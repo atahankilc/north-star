@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (assistant proposals and deletes, D-074, D-075)_
+_Last updated: 2026-10-17 (assistant web research, D-076)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -198,6 +198,12 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   gone from the brief, a real unlink, a clashing matrix row off, a not-linked unlink disabled; one Ctrl+Z brings all back).
   The user tried it with a real key: works. Committed and pushed 2026-10-17.
 
+## Done (Phase 4.2b: web research, 2026-10-17)
+- D-076: `[web]` switch in the chat (off by default, remembered), OpenAI `web_search` tool, search status + queries, numbered clickable
+  sources, links in answers, `Sources:` in proposed competitor notes and `sources:` on checklist rows. Verified headless on emulators with
+  OpenAI mocked (tool sent only when on, prompt matches, sources and links render, proposal shows domains, switch survives reload).
+  The user tried it with a real key: works. Committed and pushed 2026-10-17.
+
 ## Done (competitor fan-out fix, 2026-10-17)
 - D-058 refined: a competitor's features stay stacked while it is pressed or dragged and fan out when the click is released
   (`pressing` in `canvasStore`). Links to a stacked feature always show, drawn to the competitor card (one line per card pair).
@@ -205,7 +211,7 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 
 ## Next steps
 2. Small: PeerMarks colours through `themeAccent` (D-069); drop `edit`/`field` from database.rules.json once old tabs are gone
-3. 4.2b web research (OpenAI web search tool, sources on competitor facts), 4.2c per-feature model choice; Phase 5: files, export/import
+3. 4.2c per-feature model choice; Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 
 ## Blockers

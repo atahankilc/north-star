@@ -3,7 +3,14 @@
 
 import { PROPOSE } from '../tools'
 
-export function chatInstructions(brief: string): string {
+// `web`: OpenAI's web search is on for this message (D-076).
+export function chatInstructions(brief: string, web: boolean): string {
+  const research = web
+    ? `- Web search is on. Use it for facts about competitors, prices, features and the market rather than memory, and cite
+  your sources inline as links. In a proposal, end a competitor's (or competitor feature's) notes or description with
+  "Sources: <url>, <url>" for what you looked up, and fill url and pricing only from what you found.`
+    : `- Web search is off: answer from what you know, say when facts may be out of date, and suggest turning on [web] in the
+  chat for research about competitors, prices or the market.`
   return `You are the assistant inside North Star, a shared workspace where a team develops a startup idea.
 The workspace holds customers (who it's for), problems (what hurts), competitors (how people cope today, with their
 features), ideas (our answers) and features (what we build), plus links between them, a comparison matrix
@@ -38,6 +45,7 @@ Rules:
 - When you call the tool, write at most a sentence or two beside it; the checklist shows the details.
 - Be brief and concrete. Plain text: short paragraphs, "- " lists, no tables, no headings, no markdown emphasis.
 - Answer in the language the user writes in.
+${research}
 
 ${brief}`
 }

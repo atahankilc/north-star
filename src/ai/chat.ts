@@ -1,7 +1,7 @@
 // The assistant's conversation (D-073): this tab only, one per workspace, gone on reload. Collaborators never see it.
 import { create } from 'zustand'
 import type { ItemRef } from './context'
-import { AiError, streamReply, type ChatTurn } from './openai'
+import { AiError, streamReply, type ChatTurn, type Citation } from './openai'
 import { useAiSettings } from './settings'
 import { PROPOSE, PROPOSE_TOOL, parseProposal, proposalForHistory, type Proposal, type ProposalState } from './tools'
 
@@ -12,6 +12,10 @@ export type ChatMessage = ChatTurn & {
   proposal?: Proposal
   proposalState?: ProposalState
   refs?: Map<string, ItemRef>
+  // Web search (D-076): what it looked up, whether it's looking now, and the sources the answer cites.
+  searching?: boolean
+  queries?: string[]
+  citations?: Citation[]
 }
 
 // Built when a message is sent, so it sees the workspace as it is then.
@@ -53,7 +57,7 @@ export const useChat = create<ChatState>((set, get) => ({
     set({ wid, messages: [] })
   },
   send: (text, prepare) => {
-    const { apiKey, model } = useAiSettings.getState()
+    const { apiKey, model, web } = useAiSettings.getState()
     const content = text.trim()
     if (!content || get().busy || !apiKey) return
     // Failed answers aren't sent back as history.
@@ -72,10 +76,23 @@ export const useChat = create<ChatState>((set, get) => ({
     const ctl = new AbortController()
     controller = ctl
     let answer = ''
+    const queries: string[] = []
+    const citations: Citation[] = []
     streamReply({
       key: apiKey,
       model,
       instructions,
+      webSearch: web,
+      onSearch: (e) => {
+        if (e.status === 'searching') return update({ searching: true })
+        queries.push(...e.queries.filter((q) => !queries.includes(q)))
+        update({ searching: false, queries: [...queries] })
+      },
+      onCitation: (c) => {
+        if (citations.some((x) => x.url === c.url)) return
+        citations.push(c)
+        update({ citations: [...citations] })
+      },
       turns,
       signal: ctl.signal,
       onDelta: (d) => update({ content: (answer += d) }),
@@ -89,6 +106,7 @@ export const useChat = create<ChatState>((set, get) => ({
         update({ error: e instanceof AiError ? e.message : 'Something went wrong talking to OpenAI.' })
       })
       .finally(() => {
+        update({ searching: false })
         if (controller !== ctl) return
         controller = null
         set({ busy: false })

@@ -6,13 +6,24 @@ import { create } from 'zustand'
 export const DEFAULT_MODEL = 'gpt-6-luna'
 
 const KEY = 'north-star.openai-key'
+// Web search on or off in the chat (D-076), remembered in this browser.
+const WEB = 'north-star.ai-web'
 
-function load(): string {
+function load(key: string): string {
   try {
-    return localStorage.getItem(KEY) ?? ''
+    return localStorage.getItem(key) ?? ''
   } catch {
-    // Storage blocked: no key until one is entered for this session.
+    // Storage blocked: nothing until it's set again this session.
     return ''
+  }
+}
+
+function save(key: string, value: string) {
+  try {
+    if (value) localStorage.setItem(key, value)
+    else localStorage.removeItem(key)
+  } catch {
+    // Not persisted; still works for this session.
   }
 }
 
@@ -20,19 +31,21 @@ type AiSettings = {
   apiKey: string
   model: string
   setKey: (key: string) => void
+  web: boolean
+  setWeb: (web: boolean) => void
 }
 
 export const useAiSettings = create<AiSettings>((set) => ({
-  apiKey: load(),
+  apiKey: load(KEY),
   model: DEFAULT_MODEL,
   setKey: (apiKey) => {
-    try {
-      if (apiKey) localStorage.setItem(KEY, apiKey)
-      else localStorage.removeItem(KEY)
-    } catch {
-      // Not persisted; still works for this session.
-    }
+    save(KEY, apiKey)
     set({ apiKey })
+  },
+  web: load(WEB) === 'on',
+  setWeb: (web) => {
+    save(WEB, web ? 'on' : '')
+    set({ web })
   },
 }))
 

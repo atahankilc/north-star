@@ -144,6 +144,8 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 - **Changes** (D-074): one strict function tool, `propose_changes` (`src/ai/tools.ts`). The model proposes; the chat shows a
   checklist; only what the user applies is written, through `src/data/assistant.ts`, as one undo step. Deletes cascade like
   a delete by hand (D-075).
+- **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the
+  user's account). Cited sources are shown as clickable links.
 - Prompts live in `src/ai/prompts/`.
 - Risk: a key in localStorage is exposed to XSS. Mitigation: strict CSP, no untrusted HTML, no
   third-party scripts. Settings explains this to the user.

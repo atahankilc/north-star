@@ -317,6 +317,69 @@ html[data-motion='reduced'] .caret {
   font-size: var(--text-xs);
 }
 
+/* Web search (D-076): the switch beside send, what was looked up, and the cited sources. */
+.web {
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--fg-faint);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.web::before {
+  content: '[';
+  color: var(--line-hover);
+}
+
+.web::after {
+  content: ']';
+  color: var(--line-hover);
+}
+
+.web:hover {
+  color: var(--fg-strong);
+}
+
+.web[aria-pressed='true'] {
+  color: var(--accent-cyan);
+}
+
+.searched {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.text a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-decoration-color: var(--line-hover);
+  text-underline-offset: 2px;
+}
+
+.text a:hover {
+  text-decoration-color: var(--accent-cyan);
+}
+
+.sources {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  white-space: normal;
+}
+
+.sources a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* A proposal under an answer (D-074): a checklist of changes, then apply / discard. */
 .proposal {
   display: flex;

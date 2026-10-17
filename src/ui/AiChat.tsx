@@ -1,7 +1,7 @@
 // The assistant (D-073): an ASCII orb with eyes in the bottom-right corner of a workspace. Clicking it opens a chat
 // that knows the workspace and proposes changes you accept before they're written (D-074). Your own OpenAI key (D-006).
 import { AnimatePresence } from 'motion/react'
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useChat } from '../ai/chat'
 import { workspaceBrief } from '../ai/context'
@@ -110,6 +110,8 @@ function Conversation() {
   const busy = useChat((s) => s.busy)
   const send = useChat((s) => s.send)
   const stop = useChat((s) => s.stop)
+  const web = useAiSettings((s) => s.web)
+  const setWeb = useAiSettings((s) => s.setWeb)
   const path = useLocation().pathname
   const [draft, setDraft] = useState('')
   const input = useRef<HTMLTextAreaElement>(null)
@@ -138,7 +140,7 @@ function Conversation() {
     // Built when sent, so it sees the board as it is now.
     send(text, () => {
       const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })
-      return { instructions: chatInstructions(brief.text), refs: brief.refs }
+      return { instructions: chatInstructions(brief.text, useAiSettings.getState().web), refs: brief.refs }
     })
     setDraft('')
     stick.current = true
@@ -185,8 +187,23 @@ function Conversation() {
           <li key={m.id} className={styles.message} data-role={m.role}>
             <span className={styles.who}>{m.role === 'user' ? 'you' : 'ai'}</span>
             <span className={styles.text}>
-              {m.content}
+              {(m.searching || m.queries?.length) && (
+                <span className={styles.searched}>
+                  {m.searching ? 'searching the web…' : `searched: ${m.queries!.join(' · ')}`}
+                </span>
+              )}
+              {m.role === 'assistant' ? <Linked text={m.content} /> : m.content}
               {m.role === 'assistant' && busy && m === last && <span className={styles.caret} aria-hidden />}
+              {m.citations && m.citations.length > 0 && (
+                <span className={styles.sources}>
+                  <span className={styles.changeKind}>sources</span>
+                  {m.citations.map((c, i) => (
+                    <a key={c.url} href={c.url} target="_blank" rel="noreferrer" title={c.url}>
+                      {i + 1}. {c.title}
+                    </a>
+                  ))}
+                </span>
+              )}
               {m.error && <span className={styles.error}>! {m.error}</span>}
               {m.proposal && <AiProposal message={m} />}
             </span>
@@ -204,6 +221,15 @@ function Conversation() {
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKey}
         />
+        <button
+          type="button"
+          className={styles.web}
+          aria-pressed={web}
+          onClick={() => setWeb(!web)}
+          title={web ? 'Web search is on: answers look things up and cite sources (about $0.01 per search on your OpenAI account)' : 'Turn on web search for research (about $0.01 per search on your OpenAI account)'}
+        >
+          web
+        </button>
         {busy ? (
           <button type="button" className={styles.send} onClick={stop}>
             stop
@@ -214,7 +240,29 @@ function Conversation() {
           </button>
         )}
       </form>
-      <p className={styles.footnote}>Proposes changes; nothing is written until you apply. Enter sends, Shift+Enter adds a line.</p>
+      <p className={styles.footnote}>
+        Proposes changes; nothing is written until you apply. {web ? 'Web search on: ~$0.01 per search.' : 'Enter sends, Shift+Enter adds a line.'}
+      </p>
     </>
   )
+}
+
+// Links in an answer: markdown `[title](url)` (how cited sources come back) and bare URLs, both clickable (D-076).
+const LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)\]]+)/g
+
+function Linked({ text }: { text: string }) {
+  const parts: ReactNode[] = []
+  let at = 0
+  for (const m of text.matchAll(LINK)) {
+    parts.push(text.slice(at, m.index))
+    const url = m[2] ?? m[3]
+    parts.push(
+      <a key={m.index} href={url} target="_blank" rel="noreferrer">
+        {m[1] ?? url.replace(/^https?:\/\/(www\.)?/, '').replace(/[?#].*$/, '')}
+      </a>,
+    )
+    at = m.index + m[0].length
+  }
+  parts.push(text.slice(at))
+  return <>{parts.map((p, i) => (typeof p === 'string' ? <Fragment key={`t${i}`}>{p}</Fragment> : p))}</>
 }

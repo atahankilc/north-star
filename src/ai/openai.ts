@@ -7,6 +7,10 @@ export type ChatTurn = { role: 'user' | 'assistant'; content: string }
 
 export class AiError extends Error {}
 
+// A source the answer cites (D-076): OpenAI asks that these are shown and clickable.
+export type Citation = { url: string; title: string }
+export type SearchEvent = { status: 'searching' } | { status: 'done'; queries: string[] }
+
 const headers = (key: string) => ({ Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' })
 
 async function failure(res: Response, model: string): Promise<AiError> {
@@ -43,10 +47,26 @@ type StreamOptions = {
   // Function tools the model may call (D-074); a call arrives whole, with its JSON arguments.
   tools?: object[]
   onToolCall?: (name: string, args: string) => void
+  // OpenAI's own web search tool (D-076): each search costs about a cent on the user's account, so it's opt-in per message.
+  webSearch?: boolean
+  onSearch?: (e: SearchEvent) => void
+  onCitation?: (c: Citation) => void
 }
 
 // Streams one answer; resolves when it's complete. Aborting rejects with an AbortError.
-export async function streamReply({ key, model, instructions, turns, signal, onDelta, tools, onToolCall }: StreamOptions): Promise<void> {
+export async function streamReply({
+  key,
+  model,
+  instructions,
+  turns,
+  signal,
+  onDelta,
+  tools = [],
+  onToolCall,
+  webSearch,
+  onSearch,
+  onCitation,
+}: StreamOptions): Promise<void> {
   let res: Response
   try {
     res = await fetch(`${API}/responses`, {
@@ -61,7 +81,9 @@ export async function streamReply({ key, model, instructions, turns, signal, onD
         // Nothing kept on OpenAI's side beyond what their policy requires.
         store: false,
         reasoning: { effort: 'low' },
-        ...(tools?.length ? { tools, parallel_tool_calls: false } : {}),
+        ...(webSearch || tools.length
+          ? { tools: [...tools, ...(webSearch ? [{ type: 'web_search', search_context_size: 'medium' }] : [])], parallel_tool_calls: false }
+          : {}),
       }),
     })
   } catch (e) {
@@ -91,12 +113,20 @@ export async function streamReply({ key, model, instructions, turns, signal, onD
         type: string
         delta?: string
         message?: string
-        item?: { type?: string; name?: string; arguments?: string }
+        item?: { type?: string; name?: string; arguments?: string; action?: { query?: string; queries?: string[] } }
+        annotation?: { type?: string; url?: string; title?: string }
         response?: { error?: { message?: string }; incomplete_details?: { reason?: string } }
       }
       if (event.type === 'response.output_text.delta' && event.delta) onDelta(event.delta)
       else if (event.type === 'response.output_item.done' && event.item?.type === 'function_call') {
         onToolCall?.(event.item.name ?? '', event.item.arguments ?? '{}')
+      } else if (event.type === 'response.output_item.added' && event.item?.type === 'web_search_call') {
+        onSearch?.({ status: 'searching' })
+      } else if (event.type === 'response.output_item.done' && event.item?.type === 'web_search_call') {
+        const a = event.item.action
+        onSearch?.({ status: 'done', queries: a?.queries ?? (a?.query ? [a.query] : []) })
+      } else if (event.type === 'response.output_text.annotation.added' && event.annotation?.type === 'url_citation' && event.annotation.url) {
+        onCitation?.({ url: event.annotation.url, title: event.annotation.title || event.annotation.url })
       } else if (event.type === 'response.completed') return
       else if (event.type === 'response.failed') throw new AiError(event.response?.error?.message ?? 'OpenAI stopped with an error.')
       else if (event.type === 'response.incomplete') {

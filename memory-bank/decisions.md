@@ -489,6 +489,7 @@ the usual flow. (The first pass had a "space photo" look: nebula clouds, a galax
 - *Phase 4.2:* tools so the assistant can add competitors, links, matrix notes, summaries (done in D-074); previews you accept before anything is written
   (user's answer: preview, then accept); market research by sending agents.
 
+
 ### D-074 · 2026-10-17 · Accepted (Phase 4.2a; extends D-073)
 **The assistant proposes changes; you tick and apply them.** One OpenAI function tool, `propose_changes` (`src/ai/tools.ts`), not MCP:
 the app has no server to host one, and a browser-side function tool does the same job with the same key.
@@ -515,3 +516,17 @@ the app has no server to host one, and a browser-side function tool does the sam
 - Also in the prompt (user feedback the same day): new items are wired into the chain (competitor competes-with its problems and is
   `for` its customers; idea solves its problem…), a missing customer or problem is added in the same proposal, and judgements
   ("the weakest idea") name an item and the criterion instead of asking for criteria.
+
+### D-076 · 2026-10-17 · Accepted (Phase 4.2b)
+**Web research in the chat, opt-in, with sources.** OpenAI's built-in `web_search` tool (Responses API), not our own crawler: there is
+no server, and it works with the user's key.
+- *Switch:* `[web]` beside send (cyan when on), off by default and remembered in this browser (`north-star.ai-web`). Each search costs
+  about $0.01 on the user's account ($10 / 1k calls per third-party trackers in Oct 2026, not checked on OpenAI's pricing page),
+  so it's never on silently; the footnote says so while it's on.
+- *While it works:* "searching the web…", then `searched: query · query` above the answer.
+- *Sources:* OpenAI requires cited sources to be visible and clickable: `url_citation` annotations become a numbered `sources` list under
+  the answer, and markdown links / bare URLs in the text are links.
+- *Into the board:* with web on, the prompt has the model end a competitor's notes or description with `Sources: <url>, …` and fill url /
+  pricing only from what it found; checklist rows show `sources: domain, domain`. No new data field, so no rule change.
+  With web off, the prompt says facts may be dated and suggests `[web]`.
+- Later: a deeper "send agents" research mode (several searches per competitor, one report) if single answers fall short.

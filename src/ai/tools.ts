@@ -215,7 +215,10 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>): Proposa
           kind: 'competitor',
           tone: 'competitor',
           text: s(raw.name) ?? 'Untitled',
-          detail: [s(raw.url), tagText(raw.tags), s(raw.description) && clip(s(raw.description)!)].filter(Boolean).join(' · ') || undefined,
+          detail:
+            [s(raw.pricing) && clip(s(raw.pricing)!, 40), tagText(raw.tags), s(raw.description) && clip(s(raw.description)!), sourcesOf(raw)]
+              .filter(Boolean)
+              .join(' · ') || undefined,
           needs: needsOf(resolve(raw.near)),
         }
       case 'add_competitor_feature': {
@@ -226,7 +229,7 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>): Proposa
           kind: 'their feature',
           tone: 'competitor',
           text: `${c?.name ?? '?'}: ${s(raw.name) ?? 'Untitled'}`,
-          detail: [s(raw.category), s(raw.description) && clip(s(raw.description)!)].filter(Boolean).join(' · ') || undefined,
+          detail: [s(raw.category), s(raw.description) && clip(s(raw.description)!), sourcesOf(raw)].filter(Boolean).join(' · ') || undefined,
           needs: needsOf(c),
           problem: !c ? 'unknown competitor' : c.type !== 'competitor' ? `${c.name} isn't a competitor` : undefined,
         }
@@ -245,7 +248,7 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>): Proposa
           kind: t?.type === 'competitor' ? 'competitor' : (t?.type ?? want),
           tone: t && t.type !== 'competitorFeature' ? (t.type as BoardType) : null,
           text: t?.name ?? '?',
-          detail: edits.join(' · ') || undefined,
+          detail: [...edits, sourcesOf(raw)].filter(Boolean).join(' · ') || undefined,
           needs: needsOf(t),
           problem: !t ? 'unknown item' : !fit ? `${t.name} isn't a ${want}` : edits.length === 0 ? 'nothing to change' : undefined,
         }
@@ -339,6 +342,16 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>): Proposa
     }
   }
   return { summary: s(data.summary) ?? 'Proposed changes', changes }
+}
+
+// Where researched facts came from (D-076): the domains of every URL in the row's text fields.
+function sourcesOf(raw: Raw): string | undefined {
+  const domains = new Set<string>()
+  for (const v of Object.values(raw)) {
+    if (typeof v !== 'string') continue
+    for (const m of v.matchAll(/https?:\/\/(?:www\.)?([^/\s),\]]+)/g)) domains.add(m[1])
+  }
+  return domains.size ? `sources: ${[...domains].join(', ')}` : undefined
 }
 
 function tagText(v: unknown): string {
