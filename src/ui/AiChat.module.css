@@ -631,7 +631,8 @@ html[data-motion='reduced'] .caret {
   }
 }
 
-/* The preview (D-087): a frame around the app and a bar under the HUD. Functional for now; the design comes later. */
+/* The preview (D-087): a bare screen over the app. A frame, and a bar in the HUD's place (the HUD, filters and board
+   tools are hidden, previewLock.ts). Functional for now; the design comes later. */
 .previewFrame {
   position: fixed;
   inset: 0;
@@ -642,24 +643,68 @@ html[data-motion='reduced'] .caret {
 
 .previewBar {
   position: fixed;
-  bottom: calc(var(--hud-y) + 48px);
-  left: 50%;
+  top: 0;
+  right: 0;
+  left: 0;
   z-index: 41;
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-3);
-  max-width: calc(100% - 2 * var(--space-4));
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--accent-cyan);
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  min-height: var(--hud-h);
+  padding: var(--space-2) var(--hud-x);
+  border-bottom: 1px solid var(--accent-cyan);
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  transform: translateX(-50%);
+}
+
+.previewTitle {
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.previewCount {
+  color: var(--fg-dim);
+}
+
+.previewViews {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.previewViews a {
+  color: var(--fg-dim);
+  text-decoration: none;
+}
+
+.previewViews a:hover,
+.previewViews a[aria-current='page'] {
+  color: var(--fg-strong);
+}
+
+.previewViews a[aria-current='page'] {
+  text-decoration: underline;
+  text-decoration-color: var(--accent-cyan);
+  text-underline-offset: 4px;
 }
 
 .previewKey {
   display: flex;
   gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* What the bare preview screen leaves out. */
+:global([data-previewing] > header),
+:global([data-previewing] [data-preview-hide]) {
+  display: none !important;
+}
+
+/* Locked controls while previewing (previewLock.ts). */
+:global([data-previewing] [data-preview-locked]) {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

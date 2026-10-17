@@ -113,7 +113,7 @@ export function BoardLabel({ wid, label }: Props) {
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={(e) => {
             e.stopPropagation()
-            setEditingLabel(label.id)
+            if (!isPreviewing()) setEditingLabel(label.id)
           }}
           onPointerOver={(e) => {
             e.stopPropagation()

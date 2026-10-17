@@ -259,6 +259,7 @@ function Popover({
     <div ref={ref} className={styles.popoverCell}>
       <button
         className={styles.cellButton}
+        data-edit
         aria-expanded={isOpen}
         onClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect()

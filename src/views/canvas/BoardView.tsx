@@ -118,7 +118,7 @@ export function BoardView() {
       <FilterBar goTo={places.map((l) => ({ key: l.id, label: l.text.trim(), onSelect: () => jump(l) }))} />
 
       {/* One create button for everything (D-053). */}
-      <footer className={styles.tools}>
+      <footer className={styles.tools} data-preview-hide>
         <Menu
           primary
           up

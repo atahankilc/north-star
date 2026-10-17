@@ -6,7 +6,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
-import { useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useChat, type Step } from '../ai/chat'
 import { workspaceBrief } from '../ai/context'
 import { useKeySource } from '../ai/keySource'
@@ -21,6 +21,7 @@ import { useMotion } from '../state/motion'
 import { themeAccent, useTheme } from '../state/theme'
 import { useWs } from '../views/workspace/context'
 import { MARK_COLOR, OutsidePreview, usePreview, type Mark } from '../views/workspace/preview'
+import { lockApp } from '../views/workspace/previewLock'
 import { AiKeyForm, KEY_PRIVACY } from './AiSettings'
 import { AiOrb, type OrbCue, type OrbMood } from './AiOrb'
 import { glide, GLIDE_MS } from './glide'
@@ -538,10 +539,13 @@ function ModeMenu({ modes, pick, selected, onChoose }: { modes: Mode[]; pick: nu
 // colours. Esc closes it. Drawn inside the app's box, so it stays clear of the assistant's window.
 function PreviewBar() {
   const showing = usePreview((s) => s.ws !== null)
+  const wid = usePreview((s) => s.ws?.wid)
   const count = usePreview((s) => s.count)
   const theme = useTheme((s) => s.theme)
   const [host, setHost] = useState<Element | null>(null)
   useEffect(() => setHost(document.querySelector('[data-app]')), [])
+  // The app becomes a bare preview screen meanwhile: no HUD, filters or tools, nothing editable (previewLock.ts).
+  useEffect(() => (showing && host instanceof HTMLElement ? lockApp(host) : undefined), [showing, host])
   useEffect(() => {
     if (!showing) return
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -553,15 +557,23 @@ function PreviewBar() {
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
   }, [showing])
-  if (!showing || !host) return null
+  if (!showing || !host || !wid) return null
   return createPortal(
     <>
       <div className={styles.previewFrame} aria-hidden />
-      <div className={styles.previewBar} role="status">
-        <span className={styles.changeKind}>preview</span>
-        <span>
-          {count} change{count === 1 ? '' : 's'} as if applied; nothing is written yet
+      {/* In the HUD's place: the only way around is between this workspace's views. */}
+      <div className={styles.previewBar} role="status" data-preview-bar>
+        <span className={styles.previewTitle}>preview</span>
+        <span className={styles.previewCount}>
+          {count} change{count === 1 ? '' : 's'} as if applied · nothing is written yet
         </span>
+        <nav className={styles.previewViews} aria-label="Preview views">
+          {(['board', 'flow', 'table', 'matrix'] as const).map((v) => (
+            <NavLink key={v} to={workspacePath(wid, v === 'board' ? undefined : v)} end={v === 'board'}>
+              {v}
+            </NavLink>
+          ))}
+        </nav>
         <span className={styles.previewKey}>
           {(Object.keys(MARK_COLOR) as Mark[]).map((m) => (
             <span key={m} style={{ color: themeAccent(MARK_COLOR[m], theme) }}>

@@ -53,7 +53,8 @@ export function FilterBar({ goTo }: Props) {
   const tagSummary = tags.length === 0 ? 'any' : tags.length === 1 ? `#${tags[0]}` : `${tags.length}`
 
   return (
-    <div className={styles.filters}>
+    // Hidden in the assistant's bare preview screen (D-087).
+    <div className={styles.filters} data-preview-hide>
       <Menu
         label="show"
         summary={BOARD_TYPES.map((t) => (
