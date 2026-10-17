@@ -304,6 +304,9 @@ Table's tags cell. The idea panel's "To feature" button is gone.
 competitor (or one of its features) fans them out to the right as compressed cards (`FeatureChip.tsx`: name + category). Clicking
 one opens the competitor panel with that feature unfolded; shift+dragging a card onto one creates an `inspired-by` link. Links to
 competitor features are drawn only while fanned out.
+*Refined 2026-10-17 (user):* they fan out only once the click on the competitor is released; while it is held down or dragged
+they stay stacked behind it (they used to open and close during a drag).
+Links to a stacked feature are always drawn, pointing at the competitor card (one line per pair of cards; a direct link wins).
 
 ### D-059 · 2026-10-17 · Accepted
 **Links read as sentences.** Straight lines from card edge to card edge with an arrowhead at the target and the kind written at the

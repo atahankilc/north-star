@@ -62,7 +62,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
   const live = useCanvas((s) => s.dragging[node.id])
   const isLinkSource = useCanvas((s) => s.linkFrom === node.id)
   const isLinkTarget = useCanvas((s) => s.linkFrom !== null && s.linkFrom !== node.id) && hovered
-  const { select, startLink, endLink, setDragging } = useCanvas.getState()
+  const { select, startLink, endLink, setDragging, setPressing } = useCanvas.getState()
 
   const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean } | null>(null)
 
@@ -95,6 +95,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
     if (controls) controls.enabled = false
     const p = boardPoint(e)
     if (!p) return
+    setPressing(node.id)
     select(node.id)
     if (e.shiftKey) {
       startLink(node.id, p)
@@ -121,6 +122,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
   }
 
   const onPointerUp = (e: ThreeEvent<PointerEvent>) => {
+    setPressing(null)
     const d = drag.current
     if (d) {
       e.stopPropagation()

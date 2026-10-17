@@ -198,6 +198,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   // A link released anywhere but on a card is cancelled; controls always come back.
   useEffect(() => {
     const up = () => {
+      if (useCanvas.getState().pressing) useCanvas.getState().setPressing(null)
       if (useCanvas.getState().linkFrom) endLink()
       if (controls) controls.enabled = true
     }
@@ -206,16 +207,18 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   }, [controls, endLink])
 
   // The competitor whose features are fanned out: the selected one, or the owner of a selected feature (D-058).
+  // While the competitor itself is held down or dragged they stay stacked behind it, and fan out once the click is released.
   const theirs = useMemo(() => {
     const map = new Map<string, WithId<CompetitorFeature>[]>()
     for (const f of [...competitorFeatures].sort((a, b) => a.createdAt - b.createdAt)) map.set(f.competitorId, [...(map.get(f.competitorId) ?? []), f])
     return map
   }, [competitorFeatures])
+  const pressing = useCanvas((s) => s.pressing)
   const openId = useMemo(() => {
     if (!selectedId) return null
-    if (theirs.has(selectedId)) return selectedId
+    if (theirs.has(selectedId)) return selectedId === pressing ? null : selectedId
     return competitorFeatures.find((f) => f.id === selectedId)?.competitorId ?? null
-  }, [selectedId, theirs, competitorFeatures])
+  }, [selectedId, pressing, theirs, competitorFeatures])
 
   const positions = useMemo(() => {
     const map = new Map<string, [number, number]>()
@@ -261,6 +264,29 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     void createEdge(wid, { id: a.id, type: a.type }, { id: b.id, type: b.type }, defaultKind(a.type, b.type))
   }
 
+  // Links to a competitor's stacked features point at the competitor, so they show without fanning it out (D-058).
+  // A pair of cards gets one line: a direct link wins, then the first feature link.
+  const lines = useMemo(() => {
+    const owner = new Map(competitorFeatures.map((f) => [f.id, f.competitorId]))
+    const end = (id: string) => (positions.has(id) ? id : (owner.get(id) ?? id))
+    const seen = new Set<string>()
+    const out: { edge: (typeof edges)[number]; from: string; to: string; active: boolean }[] = []
+    const viaStack = (e: (typeof edges)[number]) => end(e.fromId) !== e.fromId || end(e.toId) !== e.toId
+    for (const edge of [...edges].sort((x, y) => Number(viaStack(x)) - Number(viaStack(y)))) {
+      const from = end(edge.fromId)
+      const to = end(edge.toId)
+      if (from === to || !positions.has(from) || !positions.has(to)) continue
+      // Customer tags are labels on the card; their lines show only while that customer is selected.
+      if (edge.kind === FOR && edge.toId !== customerId) continue
+      const pair = from < to ? `${from}|${to}` : `${to}|${from}`
+      if (seen.has(pair)) continue
+      seen.add(pair)
+      const active = [edge.fromId, edge.toId, from, to].includes(selectedId ?? '')
+      out.push({ edge, from, to, active })
+    }
+    return out
+  }, [edges, positions, competitorFeatures, customerId, selectedId])
+
   const linkSource = linkFrom ? positions.get(linkFrom) : undefined
 
   return (
@@ -285,25 +311,17 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
         <BoardLabel key={l.id} wid={wid} label={l} />
       ))}
 
-      {edges.map((edge) => {
-        const a = positions.get(edge.fromId)
-        const b = positions.get(edge.toId)
-        if (!a || !b) return null
-        // Customer tags are labels on the card; their lines show only while that customer is selected.
-        if (edge.kind === FOR && edge.toId !== customerId) return null
-        const active = selectedId === edge.fromId || selectedId === edge.toId
-        return (
-          <EdgeLine
-            key={edge.id}
-            from={a}
-            to={b}
-            fromHalf={chips.has(edge.fromId) ? CHIP_HALF : CARD_HALF}
-            toHalf={chips.has(edge.toId) ? CHIP_HALF : CARD_HALF}
-            kind={edge.kind}
-            active={active}
-          />
-        )
-      })}
+      {lines.map(({ edge, from, to, active }) => (
+        <EdgeLine
+          key={edge.id}
+          from={positions.get(from)!}
+          to={positions.get(to)!}
+          fromHalf={chips.has(from) ? CHIP_HALF : CARD_HALF}
+          toHalf={chips.has(to) ? CHIP_HALF : CARD_HALF}
+          kind={edge.kind}
+          active={active}
+        />
+      ))}
 
       {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={CARD_HALF} toHalf={[0, 0]} active />}
 

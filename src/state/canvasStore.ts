@@ -10,6 +10,8 @@ type CanvasState = {
   linkPointer: Vec2 | null
   // Live positions of cards being dragged by this user, ahead of Firestore.
   dragging: Record<string, Vec2>
+  // The card under a held-down pointer: a competitor keeps its features stacked until the press ends (D-058).
+  pressing: string | null
   // Set by the board once mounted: where the camera is looking.
   viewCenter: () => Vec2
   // Set by the board once mounted: move the camera to look at a point.
@@ -24,6 +26,7 @@ type CanvasState = {
   moveLink: (at: Vec2) => void
   endLink: () => void
   setDragging: (id: string, at: Vec2 | null) => void
+  setPressing: (id: string | null) => void
   setViewCenter: (fn: () => Vec2) => void
   setFocusOn: (fn: (at: Vec2) => void) => void
   setFlyTo: (fn: (at: Vec2) => void) => void
@@ -35,6 +38,7 @@ export const useCanvas = create<CanvasState>((set) => ({
   linkFrom: null,
   linkPointer: null,
   dragging: {},
+  pressing: null,
   viewCenter: () => [0, 0],
   focusOn: () => {},
   flyTo: () => {},
@@ -51,6 +55,7 @@ export const useCanvas = create<CanvasState>((set) => ({
       else delete dragging[id]
       return { dragging }
     }),
+  setPressing: (id) => set({ pressing: id }),
   setViewCenter: (fn) => set({ viewCenter: fn }),
   setFocusOn: (fn) => set({ focusOn: fn }),
   setFlyTo: (fn) => set({ flyTo: fn }),

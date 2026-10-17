@@ -198,6 +198,11 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   gone from the brief, a real unlink, a clashing matrix row off, a not-linked unlink disabled; one Ctrl+Z brings all back).
   The user tried it with a real key: works. Committed and pushed 2026-10-17.
 
+## Done (competitor fan-out fix, 2026-10-17)
+- D-058 refined: a competitor's features stay stacked while it is pressed or dragged and fan out when the click is released
+  (`pressing` in `canvasStore`). Links to a stacked feature always show, drawn to the competitor card (one line per card pair).
+  Verified headless on emulators (example workspace, stacked and fanned). Committed and pushed 2026-10-17.
+
 ## Next steps
 2. Small: PeerMarks colours through `themeAccent` (D-069); drop `edit`/`field` from database.rules.json once old tabs are gone
 3. 4.2b web research (OpenAI web search tool, sources on competitor facts), 4.2c per-feature model choice; Phase 5: files, export/import
