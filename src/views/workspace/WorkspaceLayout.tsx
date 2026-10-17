@@ -12,6 +12,7 @@ import { Hud } from '../../ui/Hud'
 import { InlineEdit } from '../../ui/InlineEdit'
 import { Row, Section } from '../../ui/Settings'
 import { Toast } from '../../ui/Toast'
+import { forgetCamera } from '../canvas/Board'
 import { WorkspaceContext, type WorkspaceCtx } from './context'
 import { useEditKeys } from './useEditKeys'
 import styles from './WorkspaceLayout.module.css'
@@ -34,6 +35,9 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   const ctx = useMemo<WorkspaceCtx>(() => ({ ...data, wid, workspace }), [data, wid, workspace])
   const load = useWsView((s) => s.load)
   useEffect(() => load(wid), [load, wid])
+  // Opening a workspace frames all its cards; switching views inside it keeps your place.
+  // During the first render, so it's done before the board below reads its camera.
+  useState(() => forgetCamera(wid))
 
   return (
     <WorkspaceContext.Provider value={ctx}>

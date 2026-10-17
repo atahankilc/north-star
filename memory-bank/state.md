@@ -97,6 +97,12 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Flat cards with type-colour left border + label, no colour picker (D-055); tags as grouping with TAG filter and Table column,
   competitor tags (D-056); breadcrumb name not editable. Rules: 71 pass, **not deployed**. Not pushed.
 
+## Done (cards, panels, links, 2026-10-17)
+- No notes on cards; `for` dropdown and tag picker in panels; "To feature" removed (D-057). Competitor feature stack that fans
+  out (D-058). Links with arrows and kind labels (D-059). Fit-all on open; Matrix full height (D-060).
+- Dev hook `window.__boardItems` (board items with ids) for automation.
+- Verified on emulators with headless Chrome; rules 71 pass. **Rules (competitor tags) not deployed, nothing pushed.**
+
 ## Next steps
 1. Deploy rules + push (ask the user), their review on the live site; then Phase 3 (presence, live cursors)
 2. Phase 3: presence + live cursors (RTDB rules are ready)
@@ -119,7 +125,7 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Ideas and features used to live on separate boards, so in old workspaces they may overlap on the shared board. Drag them apart.
 - The quickest realistic test data is the example workspace: click Alice, then "Create example" (emulators).
 - Seed script pattern for visual checks: sign in to the auth emulator as `test-alice` with the firebase client in node, write a workspace + items, then open `/#/w/<wid>` after clicking Alice.
-- Dev hooks: `window.__sceneTime`, `__backdrop` (R3F state), `__curtain`, `__sweep`, `__canvas`, `__advance`.
+- Dev hooks: `window.__boardItems`, `window.__sceneTime`, `__backdrop` (R3F state), `__curtain`, `__sweep`, `__canvas`, `__advance`.
 - Chrome screenshots are scaled: viewport 2560 px vs 1568 px frame, so script clientX/Y needs ×(innerWidth/1568).
 - OrbitControls listens on the Board's wrapper div (not the canvas), so card handlers run first and can disable panning.
 - The bundle is about 1.6 MB (three + drei + firebase). Code-split views later.

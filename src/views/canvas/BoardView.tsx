@@ -21,7 +21,7 @@ import styles from './BoardView.module.css'
 const LAND_BELOW = 2.5
 
 export function BoardView() {
-  const { wid, edges, competitors, labels } = useWs()
+  const { wid, edges, competitors, competitorFeatures, labels } = useWs()
   const all = useBoardItems()
   const nodes = useVisibleItems(all)
   const select = useCanvas((s) => s.select)
@@ -52,6 +52,11 @@ export function BoardView() {
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params])
+
+  // Dev-only handle for automation: the board's items with their ids.
+  useEffect(() => {
+    if (import.meta.env.DEV) (window as unknown as { __boardItems: typeof all }).__boardItems = all
+  }, [all])
 
   // Competitors made before the board (D-040) have no position yet: give each a free spot once.
   const placed = useRef(new Set<string>())
@@ -108,7 +113,7 @@ export function BoardView() {
 
   return (
     <main className={styles.page}>
-      <Board wid={wid} nodes={nodes} edges={edges} labels={labels} focus={focus} onCreate={(at) => void create(lastType, at)} />
+      <Board wid={wid} nodes={nodes} edges={edges} labels={labels} competitorFeatures={competitorFeatures} focus={focus} onCreate={(at) => void create(lastType, at)} />
 
       <FilterBar goTo={places.map((l) => ({ key: l.id, label: l.text.trim(), onSelect: () => jump(l) }))} />
 

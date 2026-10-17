@@ -71,7 +71,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   (customer green, problem magenta, competitor yellow, idea white, feature cyan); a hairline edge brightens on hover/selection.
   Type colours are reserved for type: tags are white `#chips` (D-056). Lift on hover and drag.
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
-- Connections: curved lines made of dotted or glyph segments, animated flow toward the target
+- Connections (D-059): straight, edge to edge, with an arrowhead and the kind written at the midpoint; line pattern by kind
+  (solid / dashed / dotted / faint), neutral grey, cyan when attached to the selection. No animation
 
 ### HUD (D-027, D-053, D-054)
 - Fixed top bar, same on every page: breadcrumb left (`# north-star / workspaces / <name>`), actions right.

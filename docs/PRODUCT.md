@@ -55,7 +55,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 2. Structure: connect, tag, name areas with text labels
 3. Research: add competitors and break their products into features
 4. Link: ideas ↔ competitor features
-5. Promote: idea or cluster → Feature
+5. Plan: add features and link them to the ideas and competitor features they come from
 6. Compare: fill in the matrix
 7. Decide: use gaps and differences to pick what to build
 8. Collaborate: invite people, see live cursors, edit together

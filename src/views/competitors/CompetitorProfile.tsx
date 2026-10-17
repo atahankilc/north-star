@@ -7,11 +7,13 @@ import type { Competitor, CompetitorFeature } from '../../data/model'
 import { createNode, deleteNode, updateNode } from '../../data/nodes'
 import { useHistory } from '../../data/history'
 import { useCanvas } from '../../state/canvasStore'
+import { isReducedMotion } from '../../state/motion'
 import { Appear } from '../../ui/Appear'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { useWs } from '../workspace/context'
-import { parseTags, TAG_HINT } from '../canvas/tags'
+import { TAG_HINT } from '../canvas/tags'
+import { ItemTags } from '../workspace/ItemTags'
 import { LinkList } from '../workspace/LinkList'
 import { removeItem, UNDO_HINT } from '../workspace/useEditKeys'
 import styles from './CompetitorProfile.module.css'
@@ -19,7 +21,16 @@ import styles from './CompetitorProfile.module.css'
 const UNCATEGORIZED = 'uncategorized'
 
 // `children` sits between the facts and the features (the customer picker).
-export function CompetitorProfile({ competitor, children }: { competitor: WithId<Competitor>; children?: ReactNode }) {
+export function CompetitorProfile({
+  competitor,
+  focusFeature,
+  children,
+}: {
+  competitor: WithId<Competitor>
+  // Unfold and scroll to this feature (its chip was clicked on the board).
+  focusFeature?: string
+  children?: ReactNode
+}) {
   const { wid } = useWs()
   const select = useCanvas((s) => s.select)
   const set = (fields: Partial<Competitor>) => void updateNode(wid, 'competitor', competitor.id, fields)
@@ -67,24 +78,15 @@ export function CompetitorProfile({ competitor, children }: { competitor: WithId
       </div>
       <Field label="description" value={competitor.description} onSave={opt('description')} placeholder="What they do" multiline />
       <Field label="notes" value={competitor.notes} onSave={opt('notes')} placeholder="Strengths, weaknesses, reviews" multiline />
-      <label className={styles.field}>
+      <div className={styles.field}>
         <span className={styles.fieldLabel}>tags</span>
-        <AutosaveField
-          className={styles.input}
-          label="Tags"
-          placeholder="direct, status quo"
-          value={(competitor.tags ?? []).join(', ')}
-          onSave={(v) => {
-            const tags = parseTags(v)
-            set({ tags: tags.length ? tags : undefined })
-          }}
-        />
+        <ItemTags item={{ id: competitor.id, type: 'competitor', tags: competitor.tags ?? [] }} />
         <span className={styles.hint}>{TAG_HINT}</span>
-      </label>
+      </div>
 
       {children}
 
-      <Features competitorId={competitor.id} />
+      <Features competitorId={competitor.id} focus={focusFeature} />
 
       <LinkList nodeId={competitor.id} nodeType="competitor" hint="Link this competitor to ideas or features." />
 
@@ -128,10 +130,16 @@ function Field({
   )
 }
 
-function Features({ competitorId }: { competitorId: string }) {
+function Features({ competitorId, focus }: { competitorId: string; focus?: string }) {
   const { wid, competitorFeatures } = useWs()
   const [params, setParams] = useSearchParams()
   const [open, setOpen] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!focus) return
+    setOpen(focus)
+    requestAnimationFrame(() => document.getElementById(`cf-${focus}`)?.scrollIntoView({ block: 'center', behavior: isReducedMotion() ? 'auto' : 'smooth' }))
+  }, [focus])
   const features = competitorFeatures.filter((f) => f.competitorId === competitorId)
   const listId = `categories-${competitorId}`
 

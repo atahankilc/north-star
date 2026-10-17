@@ -1,5 +1,6 @@
 // One card on the board: a flat card with SDF text (D-019). Every type has the same shape; a left border and a small
 // label in the type's colour say what it is (D-055). Tags (white #chips) group cards within a type (D-056).
+// Notes stay in the panel, not on the card (D-057), so cards stay small.
 // Editing happens in the DetailPanel.
 import { Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
@@ -29,10 +30,12 @@ type Props = {
   layer: number
   // Tagged with the selected customer (D-044).
   related: boolean
+  // A competitor's features, waiting behind it as a stack (D-058); 0 when fanned out or not a competitor.
+  stack?: number
   onLinkDrop: (targetId: string) => void
 }
 
-export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props) {
+export function NodeCard({ wid, item: node, layer, related, stack = 0, onLinkDrop }: Props) {
   const type = node.type
   const W = CARD_W
   const H = CARD_H
@@ -47,8 +50,6 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
     return m
   }, [cell])
   const [hovered, setHovered] = useState(false)
-  // Rendered height of the title, so notes start below it.
-  const [titleH, setTitleH] = useState(0.2)
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
 
   const selected = useCanvas((s) => s.selectedId === node.id)
@@ -129,12 +130,8 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
   const title = node.title.trim()
   const left = -W / 2 + 0.22
   const inner = W - 0.22 - 0.16
-  const titleTop = H / 2 - 0.32
+  const titleTop = H / 2 - 0.27
   const tags = node.tags.map((t) => `#${t}`).join('  ')
-  // Notes stop above the tag and meta lines.
-  const bottomLines = (tags ? 0.16 : 0) + (node.meta ? 0.16 : 0)
-  const bodyTop = titleTop - titleH - 0.08
-  const bodyBottom = -H / 2 + 0.14 + bottomLines
 
   return (
     <group
@@ -157,6 +154,19 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
       }}
     >
       <group ref={content}>
+        {/* Up to three plates peeking out behind: this competitor has features to fan out. */}
+        {Array.from({ length: Math.min(3, stack) }, (_, i) => (
+          <group key={i} position={[(i + 1) * 0.07, -(i + 1) * 0.07, -0.006 - i * 0.002]}>
+            <mesh position={[0, 0, -0.001]}>
+              <planeGeometry args={[W + 0.02, H + 0.02]} />
+              <meshBasicMaterial color="#2a2a2a" toneMapped={false} />
+            </mesh>
+            <mesh>
+              <planeGeometry args={[W, H]} />
+              <meshBasicMaterial color="#0e0e0e" toneMapped={false} />
+            </mesh>
+          </group>
+        ))}
         {/* Edge: a hairline, or the highlight when hovered, selected, related or a link target. */}
         <mesh position={[0, 0, -0.002]}>
           <planeGeometry args={[W + (rim ? 0.05 : 0.02), H + (rim ? 0.05 : 0.02)]} />
@@ -179,7 +189,7 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
           color={accent}
           anchorX="left"
           anchorY="top"
-          position={[left, H / 2 - 0.13, 0.002]}
+          position={[left, H / 2 - 0.12, 0.002]}
         >
           {BOARD_KINDS[type].label.toUpperCase()}
         </Text>
@@ -194,30 +204,9 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
           position={[left, titleTop, 0.002]}
           maxWidth={inner}
           letterSpacing={-0.01}
-          // Notes start under however many lines the title took.
-          onSync={(t) => {
-            const b = (t as unknown as { textRenderInfo?: { blockBounds: number[] } }).textRenderInfo?.blockBounds
-            if (b) setTitleH(b[3] - b[1])
-          }}
         >
-          {truncate(title || 'Untitled', 48)}
+          {truncate(title || 'Untitled', 44)}
         </Text>
-        {node.body && bodyTop - bodyBottom > 0.1 && (
-          <Text
-            material={textMaterial}
-            font={fontUrls.mono}
-            fontSize={0.09}
-            lineHeight={1.45}
-            color={type === 'competitor' ? colors.cyan : colors.fgDim}
-            anchorX="left"
-            anchorY="top"
-            position={[left, bodyTop, 0.002]}
-            maxWidth={inner}
-            clipRect={[0, -(bodyTop - bodyBottom), W, 0.01]}
-          >
-            {node.body}
-          </Text>
-        )}
         {tags && (
           <Text
             material={textMaterial}
@@ -226,7 +215,7 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
             color={colors.fg}
             anchorX="left"
             anchorY="bottom"
-            position={[left, -H / 2 + 0.14 + (node.meta ? 0.16 : 0), 0.002]}
+            position={[left, -H / 2 + 0.12 + (node.meta ? 0.15 : 0), 0.002]}
           >
             {truncate(tags, 40)}
           </Text>
@@ -239,7 +228,7 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
             color={colors.fgDim}
             anchorX="left"
             anchorY="bottom"
-            position={[left, -H / 2 + 0.14, 0.002]}
+            position={[left, -H / 2 + 0.12, 0.002]}
           >
             {truncate(node.meta, 42)}
           </Text>

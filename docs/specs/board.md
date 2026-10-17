@@ -24,7 +24,15 @@ a `TAG ▾` filter, and a tags column in Table.
 | **Competitor feature** | name, description, category | no card: listed in its competitor's panel |
 | **Text label** (D-050) | text | large text on the board, no card |
 
-Card layout, top to bottom: `TYPE` label · title · notes (as far as they fit) · `#tags` · who it's for and type facts.
+Card layout, top to bottom: `TYPE` label · title (up to two lines) · `#tags` · who it's for and type facts. Notes and
+descriptions live in the side panel only (D-057).
+
+- **Competitor features** (D-058) wait behind their competitor as a stack (up to three plates peek out). Selecting the
+  competitor fans them out to the right as compressed cards; clicking one opens it unfolded in the competitor's panel, and
+  shift+dragging a card onto one links to it (`inspired by`). Links to them show while they're fanned out.
+- **Links** (D-059) run straight from edge to edge with an arrowhead, so they read as sentences ("idea → solves → problem").
+  The kind is written at the midpoint and sets the line: solves / part of solid, competes / depends on dashed,
+  inspired by / for dotted, relates faint and unlabelled. Colour stays neutral; the selected card's links turn cyan.
 
 - **Customers are the segments** (D-044): tagging an item with a customer is a `for` link, drawn as a label chip on the card,
   not a line. Selecting a customer highlights everything tagged for it and shows those lines.
@@ -49,6 +57,8 @@ Card layout, top to bottom: `TYPE` label · title · notes (as far as they fit) 
 - **Go to** lists every text label in reading order (top to bottom, then left to right). Choosing one, or pressing 1–9,
   glides the camera there (instant under reduced motion). Any pan or zoom of your own takes over.
 - **Create**: one `+` button opens a menu of everything you can create (D-053).
+- **Side panel** (D-057): `for` is a multi-select dropdown; tags use a picker (chips, type to filter existing tags, Enter adds).
+  The idea panel no longer has "To feature".
 - **Settings** (⚙, every signed-in page, D-054): account and sign out, the workspace's name, members and invite code,
   motion, and what's coming in later phases.
 - Zoom reaches from a single card to the whole workspace (camera far plane 1000, zoom-out limit 150).
@@ -56,7 +66,7 @@ Card layout, top to bottom: `TYPE` label · title · notes (as far as they fit) 
 ## 4. Views
 
 ### Board (main)
-The free 3D canvas. Drag to move, shift+drag to link, double-click for a new item of the last `+` type (text included),
+The free canvas. Opening a workspace frames every card and label (switching views inside it keeps your place). Drag to move, shift+drag to link, double-click for a new item of the last `+` type (text included),
 side panel to edit. Text: `+ Text` or double-click (after `+ Text`) opens an input right on the board; Enter saves, Escape
 cancels, empty text removes it; double-click a label to edit it, drag to move, Delete to remove.
 
@@ -71,7 +81,7 @@ Everything the filters let through, one section per type in chain order. Sortabl
 Name, tags, customers, priority and status edit inline; the type opens the side panel.
 
 ### Matrix
-Our features × competitors, coverage per cell, with a verdict per feature (gap / mixed / table stakes).
+Our features × competitors, coverage per cell, with a verdict per feature (gap / mixed / table stakes). Fills the page height.
 
 ## 5. Data and rules
 

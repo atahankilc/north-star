@@ -10,11 +10,11 @@ import { AutosaveField } from '../../ui/AutosaveField'
 import { DecodeText } from '../../ui/DecodeText'
 import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems, type BoardItem } from '../canvas/boardKinds'
 import { DetailPanel } from '../canvas/DetailPanel'
-import { parseTags } from '../canvas/tags'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { linkSummary, useSelectionScope } from '../workspace/graph'
 import { ForPicker } from '../workspace/ItemPickers'
+import { ItemTags } from '../workspace/ItemTags'
 import styles from './TableView.module.css'
 
 type SortKey = 'name' | 'tags' | 'for' | 'links' | 'pri' | 'status'
@@ -155,16 +155,9 @@ export function TableView() {
                         <AutosaveField className={styles.name} label="Name" placeholder="Untitled" value={item.title} onSave={setName} />
                       </td>
                       <td className={styles.tagsCell}>
-                        <AutosaveField
-                          className={styles.tags}
-                          label="Tags"
-                          placeholder="—"
-                          value={item.tags.map((t) => `#${t}`).join(' ')}
-                          onSave={(v) => {
-                            const tags = parseTags(v.replace(/\s+(?=#)/g, ','))
-                            void updateNode(wid, item.type, item.id, { tags: tags.length ? tags : undefined } as never)
-                          }}
-                        />
+                        <Popover id={`${key}:tags`} open={open} setOpen={setOpen} text={item.tags.map((t) => `#${t}`).join(' ')}>
+                          <ItemTags item={item} />
+                        </Popover>
                       </td>
                       <td>
                         {item.type === 'customer' ? (

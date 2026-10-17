@@ -10,7 +10,8 @@
 
 .frame {
   composes: frame from '../../ui/Frame.module.css';
-  flex: 0 1 auto;
+  /* Fills the page down to the legend; long matrices scroll inside. */
+  flex: 1 1 auto;
   min-height: 0;
   max-width: 100%;
   width: fit-content;

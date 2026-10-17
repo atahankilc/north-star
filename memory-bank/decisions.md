@@ -191,7 +191,7 @@ Shared math: `src/ui/cellReveal.ts`. Entrances wait for `settled`.
 Routes: `/w/:wid` (ideas), `/w/:wid/features`, `/w/:wid/competitors(/:cid)`, `/w/:wid/matrix`. One workspace layout route loads every
 collection once and shares it with all views, so switching tabs is instant and any panel can show links to nodes in other views.
 
-### D-037 · 2026-10-17 · Accepted
+### D-037 · 2026-10-17 · Accepted (promote button removed by D-057)
 **The Features view is a 3D board like the idea canvas.** The Board, cards and detail panel are generic over board node types
 (`idea`, `feature`). Ideas and features share their board fields (`title`, `body`, `color`, `tags`, `x`, `y`); features add
 `priority`, `status`, `effort`. An idea can be promoted to a feature (new feature + `inspired-by` edge).
@@ -292,3 +292,24 @@ The workspace name in the breadcrumb is plain text (rename in settings / workspa
 **Tags group cards within a type.** Shown as white `#chips` on every card (never type colours); a `TAG ▾` filter beside SHOW and FOR;
 an editable tags column in Table (`#a #b` or `a, b`); competitors gained `tags` (rules + 2 tests). Chosen over colours or symbols because
 a tag carries its meaning in its name and works the same in every view. The example workspace tags everything.
+
+### D-057 · 2026-10-17 · Accepted
+**Small cards, compact panels.** Cards no longer show notes or descriptions (height 1.25: type label, title ≤2 lines, tags, meta).
+In the side panel, `for` is a multi-select dropdown and tags use a picker (`src/ui/TagInput.tsx`: chips with ×, type to filter the
+workspace's existing tags, Enter or comma adds, Backspace removes the last); the same picker is in the competitor panel and the
+Table's tags cell. The idea panel's "To feature" button is gone.
+
+### D-058 · 2026-10-17 · Accepted
+**A competitor's features stack behind it on the board.** Up to three plates peek out behind a competitor card. Selecting the
+competitor (or one of its features) fans them out to the right as compressed cards (`FeatureChip.tsx`: name + category). Clicking
+one opens the competitor panel with that feature unfolded; shift+dragging a card onto one creates an `inspired-by` link. Links to
+competitor features are drawn only while fanned out.
+
+### D-059 · 2026-10-17 · Accepted
+**Links read as sentences.** Straight lines from card edge to card edge with an arrowhead at the target and the kind written at the
+midpoint ("solves", "competes", "inspired by"…; "relates" stays unlabelled and faint). Line pattern by kind, neutral colour,
+cyan for the selected card's links; no flowing animation.
+
+### D-060 · 2026-10-17 · Accepted
+**Opening a workspace frames everything** (all cards and labels, within zoom limits 9–150; room left for the HUD and toolbar).
+Switching between views inside a workspace keeps your place. The Matrix frame fills the page height.

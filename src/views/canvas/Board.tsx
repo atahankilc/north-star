@@ -6,13 +6,14 @@ import { MathUtils, MOUSE, TOUCH } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
-import { FOR, type Edge, type Label } from '../../data/model'
+import { FOR, type CompetitorFeature, type Edge, type Label } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { isReducedMotion } from '../../state/motion'
-import { colors } from '../../styles/tokens'
 import { defaultKind, type BoardItem } from './boardKinds'
-import { BoardLabel } from './BoardLabel'
+import { BoardLabel, LABEL_SIZE } from './BoardLabel'
+import { CARD_H, CARD_W } from './cardLayout'
 import { EdgeLine } from './EdgeLine'
+import { CHIP_H, CHIP_W, FeatureChip } from './FeatureChip'
 import { boardPoint, NodeCard } from './NodeCard'
 
 type Props = {
@@ -22,6 +23,8 @@ type Props = {
   edges: WithId<Edge>[]
   // Text written on the board (D-050).
   labels: WithId<Label>[]
+  // Shown as a stack behind their competitor, fanned out while it's selected (D-058).
+  competitorFeatures: WithId<CompetitorFeature>[]
   // Double-click on empty board.
   onCreate: (at: [number, number]) => void
   // Look here first instead of where this board was last left (e.g. a link jumped to a card).
@@ -30,6 +33,24 @@ type Props = {
 
 // Where each board's camera was left, so switching views and coming back doesn't lose your place.
 const cameras = new Map<string, { target: [number, number]; distance: number }>()
+
+// Opening a workspace starts from a view of everything, not where it was left (the workspace layout calls this).
+export function forgetCamera(wid: string) {
+  cameras.delete(wid)
+}
+
+const MIN_FIT = 9
+const MAX_DISTANCE = 150
+// Room left for the HUD and filters above, the toolbar below (in px), and a margin around the cards (in board units).
+const CHROME_PX = 170
+const MARGIN = 1.2
+
+// Feature chips fan out to the right of their competitor, top-aligned with it.
+function chipSpot(c: [number, number], i: number): [number, number] {
+  return [c[0] + CARD_W / 2 + 0.3 + CHIP_W / 2, c[1] + CARD_H / 2 - CHIP_H / 2 - i * (CHIP_H + 0.1)]
+}
+const CARD_HALF: [number, number] = [CARD_W / 2, CARD_H / 2]
+const CHIP_HALF: [number, number] = [CHIP_W / 2, CHIP_H / 2]
 
 export function Board(props: Props) {
   // Pan/zoom listens on this wrapper, not the canvas. DOM events reach the canvas (and R3F's
@@ -65,16 +86,17 @@ function Controls({ domElement }: { domElement: HTMLElement }) {
       dampingFactor={0.12}
       minDistance={3}
       // Far enough out to see a whole workspace of areas at once; further, and cards are specks.
-      maxDistance={150}
+      maxDistance={MAX_DISTANCE}
       mouseButtons={{ LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN }}
       touches={{ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }}
     />
   )
 }
 
-function Scene({ wid, nodes, edges, labels, onCreate, focus }: Props) {
+function Scene({ wid, nodes, edges, labels, competitorFeatures, onCreate, focus }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
+  const size = useThree((s) => s.size)
   const selectedId = useCanvas((s) => s.selectedId)
   const dragging = useCanvas((s) => s.dragging)
   const linkFrom = useCanvas((s) => s.linkFrom)
@@ -126,6 +148,8 @@ function Scene({ wid, nodes, edges, labels, onCreate, focus }: Props) {
       controls.target.set(at[0], at[1], 0)
       camera.position.set(at[0], at[1], saved?.distance ?? camera.position.z)
       controls.update()
+    } else {
+      fitAll()
     }
     return () => {
       cameras.set(key, { target: [controls.target.x, controls.target.y], distance: camera.position.z })
@@ -133,6 +157,30 @@ function Scene({ wid, nodes, edges, labels, onCreate, focus }: Props) {
     // Only on mount: `focus` is where to start, not something to follow.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [controls])
+
+  // Frame every card and label, as close as the zoom limits allow.
+  function fitAll() {
+    if (!controls) return
+    const boxes = [
+      ...nodes.map((n) => [n.x - CARD_W / 2, n.y - CARD_H / 2, n.x + CARD_W / 2, n.y + CARD_H / 2]),
+      ...labels.map((l) => [l.x - l.text.length * LABEL_SIZE * 0.32, l.y - LABEL_SIZE / 2, l.x + l.text.length * LABEL_SIZE * 0.32, l.y + LABEL_SIZE / 2]),
+    ]
+    if (boxes.length === 0) return
+    const x0 = Math.min(...boxes.map((b) => b[0])) - MARGIN
+    const y0 = Math.min(...boxes.map((b) => b[1])) - MARGIN
+    const x1 = Math.max(...boxes.map((b) => b[2])) + MARGIN
+    const y1 = Math.max(...boxes.map((b) => b[3])) + MARGIN
+    const fov = ((camera as { fov?: number }).fov ?? 40) * (Math.PI / 180)
+    const tan = Math.tan(fov / 2)
+    const usable = Math.max(0.3, (size.height - CHROME_PX) / size.height)
+    const distance = Math.max((y1 - y0) / 2 / (tan * usable), (x1 - x0) / 2 / (tan * (size.width / size.height)))
+    const cx = (x0 + x1) / 2
+    // The HUD covers more of the top than the toolbar covers of the bottom: nudge the view up a little.
+    const cy = (y0 + y1) / 2 + ((y1 - y0) / 2) * (1 - usable) * 0.3
+    controls.target.set(cx, cy, 0)
+    camera.position.set(cx, cy, MathUtils.clamp(distance, MIN_FIT, MAX_DISTANCE))
+    controls.update()
+  }
 
   // A link released anywhere but on a card is cancelled; controls always come back.
   useEffect(() => {
@@ -144,11 +192,26 @@ function Scene({ wid, nodes, edges, labels, onCreate, focus }: Props) {
     return () => window.removeEventListener('pointerup', up)
   }, [controls, endLink])
 
+  // The competitor whose features are fanned out: the selected one, or the owner of a selected feature (D-058).
+  const theirs = useMemo(() => {
+    const map = new Map<string, WithId<CompetitorFeature>[]>()
+    for (const f of [...competitorFeatures].sort((a, b) => a.createdAt - b.createdAt)) map.set(f.competitorId, [...(map.get(f.competitorId) ?? []), f])
+    return map
+  }, [competitorFeatures])
+  const openId = useMemo(() => {
+    if (!selectedId) return null
+    if (theirs.has(selectedId)) return selectedId
+    return competitorFeatures.find((f) => f.id === selectedId)?.competitorId ?? null
+  }, [selectedId, theirs, competitorFeatures])
+
   const positions = useMemo(() => {
     const map = new Map<string, [number, number]>()
     for (const n of nodes) map.set(n.id, dragging[n.id] ?? [n.x, n.y])
+    const c = openId ? map.get(openId) : undefined
+    if (c) (theirs.get(openId!) ?? []).forEach((f, i) => map.set(f.id, chipSpot(c, i)))
     return map
-  }, [nodes, dragging])
+  }, [nodes, dragging, openId, theirs])
+  const chips = new Set(openId ? (theirs.get(openId) ?? []).map((f) => f.id) : [])
 
   // Older cards sit lower; newer ones on top.
   const layers = useMemo(
@@ -165,6 +228,12 @@ function Scene({ wid, nodes, edges, labels, onCreate, focus }: Props) {
   const onLinkDrop = (targetId: string) => {
     const fromId = useCanvas.getState().linkFrom
     const from = fromId ? byId.get(fromId) : undefined
+    // Onto one of a competitor's features: "inspired by" is the usual reason (D-058).
+    const feature = competitorFeatures.find((f) => f.id === targetId)
+    if (from && feature) {
+      if (!linked(edges, from.id, feature.id)) void createEdge(wid, { id: from.id, type: from.type }, { id: feature.id, type: 'competitorFeature' }, 'inspired-by')
+      return
+    }
     const to = byId.get(targetId)
     if (!from || !to || from.id === to.id || linked(edges, from.id, to.id)) return
     // A tag always points item → customer, whichever card you dragged from.
@@ -209,10 +278,26 @@ function Scene({ wid, nodes, edges, labels, onCreate, focus }: Props) {
         // Customer tags are labels on the card; their lines show only while that customer is selected.
         if (edge.kind === FOR && edge.toId !== customerId) return null
         const active = selectedId === edge.fromId || selectedId === edge.toId
-        return <EdgeLine key={edge.id} from={a} to={b} color={active ? colors.cyan : '#4a4a4a'} width={active ? 2 : 1.5} />
+        return (
+          <EdgeLine
+            key={edge.id}
+            from={a}
+            to={b}
+            fromHalf={chips.has(edge.fromId) ? CHIP_HALF : CARD_HALF}
+            toHalf={chips.has(edge.toId) ? CHIP_HALF : CARD_HALF}
+            kind={edge.kind}
+            active={active}
+          />
+        )
       })}
 
-      {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} color={colors.cyan} width={2} />}
+      {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={CARD_HALF} toHalf={[0, 0]} active />}
+
+      {openId &&
+        positions.get(openId) &&
+        (theirs.get(openId) ?? []).map((f, i) => (
+          <FeatureChip key={f.id} feature={f} at={chipSpot(positions.get(openId)!, i)} from={positions.get(openId)!} onLinkDrop={onLinkDrop} />
+        ))}
 
       {nodes.map((node) => (
         <NodeCard
@@ -221,6 +306,7 @@ function Scene({ wid, nodes, edges, labels, onCreate, focus }: Props) {
           item={node}
           layer={layers.get(node.id) ?? 0}
           related={customerId !== null && node.forIds.includes(customerId)}
+          stack={node.type === 'competitor' && openId !== node.id ? (theirs.get(node.id)?.length ?? 0) : 0}
           onLinkDrop={onLinkDrop}
         />
       ))}

@@ -1,7 +1,6 @@
 // Side panel for the selected card: all editing happens here, in the DOM (D-009). Competitors show their profile (D-040).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { createEdge } from '../../data/edges'
 import type { WithId } from '../../data/hooks'
 import {
   FEATURE_EFFORTS,
@@ -10,7 +9,7 @@ import {
   type BoardNode,
   type Feature,
 } from '../../data/model'
-import { createBoardNode, updateNode } from '../../data/nodes'
+import { updateNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { Appear } from '../../ui/Appear'
@@ -18,18 +17,18 @@ import { Choice } from '../../ui/Choice'
 import { CompetitorProfile } from '../competitors/CompetitorProfile'
 import { useWs } from '../workspace/context'
 import { ForPicker } from '../workspace/ItemPickers'
+import { ItemTags } from '../workspace/ItemTags'
 import { LinkList } from '../workspace/LinkList'
 import { removeItem } from '../workspace/useEditKeys'
 import { BOARD_KINDS, type BoardItem } from './boardKinds'
-import { findFreeSpot } from './cardLayout'
-import { parseTags, TAG_HINT } from './tags'
+import { TAG_HINT } from './tags'
 import styles from './DetailPanel.module.css'
 
 const SAVE_AFTER_MS = 400
 
-type Draft = { title: string; body: string; tags: string }
+type Draft = { title: string; body: string }
 
-const toDraft = (n: BoardNode): Draft => ({ title: n.title, body: n.body ?? '', tags: (n.tags ?? []).join(', ') })
+const toDraft = (n: BoardNode): Draft => ({ title: n.title, body: n.body ?? '' })
 
 
 type CardType = Exclude<BoardItem['type'], 'competitor'>
@@ -38,7 +37,9 @@ type CardType = Exclude<BoardItem['type'], 'competitor'>
 export function DetailPanel({ items }: { items: BoardItem[] }) {
   const ws = useWs()
   const selectedId = useCanvas((s) => s.selectedId)
-  const item = items.find((n) => n.id === selectedId)
+  // A competitor's feature chip on the board opens its competitor, with that feature unfolded (D-058).
+  const feature = ws.competitorFeatures.find((f) => f.id === selectedId)
+  const item = items.find((n) => n.id === (feature ? feature.competitorId : selectedId))
   const docs = { customer: ws.customers, problem: ws.problems, idea: ws.ideas, feature: ws.features }
   const competitor = item?.type === 'competitor' ? ws.competitors.find((c) => c.id === item.id) : undefined
   const node = item && item.type !== 'competitor' ? (docs[item.type] as WithId<BoardNode>[]).find((n) => n.id === item.id) : undefined
@@ -54,7 +55,7 @@ export function DetailPanel({ items }: { items: BoardItem[] }) {
           aria-label={`${BOARD_KINDS[item.type].label} details`}
         >
           {competitor ? (
-            <CompetitorProfile key={item.id} competitor={competitor}>
+            <CompetitorProfile key={item.id} competitor={competitor} focusFeature={feature?.id}>
               <div className={styles.pickers}>
                 <ForPicker item={item} />
               </div>
@@ -71,14 +72,12 @@ export function DetailPanel({ items }: { items: BoardItem[] }) {
 function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }) {
   const type = item.type as CardType
   const { wid } = useWs()
-  const nodes = useBoardNodes()
   const select = useCanvas((s) => s.select)
   const [draft, setDraft] = useState<Draft>(() => toDraft(node))
   const focused = useRef<keyof Draft | null>(null)
   const pending = useRef<Partial<BoardNode>>({})
   const timer = useRef<number | undefined>(undefined)
   const titleRef = useRef<HTMLInputElement>(null)
-  const [promoted, setPromoted] = useState(false)
   const kind = BOARD_KINDS[type]
 
   // Remote edits flow in, except into the field you're typing in.
@@ -107,7 +106,7 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
 
   const edit = (field: keyof Draft, value: string) => {
     setDraft((d) => ({ ...d, [field]: value }))
-    pending.current[field] = (field === 'tags' ? parseTags(value) : value) as never
+    pending.current[field] = value
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(flush, SAVE_AFTER_MS)
   }
@@ -121,16 +120,6 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
       flush()
     },
   })
-
-  // D-037: the idea's text becomes a new feature next to it that remembers where it came from.
-  const promote = async () => {
-    flush()
-    setPromoted(true)
-    const [x, y] = findFreeSpot([node.x + 2.7, node.y], nodes)
-    const { title, body, tags } = { ...node, ...pending.current }
-    const id = await createBoardNode(wid, 'feature', { x, y }, { title, ...(body && { body }), ...(tags?.length && { tags }) })
-    await createEdge(wid, { id, type: 'feature' }, { id: node.id, type: 'idea' }, 'inspired-by')
-  }
 
   return (
     <div className={styles.inner}>
@@ -153,11 +142,11 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
         <textarea className={styles.body} rows={6} placeholder={kind.placeholder} {...field('body')} />
       </label>
 
-      <label className={styles.label}>
+      <div className={styles.label}>
         tags
-        <input className={styles.input} placeholder="mvp, pricing" {...field('tags')} />
+        <ItemTags item={item} />
         <span className={styles.hint}>{TAG_HINT}</span>
-      </label>
+      </div>
 
       <LinkList
         nodeId={node.id}
@@ -172,11 +161,6 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
       <footer className={styles.foot}>
         <span className={styles.meta}>created {new Date(node.createdAt).toLocaleDateString()}</span>
         <span className={styles.actions}>
-          {type === 'idea' && (
-            <AsciiButton accent="cyan" onClick={promote} disabled={promoted}>
-              {promoted ? 'Promoted' : 'To feature'}
-            </AsciiButton>
-          )}
           {/* Undoable, so one click (Q-013). */}
           <AsciiButton
             accent="yellow"
@@ -202,10 +186,4 @@ function FeatureFields({ wid, feature }: { wid: string; feature: WithId<Feature>
       <Choice label="effort" options={FEATURE_EFFORTS} value={feature.effort} onChange={(effort) => set({ effort })} />
     </>
   )
-}
-
-// Positions of every card, for placing a promoted feature without overlap.
-function useBoardNodes() {
-  const { customers, problems, ideas, features, competitors } = useWs()
-  return [...customers, ...problems, ...ideas, ...features, ...competitors.map((c) => ({ x: c.x ?? 0, y: c.y ?? 0 }))]
 }
