@@ -268,11 +268,11 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   with new/edited/moved/deleted marks; a bare screen (no HUD/filters/tools, own view tabs) where nothing is editable; Esc closes. Functional only: the user will redesign the assistant UI
   and the preview's look later. Verified on emulators with a fake OpenAI.
 - D-088 (2026-10-18): deep research (`/research <topic>`): plan → pick questions → up to 3 web researchers at once → one report
-  with sources, a proposal and `download report .md`. Verified on emulators with a fake OpenAI. **To try with a real key.**
+  with sources, a proposal and `download report .md`. Verified on emulators with a fake OpenAI; the user tried it with a real key: works.
 - D-078 to D-088 committed and **pushed 2026-10-18** (live deploy green; deep links serve the app via 404.html).
 - D-089 (2026-10-18): research reports are structured (`write_report`) and open on a report screen (answer, sections with
   numbered sources, implications with item links, open questions, sources, .md); light Markdown (lists, bold) in answers.
-  Verified on emulators with a fake OpenAI. Committed (`576d826`), **not pushed**.
+  Verified on emulators with a fake OpenAI. The user ran a real `/research` with D-088 + D-089: works. Committed (`576d826`), **not pushed**.
 - Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research (all done) →
   saved/shared chats and reports, reading attachments (after D-083) → the user's own redesign of the assistant UI and the preview.
 
