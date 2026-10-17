@@ -1,0 +1,154 @@
+# North Star: Architecture
+
+Status: **accepted** unless marked. Items marked ⏳ wait on a decision in
+[../memory-bank/open-questions.md](../memory-bank/open-questions.md).
+Accepted decisions are logged in [../memory-bank/decisions.md](../memory-bank/decisions.md).
+
+## 1. Constraints
+
+- The frontend is a **static SPA on GitHub Pages**: free, with no server we run.
+- There is **no self-run backend**. Free backend hosts (Render, Railway free tiers, etc.) have cold
+  starts or shut down, which is unacceptable.
+- We still need: **auth, database, real-time sync, presence/cursors, file storage**.
+- AI calls use the **user's own OpenAI key**, directly from the browser.
+
+So: one managed **"database-with-batteries"** service that the browser talks to directly, with
+access enforced by that service's permission rules.
+
+## 2. High-level diagram
+
+```
+┌──────────────── Browser (GitHub Pages SPA) ────────────────┐
+│ React + R3F (three.js)  ·  Zustand UI state  ·  Router     │
+│   │                    │                       │           │
+│   │ queries/tx,        │ presence/cursors      │ fetch     │
+│   │ auth, files        │ (ephemeral)           │ (BYOK)    │
+└───┼────────────────────┼───────────────────────┼───────────┘
+    ▼                    ▼                       ▼
+┌──────────────── Firebase (Spark, free) ─┐   ┌───────────┐
+│ Auth (Google) · Firestore (data+rules)  │   │ OpenAI API│
+│ Realtime DB (presence/cursors)          │   └───────────┘
+│ Storage: later, needs Blaze (D-015)     │
+└─────────────────────────────────────────┘
+```
+
+## 3. Backend choice: Firebase (D-014)
+
+InstantDB was the first choice (D-010), but its hosted service is shutting down (no new sign-ups;
+apps stop on 2027-08-31). That moved **longevity** to the top of the criteria.
+
+| Option | Verdict |
+|---|---|
+| **Firebase** ✅ | Google-backed, never pauses, no cold starts. Firestore real-time listeners and offline cache. Realtime Database is ideal for cursors (cheap, `onDisconnect`). Native Google sign-in. Spark plan needs no card. |
+| Convex | Good developer experience, but cursor updates count as function calls (1M/month free goes fast), and it's a startup (same risk as Instant). |
+| Supabase | **Free projects pause after about a week of inactivity.** |
+| InstantDB | Shutting down. Superseded. |
+
+Firebase services used:
+- **Auth**: Google provider, popup flow
+- **Firestore**: all persistent data, security rules in `firestore.rules`
+- **Realtime Database**: ephemeral presence and cursors only, rules in `database.rules.json`
+- **Storage**: not yet. It needs the Blaze plan; decide in Phase 5 (D-015)
+
+The app talks to Firebase only through **`src/data/`**, so another swap would stay contained.
+
+## 4. Frontend stack (proposed)
+
+- **Vite + React + TypeScript**
+- **three.js via @react-three/fiber** with **@react-three/drei** helpers and
+  **@react-three/postprocessing** for the ASCII/dither effect
+- **Zustand** for local UI state (selection, tool mode, camera)
+- **React Router** with **HashRouter**, because GitHub Pages has no server-side rewrites
+- **Framer Motion / motion** for DOM transitions, and R3F springs (`@react-spring/three`) for 3D
+- **GitHub Actions** builds and deploys to Pages
+
+### Rendering strategy (hybrid)
+Fully WebGL text editing is painful and inaccessible. So:
+- **3D layer (R3F):** scene, camera, post-it card meshes, connection curves, ambient ASCII-shaded
+  backgrounds, transitions between views, and collaborator cursors in world space.
+- **DOM layer:** text editing (drei `<Html>` or overlays on the focused card), side panels,
+  the matrix/table view, settings, and modals. These are styled in the same ASCII language.
+- The **ASCII post-processing** applies to decorative and ambient layers and transitions, never to
+  text the user has to read or edit.
+
+## 5. Data model (Firestore)
+
+Source of truth: `src/data/model.ts`.
+
+```
+workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role}, inviteCode
+  ideas/{id}            title, body, color, tags[], status, groupIds[], x, y, z
+  groups/{id}           name, color
+  features/{id}         name, description, priority, status, effort
+  competitors/{id}      name, url, description, pricing, audience, notes
+  competitorFeatures/{id}  competitorId, name, description, category, x, y
+  comparisons/{id}      featureId, competitorId, coverage, notes
+  edges/{id}            fromId, fromType, toId, toType, kind, label
+inviteCodes/{code}      workspaceId, createdBy
+
+RTDB: presence/{wid}/{uid}   name, color, view, x, y, ts
+```
+- Entities are **subcollections of their workspace**, so one rule covers them: the caller must be in `memberIds`.
+- `edges` is one generic edge collection, so any node type can connect to any other.
+- "My workspaces" = `where('memberIds', 'array-contains', uid)`.
+- **Joining (D-012):** read `inviteCodes/{code}` (get only, never list) → update the workspace to add yourself
+  to `memberIds` with `joinCode = code`. The rules only allow this when the code matches the
+  workspace's current `inviteCode` and the only change is adding yourself.
+
+## 6. Real-time collaboration
+
+- **Persistent data:** DB subscriptions. Every client re-renders on change.
+  The conflict model is **last-write-wins per field**, which is enough for post-it fields.
+  ⏳ Concurrent editing of the *same* long text body is a later concern; the option is Yjs.
+- **Ephemeral data** (cursors, selection, "is typing", viewport): Realtime Database at
+  `presence/{wid}/{uid}`, removed automatically with `onDisconnect()`. Throttled to about 15–20 Hz and
+  interpolated on the receiving side for smooth motion. RTDB writes are free (billed by bandwidth),
+  and Spark allows 100 simultaneous connections.
+- RTDB rules can't read Firestore membership, so any signed-in user who knows a workspace ID could
+  read its cursors (name, colour, coordinates only). The IDs are random. Accepted for now (D-016).
+- Each collaborator has a colour drawn from the accent palette (see [DESIGN.md](DESIGN.md)).
+
+## 7. Authentication
+
+Firebase Auth with the Google provider, popup flow (D-011). `localhost` and `atahankilc.github.io`
+must be in Firebase Auth → Settings → Authorized domains. Workspaces are shared with an invite code (D-012).
+
+## 8. AI (BYOK)
+
+- The user pastes an **OpenAI API key on the Settings page**.
+- The key is stored **only in the user's browser (localStorage)** and is **never written to the DB**,
+  so collaborators can never see it. Each collaborator uses their own key.
+- Calls go **directly from browser to OpenAI** (`fetch` or the SDK with `dangerouslyAllowBrowser`).
+- **Default model: a cheap small model** (currently the "nano"/"mini" tier). It is configurable in
+  Settings. ⏳ Pick the exact default model ID at implementation time from OpenAI's pricing page.
+- Prompts live in `src/ai/prompts/` with structured JSON outputs where useful
+  (for example, suggested links).
+- Risk: a key in localStorage is exposed to XSS. Mitigation: strict CSP, no untrusted HTML, no
+  third-party scripts. Settings explains this to the user.
+
+## 9. Files, export and import
+
+- **Attachments** (image/PDF/drawing) go to Firebase Storage, linked to a node. This needs the Blaze
+  plan (card required, 5 GB free). Deferred to Phase 5 (D-015).
+- **Drawing:** ⏳ either upload drawing files, or a built-in sketch pad (for example tldraw or a
+  simple canvas) that saves as SVG/PNG.
+- **Export:** a workspace bundle as `.zip` holding `workspace.json` (all entities and links) plus
+  `attachments/`.
+- **Import:** load a bundle into a new workspace, remapping IDs.
+- Later: matrix → CSV, canvas → PNG/PDF.
+
+## 10. Repo layout (planned)
+
+```
+src/
+  app/            routes, providers, layout
+  views/          canvas/, features/, competitors/, matrix/, settings/
+  three/          scene, cards, edges, cursors, ascii effect, transitions
+  ui/             ASCII-styled DOM components
+  data/           DB adapter, schema, hooks, permissions
+  ai/             client, prompts
+  io/             export/import
+  styles/         tokens
+docs/             product, architecture, design, roadmap
+memory-bank/      project state, decisions, open questions
+```

@@ -1,0 +1,72 @@
+rules_version = '2';
+
+// Security for all persistent data. The client is never trusted (CLAUDE.md).
+// Deploy: npx firebase-tools deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function workspace(wid) {
+      return get(/databases/$(database)/documents/workspaces/$(wid)).data;
+    }
+
+    function isMember(wid) {
+      return signedIn() && request.auth.uid in workspace(wid).memberIds;
+    }
+
+    match /workspaces/{wid} {
+      allow read: if signedIn() && request.auth.uid in resource.data.memberIds;
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberIds == [request.auth.uid];
+
+      allow update: if editing() || joining() || ownerManaging();
+
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      // Members edit content fields only.
+      function editing() {
+        return signedIn()
+          && request.auth.uid in resource.data.memberIds
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description']);
+      }
+
+      // Owner manages members, roles and the invite code.
+      function ownerManaging() {
+        return signedIn()
+          && resource.data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId;
+      }
+
+      // Join with an invite code (D-012): add only yourself, and prove the code.
+      function joining() {
+        return signedIn()
+          && !(request.auth.uid in resource.data.memberIds)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'roles', 'joinCode'])
+          && request.resource.data.memberIds == resource.data.memberIds.concat([request.auth.uid])
+          && request.resource.data.roles.diff(resource.data.roles).affectedKeys().hasOnly([request.auth.uid])
+          && request.resource.data.roles[request.auth.uid] == 'editor'
+          && request.resource.data.joinCode == resource.data.inviteCode;
+      }
+
+      // ideas, groups, features, competitors, competitorFeatures, comparisons, edges
+      match /{collection}/{docId} {
+        allow read, write: if isMember(wid);
+      }
+    }
+
+    // Lookup by exact code only; codes can't be listed or enumerated.
+    match /inviteCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && workspace(request.resource.data.workspaceId).ownerId == request.auth.uid
+        && request.resource.data.createdBy == request.auth.uid;
+      allow delete: if signedIn() && workspace(resource.data.workspaceId).ownerId == request.auth.uid;
+    }
+  }
+}

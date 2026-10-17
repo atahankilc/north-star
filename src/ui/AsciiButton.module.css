@@ -1,0 +1,61 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--fg-strong);
+  font: inherit;
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  isolation: isolate;
+}
+
+/* Fill wipes in from the left on hover. */
+.button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.button:hover::before,
+.button:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.button:hover,
+.button:focus-visible {
+  color: var(--bg);
+}
+
+.bracket {
+  color: var(--accent);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.button:hover .bracket,
+.button:focus-visible .bracket {
+  color: var(--bg);
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.button:disabled::before {
+  display: none;
+}
+
+.label {
+  white-space: nowrap;
+}
