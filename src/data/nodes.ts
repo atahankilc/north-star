@@ -30,7 +30,6 @@ export const COLLECTIONS = {
   customer: 'customers',
   problem: 'problems',
   idea: 'ideas',
-  group: 'groups',
   feature: 'features',
   competitor: 'competitors',
   competitorFeature: 'competitorFeatures',
@@ -40,7 +39,6 @@ type Fields = {
   customer: Customer
   problem: Problem
   idea: Idea
-  group: never
   feature: Feature
   competitor: Competitor
   competitorFeature: CompetitorFeature
@@ -48,7 +46,7 @@ type Fields = {
 
 const col = (wid: string, name: string) => collection(db(), 'workspaces', wid, name)
 
-export async function createNode<T extends Exclude<NodeType, 'group'>>(
+export async function createNode<T extends NodeType>(
   wid: string,
   type: T,
   fields: Omit<Fields[T], 'createdAt' | 'updatedAt'>,
@@ -63,7 +61,6 @@ const LABELS: Record<NodeType, string> = {
   customer: 'customer',
   problem: 'problem',
   idea: 'idea',
-  group: 'group',
   feature: 'feature',
   competitor: 'competitor',
   competitorFeature: 'competitor feature',
@@ -74,15 +71,13 @@ export function createBoardNode(
   wid: string,
   type: BoardType,
   at: { x: number; y: number },
-  fields: Partial<BoardNode> & { domainId?: string; domainIds?: string[] } = {},
+  fields: Partial<BoardNode> = {},
 ) {
   if (type === 'competitor') {
-    const { title = '', body: _body, tags: _tags, domainId: _d, ...rest } = fields
+    const { title = '', body: _body, tags: _tags, ...rest } = fields
     return createNode(wid, 'competitor', { ...rest, name: title, x: at.x, y: at.y })
   }
-  const { domainId, domainIds, ...rest } = fields
-  const domain = type === 'problem' || type === 'idea' ? domainId && { domainId } : domainIds?.length && { domainIds }
-  return createNode(wid, type, { title: '', ...rest, ...domain, x: at.x, y: at.y } as never)
+  return createNode(wid, type, { title: '', ...fields, x: at.x, y: at.y } as never)
 }
 
 // `undefined` clears a field (Firestore rejects undefined values).

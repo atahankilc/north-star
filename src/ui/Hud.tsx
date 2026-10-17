@@ -14,12 +14,10 @@ export type Crumb = {
 // View switcher after the breadcrumb (D-036): `[ideas] features competitors matrix`.
 export type Tab = { label: string; to: string; end?: boolean }
 
-// `nav` is free-form navigation after the breadcrumb instead of `tabs` (e.g. domain tabs, D-039).
-type Props = { crumbs?: Crumb[]; tabs?: Tab[]; nav?: ReactNode; right?: ReactNode }
+type Props = { crumbs?: Crumb[]; tabs?: Tab[]; right?: ReactNode }
 
-export function Hud({ crumbs = [], tabs: tabList, nav, right }: Props) {
+export function Hud({ crumbs = [], tabs, right }: Props) {
   const atRoot = crumbs.length === 0
-  const tabs = tabList ?? nav
 
   return (
     <header className={styles.hud}>
@@ -57,17 +55,13 @@ export function Hud({ crumbs = [], tabs: tabList, nav, right }: Props) {
             <span className={styles.sep} aria-hidden>
               /
             </span>
-            {tabList ? (
-              <span className={styles.tabs}>
-                {tabList.map((t) => (
-                  <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? styles.tabActive : styles.tab)}>
-                    {t.label}
-                  </NavLink>
-                ))}
-              </span>
-            ) : (
-              nav
-            )}
+            <span className={styles.tabs}>
+              {tabs.map((t) => (
+                <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? styles.tabActive : styles.tab)}>
+                  {t.label}
+                </NavLink>
+              ))}
+            </span>
           </>
         )}
       </nav>

@@ -1,23 +1,16 @@
-// `show: [customers] [problems] …   for: any  SMEs …` under the HUD (docs/specs/domains.md §3).
-import { useMemo } from 'react'
+// `show: [customers] [problems] …   for: any  SMEs …` under the HUD (docs/specs/board.md §3).
+import { useMemo, type ReactNode } from 'react'
 import { BOARD_TYPES } from '../../data/model'
-import { ALL, useWsView } from '../../state/workspaceView'
+import { useWsView } from '../../state/workspaceView'
 import { BOARD_KINDS } from '../canvas/boardKinds'
 import { useWs } from './context'
 import styles from './Bars.module.css'
 
-export function FilterBar() {
+// `children` adds a group of its own after the filters (the board's jump list).
+export function FilterBar({ children }: { children?: ReactNode }) {
   const { customers } = useWs()
-  const { domain, types, forIds, toggleType, toggleFor, clearFor } = useWsView()
-
-  // Customers of this domain (and unsorted ones), plus any still picked from elsewhere.
-  const options = useMemo(
-    () =>
-      [...customers]
-        .filter((c) => domain === ALL || !c.domainIds?.length || c.domainIds.includes(domain) || forIds.includes(c.id))
-        .sort((a, b) => a.createdAt - b.createdAt),
-    [customers, domain, forIds],
-  )
+  const { types, forIds, toggleType, toggleFor, clearFor } = useWsView()
+  const options = useMemo(() => [...customers].sort((a, b) => a.createdAt - b.createdAt), [customers])
 
   return (
     <div className={styles.filters}>
@@ -48,6 +41,7 @@ export function FilterBar() {
           ))}
         </span>
       )}
+      {children}
     </div>
   )
 }

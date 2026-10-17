@@ -6,16 +6,20 @@ import { useCanvas } from '../../state/canvasStore'
 import { BOARD_KINDS, type BoardItem } from '../canvas/boardKinds'
 
 // Each node → every node it shares an edge with, any kind, either direction.
-export function useNeighbours(edges: WithId<Edge>[]): Map<string, Set<string>> {
+// `alias` stands one id in for another (e.g. a competitor for each of its features).
+export function useNeighbours(edges: WithId<Edge>[], alias?: Map<string, string>): Map<string, Set<string>> {
   return useMemo(() => {
     const map = new Map<string, Set<string>>()
     const add = (a: string, b: string) => map.set(a, (map.get(a) ?? new Set()).add(b))
     for (const e of edges) {
-      add(e.fromId, e.toId)
-      add(e.toId, e.fromId)
+      const from = alias?.get(e.fromId) ?? e.fromId
+      const to = alias?.get(e.toId) ?? e.toId
+      if (from === to) continue
+      add(from, to)
+      add(to, from)
     }
     return map
-  }, [edges])
+  }, [edges, alias])
 }
 
 const SHORT_KIND: Record<string, string> = { 'competes-with': 'competes', 'inspired-by': 'inspired by', 'depends-on': 'depends on', 'part-of': 'part of' }

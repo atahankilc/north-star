@@ -1,7 +1,7 @@
 // Workspace keyboard: ⌘Z / Ctrl+Z undo, ⇧⌘Z / Ctrl+Y redo, Delete or Backspace deletes the selected item (Q-013).
 // Text fields keep their own undo and Backspace.
 import { useEffect } from 'react'
-import { deleteGroup } from '../../data/groups'
+import { deleteLabel } from '../../data/labels'
 import { redo, undo, useHistory } from '../../data/history'
 import type { BoardType } from '../../data/model'
 import { deleteNode } from '../../data/nodes'
@@ -34,11 +34,11 @@ export function useEditKeys() {
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && !mod) {
         const id = useCanvas.getState().selectedId
         if (!id) return
-        const group = ws.groups.find((g) => g.id === id)
-        const found = !group && findItem(ws, id)
-        if (!group && !found) return
+        const label = ws.labels.find((l) => l.id === id)
+        const found = !label && findItem(ws, id)
+        if (!label && !found) return
         e.preventDefault()
-        if (group) removeGroup(wid, id, group.name)
+        if (label) removeLabel(wid, id, label.text)
         else if (found) removeItem(wid, found.type, id, found.title)
       }
     }
@@ -70,10 +70,10 @@ export function removeItem(wid: string, type: BoardType, id: string, title: stri
   useHistory.getState().say(`Deleted ${BOARD_KINDS[type].label}${name} · ${UNDO_HINT} to undo`)
 }
 
-// Deletes a frame (not its cards) and says how to get it back.
-export function removeGroup(wid: string, id: string, name: string) {
+// Deletes a text label and says how to get it back.
+export function removeLabel(wid: string, id: string, text: string) {
   useCanvas.getState().select(null)
-  void deleteGroup(wid, id)
-  const label = name.trim() ? ` "${name.trim()}"` : ''
-  useHistory.getState().say(`Deleted group${label} · ${UNDO_HINT} to undo`)
+  void deleteLabel(wid, id)
+  const quoted = text.trim() ? ` "${text.trim()}"` : ''
+  useHistory.getState().say(`Deleted text${quoted} · ${UNDO_HINT} to undo`)
 }

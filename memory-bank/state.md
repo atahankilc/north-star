@@ -1,10 +1,10 @@
 # Project State
 
-_Last updated: 2026-10-17 (undo + groups)_
+_Last updated: 2026-10-17 (board rework: no domains/groups, labels, shapes, example)_
 
 ## Phase
-**Phase 2b: domains, customers, problems and one board** (spec: docs/specs/domains.md, D-039 to D-045).
-All four build steps done (Board, Table, Flow, Matrix by domain). Phase 1 leftovers: groups (Q-012), undo (Q-013).
+**Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
+text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live cursors).
 
 ## Done
 - **Phase 0**: specs, memory bank, scaffold, ASCII design language, GitHub Pages workflow (commit `e114f34`)
@@ -76,13 +76,20 @@ All four build steps done (Board, Table, Flow, Matrix by domain). Phase 1 leftov
 - Undo/redo + Delete key + toast (D-046). Verified on emulators: edit undo/redo, Delete-key cascade delete restored
   (competitor + its feature + matrix cell + link), create undone, a drag undone in one step.
 
-## Done (groups, 2026-10-17)
+## Done (groups, 2026-10-17; removed later the same day, D-049)
 - Groups as frames on the board (D-047): `+ Group`, drag label to move with contents (one undo step), corner resize, group panel,
   Delete key, domain-aware. Rules + 3 tests (69 pass), deployed and pushed 2026-10-17. Verified on emulators (move with members, outside card
   untouched, undo, double-click inside creates a card, resize, delete keeps cards).
 
+## Done (board rework, 2026-10-17)
+- Removed domains (D-048) and groups (D-049) from UI, data layer and rules (retired collections stay readable/deletable).
+- Text labels on the board + "go to" jump list with 1–9 keys and camera glide (D-050); zoom-out to 260.
+- Per-type card silhouettes (D-051). Example workspace button (D-052).
+- Rules: 69 pass. Verified on emulators: example creates, jumps, zoom-out, typing text on the board, undo of a new label,
+  Flow/Table/Matrix with the example. **Not pushed / rules not deployed yet.**
+
 ## Next steps
-1. User review of undo + groups on the live site
+1. Push + deploy rules (ask the user), then their review on the live site
 2. Phase 3: presence + live cursors (RTDB rules are ready)
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilic.github.io/mind-map/ (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
@@ -101,6 +108,7 @@ All four build steps done (Board, Table, Flow, Matrix by domain). Phase 1 leftov
   via `evaluateOnNewDocument` first (the user's OS has Reduce Motion on). Wait for `window.__curtain.getState().revealed` before capturing.
 - The user runs their own dev server on :5173. Use another port (e.g. 5179) for yours, and stop your servers when done.
 - Ideas and features used to live on separate boards, so in old workspaces they may overlap on the shared board. Drag them apart.
+- The quickest realistic test data is the example workspace: click Alice, then "Create example" (emulators).
 - Seed script pattern for visual checks: sign in to the auth emulator as `test-alice` with the firebase client in node, write a workspace + items, then open `/#/w/<wid>` after clicking Alice.
 - Dev hooks: `window.__sceneTime`, `__backdrop` (R3F state), `__curtain`, `__sweep`, `__canvas`, `__advance`.
 - Chrome screenshots are scaled: viewport 2560 px vs 1568 px frame, so script clientX/Y needs ×(innerWidth/1568).

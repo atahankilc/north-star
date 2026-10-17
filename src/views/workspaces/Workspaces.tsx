@@ -3,6 +3,7 @@ import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signOut, type AuthUser } from '../../data/auth'
+import { createExampleWorkspace } from '../../data/example'
 import type { WithId } from '../../data/hooks'
 import type { Workspace } from '../../data/model'
 import {
@@ -49,6 +50,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
         <div className={styles.forms}>
           <CreateForm uid={user.id} onCreated={(id) => navigate(`/w/${id}`)} />
           <JoinForm uid={user.id} onJoined={(id) => navigate(`/w/${id}`)} />
+          <ExampleStrip uid={user.id} onCreated={(id) => navigate(`/w/${id}`)} />
         </div>
 
         {workspaces.error && <p className={styles.error}>! {workspaces.error.message}</p>}
@@ -228,6 +230,36 @@ function CreateForm({ uid, onCreated }: { uid: string; onCreated: (id: string) =
           Create
         </AsciiButton>
       </div>
+      {error && <p className={styles.error}>! {error}</p>}
+    </Appear>
+  )
+}
+
+// D-052: a filled-in workspace to explore every view with.
+function ExampleStrip({ uid, onCreated }: { uid: string; onCreated: (id: string) => void }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const create = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      onCreated(await createExampleWorkspace(uid))
+    } catch (err) {
+      setError((err as Error).message)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Appear className={styles.example}>
+      <span className={styles.label}>example</span>
+      <p className={styles.exampleText}>
+        A made-up startup with every view filled in: customers, problems, competitors, ideas, a roadmap and the matrix.
+      </p>
+      <AsciiButton accent="green" onClick={create} disabled={busy}>
+        {busy ? 'Creating' : 'Create example'}
+      </AsciiButton>
       {error && <p className={styles.error}>! {error}</p>}
     </Appear>
   )

@@ -1,28 +1,27 @@
 // The board scene: every item type on one canvas (D-040), 2.5D (D-018) with pan/zoom camera, cards and connections.
 import { OrbitControls } from '@react-three/drei'
-import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useEffect, useMemo, useState } from 'react'
-import { MOUSE, TOUCH } from 'three'
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { MathUtils, MOUSE, TOUCH } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
-import type { Passenger } from '../../data/groups'
-import { FOR, type Edge, type Group } from '../../data/model'
+import { FOR, type Edge, type Label } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
-import { ALL, useWsView } from '../../state/workspaceView'
+import { isReducedMotion } from '../../state/motion'
 import { colors } from '../../styles/tokens'
 import { defaultKind, type BoardItem } from './boardKinds'
+import { BoardLabel } from './BoardLabel'
 import { EdgeLine } from './EdgeLine'
-import { GroupFrame } from './GroupFrame'
 import { boardPoint, NodeCard } from './NodeCard'
 
 type Props = {
   wid: string
-  // Visible items only (domain tab and filters applied).
+  // Visible items only (filters applied).
   nodes: BoardItem[]
   edges: WithId<Edge>[]
-  // Frames behind the cards (D-047), already filtered by domain.
-  groups: WithId<Group>[]
+  // Text written on the board (D-050).
+  labels: WithId<Label>[]
   // Double-click on empty board.
   onCreate: (at: [number, number]) => void
   // Look here first instead of where this board was last left (e.g. a link jumped to a card).
@@ -63,15 +62,16 @@ function Controls({ domElement }: { domElement: HTMLElement }) {
       zoomToCursor
       enableDamping
       dampingFactor={0.12}
-      minDistance={4}
-      maxDistance={60}
+      minDistance={3}
+      // Far enough out to see a whole workspace of areas at once.
+      maxDistance={260}
       mouseButtons={{ LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN }}
       touches={{ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }}
     />
   )
 }
 
-function Scene({ wid, nodes, edges, groups, onCreate, focus }: Props) {
+function Scene({ wid, nodes, edges, labels, onCreate, focus }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const selectedId = useCanvas((s) => s.selectedId)
@@ -79,17 +79,42 @@ function Scene({ wid, nodes, edges, groups, onCreate, focus }: Props) {
   const linkFrom = useCanvas((s) => s.linkFrom)
   const linkPointer = useCanvas((s) => s.linkPointer)
   const { select, moveLink, endLink, setViewCenter } = useCanvas.getState()
-  const showUnsorted = useWsView((s) => s.domain === ALL)
+  // Where the camera is gliding to, if anywhere (jump list).
+  const flight = useRef<[number, number] | null>(null)
 
   useEffect(() => {
     if (!controls) return
     setViewCenter(() => [controls.target.x, controls.target.y])
-    useCanvas.getState().setFocusOn(([x, y]) => {
+    const jump = ([x, y]: [number, number]) => {
       camera.position.set(x, y, camera.position.z)
       controls.target.set(x, y, 0)
       controls.update()
+    }
+    useCanvas.getState().setFocusOn(jump)
+    useCanvas.getState().setFlyTo((at) => {
+      if (isReducedMotion()) return jump(at)
+      flight.current = at
     })
   }, [controls, camera, setViewCenter])
+
+  // Glide toward the flight target; any pan or zoom of your own takes over.
+  useEffect(() => {
+    if (!controls) return
+    const cancel = () => (flight.current = null)
+    controls.addEventListener('start', cancel)
+    return () => controls.removeEventListener('start', cancel)
+  }, [controls])
+  useFrame((_, dt) => {
+    const to = flight.current
+    if (!to || !controls) return
+    const x = MathUtils.damp(controls.target.x, to[0], 5, dt)
+    const y = MathUtils.damp(controls.target.y, to[1], 5, dt)
+    camera.position.x += x - controls.target.x
+    camera.position.y += y - controls.target.y
+    controls.target.set(x, y, 0)
+    controls.update()
+    if (Math.hypot(to[0] - x, to[1] - y) < 0.01) flight.current = null
+  })
 
   useEffect(() => {
     if (!controls) return
@@ -132,20 +157,6 @@ function Scene({ wid, nodes, edges, groups, onCreate, focus }: Props) {
 
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
 
-  // Bigger frames sit behind smaller ones.
-  const frames = useMemo(() => [...groups].sort((a, b) => b.w * b.h - a.w * a.h), [groups])
-
-  // A frame carries the cards whose centre is inside it, and the frames that fit inside it.
-  const passengersOf = (g: WithId<Group>): Passenger[] => {
-    const inside = (x: number, y: number) => Math.abs(x - g.x) <= g.w / 2 && Math.abs(y - g.y) <= g.h / 2
-    return [
-      { type: 'group', id: g.id, from: [g.x, g.y] },
-      ...groups
-        .filter((o) => o.id !== g.id && inside(o.x - o.w / 2, o.y - o.h / 2) && inside(o.x + o.w / 2, o.y + o.h / 2) && o.w * o.h < g.w * g.h)
-        .map((o): Passenger => ({ type: 'group', id: o.id, from: [o.x, o.y] })),
-      ...nodes.filter((n) => inside(n.x, n.y)).map((n): Passenger => ({ type: n.type, id: n.id, from: [n.x, n.y] })),
-    ]
-  }
   const selected = selectedId ? byId.get(selectedId) : undefined
   // A selected customer lights up everything tagged for it (D-044).
   const customerId = selected?.type === 'customer' ? selected.id : null
@@ -186,8 +197,8 @@ function Scene({ wid, nodes, edges, groups, onCreate, focus }: Props) {
         <DotGridMaterial />
       </mesh>
 
-      {frames.map((g) => (
-        <GroupFrame key={g.id} wid={wid} group={g} passengersOf={passengersOf} />
+      {labels.map((l) => (
+        <BoardLabel key={l.id} wid={wid} label={l} />
       ))}
 
       {edges.map((edge) => {
@@ -209,7 +220,6 @@ function Scene({ wid, nodes, edges, groups, onCreate, focus }: Props) {
           item={node}
           layer={layers.get(node.id) ?? 0}
           related={customerId !== null && node.forIds.includes(customerId)}
-          unsorted={showUnsorted && node.domainIds.length === 0}
           onLinkDrop={onLinkDrop}
         />
       ))}

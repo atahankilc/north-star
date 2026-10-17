@@ -1,4 +1,4 @@
-// Local, per-tab UI state for the idea canvas. Persistent data lives in Firestore (src/data/).
+// Local, per-tab UI state for the board. Persistent data lives in Firestore (src/data/).
 import { create } from 'zustand'
 
 type Vec2 = [number, number]
@@ -14,6 +14,10 @@ type CanvasState = {
   viewCenter: () => Vec2
   // Set by the board once mounted: move the camera to look at a point.
   focusOn: (at: Vec2) => void
+  // Set by the board once mounted: glide the camera to a point (jump list, D-050). Instant under reduced motion.
+  flyTo: (at: Vec2) => void
+  // The text label being typed into on the board, if any.
+  editingLabel: string | null
 
   select: (id: string | null) => void
   startLink: (id: string, at: Vec2) => void
@@ -22,6 +26,8 @@ type CanvasState = {
   setDragging: (id: string, at: Vec2 | null) => void
   setViewCenter: (fn: () => Vec2) => void
   setFocusOn: (fn: (at: Vec2) => void) => void
+  setFlyTo: (fn: (at: Vec2) => void) => void
+  setEditingLabel: (id: string | null) => void
 }
 
 export const useCanvas = create<CanvasState>((set) => ({
@@ -31,6 +37,8 @@ export const useCanvas = create<CanvasState>((set) => ({
   dragging: {},
   viewCenter: () => [0, 0],
   focusOn: () => {},
+  flyTo: () => {},
+  editingLabel: null,
 
   select: (id) => set({ selectedId: id }),
   startLink: (id, at) => set({ linkFrom: id, linkPointer: at }),
@@ -45,6 +53,8 @@ export const useCanvas = create<CanvasState>((set) => ({
     }),
   setViewCenter: (fn) => set({ viewCenter: fn }),
   setFocusOn: (fn) => set({ focusOn: fn }),
+  setFlyTo: (fn) => set({ flyTo: fn }),
+  setEditingLabel: (id) => set({ editingLabel: id }),
 }))
 
 // Dev-only handle for inspecting state from the console or automation.

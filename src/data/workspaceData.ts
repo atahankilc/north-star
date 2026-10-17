@@ -1,11 +1,10 @@
 // Everything in one workspace, live. Loaded once by the workspace layout and shared by every view (D-036).
 import type { WithId } from './hooks'
 import { useWorkspaceCollection } from './hooks'
-import type { Comparison, Competitor, CompetitorFeature, Customer, Domain, Edge, Feature, Group, Idea, Problem } from './model'
+import type { Comparison, Competitor, CompetitorFeature, Customer, Edge, Feature, Idea, Label, Problem } from './model'
 
 export type WorkspaceData = {
-  domains: WithId<Domain>[]
-  groups: WithId<Group>[]
+  labels: WithId<Label>[]
   customers: WithId<Customer>[]
   problems: WithId<Problem>[]
   ideas: WithId<Idea>[]
@@ -17,8 +16,7 @@ export type WorkspaceData = {
 }
 
 export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading: boolean; error: Error | null } {
-  const domains = useWorkspaceCollection<Domain>(wid, 'domains')
-  const groups = useWorkspaceCollection<Group>(wid, 'groups')
+  const labels = useWorkspaceCollection<Label>(wid, 'labels')
   const customers = useWorkspaceCollection<Customer>(wid, 'customers')
   const problems = useWorkspaceCollection<Problem>(wid, 'problems')
   const ideas = useWorkspaceCollection<Idea>(wid, 'ideas')
@@ -27,12 +25,11 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const competitorFeatures = useWorkspaceCollection<CompetitorFeature>(wid, 'competitorFeatures')
   const comparisons = useWorkspaceCollection<Comparison>(wid, 'comparisons')
   const edges = useWorkspaceCollection<Edge>(wid, 'edges')
-  const all = [domains, groups, customers, problems, ideas, features, competitors, competitorFeatures, comparisons, edges]
+  const all = [labels, customers, problems, ideas, features, competitors, competitorFeatures, comparisons, edges]
 
   return {
     data: {
-      domains: domains.data,
-      groups: groups.data,
+      labels: labels.data,
       customers: customers.data,
       problems: problems.data,
       ideas: ideas.data,

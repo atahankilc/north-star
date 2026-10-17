@@ -1,4 +1,4 @@
-// `view: [board] flow table matrix`, bottom-right on every workspace view (docs/specs/domains.md §3).
+// `view: [board] flow table matrix`, bottom-right on every workspace view (docs/specs/board.md §3).
 import { NavLink } from 'react-router-dom'
 import { useWs } from './context'
 import styles from './Bars.module.css'

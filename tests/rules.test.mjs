@@ -124,9 +124,8 @@ await deny('matrix cell with an unknown coverage', () => cell(`f2_${compRef.id}`
 await allow('edge between an idea and a feature', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'feature', toId: 'b', toType: 'idea', kind: 'inspired-by' }))
 await deny('edge to itself', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'a', toType: 'idea', kind: 'relates' }))
 await deny('edge with an unknown node type', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'user', toId: 'b', toType: 'idea', kind: 'relates' }))
-// Domains, customers, problems (D-039 to D-044).
-await allow('domain', () => addDoc(sub(bob.fs, 'domains'), { name: 'Dev tools', createdAt: 1 }))
-await deny('domain without a name', () => addDoc(sub(bob.fs, 'domains'), { createdAt: 1 }))
+// Customers, problems; old domain fields still tolerated (D-042 to D-048).
+await deny('new domain (retired, D-048)', () => addDoc(sub(bob.fs, 'domains'), { name: 'Dev tools', createdAt: 1 }))
 await allow('customer in two domains', () => addDoc(sub(bob.fs, 'customers'), { ...card, domainIds: ['d1', 'd2'] }))
 await allow('problem in one domain', () => addDoc(sub(bob.fs, 'problems'), { ...card, domainId: 'd1' }))
 await deny('problem with a numeric domain', () => addDoc(sub(bob.fs, 'problems'), { ...card, domainId: 7 }))
@@ -135,10 +134,11 @@ await allow('competitor placed on the board', () => updateDoc(compRef, { x: 2, y
 await deny('competitor with a text position', () => updateDoc(compRef, { x: 'left' }))
 await allow('edge tagging an idea for a customer', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'c', toType: 'customer', kind: 'for' }))
 await allow('edge from an idea to a problem', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'p', toType: 'problem', kind: 'solves' }))
-// Groups: frames on the board (D-047).
-await allow('group frame', () => addDoc(sub(bob.fs, 'groups'), { name: 'Pricing', x: 0, y: 0, w: 6, h: 4, domainId: 'd1', createdAt: 1, updatedAt: 1 }))
-await deny('group without a size', () => addDoc(sub(bob.fs, 'groups'), { name: 'Pricing', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
-await deny('group with a negative width', () => addDoc(sub(bob.fs, 'groups'), { name: 'x', x: 0, y: 0, w: -1, h: 4, createdAt: 1, updatedAt: 1 }))
+// Labels: text on the board (D-050). Groups are retired (D-049).
+await allow('text label', () => addDoc(sub(bob.fs, 'labels'), { text: 'COMPETITORS', x: 0, y: 5, createdAt: 1, updatedAt: 1 }))
+await deny('label without a position', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', createdAt: 1, updatedAt: 1 }))
+await deny('label with a numeric text', () => addDoc(sub(bob.fs, 'labels'), { text: 3, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('new group (retired)', () => addDoc(sub(bob.fs, 'groups'), { name: 'Pricing', x: 0, y: 0, w: 6, h: 4, createdAt: 1, updatedAt: 1 }))
 await deny('member promotes self to owner', () => join(bob, { [`roles.${bob.uid}`]: 'owner' }))
 await deny('member takes ownership', () => join(bob, { ownerId: bob.uid }))
 await deny('member adds someone else', () => join(bob, { memberIds: arrayUnion(carol.uid) }))

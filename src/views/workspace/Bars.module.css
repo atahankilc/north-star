@@ -1,4 +1,4 @@
-/* Domain tabs, filter bar and view switch (docs/specs/domains.md §3): the bracket language of the HUD tabs. */
+/* Filter bar, jump list and view switch (docs/specs/board.md §3): the bracket language of the HUD tabs. */
 .filters {
   position: absolute;
   top: calc(var(--hud-h) - var(--space-2));
@@ -85,61 +85,4 @@
   font-size: var(--text-sm);
 }
 
-/* ── domain tabs in the HUD ───────────────────────── */
-
-.domains {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.domain {
-  --tone: var(--accent-magenta);
-}
-
-.rename {
-  color: var(--fg-strong);
-}
-
-.remove {
-  margin-left: var(--space-1);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-faint);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
-}
-
-.remove:hover {
-  color: var(--accent-magenta);
-}
-
-.remove[data-confirm='true'] {
-  color: var(--accent-magenta);
-}
-
-.newDomain {
-  width: 14ch;
-  padding: 0;
-  border: 0;
-  border-bottom: 1px solid var(--accent-magenta);
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
-  outline: none;
-}
-
-.newDomain::placeholder {
-  color: var(--placeholder);
-}
-
-.add {
-  composes: toggle;
-  color: var(--fg-faint);
-}
 

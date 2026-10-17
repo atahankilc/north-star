@@ -1,13 +1,15 @@
-// /w/:wid: the main view (D-040). Every item type on one board, filtered by the domain tab and the filter bar.
+// /w/:wid: the main view (D-040). Every item type on one board, plus text written on it (D-050), filtered by the filter bar.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { BOARD_TYPES, type BoardType } from '../../data/model'
-import { createGroup } from '../../data/groups'
+import type { WithId } from '../../data/hooks'
+import { createLabel } from '../../data/labels'
+import { BOARD_TYPES, type Label } from '../../data/model'
 import { createBoardNode, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
-import { ALL, useWsView } from '../../state/workspaceView'
+import { useWsView, type NewThing } from '../../state/workspaceView'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { DecodeText } from '../../ui/DecodeText'
+import bars from '../workspace/Bars.module.css'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { ViewSwitch } from '../workspace/ViewSwitch'
@@ -17,12 +19,14 @@ import { findFreeSpot } from './cardLayout'
 import { DetailPanel } from './DetailPanel'
 import styles from './BoardView.module.css'
 
+// A jump lands with the label near the top of the view, so the area under it is in sight.
+const LAND_BELOW = 2.5
+
 export function BoardView() {
-  const { wid, edges, competitors, domains, groups } = useWs()
+  const { wid, edges, competitors, labels } = useWs()
   const all = useBoardItems()
   const nodes = useVisibleItems(all)
   const select = useCanvas((s) => s.select)
-  const domain = useWsView((s) => s.domain)
   const lastType = useWsView((s) => s.lastType)
   const [params, setParams] = useSearchParams()
 
@@ -64,65 +68,62 @@ export function BoardView() {
     }
   }, [all, competitors, wid])
 
-  // Switching domain tab looks at what that tab shows.
-  const firstDomain = useRef(domain)
-  useEffect(() => {
-    if (domain === firstDomain.current) return
-    firstDomain.current = domain
-    if (nodes.length === 0) return
-    const xs = nodes.map((n) => n.x)
-    const ys = nodes.map((n) => n.y)
-    useCanvas.getState().focusOn([(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [domain])
+  // The jump list (D-050), in reading order: top to bottom, then left to right.
+  const places = useMemo(() => labels.filter((l) => l.text.trim()).sort((a, b) => b.y - a.y || a.x - b.x), [labels])
+  const jump = (l: WithId<Label>) => useCanvas.getState().flyTo([l.x, l.y - LAND_BELOW])
 
-  // Leaving the board clears selection; Escape deselects.
+  // Escape deselects; 1–9 jump to the places in the list; leaving the board clears selection.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement
+      if (t.closest('input, textarea, select') || t.isContentEditable) return
       if (e.key === 'Escape') select(null)
+      if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const place = places[Number(e.key) - 1]
+        if (place) jump(place)
+      }
     }
     window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      select(null)
-    }
-  }, [select])
+    return () => window.removeEventListener('keydown', onKey)
+  }, [select, places])
+  useEffect(() => () => select(null), [select])
 
-  // New items go into the current domain tab; on `all` they start unsorted.
-  const create = async (type: BoardType, at: [number, number]) => {
-    const d = domain !== ALL && domains.some((x) => x.id === domain) ? domain : undefined
-    const id = await createBoardNode(wid, type, { x: at[0], y: at[1] }, d ? { domainId: d, domainIds: [d] } : {})
+  const create = async (type: NewThing, at: [number, number]) => {
+    if (type === 'text') {
+      const id = await createLabel(wid, { text: '', x: at[0], y: at[1] })
+      select(id)
+      useCanvas.getState().setEditingLabel(id)
+      return
+    }
+    const id = await createBoardNode(wid, type, { x: at[0], y: at[1] })
     const { types, toggleType } = useWsView.getState()
     if (!types.includes(type)) toggleType(type)
     select(id)
   }
 
-  // Frames on this tab: the tab's own and those without a domain.
-  const frames = useMemo(
-    () => groups.filter((g) => domain === ALL || !g.domainId || g.domainId === domain || !domains.some((d) => d.id === domain)),
-    [groups, domain, domains],
-  )
-
-  // A new frame goes around the selected card, or in the middle of the view.
-  const addGroup = async () => {
-    const sel = all.find((i) => i.id === useCanvas.getState().selectedId)
-    const [x, y] = sel ? [sel.x + 1.4, sel.y - 0.6] : useCanvas.getState().viewCenter()
-    const d = domain !== ALL && domains.some((x) => x.id === domain) ? domain : undefined
-    const id = await createGroup(wid, { name: '', x, y, w: 6.2, h: 3.4, ...(d && { domainId: d }) })
-    select(id)
-  }
-
-  const add = (type: BoardType) => {
+  const add = (type: NewThing) => {
     useWsView.getState().setLastType(type)
-    // Clear of every card, including ones this tab hides, so switching tabs never shows a pile-up.
-    void create(type, findFreeSpot(useCanvas.getState().viewCenter(), all))
+    const center = useCanvas.getState().viewCenter()
+    // Clear of every card, including filtered-out ones.
+    void create(type, findFreeSpot(center, all))
   }
 
   return (
     <main className={styles.page}>
-      <Board wid={wid} nodes={nodes} edges={edges} groups={frames} focus={focus} onCreate={(at) => void create(lastType, at)} />
+      <Board wid={wid} nodes={nodes} edges={edges} labels={labels} focus={focus} onCreate={(at) => void create(lastType, at)} />
 
-      <FilterBar />
+      <FilterBar>
+        {places.length > 0 && (
+          <span className={bars.group} role="group" aria-label="Go to">
+            <span className={bars.label}>go to</span>
+            {places.map((l, i) => (
+              <button key={l.id} className={bars.toggle} onClick={() => jump(l)} title={i < 9 ? `Press ${i + 1}` : undefined}>
+                {l.text.trim()}
+              </button>
+            ))}
+          </span>
+        )}
+      </FilterBar>
 
       <footer className={styles.tools}>
         <span className={styles.adds}>
@@ -131,19 +132,25 @@ export function BoardView() {
               {BOARD_KINDS[t].addLabel}
             </AsciiButton>
           ))}
-          <AsciiButton accent="blue" onClick={() => void addGroup()}>
-            + Group
+          <AsciiButton accent="cyan" onClick={() => add('text')}>
+            + Text
           </AsciiButton>
         </span>
         <span className={styles.hints}>
-          double-click: new {BOARD_KINDS[lastType].label} · drag: move · shift+drag: link · drag board: pan · scroll: zoom
+          double-click: new {lastType === 'text' ? 'text' : BOARD_KINDS[lastType].label} · drag: move · shift+drag: link · scroll: zoom
+          {places.length > 0 && ' · 1–9: go to'}
         </span>
       </footer>
       <ViewSwitch />
 
-      {nodes.length === 0 && (
+      {all.length === 0 && labels.length === 0 && (
         <div className={styles.empty}>
-          <DecodeText text={all.length === 0 ? 'Double-click anywhere to pin your first idea' : 'Nothing here with these filters'} />
+          <DecodeText text="Double-click anywhere to pin your first idea" />
+        </div>
+      )}
+      {all.length > 0 && nodes.length === 0 && labels.length === 0 && (
+        <div className={styles.empty}>
+          <DecodeText text="Nothing here with these filters" />
         </div>
       )}
 

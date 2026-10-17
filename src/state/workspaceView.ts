@@ -1,32 +1,30 @@
-// What the current workspace shows: domain tab, type and customer filters, and which `+` was used last.
-// Remembered per workspace in this browser (spec: docs/specs/domains.md §3).
+// What the current workspace shows: type and customer filters, and which `+` was used last.
+// Remembered per workspace in this browser (spec: docs/specs/board.md §3).
 import { create } from 'zustand'
 import { BOARD_TYPES, type BoardType } from '../data/model'
 
-export const ALL = 'all'
+// What a double-click on the board makes: a card, or text (D-050).
+export type NewThing = BoardType | 'text'
 
 type Filters = {
-  // A domain id, or ALL.
-  domain: string
   types: BoardType[]
   // Customer ids for the `for:` filter; empty = any customer.
   forIds: string[]
   // Double-click on the board creates one of these.
-  lastType: BoardType
+  lastType: NewThing
 }
 
-const DEFAULTS: Filters = { domain: ALL, types: [...BOARD_TYPES], forIds: [], lastType: 'idea' }
+const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], lastType: 'idea' }
 
 type State = Filters & {
   wid: string | null
   load: (wid: string) => void
-  setDomain: (domain: string) => void
   toggleType: (type: BoardType) => void
   toggleFor: (customerId: string) => void
   clearFor: () => void
-  setLastType: (type: BoardType) => void
+  setLastType: (type: NewThing) => void
   // Undo whatever filter hides this item, so a link can always land on it.
-  reveal: (item: { type: BoardType; domainIds: string[] }) => void
+  reveal: (item: { type: BoardType }) => void
 }
 
 const key = (wid: string) => `north-star.view.${wid}`
@@ -37,9 +35,9 @@ function read(wid: string): Filters {
     if (!raw) return DEFAULTS
     const saved = JSON.parse(raw) as Partial<Filters>
     return {
-      ...DEFAULTS,
-      ...saved,
       types: (saved.types ?? DEFAULTS.types).filter((t) => BOARD_TYPES.includes(t)),
+      forIds: saved.forIds ?? [],
+      lastType: saved.lastType ?? DEFAULTS.lastType,
     }
   } catch {
     return DEFAULTS
@@ -49,10 +47,10 @@ function read(wid: string): Filters {
 export const useWsView = create<State>((set, get) => {
   const save = (patch: Partial<Filters>) => {
     set(patch)
-    const { wid, domain, types, forIds, lastType } = get()
+    const { wid, types, forIds, lastType } = get()
     if (!wid) return
     try {
-      localStorage.setItem(key(wid), JSON.stringify({ domain, types, forIds, lastType }))
+      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, lastType }))
     } catch {
       // Private mode or blocked storage: filters just won't be remembered.
     }
@@ -64,7 +62,6 @@ export const useWsView = create<State>((set, get) => {
     load: (wid) => {
       if (get().wid !== wid) set({ wid, ...read(wid) })
     },
-    setDomain: (domain) => save({ domain }),
     toggleType: (type) => {
       const types = get().types
       save({ types: types.includes(type) ? types.filter((t) => t !== type) : BOARD_TYPES.filter((t) => t === type || types.includes(t)) })
@@ -76,9 +73,8 @@ export const useWsView = create<State>((set, get) => {
     clearFor: () => save({ forIds: [] }),
     setLastType: (lastType) => save({ lastType }),
     reveal: (item) => {
-      const { domain, types } = get()
+      const { types } = get()
       save({
-        domain: domain === ALL || item.domainIds.includes(domain) ? domain : ALL,
         types: types.includes(item.type) ? types : BOARD_TYPES.filter((t) => t === item.type || types.includes(t)),
         forIds: [],
       })

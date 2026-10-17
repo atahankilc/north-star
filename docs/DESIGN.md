@@ -67,7 +67,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Buttons: `[ CREATE ]` style labels, with an accent fill on hover
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
-- Post-it cards: dark slabs with a coloured glyph edge by category, slight 3D tilt on hover, lift on drag
+- Cards: dark lit slabs, one silhouette per type, outlined in the type's colour (D-051, [specs/board.md](specs/board.md) §2): customer pill,
+  problem with a folded corner, competitor wide with a double rim, idea post-it, feature tag. Lift on hover and drag.
+- Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
 - Connections: curved lines made of dotted or glyph segments, animated flow toward the target
 
 ### HUD (D-027)

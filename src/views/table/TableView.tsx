@@ -1,11 +1,10 @@
-// /w/:wid/table: everything the filters let through as a spreadsheet, grouped by domain (docs/specs/domains.md §4).
-// Name, domain, customers, priority and status edit inline; the type opens the side panel.
+// /w/:wid/table: everything the filters let through as a spreadsheet, grouped by type in chain order (docs/specs/board.md §4).
+// Name, customers, priority and status edit inline; the type opens the side panel.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { BOARD_TYPES, FEATURE_PRIORITIES, FEATURE_STATUSES, FOR, type Feature } from '../../data/model'
 import { updateNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
-import { ALL, useWsView } from '../../state/workspaceView'
 import { Appear } from '../../ui/Appear'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { DecodeText } from '../../ui/DecodeText'
@@ -14,38 +13,33 @@ import { DetailPanel } from '../canvas/DetailPanel'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { linkSummary, useSelectionScope } from '../workspace/graph'
-import { DomainPicker, ForPicker } from '../workspace/ItemPickers'
+import { ForPicker } from '../workspace/ItemPickers'
 import { ViewSwitch } from '../workspace/ViewSwitch'
 import styles from './TableView.module.css'
 
-type SortKey = 'type' | 'name' | 'domain' | 'for' | 'links' | 'pri' | 'status'
+type SortKey = 'name' | 'for' | 'links' | 'pri' | 'status'
 const COLUMNS: { key: SortKey; label: string }[] = [
-  { key: 'type', label: 'type' },
   { key: 'name', label: 'name' },
-  { key: 'domain', label: 'domain' },
   { key: 'for', label: 'for' },
   { key: 'links', label: 'linked to' },
   { key: 'pri', label: 'pri' },
   { key: 'status', label: 'status' },
 ]
-const UNSORTED = 'unsorted'
 
-type Row = { item: BoardItem; links: string; linkCount: number; domains: string; customers: string; feature?: Feature }
+type Row = { item: BoardItem; links: string; linkCount: number; customers: string; feature?: Feature }
 
 export function TableView() {
-  const { wid, domains, customers, features, edges, competitorFeatures } = useWs()
+  const { wid, customers, features, edges, competitorFeatures } = useWs()
   const all = useBoardItems()
   const visible = useVisibleItems(all)
-  const domain = useWsView((s) => s.domain)
   const selectedId = useCanvas((s) => s.selectedId)
   const select = useCanvas((s) => s.select)
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'type', dir: 1 })
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 } | null>(null)
   const [open, setOpen] = useState<string | null>(null)
   useSelectionScope()
 
   const rows = useMemo(() => {
     const byId = new Map(all.map((i) => [i.id, i]))
-    const domainName = new Map(domains.map((d) => [d.id, d.name]))
     const customerName = new Map(customers.map((c) => [c.id, c.title || 'Untitled']))
     const featureById = new Map(features.map((f) => [f.id, f]))
     const theirs = new Map<string, number>()
@@ -58,28 +52,26 @@ export function TableView() {
         item,
         links: linkSummary(item, edges, byId, extra),
         linkCount: edges.filter((e) => (e.fromId === item.id && e.kind !== FOR) || e.toId === item.id).length,
-        domains: item.domainIds.map((d) => domainName.get(d)).filter(Boolean).join(', '),
         customers: item.forIds.map((c) => customerName.get(c)).filter(Boolean).join(', '),
         feature: item.type === 'feature' ? featureById.get(item.id) : undefined,
       }
     })
-  }, [all, visible, domains, customers, features, edges, competitorFeatures])
+  }, [all, visible, customers, features, edges, competitorFeatures])
 
+  // Unsorted: oldest first. A header click sorts within each type.
   const sorted = useMemo(() => {
+    if (!sort) return [...rows].sort((a, b) => a.item.createdAt - b.item.createdAt)
+    const LAST = '\uffff'
     const value = (r: Row): string | number => {
       switch (sort.key) {
-        case 'type':
-          return BOARD_TYPES.indexOf(r.item.type)
         case 'name':
           return r.item.title.toLowerCase()
-        case 'domain':
-          return r.domains || '￿'
         case 'for':
-          return r.customers || '￿'
+          return r.customers || LAST
         case 'links':
           return -r.linkCount
         case 'pri':
-          return r.feature?.priority ?? '￿'
+          return r.feature?.priority ?? LAST
         case 'status':
           return r.feature?.status ? FEATURE_STATUSES.indexOf(r.feature.status) : 99
       }
@@ -91,28 +83,24 @@ export function TableView() {
     })
   }, [rows, sort])
 
-  // On `all`, one group per domain (an item in two domains shows in both) and the unsorted ones last.
-  const groups = useMemo(() => {
-    const ordered = [...domains].sort((a, b) => a.createdAt - b.createdAt)
-    const scope = domain !== ALL && ordered.some((d) => d.id === domain) ? ordered.filter((d) => d.id === domain) : ordered
-    const list: { id: string; name: string; rows: Row[] }[] = scope.map((d) => ({
-      id: d.id,
-      name: d.name,
-      rows: sorted.filter((r) => r.item.domainIds.includes(d.id)),
-    }))
-    if (scope.length === ordered.length) list.push({ id: UNSORTED, name: UNSORTED, rows: sorted.filter((r) => r.item.domainIds.length === 0) })
-    return list.filter((g) => g.rows.length > 0)
-  }, [domains, domain, sorted])
+  // One section per type, in chain order (D-045).
+  const groups = useMemo(
+    () =>
+      BOARD_TYPES.map((t) => ({ id: t, name: BOARD_KINDS[t].plural, tone: TYPE_ACCENT[t], rows: sorted.filter((r) => r.item.type === t) })).filter(
+        (g) => g.rows.length > 0,
+      ),
+    [sorted],
+  )
 
   const header = (key: SortKey, label: string) => (
-    <th key={key} aria-sort={sort.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : undefined}>
+    <th key={key} aria-sort={sort?.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : undefined}>
       <button
         className={styles.sort}
-        onClick={() => setSort((s) => ({ key, dir: s.key === key ? (-s.dir as 1 | -1) : 1 }))}
+        onClick={() => setSort((s) => ({ key, dir: s?.key === key ? (-s.dir as 1 | -1) : 1 }))}
       >
         {label}
         <span className={styles.arrow} aria-hidden>
-          {sort.key === key ? (sort.dir === 1 ? ' ↓' : ' ↑') : ''}
+          {sort?.key === key ? (sort.dir === 1 ? ' ↓' : ' ↑') : ''}
         </span>
       </button>
     </th>
@@ -129,12 +117,15 @@ export function TableView() {
         <Appear className={styles.frame}>
           <table className={styles.table}>
             <thead>
-              <tr>{COLUMNS.map((c) => header(c.key, c.label))}</tr>
+              <tr>
+                <th className={styles.typeHead} />
+                {COLUMNS.map((c) => header(c.key, c.label))}
+              </tr>
             </thead>
             {groups.map((g) => (
               <tbody key={g.id}>
-                <tr className={styles.groupRow}>
-                  <th colSpan={COLUMNS.length} scope="rowgroup">
+                <tr className={styles.groupRow} style={{ ['--tone' as string]: g.tone }}>
+                  <th colSpan={COLUMNS.length + 1} scope="rowgroup">
                     <span aria-hidden>─ </span>
                     {g.name}
                     <span className={styles.count}> · {g.rows.length}</span>
@@ -159,11 +150,6 @@ export function TableView() {
                       </td>
                       <td className={styles.nameCell}>
                         <AutosaveField className={styles.name} label="Name" placeholder="Untitled" value={item.title} onSave={setName} />
-                      </td>
-                      <td>
-                        <Popover id={`${key}:domain`} open={open} setOpen={setOpen} text={r.domains}>
-                          <DomainPicker item={item} />
-                        </Popover>
                       </td>
                       <td>
                         {item.type === 'customer' ? (

@@ -1,0 +1,45 @@
+// Text on the board (D-050): headings like "COMPETITORS" over an area, and the places the jump list flies to.
+// Undoable (history.ts) except the live position stream during a drag.
+import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc } from 'firebase/firestore'
+import { db } from './firebase'
+import { absent, snapshotWith, tracked } from './history'
+import type { Label } from './model'
+
+const labelsOf = (wid: string) => collection(db(), 'workspaces', wid, 'labels')
+
+export async function createLabel(wid: string, fields: Omit<Label, 'createdAt' | 'updatedAt'>) {
+  const now = Date.now()
+  const ref = doc(labelsOf(wid))
+  await tracked('new text', [ref], () => setDoc(ref, { ...fields, createdAt: now, updatedAt: now }), {
+    before: absent([ref]),
+    key: `label:${ref.id}:text`,
+  })
+  return ref.id
+}
+
+// `undefined` clears a field. `first`: the text a new label is given, which undoes together with creating it.
+export function updateLabel(wid: string, id: string, fields: Partial<Pick<Label, 'text' | 'color'>>, first = false) {
+  const data: Record<string, unknown> = { updatedAt: Date.now() }
+  for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v
+  const ref = doc(labelsOf(wid), id)
+  return tracked('edit text', [ref], () => updateDoc(ref, data), {
+    key: `label:${id}:${Object.keys(fields).sort().join(',')}`,
+    mergeAlways: first,
+  })
+}
+
+export function deleteLabel(wid: string, id: string) {
+  const ref = doc(labelsOf(wid), id)
+  return tracked('delete text', [ref], () => deleteDoc(ref))
+}
+
+// The live stream while dragging: not undoable on its own, see endLabelMove.
+export function moveLabel(wid: string, id: string, x: number, y: number) {
+  return updateDoc(doc(labelsOf(wid), id), { x, y })
+}
+
+export async function endLabelMove(wid: string, id: string, from: [number, number], to: [number, number]) {
+  const ref = doc(labelsOf(wid), id)
+  const before = await snapshotWith(ref, { x: from[0], y: from[1] })
+  return tracked('move text', [ref], () => updateDoc(ref, { x: to[0], y: to[1] }), { before })
+}

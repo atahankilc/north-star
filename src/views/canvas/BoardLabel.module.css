@@ -1,0 +1,24 @@
+/* Typing a label on the board: looks like the text it becomes, with a caret and an underline. */
+.input {
+  min-width: 4ch;
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 2px solid var(--accent-cyan);
+  background: none;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-align: center;
+  outline: none;
+  caret-color: var(--accent-magenta);
+}
+
+/* The cyan underline already shows focus. */
+.input:focus-visible {
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--placeholder);
+}

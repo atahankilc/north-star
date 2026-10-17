@@ -16,7 +16,6 @@ export const TYPE_LABELS: Record<NodeType, string> = {
   customer: 'customer',
   problem: 'problem',
   idea: 'idea',
-  group: 'group',
   feature: 'feature',
   competitor: 'competitor',
   competitorFeature: 'their feature',

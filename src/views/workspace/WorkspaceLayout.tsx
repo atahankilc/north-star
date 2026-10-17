@@ -11,7 +11,6 @@ import { Hud } from '../../ui/Hud'
 import { InlineEdit } from '../../ui/InlineEdit'
 import { Toast } from '../../ui/Toast'
 import { WorkspaceContext, type WorkspaceCtx } from './context'
-import { DomainTabs } from './DomainTabs'
 import { useEditKeys } from './useEditKeys'
 import styles from './WorkspaceLayout.module.css'
 
@@ -41,7 +40,6 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           { label: 'workspaces', to: '/w' },
           { label: <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} /> },
         ]}
-        nav={<DomainTabs />}
         right={<InviteChip code={workspace.inviteCode} />}
       />
       {!isLoading && <Outlet />}

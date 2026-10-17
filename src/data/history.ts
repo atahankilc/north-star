@@ -73,6 +73,8 @@ type Options = {
   key?: string
   // Wait for the server before reading the result: for writes that are several dependent steps (cascading deletes).
   settle?: boolean
+  // Merge into the previous step with the same key however long ago it was (e.g. a label's first text into its creation).
+  mergeAlways?: boolean
 }
 
 // Tracked writes, undo and redo run one at a time, so snapshots and the stack never interleave. Firestore applies
@@ -100,7 +102,7 @@ async function record(label: string, refs: DocumentReference[], write: () => Pro
   const last = past[past.length - 1]
   const now = Date.now()
   let step: Step
-  if (opts.key && last?.key === opts.key && now - last.at < MERGE_WITHIN_MS) {
+  if (opts.key && last?.key === opts.key && (opts.mergeAlways || now - last.at < MERGE_WITHIN_MS)) {
     step = { ...last, after, at: now }
     useHistory.setState({ past: [...past.slice(0, -1), step], future: [] })
   } else {

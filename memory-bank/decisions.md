@@ -200,9 +200,9 @@ collection once and shares it with all views, so switching tabs is instant and a
 **Competitors are profiles with a categorized feature list, not a spatial map.** The competitor page shows name, URL, pricing,
 audience and notes, plus its features grouped by `category`. `CompetitorFeature` has no position.
 
-### D-039 · 2026-10-17 · Accepted
+### D-039 · 2026-10-17 · Superseded by D-048
 **Domains organise a workspace.** A workspace holds domains (e.g. pet care, fintech). Ideas and problems belong to exactly one
-domain; competitors and features can belong to several. Domains are the main tabs. Spec: [docs/specs/domains.md](../docs/specs/domains.md).
+domain; competitors and features can belong to several. Domains are the main tabs. (Spec now [docs/specs/board.md](../docs/specs/board.md).)
 
 ### D-040 · 2026-10-17 · Accepted
 **The Board is the main view.** All item types live on one free canvas, filtered by domain and type. Flow, Table and Matrix are
@@ -237,10 +237,36 @@ Keys: ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y, Delete or Backspace on the selected item;
 Deletes are one click now (they're undoable); domain delete keeps its `delete?` step.
 Tracked writes are serialised but never wait for the server (Firestore applies writes locally in call order), so editing works offline.
 
-### D-047 · 2026-10-17 · Accepted (answers Q-012)
+### D-047 · 2026-10-17 · Superseded by D-049 (answered Q-012)
 **Groups are labelled frames on the board** (`groups/{id}`: name, color, x, y, w, h, domainId; `src/views/canvas/GroupFrame.tsx`).
 Membership is spatial: dragging the label moves the frame plus every card whose centre is inside it and every smaller frame that fits inside,
 as one undo step. The bottom-right corner resizes (top-left stays put). The fill has no handlers, so panning and double-click-to-create
 work inside a frame. Clicking the label opens the group panel (name, domain, colour, delete); deleting a group leaves its cards.
 A group shows on its domain's tab and on `all`; without a domain it shows everywhere. `+ Group` frames the selected card or the view centre.
 The old `groupIds` field on ideas is unused. Table and Flow ignore groups for now.
+
+### D-048 · 2026-10-17 · Accepted (reverses D-039)
+**No domains.** The user found them unnecessary: a workspace already is one idea space, and customers (the `for:` filter) plus
+text labels cover slicing and naming areas. Removed tabs, pickers, unsorted marks and the domain filters on Table/Matrix.
+Rules refuse new `domains` docs but keep read/delete for clean-up; old `domainId`/`domainIds` fields are tolerated and ignored.
+
+### D-049 · 2026-10-17 · Accepted (reverses D-047)
+**No groups.** Replaced by text labels (D-050) to mark areas. Rules refuse new `groups` docs, keep read/delete for clean-up.
+
+### D-050 · 2026-10-17 · Accepted
+**Text labels on the board are the places you jump to.** `labels/{id}`: text, color, x, y. Written straight on the canvas
+(`+ Text`, or double-click after it): a DOM input sits over the spot while typing (never WebGL), Enter saves, Escape cancels,
+empty text deletes. Drag to move, double-click to edit, Delete to remove; all undoable, and a new label plus its first text undo as one step.
+The board's "go to" row lists every label in reading order (top→bottom, left→right); click or press 1–9 to glide the camera there
+(instant under reduced motion; your own pan/zoom cancels the glide). Only labels are jumpable: no other text anywhere (user's words).
+Zoom-out limit raised from 60 to 260 so a whole workspace fits on screen.
+
+### D-051 · 2026-10-17 · Accepted
+**One silhouette per card type** (user picked shapes over colour headers): customer pill (green), problem with a folded top-right
+corner (magenta), competitor wide with a double rim (yellow), idea post-it with a top strip (neutral), feature tag with pointed ends
+(cyan). Each is outlined in its colour. Geometry in `src/views/canvas/cardShapes.ts` (extruded shapes, shared per type).
+
+### D-052 · 2026-10-17 · Accepted
+**Built-in example workspace** ("Create example" on the workspaces page, `src/data/example.ts`): a made-up startup, Tablebook
+(shift scheduling for independent restaurants), with 4 customers, 4 problems, 4 fictional competitors and their features,
+4 ideas, 6 features, every link kind, customer tags, a full matrix and six area labels. Competitor names are invented on purpose.

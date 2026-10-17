@@ -20,12 +20,11 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | Entity | Description | Key fields |
 |---|---|---|
 | **Workspace** | One startup idea space; the unit of sharing | name, description, members, roles |
-| **Domain** | A market or area inside a workspace; the main tabs (D-039) | name, color, description |
-| **Customer** | Who it's for, at any breadth; doubles as the segment (D-044) | title, notes, position, domains |
-| **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position, domain |
+| **Customer** | Who it's for, at any breadth; doubles as the segment (D-044) | title, notes, position |
+| **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position |
+| **Text label** | Text written on the board; names an area and is a place to jump to (D-050) | text, position |
 | **Idea** (post-it) | A thought, problem, insight or feature idea | title, body, color, tags, position (x,y,z), status, attachments |
 | **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label |
-| **Group** | A labelled frame on the board; what's inside moves with it (D-047) | name, color, position, size, domain |
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, linked ideas |
 | **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor |
@@ -34,8 +33,8 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 
 ## 4. Views
 
-> Now one board with every item type, domain tabs and a view switch (D-040): see [specs/domains.md](specs/domains.md).
-> Board, Flow, Table and Matrix are all built. Items 1–3 below describe the earlier per-type pages.
+> Now one board with every item type, text labels to jump between, and Board / Flow / Table / Matrix views (D-040, D-050):
+> see [specs/board.md](specs/board.md). Items 1–3 below describe the earlier per-type pages. A built-in example workspace shows it all (D-052).
 
 1. **Idea Canvas.** A 3D/2.5D infinite board of post-its with connections, groups, zoom/pan,
    mini-map, and live collaborator cursors.
@@ -53,7 +52,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 ## 5. Key flows
 
 1. Brain-dump: create post-its quickly on the canvas
-2. Structure: connect, group, tag
+2. Structure: connect, tag, name areas with text labels
 3. Research: add competitors and break their products into features
 4. Link: ideas ↔ competitor features
 5. Promote: idea or cluster → Feature
@@ -67,7 +66,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 - **Real-time collaboration**: live cursors, presence (who is here), live edits
 - **Authentication**
 - **AI assist with BYOK** (bring your own OpenAI key), using a cheap model for:
-  - summarize a cluster or group
+  - summarize an area (the cards under a text label)
   - suggest connections between ideas
   - draft a competitor breakdown from a description or URL text
   - fill or suggest matrix notes

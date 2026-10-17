@@ -10,7 +10,7 @@ Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 
 ## Phase 1: Single-user core (mostly done; see memory-bank/state.md)
 - Auth and workspace list
-- Idea Canvas: create, edit, move and delete post-its; connections; groups; tags
+- Idea Canvas: create, edit, move and delete post-its; connections; tags; text labels to name and jump between areas (groups dropped, D-049)
 - Detail panel
 - Data adapter, schema and permission rules
 

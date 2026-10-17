@@ -17,7 +17,7 @@ import styles from './CompetitorProfile.module.css'
 
 const UNCATEGORIZED = 'uncategorized'
 
-// `children` sits between the facts and the features (domain and customer pickers).
+// `children` sits between the facts and the features (the customer picker).
 export function CompetitorProfile({ competitor, children }: { competitor: WithId<Competitor>; children?: ReactNode }) {
   const { wid } = useWs()
   const select = useCanvas((s) => s.select)

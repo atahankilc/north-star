@@ -91,7 +91,7 @@ function Picker({ onPick, exclude }: { onPick: (id: string) => void; exclude: (i
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return [...index.values()]
-      .filter((n) => n.type !== 'group' && !exclude(n.id))
+      .filter((n) => !exclude(n.id))
       .filter((n) => !needle || n.title.toLowerCase().includes(needle) || TYPE_LABELS[n.type].includes(needle))
       .slice(0, MAX_RESULTS)
   }, [index, q, exclude])

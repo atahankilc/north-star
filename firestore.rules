@@ -36,16 +36,10 @@ service cloud.firestore {
       return !(key in d) || d[key] in values;
     }
 
-    // Problems and ideas sit in one domain; customers, competitors and features in several (D-039).
+    // Domains are retired (D-048); older items may still carry these fields, so they're tolerated, not required.
     function validDomainRefs(d) {
       return optText(d, 'domainId', 128)
         && (!('domainIds' in d) || (d.domainIds is list && d.domainIds.size() <= 50));
-    }
-
-    function validDomain(d) {
-      return isText(d.name, 100)
-        && optText(d, 'color', 20)
-        && optText(d, 'description', 2000);
     }
 
     // Customers, problems, ideas and features: cards on the board (D-037, D-040).
@@ -78,13 +72,11 @@ service cloud.firestore {
         && validDomainRefs(d);
     }
 
-    // A labelled frame on the board (D-047).
-    function validGroup(d) {
-      return isText(d.name, 200)
+    // Text on the board, and a place to jump to (D-050).
+    function validLabel(d) {
+      return isText(d.text, 200)
         && optText(d, 'color', 20)
-        && d.x is number && d.y is number
-        && d.w is number && d.h is number && d.w > 0 && d.h > 0
-        && validDomainRefs(d);
+        && d.x is number && d.y is number;
     }
 
     function validCompetitorFeature(d) {
@@ -105,7 +97,7 @@ service cloud.firestore {
     }
 
     function validEdge(d) {
-      let types = ['customer', 'problem', 'idea', 'group', 'feature', 'competitor', 'competitorFeature'];
+      let types = ['customer', 'problem', 'idea', 'feature', 'competitor', 'competitorFeature'];
       return isText(d.fromId, 128) && isText(d.toId, 128) && d.fromId != d.toId
         && d.fromType in types && d.toType in types
         && isText(d.kind, 40)
@@ -113,7 +105,7 @@ service cloud.firestore {
     }
 
     function valid(collection, id, d) {
-      return (collection == 'domains' && validDomain(d))
+      return (collection == 'labels' && validLabel(d))
         || (collection == 'customers' && validCard(d))
         || (collection == 'problems' && validCard(d))
         || (collection == 'ideas' && validCard(d))
@@ -121,8 +113,7 @@ service cloud.firestore {
         || (collection == 'competitors' && validCompetitor(d))
         || (collection == 'competitorFeatures' && validCompetitorFeature(d))
         || (collection == 'comparisons' && validComparison(id, d))
-        || (collection == 'edges' && validEdge(d))
-        || (collection == 'groups' && validGroup(d));
+        || (collection == 'edges' && validEdge(d));
     }
 
     match /workspaces/{wid} {
@@ -180,7 +171,8 @@ service cloud.firestore {
       // Workspace content: members only, known collections only, with a sane shape.
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
-        allow read, delete: if isMember(wid) && collection in ['domains', 'customers', 'problems', 'ideas', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges'];
+        // `domains` and `groups` are retired (D-048, D-049): still readable and deletable so old workspaces can be cleaned up.
+        allow read, delete: if isMember(wid) && collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'domains', 'groups'];
         allow create, update: if isMember(wid) && valid(collection, docId, request.resource.data);
       }
     }

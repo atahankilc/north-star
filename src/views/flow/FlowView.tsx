@@ -44,12 +44,14 @@ function buildRows(items: BoardItem[], neighbours: Map<string, Set<string>>): Ro
   for (const p of of('problem')) {
     const ideas = near([p.id], 'idea')
     const anchors = [p.id, ...ideas.map((i) => i.id)]
+    const rivals = near(anchors, 'competitor')
     push(p.id, {
       customer: near([p.id], 'customer'),
       problem: [p],
-      competitor: near(anchors, 'competitor'),
+      competitor: rivals,
       idea: ideas,
-      feature: near(anchors, 'feature'),
+      // What we build for this problem, its ideas, or to answer these competitors.
+      feature: near([...anchors, ...rivals.map((c) => c.id)], 'feature'),
     })
   }
   for (const i of of('idea')) {
@@ -67,11 +69,13 @@ function buildRows(items: BoardItem[], neighbours: Map<string, Set<string>>): Ro
 }
 
 export function FlowView() {
-  const { edges } = useWs()
+  const { edges, competitorFeatures } = useWs()
   const all = useBoardItems()
   const visible = useVisibleItems(all)
   const types = useWsView((s) => s.types)
-  const neighbours = useNeighbours(edges)
+  // A link to one of a competitor's features counts as a link to that competitor.
+  const owners = useMemo(() => new Map(competitorFeatures.map((f) => [f.id, f.competitorId])), [competitorFeatures])
+  const neighbours = useNeighbours(edges, owners)
   useSelectionScope()
 
   const columns = BOARD_TYPES.filter((t) => types.includes(t))
