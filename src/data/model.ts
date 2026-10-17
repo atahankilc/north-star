@@ -11,6 +11,7 @@
 //     comparisons/{id}                       Comparison
 //     edges/{id}                             Edge (any node ↔ any node)
 //   inviteCodes/{code}                       InviteCode (D-012)
+//   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)
 //
 // Realtime Database (ephemeral):
 //   presence/{workspaceId}/{uid}             Presence (D-016)
@@ -24,7 +25,9 @@ export type Workspace = {
   memberIds: string[]
   roles: Record<string, Role>
   inviteCode: string
-  // Set by a joining member; the rules check it against inviteCode (D-012).
+  // Lowercased addresses the owner invited; accepting or declining removes yours (D-062).
+  invitedEmails?: string[]
+  // Retired (D-062): codes used to join directly. Older workspaces may still carry it.
   joinCode?: string
   createdAt: number
 }
@@ -32,6 +35,18 @@ export type Workspace = {
 export type InviteCode = {
   workspaceId: string
   createdBy: string
+}
+
+// Someone entered the code and waits for the owner (D-062).
+export type JoinRequest = {
+  workspaceId: string
+  // Copied from the workspace so the owner can query their requests.
+  ownerId: string
+  uid: string
+  name: string
+  email: string
+  code: string
+  createdAt: number
 }
 
 export type NodeType = 'customer' | 'problem' | 'idea' | 'feature' | 'competitor' | 'competitorFeature'

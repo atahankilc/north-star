@@ -14,6 +14,96 @@
   font-size: var(--text-xs);
 }
 
+.error {
+  margin: 0;
+  color: var(--accent-yellow);
+  font-size: var(--text-xs);
+}
+
+/* Join requests and email invites in settings (D-062). */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.who {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.inviteForm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+  caret-color: var(--accent-cyan);
+}
+
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+.input:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.action {
+  padding: 2px var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.action::before {
+  content: '[';
+  color: var(--line-hover);
+}
+
+.action::after {
+  content: ']';
+  color: var(--line-hover);
+}
+
+.action:hover {
+  color: var(--fg-strong);
+}
+
+.action[data-tone='primary'] {
+  color: var(--accent-cyan);
+}
+
+.action[data-tone='danger']:hover {
+  color: var(--accent-magenta);
+}
+
 .status {
   position: relative;
   z-index: 1;

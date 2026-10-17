@@ -77,7 +77,7 @@ Fully WebGL text editing is painful and inaccessible. So:
 Source of truth: `src/data/model.ts`.
 
 ```
-workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role}, inviteCode
+workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role}, inviteCode, invitedEmails[]
   customers/{id}        title, body, color, tags[], x, y                          (D-042, D-044)
   problems/{id}         title, body, color, tags[], x, y                          (D-041)
   ideas/{id}            title, body, color, tags[], status, x, y
@@ -88,6 +88,7 @@ workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role
   comparisons/{id}      featureId, competitorId, coverage?, notes, competitorFeatureId   (id = featureId_competitorId)
   edges/{id}            fromId, fromType, toId, toType, kind, label
 inviteCodes/{code}      workspaceId, createdBy
+joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)
 
 RTDB: presence/{wid}/{uid}   name, color, view, x, y, ts
 ```
@@ -99,9 +100,16 @@ RTDB: presence/{wid}/{uid}   name, color, view, x, y, ts
 - Rules allow only these collections and check each one's basic shape (`firestore.rules`, mirrors `model.ts`).
 - The workspace route loads every collection once (`src/data/workspaceData.ts`); all views share it (D-036).
 - "My workspaces" = `where('memberIds', 'array-contains', uid)`.
-- **Joining (D-012):** read `inviteCodes/{code}` (get only, never list) → update the workspace to add yourself
-  to `memberIds` with `joinCode = code`. The rules only allow this when the code matches the
-  workspace's current `inviteCode` and the only change is adding yourself.
+- **Joining (D-062, replaces the direct join of D-012).** Two ways in, both checked by the rules:
+  - *Email invite:* the owner adds a lowercased address to `invitedEmails`. That person (signed in with a verified Google
+    address) can read the workspace doc, so it shows on their workspaces page (`where('invitedEmails', 'array-contains', email)`).
+    Accepting adds only yourself as `editor` and removes your address in the same write; declining only removes your address.
+    No mail is sent (no server); the owner tells them.
+  - *Code + approval:* read `inviteCodes/{code}` (get only) → create `joinRequests/{wid}_{uid}` carrying the code; the rules
+    check it against the workspace's current `inviteCode` and copy in `ownerId`. The owner sees requests in Settings
+    (`where('ownerId', '==', uid)`) and approves (adds the member and deletes the request in one batch) or denies (deletes it).
+    The requester can see and withdraw their own. A code alone never makes anyone a member.
+  - The owner can swap in a new code (old `inviteCodes` doc deleted, new one created, `inviteCode` updated in one batch).
 
 ## 6. Real-time collaboration
 
@@ -119,7 +127,7 @@ RTDB: presence/{wid}/{uid}   name, color, view, x, y, ts
 ## 7. Authentication
 
 Firebase Auth with the Google provider, popup flow (D-011). `localhost` and `atahankilc.github.io`
-must be in Firebase Auth → Settings → Authorized domains. Workspaces are shared with an invite code (D-012).
+must be in Firebase Auth → Settings → Authorized domains. Workspaces are shared by email invite or by a code the owner approves (D-062).
 
 ## 8. AI (BYOK)
 

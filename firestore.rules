@@ -22,6 +22,18 @@ service cloud.firestore {
       return signedIn() && request.auth.uid in workspace(wid).memberIds;
     }
 
+    // Your verified Google address, lowercased like the invite list (D-062).
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function invited(data) {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && 'invitedEmails' in data
+        && myEmail() in data.invitedEmails;
+    }
+
     // ---- Workspace content shapes ----
 
     function isText(v, max) {
@@ -118,7 +130,8 @@ service cloud.firestore {
     }
 
     match /workspaces/{wid} {
-      allow read: if signedIn() && request.auth.uid in resource.data.memberIds;
+      // Invited people see the workspace doc (name, member count) to accept or decline, not its content.
+      allow read: if signedIn() && (request.auth.uid in resource.data.memberIds || invited(resource.data));
 
       allow create: if signedIn()
         && request.resource.data.ownerId == request.auth.uid
@@ -127,7 +140,7 @@ service cloud.firestore {
         && request.resource.data.roles[request.auth.uid] == 'owner'
         && request.resource.data.inviteCode is string;
 
-      allow update: if editing() || joining() || leaving() || ownerManaging();
+      allow update: if editing() || joiningByInvite() || decliningInvite() || leaving() || ownerManaging();
 
       allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
 
@@ -144,18 +157,28 @@ service cloud.firestore {
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
           && request.auth.uid in request.resource.data.memberIds
-          && request.resource.data.roles[request.auth.uid] == 'owner';
+          && request.resource.data.roles[request.auth.uid] == 'owner'
+          && (!('invitedEmails' in request.resource.data)
+            || (request.resource.data.invitedEmails is list && request.resource.data.invitedEmails.size() <= 100));
       }
 
-      // Join with an invite code (D-012): add only yourself, and prove the code.
-      function joining() {
-        return signedIn()
+      // Accept an email invite (D-062): add only yourself, as editor, and use up your invite.
+      // A code alone no longer joins anyone; it only sends a request the owner approves (joinRequests below).
+      function joiningByInvite() {
+        return invited(resource.data)
           && !(request.auth.uid in resource.data.memberIds)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'roles', 'joinCode'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'roles', 'invitedEmails'])
           && request.resource.data.memberIds == resource.data.memberIds.concat([request.auth.uid])
           && request.resource.data.roles.diff(resource.data.roles).affectedKeys().hasOnly([request.auth.uid])
           && request.resource.data.roles[request.auth.uid] == 'editor'
-          && request.resource.data.joinCode == resource.data.inviteCode;
+          && request.resource.data.invitedEmails == resource.data.invitedEmails.removeAll([myEmail()]);
+      }
+
+      // Turn an invite down: remove only your own address.
+      function decliningInvite() {
+        return invited(resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['invitedEmails'])
+          && request.resource.data.invitedEmails == resource.data.invitedEmails.removeAll([myEmail()]);
       }
 
       // A non-owner removes only themselves. Owners delete the workspace instead.
@@ -187,6 +210,25 @@ service cloud.firestore {
         && workspaceAfter(request.resource.data.workspaceId).inviteCode == code
         && request.resource.data.createdBy == request.auth.uid;
       allow delete: if signedIn() && workspace(resource.data.workspaceId).ownerId == request.auth.uid;
+    }
+
+    // Asking to join with a code (D-062). The id is `<workspaceId>_<uid>`: one request per person per workspace.
+    // The owner approves (adds the member and deletes the request in one batch) or denies (deletes it).
+    // `ownerId` is copied in so the owner can query their requests without a get() per document.
+    match /joinRequests/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['workspaceId', 'ownerId', 'uid', 'name', 'email', 'code', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && id == request.resource.data.workspaceId + '_' + request.auth.uid
+        && request.resource.data.code == workspace(request.resource.data.workspaceId).inviteCode
+        && request.resource.data.ownerId == workspace(request.resource.data.workspaceId).ownerId
+        && !(request.auth.uid in workspace(request.resource.data.workspaceId).memberIds)
+        && request.resource.data.email == request.auth.token.email
+        && isText(request.resource.data.name, 200)
+        && request.resource.data.createdAt is number;
+      // The requester sees and withdraws their own; the owner sees and settles theirs.
+      allow read, delete: if signedIn()
+        && (resource.data.uid == request.auth.uid || resource.data.ownerId == request.auth.uid);
     }
   }
 }

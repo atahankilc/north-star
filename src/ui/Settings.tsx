@@ -12,9 +12,10 @@ const MOTION: readonly MotionPref[] = ['system', 'full', 'reduced']
 type Props = {
   // The current workspace's section, if there is one.
   workspace?: ReactNode
+  badge?: number
 }
 
-export function SettingsButton({ workspace }: Props) {
+export function SettingsButton({ workspace, badge = 0 }: Props) {
   const { user } = useAuth()
   const dialog = useRef<HTMLDialogElement>(null)
   const [open, setOpen] = useState(false)
@@ -39,7 +40,12 @@ export function SettingsButton({ workspace }: Props) {
         <span className={styles.gear} aria-hidden>
           ⚙
         </span>
-        <span className={styles.srOnly}>Settings</span>
+        {badge > 0 && (
+          <span className={styles.badge} aria-hidden>
+            {badge}
+          </span>
+        )}
+        <span className={styles.srOnly}>Settings{badge > 0 ? `, ${badge} waiting` : ''}</span>
       </button>
       <dialog
         ref={dialog}

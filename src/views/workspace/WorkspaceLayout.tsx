@@ -1,8 +1,21 @@
 // /w/:wid/*: loads one workspace and everything in it once, then renders the current view (D-036, D-040).
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, Outlet, useParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
-import { renameWorkspace, useWorkspace } from '../../data/workspaces'
+import {
+  approveJoinRequest,
+  denyJoinRequest,
+  inviteEmail,
+  isEmail,
+  normalizeEmail,
+  renameWorkspace,
+  renewInviteCode,
+  uninviteEmail,
+  useRequestsToMe,
+  useWorkspace,
+} from '../../data/workspaces'
+import type { WithId } from '../../data/hooks'
+import type { JoinRequest } from '../../data/model'
 import { useWorkspaceData } from '../../data/workspaceData'
 import { useHoldCurtain } from '../../state/curtain'
 import { useWsView } from '../../state/workspaceView'
@@ -38,6 +51,10 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   // Opening a workspace frames all its cards; switching views inside it keeps your place.
   // During the first render, so it's done before the board below reads its camera.
   useState(() => forgetCamera(wid))
+  const { user } = useAuth()
+  const isOwner = user?.id === workspace.ownerId
+  // Non-owners query their own (empty) slice, which the rules allow; the badge only counts for the owner.
+  const requests = useRequestsToMe(user?.id ?? '', wid)
 
   return (
     <WorkspaceContext.Provider value={ctx}>
@@ -53,7 +70,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           { label: 'table', to: `/w/${wid}/table` },
           { label: 'matrix', to: `/w/${wid}/matrix` },
         ]}
-        settings={<WorkspaceSettings wid={wid} workspace={workspace} />}
+        settings={<WorkspaceSettings wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
+        settingsBadge={isOwner ? requests.data.length : 0}
       />
       {!isLoading && <Outlet />}
       <EditKeys />
@@ -67,19 +85,28 @@ function EditKeys() {
   return null
 }
 
-// The workspace's part of the settings modal (D-054): its name, who's in it, and the code to invite more.
-function WorkspaceSettings({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['workspace'] }) {
+// The workspace's part of the settings modal (D-054): its name, who's in it, and how people get in (D-062).
+type SettingsProps = { wid: string; workspace: WorkspaceCtx['workspace']; requests: WithId<JoinRequest>[] }
+
+function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
   const [copied, setCopied] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
   const code = workspace.inviteCode
   const pretty = `${code.slice(0, 4)}-${code.slice(4)}`
   const members = workspace.memberIds.length
   const role = user ? workspace.roles[user.id] : undefined
+  const isOwner = role === 'owner'
 
   const copy = async () => {
     await navigator.clipboard.writeText(code)
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1500)
+  }
+
+  const run = (p: Promise<unknown>) => {
+    setError(null)
+    p.catch((e: Error) => setError(e.message))
   }
 
   return (
@@ -91,14 +118,104 @@ function WorkspaceSettings({ wid, workspace }: { wid: string; workspace: Workspa
         {members} {members === 1 ? 'person' : 'people'}
         {role && <span className={styles.role}>you're the {role}</span>}
       </Row>
+
+      {isOwner && (
+        <Row label="asking to join">
+          {requests.length === 0 ? (
+            <span className={styles.role}>no one is waiting</span>
+          ) : (
+            <ul className={styles.list}>
+              {requests.map((r) => (
+                <li key={r.id} className={styles.item}>
+                  <span className={styles.who}>
+                    {r.name}
+                    {r.email && r.email !== r.name && <span className={styles.role}> {r.email}</span>}
+                  </span>
+                  <span>
+                    <button className={styles.action} data-tone="primary" onClick={() => run(approveJoinRequest(wid, r.uid))}>
+                      let in
+                    </button>
+                    <button className={styles.action} data-tone="danger" onClick={() => run(denyJoinRequest(wid, r.uid))}>
+                      deny
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Row>
+      )}
+
+      {isOwner && <EmailInvites wid={wid} invited={workspace.invitedEmails ?? []} onError={setError} />}
+
       <Row label="invite code">
         <span className={styles.code}>{pretty}</span>
         <AsciiButton accent="cyan" onClick={copy}>
           {copied ? 'Copied' : 'Copy'}
         </AsciiButton>
+        {isOwner && user && (
+          <button className={styles.action} onClick={() => run(renewInviteCode(wid, code, user.id))}>
+            new code
+          </button>
+        )}
       </Row>
-      <p className={styles.hint}>Anyone signed in can join with this code from their workspaces page.</p>
+      <p className={styles.hint}>
+        {isOwner
+          ? 'People who enter the code ask to join, and you let them in here. A new code stops the old one; invited addresses join without one.'
+          : 'People who enter the code ask to join; the owner lets them in.'}
+      </p>
+      {error && <p className={styles.error}>! {error}</p>}
     </Section>
+  )
+}
+
+// No email is sent: the invite shows up on their workspaces page once they sign in with that Google address.
+function EmailInvites({ wid, invited, onError }: { wid: string; invited: string[]; onError: (e: string | null) => void }) {
+  const [draft, setDraft] = useState('')
+  const email = normalizeEmail(draft)
+  const valid = isEmail(email)
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    if (!valid) return
+    onError(null)
+    inviteEmail(wid, email)
+      .then(() => setDraft(''))
+      .catch((err: Error) => onError(err.message))
+  }
+
+  return (
+    <Row label="invite by email">
+      <form className={styles.inviteForm} onSubmit={submit}>
+        <input
+          className={styles.input}
+          type="email"
+          placeholder="name@gmail.com"
+          aria-label="Email to invite"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+        />
+        <AsciiButton type="submit" accent="cyan" disabled={!valid || invited.includes(email)}>
+          Invite
+        </AsciiButton>
+      </form>
+      {invited.length > 0 && (
+        <ul className={styles.list}>
+          {invited.map((address) => (
+            <li key={address} className={styles.item}>
+              <span className={styles.who}>
+                {address} <span className={styles.role}>invited</span>
+              </span>
+              <button className={styles.action} data-tone="danger" onClick={() => uninviteEmail(wid, address).catch((e: Error) => onError(e.message))}>
+                remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Row>
   )
 }
 

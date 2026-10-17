@@ -105,6 +105,63 @@
   font-size: var(--text-xs);
 }
 
+
+.ok {
+  margin: 0;
+  color: var(--accent-cyan);
+  font-size: var(--text-xs);
+}
+
+/* ── waiting: invites and requests (D-062) ─────────── */
+
+.pending {
+  composes: dashed from '../../ui/Frame.module.css';
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--space-8)) 0 var(--space-12);
+  padding: var(--space-4) var(--space-6);
+}
+
+.pendingList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pendingItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-4);
+}
+
+.pendingName {
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.pendingMeta {
+  flex: 1;
+  min-width: 160px;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+.pendingActions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.waiting {
+  color: var(--accent-cyan);
+}
+
 /* ── workspace cards ───────────────────────────────── */
 
 .grid {

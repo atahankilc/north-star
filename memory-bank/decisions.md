@@ -49,7 +49,7 @@ Mitigation: all access goes through the `src/data/` adapter.
 Implementation: Firebase Auth Google provider, popup flow (updated after D-014).
 
 ### D-012 · 2026-10-17 · Accepted
-**Workspaces are shared with an invite code.** The owner generates a code, and others sign in with Google and enter it to join.
+**Workspaces are shared with an invite code.** (Joining directly with the code is superseded by D-062.) The owner generates a code, and others sign in with Google and enter it to join.
 The code is stored on the workspace and can be regenerated to revoke it. (Partly resolves Q-007; roles are still open.)
 
 ### D-013 · 2026-10-17 · Accepted
@@ -319,3 +319,17 @@ Switching between views inside a workspace keeps your place. The Matrix frame fi
 or scale on hover, selection or drag: the lift moved a dragged card toward the camera, so it looked bigger and dropped away from
 the pointer. A dragged card now sits exactly under the pointer. In a workspace the backdrop is dimmer (14%, was 28%). Slowing it down was
 tried and reverted: the user felt it slowed the card animations too; speed stays as it was.
+
+### D-062 · 2026-10-17 · Accepted (supersedes the direct join of D-012)
+**A code asks; the owner decides. Or the owner invites an email.** Before, anyone holding the code joined silently as an editor,
+and a code never expired, so one leaked code was enough. Now:
+- *Email invite:* the owner adds an address in Settings (`invitedEmails` on the workspace). The invite shows on that person's
+  workspaces page once they sign in with that verified Google address; they join or decline. No email is sent: there is no server,
+  and sending mail would need Cloud Functions / Blaze (D-015).
+- *Code:* entering it creates a `joinRequests/{wid}_{uid}` document; the owner lets them in or denies from Settings. A cyan count on
+  the Settings button and "· N waiting" on the workspace card tell the owner someone is waiting. The requester sees the request
+  under "waiting" and can withdraw it.
+- The owner can make a new code; the old one stops working at once.
+Kept the 8-character code: guessing it isn't the risk (31⁸ ≈ 8.5×10¹¹), a leaked one is, and approval covers that.
+Rules: `joiningByInvite()`, `decliningInvite()`, `joinRequests` match; the old `joining()` is gone. 108 rule tests pass.
+

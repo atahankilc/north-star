@@ -1,19 +1,25 @@
-// /w: your workspaces, plus create and join-by-invite-code (D-012).
+// /w: your workspaces, plus create, ask to join with a code, and invites waiting for you (D-012, D-062).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { AuthUser } from '../../data/auth'
 import { createExampleWorkspace } from '../../data/example'
 import type { WithId } from '../../data/hooks'
-import type { Workspace } from '../../data/model'
+import type { JoinRequest, Workspace } from '../../data/model'
 import {
+  acceptInvite,
   createWorkspace,
+  declineInvite,
   deleteWorkspace,
-  joinWorkspace,
   JoinError,
   leaveWorkspace,
   renameWorkspace,
+  requestToJoin,
+  useMyInvites,
+  useMyJoinRequests,
   useMyWorkspaces,
+  useRequestsToMe,
+  withdrawJoinRequest,
 } from '../../data/workspaces'
 import { useHoldCurtain } from '../../state/curtain'
 import { AsciiButton } from '../../ui/AsciiButton'
@@ -24,6 +30,7 @@ import styles from './Workspaces.module.css'
 
 export function Workspaces({ user }: { user: AuthUser }) {
   const workspaces = useMyWorkspaces(user.id)
+  const waiting = useRequestsToMe(user.id)
   const navigate = useNavigate()
   useHoldCurtain('workspaces', workspaces.isLoading)
   const sorted = [...workspaces.data].sort((a, b) => b.createdAt - a.createdAt)
@@ -39,9 +46,11 @@ export function Workspaces({ user }: { user: AuthUser }) {
 
         <div className={styles.forms}>
           <CreateForm uid={user.id} onCreated={(id) => navigate(`/w/${id}`)} />
-          <JoinForm uid={user.id} onJoined={(id) => navigate(`/w/${id}`)} />
+          <JoinForm user={user} onJoined={(id) => navigate(`/w/${id}`)} />
           <ExampleStrip uid={user.id} onCreated={(id) => navigate(`/w/${id}`)} />
         </div>
+
+        <Pending user={user} onJoined={(id) => navigate(`/w/${id}`)} />
 
         {workspaces.error && <p className={styles.error}>! {workspaces.error.message}</p>}
 
@@ -50,7 +59,12 @@ export function Workspaces({ user }: { user: AuthUser }) {
           <AnimatePresence>
             {sorted.map((w) => (
               <Appear as="li" key={w.id}>
-                <WorkspaceCard workspace={w} uid={user.id} onOpen={() => navigate(`/w/${w.id}`)} />
+                <WorkspaceCard
+                  workspace={w}
+                  uid={user.id}
+                  waiting={waiting.data.filter((r) => r.workspaceId === w.id).length}
+                  onOpen={() => navigate(`/w/${w.id}`)}
+                />
               </Appear>
             ))}
           </AnimatePresence>
@@ -59,7 +73,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
           {!workspaces.isLoading && sorted.length === 0 && (
             <Appear key="empty" className={styles.empty}>
               <span className={styles.label}>no workspaces yet</span>
-              <p className={styles.emptyText}>Create one above, or join a teammate's with their invite code.</p>
+              <p className={styles.emptyText}>Create one above, or ask to join a teammate's with their invite code.</p>
             </Appear>
           )}
         </AnimatePresence>
@@ -70,7 +84,9 @@ export function Workspaces({ user }: { user: AuthUser }) {
 
 type Mode = 'idle' | 'renaming' | 'confirm' | 'busy'
 
-function WorkspaceCard({ workspace: w, uid, onOpen }: { workspace: WithId<Workspace>; uid: string; onOpen: () => void }) {
+type CardProps = { workspace: WithId<Workspace>; uid: string; waiting: number; onOpen: () => void }
+
+function WorkspaceCard({ workspace: w, uid, waiting, onOpen }: CardProps) {
   const isOwner = w.ownerId === uid
   const [mode, setMode] = useState<Mode>('idle')
   const [draft, setDraft] = useState(w.name)
@@ -105,7 +121,7 @@ function WorkspaceCard({ workspace: w, uid, onOpen }: { workspace: WithId<Worksp
     setMode('busy')
     setError(null)
     try {
-      await (isOwner ? deleteWorkspace(w.id, w.inviteCode) : leaveWorkspace(w.id, uid))
+      await (isOwner ? deleteWorkspace(w.id, w.inviteCode, uid) : leaveWorkspace(w.id, uid))
     } catch (e) {
       setError((e as Error).message)
       setMode('idle')
@@ -168,6 +184,7 @@ function WorkspaceCard({ workspace: w, uid, onOpen }: { workspace: WithId<Worksp
           <>
             <span className={styles.cardMeta}>
               {isOwner ? 'owner' : 'editor'} · {w.memberIds.length} {w.memberIds.length === 1 ? 'member' : 'members'}
+              {waiting > 0 && <span className={styles.waiting}> · {waiting} waiting</span>}
             </span>
             <span className={styles.actions}>
               <button className={styles.action} onClick={startRename}>
@@ -255,27 +272,33 @@ function ExampleStrip({ uid, onCreated }: { uid: string; onCreated: (id: string)
   )
 }
 
-function JoinForm({ uid, onJoined }: { uid: string; onJoined: (id: string) => void }) {
+// D-062: the code only asks; the owner lets you in from their settings.
+function JoinForm({ user, onJoined }: { user: AuthUser; onJoined: (id: string) => void }) {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sent, setSent] = useState(false)
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setBusy(true)
     setError(null)
+    setSent(false)
     try {
-      onJoined(await joinWorkspace(code, uid))
+      const result = await requestToJoin(code, user)
+      if (result.status === 'member') return onJoined(result.workspaceId)
+      setSent(true)
+      setCode('')
     } catch (err) {
-      setError(err instanceof JoinError ? err.message : 'Could not join. Check the code and try again.')
-      setBusy(false)
+      setError(err instanceof JoinError ? err.message : 'Could not send the request. Check the code and try again.')
     }
+    setBusy(false)
   }
 
   return (
     <Appear as="form" className={styles.form} data-accent="cyan" onSubmit={submit}>
       <label className={styles.label} htmlFor="ws-code">
-        join with invite code
+        ask to join with a code
       </label>
       <div className={styles.row}>
         <input
@@ -289,9 +312,73 @@ function JoinForm({ uid, onJoined }: { uid: string; onJoined: (id: string) => vo
           maxLength={12}
         />
         <AsciiButton type="submit" accent="cyan" disabled={busy || !code.trim()}>
-          Join
+          Ask
         </AsciiButton>
       </div>
+      {error && <p className={styles.error}>! {error}</p>}
+      {sent && <p className={styles.ok}>Request sent. You're in once the owner approves it.</p>}
+    </Appear>
+  )
+}
+
+// Invites to your address and requests you sent, both waiting on someone (D-062).
+function Pending({ user, onJoined }: { user: AuthUser; onJoined: (id: string) => void }) {
+  const invites = useMyInvites(user.email)
+  const requests = useMyJoinRequests(user.id)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
+
+  const run = async (key: string, fn: () => Promise<unknown>) => {
+    setBusy(key)
+    setError(null)
+    try {
+      await fn()
+    } catch (e) {
+      setError((e as Error).message)
+    }
+    setBusy(null)
+  }
+
+  if (invites.data.length === 0 && requests.data.length === 0) return null
+
+  return (
+    <Appear className={styles.pending}>
+      <span className={styles.label}>waiting</span>
+      <ul className={styles.pendingList}>
+        {invites.data.map((w) => (
+          <li key={w.id} className={styles.pendingItem}>
+            <span className={styles.pendingName}>{w.name}</span>
+            <span className={styles.pendingMeta}>invited you · {w.memberIds.length} {w.memberIds.length === 1 ? 'member' : 'members'}</span>
+            <span className={styles.pendingActions}>
+              <button
+                className={styles.action}
+                data-tone="primary"
+                disabled={busy !== null}
+                onClick={() => run(w.id, async () => {
+                  await acceptInvite(w.id, user)
+                  onJoined(w.id)
+                })}
+              >
+                join
+              </button>
+              <button className={styles.action} data-tone="danger" disabled={busy !== null} onClick={() => run(w.id, () => declineInvite(w.id, user.email ?? ''))}>
+                decline
+              </button>
+            </span>
+          </li>
+        ))}
+        {requests.data.map((r: WithId<JoinRequest>) => (
+          <li key={r.id} className={styles.pendingItem}>
+            <span className={styles.pendingName}>{r.code.slice(0, 4)}-{r.code.slice(4)}</span>
+            <span className={styles.pendingMeta}>you asked to join · waiting for the owner</span>
+            <span className={styles.pendingActions}>
+              <button className={styles.action} disabled={busy !== null} onClick={() => run(r.id, () => withdrawJoinRequest(r.workspaceId, user.id))}>
+                withdraw
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
       {error && <p className={styles.error}>! {error}</p>}
     </Appear>
   )

@@ -35,6 +35,17 @@
   color: var(--fg-dim);
 }
 
+.badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--accent-cyan);
+  color: var(--bg);
+  font-size: var(--text-xs);
+}
+
 .trigger:hover .gear {
   color: var(--accent-cyan);
 }

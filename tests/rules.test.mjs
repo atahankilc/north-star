@@ -15,7 +15,10 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  query,
+  setDoc,
   updateDoc,
+  where,
   writeBatch,
 } from 'firebase/firestore'
 
@@ -59,12 +62,13 @@ const deny = (l, f) => check(l, false, f)
 const alice = await client('alice')
 const bob = await client('bob')
 const carol = await client('carol')
+const dave = await client('dave')
 const anon = await client('anon')
 
 // Alice creates a workspace + invite code in one batch, like createWorkspace().
 const wsRef = doc(collection(alice.fs, 'workspaces'))
 const wid = wsRef.id
-const CODE = 'TESTCODE'
+let CODE = 'TESTCODE'
 await allow('owner creates workspace + invite code', async () => {
   const b = writeBatch(alice.fs)
   b.set(wsRef, { name: 'Acme', ownerId: alice.uid, memberIds: [alice.uid], roles: { [alice.uid]: 'owner' }, inviteCode: CODE, createdAt: Date.now() })
@@ -93,11 +97,83 @@ await allow('signed-in user gets invite code by exact value', () => getDoc(doc(b
 await deny('anyone lists invite codes', () => getDocs(collection(bob.fs, 'inviteCodes')))
 
 const join = (who, fields) => updateDoc(doc(who.fs, 'workspaces', wid), fields)
-await deny('join with a wrong code', () => join(bob, { memberIds: arrayUnion(bob.uid), [`roles.${bob.uid}`]: 'editor', joinCode: 'WRONG' }))
-await deny('join as owner role', () => join(bob, { memberIds: arrayUnion(bob.uid), [`roles.${bob.uid}`]: 'owner', joinCode: CODE }))
-await deny('join and add someone else too', () => join(bob, { memberIds: arrayUnion(bob.uid, carol.uid), [`roles.${bob.uid}`]: 'editor', joinCode: CODE }))
-await deny('join and rename in the same write', () => join(bob, { memberIds: arrayUnion(bob.uid), [`roles.${bob.uid}`]: 'editor', joinCode: CODE, name: 'Mine' }))
-await allow('join with the right code', () => join(bob, { memberIds: arrayUnion(bob.uid), [`roles.${bob.uid}`]: 'editor', joinCode: CODE }))
+// D-062: a code no longer joins by itself.
+await deny('join directly with the right code (retired, D-062)', () => join(bob, { memberIds: arrayUnion(bob.uid), [`roles.${bob.uid}`]: 'editor', joinCode: CODE }))
+await deny('join directly without a code', () => join(bob, { memberIds: arrayUnion(bob.uid), [`roles.${bob.uid}`]: 'editor' }))
+
+// Join requests (D-062): a code sends a request; the owner approves or denies.
+const reqRef = (fs, uid) => doc(fs, 'joinRequests', `${wid}_${uid}`)
+const request = (who, extra = {}) => ({ workspaceId: wid, ownerId: alice.uid, uid: who.uid, name: who.name, email: `${who.name}@example.com`, code: CODE, createdAt: 1, ...extra })
+bob.name = 'bob'
+carol.name = 'carol'
+await deny('request with a wrong code', () => setDoc(reqRef(bob.fs, bob.uid), request(bob, { code: 'WRONG' })))
+await deny('request on behalf of someone else', () => setDoc(reqRef(bob.fs, carol.uid), request(carol)))
+await deny('request with a made-up owner', () => setDoc(reqRef(bob.fs, bob.uid), request(bob, { ownerId: bob.uid })))
+await deny('request with someone else\'s email', () => setDoc(reqRef(bob.fs, bob.uid), request(bob, { email: 'alice@example.com' })))
+await deny('request with extra fields', () => setDoc(reqRef(bob.fs, bob.uid), request(bob, { role: 'owner' })))
+await deny('owner requests to join their own workspace', () => setDoc(reqRef(alice.fs, alice.uid), { ...request(bob), uid: alice.uid, email: 'alice@example.com' }))
+await allow('request with the right code', () => setDoc(reqRef(bob.fs, bob.uid), request(bob)))
+await deny('request again over a pending one', () => setDoc(reqRef(bob.fs, bob.uid), request(bob, { createdAt: 2 })))
+await allow('requester reads their request', () => getDoc(reqRef(bob.fs, bob.uid)))
+await allow('requester lists their own requests', () => getDocs(query(collection(bob.fs, 'joinRequests'), where('uid', '==', bob.uid))))
+await deny('someone else reads the request', () => getDoc(reqRef(carol.fs, bob.uid)))
+await deny('anyone lists all requests', () => getDocs(collection(carol.fs, 'joinRequests')))
+await allow('owner lists the workspace\'s requests', () =>
+  getDocs(query(collection(alice.fs, 'joinRequests'), where('ownerId', '==', alice.uid), where('workspaceId', '==', wid))),
+)
+await deny('pending requester still cannot read the workspace', () => getDoc(doc(bob.fs, 'workspaces', wid)))
+await deny('requester approves themselves', () => join(bob, { memberIds: arrayUnion(bob.uid), [`roles.${bob.uid}`]: 'editor' }))
+await allow('owner approves: adds the member and deletes the request', () => {
+  const b = writeBatch(alice.fs)
+  b.update(doc(alice.fs, 'workspaces', wid), { memberIds: arrayUnion(bob.uid), [`roles.${bob.uid}`]: 'editor' })
+  b.delete(reqRef(alice.fs, bob.uid))
+  return b.commit()
+})
+await deny('member requests to join again', () => setDoc(reqRef(bob.fs, bob.uid), request(bob)))
+await allow('carol requests', () => setDoc(reqRef(carol.fs, carol.uid), request(carol)))
+await deny('a member (not owner) deletes someone\'s request', () => writeBatch(bob.fs).delete(reqRef(bob.fs, carol.uid)).commit())
+await allow('owner denies the request', () => writeBatch(alice.fs).delete(reqRef(alice.fs, carol.uid)).commit())
+await allow('carol requests again', () => setDoc(reqRef(carol.fs, carol.uid), request(carol)))
+await allow('requester withdraws their request', () => writeBatch(carol.fs).delete(reqRef(carol.fs, carol.uid)).commit())
+
+// Email invites (D-062).
+await deny('member (not owner) invites an email', () => join(bob, { invitedEmails: arrayUnion('dave@example.com') }))
+await deny('uninvited user reads the workspace', () => getDoc(doc(dave.fs, 'workspaces', wid)))
+await allow('owner invites an email', () => join(alice, { invitedEmails: arrayUnion('dave@example.com', 'carol@example.com') }))
+await allow('invitee reads the workspace doc', () => getDoc(doc(dave.fs, 'workspaces', wid)))
+await allow('invitee lists their invites', () =>
+  getDocs(query(collection(dave.fs, 'workspaces'), where('invitedEmails', 'array-contains', 'dave@example.com'))),
+)
+await deny('invitee lists ideas before joining', () => getDocs(ideas(dave.fs)))
+await deny('invitee joins as owner', () =>
+  join(dave, { memberIds: arrayUnion(dave.uid), [`roles.${dave.uid}`]: 'owner', invitedEmails: arrayRemove('dave@example.com') }),
+)
+await deny('invitee joins but keeps the invite', () => join(dave, { memberIds: arrayUnion(dave.uid), [`roles.${dave.uid}`]: 'editor' }))
+await deny('invitee removes someone else\'s invite', () => join(dave, { invitedEmails: arrayRemove('carol@example.com') }))
+await deny('outsider joins on someone else\'s invite', async () => {
+  const outsider = await client('erin')
+  await join(outsider, { memberIds: arrayUnion(outsider.uid), [`roles.${outsider.uid}`]: 'editor', invitedEmails: arrayRemove('dave@example.com') })
+})
+await allow('invitee joins', () =>
+  join(dave, { memberIds: arrayUnion(dave.uid), [`roles.${dave.uid}`]: 'editor', invitedEmails: arrayRemove('dave@example.com') }),
+)
+await allow('new member lists ideas', () => getDocs(ideas(dave.fs)))
+await allow('invitee declines', () => join(carol, { invitedEmails: arrayRemove('carol@example.com') }))
+await deny('declined invitee reads the workspace', () => getDoc(doc(carol.fs, 'workspaces', wid)))
+
+// New code (D-062): the old one stops working.
+const OLD_CODE = CODE
+CODE = 'NEWCODE2'
+await deny('member (not owner) changes the code', () => join(bob, { inviteCode: CODE }))
+await allow('owner swaps in a new code', () => {
+  const b = writeBatch(alice.fs)
+  b.delete(doc(alice.fs, 'inviteCodes', OLD_CODE))
+  b.set(doc(alice.fs, 'inviteCodes', CODE), { workspaceId: wid, createdBy: alice.uid })
+  b.update(doc(alice.fs, 'workspaces', wid), { inviteCode: CODE })
+  return b.commit()
+})
+await deny('request with the old code', () => setDoc(reqRef(carol.fs, carol.uid), request(carol, { code: OLD_CODE })))
+await allow('request with the new code', () => setDoc(reqRef(carol.fs, carol.uid), request(carol)))
 
 await allow('member reads workspace', () => getDoc(doc(bob.fs, 'workspaces', wid)))
 await allow('member lists ideas', () => getDocs(ideas(bob.fs)))

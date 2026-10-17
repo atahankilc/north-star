@@ -22,9 +22,11 @@ type Props = {
   right?: ReactNode
   // The current workspace's section in the settings modal.
   settings?: ReactNode
+  // Something in settings wants attention, e.g. people asking to join (D-062).
+  settingsBadge?: number
 }
 
-export function Hud({ crumbs = [], views, right, settings }: Props) {
+export function Hud({ crumbs = [], views, right, settings, settingsBadge }: Props) {
   const atRoot = crumbs.length === 0
   const { user } = useAuth()
 
@@ -72,7 +74,7 @@ export function Hud({ crumbs = [], views, right, settings }: Props) {
       <div className={styles.right}>
         {right}
         {/* Signed in: motion lives in settings. Signed out: just the motion switch. */}
-        {user ? <SettingsButton workspace={settings} /> : <MotionToggle />}
+        {user ? <SettingsButton workspace={settings} badge={settingsBadge} /> : <MotionToggle />}
       </div>
     </header>
   )

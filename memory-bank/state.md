@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (board rework: no domains/groups, labels, shapes, example)_
+_Last updated: 2026-10-17 (safer joining: email invites + approved join requests)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -106,8 +106,16 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 ## Done (calmer board, 2026-10-17)
 - No double-click create; cards don't lift/scale and drop exactly under the pointer; dimmer backdrop in workspaces (D-061; slowing it was reverted).
 
+## Done (safer joining, 2026-10-17)
+- D-062: a code no longer joins anyone by itself. It sends a join request the owner approves or denies in Settings
+  (count on the Settings button, "· N waiting" on the card). Owners can also invite by email (no mail sent; the invite waits on the
+  invitee's workspaces page) and make a new code. "Waiting" strip on the workspaces page for invites and your own requests.
+- Rules: 108 pass, deployed and pushed 2026-10-17. The new client needs the new rules (joinRequests) and the old direct join is now refused, so
+  deploy rules and push together. Verified on emulators with headless Chrome (Bob asks → Alice lets in; Carol invited by email → joins;
+  duplicate request message; new code).
+
 ## Next steps
-1. Deploy rules + push (ask the user), their review on the live site; then Phase 3 (presence, live cursors)
+1. The user's review on the live site; then Phase 3 (presence, live cursors)
 2. Phase 3: presence + live cursors (RTDB rules are ready)
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
