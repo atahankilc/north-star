@@ -4,6 +4,7 @@ import { initializeApp, type FirebaseApp } from 'firebase/app'
 import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth'
 import { connectDatabaseEmulator, getDatabase, type Database } from 'firebase/database'
 import { connectFunctionsEmulator, getFunctions, type Functions } from 'firebase/functions'
+import { connectStorageEmulator, getStorage, type FirebaseStorage } from 'firebase/storage'
 import {
   connectFirestoreEmulator,
   initializeFirestore,
@@ -23,6 +24,7 @@ const config = useEmulators
       authDomain: 'localhost',
       projectId: 'demo-north-star',
       databaseURL: 'http://127.0.0.1:9010?ns=demo-north-star-default-rtdb',
+      storageBucket: 'demo-north-star.appspot.com',
       appId: 'demo-app',
     }
   : {
@@ -30,12 +32,14 @@ const config = useEmulators
       authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
       projectId: env.VITE_FIREBASE_PROJECT_ID,
       databaseURL: env.VITE_FIREBASE_DATABASE_URL,
+      // Projects made since late 2024 get a `<project>.firebasestorage.app` bucket.
+      storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || (env.VITE_FIREBASE_PROJECT_ID && `${env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`),
       appId: env.VITE_FIREBASE_APP_ID,
     }
 
 export const isConfigured = Boolean(config.apiKey && config.projectId)
 
-type Services = { app: FirebaseApp; auth: Auth; firestore: Firestore; rtdb: Database | null; functions: Functions }
+type Services = { app: FirebaseApp; auth: Auth; firestore: Firestore; rtdb: Database | null; functions: Functions; storage: FirebaseStorage }
 
 // Our Cloud Functions live next to the Realtime Database (D-079).
 const REGION = 'europe-west1'
@@ -55,15 +59,18 @@ function init(): Services {
   const rtdb = config.databaseURL ? getDatabase(app) : null
   // The assistant's workspace key (D-079): only server code ever holds it.
   const functions = getFunctions(app, REGION)
+  // Attachment files (D-083); their metadata lives in Firestore.
+  const storage = getStorage(app)
 
   if (useEmulators) {
     connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
     connectFirestoreEmulator(firestore, '127.0.0.1', 8080)
     if (rtdb) connectDatabaseEmulator(rtdb, '127.0.0.1', 9010)
     connectFunctionsEmulator(functions, '127.0.0.1', 5001)
+    connectStorageEmulator(storage, '127.0.0.1', 9199)
   }
 
-  return { app, auth, firestore, rtdb, functions }
+  return { app, auth, firestore, rtdb, functions, storage }
 }
 
 export function db(): Firestore {

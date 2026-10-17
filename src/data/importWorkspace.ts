@@ -1,7 +1,8 @@
 // Import (D-080): a bundle becomes a new workspace you own. Every id is new; links, matrix cells and competitor
 // features follow their items, and anything pointing at an item that isn't in the file is left out.
-import { collection, doc, getDoc, writeBatch, type DocumentReference } from 'firebase/firestore'
+import { collection, doc, getDoc, setDoc, writeBatch, type DocumentReference } from 'firebase/firestore'
 import {
+  cleanAttachment,
   cleanCard,
   cleanComparison,
   cleanCompetitor,
@@ -9,8 +10,9 @@ import {
   cleanEdge,
   cleanFeature,
   cleanLabel,
-  type Bundle,
+  type LoadedBundle,
 } from '../io/bundle'
+import { attachmentsAvailable, uploadImported } from './attachments'
 import { db } from './firebase'
 import type { NodeType, Workspace } from './model'
 import { COLLECTIONS } from './nodes'
@@ -18,9 +20,10 @@ import { createWorkspace, deleteWorkspace } from './workspaces'
 
 const BATCH_LIMIT = 450
 
-export type ImportResult = { workspaceId: string; written: number; skipped: number }
+// `filesLeftOut`: attachments not brought over because files can't be stored here yet (D-083).
+export type ImportResult = { workspaceId: string; written: number; skipped: number; filesLeftOut: number }
 
-export async function importWorkspace(bundle: Bundle, uid: string): Promise<ImportResult> {
+export async function importWorkspace(bundle: LoadedBundle, uid: string): Promise<ImportResult> {
   const wid = await createWorkspace(bundle.workspace.name, uid, bundle.workspace.description)
   const col = (name: string) => collection(db(), 'workspaces', wid, name)
   const now = Date.now()
@@ -84,6 +87,7 @@ export async function importWorkspace(bundle: Bundle, uid: string): Promise<Impo
     ])
   }
 
+  let written = writes.length
   try {
     for (let i = 0; i < writes.length; i += BATCH_LIMIT) {
       const batch = writeBatch(db())
@@ -97,5 +101,29 @@ export async function importWorkspace(bundle: Bundle, uid: string): Promise<Impo
     if (code) await deleteWorkspace(wid, code, uid).catch(() => {})
     throw err
   }
-  return { workspaceId: wid, written: writes.length, skipped }
+
+  // Attachments last, once their items exist: each file goes up under a new id, then its record. One that fails is
+  // left out rather than undoing the whole import.
+  const attachments = bundle.attachments ?? []
+  let filesLeftOut = 0
+  if (!attachmentsAvailable) filesLeftOut = attachments.length
+  else {
+    for (const d of attachments) {
+      const owner = ids.get(d.nodeId as string)
+      const fields = cleanAttachment(d, now)
+      const bytes = fields && bundle.files[d.file as string]
+      if (!owner || !fields || !bytes) {
+        skipped++
+        continue
+      }
+      try {
+        const { id, data } = await uploadImported(wid, bytes, { ...fields, nodeId: owner.id, nodeType: owner.type, uid })
+        await setDoc(doc(col('attachments'), id), data)
+        written++
+      } catch {
+        skipped++
+      }
+    }
+  }
+  return { workspaceId: wid, written, skipped, filesLeftOut }
 }

@@ -159,6 +159,8 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   asks sent as a normal message (the chat shows the short form); one-item modes use the selected card when it fits.
 - **Board areas** (D-086): `arrange_area` rows name an area and its cards; `src/ai/arrange.ts` lays it out (label + a
   column per type) where the board has room. Labels are referred to by their text.
+- **Preview** (D-087): `src/ai/simulate.ts` plays a proposal's writes onto an in-memory copy; while open, `useWs()` serves that copy
+  to every view (not to the assistant window), marks show on items, and `tracked()` refuses writes.
 - **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the
   user's account). Cited sources are shown as clickable links.
 - Prompts live in `src/ai/prompts/`.
@@ -167,14 +169,30 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 
 ## 9. Files, export and import
 
-- **Attachments** (image/PDF/drawing) go to Firebase Storage, linked to a node. This needs the Blaze
-  plan (card required, 5 GB free). Deferred to Phase 5 (D-015).
-- **Drawing:** ⏳ either upload drawing files, or a built-in sketch pad (for example tldraw or a
-  simple canvas) that saves as SVG/PNG.
+- **Attachments** ✅ on the emulators (D-083; live once Storage is deployed, which needs Blaze): images (PNG, JPEG, WebP, GIF),
+  SVGs and PDFs on any card, up to 10 MB each. All access is in `src/data/attachments.ts`.
+  - *Where:* the record in Firestore at `workspaces/{wid}/attachments/{id}` (`nodeId, nodeType, name, contentType, size, path,
+    width?, height?, thumbPath?, uid, createdAt`, listed live with the workspace); the file in Storage at
+    `workspaces/{wid}/attachments/{id}/{safe name}`, an image's 320 px WebP thumbnail beside it as `~thumb.webp`.
+  - *Rules:* `firestore.rules` checks the record's shape (size < 10 MB, the type list, `path` under its own id); `storage.rules`
+    lets members only (via `firestore.get` of the workspace) read, list and delete, and write < 10 MB of the same types.
+  - *Before upload:* a PNG, JPEG or WebP over 2560 px on a side or over 2 MB is resized to fit 2560 px and saved as WebP (0.85),
+    unless that comes out bigger. GIF, SVG and PDF go up as they are.
+  - *Loading:* a workspace loads only the records, and they don't hold the loading screen. Files load when they're looked at:
+    the panel shows thumbnails, the lightbox the full image, a PDF opens in a new tab; the board card shows only a count.
+    Images and SVGs are shown only through `<img>`, so an SVG's scripts never run.
+  - *Undo:* upload first, then the record with `tracked()`. Removing an attachment or deleting its item (it's in `cascadeOf`)
+    removes only the record, so undo brings it back with its file. Files with no record and over a day old are swept when a
+    member opens the workspace (once a day per browser); a record whose file is gone shows "file missing". Deleting a workspace
+    deletes the whole Storage prefix first, while you're still a member.
+  - *Live site:* hidden behind `ATTACHMENTS_LIVE = false` until `storage.rules` are deployed and the bucket has CORS (`cors.json`,
+    for `getBytes` in export).
+- **Drawing:** upload only (Q-004 → D-083): draw elsewhere and attach the SVG/PNG/PDF. A built-in sketch pad may come later.
 - **Export** ✅ (D-080, Settings → workspace → export): a workspace bundle as `.zip` holding `workspace.json`
   (`format: north-star.workspace`, `version: 1`; every item, link, matrix cell and label, never members, codes or AI data),
-  plus `attachments/` once attachments exist. Code: `src/io/bundle.ts`.
-- **Import** ✅ (D-080, workspaces page): a bundle becomes a new workspace you own, docs rebuilt to the rules' shapes, IDs remapped,
+  plus each attachment's file at `attachments/<id>/<name>` with its record in `workspace.json`'s optional `attachments` (D-083;
+  still version 1). Code: `src/io/bundle.ts`.
+- **Import** ✅ (D-080, workspaces page; attachments D-083: files uploaded under new ids, or left out with a note where Storage isn't live): a bundle becomes a new workspace you own, docs rebuilt to the rules' shapes, IDs remapped,
   dangling references dropped (`src/data/importWorkspace.ts`).
 - **Matrix → TSV** ✅ (`src/io/tsv.ts`; tabs, since Excel splits CSV by region) and **board → PNG** ✅ (offscreen render in `Board.tsx`). PDF later.
 

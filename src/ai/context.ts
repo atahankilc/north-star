@@ -79,6 +79,11 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where): Brief {
   }
   const forText = (id: string) => (forOf.has(id) ? ` (for: ${forOf.get(id)!.join(', ')})` : '')
 
+  // Attachments (D-083): names only, never the files.
+  const filesOf = new Map<string, string[]>()
+  for (const a of ws.attachments) filesOf.set(a.nodeId, [...(filesOf.get(a.nodeId) ?? []), clip(a.name, 80)])
+  const filesLine = (id: string) => (filesOf.has(id) ? [`  files: ${filesOf.get(id)!.join(', ')}`] : [])
+
   const about = clip(ws.workspace.description, 1000)
   const lines: string[] = [
     `WORKSPACE "${ws.workspace.name}" (each item starts with its [ref])`,
@@ -90,6 +95,7 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where): Brief {
     for (const n of items) {
       const body = clip(n.body)
       lines.push(`- ${r(n.id)}${n.title || 'Untitled'}${extra(n)}${tags(n.tags)}${forText(n.id)}${areaOf(ws.labels, n.x, n.y)}${body ? `: ${body}` : ''}`)
+      lines.push(...filesLine(n.id))
     }
   }
   section('CUSTOMERS', ws.customers)
@@ -111,6 +117,7 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where): Brief {
     lines.push(`- ${r(c.id)}${c.name || 'Untitled'}${tags(c.tags)}${forText(c.id)}${area}${facts.length ? ` (${facts.join('; ')})` : ''}`)
     if (c.description) lines.push(`  about: ${clip(c.description)}`)
     if (c.notes) lines.push(`  notes: ${clip(c.notes)}`)
+    lines.push(...filesLine(c.id))
     const feats = ws.competitorFeatures.filter((f) => f.competitorId === c.id)
     for (const f of feats) lines.push(`  · ${r(f.id)}${f.category ? `${f.category} / ` : ''}${f.name || 'Untitled'}${f.description ? `: ${clip(f.description, 160)}` : ''}`)
   }

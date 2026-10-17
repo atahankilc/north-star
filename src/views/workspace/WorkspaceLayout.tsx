@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
 import { WORKSPACES, workspacePath } from '../../app/paths'
+import { attachmentBytes, useOrphanSweep } from '../../data/attachments'
 import { useAuth } from '../../data/auth'
 import {
   approveJoinRequest,
@@ -34,7 +35,7 @@ import { PeopleHere } from '../../ui/PeopleHere'
 import { Row, Section } from '../../ui/Settings'
 import { Toast } from '../../ui/Toast'
 import { forgetCamera } from '../canvas/Board'
-import { download, fileSlug, makeBundle, zipBundle } from '../../io/bundle'
+import { attachmentEntry, download, fileSlug, makeBundle, zipBundle } from '../../io/bundle'
 import { matrixTsv } from '../../io/tsv'
 import { useWs, WorkspaceContext, type WorkspaceCtx } from './context'
 import { useEditKeys } from './useEditKeys'
@@ -55,6 +56,8 @@ export function WorkspaceLayout() {
 function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['workspace'] }) {
   const { data, isLoading } = useWorkspaceData(wid)
   useHoldCurtain('board', isLoading)
+  // Attachment files nobody points at any more, at most once a day (D-083).
+  useOrphanSweep(wid)
   const ctx = useMemo<WorkspaceCtx>(() => ({ ...data, wid, workspace }), [data, wid, workspace])
   const load = useWsView((s) => s.load)
   useEffect(() => load(wid), [load, wid])
@@ -218,11 +221,33 @@ function ExportSection() {
   const ws = useWs()
   const snapshot = useCanvas((s) => s.snapshot)
   const [busy, setBusy] = useState(false)
+  const [zipping, setZipping] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [note, setNote] = useState<string | null>(null)
   const slug = fileSlug(ws.workspace.name)
   const date = new Date().toISOString().slice(0, 10)
 
-  const bundle = () => download(zipBundle(makeBundle(ws.workspace.name, ws.workspace.description, ws)), `${slug}-${date}.zip`)
+  // Attachment files (D-083) are fetched only now, one by one; a missing one is left out of the zip.
+  const bundle = async () => {
+    setZipping(true)
+    setError(null)
+    setNote(null)
+    try {
+      const files: Record<string, Uint8Array> = {}
+      let missing = 0
+      for (const a of ws.attachments) {
+        const bytes = await attachmentBytes(a.path)
+        if (bytes) files[attachmentEntry(a.id, a.path)] = bytes
+        else missing++
+      }
+      download(zipBundle(makeBundle(ws.workspace.name, ws.workspace.description, ws), files), `${slug}-${date}.zip`)
+      if (missing) setNote(`${missing} ${missing === 1 ? 'attachment is' : 'attachments are'} missing their file and stayed out of the .zip.`)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setZipping(false)
+    }
+  }
   const tsv = () =>
     download(
       new Blob([matrixTsv(ws.features, ws.competitors, ws.comparisons)], { type: 'text/tab-separated-values;charset=utf-8' }),
@@ -245,11 +270,12 @@ function ExportSection() {
   return (
     <Section label="export">
       <Row label="workspace">
-        <AsciiButton accent="cyan" onClick={bundle}>
-          Download .zip
+        <AsciiButton accent="cyan" onClick={() => void bundle()} disabled={zipping}>
+          {zipping ? 'Packing' : 'Download .zip'}
         </AsciiButton>
         <span className={styles.role}>
           {items} {items === 1 ? 'item' : 'items'}, {ws.edges.length} {ws.edges.length === 1 ? 'link' : 'links'}
+          {ws.attachments.length > 0 && `, ${ws.attachments.length} ${ws.attachments.length === 1 ? 'file' : 'files'}`}
         </span>
       </Row>
       <Row label="matrix">
@@ -264,9 +290,10 @@ function ExportSection() {
         {!snapshot && <span className={styles.role}>open the board view first</span>}
       </Row>
       <p className={styles.hint}>
-        The .zip holds every item, link, matrix cell and label. Import it from the workspaces page to make a copy you own; members,
+        The .zip holds every item, link, matrix cell, label and attachment. Import it from the workspaces page to make a copy you own; members,
         invite codes and assistant keys stay here. The picture is the whole board as it's filtered now.
       </p>
+      {note && <p className={styles.hint}>{note}</p>}
       {error && <p className={styles.error}>! {error}</p>}
     </Section>
   )

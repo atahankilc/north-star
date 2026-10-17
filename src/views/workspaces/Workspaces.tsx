@@ -280,15 +280,22 @@ function ExampleStrip({ uid, onCreated }: { uid: string; onCreated: (id: string)
 function ImportStrip({ uid, onCreated }: { uid: string; onCreated: (id: string) => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Imported, but its attachments had to stay behind (D-083): say so before going there.
+  const [leftOut, setLeftOut] = useState<{ id: string; files: number } | null>(null)
   const input = useRef<HTMLInputElement>(null)
 
   const load = async (file: File | undefined) => {
     if (!file) return
     setBusy(true)
     setError(null)
+    setLeftOut(null)
     try {
       const bundle = await readBundle(file)
-      onCreated((await importWorkspace(bundle, uid)).workspaceId)
+      const result = await importWorkspace(bundle, uid)
+      if (result.filesLeftOut) {
+        setLeftOut({ id: result.workspaceId, files: result.filesLeftOut })
+        setBusy(false)
+      } else onCreated(result.workspaceId)
     } catch (err) {
       setError((err as Error).message)
       setBusy(false)
@@ -307,6 +314,17 @@ function ImportStrip({ uid, onCreated }: { uid: string; onCreated: (id: string) 
       <AsciiButton accent="cyan" onClick={() => input.current?.click()} disabled={busy}>
         {busy ? 'Importing' : 'Choose file'}
       </AsciiButton>
+      {leftOut && (
+        <>
+          <p className={styles.exampleText}>
+            Imported. Its {leftOut.files} {leftOut.files === 1 ? 'attachment was' : 'attachments were'} left out: files can't be
+            stored here yet.
+          </p>
+          <AsciiButton accent="green" onClick={() => onCreated(leftOut.id)}>
+            Open workspace
+          </AsciiButton>
+        </>
+      )}
       {error && <p className={styles.error}>! {error}</p>}
     </Appear>
   )

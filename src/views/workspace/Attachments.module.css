@@ -1,0 +1,295 @@
+/* Attachments in a side panel (D-083). Same section rhythm as LinkList. */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.add {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.add:hover,
+.add:focus-visible {
+  color: var(--accent-cyan);
+}
+
+.hint {
+  margin: 0;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+/* Dropping files on the panel: its edge turns cyan. */
+:global([data-side-panel][data-dropping='true']) {
+  border-color: var(--accent-cyan);
+  box-shadow: inset 0 0 0 1px var(--accent-cyan);
+}
+
+/* ── images ─────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thumbCell {
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.thumb,
+.missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--wash-1);
+}
+
+.thumb {
+  cursor: zoom-in;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.thumb:hover,
+.thumb:focus-visible {
+  border-color: var(--accent-cyan);
+  outline: none;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.missing {
+  border-style: dashed;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.removeThumb {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.thumbCell:hover .removeThumb,
+.removeThumb:focus-visible {
+  opacity: 1;
+}
+
+/* Touch screens have no hover: keep it visible. */
+@media (hover: none) {
+  .removeThumb {
+    opacity: 1;
+  }
+}
+
+.removeThumb:hover {
+  color: var(--accent-magenta);
+}
+
+/* ── files (PDF, SVG) and uploads ─────────────────── */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: var(--text-sm);
+}
+
+/* An upload in progress: glyph, name, bar, percent. */
+.row:has(.progress) {
+  grid-template-columns: auto minmax(0, 1fr) 72px auto;
+}
+
+.open {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.open[data-dim] {
+  color: var(--fg-dim);
+  cursor: default;
+}
+
+.open:not([data-dim]):hover .name,
+.open:not([data-dim]):focus-visible .name {
+  color: var(--fg-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-cyan);
+}
+
+.glyph {
+  color: var(--accent-cyan);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.size {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.remove {
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.remove:hover {
+  color: var(--accent-magenta);
+}
+
+.progress {
+  position: relative;
+  height: 2px;
+  background: var(--line);
+}
+
+.bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent-cyan);
+  transition: width var(--dur-fast) linear;
+}
+
+html[data-motion='reduced'] .bar {
+  transition: none;
+}
+
+.error {
+  margin: 0;
+  color: var(--accent-magenta);
+  font-size: var(--text-xs);
+}
+
+/* ── lightbox ─────────────────────────────────────── */
+
+.lightbox {
+  composes: frame from '../../ui/Frame.module.css';
+  max-width: calc(100vw - 2 * var(--space-4));
+  max-height: calc(100vh - 2 * var(--space-4));
+  padding: 0;
+  color: var(--fg);
+  background: var(--bg-raised);
+}
+
+.lightbox::backdrop {
+  background: var(--scrim);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.full {
+  display: block;
+  max-width: calc(100vw - 2 * var(--space-4) - 2px);
+  max-height: calc(100vh - 2 * var(--space-4) - 48px);
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.lightbox .missing {
+  width: min(320px, 80vw);
+  height: 200px;
+}
+
+.caption {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-sm);
+}
+
+.close {
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--fg-strong);
+}

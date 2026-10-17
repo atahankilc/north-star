@@ -16,6 +16,7 @@ import { Appear } from '../../ui/Appear'
 import { Choice } from '../../ui/Choice'
 import { CompetitorProfile } from '../competitors/CompetitorProfile'
 import { useWs } from '../workspace/context'
+import { Attachments } from '../workspace/Attachments'
 import { ForPicker } from '../workspace/ItemPickers'
 import { ItemTags } from '../workspace/ItemTags'
 import { PeersHere } from '../workspace/PeersHere'
@@ -150,6 +151,8 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
         <ItemTags item={item} />
         <span className={styles.hint}>{TAG_HINT}</span>
       </div>
+
+      <Attachments node={{ id: node.id, type }} />
 
       <LinkList
         nodeId={node.id}

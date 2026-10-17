@@ -10,9 +10,11 @@ import {
   writeBatch,
   type DocumentReference,
 } from 'firebase/firestore'
+import { attachmentsAvailable } from './attachments'
 import { db } from './firebase'
 import { absent, snapshotWith, tracked } from './history'
 import type {
+  Attachment,
   BoardNode,
   BoardType,
   Comparison,
@@ -112,8 +114,9 @@ async function deleteAll(refs: DocumentReference[]): Promise<void> {
   }
 }
 
-// Everything that hangs off a node and goes with it: its edges, a feature's or competitor's matrix cells, and a
-// competitor's own features (with their edges). Firestore doesn't cascade. The node itself is not included.
+// Everything that hangs off a node and goes with it: its edges, its attachments (records only; the files stay for undo,
+// D-083), a feature's or competitor's matrix cells, and a competitor's own features (with their edges).
+// Firestore doesn't cascade. The node itself is not included.
 export async function cascadeOf(wid: string, type: NodeType, id: string): Promise<DocumentReference[]> {
   const ids = new Set([id])
   const refs: DocumentReference[] = []
@@ -135,6 +138,10 @@ export async function cascadeOf(wid: string, type: NodeType, id: string): Promis
   for (const d of edges.docs) {
     const e = d.data() as Edge
     if (ids.has(e.fromId) || ids.has(e.toId)) refs.push(d.ref)
+  }
+  if (attachmentsAvailable) {
+    const files = await getDocs(col(wid, 'attachments'))
+    for (const d of files.docs) if (ids.has((d.data() as Attachment).nodeId)) refs.push(d.ref)
   }
   return refs
 }

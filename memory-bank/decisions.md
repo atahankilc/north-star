@@ -65,6 +65,8 @@ Rejected: Convex (cursor updates burn function-call quota, startup risk), Supaba
 ### D-015 · 2026-10-17 · Accepted
 **Attachments are deferred. Stay on Spark with no card for now.** Firebase Storage needs the Blaze plan
 (card required, 5 GB free). Revisit in Phase 5. Options then: Blaze plus a $1 budget alert, or an alternative store.
+*Revisited by D-083 (user):* attachments are built on Firebase Storage now and verified on the emulators; they stay hidden on the
+live site until the project is on Blaze (as D-079 also needs) and `storage.rules` are deployed.
 
 ### D-016 · 2026-10-17 · Accepted
 **Presence lives in RTDB at `presence/{wid}/{uid}`. It is readable by any signed-in user, and each user can write only their own node.**
@@ -712,4 +714,64 @@ pick from the roadmap. The model never deals in coordinates: it decides what bel
   card in one area; remove labels that would name nothing. New mode `/organize` (D-085), optionally `/organize <by what>`.
 - Verified on emulators with a fake OpenAI (headless Chrome): the example board in three areas (one reusing `OUR IDEAS`),
   a label renamed, one removed, a bad label row off; 22 cards moved, no two overlapping; one Ctrl+Z restores every position.
+
+### D-083 · 2026-10-17 · Accepted (Phase 5; answers Q-004 and Q-009; revisits D-015)
+**Attachments: images, SVGs and PDFs on any card, in Firebase Storage, shown only where Storage is live.** The user's decisions.
+- *Storage now, flag for the live site:* built on Firebase Storage although the project isn't on Blaze yet; developed and
+  verified on the emulators (storage emulator on 9199). `attachmentsAvailable = useEmulators || ATTACHMENTS_LIVE`
+  (`src/data/attachments.ts`, `ATTACHMENTS_LIVE = false`), the same pattern as D-079's workspace key. Where it's off the panels
+  show nothing at all, not a disabled button, and no attachment query, cascade or Storage call runs.
+- *Q-004:* upload only (image, SVG, PDF). No sketch pad for now.
+- *Q-009:* 10 MB per file (`< 10 MiB` in both rule files). Before upload, a PNG, JPEG or WebP over 2560 px on a side or over 2 MB
+  is resized to fit 2560 px and saved as WebP at 0.85, unless that comes out bigger; GIF (may be animated), SVG and PDF go as they are.
+- *Data:* record at `workspaces/{wid}/attachments/{id}` (nodeId, nodeType, name, contentType, size, path, width/height for
+  images, thumbPath, uid, createdAt), live in `useWorkspaceData`; file at `workspaces/{wid}/attachments/{id}/{safe name}`.
+  `firestore.rules`: allowlist + shape (size, type list, `path` and `thumbPath` under its own id; `uid` isn't tied to the writer,
+  since undoing someone's delete restores another person's record). `storage.rules` (new): members only via
+  `firestore.get(...workspaces/$(wid)).data.memberIds`; writes < 10 MB of the six types; read (get, list) and delete for members.
+- *Loading (user, mid-task): a workspace never downloads files up front.* Only the small records load with it, and they don't
+  hold the loading screen. Each image also gets a 320 px WebP thumbnail (`~thumb.webp`, a name `safeFileName` can't produce),
+  which is all an open panel loads; the full image loads in the lightbox, a PDF when opened, the board shows only a count.
+- *Undo:* the file goes up first, then the record through `tracked()`. Removing an attachment, or deleting its item (attachments
+  are in `cascadeOf`), deletes only the record, so one undo brings it back with its file. Orphans (no record, over 24 h old by
+  `timeCreated`) are swept when a member opens the workspace, at most once a day per browser. A record whose file is gone shows
+  "file missing". `deleteWorkspace` deletes the whole Storage prefix before any doc, while you're still a member.
+- *UI* (`src/views/workspace/Attachments.tsx`): a section in every card's panel and the competitor profile: thumbnails in a grid,
+  SVGs and PDFs as rows (name, size), `[ + attach ]` or drop files anywhere on the panel (cyan edge), per-file progress, × to remove
+  (undoable, toast), plain-word errors (wrong type, too big). An image or SVG opens in a native `<dialog>` lightbox (Esc closes);
+  a PDF opens in a new tab. Images and SVGs only ever through `<img>`, so SVG scripts can't run. The card's meta line ends with
+  `N files`. Table, Flow and Matrix are unchanged. The assistant brief lists file names per item (names only).
+- *Export / import:* the zip gains `attachments/<id>/<name>` (stored, not recompressed) with the records in `workspace.json`'s
+  optional `attachments` (version stays 1; path, uid and thumbnail stay behind). Import uploads each file under a new id after
+  the items exist and drops those whose item or file is missing; where Storage isn't live it skips them and says so before
+  opening the workspace. `getBytes` on the live bucket needs CORS: `cors.json` (`gsutil cors set`).
+- Rules: 165 tests pass (20 new: records, thumbnails, Storage upload/read/delete for members, an outsider refused, 11 MB and
+  `.exe` refused, a path outside `attachments/`). `test:rules` runs the storage emulator too; `deploy:rules` now includes
+  storage, so it only works once the project is on Blaze.
+
+### D-087 · 2026-10-18 · Accepted (extends D-074, D-081)
+**Preview a proposal in the app before applying it.** User request: see what the assistant wants to change, like an artifact
+beside the chat. The chat stays on the right (D-081); the app on the left shows the workspace as if the ticked rows were applied.
+Functional first: the user will redesign the assistant UI and how the preview looks later.
+- *Simulation* (`src/ai/simulate.ts`): the same writes `apply` makes (`toWrites`), played onto a copy of the workspace in memory:
+  new items get `preview-…` ids, deletes keep the item (marked) and drop its links and matrix cells like `cascadeOf`, areas move
+  cards and labels. Nothing reaches Firestore. Each touched item or matrix cell gets a mark: `new`, `edited`, `moved`, `deleted`.
+- *Showing it* (`src/views/workspace/preview.ts`): a store with the previewed workspace; `useWs()` returns it everywhere except inside
+  `<OutsidePreview>` (the assistant's window, which keeps the real one). So board, flow, table and matrix all show it with no
+  changes of their own. Marks reuse the collaborator-selection marks (D-067/D-068: rings and a name tag in cyan / yellow / blue /
+  magenta).
+- *A bare screen (user, second pass):* while open, the app's HUD, filters and board tools (`+`, hints) are hidden, so you can't
+  leave the workspace from it; a bar takes the HUD's place: `PREVIEW · N changes as if applied`, the four view tabs (within this
+  workspace), the colour key and `close · esc`; a cyan frame around it.
+- *Live:* ticking or unticking a row updates the preview at once. `[preview]` / `[close preview]` beside apply and discard; opening
+  glides the camera to the first added or moved card. Apply, discard, closing the chat or Esc end it.
+- *Nothing editable while open (user: "don't let me change things"):* `src/views/workspace/previewLock.ts` disables every text
+  field, select and checkbox in the app's box, a side panel's buttons except close, and the Table's pickers (`data-edit`), keeps
+  them disabled as panels open (MutationObserver), stops dropped and pasted files, and gives everything back on close. Card and
+  label drags, label double-click editing, shift-link and the competitor auto-placing don't start. Underneath, `tracked()`, undo
+  and redo refuse with a toast (`setReadOnly` in history.ts). The real workspace is unchanged until apply.
+- Verified on emulators with a fake OpenAI (headless Chrome): 6 rows (new idea + link, rename, competitor delete, matrix cell, an
+  area) shown on the board and in table/matrix; untick → the new card goes; Delete key and a drag refused; Esc → real workspace
+  identical; preview again → apply writes everything. Second pass: in a card's panel only `Close panel` stays enabled and typing
+  changes nothing; HUD, filters and `+` hidden; Table pickers 42/42 disabled; the bar's tabs switch views; after Esc everything is back.
 

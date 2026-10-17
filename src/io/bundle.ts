@@ -1,8 +1,10 @@
-// A whole workspace as one file (D-080): a .zip holding `workspace.json`, with room for `attachments/` once files exist (D-015).
-// Only the content travels: items, links, matrix cells, labels. Members, invite codes, roles and anything AI (keys, usage) never do.
-import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
+// A whole workspace as one file (D-080): a .zip holding `workspace.json` and, since D-083, each attachment's file at
+// `attachments/<id>/<name>` (its record is in workspace.json's optional `attachments`, so the version stays 1).
+// Only the content travels: items, links, matrix cells, labels, files. Members, invite codes, roles and anything AI
+// (keys, usage) never do.
+import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -27,7 +29,12 @@ export type Bundle = {
   version: number
   exportedAt: string
   workspace: { name: string; description?: string }
+  // Records only; each `file` names its entry in the zip (D-083). Missing in older exports.
+  attachments?: Doc[]
 } & Record<BundleCollection, Doc[]>
+
+// A bundle as read back, with the attachment files from its zip by entry name.
+export type LoadedBundle = Bundle & { files: Record<string, Uint8Array> }
 
 export class BundleError extends Error {}
 
@@ -39,29 +46,46 @@ export function makeBundle(name: string, description: string | undefined, data: 
     workspace: { name, ...(description && { description }) },
   } as Bundle
   for (const c of BUNDLE_COLLECTIONS) bundle[c] = data[c].map((d) => ({ ...d }) as Doc)
+  if (data.attachments.length) {
+    // Where it was stored, who attached it and its thumbnail stay behind; the importer makes new ones.
+    bundle.attachments = data.attachments.map(({ path, uid: _uid, thumbPath: _thumb, ...rest }) => ({
+      ...rest,
+      file: attachmentEntry(rest.id, path),
+    }))
+  }
   return bundle
 }
 
-export function zipBundle(bundle: Bundle): Blob {
-  const zip = zipSync({ 'workspace.json': strToU8(JSON.stringify(bundle, null, 2)) }, { level: 6 })
+// attachments/<id>/<stored name>: the stored name is already safe for a zip.
+export const attachmentEntry = (id: string, path: string) => `attachments/${id}/${path.split('/').pop()}`
+
+// `files`: the attachments' bytes by entry name; already compressed (images, PDFs), so stored as they are.
+export function zipBundle(bundle: Bundle, files: Record<string, Uint8Array> = {}): Blob {
+  const entries: Zippable = { 'workspace.json': strToU8(JSON.stringify(bundle, null, 2)) }
+  for (const [name, bytes] of Object.entries(files)) entries[name] = [bytes, { level: 0 }]
+  const zip = zipSync(entries, { level: 6 })
   return new Blob([zip as Uint8Array<ArrayBuffer>], { type: 'application/zip' })
 }
 
 // Reads a .zip from an export, or its workspace.json on its own.
-export async function readBundle(file: File): Promise<Bundle> {
+export async function readBundle(file: File): Promise<LoadedBundle> {
   const bytes = new Uint8Array(await file.arrayBuffer())
   let text: string
+  let files: Record<string, Uint8Array> = {}
   // "PK": a zip.
   if (bytes[0] === 0x50 && bytes[1] === 0x4b) {
-    let files: Record<string, Uint8Array>
+    let entries: Record<string, Uint8Array>
     try {
-      files = unzipSync(bytes, { filter: (f) => f.name.endsWith('workspace.json') })
+      entries = unzipSync(bytes, {
+        filter: (f) => f.name.endsWith('workspace.json') || (f.name.startsWith('attachments/') && f.originalSize < ATTACHMENT_MAX_BYTES),
+      })
     } catch {
       throw new BundleError('That zip file could not be opened.')
     }
-    const entry = Object.keys(files)[0]
+    const entry = Object.keys(entries).find((n) => n.endsWith('workspace.json'))
     if (!entry) throw new BundleError('No workspace.json in that zip: is it a North Star export?')
-    text = strFromU8(files[entry])
+    text = strFromU8(entries[entry])
+    files = Object.fromEntries(Object.entries(entries).filter(([n]) => n.startsWith('attachments/')))
   } else {
     text = strFromU8(bytes)
   }
@@ -77,8 +101,9 @@ export async function readBundle(file: File): Promise<Bundle> {
     throw new BundleError('That export comes from a newer version of North Star. Reload the page and try again.')
   }
   const description = str(b.workspace?.description, 1000)
-  const bundle = { ...b, workspace: { name: str(b.workspace?.name, 200) || 'Imported workspace', ...(description && { description }) } } as Bundle
+  const bundle = { ...b, workspace: { name: str(b.workspace?.name, 200) || 'Imported workspace', ...(description && { description }) }, files } as LoadedBundle
   for (const c of BUNDLE_COLLECTIONS) bundle[c] = Array.isArray(b[c]) ? (b[c] as Doc[]).filter((d) => d && typeof d.id === 'string') : []
+  bundle.attachments = Array.isArray(b.attachments) ? b.attachments.filter((d) => d && typeof d.id === 'string') : []
   return bundle
 }
 
@@ -151,6 +176,16 @@ export function cleanCompetitorFeature(d: Doc, now: number) {
 
 export function cleanComparison(d: Doc, now: number) {
   return { ...compact({ coverage: oneOf(d.coverage, COVERAGES), notes: str(d.notes, 20000) }), updatedAt: num(d.updatedAt) ?? now }
+}
+
+// The record's own fields; the importer adds where the file now lives, its item and who imported it.
+export function cleanAttachment(d: Doc, now: number) {
+  const name = str(d.name, 200)
+  const contentType = oneOf(d.contentType, ATTACHMENT_TYPES)
+  if (!name || !contentType || typeof d.nodeId !== 'string' || typeof d.file !== 'string') return null
+  const width = num(d.width)
+  const height = num(d.height)
+  return { name, contentType, ...(width && height && { width, height }), createdAt: num(d.createdAt) ?? now }
 }
 
 export function cleanEdge(d: Doc) {

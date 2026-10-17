@@ -30,7 +30,7 @@ Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 - AI actions: summarize, suggest links, draft competitor breakdown, fill matrix notes
 
 ## Phase 5: Files, export and import
-- Attachments (images, PDFs, drawings)
+- Attachments (images, SVGs, PDFs; drawings as uploaded files) ✅ on the emulators (D-083); live once Storage is deployed (Blaze)
 - Workspace export/import (zip bundle) ✅ (D-080)
 - Matrix → TSV, canvas → PNG ✅ (D-080)
 

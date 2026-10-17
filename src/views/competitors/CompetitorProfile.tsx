@@ -11,6 +11,7 @@ import { isReducedMotion } from '../../state/motion'
 import { Appear } from '../../ui/Appear'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { AutosaveField } from '../../ui/AutosaveField'
+import { Attachments } from '../workspace/Attachments'
 import { useWs } from '../workspace/context'
 import { TAG_HINT } from '../canvas/tags'
 import { ItemTags } from '../workspace/ItemTags'
@@ -87,6 +88,8 @@ export function CompetitorProfile({
       {children}
 
       <Features competitorId={competitor.id} focus={focusFeature} />
+
+      <Attachments node={{ id: competitor.id, type: 'competitor' }} />
 
       <LinkList nodeId={competitor.id} nodeType="competitor" hint="Link this competitor to ideas or features." />
 

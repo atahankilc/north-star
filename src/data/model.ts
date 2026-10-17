@@ -10,6 +10,7 @@
 //     competitorFeatures/{id}                CompetitorFeature
 //     comparisons/{id}                       Comparison
 //     edges/{id}                             Edge (any node ↔ any node)
+//     attachments/{id}                       Attachment (D-083); the file is in Storage at `path`
 //   inviteCodes/{code}                       InviteCode (D-012)
 //   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)
 //
@@ -160,6 +161,30 @@ export type Edge = {
   toType: NodeType
   kind: EdgeKind
   label?: string
+}
+
+// Images, SVGs and PDFs on an item (D-083). The same list is in firestore.rules and storage.rules.
+export const ATTACHMENT_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'] as const
+export type AttachmentType = (typeof ATTACHMENT_TYPES)[number]
+export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024
+
+export type Attachment = {
+  nodeId: string
+  nodeType: NodeType
+  // What the person called it (shown); the stored file name is the last part of `path`.
+  name: string
+  contentType: AttachmentType
+  size: number
+  // workspaces/{wid}/attachments/{id}/{safe name}
+  path: string
+  // Images only.
+  width?: number
+  height?: number
+  // Images only: a small WebP beside the file (`<id>/~thumb.webp`) that the panel shows; the full file loads on click.
+  thumbPath?: string
+  // Who attached it.
+  uid: string
+  createdAt: number
 }
 
 export type Presence = {

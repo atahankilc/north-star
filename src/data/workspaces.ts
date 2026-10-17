@@ -13,6 +13,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
+import { attachmentsAvailable, deleteAttachmentFiles } from './attachments'
 import { db } from './firebase'
 import { useDoc, useQuery } from './hooks'
 import type { AuthUser } from './auth'
@@ -192,11 +193,16 @@ export function describeWorkspace(wid: string, description: string) {
 
 // Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
 // `domains` and `groups` are retired (D-048, D-049) but older workspaces may still hold some.
-const WORKSPACE_COLLECTIONS = ['labels', 'domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons']
+const WORKSPACE_COLLECTIONS = [
+  'labels', 'domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons',
+  ...(attachmentsAvailable ? ['attachments'] : []),
+]
 const BATCH_LIMIT = 450
 
-// Owner only. Children go first: their rules check membership on the workspace doc.
+// Owner only. Children go first: their rules check membership on the workspace doc. Attachment files go before any
+// doc (storage.rules check membership the same way), so none are left behind.
 export async function deleteWorkspace(wid: string, inviteCode: string, uid: string) {
+  await deleteAttachmentFiles(wid)
   const snaps = await Promise.all([
     ...WORKSPACE_COLLECTIONS.map((c) => getDocs(collection(db(), 'workspaces', wid, c))),
     getDocs(query(collection(db(), 'joinRequests'), where('ownerId', '==', uid), where('workspaceId', '==', wid))),

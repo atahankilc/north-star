@@ -1,7 +1,10 @@
 // Everything in one workspace, live. Loaded once by the workspace layout and shared by every view (D-036).
+import { collection } from 'firebase/firestore'
+import { attachmentsAvailable } from './attachments'
+import { db } from './firebase'
 import type { WithId } from './hooks'
-import { useWorkspaceCollection } from './hooks'
-import type { Comparison, Competitor, CompetitorFeature, Customer, Edge, Feature, Idea, Label, Problem } from './model'
+import { useQuery, useWorkspaceCollection } from './hooks'
+import type { Attachment, Comparison, Competitor, CompetitorFeature, Customer, Edge, Feature, Idea, Label, Problem } from './model'
 
 export type WorkspaceData = {
   labels: WithId<Label>[]
@@ -13,6 +16,8 @@ export type WorkspaceData = {
   competitorFeatures: WithId<CompetitorFeature>[]
   comparisons: WithId<Comparison>[]
   edges: WithId<Edge>[]
+  // Empty where attachments aren't available yet (D-083).
+  attachments: WithId<Attachment>[]
 }
 
 export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading: boolean; error: Error | null } {
@@ -25,6 +30,10 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const competitorFeatures = useWorkspaceCollection<CompetitorFeature>(wid, 'competitorFeatures')
   const comparisons = useWorkspaceCollection<Comparison>(wid, 'comparisons')
   const edges = useWorkspaceCollection<Edge>(wid, 'edges')
+  const attachments = useQuery<Attachment>(
+    attachmentsAvailable ? collection(db(), 'workspaces', wid, 'attachments') : null,
+    `${wid}/attachments`,
+  )
   const all = [labels, customers, problems, ideas, features, competitors, competitorFeatures, comparisons, edges]
 
   return {
@@ -38,8 +47,10 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
       competitorFeatures: competitorFeatures.data,
       comparisons: comparisons.data,
       edges: edges.data,
+      attachments: attachments.data,
     },
+    // Attachment records don't hold the workspace's loading screen: the board needs only their counts, which fill in.
     isLoading: all.some((l) => l.isLoading),
-    error: all.find((l) => l.error)?.error ?? null,
+    error: [...all, attachments].find((l) => l.error)?.error ?? null,
   }
 }

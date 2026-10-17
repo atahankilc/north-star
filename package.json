@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit",
     "dev:emu": "VITE_USE_EMULATORS=true vite",
     "emulators": "npm run build:functions && firebase emulators:start --project demo-north-star",
-    "test:rules": "firebase emulators:exec --project demo-north-star --only auth,firestore,database \"node tests/rules.test.mjs\"",
-    "deploy:rules": "firebase deploy --only firestore:rules,database --project north-star-db",
+    "test:rules": "firebase emulators:exec --project demo-north-star --only auth,firestore,database,storage \"node tests/rules.test.mjs\"",
+    "deploy:rules": "firebase deploy --only firestore:rules,database,storage --project north-star-db",
     "build:functions": "npm --prefix functions run build",
     "deploy:functions": "firebase deploy --only functions --project north-star-db"
   },

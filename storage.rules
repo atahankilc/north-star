@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Attachment files (D-083). Their metadata is in Firestore (workspaces/{wid}/attachments, firestore.rules);
+// the file sits at workspaces/{wid}/attachments/{id}/{name}. Members only, checked against the workspace doc.
+// Deploy (needs Blaze): npm run deploy:rules
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isMember(wid) {
+      return request.auth != null
+        && request.auth.uid in firestore.get(/databases/(default)/documents/workspaces/$(wid)).data.memberIds;
+    }
+
+    match /workspaces/{wid}/attachments/{path=**} {
+      // get, list (the orphan sweep and workspace delete list the prefix) and delete: members.
+      allow read, delete: if isMember(wid);
+      // Up to 10 MB, images, SVGs and PDFs only; the same list as src/data/attachments.ts.
+      allow create, update: if isMember(wid)
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType in ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'];
+    }
+  }
+}

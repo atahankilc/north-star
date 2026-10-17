@@ -117,7 +117,24 @@ service cloud.firestore {
         && optText(d, 'label', 200);
     }
 
-    function valid(collection, id, d) {
+    // A file on an item (D-083): the metadata here, the file in Storage (storage.rules) at `path`.
+    // `uid` is who attached it; not tied to the writer, since undoing a delete restores someone else's attachment.
+    function validAttachment(wid, id, d) {
+      return isText(d.nodeId, 128)
+        && d.nodeType in ['customer', 'problem', 'idea', 'feature', 'competitor', 'competitorFeature']
+        && isText(d.name, 200) && d.name.size() > 0
+        && d.contentType in ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf']
+        && d.size is int && d.size >= 0 && d.size < 10 * 1024 * 1024
+        && isText(d.path, 400)
+        && d.path.matches('workspaces/' + wid + '/attachments/' + id + '/[^/]+')
+        && (!('thumbPath' in d) || d.thumbPath == 'workspaces/' + wid + '/attachments/' + id + '/~thumb.webp')
+        && (!('width' in d) || d.width is number)
+        && (!('height' in d) || d.height is number)
+        && isText(d.uid, 128)
+        && d.createdAt is number;
+    }
+
+    function valid(wid, collection, id, d) {
       return (collection == 'labels' && validLabel(d))
         || (collection == 'customers' && validCard(d))
         || (collection == 'problems' && validCard(d))
@@ -126,7 +143,8 @@ service cloud.firestore {
         || (collection == 'competitors' && validCompetitor(d))
         || (collection == 'competitorFeatures' && validCompetitorFeature(d))
         || (collection == 'comparisons' && validComparison(id, d))
-        || (collection == 'edges' && validEdge(d));
+        || (collection == 'edges' && validEdge(d))
+        || (collection == 'attachments' && validAttachment(wid, id, d));
     }
 
     match /workspaces/{wid} {
@@ -241,8 +259,8 @@ service cloud.firestore {
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
         // `domains` and `groups` are retired (D-048, D-049): still readable and deletable so old workspaces can be cleaned up.
-        allow read, delete: if isMember(wid) && collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'domains', 'groups'];
-        allow create, update: if isMember(wid) && valid(collection, docId, request.resource.data);
+        allow read, delete: if isMember(wid) && collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'domains', 'groups'];
+        allow create, update: if isMember(wid) && valid(wid, collection, docId, request.resource.data);
       }
     }
 

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (assistant organises the board, D-086)_
+_Last updated: 2026-10-18 (assistant proposal preview, D-087; attachments on the emulators, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -258,21 +258,48 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 ## Done (assistant agent loop, 2026-10-17)
 - D-084: up to 6 steps per answer, `get_items` (read items in full), proposals report bad rows back and can be redone in the
   same answer, last step `tool_choice: none`. Each answer lists its steps live (searched / read / proposed / thinking). Proxy whitelist passes `include` + `tool_choice` (not deployed). Verified on
-  emulators with a fake OpenAI. **Not committed. To check with a real key:** a [web] answer that also calls a tool (are
-  `web_search_call` items accepted back with store:false?).
+  emulators with a fake OpenAI. Committed (not pushed). The user tried it with a real key: works. **Still to check with a real key:**
+  a [web] answer that also calls a tool (are `web_search_call` items accepted back with store:false?).
 - D-085: analysis modes (`/validate /interview /swot /gaps /next /pitch`) in the empty chat and a `/` menu; a mode uses the
   selected card when it fits. Caret only while text streams. Verified on emulators with a fake OpenAI.
 - D-086: board organising: `arrange_area` / `rename_label` / `delete_label` rows, layout in `src/ai/arrange.ts`, `/organize`
   mode; one undo step. Verified on emulators with a fake OpenAI.
-- Assistant roadmap discussed with the user (in order): agent loop (done), analysis modes (done), board layout (done) → analysis modes + label/layout proposals →
-  deep research mode → saved/shared chats and reports, reading attachments (after D-083).
+- D-087 (2026-10-18): preview a proposal in the app (`[preview]` in the checklist): every view shows the ticked rows as if applied,
+  with new/edited/moved/deleted marks; a bare screen (no HUD/filters/tools, own view tabs) where nothing is editable; Esc closes. Functional only: the user will redesign the assistant UI
+  and the preview's look later. Verified on emulators with a fake OpenAI.
+- D-085 to D-087 are committed (code; their memory-bank/docs entries sit uncommitted beside D-083's). Not pushed.
+- Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview (all done) → deep research mode →
+  saved/shared chats and reports, reading attachments (after D-083) → the user's own redesign of the assistant UI and the preview.
+
+## Done (Phase 5: attachments, 2026-10-17, on the emulators only)
+- D-083: images, SVGs and PDFs on every card and competitor (`src/data/attachments.ts`, `src/views/workspace/Attachments.tsx`):
+  thumbnails + lightbox, file rows, attach button + drop on panel, progress, undoable remove, `N files` on the card, names in the
+  assistant brief, export/import with files. `storage.rules` (new), `firestore.rules` (`attachments`), `cors.json`, storage emulator
+  on 9199. Hidden on the live site (`ATTACHMENTS_LIVE = false`). Rules: 165 pass. Build passes. **Not committed.** Firestore rules not
+  deployed yet (a superset, safe to deploy alone: `npx firebase deploy --only firestore:rules --project north-star-db`).
+- Verified headless on emulators: an 18 MB 4000×3000 PNG became a 289 KB 2560×1920 WebP with a 320×240 thumbnail; PDF and SVG rows;
+  `.exe` and an 11 MB PDF refused in plain words; lightbox opens the full image, Esc closes it (panel stays); SVG shown through `<img>`;
+  PDF link opens a new tab; card meta `3 files`; Bob (joined by email invite) sees the files live, and a remove + undo by Alice live;
+  Carol refused ("not a member"); Storage rules (outsider, 11 MB, .exe, delete) in the rule tests.
+- Also verified (2026-10-18): delete an item with three attachments → its records go with it → one Ctrl+Z brings the item and all three
+  files back (alone, and with Bob watching it go and come back); export zip holds `attachments/<id>/<name>` (records without path/uid);
+  import puts the files on the same item under new ids (thumbnail remade); light theme and 390 px (no horizontal scroll) screenshots.
+- **Emulator-only slowness, not a bug in the app:** after a reload, once a panel has asked Storage for a file URL, that tab's next
+  Firestore write can sit ~55 s *in Chrome's queue* before it's sent (CDP timing: stalled 55 002 ms, server 82 ms; another tab's write
+  at the same moment took 45 ms). The emulators speak HTTP/1.1, so Chrome's per-host connection limit queues the request; the live
+  Firestore and Storage use HTTP/2, which doesn't queue like this. Watch for it once attachments are live anyway.
+- At 390 px the board's filter bar overlaps the top of the side panel (was already so; not from attachments).
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs
    `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`, then `npm run deploy:functions`, set
    `WORKSPACE_KEYS_LIVE = true` in src/data/ai.ts, push, and try with a real key as owner + member (also the delete cleanup).
    (Export/import, TSV and PNG are done, D-080.)
-3. Phase 5: attachments (need Blaze, D-015 / Q-009; Q-004 drawings); the bundle then gains `attachments/`
+3. Attachments live (D-083), once on Blaze: `npm run deploy:rules` (now includes storage; until Blaze, deploy Firestore rules
+   with `--only firestore:rules,database`), set the bucket's CORS with `gsutil cors set cors.json gs://<bucket>` (bucket defaults to
+   `north-star-db.firebasestorage.app`; set the `VITE_FIREBASE_STORAGE_BUCKET` repo variable if it differs), flip
+   `ATTACHMENTS_LIVE = true` in src/data/attachments.ts, push, then try upload, export and a workspace delete on the live site.
+   Before that: finish the unverified checks listed under D-083 above.
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 
 ## Blockers

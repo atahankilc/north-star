@@ -29,7 +29,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor |
 | **Comparison** | How a competitor covers one of our features | feature, competitor, coverage (`none`/`partial`/`full`/`better`), notes, linked competitor feature |
-| **Attachment** | Image, PDF or drawing attached to any node | file, type, name, owner node |
+| **Attachment** | Image, SVG or PDF on any card (D-083; upload only, no sketch pad) | file, type, name, size, owner item |
 
 ## 4. Views
 
@@ -72,7 +72,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
   - fill or suggest matrix notes
 - **Settings page** where users enter their own API key and choose a model
 - **Export / Import** of a workspace (JSON bundle)
-- **Attachments**: images, PDFs, drawings on nodes
+- **Attachments**: images, SVGs and PDFs on any card, up to 10 MB each, big photos shrunk before upload (D-083); drawings are uploaded as files, no built-in sketch pad
 - **Web only**
 
 ### Later / nice to have

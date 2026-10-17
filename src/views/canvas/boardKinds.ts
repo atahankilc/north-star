@@ -85,7 +85,7 @@ export function defaultKind(from: BoardType, to: BoardType): EdgeKind {
 // Every board item in the workspace (unfiltered). Competitors without a position yet sit at the origin
 // until the board places them.
 export function useBoardItems(): BoardItem[] {
-  const { customers, problems, ideas, competitors, features, competitorFeatures, edges } = useWs()
+  const { customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments } = useWs()
   return useMemo(() => {
     const tags = forTags(edges)
     const names = new Map(customers.map((c) => [c.id, c.title || 'Untitled']))
@@ -93,14 +93,21 @@ export function useBoardItems(): BoardItem[] {
     const line = (...parts: (string | undefined)[]) => parts.filter(Boolean).join('   ')
     const counts = new Map<string, number>()
     for (const f of competitorFeatures) counts.set(f.competitorId, (counts.get(f.competitorId) ?? 0) + 1)
+    // Attachments (D-083): a count at the end of the card's meta line.
+    const fileCounts = new Map<string, number>()
+    for (const a of attachments) fileCounts.set(a.nodeId, (fileCounts.get(a.nodeId) ?? 0) + 1)
+    const files = (id: string) => {
+      const n = fileCounts.get(id)
+      return n ? `${n} file${n === 1 ? '' : 's'}` : undefined
+    }
 
     const items: BoardItem[] = []
     for (const c of customers) {
       const tagged = edges.filter((e) => e.kind === FOR && e.toId === c.id).length
-      items.push({ ...c, type: 'customer', tags: c.tags ?? [], forIds: [], meta: tagged ? `${tagged} tagged for them` : '' })
+      items.push({ ...c, type: 'customer', tags: c.tags ?? [], forIds: [], meta: line(tagged ? `${tagged} tagged for them` : '', files(c.id)) })
     }
-    for (const p of problems) items.push({ ...p, type: 'problem', tags: p.tags ?? [], forIds: tags.get(p.id) ?? [], meta: labels(p.id) })
-    for (const i of ideas) items.push({ ...i, type: 'idea', tags: i.tags ?? [], forIds: tags.get(i.id) ?? [], meta: labels(i.id) })
+    for (const p of problems) items.push({ ...p, type: 'problem', tags: p.tags ?? [], forIds: tags.get(p.id) ?? [], meta: line(labels(p.id), files(p.id)) })
+    for (const i of ideas) items.push({ ...i, type: 'idea', tags: i.tags ?? [], forIds: tags.get(i.id) ?? [], meta: line(labels(i.id), files(i.id)) })
     for (const c of competitors) {
       const n = counts.get(c.id) ?? 0
       items.push({
@@ -113,15 +120,15 @@ export function useBoardItems(): BoardItem[] {
         y: c.y ?? 0,
         createdAt: c.createdAt,
         forIds: tags.get(c.id) ?? [],
-        meta: line(labels(c.id), `${n} feature${n === 1 ? '' : 's'}`),
+        meta: line(labels(c.id), `${n} feature${n === 1 ? '' : 's'}`, files(c.id)),
       })
     }
     for (const f of features) {
       const fields = [f.priority, f.status, f.effort].filter(Boolean).join(' · ')
-      items.push({ ...f, type: 'feature', tags: f.tags ?? [], forIds: tags.get(f.id) ?? [], meta: line(fields, labels(f.id)) })
+      items.push({ ...f, type: 'feature', tags: f.tags ?? [], forIds: tags.get(f.id) ?? [], meta: line(fields, labels(f.id), files(f.id)) })
     }
     return items
-  }, [customers, problems, ideas, competitors, features, competitorFeatures, edges])
+  }, [customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments])
 }
 
 // What the filters let through (customer cards stay visible under a `for:` filter).

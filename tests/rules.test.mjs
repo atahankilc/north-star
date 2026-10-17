@@ -10,6 +10,7 @@ import {
   arrayUnion,
   collection,
   connectFirestoreEmulator,
+  deleteDoc,
   deleteField,
   doc,
   getDoc,
@@ -21,9 +22,10 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
+import { connectStorageEmulator, deleteObject, getBytes, getStorage, ref as fileRef, uploadBytes } from 'firebase/storage'
 
 const PROJECT = 'demo-north-star'
-const config = { apiKey: 'demo-key', projectId: PROJECT, databaseURL: `http://127.0.0.1:9010?ns=${PROJECT}-default-rtdb` }
+const config = { apiKey: 'demo-key', projectId: PROJECT, databaseURL: `http://127.0.0.1:9010?ns=${PROJECT}-default-rtdb`, storageBucket: `${PROJECT}.appspot.com` }
 
 async function client(name) {
   const app = initializeApp(config, name)
@@ -33,12 +35,14 @@ async function client(name) {
   connectFirestoreEmulator(fs, '127.0.0.1', 8080)
   const rt = getDatabase(app)
   connectDatabaseEmulator(rt, '127.0.0.1', 9010)
+  const st = getStorage(app)
+  connectStorageEmulator(st, '127.0.0.1', 9199)
   let uid = null
   if (name !== 'anon') {
     const token = JSON.stringify({ sub: `test-${name}`, email: `${name}@example.com`, email_verified: true })
     uid = (await signInWithCredential(auth, GoogleAuthProvider.credential(token))).user.uid
   }
-  return { fs, rt, uid }
+  return { fs, rt, st, uid }
 }
 
 let passed = 0
@@ -63,6 +67,8 @@ const alice = await client('alice')
 const bob = await client('bob')
 const carol = await client('carol')
 const dave = await client('dave')
+// Never a member of anything.
+const erin = await client('erin')
 const anon = await client('anon')
 
 // Alice creates a workspace + invite code in one batch, like createWorkspace().
@@ -220,6 +226,35 @@ await allow('text label', () => addDoc(sub(bob.fs, 'labels'), { text: 'COMPETITO
 await deny('label without a position', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', createdAt: 1, updatedAt: 1 }))
 await deny('label with a numeric text', () => addDoc(sub(bob.fs, 'labels'), { text: 3, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await deny('new group (retired)', () => addDoc(sub(bob.fs, 'groups'), { name: 'Pricing', x: 0, y: 0, w: 6, h: 4, createdAt: 1, updatedAt: 1 }))
+// Attachments (D-083): metadata in Firestore, the file in Storage.
+const attDoc = (fs, id) => doc(fs, 'workspaces', wid, 'attachments', id)
+const att = (id, extra = {}) => ({
+  nodeId: 'n1', nodeType: 'idea', name: 'plan.pdf', contentType: 'application/pdf', size: 1200,
+  path: `workspaces/${wid}/attachments/${id}/plan.pdf`, uid: bob.uid, createdAt: 1, ...extra,
+})
+await allow('attachment record', () => setDoc(attDoc(bob.fs, 'a1'), att('a1')))
+await allow('image attachment record with its size in pixels', () => setDoc(attDoc(bob.fs, 'a2'), att('a2', { name: 'shot.webp', contentType: 'image/webp', path: `workspaces/${wid}/attachments/a2/shot.webp`, width: 2560, height: 1440 })))
+await allow('attachment record attached by someone else (undo restores it)', () => setDoc(attDoc(bob.fs, 'a3'), att('a3', { uid: alice.uid })))
+await allow('image attachment record with its thumbnail', () => setDoc(attDoc(bob.fs, 'a8'), att('a8', { contentType: 'image/png', name: 'a.png', path: `workspaces/${wid}/attachments/a8/a.png`, thumbPath: `workspaces/${wid}/attachments/a8/~thumb.webp` })))
+await deny('attachment record with a thumbnail elsewhere', () => setDoc(attDoc(bob.fs, 'a9'), att('a9', { thumbPath: `workspaces/${wid}/attachments/a1/~thumb.webp` })))
+await deny('attachment record over 10 MB', () => setDoc(attDoc(bob.fs, 'a4'), att('a4', { size: 11 * 1024 * 1024 })))
+await deny('attachment record of an .exe', () => setDoc(attDoc(bob.fs, 'a5'), att('a5', { contentType: 'application/x-msdownload' })))
+await deny('attachment record pointing at another path', () => setDoc(attDoc(bob.fs, 'a6'), att('a6', { path: `workspaces/${wid}/attachments/a1/plan.pdf` })))
+await deny('attachment record from a non-member', () => setDoc(attDoc(erin.fs, 'a7'), att('a7')))
+await deny('non-member reads attachment records', () => getDocs(collection(erin.fs, 'workspaces', wid, 'attachments')))
+await allow('member deletes an attachment record', () => deleteDoc(attDoc(bob.fs, 'a3')))
+
+const file = (who, name) => fileRef(who.st, `workspaces/${wid}/attachments/f1/${name}`)
+const pdf = new Uint8Array(2048)
+await allow('member uploads a file', () => uploadBytes(file(bob, 'plan.pdf'), pdf, { contentType: 'application/pdf' }))
+await allow('another member reads it', () => getBytes(file(alice, 'plan.pdf')))
+await deny('non-member uploads a file', () => uploadBytes(file(erin, 'x.pdf'), pdf, { contentType: 'application/pdf' }))
+await deny('non-member reads a file', () => getBytes(file(erin, 'plan.pdf')))
+await deny('an 11 MB file', () => uploadBytes(file(bob, 'big.png'), new Uint8Array(11 * 1024 * 1024), { contentType: 'image/png' }))
+await deny('an .exe content type', () => uploadBytes(file(bob, 'run.exe'), pdf, { contentType: 'application/x-msdownload' }))
+await deny('a file outside attachments/', () => uploadBytes(fileRef(bob.st, `workspaces/${wid}/other/x.pdf`), pdf, { contentType: 'application/pdf' }))
+await deny('non-member deletes a file', () => deleteObject(file(erin, 'plan.pdf')))
+await allow('member deletes a file', () => deleteObject(file(bob, 'plan.pdf')))
 await deny('member promotes self to owner', () => join(bob, { [`roles.${bob.uid}`]: 'owner' }))
 await deny('member takes ownership', () => join(bob, { ownerId: bob.uid }))
 await deny('member adds someone else', () => join(bob, { memberIds: arrayUnion(carol.uid) }))
