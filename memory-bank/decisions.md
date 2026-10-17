@@ -871,3 +871,26 @@ save reports rather than whole chats (chats stay in the tab, D-073); every repor
 - Verified on emulators with headless Chrome: a PDF and an empty file refused; a hand-written file (bold, a cited link, a list
   item over two lines, a table, next steps, open questions) read as intended; an export-format file with `[1]` and item names;
   download → upload identical.
+
+### D-092 · 2026-10-18 · Accepted (extends D-078)
+**Easter egg: now and then the orb turns into a pomegranate (nar) and stays one for a while.** User request.
+- *When:* while idle, each time an antic is due there is a 3% chance (`POM_CHANCE`) it's this instead, at most once every 2 minutes
+  (`POM_REST`). It stays 28–45 s (`POM_STAY`), whatever the mood: hover moods, antics, sleep and the chat all play on the fruit.
+- *How:* a red puff and a surprised face; the dots turn red one by one in random order (D-035). The shape becomes the fruit's:
+  broad shoulders, a flat top, a rounder bottom, faint ridges around. A small dark calyx (a short neck, six sepals flaring out
+  more than up, `^` tips, a dark opening) sits in the top. The skin is crimson, darker on the shaded side, with a few warm
+  patches, pale speckles and a small shine. An open slice (a wedge of round `●`/`o` seeds with pale pith around it) turns past
+  as it spins.
+- *Going back (user: burst it first, then the bot appears):* it swells about 14% with `> <` eyes, gritted teeth and a growing
+  tremble (0.7 s), then bursts: seeds, bits of peel and pith fly out and fall, the calyx is thrown up (particles now take a
+  `fall` and fade before the canvas edge). Nothing for a beat (to 1.15 s), then the plain orb builds back: its dots appear
+  in random order while it grows from half size with a little overshoot, the face pops in with the happy `free` look
+  (`^ ^`, a hop), done at 1.75 s (`BURST`). Typing `nar` during the burst is ignored.
+  *Second pass (user):* the first version (a red ball with a big orange crown) "looked like a red queen with her crown", so
+  the calyx got small and dark, the shape and the slice came in.
+- *Colours:* tokens `--pom-skin`, `--pom-shade`, `--pom-shine`, `--pom-blush`, `--pom-crown`, `--pom-aril`, `--pom-pith`
+  (dark and light, tokens.css; the orb is a 2D canvas, so no WebGL mirror).
+- *On purpose (user):* type `nar` anywhere in a workspace, outside a text field (inputs, textareas, selects, contenteditable);
+  again turns it back. Not shift-sensitive, ignored with ⌘/Ctrl/Alt; no rest time for this. One keydown listener on the orb,
+  only the last three letters kept. No `/nar` in the chat (user declined it). It stays undocumented in the UI on purpose.
+- Never under reduced motion (no antics there, no `nar` listener). Dev hook: `__orbPom()` does what `nar` does.

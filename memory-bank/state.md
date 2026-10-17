@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -281,6 +281,11 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research, saved
   reports (all done; whole chats stay unsaved, the user chose reports instead) → reading attachments (after D-083) → the
   user's own redesign of the assistant UI and the preview.
+
+## Done (orb easter egg, 2026-10-18)
+- D-092: once in a long while the idle orb turns into a pomegranate (squat fruit shape, small dark calyx, speckled skin, an open slice of seeds) for 28–45 s, then bursts into seeds and the plain orb builds back;
+  typing `nar` outside a text field turns it (and back). Verified headless with a temporary preview page (dark + light, `__orbPom()`;
+  `nar` in an input does nothing, `Nar` on the page turns it, `nar` again turns it back). Build passes. Committed and pushed 2026-10-18.
 
 ## Done (Phase 5: attachments, 2026-10-17, on the emulators only)
 - D-083: images, SVGs and PDFs on every card and competitor (`src/data/attachments.ts`, `src/views/workspace/Attachments.tsx`):

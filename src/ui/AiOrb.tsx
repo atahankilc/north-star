@@ -12,6 +12,9 @@
 //   or play dead (X eyes, tongue out, tipped over, not spinning), and then it pulls itself together. Opening, it heaves
 //   its window up from below (D-081): eyes squeezed, a strain.
 // - Cues from outside (`cue`): a side panel shoving it aside bumps it; the panel closing frees it.
+// - Easter egg: once in a long while, instead of an antic, it turns into a pomegranate (nar) with a crown and stays one
+//   for half a minute or so, face and moods and all; then it swells, bursts into seeds and peel, and the plain orb builds
+//   itself back. Typing `nar` outside a text field turns it (or back).
 // Under reduced motion it holds still and is drawn once per change.
 import { useEffect, useRef } from 'react'
 import { useMotion } from '../state/motion'
@@ -38,7 +41,22 @@ function lattice(n: number) {
   })
 }
 
-type Colors = { bg: string; strong: string; fg: string; dim: string; faint: string; cyan: string; magenta: string }
+type Colors = {
+  bg: string
+  strong: string
+  fg: string
+  dim: string
+  faint: string
+  cyan: string
+  magenta: string
+  skin: string
+  shade: string
+  shine: string
+  blush: string
+  crown: string
+  aril: string
+  pith: string
+}
 
 function readColors(): Colors {
   const css = getComputedStyle(document.documentElement)
@@ -51,6 +69,13 @@ function readColors(): Colors {
     faint: v('--fg-faint'),
     cyan: v('--accent-cyan'),
     magenta: v('--accent-magenta'),
+    skin: v('--pom-skin'),
+    shade: v('--pom-shade'),
+    shine: v('--pom-shine'),
+    blush: v('--pom-blush'),
+    crown: v('--pom-crown'),
+    aril: v('--pom-aril'),
+    pith: v('--pom-pith'),
   }
 }
 
@@ -126,6 +151,35 @@ const ANTICS: { kind: Antic; dur: number; weight: number }[] = [
 ]
 const SLEEP_AFTER = 20_000
 
+// The pomegranate: the chance that an idle antic is this instead, how long it stays (s), and the least time between two.
+const POM_CHANCE = 0.03
+const POM_STAY = [28, 45]
+const POM_REST = 120_000
+// Its calyx, small and dark like the real fruit's (a big bright one read as a queen's crown): a short neck sitting in the
+// flat top, six sepals flaring outward more than up, and a dark opening between them. Heights are above the top (`POM_TOP`).
+// kind 1: neck or sepal, 2: a sepal's tip, 3: the opening.
+const POM_TOP = 0.86
+const CROWN = [
+  ...Array.from({ length: 16 }, (_, i) => {
+    const a = (i % 8) * (Math.PI / 4)
+    return { x: Math.cos(a) * 0.13, y: i < 8 ? -0.01 : 0.07, z: Math.sin(a) * 0.13, kind: 1 }
+  }),
+  ...Array.from({ length: 18 }, (_, i) => {
+    const a = Math.floor(i / 3) * (Math.PI / 3) + Math.PI / 6
+    const t = (i % 3) / 2
+    const r = 0.14 + t * 0.14
+    return { x: Math.cos(a) * r, y: 0.11 + t * 0.07, z: Math.sin(a) * r, kind: t === 1 ? 2 : 1 }
+  }),
+  ...Array.from({ length: 4 }, (_, i) => ({ x: Math.cos(i * 1.57) * 0.06, y: 0.12, z: Math.sin(i * 1.57) * 0.06, kind: 3 })),
+]
+// The open slice: seeds show through a wedge of the skin, around this longitude, so it turns past now and then.
+const SLICE_AT = Math.PI * 0.9
+const SLICE_W = 0.55
+// Leaving the pomegranate (s from the start): it swells and trembles until `pop`, bursts, nothing is left until `gone`,
+// then the plain orb builds itself back (dots in random order, growing with a little overshoot) until `back`.
+const BURST = { pop: 0.7, gone: 1.15, back: 1.75 }
+const angleTo = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)))
+
 // Reactions to the chat: after talking, and after the chat closes (sad or dead, then reviving).
 type React = 'tired' | 'sad' | 'dead' | 'revive' | 'heave' | 'bumped' | 'free'
 const REACT_DUR: Record<React, number> = { tired: 3.5, sad: 2.4, dead: 2.4, revive: 0.9, heave: 0.6, bumped: 1.1, free: 0.9 }
@@ -134,7 +188,19 @@ const chatting = (m: OrbMood) => m === 'open' || m === 'thinking' || m === 'talk
 const smooth = (t: number) => t * t * (3 - 2 * t)
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t))
 
-type Particle = { g: string; color: keyof Colors; x: number; y: number; vx: number; vy: number; born: number; life: number; size: number }
+// `fall`: a pull downward (px/s²), for the pomegranate's seeds.
+type Particle = {
+  g: string
+  color: keyof Colors
+  x: number
+  y: number
+  vx: number
+  vy: number
+  fall?: number
+  born: number
+  life: number
+  size: number
+}
 type Eye = { s: number; x: number; y: number; rx: number; ry: number }
 
 export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: OrbCue }) {
@@ -200,14 +266,79 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
       const dur = kind === 'sleep' ? Infinity : kind === 'surprise' && antic?.kind === 'sleep' ? 0.9 : ANTICS.find((a) => a.kind === kind)!.dur
       antic = { kind, at: now, dur, side: Math.random() < 0.5 ? -1 : 1, spots: [spot(), spot()], burst: false }
     }
+    // The pomegranate: on until `pomUntil`; `pomK` eases 0 → 1, and each dot turns red once `pomK` passes its own seed.
+    let pomUntil = 0
+    let pomEnded = -Infinity
+    let pomK = 0
+    const seeds = sphere.map(() => Math.random() * 0.9 + 0.05)
+    // Per dot, fixed: a random number (speckles, seed glyphs), warm patches (low-frequency, more on the upper half), and
+    // where it is on the slice (0 skin, 1 seed, 2 pith).
+    const grain = sphere.map(() => Math.random())
+    const warm = sphere.map(([x, y, z]) => Math.sin(3 * x + 1.3) * Math.sin(2.5 * y + 0.7) * Math.sin(3.2 * z + 2.1) + y * 0.2 > 0.38)
+    const slice = sphere.map(([x, y, z]) => {
+      const d = angleTo(Math.atan2(z, x), SLICE_AT)
+      if (d > SLICE_W || y < -0.8 || y > 0.66) return 0
+      return d > SLICE_W - 0.1 || y < -0.7 || y > 0.56 ? 2 : 1
+    })
+    const puff = (color: keyof Colors, now: number) => {
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2
+        emit({ g: i % 2 ? '•' : '·', color, x: c + Math.cos(a) * R * 0.8, y: c + Math.sin(a) * R * 0.8, vx: Math.cos(a) * 30, vy: Math.sin(a) * 30, life: 0.7, size: R * 0.26 }, now)
+      }
+    }
+    // The burst: seeds fly everywhere and fall, bits of peel and pith with them, and the calyx is thrown up.
+    let burstAt = -1
+    let popped = false
+    let rebuilt = false
+    const pop = (now: number) => {
+      for (let i = 0; i < 36; i++) {
+        const a = Math.random() * Math.PI * 2
+        const d = Math.random()
+        const v = R * (1.1 + Math.random() * 0.9)
+        const color: keyof Colors = i < 22 ? 'aril' : i < 30 ? 'skin' : 'pith'
+        const g = color === 'aril' ? (i % 3 ? '●' : 'o') : color === 'skin' ? (i % 2 ? '+' : '*') : ':'
+        emit({ g, color, x: c + Math.cos(a) * R * 0.45 * d, y: c + Math.sin(a) * R * 0.45 * d, vx: Math.cos(a) * v, vy: Math.sin(a) * v - R * 0.7, fall: R * 3.4, life: 0.8 + Math.random() * 0.5, size: R * (color === 'aril' ? 0.22 : 0.26) }, now)
+      }
+      emit({ g: '^', color: 'crown', x: c, y: c - R * 0.9, vx: (Math.random() - 0.5) * R * 0.5, vy: -R * 1.4, fall: R * 3, life: 1.1, size: R * 0.4 }, now)
+    }
+    const becomePom = (now: number) => {
+      pomUntil = now + (POM_STAY[0] + Math.random() * (POM_STAY[1] - POM_STAY[0])) * 1000
+      puff('skin', now)
+      start('surprise', now)
+    }
+    const togglePom = () => {
+      const now = performance.now()
+      if (burstAt >= 0) return
+      if (now < pomUntil) pomUntil = now
+      else becomePom(now)
+    }
+    // The secret: `nar` typed anywhere but in a text field. Only the last three letters are kept.
+    let typed = ''
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.length !== 1 || e.repeat || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return
+      const t = e.target as HTMLElement | null
+      if (t && (t.isContentEditable || t.closest('input, textarea, select, [contenteditable]'))) return
+      typed = (typed + e.key.toLowerCase()).slice(-3)
+      if (typed === 'nar') {
+        typed = ''
+        togglePom()
+      }
+    }
+    if (!reduced) window.addEventListener('keydown', onKey)
     let react: { kind: React; at: number } | null = null
     let prevMood = mood
     let lastCue = cue?.n
     // Dev hooks for visual checks: `__orbAntic('race')` starts that antic now; `__orbFace('angry')` holds that hover mood;
-    // `__orbReact('dead')` plays that reaction.
+    // `__orbReact('dead')` plays that reaction; `__orbPom()` turns it into the pomegranate now (again: back).
     if (import.meta.env.DEV) {
-      const w = window as unknown as { __orbAntic: (k: Antic) => void; __orbFace: (f: HoverFace) => void; __orbReact: (k: React) => void }
+      const w = window as unknown as {
+        __orbAntic: (k: Antic) => void
+        __orbFace: (f: HoverFace) => void
+        __orbReact: (k: React) => void
+        __orbPom: () => void
+      }
       w.__orbAntic = (k) => start(k, performance.now())
+      w.__orbPom = togglePom
       w.__orbReact = (k) => (react = { kind: k, at: performance.now() })
       w.__orbFace = (f) => {
         hoverFace = f
@@ -242,6 +373,11 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
     // The expression for this moment.
     const expression = (m: OrbMood, now: number): Face => {
       const f = face()
+      // About to burst: squeezed shut, teeth gritted, trembling harder and harder.
+      if (burstAt >= 0 && !popped) {
+        const t = clamp01((now - burstAt) / 1000 / BURST.pop)
+        return { ...f, look: { x: 0, y: -0.1 }, rate: 20, shape: ['squeeze', 'squeeze'], mouth: 'grin', shake: 0.4 + 0.6 * t, spin: 0.1, blink: false }
+      }
       if (react) {
         const at = (now - react.at) / 1000
         switch (react.kind) {
@@ -597,14 +733,45 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
           antic = null
           anticAt = now + 3000 + Math.random() * 4000
         }
-        if (!antic && m === 'idle' && !react) {
+        if (!antic && m === 'idle' && !react && burstAt < 0) {
           if (now - movedAt > SLEEP_AFTER) start('sleep', now)
+          else if (now > anticAt && now > pomUntil && now - pomEnded > POM_REST && Math.random() < POM_CHANCE) becomePom(now)
           else if (now > anticAt) {
             let pick = Math.random() * ANTICS.reduce((a, b) => a + b.weight, 0)
             start((ANTICS.find((x) => (pick -= x.weight) < 0) ?? ANTICS[0]).kind, now)
           }
         }
       }
+
+      // Leaving the pomegranate: it bursts (BURST), and the plain orb builds itself back.
+      const pom = now < pomUntil
+      if (!pom && pomUntil && pomEnded < pomUntil) {
+        pomEnded = now
+        burstAt = reduced ? -1 : now
+        popped = rebuilt = false
+      }
+      let bt = burstAt < 0 ? -1 : (now - burstAt) / 1000
+      if (bt > BURST.back) bt = burstAt = -1
+      if (bt >= BURST.pop && !popped) {
+        popped = true
+        pomK = 0
+        pop(now)
+      }
+      if (bt >= BURST.gone && !rebuilt) {
+        // The face pops in with the dots, and it's happy to be back.
+        rebuilt = true
+        eyePop[0] = eyePop[1] = 0
+        mouthPop = 0
+        react = { kind: 'free', at: now }
+      }
+      const gone = bt >= BURST.pop && bt < BURST.gone
+      const swell = bt >= 0 && !popped ? smooth(clamp01(bt / BURST.pop)) : 0
+      const grow = bt >= BURST.gone ? clamp01((bt - BURST.gone) / (BURST.back - BURST.gone)) : 1
+      // Back-out easing: from 0.5 to a touch past full size, then settles.
+      const back = 1 + 2.2 * (grow - 1) ** 3 + 1.2 * (grow - 1) ** 2
+      const scale = bt < 0 ? 1 : popped ? 0.5 + 0.5 * back : 1 + 0.14 * swell
+      const appear = Math.min(1, grow * 1.6)
+      if (!popped) pomK += (+(pom || bt >= 0) - pomK) * (reduced ? 1 : 1 - Math.exp(-dt * (pom ? 1.6 : 3)))
 
       const want = expression(m, now)
       const ease = (r: number) => (reduced ? 1 : 1 - Math.exp(-dt * r))
@@ -661,6 +828,12 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
       const beat = r * cur.pulse * 0.12 * Math.max(0, Math.sin(clock * 7)) ** 4
 
       ctx.clearRect(0, 0, full, full)
+      if (gone) return drawParticles(now)
+      // Swelling before the burst, growing back after it: the orb and its face scale around the centre.
+      ctx.save()
+      ctx.translate(c, c)
+      ctx.scale(scale, scale)
+      ctx.translate(-c, -c)
       ctx.font = `600 ${font}px ${mono}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
@@ -682,17 +855,37 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
       const sn = Math.sin(spin)
       const ct = Math.cos(TILT)
       const st = Math.sin(TILT)
-      const projected = sphere.map(([x, y, z]) => {
+      const project = (x: number, y: number, z: number, i: number, crown: number) => {
         // Spin around the vertical axis, then tilt toward the viewer.
         const x1 = x * cs + z * sn
         const z1 = -x * sn + z * cs
         const y2 = y * ct - z1 * st
         const z2 = y * st + z1 * ct
-        return { x: cx0 + x1 * R, y: cy0 - y2 * R, z: z2, nx: x1, ny: y2 }
+        return { x: cx0 + x1 * R, y: cy0 - y2 * R, z: z2, nx: x1, ny: y2, i, crown }
+      }
+      // As a pomegranate: broad shoulders and a flat top where the calyx sits, a rounder bottom, faint ridges around.
+      const k = pomK
+      const projected = sphere.map(([x, y, z], i) => {
+        if (k < 0.01) return project(x, y, z, i, 0)
+        const ridge = 1 + k * 0.035 * Math.cos(6 * Math.atan2(z, x)) * (1 - y * y)
+        const h = (1 + k * (0.05 + 0.05 * Math.max(0, y) * (1 - y))) * ridge
+        const yy = y > 0 ? y * (1 - k * 0.14) - k * 0.06 * Math.max(0, y - 0.88) / 0.12 : y * (1 - k * 0.04)
+        return project(x * h, yy, z * h, i, 0)
       })
+      if (k > 0.02) {
+        // The calyx rises out of the top as `pomK` grows.
+        const top = 1 - (1 - POM_TOP) * k
+        for (const p of CROWN) projected.push(project(p.x * k, top + p.y * k, p.z * k, -1, p.kind))
+      }
       projected.sort((a, b) => a.z - b.z)
 
       for (const p of projected) {
+        if (p.crown) {
+          ctx.fillStyle = p.crown === 3 ? colors.shade : colors.crown
+          ctx.fillText(p.crown === 2 ? '^' : p.crown === 3 ? '·' : p.z < 0 ? ':' : '+', p.x, p.y)
+          continue
+        }
+        if (appear < 1 && appear <= seeds[p.i]) continue
         // Keep a margin around the eyes clear so they read.
         if (p.z > 0 && eyes.some((e) => Math.hypot((p.x - e.x) / (e.rx * 1.6), (p.y - e.y) / (e.ry * 1.45)) < 1)) continue
         // Lit from the upper left, front.
@@ -702,6 +895,27 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
         const band = m === 'thinking' && Math.abs(Math.sin(p.ny * 3 - shimmer * 5)) < 0.22
         // Angry: the front of the sphere runs hot.
         const hot = p.z > 0.15 && cur.hot > 0.5 && b > 0.45
+        if (pomK > seeds[p.i] && !band && !hot) {
+          // A pomegranate dot. In the open slice: round seeds (a few catching the light) with pale pith around them.
+          // On the skin: red, darker on the shaded side, warm patches, pale speckles, a small shine where the light hits.
+          const cut = pomK > 0.6 ? slice[p.i] : 0
+          const g = grain[p.i]
+          if (cut === 1) {
+            ctx.fillStyle = p.z < 0 ? colors.shade : g < 0.15 ? colors.shine : colors.aril
+            ctx.fillText(p.z < 0 ? '·' : g < 0.5 ? '●' : 'o', p.x, p.y)
+          } else if (cut === 2) {
+            ctx.fillStyle = p.z < 0 ? colors.shade : colors.pith
+            ctx.fillText(p.z < 0 ? '·' : ':', p.x, p.y)
+          } else if (p.z < 0 || b < 0.45) {
+            ctx.fillStyle = colors.shade
+            ctx.fillText(glyph, p.x, p.y)
+          } else {
+            const speck = g < 0.07
+            ctx.fillStyle = b > 0.96 || speck ? colors.shine : warm[p.i] ? colors.blush : colors.skin
+            ctx.fillText(speck ? '·' : glyph, p.x, p.y)
+          }
+          continue
+        }
         ctx.fillStyle = band ? colors.cyan : hot ? colors.magenta : p.z < 0 ? colors.faint : b > 0.72 ? colors.fg : colors.dim
         ctx.fillText(glyph, p.x, p.y)
       }
@@ -723,15 +937,22 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
 
       const md = R * 0.36 * cur.wide
       drawMouth(fx - md * ts, fy + md * tc, mouthPop)
+      ctx.restore()
+      drawParticles(now)
+    }
 
-      // Floating z's, notes, hearts, sparkles: they rise and fade, with a page-coloured edge so they read over the dots.
+    // Floating z's, notes, hearts, sparkles, seeds: they rise (or fall) and fade, with a page-coloured edge so they read over
+    // the dots, and fade out before the canvas edge would cut them.
+    const drawParticles = (now: number) => {
       particles = particles.filter((p) => now - p.born < p.life * 1000)
       for (const p of particles) {
         const age = (now - p.born) / 1000
         const x = p.x + p.vx * age
-        const y = p.y + p.vy * age
+        const y = p.y + p.vy * age + 0.5 * (p.fall ?? 0) * age * age
+        const edge = clamp01((c - Math.max(Math.abs(x - c), Math.abs(y - c)) - p.size * 0.5) / (R * 0.25))
+        if (edge <= 0) continue
         ctx.save()
-        ctx.globalAlpha = Math.min(1, (1 - age / p.life) * 2, age * 8)
+        ctx.globalAlpha = Math.min(1, (1 - age / p.life) * 2, age * 8) * edge
         ctx.font = `700 ${Math.round(p.size * (0.8 + 0.3 * Math.min(1, age * 4)))}px ${mono}`
         ctx.lineWidth = 3
         ctx.strokeStyle = colors.bg
@@ -757,6 +978,7 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('keydown', onKey)
     }
     // `mood` is read live through moodRef; under reduced motion `redraw` carries it.
     // eslint-disable-next-line react-hooks/exhaustive-deps

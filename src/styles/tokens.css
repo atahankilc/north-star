@@ -21,6 +21,16 @@
   --accent-blue: #3d7bff;
   --accent-green: #3dff8a;
 
+  /* The assistant orb's pomegranate easter egg (AiOrb.tsx): skin, its shaded side, its shine, its warm patches, the crown,
+     and the open slice: seeds and the pale pith between them. */
+  --pom-skin: #e8263c;
+  --pom-shade: #6e1220;
+  --pom-shine: #ffc4cc;
+  --pom-blush: #ff7a45;
+  --pom-crown: #a8382a;
+  --pom-aril: #ff3d6e;
+  --pom-pith: #ffe2bf;
+
   /* Text on an accent fill; faint fg washes for hovers and stripes; the modal backdrop (D-069). */
   --on-accent: #000000;
   --wash-1: rgba(255, 255, 255, 0.025);
@@ -78,6 +88,14 @@
   --accent-yellow: #a87d00;
   --accent-blue: #2a5fe0;
   --accent-green: #0f9a4b;
+
+  --pom-skin: #c0142b;
+  --pom-shade: #e3a0aa;
+  --pom-shine: #ff8a9a;
+  --pom-blush: #d4602a;
+  --pom-crown: #6e2216;
+  --pom-aril: #e8174f;
+  --pom-pith: #c99a5e;
 
   --on-accent: #000000;
   --wash-1: rgba(0, 0, 0, 0.025);
