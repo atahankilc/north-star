@@ -36,14 +36,32 @@ export function introTime(): number {
   return introSkipped ? INTRO_SECONDS : Math.min(sceneTime(), INTRO_SECONDS)
 }
 
-// Light theme only (D-072): how dark-blue the sky is during the welcome. Paper → night over the first second, back to
-// paper while the sky melts into the flow (the same 6.2–9.8 s as the shader's crossfade).
-export function introNight(t = introTime()): number {
-  const ease = (a: number, b: number, x: number) => {
-    const k = Math.min(Math.max((x - a) / (b - a), 0), 1)
-    return k * k * (3 - 2 * k)
-  }
-  return ease(0, 1.2, t) * (1 - ease(6.2, 9.8, t))
+// Light theme only (D-072): the welcome's dark-blue sky, on the landing only (signed out; signed-in pages see the intro on paper).
+// Landing starts it when the page is revealed, so it sweeps in with every other entrance; it sweeps out from NIGHT_OUT_AT, once
+// the stars have gone and the flow has mostly taken over. Both ways eight tones cross the screen diagonally (AsciiEffect).
+export const NIGHT_OUT_AT = 8.4
+export const NIGHT_IN = 0.8
+export const NIGHT_OUT = 0.8
+const NIGHT_SPREAD = 1.4 // from the first tone's sweep to the last's, in screen diagonals; AsciiEffect's shader uses the same
+let nightFrom: number | null = null
+
+export function startNight() {
+  if (nightFrom === null && introTime() < NIGHT_OUT_AT) nightFrom = introTime()
+}
+export function stopNight() {
+  nightFrom = null
+}
+
+// Progress (0–1) of the sweep in and the sweep out.
+export function introNight(t = introTime()): { sweepIn: number; sweepOut: number } {
+  if (nightFrom === null) return { sweepIn: 0, sweepOut: 0 }
+  const clamp = (x: number) => Math.min(Math.max(x, 0), 1)
+  return { sweepIn: clamp((t - nightFrom) / NIGHT_IN), sweepOut: clamp((t - NIGHT_OUT_AT) / NIGHT_OUT) }
+}
+
+// When (0–1 of a sweep) the spot at this diagonal position (0 bottom left, 1 top right) is half way through its tones.
+export function nightHalfway(position: number): number {
+  return (position + NIGHT_SPREAD / 2) / (1 + NIGHT_SPREAD)
 }
 
 // Backdrop brightness (1 = full, lower on the board so cards stay legible). Eased by the backdrop

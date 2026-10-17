@@ -4,46 +4,53 @@ import { signInAsTestUser, signInWithGoogle } from '../../data/auth'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { Hud } from '../../ui/Hud'
 import { Appear } from '../../ui/Appear'
-import { introTime } from '../../three/sceneClock'
+import { NIGHT_IN, NIGHT_OUT, NIGHT_OUT_AT, introTime, nightHalfway, startNight, stopNight } from '../../three/sceneClock'
+import { useCurtain } from '../../state/curtain'
 import { useTheme } from '../../state/theme'
 import styles from './Landing.module.css'
 
-// Light theme: while the welcome's sky is dark blue (D-072), the landing's text turns light (`data-night` on <html>, tokens.css)
-// and eases back about when the sky is half paper again. Dark theme and later visits never set it.
-function useNightText() {
+// Light theme: the welcome's dark-blue sky (D-072) belongs to the landing only. It starts as the page is revealed, together with
+// every entrance, and while it lasts the text turns light, following the sweep: it crosses from the bottom left to the top right
+// both ways, so the headline (`data-night`, tokens.css) turns first and back first, the HUD (`data-night-top`, Hud.module.css)
+// after it each time. Each switches when its spot is half way through the tones. Dark theme never sets them.
+function useNight() {
   const light = useTheme((s) => s.theme) === 'light'
+  const revealed = useCurtain((s) => s.revealed)
   useEffect(() => {
-    if (!light || introTime() >= NIGHT_TEXT_UNTIL) return
+    if (!light || !revealed || introTime() >= NIGHT_OUT_AT) return
     const root = document.documentElement
-    root.setAttribute('data-night', '')
-    root.setAttribute('data-night-top', '')
-    const left = (NIGHT_TEXT_UNTIL - introTime()) * 1000
+    startNight()
+    const headline = nightHalfway((0.3 + 0.12) / 2) // its middle, low on the left
+    const hud = nightHalfway((0.1 + 0.97) / 2) // the breadcrumb, high on the left
+    const out = (NIGHT_OUT_AT - introTime()) * 1000
     const timers = [
-      setTimeout(() => root.removeAttribute('data-night'), left),
-      setTimeout(() => root.removeAttribute('data-night-top'), left + 400),
+      setTimeout(() => root.setAttribute('data-night', ''), NIGHT_IN * headline * 1000),
+      setTimeout(() => root.setAttribute('data-night-top', ''), NIGHT_IN * hud * 1000),
+      setTimeout(() => root.removeAttribute('data-night'), out + NIGHT_OUT * headline * 1000),
+      setTimeout(() => root.removeAttribute('data-night-top'), out + NIGHT_OUT * hud * 1000),
     ]
     return () => {
       timers.forEach(clearTimeout)
+      stopNight()
       root.removeAttribute('data-night')
       root.removeAttribute('data-night-top')
     }
-  }, [light])
+  }, [light, revealed])
 }
-// Day comes up from the bottom (AsciiEffect): the headline's band is paper again by about 8.1 s, the top by 9.8 s.
-// Text eases over 1.6 s and the page colour over 2.4 s, starting here; the HUD at the top 0.4 s later over 1.2 s (data-night-top).
-const NIGHT_TEXT_UNTIL = 7.6
 
 export function Landing({ error }: { error?: string | null }) {
   const [signInError, setSignInError] = useState<string | null>(null)
   const shownError = signInError ?? error
-  useNightText()
+  useNight()
+  // Read once: recomputing it on a later render would shift the running animation ahead.
+  const [introAt] = useState(() => `${-introTime()}s`)
 
   return (
     <main className={styles.page}>
       <Hud />
 
       {/* The scrim under the headline fades in with the end of the welcome, so the dawn can rise from the bottom edge (D-072). */}
-      <section className={styles.hero} style={{ '--intro-at': `${-introTime()}s` } as CSSProperties}>
+      <section className={styles.hero} style={{ '--intro-at': introAt } as CSSProperties}>
         {/* Builds cell by cell every time the landing opens: on reload, and after signing out. */}
         <Appear as="h1" className={styles.title} duration={400}>
           {/* The tight tracking makes the r's arm touch the t's crossbar; open just that pair. */}

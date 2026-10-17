@@ -50,8 +50,10 @@ uniform float uMaskMode;   // 0 off · 1 covering · 2 revealing · 3 fully cove
 uniform float uProgress;   // 0 → 1 along the sweep
 uniform float uLight;      // 1: ink on paper (light theme, D-069)
 uniform vec3 uPaper;
-uniform float uNight;      // light theme only: 0 paper → 1 the welcome's night sky (D-072)
+uniform float uNight;      // light theme only: the welcome's night sweeping in (0 → 1, D-072)
+uniform float uNightOut;   // and sweeping out again (0 → 1)
 uniform vec3 uSky;
+uniform vec3 uDusk;        // the light blue between paper and the night sky
 
 vec3 toSrgb(vec3 c) { return pow(max(c, 0.0), vec3(1.0 / 2.2)); }
 float hash12(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
@@ -77,13 +79,22 @@ void main() {
     float cover = clamp(l * uGain, 0.0, 1.0) * uDim * glyph;
     vec3 printed = mix(toSrgb(uPaper), toSrgb(ink), toSrgb(vec3(cover)).r);
     col = pow(printed, vec3(2.2));
-    // The welcome's night: glyphs glow on a dark-blue sky the way they do on black, then the sky turns back into paper.
-    // Scaled by the dim, so a workspace only gets a faint tint behind its cards.
-    vec3 night = uSky * uDim * (1.0 - clamp(l * uGain, 0.0, 1.0) * glyph) + mix(vec3(l), c, uSaturation) * uGain * uDim * glyph;
-    // Day comes up from the bottom like a sunrise: the bottom turns back into paper first, the top stays night longest.
-    // Crossfaded in display space, so it brightens like a sky instead of passing through flat grey.
-    float local = clamp((uNight - 0.5 * (1.0 - vUv.y)) / 0.5, 0.0, 1.0);
-    col = pow(mix(toSrgb(col), toSrgb(night), local * uDim), vec3(2.2));
+    // The welcome's night: glyphs glow on a dark-blue sky the way they do on black. It sweeps in diagonally from the bottom
+    // left to the top right in eight tones (paper → light blue → night), the sweeps following each other with room between
+    // them, in squares a third of a cell wide with a ragged edge; it leaves the same way, the tones going out bottom left
+    // first. uNight / uNightOut are the two sweeps' progress (0 → 1); NIGHT_SPREAD in sceneClock.ts must match the 1.4.
+    vec2 square = floor(px / (uCell / 3.0));
+    float depth = (vUv.x + vUv.y) * 0.5 * 0.94 + hash12(square + 7.0) * 0.06;   // 0 bottom left → 1 top right, frayed
+    float toneIn = floor(clamp((uNight * 2.4 - depth) / 1.4, 0.0, 1.0) * 8.0) / 8.0;
+    float toneOut = floor(clamp((uNightOut * 2.4 - depth) / 1.4, 0.0, 1.0) * 8.0) / 8.0;
+    float tone = min(toneIn, 1.0 - toneOut);
+    if (tone >= 1.0) {
+      col = uSky * uDim * (1.0 - clamp(l * uGain, 0.0, 1.0) * glyph) + mix(vec3(l), c, uSaturation) * uGain * uDim * glyph;
+    } else if (tone > 0.0) {
+      vec3 dusk = toSrgb(uDusk);
+      vec3 shade = tone < 0.5 ? mix(toSrgb(uPaper), dusk, tone * 2.0) : mix(dusk, toSrgb(uSky), tone * 2.0 - 1.0);
+      col = pow(shade, vec3(2.2));
+    }
   }
   float alpha = 1.0;
 
@@ -172,7 +183,9 @@ export class AsciiEffect {
         uLight: { value: 0 },
         uPaper: { value: new Color() },
         uNight: { value: 0 },
+        uNightOut: { value: 0 },
         uSky: { value: new Color() },
+        uDusk: { value: new Color() },
       },
     })
     const mesh = new Mesh(new PlaneGeometry(2, 2), this.material)
@@ -191,15 +204,17 @@ export class AsciiEffect {
   }
 
   // Light theme: glyphs print dark on `paper` instead of glowing on black.
-  setTheme(light: boolean, paper: string, sky: string) {
+  setTheme(light: boolean, paper: string, sky: string, dusk: string) {
     this.material.uniforms.uLight.value = light ? 1 : 0
     ;(this.material.uniforms.uPaper.value as Color).set(paper)
     ;(this.material.uniforms.uSky.value as Color).set(sky)
+    ;(this.material.uniforms.uDusk.value as Color).set(dusk)
   }
 
-  // Light theme only: how far the paper has turned into the welcome's night sky (0–1).
-  setNight(value: number) {
-    this.material.uniforms.uNight.value = this.material.uniforms.uLight.value * value
+  // Light theme only: the welcome's night sky (see introNight in sceneClock.ts).
+  setNight(sweepIn: number, sweepOut: number) {
+    this.material.uniforms.uNight.value = this.material.uniforms.uLight.value * sweepIn
+    this.material.uniforms.uNightOut.value = sweepOut
   }
 
   setMask(mode: MaskMode, progress = 0) {

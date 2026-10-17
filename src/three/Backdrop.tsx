@@ -34,7 +34,7 @@ export function BackdropScene({ onFrame, field = true }: SceneProps) {
   const theme = useTheme((s) => s.theme)
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => {
-    effect.setTheme(theme === 'light', palettes[theme].bg, palettes[theme].night)
+    effect.setTheme(theme === 'light', palettes[theme].bg, palettes[theme].night, palettes[theme].dusk)
     invalidate()
   }, [effect, theme, invalidate])
 
@@ -42,7 +42,8 @@ export function BackdropScene({ onFrame, field = true }: SceneProps) {
   useFrame(({ gl, scene, camera }, dt) => {
     onFrame?.(effect, dt)
     // Without the field there's no sky to darken, so the curtain still rebuilds out of plain paper.
-    effect.setNight(field ? introNight() : 0)
+    const { sweepIn, sweepOut } = introNight()
+    effect.setNight(field ? sweepIn : 0, sweepOut)
     effect.resize(gl)
     effect.render(gl, scene, camera)
   }, 1)

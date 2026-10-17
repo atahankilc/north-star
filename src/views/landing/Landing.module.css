@@ -37,7 +37,8 @@
 }
 
 @keyframes scrim {
-  0%, 85% { opacity: 0; }
+  /* After the light theme's night has left (9.4 s, sceneClock.ts), so it never lays a flat band over its tones. */
+  0%, 94% { opacity: 0; }
   100% { opacity: 1; }
 }
 

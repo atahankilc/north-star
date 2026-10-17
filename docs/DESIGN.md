@@ -111,6 +111,10 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
   go out one by one and the sky melts slowly into the flow, which has been running underneath. The landing's headline scrim stays
   out during the intro so the glow can reach the bottom edge, and fades in as the flow takes over. No galaxy, nebula, Milky Way,
   shooting stars, constellation lines or aurora (all tried and rejected). Skipped when the app starts under reduced motion.
+  In the light theme, signed out only, the landing's sky turns dark blue for the intro (white stars, a brighter sunrise, light text):
+  it sweeps in with the page's other entrances as eight tones (paper → light blue → night) crossing diagonally from the bottom left
+  to the top right with room between them, ragged edges of small squares, 0.8 s; from 8.4 s the tones go out the same direction. Signed-in
+  pages play the intro on paper. Light theme prints its ASCII ink in sRGB space, so it reads as strongly as the dark theme's glyphs.
 - **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour
   (`<Appear>` for DOM, `CardReveal` for 3D cards), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
 - Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.

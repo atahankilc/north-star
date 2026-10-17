@@ -454,8 +454,18 @@ the usual flow. (The first pass had a "space photo" look: nebula clouds, a galax
   from the yellow accent at the edge; the ASCII target is 8-bit, so pure red alone only reaches faint glyphs), the bright star blooms
   4.2–5 s in the upper right, stars go out 5.4–8.5 s, slow crossfade into the flow 6.2–9.8 s. The glow skips the bottom calm band.
   The landing hero's scrim is a `::before` whose 10 s fade-in is lined up with the intro clock (`--intro-at`), so it's out while the glow shows.
-- *Light theme:* the glow uses the same bright `ember`/`dawn` in both palettes (the pass darkens the hue itself), its gold core is a
-  fixed bright gold (the light yellow token printed faintly), and it gets 2.2× instead of 1.5× strength on paper (`uLight`).
+- *Light theme (user's idea): a dark-blue night sky, landing only.* While signed out, the light theme's ASCII pass draws the intro on
+  `palettes.light.night` (#0c1736) the way dark draws on black: white stars, a brighter sunrise (glow 2.2× in light, `uLight`), light text.
+  Signed-in pages never get it (they see the intro faded on paper). Landing calls `startNight()` when the page is revealed, so the sky
+  sweeps in with every other entrance; `introNight()` (sceneClock.ts) gives the sweep in (0.8 s) and the sweep out (0.8 s from 8.4 s).
+  It moves as *tone sweeps* (user's design): eight tones from paper through light blue (`palettes.light.dusk`) to night, crossing the
+  screen diagonally from the bottom left to the top right with room between them, in squares a third of a cell wide with a ragged
+  edge; leaving, the tones go out the same direction, so day comes back from the bottom left. The text follows: `data-night`
+  (headline, `--bg`) and `data-night-top` (HUD, Hud.module.css; its fade strip is clear meanwhile) switch when their spot is half
+  way through the tones (`nightHalfway`). The headline's scrim fades in only after
+  the night has left (9.4 s). Rejected on the way: a 1.2 s fade that slid down from the top as a grey gradient, the night waiting for
+  its own fill before the page appeared, a slow morning rising from the bottom, plain random squares, glyph-ramp ink in random
+  order, a fast top-down front whose tones followed each other too closely, and four tones rising straight up from the bottom. Dark theme is untouched.
 - *Second pass (user):* the galaxy, nebula clouds, Milky Way band and shooting stars didn't look good and are gone; the sunrise replaces them.
   The glow had to start at the very bottom edge, not climb high, and spread from the lower left rather than along the whole bottom.
 - *Rejected in the first pass:* drawing the Little Dipper's lines (not wanted), and an aurora (appeared and vanished too abruptly).

@@ -29,6 +29,7 @@ export type Palette = {
   ember: string // welcome sunrise (D-072), WebGL only
   dawn: string
   night: string // the welcome's sky in light theme (D-072); dark never uses it
+  dusk: string // the light blue the night falls through on its way in and out
   card: string
   cardBehind: string
   chip: string
@@ -46,6 +47,7 @@ export const palettes: Record<Theme, Palette> = {
     ember: '#ff4a26',
     dawn: '#ff9a2e',
     night: '#000000',
+    dusk: '#000000',
     card: '#121212',
     cardBehind: '#0e0e0e',
     chip: '#161616',
@@ -69,6 +71,7 @@ export const palettes: Record<Theme, Palette> = {
     ember: '#ff4a26',
     dawn: '#ff9a2e',
     night: '#0c1736',
+    dusk: '#9fb3e3',
     card: '#ffffff',
     cardBehind: '#e9e9e9',
     chip: '#fafafa',

@@ -178,6 +178,10 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   Light theme: the ASCII pass now blends ink in sRGB, so stars, the north star, the orange glow and the flow print as strongly as dark
   shows them (they were nearly invisible). Verified headless (dark timeline 1.5–11 s; light at 5.5 s and 12 s; light example workspace
   on emulators: cards still read fine over the 14% backdrop). Committed and pushed 2026-10-17 (`1f7688b`).
+- Light night sky (D-072, after `1f7688b`): signed out only, the landing's light-theme intro is a dark-blue sky with white stars, a
+  brighter sunrise and light text; it sweeps in with the page's entrances as eight tones crossing diagonally from the bottom left
+  (0.8 s) and goes out the same direction from 8.4 s; text follows the sweep. Signed-in pages see the intro on paper. Verified headless (light reveal / 3 / 8.7 / 8.8 / 9.3 s, signed-in /workspaces in
+  light on emulators: no night). Committed and pushed 2026-10-17.
 
 ## Done (Phase 4.1: assistant orb + chat, 2026-10-17)
 - D-073: ASCII orb with eyes bottom-right in workspaces → chat panel; OpenAI key in Settings → ai or in the chat; gpt-6-luna; read-only
