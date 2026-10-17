@@ -1,8 +1,10 @@
 // The top bar on every page: breadcrumb and view menu bar on the left, page actions and settings on the right.
 // Same position and margins everywhere (--hud-x / --hud-y), so nothing shifts between pages.
+import { motion } from 'motion/react'
 import { Fragment, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../data/auth'
+import { useMotion } from '../state/motion'
 import styles from './Hud.module.css'
 import { MotionToggle } from './MotionToggle'
 import { SettingsButton } from './Settings'
@@ -13,7 +15,7 @@ export type Crumb = {
   to?: string
 }
 
-// The workspace's views, as a menu bar of their own beside the breadcrumb (D-053): `BOARD | FLOW | TABLE | MATRIX`.
+// The workspace's views, as tabs beside the breadcrumb (D-053, D-067): `│ board  flow  table  matrix`, the current one underlined.
 export type Tab = { label: string; to: string; end?: boolean }
 
 type Props = {
@@ -29,17 +31,20 @@ type Props = {
 export function Hud({ crumbs = [], views, right, settings, settingsBadge }: Props) {
   const atRoot = crumbs.length === 0
   const { user } = useAuth()
+  const reduced = useMotion((s) => s.reduced)
 
   return (
     <header className={styles.hud}>
       <nav className={styles.crumbs} aria-label="Breadcrumb">
         {atRoot ? (
           <span className={styles.current} aria-current="page">
-            <span className={styles.hash}>#</span> north-star
+            <span className={styles.hash}>#</span>
+            <span className={styles.rootName}> north-star</span>
           </span>
         ) : (
           <Link to="/" className={styles.link}>
-            <span className={styles.hash}>#</span> north-star
+            <span className={styles.hash}>#</span>
+            <span className={styles.rootName}> north-star</span>
           </Link>
         )}
         {crumbs.map((c, i) => {
@@ -66,7 +71,19 @@ export function Hud({ crumbs = [], views, right, settings, settingsBadge }: Prop
         <nav className={styles.views} aria-label="Views">
           {views.map((t) => (
             <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? styles.viewActive : styles.view)}>
-              {t.label}
+              {({ isActive }) => (
+                <>
+                  {t.label}
+                  {/* One bar that slides to the current view. */}
+                  {isActive && (
+                    <motion.span
+                      layoutId="hud-view-bar"
+                      className={styles.viewBar}
+                      transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 520, damping: 40 }}
+                    />
+                  )}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>

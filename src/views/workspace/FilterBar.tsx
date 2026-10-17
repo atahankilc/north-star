@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { BOARD_TYPES } from '../../data/model'
 import { useWsView } from '../../state/workspaceView'
 import { Menu, type MenuEntry } from '../../ui/Menu'
+import menuStyles from '../../ui/Menu.module.css'
 import { BOARD_KINDS, TYPE_ACCENT, useAllTags, useBoardItems } from '../canvas/boardKinds'
 import { useWs } from './context'
 import styles from './Bars.module.css'
@@ -55,13 +56,17 @@ export function FilterBar({ goTo }: Props) {
     <div className={styles.filters}>
       <Menu
         label="show"
-        summary={types.length === BOARD_TYPES.length ? 'all' : `${types.length}/${BOARD_TYPES.length}`}
+        summary={BOARD_TYPES.map((t) => (
+          <span key={t} className={menuStyles.swatch} data-on={types.includes(t)} style={{ ['--tone' as string]: TYPE_ACCENT[t] }} />
+        ))}
+        active={types.length < BOARD_TYPES.length}
         items={show}
         ariaLabel="Show item types"
       />
       <Menu
         label="for"
         summary={forSummary}
+        active={forIds.length > 0}
         items={forItems}
         ariaLabel="Only items for these customers"
         empty="No customers yet: create one with +"
@@ -69,6 +74,7 @@ export function FilterBar({ goTo }: Props) {
       <Menu
         label="tag"
         summary={tagSummary}
+        active={tags.length > 0}
         items={allTags.length ? tagItems : []}
         ariaLabel="Only items with these tags"
         empty="No tags yet: add some in a card's panel"

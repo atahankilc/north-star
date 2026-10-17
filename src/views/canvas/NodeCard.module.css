@@ -1,0 +1,18 @@
+/* Names of the collaborators who have a card selected, sitting on its outer ring's top-left corner (D-067). */
+.peers {
+  display: flex;
+  gap: 2px;
+  transform: translateY(-100%);
+  pointer-events: none;
+  user-select: none;
+}
+
+.peer {
+  padding: 1px var(--space-1);
+  background: var(--peer);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+}

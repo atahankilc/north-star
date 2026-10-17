@@ -6,9 +6,11 @@
   align-items: center;
   gap: var(--space-2);
   max-width: 220px;
-  height: 34px;
-  padding: 0 var(--space-2) 0 0;
+  height: 30px;
+  /* The same rule as before the view tabs (D-067): page things on the left, you on the right. */
+  padding: 0 var(--space-1) 0 var(--space-4);
   border: 0;
+  border-left: 1px solid var(--line);
   background: none;
   color: var(--fg-dim);
   font: inherit;
@@ -40,39 +42,61 @@
   white-space: nowrap;
 }
 
-/* The gear: a framed square of its own. */
+/* The gear: an unframed icon like the view tabs (frames are for filters); open, it takes the tabs' magenta bar. */
 .trigger {
-  composes: interactive from './Frame.module.css';
-  --accent: var(--accent-cyan);
+  position: relative;
   display: inline-grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   padding: 0;
+  border: 0;
+  background: none;
   color: var(--fg-dim);
   font: inherit;
   cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.trigger::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: -3px;
+  height: 2px;
+  background: var(--accent-magenta);
+  transform: scaleX(0);
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.trigger:hover,
+.trigger:focus-visible,
+.trigger[data-open='true'] {
+  color: var(--fg-strong);
+}
+
+.trigger[data-open='true']::after {
+  transform: scaleX(1);
 }
 
 .gear {
   font-size: 17px;
   line-height: 1;
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    transform var(--dur-med) var(--ease-out);
+  transition: transform var(--dur-med) var(--ease-out);
 }
 
 .trigger:hover .gear,
-.trigger:focus-visible .gear {
-  color: var(--accent-cyan);
+.trigger:focus-visible .gear,
+.trigger[data-open='true'] .gear {
   transform: rotate(45deg);
 }
 
 /* People waiting to join: a count pinned to the corner. */
 .badge {
   position: absolute;
-  top: -7px;
-  right: -7px;
+  top: -4px;
+  right: -6px;
   display: inline-grid;
   place-items: center;
   min-width: 16px;
@@ -82,6 +106,12 @@
   color: var(--bg);
   font-size: 10px;
   line-height: 1;
+}
+
+@media (max-width: 760px) {
+  .account {
+    padding-left: var(--space-2);
+  }
 }
 
 .dialog {

@@ -3,6 +3,7 @@
 // A native <dialog>: focus stays inside, Escape and the backdrop close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../data/auth'
+import { usePresence } from '../data/presence'
 import { useDisplay, type BackgroundPref } from '../state/display'
 import { useMotion, type MotionPref } from '../state/motion'
 import { AsciiButton } from './AsciiButton'
@@ -28,6 +29,7 @@ type Props = {
 
 export function SettingsButton({ workspace, badge = 0 }: Props) {
   const { user } = useAuth()
+  const myColor = usePresence((s) => s.myColor)
   const dialog = useRef<HTMLDialogElement>(null)
   const [open, setOpen] = useState(false)
   const [page, setPage] = useState<Page>('account')
@@ -55,12 +57,13 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
   return (
     <>
       <button className={styles.account} onClick={() => show('account')} aria-haspopup="dialog" aria-label={`Account: ${who}`}>
-        <span className={styles.chipAvatar} aria-hidden>
+        {/* In a workspace, your square is in the colour the others see you in (D-067). */}
+        <span className={styles.chipAvatar} style={myColor ? { background: myColor } : undefined} aria-hidden>
           {who.trim()[0]?.toUpperCase()}
         </span>
         <span className={styles.chipName}>{who}</span>
       </button>
-      <button className={styles.trigger} onClick={() => show()} aria-haspopup="dialog" aria-label={`Settings${badge > 0 ? `, ${badge} waiting` : ''}`}>
+      <button className={styles.trigger} data-open={open || undefined} onClick={() => show()} aria-haspopup="dialog" aria-label={`Settings${badge > 0 ? `, ${badge} waiting` : ''}`}>
         <span className={styles.gear} aria-hidden>
           ⚙&#xFE0E;
         </span>

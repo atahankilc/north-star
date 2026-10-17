@@ -13,6 +13,9 @@
           "x": { ".validate": "newData.isNumber()" },
           "y": { ".validate": "newData.isNumber()" },
           "sel": { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "edit": { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "field": { ".validate": "newData.isString() && newData.val().length <= 80" },
+          "since": { ".validate": "newData.isNumber()" },
           "ts": { ".validate": "newData.isNumber() && newData.val() <= now" },
           "$other": { ".validate": false }
         }

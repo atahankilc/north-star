@@ -90,7 +90,7 @@ workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role
 inviteCodes/{code}      workspaceId, createdBy
 joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)
 
-RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, ts   (D-065)
+RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, edit?, field?, since?, ts   (D-065, D-067)
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: the caller must be in `memberIds`.
 - `edges` is one generic edge collection, so any node type can connect to any other.
@@ -123,7 +123,7 @@ RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, ts   (D-06
   and Spark allows 100 simultaneous connections.
 - RTDB rules can't read Firestore membership, so any signed-in user who knows a workspace ID could
   read its cursors (name, colour, coordinates only). The IDs are random. Accepted for now (D-016).
-- Each collaborator has a colour drawn from the accent palette (see [DESIGN.md](DESIGN.md)).
+- Each collaborator has a colour from the accent palette, assigned in join order so up to five never clash (D-067; see [DESIGN.md](DESIGN.md)).
 
 ## 7. Authentication
 

@@ -20,6 +20,11 @@ export type Presence = {
   y?: number
   // The item they have selected.
   sel?: string
+  // The item and field they're typing in (a text field has focus), so others see it (D-067).
+  edit?: string
+  field?: string
+  // When they joined (server time). Earlier joiners keep their colour when someone new arrives.
+  since?: number
   ts: number
 }
 
@@ -32,22 +37,48 @@ const WRITE_EVERY_MS = 60
 const HEARTBEAT_MS = 20_000
 const STALE_MS = 60_000
 
-// One colour per person, stable across sessions: the accent palette (DESIGN.md §3).
+// Each person's preferred colour: a hash of their uid over the accent palette (DESIGN.md §3).
 export function presenceColor(uid: string): string {
   let h = 0
   for (let i = 0; i < uid.length; i++) h = (h * 31 + uid.charCodeAt(i)) | 0
   return accents[Math.abs(h) % accents.length]
 }
 
-type PresenceState = {
-  // Everyone else in this workspace right now (never yourself, not even your other tabs).
-  peers: Peer[]
+// The colour everyone sees for each person here. In join order, each person takes their preferred colour if it's
+// still free, otherwise the first free accent, so up to five people never share one. Every client computes the same
+// answer from the same list, so nothing extra is written; earlier joiners keep theirs when someone arrives.
+export function assignColors(people: { uid: string; since?: number }[]): Map<string, string> {
+  const order = [...people].sort((a, b) => (a.since ?? Infinity) - (b.since ?? Infinity) || a.uid.localeCompare(b.uid))
+  const used = new Set<string>()
+  const out = new Map<string, string>()
+  order.forEach(({ uid }, i) => {
+    const preferred = presenceColor(uid)
+    const color = !used.has(preferred) ? preferred : (accents.find((c) => !used.has(c)) ?? accents[i % accents.length])
+    used.add(color)
+    out.set(uid, color)
+  })
+  return out
 }
 
-export const usePresence = create<PresenceState>(() => ({ peers: [] }))
+type PresenceState = {
+  // Everyone else in this workspace right now (never yourself, not even your other tabs), in their assigned colour.
+  peers: Peer[]
+  // Your own colour here, as the others see it; null outside a workspace.
+  myColor: string | null
+  // The person whose cursor (and view) you're following, if anyone.
+  following: string | null
+  follow: (uid: string | null) => void
+}
+
+export const usePresence = create<PresenceState>((set) => ({
+  peers: [],
+  myColor: null,
+  following: null,
+  follow: (uid) => set({ following: uid }),
+}))
 
 // This tab's own node: what we last wrote, and where to write it.
-let mine: { node: DatabaseReference; data: Omit<Presence, 'ts'> } | null = null
+let mine: { node: DatabaseReference; data: Omit<Presence, 'ts' | 'since'>; since: number | null } | null = null
 let lastWrite = 0
 let pending: number | null = null
 
@@ -57,7 +88,7 @@ function flush() {
   lastWrite = performance.now()
   // Drop undefined fields: RTDB refuses them.
   const data = Object.fromEntries(Object.entries(mine.data).filter(([, v]) => v !== undefined))
-  set(mine.node, { ...data, ts: serverTimestamp() }).catch(() => {})
+  set(mine.node, { ...data, since: mine.since ?? serverTimestamp(), ts: serverTimestamp() }).catch(() => {})
 }
 
 function schedule() {
@@ -66,7 +97,7 @@ function schedule() {
   pending = window.setTimeout(flush, wait)
 }
 
-function patch(p: Partial<Omit<Presence, 'ts'>>) {
+function patch(p: Partial<Omit<Presence, 'ts' | 'since'>>) {
   if (!mine) return
   const next = { ...mine.data, ...p }
   if ((Object.keys(next) as (keyof typeof next)[]).every((k) => next[k] === mine!.data[k])) return
@@ -83,6 +114,21 @@ export function setPresenceSelection(id: string | null) {
   patch({ sel: id ?? undefined })
 }
 
+export function setEditing(at: { item: string; field: string } | null) {
+  patch({ edit: at?.item, field: at ? at.field.slice(0, 80) : undefined })
+}
+
+// Which item and field a focused text control belongs to: the closest `[data-item]` container, and the control's
+// `data-field`, label or placeholder. Null for anything that isn't text being typed into an item.
+function editTarget(el: EventTarget | null): { item: string; field: string } | null {
+  if (!(el instanceof HTMLElement)) return null
+  const text = el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && /^(text|search|url|email|number|)$/.test(el.type))
+  if (!text && !el.isContentEditable) return null
+  const item = el.closest<HTMLElement>('[data-item]')?.dataset.item
+  const field = el.dataset.field ?? el.getAttribute('aria-label') ?? el.getAttribute('placeholder') ?? 'text'
+  return item ? { item, field: field.toLowerCase() } : null
+}
+
 const round = (v: number) => Math.round(v * 1000) / 1000
 
 // Announce yourself in a workspace while mounted, and listen for everyone else.
@@ -95,7 +141,7 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
     const rtdb = firebase?.rtdb
     if (!rtdb || !uid) return
     const node = ref(rtdb, `presence/${wid}/${uid}`)
-    mine = { node, data: { name: name.slice(0, 80), color: presenceColor(uid), photo, view: 'board' } }
+    mine = { node, data: { name: name.slice(0, 80), color: presenceColor(uid), photo, view: 'board' }, since: null }
 
     // Whenever the connection (re)opens: re-arm the clean-up and write ourselves back.
     const offConnected = onValue(ref(rtdb, '.info/connected'), (snap) => {
@@ -111,20 +157,28 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
     let all: Record<string, Presence> = {}
     const publish = () => {
       const now = Date.now() + offset
+      const here = Object.entries(all)
+        .filter(([id, p]) => id !== uid && now - (p.ts ?? 0) < STALE_MS)
+        .map(([id, p]) => ({ ...p, uid: id }))
+      const colors = assignColors([...here, { uid, since: mine?.since ?? undefined }])
+      const { following } = usePresence.getState()
       usePresence.setState({
-        peers: Object.entries(all)
-          .filter(([id, p]) => id !== uid && now - (p.ts ?? 0) < STALE_MS)
-          .map(([id, p]) => ({ ...p, uid: id }))
-          .sort((a, b) => a.name.localeCompare(b.name)),
+        peers: here.map((p) => ({ ...p, color: colors.get(p.uid)! })).sort((a, b) => a.name.localeCompare(b.name)),
+        myColor: colors.get(uid)!,
+        // They left: stop following.
+        following: following && here.some((p) => p.uid === following) ? following : null,
       })
     }
     const offPeers = onValue(
       ref(rtdb, `presence/${wid}`),
       (snap) => {
         all = (snap.val() as Record<string, Presence> | null) ?? {}
+        // Our join time comes back from the server once; keep writing that one.
+        const since = all[uid]?.since
+        if (mine && mine.since === null && typeof since === 'number') mine.since = since
         publish()
       },
-      () => usePresence.setState({ peers: [] }),
+      () => usePresence.setState({ peers: [], following: null }),
     )
 
     const beat = window.setInterval(() => {
@@ -134,6 +188,11 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
     // A hidden tab has no pointer on the board.
     const onVisibility = () => document.hidden && setCursor(null)
     document.addEventListener('visibilitychange', onVisibility)
+    // Typing somewhere: say where (D-067).
+    const onFocusIn = (e: FocusEvent) => setEditing(editTarget(e.target))
+    const onFocusOut = () => setEditing(null)
+    document.addEventListener('focusin', onFocusIn)
+    document.addEventListener('focusout', onFocusOut)
 
     return () => {
       offConnected()
@@ -141,10 +200,12 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
       offPeers()
       window.clearInterval(beat)
       document.removeEventListener('visibilitychange', onVisibility)
+      document.removeEventListener('focusin', onFocusIn)
+      document.removeEventListener('focusout', onFocusOut)
       if (pending !== null) window.clearTimeout(pending)
       pending = null
       mine = null
-      usePresence.setState({ peers: [] })
+      usePresence.setState({ peers: [], myColor: null, following: null })
       onDisconnect(node).cancel().catch(() => {})
       remove(node).catch(() => {})
     }

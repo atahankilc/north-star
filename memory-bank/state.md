@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (Phase 3 started: presence and live cursors, D-065)_
+_Last updated: 2026-10-17 (follow, typing indicator, multi-person selection, distinct colours, D-067; view tabs, D-066)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -135,9 +135,20 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Verified with two headless Chromes on the emulators (Alice sees Bob's cursor and name at the right spot, his selection rim,
   "Bob · table" after he switches views, gone after he closes the tab). **Not committed or pushed.**
 
+## Done (view tabs, 2026-10-17)
+- D-066: views as unframed tabs with a sliding magenta underline; dropdown triggers a fixed 30px tall (`go to` was shorter);
+  breadcrumb collapses to `#` below 760px. Verified headless on emulators at 1280 and 390 px. Not committed.
+
+## Done (follow + typing + colours, 2026-10-17)
+- D-067: follow a person (view + cursor, framed page, Esc), one ring + name per person on a shared card, `Bob ✎ title` on the card /
+  panel strip / field outline, join-order colours (no clashes up to 5), own colour on the account chip, cursor trail removed.
+- Rules (+ `edit`, `field`, `since`): 118 pass, **deployed** 2026-10-17 (a superset, safe for the live client).
+- Verified with three headless Chromes on emulators (rings + names, `Bob ✎ title` outline in Carol's panel, distinct colours,
+  Alice follows Bob to x=30 and into Table, Esc stops). Not committed.
+
 ## Next steps
-1. The user's review of presence/cursors (try two browsers or Alice + Bob on the emulators); commit + push
-2. Phase 3 rest: maybe "is typing"/editing indicators in the side panel, following someone's view
+1. The user's review of presence/follow/typing; commit + push
+2. Phase 3 rest: typing indicators in Table cells; maybe show peers' viewports
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 

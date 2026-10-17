@@ -238,13 +238,15 @@ const presence = (who, uid) => ref(who.rt, `presence/${wid}/${uid}`)
 const me = (name, extra = {}) => ({ name, color: '#2de2e6', view: 'board', ts: serverTimestamp(), ...extra })
 await allow('write own presence', () => rtSet(presence(bob, bob.uid), me('Bob')))
 await allow('presence with cursor, selection and photo', () =>
-  rtSet(presence(bob, bob.uid), me('Bob', { x: 1.5, y: -2, sel: 'abc', photo: 'https://example.com/a.png' })),
+  rtSet(presence(bob, bob.uid), me('Bob', { x: 1.5, y: -2, sel: 'abc', photo: 'https://example.com/a.png', since: serverTimestamp(), edit: 'abc', field: 'title' })),
 )
 await deny('write someone else\'s presence', () => rtSet(presence(bob, alice.uid), me('Fake')))
 await deny('presence without required fields', () => rtSet(presence(bob, bob.uid), { x: 1 }))
 await deny('presence with an unknown field', () => rtSet(presence(bob, bob.uid), me('Bob', { secret: 1 })))
 await deny('presence with an unknown view', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'canvas' })))
 await deny('presence with a non-hex colour', () => rtSet(presence(bob, bob.uid), me('Bob', { color: 'red' })))
+await deny('presence with a too-long field name', () => rtSet(presence(bob, bob.uid), me('Bob', { edit: 'abc', field: 'x'.repeat(81) })))
+await deny('presence with a text join time', () => rtSet(presence(bob, bob.uid), me('Bob', { since: 'now' })))
 await deny('presence with a text cursor', () => rtSet(presence(bob, bob.uid), me('Bob', { x: 'far' })))
 await deny('presence from the future', () => rtSet(presence(bob, bob.uid), me('Bob', { ts: Date.now() + 3_600_000 })))
 await allow('remove own presence', () => rtRemove(presence(bob, bob.uid)))

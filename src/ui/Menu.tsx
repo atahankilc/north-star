@@ -33,11 +33,13 @@ type Props = {
   alignEnd?: boolean
   // A filled, prominent trigger (the create button).
   primary?: boolean
+  // A filter that's narrowing what you see: the trigger stays lit.
+  active?: boolean
   ariaLabel: string
   empty?: string
 }
 
-export function Menu({ label, summary, items, up, alignEnd, primary, ariaLabel, empty }: Props) {
+export function Menu({ label, summary, items, up, alignEnd, primary, active, ariaLabel, empty }: Props) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
@@ -82,6 +84,7 @@ export function Menu({ label, summary, items, up, alignEnd, primary, ariaLabel, 
         className={primary ? styles.primary : styles.trigger}
         aria-haspopup="menu"
         aria-expanded={open}
+        data-active={active || undefined}
         aria-controls={open ? id : undefined}
         aria-label={ariaLabel}
         onClick={() => setOpen((o) => !o)}
@@ -93,7 +96,7 @@ export function Menu({ label, summary, items, up, alignEnd, primary, ariaLabel, 
         {summary !== undefined && <span className={styles.summary}>{summary}</span>}
         {!primary && (
           <span className={styles.caret} aria-hidden>
-            {open ? '▴' : '▾'}
+            ▾
           </span>
         )}
       </button>

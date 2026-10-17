@@ -1,0 +1,21 @@
+.here {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: var(--space-3) var(--space-6) 0;
+}
+
+.here[hidden] {
+  display: none;
+}
+
+/* The person's colour, like their cursor tag. */
+.peer {
+  padding: 1px var(--space-1);
+  background: var(--peer);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+}

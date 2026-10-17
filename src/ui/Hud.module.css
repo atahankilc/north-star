@@ -26,6 +26,7 @@
   align-items: baseline;
   gap: var(--space-2);
   min-width: 0;
+  overflow: hidden;
   white-space: nowrap;
 }
 
@@ -63,44 +64,58 @@ a.link:hover {
 
 .views {
   display: flex;
+  align-items: center;
+  align-self: stretch;
+  gap: var(--space-1);
   margin-right: auto;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  /* A rule, not a slash: the views are places to switch between, not more path. */
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--line);
+  margin-block: var(--space-4);
 }
 
-/* A menu bar, not more breadcrumb: framed segments, the current one filled. */
+/* Navigation tabs, not filters: no frame, normal case, a sliding accent bar under the current one. */
 .view,
 .viewActive {
-  padding: var(--space-1) var(--space-4);
+  position: relative;
+  padding: var(--space-1) var(--space-2);
   color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: 0.12em;
   text-decoration: none;
-  text-transform: uppercase;
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out);
 }
 
-.view + .view,
-.view + .viewActive,
-.viewActive + .view {
-  border-left: 1px solid var(--line);
-}
-
-.view:hover {
-  background: rgba(255, 255, 255, 0.05);
+.view:hover,
+.view:focus-visible {
   color: var(--fg-strong);
 }
 
 .viewActive {
-  background: var(--fg);
-  color: var(--bg);
+  color: var(--fg-strong);
+}
+
+.viewBar {
+  position: absolute;
+  left: var(--space-2);
+  right: var(--space-2);
+  bottom: -3px;
+  height: 2px;
+  background: var(--accent-magenta);
 }
 
 @media (max-width: 760px) {
+  /* Narrow: the breadcrumb collapses to `#` (home) when there are view tabs to fit. */
+  .crumbs:has(+ .views) > :not(:first-child),
+  .crumbs:has(+ .views) .rootName {
+    display: none;
+  }
+
+  .views {
+    flex-shrink: 0;
+    padding-left: var(--space-2);
+  }
+
   .view,
   .viewActive {
-    padding: var(--space-1) var(--space-2);
+    padding: var(--space-1) var(--space-1);
   }
 }

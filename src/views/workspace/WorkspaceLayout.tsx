@@ -78,7 +78,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           { label: 'table', to: `/w/${wid}/table` },
           { label: 'matrix', to: `/w/${wid}/matrix` },
         ]}
-        right={<PeopleHere wid={wid} onBoard={view === 'board'} />}
+        right={<PeopleHere wid={wid} view={view} />}
         settings={<WorkspaceSettings wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
         settingsBadge={isOwner ? requests.data.length : 0}
       />

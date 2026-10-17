@@ -370,3 +370,30 @@ into tabs above the page.
   if you're both on the board, otherwise open their view.
 - Rules now check every field's type, the view list, `ts <= now`, and refuse unknown fields (116 rule tests pass).
 
+### D-067 · 2026-10-17 · Accepted (refines D-053, D-064)
+**Views are tabs, filters are boxes.** The user found the view menu bar looked like the filter dropdowns (same frame, same small
+uppercase text). Now the views (`board flow table matrix`) sit after a vertical rule in the HUD as plain lowercase tabs in the
+breadcrumb's size: dim, bright on hover, the current one bright with a 2px magenta bar that slides between tabs (`layoutId`, instant
+under reduced motion). Frames stay reserved for controls that change what you see (filters, `+`). Every dropdown trigger has a fixed
+30px height, so `go to` (no summary text) is as tall as `show`/`for`/`tag`. Below 760px the breadcrumb collapses to `#` so the tabs fit.
+- *Settings:* the gear lost its frame too (an icon like the tabs, dim → bright, turns 45°); while the modal is open it carries
+  the same magenta bar. The account chip sits after the same vertical rule as the tabs (page things left, you right).
+- *Filters stay framed, but read better:* `LABEL │ value ▾` with a faint rule; the caret turns when open; SHOW's value is one
+  square per type in its colour (hollow when hidden); a filter that narrows the board stays lit (cyan edge, cyan top bar, cyan value).
+
+### D-067 · 2026-10-17 · Accepted (extends D-065)
+**Follow someone, see everyone on a card, see who's typing, distinct colours.**
+- *Follow:* clicking a person in the HUD follows them: their view, and on the board their cursor (camera keeps it centred at your
+  own zoom). Stops on your own pan/zoom, switching view yourself, Escape, or clicking them again. While following, the page has a
+  2px frame in their colour and a "following Bob · board — esc to stop" tag at the bottom.
+- *Several people on one card:* a ring per person in their colour around the card (outermost = first in the list), and their
+  names as tags above its top-left corner. Before, only one colour showed.
+- *Who's typing (user request):* focusing a text field inside an item's panel sends `edit` (item id) and `field` (the field's
+  `data-field`, label or placeholder). Others see `Bob ✎ title` on the card and at the top of the panel, and the field itself gets an
+  outline in Bob's colour. Panels mark their item with `data-item`. Table cells don't report editing yet.
+- *Colours:* each person still prefers a hashed accent, but colours are assigned in join order (`since`, server time) so up to five
+  people never share one; everyone computes the same answer locally. Your own square on the account chip shows your colour in a workspace.
+  HUD people are chips: a filled square (or photo with a colour band) plus their name in their colour (initials only above 3 people or below 640px).
+- *No cursor trail:* tried, the user found it ugly.
+Rules: `edit`, `field`, `since` validated; 118 rule tests pass.
+

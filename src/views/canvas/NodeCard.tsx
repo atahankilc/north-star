@@ -2,7 +2,7 @@
 // label in the type's colour say what it is (D-055). Tags (white #chips) group cards within a type (D-056).
 // Notes stay in the panel, not on the card (D-057), so cards stay small.
 // Editing happens in the DetailPanel.
-import { Text } from '@react-three/drei'
+import { Html, Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useMemo, useRef, useState } from 'react'
 import { MathUtils, MeshBasicMaterial, Plane, Vector3, type Group } from 'three'
@@ -14,10 +14,14 @@ import { fontUrls } from '../../three/fonts'
 import { BOARD_KINDS, TYPE_ACCENT, type BoardItem } from './boardKinds'
 import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
+import styles from './NodeCard.module.css'
 
 const BOARD = new Plane(new Vector3(0, 0, 1), 0)
 const hit = new Vector3()
 const WRITE_EVERY_MS = 120
+// Rings around a card for each collaborator who has it selected: one band each, with a dark gap between.
+const RING = 0.05
+const RING_GAP = 0.025
 
 export function boardPoint(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] | null {
   return e.ray.intersectPlane(BOARD, hit) ? [hit.x, hit.y] : null
@@ -32,12 +36,12 @@ type Props = {
   related: boolean
   // A competitor's features, waiting behind it as a stack (D-058); 0 when fanned out or not a competitor.
   stack?: number
-  // A collaborator has this card selected: their colour (D-065).
-  peerColor?: string
+  // Collaborators who have this card selected, in their colours (D-065, D-067).
+  peers?: { name: string; color: string }[]
   onLinkDrop: (targetId: string) => void
 }
 
-export function NodeCard({ wid, item: node, layer, related, stack = 0, peerColor, onLinkDrop }: Props) {
+export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], onLinkDrop }: Props) {
   const type = node.type
   const W = CARD_W
   const H = CARD_H
@@ -132,7 +136,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peerColor
     if (controls) controls.enabled = true
   }
 
-  const rim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : (peerColor ?? (hovered ? '#5a5a5a' : null))
+  const rim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : hovered ? '#5a5a5a' : null
   const title = node.title.trim()
   const left = -W / 2 + 0.22
   const inner = W - 0.22 - 0.16
@@ -173,6 +177,22 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peerColor
             </mesh>
           </group>
         ))}
+        {/* Collaborators' selections: outermost first, each band a little further back. */}
+        {peers.map((p, i) => {
+          const out = 0.05 + (peers.length - i) * (RING + RING_GAP)
+          return (
+            <group key={p.name + i} position={[0, 0, -0.003 - (peers.length - i) * 0.0004]}>
+              <mesh position={[0, 0, -0.0002]}>
+                <planeGeometry args={[W + out, H + out]} />
+                <meshBasicMaterial color={p.color} toneMapped={false} />
+              </mesh>
+              <mesh>
+                <planeGeometry args={[W + out - RING, H + out - RING]} />
+                <meshBasicMaterial color={colors.bg} toneMapped={false} />
+              </mesh>
+            </group>
+          )
+        })}
         {/* Edge: a hairline, or the highlight when hovered, selected, related or a link target. */}
         <mesh position={[0, 0, -0.002]}>
           <planeGeometry args={[W + (rim ? 0.05 : 0.02), H + (rim ? 0.05 : 0.02)]} />
@@ -240,6 +260,18 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peerColor
           </Text>
         )}
       </group>
+      {peers.length > 0 && (
+        // Who has it open, above its top-left corner (DOM, so the names stay crisp at any zoom).
+        <Html position={[-W / 2 - (0.05 + peers.length * (RING + RING_GAP)) / 2, H / 2 + (0.05 + peers.length * (RING + RING_GAP)) / 2, 0]} zIndexRange={[1, 1]} pointerEvents="none">
+          <div className={styles.peers}>
+            {peers.map((p, i) => (
+              <span key={p.name + i} className={styles.peer} style={{ ['--peer' as string]: p.color }}>
+                {p.name}
+              </span>
+            ))}
+          </div>
+        </Html>
+      )}
       <CardReveal content={content} uniforms={cell} />
     </group>
   )
