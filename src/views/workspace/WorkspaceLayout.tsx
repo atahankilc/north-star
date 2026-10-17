@@ -9,8 +9,10 @@ import { Appear } from '../../ui/Appear'
 import { DecodeText } from '../../ui/DecodeText'
 import { Hud } from '../../ui/Hud'
 import { InlineEdit } from '../../ui/InlineEdit'
+import { Toast } from '../../ui/Toast'
 import { WorkspaceContext, type WorkspaceCtx } from './context'
 import { DomainTabs } from './DomainTabs'
+import { useEditKeys } from './useEditKeys'
 import styles from './WorkspaceLayout.module.css'
 
 export function WorkspaceLayout() {
@@ -43,8 +45,15 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
         right={<InviteChip code={workspace.inviteCode} />}
       />
       {!isLoading && <Outlet />}
+      <EditKeys />
+      <Toast />
     </WorkspaceContext.Provider>
   )
+}
+
+function EditKeys() {
+  useEditKeys()
+  return null
 }
 
 function InviteChip({ code }: { code: string }) {

@@ -5,12 +5,14 @@ import { useSearchParams } from 'react-router-dom'
 import type { WithId } from '../../data/hooks'
 import type { Competitor, CompetitorFeature } from '../../data/model'
 import { createNode, deleteNode, updateNode } from '../../data/nodes'
+import { useHistory } from '../../data/history'
 import { useCanvas } from '../../state/canvasStore'
 import { Appear } from '../../ui/Appear'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { useWs } from '../workspace/context'
 import { LinkList } from '../workspace/LinkList'
+import { removeItem, UNDO_HINT } from '../workspace/useEditKeys'
 import styles from './CompetitorProfile.module.css'
 
 const UNCATEGORIZED = 'uncategorized'
@@ -19,15 +21,8 @@ const UNCATEGORIZED = 'uncategorized'
 export function CompetitorProfile({ competitor, children }: { competitor: WithId<Competitor>; children?: ReactNode }) {
   const { wid } = useWs()
   const select = useCanvas((s) => s.select)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const set = (fields: Partial<Competitor>) => void updateNode(wid, 'competitor', competitor.id, fields)
   const opt = (key: keyof Competitor) => (v: string) => set({ [key]: v.trim() ? v : undefined })
-
-  useEffect(() => {
-    if (!confirmDelete) return
-    const t = window.setTimeout(() => setConfirmDelete(false), 3000)
-    return () => window.clearTimeout(t)
-  }, [confirmDelete])
 
   const href = safeUrl(competitor.url)
 
@@ -80,15 +75,9 @@ export function CompetitorProfile({ competitor, children }: { competitor: WithId
 
       <footer className={styles.foot}>
         <span className={styles.meta}>added {new Date(competitor.createdAt).toLocaleDateString()}</span>
-        <AsciiButton
-          accent={confirmDelete ? 'magenta' : 'yellow'}
-          onClick={() => {
-            if (!confirmDelete) return setConfirmDelete(true)
-            select(null)
-            void deleteNode(wid, 'competitor', competitor.id)
-          }}
-        >
-          {confirmDelete ? 'Confirm delete' : 'Delete competitor'}
+        {/* Undoable, so one click (Q-013). */}
+        <AsciiButton accent="yellow" onClick={() => removeItem(wid, 'competitor', competitor.id, competitor.name)}>
+          Delete competitor
         </AsciiButton>
       </footer>
     </div>
@@ -206,7 +195,6 @@ function FeatureRow({
   listId: string
 }) {
   const { wid, edges } = useWs()
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const set = (fields: Partial<CompetitorFeature>) => void updateNode(wid, 'competitorFeature', feature.id, fields)
   const links = edges.filter((e) => e.fromId === feature.id || e.toId === feature.id).length
 
@@ -248,17 +236,13 @@ function FeatureRow({
             <LinkList nodeId={feature.id} nodeType="competitorFeature" hint="Link it to your ideas or features." />
             <div className={styles.rowFoot}>
               <AsciiButton
-                accent={confirmDelete ? 'magenta' : 'yellow'}
+                accent="yellow"
                 onClick={() => {
-                  if (!confirmDelete) {
-                    setConfirmDelete(true)
-                    window.setTimeout(() => setConfirmDelete(false), 3000)
-                    return
-                  }
                   void deleteNode(wid, 'competitorFeature', feature.id)
+                  useHistory.getState().say(`Deleted "${feature.name || 'feature'}" · ${UNDO_HINT} to undo`)
                 }}
               >
-                {confirmDelete ? 'Confirm delete' : 'Delete'}
+                Delete
               </AsciiButton>
             </div>
           </Appear>

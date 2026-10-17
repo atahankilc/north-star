@@ -227,3 +227,12 @@ Selecting a customer card highlights the items tagged with it and shows those li
 ### D-045 · 2026-10-17 · Accepted
 **Flow columns: Customers → Problems → Competitors → Ideas → Features** (who hurts, what hurts, how they cope today, our answer,
 what we build). Competitors before ideas so the gap shows before the solution.
+
+### D-046 · 2026-10-17 · Accepted (answers Q-013)
+**Undo/redo by document snapshots** (`src/data/history.ts`). Every write in `src/data/` goes through `tracked()`, which snapshots
+the documents it touches before and after; undo/redo write a snapshot back. So cascades (a competitor with its features, matrix cells
+and links; a domain and its items' domain fields) undo as one step. Typing in one field and one drag merge into one step.
+Local to the tab and workspace (cleared on switching), last write wins against collaborators.
+Keys: ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y, Delete or Backspace on the selected item; text fields keep their own undo. A toast says what happened.
+Deletes are one click now (they're undoable); domain delete keeps its `delete?` step.
+Tracked writes are serialised but never wait for the server (Firestore applies writes locally in call order), so editing works offline.

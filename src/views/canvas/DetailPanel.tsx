@@ -10,7 +10,7 @@ import {
   type BoardNode,
   type Feature,
 } from '../../data/model'
-import { createBoardNode, deleteNode, updateNode } from '../../data/nodes'
+import { createBoardNode, updateNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { Appear } from '../../ui/Appear'
@@ -19,6 +19,7 @@ import { CompetitorProfile } from '../competitors/CompetitorProfile'
 import { useWs } from '../workspace/context'
 import { DomainPicker, ForPicker } from '../workspace/ItemPickers'
 import { LinkList } from '../workspace/LinkList'
+import { removeItem } from '../workspace/useEditKeys'
 import { BOARD_KINDS, type BoardItem } from './boardKinds'
 import { findFreeSpot, IDEA_COLORS } from './cardLayout'
 import styles from './DetailPanel.module.css'
@@ -79,7 +80,6 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
   const pending = useRef<Partial<BoardNode>>({})
   const timer = useRef<number | undefined>(undefined)
   const titleRef = useRef<HTMLInputElement>(null)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [promoted, setPromoted] = useState(false)
   const kind = BOARD_KINDS[type]
 
@@ -123,12 +123,6 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
       flush()
     },
   })
-
-  useEffect(() => {
-    if (!confirmDelete) return
-    const t = window.setTimeout(() => setConfirmDelete(false), 3000)
-    return () => window.clearTimeout(t)
-  }, [confirmDelete])
 
   // D-037: the idea's text becomes a new feature next to it, in its domain, that remembers where it came from.
   const promote = async () => {
@@ -212,15 +206,15 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
               {promoted ? 'Promoted' : 'To feature'}
             </AsciiButton>
           )}
+          {/* Undoable, so one click (Q-013). */}
           <AsciiButton
-            accent={confirmDelete ? 'magenta' : 'yellow'}
+            accent="yellow"
             onClick={() => {
-              if (!confirmDelete) return setConfirmDelete(true)
-              select(null)
-              void deleteNode(wid, type, node.id)
+              flush()
+              removeItem(wid, type, node.id, draft.title)
             }}
           >
-            {confirmDelete ? 'Confirm delete' : 'Delete'}
+            Delete
           </AsciiButton>
         </span>
       </footer>

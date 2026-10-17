@@ -1,5 +1,7 @@
-import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore'
+// Links between any two nodes. Undoable (history.ts).
+import { collection, deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from './firebase'
+import { absent, tracked } from './history'
 import type { Edge, EdgeKind, NodeType } from './model'
 
 const edgesOf = (wid: string) => collection(db(), 'workspaces', wid, 'edges')
@@ -11,16 +13,19 @@ export async function createEdge(
   kind: EdgeKind = 'relates',
 ) {
   const edge: Edge = { fromId: from.id, fromType: from.type, toId: to.id, toType: to.type, kind }
-  const ref = await addDoc(edgesOf(wid), edge)
+  const ref = doc(edgesOf(wid))
+  await tracked(kind === 'for' ? 'tag' : 'link', [ref], () => setDoc(ref, edge), { before: absent([ref]) })
   return ref.id
 }
 
 export function updateEdge(wid: string, id: string, fields: Partial<Pick<Edge, 'kind' | 'label'>>) {
-  return updateDoc(doc(edgesOf(wid), id), fields)
+  const ref = doc(edgesOf(wid), id)
+  return tracked('link type', [ref], () => updateDoc(ref, fields))
 }
 
 export function deleteEdge(wid: string, id: string) {
-  return deleteDoc(doc(edgesOf(wid), id))
+  const ref = doc(edgesOf(wid), id)
+  return tracked('unlink', [ref], () => deleteDoc(ref))
 }
 
 export function linked(edges: Edge[], a: string, b: string) {

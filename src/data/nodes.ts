@@ -1,15 +1,17 @@
 // Create, edit and delete for every node type. Edges live in edges.ts, matrix cells in comparisons.ts.
+// Everything here is undoable (history.ts) except the live position stream during a drag.
 import {
-  addDoc,
   collection,
   deleteField,
   doc,
   getDocs,
+  setDoc,
   updateDoc,
   writeBatch,
   type DocumentReference,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { absent, snapshotWith, tracked } from './history'
 import type {
   BoardNode,
   BoardType,
@@ -52,8 +54,19 @@ export async function createNode<T extends Exclude<NodeType, 'group'>>(
   fields: Omit<Fields[T], 'createdAt' | 'updatedAt'>,
 ) {
   const now = Date.now()
-  const ref = await addDoc(col(wid, COLLECTIONS[type]), { ...fields, createdAt: now, updatedAt: now })
+  const ref = doc(col(wid, COLLECTIONS[type]))
+  await tracked(`new ${LABELS[type]}`, [ref], () => setDoc(ref, { ...fields, createdAt: now, updatedAt: now }), { before: absent([ref]) })
   return ref.id
+}
+
+const LABELS: Record<NodeType, string> = {
+  customer: 'customer',
+  problem: 'problem',
+  idea: 'idea',
+  group: 'group',
+  feature: 'feature',
+  competitor: 'competitor',
+  competitorFeature: 'competitor feature',
 }
 
 // A new card on the board. Competitors keep their title as `name`.
@@ -73,19 +86,30 @@ export function createBoardNode(
 }
 
 // `undefined` clears a field (Firestore rejects undefined values).
+// Typing in one field merges into one undo step.
 export function updateNode<T extends NodeType>(wid: string, type: T, id: string, fields: Partial<Fields[T]>) {
   const data: Record<string, unknown> = { updatedAt: Date.now() }
   for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v
-  return updateDoc(doc(col(wid, COLLECTIONS[type]), id), data)
+  const ref = doc(col(wid, COLLECTIONS[type]), id)
+  const keys = Object.keys(fields).sort().join(',')
+  return tracked(`edit ${LABELS[type]}`, [ref], () => updateDoc(ref, data), { key: `edit:${id}:${keys}` })
 }
 
+// The live stream while dragging: not undoable on its own, see endMove.
 export function moveNode(wid: string, type: BoardType, id: string, x: number, y: number) {
   return updateDoc(doc(col(wid, COLLECTIONS[type]), id), { x, y })
 }
 
+// The end of a drag: one undo step from where the card started.
+export async function endMove(wid: string, type: BoardType, id: string, from: [number, number], to: [number, number]) {
+  const ref = doc(col(wid, COLLECTIONS[type]), id)
+  const before = await snapshotWith(ref, { x: from[0], y: from[1] })
+  return tracked(`move ${LABELS[type]}`, [ref], () => updateDoc(ref, { x: to[0], y: to[1] }), { before })
+}
+
 const BATCH_LIMIT = 450
 
-async function deleteAll(refs: DocumentReference[]) {
+async function deleteAll(refs: DocumentReference[]): Promise<void> {
   for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
     const batch = writeBatch(db())
     for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)
@@ -119,6 +143,14 @@ export async function deleteNode(wid: string, type: NodeType, id: string) {
   }
 
   // The node itself goes last, so a failure part-way leaves it visible to retry.
-  await deleteAll(refs)
-  await deleteAll([doc(col(wid, COLLECTIONS[type]), id)])
+  const self = doc(col(wid, COLLECTIONS[type]), id)
+  await tracked(
+    `delete ${LABELS[type]}`,
+    [...refs, self],
+    async () => {
+      await deleteAll(refs)
+      await deleteAll([self])
+    },
+    { settle: true },
+  )
 }

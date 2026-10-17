@@ -24,8 +24,3 @@ Should images be compressed client-side?
 ### Q-012 · soon: How should groups/clusters work?
 Option A: a group is a labelled frame you drag cards into (spatial). Option B: tag-based (all cards with a tag form a group).
 Recommendation: A, a frame on the board that moves its cards with it, since it matches the post-it mental model.
-
-### Q-013 · soon: Undo and keyboard delete
-Right now deleting is a two-step button only (no Delete key) because there's no undo yet.
-Recommendation: add a small local undo stack (create, move, edit, delete), then enable the Delete key and cmd+Z.
-

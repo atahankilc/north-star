@@ -5,7 +5,7 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useMemo, useRef, useState } from 'react'
 import { MathUtils, MeshBasicMaterial, Plane, Shape, Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import { moveNode } from '../../data/nodes'
+import { endMove, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { colors } from '../../styles/tokens'
 import { fontUrls } from '../../three/fonts'
@@ -71,7 +71,7 @@ export function NodeCard({ wid, item: node, layer, related, unsorted, onLinkDrop
   const isLinkTarget = useCanvas((s) => s.linkFrom !== null && s.linkFrom !== node.id) && hovered
   const { select, startLink, endLink, setDragging } = useCanvas.getState()
 
-  const drag = useRef<{ dx: number; dy: number; lastWrite: number; moved: boolean } | null>(null)
+  const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean } | null>(null)
 
   const [x, y] = live ?? [node.x, node.y]
   const accent = node.color ?? TYPE_ACCENT[type]
@@ -101,7 +101,7 @@ export function NodeCard({ wid, item: node, layer, related, unsorted, onLinkDrop
       startLink(node.id, p)
       return
     }
-    drag.current = { dx: p[0] - x, dy: p[1] - y, lastWrite: 0, moved: false }
+    drag.current = { dx: p[0] - x, dy: p[1] - y, from: [node.x, node.y], lastWrite: 0, moved: false }
     ;(e.target as Element).setPointerCapture(e.pointerId)
   }
 
@@ -128,7 +128,8 @@ export function NodeCard({ wid, item: node, layer, related, unsorted, onLinkDrop
       drag.current = null
       ;(e.target as Element).releasePointerCapture(e.pointerId)
       const final = useCanvas.getState().dragging[node.id]
-      if (d.moved && final) void moveNode(wid, type, node.id, final[0], final[1])
+      // One undo step for the whole drag.
+      if (d.moved && final) void endMove(wid, type, node.id, d.from, final)
       setDragging(node.id, null)
     } else if (useCanvas.getState().linkFrom && !isLinkSource) {
       e.stopPropagation()

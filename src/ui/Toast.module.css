@@ -1,0 +1,32 @@
+.toast {
+  composes: frame from './Frame.module.css';
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--hud-y) + 40px);
+  z-index: 30;
+  padding: var(--space-2) var(--space-4);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.toast::before {
+  content: '› ';
+  color: var(--accent-cyan);
+}
+
+.toast[data-visible='true'] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+html[data-motion='reduced'] .toast {
+  transform: translate(-50%, 0);
+  transition: none;
+}
