@@ -5,7 +5,10 @@ competitors, comparison matrix) with a 3D ASCII design language. It is a static 
 SPA on GitHub Pages, backed by Firebase (Auth, Firestore, Realtime Database). There is no server of our own.
 
 ## Session start: always
-1. Read `memory-bank/state.md`, `memory-bank/open-questions.md` and `memory-bank/decisions.md`.
+1. The memory bank is auto-loaded into context via these imports (no need to read them manually):
+   - @memory-bank/state.md
+   - @memory-bank/open-questions.md
+   - @memory-bank/decisions.md
 2. Consult `/docs` as needed:
    - `docs/PRODUCT.md`: what we're building (entities, views, flows)
    - `docs/ARCHITECTURE.md`: stack, backend, data model, collaboration, AI, export/import
