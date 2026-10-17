@@ -103,10 +103,32 @@ export function Board(props: Props) {
         <CursorReporter />
         <PeerCursors />
         <FollowCamera />
+        <KeepLeftEdge />
         <Snapshot nodes={props.nodes} labels={props.labels} />
       </Canvas>
     </div>
   )
+}
+
+// When the canvas gets narrower or wider (the assistant's window opening or closing, D-081), keep the board's left
+// edge where it is: the cards you're looking at stay put and the board is only revealed or covered on the right.
+function KeepLeftEdge() {
+  const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
+  const camera = useThree((s) => s.camera)
+  const { width, height } = useThree((s) => s.size)
+  const last = useRef(width)
+  useEffect(() => {
+    const dw = width - last.current
+    last.current = width
+    if (!controls || !dw || !height) return
+    const fov = ((camera as { fov?: number }).fov ?? 40) * (Math.PI / 180)
+    const perPixel = (2 * camera.position.z * Math.tan(fov / 2)) / height
+    const dx = (dw / 2) * perPixel
+    camera.position.x += dx
+    controls.target.x += dx
+    controls.update()
+  }, [width, height, camera, controls])
+  return null
 }
 
 function Controls({ domElement }: { domElement: HTMLElement }) {

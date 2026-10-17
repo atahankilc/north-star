@@ -543,6 +543,28 @@ no server, and it works with the user's key.
 - Two tasks, not one per feature: today the assistant has only these two kinds of calls. New kinds (e.g. a deep "send agents" research)
   get their own picker when they arrive.
 
+### D-078 · 2026-10-17 · Accepted (refines D-073's orb)
+**A bigger orb with Grok-style eyes and a lot of character.** User feedback: the dot sphere was too small and its eyes were neither
+cute nor pretty; then: moods under the pointer, things to do by itself, reactions to the chat. No tooltip on the orb (user).
+- *Size:* 88 px (68 px below 760px), was 56. Dot count grows with the size. The canvas bleeds 36% past the button (negative
+  margin, no pointer events) so floating glyphs have room; the button stays orb-sized.
+- *Calmer sphere:* glyphs stop at `*` (no `# % @`), which had drowned out the face.
+- *Eyes (user: "like Grok Bot"):* solid rounded squares in `--fg-strong`, no pupils, no shine. Expressions come from eye shapes
+  (`^` arcs, hearts, four-point sparkles, spirals, `> <`, X, closed curves, flat/slanted/sad lids, one eye bigger) and a small mouth;
+  a changing eye or mouth pops small and back. The face slides toward where it looks, flattens near the edge, can tilt and sink.
+  Rejected on the way: glossy eyes with catchlights (anime), white eyes with pupils, a pink blush on every hover, heavy lids for thinking.
+- *Under the pointer:* a mood, new on every hover and every 2.6–4 s: laughing, angry (slanted cut, magenta dots, shakes in bursts),
+  shy (`///`), in love (heart eyes, heartbeat, rising ♥), starry (cyan sparkle eyes, ✦ around), suspicious (one eye narrowed, side-eye).
+- *By itself while idle (like the Las Vegas Sphere's face, user's reference):* one every 3–7 s, whether or not the pointer moves:
+  race, glance, wink, hum (♪), bored, surprise, eye roll, dizzy (fast spin, spiral eyes), love, sneeze (ah… choo, a puff of dots).
+  Pointer still for 20 s: falls asleep (closed eyes, z's); moving wakes it with a short start.
+- *With the chat (user):* open = curious (head tilts side to side, the eye on that side bigger, darts over the chat, a `?` now and then);
+  waiting for the answer = thinking (fast spin, cyan shimmer, narrowed eyes); answer streaming = yapping (`talking` mood: chattering
+  mouth, bobbing); after talking = tired for 3.5 s (droopy lids, sinks, a sigh); closing = sad (tear) or plays dead (X eyes, tongue
+  out, tipped over, no spin), 2.4 s, then revives with a shake.
+- Reduced motion: still, drawn once per mood, no antics or reactions. Colours are re-read every few frames (theme tokens transition).
+- Dev hooks: `__orbAntic('race')`, `__orbFace('angry')`, `__orbReact('dead')`.
+
 ### D-079 · 2026-10-17 · Accepted (Phase 4.3; extends D-006, needs Blaze, reverses D-015's "stay on Spark")
 **A workspace key the owner shares, and a usage log for every assistant call.** User's request and choices.
 - *Where the shared key lives:* nowhere a browser can read it. There's no way to let others use a key in their browser without
@@ -591,6 +613,30 @@ no server, and it works with the user's key.
 - *PNG* (`Snapshot` in `Board.tsx`, `canvasStore.snapshot`): the whole board as filtered, drawn once offscreen with an orthographic camera
   from straight above at 120 px per board unit (less for huge boards, max side 8192), on the theme's `--bg` without the `+` grid (user), line widths as at 2x. Cursors and
   names (DOM) stay out; your own selection highlight is in it. Only while the board view is mounted ("open the board view first" otherwise).
+
+### D-081 · 2026-10-17 · Accepted (changes D-073's chat panel)
+**The assistant opens as a window beside the app, not a panel over it.** User: "the left is North Star, the right is the AI window".
+- *Layout:* the workspace (HUD, views, side panels, toasts) lives in one fixed box `[data-app]` with `contain: layout`, so every
+  fixed element inside is laid out in that box. While the chat is open (`html[data-ai-open]`) the box ends at `--ai-w` and the
+  window fills the right edge, full height, with a hairline. The app takes its new width at once (see the second pass below);
+  nothing else had to change. The backdrop still spans the whole screen behind both.
+- *Width:* drag the window's left edge (cyan line on hover), 320–760 px, never leaving the app under 360 px; remembered in this
+  browser (`north-star.ai-width`, default 420).
+- *The orb is the window's face:* the same orb (one instance, so its reactions carry over, D-078) glides from the corner into the
+  header's left (Motion `layout`) and back on close; clicking it closes the window. Open, its curious glances point down at the chat.
+- *Composer:* one framed box, the text on top and `[web] [send]` under it; the frame turns cyan while you type.
+- *Narrow screens (<760 px):* the window covers the whole screen instead of sharing it.
+- The table's popovers clamp to the app box instead of the window width, so they don't slide under the assistant.
+- *Motion, second pass (user: the app took time to adapt and jumped, the + grid waited and then jumped):* the app box changes
+  width at once, never eased (an easing canvas lags and snaps). The board keeps its left edge (`KeepLeftEdge` in Board.tsx shifts
+  camera and target), so cards and grid stay put. The HUD's right side (`data-glide`) and open side panels glide to their new
+  place (`src/ui/glide.ts`, FLIP with WAAPI, run from the chat store's `open` change so every way of opening or closing does it).
+  Opening, the window rises from below with the orb straining at its top (`heave`: `> <`, trembling); closing, the app is whole
+  again at once *under* the window, so lowering it reveals the board instead of making it wait. Header words fade in once the
+  orb has landed. Rejected: sliding in from the right (didn't match the orb rising).
+- *Lower floor:* the window is the page's black at 78% with the flowing backdrop faintly through it, a soft shade along its left edge.
+- *Side panels and the orb:* the closed orb's offset is React state (a MutationObserver on `[data-side-panel]`), so Motion glides
+  it aside and back instead of teleporting; it gets `bumped` (`> <`, a jolt, a wary look) and `free` (`^ ^`, a hop) via `cue`.
 
 ### D-082 · 2026-10-17 · Accepted
 **The assistant knows the app from the startup, and the team says what it's building.** User report: asked "Summarize this

@@ -73,26 +73,29 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 
   return (
     <WorkspaceContext.Provider value={ctx}>
-      <Hud
-        crumbs={[
-          { label: 'workspaces', to: WORKSPACES },
-          // Renaming lives in settings and on the workspaces page, not here.
-          { label: workspace.name },
-        ]}
-        views={[
-          { label: 'board', to: workspacePath(wid), end: true },
-          { label: 'flow', to: workspacePath(wid, 'flow') },
-          { label: 'table', to: workspacePath(wid, 'table') },
-          { label: 'matrix', to: workspacePath(wid, 'matrix') },
-        ]}
-        right={<PeopleHere wid={wid} view={view} />}
-        settings={<WorkspaceSettings wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
-        settingsBadge={isOwner ? requests.data.length : 0}
-      />
-      {!isLoading && <Outlet />}
-      <EditKeys />
+      {/* The app's box: everything fixed inside is laid out in it, so it all makes room for the assistant's window (D-081). */}
+      <div className={styles.app} data-app>
+        <Hud
+          crumbs={[
+            { label: 'workspaces', to: WORKSPACES },
+            // Renaming lives in settings and on the workspaces page, not here.
+            { label: workspace.name },
+          ]}
+          views={[
+            { label: 'board', to: workspacePath(wid), end: true },
+            { label: 'flow', to: workspacePath(wid, 'flow') },
+            { label: 'table', to: workspacePath(wid, 'table') },
+            { label: 'matrix', to: workspacePath(wid, 'matrix') },
+          ]}
+          right={<PeopleHere wid={wid} view={view} />}
+          settings={<WorkspaceSettings wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
+          settingsBadge={isOwner ? requests.data.length : 0}
+        />
+        {!isLoading && <Outlet />}
+        <EditKeys />
+        <Toast />
+      </div>
       {!isLoading && <AiChat />}
-      <Toast />
     </WorkspaceContext.Provider>
   )
 }

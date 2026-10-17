@@ -215,6 +215,11 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   refused with "Still using …"; requests go to gpt-6-luna with web off and gpt-6.1-sol with web on). Committed 2026-10-17 with D-079.
   **Phase 4 is done.**
 
+## Done (orb redesign, 2026-10-17)
+- D-078: bigger orb (88 px), Grok-style eyes, six hover moods, ten idle antics + sleep, chat reactions (curious, thinking,
+  yapping via the new `talking` mood, tired, sad/dead on close, revive), no tooltip. Dev hooks `__orbAntic`, `__orbFace`, `__orbReact`.
+  Verified headless with a temporary preview page (every expression captured). Committed 2026-10-17.
+
 ## Done (Phase 4.3: workspace key + usage log, 2026-10-17)
 - D-079: `functions/` (setWorkspaceKey, aiMembers, ai streaming proxy, cleanUpWorkspaceAi), rules for `ai/config`, `aiUsage`, `aiSecrets`
   (142 rule tests pass), `callAi` wrapper logging every call, Settings → ai → keys / usage, key choice per workspace, prices removed from
@@ -231,6 +236,14 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   `src/data/importWorkspace.ts`, `src/views/matrix/reading.ts`, `Snapshot` in Board.tsx. New dependency: `fflate`. No rule change.
 - Verified headless on emulators in dark and light: example → zip/tsv/png downloaded; zip imported as a new workspace whose re-export has
   the same counts, the same links and the same matrix cells by name, with new ids; a non-export file is refused. Build passes. Committed and pushed 2026-10-17.
+
+## Done (assistant window, 2026-10-17)
+- D-081: the chat is a resizable full-height window on the right; the app (`[data-app]`, `contain: layout`) makes room; the orb
+  glides into its header; framed composer; full screen below 760px. Verified headless on emulators with OpenAI mocked
+  (1440 dark, 1280 light, 390 narrow: open, streamed answer, close with the sad/dead reaction).
+- D-081 second pass: instant app width + board keeps its left edge + FLIP glides (glide.ts), window lifted up by the orb,
+  black see-through window, orb glides around side panels with bumped/free reactions. Verified with a timestamped CDP screencast
+  on emulators (open, close, side panel in and out: no board jump). Committed 2026-10-17 (not pushed).
 
 ## Done (assistant knows the startup, 2026-10-17)
 - D-082: the prompt says North Star is the app, never the startup; brief starts with `WHAT WE'RE BUILDING` and is wrapped in

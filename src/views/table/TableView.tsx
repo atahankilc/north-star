@@ -262,7 +262,9 @@ function Popover({
         aria-expanded={isOpen}
         onClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect()
-          setAt({ left: Math.min(r.left, window.innerWidth - 380), top: r.bottom + 4 })
+          // Kept inside the app's box, clear of the assistant's window (D-081).
+          const right = e.currentTarget.closest('[data-app]')?.getBoundingClientRect().right ?? window.innerWidth
+          setAt({ left: Math.min(r.left, right - 380), top: r.bottom + 4 })
           setOpen(isOpen ? null : id)
         }}
       >

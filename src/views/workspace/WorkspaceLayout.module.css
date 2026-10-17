@@ -1,3 +1,14 @@
+/* The app beside the assistant's window (D-081). Layout containment makes this box the containing block for every fixed
+   element inside (HUD, side panels, toasts), so they all end where the window starts. It changes width at once, never
+   animated: an easing canvas lags and jumps. What moves glides instead (glide.ts, the board's KeepLeftEdge). */
+.app {
+  position: fixed;
+  inset: 0;
+  right: var(--ai-w, 0px);
+  z-index: 1;
+  contain: layout;
+}
+
 .code {
   color: var(--accent-cyan);
   letter-spacing: 0.08em;

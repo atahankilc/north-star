@@ -1,8 +1,10 @@
-// The assistant (D-073): an ASCII orb with eyes in the bottom-right corner of a workspace. Clicking it opens a chat
-// that knows the workspace and proposes changes you accept before they're written (D-074). Your own OpenAI key (D-006)
+// The assistant (D-073): an ASCII orb with eyes in the bottom-right corner of a workspace. Clicking it opens the
+// assistant's window, a full-height column on the right that the app makes room for (D-081); the orb glides up into its
+// header and stays there as its face. The chat knows the workspace and proposes changes you accept before they're
+// written (D-074). Your own OpenAI key (D-006)
 // or the workspace's, if the owner set one and lets you use it (D-079).
-import { AnimatePresence } from 'motion/react'
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type CSSProperties } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useChat } from '../ai/chat'
 import { workspaceBrief } from '../ai/context'
@@ -12,14 +14,58 @@ import { modelFor, useAiSettings } from '../ai/settings'
 import type { KeySource } from '../data/ai'
 import { workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
+import { useMotion } from '../state/motion'
 import { useWs } from '../views/workspace/context'
 import { AiKeyForm, KEY_PRIVACY } from './AiSettings'
-import { AiOrb, type OrbMood } from './AiOrb'
+import { AiOrb, type OrbCue, type OrbMood } from './AiOrb'
+import { glide, GLIDE_MS } from './glide'
 import { AiProposal } from './AiProposal'
 import styles from './AiChat.module.css'
-import { Appear } from './Appear'
 
-const ORB = 56
+// The orb's size: big enough for its face to read; smaller on phones.
+const ORB = 88
+const ORB_NARROW = 68
+
+function useNarrow() {
+  const query = '(max-width: 760px)'
+  const [narrow, setNarrow] = useState(() => window.matchMedia(query).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const on = () => setNarrow(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return narrow
+}
+
+// The window's width: dragged by its left edge, remembered in this browser.
+const WIDTH_KEY = 'north-star.ai-width'
+const WIDTH = { min: 320, max: 760, initial: 420 }
+
+function readWidth() {
+  try {
+    const n = Number(localStorage.getItem(WIDTH_KEY))
+    return n >= WIDTH.min && n <= WIDTH.max ? n : WIDTH.initial
+  } catch {
+    return WIDTH.initial
+  }
+}
+
+const EASE = [0.16, 1, 0.3, 1] as const
+const GLIDE = { duration: GLIDE_MS / 1000, ease: EASE }
+
+// Which side panel is open in the app, if any (an item's, or the matrix cell's): the closed orb steps aside for it.
+function useSidePanel() {
+  const [side, setSide] = useState<string | null>(null)
+  useEffect(() => {
+    const read = () => setSide(document.querySelector('[data-side-panel]')?.getAttribute('data-side-panel') ?? null)
+    read()
+    const watch = new MutationObserver(read)
+    watch.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-side-panel'] })
+    return () => watch.disconnect()
+  }, [])
+  return side
+}
 
 const STARTERS = [
   'Summarize this workspace',
@@ -34,30 +80,72 @@ export function AiChat() {
   const busy = useChat((s) => s.busy)
   const enter = useChat((s) => s.enter)
   const [hover, setHover] = useState(false)
+  const size = useNarrow() ? ORB_NARROW : ORB
+  const reduced = useMotion((s) => s.reduced)
   useEffect(() => enter(wid), [enter, wid])
 
-  const mood: OrbMood = busy ? 'thinking' : open ? 'open' : hover ? 'hover' : 'idle'
+  // `html[data-ai-open]` gives the app its room (`--ai-w`, AiChat.module.css); the width is a variable on <html> too.
+  useEffect(() => {
+    const html = document.documentElement
+    html.style.setProperty('--ai-width', `${readWidth()}px`)
+    html.style.setProperty('--orb', `${size}px`)
+  }, [size])
+  // The app takes its new width at once (the board keeps its left edge, Board.tsx); the HUD's right side and side panels
+  // glide over (glide.ts). Opening, the window is lifted up by the orb; closing, the app is already whole under it as it
+  // goes down. Run from the store, before React renders, whoever opens or closes it.
+  useEffect(() => {
+    const html = document.documentElement
+    html.toggleAttribute('data-ai-open', useChat.getState().open)
+    const unsubscribe = useChat.subscribe((s, prev) => {
+      if (s.open !== prev.open) glide(() => html.toggleAttribute('data-ai-open', s.open))
+    })
+    return () => {
+      unsubscribe()
+      html.removeAttribute('data-ai-open')
+    }
+  }, [])
+
+  // A side panel shoves the closed orb aside (it glides, and gets bumped); closing it lets the orb back (relieved).
+  const side = useSidePanel()
+  const [cue, setCue] = useState<OrbCue | undefined>()
+  const lastSide = useRef(side)
+  useEffect(() => {
+    if (side === lastSide.current) return
+    const appeared = !!side && !lastSide.current
+    const gone = !side && !!lastSide.current
+    lastSide.current = side
+    if (open || (!appeared && !gone)) return
+    setCue((c) => ({ kind: appeared ? 'bumped' : 'free', n: (c?.n ?? 0) + 1 }))
+  }, [side, open])
+  const sideRoom = side ? `calc(min(${side === 'wide' ? 520 : 380}px, 100vw - 2 * var(--space-4)) + var(--space-4))` : '0px'
+
+  // Thinking until the first words arrive, then talking while they stream in.
+  const talking = useChat((s) => s.busy && !!s.messages[s.messages.length - 1]?.content)
+  const mood: OrbMood = busy ? (talking ? 'talking' : 'thinking') : open ? 'open' : hover ? 'hover' : 'idle'
 
   return (
-    <div className={styles.dock}>
-      <AnimatePresence>{open && <ChatPanel key="chat" onClose={() => setOpen(false)} />}</AnimatePresence>
-      <button
+    <>
+      <AnimatePresence>{open && <AiWindow key="chat" onClose={() => setOpen(false)} />}</AnimatePresence>
+      {/* One orb for both places, so its reactions carry over; `layout` glides it between the corner and the header. */}
+      <motion.button
+        layout={!reduced}
+        transition={GLIDE}
         className={styles.orb}
+        style={{ '--side-room': sideRoom } as CSSProperties}
         data-open={open || undefined}
         onClick={() => setOpen(!open)}
         onPointerEnter={() => setHover(true)}
         onPointerLeave={() => setHover(false)}
         aria-expanded={open}
         aria-label={open ? 'Close the assistant' : 'Ask the assistant'}
-        title="Assistant"
       >
-        <AiOrb size={ORB} mood={mood} />
-      </button>
-    </div>
+        <AiOrb size={size} mood={mood} cue={cue} />
+      </motion.button>
+    </>
   )
 }
 
-function ChatPanel({ onClose }: { onClose: () => void }) {
+function AiWindow({ onClose }: { onClose: () => void }) {
   const { source, workspaceKeyExists } = useKeySource()
   const model = useAiSettings(modelFor)
   const messages = useChat((s) => s.messages)
@@ -70,13 +158,27 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
     onClose()
   }
 
+  const reduced = useMotion((s) => s.reduced)
+
   return (
-    <Appear as="section" className={styles.panel} aria-label="Assistant" onKeyDown={onKeyDown}>
+    <motion.aside
+      className={styles.window}
+      aria-label="Assistant"
+      onKeyDown={onKeyDown}
+      // Lifted up from below by the orb (which glides up to its header at the same pace), lowered the same way.
+      initial={reduced ? false : { y: '100%' }}
+      animate={{ y: 0 }}
+      exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { y: '100%' }}
+      transition={GLIDE}
+    >
+      <ResizeEdge />
       <header className={styles.head}>
-        <span className={styles.kicker}>assistant</span>
-        <span className={styles.model}>
-          {model}
-          {source && ` · ${source === 'workspace' ? 'workspace key' : 'own key'}`}
+        <span className={styles.title}>
+          <span className={styles.name}>assistant</span>
+          <span className={styles.model}>
+            {model}
+            {source && ` · ${source === 'workspace' ? 'workspace key' : 'own key'}`}
+          </span>
         </span>
         <span className={styles.headActions}>
           {messages.length > 0 && (
@@ -90,8 +192,36 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
         </span>
       </header>
       {source ? <Conversation source={source} /> : <NoKey workspaceKeyExists={workspaceKeyExists} />}
-    </Appear>
+    </motion.aside>
   )
+}
+
+// The window's left edge: drag to resize. While dragging the app follows at once (no easing).
+function ResizeEdge() {
+  const onPointerDown = (e: ReactPointerEvent) => {
+    e.preventDefault()
+    const html = document.documentElement
+    html.toggleAttribute('data-ai-resizing', true)
+    let width = readWidth()
+    const move = (ev: PointerEvent) => {
+      const max = Math.min(WIDTH.max, window.innerWidth - 360)
+      width = Math.round(Math.min(max, Math.max(WIDTH.min, window.innerWidth - ev.clientX)))
+      html.style.setProperty('--ai-width', `${width}px`)
+    }
+    const up = () => {
+      html.removeAttribute('data-ai-resizing')
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      try {
+        localStorage.setItem(WIDTH_KEY, String(width))
+      } catch {
+        // Not remembered; it still works for now.
+      }
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+  return <div className={styles.edge} onPointerDown={onPointerDown} role="separator" aria-orientation="vertical" aria-label="Resize the assistant" />
 }
 
 function NoKey({ workspaceKeyExists }: { workspaceKeyExists: boolean }) {
@@ -231,24 +361,26 @@ function Conversation({ source }: { source: KeySource }) {
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKey}
         />
-        <button
-          type="button"
-          className={styles.web}
-          aria-pressed={web}
-          onClick={() => setWeb(!web)}
-          title={web ? 'Web search is on: answers look things up and cite sources. Each search is billed.' : 'Turn on web search for research. Each search is billed.'}
-        >
-          web
-        </button>
-        {busy ? (
-          <button type="button" className={styles.send} onClick={stop}>
-            stop
+        <span className={styles.composerBar}>
+          <button
+            type="button"
+            className={styles.web}
+            aria-pressed={web}
+            onClick={() => setWeb(!web)}
+            title={web ? 'Web search is on: answers look things up and cite sources. Each search is billed.' : 'Turn on web search for research. Each search is billed.'}
+          >
+            web
           </button>
-        ) : (
-          <button type="submit" className={styles.send} disabled={!draft.trim()}>
-            send
-          </button>
-        )}
+          {busy ? (
+            <button type="button" className={styles.send} onClick={stop}>
+              stop
+            </button>
+          ) : (
+            <button type="submit" className={styles.send} disabled={!draft.trim()}>
+              send
+            </button>
+          )}
+        </span>
       </form>
       <p className={styles.footnote}>
         Proposes changes; nothing is written until you apply. {web ? 'Web search on: each search is billed.' : 'Enter sends, Shift+Enter adds a line.'}

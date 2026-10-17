@@ -87,7 +87,7 @@ export function Hud({ crumbs = [], views, right, settings, settingsBadge }: Prop
           ))}
         </nav>
       )}
-      <div className={styles.right}>
+      <div className={styles.right} data-glide>
         {right}
         {/* Settings (motion, theme, background) only once signed in; the landing has no controls. */}
         {user && <SettingsButton workspace={settings} badge={settingsBadge} />}

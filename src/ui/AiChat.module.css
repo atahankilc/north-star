@@ -1,32 +1,23 @@
-/* The assistant's orb and chat (D-073), bottom-right of a workspace. */
-.dock {
+/* The assistant (D-073) and its window (D-081): a full-height column on the right that the app makes room for. */
+
+/* Sizes, on <html> so the app (WorkspaceLayout.module.css) can read them. `--ai-width` is set from AiChat (dragged, remembered),
+   `--orb` is the orb's size. The window never leaves the app less than 360px. */
+:global(html) {
+  --ai-window-w: min(var(--ai-width, 420px), calc(100vw - 360px));
+  --ai-w: 0px;
+}
+
+:global(html[data-ai-open]) {
+  --ai-w: var(--ai-window-w);
+}
+
+/* The orb: bottom-right of the app while closed, in the window's header while open (Motion's `layout` glides it). */
+.orb {
   position: fixed;
-  right: var(--hud-x);
+  /* `--side-room` (set from AiChat) is the width of an open side panel, so the orb glides aside for it. */
+  right: calc(var(--hud-x) + var(--side-room, 0px));
   bottom: var(--hud-y);
   z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-2);
-  pointer-events: none;
-}
-
-.dock > * {
-  pointer-events: auto;
-}
-
-/* An item's side panel owns the right edge: the assistant moves to its left. */
-:global(html:has([data-side-panel])) .dock {
-  right: calc(var(--hud-x) + min(380px, 100vw - 2 * var(--space-4)) + var(--space-4));
-}
-
-:global(html:has([data-side-panel='wide'])) .dock {
-  right: calc(var(--hud-x) + min(520px, 100vw - 2 * var(--space-4)) + var(--space-4));
-}
-
-/* The orb is an icon, unframed like the gear; open, it takes the same magenta bar (D-066). */
-.orb {
-  position: relative;
   display: block;
   padding: 0;
   border: 0;
@@ -34,20 +25,12 @@
   cursor: pointer;
 }
 
-.orb::after {
-  content: '';
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: -4px;
-  height: 2px;
-  background: var(--accent-magenta);
-  transform: scaleX(0);
-  transition: transform var(--dur-med) var(--ease-out);
-}
-
-.orb[data-open='true']::after {
-  transform: scaleX(1);
+.orb[data-open='true'] {
+  right: auto;
+  bottom: auto;
+  top: var(--space-3);
+  left: calc(100vw - var(--ai-window-w) + var(--space-4));
+  z-index: 31;
 }
 
 .orb:focus-visible {
@@ -55,25 +38,94 @@
   outline-offset: 2px;
 }
 
-.panel {
-  composes: frame from './Frame.module.css';
+/* The floor under the app: black like the page, with the flowing background faintly through it, and a soft shade
+   along its left edge where the app sits above it. */
+.window {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
   display: flex;
   flex-direction: column;
-  width: min(400px, calc(100vw - 2 * var(--space-4)));
-  height: min(560px, calc(100dvh - var(--hud-h) - var(--hud-y) - 56px - var(--space-6)));
+  width: var(--ai-window-w);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  border-left: 1px solid var(--line);
+  box-shadow: inset 28px 0 32px -28px var(--scrim);
   font-size: var(--text-sm);
 }
 
+/* Drag the left edge to resize; a cyan line shows where. */
+.edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  z-index: 1;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.edge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: var(--accent-cyan);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.edge:hover::after,
+:global(html[data-ai-resizing]) .edge::after {
+  opacity: 1;
+}
+
+:global(html[data-ai-resizing]) {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* The header leaves the orb its corner: the orb is its face. */
 .head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  min-height: calc(var(--orb, 88px) + 2 * var(--space-3));
+  padding: var(--space-3) var(--space-4) var(--space-3) calc(var(--orb, 88px) + 2 * var(--space-4));
   border-bottom: 1px solid var(--line);
 }
 
-.kicker {
-  composes: label from './Frame.module.css';
+.title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* The orb crosses the header on its way up: the header's words come in once it has landed. */
+.title,
+.headActions {
+  animation: settle 260ms var(--ease-out) 380ms both;
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+  }
+}
+
+html[data-motion='reduced'] .title,
+html[data-motion='reduced'] .headActions {
+  animation: none;
+}
+
+.name {
+  color: var(--fg-strong);
+  font-size: var(--text-md);
 }
 
 .model {
@@ -254,20 +306,33 @@ html[data-motion='reduced'] .caret {
   font-size: var(--text-xs);
 }
 
+/* One framed box: the text on top, web and send under it; the frame lights up while you type. */
 .composer {
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) var(--space-4) var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.composer:focus-within {
+  border-color: var(--accent-cyan);
+}
+
+.composerBar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4) var(--space-1);
-  border-top: 1px solid var(--line);
 }
 
 .input {
-  flex: 1;
   min-width: 0;
-  padding: var(--space-1) 0;
+  padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
   background: none;
   color: var(--fg-strong);
   font: inherit;
@@ -281,8 +346,8 @@ html[data-motion='reduced'] .caret {
   color: var(--placeholder);
 }
 
-.input:focus {
-  border-bottom-color: var(--accent-cyan);
+.input:focus-visible {
+  outline: none;
 }
 
 .send {
@@ -472,9 +537,18 @@ html[data-motion='reduced'] .caret {
   gap: var(--space-3);
 }
 
-/* Narrow screens: a side panel fills the width, so the assistant steps aside until it closes. */
+/* Narrow screens: the window covers the whole screen instead of sharing it, and a side panel fills the width, so the
+   closed orb steps aside until it closes. */
 @media (max-width: 760px) {
-  :global(html:has([data-side-panel])) .dock {
+  :global(html) {
+    --ai-window-w: 100vw;
+  }
+
+  :global(html[data-ai-open]) {
+    --ai-w: 0px;
+  }
+
+  :global(html:has([data-side-panel])) .orb:not([data-open]) {
     display: none;
   }
 }
