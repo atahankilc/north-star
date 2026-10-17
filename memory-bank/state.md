@@ -124,6 +124,10 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Verified with headless Chrome on emulators: landing 30 renders/s, idle board 0 draws, panning draws, background off removes
   the canvas, the landing still flows after sign-out; same frame as before at a pinned clock (glyphs a touch crisper). Not committed.
 
+## Done (go-to fix, 2026-10-17)
+- "go to" jumps glide every time: `flyTo` now asks the on-demand board (D-063) for a frame, so the glide starts by itself; before,
+  it only moved if something else happened to draw a frame. Verified headless: jump, pan, jump again (and to other labels).
+
 ## Next steps
 1. The user's review on the live site; then Phase 3 (presence, live cursors)
 2. Phase 3: presence + live cursors (RTDB rules are ready)

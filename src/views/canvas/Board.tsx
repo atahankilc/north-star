@@ -98,6 +98,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
+  const invalidate = useThree((s) => s.invalidate)
   const selectedId = useCanvas((s) => s.selectedId)
   const dragging = useCanvas((s) => s.dragging)
   const linkFrom = useCanvas((s) => s.linkFrom)
@@ -118,8 +119,10 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     useCanvas.getState().setFlyTo((at) => {
       if (isReducedMotion()) return jump(at)
       flight.current = at
+      // The board draws on demand: without a first frame the glide below never starts.
+      invalidate()
     })
-  }, [controls, camera, setViewCenter])
+  }, [controls, camera, setViewCenter, invalidate])
 
   // Glide toward the flight target; any pan or zoom of your own takes over.
   useEffect(() => {
