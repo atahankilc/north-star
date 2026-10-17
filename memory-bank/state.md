@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (export / import / TSV / PNG, D-080)_
+_Last updated: 2026-10-17 (assistant knows the startup, D-082)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -231,6 +231,12 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   `src/data/importWorkspace.ts`, `src/views/matrix/reading.ts`, `Snapshot` in Board.tsx. New dependency: `fflate`. No rule change.
 - Verified headless on emulators in dark and light: example → zip/tsv/png downloaded; zip imported as a new workspace whose re-export has
   the same counts, the same links and the same matrix cells by name, with new ids; a non-export file is refused. Build passes. Committed and pushed 2026-10-17.
+
+## Done (assistant knows the startup, 2026-10-17)
+- D-082: the prompt says North Star is the app, never the startup; brief starts with `WHAT WE'RE BUILDING` and is wrapped in
+  `<workspace>` tags; Settings → workspace → building edits `workspace.description` (example and import fill it). Rules: 145 pass,
+  Firestore rules deployed (database.rules.json left alone: another session's `edit`/`field` removal). Verified headless on
+  emulators with OpenAI mocked (field shows the example text; an edit reaches the next request's instructions). Committed and pushed 2026-10-17.
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs

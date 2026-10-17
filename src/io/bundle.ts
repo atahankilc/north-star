@@ -76,7 +76,8 @@ export async function readBundle(file: File): Promise<Bundle> {
   if (typeof b.version !== 'number' || b.version > BUNDLE_VERSION) {
     throw new BundleError('That export comes from a newer version of North Star. Reload the page and try again.')
   }
-  const bundle = { ...b, workspace: { name: str(b.workspace?.name, 200) || 'Imported workspace' } } as Bundle
+  const description = str(b.workspace?.description, 1000)
+  const bundle = { ...b, workspace: { name: str(b.workspace?.name, 200) || 'Imported workspace', ...(description && { description }) } } as Bundle
   for (const c of BUNDLE_COLLECTIONS) bundle[c] = Array.isArray(b[c]) ? (b[c] as Doc[]).filter((d) => d && typeof d.id === 'string') : []
   return bundle
 }

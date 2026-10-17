@@ -9,6 +9,8 @@ import {
   inviteEmail,
   isEmail,
   normalizeEmail,
+  describeWorkspace,
+  DESCRIPTION_MAX,
   renameWorkspace,
   renewInviteCode,
   uninviteEmail,
@@ -26,6 +28,7 @@ import { AiChat } from '../../ui/AiChat'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { DecodeText } from '../../ui/DecodeText'
 import { Hud } from '../../ui/Hud'
+import { AutosaveField } from '../../ui/AutosaveField'
 import { InlineEdit } from '../../ui/InlineEdit'
 import { PeopleHere } from '../../ui/PeopleHere'
 import { Row, Section } from '../../ui/Settings'
@@ -134,6 +137,19 @@ function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
         <Row label="name">
           <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} />
         </Row>
+        <Row label="building">
+          <AutosaveField
+            multiline
+            rows={2}
+            className={`${styles.input} ${styles.about}`}
+            label="what we're building"
+            placeholder="e.g. Tablebook: shift scheduling for independent restaurants"
+            maxLength={DESCRIPTION_MAX}
+            value={workspace.description ?? ''}
+            onSave={(d) => run(describeWorkspace(wid, d))}
+          />
+        </Row>
+        <p className={styles.hint}>What the team is building, in a sentence or two. The assistant reads it first.</p>
         <Row label="members">
           {members} {members === 1 ? 'person' : 'people'}
           {role && <span className={styles.role}>you're the {role}</span>}

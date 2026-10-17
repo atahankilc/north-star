@@ -78,7 +78,7 @@ Fully WebGL text editing is painful and inaccessible. So:
 Source of truth: `src/data/model.ts`.
 
 ```
-workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role}, inviteCode, invitedEmails[]
+workspaces/{wid}        name, description (≤1000, D-082), ownerId, memberIds[], roles{uid: role}, inviteCode, invitedEmails[]
   customers/{id}        title, body, color, tags[], x, y                          (D-042, D-044)
   problems/{id}         title, body, color, tags[], x, y                          (D-041)
   ideas/{id}            title, body, color, tags[], status, x, y
@@ -145,7 +145,9 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 - Calls go **directly from browser to OpenAI** with `fetch` (Responses API, streaming, `store: false`; `src/ai/openai.ts`).
 - **Models** (D-077): one for chat and one for research (`[web]` on), picked in Settings → ai; both default to `gpt-6-luna`.
 - **Context:** each message sends a fresh plain-text brief of the workspace (`src/ai/context.ts`), built from the data the page
-  already holds; every item carries a short `[ref]`.
+  already holds; every item carries a short `[ref]`. It opens with the workspace name and `WHAT WE'RE BUILDING` (the workspace
+  description, set in Settings → workspace) and is wrapped in `<workspace>…</workspace>` as data, not instructions. The prompt
+  says North Star is the app, never the startup (D-082).
 - **Changes** (D-074): one strict function tool, `propose_changes` (`src/ai/tools.ts`). The model proposes; the chat shows a
   checklist; only what the user applies is written, through `src/data/assistant.ts`, as one undo step. Deletes cascade like
   a delete by hand (D-075).

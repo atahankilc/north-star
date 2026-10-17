@@ -179,6 +179,9 @@ await allow('member reads workspace', () => getDoc(doc(bob.fs, 'workspaces', wid
 await allow('member lists ideas', () => getDocs(ideas(bob.fs)))
 await allow('member creates idea', () => addDoc(ideas(bob.fs), { title: 'Bob', x: 1, y: 1, createdAt: 1, updatedAt: 1 }))
 await allow('member renames workspace', () => join(bob, { name: 'Acme 2' }))
+await allow('member describes workspace', () => join(bob, { description: 'Shift scheduling for small restaurants' }))
+await deny('workspace description too long', () => join(bob, { description: 'x'.repeat(1001) }))
+await deny('workspace description not text', () => join(bob, { description: 5 }))
 
 // Content shapes (D-036 to D-038).
 const sub = (fs, name) => collection(fs, 'workspaces', wid, name)

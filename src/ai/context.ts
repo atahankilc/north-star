@@ -79,8 +79,11 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where): Brief {
   }
   const forText = (id: string) => (forOf.has(id) ? ` (for: ${forOf.get(id)!.join(', ')})` : '')
 
-  const lines: string[] = [`WORKSPACE "${ws.workspace.name}" (each item starts with its [ref])`]
-  if (ws.workspace.description) lines.push(clip(ws.workspace.description))
+  const about = clip(ws.workspace.description, 1000)
+  const lines: string[] = [
+    `WORKSPACE "${ws.workspace.name}" (each item starts with its [ref])`,
+    `WHAT WE'RE BUILDING: ${about || '(not written yet; infer it from the items below)'}`,
+  ]
 
   const section = (title: string, items: WithId<BoardNode>[], extra: (n: WithId<BoardNode>) => string = () => '') => {
     lines.push('', `${title} (${items.length})`)

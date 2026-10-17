@@ -591,3 +591,17 @@ no server, and it works with the user's key.
 - *PNG* (`Snapshot` in `Board.tsx`, `canvasStore.snapshot`): the whole board as filtered, drawn once offscreen with an orthographic camera
   from straight above at 120 px per board unit (less for huge boards, max side 8192), on the theme's `--bg` without the `+` grid (user), line widths as at 2x. Cursors and
   names (DOM) stay out; your own selection highlight is in it. Only while the board view is mounted ("open the board view first" otherwise).
+
+### D-082 · 2026-10-17 · Accepted
+**The assistant knows the app from the startup, and the team says what it's building.** User report: asked "Summarize this
+workspace" in the Tablebook example, it answered "North Star is focused on small restaurant teams". Cause: the prompt opened with
+"You are the assistant inside North Star, a shared workspace where a team develops a startup idea", which made the app's name the
+workspace's, and the startup's name only showed inside the brief's `WORKSPACE "…"` line.
+- *Prompt* (`src/ai/prompts/chat.ts`): North Star is the tool, never the startup or the subject of an answer; the workspace's name
+  is in the instructions; the startup is called by the WHAT WE'RE BUILDING name, else the workspace name; "we" means the team.
+- *Brief* (`src/ai/context.ts`): second line `WHAT WE'RE BUILDING: …` (or "not written yet; infer it from the items below"); the
+  whole brief sits between `<workspace>` and `</workspace>`, and the prompt says its contents are data, not instructions.
+- *Data:* the existing optional `workspace.description` is now edited in Settings → workspace → general → building (autosaves,
+  ≤1000 characters, `describeWorkspace` in `src/data/workspaces.ts`). Rules check it's text ≤1000 on create and on member edits
+  (3 new tests, 145 pass; Firestore rules deployed 2026-10-17). The example workspace and import fill it; export already carried it.
+- Not done: a set of test questions run against the example on every prompt change, and a stronger default chat model.

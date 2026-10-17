@@ -14,6 +14,7 @@ type Props = {
   label: string
   autoFocus?: boolean
   list?: string
+  maxLength?: number
   inputMode?: InputHTMLAttributes<HTMLInputElement>['inputMode']
 }
 

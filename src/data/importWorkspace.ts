@@ -21,7 +21,7 @@ const BATCH_LIMIT = 450
 export type ImportResult = { workspaceId: string; written: number; skipped: number }
 
 export async function importWorkspace(bundle: Bundle, uid: string): Promise<ImportResult> {
-  const wid = await createWorkspace(bundle.workspace.name, uid)
+  const wid = await createWorkspace(bundle.workspace.name, uid, bundle.workspace.description)
   const col = (name: string) => collection(db(), 'workspaces', wid, name)
   const now = Date.now()
   const writes: [DocumentReference, object][] = []

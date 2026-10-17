@@ -150,7 +150,7 @@ function Conversation({ source }: { source: KeySource }) {
     // Built when sent, so it sees the board as it is now.
     send(text, () => {
       const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })
-      return { instructions: chatInstructions(brief.text, useAiSettings.getState().web), refs: brief.refs, source }
+      return { instructions: chatInstructions(brief.text, ws.workspace.name, useAiSettings.getState().web), refs: brief.refs, source }
     })
     setDraft('')
     stick.current = true

@@ -41,11 +41,13 @@ export function useWorkspace(wid: string) {
   return useDoc<Workspace>(`workspaces/${wid}`)
 }
 
-export async function createWorkspace(name: string, uid: string): Promise<string> {
+export async function createWorkspace(name: string, uid: string, description?: string): Promise<string> {
   const ref = doc(collection(db(), 'workspaces'))
   const inviteCode = newInviteCode()
+  const about = description?.trim().slice(0, DESCRIPTION_MAX)
   const workspace: Workspace = {
     name: name.trim() || 'Untitled',
+    ...(about && { description: about }),
     ownerId: uid,
     memberIds: [uid],
     roles: { [uid]: 'owner' },
@@ -178,6 +180,14 @@ export function declineInvite(wid: string, email: string) {
 
 export function renameWorkspace(wid: string, name: string) {
   return updateDoc(doc(db(), 'workspaces', wid), { name: name.trim() || 'Untitled' })
+}
+
+// What the team is building, in a sentence or two (D-082). The assistant reads it first, so it knows the startup
+// apart from the app.
+export const DESCRIPTION_MAX = 1000
+
+export function describeWorkspace(wid: string, description: string) {
+  return updateDoc(doc(db(), 'workspaces', wid), { description: description.trim().slice(0, DESCRIPTION_MAX) })
 }
 
 // Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.

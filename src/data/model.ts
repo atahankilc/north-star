@@ -20,6 +20,7 @@ export type Role = 'owner' | 'editor'
 
 export type Workspace = {
   name: string
+  // What the team is building (D-082), for people and the assistant.
   description?: string
   ownerId: string
   memberIds: string[]

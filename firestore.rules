@@ -138,7 +138,8 @@ service cloud.firestore {
         && request.resource.data.memberIds == [request.auth.uid]
         && request.resource.data.roles.keys().hasOnly([request.auth.uid])
         && request.resource.data.roles[request.auth.uid] == 'owner'
-        && request.resource.data.inviteCode is string;
+        && request.resource.data.inviteCode is string
+        && optText(request.resource.data, 'description', 1000);
 
       allow update: if editing() || joiningByInvite() || decliningInvite() || leaving() || ownerManaging();
 
@@ -148,7 +149,8 @@ service cloud.firestore {
       function editing() {
         return signedIn()
           && request.auth.uid in resource.data.memberIds
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description']);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description'])
+          && optText(request.resource.data, 'description', 1000);
       }
 
       // Owner manages members, roles and the invite code, but can't orphan the workspace.

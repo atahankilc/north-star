@@ -64,6 +64,11 @@
   caret-color: var(--accent-cyan);
 }
 
+.about {
+  resize: vertical;
+  line-height: 1.5;
+}
+
 .input::placeholder {
   color: var(--placeholder);
 }

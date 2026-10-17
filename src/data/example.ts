@@ -142,7 +142,11 @@ const labels: [string, number, number][] = [
 ]
 
 export async function createExampleWorkspace(uid: string): Promise<string> {
-  const wid = await createWorkspace('Example: Tablebook', uid)
+  const wid = await createWorkspace(
+    'Example: Tablebook',
+    uid,
+    'Tablebook: shift scheduling for independent restaurants. Owners build the rota in minutes, staff swap shifts from their phones, and nobody runs it over WhatsApp any more.',
+  )
   const col = (name: string) => collection(db(), 'workspaces', wid, name)
   const ids = new Map<string, { id: string; type: NodeType }>()
   const batch = writeBatch(db())
