@@ -275,8 +275,8 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-083: images, SVGs and PDFs on every card and competitor (`src/data/attachments.ts`, `src/views/workspace/Attachments.tsx`):
   thumbnails + lightbox, file rows, attach button + drop on panel, progress, undoable remove, `N files` on the card, names in the
   assistant brief, export/import with files. `storage.rules` (new), `firestore.rules` (`attachments`), `cors.json`, storage emulator
-  on 9199. Hidden on the live site (`ATTACHMENTS_LIVE = false`). Rules: 165 pass. Build passes. **Not committed.** Firestore rules not
-  deployed yet (a superset, safe to deploy alone: `npx firebase deploy --only firestore:rules --project north-star-db`).
+  on 9199. Hidden on the live site (`ATTACHMENTS_LIVE = false`). Rules: 165 pass. Build passes. Committed 2026-10-18 (`350243b`, not pushed).
+  Firestore rules deployed 2026-10-18 (`--only firestore:rules`); storage.rules wait for Blaze.
 - Verified headless on emulators: an 18 MB 4000×3000 PNG became a 289 KB 2560×1920 WebP with a 320×240 thumbnail; PDF and SVG rows;
   `.exe` and an 11 MB PDF refused in plain words; lightbox opens the full image, Esc closes it (panel stays); SVG shown through `<img>`;
   PDF link opens a new tab; card meta `3 files`; Bob (joined by email invite) sees the files live, and a remove + undo by Alice live;
