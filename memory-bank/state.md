@@ -1,10 +1,10 @@
 # Project State
 
-_Last updated: 2026-10-17 (Phase 2b step 1)_
+_Last updated: 2026-10-17 (Phase 2b done)_
 
 ## Phase
 **Phase 2b: domains, customers, problems and one board** (spec: docs/specs/domains.md, D-039 to D-045).
-Build step 1 done; steps 2 (Table) and 3 (Flow) next. Phase 1 leftovers: groups (Q-012), undo (Q-013).
+All four build steps done (Board, Table, Flow, Matrix by domain). Phase 1 leftovers: groups (Q-012), undo (Q-013).
 
 ## Done
 - **Phase 0**: specs, memory bank, scaffold, ASCII design language, GitHub Pages workflow (commit `e114f34`)
@@ -54,7 +54,7 @@ Build step 1 done; steps 2 (Table) and 3 (Flow) next. Phase 1 leftovers: groups 
 - Spec accepted with the user: customers are items and double as segments (`for` edges drawn as card labels), user-created,
   any kind of startup; Flow order Customers → Problems → Competitors → Ideas → Features (D-042 to D-045)
 - Data: `domains`, `customers`, `problems` collections; `domainId` / `domainIds[]` on items; competitors get `x, y`;
-  `src/data/domains.ts` (create, rename, delete → items become unsorted). Rules + 10 new tests (66 pass). **Rules not deployed yet.**
+  `src/data/domains.ts` (create, rename, delete → items become unsorted). Rules + 10 new tests (66 pass). Rules deployed 2026-10-17; step 1 pushed.
 - One board (`/w/:wid`) with all five types, each with its own card shape (customer: rounded + `@`, problem: magenta band + `!`,
   competitor: wide double rim, feature: `◆`). Competitors without a position get a free spot on first view.
 - HUD domain tabs (`[all] … + domain`, click the current tab to rename, `×` → `delete?`), filter bar (types + `for:` customers),
@@ -64,8 +64,16 @@ Build step 1 done; steps 2 (Table) and 3 (Flow) next. Phase 1 leftovers: groups 
 - Matrix follows the domain tab. Old `/features` and `/competitors` routes redirect to the board. Links use `?n=<id>` (+ `&f=` for a competitor's feature).
 - Verified on emulators with headless Chrome (seeded workspace; add/rename/delete domain, create + tag, customer highlight, competitor panel, matrix, redirects).
 
+## Done (Phase 2b steps 2–3, 2026-10-17)
+- **Table** (`/w/:wid/table`, `src/views/table/`): rows grouped by domain (multi-domain items show in each; unsorted last), sortable headers,
+  inline name, domain/for pickers in portal popovers, feature priority/status selects, "linked to" summary; type opens the side panel.
+- **Flow** (`/w/:wid/flow`, `src/views/flow/`): columns in chain order (D-045), one row per problem (its customers, competitors of it or its ideas,
+  ideas, features), then ideas without a problem, customers with neither, and a "not linked yet" row; gaps read `(none researched)` etc.
+- Both use the filter bar, domain tab and the shared side panel (`useSelectionScope` in `src/views/workspace/graph.ts`). View switch: board flow table matrix.
+- Verified on emulators with headless Chrome (sort, tag via popover, inline rename, domain filter, flow rows and panel).
+
 ## Next steps
-0. Phase 2b step 2: Table view; step 3: Flow view (docs/specs/domains.md §4). Deploy rules when the user okays it.
+0. User review of Phase 2b on the live site; push the Table/Flow commit if not yet pushed.
 1. Groups / clusters (Q-012)
 2. Undo + Delete key (Q-013)
 3. Phase 2: competitors, competitor maps, features view, comparison matrix

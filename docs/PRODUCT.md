@@ -35,7 +35,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 ## 4. Views
 
 > Now one board with every item type, domain tabs and a view switch (D-040): see [specs/domains.md](specs/domains.md).
-> Board and Matrix are built; Flow and Table are next. Items 1–3 below describe the earlier per-type pages.
+> Board, Flow, Table and Matrix are all built. Items 1–3 below describe the earlier per-type pages.
 
 1. **Idea Canvas.** A 3D/2.5D infinite board of post-its with connections, groups, zoom/pan,
    mini-map, and live collaborator cursors.

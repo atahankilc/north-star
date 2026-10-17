@@ -8,8 +8,10 @@ import { useMotion } from '../state/motion'
 import { Backdrop } from '../three/Backdrop'
 import { Curtain } from '../ui/Curtain'
 import { BoardView } from '../views/canvas/BoardView'
+import { FlowView } from '../views/flow/FlowView'
 import { Landing } from '../views/landing/Landing'
 import { MatrixView } from '../views/matrix/MatrixView'
+import { TableView } from '../views/table/TableView'
 import { WorkspaceLayout } from '../views/workspace/WorkspaceLayout'
 import { Workspaces } from '../views/workspaces/Workspaces'
 
@@ -44,6 +46,8 @@ function Shell() {
               <Route path="/w" element={<Workspaces user={user} />} />
               <Route path="/w/:wid" element={<WorkspaceLayout />}>
                 <Route index element={<BoardView />} />
+                <Route path="flow" element={<FlowView />} />
+                <Route path="table" element={<TableView />} />
                 <Route path="matrix" element={<MatrixView />} />
                 {/* Old per-type pages (D-036) now live on the board (D-040). */}
                 <Route path="*" element={<Navigate to=".." replace />} />

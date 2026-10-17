@@ -1,5 +1,4 @@
-// `view: [board] matrix`, bottom-right on every workspace view (docs/specs/domains.md §3).
-// Flow and Table join here when they're built.
+// `view: [board] flow table matrix`, bottom-right on every workspace view (docs/specs/domains.md §3).
 import { NavLink } from 'react-router-dom'
 import { useWs } from './context'
 import styles from './Bars.module.css'
@@ -9,6 +8,8 @@ export function ViewSwitch() {
   const base = `/w/${wid}`
   const views = [
     { label: 'board', to: base, end: true },
+    { label: 'flow', to: `${base}/flow`, end: false },
+    { label: 'table', to: `${base}/table`, end: false },
     { label: 'matrix', to: `${base}/matrix`, end: false },
   ]
   return (
