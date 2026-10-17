@@ -401,8 +401,8 @@ function Conversation({ source }: { source: KeySource }) {
               {m.role === 'assistant' && <Steps steps={m.steps ?? []} thinking={!!m.thinking && busy && m === last} />}
               {m.role === 'assistant' ? <Rich text={m.content} /> : (m.shown ?? m.content)}
               {m.role === 'assistant' && busy && m === last && writing(m) && <span className={styles.caret} aria-hidden />}
-              {/* A report lists its sources on the report screen (D-089). */}
-              {!m.report && m.citations && m.citations.length > 0 && (
+              {/* A research report lists its sources on the report screen (D-089). */}
+              {!(m.report && m.research) && m.citations && m.citations.length > 0 && (
                 <span className={styles.sources}>
                   <span className={styles.changeKind}>sources</span>
                   {m.citations.map((c, i) => (
@@ -414,6 +414,7 @@ function Conversation({ source }: { source: KeySource }) {
               )}
               {m.error && <span className={styles.error}>! {m.error}</span>}
               {m.research && <ResearchPlan message={m} onRun={() => runResearch(m.id, () => prepareAt(currentView(), true))} />}
+              {!m.research && m.report && <ReportCard message={m} />}
               {m.proposal && <AiProposal message={m} />}
             </span>
           </li>
@@ -637,7 +638,6 @@ function ResearchPlan({ message, onRun }: { message: ChatMessage; onRun: () => v
   const r = message.research!
   const busy = useChat((s) => s.busy)
   const toggle = useChat((s) => s.toggleQuestion)
-  const reportOpen = useChat((s) => s.reportOpen === message.id)
   const on = r.questions.filter((q) => q.on).length
   const cancel = () =>
     useChat.setState((s) => ({ messages: s.messages.map((m) => (m.id === message.id ? { ...m, research: { ...r, phase: 'cancelled' as Research['phase'] } } : m)) }))
@@ -672,24 +672,48 @@ function ResearchPlan({ message, onRun }: { message: ChatMessage; onRun: () => v
         </div>
       </div>
     )
-  const report = message.report
-  if (report)
-    return (
-      <div className={styles.proposal}>
-        <p className={styles.proposalHead}>
-          <span className={styles.changeKind}>report</span> {report.title}
-        </p>
-        <p className={styles.fine}>
-          {report.sections.length} questions · {report.sources.length} sources
-          {report.openQuestions.length ? ` · ${report.openQuestions.length} open question${report.openQuestions.length === 1 ? '' : 's'}` : ''}
-        </p>
-        <div className={styles.proposalActions}>
-          <button className={styles.send} onClick={() => useChat.getState().showReport(reportOpen ? null : message.id)}>
-            {reportOpen ? 'close report' : 'open report'}
-          </button>
-        </div>
-      </div>
-    )
+  if (message.report) return <ReportCard message={message} />
   if (r.phase === 'cancelled') return <span className={styles.fine}>research cancelled</span>
   return null
+}
+
+// A report in the chat: from /research (D-089) or a write-up of the conversation (D-090). It opens on the report screen;
+// research is saved to the reports tab as it's written, a write-up when you save it. Either is yours until you share it.
+function ReportCard({ message }: { message: ChatMessage }) {
+  const report = message.report!
+  const id = message.reportId
+  const reportOpen = useChat((s) => !!id && s.reportOpen === id)
+  const saved = useWs().reports.find((x) => x.id === id)
+  const research = message.reportMeta?.kind !== 'chat'
+  const status = saved
+    ? `saved in reports · ${saved.shared ? 'shared with the workspace' : 'only you can see it'}`
+    : message.reportError
+      ? `! not saved: ${message.reportError}`
+      : research
+        ? 'saving to reports…'
+        : 'not saved yet'
+  return (
+    <div className={styles.proposal}>
+      <p className={styles.proposalHead}>
+        <span className={styles.changeKind}>report</span> {report.title}
+      </p>
+      <p className={styles.fine}>
+        {report.sections.length} {research ? 'question' : 'section'}
+        {report.sections.length === 1 ? '' : 's'}
+        {report.sources.length ? ` · ${report.sources.length} source${report.sources.length === 1 ? '' : 's'}` : ''}
+        {report.openQuestions.length ? ` · ${report.openQuestions.length} open question${report.openQuestions.length === 1 ? '' : 's'}` : ''}
+      </p>
+      <p className={styles.fine}>{status}</p>
+      <div className={styles.proposalActions}>
+        <button className={styles.send} onClick={() => id && useChat.getState().showReport(reportOpen ? null : id)}>
+          {reportOpen ? 'close report' : 'open report'}
+        </button>
+        {!saved && !research && (
+          <button className={styles.action} onClick={() => useChat.getState().keepReport(message.id)}>
+            save to reports
+          </button>
+        )}
+      </div>
+    </div>
+  )
 }

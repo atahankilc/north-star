@@ -3,6 +3,7 @@
 //   /workspaces                         your workspaces
 //   /workspaces/<id>                    a workspace's board
 //   /workspaces/<id>/flow|table|matrix  its other views
+//   /workspaces/<id>/reports            saved research reports (D-090); ?report=<id> opens one
 //   ?item=<id>                          selects an item (board); &feature=<id> opens a competitor's feature
 import type { PresenceView } from '../data/presence'
 
@@ -14,6 +15,10 @@ export function workspacePath(wid: string, view: PresenceView = 'board') {
 
 export function itemPath(wid: string, itemId: string, featureId?: string) {
   return `${workspacePath(wid)}?item=${itemId}${featureId ? `&feature=${featureId}` : ''}`
+}
+
+export function reportPath(wid: string, reportId: string) {
+  return `${workspacePath(wid, 'reports')}?report=${reportId}`
 }
 
 // Links from before D-070 looked like `/#/w/<id>/table?n=<id>&f=<id>`. Rewrite them in place before the router starts.

@@ -9,7 +9,7 @@
           "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
           "color": { ".validate": "newData.isString() && newData.val().matches(/^#[0-9a-fA-F]{6}$/)" },
           "photo": { ".validate": "newData.isString() && newData.val().length <= 2048" },
-          "view": { ".validate": "newData.val() === 'board' || newData.val() === 'flow' || newData.val() === 'table' || newData.val() === 'matrix'" },
+          "view": { ".validate": "newData.val() === 'board' || newData.val() === 'flow' || newData.val() === 'table' || newData.val() === 'matrix' || newData.val() === 'reports'" },
           "x": { ".validate": "newData.isNumber()" },
           "y": { ".validate": "newData.isNumber()" },
           "sel": { ".validate": "newData.isString() && newData.val().length <= 128" },

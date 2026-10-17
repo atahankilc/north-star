@@ -206,8 +206,13 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
   const snaps = await Promise.all([
     ...WORKSPACE_COLLECTIONS.map((c) => getDocs(collection(db(), 'workspaces', wid, c))),
     getDocs(query(collection(db(), 'joinRequests'), where('ownerId', '==', uid), where('workspaceId', '==', wid))),
+    // Reports (D-090): the shared ones and the owner's own. Others' private reports can't be read here; the
+    // cleanUpWorkspaceAi function takes them once functions are deployed.
+    getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('shared', '==', true))),
+    getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('uid', '==', uid))),
   ])
-  const refs = snaps.flatMap((s) => s.docs.map((d) => d.ref))
+  // Once each: your own shared reports come back from both report queries.
+  const refs = [...new Map(snaps.flatMap((s) => s.docs.map((d) => [d.ref.path, d.ref] as const))).values()]
   for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
     const batch = writeBatch(db())
     for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)

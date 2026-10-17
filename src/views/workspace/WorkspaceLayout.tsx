@@ -54,7 +54,8 @@ export function WorkspaceLayout() {
 }
 
 function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['workspace'] }) {
-  const { data, isLoading } = useWorkspaceData(wid)
+  const { user } = useAuth()
+  const { data, isLoading } = useWorkspaceData(wid, user?.id)
   useHoldCurtain('board', isLoading)
   // Attachment files nobody points at any more, at most once a day (D-083).
   useOrphanSweep(wid)
@@ -64,7 +65,6 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   // Opening a workspace frames all its cards; switching views inside it keeps your place.
   // During the first render, so it's done before the board below reads its camera.
   useState(() => forgetCamera(wid))
-  const { user } = useAuth()
   const isOwner = user?.id === workspace.ownerId
   // Non-owners query their own (empty) slice, which the rules allow; the badge only counts for the owner.
   const requests = useRequestsToMe(user?.id ?? '', wid)
@@ -89,6 +89,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             { label: 'flow', to: workspacePath(wid, 'flow') },
             { label: 'table', to: workspacePath(wid, 'table') },
             { label: 'matrix', to: workspacePath(wid, 'matrix') },
+            { label: 'reports', to: workspacePath(wid, 'reports') },
           ]}
           right={<PeopleHere wid={wid} view={view} />}
           settings={<WorkspaceSettings wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
@@ -105,7 +106,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 
 function viewOf(path: string, wid: string): PresenceView {
   const rest = path.slice(workspacePath(wid).length).replace(/^\//, '').split('/')[0]
-  return rest === 'flow' || rest === 'table' || rest === 'matrix' ? rest : 'board'
+  return rest === 'flow' || rest === 'table' || rest === 'matrix' || rest === 'reports' ? rest : 'board'
 }
 
 function EditKeys() {
@@ -290,7 +291,7 @@ function ExportSection() {
         {!snapshot && <span className={styles.role}>open the board view first</span>}
       </Row>
       <p className={styles.hint}>
-        The .zip holds every item, link, matrix cell, label and attachment. Import it from the workspaces page to make a copy you own; members,
+        The .zip holds every item, link, matrix cell, label and attachment, and the research reports you can see. Import it from the workspaces page to make a copy you own; members,
         invite codes and assistant keys stay here. The picture is the whole board as it's filtered now.
       </p>
       {note && <p className={styles.hint}>{note}</p>}

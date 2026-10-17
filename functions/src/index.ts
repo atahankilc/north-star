@@ -261,11 +261,13 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
   }
 })
 
-// ---- A deleted workspace takes its key and AI records with it ----
+// ---- A deleted workspace takes its key, AI records and reports with it ----
 
 export const cleanUpWorkspaceAi = onDocumentDeleted('workspaces/{wid}', async (event) => {
   const wid = event.params.wid
   await secretRef(wid).delete()
   await db().recursiveDelete(db().collection(`workspaces/${wid}/ai`))
   await db().recursiveDelete(db().collection(`workspaces/${wid}/aiUsage`))
+  // Members' private research reports (D-090), which the owner's browser can't read to delete.
+  await db().recursiveDelete(db().collection(`workspaces/${wid}/reports`))
 })

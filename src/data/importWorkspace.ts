@@ -10,6 +10,7 @@ import {
   cleanEdge,
   cleanFeature,
   cleanLabel,
+  cleanReport,
   type LoadedBundle,
 } from '../io/bundle'
 import { attachmentsAvailable, uploadImported } from './attachments'
@@ -85,6 +86,17 @@ export async function importWorkspace(bundle: LoadedBundle, uid: string): Promis
         ...(theirs?.type === 'competitorFeature' && { competitorFeatureId: theirs.id }),
       },
     ])
+  }
+
+  // Research reports (D-090): yours now, shared as they were; their items follow, unknown ones are dropped.
+  for (const d of bundle.reports ?? []) {
+    const fields = cleanReport(d, now)
+    if (!fields) {
+      skipped++
+      continue
+    }
+    const implications = fields.implications.map((x) => ({ ...x, items: x.items.map((i) => ids.get(i)?.id).filter((i): i is string => !!i) }))
+    writes.push([doc(col('reports')), { ...fields, implications, uid }])
   }
 
   let written = writes.length

@@ -3,7 +3,9 @@
 // helps. Our own orchestration rather than OpenAI's deep-research models: those run for minutes in the background,
 // which needs answers stored at OpenAI (we always send store: false), and cost far more.
 import type { WorkspaceCtx } from '../views/workspace/context'
+import type { ItemRef } from './context'
 import type { Citation } from './openai'
+import type { ReportContent, ReportPoint } from '../data/model'
 
 export const PLAN = 'plan_research'
 export const MAX_QUESTIONS = 6
@@ -162,15 +164,111 @@ export const REPORT_TOOL = {
   },
 }
 
-export type ReportPoint = { text: string; sources: number[] }
-export type Report = {
-  title: string
-  answer: string
-  sections: { question: string; points: ReportPoint[] }[]
-  implications: { text: string; refs: string[] }[]
-  openQuestions: string[]
-  // Numbered from 1: point.sources index into this.
-  sources: Citation[]
+// The report's shape is the saved one (D-090), so the chat's copy and the saved copy show the same way.
+export type { ReportPoint } from '../data/model'
+export type Report = ReportContent
+
+// A write-up of the conversation (D-090): when the user asks for one, in any chat, not only after /research. The same
+// report shape; headings instead of questions, and sources as the URLs the conversation cited.
+export const CHAT_REPORT = 'make_report'
+
+export const CHAT_REPORT_TOOL = {
+  type: 'function',
+  name: CHAT_REPORT,
+  description:
+    'Write up this conversation (or the part the user asks for) as a report the user can read, download as .md and save to the reports tab. Only when the user asks for a report, a write-up or a saved summary.',
+  strict: true,
+  parameters: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'A short title, like a headline.' },
+      answer: { type: 'string', description: 'The gist in two or three plain sentences: what was concluded.' },
+      sections: {
+        type: 'array',
+        description: '2 to 8 sections, one per topic the conversation covered, in a sensible reading order.',
+        items: {
+          type: 'object',
+          properties: {
+            heading: { type: 'string', description: 'The topic, a few words or a question.' },
+            points: {
+              type: 'array',
+              description: '2 to 7 points, each one short sentence: what was found, decided or suggested.',
+              items: {
+                type: 'object',
+                properties: {
+                  text: { type: 'string', description: 'One sentence, no links in the text.' },
+                  urls: { type: 'array', items: { type: 'string' }, description: 'URLs cited earlier in the conversation that back it; usually empty.' },
+                },
+                required: ['text', 'urls'],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ['heading', 'points'],
+          additionalProperties: false,
+        },
+      },
+      implications: {
+        type: 'array',
+        description: 'Up to 5 next steps or consequences for us, each naming the workspace items it concerns.',
+        items: {
+          type: 'object',
+          properties: {
+            text: { type: 'string', description: 'One sentence.' },
+            refs: { type: 'array', items: { type: 'string' }, description: 'Refs of our items it concerns (without brackets).' },
+          },
+          required: ['text', 'refs'],
+          additionalProperties: false,
+        },
+      },
+      open_questions: { type: 'array', items: { type: 'string' }, description: 'What is still undecided or unknown, one sentence each.' },
+    },
+    required: ['title', 'answer', 'sections', 'implications', 'open_questions'],
+    additionalProperties: false,
+  },
+}
+
+// `known`: sources cited in the chat so far, for their titles; a URL that never came up is kept with its domain as title.
+export function parseChatReport(args: string, refs: Map<string, ItemRef>, known: Citation[]): Report | null {
+  try {
+    const d = JSON.parse(args) as {
+      title?: string
+      answer?: string
+      sections?: { heading?: string; points?: { text?: string; urls?: string[] }[] }[]
+      implications?: { text?: string; refs?: string[] }[]
+      open_questions?: string[]
+    }
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
+    const sources: Citation[] = []
+    const num = (url: string) => {
+      let i = sources.findIndex((x) => x.url === url)
+      if (i < 0) i = sources.push(known.find((x) => x.url === url) ?? { url, title: url.replace(/^https?:\/\/(www\.)?/, '').replace(/[/?#].*$/, '') }) - 1
+      return i + 1
+    }
+    const report: Report = {
+      title: str(d.title) || 'Report',
+      answer: str(d.answer),
+      sections: (d.sections ?? [])
+        .map((x) => ({
+          question: str(x.heading),
+          points: (x.points ?? [])
+            .map((p) => ({ text: str(p.text), sources: [...new Set((p.urls ?? []).map(str).filter((u) => /^https?:\/\//.test(u)).map(num))] }))
+            .filter((p) => p.text),
+        }))
+        .filter((x) => x.question || x.points.length),
+      implications: (d.implications ?? [])
+        .map((x) => ({
+          text: str(x.text),
+          items: [...new Set((x.refs ?? []).map((r) => refs.get(str(r).replace(/^\[|\]$/g, ''))?.id).filter((id): id is string => !!id))],
+        }))
+        .filter((x) => x.text),
+      openQuestions: (d.open_questions ?? []).map(str).filter(Boolean),
+      sources,
+    }
+    return report.answer || report.sections.length ? report : null
+  } catch {
+    return null
+  }
 }
 
 const MD_LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
@@ -210,7 +308,8 @@ export function reportAsk(r: Research): string {
   )
 }
 
-export function parseReport(args: string, sources: Citation[]): Report | null {
+// The model names our items by ref; the report keeps their ids, which stay valid after this chat is gone.
+export function parseReport(args: string, sources: Citation[], refs: Map<string, ItemRef>): Report | null {
   try {
     const d = JSON.parse(args) as {
       title?: string
@@ -227,7 +326,12 @@ export function parseReport(args: string, sources: Citation[]): Report | null {
       sections: (d.sections ?? [])
         .map((x) => ({ question: str(x.question), points: (x.points ?? []).map((p) => ({ text: str(p.text), sources: nums(p.sources) })).filter((p) => p.text) }))
         .filter((x) => x.question || x.points.length),
-      implications: (d.implications ?? []).map((x) => ({ text: str(x.text), refs: (x.refs ?? []).map((r) => str(r).replace(/^\[|\]$/g, '')).filter(Boolean) })).filter((x) => x.text),
+      implications: (d.implications ?? [])
+        .map((x) => ({
+          text: str(x.text),
+          items: [...new Set((x.refs ?? []).map((r) => refs.get(str(r).replace(/^\[|\]$/g, ''))?.id).filter((id): id is string => !!id))],
+        }))
+        .filter((x) => x.text),
       openQuestions: (d.open_questions ?? []).map(str).filter(Boolean),
       sources,
     }
@@ -248,16 +352,16 @@ export function reportText(r: Report): string {
   ].join('\n')
 }
 
-// The report as a Markdown file, sources as numbered footnotes.
-export function reportMarkdown(r: Report, workspace: string, names: (ref: string) => string | undefined): string {
+// The report as a Markdown file, sources as numbered footnotes. `names`: our items' names by id.
+export function reportMarkdown(r: Report, workspace: string, names: (id: string) => string | undefined, date = today()): string {
   const cite = (p: ReportPoint) => (p.sources.length ? ` ${p.sources.map((n) => `[${n}]`).join('')}` : '')
   return [
     `# ${r.title}`,
-    `_${workspace} · ${today()}_`,
+    `_${workspace} · ${date}_`,
     `> ${r.answer}`,
     ...r.sections.map((s) => `## ${s.question}\n\n${s.points.map((p) => `- ${p.text}${cite(p)}`).join('\n')}`),
     r.implications.length
-      ? `## What it means for us\n\n${r.implications.map((i) => `- ${i.text}${i.refs.length ? ` (${i.refs.map((x) => names(x) ?? x).join(', ')})` : ''}`).join('\n')}`
+      ? `## What it means for us\n\n${r.implications.map((i) => `- ${i.text}${i.items.some(names) ? ` (${i.items.map(names).filter(Boolean).join(', ')})` : ''}`).join('\n')}`
       : '',
     r.openQuestions.length ? `## Open questions\n\n${r.openQuestions.map((q) => `- ${q}`).join('\n')}` : '',
     `## Sources\n\n${r.sources.map((s, i) => `${i + 1}. [${s.title}](${s.url})`).join('\n')}`,

@@ -1,10 +1,10 @@
 // A whole workspace as one file (D-080): a .zip holding `workspace.json` and, since D-083, each attachment's file at
 // `attachments/<id>/<name>` (its record is in workspace.json's optional `attachments`, so the version stays 1).
-// Only the content travels: items, links, matrix cells, labels, files. Members, invite codes, roles and anything AI
+// Only the content travels: items, links, matrix cells, labels, files, research reports (D-090). Members, invite codes, roles and anything AI
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, REPORT_LIMITS } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -31,6 +31,8 @@ export type Bundle = {
   workspace: { name: string; description?: string }
   // Records only; each `file` names its entry in the zip (D-083). Missing in older exports.
   attachments?: Doc[]
+  // Research reports you could see (D-090), without who ran them; missing in older exports.
+  reports?: Doc[]
 } & Record<BundleCollection, Doc[]>
 
 // A bundle as read back, with the attachment files from its zip by entry name.
@@ -53,6 +55,7 @@ export function makeBundle(name: string, description: string | undefined, data: 
       file: attachmentEntry(rest.id, path),
     }))
   }
+  if (data.reports.length) bundle.reports = data.reports.map(({ uid: _uid, ...rest }) => ({ ...rest }) as Doc)
   return bundle
 }
 
@@ -104,6 +107,7 @@ export async function readBundle(file: File): Promise<LoadedBundle> {
   const bundle = { ...b, workspace: { name: str(b.workspace?.name, 200) || 'Imported workspace', ...(description && { description }) }, files } as LoadedBundle
   for (const c of BUNDLE_COLLECTIONS) bundle[c] = Array.isArray(b[c]) ? (b[c] as Doc[]).filter((d) => d && typeof d.id === 'string') : []
   bundle.attachments = Array.isArray(b.attachments) ? b.attachments.filter((d) => d && typeof d.id === 'string') : []
+  bundle.reports = Array.isArray(b.reports) ? b.reports.filter((d) => d && typeof d.id === 'string') : []
   return bundle
 }
 
@@ -186,6 +190,40 @@ export function cleanAttachment(d: Doc, now: number) {
   const width = num(d.width)
   const height = num(d.height)
   return { name, contentType, ...(width && height && { width, height }), createdAt: num(d.createdAt) ?? now }
+}
+
+// A report's own fields (D-090), within the limits the rules check; `items` are still the file's ids (the importer maps
+// them). The importer adds who it belongs to.
+export function cleanReport(d: Doc, now: number) {
+  const L = REPORT_LIMITS
+  const list = (v: unknown, max: number) => (Array.isArray(v) ? v.slice(0, max) : [])
+  const text = (v: unknown, max: number) => str(v, max) ?? ''
+  const title = str(d.title, 300)
+  if (!title) return null
+  const sources = list(d.sources, L.sources)
+    .map((c: { title?: unknown; url?: unknown }) => ({ title: text(c?.title, 500), url: text(c?.url, 2000) }))
+    .filter((c) => /^https?:\/\//.test(c.url))
+  const nums = (v: unknown) => list(v, 20).filter((n): n is number => Number.isInteger(n) && n >= 1 && n <= sources.length)
+  return {
+    kind: d.kind === 'chat' || d.kind === 'upload' ? d.kind : ('research' as const),
+    title,
+    answer: text(d.answer, 4000),
+    sections: list(d.sections, L.sections).map((x: { question?: unknown; points?: unknown }) => ({
+      question: text(x?.question, 1000),
+      points: list(x?.points, L.points).map((p: { text?: unknown; sources?: unknown }) => ({ text: text(p?.text, L.text), sources: nums(p?.sources) })),
+    })),
+    implications: list(d.implications, L.implications).map((x: { text?: unknown; items?: unknown }) => ({
+      text: text(x?.text, L.text),
+      items: list(x?.items, 20).filter((i): i is string => typeof i === 'string'),
+    })),
+    openQuestions: list(d.openQuestions, L.openQuestions).map((q) => text(q, L.text)),
+    sources,
+    topic: text(d.topic, 500),
+    model: text(d.model, 100),
+    name: text(d.name, 200) || 'someone',
+    shared: d.shared === true,
+    createdAt: num(d.createdAt) ?? now,
+  }
 }
 
 export function cleanEdge(d: Doc) {

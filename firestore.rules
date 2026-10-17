@@ -255,6 +255,35 @@ service cloud.firestore {
             || (resource.data.keySource == 'workspace' && workspace(wid).ownerId == request.auth.uid));
       }
 
+      // Research reports (D-090). Saved by whoever ran them and seen only by them until they share it; then every member
+      // reads it. Only the author shares or unshares it, and nothing else in it changes. The author deletes it; the owner
+      // may delete a shared one. Undoing the owner's delete restores someone else's shared report, so the owner may create that too.
+      // Shape mirrors SavedReport and REPORT_LIMITS in src/data/model.ts.
+      match /reports/{id} {
+        function validReport(d) {
+          return d.keys().hasOnly(['kind', 'title', 'answer', 'sections', 'implications', 'openQuestions', 'sources', 'topic', 'uid', 'name', 'model', 'shared', 'createdAt'])
+            && optIn(d, 'kind', ['research', 'chat', 'upload'])
+            && isText(d.title, 300) && isText(d.answer, 4000)
+            && d.sections is list && d.sections.size() <= 30
+            && d.implications is list && d.implications.size() <= 20
+            && d.openQuestions is list && d.openQuestions.size() <= 30
+            && d.sources is list && d.sources.size() <= 200
+            && isText(d.topic, 500) && isText(d.uid, 128) && isText(d.name, 200) && isText(d.model, 100)
+            && d.shared is bool
+            && d.createdAt is number;
+        }
+        function isOwner() {
+          return workspace(wid).ownerId == request.auth.uid;
+        }
+        allow read: if isMember(wid) && (resource.data.shared == true || resource.data.uid == request.auth.uid);
+        allow create: if isMember(wid) && validReport(request.resource.data)
+          && (request.resource.data.uid == request.auth.uid || (request.resource.data.shared == true && isOwner()));
+        allow update: if isMember(wid) && resource.data.uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared'])
+          && request.resource.data.shared is bool;
+        allow delete: if isMember(wid) && (resource.data.uid == request.auth.uid || (resource.data.shared == true && isOwner()));
+      }
+
       // Workspace content: members only, known collections only, with a sane shape.
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {

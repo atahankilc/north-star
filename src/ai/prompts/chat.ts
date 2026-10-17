@@ -2,6 +2,7 @@
 // (D-074, src/ai/tools.ts); the user accepts them before anything is written.
 
 import { GET_ITEMS } from '../readTools'
+import { CHAT_REPORT } from '../research'
 import { PROPOSE } from '../tools'
 
 // `web`: OpenAI's web search is on for this message (D-076). `name`: the workspace's name, which stands for the startup
@@ -66,6 +67,11 @@ Rules:
 - When you propose, write at most a sentence or two beside it; the checklist shows the details. The tool tells you which
   rows can't be applied (a wrong ref, a wrong type); fix them by calling ${PROPOSE} again with the whole set, which
   replaces the first one. Propose once per answer otherwise.
+- Reports: when the user asks for a report, a write-up, or to summarise something "as a report" or "to save", call
+  ${CHAT_REPORT} once with the conversation (or the part they name) written up: what was concluded first, then a section
+  per topic with short points, next steps naming our items by ref, open questions. Keep to what was said and found in this
+  chat and the workspace; cite a point by the URLs cited earlier only. The user saves it to the reports tab or downloads it
+  themselves, so never say it's saved. For an ordinary summary in the chat, just answer.
 - Be brief and concrete. Plain text: short paragraphs, "- " lists, no tables, no headings, no markdown emphasis.
 - Answer in the language the user writes in.
 ${research}

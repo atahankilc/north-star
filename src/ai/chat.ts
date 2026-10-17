@@ -9,7 +9,10 @@ import { callAi } from './call'
 import { AiError, type ChatTurn, type Citation, type InputItem, type ToolCall } from './openai'
 import { GET_ITEMS, GET_ITEMS_TOOL, readItems } from './readTools'
 import {
+  CHAT_REPORT,
+  CHAT_REPORT_TOOL,
   numberSources,
+  parseChatReport,
   PARALLEL,
   parsePlan,
   parseReport,
@@ -25,6 +28,8 @@ import {
   type Research,
 } from './research'
 import { modelFor, useAiSettings } from './settings'
+import { newReportId, saveReport } from '../data/reports'
+import type { ReportKind } from '../data/model'
 import { PROPOSE, PROPOSE_TOOL, parseProposal, proposalForHistory, proposalReport, type Proposal, type ProposalState } from './tools'
 
 // Calls to OpenAI per answer. The last one may not use tools, so an answer always ends in words.
@@ -48,6 +53,11 @@ export type ChatMessage = ChatTurn & {
   // A deep research run (D-088): its plan, its researchers and where it's at; its report (D-089).
   research?: Research
   report?: Report
+  // Its id in the reports tab (D-090), saved there at once for research and when you choose for a chat write-up;
+  // why saving failed, if it did; and what it's saved with.
+  reportId?: string
+  reportError?: string
+  reportMeta?: { kind: ReportKind; topic: string; model: string }
 }
 
 // `warn`: done, but not all of it worked (a proposal with rows that can't be applied, refs that matched nothing).
@@ -167,9 +177,9 @@ type ChatState = {
   open: boolean
   messages: ChatMessage[]
   busy: boolean
-  // The message whose report is on the report screen (D-089), or null.
-  reportOpen: number | null
-  showReport: (id: number | null) => void
+  // The report on the report screen (D-089), by its saved id (D-090), or null.
+  reportOpen: string | null
+  showReport: (id: string | null) => void
   setOpen: (open: boolean) => void
   // Switching workspace starts a new conversation.
   enter: (wid: string) => void
@@ -179,6 +189,8 @@ type ChatState = {
   toggleQuestion: (id: number, question: number) => void
   runResearch: (id: number, prepare: () => Prepared) => void
   decide: (id: number, state: ProposalState) => void
+  // Saves a chat write-up (D-090) to the reports tab, for you only until you share it.
+  keepReport: (id: number) => void
   stop: () => void
   clear: () => void
 }
@@ -258,6 +270,24 @@ export const useChat = create<ChatState>((set, get) => ({
     const reply: ChatMessage = { id: nextId++, role: 'assistant', content: '', refs: p.refs }
     set((s) => ({ busy: true, messages: [...s.messages, { id: nextId++, role: 'user', content, shown }, reply] }))
     const run = begin(reply.id, p, settings.web ? 'research' : 'chat', modelFor(settings), settings.web)
+    // Asked for a report, it writes the conversation up (D-090); it shows at once and waits for you to save it.
+    let reportId: string | undefined
+    run.extra = [
+      {
+        def: CHAT_REPORT_TOOL,
+        name: CHAT_REPORT,
+        run: (args) => {
+          const cited = [...get().messages.flatMap((m) => m.citations ?? []), ...run.citations]
+          const report = parseChatReport(args, run.refs, cited)
+          if (!report) return `The report came back garbled. Call ${CHAT_REPORT} again with every field filled.`
+          reportId ??= newReportId(run.wid)
+          run.steps.push({ kind: 'report', text: `wrote a report · ${report.sections.length} sections`, state: 'done' })
+          run.update({ report, reportId, reportError: undefined, steps: [...run.steps], reportMeta: { kind: 'chat', topic: (shown ?? content).slice(0, 500), model: run.model } })
+          useChat.setState({ reportOpen: reportId })
+          return 'Shown to the user on the report screen, where they can save it to the reports tab or download it as .md. Finish with one short sentence; don\'t repeat the report or claim it was saved.'
+        },
+      },
+    ]
     finish(reply.id, run, runAnswer(run, turns))
   },
   research: (topic, prepare, shown) => {
@@ -368,17 +398,23 @@ export const useChat = create<ChatState>((set, get) => ({
       run.update({ research })
       const turns = [...history(before(get().messages, id)), { role: 'user' as const, content: reportAsk(research) }]
       // The report comes through write_report (D-089) and opens on the report screen; the text answer is one sentence.
+      // Saved as soon as it's written, under one id even if the model writes it again.
+      const reportId = newReportId(run.wid)
       run.extra = [
         {
           def: REPORT_TOOL,
           name: REPORT,
           run: (args) => {
-            const report = parseReport(args, research.sources ?? [])
+            const report = parseReport(args, research.sources ?? [], run.refs)
             if (!report) return 'The report came back garbled. Call write_report again with every field filled.'
             run.steps.push({ kind: 'report', text: `wrote the report · ${report.sections.length} sections · ${report.sources.length} sources`, state: 'done' })
-            run.update({ report, steps: [...run.steps] })
+            const reportMeta = { kind: 'research' as const, topic: research.topic, model: run.model }
+            run.update({ report, reportId, reportError: undefined, reportMeta, steps: [...run.steps] })
+            saveReport(run.wid, reportId, report, reportMeta).catch((e: Error) =>
+              run.update({ reportError: e.message }),
+            )
             // It opens by itself: that's what the run was for.
-            useChat.setState({ reportOpen: id })
+            useChat.setState({ reportOpen: reportId })
             return 'Shown to the user on the report screen. Now propose changes if they help, then finish with one short sentence.'
           },
         },
@@ -388,6 +424,14 @@ export const useChat = create<ChatState>((set, get) => ({
       run.update({ research: { ...research, phase: 'done' } })
     }
     finish(id, run, go())
+  },
+  keepReport: (id) => {
+    const m = get().messages.find((x) => x.id === id)
+    const wid = get().wid
+    if (!m?.report || !m.reportId || !m.reportMeta || !wid) return
+    const update = (patch: Partial<ChatMessage>) => set((s) => ({ messages: s.messages.map((x) => (x.id === id ? { ...x, ...patch } : x)) }))
+    update({ reportError: undefined })
+    saveReport(wid, m.reportId, m.report, m.reportMeta).catch((e: Error) => update({ reportError: e.message }))
   },
   decide: (id, proposalState) => set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, proposalState } : m)) })),
   stop: () => {

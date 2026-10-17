@@ -11,6 +11,7 @@
 //     comparisons/{id}                       Comparison
 //     edges/{id}                             Edge (any node ↔ any node)
 //     attachments/{id}                       Attachment (D-083); the file is in Storage at `path`
+//     reports/{id}                           SavedReport (D-090): a research report, yours until you share it
 //   inviteCodes/{code}                       InviteCode (D-012)
 //   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)
 //
@@ -186,6 +187,38 @@ export type Attachment = {
   uid: string
   createdAt: number
 }
+
+// A research report (D-089), saved when it's written (D-090). Only its author sees it until they share it with the
+// workspace. The same limits are in firestore.rules.
+export type ReportPoint = { text: string; sources: number[] }
+export type ReportContent = {
+  title: string
+  answer: string
+  sections: { question: string; points: ReportPoint[] }[]
+  // `items`: ids of our items it concerns.
+  implications: { text: string; items: string[] }[]
+  openQuestions: string[]
+  // Numbered from 1: a point's `sources` index into this.
+  sources: { title: string; url: string }[]
+}
+
+// `research`: from /research (D-088), points without sources are inferences. `chat`: the assistant wrote up a
+// conversation when asked (D-090). `upload`: someone's own .md file (D-091). Older reports have no kind and are research.
+export type ReportKind = 'research' | 'chat' | 'upload'
+
+export type SavedReport = ReportContent & {
+  kind?: ReportKind
+  topic: string
+  // Who ran it and their name then.
+  uid: string
+  name: string
+  model: string
+  shared: boolean
+  createdAt: number
+}
+
+// Uploaded files (D-091) can be longer than what the assistant writes, so these leave room.
+export const REPORT_LIMITS = { sections: 30, points: 40, implications: 20, openQuestions: 30, sources: 200, text: 4000 }
 
 export type Presence = {
   name: string

@@ -135,6 +135,15 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where): Brief {
   const areas = ws.labels.filter((l) => l.text.trim())
   if (areas.length) lines.push('', `AREAS ON THE BOARD: ${areas.map((l) => clip(l.text, 60)).join(' | ')}`)
 
+  // Saved research (D-090): what was found before, so it isn't researched again. The user's own and the shared ones.
+  const reports = ws.reports.slice(0, 10)
+  if (reports.length) {
+    lines.push('', `RESEARCH REPORTS (${ws.reports.length}, newest first; the full text is on the reports tab)`)
+    for (const r of reports) {
+      lines.push(`- "${clip(r.title, 120)}" (${new Date(r.createdAt).toISOString().slice(0, 10)}, ${r.shared ? 'shared' : 'private'}): ${clip(r.answer, 300)}`)
+    }
+  }
+
   lines.push('', `THE USER is in the ${where.view} view.`)
   const sel = where.selectedId && names.get(where.selectedId)
   if (sel) lines.push(`They have "${sel}" [${refOf.get(where.selectedId!)}] selected; "this" probably means it.`)

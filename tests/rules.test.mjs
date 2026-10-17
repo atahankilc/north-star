@@ -306,6 +306,42 @@ await allow('member lists their own usage', () => getDocs(query(usage(bob.fs), w
 await deny('member lists everyone\'s usage', () => getDocs(usage(bob.fs)))
 await deny('member lists workspace-key usage', () => getDocs(query(usage(bob.fs), where('keySource', '==', 'workspace'))))
 
+// Research reports (D-090): yours until shared.
+const reports = (fs) => collection(fs, 'workspaces', wid, 'reports')
+const repDoc = (fs, id) => doc(fs, 'workspaces', wid, 'reports', id)
+const report = (who, extra = {}) => ({
+  title: 'Market', answer: 'Small.', sections: [{ question: 'Who?', points: [{ text: 'A', sources: [1] }] }],
+  implications: [{ text: 'B', items: [] }], openQuestions: [], sources: [{ title: 'S', url: 'https://example.com' }],
+  topic: 'market', uid: who.uid, name: 'Bob', model: 'gpt-6-luna', shared: false, createdAt: Date.now(), ...extra,
+})
+await allow('member saves their report', () => setDoc(repDoc(bob.fs, 'r1'), report(bob)))
+await allow("member saves a chat's write-up", () => setDoc(repDoc(bob.fs, 'r7'), report(bob, { kind: 'chat' })))
+await allow('member saves an uploaded .md report (D-091)', () => setDoc(repDoc(bob.fs, 'r9'), report(bob, { kind: 'upload', model: '', sections: Array(30).fill({ question: 'Q', points: [] }) })))
+await deny('report with too many sections', () => setDoc(repDoc(bob.fs, 'r10'), report(bob, { kind: 'upload', sections: Array(31).fill({ question: 'Q', points: [] }) })))
+await deny('report of an unknown kind', () => setDoc(repDoc(bob.fs, 'r8'), report(bob, { kind: 'memo' })))
+await deny('member saves a report as someone else', () => setDoc(repDoc(bob.fs, 'r2'), report(dave)))
+await deny('report with an unknown field', () => setDoc(repDoc(bob.fs, 'r3'), report(bob, { findings: 'raw' })))
+await deny('report with too many sources', () => setDoc(repDoc(bob.fs, 'r4'), report(bob, { sources: Array(201).fill({ title: 'x', url: 'https://x' }) })))
+await deny('outsider saves a report', () => setDoc(repDoc(carol.fs, 'r5'), report(carol)))
+await allow('author reads their private report', () => getDoc(repDoc(bob.fs, 'r1')))
+await deny('another member reads a private report', () => getDoc(repDoc(dave.fs, 'r1')))
+await deny('owner reads a private report', () => getDoc(repDoc(alice.fs, 'r1')))
+await deny('member lists every report', () => getDocs(reports(dave.fs)))
+await allow('member lists their own reports', () => getDocs(query(reports(bob.fs), where('uid', '==', bob.uid))))
+await allow('member lists shared reports', () => getDocs(query(reports(dave.fs), where('shared', '==', true))))
+await deny('another member shares it', () => updateDoc(repDoc(dave.fs, 'r1'), { shared: true }))
+await deny('author edits a saved report', () => updateDoc(repDoc(bob.fs, 'r1'), { title: 'Other' }))
+await allow('author shares their report', () => updateDoc(repDoc(bob.fs, 'r1'), { shared: true }))
+await allow('member reads a shared report', () => getDoc(repDoc(dave.fs, 'r1')))
+await deny('outsider reads a shared report', () => getDoc(repDoc(carol.fs, 'r1')))
+await deny('another member deletes a shared report', () => deleteDoc(repDoc(dave.fs, 'r1')))
+await allow('owner deletes a shared report', () => deleteDoc(repDoc(alice.fs, 'r1')))
+await allow("owner's undo restores the shared report", () => setDoc(repDoc(alice.fs, 'r1'), report(bob, { shared: true })))
+await deny('owner restores it as private', () => setDoc(repDoc(alice.fs, 'r6'), report(bob)))
+await allow('author unshares it', () => updateDoc(repDoc(bob.fs, 'r1'), { shared: false }))
+await deny('owner deletes a private report', () => deleteDoc(repDoc(alice.fs, 'r1')))
+await allow('author deletes their report', () => deleteDoc(repDoc(bob.fs, 'r1')))
+
 await deny('outsider still cannot read after others join', () => getDoc(doc(carol.fs, 'workspaces', wid)))
 
 await deny('member removes someone else', () => join(bob, { memberIds: arrayRemove(alice.uid) }))
@@ -326,6 +362,7 @@ await allow('presence with cursor, selection and photo', () =>
 await deny('write someone else\'s presence', () => rtSet(presence(bob, alice.uid), me('Fake')))
 await deny('presence without required fields', () => rtSet(presence(bob, bob.uid), { x: 1 }))
 await deny('presence with an unknown field', () => rtSet(presence(bob, bob.uid), me('Bob', { secret: 1 })))
+await allow('presence on the reports tab (D-090)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'reports' })))
 await deny('presence with an unknown view', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'canvas' })))
 await deny('presence with a non-hex colour', () => rtSet(presence(bob, bob.uid), me('Bob', { color: 'red' })))
 await deny('presence with the retired typing fields (D-071)', () => rtSet(presence(bob, bob.uid), me('Bob', { edit: 'abc', field: 'title' })))

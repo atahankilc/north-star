@@ -60,6 +60,28 @@
   color: var(--fg-strong);
 }
 
+.action[data-tone='primary'] {
+  color: var(--accent-cyan);
+}
+
+.action[data-tone='danger']:hover {
+  color: var(--accent-magenta);
+}
+
+/* Who can see it (D-090): faint while it's yours alone, cyan once shared. */
+.status {
+  flex: none;
+  color: var(--fg-faint);
+}
+
+.status[data-shared] {
+  color: var(--accent-cyan);
+}
+
+.status[data-error] {
+  color: var(--accent-magenta);
+}
+
 /* Scrolls at the screen's edge; the text keeps a readable measure in the middle. */
 .page {
   flex: 1;
@@ -267,4 +289,10 @@
   color: var(--fg-faint);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+}
+
+@media (max-width: 640px) {
+  .status {
+    display: none;
+  }
 }
