@@ -240,7 +240,7 @@ function CellPanel({
   const set = (fields: Parameters<typeof setCell>[3]) => void setCell(wid, feature.id, competitorId, fields)
 
   return (
-    <Appear as="aside" className={styles.panel} aria-label="Cell details">
+    <Appear as="aside" className={styles.panel} data-side-panel="narrow" aria-label="Cell details">
       <header className={styles.panelHead}>
         <span className={styles.kicker}>cell</span>
         <button className={styles.close} onClick={onClose} aria-label="Close panel">

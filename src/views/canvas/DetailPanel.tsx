@@ -53,6 +53,7 @@ export function DetailPanel({ items }: { items: BoardItem[] }) {
           key="panel"
           className={styles.panel}
           data-wide={Boolean(competitor)}
+          data-side-panel={competitor ? 'wide' : 'narrow'}
           aria-label={`${BOARD_KINDS[item.type].label} details`}
         >
           <PeersHere itemId={item.id} />

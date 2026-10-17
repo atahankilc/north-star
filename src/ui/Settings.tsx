@@ -1,5 +1,6 @@
 // Settings (D-054, D-064): your account chip and an icon button sit side by side in the HUD; either opens a modal with a side menu on the left and the chosen page on the right:
-// your account, the current workspace (name, people, invite code) and the app itself (motion, background, what's coming).
+// your account, the current workspace (name, people, invite code), the app itself (theme, motion, background, what's coming)
+// and the assistant (OpenAI key, model; D-073).
 // A native <dialog>: focus stays inside, Escape and the backdrop close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../data/auth'
@@ -7,6 +8,7 @@ import { usePresence } from '../data/presence'
 import { useDisplay, type BackgroundPref } from '../state/display'
 import { useMotion, type MotionPref } from '../state/motion'
 import { themeAccent, useTheme, type ThemePref } from '../state/theme'
+import { AiSettingsPage } from './AiSettings'
 import { AsciiButton } from './AsciiButton'
 import { Choice } from './Choice'
 import styles from './Settings.module.css'
@@ -15,12 +17,13 @@ const MOTION: readonly MotionPref[] = ['full', 'reduced', 'system']
 const BACKGROUND: readonly BackgroundPref[] = ['on', 'off']
 const THEME: readonly ThemePref[] = ['dark', 'light', 'system']
 
-type Page = 'account' | 'workspace' | 'app'
+type Page = 'account' | 'workspace' | 'app' | 'ai'
 
 const PAGES: { id: Page; label: string; title: string }[] = [
   { id: 'account', label: 'account', title: 'Account' },
   { id: 'workspace', label: 'workspace', title: 'Workspace' },
   { id: 'app', label: 'app', title: 'App' },
+  { id: 'ai', label: 'ai', title: 'Assistant' },
 ]
 
 type Props = {
@@ -138,6 +141,8 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
 
               {current.id === 'workspace' && workspace}
 
+              {current.id === 'ai' && <AiSettingsPage />}
+
               {current.id === 'app' && (
                 <>
                   <Section label="display">
@@ -147,8 +152,7 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
                   </Section>
 
                   <Section label="coming later">
-                    <Later name="AI assistant" detail="Your own OpenAI key, kept only in this browser" phase="phase 4" />
-                    <Later name="Live cursors" detail="See who's here and where they're looking" phase="phase 3" />
+                    <Later name="Assistant tools" detail="The assistant adds competitors, links and matrix notes for you" phase="phase 4.2" />
                     <Later name="Export and import" detail="A whole workspace as one file" phase="phase 5" />
                   </Section>
                 </>

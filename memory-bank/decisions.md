@@ -416,7 +416,9 @@ theme before the first paint, so dark never flashes first.
   Never hard-code a colour in CSS; use a token.
 - *WebGL:* `palettes.dark/light` in `tokens.ts` (cards, hairlines, edges, grid shade…), read via `usePalette()`. `TYPE_ACCENT` is now CSS
   (`var(--accent-…)`) for the DOM; WebGL uses `typeAccent(type, palette)`. The ASCII pass prints in light mode: brightness becomes
-  ink coverage over the paper, and colour keeps its hue but darkens (`AsciiEffect.setTheme`). The loading curtain rebuilds out of paper.
+  ink coverage over the paper, and colour keeps its hue but darkens (`AsciiEffect.setTheme`). Ink is blended over the paper in display (sRGB) space,
+  not linear light: the linear blend printed far paler than the dark backdrop shines (stars nearly vanished, no colour), so now ink
+  darkness on screen matches glyph brightness in dark (fixed with D-072's second pass). The loading curtain rebuilds out of paper.
 - *Presence colours* stay the dark-theme hex values (they identify a person and are compared across clients); `themeAccent(hex)` /
   `useThemeAccent()` draw them in the current theme's shade (HUD people, cursors, card rings and tags, panel strip, account chip).
   PeerMarks (Flow/Table/Matrix) still draws the bright values.
@@ -441,4 +443,36 @@ so `Bob ✎ title`, the field outline and the `edit`/`field` presence writes are
 with no lock or warning (answers Q-006 for good: no Yjs). The panel strip now only says `Bob is here`.
 The RTDB rules still accept `edit`/`field` (retired, never written) so tabs still running the previous build keep working;
 drop them from the rules once that build is gone. **Phase 3 is done.**
+
+### D-072 · 2026-10-17 · Accepted (extends D-028)
+**A welcome intro in the backdrop, and the landing's r/t pair opened.** User request: when the ASCII animation starts, the screen
+slowly fills with stars while a red-orange sunrise glows low from the lower left, our north star appears last, then it returns to
+the usual flow. (The first pass had a "space photo" look: nebula clouds, a galaxy, shooting stars; see below.)
+- `welcome()` + `dawn()` in `src/three/AmbientField.tsx`, driven by `introTime()` from `sceneClock.ts` (the scene clock's first `INTRO_SECONDS` = 10 s),
+  so the loading curtain's copy shows the same frame (D-025). Timeline: stars fill 0.2–4.4 s (accelerating), a sunrise glow rises 0.4–6 s
+  from the bottom edge, centred left of middle and squashed so it spreads sideways and stays low (palette `ember` → `dawn` → a pale gold
+  from the yellow accent at the edge; the ASCII target is 8-bit, so pure red alone only reaches faint glyphs), the bright star blooms
+  4.2–5 s in the upper right, stars go out 5.4–8.5 s, slow crossfade into the flow 6.2–9.8 s. The glow skips the bottom calm band.
+  The landing hero's scrim is a `::before` whose 10 s fade-in is lined up with the intro clock (`--intro-at`), so it's out while the glow shows.
+- *Light theme:* the glow uses the same bright `ember`/`dawn` in both palettes (the pass darkens the hue itself), its gold core is a
+  fixed bright gold (the light yellow token printed faintly), and it gets 2.2× instead of 1.5× strength on paper (`uLight`).
+- *Second pass (user):* the galaxy, nebula clouds, Milky Way band and shooting stars didn't look good and are gone; the sunrise replaces them.
+  The glow had to start at the very bottom edge, not climb high, and spread from the lower left rather than along the whole bottom.
+- *Rejected in the first pass:* drawing the Little Dipper's lines (not wanted), and an aurora (appeared and vanished too abruptly).
+- Plays once per app start (any page; dimmed in a workspace like the rest of the backdrop). Skipped if reduced motion is on at start,
+  since the frozen clock would hold an empty sky.
+- *Title:* Geist at -0.045em tracking made the r's arm touch the t in "North"; that one letter gets -0.02em (`.kernRt`).
+
+### D-073 · 2026-10-17 · Accepted (Phase 4.1; answers Q-003)
+**The assistant is an ASCII orb with eyes, bottom-right in a workspace, that opens a chat.** The user's call: no per-panel AI menus for now.
+- *Orb* (`src/ui/AiOrb.tsx`): a turning sphere of ASCII dots on its own 2D canvas (30 fps, not the backdrop pass), two eyes that follow
+  the pointer and blink; spins faster with a cyan shimmer while answering. Still under reduced motion. Moves left of an open side panel
+  (`data-side-panel`), hidden behind one below 760px.
+- *Chat* (`src/ui/AiChat.tsx`, `src/ai/`): streams from OpenAI's Responses API straight from the browser (`store: false`, low reasoning).
+  Each message sends a fresh plain-text brief of the workspace (`src/ai/context.ts`: items, tags, areas, links, competitors, matrix, the
+  view and selection). Read-only; the chat lives in the tab only (one per workspace, gone on reload).
+- *Key* (D-006): pasted in the chat or Settings → ai, checked with a free `GET /v1/models/<model>`, kept only in localStorage.
+- *Model:* `gpt-6-luna` ($0.10 / $0.50 per 1M tokens, cheapest on OpenAI's model page 2026-10-17). A per-feature model picker comes later.
+- *Phase 4.2:* tools/MCP so the assistant can add competitors, links, matrix notes, summaries; previews you accept before anything is written
+  (user's answer: preview, then accept); market research by sending agents.
 

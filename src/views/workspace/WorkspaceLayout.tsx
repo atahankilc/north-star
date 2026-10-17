@@ -22,6 +22,7 @@ import { useWorkspaceData } from '../../data/workspaceData'
 import { useCanvas } from '../../state/canvasStore'
 import { useHoldCurtain } from '../../state/curtain'
 import { useWsView } from '../../state/workspaceView'
+import { AiChat } from '../../ui/AiChat'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { DecodeText } from '../../ui/DecodeText'
 import { Hud } from '../../ui/Hud'
@@ -85,6 +86,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
       />
       {!isLoading && <Outlet />}
       <EditKeys />
+      {!isLoading && <AiChat />}
       <Toast />
     </WorkspaceContext.Provider>
   )

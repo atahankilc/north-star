@@ -1,0 +1,325 @@
+/* The assistant's orb and chat (D-073), bottom-right of a workspace. */
+.dock {
+  position: fixed;
+  right: var(--hud-x);
+  bottom: var(--hud-y);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.dock > * {
+  pointer-events: auto;
+}
+
+/* An item's side panel owns the right edge: the assistant moves to its left. */
+:global(html:has([data-side-panel])) .dock {
+  right: calc(var(--hud-x) + min(380px, 100vw - 2 * var(--space-4)) + var(--space-4));
+}
+
+:global(html:has([data-side-panel='wide'])) .dock {
+  right: calc(var(--hud-x) + min(520px, 100vw - 2 * var(--space-4)) + var(--space-4));
+}
+
+/* The orb is an icon, unframed like the gear; open, it takes the same magenta bar (D-066). */
+.orb {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.orb::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -4px;
+  height: 2px;
+  background: var(--accent-magenta);
+  transform: scaleX(0);
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.orb[data-open='true']::after {
+  transform: scaleX(1);
+}
+
+.orb:focus-visible {
+  outline: 1px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+.panel {
+  composes: frame from './Frame.module.css';
+  display: flex;
+  flex-direction: column;
+  width: min(400px, calc(100vw - 2 * var(--space-4)));
+  height: min(560px, calc(100dvh - var(--hud-h) - var(--hud-y) - 56px - var(--space-6)));
+  font-size: var(--text-sm);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.kicker {
+  composes: label from './Frame.module.css';
+}
+
+.model {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.headActions {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.action {
+  padding: 2px var(--space-1);
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.action::before {
+  content: '[';
+  color: var(--line-hover);
+}
+
+.action::after {
+  content: ']';
+  color: var(--line-hover);
+}
+
+.action:hover {
+  color: var(--fg-strong);
+}
+
+.close {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--accent-magenta);
+}
+
+.noKey {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-4);
+}
+
+.lead {
+  margin: 0;
+  color: var(--fg);
+}
+
+.fine {
+  margin: 0;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.fine a {
+  color: var(--fg-dim);
+}
+
+.fine a:hover {
+  color: var(--accent-cyan);
+}
+
+.log {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-4);
+  overflow-y: auto;
+  list-style: none;
+  overscroll-behavior: contain;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.starters {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.starter {
+  padding: var(--space-1) var(--space-2);
+  border: 1px dashed var(--line);
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.starter:hover,
+.starter:focus-visible {
+  border-color: var(--accent-cyan);
+  color: var(--fg-strong);
+}
+
+.message {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.who {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 20px;
+}
+
+.message[data-role='assistant'] .who {
+  color: var(--accent-cyan);
+}
+
+.text {
+  color: var(--fg);
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.message[data-role='user'] .text {
+  color: var(--fg-strong);
+}
+
+.caret {
+  display: inline-block;
+  width: 7px;
+  height: 13px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: var(--accent-cyan);
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+html[data-motion='reduced'] .caret {
+  animation: none;
+}
+
+.error {
+  display: block;
+  color: var(--accent-yellow);
+  font-size: var(--text-xs);
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  border-top: 1px solid var(--line);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  line-height: 20px;
+  resize: none;
+  outline: none;
+  caret-color: var(--accent-cyan);
+}
+
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+.input:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.send {
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--accent-cyan);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.send::before {
+  content: '[';
+  color: var(--line-hover);
+}
+
+.send::after {
+  content: ']';
+  color: var(--line-hover);
+}
+
+.send:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+.footnote {
+  margin: 0;
+  padding: var(--space-1) var(--space-4) var(--space-3);
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+/* Narrow screens: a side panel fills the width, so the assistant steps aside until it closes. */
+@media (max-width: 760px) {
+  :global(html:has([data-side-panel])) .dock {
+    display: none;
+  }
+}

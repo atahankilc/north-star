@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (Phase 3 done: typing indicator removed, LWW kept, D-071)_
+_Last updated: 2026-10-17 (welcome intro: sunrise instead of galaxy/shooting stars, D-072)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -171,10 +171,23 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-071: removed the typing indicator (`edit`/`field` writes, `Bob ✎ …` on cards, field outline); the panel strip says `Bob is here`.
   Following across views verified on the new `/workspaces/…` routes (D-070). Not committed.
 
+## Done (welcome intro, 2026-10-17)
+- D-072: stars fill the sky while a red-orange sunrise glows low from the lower left (from the bottom edge; the landing's headline scrim
+  fades in only as the intro ends), the north star last (upper right), then a slow melt into the flow (first 10 s of the backdrop).
+  Galaxy, nebula, Milky Way and shooting stars removed (user). "North" r/t no longer touch.
+  Light theme: the ASCII pass now blends ink in sRGB, so stars, the north star, the orange glow and the flow print as strongly as dark
+  shows them (they were nearly invisible). Verified headless (dark timeline 1.5–11 s; light at 5.5 s and 12 s; light example workspace
+  on emulators: cards still read fine over the 14% backdrop). Not committed.
+
+## Done (Phase 4.1: assistant orb + chat, 2026-10-17)
+- D-073: ASCII orb with eyes bottom-right in workspaces → chat panel; OpenAI key in Settings → ai or in the chat; gpt-6-luna; read-only
+  workspace brief per message. Build passes. Verified headless on emulators with OpenAI mocked (key check, streaming answer, brief contents,
+  Escape closes). **Not tried against the real OpenAI API yet** (no key here). Not committed.
+
 ## Next steps
 1. Commit + push the open work (light theme D-069, routing D-070, D-071)
 2. Small: PeerMarks colours through `themeAccent` (D-069); drop `edit`/`field` from database.rules.json once old tabs are gone
-3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
+3. Try the assistant with a real OpenAI key; then Phase 4.2 (tools/MCP, preview + accept, per-feature model choice); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 
 ## Blockers
