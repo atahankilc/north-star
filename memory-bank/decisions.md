@@ -346,3 +346,13 @@ Rules: `joiningByInvite()`, `decliningInvite()`, `joinRequests` match; the old `
   at all while frozen. Its WebGL context asks for `low-power`. The board canvas renders on demand too: React updates, controls
   and text invalidate it, glides invalidate until they settle (`glideDt` caps the delta so they still animate after a pause).
 - Measured (headless, 1440×900 @2x): backdrop 30 renders/s instead of one per display refresh; idle board 0 draws (was every frame).
+
+### D-064 · 2026-10-17 · Accepted (refines D-054)
+**Settings: an icon button and a modal with a side menu.** The HUD shows your account chip (avatar + name) and, beside it, a
+framed ⚙ square (the join-request count sits in its corner). The chip opens settings on the account page. The modal has a side menu on the left and the chosen page on the right:
+- *account*: avatar, name and email, sign-in method, sign out;
+- *workspace* (only inside one): general (name, members), people (asking to join, invite by email; owner only), invite code;
+- *app*: display (motion, background) and what's coming later.
+It opens on the workspace page when someone is waiting to join, otherwise on the last page you used. Below 640 px the menu turns
+into tabs above the page.
+

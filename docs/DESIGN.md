@@ -79,7 +79,11 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Screen-edge margins come only from `--hud-x` / `--hud-y` (toolbar, panels and status line too).
 
 - In a workspace, the views sit beside the breadcrumb as a framed menu bar (current view filled), and the right side holds one
-  settings button (avatar initial, name, ⚙) that opens the settings modal. Signed out, the right side is just the motion switch.
+  account chip (avatar initial + name; just the initial below 640 px) and, beside it, a framed ⚙ icon button (cyan count in the
+  corner when people wait to join). The chip opens settings on the account page, the gear on the last page used. It opens the settings
+  modal: a side menu on the left (`> ACCOUNT`, `> WORKSPACE` only inside a workspace, `> APP`; the current one gets a cyan left bar)
+  and the chosen page on the right. Below 640 px the menu becomes a row of tabs above the page (D-064).
+  Signed out, the right side is just the motion switch.
 - Dropdowns (`src/ui/Menu.tsx`): a framed trigger `SHOW all ▾`, a framed list below (or above, for the bottom toolbar), `[x]`/`[ ]` checks.
   The create button is the one solid-magenta control on the board.
 

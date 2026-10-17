@@ -1,68 +1,93 @@
-/* Settings button in the HUD and its modal (D-054). */
-.trigger {
-  composes: interactive from './Frame.module.css';
-  --accent: var(--accent-cyan);
+/* Settings button in the HUD and its modal (D-054, D-064). */
+
+/* Who's signed in, always beside the gear; opens settings on the account page. */
+.account {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  max-width: 280px;
-  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
-  color: var(--fg);
+  max-width: 220px;
+  height: 34px;
+  padding: 0 var(--space-2) 0 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
   font: inherit;
   font-size: var(--text-sm);
   cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
 }
 
-.avatar {
+.account:hover,
+.account:focus-visible {
+  color: var(--fg-strong);
+}
+
+.chipAvatar {
   display: inline-grid;
+  flex-shrink: 0;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   background: var(--accent-cyan);
   color: var(--bg);
   font-size: var(--text-xs);
 }
 
-.who {
+.chipName {
   min-width: 0;
   overflow: hidden;
-  color: var(--fg-dim);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.gear {
-  color: var(--fg-dim);
-}
-
-.badge {
+/* The gear: a framed square of its own. */
+.trigger {
+  composes: interactive from './Frame.module.css';
+  --accent: var(--accent-cyan);
   display: inline-grid;
   place-items: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.gear {
+  font-size: 17px;
+  line-height: 1;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-med) var(--ease-out);
+}
+
+.trigger:hover .gear,
+.trigger:focus-visible .gear {
+  color: var(--accent-cyan);
+  transform: rotate(45deg);
+}
+
+/* People waiting to join: a count pinned to the corner. */
+.badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
   background: var(--accent-cyan);
   color: var(--bg);
-  font-size: var(--text-xs);
-}
-
-.trigger:hover .gear {
-  color: var(--accent-cyan);
-}
-
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .dialog {
   composes: frame from './Frame.module.css';
-  width: min(560px, calc(100vw - 2 * var(--space-4)));
-  max-height: calc(100vh - 2 * var(--space-8));
+  width: min(780px, calc(100vw - 2 * var(--space-4)));
+  height: min(600px, calc(100vh - 2 * var(--space-8)));
   padding: 0;
   color: var(--fg);
   background: var(--bg-raised);
@@ -72,11 +97,97 @@
   background: rgba(0, 0, 0, 0.7);
 }
 
+/* Side menu on the left, the chosen page on the right. */
 .inner {
+  display: grid;
+  grid-template-columns: 188px minmax(0, 1fr);
+  height: 100%;
+}
+
+.nav {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-4) var(--space-6) var(--space-6);
+  padding: var(--space-6) var(--space-3) var(--space-6) var(--space-6);
+  border-right: 1px solid var(--line);
+}
+
+.navTitle {
+  margin: 0;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.navList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.navItem:hover {
+  color: var(--fg-strong);
+}
+
+.navItem[aria-current='page'] {
+  border-left-color: var(--accent-cyan);
+  background: color-mix(in srgb, var(--accent-cyan) 7%, transparent);
+  color: var(--fg-strong);
+}
+
+.navLabel::before {
+  content: '> ';
+  color: transparent;
+}
+
+.navItem[aria-current='page'] .navLabel::before {
+  color: var(--accent-cyan);
+}
+
+.navBadge {
+  min-width: 16px;
+  padding: 0 4px;
+  background: var(--accent-cyan);
+  color: var(--bg);
+  font-size: 10px;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-6) var(--space-8);
 }
 
 .head {
@@ -106,6 +217,43 @@
   color: var(--fg-strong);
 }
 
+/* Account page: who you are, large. */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.avatar {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  background: var(--accent-cyan);
+  color: var(--bg);
+  font-size: 20px;
+}
+
+.profileText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profileName {
+  color: var(--fg-strong);
+  font-size: var(--text-md);
+  overflow-wrap: anywhere;
+}
+
+.profileEmail {
+  color: var(--fg-dim);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
 .section {
   display: flex;
   flex-direction: column;
@@ -129,7 +277,7 @@
 
 .rowLabel {
   flex-shrink: 0;
-  width: 110px;
+  width: 136px;
   color: var(--fg-dim);
   font-size: var(--text-xs);
   letter-spacing: 0.12em;
@@ -141,6 +289,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-3);
+  flex: 1;
   min-width: 0;
   color: var(--fg);
   overflow-wrap: anywhere;
@@ -176,16 +325,69 @@
   text-transform: uppercase;
 }
 
-@media (max-width: 560px) {
+/* Narrow screens: the side menu becomes a row of tabs above the page, and the chip keeps only its initial. */
+@media (max-width: 640px) {
+  .chipName {
+    display: none;
+  }
+
+  .dialog {
+    height: calc(100vh - 2 * var(--space-4));
+  }
+
+  .inner {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .nav {
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-4) 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .navTitle {
+    font-size: 20px;
+  }
+
+  .navList {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .navItem {
+    width: auto;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+  }
+
+  .navItem[aria-current='page'] {
+    border-bottom-color: var(--accent-cyan);
+  }
+
+  .page {
+    padding: var(--space-4) var(--space-4) var(--space-6);
+  }
+
+  .row {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .rowLabel {
+    width: auto;
+  }
+
+  .rowValue {
+    width: 100%;
+  }
+
   .later {
     grid-template-columns: 1fr auto;
   }
 
   .laterDetail {
-    display: none;
-  }
-
-  .who {
     display: none;
   }
 }

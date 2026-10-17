@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (full motion default, background switch, cheaper backdrop, D-063)_
+_Last updated: 2026-10-17 (settings modal with side menu, D-064; full motion default, background switch, cheaper backdrop, D-063)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -113,6 +113,10 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Rules: 108 pass, deployed and pushed 2026-10-17. The new client needs the new rules (joinRequests) and the old direct join is now refused, so
   deploy rules and push together. Verified on emulators with headless Chrome (Bob asks → Alice lets in; Carol invited by email → joins;
   duplicate request message; new code).
+
+## Done (settings redesign, 2026-10-17)
+- D-064: account chip + ⚙ icon button side by side; settings modal with a side menu (account / workspace / app) and pages on the right; tabs on narrow screens.
+  Verified with headless Chrome on the emulators (all three pages, 390 px width). Ships the D-063 background on/off control. Pushed 2026-10-17.
 
 ## Done (motion default + background switch + GPU, 2026-10-17)
 - Full motion by default, `background: on | off` in Settings → app (signed-in pages only), field at one texel per cell,

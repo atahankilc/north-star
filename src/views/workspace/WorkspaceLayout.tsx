@@ -85,7 +85,7 @@ function EditKeys() {
   return null
 }
 
-// The workspace's part of the settings modal (D-054): its name, who's in it, and how people get in (D-062).
+// The workspace page of the settings modal (D-054, D-064): its name, who's in it, and how people get in (D-062).
 type SettingsProps = { wid: string; workspace: WorkspaceCtx['workspace']; requests: WithId<JoinRequest>[] }
 
 function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
@@ -110,62 +110,67 @@ function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
   }
 
   return (
-    <Section label="this workspace">
-      <Row label="name">
-        <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} />
-      </Row>
-      <Row label="members">
-        {members} {members === 1 ? 'person' : 'people'}
-        {role && <span className={styles.role}>you're the {role}</span>}
-      </Row>
+    <>
+      <Section label="general">
+        <Row label="name">
+          <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} />
+        </Row>
+        <Row label="members">
+          {members} {members === 1 ? 'person' : 'people'}
+          {role && <span className={styles.role}>you're the {role}</span>}
+        </Row>
+      </Section>
 
       {isOwner && (
-        <Row label="asking to join">
-          {requests.length === 0 ? (
-            <span className={styles.role}>no one is waiting</span>
-          ) : (
-            <ul className={styles.list}>
-              {requests.map((r) => (
-                <li key={r.id} className={styles.item}>
-                  <span className={styles.who}>
-                    {r.name}
-                    {r.email && r.email !== r.name && <span className={styles.role}> {r.email}</span>}
-                  </span>
-                  <span>
-                    <button className={styles.action} data-tone="primary" onClick={() => run(approveJoinRequest(wid, r.uid))}>
-                      let in
-                    </button>
-                    <button className={styles.action} data-tone="danger" onClick={() => run(denyJoinRequest(wid, r.uid))}>
-                      deny
-                    </button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Row>
+        <Section label="people">
+          <Row label="asking to join">
+            {requests.length === 0 ? (
+              <span className={styles.role}>no one is waiting</span>
+            ) : (
+              <ul className={styles.list}>
+                {requests.map((r) => (
+                  <li key={r.id} className={styles.item}>
+                    <span className={styles.who}>
+                      {r.name}
+                      {r.email && r.email !== r.name && <span className={styles.role}> {r.email}</span>}
+                    </span>
+                    <span>
+                      <button className={styles.action} data-tone="primary" onClick={() => run(approveJoinRequest(wid, r.uid))}>
+                        let in
+                      </button>
+                      <button className={styles.action} data-tone="danger" onClick={() => run(denyJoinRequest(wid, r.uid))}>
+                        deny
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Row>
+          <EmailInvites wid={wid} invited={workspace.invitedEmails ?? []} onError={setError} />
+        </Section>
       )}
 
-      {isOwner && <EmailInvites wid={wid} invited={workspace.invitedEmails ?? []} onError={setError} />}
-
-      <Row label="invite code">
-        <span className={styles.code}>{pretty}</span>
-        <AsciiButton accent="cyan" onClick={copy}>
-          {copied ? 'Copied' : 'Copy'}
-        </AsciiButton>
-        {isOwner && user && (
-          <button className={styles.action} onClick={() => run(renewInviteCode(wid, code, user.id))}>
-            new code
-          </button>
-        )}
-      </Row>
-      <p className={styles.hint}>
-        {isOwner
-          ? 'People who enter the code ask to join, and you let them in here. A new code stops the old one; invited addresses join without one.'
-          : 'People who enter the code ask to join; the owner lets them in.'}
-      </p>
+      <Section label="invite code">
+        <Row label="code">
+          <span className={styles.code}>{pretty}</span>
+          <AsciiButton accent="cyan" onClick={copy}>
+            {copied ? 'Copied' : 'Copy'}
+          </AsciiButton>
+          {isOwner && user && (
+            <button className={styles.action} onClick={() => run(renewInviteCode(wid, code, user.id))}>
+              new code
+            </button>
+          )}
+        </Row>
+        <p className={styles.hint}>
+          {isOwner
+            ? 'People who enter the code ask to join, and you let them in here. A new code stops the old one; invited addresses join without one.'
+            : 'People who enter the code ask to join; the owner lets them in.'}
+        </p>
+      </Section>
       {error && <p className={styles.error}>! {error}</p>}
-    </Section>
+    </>
   )
 }
 
