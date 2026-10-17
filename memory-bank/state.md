@@ -277,7 +277,7 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   them to the workspace; any chat can be written up as a report on request (`make_report`), saved when you press save.
   Rules: 191 pass. Verified on emulators with headless Chrome, two users and a fake OpenAI. Firestore + RTDB rules **deployed** 2026-10-18
   (a superset, safe for the live client). D-091: `upload .md` on the reports tab (own Markdown reports, parsed to the same
-  shape; round-trips the report screen's download); rules 193 pass, deployed 2026-10-18. Committed (`a86583c`), **not pushed**. The user tried reports with a real key 2026-10-18: works.
+  shape; round-trips the report screen's download); rules 193 pass, deployed 2026-10-18. Committed and **pushed 2026-10-18** (`a86583c`, live deploy green). The user tried reports with a real key 2026-10-18: works.
 - Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research, saved
   reports (all done; whole chats stay unsaved, the user chose reports instead) → reading attachments (after D-083) → the
   user's own redesign of the assistant UI and the preview.
