@@ -245,6 +245,10 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   black see-through window, orb glides around side panels with bumped/free reactions. Verified with a timestamped CDP screencast
   on emulators (open, close, side panel in and out: no board jump). Committed 2026-10-17 (not pushed).
 
+## Done (small cleanups, 2026-10-17)
+- PeerMarks (Flow rings, Table bars, Matrix cells, name tags) draw presence colours in the theme's shade: `usePeersOn` maps them
+  through `themeAccent` (D-069). Retired `edit`/`field` dropped from database.rules.json (D-071); rules 145 pass, **deployed** 2026-10-17. Committed 2026-10-17 (not pushed).
+
 ## Done (assistant knows the startup, 2026-10-17)
 - D-082: the prompt says North Star is the app, never the startup; brief starts with `WHAT WE'RE BUILDING` and is wrapped in
   `<workspace>` tags; Settings → workspace → building edits `workspace.description` (example and import fill it). Rules: 145 pass,
@@ -256,7 +260,6 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
    `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`, then `npm run deploy:functions`, set
    `WORKSPACE_KEYS_LIVE = true` in src/data/ai.ts, push, and try with a real key as owner + member (also the delete cleanup).
    (Export/import, TSV and PNG are done, D-080.)
-2. Small: PeerMarks colours through `themeAccent` (D-069); drop `edit`/`field` from database.rules.json once old tabs are gone
 3. Phase 5: attachments (need Blaze, D-015 / Q-009; Q-004 drawings); the bundle then gains `attachments/`
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 

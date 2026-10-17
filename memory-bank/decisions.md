@@ -425,7 +425,7 @@ theme before the first paint, so dark never flashes first.
   darkness on screen matches glyph brightness in dark (fixed with D-072's second pass). The loading curtain rebuilds out of paper.
 - *Presence colours* stay the dark-theme hex values (they identify a person and are compared across clients); `themeAccent(hex)` /
   `useThemeAccent()` draw them in the current theme's shade (HUD people, cursors, card rings and tags, panel strip, account chip).
-  PeerMarks (Flow/Table/Matrix) still draws the bright values.
+  PeerMarks (Flow/Table/Matrix) does too, through `usePeersOn`.
 - *Landing:* no controls in the HUD any more (the user's call): the motion switch is gone, and motion and theme are in Settings once signed in.
   A signed-out visitor gets the stored preference, or else the defaults.
 - *Defaults, always (user's rule, in CLAUDE.md):* dark theme, full motion, background on, regardless of the OS. Changing them is a
@@ -445,8 +445,7 @@ address, and `/#/w/<id>` was hard to read.
 **No "who's typing" anywhere; last write wins, no guard.** The user: seeing who has a card open (and how many people) is enough,
 so `Bob ✎ title`, the field outline and the `edit`/`field` presence writes are gone. Concurrent edits stay last-write-wins per field
 with no lock or warning (answers Q-006 for good: no Yjs). The panel strip now only says `Bob is here`.
-The RTDB rules still accept `edit`/`field` (retired, never written) so tabs still running the previous build keep working;
-drop them from the rules once that build is gone. **Phase 3 is done.**
+The RTDB rules accepted `edit`/`field` for a while so tabs on the previous build kept working; they were dropped later the same day. **Phase 3 is done.**
 
 ### D-072 · 2026-10-17 · Accepted (extends D-028)
 **A welcome intro in the backdrop, and the landing's r/t pair opened.** User request: when the ASCII animation starts, the screen
