@@ -21,7 +21,7 @@ _Last updated: 2026-10-17_
   - Invite chip copies the code; non-members see "not found or not a member"
 - Verified end to end in Chrome on the emulators (create, edit, drag, link, join as Bob, Carol refused)
 
-## Done (UI feedback round 1, uncommitted)
+## Done (UI feedback rounds, committed in `76ff572`)
 - Loading: flowing background + corner status, then a cell-by-cell top-left → bottom-right rebuild (D-025)
 - Background flows like a fluid with no mouse influence (D-026)
 - Fix: a single click on a card now opens the panel (the board underneath was deselecting it)
@@ -53,9 +53,11 @@ _Last updated: 2026-10-17_
 - Background (hidden) Chrome tabs pause rAF **and** heavily throttle timers after a few minutes, so long test scripts stall,
   motion exit animations never finish (the curtain stays in the DOM), and screenshots can come out stale or tiled. Keep scripts
   short and observe with MutationObserver; hide `[role=status]` to look past a stuck curtain.
-- **For visual or animation checks, use headless Chrome via puppeteer-core** (installed in the session scratchpad, not the repo;
-  launch `/Applications/Google Chrome.app/...` with `headless: 'new'`). It runs rAF normally, unlike the extension's background tab.
-  Set `localStorage['north-star.motion'] = 'full'` first (the user's OS has Reduce Motion on).
+- **For visual or animation checks, use headless Chrome via puppeteer-core.** Install it in the session scratchpad
+  (`npm i puppeteer-core@24`, never in the repo) and launch `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
+  with `headless: 'new'`. It runs rAF normally, unlike the extension's background tab. Set `localStorage['north-star.motion'] = 'full'`
+  via `evaluateOnNewDocument` first (the user's OS has Reduce Motion on). Wait for `window.__curtain.getState().revealed` before capturing.
+- The user runs their own dev server on :5173. Use another port (e.g. 5179) for yours, and stop your servers when done.
 - Dev hooks: `window.__sceneTime`, `__backdrop` (R3F state), `__curtain`, `__sweep`, `__canvas`, `__advance`.
 - Chrome screenshots are scaled: viewport 2560 px vs 1568 px frame, so script clientX/Y needs ×(innerWidth/1568).
 - OrbitControls listens on the Board's wrapper div (not the canvas), so card handlers run first and can disable panning.
