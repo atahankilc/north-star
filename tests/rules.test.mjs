@@ -6,9 +6,11 @@ import { connectAuthEmulator, getAuth, GoogleAuthProvider, signInWithCredential 
 import { connectDatabaseEmulator, get as rtGet, getDatabase, ref, set as rtSet } from 'firebase/database'
 import {
   addDoc,
+  arrayRemove,
   arrayUnion,
   collection,
   connectFirestoreEmulator,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -109,6 +111,15 @@ await deny('member deletes workspace', () => writeBatch(bob.fs).delete(doc(bob.f
 
 await deny('outsider still cannot read after others join', () => getDoc(doc(carol.fs, 'workspaces', wid)))
 
+await deny('member removes someone else', () => join(bob, { memberIds: arrayRemove(alice.uid) }))
+await deny('leave but keep your role', () => join(bob, { memberIds: arrayRemove(bob.uid) }))
+await deny('owner leaves (must delete instead)', () =>
+  join(alice, { memberIds: arrayRemove(alice.uid), [`roles.${alice.uid}`]: deleteField() }),
+)
+await allow('member leaves', () => join(bob, { memberIds: arrayRemove(bob.uid), [`roles.${bob.uid}`]: deleteField() }))
+await deny('former member reads workspace', () => getDoc(doc(bob.fs, 'workspaces', wid)))
+await deny('former member lists ideas', () => getDocs(ideas(bob.fs)))
+
 const presence = (who, uid) => ref(who.rt, `presence/${wid}/${uid}`)
 const me = (name) => ({ name, color: '#fff', view: 'canvas', ts: Date.now() })
 await allow('write own presence', () => rtSet(presence(bob, bob.uid), me('Bob')))
@@ -117,6 +128,18 @@ await deny('presence without required fields', () => rtSet(presence(bob, bob.uid
 await allow('signed-in user reads presence', () => rtGet(ref(alice.rt, `presence/${wid}`)))
 await deny('signed-out user reads presence', () => rtGet(ref(anon.rt, `presence/${wid}`)))
 await deny('read outside /presence', () => rtGet(ref(alice.rt, '/')))
+
+await deny('member deletes the invite code', () => writeBatch(carol.fs).delete(doc(carol.fs, 'inviteCodes', CODE)).commit())
+await allow('owner deletes children, invite code, then workspace', async () => {
+  const children = await getDocs(ideas(alice.fs))
+  const b1 = writeBatch(alice.fs)
+  children.forEach((d) => b1.delete(d.ref))
+  await b1.commit()
+  const b2 = writeBatch(alice.fs)
+  b2.delete(doc(alice.fs, 'inviteCodes', CODE))
+  b2.delete(doc(alice.fs, 'workspaces', wid))
+  await b2.commit()
+})
 
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed ? 1 : 0)

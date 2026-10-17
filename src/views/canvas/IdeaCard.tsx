@@ -1,8 +1,8 @@
 // One post-it on the board: a lit slab with SDF text (D-019). Editing happens in the DetailPanel.
 import { RoundedBox, Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useRef, useState } from 'react'
-import { MathUtils, Plane, Vector3, type Group } from 'three'
+import { useMemo, useRef, useState } from 'react'
+import { MathUtils, MeshBasicMaterial, Plane, Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { moveIdea } from '../../data/ideas'
@@ -11,6 +11,7 @@ import { useCanvas } from '../../state/canvasStore'
 import { colors } from '../../styles/tokens'
 import { fontUrls } from '../../three/fonts'
 import { CARD_H, CARD_W, truncate } from './cardLayout'
+import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 
 const BOARD = new Plane(new Vector3(0, 0, 1), 0)
 const hit = new Vector3()
@@ -30,6 +31,15 @@ type Props = {
 
 export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
   const group = useRef<Group>(null)
+  const content = useRef<Group>(null)
+  // Cell-by-cell entrance (D-034): shared by all of this card's materials. Text gets its own base
+  // material so the reveal doesn't leak into troika's shared default.
+  const cell = useMemo(makeCellUniforms, [])
+  const textMaterial = useMemo(() => {
+    const m = new MeshBasicMaterial()
+    installCellReveal(m, cell)
+    return m
+  }, [cell])
   const [hovered, setHovered] = useState(false)
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
 
@@ -117,6 +127,9 @@ export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      // The board under the card deselects on click; keep this click to the card.
+      onClick={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
       onPointerOver={(e) => {
         e.stopPropagation()
         setHovered(true)
@@ -127,60 +140,66 @@ export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
         document.body.style.cursor = ''
       }}
     >
-      {rim && (
-        <mesh position={[0, 0, -0.04]}>
-          <planeGeometry args={[CARD_W + 0.06, CARD_H + 0.06]} />
-          <meshBasicMaterial color={rim} toneMapped={false} />
+      <group ref={content}>
+        {rim && (
+          <mesh position={[0, 0, -0.04]}>
+            <planeGeometry args={[CARD_W + 0.06, CARD_H + 0.06]} />
+            <meshBasicMaterial color={rim} toneMapped={false} />
+          </mesh>
+        )}
+        <RoundedBox args={[CARD_W, CARD_H, 0.06]} radius={0.025} smoothness={2}>
+          <meshStandardMaterial color="#121212" roughness={0.7} metalness={0.05} />
+        </RoundedBox>
+        {/* Accent strip along the top edge. */}
+        <mesh position={[0, CARD_H / 2 - 0.02, 0.031]}>
+          <planeGeometry args={[CARD_W, 0.04]} />
+          <meshBasicMaterial color={accent} toneMapped={false} />
         </mesh>
-      )}
-      <RoundedBox args={[CARD_W, CARD_H, 0.06]} radius={0.025} smoothness={2}>
-        <meshStandardMaterial color="#121212" roughness={0.7} metalness={0.05} />
-      </RoundedBox>
-      {/* Accent strip along the top edge. */}
-      <mesh position={[0, CARD_H / 2 - 0.02, 0.031]}>
-        <planeGeometry args={[CARD_W, 0.04]} />
-        <meshBasicMaterial color={accent} toneMapped={false} />
-      </mesh>
 
-      <Text
-        font={fontUrls.display}
-        fontSize={0.17}
-        color={title ? colors.fg : colors.fgDim}
-        anchorX="left"
-        anchorY="top"
-        position={[-CARD_W / 2 + 0.18, CARD_H / 2 - 0.2, 0.032]}
-        maxWidth={CARD_W - 0.36}
-        letterSpacing={-0.01}
-      >
-        {truncate(title || 'Untitled', 26)}
-      </Text>
-      {idea.body && (
         <Text
-          font={fontUrls.mono}
-          fontSize={0.095}
-          lineHeight={1.45}
-          color={colors.fgDim}
+          material={textMaterial}
+          font={fontUrls.display}
+          fontSize={0.17}
+          color={title ? colors.fg : colors.fgDim}
           anchorX="left"
           anchorY="top"
-          position={[-CARD_W / 2 + 0.18, CARD_H / 2 - 0.5, 0.032]}
+          position={[-CARD_W / 2 + 0.18, CARD_H / 2 - 0.2, 0.032]}
           maxWidth={CARD_W - 0.36}
-          clipRect={[0, -(CARD_H - 0.85), CARD_W, 0.01]}
+          letterSpacing={-0.01}
         >
-          {idea.body}
+          {truncate(title || 'Untitled', 26)}
         </Text>
-      )}
-      {tags && (
-        <Text
-          font={fontUrls.mono}
-          fontSize={0.085}
-          color={idea.color ?? colors.cyan}
-          anchorX="left"
-          anchorY="bottom"
-          position={[-CARD_W / 2 + 0.18, -CARD_H / 2 + 0.14, 0.032]}
-        >
-          {truncate(tags, 40)}
-        </Text>
-      )}
+        {idea.body && (
+          <Text
+            material={textMaterial}
+            font={fontUrls.mono}
+            fontSize={0.095}
+            lineHeight={1.45}
+            color={colors.fgDim}
+            anchorX="left"
+            anchorY="top"
+            position={[-CARD_W / 2 + 0.18, CARD_H / 2 - 0.5, 0.032]}
+            maxWidth={CARD_W - 0.36}
+            clipRect={[0, -(CARD_H - 0.85), CARD_W, 0.01]}
+          >
+            {idea.body}
+          </Text>
+        )}
+        {tags && (
+          <Text
+            material={textMaterial}
+            font={fontUrls.mono}
+            fontSize={0.085}
+            color={idea.color ?? colors.cyan}
+            anchorX="left"
+            anchorY="bottom"
+            position={[-CARD_W / 2 + 0.18, -CARD_H / 2 + 0.14, 0.032]}
+          >
+            {truncate(tags, 40)}
+          </Text>
+        )}
+      </group>
+      <CardReveal content={content} uniforms={cell} />
     </group>
   )
 }

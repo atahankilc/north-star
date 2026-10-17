@@ -93,3 +93,95 @@ so nothing can reach production. Test users (Alice, Bob, Carol) sign in with fak
 ### D-021 · 2026-10-17 · Accepted
 **Roles for the MVP: owner + editor.** Resolves Q-007. Owner: members, invite code, delete. Editor: everything else.
 Enforced in `firestore.rules`, covered by `tests/rules.test.mjs`.
+
+### D-022 · 2026-10-17 · Superseded by D-025
+**A loading curtain covers the app until it's ready** (`src/ui/Curtain.tsx`, `src/state/curtain.ts`).
+Anything can hold it with `useHoldCurtain(key, isLoading)`: the shell holds it for auth and fonts, pages for their data.
+On first load it stays up for at least 900 ms, then opens as a shutter from the centre. After that it only appears
+if a load takes over 250 ms. Entrance animations (`DecodeText`, landing motion) wait for `revealed`.
+
+### D-023 · 2026-10-17 · Accepted
+**Owners delete workspaces; editors leave them.** Delete removes every subcollection doc, then the invite code and the workspace
+(client-side, children first, since Firestore doesn't cascade). A new `leaving()` rule lets a non-owner remove only themselves,
+and `ownerManaging()` now prevents the owner from removing themselves or their owner role (no orphaned workspaces).
+Rename is open to all members (card action, or click the name in the canvas header).
+
+### D-024 · 2026-10-17 · Accepted
+**One framed surface for all panels, cards, forms and chips:** `src/ui/Frame.module.css` (`frame`, `dashed`, `interactive`, `label`),
+using the tokens `--surface`, `--surface-blur`, `--line`, `--line-hover`. New framed UI must compose these classes instead of setting its own background or border.
+
+### D-025 · 2026-10-17 · Accepted (supersedes D-022's visuals; the hold mechanism stays)
+**Loading = the flowing background itself, then a cell-by-cell rebuild.** While held, an exact copy of the backdrop
+(`BackdropScene` in a second canvas, same clock, same dim) covers the page, with a small status (`▖ LOADING WORKSPACES`) in the
+bottom-right. When ready, the copy's ASCII pass masks itself cell by cell along a jittered top-left → bottom-right diagonal
+(magenta glyph flash at the edge, about 1.1 s), so the page rebuilds out of the background without the animation restarting.
+On first load the cover is solid black until its first frame, so nothing flashes through while shaders compile.
+Requirement: **nothing in the backdrop may depend on per-canvas state** (own clocks, pointer). Use `sceneTime()` and `backdropDim` from `src/three/sceneClock.ts`.
+
+### D-026 · 2026-10-17 · Accepted (extended by D-028)
+**The background flows by itself, like a fluid. No mouse influence.** Two levels of time-varying domain warp in `AmbientField`.
+The landing's floating cards drift on the shared clock with no pointer parallax. Dimming on the board is an ASCII-pass uniform, not CSS opacity.
+
+### D-027 · 2026-10-17 · Accepted
+**One HUD on every page** (`src/ui/Hud.tsx`): a fixed-height top bar (`--hud-h`) with a breadcrumb on the left
+(`# north-star / workspaces / <name>`; earlier segments link back, the current one is bright, the workspace name is click-to-rename)
+and page actions on the right. Every screen-edge element (canvas toolbar, detail panel, loading status) uses `--hud-x` / `--hud-y`,
+so nothing shifts between pages. Elements inside the bar must not change its line height (InlineEdit draws underlines as decoration or shadow, not border).
+Card footers always split "message or info" on the left and "actions" on the right, in every mode (idle, renaming, confirm).
+
+### D-028 · 2026-10-17 · Accepted
+**The background lives in generations.** Every ~9 s a new set of forms is born. Each one drifts in its own direction,
+swells brighter (so the ASCII pass switches it to heavier glyphs: `· : - = + # % @`), then fades while the next rises.
+Two generations always overlap. ASCII only; no post-its or 3D objects in the backdrop or loading screen (the landing's floating cards were removed).
+Bug fixed: R3F copies a `<shaderMaterial uniforms={…}>` object, so per-frame updates must go through the material ref
+(`material.current.uniforms`), never the memo'd object. The background had never actually animated before this fix.
+
+### D-029 · 2026-10-17 · Superseded by D-034
+**Components enter and leave with a pixelated wave** (`src/ui/PixelWave.tsx`, after the user's reference recording): square tiles
+(about 18 px) sweep left to right, faint lead, solid core, softer tail, with the content already there behind the band (enter) or still
+there ahead of it (exit). Implemented as a per-row staircase `clip-path` on the element plus a fixed 2D canvas of tiles over its box.
+Use `<PixelWave as="li|form|aside|button" accent delay>` for framed components. Wrap in `<AnimatePresence>` for the exit wave
+(it waits via `usePresence`). Entrances wait for the loading curtain to open.
+
+### D-030 · 2026-10-17 · Accepted
+**In-app motion setting:** `motion: system | full | reduced` in the HUD (`src/state/motion.ts`), saved in localStorage, default *system*.
+Everything reads `useMotion().reduced` / `isReducedMotion()`; nothing reads the media query directly. CSS uses `html[data-motion='reduced']`.
+Why: the user's Mac has Reduce Motion on but they want the full experience, while users who need reduced motion keep it.
+Under reduced motion: the background freezes (and resumes seamlessly), waves and sweeps are skipped, decode text is instant.
+
+### D-031 · 2026-10-17 · Accepted
+**The page-load reveal has no coloured edge.** User feedback: the magenta diagonal "wave" was not wanted. The reveal stays a plain
+cell-by-cell rebuild (D-025). The user specifically likes the decode text, the workspace-card waves and the detail panel's wave.
+
+### D-032 · 2026-10-17 · Superseded by D-034
+**Idea cards wave in too** (`src/views/canvas/CardWave.tsx`). It's the same timeline as `<PixelWave>` (shared `src/ui/waveTimeline.ts`),
+rebuilt in 3D: a 13×8 instanced tile grid sweeps across the card while one world-space clipping plane reveals its content
+(slab, rim, strip, troika text). The Board enables `gl.localClippingEnabled`. Cards present when a board opens stagger in
+(70 ms apart, up to 1 s); cards created later wave in immediately. Enter only, for now.
+
+### D-033 · 2026-10-17 · Superseded by D-034 (rejected trial; the `settled` gating stays)
+**Cards and side panels enter with the landing headline's "rise"** (fade up about 40 px out of a 12 px blur, 1.1 s, `cubic-bezier(0.16,1,0.3,1)`),
+without colour. Applies to workspace cards, board idea cards and the idea detail panel. Forms, invite chip and landing CTA keep the wave.
+Switch with `?entrance=rise|wave` (remembered in localStorage, `src/ui/entrance.ts`). DOM: `<Appear effect=…>` (formerly PixelWave)
+uses the Web Animations API. 3D cards: `CardEntrance` → `CardRise` (rise + fade via material opacity and troika fillOpacity; a 0.96 → 1 scale
+stands in for blur, which WebGL can't do cheaply per object).
+**Entrances now wait for `settled`** (the page-load rebuild has fully finished), not `revealed`, so they're seen in full.
+Text decode still starts at `revealed`. Open question for the user: keep rise, or go back to wave (Q-014).
+
+### D-034 · 2026-10-17 · Accepted
+**One entrance everywhere: cell-by-cell build-up.** The user loved the "North Star" headline appearing piece by piece. That was the
+page-load reveal (D-025), not the headline's blur animation. Now every component builds itself the same way: content appears in
+9 px cells on the backdrop's ASCII grid, along a jittered top-left → bottom-right diagonal (0.8 position + 0.2 per-cell noise), no colour.
+- DOM: `<Appear as=… delay duration>` (`src/ui/Appear.tsx`): a `clip-path: path()` of merged cell runs, viewport-aligned. Exit = breaks apart the same way.
+- 3D idea cards: `CardReveal` injects a `discard` into every card material via `onBeforeCompile` (screen-space cells from `gl_FragCoord`).
+  Each card owns a base `MeshBasicMaterial` for its troika text (troika's derived material calls the base `onBeforeCompile`), so the shared default isn't touched.
+- The landing headline uses it too, so it builds on every visit, including after sign-out (which previously only faded in).
+- **Rejected by the user:** coloured tile waves (anywhere) and the blur "rise".
+Shared math: `src/ui/cellReveal.ts`. Entrances wait for `settled`.
+
+### D-035 · 2026-10-17 · Accepted (refines D-034, D-025)
+**Random order, all at once, fast.**
+- Cells appear in **random order** (pure per-cell hash, no top-left → bottom-right diagonal), for components, 3D cards and the page-load reveal.
+- **Nothing waits:** every entrance and text decode starts the moment the page is revealed (`revealed`). There are no staggers or delays,
+  and nothing waits for the page-load rebuild to finish (the `settled` state was removed).
+- **Faster:** components 320 ms, landing headline 400 ms, page-load reveal 400 ms, text decode 260 ms (nav 220 ms). (Halved, then about 25% more on request.)

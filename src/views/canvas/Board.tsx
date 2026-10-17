@@ -140,7 +140,13 @@ function Scene({ wid, ideas, edges }: Props) {
       {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} color={colors.cyan} width={2} />}
 
       {ideas.map((idea) => (
-        <IdeaCard key={idea.id} wid={wid} idea={idea} layer={layers.get(idea.id) ?? 0} onLinkDrop={onLinkDrop} />
+        <IdeaCard
+          key={idea.id}
+          wid={wid}
+          idea={idea}
+          layer={layers.get(idea.id) ?? 0}
+          onLinkDrop={onLinkDrop}
+        />
       ))}
     </>
   )

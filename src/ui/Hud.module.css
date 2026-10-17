@@ -1,0 +1,62 @@
+.hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-6);
+  /* Fixed height: the breadcrumb sits on the same line whatever is on the right. */
+  height: var(--hud-h);
+  padding: 0 var(--hud-x);
+  background: linear-gradient(to bottom, var(--bg) 20%, transparent);
+  font-size: var(--text-sm);
+  /* Only the bar's contents take clicks, so the board under it still pans. */
+  pointer-events: none;
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.crumbs {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.hash {
+  color: var(--accent-magenta);
+}
+
+.sep {
+  color: var(--line-hover);
+}
+
+.link {
+  color: var(--fg-dim);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+a.link:hover {
+  color: var(--fg-strong);
+}
+
+.current {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-strong);
+  text-overflow: ellipsis;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--fg-dim);
+}

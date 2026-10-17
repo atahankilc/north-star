@@ -1,0 +1,26 @@
+/* Exact copy of the backdrop, laid over the page while it loads. */
+.cover {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+
+.status {
+  position: fixed;
+  right: var(--hud-x);
+  bottom: var(--hud-y);
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.spinner {
+  color: var(--accent-magenta);
+  font-size: var(--text-sm);
+}

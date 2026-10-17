@@ -1,6 +1,9 @@
 // Post-processing pass that re-renders the scene as glyphs (docs/DESIGN.md §5).
 // Each screen cell samples the scene once, maps luminance to a glyph ramp and keeps the
 // scene's colour, so accent-coloured objects come through as coloured glyphs.
+//
+// It can also mask itself cell by cell (the loading curtain, D-025): cells are "covered" or
+// transparent, each at its own random moment (D-035).
 import { BlendFunction, Effect, EffectAttribute } from 'postprocessing'
 import { CanvasTexture, LinearFilter, Uniform } from 'three'
 import { fonts } from '../styles/tokens'
@@ -11,6 +14,11 @@ uniform float uCount;
 uniform float uCell;
 uniform float uSaturation;
 uniform float uGain;
+uniform float uDim;
+uniform float uMaskMode;   // 0 off · 1 covering · 2 revealing · 3 fully covered
+uniform float uProgress;   // 0 → 1 along the sweep
+
+float hash12(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 
 void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
   vec2 px = uv * resolution;
@@ -21,10 +29,23 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
   float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
   float idx = floor(clamp(l * uGain, 0.0, 0.999) * uCount);
   vec2 local = fract(px / uCell);
-  float mask = texture2D(uGlyphs, vec2((idx + local.x) / uCount, local.y)).r;
+  float glyph = texture2D(uGlyphs, vec2((idx + local.x) / uCount, local.y)).r;
 
-  vec3 tint = mix(vec3(l), c, uSaturation) * uGain;
-  outputColor = vec4(tint * mask, 1.0);
+  vec3 col = mix(vec3(l), c, uSaturation) * uGain * uDim * glyph;
+  float alpha = 1.0;
+
+  if (uMaskMode > 0.5) {
+    // Each cell flips at its own random moment, so the page builds "pixel by pixel" in no particular order.
+    float d = hash12(cell);
+    float covered = uMaskMode < 1.5 ? step(d, uProgress)
+                  : uMaskMode < 2.5 ? step(uProgress, d)
+                  : 1.0;
+
+    alpha = covered;
+    col *= covered; // premultiplied
+  }
+
+  outputColor = vec4(col, alpha);
 }
 `
 
@@ -36,6 +57,9 @@ export type AsciiOptions = {
   gain?: number
   ramp?: string
 }
+
+export type MaskMode = 'off' | 'covering' | 'revealing' | 'covered'
+const MASK_MODES: Record<MaskMode, number> = { off: 0, covering: 1, revealing: 2, covered: 3 }
 
 function drawAtlas(canvas: HTMLCanvasElement, ramp: string) {
   const size = 64
@@ -72,6 +96,9 @@ export class AsciiEffect extends Effect {
         ['uCell', new Uniform(cellSize)],
         ['uSaturation', new Uniform(saturation)],
         ['uGain', new Uniform(gain)],
+        ['uDim', new Uniform(1)],
+        ['uMaskMode', new Uniform(0)],
+        ['uProgress', new Uniform(0)],
       ]),
     })
     this.atlas = atlas
@@ -83,8 +110,13 @@ export class AsciiEffect extends Effect {
     })
   }
 
-  set cellSize(px: number) {
-    this.uniforms.get('uCell')!.value = px
+  setDim(value: number) {
+    this.uniforms.get('uDim')!.value = value
+  }
+
+  setMask(mode: MaskMode, progress = 0) {
+    this.uniforms.get('uMaskMode')!.value = MASK_MODES[mode]
+    this.uniforms.get('uProgress')!.value = progress
   }
 
   dispose() {

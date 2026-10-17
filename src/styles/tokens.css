@@ -4,6 +4,13 @@
   --bg-raised: #0b0b0b;
   --line: #2a2a2a;
   --fg-dim: #6b6b6b;
+  --fg-faint: #4d4d4d;
+  --placeholder: #3d3d3d;
+
+  /* One surface for every framed element: panels, cards, forms, chips. */
+  --surface: rgba(11, 11, 11, 0.86);
+  --surface-blur: blur(10px);
+  --line-hover: #3a3a3a;
   --fg: #e8e8e8;
   --fg-strong: #ffffff;
 
@@ -30,8 +37,20 @@
   --space-8: 32px;
   --space-12: 48px;
 
+  /* HUD: the one set of screen-edge margins for the top bar and every corner element. */
+  --hud-x: var(--space-6);
+  --hud-y: var(--space-4);
+  --hud-h: 56px;
+
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 200ms;
   --dur-med: 400ms;
   --dur-slow: 600ms;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --hud-x: var(--space-4);
+    --hud-y: var(--space-3);
+  }
 }

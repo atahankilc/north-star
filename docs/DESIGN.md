@@ -70,7 +70,27 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Post-it cards: dark slabs with a coloured glyph edge by category, slight 3D tilt on hover, lift on drag
 - Connections: curved lines made of dotted or glyph segments, animated flow toward the target
 
+### HUD (D-027)
+- Fixed top bar, same on every page: breadcrumb left (`# north-star / workspaces / <name>`), actions right.
+- Screen-edge margins come only from `--hud-x` / `--hud-y` (toolbar, panels and status line too).
+
+### Surfaces (D-024)
+Every framed element (panels, cards, forms, chips, empty states) composes `src/ui/Frame.module.css`:
+- `frame`: translucent near-black (`--surface`) + 10px backdrop blur + 1px `--line` border
+- `interactive`: frame + hover border lift + accent bar wiping in along the top edge (`--accent` sets the colour)
+- `dashed`: empty or placeholder states
+- `label`: `┌ UPPERCASE MONO` section label
+
 ## 7. Motion
+
+- **Loading** (D-025, D-031): only the flowing background plus a `▖ STATUS` line in the bottom-right; then the page
+  rebuilds cell by cell in random order (no coloured edge).
+- **Background** (D-026, D-028): flows by itself like a fluid; forms are born, drift, grow denser (heavier glyphs) and fade
+  in overlapping generations. ASCII only; never reacts to the mouse.
+- **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour
+  (`<Appear>` for DOM, `CardReveal` for 3D cards), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
+- Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.
+- **Motion setting** (D-030): `system | full | reduced` in the HUD; reduced = frozen background, no waves or sweeps.
 
 - Camera flies between views (Canvas → Features → Competitor map) with eased paths
 - Cards spring in on create and dissolve into glyphs on delete

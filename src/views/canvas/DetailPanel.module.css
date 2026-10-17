@@ -1,12 +1,11 @@
 .panel {
+  composes: frame from '../../ui/Frame.module.css';
   position: absolute;
-  top: 64px;
-  right: var(--space-4);
-  bottom: var(--space-4);
+  top: calc(var(--hud-h) + var(--space-2));
+  right: var(--hud-x);
+  bottom: var(--hud-y);
   z-index: 3;
   width: min(380px, calc(100vw - 2 * var(--space-4)));
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
   overflow-y: auto;
 }
 
@@ -25,15 +24,7 @@
 }
 
 .kicker {
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.kicker::before {
-  content: '┌ ';
-  color: var(--line);
+  composes: label from '../../ui/Frame.module.css';
 }
 
 .close {
@@ -65,7 +56,7 @@
 .title::placeholder,
 .body::placeholder,
 .input::placeholder {
-  color: #3d3d3d;
+  color: var(--placeholder);
 }
 
 .label {
@@ -128,7 +119,7 @@
 
 .hint {
   margin: 0;
-  color: #4d4d4d;
+  color: var(--fg-faint);
   letter-spacing: normal;
   text-transform: none;
 }
@@ -210,6 +201,6 @@
 }
 
 .meta {
-  color: #4d4d4d;
+  color: var(--fg-faint);
   font-size: var(--text-xs);
 }

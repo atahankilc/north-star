@@ -2,10 +2,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { createIdea, useEdges, useIdeas } from '../../data/ideas'
-import { useWorkspace } from '../../data/workspaces'
+import { renameWorkspace, useWorkspace } from '../../data/workspaces'
 import { useCanvas } from '../../state/canvasStore'
+import { useHoldCurtain } from '../../state/curtain'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { DecodeText } from '../../ui/DecodeText'
+import { Hud } from '../../ui/Hud'
+import { InlineEdit } from '../../ui/InlineEdit'
+import { Appear } from '../../ui/Appear'
 import { Board } from './Board'
 import { findFreeSpot } from './cardLayout'
 import { DetailPanel } from './DetailPanel'
@@ -14,6 +18,7 @@ import styles from './CanvasView.module.css'
 export function CanvasView() {
   const { wid = '' } = useParams()
   const workspace = useWorkspace(wid)
+  useHoldCurtain('workspace', workspace.isLoading)
 
   if (workspace.isLoading) return <Status text="Loading workspace" />
   if (workspace.error || !workspace.data) {
@@ -25,6 +30,7 @@ export function CanvasView() {
 function Loaded({ wid, name, inviteCode }: { wid: string; name: string; inviteCode: string }) {
   const ideas = useIdeas(wid)
   const edges = useEdges(wid)
+  useHoldCurtain('board', ideas.isLoading || edges.isLoading)
   const select = useCanvas((s) => s.select)
 
   // Leaving the workspace clears selection; Escape deselects.
@@ -49,16 +55,13 @@ function Loaded({ wid, name, inviteCode }: { wid: string; name: string; inviteCo
     <main className={styles.page}>
       <Board wid={wid} ideas={ideas.data} edges={edges.data} />
 
-      <header className={styles.bar}>
-        <span className={styles.crumbs}>
-          <Link to="/w" className={styles.home}>
-            <span className={styles.hash}>#</span> north-star
-          </Link>
-          <span className={styles.sep}>/</span>
-          <span className={styles.name}>{name}</span>
-        </span>
-        <InviteChip code={inviteCode} />
-      </header>
+      <Hud
+        crumbs={[
+          { label: 'workspaces', to: '/w' },
+          { label: <InlineEdit label="workspace" value={name} onSave={(n) => renameWorkspace(wid, n)} /> },
+        ]}
+        right={<InviteChip code={inviteCode} />}
+      />
 
       <footer className={styles.tools}>
         <AsciiButton onClick={addIdea}>+ Idea</AsciiButton>
@@ -89,10 +92,10 @@ function InviteChip({ code }: { code: string }) {
   }
 
   return (
-    <button className={styles.invite} onClick={copy} title="Copy invite code">
+    <Appear as="button" className={styles.invite} onClick={copy} title="Copy invite code">
       <span className={styles.inviteLabel}>{copied ? 'copied' : 'invite'}</span>
       <span className={styles.code}>{pretty}</span>
-    </button>
+    </Appear>
   )
 }
 

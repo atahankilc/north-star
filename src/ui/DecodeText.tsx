@@ -1,13 +1,18 @@
 // Text that "decodes" from random glyphs into its final value: the ASCII entrance motion for DOM text.
 import { useEffect, useState } from 'react'
+import { useRevealed } from '../state/curtain'
+import { isReducedMotion } from '../state/motion'
 
 const GLYPHS = '#%@*+=-:.·/\\|<>[]{}'
 
-export function DecodeText({ text, duration = 700, delay = 0 }: { text: string; duration?: number; delay?: number }) {
+export function DecodeText({ text, duration = 260, delay = 0 }: { text: string; duration?: number; delay?: number }) {
   const [out, setOut] = useState(() => text.replace(/\S/g, ' '))
+  // Start once the loading curtain has opened, so the effect is actually seen.
+  const revealed = useRevealed()
 
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (!revealed) return
+    if (isReducedMotion()) {
       setOut(text)
       return
     }
@@ -26,7 +31,7 @@ export function DecodeText({ text, duration = 700, delay = 0 }: { text: string; 
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [text, duration, delay])
+  }, [text, duration, delay, revealed])
 
   return (
     <span aria-label={text}>

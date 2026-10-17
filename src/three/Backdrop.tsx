@@ -1,54 +1,69 @@
-// The persistent 3D layer behind all DOM views. Lives once in the app shell so
-// route changes never tear down the WebGL context.
-import { advance, Canvas } from '@react-three/fiber'
+// The persistent 3D layer behind all DOM views. Lives once in the app shell so route changes
+// never tear down the WebGL context. <BackdropScene> is also reused by the loading curtain,
+// which draws an identical copy on top of the page (D-025).
+import { advance, Canvas, useFrame } from '@react-three/fiber'
 import { EffectComposer } from '@react-three/postprocessing'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import { MathUtils } from 'three'
 import { AmbientField } from './AmbientField'
 import { AsciiEffect } from './AsciiEffect'
-import { FloatingCards } from './FloatingCards'
+import { backdropDim } from './sceneClock'
 
 // Dev-only: step frames manually, e.g. from automation in a background tab where rAF is paused.
 if (import.meta.env.DEV) {
   ;(window as unknown as { __advance: typeof advance }).__advance = advance
 }
 
-function usePrefersReducedMotion() {
-  const query = '(prefers-reduced-motion: reduce)'
-  const [reduced, setReduced] = useState(() => window.matchMedia(query).matches)
-  useEffect(() => {
-    const mq = window.matchMedia(query)
-    const onChange = () => setReduced(mq.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
-  return reduced
+export const BACKDROP_CAMERA = { position: [0, 0, 6] as [number, number, number], fov: 45 }
+
+export function cellSize() {
+  return Math.round(9 * Math.min(window.devicePixelRatio, 2))
 }
 
-function Ascii({ cellSize }: { cellSize: number }) {
-  const effect = useMemo(() => new AsciiEffect({ cellSize }), [cellSize])
+type SceneProps = {
+  // Called every frame with this canvas's ASCII pass, before rendering.
+  onFrame?: (effect: AsciiEffect, dt: number) => void
+}
+
+export function BackdropScene({ onFrame }: SceneProps) {
+  const effect = useMemo(() => new AsciiEffect({ cellSize: cellSize() }), [])
   useEffect(() => () => effect.dispose(), [effect])
-  return <primitive object={effect} dispose={null} />
+
+  useFrame((_, dt) => onFrame?.(effect, dt))
+
+  return (
+    <>
+      <AmbientField />
+      <EffectComposer multisampling={0}>
+        <primitive object={effect} dispose={null} />
+      </EffectComposer>
+    </>
+  )
 }
 
-export function Backdrop({ cards = false, dim = false }: { cards?: boolean; dim?: boolean }) {
-  const animate = !usePrefersReducedMotion()
-  const cellSize = Math.round(9 * Math.min(window.devicePixelRatio, 2))
+export function Backdrop({ dim = false }: { dim?: boolean }) {
+  // The field steps back on the board so cards stay legible.
+  useEffect(() => {
+    backdropDim.target = dim ? 0.28 : 1
+  }, [dim])
 
   return (
     <Canvas
-      style={{ position: 'fixed', inset: 0, zIndex: 0, opacity: dim ? 0.28 : 1, transition: 'opacity 600ms var(--ease-out)' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [0, 0, 6], fov: 45 }}
+      camera={BACKDROP_CAMERA}
       gl={{ antialias: false, powerPreference: 'high-performance' }}
       aria-hidden
+      onCreated={(state) => {
+        if (import.meta.env.DEV) (window as unknown as { __backdrop: typeof state }).__backdrop = state
+      }}
     >
-      <ambientLight intensity={0.25} />
-      <directionalLight position={[-3, 4, 5]} intensity={2.2} />
-      <AmbientField animate={animate} />
-      {cards && <FloatingCards animate={animate} />}
-      <EffectComposer multisampling={0}>
-        <Ascii cellSize={cellSize} />
-      </EffectComposer>
+      <BackdropScene
+        onFrame={(effect, dt) => {
+          backdropDim.current = MathUtils.damp(backdropDim.current, backdropDim.target, 5, dt)
+          effect.setDim(backdropDim.current)
+        }}
+      />
     </Canvas>
   )
 }

@@ -1,8 +1,11 @@
 import {
+  arrayRemove,
   arrayUnion,
   collection,
+  deleteField,
   doc,
   getDoc,
+  getDocs,
   query,
   updateDoc,
   where,
@@ -82,4 +85,31 @@ export async function joinWorkspace(rawCode: string, uid: string): Promise<strin
 
 export function renameWorkspace(wid: string, name: string) {
   return updateDoc(doc(db(), 'workspaces', wid), { name: name.trim() || 'Untitled' })
+}
+
+// Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
+const WORKSPACE_COLLECTIONS = ['ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons']
+const BATCH_LIMIT = 450
+
+// Owner only. Children go first: their rules check membership on the workspace doc.
+export async function deleteWorkspace(wid: string, inviteCode: string) {
+  const snaps = await Promise.all(WORKSPACE_COLLECTIONS.map((c) => getDocs(collection(db(), 'workspaces', wid, c))))
+  const refs = snaps.flatMap((s) => s.docs.map((d) => d.ref))
+  for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
+    const batch = writeBatch(db())
+    for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)
+    await batch.commit()
+  }
+  const batch = writeBatch(db())
+  batch.delete(doc(db(), 'inviteCodes', inviteCode))
+  batch.delete(doc(db(), 'workspaces', wid))
+  await batch.commit()
+}
+
+// Non-owners leave instead of deleting.
+export function leaveWorkspace(wid: string, uid: string) {
+  return updateDoc(doc(db(), 'workspaces', wid), {
+    memberIds: arrayRemove(uid),
+    [`roles.${uid}`]: deleteField(),
+  })
 }

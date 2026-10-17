@@ -1,0 +1,58 @@
+/* The one framed surface (docs/DESIGN.md §6). Compose it: `composes: frame from '../../ui/Frame.module.css'`. */
+.frame {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: var(--surface-blur);
+  -webkit-backdrop-filter: var(--surface-blur);
+}
+
+/* Placeholder/empty surfaces: same fill, dashed edge. */
+.dashed {
+  composes: frame;
+  border-style: dashed;
+}
+
+/* Hoverable frames: border lifts, accent bar wipes in along the top edge. */
+.interactive {
+  composes: frame;
+  position: relative;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-med) var(--ease-out);
+}
+
+.interactive::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  height: 2px;
+  background: var(--accent, var(--accent-magenta));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.interactive:hover,
+.interactive:focus-within {
+  border-color: var(--line-hover);
+}
+
+.interactive:hover::before,
+.interactive:focus-within::before {
+  transform: scaleX(1);
+}
+
+/* Small uppercase label with a box-corner glyph: "┌ NEW WORKSPACE". */
+.label {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.label::before {
+  content: '┌ ';
+  color: var(--line-hover);
+}

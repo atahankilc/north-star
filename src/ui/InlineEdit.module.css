@@ -1,0 +1,38 @@
+/* Underlines are drawn without borders so the text box never changes size (keeps HUD lines aligned). */
+.text {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: underline dashed transparent;
+  text-underline-offset: 4px;
+  cursor: text;
+  transition: text-decoration-color var(--dur-fast) var(--ease-out);
+}
+
+.text:hover {
+  text-decoration-color: var(--line-hover);
+}
+
+.input {
+  width: 100%;
+  min-width: 8ch;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: inset 0 -1px 0 var(--accent-magenta);
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  outline: none;
+  caret-color: var(--accent-magenta);
+}

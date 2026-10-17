@@ -4,31 +4,14 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: var(--space-6) var(--space-8);
+  justify-content: flex-end;
+  padding: var(--hud-y) var(--hud-x);
   pointer-events: none;
 }
 
 .page a,
 .page button {
   pointer-events: auto;
-}
-
-.nav {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-6);
-  font-size: var(--text-sm);
-  color: var(--fg-strong);
-}
-
-.mark {
-  letter-spacing: 0.04em;
-}
-
-.hash {
-  color: var(--accent-magenta);
 }
 
 .pillars {
@@ -43,8 +26,8 @@
   justify-content: space-between;
   gap: var(--space-8);
   /* Solid band under the type, like the Enosta reference. */
-  margin: 0 calc(var(--space-8) * -1) calc(var(--space-6) * -1);
-  padding: var(--space-6) var(--space-8) var(--space-8);
+  margin: 0 calc(var(--hud-x) * -1) calc(var(--hud-y) * -1);
+  padding: var(--space-6) var(--hud-x) var(--space-8);
   background: linear-gradient(to bottom, transparent, var(--bg) 35%);
 }
 
@@ -88,10 +71,6 @@
 }
 
 @media (max-width: 760px) {
-  .page {
-    padding: var(--space-4);
-  }
-
   .pillars {
     display: none;
   }
@@ -99,8 +78,7 @@
   .hero {
     flex-direction: column;
     align-items: flex-start;
-    margin: 0 calc(var(--space-4) * -1) calc(var(--space-4) * -1);
-    padding: var(--space-4);
+    padding: var(--space-4) var(--hud-x);
   }
 
   .aside {

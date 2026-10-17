@@ -1,11 +1,12 @@
 // Side panel for the selected idea: all editing happens here, in the DOM (D-009).
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { WithId } from '../../data/hooks'
 import { deleteEdge, deleteIdea, updateEdge, updateIdea } from '../../data/ideas'
 import type { Edge, EdgeKind, Idea } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { AsciiButton } from '../../ui/AsciiButton'
+import { Appear } from '../../ui/Appear'
 import { IDEA_COLORS } from './cardLayout'
 import styles from './DetailPanel.module.css'
 
@@ -32,17 +33,9 @@ export function DetailPanel({ wid, ideas, edges }: Props) {
   return (
     <AnimatePresence>
       {idea && (
-        <motion.aside
-          key="panel"
-          className={styles.panel}
-          initial={{ x: 40, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 40, opacity: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          aria-label="Idea details"
-        >
+        <Appear as="aside" key="panel" className={styles.panel} aria-label="Idea details">
           <IdeaEditor key={idea.id} wid={wid} idea={idea} ideas={ideas} edges={edges} />
-        </motion.aside>
+        </Appear>
       )}
     </AnimatePresence>
   )
