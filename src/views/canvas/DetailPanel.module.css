@@ -3,8 +3,7 @@
   position: absolute;
   top: calc(var(--hud-h) + var(--space-2));
   right: var(--hud-x);
-  /* Clear of the view switch below it. */
-  bottom: calc(var(--hud-y) + 32px);
+  bottom: var(--hud-y);
   z-index: 3;
   width: min(380px, calc(100vw - 2 * var(--space-4)));
   overflow-y: auto;

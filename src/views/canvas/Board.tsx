@@ -40,7 +40,8 @@ export function Board(props: Props) {
     <div ref={setWrapper} style={{ position: 'absolute', inset: 0, touchAction: 'none' }}>
       <Canvas
         dpr={[1, 2]}
-        camera={{ position: [0, 0, 11], fov: 40, near: 0.1, far: 200 }}
+        // `far` stays well past maxDistance, or zooming out clips everything away.
+        camera={{ position: [0, 0, 11], fov: 40, near: 0.1, far: 1000 }}
         gl={{ alpha: true, antialias: true }}
       >
         <ambientLight intensity={0.7} />
@@ -63,8 +64,8 @@ function Controls({ domElement }: { domElement: HTMLElement }) {
       enableDamping
       dampingFactor={0.12}
       minDistance={3}
-      // Far enough out to see a whole workspace of areas at once.
-      maxDistance={260}
+      // Far enough out to see a whole workspace of areas at once; further, and cards are specks.
+      maxDistance={150}
       mouseButtons={{ LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN }}
       touches={{ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }}
     />

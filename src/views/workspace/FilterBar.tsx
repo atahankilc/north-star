@@ -1,47 +1,66 @@
-// `show: [customers] [problems] …   for: any  SMEs …` under the HUD (docs/specs/board.md §3).
-import { useMemo, type ReactNode } from 'react'
+// `[ SHOW 5/5 ▾ ] [ FOR any ▾ ] [ GO TO ▾ ]` under the HUD (docs/specs/board.md §3, D-053).
+import { useMemo } from 'react'
 import { BOARD_TYPES } from '../../data/model'
 import { useWsView } from '../../state/workspaceView'
-import { BOARD_KINDS } from '../canvas/boardKinds'
+import { Menu, type MenuEntry } from '../../ui/Menu'
+import { BOARD_KINDS, TYPE_ACCENT } from '../canvas/boardKinds'
 import { useWs } from './context'
 import styles from './Bars.module.css'
 
-// `children` adds a group of its own after the filters (the board's jump list).
-export function FilterBar({ children }: { children?: ReactNode }) {
+type Props = {
+  // The board's jump list (D-050); other views leave it out.
+  goTo?: { key: string; label: string; onSelect: () => void }[]
+}
+
+export function FilterBar({ goTo }: Props) {
   const { customers } = useWs()
   const { types, forIds, toggleType, toggleFor, clearFor } = useWsView()
-  const options = useMemo(() => [...customers].sort((a, b) => a.createdAt - b.createdAt), [customers])
+  const sorted = useMemo(() => [...customers].sort((a, b) => a.createdAt - b.createdAt), [customers])
+
+  const show: MenuEntry[] = BOARD_TYPES.map((t) => ({
+    key: t,
+    label: BOARD_KINDS[t].plural,
+    checked: types.includes(t),
+    tone: TYPE_ACCENT[t],
+    onSelect: () => toggleType(t),
+  }))
+
+  const forItems: MenuEntry[] = [
+    { key: 'any', label: 'any customer', checked: forIds.length === 0, onSelect: clearFor },
+    ...sorted.map((c) => ({
+      key: c.id,
+      label: c.title || 'Untitled',
+      checked: forIds.includes(c.id),
+      tone: 'var(--accent-green)',
+      onSelect: () => toggleFor(c.id),
+    })),
+  ]
+  const forSummary =
+    forIds.length === 0 ? 'any' : forIds.length === 1 ? (sorted.find((c) => c.id === forIds[0])?.title ?? '1') : `${forIds.length}`
 
   return (
     <div className={styles.filters}>
-      <span className={styles.group} role="group" aria-label="Item types">
-        <span className={styles.label}>show</span>
-        {BOARD_TYPES.map((t) => (
-          <button key={t} className={styles.toggle} aria-pressed={types.includes(t)} onClick={() => toggleType(t)}>
-            {BOARD_KINDS[t].plural}
-          </button>
-        ))}
-      </span>
-      {options.length > 0 && (
-        <span className={styles.group} role="group" aria-label="For customers">
-          <span className={styles.label}>for</span>
-          <button className={styles.toggle} aria-pressed={forIds.length === 0} onClick={clearFor}>
-            any
-          </button>
-          {options.map((c) => (
-            <button
-              key={c.id}
-              className={styles.toggle}
-              style={{ ['--tone' as string]: 'var(--accent-green)' }}
-              aria-pressed={forIds.includes(c.id)}
-              onClick={() => toggleFor(c.id)}
-            >
-              {c.title || 'Untitled'}
-            </button>
-          ))}
-        </span>
+      <Menu
+        label="show"
+        summary={types.length === BOARD_TYPES.length ? 'all' : `${types.length}/${BOARD_TYPES.length}`}
+        items={show}
+        ariaLabel="Show item types"
+      />
+      <Menu
+        label="for"
+        summary={forSummary}
+        items={forItems}
+        ariaLabel="Only items for these customers"
+        empty="No customers yet: create one with +"
+      />
+      {goTo && (
+        <Menu
+          label="go to"
+          items={goTo.map((g, i) => ({ ...g, glyph: '↳', hint: i < 9 ? `${i + 1}` : undefined }))}
+          ariaLabel="Go to a label on the board"
+          empty="Write text on the board (+ → Text) to jump to it from here"
+        />
       )}
-      {children}
     </div>
   )
 }

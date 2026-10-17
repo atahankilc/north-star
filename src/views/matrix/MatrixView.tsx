@@ -11,7 +11,6 @@ import { AutosaveField } from '../../ui/AutosaveField'
 import { Choice } from '../../ui/Choice'
 import { DecodeText } from '../../ui/DecodeText'
 import { useWs } from '../workspace/context'
-import { ViewSwitch } from '../workspace/ViewSwitch'
 import styles from './MatrixView.module.css'
 
 // Not assessed → none → partial → full → better → not assessed.
@@ -101,7 +100,6 @@ export function MatrixView() {
             {' on the board to start.'}
           </p>
         </div>
-        <ViewSwitch />
       </main>
     )
   }
@@ -209,7 +207,6 @@ export function MatrixView() {
           />
         )}
       </AnimatePresence>
-      <ViewSwitch />
     </main>
   )
 }

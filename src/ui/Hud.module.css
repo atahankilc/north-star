@@ -61,49 +61,46 @@ a.link:hover {
   color: var(--fg-dim);
 }
 
-.tabs {
+.views {
   display: flex;
-  gap: var(--space-1);
+  margin-right: auto;
+  border: 1px solid var(--line);
+  background: var(--surface);
 }
 
-.tab,
-.tabActive {
+/* A menu bar, not more breadcrumb: framed segments, the current one filled. */
+.view,
+.viewActive {
+  padding: var(--space-1) var(--space-4);
   color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
   text-decoration: none;
-  transition: color var(--dur-fast) var(--ease-out);
+  text-transform: uppercase;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
 }
 
-.tab:hover {
+.view + .view,
+.view + .viewActive,
+.viewActive + .view {
+  border-left: 1px solid var(--line);
+}
+
+.view:hover {
+  background: rgba(255, 255, 255, 0.05);
   color: var(--fg-strong);
 }
 
-/* `[ideas]`: every tab reserves its brackets, so switching views doesn't shift the row. */
-.tab::before,
-.tabActive::before {
-  content: '[';
-}
-
-.tab::after,
-.tabActive::after {
-  content: ']';
-}
-
-.tab::before,
-.tab::after {
-  color: transparent;
-}
-
-.tabActive {
-  color: var(--fg-strong);
-}
-
-.tabActive::before,
-.tabActive::after {
-  color: var(--accent-magenta);
+.viewActive {
+  background: var(--fg);
+  color: var(--bg);
 }
 
 @media (max-width: 760px) {
-  .tabs {
-    gap: 0;
+  .view,
+  .viewActive {
+    padding: var(--space-1) var(--space-2);
   }
 }

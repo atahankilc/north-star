@@ -9,8 +9,9 @@ import { useCanvas } from '../../state/canvasStore'
 import { BOARD_KINDS } from '../canvas/boardKinds'
 import { useWs } from './context'
 
+// Typing, or inside the settings dialog: the board's shortcuts stay out of the way.
 const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || Boolean(t.closest('input, textarea, select')))
+  t instanceof HTMLElement && (t.isContentEditable || Boolean(t.closest('input, textarea, select, dialog')))
 
 export const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'Ctrl+Z'
 

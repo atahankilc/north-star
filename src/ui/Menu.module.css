@@ -1,0 +1,166 @@
+/* Dropdown menus (D-053), in the bracket language of the HUD. */
+.root {
+  position: relative;
+  display: inline-flex;
+}
+
+.trigger {
+  composes: interactive from './Frame.module.css';
+  --accent: var(--accent-cyan);
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.trigger[aria-expanded='true'] {
+  border-color: var(--line-hover);
+}
+
+.label {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.summary {
+  max-width: 22ch;
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+}
+
+.caret {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+/* The create button: a solid square `+`. */
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 36px;
+  min-width: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--accent-magenta);
+  background: var(--accent-magenta);
+  color: var(--bg);
+  font: inherit;
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.primary .label {
+  color: inherit;
+  font-size: var(--text-md);
+  letter-spacing: 0;
+}
+
+.primary:hover,
+.primary[aria-expanded='true'] {
+  background: var(--bg);
+  color: var(--accent-magenta);
+}
+
+.panel {
+  composes: frame from './Frame.module.css';
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: 40;
+  min-width: 220px;
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+  padding: var(--space-1) 0;
+}
+
+.panel[data-up='true'] {
+  top: auto;
+  bottom: calc(100% + var(--space-2));
+}
+
+.panel[data-end='true'] {
+  left: auto;
+  right: 0;
+}
+
+.heading {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.item:hover,
+.item:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg-strong);
+}
+
+.item:focus-visible {
+  box-shadow: inset 2px 0 0 var(--tone, var(--accent-cyan));
+}
+
+.check {
+  color: var(--fg-faint);
+}
+
+.check[data-on='true'] {
+  color: var(--tone, var(--accent-cyan));
+}
+
+.glyph {
+  width: 1.2em;
+  color: var(--tone, var(--fg-dim));
+  text-align: center;
+}
+
+.itemLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hint {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--fg-faint);
+  font-size: var(--text-sm);
+  white-space: normal;
+}

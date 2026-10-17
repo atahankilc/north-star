@@ -7,17 +7,18 @@ import { BOARD_TYPES, type Label } from '../../data/model'
 import { createBoardNode, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { useWsView, type NewThing } from '../../state/workspaceView'
-import { AsciiButton } from '../../ui/AsciiButton'
 import { DecodeText } from '../../ui/DecodeText'
-import bars from '../workspace/Bars.module.css'
+import { Menu } from '../../ui/Menu'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
-import { ViewSwitch } from '../workspace/ViewSwitch'
 import { Board } from './Board'
-import { BOARD_KINDS, useBoardItems, useVisibleItems } from './boardKinds'
+import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems } from './boardKinds'
 import { findFreeSpot } from './cardLayout'
 import { DetailPanel } from './DetailPanel'
 import styles from './BoardView.module.css'
+
+// The shape each type has on the board (D-051), as a glyph for the create menu.
+const GLYPHS = { customer: '◖', problem: '◣', competitor: '▭', idea: '▢', feature: '◆' } as const
 
 // A jump lands with the label near the top of the view, so the area under it is in sight.
 const LAND_BELOW = 2.5
@@ -76,7 +77,7 @@ export function BoardView() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
-      if (t.closest('input, textarea, select') || t.isContentEditable) return
+      if (t.closest('input, textarea, select, dialog') || t.isContentEditable) return
       if (e.key === 'Escape') select(null)
       if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const place = places[Number(e.key) - 1]
@@ -112,36 +113,34 @@ export function BoardView() {
     <main className={styles.page}>
       <Board wid={wid} nodes={nodes} edges={edges} labels={labels} focus={focus} onCreate={(at) => void create(lastType, at)} />
 
-      <FilterBar>
-        {places.length > 0 && (
-          <span className={bars.group} role="group" aria-label="Go to">
-            <span className={bars.label}>go to</span>
-            {places.map((l, i) => (
-              <button key={l.id} className={bars.toggle} onClick={() => jump(l)} title={i < 9 ? `Press ${i + 1}` : undefined}>
-                {l.text.trim()}
-              </button>
-            ))}
-          </span>
-        )}
-      </FilterBar>
+      <FilterBar goTo={places.map((l) => ({ key: l.id, label: l.text.trim(), onSelect: () => jump(l) }))} />
 
+      {/* One create button for everything (D-053). */}
       <footer className={styles.tools}>
-        <span className={styles.adds}>
-          {BOARD_TYPES.map((t) => (
-            <AsciiButton key={t} onClick={() => add(t)}>
-              {BOARD_KINDS[t].addLabel}
-            </AsciiButton>
-          ))}
-          <AsciiButton accent="cyan" onClick={() => add('text')}>
-            + Text
-          </AsciiButton>
-        </span>
+        <Menu
+          primary
+          up
+          label="+"
+          ariaLabel="Create"
+          items={[
+            { key: 'cards', heading: 'card' },
+            ...BOARD_TYPES.map((t) => ({
+              key: t,
+              label: BOARD_KINDS[t].label,
+              glyph: GLYPHS[t],
+              tone: TYPE_ACCENT[t],
+              hint: lastType === t ? 'double-click' : undefined,
+              onSelect: () => add(t),
+            })),
+            { key: 'board', heading: 'on the board' },
+            { key: 'text', label: 'text', glyph: 'T', hint: lastType === 'text' ? 'double-click' : 'jump point', onSelect: () => add('text') },
+          ]}
+        />
         <span className={styles.hints}>
           double-click: new {lastType === 'text' ? 'text' : BOARD_KINDS[lastType].label} · drag: move · shift+drag: link · scroll: zoom
           {places.length > 0 && ' · 1–9: go to'}
         </span>
       </footer>
-      <ViewSwitch />
 
       {all.length === 0 && labels.length === 0 && (
         <div className={styles.empty}>

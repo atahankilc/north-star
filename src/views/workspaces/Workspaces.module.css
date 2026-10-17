@@ -294,10 +294,6 @@ span.cardName {
     grid-template-columns: 1fr;
   }
 
-  .email {
-    display: none;
-  }
-
   .actions {
     opacity: 1;
   }

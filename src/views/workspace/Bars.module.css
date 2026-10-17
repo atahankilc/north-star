@@ -1,88 +1,11 @@
-/* Filter bar, jump list and view switch (docs/specs/board.md §3): the bracket language of the HUD tabs. */
+/* The filter row under the HUD (docs/specs/board.md §3, D-053): framed dropdown triggers. */
 .filters {
   position: absolute;
-  top: calc(var(--hud-h) - var(--space-2));
-  left: 0;
-  right: 0;
-  z-index: 2;
-  padding: var(--space-2) var(--hud-x) var(--space-6);
-  /* Continues the HUD's fade, so the filters stay readable over cards. */
-  background: linear-gradient(to bottom, var(--bg) 45%, transparent);
-  pointer-events: none;
+  top: var(--hud-h);
+  left: var(--hud-x);
+  z-index: 4;
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2) var(--space-6);
-  font-size: var(--text-sm);
+  align-items: center;
+  gap: var(--space-2);
 }
-
-.group {
-  pointer-events: auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1);
-}
-
-.label {
-  margin-right: var(--space-1);
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-/* `[ideas]`: brackets are always reserved, so toggling doesn't shift the row. */
-.toggle {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.toggle::before {
-  content: '[';
-  color: transparent;
-}
-
-.toggle::after {
-  content: ']';
-  color: transparent;
-}
-
-.toggle:hover {
-  color: var(--fg-strong);
-}
-
-.toggle[aria-pressed='true'],
-.toggle[aria-current='page'],
-.toggle[data-active='true'] {
-  color: var(--fg-strong);
-}
-
-.toggle[aria-pressed='true']::before,
-.toggle[aria-pressed='true']::after,
-.toggle[aria-current='page']::before,
-.toggle[aria-current='page']::after,
-.toggle[data-active='true']::before,
-.toggle[data-active='true']::after {
-  color: var(--tone, var(--accent-cyan));
-}
-
-.views {
-  position: absolute;
-  right: var(--hud-x);
-  bottom: var(--hud-y);
-  z-index: 2;
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-1);
-  font-size: var(--text-sm);
-}
-
-

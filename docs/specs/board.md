@@ -29,19 +29,23 @@ Everything lives on one board; the other views are different ways of drawing the
 ## 3. Layout
 
 ```
-# north-star / workspaces / Tablebook                                              invite ABCD-1234
- show: [customers] [problems] [competitors] [ideas] [features]     for: any  SMEs  solo game devs
- go to: CUSTOMERS  PROBLEMS  COMPETITION  OUR IDEAS  ROADMAP                (board only, 1–9 keys)
+# north-star / workspaces / Tablebook   ┃BOARD┃ FLOW │ TABLE │ MATRIX                    [A Alice ⚙]
+[ SHOW all ▾ ] [ FOR any ▾ ] [ GO TO ▾ ]                                     (go to: board only)
 
                        ( the current view: board, flow, table or matrix )
 
-[ + CUSTOMER ] [ + PROBLEM ] [ + COMPETITOR ] [ + IDEA ] [ + FEATURE ] [ + TEXT ]   view: [board] flow table matrix
+[+]  double-click: new idea · drag: move · …                       (+ opens: customer, problem, competitor,
+                                                                    idea, feature │ text)
 ```
 
-- **Filters** toggle item types, and `for:` narrows to items tagged with the chosen customers. Remembered per workspace.
-- **Go to** lists every text label in reading order (top to bottom, then left to right). Clicking one, or pressing 1–9,
+- **Views** are a menu bar beside the breadcrumb, framed so they read as views, not more path (D-053).
+- **Filters** are dropdowns (D-053): `show` (item types, checkboxes) and `for` (customers). Remembered per workspace.
+- **Go to** lists every text label in reading order (top to bottom, then left to right). Choosing one, or pressing 1–9,
   glides the camera there (instant under reduced motion). Any pan or zoom of your own takes over.
-- Zoom reaches from a single card to the whole workspace.
+- **Create**: one `+` button opens a menu of everything you can create (D-053).
+- **Settings** (⚙, every signed-in page, D-054): account and sign out, the workspace's name, members and invite code,
+  motion, and what's coming in later phases.
+- Zoom reaches from a single card to the whole workspace (camera far plane 1000, zoom-out limit 150).
 
 ## 4. Views
 

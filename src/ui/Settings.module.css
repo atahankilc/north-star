@@ -1,0 +1,180 @@
+/* Settings button in the HUD and its modal (D-054). */
+.trigger {
+  composes: interactive from './Frame.module.css';
+  --accent: var(--accent-cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 280px;
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  background: var(--accent-cyan);
+  color: var(--bg);
+  font-size: var(--text-xs);
+}
+
+.who {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gear {
+  color: var(--fg-dim);
+}
+
+.trigger:hover .gear {
+  color: var(--accent-cyan);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.dialog {
+  composes: frame from './Frame.module.css';
+  width: min(560px, calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100vh - 2 * var(--space-8));
+  padding: 0;
+  color: var(--fg);
+  background: var(--bg-raised);
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.title {
+  margin: 0;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.close {
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--fg-strong);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.label {
+  composes: label from './Frame.module.css';
+  margin: 0;
+  font-weight: 400;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.rowLabel {
+  flex-shrink: 0;
+  width: 110px;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rowValue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.note {
+  margin: 0;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.later {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  color: var(--fg-faint);
+  font-size: var(--text-sm);
+}
+
+.laterName {
+  color: var(--fg-dim);
+}
+
+.laterPhase {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 560px) {
+  .later {
+    grid-template-columns: 1fr auto;
+  }
+
+  .laterDetail {
+    display: none;
+  }
+
+  .who {
+    display: none;
+  }
+}

@@ -4,8 +4,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* Room for the filter bar above and the view switch below. */
-  padding: calc(var(--hud-h) + 44px) var(--hud-x) calc(var(--hud-y) + 32px);
+  /* Room for the filter row above. */
+  padding: calc(var(--hud-h) + 48px) var(--hud-x) var(--hud-y);
 }
 
 .frame {

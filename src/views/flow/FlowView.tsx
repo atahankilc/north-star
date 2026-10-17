@@ -11,7 +11,6 @@ import { DetailPanel } from '../canvas/DetailPanel'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { useNeighbours, useSelectionScope } from '../workspace/graph'
-import { ViewSwitch } from '../workspace/ViewSwitch'
 import styles from './FlowView.module.css'
 
 type Row = { key: string; cells: Record<BoardType, BoardItem[]>; loose?: boolean }
@@ -124,7 +123,6 @@ export function FlowView() {
           </div>
         </Appear>
       )}
-      <ViewSwitch />
       <DetailPanel items={all} />
     </main>
   )

@@ -2,7 +2,7 @@
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { signOut, type AuthUser } from '../../data/auth'
+import type { AuthUser } from '../../data/auth'
 import { createExampleWorkspace } from '../../data/example'
 import type { WithId } from '../../data/hooks'
 import type { Workspace } from '../../data/model'
@@ -30,17 +30,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
 
   return (
     <main className={styles.page}>
-      <Hud
-        crumbs={[{ label: 'workspaces' }]}
-        right={
-          <>
-            <span className={styles.email}>{user.email}</span>
-            <AsciiButton accent="cyan" onClick={() => signOut()}>
-              Sign out
-            </AsciiButton>
-          </>
-        }
-      />
+      <Hud crumbs={[{ label: 'workspaces' }]} />
 
       <section className={styles.content}>
         <h1 className={styles.title}>

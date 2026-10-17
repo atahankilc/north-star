@@ -1,9 +1,11 @@
-// The top bar on every page: breadcrumb on the left, page actions on the right.
+// The top bar on every page: breadcrumb and view menu bar on the left, page actions and settings on the right.
 // Same position and margins everywhere (--hud-x / --hud-y), so nothing shifts between pages.
 import { Fragment, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../data/auth'
 import styles from './Hud.module.css'
 import { MotionToggle } from './MotionToggle'
+import { SettingsButton } from './Settings'
 
 export type Crumb = {
   label: ReactNode
@@ -11,13 +13,20 @@ export type Crumb = {
   to?: string
 }
 
-// View switcher after the breadcrumb (D-036): `[ideas] features competitors matrix`.
+// The workspace's views, as a menu bar of their own beside the breadcrumb (D-053): `BOARD | FLOW | TABLE | MATRIX`.
 export type Tab = { label: string; to: string; end?: boolean }
 
-type Props = { crumbs?: Crumb[]; tabs?: Tab[]; right?: ReactNode }
+type Props = {
+  crumbs?: Crumb[]
+  views?: Tab[]
+  right?: ReactNode
+  // The current workspace's section in the settings modal.
+  settings?: ReactNode
+}
 
-export function Hud({ crumbs = [], tabs, right }: Props) {
+export function Hud({ crumbs = [], views, right, settings }: Props) {
   const atRoot = crumbs.length === 0
+  const { user } = useAuth()
 
   return (
     <header className={styles.hud}>
@@ -38,8 +47,8 @@ export function Hud({ crumbs = [], tabs, right }: Props) {
               <span className={styles.sep} aria-hidden>
                 /
               </span>
-              {(last && !tabs) || !c.to ? (
-                <span className={last && !tabs ? styles.current : styles.link} aria-current={last && !tabs ? 'page' : undefined}>
+              {last || !c.to ? (
+                <span className={last ? styles.current : styles.link} aria-current={last ? 'page' : undefined}>
                   {c.label}
                 </span>
               ) : (
@@ -50,24 +59,20 @@ export function Hud({ crumbs = [], tabs, right }: Props) {
             </Fragment>
           )
         })}
-        {tabs && (
-          <>
-            <span className={styles.sep} aria-hidden>
-              /
-            </span>
-            <span className={styles.tabs}>
-              {tabs.map((t) => (
-                <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? styles.tabActive : styles.tab)}>
-                  {t.label}
-                </NavLink>
-              ))}
-            </span>
-          </>
-        )}
       </nav>
+      {views && (
+        <nav className={styles.views} aria-label="Views">
+          {views.map((t) => (
+            <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? styles.viewActive : styles.view)}>
+              {t.label}
+            </NavLink>
+          ))}
+        </nav>
+      )}
       <div className={styles.right}>
         {right}
-        <MotionToggle />
+        {/* Signed in: motion lives in settings. Signed out: just the motion switch. */}
+        {user ? <SettingsButton workspace={settings} /> : <MotionToggle />}
       </div>
     </header>
   )

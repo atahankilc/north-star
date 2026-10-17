@@ -14,7 +14,6 @@ import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { linkSummary, useSelectionScope } from '../workspace/graph'
 import { ForPicker } from '../workspace/ItemPickers'
-import { ViewSwitch } from '../workspace/ViewSwitch'
 import styles from './TableView.module.css'
 
 type SortKey = 'name' | 'for' | 'links' | 'pri' | 'status'
@@ -201,7 +200,6 @@ export function TableView() {
           </table>
         </Appear>
       )}
-      <ViewSwitch />
       <DetailPanel items={all} />
     </main>
   )

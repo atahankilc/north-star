@@ -72,9 +72,14 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
 - Connections: curved lines made of dotted or glyph segments, animated flow toward the target
 
-### HUD (D-027)
+### HUD (D-027, D-053, D-054)
 - Fixed top bar, same on every page: breadcrumb left (`# north-star / workspaces / <name>`), actions right.
 - Screen-edge margins come only from `--hud-x` / `--hud-y` (toolbar, panels and status line too).
+
+- In a workspace, the views sit beside the breadcrumb as a framed menu bar (current view filled), and the right side holds one
+  settings button (avatar initial, name, ⚙) that opens the settings modal. Signed out, the right side is just the motion switch.
+- Dropdowns (`src/ui/Menu.tsx`): a framed trigger `SHOW all ▾`, a framed list below (or above, for the bottom toolbar), `[x]`/`[ ]` checks.
+  The create button is the one solid-magenta control on the board.
 
 ### Surfaces (D-024)
 Every framed element (panels, cards, forms, chips, empty states) composes `src/ui/Frame.module.css`:

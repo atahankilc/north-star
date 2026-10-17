@@ -259,7 +259,7 @@ Rules refuse new `domains` docs but keep read/delete for clean-up; old `domainId
 empty text deletes. Drag to move, double-click to edit, Delete to remove; all undoable, and a new label plus its first text undo as one step.
 The board's "go to" row lists every label in reading order (top→bottom, left→right); click or press 1–9 to glide the camera there
 (instant under reduced motion; your own pan/zoom cancels the glide). Only labels are jumpable: no other text anywhere (user's words).
-Zoom-out limit raised from 60 to 260 so a whole workspace fits on screen.
+Zoom-out limit raised from 60 (later capped at 150 with the camera far plane at 1000, after cards vanished past the old far plane of 200).
 
 ### D-051 · 2026-10-17 · Accepted
 **One silhouette per card type** (user picked shapes over colour headers): customer pill (green), problem with a folded top-right
@@ -270,3 +270,14 @@ corner (magenta), competitor wide with a double rim (yellow), idea post-it with 
 **Built-in example workspace** ("Create example" on the workspaces page, `src/data/example.ts`): a made-up startup, Tablebook
 (shift scheduling for independent restaurants), with 4 customers, 4 problems, 4 fictional competitors and their features,
 4 ideas, 6 features, every link kind, customer tags, a full matrix and six area labels. Competitor names are invented on purpose.
+
+### D-053 · 2026-10-17 · Accepted
+**Fewer, clearer controls.** One `+` create button (bottom-left, solid magenta) opens a menu of card types and text.
+`show`, `for` and `go to` are dropdowns (`src/ui/Menu.tsx`: checkbox items stay open, actions close; arrows/Home/End/Escape).
+The views (board, flow, table, matrix) moved from bottom-right to a framed menu bar beside the breadcrumb, so they read as views
+rather than more path.
+
+### D-054 · 2026-10-17 · Accepted
+**Settings modal** (`src/ui/Settings.tsx`, a native `<dialog>`), opened from an account button on every signed-in page:
+account + sign out, the workspace's name / members / invite code (moved out of the HUD), motion (moved out of the HUD),
+and a "coming later" list (AI key, live cursors, export). Later phases add their settings here. Board shortcuts ignore keys inside it.
