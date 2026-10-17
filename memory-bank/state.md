@@ -86,10 +86,10 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Text labels on the board + "go to" jump list with 1–9 keys and camera glide (D-050); zoom-out to 260.
 - Per-type card silhouettes (D-051). Example workspace button (D-052).
 - Rules: 69 pass. Verified on emulators: example creates, jumps, zoom-out, typing text on the board, undo of a new label,
-  Flow/Table/Matrix with the example. **Not pushed / rules not deployed yet.**
+  Flow/Table/Matrix with the example. Rules deployed and pushed 2026-10-17.
 
 ## Next steps
-1. Push + deploy rules (ask the user), then their review on the live site
+1. User review on the live site; then Phase 3 (presence, live cursors)
 2. Phase 3: presence + live cursors (RTDB rules are ready)
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilic.github.io/mind-map/ (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
