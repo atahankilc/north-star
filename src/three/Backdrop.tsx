@@ -8,7 +8,7 @@ import { useTheme } from '../state/theme'
 import { palettes } from '../styles/tokens'
 import { AmbientField } from './AmbientField'
 import { AsciiEffect } from './AsciiEffect'
-import { backdropDim, sceneTime } from './sceneClock'
+import { backdropDim, introNight, sceneTime } from './sceneClock'
 
 // Dev-only: step frames manually, e.g. from automation in a background tab where rAF is paused.
 if (import.meta.env.DEV) {
@@ -34,13 +34,15 @@ export function BackdropScene({ onFrame, field = true }: SceneProps) {
   const theme = useTheme((s) => s.theme)
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => {
-    effect.setTheme(theme === 'light', palettes[theme].bg)
+    effect.setTheme(theme === 'light', palettes[theme].bg, palettes[theme].night)
     invalidate()
   }, [effect, theme, invalidate])
 
   // Priority 1 takes over rendering from R3F: the field goes into the per-cell target, then the glyphs to the screen.
   useFrame(({ gl, scene, camera }, dt) => {
     onFrame?.(effect, dt)
+    // Without the field there's no sky to darken, so the curtain still rebuilds out of plain paper.
+    effect.setNight(field ? introNight() : 0)
     effect.resize(gl)
     effect.render(gl, scene, camera)
   }, 1)

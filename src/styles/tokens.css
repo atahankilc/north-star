@@ -88,6 +88,26 @@
   --menu: rgba(255, 255, 255, 0.96);
 }
 
+/* The welcome's night sky in light theme (D-072): while the landing's sky is dark blue its text is light, then eases back.
+   Set on <html> by Landing (data-night). Registered so the colours can transition instead of snapping. */
+@property --bg { syntax: '<color>'; inherits: true; initial-value: #000000; }
+@property --fg { syntax: '<color>'; inherits: true; initial-value: #e8e8e8; }
+@property --fg-strong { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
+@property --fg-dim { syntax: '<color>'; inherits: true; initial-value: #6b6b6b; }
+@property --fg-faint { syntax: '<color>'; inherits: true; initial-value: #4d4d4d; }
+
+:root[data-theme='light'] {
+  transition: --bg 2.4s ease, --fg 1.6s ease, --fg-strong 1.6s ease, --fg-dim 1.6s ease, --fg-faint 1.6s ease;
+}
+
+:root[data-theme='light'][data-night] {
+  --bg: #0c1736; /* palettes.light.night: the HUD's fade strip and the page behind the canvas */
+  --fg: #e8ecf5;
+  --fg-strong: #ffffff;
+  --fg-dim: #8f9bb8;
+  --fg-faint: #5d6a8a;
+}
+
 @media (max-width: 760px) {
   :root {
     --hud-x: var(--space-4);

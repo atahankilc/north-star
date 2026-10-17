@@ -25,6 +25,27 @@ export function sceneTime(): number {
   return step((now - base) / 1000)
 }
 
+// The welcome intro (D-072): night sky filling with stars → one bright star → the usual flow, in the first INTRO_SECONDS of the
+// scene clock. Skipped when the app starts under reduced motion (the frozen clock would hold an empty sky).
+export const INTRO_SECONDS = 10
+let introSkipped: boolean | null = null
+
+// Seconds into the intro; INTRO_SECONDS or more means it's over.
+export function introTime(): number {
+  introSkipped ??= isReducedMotion()
+  return introSkipped ? INTRO_SECONDS : Math.min(sceneTime(), INTRO_SECONDS)
+}
+
+// Light theme only (D-072): how dark-blue the sky is during the welcome. Paper → night over the first second, back to
+// paper while the sky melts into the flow (the same 6.2–9.8 s as the shader's crossfade).
+export function introNight(t = introTime()): number {
+  const ease = (a: number, b: number, x: number) => {
+    const k = Math.min(Math.max((x - a) / (b - a), 0), 1)
+    return k * k * (3 - 2 * k)
+  }
+  return ease(0, 1.2, t) * (1 - ease(6.2, 9.8, t))
+}
+
 // Backdrop brightness (1 = full, lower on the board so cards stay legible). Eased by the backdrop
 // each frame and read by the curtain copy, so both stay in step during the transition.
 export const backdropDim = { target: 1, current: 1 }

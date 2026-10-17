@@ -50,7 +50,10 @@ uniform float uMaskMode;   // 0 off · 1 covering · 2 revealing · 3 fully cove
 uniform float uProgress;   // 0 → 1 along the sweep
 uniform float uLight;      // 1: ink on paper (light theme, D-069)
 uniform vec3 uPaper;
+uniform float uNight;      // light theme only: 0 paper → 1 the welcome's night sky (D-072)
+uniform vec3 uSky;
 
+vec3 toSrgb(vec3 c) { return pow(max(c, 0.0), vec3(1.0 / 2.2)); }
 float hash12(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 
 void main() {
@@ -69,8 +72,18 @@ void main() {
     float peak = max(c.r, max(c.g, c.b));
     float chroma = peak > 1e-3 ? (peak - min(c.r, min(c.g, c.b))) / peak : 0.0;
     vec3 ink = mix(vec3(0.08), c / max(peak, 1e-3) * 0.62, chroma * uSaturation);
+    // Blended in display (sRGB) space: in linear light 30% ink over paper reads only ~15% darker on screen, so the
+    // printed backdrop came out far paler than the dark one. This way ink darkness on screen matches glyph brightness in dark.
     float cover = clamp(l * uGain, 0.0, 1.0) * uDim * glyph;
-    col = mix(uPaper, ink, cover);
+    vec3 printed = mix(toSrgb(uPaper), toSrgb(ink), toSrgb(vec3(cover)).r);
+    col = pow(printed, vec3(2.2));
+    // The welcome's night: glyphs glow on a dark-blue sky the way they do on black, then the sky turns back into paper.
+    // Scaled by the dim, so a workspace only gets a faint tint behind its cards.
+    vec3 night = uSky * uDim * (1.0 - clamp(l * uGain, 0.0, 1.0) * glyph) + mix(vec3(l), c, uSaturation) * uGain * uDim * glyph;
+    // Day comes up from the bottom like a sunrise: the bottom turns back into paper first, the top stays night longest.
+    // Crossfaded in display space, so it brightens like a sky instead of passing through flat grey.
+    float local = clamp((uNight - 0.5 * (1.0 - vUv.y)) / 0.5, 0.0, 1.0);
+    col = pow(mix(toSrgb(col), toSrgb(night), local * uDim), vec3(2.2));
   }
   float alpha = 1.0;
 
@@ -158,6 +171,8 @@ export class AsciiEffect {
         uProgress: { value: 0 },
         uLight: { value: 0 },
         uPaper: { value: new Color() },
+        uNight: { value: 0 },
+        uSky: { value: new Color() },
       },
     })
     const mesh = new Mesh(new PlaneGeometry(2, 2), this.material)
@@ -176,9 +191,15 @@ export class AsciiEffect {
   }
 
   // Light theme: glyphs print dark on `paper` instead of glowing on black.
-  setTheme(light: boolean, paper: string) {
+  setTheme(light: boolean, paper: string, sky: string) {
     this.material.uniforms.uLight.value = light ? 1 : 0
     ;(this.material.uniforms.uPaper.value as Color).set(paper)
+    ;(this.material.uniforms.uSky.value as Color).set(sky)
+  }
+
+  // Light theme only: how far the paper has turned into the welcome's night sky (0–1).
+  setNight(value: number) {
+    this.material.uniforms.uNight.value = this.material.uniforms.uLight.value * value
   }
 
   setMask(mode: MaskMode, progress = 0) {

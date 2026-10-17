@@ -22,7 +22,23 @@
   /* Solid band under the type, like the Enosta reference. */
   margin: 0 calc(var(--hud-x) * -1) calc(var(--hud-y) * -1);
   padding: var(--space-6) var(--hud-x) var(--space-8);
+  position: relative;
+}
+
+/* The solid band, kept out while the welcome's dawn glows at the bottom edge and faded in as it melts into the flow
+   (D-072). `--intro-at` (minus the seconds into the intro) lines the 10 s animation up with the intro clock; after the intro it's done. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background: linear-gradient(to bottom, transparent, var(--bg) 35%);
+  animation: scrim 10s linear var(--intro-at, -10s) both;
+}
+
+@keyframes scrim {
+  0%, 85% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 .title {
@@ -33,6 +49,10 @@
   line-height: 0.82;
   letter-spacing: -0.045em;
   color: var(--fg-strong);
+}
+
+.kernRt {
+  letter-spacing: -0.02em;
 }
 
 .aside {

@@ -105,6 +105,12 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
   rebuilds cell by cell in random order (no coloured edge).
 - **Background** (D-026, D-028): flows by itself like a fluid; forms are born, drift, grow denser (heavier glyphs) and fade
   in overlapping generations. ASCII only; never reacts to the mouse.
+- **Welcome** (D-072): the first 10 s after the app starts, before the flow: the sky slowly fills with stars (few, then
+  faster) while a sunrise glow spreads low along the bottom edge from the lower left (pale gold at the edge, then orange, then red;
+  it never climbs far), and last one star blazes far brighter than the rest (cross and diagonal rays, upper right). Then the stars
+  go out one by one and the sky melts slowly into the flow, which has been running underneath. The landing's headline scrim stays
+  out during the intro so the glow can reach the bottom edge, and fades in as the flow takes over. No galaxy, nebula, Milky Way,
+  shooting stars, constellation lines or aurora (all tried and rejected). Skipped when the app starts under reduced motion.
 - **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour
   (`<Appear>` for DOM, `CardReveal` for 3D cards), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
 - Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.
