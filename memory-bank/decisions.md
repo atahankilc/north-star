@@ -210,3 +210,20 @@ other ways to view the same data. Supersedes the per-type tabs of D-036.
 
 ### D-041 · 2026-10-17 · Accepted
 **Problem is its own item type**, created, dragged and linked like an idea (not a field on the idea), so several ideas can attack one problem.
+
+### D-042 · 2026-10-17 · Accepted
+**Customer is its own item type** (a persona such as "solo dog walker"), placed on the board and linked like the others
+(customer → has → problem), not only a segment multi-select. Answers Q-015 point 2; the user overrode the "segments for now" recommendation.
+
+### D-043 · 2026-10-17 · Accepted
+**No fixed segment list; the tool supports any kind of startup (B2B, B2C, anything).** Segments are created by the user, not
+picked from start-ups / scale-ups / SMEs / enterprises. How they attach: D-044.
+
+### D-044 · 2026-10-17 · Accepted
+**Customers are the segments.** One user-created Customer item at any breadth ("SMEs", "solo game devs"); no separate segment type or
+segment fields. Tagging an item with a customer is a `for` edge, drawn on the board as a label chip on the item's card, not a line.
+Selecting a customer card highlights the items tagged with it and shows those lines while selected. The `for:` filter lists customers.
+
+### D-045 · 2026-10-17 · Accepted
+**Flow columns: Customers → Problems → Competitors → Ideas → Features** (who hurts, what hurts, how they cope today, our answer,
+what we build). Competitors before ideas so the gap shows before the solution.

@@ -20,6 +20,9 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | Entity | Description | Key fields |
 |---|---|---|
 | **Workspace** | One startup idea space; the unit of sharing | name, description, members, roles |
+| **Domain** | A market or area inside a workspace; the main tabs (D-039) | name, color, description |
+| **Customer** | Who it's for, at any breadth; doubles as the segment (D-044) | title, notes, position, domains |
+| **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position, domain |
 | **Idea** (post-it) | A thought, problem, insight or feature idea | title, body, color, tags, position (x,y,z), status, attachments |
 | **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label |
 | **Group** | Cluster of ideas on the canvas | name, color, members |
@@ -30,6 +33,8 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Attachment** | Image, PDF or drawing attached to any node | file, type, name, owner node |
 
 ## 4. Views
+
+> Being reworked into one board with domain tabs and Board / Flow / Table / Matrix views: see [specs/domains.md](specs/domains.md) (D-040).
 
 1. **Idea Canvas.** A 3D/2.5D infinite board of post-its with connections, groups, zoom/pan,
    mini-map, and live collaborator cursors.

@@ -29,7 +29,3 @@ Recommendation: A, a frame on the board that moves its cards with it, since it m
 Right now deleting is a two-step button only (no Delete key) because there's no undo yet.
 Recommendation: add a small local undo stack (create, move, edit, delete), then enable the Delete key and cmd+Z.
 
-### Q-015 · blocking: Information architecture around domains
-Partly answered (D-039 to D-041): domains inside a workspace, Board is the main view, Problem is its own item.
-Spec drafted in [docs/specs/domains.md](../docs/specs/domains.md), **waiting for the user's review** (open points in §7:
-segment list incl. consumers?, customers as items or segments, Flow column order). Don't build it before the review.
