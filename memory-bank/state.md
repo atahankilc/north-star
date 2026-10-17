@@ -104,7 +104,7 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Verified on emulators with headless Chrome; rules 71 pass. **Rules (competitor tags) not deployed, nothing pushed.**
 
 ## Done (calmer board, 2026-10-17)
-- No double-click create; cards don't lift/scale and drop exactly under the pointer; dimmer, slower backdrop in workspaces (D-061).
+- No double-click create; cards don't lift/scale and drop exactly under the pointer; dimmer backdrop in workspaces (D-061; slowing it was reverted).
 
 ## Next steps
 1. Deploy rules + push (ask the user), their review on the live site; then Phase 3 (presence, live cursors)

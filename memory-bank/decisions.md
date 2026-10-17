@@ -317,5 +317,5 @@ Switching between views inside a workspace keeps your place. The Matrix frame fi
 ### D-061 · 2026-10-17 · Accepted
 **Calmer board.** No double-click to create (the `+` menu is the only way; double-click still edits a text label). Cards don't lift
 or scale on hover, selection or drag: the lift moved a dragged card toward the camera, so it looked bigger and dropped away from
-the pointer. A dragged card now sits exactly under the pointer. In a workspace the backdrop is dimmer (14%, was 28%) and runs at 35%
-speed (`backdropPace` in `sceneClock.ts`; the clock accumulates time at an eased rate, still frozen under reduced motion).
+the pointer. A dragged card now sits exactly under the pointer. In a workspace the backdrop is dimmer (14%, was 28%). Slowing it down was
+tried and reverted: the user felt it slowed the card animations too; speed stays as it was.

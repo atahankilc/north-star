@@ -3,21 +3,21 @@
 // depend on per-canvas state (own clocks, pointer position, etc.).
 import { isReducedMotion } from '../state/motion'
 
-// How fast the backdrop moves (1 = full speed, slower in a workspace so it stays out of the way). Eased here.
-export const backdropPace = { target: 1, current: 1 }
+let base = performance.now()
+let frozenAt: number | null = null
 
-let elapsed = 0
-let last = performance.now()
-
-// Seconds of animation so far, run at the backdrop's pace. Pauses (and later resumes seamlessly) under reduced motion.
+// Seconds of animation so far. Pauses (and later resumes seamlessly) under reduced motion.
 export function sceneTime(): number {
   const now = performance.now()
-  const dt = Math.min(0.25, (now - last) / 1000)
-  last = now
-  if (isReducedMotion()) return elapsed
-  backdropPace.current += (backdropPace.target - backdropPace.current) * (1 - Math.exp(-2 * dt))
-  elapsed += dt * backdropPace.current
-  return elapsed
+  if (isReducedMotion()) {
+    frozenAt ??= (now - base) / 1000
+    return frozenAt
+  }
+  if (frozenAt !== null) {
+    base = now - frozenAt * 1000
+    frozenAt = null
+  }
+  return (now - base) / 1000
 }
 
 // Backdrop brightness (1 = full, lower on the board so cards stay legible). Eased by the backdrop
