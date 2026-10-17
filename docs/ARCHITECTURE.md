@@ -157,6 +157,8 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   The last call uses `tool_choice: none`, so every answer ends in words. Each call is its own usage-log entry.
 - **Analysis modes** (D-085): `/validate`, `/interview`, `/swot`, `/gaps`, `/next`, `/pitch` (`src/ai/modes.ts`) are canned
   asks sent as a normal message (the chat shows the short form); one-item modes use the selected card when it fits.
+- **Board areas** (D-086): `arrange_area` rows name an area and its cards; `src/ai/arrange.ts` lays it out (label + a
+  column per type) where the board has room. Labels are referred to by their text.
 - **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the
   user's account). Cited sources are shown as clickable links.
 - Prompts live in `src/ai/prompts/`.

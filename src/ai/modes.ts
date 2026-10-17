@@ -61,6 +61,16 @@ export const MODES: Mode[] = [
       `important first. Propose only the links that are clearly right, and ask about the rest. ${LANGUAGE}`,
   },
   {
+    id: 'organize',
+    label: 'organize the board',
+    hint: 'group cards into named areas',
+    ask: (about) =>
+      `Organize the board into areas${about ? ` by ${about}` : ''}. Group every card the way that makes this startup easiest to ` +
+      'read (a customer segment, a theme or a journey step per area; say which you chose and why in a sentence), give each ' +
+      'area a short name, reuse existing labels that still fit and remove the ones that no longer name anything. Propose it ' +
+      `with arrange_area rows. ${LANGUAGE}`,
+  },
+  {
     id: 'next',
     label: 'what next',
     hint: 'the three most valuable next steps',
@@ -88,7 +98,8 @@ export function parseMode(text: string): { mode: Mode; rest: string } | null {
 
 // What the mode works on: the text after the command, else the selected item if it's the right type.
 export function modeAbout(mode: Mode, rest: string, selected: { type: NodeType; name: string } | null): string | null {
-  if (!mode.target) return null
+  // A mode without an item takes the rest as is (`/organize customer segment`).
+  if (!mode.target) return rest || null
   if (rest) return `the ${mode.target} "${rest}"`
   if (selected?.type === mode.target) return `the ${mode.target} "${selected.name}" (selected on the board)`
   return null

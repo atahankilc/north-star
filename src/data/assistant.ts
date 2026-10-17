@@ -19,6 +19,9 @@ export type AssistantWrite =
   // With everything that hangs off it, like a delete by hand (nodes.ts cascadeOf).
   | { do: 'delete'; target: { id: string; type: NodeType } }
   | { do: 'unlink'; edgeIds: string[] }
+  // Board labels (D-086): a new one (no id), or changes to one; and removing one.
+  | { do: 'label'; id?: string; fields: Record<string, unknown> }
+  | { do: 'unlabel'; id: string }
 
 const BATCH_LIMIT = 450
 
@@ -49,6 +52,22 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
     }
     if (w.do === 'unlink') {
       gone.push(...w.edgeIds.map((id) => doc(col(wid, 'edges'), id)))
+      continue
+    }
+    if (w.do === 'unlabel') {
+      gone.push(doc(col(wid, 'labels'), w.id))
+      continue
+    }
+    if (w.do === 'label') {
+      if (w.id) {
+        const ref = doc(col(wid, 'labels'), w.id)
+        ops.push((b) => b.update(ref, { ...w.fields, updatedAt: now }))
+        existing.push(ref)
+      } else {
+        const ref = doc(col(wid, 'labels'))
+        ops.push((b) => b.set(ref, { ...w.fields, createdAt: now, updatedAt: now }))
+        fresh.push(ref)
+      }
       continue
     }
     if (w.do === 'create') {

@@ -6,6 +6,7 @@ import { COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, type 
 import { CARD_H, CARD_W, findFreeSpot } from '../views/canvas/cardLayout'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
+import { arrangeAreas, type AreaPlan } from './arrange'
 
 export const PROPOSE = 'propose_changes'
 
@@ -101,6 +102,27 @@ const OPS = [
     from: ref('One end'),
     to: ref('The other end'),
   }),
+  op(
+    'arrange_area',
+    'Gather cards into one area of the board under a text label. You choose what goes together; the app lays the area out ' +
+      '(a column per type in the order customers, problems, competitors, ideas, features) and puts it where the board has room.',
+    {
+      label: str('The area name as written on the board, 1 to 4 words. If a label with this text exists, it moves with its cards.'),
+      items: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Refs (or keys of cards added here) of the cards and competitors in this area, in the order to show them. A card goes in one area at most.',
+      },
+    },
+  ),
+  op('rename_label', 'Change the text of a label on the board.', {
+    label: str('Its current text, exactly as listed under AREAS ON THE BOARD.'),
+    text: str('The new text.'),
+  }),
+  op('delete_label', 'Remove a label from the board; its cards stay where they are.', {
+    label: str('Its current text, exactly as listed under AREAS ON THE BOARD.'),
+    reason: str('Why it should go, in a few words; shown to the user.'),
+  }),
   op('set_matrix_cell', 'One cell of the matrix: how well a competitor covers one of OUR features.', {
     feature: ref('Our feature'),
     competitor: ref('The competitor'),
@@ -136,7 +158,7 @@ export type Change = {
   n: number
   raw: Raw
   // What it does, in the checklist's words.
-  sign: '+' | '~' | '→' | '▦' | '−'
+  sign: '+' | '~' | '→' | '▦' | '−' | '▤'
   kind: string
   // A board type colours the row (customer green…); competitor features take their competitor's.
   tone: BoardType | null
@@ -161,7 +183,8 @@ const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefi
 const refKey = (v: unknown) => s(v)?.replace(/^\[|\]$/g, '')
 const clip = (t: string, n = 70) => (t.length > n ? `${t.slice(0, n - 1)}…` : t)
 
-export function parseProposal(args: string, refs: Map<string, ItemRef>): Proposal {
+// `labels`: the texts of the board's labels now, so label changes can be checked (D-086).
+export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: string[] = []): Proposal {
   let data: { summary?: unknown; changes?: unknown }
   try {
     data = JSON.parse(args)
@@ -190,6 +213,9 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>): Proposa
   }
   const needsOf = (...rs: (Resolved | undefined)[]) => rs.flatMap((r) => (r && 'key' in r.ref ? [r.ref.key] : []))
   const isBoardCard = (t: NodeType) => (CARD_TYPES as readonly string[]).includes(t)
+  const hasLabel = (v: unknown) => labels.some((l) => sameLabel(l, v))
+  // Which area each card went to first: a card is in one area at most.
+  const areaOf = new Map<string, string>()
 
   const changes: Change[] = raws.map((raw, i) => {
     const base = { n: i, raw, needs: [] as string[], clashes: [] as number[] }
@@ -297,6 +323,53 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>): Proposa
                   : undefined,
         }
       }
+      case 'arrange_area': {
+        const label = s(raw.label) ?? 'Untitled'
+        const items = (Array.isArray(raw.items) ? raw.items : []).map((v) => ({ v, r: resolve(v) }))
+        const unknown = items.filter((x) => !x.r).length
+        const wrong = items.find((x) => x.r && x.r.type === 'competitorFeature')
+        const twice = items.find((x) => x.r && areaOf.has(refKey(x.v)!))
+        for (const x of items) if (x.r && !areaOf.has(refKey(x.v)!)) areaOf.set(refKey(x.v)!, label)
+        const names = items.map((x) => x.r?.name ?? '?')
+        return {
+          ...base,
+          sign: '▤',
+          kind: 'area',
+          tone: null,
+          text: label,
+          detail: `${items.length} card${items.length === 1 ? '' : 's'}${hasLabel(label) ? ', moves the label' : ''}: ${clip(names.join(', '), 160)}`,
+          needs: needsOf(...items.map((x) => x.r)),
+          problem: !items.length
+            ? 'no cards'
+            : unknown
+              ? `${unknown} unknown item${unknown === 1 ? '' : 's'}`
+              : wrong
+                ? `${wrong.r!.name} can't be moved on its own (it sits behind its competitor)`
+                : twice
+                  ? `${twice.r!.name} is already in "${areaOf.get(refKey(twice.v)!)}"`
+                  : undefined,
+        }
+      }
+      case 'rename_label':
+        return {
+          ...base,
+          sign: '~',
+          kind: 'label',
+          tone: null,
+          text: `${s(raw.label) ?? '?'}  →  ${s(raw.text) ?? '?'}`,
+          problem: !hasLabel(raw.label) ? 'no label with this text' : !s(raw.text) ? 'no new text' : undefined,
+        }
+      case 'delete_label':
+        return {
+          ...base,
+          sign: '−',
+          kind: 'label',
+          tone: null,
+          text: s(raw.label) ?? '?',
+          detail: s(raw.reason),
+          removes: true,
+          problem: !hasLabel(raw.label) ? 'no label with this text' : undefined,
+        }
       case 'delete_item': {
         const t = resolve(raw.target)
         return {
@@ -336,13 +409,18 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>): Proposa
   }
   for (const c of changes) {
     if (c.raw.op === 'delete_item') continue
-    for (const field of ['target', 'from', 'to', 'competitor', 'feature', 'near']) {
-      const d = deleting.get(refKey(c.raw[field]) ?? '')
+    for (const v of [...['target', 'from', 'to', 'competitor', 'feature', 'near'].map((f) => c.raw[f]), ...itemsOf(c.raw)]) {
+      const d = deleting.get(refKey(v) ?? '')
       if (d !== undefined && !c.clashes.includes(d)) c.clashes.push(d)
     }
   }
   return { summary: s(data.summary) ?? 'Proposed changes', changes }
 }
+
+// An arrange_area row's cards.
+const itemsOf = (raw: Raw): unknown[] => (Array.isArray(raw.items) ? raw.items : [])
+// Labels are named by their text: the same text, ignoring case and spaces at the ends.
+const sameLabel = (text: string, v: unknown) => text.trim().toLowerCase() === (s(v) ?? '').toLowerCase()
 
 // Where researched facts came from (D-076): the domains of every URL in the row's text fields.
 function sourcesOf(raw: Raw): string | undefined {
@@ -363,9 +441,12 @@ export function stillValid(change: Change, ws: WorkspaceCtx, refs: Map<string, I
   if (change.problem) return change.problem
   const exists = new Set<string>()
   for (const list of [ws.customers, ws.problems, ws.ideas, ws.features, ws.competitors, ws.competitorFeatures]) for (const n of list) exists.add(n.id)
-  for (const k of ['target', 'from', 'to', 'competitor', 'feature', 'near']) {
-    const r = refs.get(refKey(change.raw[k]) ?? '')
+  for (const v of [...['target', 'from', 'to', 'competitor', 'feature', 'near'].map((k) => change.raw[k]), ...itemsOf(change.raw)]) {
+    const r = refs.get(refKey(v) ?? '')
     if (r && !exists.has(r.id)) return `${r.name} was deleted`
+  }
+  if (['rename_label', 'delete_label'].includes(change.raw.op) && !ws.labels.some((l) => sameLabel(l.text, change.raw.label))) {
+    return 'the label is gone'
   }
   const a = refs.get(refKey(change.raw.from) ?? '')
   const b = refs.get(refKey(change.raw.to) ?? '')
@@ -398,7 +479,27 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
   const position = new Map<string, { x: number; y: number }>()
   for (const n of [...ws.customers, ...ws.problems, ...ws.ideas, ...ws.features]) position.set(n.id, { x: n.x, y: n.y })
   for (const c of ws.competitors) if (c.x !== undefined && c.y !== undefined) position.set(c.id, { x: c.x, y: c.y })
-  const cards = [...position.values()]
+  // Areas first (D-086): their cards (new ones too) get their place from the layout, and what's left is placed around them.
+  const plans: AreaPlan[] = accepted
+    .filter((c) => c.raw.op === 'arrange_area')
+    .map((c) => ({ label: s(c.raw.label)!, items: itemsOf(c.raw).map((v) => refOf(v)).map((r) => ({ id: 'id' in r ? r.id : r.key, type: r.type })) }))
+  const moving = new Set(plans.flatMap((p) => p.items.map((i) => i.id)))
+  const movingLabels = new Set(ws.labels.filter((l) => plans.some((p) => sameLabel(l.text, p.label))).map((l) => l.id))
+  const droppedLabels = new Set(
+    accepted.filter((c) => c.raw.op === 'delete_label').flatMap((c) => ws.labels.filter((l) => sameLabel(l.text, c.raw.label)).map((l) => l.id)),
+  )
+  const layout = plans.length
+    ? arrangeAreas(
+        plans,
+        {
+          cards: [...position.entries()].filter(([id]) => !moving.has(id)).map(([, p]) => p),
+          labels: ws.labels.filter((l) => !movingLabels.has(l.id) && !droppedLabels.has(l.id)),
+        },
+        [...position.values()],
+      )
+    : null
+  const cards = [...position.entries()].filter(([id]) => !moving.has(id)).map(([, p]) => p)
+  if (layout) cards.push(...layout.cards.values())
   const placed = new Map<string, { x: number; y: number }>()
   const ofType = (type: BoardType) => {
     const list: { x?: number; y?: number }[] = type === 'competitor' ? ws.competitors : ws[`${type}s` as 'ideas']
@@ -431,12 +532,19 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
   const compact = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
   const tags = (v: unknown) => (Array.isArray(v) ? v.map((t) => String(t).replace(/^#/, '').trim()).filter(Boolean).slice(0, 30) : undefined)
 
-  return accepted.map((c): AssistantWrite => {
+  // Existing cards an area moves: one position update each.
+  const moves: AssistantWrite[] = []
+  for (const [id, p] of layout?.cards ?? []) {
+    const e = [...refs.values()].find((x) => x.id === id)
+    if (e) moves.push({ do: 'update', target: { id, type: e.type }, fields: { x: p.x, y: p.y } })
+  }
+
+  const writes = accepted.map((c): AssistantWrite => {
     const r = c.raw
     switch (r.op) {
       case 'add_card': {
         const type = r.type as BoardType
-        const at = spot(s(r.key)!, type, r.near)
+        const at = layout?.cards.get(s(r.key)!) ?? spot(s(r.key)!, type, r.near)
         const extra = type === 'feature' ? { priority: text(r.priority), status: text(r.status), effort: text(r.effort) } : {}
         return {
           do: 'create',
@@ -446,7 +554,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         }
       }
       case 'add_competitor': {
-        const at = spot(s(r.key)!, 'competitor', r.near)
+        const at = layout?.cards.get(s(r.key)!) ?? spot(s(r.key)!, 'competitor', r.near)
         return {
           do: 'create',
           key: s(r.key)!,
@@ -492,6 +600,16 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         return { do: 'link', from: refOf(r.from), to: refOf(r.to), kind: s(r.kind) ?? 'relates', label: text(r.label) }
       case 'delete_item':
         return { do: 'delete', target: refOf(r.target) as { id: string; type: NodeType } }
+      case 'arrange_area': {
+        const plan = layout!.labels.find((l) => sameLabel(l.text, r.label))!
+        const existing = ws.labels.find((l) => sameLabel(l.text, r.label))
+        const fields = { x: plan.x, y: plan.y }
+        return existing ? { do: 'label', id: existing.id, fields } : { do: 'label', fields: { text: plan.text, ...fields } }
+      }
+      case 'rename_label':
+        return { do: 'label', id: ws.labels.find((l) => sameLabel(l.text, r.label))!.id, fields: { text: s(r.text)!.slice(0, 200) } }
+      case 'delete_label':
+        return { do: 'unlabel', id: ws.labels.find((l) => sameLabel(l.text, r.label))!.id }
       case 'unlink': {
         const a = (refOf(r.from) as { id: string }).id
         const b = (refOf(r.to) as { id: string }).id
@@ -507,6 +625,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         }
     }
   })
+  return [...writes, ...moves]
 }
 
 // The proposal and what became of it, as plain text for the model's next turn.

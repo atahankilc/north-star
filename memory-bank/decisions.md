@@ -693,3 +693,23 @@ panels (D-073: no per-panel AI menus) and D-053 (no new board controls).
 - Verified on emulators with a fake OpenAI (headless Chrome): empty-state list, `/va` → menu with the selected idea, Enter
   fills, Enter sends the full ask naming the selected idea, the chat shows `/validate · <idea>`, Escape closes only the menu.
 
+### D-086 · 2026-10-17 · Accepted (extends D-074, D-050)
+**The assistant can organise the board: it groups cards into named areas, and the app lays them out.** The user's next
+pick from the roadmap. The model never deals in coordinates: it decides what belongs together and names it.
+- *New proposal rows* (`src/ai/tools.ts`): `arrange_area` (a label text + the cards in it, new cards of the same proposal
+  too), `rename_label`, `delete_label`. Labels are named by their text (the brief lists them under AREAS ON THE BOARD);
+  reusing an existing label's text moves that label with its cards. Checklist: `▤ area Name` with its cards, labels as `~` / `−` rows.
+  Off with a reason: an unknown card, a competitor's feature (it sits behind its competitor), a card already in another area
+  of the proposal, a label that doesn't exist.
+- *Layout* (`src/ai/arrange.ts`): an area is its label with a column per type below it, in the chain's order (customers,
+  problems, competitors, ideas, features), with room after a competitor column for its fanned features (D-058). Areas go
+  left to right from the board's top-left corner, wrapping past the board's width (at least 40 units), at the first spot
+  where they don't touch anything that stays (cards not moving, labels kept). The label is centred over its area, so the
+  "nearest label above" rule (D-050, the brief's `[area: …]`) puts its cards in it.
+- *Apply:* labels created/moved/renamed/removed and every card moved, in the same batch and one undo step; the camera glides
+  to the first area.
+- *Prompt:* arrange only when asked to organise, tidy, group or lay out; group by segment, theme or journey step; every
+  card in one area; remove labels that would name nothing. New mode `/organize` (D-085), optionally `/organize <by what>`.
+- Verified on emulators with a fake OpenAI (headless Chrome): the example board in three areas (one reusing `OUR IDEAS`),
+  a label renamed, one removed, a bad label row off; 22 cards moved, no two overlapping; one Ctrl+Z restores every position.
+

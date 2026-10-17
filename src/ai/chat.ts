@@ -104,7 +104,7 @@ export const useChat = create<ChatState>((set, get) => ({
     // one in the same answer replaces it).
     const run = (c: ToolCall): string => {
       if (c.name === PROPOSE) {
-        const proposal = parseProposal(c.args, refs)
+        const proposal = parseProposal(c.args, refs, ws.labels.map((l) => l.text))
         const bad = proposal.changes.filter((x) => x.problem)
         const n = proposal.changes.length
         const what = `${proposed ? 'corrected the proposal' : 'proposed'}: ${n} change${n === 1 ? '' : 's'}`

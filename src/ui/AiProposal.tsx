@@ -6,6 +6,7 @@ import { useChat, type ChatMessage } from '../ai/chat'
 import { stillValid, toWrites, type Change } from '../ai/tools'
 import { itemPath } from '../app/paths'
 import { applyAssistantChanges } from '../data/assistant'
+import { useCanvas } from '../state/canvasStore'
 import { TYPE_ACCENT } from '../views/canvas/boardKinds'
 import { useWs } from '../views/workspace/context'
 import styles from './AiChat.module.css'
@@ -70,6 +71,9 @@ export function AiProposal({ message }: { message: ChatMessage }) {
       return
     }
     decide(message.id, { status: 'applied', applied: accepted.length, rows: accepted.map((c) => c.n) })
+    // A rearranged board (D-086): glide to the first area, so you see where things went.
+    const area = writes.find((w) => w.do === 'label' && typeof w.fields.x === 'number')
+    if (area?.do === 'label') useCanvas.getState().flyTo([area.fields.x as number, area.fields.y as number])
     // The writes show at once (local cache); the promise settles when the server has them.
     applyAssistantChanges(ws.wid, writes)
       .then((ids) => {
