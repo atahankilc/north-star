@@ -12,7 +12,7 @@ import { workspaceBrief } from '../ai/context'
 import { useKeySource } from '../ai/keySource'
 import { chatInstructions } from '../ai/prompts/chat'
 import { MODES, modeAbout, parseMode, type Mode } from '../ai/modes'
-import { reportMarkdown, type Research } from '../ai/research'
+import type { Research } from '../ai/research'
 import { modelFor, useAiSettings } from '../ai/settings'
 import type { KeySource } from '../data/ai'
 import type { NodeType } from '../data/model'
@@ -27,6 +27,7 @@ import { AiKeyForm, KEY_PRIVACY } from './AiSettings'
 import { AiOrb, type OrbCue, type OrbMood } from './AiOrb'
 import { glide, GLIDE_MS } from './glide'
 import { AiProposal } from './AiProposal'
+import { ReportView } from './ReportView'
 import styles from './AiChat.module.css'
 
 // The orb's size: big enough for its face to read; smaller on phones.
@@ -130,6 +131,7 @@ export function AiChat() {
     // The assistant always sees the real workspace, also while the app shows its preview (D-087).
     <OutsidePreview.Provider value={true}>
       <PreviewBar />
+      <ReportView />
       <AnimatePresence>{open && <AiWindow key="chat" onClose={() => setOpen(false)} />}</AnimatePresence>
       {/* One orb for both places, so its reactions carry over; `layout` glides it between the corner and the header. */}
       <motion.button
@@ -397,9 +399,10 @@ function Conversation({ source }: { source: KeySource }) {
             <span className={styles.who}>{m.role === 'user' ? 'you' : 'ai'}</span>
             <span className={styles.text}>
               {m.role === 'assistant' && <Steps steps={m.steps ?? []} thinking={!!m.thinking && busy && m === last} />}
-              {m.role === 'assistant' ? <Linked text={m.content} /> : (m.shown ?? m.content)}
+              {m.role === 'assistant' ? <Rich text={m.content} /> : (m.shown ?? m.content)}
               {m.role === 'assistant' && busy && m === last && writing(m) && <span className={styles.caret} aria-hidden />}
-              {m.citations && m.citations.length > 0 && (
+              {/* A report lists its sources on the report screen (D-089). */}
+              {!m.report && m.citations && m.citations.length > 0 && (
                 <span className={styles.sources}>
                   <span className={styles.changeKind}>sources</span>
                   {m.citations.map((c, i) => (
@@ -458,6 +461,36 @@ function Conversation({ source }: { source: KeySource }) {
 
 // Links in an answer: markdown `[title](url)` (how cited sources come back) and bare URLs, both clickable (D-076).
 const LINK = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)\]]+)/g
+
+// An answer's text (D-089): `- ` lines as a list with a hanging indent, `**bold**`, and links (Linked). Nothing else of
+// Markdown, so text that happens to contain `#` or `_` reads as written.
+function Rich({ text }: { text: string }) {
+  const lines = text.split('\n')
+  return (
+    <>
+      {lines.map((line, i) => {
+        const item = /^\s*[-*•] (.*)$/.exec(line)
+        if (item)
+          return (
+            <span key={i} className={styles.bullet}>
+              <Bold text={item[1]} />
+            </span>
+          )
+        return (
+          <Fragment key={i}>
+            <Bold text={line} />
+            {i < lines.length - 1 && !/^\s*[-*•] /.test(lines[i + 1]) ? '\n' : ''}
+          </Fragment>
+        )
+      })}
+    </>
+  )
+}
+
+function Bold({ text }: { text: string }) {
+  const parts = text.split(/\*\*([^*]+)\*\*/g)
+  return <>{parts.map((p, i) => (i % 2 ? <strong key={i}>{p}</strong> : <Linked key={i} text={p} />))}</>
+}
 
 function Linked({ text }: { text: string }) {
   const parts: ReactNode[] = []
@@ -599,23 +632,15 @@ function PreviewBar() {
 }
 
 // A deep research run in the chat (D-088). While you review the plan: its questions to tick and `research N`; once the
-// report is written: a download as Markdown. The run itself shows in the answer's steps.
+// report is written: a card that opens it on the report screen (D-089). The run itself shows in the answer's steps.
 function ResearchPlan({ message, onRun }: { message: ChatMessage; onRun: () => void }) {
   const r = message.research!
   const busy = useChat((s) => s.busy)
   const toggle = useChat((s) => s.toggleQuestion)
-  const ws = useWs()
+  const reportOpen = useChat((s) => s.reportOpen === message.id)
   const on = r.questions.filter((q) => q.on).length
   const cancel = () =>
     useChat.setState((s) => ({ messages: s.messages.map((m) => (m.id === message.id ? { ...m, research: { ...r, phase: 'cancelled' as Research['phase'] } } : m)) }))
-  const download = () => {
-    const blob = new Blob([reportMarkdown(r, message.content, ws.workspace.name)], { type: 'text/markdown' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `research-${(r.topic || 'market').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}.md`
-    a.click()
-    URL.revokeObjectURL(a.href)
-  }
   if (r.phase === 'review')
     return (
       <div className={styles.proposal} data-status="pending">
@@ -647,12 +672,22 @@ function ResearchPlan({ message, onRun }: { message: ChatMessage; onRun: () => v
         </div>
       </div>
     )
-  if (r.phase === 'done' && message.content)
+  const report = message.report
+  if (report)
     return (
-      <div className={styles.proposalActions}>
-        <button className={styles.action} onClick={download}>
-          download report .md
-        </button>
+      <div className={styles.proposal}>
+        <p className={styles.proposalHead}>
+          <span className={styles.changeKind}>report</span> {report.title}
+        </p>
+        <p className={styles.fine}>
+          {report.sections.length} questions · {report.sources.length} sources
+          {report.openQuestions.length ? ` · ${report.openQuestions.length} open question${report.openQuestions.length === 1 ? '' : 's'}` : ''}
+        </p>
+        <div className={styles.proposalActions}>
+          <button className={styles.send} onClick={() => useChat.getState().showReport(reportOpen ? null : message.id)}>
+            {reportOpen ? 'close report' : 'open report'}
+          </button>
+        </div>
       </div>
     )
   if (r.phase === 'cancelled') return <span className={styles.fine}>research cancelled</span>

@@ -8,7 +8,22 @@ import type { WorkspaceCtx } from '../views/workspace/context'
 import { callAi } from './call'
 import { AiError, type ChatTurn, type Citation, type InputItem, type ToolCall } from './openai'
 import { GET_ITEMS, GET_ITEMS_TOOL, readItems } from './readTools'
-import { PARALLEL, PLAN, PLAN_TOOL, parsePlan, planAsk, reportAsk, researcherInstructions, type Research } from './research'
+import {
+  numberSources,
+  PARALLEL,
+  parsePlan,
+  parseReport,
+  PLAN,
+  PLAN_TOOL,
+  planAsk,
+  REPORT,
+  REPORT_TOOL,
+  reportAsk,
+  reportText,
+  researcherInstructions,
+  type Report,
+  type Research,
+} from './research'
 import { modelFor, useAiSettings } from './settings'
 import { PROPOSE, PROPOSE_TOOL, parseProposal, proposalForHistory, proposalReport, type Proposal, type ProposalState } from './tools'
 
@@ -30,12 +45,13 @@ export type ChatMessage = ChatTurn & {
   thinking?: boolean
   // The sources the answer cites (D-076).
   citations?: Citation[]
-  // A deep research run (D-088): its plan, its researchers and where it's at.
+  // A deep research run (D-088): its plan, its researchers and where it's at; its report (D-089).
   research?: Research
+  report?: Report
 }
 
 // `warn`: done, but not all of it worked (a proposal with rows that can't be applied, refs that matched nothing).
-export type Step = { kind: 'read' | 'search' | 'propose' | 'plan' | 'research'; text: string; state: 'running' | 'done' | 'warn' }
+export type Step = { kind: 'read' | 'search' | 'propose' | 'plan' | 'research' | 'report'; text: string; state: 'running' | 'done' | 'warn' }
 
 // Built when a message is sent, so it sees the workspace as it is then.
 // `ws` is what the read tools see for the whole answer.
@@ -57,6 +73,9 @@ type AnswerRun = {
   // Carried in from earlier phases (a research run's steps), added to here.
   steps: Step[]
   citations: Citation[]
+  // More function tools for this answer (the research report, D-089), and whether its first step must call one.
+  extra?: { def: object; name: string; run: (args: string) => string }[]
+  firstRequired?: boolean
 }
 
 // The agent loop (D-084): up to MAX_STEPS calls, running the function tools the model calls in between.
@@ -86,6 +105,8 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
       showSteps()
       return res.text
     }
+    const x = r.extra?.find((t) => t.name === c.name)
+    if (x) return x.run(c.args)
     return `There is no tool called ${c.name}.`
   }
   let input = turns
@@ -123,8 +144,8 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
         fresh = false
         update({ content: (answer += d), thinking: false })
       },
-      tools: [PROPOSE_TOOL, GET_ITEMS_TOOL],
-      toolChoice: step === MAX_STEPS - 1 ? 'none' : 'auto',
+      tools: [PROPOSE_TOOL, GET_ITEMS_TOOL, ...(r.extra ?? []).map((t) => t.def)],
+      toolChoice: step === MAX_STEPS - 1 ? 'none' : step === 0 && r.firstRequired ? 'required' : 'auto',
     })
     update({ thinking: false })
     if (!calls.length || r.signal.aborted) return
@@ -133,10 +154,12 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
 }
 
 // What the model sees of an earlier answer: its text plus what it proposed and what became of it.
+// A report (D-089) goes back as its compact text.
 function asTurn(m: ChatMessage): ChatTurn {
-  if (!m.proposal) return { role: m.role, content: m.content }
+  const text = [m.report && reportText(m.report), m.content].filter(Boolean).join('\n\n')
+  if (!m.proposal) return { role: m.role, content: text }
   const note = proposalForHistory(m.proposal, m.proposalState ?? { status: 'pending' })
-  return { role: m.role, content: m.content ? `${m.content}\n\n${note}` : note }
+  return { role: m.role, content: text ? `${text}\n\n${note}` : note }
 }
 
 type ChatState = {
@@ -144,6 +167,9 @@ type ChatState = {
   open: boolean
   messages: ChatMessage[]
   busy: boolean
+  // The message whose report is on the report screen (D-089), or null.
+  reportOpen: number | null
+  showReport: (id: number | null) => void
   setOpen: (open: boolean) => void
   // Switching workspace starts a new conversation.
   enter: (wid: string) => void
@@ -214,11 +240,13 @@ export const useChat = create<ChatState>((set, get) => ({
   open: false,
   messages: [],
   busy: false,
+  reportOpen: null,
+  showReport: (reportOpen) => set({ reportOpen }),
   setOpen: (open) => set({ open }),
   enter: (wid) => {
     if (get().wid === wid) return
     get().stop()
-    set({ wid, messages: [] })
+    set({ wid, messages: [], reportOpen: null })
   },
   send: (text, prepare, shown) => {
     const settings = useAiSettings.getState()
@@ -336,9 +364,26 @@ export const useChat = create<ChatState>((set, get) => ({
         run.update({ research: { ...research, phase: 'failed' }, error: 'None of the researchers came back with findings.' })
         return
       }
-      research = { ...research, phase: 'writing' }
+      research = { ...research, phase: 'writing', sources: numberSources(research) }
       run.update({ research })
       const turns = [...history(before(get().messages, id)), { role: 'user' as const, content: reportAsk(research) }]
+      // The report comes through write_report (D-089) and opens on the report screen; the text answer is one sentence.
+      run.extra = [
+        {
+          def: REPORT_TOOL,
+          name: REPORT,
+          run: (args) => {
+            const report = parseReport(args, research.sources ?? [])
+            if (!report) return 'The report came back garbled. Call write_report again with every field filled.'
+            run.steps.push({ kind: 'report', text: `wrote the report · ${report.sections.length} sections · ${report.sources.length} sources`, state: 'done' })
+            run.update({ report, steps: [...run.steps] })
+            // It opens by itself: that's what the run was for.
+            useChat.setState({ reportOpen: id })
+            return 'Shown to the user on the report screen. Now propose changes if they help, then finish with one short sentence.'
+          },
+        },
+      ]
+      run.firstRequired = true
       await runAnswer(run, turns)
       run.update({ research: { ...research, phase: 'done' } })
     }
@@ -352,6 +397,6 @@ export const useChat = create<ChatState>((set, get) => ({
   },
   clear: () => {
     get().stop()
-    set({ messages: [] })
+    set({ messages: [], reportOpen: null })
   },
 }))

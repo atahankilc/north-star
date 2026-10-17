@@ -276,6 +276,24 @@ html[data-motion='reduced'] .headActions {
   overflow-wrap: anywhere;
 }
 
+/* `- ` lines in an answer (D-089): a list with a hanging indent. */
+.bullet {
+  display: block;
+  padding-left: 2ch;
+  text-indent: -2ch;
+}
+
+.bullet::before {
+  content: '· ';
+  color: var(--fg-faint);
+  white-space: pre;
+}
+
+.text strong {
+  color: var(--fg-strong);
+  font-weight: 600;
+}
+
 .message[data-role='user'] .text {
   color: var(--fg-strong);
 }
