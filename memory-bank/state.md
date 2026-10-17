@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (assistant deep research, D-088; preview, D-087; attachments on the emulators, D-083)_
+_Last updated: 2026-10-18 (research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -270,6 +270,9 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-088 (2026-10-18): deep research (`/research <topic>`): plan → pick questions → up to 3 web researchers at once → one report
   with sources, a proposal and `download report .md`. Verified on emulators with a fake OpenAI. **To try with a real key.**
 - D-078 to D-088 committed and **pushed 2026-10-18** (live deploy green; deep links serve the app via 404.html).
+- D-089 (2026-10-18): research reports are structured (`write_report`) and open on a report screen (answer, sections with
+  numbered sources, implications with item links, open questions, sources, .md); light Markdown (lists, bold) in answers.
+  Verified on emulators with a fake OpenAI. Committed (`576d826`), **not pushed**.
 - Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research (all done) →
   saved/shared chats and reports, reading attachments (after D-083) → the user's own redesign of the assistant UI and the preview.
 

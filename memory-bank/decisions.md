@@ -795,3 +795,24 @@ models: those run for minutes in background mode, which needs answers stored at 
 - Verified on emulators with a fake OpenAI (headless Chrome): plan with 4 questions, one unticked; 3 researchers at once with
   web_search and store:false; one failing researcher noted in the report ask; the report call has no web tool, 2 findings, a proposal.
 
+### D-089 · 2026-10-18 · Accepted (extends D-088)
+**Research reports are structured and open on a report screen.** User: the report was hard to read. Causes: the chat prompt
+asks for plain text without headings, the chat rendered no Markdown, and a long report sat in a 420 px column.
+- *Structure:* the report is written through a `write_report` tool (strict, `src/ai/research.ts`), required as the report
+  step's first call: title, a 2–3 sentence answer, per question 3–7 one-sentence points each citing sources by number (none =
+  an inference), what it means for us with our items' refs, open questions. Sources are numbered from the researchers'
+  citations and links (`numberSources`); the findings the model reads carry `[n]` instead of URLs and a SOURCES list. Numbers
+  outside the list are dropped. Then the usual proposal, and a one-sentence text answer.
+- *Report screen* (`src/ui/ReportView.tsx`): over the app's box like the preview (D-087), the chat beside it; opens by itself when
+  the report arrives, `open report` / `close report` on the chat's report card, Esc closes; one screen at a time with the
+  preview. Title and meta, the answer in a cyan-edged box, a collapsible numbered section per question with boxed source
+  numbers (link + title on hover), inferences dimmed and marked, our items as buttons that close the report and select the
+  item, open questions, numbered sources with domains. Body in Geist (sans) at a readable measure (760 px), labels in mono.
+  `download .md` writes the same structure with numbered sources.
+- *Chat:* a report card (title, questions · sources · open questions) instead of the long text; no duplicate sources list.
+  Later turns see the report as compact text (`reportText`). Answers in general now render `- ` lines as a list with a hanging
+  indent and `**bold**` (nothing else of Markdown).
+- Verified on emulators with a fake OpenAI (headless Chrome): `tool_choice: required` with write_report on the report step;
+  the ask has SOURCES and `[n]` findings; the screen opens by itself with sections, an inference, citations linking to their
+  URLs (an out-of-range number dropped), item chips selecting the card, Esc; the next turn carries `REPORT:`.
+
