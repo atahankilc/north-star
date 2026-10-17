@@ -161,6 +161,8 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   column per type) where the board has room. Labels are referred to by their text.
 - **Preview** (D-087): `src/ai/simulate.ts` plays a proposal's writes onto an in-memory copy; while open, `useWs()` serves that copy
   to every view (not to the assistant window), marks show on items, and `tracked()` refuses writes.
+- **Deep research** (D-088): `/research` → a planned set of questions you pick → one web-searching call per question (3 at a
+  time) → the agent loop writes one report from the findings (`src/ai/research.ts`).
 - **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the
   user's account). Cited sources are shown as clickable links.
 - Prompts live in `src/ai/prompts/`.

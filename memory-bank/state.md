@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (assistant proposal preview, D-087; attachments on the emulators, D-083)_
+_Last updated: 2026-10-18 (assistant deep research, D-088; preview, D-087; attachments on the emulators, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -267,8 +267,10 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-087 (2026-10-18): preview a proposal in the app (`[preview]` in the checklist): every view shows the ticked rows as if applied,
   with new/edited/moved/deleted marks; a bare screen (no HUD/filters/tools, own view tabs) where nothing is editable; Esc closes. Functional only: the user will redesign the assistant UI
   and the preview's look later. Verified on emulators with a fake OpenAI.
-- D-085 to D-087 are committed (code; their memory-bank/docs entries sit uncommitted beside D-083's). Not pushed.
-- Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview (all done) → deep research mode →
+- D-088 (2026-10-18): deep research (`/research <topic>`): plan → pick questions → up to 3 web researchers at once → one report
+  with sources, a proposal and `download report .md`. Verified on emulators with a fake OpenAI. **To try with a real key.**
+- D-085 to D-088 are committed (code; their memory-bank/docs entries sit uncommitted beside D-083's). Not pushed.
+- Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research (all done) →
   saved/shared chats and reports, reading attachments (after D-083) → the user's own redesign of the assistant UI and the preview.
 
 ## Done (Phase 5: attachments, 2026-10-17, on the emulators only)

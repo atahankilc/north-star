@@ -775,3 +775,23 @@ Functional first: the user will redesign the assistant UI and how the preview lo
   identical; preview again → apply writes everything. Second pass: in a card's panel only `Close panel` stays enabled and typing
   changes nothing; HUD, filters and `+` hidden; Table pickers 42/42 disabled; the bar's tabs switch views; after Esc everything is back.
 
+### D-088 · 2026-10-18 · Accepted (extends D-076, D-084; the "send agents" research of D-073)
+**Deep research: `/research <topic>` plans questions, you pick them, web researchers answer them, one report comes back.**
+Our own orchestration in the browser (`src/ai/research.ts`, `runResearch` in `src/ai/chat.ts`), not OpenAI's deep-research
+models: those run for minutes in background mode, which needs answers stored at OpenAI (we always send `store: false`), and cost far more.
+- *Plan:* one call on the research model with `plan_research` (strict; `tool_choice: 'required'`) → 3 to 6 questions with why each
+  matters. The chat shows them as a checklist (`research plan …`); untick what you don't want, `research N` or `cancel`.
+- *Researchers:* one call per ticked question, at most 3 at once (`PARALLEL`), each with `web_search`, a short context of us
+  (what we're building, customers, problems, known competitors; not the whole brief), and instructions to answer in 5–10 lines,
+  each fact with a `[title](url)` link, facts apart from inferences. Steps show `researching "…"` → `researched "…" · N sources`,
+  or `! couldn't research "…"` (the run goes on without it).
+- *Report:* the normal agent loop (D-084) on the research model with the full brief and the findings in `<findings>` (data, not
+  instructions), no web search: the answer first, then per question with the links, what it means for us, open questions; a
+  proposal if it helps (competitors with `Sources:`), with the usual checklist and preview (D-087). `download report .md` saves it
+  with the sources by question. Later turns see `Research: <topic>` and the report, not the findings.
+- *Cost:* every call is logged as task `research` (D-079). The plan step says each researcher searches a few times, billed to the key in use.
+- `/research` is in the modes list (D-085); with no topic it researches the market for what we're building. The `ai` proxy now
+  also passes `tool_choice: 'required'` (not deployed).
+- Verified on emulators with a fake OpenAI (headless Chrome): plan with 4 questions, one unticked; 3 researchers at once with
+  web_search and store:false; one failing researcher noted in the report ask; the report call has no web tool, 2 findings, a proposal.
+
