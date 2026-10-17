@@ -35,6 +35,30 @@
   border-bottom-color: var(--accent-cyan);
 }
 
+.select {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  outline: none;
+  cursor: pointer;
+}
+
+.select:focus-visible {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.select option {
+  background: var(--bg);
+  color: var(--fg-strong);
+}
+
 .key {
   font-family: var(--font-mono);
 }
@@ -85,4 +109,26 @@
 
 .action[data-tone='danger']:hover {
   color: var(--accent-magenta);
+}
+
+/* Who may use the workspace key (D-079). */
+.members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-2);
+}
+
+.member {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.member input {
+  margin: 0;
+  accent-color: var(--accent-cyan);
 }

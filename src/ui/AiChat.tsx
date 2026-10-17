@@ -1,12 +1,15 @@
 // The assistant (D-073): an ASCII orb with eyes in the bottom-right corner of a workspace. Clicking it opens a chat
-// that knows the workspace and proposes changes you accept before they're written (D-074). Your own OpenAI key (D-006).
+// that knows the workspace and proposes changes you accept before they're written (D-074). Your own OpenAI key (D-006)
+// or the workspace's, if the owner set one and lets you use it (D-079).
 import { AnimatePresence } from 'motion/react'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useChat } from '../ai/chat'
 import { workspaceBrief } from '../ai/context'
+import { useKeySource } from '../ai/keySource'
 import { chatInstructions } from '../ai/prompts/chat'
-import { useAiSettings } from '../ai/settings'
+import { modelFor, useAiSettings } from '../ai/settings'
+import type { KeySource } from '../data/ai'
 import { workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
 import { useWs } from '../views/workspace/context'
@@ -55,8 +58,8 @@ export function AiChat() {
 }
 
 function ChatPanel({ onClose }: { onClose: () => void }) {
-  const apiKey = useAiSettings((s) => s.apiKey)
-  const model = useAiSettings((s) => s.model)
+  const { source, workspaceKeyExists } = useKeySource()
+  const model = useAiSettings(modelFor)
   const messages = useChat((s) => s.messages)
   const clear = useChat((s) => s.clear)
 
@@ -71,7 +74,10 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
     <Appear as="section" className={styles.panel} aria-label="Assistant" onKeyDown={onKeyDown}>
       <header className={styles.head}>
         <span className={styles.kicker}>assistant</span>
-        <span className={styles.model}>{model}</span>
+        <span className={styles.model}>
+          {model}
+          {source && ` · ${source === 'workspace' ? 'workspace key' : 'own key'}`}
+        </span>
         <span className={styles.headActions}>
           {messages.length > 0 && (
             <button className={styles.action} onClick={clear}>
@@ -83,15 +89,19 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
           </button>
         </span>
       </header>
-      {apiKey ? <Conversation /> : <NoKey />}
+      {source ? <Conversation source={source} /> : <NoKey workspaceKeyExists={workspaceKeyExists} />}
     </Appear>
   )
 }
 
-function NoKey() {
+function NoKey({ workspaceKeyExists }: { workspaceKeyExists: boolean }) {
   return (
     <div className={styles.noKey}>
-      <p className={styles.lead}>Paste your OpenAI API key to talk to the assistant.</p>
+      <p className={styles.lead}>
+        {workspaceKeyExists
+          ? "This workspace has a key, but the owner hasn't let you use it. Paste your own to talk to the assistant."
+          : 'Paste your OpenAI API key to talk to the assistant.'}
+      </p>
       <AiKeyForm />
       <p className={styles.fine}>
         {KEY_PRIVACY} Get one at{' '}
@@ -104,7 +114,7 @@ function NoKey() {
   )
 }
 
-function Conversation() {
+function Conversation({ source }: { source: KeySource }) {
   const ws = useWs()
   const messages = useChat((s) => s.messages)
   const busy = useChat((s) => s.busy)
@@ -140,7 +150,7 @@ function Conversation() {
     // Built when sent, so it sees the board as it is now.
     send(text, () => {
       const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })
-      return { instructions: chatInstructions(brief.text, useAiSettings.getState().web), refs: brief.refs }
+      return { instructions: chatInstructions(brief.text, useAiSettings.getState().web), refs: brief.refs, source }
     })
     setDraft('')
     stick.current = true
@@ -226,7 +236,7 @@ function Conversation() {
           className={styles.web}
           aria-pressed={web}
           onClick={() => setWeb(!web)}
-          title={web ? 'Web search is on: answers look things up and cite sources (about $0.01 per search on your OpenAI account)' : 'Turn on web search for research (about $0.01 per search on your OpenAI account)'}
+          title={web ? 'Web search is on: answers look things up and cite sources. Each search is billed.' : 'Turn on web search for research. Each search is billed.'}
         >
           web
         </button>
@@ -241,7 +251,7 @@ function Conversation() {
         )}
       </form>
       <p className={styles.footnote}>
-        Proposes changes; nothing is written until you apply. {web ? 'Web search on: ~$0.01 per search.' : 'Enter sends, Shift+Enter adds a line.'}
+        Proposes changes; nothing is written until you apply. {web ? 'Web search on: each search is billed.' : 'Enter sends, Shift+Enter adds a line.'}
       </p>
     </>
   )

@@ -192,6 +192,49 @@ service cloud.firestore {
           && !(request.auth.uid in request.resource.data.roles);
       }
 
+      // The assistant's workspace key settings (D-079). Members read them (is there a key, may I use it); the owner picks
+      // who may use it. hasKey / keyHint are written only by the setWorkspaceKey function, never by a client.
+      match /ai/{docId} {
+        function isOwner() {
+          return signedIn() && workspace(wid).ownerId == request.auth.uid;
+        }
+        function validAccess(d) {
+          return d.access in ['everyone', 'chosen'] && d.allowed is list && d.allowed.size() <= 100;
+        }
+        allow read: if isMember(wid);
+        allow create: if docId == 'config' && isOwner()
+          && request.resource.data.keys().hasOnly(['access', 'allowed'])
+          && validAccess(request.resource.data);
+        allow update: if docId == 'config' && isOwner()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['access', 'allowed'])
+          && validAccess(request.resource.data);
+      }
+
+      // What each assistant call used (D-079): time, task, model, tokens, searches; never the messages.
+      // Append-only. You log your own-key calls; workspace-key calls are logged by the server.
+      // You see your own entries; the owner also sees everyone's workspace-key entries, never someone's own-key ones.
+      match /aiUsage/{id} {
+        function count(v) {
+          return v is int && v >= 0;
+        }
+        allow create: if isMember(wid)
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'keySource', 'task', 'model', 'inputTokens', 'cachedTokens', 'outputTokens', 'reasoningTokens', 'webSearches', 'tools', 'status', 'ms', 'at'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keySource == 'own'
+          && isText(request.resource.data.name, 200)
+          && request.resource.data.task in ['chat', 'research']
+          && isText(request.resource.data.model, 100)
+          && count(request.resource.data.inputTokens) && count(request.resource.data.cachedTokens)
+          && count(request.resource.data.outputTokens) && count(request.resource.data.reasoningTokens)
+          && count(request.resource.data.webSearches) && count(request.resource.data.ms)
+          && request.resource.data.tools is list && request.resource.data.tools.size() <= 10
+          && request.resource.data.status in ['done', 'stopped', 'failed']
+          && request.resource.data.at is int && request.resource.data.at <= request.time.toMillis() + 60000;
+        allow read: if signedIn()
+          && (resource.data.uid == request.auth.uid
+            || (resource.data.keySource == 'workspace' && workspace(wid).ownerId == request.auth.uid));
+      }
+
       // Workspace content: members only, known collections only, with a sane shape.
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
@@ -199,6 +242,11 @@ service cloud.firestore {
         allow read, delete: if isMember(wid) && collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'domains', 'groups'];
         allow create, update: if isMember(wid) && valid(collection, docId, request.resource.data);
       }
+    }
+
+    // A workspace's OpenAI key, encrypted (D-079). Only the Cloud Functions (admin) read or write it; no client ever can.
+    match /aiSecrets/{wid} {
+      allow read, write: if false;
     }
 
     // Lookup by exact code only; codes can't be listed or enumerated.

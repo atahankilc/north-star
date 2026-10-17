@@ -134,11 +134,16 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 
 ## 8. AI (BYOK)
 
+- **Two kinds of key** (D-079): your own (below), or a **workspace key** the owner sets once in Settings → ai → keys and
+  shares with everyone or chosen members. The workspace key is held only by Cloud Functions (`functions/`): encrypted in
+  `aiSecrets/{wid}` (no client access), used by the `ai` function, which streams the answer back and logs the call.
+  Every call, on either key, goes through `callAi` (`src/ai/call.ts`) and lands in `workspaces/{wid}/aiUsage` (tokens, model,
+  tools, time; never messages). You see your own calls; the owner also sees all workspace-key calls.
 - The user pastes an **OpenAI API key on the Settings page**.
 - The key is stored **only in the user's browser (localStorage)** and is **never written to the DB**,
   so collaborators can never see it. Each collaborator uses their own key.
 - Calls go **directly from browser to OpenAI** with `fetch` (Responses API, streaming, `store: false`; `src/ai/openai.ts`).
-- **Default model: `gpt-6-luna`** (D-073). A per-feature model choice comes in Phase 4.2c.
+- **Models** (D-077): one for chat and one for research (`[web]` on), picked in Settings → ai; both default to `gpt-6-luna`.
 - **Context:** each message sends a fresh plain-text brief of the workspace (`src/ai/context.ts`), built from the data the page
   already holds; every item carries a short `[ref]`.
 - **Changes** (D-074): one strict function tool, `propose_changes` (`src/ai/tools.ts`). The model proposes; the chat shows a

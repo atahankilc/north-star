@@ -1,5 +1,5 @@
-// Calls straight from the browser to OpenAI with the user's own key (D-006). No SDK: one streaming Responses call
-// and one cheap check. Errors carry OpenAI's message, never the key.
+// OpenAI's Responses API, streamed. No SDK. A call goes either straight from the browser with the user's own key
+// (D-006) or through our server on the workspace key (D-079); `send` decides which. Errors carry OpenAI's message, never the key.
 
 const API = 'https://api.openai.com/v1'
 
@@ -11,15 +11,29 @@ export class AiError extends Error {}
 export type Citation = { url: string; title: string }
 export type SearchEvent = { status: 'searching' } | { status: 'done'; queries: string[] }
 
+// What a call used, from the last event of the stream (D-079).
+export type Usage = { inputTokens: number; cachedTokens: number; outputTokens: number; reasoningTokens: number }
+
+// Posts a Responses API body and returns the streaming response.
+export type Send = (body: object, signal: AbortSignal) => Promise<Response>
+
+// Straight to OpenAI with your own key.
+export const directSend =
+  (key: string): Send =>
+  (body, signal) =>
+    fetch(`${API}/responses`, { method: 'POST', headers: headers(key), signal, body: JSON.stringify(body) })
+
 const headers = (key: string) => ({ Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' })
 
-async function failure(res: Response, model: string): Promise<AiError> {
+// `direct`: the status came from OpenAI itself (our server words its own errors).
+async function failure(res: Response, model: string, direct = true): Promise<AiError> {
   let detail = ''
   try {
     detail = ((await res.json()) as { error?: { message?: string } }).error?.message ?? ''
   } catch {
     // Not JSON; the status says enough.
   }
+  if (!direct) return new AiError(detail || `The workspace key's server answered ${res.status}.`)
   if (res.status === 401) return new AiError("OpenAI didn't accept this key.")
   if (res.status === 404) return new AiError(`This key can't use ${model}.`)
   if (res.status === 429) return new AiError(detail || 'OpenAI says slow down, or the account is out of credit.')
@@ -37,8 +51,10 @@ export async function checkKey(key: string, model: string): Promise<void> {
   if (!res.ok) throw await failure(res, model)
 }
 
-type StreamOptions = {
-  key: string
+export type StreamOptions = {
+  send: Send
+  // False when `send` goes through our server, which words its own errors.
+  direct?: boolean
   model: string
   instructions: string
   turns: ChatTurn[]
@@ -47,15 +63,17 @@ type StreamOptions = {
   // Function tools the model may call (D-074); a call arrives whole, with its JSON arguments.
   tools?: object[]
   onToolCall?: (name: string, args: string) => void
-  // OpenAI's own web search tool (D-076): each search costs about a cent on the user's account, so it's opt-in per message.
+  // OpenAI's own web search tool (D-076): every search is billed, so it's opt-in per message.
   webSearch?: boolean
   onSearch?: (e: SearchEvent) => void
   onCitation?: (c: Citation) => void
+  onUsage?: (u: Usage) => void
 }
 
 // Streams one answer; resolves when it's complete. Aborting rejects with an AbortError.
 export async function streamReply({
-  key,
+  send,
+  direct = true,
   model,
   instructions,
   turns,
@@ -66,14 +84,12 @@ export async function streamReply({
   webSearch,
   onSearch,
   onCitation,
+  onUsage,
 }: StreamOptions): Promise<void> {
   let res: Response
   try {
-    res = await fetch(`${API}/responses`, {
-      method: 'POST',
-      headers: headers(key),
-      signal,
-      body: JSON.stringify({
+    res = await send(
+      {
         model,
         instructions,
         input: turns,
@@ -84,13 +100,14 @@ export async function streamReply({
         ...(webSearch || tools.length
           ? { tools: [...tools, ...(webSearch ? [{ type: 'web_search', search_context_size: 'medium' }] : [])], parallel_tool_calls: false }
           : {}),
-      }),
-    })
+      },
+      signal,
+    )
   } catch (e) {
     if (signal.aborted) throw e
-    throw new AiError("Couldn't reach OpenAI. Check your connection.")
+    throw new AiError(direct ? "Couldn't reach OpenAI. Check your connection." : "Couldn't reach the workspace key's server.")
   }
-  if (!res.ok || !res.body) throw await failure(res, model)
+  if (!res.ok || !res.body) throw await failure(res, model, direct)
 
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
   let buffer = ''
@@ -115,7 +132,26 @@ export async function streamReply({
         message?: string
         item?: { type?: string; name?: string; arguments?: string; action?: { query?: string; queries?: string[] } }
         annotation?: { type?: string; url?: string; title?: string }
-        response?: { error?: { message?: string }; incomplete_details?: { reason?: string } }
+        response?: {
+          error?: { message?: string }
+          incomplete_details?: { reason?: string }
+          usage?: {
+            input_tokens?: number
+            output_tokens?: number
+            input_tokens_details?: { cached_tokens?: number }
+            output_tokens_details?: { reasoning_tokens?: number }
+          }
+        }
+      }
+      // A finished or cut-short answer reports what it used.
+      if ((event.type === 'response.completed' || event.type === 'response.incomplete') && event.response?.usage) {
+        const u = event.response.usage
+        onUsage?.({
+          inputTokens: u.input_tokens ?? 0,
+          cachedTokens: u.input_tokens_details?.cached_tokens ?? 0,
+          outputTokens: u.output_tokens ?? 0,
+          reasoningTokens: u.output_tokens_details?.reasoning_tokens ?? 0,
+        })
       }
       if (event.type === 'response.output_text.delta' && event.delta) onDelta(event.delta)
       else if (event.type === 'response.output_item.done' && event.item?.type === 'function_call') {

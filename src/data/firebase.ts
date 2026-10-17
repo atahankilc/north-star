@@ -3,6 +3,7 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app'
 import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth'
 import { connectDatabaseEmulator, getDatabase, type Database } from 'firebase/database'
+import { connectFunctionsEmulator, getFunctions, type Functions } from 'firebase/functions'
 import {
   connectFirestoreEmulator,
   initializeFirestore,
@@ -34,7 +35,10 @@ const config = useEmulators
 
 export const isConfigured = Boolean(config.apiKey && config.projectId)
 
-type Services = { app: FirebaseApp; auth: Auth; firestore: Firestore; rtdb: Database | null }
+type Services = { app: FirebaseApp; auth: Auth; firestore: Firestore; rtdb: Database | null; functions: Functions }
+
+// Our Cloud Functions live next to the Realtime Database (D-079).
+const REGION = 'europe-west1'
 
 // Null until the VITE_FIREBASE_* vars are set, so the UI can still render (e.g. local design work).
 export const firebase: Services | null = isConfigured ? init() : null
@@ -49,17 +53,25 @@ function init(): Services {
   })
   // Realtime Database: ephemeral presence and cursors only (D-016).
   const rtdb = config.databaseURL ? getDatabase(app) : null
+  // The assistant's workspace key (D-079): only server code ever holds it.
+  const functions = getFunctions(app, REGION)
 
   if (useEmulators) {
     connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
     connectFirestoreEmulator(firestore, '127.0.0.1', 8080)
     if (rtdb) connectDatabaseEmulator(rtdb, '127.0.0.1', 9010)
+    connectFunctionsEmulator(functions, '127.0.0.1', 5001)
   }
 
-  return { app, auth, firestore, rtdb }
+  return { app, auth, firestore, rtdb, functions }
 }
 
 export function db(): Firestore {
   if (!firebase) throw new Error('Firebase is not configured')
   return firebase.firestore
 }
+
+// The streaming endpoint that calls OpenAI on a workspace's key (functions/src/index.ts `ai`).
+export const aiProxyUrl = useEmulators
+  ? `http://127.0.0.1:5001/${config.projectId}/${REGION}/ai`
+  : `https://${REGION}-${config.projectId}.cloudfunctions.net/ai`

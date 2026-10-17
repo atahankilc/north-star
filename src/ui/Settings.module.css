@@ -192,6 +192,20 @@
   color: var(--fg-strong);
 }
 
+/* A heading over sub-pages (ai → keys, usage; D-079). */
+.navGroup {
+  display: block;
+  padding: var(--space-2) var(--space-3) 2px;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.navItem[data-sub] {
+  padding-left: var(--space-6);
+}
+
 .navLabel::before {
   content: '> ';
   color: transparent;
@@ -394,6 +408,21 @@
 
   .navItem[aria-current='page'] {
     border-bottom-color: var(--accent-cyan);
+  }
+
+  /* Tabs have no room for the heading: the sub-pages carry it. */
+  .navGroup {
+    display: none;
+  }
+
+  .navItem[data-sub] {
+    padding-left: var(--space-3);
+  }
+
+  .navItem[data-sub] .navLabel::before,
+  .navItem[data-sub][aria-current='page'] .navLabel::before {
+    content: 'ai ';
+    color: var(--fg-faint);
   }
 
   .page {

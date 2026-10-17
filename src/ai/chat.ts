@@ -1,8 +1,10 @@
 // The assistant's conversation (D-073): this tab only, one per workspace, gone on reload. Collaborators never see it.
 import { create } from 'zustand'
 import type { ItemRef } from './context'
-import { AiError, streamReply, type ChatTurn, type Citation } from './openai'
-import { useAiSettings } from './settings'
+import type { KeySource } from '../data/ai'
+import { callAi } from './call'
+import { AiError, type ChatTurn, type Citation } from './openai'
+import { modelFor, useAiSettings } from './settings'
 import { PROPOSE, PROPOSE_TOOL, parseProposal, proposalForHistory, type Proposal, type ProposalState } from './tools'
 
 export type ChatMessage = ChatTurn & {
@@ -19,7 +21,7 @@ export type ChatMessage = ChatTurn & {
 }
 
 // Built when a message is sent, so it sees the workspace as it is then.
-export type Prepared = { instructions: string; refs: Map<string, ItemRef> }
+export type Prepared = { instructions: string; refs: Map<string, ItemRef>; source: KeySource }
 
 // What the model sees of an earlier answer: its text plus what it proposed and what became of it.
 function asTurn(m: ChatMessage): ChatTurn {
@@ -57,9 +59,12 @@ export const useChat = create<ChatState>((set, get) => ({
     set({ wid, messages: [] })
   },
   send: (text, prepare) => {
-    const { apiKey, model, web } = useAiSettings.getState()
+    const settings = useAiSettings.getState()
+    const { apiKey, web } = settings
+    const model = modelFor(settings)
     const content = text.trim()
-    if (!content || get().busy || !apiKey) return
+    const wid = get().wid
+    if (!content || get().busy || !wid) return
     // Failed answers aren't sent back as history.
     const turns: ChatTurn[] = [
       ...get()
@@ -67,7 +72,8 @@ export const useChat = create<ChatState>((set, get) => ({
         .map(asTurn),
       { role: 'user', content },
     ]
-    const { instructions, refs } = prepare()
+    const { instructions, refs, source } = prepare()
+    if (source === 'own' && !apiKey) return
     const reply: ChatMessage = { id: nextId++, role: 'assistant', content: '', refs }
     set((s) => ({ busy: true, messages: [...s.messages, { id: nextId++, role: 'user', content }, reply] }))
 
@@ -78,8 +84,11 @@ export const useChat = create<ChatState>((set, get) => ({
     let answer = ''
     const queries: string[] = []
     const citations: Citation[] = []
-    streamReply({
-      key: apiKey,
+    callAi({
+      wid,
+      task: web ? 'research' : 'chat',
+      source,
+      apiKey,
       model,
       instructions,
       webSearch: web,

@@ -1,0 +1,153 @@
+/* The assistant's usage log (D-079), in the settings page's column. */
+.note {
+  margin: 0;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.error {
+  margin: 0;
+  color: var(--accent-yellow);
+  font-size: var(--text-xs);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-2);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+}
+
+.card[data-accent] {
+  border-color: color-mix(in srgb, var(--accent-cyan) 45%, var(--line));
+}
+
+.cardLabel {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cardValue {
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: 18px;
+}
+
+.card[data-accent] .cardValue {
+  color: var(--accent-cyan);
+}
+
+.cardDetail {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.head,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 0.6fr 1.4fr 0.8fr 0.9fr;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+
+.head {
+  border-bottom: 1px solid var(--line);
+  color: var(--fg-faint);
+}
+
+.row {
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+  color: var(--fg);
+}
+
+.row > span:first-child {
+  overflow: hidden;
+  color: var(--fg-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calls {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+}
+
+.call {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+  align-items: baseline;
+}
+
+.callTime {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+}
+
+.callMain {
+  overflow: hidden;
+  color: var(--fg-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.callWho {
+  color: var(--fg-strong);
+}
+
+.callKey[data-key='workspace'] {
+  color: var(--accent-cyan);
+}
+
+.callStatus {
+  color: var(--accent-yellow);
+}
+
+.callNums {
+  color: var(--fg);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .call {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .callTime {
+    grid-column: 1 / -1;
+  }
+
+  .head,
+  .row {
+    grid-template-columns: minmax(0, 1.4fr) 0.5fr 1.4fr 0.9fr;
+  }
+
+  .head > span:nth-child(4),
+  .row > span:nth-child(4) {
+    display: none;
+  }
+}

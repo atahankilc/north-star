@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (assistant web research, D-076)_
+_Last updated: 2026-10-17 (workspace key + usage log, D-079)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -209,13 +209,30 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   (`pressing` in `canvasStore`). Links to a stacked feature always show, drawn to the competitor card (one line per card pair).
   Verified headless on emulators (example workspace, stacked and fanned). Committed and pushed 2026-10-17.
 
+## Done (Phase 4.2c: model per task, 2026-10-17)
+- D-077: Settings → ai → models: chat and research pickers (4 listed models + any id; prices removed by D-079), checked against the key before saved,
+  research used while [web] is on, header shows the model in use. Verified headless on emulators (research → gpt-6.1-sol saved; bogus id
+  refused with "Still using …"; requests go to gpt-6-luna with web off and gpt-6.1-sol with web on). Committed 2026-10-17 with D-079.
+  **Phase 4 is done.**
+
+## Done (Phase 4.3: workspace key + usage log, 2026-10-17)
+- D-079: `functions/` (setWorkspaceKey, aiMembers, ai streaming proxy, cleanUpWorkspaceAi), rules for `ai/config`, `aiUsage`, `aiSecrets`
+  (142 rule tests pass), `callAi` wrapper logging every call, Settings → ai → keys / usage, key choice per workspace, prices removed from
+  the UI (estimates only in the log). CLAUDE.md key rule updated (user approved). Verified end to end on emulators with two headless
+  Chromes and a fake OpenAI (key stored encrypted only; Bob refused, then allowed; his call reaches OpenAI with Alice's key and store:false;
+  server-written log; Bob sees his, Alice sees Bob by person; Bob's own-key call logged by him and invisible to Alice).
+  Committed and pushed with the rules deployed 2026-10-17; the workspace-key section is hidden on the live site
+  (`WORKSPACE_KEYS_LIVE = false` in src/data/ai.ts) until functions deploy. **To finish: Blaze (the user's payments profile
+  was refused once, OR_BAOOC_15; retrying after 24 h, likely a profile country vs German card mismatch), `AI_KEY_SECRET`,
+  `npm run deploy:functions`, flip the flag, try with a real key.** Workspace-delete cleanup trigger not exercised yet.
+
 ## Next steps
 2. Small: PeerMarks colours through `themeAccent` (D-069); drop `edit`/`field` from database.rules.json once old tabs are gone
-3. 4.2c per-feature model choice; Phase 5: files, export/import
+3. Phase 5: files, export/import (attachments need Blaze, D-015 / Q-009)
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 
 ## Blockers
-- None
+- Workspace key on the live site: the user has to put the Firebase project on Blaze (D-079) before functions can deploy.
 
 ## Notes for future sessions
 - In a hidden or background browser tab rAF is paused. In dev, `window.__advance(t, true)` steps frames and `window.__canvas` exposes the canvas store.

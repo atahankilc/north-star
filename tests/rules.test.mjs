@@ -223,6 +223,51 @@ await deny('member adds someone else', () => join(bob, { memberIds: arrayUnion(c
 await deny('member changes the invite code', () => join(bob, { inviteCode: 'BOBCODE2' }))
 await deny('member deletes workspace', () => writeBatch(bob.fs).delete(doc(bob.fs, 'workspaces', wid)).commit())
 
+// The assistant's workspace key and usage log (D-079).
+const aiConfig = (fs) => doc(fs, 'workspaces', wid, 'ai', 'config')
+await allow('owner chooses who may use the workspace key', () => setDoc(aiConfig(alice.fs), { access: 'chosen', allowed: [bob.uid] }))
+await allow('member reads the key settings', () => getDoc(aiConfig(bob.fs)))
+await deny('outsider reads the key settings', () => getDoc(aiConfig(carol.fs)))
+await deny('member lets themselves use the key', () => updateDoc(aiConfig(bob.fs), { allowed: [bob.uid, carol.uid] }))
+await deny('owner fakes a key on the client', () => updateDoc(aiConfig(alice.fs), { hasKey: true, keyHint: 'sk-…abcd' }))
+await deny('owner writes an unknown access mode', () => updateDoc(aiConfig(alice.fs), { access: 'anyone' }))
+await allow('owner opens the key to everyone', () => updateDoc(aiConfig(alice.fs), { access: 'everyone' }))
+await deny('owner reads the encrypted key', () => getDoc(doc(alice.fs, 'aiSecrets', wid)))
+await deny('owner writes the encrypted key', () => setDoc(doc(alice.fs, 'aiSecrets', wid), { data: 'x' }))
+
+const usage = (fs) => collection(fs, 'workspaces', wid, 'aiUsage')
+const entry = (who, extra = {}) => ({
+  uid: who.uid, name: 'Bob', keySource: 'own', task: 'chat', model: 'gpt-6-luna',
+  inputTokens: 1200, cachedTokens: 0, outputTokens: 80, reasoningTokens: 0, webSearches: 0,
+  tools: [], status: 'done', ms: 900, at: Date.now(), ...extra,
+})
+const bobOwn = await addDoc(usage(bob.fs), entry(bob))
+await allow('member logs an own-key call', () => getDoc(bobOwn))
+await deny('member logs a call as someone else', () => addDoc(usage(bob.fs), entry(alice)))
+await deny('member logs a workspace-key call (server only)', () => addDoc(usage(bob.fs), entry(bob, { keySource: 'workspace' })))
+await deny('usage with negative tokens', () => addDoc(usage(bob.fs), entry(bob, { inputTokens: -1 })))
+await deny('usage with the message text', () => addDoc(usage(bob.fs), entry(bob, { prompt: 'secret plans' })))
+await deny('outsider logs usage', () => addDoc(usage(carol.fs), entry(carol)))
+await deny('member edits a usage entry', () => updateDoc(bobOwn, { outputTokens: 1 }))
+await deny('member deletes a usage entry', () => writeBatch(bob.fs).delete(bobOwn).commit())
+await deny("owner reads someone's own-key usage", () => getDoc(doc(alice.fs, bobOwn.path)))
+// Workspace-key entries are written by the server (admin); the emulator's `owner` token stands in for it.
+const adminAdd = async (id, data) => {
+  const fields = Object.fromEntries(Object.entries(data).map(([k, v]) => [k,
+    Array.isArray(v) ? { arrayValue: {} } : typeof v === 'number' ? { integerValue: String(v) } : { stringValue: v }]))
+  const r = await fetch(`http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/(default)/documents/workspaces/${wid}/aiUsage?documentId=${id}`, {
+    method: 'POST', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: JSON.stringify({ fields }),
+  })
+  if (!r.ok) throw new Error(await r.text())
+}
+await adminAdd('bobShared', entry(bob, { keySource: 'workspace' }))
+await allow("owner reads a member's workspace-key usage", () => getDoc(doc(alice.fs, 'workspaces', wid, 'aiUsage', 'bobShared')))
+await allow('member reads their own workspace-key usage', () => getDoc(doc(bob.fs, 'workspaces', wid, 'aiUsage', 'bobShared')))
+await allow('owner lists workspace-key usage', () => getDocs(query(usage(alice.fs), where('keySource', '==', 'workspace'))))
+await allow('member lists their own usage', () => getDocs(query(usage(bob.fs), where('uid', '==', bob.uid))))
+await deny('member lists everyone\'s usage', () => getDocs(usage(bob.fs)))
+await deny('member lists workspace-key usage', () => getDocs(query(usage(bob.fs), where('keySource', '==', 'workspace'))))
+
 await deny('outsider still cannot read after others join', () => getDoc(doc(carol.fs, 'workspaces', wid)))
 
 await deny('member removes someone else', () => join(bob, { memberIds: arrayRemove(alice.uid) }))

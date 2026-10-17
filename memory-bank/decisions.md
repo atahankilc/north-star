@@ -28,6 +28,7 @@ Why: user preference, based on the references in `docs/design/references/`. See 
 **AI uses BYOK OpenAI keys, entered on a Settings page, with a cheap model by default.**
 The key is stored only in the user's browser and never in the DB. Calls go directly to OpenAI.
 Why: no backend to hold secrets, and collaborators must not see each other's keys.
+(Extended by D-079: an owner can also set a workspace key, held only by our Cloud Functions; own keys stay as here.)
 
 ### D-007 · 2026-10-17 · Accepted
 **Features are their own view and entity, linked to ideas** (not just an idea with a tag).
@@ -530,3 +531,43 @@ no server, and it works with the user's key.
   pricing only from what it found; checklist rows show `sources: domain, domain`. No new data field, so no rule change.
   With web off, the prompt says facts may be dated and suggests `[web]`.
 - Later: a deeper "send agents" research mode (several searches per competitor, one report) if single answers fall short.
+
+### D-077 · 2026-10-17 · Accepted (Phase 4.2c; closes Phase 4.2)
+**A model per task: chat and research.** Settings → ai → models has two pickers (`src/ai/settings.ts`, localStorage `north-star.ai-models`):
+- *chat*: questions and proposals; *research*: any message sent with `[web]` on (D-076), where a stronger model searches and reads better.
+  Both default to `gpt-6-luna` (cheapest); the chat header shows the model the next message will use.
+- *List* (prices shown at first, removed from the UI by D-079; OpenAI pricing page, 2026-10-17; $ per 1M in / out): `gpt-6-luna` 0.10 / 0.50, `gpt-5.6-luna` 0.20 / 1.20, `gpt-6.1-sol` 2 / 10,
+  `gpt-5.5` 5 / 30 (the model OpenAI's web search guide names for agentic search). "other model id…" takes any id.
+- *Checked before kept:* a choice is saved only after the free `GET /v1/models/<id>` succeeds with your key; otherwise the error shows and
+  the previous model stays ("Still using …"). Without a key it's saved as is (the key check uses the chat model).
+- Two tasks, not one per feature: today the assistant has only these two kinds of calls. New kinds (e.g. a deep "send agents" research)
+  get their own picker when they arrive.
+
+### D-079 · 2026-10-17 · Accepted (Phase 4.3; extends D-006, needs Blaze, reverses D-015's "stay on Spark")
+**A workspace key the owner shares, and a usage log for every assistant call.** User's request and choices.
+- *Where the shared key lives:* nowhere a browser can read it. There's no way to let others use a key in their browser without
+  handing it to them, so the key goes once to a callable function, `setWorkspaceKey` (owner only; checked against OpenAI), is encrypted
+  with AES-256-GCM under the `AI_KEY_SECRET` secret and kept in `aiSecrets/{wid}` (rules: no client access at all). The client only sees
+  `ai/config`: `hasKey`, `keyHint` (`sk-…abcd`), `access: everyone | chosen`, `allowed: uid[]` (owner edits the last two).
+- *Calls on it* go through `ai`, an HTTPS function that checks the ID token, membership and access, forwards a whitelisted Responses
+  body (`stream: true`, `store: false` forced), streams the answer back and writes the usage entry itself, so it can't be skipped or faked.
+  OpenAI errors are scrubbed of key fragments. Functions run in europe-west1 (next to RTDB); `aiMembers` gives the owner members' names
+  (the workspace only holds ids); `cleanUpWorkspaceAi` deletes the secret and AI records when a workspace is deleted.
+- *Own keys stay as D-006:* in the browser, straight to OpenAI. Per workspace you pick `this workspace uses: workspace | own`
+  (default: the workspace key when you may use it). The chat header says which key; without a usable one the chat asks for yours and
+  says when the owner hasn't let you use theirs.
+- *Usage log* (`workspaces/{wid}/aiUsage`, append-only): uid, name, key source, task (chat/research), tools used (`propose_changes`,
+  `web_search`), model, input / cached / output / reasoning tokens, web searches, status (done/stopped/failed), duration, time.
+  Never the messages. Every call goes through one wrapper, `callAi` (`src/ai/call.ts`), which measures this from the stream's final
+  usage event; own-key calls are logged by the caller's browser, workspace-key calls by the server.
+- *Who sees what (user's rule):* your own-key calls only you, the owner included in "nobody else"; workspace-key calls you see your own,
+  the owner sees everyone's. Enforced by the rules (two allowed queries: `uid == me`, and `keySource == workspace` for the owner).
+- *Settings → ai* is now two sub-pages: **keys** (your key, the workspace key and who may use it, which key this workspace uses, models)
+  and **usage** (this month's totals, the workspace key person by person for the owner, the last 100 calls).
+- *No prices in the UI* (user: they change, everyone knows the model classes). The usage log shows exact tokens and an estimate marked ≈
+  from one table (`src/ai/prices.ts`, dated); the real bill is on OpenAI's dashboard.
+- *Needs:* the Firebase project on Blaze (card; functions' free tier is far more than we use; a $1 budget alert), the secret
+  `AI_KEY_SECRET` set (`firebase functions:secrets:set AI_KEY_SECRET`), then `npm run deploy:rules` and `npm run deploy:functions`.
+  Until then the workspace key can't be set on the live site; own keys keep working.
+- Emulators: `functions/.secret.local` (a dummy secret) and `functions/.env.local` (`OPENAI_API_BASE` → a fake OpenAI for tests); both
+  gitignored, never deployed.

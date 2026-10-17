@@ -2,7 +2,8 @@
 
 North Star (formerly "Mind-Map") is a visual, real-time collaborative startup-ideation workspace (ideas, features,
 competitors, comparison matrix) with a 3D ASCII design language. It is a static React + three.js
-SPA on GitHub Pages, backed by Firebase (Auth, Firestore, Realtime Database). There is no server of our own.
+SPA on GitHub Pages, backed by Firebase (Auth, Firestore, Realtime Database). The only server code is a few Cloud
+Functions in `functions/` for the assistant's shared workspace key (D-079).
 
 ## Session start: always
 1. The memory bank is auto-loaded into context via these imports (no need to read them manually):
@@ -22,12 +23,14 @@ SPA on GitHub Pages, backed by Firebase (Auth, Firestore, Realtime Database). Th
 - If a decision changes a spec, update the relevant `/docs` file in the same change.
 
 ## Commands
-- `npm run dev` (real Firebase), `npm run dev:emu` + `npm run emulators` (local, test users)
+- `npm run dev` (real Firebase), `npm run dev:emu` + `npm run emulators` (local, test users; builds and runs the functions too)
 - `npm run test:rules`: run after any change to `firestore.rules` / `database.rules.json`, then `npm run deploy:rules`
-- `npm run build`: typecheck + production build
+- `npm run build`: typecheck + production build; `npm run build:functions`, `npm run deploy:functions` (needs the Blaze plan)
 
 ## Hard rules
-- Never store or log users' OpenAI API keys anywhere except the user's own browser storage.
+- OpenAI keys: a person's own key lives only in their own browser storage. A workspace key (D-079) is sent once to the
+  `setWorkspaceKey` function and kept only encrypted in `aiSecrets/`, which no client can read; it is never returned to
+  any browser. Never log or store either key anywhere else, and never put message text in the usage log.
 - The ASCII post-processing effect must never cover readable or editable text.
 - All DB access goes through `src/data/`. Permissions are enforced by `firestore.rules` and
   `database.rules.json`, not by the client. Change a rule and the data shape together.
