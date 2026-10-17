@@ -317,6 +317,98 @@ html[data-motion='reduced'] .caret {
   font-size: var(--text-xs);
 }
 
+/* A proposal under an answer (D-074): a checklist of changes, then apply / discard. */
+.proposal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--line-hover);
+  white-space: normal;
+}
+
+.proposal[data-status='pending'] {
+  border-style: solid;
+  border-color: var(--accent-cyan);
+}
+
+.proposalHead {
+  margin: 0;
+  color: var(--fg-strong);
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.change label {
+  display: grid;
+  grid-template-columns: 14px 14px minmax(0, 1fr);
+  gap: var(--space-1);
+  align-items: baseline;
+  cursor: pointer;
+}
+
+.change input {
+  margin: 0;
+  accent-color: var(--accent-cyan);
+}
+
+.change[data-off] .changeBody,
+.change[data-off] .sign {
+  opacity: 0.45;
+}
+
+.sign {
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.changeBody {
+  color: var(--fg);
+  font-size: var(--text-xs);
+  line-height: 18px;
+}
+
+.changeKind {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+}
+
+/* A delete or unlink (D-075): magenta minus, the name struck through. */
+.change[data-removes] .sign {
+  color: var(--accent-magenta);
+}
+
+.change[data-removes] .changeText {
+  text-decoration: line-through;
+  text-decoration-color: var(--accent-magenta);
+}
+
+.changeDetail,
+.changeProblem {
+  display: block;
+  color: var(--fg-dim);
+}
+
+.changeProblem {
+  color: var(--accent-yellow);
+}
+
+.proposalActions {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
 /* Narrow screens: a side panel fills the width, so the assistant steps aside until it closes. */
 @media (max-width: 760px) {
   :global(html:has([data-side-panel])) .dock {

@@ -1,7 +1,8 @@
 // The workspace as plain text for the assistant (D-073): every item with its tags, area, links and matrix cells,
-// built fresh for each message so it always sees the live board.
+// built fresh for each message so it always sees the live board. Each item carries a short ref so a proposal
+// can point at it (D-074).
 import type { WithId } from '../data/hooks'
-import type { BoardNode, Label } from '../data/model'
+import type { BoardNode, Label, NodeType } from '../data/model'
 import type { WorkspaceCtx } from '../views/workspace/context'
 
 // Far beyond a real workspace; keeps a runaway one from becoming an expensive prompt.
@@ -31,11 +32,44 @@ function areaOf(labels: WithId<Label>[], x: number, y: number): string {
 
 type Where = { view: string; selectedId: string | null }
 
-export function workspaceBrief(ws: WorkspaceCtx, where: Where): string {
+export type ItemRef = { id: string; type: NodeType; name: string }
+
+// The first 6 characters of the item's id (longer where two would clash): stable across messages, cheap in tokens.
+function makeRefs(items: { id: string; type: NodeType; name: string }[]): { byRef: Map<string, ItemRef>; refOf: Map<string, string> } {
+  const byRef = new Map<string, ItemRef>()
+  const refOf = new Map<string, string>()
+  for (const it of items) {
+    let n = 6
+    while (n < it.id.length && items.some((o) => o.id !== it.id && o.id.slice(0, n) === it.id.slice(0, n))) n++
+    const ref = it.id.slice(0, n)
+    byRef.set(ref, it)
+    refOf.set(it.id, ref)
+  }
+  return { byRef, refOf }
+}
+
+export type Brief = { text: string; refs: Map<string, ItemRef> }
+
+export function workspaceBrief(ws: WorkspaceCtx, where: Where): Brief {
   const names = new Map<string, string>()
-  for (const list of [ws.customers, ws.problems, ws.ideas, ws.features]) for (const n of list) names.set(n.id, n.title || 'Untitled')
-  for (const c of ws.competitors) names.set(c.id, c.name || 'Untitled')
-  for (const f of ws.competitorFeatures) names.set(f.id, `${names.get(f.competitorId) ?? '?'}: ${f.name || 'Untitled'}`)
+  const all: ItemRef[] = []
+  const boardLists = [['customer', ws.customers], ['problem', ws.problems], ['idea', ws.ideas], ['feature', ws.features]] as const
+  for (const [type, list] of boardLists) {
+    for (const n of list) {
+      names.set(n.id, n.title || 'Untitled')
+      all.push({ id: n.id, type, name: n.title || 'Untitled' })
+    }
+  }
+  for (const c of ws.competitors) {
+    names.set(c.id, c.name || 'Untitled')
+    all.push({ id: c.id, type: 'competitor', name: c.name || 'Untitled' })
+  }
+  for (const f of ws.competitorFeatures) {
+    names.set(f.id, `${names.get(f.competitorId) ?? '?'}: ${f.name || 'Untitled'}`)
+    all.push({ id: f.id, type: 'competitorFeature', name: names.get(f.id)! })
+  }
+  const { byRef, refOf } = makeRefs(all)
+  const r = (id: string) => `[${refOf.get(id)}] `
 
   const forOf = new Map<string, string[]>()
   for (const e of ws.edges) {
@@ -45,14 +79,14 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where): string {
   }
   const forText = (id: string) => (forOf.has(id) ? ` (for: ${forOf.get(id)!.join(', ')})` : '')
 
-  const lines: string[] = [`WORKSPACE "${ws.workspace.name}"`]
+  const lines: string[] = [`WORKSPACE "${ws.workspace.name}" (each item starts with its [ref])`]
   if (ws.workspace.description) lines.push(clip(ws.workspace.description))
 
   const section = (title: string, items: WithId<BoardNode>[], extra: (n: WithId<BoardNode>) => string = () => '') => {
     lines.push('', `${title} (${items.length})`)
     for (const n of items) {
       const body = clip(n.body)
-      lines.push(`- ${n.title || 'Untitled'}${extra(n)}${tags(n.tags)}${forText(n.id)}${areaOf(ws.labels, n.x, n.y)}${body ? `: ${body}` : ''}`)
+      lines.push(`- ${r(n.id)}${n.title || 'Untitled'}${extra(n)}${tags(n.tags)}${forText(n.id)}${areaOf(ws.labels, n.x, n.y)}${body ? `: ${body}` : ''}`)
     }
   }
   section('CUSTOMERS', ws.customers)
@@ -71,11 +105,11 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where): string {
   for (const c of ws.competitors) {
     const facts = [c.url, c.pricing && `pricing: ${clip(c.pricing, 120)}`, c.audience && `audience: ${clip(c.audience, 120)}`].filter(Boolean)
     const area = c.x !== undefined && c.y !== undefined ? areaOf(ws.labels, c.x, c.y) : ''
-    lines.push(`- ${c.name || 'Untitled'}${tags(c.tags)}${forText(c.id)}${area}${facts.length ? ` (${facts.join('; ')})` : ''}`)
+    lines.push(`- ${r(c.id)}${c.name || 'Untitled'}${tags(c.tags)}${forText(c.id)}${area}${facts.length ? ` (${facts.join('; ')})` : ''}`)
     if (c.description) lines.push(`  about: ${clip(c.description)}`)
     if (c.notes) lines.push(`  notes: ${clip(c.notes)}`)
     const feats = ws.competitorFeatures.filter((f) => f.competitorId === c.id)
-    for (const f of feats) lines.push(`  · ${f.category ? `${f.category} / ` : ''}${f.name || 'Untitled'}${f.description ? `: ${clip(f.description, 160)}` : ''}`)
+    for (const f of feats) lines.push(`  · ${r(f.id)}${f.category ? `${f.category} / ` : ''}${f.name || 'Untitled'}${f.description ? `: ${clip(f.description, 160)}` : ''}`)
   }
 
   const links = ws.edges.filter((e) => e.kind !== 'for' && names.has(e.fromId) && names.has(e.toId))
@@ -93,8 +127,8 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where): string {
 
   lines.push('', `THE USER is in the ${where.view} view.`)
   const sel = where.selectedId && names.get(where.selectedId)
-  if (sel) lines.push(`They have "${sel}" selected; "this" probably means it.`)
+  if (sel) lines.push(`They have "${sel}" [${refOf.get(where.selectedId!)}] selected; "this" probably means it.`)
 
   const text = lines.join('\n')
-  return text.length > MAX_CHARS ? `${text.slice(0, MAX_CHARS)}\n… (workspace cut short here)` : text
+  return { text: text.length > MAX_CHARS ? `${text.slice(0, MAX_CHARS)}\n… (workspace cut short here)` : text, refs: byRef }
 }

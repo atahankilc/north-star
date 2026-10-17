@@ -1,5 +1,5 @@
 // The assistant (D-073): an ASCII orb with eyes in the bottom-right corner of a workspace. Clicking it opens a chat
-// that knows the workspace (read only for now; tools that change it come in Phase 4.2). Your own OpenAI key (D-006).
+// that knows the workspace and proposes changes you accept before they're written (D-074). Your own OpenAI key (D-006).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -12,6 +12,7 @@ import { useCanvas } from '../state/canvasStore'
 import { useWs } from '../views/workspace/context'
 import { AiKeyForm, KEY_PRIVACY } from './AiSettings'
 import { AiOrb, type OrbMood } from './AiOrb'
+import { AiProposal } from './AiProposal'
 import styles from './AiChat.module.css'
 import { Appear } from './Appear'
 
@@ -20,7 +21,7 @@ const ORB = 56
 const STARTERS = [
   'Summarize this workspace',
   'Which problems have no idea yet?',
-  'Where do we stand out against competitors?',
+  'Fill in the matrix notes you can',
 ]
 
 export function AiChat() {
@@ -135,7 +136,10 @@ function Conversation() {
     if (!text.trim() || busy) return
     const view = path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
     // Built when sent, so it sees the board as it is now.
-    send(text, () => chatInstructions(workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })))
+    send(text, () => {
+      const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })
+      return { instructions: chatInstructions(brief.text), refs: brief.refs }
+    })
     setDraft('')
     stick.current = true
   }
@@ -184,6 +188,7 @@ function Conversation() {
               {m.content}
               {m.role === 'assistant' && busy && m === last && <span className={styles.caret} aria-hidden />}
               {m.error && <span className={styles.error}>! {m.error}</span>}
+              {m.proposal && <AiProposal message={m} />}
             </span>
           </li>
         ))}
@@ -209,7 +214,7 @@ function Conversation() {
           </button>
         )}
       </form>
-      <p className={styles.footnote}>Reads this workspace; can't change it yet. Enter sends, Shift+Enter adds a line.</p>
+      <p className={styles.footnote}>Proposes changes; nothing is written until you apply. Enter sends, Shift+Enter adds a line.</p>
     </>
   )
 }

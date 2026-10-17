@@ -112,9 +112,9 @@ async function deleteAll(refs: DocumentReference[]): Promise<void> {
   }
 }
 
-// Deletes the node and everything that hangs off it: its edges, a feature's or competitor's
-// matrix cells, and a competitor's own features (with their edges). Firestore doesn't cascade.
-export async function deleteNode(wid: string, type: NodeType, id: string) {
+// Everything that hangs off a node and goes with it: its edges, a feature's or competitor's matrix cells, and a
+// competitor's own features (with their edges). Firestore doesn't cascade. The node itself is not included.
+export async function cascadeOf(wid: string, type: NodeType, id: string): Promise<DocumentReference[]> {
   const ids = new Set([id])
   const refs: DocumentReference[] = []
 
@@ -136,9 +136,16 @@ export async function deleteNode(wid: string, type: NodeType, id: string) {
     const e = d.data() as Edge
     if (ids.has(e.fromId) || ids.has(e.toId)) refs.push(d.ref)
   }
+  return refs
+}
 
+export const nodeRef = (wid: string, type: NodeType, id: string) => doc(col(wid, COLLECTIONS[type]), id)
+
+// Deletes the node and everything that hangs off it (cascadeOf).
+export async function deleteNode(wid: string, type: NodeType, id: string) {
+  const refs = await cascadeOf(wid, type, id)
   // The node itself goes last, so a failure part-way leaves it visible to retry.
-  const self = doc(col(wid, COLLECTIONS[type]), id)
+  const self = nodeRef(wid, type, id)
   await tracked(
     `delete ${LABELS[type]}`,
     [...refs, self],

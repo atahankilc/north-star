@@ -473,6 +473,32 @@ the usual flow. (The first pass had a "space photo" look: nebula clouds, a galax
   view and selection). Read-only; the chat lives in the tab only (one per workspace, gone on reload).
 - *Key* (D-006): pasted in the chat or Settings → ai, checked with a free `GET /v1/models/<model>`, kept only in localStorage.
 - *Model:* `gpt-6-luna` ($0.10 / $0.50 per 1M tokens, cheapest on OpenAI's model page 2026-10-17). A per-feature model picker comes later.
-- *Phase 4.2:* tools/MCP so the assistant can add competitors, links, matrix notes, summaries; previews you accept before anything is written
+- *Phase 4.2:* tools so the assistant can add competitors, links, matrix notes, summaries (done in D-074); previews you accept before anything is written
   (user's answer: preview, then accept); market research by sending agents.
 
+### D-074 · 2026-10-17 · Accepted (Phase 4.2a; extends D-073)
+**The assistant proposes changes; you tick and apply them.** One OpenAI function tool, `propose_changes` (`src/ai/tools.ts`), not MCP:
+the app has no server to host one, and a browser-side function tool does the same job with the same key.
+- *What it can do:* add customers, problems, ideas, features and competitors; add a competitor's features; edit cards and competitors;
+  link and `for`-tag; set matrix cells (coverage, notes). **No deletes**: it says what should go and you delete it.
+- *Refs:* every item in the workspace brief starts with `[ref]` (the first 6 characters of its id, longer if two clash), so the model can
+  point at existing items; new items get a key inside the proposal, so one set can add a competitor, its features, its links and its cells.
+- *Preview:* the answer shows a checklist (sign + kind in the type colour, detail line). Everything valid starts ticked; rows with an
+  unknown ref, wrong type, an item deleted since, or an existing link are disabled with the reason; unticking a new item unticks what
+  depends on it. `apply N` / `discard`. Collaborators see nothing until it's applied.
+- *Apply* (`src/data/assistant.ts`): one Firestore batch and **one undo step** (`assistant: N changes`). New cards go in their own type's
+  column, level with the card they're placed near (or under the last of their kind), on the nearest free row.
+- *History:* the next message tells the model what it proposed and what became of it (applied n of m / discarded / undecided).
+- Next: 4.2b web research (OpenAI's web search tool, so competitor facts come with sources), 4.2c a model choice per feature.
+
+### D-075 · 2026-10-17 · Accepted (extends D-074; user's call)
+**The assistant can propose deletes too.** The checklist and one-step undo make it safe, so the "no deletes" limit of D-074 is lifted.
+- `delete_item` (any item, with a reason shown under it) and `unlink` (every link between two items, either direction; `untag` for a customer).
+  A delete cascades exactly like deleting by hand (`cascadeOf` in `src/data/nodes.ts`: links, a feature's/competitor's matrix cells, a
+  competitor's own features), and the whole set is still one undo step (batches of 450, so a big cascade fits).
+- Rows that use an item the same proposal deletes are off while that delete is ticked ("uses an item deleted here").
+  `unlink` of two items that aren't linked is disabled ("not linked"). Deletes show a magenta `−` and a struck-through name.
+- The prompt: only when the user asks to delete, remove, merge or clean up, always with a reason; otherwise suggest it in words.
+- Also in the prompt (user feedback the same day): new items are wired into the chain (competitor competes-with its problems and is
+  `for` its customers; idea solves its problem…), a missing customer or problem is added in the same proposal, and judgements
+  ("the weakest idea") name an item and the criterion instead of asking for criteria.

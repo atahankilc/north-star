@@ -137,11 +137,14 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 - The user pastes an **OpenAI API key on the Settings page**.
 - The key is stored **only in the user's browser (localStorage)** and is **never written to the DB**,
   so collaborators can never see it. Each collaborator uses their own key.
-- Calls go **directly from browser to OpenAI** (`fetch` or the SDK with `dangerouslyAllowBrowser`).
-- **Default model: a cheap small model** (currently the "nano"/"mini" tier). It is configurable in
-  Settings. ⏳ Pick the exact default model ID at implementation time from OpenAI's pricing page.
-- Prompts live in `src/ai/prompts/` with structured JSON outputs where useful
-  (for example, suggested links).
+- Calls go **directly from browser to OpenAI** with `fetch` (Responses API, streaming, `store: false`; `src/ai/openai.ts`).
+- **Default model: `gpt-6-luna`** (D-073). A per-feature model choice comes in Phase 4.2c.
+- **Context:** each message sends a fresh plain-text brief of the workspace (`src/ai/context.ts`), built from the data the page
+  already holds; every item carries a short `[ref]`.
+- **Changes** (D-074): one strict function tool, `propose_changes` (`src/ai/tools.ts`). The model proposes; the chat shows a
+  checklist; only what the user applies is written, through `src/data/assistant.ts`, as one undo step. Deletes cascade like
+  a delete by hand (D-075).
+- Prompts live in `src/ai/prompts/`.
 - Risk: a key in localStorage is exposed to XSS. Mitigation: strict CSP, no untrusted HTML, no
   third-party scripts. Settings explains this to the user.
 

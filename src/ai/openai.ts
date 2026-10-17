@@ -40,10 +40,13 @@ type StreamOptions = {
   turns: ChatTurn[]
   signal: AbortSignal
   onDelta: (text: string) => void
+  // Function tools the model may call (D-074); a call arrives whole, with its JSON arguments.
+  tools?: object[]
+  onToolCall?: (name: string, args: string) => void
 }
 
 // Streams one answer; resolves when it's complete. Aborting rejects with an AbortError.
-export async function streamReply({ key, model, instructions, turns, signal, onDelta }: StreamOptions): Promise<void> {
+export async function streamReply({ key, model, instructions, turns, signal, onDelta, tools, onToolCall }: StreamOptions): Promise<void> {
   let res: Response
   try {
     res = await fetch(`${API}/responses`, {
@@ -58,6 +61,7 @@ export async function streamReply({ key, model, instructions, turns, signal, onD
         // Nothing kept on OpenAI's side beyond what their policy requires.
         store: false,
         reasoning: { effort: 'low' },
+        ...(tools?.length ? { tools, parallel_tool_calls: false } : {}),
       }),
     })
   } catch (e) {
@@ -87,10 +91,13 @@ export async function streamReply({ key, model, instructions, turns, signal, onD
         type: string
         delta?: string
         message?: string
+        item?: { type?: string; name?: string; arguments?: string }
         response?: { error?: { message?: string }; incomplete_details?: { reason?: string } }
       }
       if (event.type === 'response.output_text.delta' && event.delta) onDelta(event.delta)
-      else if (event.type === 'response.completed') return
+      else if (event.type === 'response.output_item.done' && event.item?.type === 'function_call') {
+        onToolCall?.(event.item.name ?? '', event.item.arguments ?? '{}')
+      } else if (event.type === 'response.completed') return
       else if (event.type === 'response.failed') throw new AiError(event.response?.error?.message ?? 'OpenAI stopped with an error.')
       else if (event.type === 'response.incomplete') {
         throw new AiError(`The answer was cut short (${event.response?.incomplete_details?.reason ?? 'incomplete'}).`)

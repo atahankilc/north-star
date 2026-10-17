@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (welcome intro: sunrise instead of galaxy/shooting stars, D-072)_
+_Last updated: 2026-10-17 (assistant proposals and deletes, D-074, D-075)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -184,9 +184,19 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   workspace brief per message. Build passes. Verified headless on emulators with OpenAI mocked (key check, streaming answer, brief contents,
   Escape closes). The user tried it with a real key: works. Committed and pushed 2026-10-17 (`5e68424`).
 
+## Done (Phase 4.2a: proposals, 2026-10-17)
+- D-074: `propose_changes` tool, `[ref]`s in the brief, checklist under the answer (dependencies, live validity), apply = one batch +
+  one undo step, new cards placed in their type's column. Verified headless on emulators with OpenAI mocked (9 rows incl. a bad ref,
+  unticking an idea drops its links, apply → cards in their columns, next turn carries the outcome, one Ctrl+Z removes all).
+  The user tried it with a real key: works.
+- D-075: deletes and unlinks in proposals (cascade like a hand delete, one undo step, clashing rows off); prompt wires new items into
+  the chain, adds a missing customer/problem, commits to judgements. Verified headless on emulators (delete ShiftGrid: its 9 mentions
+  gone from the brief, a real unlink, a clashing matrix row off, a not-linked unlink disabled; one Ctrl+Z brings all back).
+  The user tried it with a real key: works. Committed and pushed 2026-10-17.
+
 ## Next steps
 2. Small: PeerMarks colours through `themeAccent` (D-069); drop `edit`/`field` from database.rules.json once old tabs are gone
-3. Phase 4.2 (tools/MCP, preview + accept, per-feature model choice); Phase 5: files, export/import
+3. 4.2b web research (OpenAI web search tool, sources on competitor facts), 4.2c per-feature model choice; Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 
 ## Blockers
