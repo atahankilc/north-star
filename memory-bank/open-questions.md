@@ -30,9 +30,6 @@ Right now deleting is a two-step button only (no Delete key) because there's no 
 Recommendation: add a small local undo stack (create, move, edit, delete), then enable the Delete key and cmd+Z.
 
 ### Q-015 · blocking: Information architecture around domains
-User feedback 2026-10-17: the app should follow how they think: **domain → ideas (problem, customer segment:
-start-ups / scale-ups / SMEs / enterprises) → competitors → features**, visible in one place with different visualizations,
-plus a spreadsheet view of everything, domain tabs, and type filters.
-Agreed so far: domains live inside a workspace; an idea has one domain, competitors and features can link into several.
-Recommendation: domains as main tabs; type filters; one data set shown as Flow (auto-laid-out columns along the chain),
-Board (free canvas, all types), Table (spreadsheet) and Matrix. Open: default view, idea fields for problem/customer.
+Partly answered (D-039 to D-041): domains inside a workspace, Board is the main view, Problem is its own item.
+Spec drafted in [docs/specs/domains.md](../docs/specs/domains.md), **waiting for the user's review** (open points in §7:
+segment list incl. consumers?, customers as items or segments, Flow column order). Don't build it before the review.

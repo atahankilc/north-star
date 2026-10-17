@@ -199,3 +199,14 @@ collection once and shares it with all views, so switching tabs is instant and a
 ### D-038 · 2026-10-17 · Accepted
 **Competitors are profiles with a categorized feature list, not a spatial map.** The competitor page shows name, URL, pricing,
 audience and notes, plus its features grouped by `category`. `CompetitorFeature` has no position.
+
+### D-039 · 2026-10-17 · Accepted
+**Domains organise a workspace.** A workspace holds domains (e.g. pet care, fintech). Ideas and problems belong to exactly one
+domain; competitors and features can belong to several. Domains are the main tabs. Spec: [docs/specs/domains.md](../docs/specs/domains.md).
+
+### D-040 · 2026-10-17 · Accepted
+**The Board is the main view.** All item types live on one free canvas, filtered by domain and type. Flow, Table and Matrix are
+other ways to view the same data. Supersedes the per-type tabs of D-036.
+
+### D-041 · 2026-10-17 · Accepted
+**Problem is its own item type**, created, dragged and linked like an idea (not a field on the idea), so several ideas can attack one problem.
