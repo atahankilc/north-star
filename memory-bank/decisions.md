@@ -676,7 +676,7 @@ board layout, shared chats), because every later tool needs it.
   (D-079 waits for Blaze).
 - Verified on emulators with a fake OpenAI (headless Chrome): get_items with a bad ref → a proposal with a bad link →
   the report → a corrected proposal → text; a model that never stops calling tools is cut at 6 with `none` on the last.
-  Not yet tried against the real API, in particular sending back `web_search_call` items with `store: false`.
+  Tried with a real key (2026-10-18): works, including a [web] answer that calls a tool (`web_search_call` items go back fine with `store: false`).
 
 ### D-085 · 2026-10-17 · Accepted
 **Analysis modes in the chat: ready-made asks, from the empty chat or by typing `/`.** User's pick over buttons in the side

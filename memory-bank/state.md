@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -258,8 +258,8 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 ## Done (assistant agent loop, 2026-10-17)
 - D-084: up to 6 steps per answer, `get_items` (read items in full), proposals report bad rows back and can be redone in the
   same answer, last step `tool_choice: none`. Each answer lists its steps live (searched / read / proposed / thinking). Proxy whitelist passes `include` + `tool_choice` (not deployed). Verified on
-  emulators with a fake OpenAI. Committed (not pushed). The user tried it with a real key: works. **Still to check with a real key:**
-  a [web] answer that also calls a tool (are `web_search_call` items accepted back with store:false?).
+  emulators with a fake OpenAI. Committed (not pushed). The user tried it with a real key: works, including a [web] answer that
+  also calls a tool (`web_search_call` items are accepted back with store:false; checked 2026-10-18).
 - D-085: analysis modes (`/validate /interview /swot /gaps /next /pitch`) in the empty chat and a `/` menu; a mode uses the
   selected card when it fits. Caret only while text streams. Verified on emulators with a fake OpenAI.
 - D-086: board organising: `arrange_area` / `rename_label` / `delete_label` rows, layout in `src/ai/arrange.ts`, `/organize`
@@ -272,12 +272,12 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-078 to D-088 committed and **pushed 2026-10-18** (live deploy green; deep links serve the app via 404.html).
 - D-089 (2026-10-18): research reports are structured (`write_report`) and open on a report screen (answer, sections with
   numbered sources, implications with item links, open questions, sources, .md); light Markdown (lists, bold) in answers.
-  Verified on emulators with a fake OpenAI. The user ran a real `/research` with D-088 + D-089: works. Committed (`576d826`), **not pushed**.
+  Verified on emulators with a fake OpenAI. The user ran a real `/research` with D-088 + D-089: works. Committed and pushed (`576d826`).
 - D-090 (2026-10-18): reports tab (`/workspaces/<id>/reports`): research reports saved at once for their author, `share` shows
   them to the workspace; any chat can be written up as a report on request (`make_report`), saved when you press save.
   Rules: 191 pass. Verified on emulators with headless Chrome, two users and a fake OpenAI. Firestore + RTDB rules **deployed** 2026-10-18
   (a superset, safe for the live client). D-091: `upload .md` on the reports tab (own Markdown reports, parsed to the same
-  shape; round-trips the report screen's download); rules 193 pass, deployed 2026-10-18. Committed (`a86583c`), **not pushed**. Not yet tried with a real key.
+  shape; round-trips the report screen's download); rules 193 pass, deployed 2026-10-18. Committed (`a86583c`), **not pushed**. The user tried reports with a real key 2026-10-18: works.
 - Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research, saved
   reports (all done; whole chats stay unsaved, the user chose reports instead) → reading attachments (after D-083) → the
   user's own redesign of the assistant UI and the preview.
