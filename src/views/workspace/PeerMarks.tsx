@@ -5,14 +5,20 @@ import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { usePresence, type Peer } from '../../data/presence'
 import { themeAccent, useTheme } from '../../state/theme'
+import { markTag, usePreview } from './preview'
 import styles from './PeerMarks.module.css'
 
 // Everyone who has `id` selected, stable between renders while that doesn't change. Colours come in the current
 // theme's shade (D-069), so everything below can use `p.color` as is.
+// The assistant's preview (D-087) marks what a change does to the item the same way, first.
 export function usePeersOn(id: string): Peer[] {
   const peers = usePresence(useShallow((s) => s.peers.filter((p) => p.sel === id)))
+  const mark = usePreview((s) => s.marks.get(id))
   const theme = useTheme((s) => s.theme)
-  return useMemo(() => peers.map((p) => ({ ...p, color: themeAccent(p.color, theme) })), [peers, theme])
+  return useMemo(
+    () => [...(mark ? [markTag(mark) as Peer] : []), ...peers].map((p) => ({ ...p, color: themeAccent(p.color, theme) })),
+    [peers, mark, theme],
+  )
 }
 
 // Rings around an element, one per person, with a dark gap between: for `box-shadow`.

@@ -15,6 +15,7 @@ import { Board } from './Board'
 import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems } from './boardKinds'
 import { findFreeSpot } from './cardLayout'
 import { DetailPanel } from './DetailPanel'
+import { isPreviewing } from '../workspace/preview'
 import styles from './BoardView.module.css'
 
 // A jump lands with the label near the top of the view, so the area under it is in sight.
@@ -60,6 +61,7 @@ export function BoardView() {
   // Competitors made before the board (D-040) have no position yet: give each a free spot once.
   const placed = useRef(new Set<string>())
   useEffect(() => {
+    if (isPreviewing()) return
     const taken = all.filter((i) => i.type !== 'competitor' || competitors.find((c) => c.id === i.id)?.x !== undefined)
     for (const c of competitors) {
       if (c.x !== undefined || placed.current.has(c.id)) continue

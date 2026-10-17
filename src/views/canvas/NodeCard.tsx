@@ -14,6 +14,7 @@ import { fontUrls } from '../../three/fonts'
 import { BOARD_KINDS, typeAccent, type BoardItem } from './boardKinds'
 import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
+import { isPreviewing } from '../workspace/preview'
 import styles from './NodeCard.module.css'
 
 const BOARD = new Plane(new Vector3(0, 0, 1), 0)
@@ -97,6 +98,8 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
     if (!p) return
     setPressing(node.id)
     select(node.id)
+    // The assistant's preview (D-087) can be looked at, not changed.
+    if (isPreviewing()) return
     if (e.shiftKey) {
       startLink(node.id, p)
       return

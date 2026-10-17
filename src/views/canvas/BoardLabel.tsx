@@ -14,6 +14,7 @@ import { fontUrls } from '../../three/fonts'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
 import { boardPoint } from './NodeCard'
+import { isPreviewing } from '../workspace/preview'
 import styles from './BoardLabel.module.css'
 
 export const LABEL_SIZE = 0.6
@@ -66,6 +67,8 @@ export function BoardLabel({ wid, label }: Props) {
     const p = boardPoint(e)
     if (!p) return
     select(label.id)
+    // The assistant's preview (D-087) can be looked at, not changed.
+    if (isPreviewing()) return
     drag.current = { dx: p[0] - x, dy: p[1] - y, from: [label.x, label.y], lastWrite: 0, moved: false }
     ;(e.target as Element).setPointerCapture(e.pointerId)
   }

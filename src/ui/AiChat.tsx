@@ -5,6 +5,7 @@
 // or the workspace's, if the owner set one and lets you use it (D-079).
 import { AnimatePresence, motion } from 'motion/react'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { useChat, type Step } from '../ai/chat'
 import { workspaceBrief } from '../ai/context'
@@ -17,7 +18,9 @@ import type { NodeType } from '../data/model'
 import { workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
 import { useMotion } from '../state/motion'
+import { themeAccent, useTheme } from '../state/theme'
 import { useWs } from '../views/workspace/context'
+import { MARK_COLOR, OutsidePreview, usePreview, type Mark } from '../views/workspace/preview'
 import { AiKeyForm, KEY_PRIVACY } from './AiSettings'
 import { AiOrb, type OrbCue, type OrbMood } from './AiOrb'
 import { glide, GLIDE_MS } from './glide'
@@ -122,7 +125,9 @@ export function AiChat() {
   const mood: OrbMood = busy ? (talking ? 'talking' : 'thinking') : open ? 'open' : hover ? 'hover' : 'idle'
 
   return (
-    <>
+    // The assistant always sees the real workspace, also while the app shows its preview (D-087).
+    <OutsidePreview.Provider value={true}>
+      <PreviewBar />
       <AnimatePresence>{open && <AiWindow key="chat" onClose={() => setOpen(false)} />}</AnimatePresence>
       {/* One orb for both places, so its reactions carry over; `layout` glides it between the corner and the header. */}
       <motion.button
@@ -139,7 +144,7 @@ export function AiChat() {
       >
         <AiOrb size={size} mood={mood} cue={cue} />
       </motion.button>
-    </>
+    </OutsidePreview.Provider>
   )
 }
 
@@ -526,5 +531,49 @@ function ModeMenu({ modes, pick, selected, onChoose }: { modes: Mode[]; pick: nu
         </li>
       ))}
     </ul>
+  )
+}
+
+// While the preview is open (D-087): a frame around the app and a bar saying what you're looking at, with the marks'
+// colours. Esc closes it. Drawn inside the app's box, so it stays clear of the assistant's window.
+function PreviewBar() {
+  const showing = usePreview((s) => s.ws !== null)
+  const count = usePreview((s) => s.count)
+  const theme = useTheme((s) => s.theme)
+  const [host, setHost] = useState<Element | null>(null)
+  useEffect(() => setHost(document.querySelector('[data-app]')), [])
+  useEffect(() => {
+    if (!showing) return
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      usePreview.getState().close()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [showing])
+  if (!showing || !host) return null
+  return createPortal(
+    <>
+      <div className={styles.previewFrame} aria-hidden />
+      <div className={styles.previewBar} role="status">
+        <span className={styles.changeKind}>preview</span>
+        <span>
+          {count} change{count === 1 ? '' : 's'} as if applied; nothing is written yet
+        </span>
+        <span className={styles.previewKey}>
+          {(Object.keys(MARK_COLOR) as Mark[]).map((m) => (
+            <span key={m} style={{ color: themeAccent(MARK_COLOR[m], theme) }}>
+              ■ {m}
+            </span>
+          ))}
+        </span>
+        <button className={styles.action} onClick={() => usePreview.getState().close()}>
+          close · esc
+        </button>
+      </div>
+    </>,
+    host,
   )
 }

@@ -630,3 +630,36 @@ html[data-motion='reduced'] .caret {
     display: none;
   }
 }
+
+/* The preview (D-087): a frame around the app and a bar under the HUD. Functional for now; the design comes later. */
+.previewFrame {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: 2px solid var(--accent-cyan);
+  pointer-events: none;
+}
+
+.previewBar {
+  position: fixed;
+  bottom: calc(var(--hud-y) + 48px);
+  left: 50%;
+  z-index: 41;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  max-width: calc(100% - 2 * var(--space-4));
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--accent-cyan);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  transform: translateX(-50%);
+}
+
+.previewKey {
+  display: flex;
+  gap: var(--space-2);
+}

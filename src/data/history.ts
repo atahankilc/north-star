@@ -89,7 +89,20 @@ function serial<T>(fn: () => Promise<T>): Promise<T> {
 
 // Runs `write` and records it as one undoable step.
 // Resolves once the write is confirmed, like the Firestore call it wraps.
+// Set while the workspace on screen isn't the real one (the assistant's preview, D-087): every tracked write, undo and
+// redo is refused with this message instead.
+let readOnly: string | null = null
+export const setReadOnly = (why: string | null) => {
+  readOnly = why
+}
+// False (and says why) while writes are refused.
+export function writable(): boolean {
+  if (readOnly) useHistory.getState().say(readOnly)
+  return !readOnly
+}
+
 export function tracked(label: string, refs: DocumentReference[], write: () => Promise<unknown>, opts: Options = {}) {
+  if (!writable()) return Promise.resolve()
   return serial(() => record(label, refs, write, opts)).then(({ pending }) => pending)
 }
 
@@ -123,8 +136,8 @@ export async function snapshotWith(ref: DocumentReference, fields: DocumentData)
   return [{ ref, data: data && { ...data, ...fields } }]
 }
 
-export const undo = () => serial(undoNow)
-export const redo = () => serial(redoNow)
+export const undo = () => (writable() ? serial(undoNow) : Promise.resolve())
+export const redo = () => (writable() ? serial(redoNow) : Promise.resolve())
 
 async function undoNow() {
   const { past, future, say } = useHistory.getState()
