@@ -69,7 +69,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Tags: `#tag` in an accent colour
 - Cards: flat, one shape for every type (D-055). A left border and a small uppercase label in the type's colour say what it is
   (customer green, problem magenta, competitor yellow, idea white, feature cyan); a hairline edge brightens on hover/selection.
-  Type colours are reserved for type: tags are white `#chips` (D-056). Lift on hover and drag.
+  Type colours are reserved for type: tags are white `#chips` (D-056). Cards never lift, tilt or scale (D-061).
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
 - Connections (D-059): straight, edge to edge, with an arrowhead and the kind written at the midpoint; line pattern by kind
   (solid / dashed / dotted / faint), neutral grey, cyan when attached to the selection. No animation

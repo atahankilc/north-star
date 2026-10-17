@@ -63,17 +63,19 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, onLinkDro
   const [x, y] = live ?? [node.x, node.y]
   const accent = TYPE_ACCENT[type]
 
-  // Glide toward the target position (remote moves animate too) and lift on hover/drag.
+  // The card stays flat and its size never changes (D-061): no lift or scale on hover, selection or drag, which also made
+  // a dragged card land somewhere other than under the pointer. While dragging it sits exactly under the pointer;
+  // otherwise it glides to its position, so collaborators' moves animate. The dragged card is drawn on top.
   useFrame((_, dt) => {
     const g = group.current
     if (!g) return
-    const lift = (drag.current ? 0.45 : hovered || selected ? 0.14 : related ? 0.07 : 0) + layer * 0.004
-    const k = drag.current ? 40 : 12
-    g.position.x = MathUtils.damp(g.position.x, x, k, dt)
-    g.position.y = MathUtils.damp(g.position.y, y, k, dt)
-    g.position.z = MathUtils.damp(g.position.z, lift, 10, dt)
-    const s = drag.current ? 1.04 : 1
-    g.scale.setScalar(MathUtils.damp(g.scale.x, s, 10, dt))
+    // Stacking uses tiny depth steps, too small to make a card look bigger or drift from the pointer.
+    if (drag.current) g.position.set(x, y, 0.06)
+    else {
+      g.position.x = MathUtils.damp(g.position.x, x, 12, dt)
+      g.position.y = MathUtils.damp(g.position.y, y, 12, dt)
+      g.position.z = Math.min(layer, 150) * 0.0003
+    }
   })
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {

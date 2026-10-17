@@ -25,7 +25,6 @@ export function BoardView() {
   const all = useBoardItems()
   const nodes = useVisibleItems(all)
   const select = useCanvas((s) => s.select)
-  const lastType = useWsView((s) => s.lastType)
   const [params, setParams] = useSearchParams()
 
   // `?n=<id>` (from a link in another view) selects that card, unhides it, and starts the camera on it.
@@ -105,7 +104,6 @@ export function BoardView() {
   }
 
   const add = (type: NewThing) => {
-    useWsView.getState().setLastType(type)
     const center = useCanvas.getState().viewCenter()
     // Clear of every card, including filtered-out ones.
     void create(type, findFreeSpot(center, all))
@@ -113,7 +111,7 @@ export function BoardView() {
 
   return (
     <main className={styles.page}>
-      <Board wid={wid} nodes={nodes} edges={edges} labels={labels} competitorFeatures={competitorFeatures} focus={focus} onCreate={(at) => void create(lastType, at)} />
+      <Board wid={wid} nodes={nodes} edges={edges} labels={labels} competitorFeatures={competitorFeatures} focus={focus} />
 
       <FilterBar goTo={places.map((l) => ({ key: l.id, label: l.text.trim(), onSelect: () => jump(l) }))} />
 
@@ -132,22 +130,21 @@ export function BoardView() {
               // The card's left border, in its type colour (D-055).
               glyph: '▌',
               tone: TYPE_ACCENT[t],
-              hint: lastType === t ? 'double-click' : undefined,
               onSelect: () => add(t),
             })),
             { key: 'board', heading: 'on the board' },
-            { key: 'text', label: 'text', glyph: 'T', hint: lastType === 'text' ? 'double-click' : 'jump point', onSelect: () => add('text') },
+            { key: 'text', label: 'text', glyph: 'T', hint: 'jump point', onSelect: () => add('text') },
           ]}
         />
         <span className={styles.hints}>
-          double-click: new {lastType === 'text' ? 'text' : BOARD_KINDS[lastType].label} · drag: move · shift+drag: link · scroll: zoom
+          drag: move · shift+drag: link · scroll: zoom
           {places.length > 0 && ' · 1–9: go to'}
         </span>
       </footer>
 
       {all.length === 0 && labels.length === 0 && (
         <div className={styles.empty}>
-          <DecodeText text="Double-click anywhere to pin your first idea" />
+          <DecodeText text="Add your first card with the + button" />
         </div>
       )}
       {all.length > 0 && nodes.length === 0 && labels.length === 0 && (

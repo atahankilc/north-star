@@ -48,7 +48,7 @@ descriptions live in the side panel only (D-057).
 
                        ( the current view: board, flow, table or matrix )
 
-[+]  double-click: new idea · drag: move · …                       (+ opens: customer, problem, competitor,
+[+]  drag: move · shift+drag: link · …                       (+ opens: customer, problem, competitor,
                                                                     idea, feature │ text)
 ```
 

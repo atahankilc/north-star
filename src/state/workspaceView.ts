@@ -1,9 +1,9 @@
-// What the current workspace shows: type and customer filters, and which `+` was used last.
+// What the current workspace shows: type, customer and tag filters.
 // Remembered per workspace in this browser (spec: docs/specs/board.md §3).
 import { create } from 'zustand'
 import { BOARD_TYPES, type BoardType } from '../data/model'
 
-// What a double-click on the board makes: a card, or text (D-050).
+// What the + menu makes: a card, or text (D-050).
 export type NewThing = BoardType | 'text'
 
 type Filters = {
@@ -12,11 +12,9 @@ type Filters = {
   forIds: string[]
   // Tags for the `tag:` filter (D-056); empty = any tag.
   tags: string[]
-  // Double-click on the board creates one of these.
-  lastType: NewThing
 }
 
-const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], lastType: 'idea' }
+const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [] }
 
 type State = Filters & {
   wid: string | null
@@ -26,7 +24,6 @@ type State = Filters & {
   clearFor: () => void
   toggleTag: (tag: string) => void
   clearTags: () => void
-  setLastType: (type: NewThing) => void
   // Undo whatever filter hides this item, so a link can always land on it.
   reveal: (item: { type: BoardType }) => void
 }
@@ -42,7 +39,6 @@ function read(wid: string): Filters {
       types: (saved.types ?? DEFAULTS.types).filter((t) => BOARD_TYPES.includes(t)),
       forIds: saved.forIds ?? [],
       tags: saved.tags ?? [],
-      lastType: saved.lastType ?? DEFAULTS.lastType,
     }
   } catch {
     return DEFAULTS
@@ -52,10 +48,10 @@ function read(wid: string): Filters {
 export const useWsView = create<State>((set, get) => {
   const save = (patch: Partial<Filters>) => {
     set(patch)
-    const { wid, types, forIds, tags, lastType } = get()
+    const { wid, types, forIds, tags } = get()
     if (!wid) return
     try {
-      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, lastType }))
+      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags }))
     } catch {
       // Private mode or blocked storage: filters just won't be remembered.
     }
@@ -81,7 +77,6 @@ export const useWsView = create<State>((set, get) => {
       save({ tags: tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag] })
     },
     clearTags: () => save({ tags: [] }),
-    setLastType: (lastType) => save({ lastType }),
     reveal: (item) => {
       const { types } = get()
       save({

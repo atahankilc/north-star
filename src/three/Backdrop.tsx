@@ -7,7 +7,7 @@ import { useEffect, useMemo } from 'react'
 import { MathUtils } from 'three'
 import { AmbientField } from './AmbientField'
 import { AsciiEffect } from './AsciiEffect'
-import { backdropDim } from './sceneClock'
+import { backdropDim, backdropPace } from './sceneClock'
 
 // Dev-only: step frames manually, e.g. from automation in a background tab where rAF is paused.
 if (import.meta.env.DEV) {
@@ -42,9 +42,10 @@ export function BackdropScene({ onFrame }: SceneProps) {
 }
 
 export function Backdrop({ dim = false }: { dim?: boolean }) {
-  // The field steps back on the board so cards stay legible.
+  // The field steps back in a workspace so cards stay legible: dimmer and slower (D-061).
   useEffect(() => {
-    backdropDim.target = dim ? 0.28 : 1
+    backdropDim.target = dim ? 0.18 : 1
+    backdropPace.target = dim ? 0.45 : 1
   }, [dim])
 
   return (

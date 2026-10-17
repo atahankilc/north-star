@@ -313,3 +313,9 @@ cyan for the selected card's links; no flowing animation.
 ### D-060 · 2026-10-17 · Accepted
 **Opening a workspace frames everything** (all cards and labels, within zoom limits 9–150; room left for the HUD and toolbar).
 Switching between views inside a workspace keeps your place. The Matrix frame fills the page height.
+
+### D-061 · 2026-10-17 · Accepted
+**Calmer board.** No double-click to create (the `+` menu is the only way; double-click still edits a text label). Cards don't lift
+or scale on hover, selection or drag: the lift moved a dragged card toward the camera, so it looked bigger and dropped away from
+the pointer. A dragged card now sits exactly under the pointer. In a workspace the backdrop is dimmer (18% vs 28%) and runs at 45%
+speed (`backdropPace` in `sceneClock.ts`; the clock accumulates time at an eased rate, still frozen under reduced motion).

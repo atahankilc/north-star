@@ -103,6 +103,9 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Dev hook `window.__boardItems` (board items with ids) for automation.
 - Verified on emulators with headless Chrome; rules 71 pass. **Rules (competitor tags) not deployed, nothing pushed.**
 
+## Done (calmer board, 2026-10-17)
+- No double-click create; cards don't lift/scale and drop exactly under the pointer; dimmer, slower backdrop in workspaces (D-061).
+
 ## Next steps
 1. Deploy rules + push (ask the user), their review on the live site; then Phase 3 (presence, live cursors)
 2. Phase 3: presence + live cursors (RTDB rules are ready)

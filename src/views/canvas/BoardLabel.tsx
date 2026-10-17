@@ -43,12 +43,15 @@ export function BoardLabel({ wid, label }: Props) {
   const [x, y] = live ?? [label.x, label.y]
   const accent = label.color ?? colors.fg
 
+  // Exactly under the pointer while dragging; remote moves glide (D-061).
   useFrame((_, dt) => {
     const g = group.current
     if (!g) return
-    const k = drag.current ? 40 : 12
-    g.position.x = MathUtils.damp(g.position.x, x, k, dt)
-    g.position.y = MathUtils.damp(g.position.y, y, k, dt)
+    if (drag.current) g.position.set(x, y, 0.01)
+    else {
+      g.position.x = MathUtils.damp(g.position.x, x, 12, dt)
+      g.position.y = MathUtils.damp(g.position.y, y, 12, dt)
+    }
   })
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {

@@ -1,6 +1,6 @@
 // The board scene: every item type on one canvas (D-040), 2.5D (D-018) with pan/zoom camera, cards and connections.
 import { OrbitControls } from '@react-three/drei'
-import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MathUtils, MOUSE, TOUCH } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -25,8 +25,6 @@ type Props = {
   labels: WithId<Label>[]
   // Shown as a stack behind their competitor, fanned out while it's selected (D-058).
   competitorFeatures: WithId<CompetitorFeature>[]
-  // Double-click on empty board.
-  onCreate: (at: [number, number]) => void
   // Look here first instead of where this board was last left (e.g. a link jumped to a card).
   focus?: [number, number]
 }
@@ -93,7 +91,7 @@ function Controls({ domElement }: { domElement: HTMLElement }) {
   )
 }
 
-function Scene({ wid, nodes, edges, labels, competitorFeatures, onCreate, focus }: Props) {
+function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
@@ -241,18 +239,12 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, onCreate, focus 
     void createEdge(wid, { id: a.id, type: a.type }, { id: b.id, type: b.type }, defaultKind(a.type, b.type))
   }
 
-  const onBoardDoubleClick = (e: ThreeEvent<MouseEvent>) => {
-    const p = boardPoint(e)
-    if (p) onCreate(p)
-  }
-
   const linkSource = linkFrom ? positions.get(linkFrom) : undefined
 
   return (
     <>
       <mesh
         position={[0, 0, -0.1]}
-        onDoubleClick={onBoardDoubleClick}
         onClick={(e) => {
           // A click (not the end of a pan) on empty board clears the selection.
           if (e.delta < 4) select(null)
