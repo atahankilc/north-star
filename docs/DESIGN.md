@@ -78,7 +78,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Fixed top bar, same on every page: breadcrumb left (`# north-star / workspaces / <name>`), actions right.
 - Screen-edge margins come only from `--hud-x` / `--hud-y` (toolbar, panels and status line too).
 
-- In a workspace, the views sit beside the breadcrumb as unframed tabs after a vertical rule (current view bright with a sliding magenta underline; D-067), and the right side holds one
+- In a workspace, the views sit beside the breadcrumb as unframed tabs after a vertical rule (current view bright with a sliding magenta underline; D-066), and the right side holds one
   account chip (avatar initial + name; just the initial below 640 px) and, beside it, a framed ⚙ icon button (cyan count in the
   corner when people wait to join). The chip opens settings on the account page, the gear on the last page used. It opens the settings
   modal: a side menu on the left (`> ACCOUNT`, `> WORKSPACE` only inside a workspace, `> APP`; the current one gets a cyan left bar)

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (follow, typing indicator, multi-person selection, distinct colours, D-067; view tabs, D-066)_
+_Last updated: 2026-10-17 (follow, typing indicator, multi-person selection, distinct colours, D-067; view tabs, settings gear, filters, D-066)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -137,7 +137,8 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 
 ## Done (view tabs, 2026-10-17)
 - D-066: views as unframed tabs with a sliding magenta underline; dropdown triggers a fixed 30px tall (`go to` was shorter);
-  breadcrumb collapses to `#` below 760px. Verified headless on emulators at 1280 and 390 px. Not committed.
+  breadcrumb collapses to `#` below 760px. Unframed gear (magenta bar while open), rule before the account chip. Filters: `LABEL │ value`,
+  type-colour squares for SHOW, lit (cyan) when narrowing. Verified headless on emulators at 1280 and 390 px. Not committed.
 
 ## Done (follow + typing + colours, 2026-10-17)
 - D-067: follow a person (view + cursor, framed page, Esc), one ring + name per person on a shared card, `Bob ✎ title` on the card /

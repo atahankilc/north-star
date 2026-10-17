@@ -7,7 +7,7 @@
   gap: var(--space-2);
   max-width: 220px;
   height: 30px;
-  /* The same rule as before the view tabs (D-067): page things on the left, you on the right. */
+  /* The same rule as before the view tabs (D-066): page things on the left, you on the right. */
   padding: 0 var(--space-1) 0 var(--space-4);
   border: 0;
   border-left: 1px solid var(--line);

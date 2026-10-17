@@ -52,7 +52,7 @@ descriptions live in the side panel only (D-057).
                                                                     idea, feature │ text)
 ```
 
-- **Views** are tabs beside the breadcrumb, after a vertical rule: no frame (frames mean filters), the current one underlined in magenta (D-053, D-067).
+- **Views** are tabs beside the breadcrumb, after a vertical rule: no frame (frames mean filters), the current one underlined in magenta (D-053, D-066).
 - **Filters** are dropdowns (D-053): `show` (item types), `for` (customers) and `tag` (D-056). Remembered per workspace.
 - **Go to** lists every text label in reading order (top to bottom, then left to right). Choosing one, or pressing 1–9,
   glides the camera there (instant under reduced motion). Any pan or zoom of your own takes over.

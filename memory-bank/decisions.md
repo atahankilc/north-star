@@ -370,7 +370,7 @@ into tabs above the page.
   if you're both on the board, otherwise open their view.
 - Rules now check every field's type, the view list, `ts <= now`, and refuse unknown fields (116 rule tests pass).
 
-### D-067 · 2026-10-17 · Accepted (refines D-053, D-064)
+### D-066 · 2026-10-17 · Accepted (refines D-053, D-064)
 **Views are tabs, filters are boxes.** The user found the view menu bar looked like the filter dropdowns (same frame, same small
 uppercase text). Now the views (`board flow table matrix`) sit after a vertical rule in the HUD as plain lowercase tabs in the
 breadcrumb's size: dim, bright on hover, the current one bright with a 2px magenta bar that slides between tabs (`layoutId`, instant

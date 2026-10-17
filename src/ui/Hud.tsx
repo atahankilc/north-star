@@ -15,7 +15,7 @@ export type Crumb = {
   to?: string
 }
 
-// The workspace's views, as tabs beside the breadcrumb (D-053, D-067): `│ board  flow  table  matrix`, the current one underlined.
+// The workspace's views, as tabs beside the breadcrumb (D-053, D-066): `│ board  flow  table  matrix`, the current one underlined.
 export type Tab = { label: string; to: string; end?: boolean }
 
 type Props = {
