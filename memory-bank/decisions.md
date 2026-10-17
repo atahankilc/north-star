@@ -73,7 +73,7 @@ Exposure is limited to name, colour and cursor coordinates, behind a random work
 ### D-017 · 2026-10-17 · Accepted
 **Product name: North Star** (formerly "Mind-Map"). Resolves Q-010.
 The Firebase project is `north-star-db`. The GitHub Pages base path comes from the repo name in CI, so a repo rename needs no code change.
-The local folder is still `mind-map`.
+The local folder was renamed to `north-star` too (2026-10-17).
 
 ### D-018 · 2026-10-17 · Accepted
 **Idea canvas is 2.5D:** a flat board in a real three.js scene, with a perspective camera that pans and zooms (no rotation),
