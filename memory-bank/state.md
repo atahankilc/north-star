@@ -227,6 +227,10 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   `npm run deploy:functions`, flip the flag, try with a real key.** Workspace-delete cleanup trigger not exercised yet.
 
 ## Next steps
+1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs
+   `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`, then `npm run deploy:functions`, set
+   `WORKSPACE_KEYS_LIVE = true` in src/data/ai.ts, push, and try with a real key as owner + member (also the delete cleanup).
+   Then Phase 5 parts that don't need Blaze: workspace export/import, Matrix → CSV, board → PNG.
 2. Small: PeerMarks colours through `themeAccent` (D-069); drop `edit`/`field` from database.rules.json once old tabs are gone
 3. Phase 5: files, export/import (attachments need Blaze, D-015 / Q-009)
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
