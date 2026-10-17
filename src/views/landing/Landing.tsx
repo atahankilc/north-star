@@ -2,12 +2,9 @@ import { useState } from 'react'
 import { isConfigured, useEmulators } from '../../data/firebase'
 import { signInAsTestUser, signInWithGoogle } from '../../data/auth'
 import { AsciiButton } from '../../ui/AsciiButton'
-import { DecodeText } from '../../ui/DecodeText'
 import { Hud } from '../../ui/Hud'
 import { Appear } from '../../ui/Appear'
 import styles from './Landing.module.css'
-
-const PILLARS = ['Ideas', 'Connections', 'Competitors', 'Comparison', 'Live together']
 
 export function Landing({ error }: { error?: string | null }) {
   const [signInError, setSignInError] = useState<string | null>(null)
@@ -15,17 +12,7 @@ export function Landing({ error }: { error?: string | null }) {
 
   return (
     <main className={styles.page}>
-      <Hud
-        right={
-          <span className={styles.pillars} aria-label="What it does">
-            {PILLARS.map((p) => (
-              <span key={p}>
-                <DecodeText text={p} duration={220} />
-              </span>
-            ))}
-          </span>
-        }
-      />
+      <Hud />
 
       <section className={styles.hero}>
         {/* Builds cell by cell every time the landing opens: on reload, and after signing out. */}
@@ -34,11 +21,6 @@ export function Landing({ error }: { error?: string | null }) {
         </Appear>
 
         <Appear className={styles.aside}>
-          <p className={styles.tagline}>
-            Ideation space for founders. Pin ideas, connect them, take competitors apart
-            feature by feature and see where the gaps are, together and live.
-          </p>
-
           {useEmulators ? (
             // Local emulators: fake Google users, so two "people" can be tested in two windows.
             <span className={styles.testUsers}>

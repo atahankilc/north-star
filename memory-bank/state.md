@@ -110,7 +110,7 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 1. Deploy rules + push (ask the user), their review on the live site; then Phase 3 (presence, live cursors)
 2. Phase 3: presence + live cursors (RTDB rules are ready)
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
-5. ~~Deploy~~ done 2026-10-17: live at https://atahankilic.github.io/mind-map/ (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
+5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 
 ## Blockers
 - None
