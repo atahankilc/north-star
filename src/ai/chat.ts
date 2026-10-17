@@ -15,6 +15,8 @@ const MAX_STEPS = 6
 
 export type ChatMessage = ChatTurn & {
   id: number
+  // What the chat shows instead of `content`: an analysis mode as typed (`/validate`), while the model gets its full ask (D-085).
+  shown?: string
   error?: string
   // Changes the assistant proposed in this answer (D-074), with the refs they were written against.
   proposal?: Proposal
@@ -50,7 +52,7 @@ type ChatState = {
   setOpen: (open: boolean) => void
   // Switching workspace starts a new conversation.
   enter: (wid: string) => void
-  send: (text: string, prepare: () => Prepared) => void
+  send: (text: string, prepare: () => Prepared, shown?: string) => void
   decide: (id: number, state: ProposalState) => void
   stop: () => void
   clear: () => void
@@ -70,7 +72,7 @@ export const useChat = create<ChatState>((set, get) => ({
     get().stop()
     set({ wid, messages: [] })
   },
-  send: (text, prepare) => {
+  send: (text, prepare, shown) => {
     const settings = useAiSettings.getState()
     const { apiKey, web } = settings
     const model = modelFor(settings)
@@ -87,7 +89,7 @@ export const useChat = create<ChatState>((set, get) => ({
     const { instructions, refs, source, ws } = prepare()
     if (source === 'own' && !apiKey) return
     const reply: ChatMessage = { id: nextId++, role: 'assistant', content: '', refs }
-    set((s) => ({ busy: true, messages: [...s.messages, { id: nextId++, role: 'user', content }, reply] }))
+    set((s) => ({ busy: true, messages: [...s.messages, { id: nextId++, role: 'user', content, shown }, reply] }))
 
     const update = (patch: Partial<ChatMessage>) =>
       set((s) => ({ messages: s.messages.map((m) => (m.id === reply.id ? { ...m, ...patch } : m)) }))

@@ -1,0 +1,95 @@
+// Analysis modes (D-085): ready-made asks for the assistant, started from the empty chat or by typing `/` in it.
+// A mode is only a well-written message: the chat shows what you typed (`/validate`), the model gets the full ask.
+// Modes that work on one item take the card selected on the board when it's the right type, or the text after the
+// command, or else let the model pick the item that needs it most.
+import type { NodeType } from '../data/model'
+
+export type Mode = {
+  id: string
+  label: string
+  hint: string
+  // The kind of item it works on, if any.
+  target?: Extract<NodeType, 'idea' | 'customer' | 'competitor'>
+  ask: (about: string | null) => string
+}
+
+// Mode asks are written in English; the answer should still follow the user's language.
+const LANGUAGE = "Answer in the language of my other messages in this chat, or English if there aren't any."
+
+export const MODES: Mode[] = [
+  {
+    id: 'validate',
+    label: 'validate an idea',
+    hint: 'assumptions, the riskiest one, tests to run this week',
+    target: 'idea',
+    ask: (about) =>
+      `Validate ${about ?? 'the idea that most needs it (say which and why)'}. Read it in full first, with its problem and customers. ` +
+      'List the assumptions it rests on: who the customer is, that the problem hurts enough, that our answer works for them, that ' +
+      "they'd pay, that we can reach them. For each, say how far the workspace backs it. Name the riskiest one and why. For the three " +
+      'riskiest, suggest a cheap test we could run this week and the result that would prove us wrong. Then propose adding them under ' +
+      `"Assumptions & tests" at the end of the idea's notes, keeping what's there. ${LANGUAGE}`,
+  },
+  {
+    id: 'interview',
+    label: 'interview questions',
+    hint: 'what to ask a customer, and what to listen for',
+    target: 'customer',
+    ask: (about) =>
+      `Write customer interview questions for ${about ?? 'the customer we know least about (say which)'}. Read the customer and the ` +
+      'problems linked to them first. 8 to 10 open questions about what they have done, not opinions about our idea (never "would ' +
+      'you use…"), grouped: how they work today, the problem and what it costs them, what they have tried (name competitors from ' +
+      `the workspace where they fit), who decides and who pays. Under each group, say what to listen for. Don't propose changes. ${LANGUAGE}`,
+  },
+  {
+    id: 'swot',
+    label: 'competitor SWOT',
+    hint: 'their strengths and weaknesses, our openings and threats',
+    target: 'competitor',
+    ask: (about) =>
+      `Do a SWOT of ${about ?? 'our most dangerous competitor (say which and why)'} against us. Read it in full first, with its ` +
+      'features and matrix cells. Strengths and weaknesses are theirs; opportunities and threats are ours. Ground each point in the ' +
+      'workspace (name the features and matrix cells), and say where we would need research. End with the one move it suggests for ' +
+      `us. Then propose adding a short SWOT at the end of the competitor's notes, keeping what's there. ${LANGUAGE}`,
+  },
+  {
+    id: 'gaps',
+    label: 'find gaps',
+    hint: "what's missing or not linked yet",
+    ask: () =>
+      'Find the gaps in this workspace: problems with no idea, ideas that solve no problem, items for no customer, our features ' +
+      'not compared with any competitor, competitors with no features broken down, matrix cells not assessed. Group them, most ' +
+      `important first. Propose only the links that are clearly right, and ask about the rest. ${LANGUAGE}`,
+  },
+  {
+    id: 'next',
+    label: 'what next',
+    hint: 'the three most valuable next steps',
+    ask: () =>
+      'What are the three most valuable things for us to do next, given this workspace? For each: what exactly, why now, and how ' +
+      `we would know it worked. Be specific to our items. Don't propose changes. ${LANGUAGE}`,
+  },
+  {
+    id: 'pitch',
+    label: 'one-page pitch',
+    hint: 'the startup on one page, from the board',
+    ask: () =>
+      "Write a one-page pitch for what we're building, from the workspace: the customer, the problem and what it costs them, our " +
+      'answer, why the options they have today fall short (name competitors), our edge, the first features, and the riskiest open ' +
+      `question. Short paragraphs, no headings. Don't propose changes. ${LANGUAGE}`,
+  },
+]
+
+// `/validate Rota photo import` → the mode and the text after it; null when the text isn't a mode.
+export function parseMode(text: string): { mode: Mode; rest: string } | null {
+  const m = /^\/([a-z]+)(?:\s+([\s\S]*))?$/i.exec(text.trim())
+  const mode = m && MODES.find((x) => x.id === m[1].toLowerCase())
+  return mode ? { mode, rest: (m[2] ?? '').trim() } : null
+}
+
+// What the mode works on: the text after the command, else the selected item if it's the right type.
+export function modeAbout(mode: Mode, rest: string, selected: { type: NodeType; name: string } | null): string | null {
+  if (!mode.target) return null
+  if (rest) return `the ${mode.target} "${rest}"`
+  if (selected?.type === mode.target) return `the ${mode.target} "${selected.name}" (selected on the board)`
+  return null
+}

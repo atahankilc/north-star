@@ -155,6 +155,8 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   (`propose_changes`, and `get_items` in `src/ai/readTools.ts`, which reads a few items in full) and sends the step's output
   items plus the `function_call_output`s back. Reasoning carries over as `reasoning.encrypted_content` (still `store: false`).
   The last call uses `tool_choice: none`, so every answer ends in words. Each call is its own usage-log entry.
+- **Analysis modes** (D-085): `/validate`, `/interview`, `/swot`, `/gaps`, `/next`, `/pitch` (`src/ai/modes.ts`) are canned
+  asks sent as a normal message (the chat shows the short form); one-item modes use the selected card when it fits.
 - **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the
   user's account). Cited sources are shown as clickable links.
 - Prompts live in `src/ai/prompts/`.

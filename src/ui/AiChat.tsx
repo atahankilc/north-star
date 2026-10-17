@@ -10,8 +10,10 @@ import { useChat, type Step } from '../ai/chat'
 import { workspaceBrief } from '../ai/context'
 import { useKeySource } from '../ai/keySource'
 import { chatInstructions } from '../ai/prompts/chat'
+import { MODES, modeAbout, parseMode, type Mode } from '../ai/modes'
 import { modelFor, useAiSettings } from '../ai/settings'
 import type { KeySource } from '../data/ai'
+import type { NodeType } from '../data/model'
 import { workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
 import { useMotion } from '../state/motion'
@@ -67,11 +69,7 @@ function useSidePanel() {
   return side
 }
 
-const STARTERS = [
-  'Summarize this workspace',
-  'Which problems have no idea yet?',
-  'Fill in the matrix notes you can',
-]
+const STARTER = 'Summarize this workspace'
 
 export function AiChat() {
   const { wid } = useWs()
@@ -254,6 +252,10 @@ function Conversation({ source }: { source: KeySource }) {
   const setWeb = useAiSettings((s) => s.setWeb)
   const path = useLocation().pathname
   const [draft, setDraft] = useState('')
+  // The `/` menu of analysis modes (D-085): open while the draft is a bare `/word`, until Escape.
+  const [pick, setPick] = useState(0)
+  const [menuOff, setMenuOff] = useState(false)
+  const modes = !menuOff && /^\/[a-z]*$/i.test(draft) ? MODES.filter((m) => m.id.startsWith(draft.slice(1).toLowerCase())) : []
   const input = useRef<HTMLTextAreaElement>(null)
   const log = useRef<HTMLOListElement>(null)
   const stick = useRef(true)
@@ -274,15 +276,47 @@ function Conversation({ source }: { source: KeySource }) {
     el.style.height = `${Math.min(el.scrollHeight, 132)}px`
   }, [draft])
 
+  // The card selected on the board (or in Flow / Table), for modes that work on one item.
+  const selectedItem = (): { type: NodeType; name: string } | null => {
+    const id = useCanvas.getState().selectedId
+    if (!id) return null
+    const lists = [['customer', ws.customers], ['problem', ws.problems], ['idea', ws.ideas], ['feature', ws.features]] as const
+    for (const [type, list] of lists) {
+      const n = list.find((x) => x.id === id)
+      if (n) return { type, name: n.title || 'Untitled' }
+    }
+    const c = ws.competitors.find((x) => x.id === id)
+    return c ? { type: 'competitor', name: c.name || 'Untitled' } : null
+  }
+
+  const edit = (text: string) => {
+    setDraft(text)
+    setPick(0)
+    setMenuOff(false)
+  }
+
+  const choose = (m: Mode) => {
+    edit(`/${m.id} `)
+    input.current?.focus()
+  }
+
   const ask = (text: string) => {
     if (!text.trim() || busy) return
+    const mode = parseMode(text)
     const view = path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
     // Built when sent, so it sees the board as it is now.
-    send(text, () => {
+    const prepare = () => {
       const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })
       return { instructions: chatInstructions(brief.text, ws.workspace.name, useAiSettings.getState().web), refs: brief.refs, source, ws }
-    })
-    setDraft('')
+    }
+    if (mode) {
+      const sel = selectedItem()
+      // Shows which card a mode ran on when it took the selection.
+      const on = mode.mode.target && !mode.rest && sel?.type === mode.mode.target ? ` · ${sel.name}` : ''
+      send(mode.mode.ask(modeAbout(mode.mode, mode.rest, sel)), prepare, `${text.trim()}${on}`)
+    }
+    else send(text, prepare)
+    edit('')
     stick.current = true
   }
 
@@ -292,6 +326,24 @@ function Conversation({ source }: { source: KeySource }) {
   }
 
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (modes.length) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        setPick((p) => (p + (e.key === 'ArrowDown' ? 1 : modes.length - 1)) % modes.length)
+        return
+      }
+      if ((e.key === 'Enter' && !e.shiftKey) || e.key === 'Tab') {
+        e.preventDefault()
+        choose(modes[Math.min(pick, modes.length - 1)])
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        setMenuOff(true)
+        return
+      }
+    }
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       ask(draft)
@@ -315,12 +367,16 @@ function Conversation({ source }: { source: KeySource }) {
           <li className={styles.empty}>
             <p className={styles.lead}>Ask about this workspace: what's missing, what to build next, how you compare.</p>
             <div className={styles.starters}>
-              {STARTERS.map((s) => (
-                <button key={s} className={styles.starter} onClick={() => ask(s)}>
-                  {s}
+              <button className={styles.starter} onClick={() => ask(STARTER)}>
+                {STARTER}
+              </button>
+              {MODES.map((m) => (
+                <button key={m.id} className={styles.starter} onClick={() => ask(`/${m.id}`)} title={m.hint}>
+                  <span className={styles.modeId}>/{m.id}</span> {m.label}
                 </button>
               ))}
             </div>
+            <p className={styles.fine}>Type / in the box for these any time. On a selected card, they work on that card.</p>
           </li>
         )}
         {messages.map((m) => (
@@ -328,8 +384,8 @@ function Conversation({ source }: { source: KeySource }) {
             <span className={styles.who}>{m.role === 'user' ? 'you' : 'ai'}</span>
             <span className={styles.text}>
               {m.role === 'assistant' && <Steps steps={m.steps ?? []} thinking={!!m.thinking && busy && m === last} />}
-              {m.role === 'assistant' ? <Linked text={m.content} /> : m.content}
-              {m.role === 'assistant' && busy && m === last && <span className={styles.caret} aria-hidden />}
+              {m.role === 'assistant' ? <Linked text={m.content} /> : (m.shown ?? m.content)}
+              {m.role === 'assistant' && busy && m === last && writing(m) && <span className={styles.caret} aria-hidden />}
               {m.citations && m.citations.length > 0 && (
                 <span className={styles.sources}>
                   <span className={styles.changeKind}>sources</span>
@@ -347,6 +403,7 @@ function Conversation({ source }: { source: KeySource }) {
         ))}
       </ol>
       <form className={styles.composer} onSubmit={submit}>
+        {modes.length > 0 && <ModeMenu modes={modes} pick={Math.min(pick, modes.length - 1)} selected={selectedItem()} onChoose={choose} />}
         <textarea
           ref={input}
           className={styles.input}
@@ -354,7 +411,7 @@ function Conversation({ source }: { source: KeySource }) {
           placeholder="Ask anything…"
           aria-label="Message the assistant"
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => edit(e.target.value)}
           onKeyDown={onKey}
         />
         <span className={styles.composerBar}>
@@ -409,6 +466,9 @@ function Linked({ text }: { text: string }) {
 // partly worked gets a yellow `!`. `thinking` is the gap while a step has nothing to show yet.
 const FRAMES = '▖▘▝▗'
 
+// The caret only follows text as it streams; while it thinks or works a step, the steps say so.
+const writing = (m: { thinking?: boolean; steps?: Step[] }) => !m.thinking && !m.steps?.some((s) => s.state === 'running')
+
 function Steps({ steps, thinking }: { steps: Step[]; thinking: boolean }) {
   if (!steps.length && !thinking) return null
   return (
@@ -441,5 +501,30 @@ function Spinner() {
     <span className={styles.stepMark} aria-hidden>
       {FRAMES[i]}
     </span>
+  )
+}
+
+// The `/` menu (D-085): modes matching what's typed; a mode that works on one item names the selected card when it fits.
+function ModeMenu({ modes, pick, selected, onChoose }: { modes: Mode[]; pick: number; selected: { type: NodeType; name: string } | null; onChoose: (m: Mode) => void }) {
+  return (
+    <ul className={styles.modes} role="listbox" aria-label="Analysis modes">
+      {modes.map((m, i) => (
+        <li
+          key={m.id}
+          role="option"
+          aria-selected={i === pick}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            onChoose(m)
+          }}
+        >
+          <span className={styles.modeId}>/{m.id}</span>
+          <span className={styles.modeText}>
+            {m.label}
+            <span className={styles.modeHint}>{m.target && selected?.type === m.target ? `on ${selected.name}` : m.hint}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }

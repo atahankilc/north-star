@@ -675,3 +675,21 @@ board layout, shared chats), because every later tool needs it.
 - Verified on emulators with a fake OpenAI (headless Chrome): get_items with a bad ref → a proposal with a bad link →
   the report → a corrected proposal → text; a model that never stops calling tools is cut at 6 with `none` on the last.
   Not yet tried against the real API, in particular sending back `web_search_call` items with `store: false`.
+
+### D-085 · 2026-10-17 · Accepted
+**Analysis modes in the chat: ready-made asks, from the empty chat or by typing `/`.** User's pick over buttons in the side
+panels (D-073: no per-panel AI menus) and D-053 (no new board controls).
+- *Modes* (`src/ai/modes.ts`): `/validate` (an idea's assumptions, the riskiest, tests to run this week; proposes them into the
+  idea's notes), `/interview` (open questions about a customer's past behaviour, what to listen for), `/swot` (a competitor
+  against us, grounded in features and matrix; proposes a short SWOT into its notes), `/gaps` (what's missing or unlinked;
+  proposes only the clearly right links), `/next` (three next steps), `/pitch` (a one-page pitch). A mode is just a
+  well-written message: the chat shows what you typed (`/validate · <card>`), the model gets the full ask.
+- *Which item:* the text after the command, else the card selected on the board (or in Flow / Table) when it's the mode's
+  type, else the model picks the one that needs it most and says which. The `/` menu shows `on <card>` when it will use the selection.
+- *Language:* the asks are English and tell the model to answer in the language of the user's other messages.
+- *UI:* the empty chat lists `Summarize this workspace` and the six modes (they replaced the old starters). Typing `/word`
+  opens a menu above the text: ↑↓ to move, Enter or Tab fills `/mode `, Enter again sends, Escape closes the menu only.
+- Also (D-084 follow-up, user): the blinking caret shows only while text streams, not while thinking or during a step.
+- Verified on emulators with a fake OpenAI (headless Chrome): empty-state list, `/va` → menu with the selected idea, Enter
+  fills, Enter sends the full ask naming the selected idea, the chat shows `/validate · <idea>`, Escape closes only the menu.
+

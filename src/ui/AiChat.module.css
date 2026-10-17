@@ -306,6 +306,50 @@ html[data-motion='reduced'] .caret {
   font-size: var(--text-xs);
 }
 
+/* Analysis modes (D-085): the command in cyan, in the empty chat and in the `/` menu above the text. */
+.modeId {
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+}
+
+.modes {
+  display: flex;
+  flex-direction: column;
+  margin: 0 calc(-1 * var(--space-3)) var(--space-1);
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--line);
+  list-style: none;
+  font-size: var(--text-xs);
+}
+
+.modes li {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+}
+
+.modes li[aria-selected='true'] {
+  background: var(--wash-2);
+}
+
+.modes .modeId {
+  flex: none;
+  width: 10ch;
+}
+
+.modeText {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-2);
+  min-width: 0;
+  color: var(--fg-strong);
+}
+
+.modeHint {
+  color: var(--fg-faint);
+}
+
 /* One framed box: the text on top, web and send under it; the frame lights up while you type. */
 .composer {
   display: flex;

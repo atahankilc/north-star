@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (assistant agent loop, D-084)_
+_Last updated: 2026-10-17 (assistant analysis modes, D-085)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -260,7 +260,9 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   same answer, last step `tool_choice: none`. Each answer lists its steps live (searched / read / proposed / thinking). Proxy whitelist passes `include` + `tool_choice` (not deployed). Verified on
   emulators with a fake OpenAI. **Not committed. To check with a real key:** a [web] answer that also calls a tool (are
   `web_search_call` items accepted back with store:false?).
-- Assistant roadmap discussed with the user (in order): agent loop (done) → analysis modes + label/layout proposals →
+- D-085: analysis modes (`/validate /interview /swot /gaps /next /pitch`) in the empty chat and a `/` menu; a mode uses the
+  selected card when it fits. Caret only while text streams. Verified on emulators with a fake OpenAI.
+- Assistant roadmap discussed with the user (in order): agent loop (done), analysis modes (done) → analysis modes + label/layout proposals →
   deep research mode → saved/shared chats and reports, reading attachments (after D-083).
 
 ## Next steps
