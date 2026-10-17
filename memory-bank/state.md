@@ -269,7 +269,7 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   and the preview's look later. Verified on emulators with a fake OpenAI.
 - D-088 (2026-10-18): deep research (`/research <topic>`): plan → pick questions → up to 3 web researchers at once → one report
   with sources, a proposal and `download report .md`. Verified on emulators with a fake OpenAI. **To try with a real key.**
-- D-085 to D-088 are committed (code; their memory-bank/docs entries sit uncommitted beside D-083's). Not pushed.
+- D-078 to D-088 committed and **pushed 2026-10-18** (live deploy green; deep links serve the app via 404.html).
 - Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research (all done) →
   saved/shared chats and reports, reading attachments (after D-083) → the user's own redesign of the assistant UI and the preview.
 
@@ -277,7 +277,7 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-083: images, SVGs and PDFs on every card and competitor (`src/data/attachments.ts`, `src/views/workspace/Attachments.tsx`):
   thumbnails + lightbox, file rows, attach button + drop on panel, progress, undoable remove, `N files` on the card, names in the
   assistant brief, export/import with files. `storage.rules` (new), `firestore.rules` (`attachments`), `cors.json`, storage emulator
-  on 9199. Hidden on the live site (`ATTACHMENTS_LIVE = false`). Rules: 165 pass. Build passes. Committed 2026-10-18 (`350243b`, not pushed).
+  on 9199. Hidden on the live site (`ATTACHMENTS_LIVE = false`). Rules: 165 pass. Build passes. Committed 2026-10-18 (`350243b`), pushed 2026-10-18 (still hidden on the live site).
   Firestore rules deployed 2026-10-18 (`--only firestore:rules`); storage.rules wait for Blaze.
 - Verified headless on emulators: an 18 MB 4000×3000 PNG became a 289 KB 2560×1920 WebP with a 320×240 thumbnail; PDF and SVG rows;
   `.exe` and an 11 MB PDF refused in plain words; lightbox opens the full image, Esc closes it (panel stays); SVG shown through `<img>`;
