@@ -15,6 +15,7 @@ import { FilterBar } from '../workspace/FilterBar'
 import { linkSummary, useSelectionScope } from '../workspace/graph'
 import { ForPicker } from '../workspace/ItemPickers'
 import { ItemTags } from '../workspace/ItemTags'
+import { RowPeers } from '../workspace/PeerMarks'
 import styles from './TableView.module.css'
 
 type SortKey = 'name' | 'tags' | 'for' | 'links' | 'pri' | 'status'
@@ -141,7 +142,7 @@ export function TableView() {
                     void updateNode(wid, item.type, item.id, (item.type === 'competitor' ? { name: v.trim() } : { title: v.trim() }) as never)
                   return (
                     <tr key={key} data-selected={selectedId === item.id}>
-                      <td>
+                      <td className={styles.typeCell}>
                         <button
                           className={styles.type}
                           style={{ ['--tone' as string]: TYPE_ACCENT[item.type] }}
@@ -150,6 +151,7 @@ export function TableView() {
                         >
                           {BOARD_KINDS[item.type].label}
                         </button>
+                        <RowPeers id={item.id} />
                       </td>
                       <td className={styles.nameCell}>
                         <AutosaveField className={styles.name} label="Name" placeholder="Untitled" value={item.title} onSave={setName} />

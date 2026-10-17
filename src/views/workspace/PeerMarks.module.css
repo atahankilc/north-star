@@ -1,0 +1,50 @@
+.tags {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The person's colour, like their cursor tag on the board. */
+.tag {
+  max-width: 10ch;
+  overflow: hidden;
+  padding: 0 var(--space-1);
+  background: var(--peer);
+  color: var(--on-accent, #000);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  letter-spacing: normal;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.more {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+}
+
+.cellRings {
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+}
+
+.cellTags {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 1;
+}

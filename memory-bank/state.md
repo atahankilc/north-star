@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (follow, typing indicator, multi-person selection, distinct colours, D-067; view tabs, settings gear, filters, D-066)_
+_Last updated: 2026-10-17 (others' selections in Flow, Table and Matrix, D-068)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -147,9 +147,16 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Verified with three headless Chromes on emulators (rings + names, `Bob ✎ title` outline in Carol's panel, distinct colours,
   Alice follows Bob to x=30 and into Table, Esc stops). Not committed.
 
+## Done (selections in every view, 2026-10-17)
+- D-068: Flow rings + names, Table colour bar + names, Matrix cell rings + names (cell selection broadcast), header tags for selected
+  features/competitors. Verified with three headless Chromes on emulators. Light-mode prep: tags use `var(--on-accent, #000)`, washes use
+  `--wash-*` tokens with the old values as fallbacks (tokens come with light mode, D-069, other session). Committed and pushed.
+- Known dev-only console warning: drei `<Html>` (cursor tags, card name tags) logs "synchronously unmount a root" when the board unmounts
+  while one is shown. Harmless.
+
 ## Next steps
 1. The user's review of presence/follow/typing; commit + push
-2. Phase 3 rest: typing indicators in Table cells; maybe show peers' viewports
+2. Phase 3 rest: typing indicators in Table cells; maybe show peers' viewports; theme-aware peer colours (`themeAccent`, D-069)
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 

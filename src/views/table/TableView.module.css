@@ -88,7 +88,7 @@ th[aria-sort] .sort {
 }
 
 tr[data-selected='true'] td {
-  background: rgba(45, 226, 230, 0.06);
+  background: var(--wash-cyan, rgba(45, 226, 230, 0.06));
 }
 
 .type {
@@ -206,4 +206,14 @@ tr[data-selected='true'] .type::after {
 .empty {
   margin: auto;
   color: var(--fg-dim);
+}
+
+/* Holds the colour bar and names of whoever else has this row open (D-068). */
+.typeCell {
+  position: relative;
+  white-space: nowrap;
+}
+
+.typeCell > span:last-child {
+  margin-left: var(--space-2);
 }

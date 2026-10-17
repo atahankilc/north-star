@@ -121,7 +121,7 @@ tr[data-selected='true'] .feature::before {
 }
 
 .cellTd[data-col-selected='true'] {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--wash-1, rgba(255, 255, 255, 0.025));
 }
 
 .cell {
@@ -143,7 +143,7 @@ tr[data-selected='true'] .feature::before {
 }
 
 .cell:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--wash-2, rgba(255, 255, 255, 0.04));
 }
 
 /* `[●]` brackets around the selected cell. */
@@ -166,7 +166,7 @@ tr[data-selected='true'] .feature::before {
 }
 
 .cell:focus-visible {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--wash-2, rgba(255, 255, 255, 0.06));
 }
 
 .glyph {
@@ -358,4 +358,11 @@ tr[data-selected='true'] .feature::before {
   .hints {
     display: none;
   }
+}
+
+/* Who has a competitor open, under its name (D-068). */
+.headPeers {
+  display: flex;
+  justify-content: center;
+  margin-top: 2px;
 }

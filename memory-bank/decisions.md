@@ -397,3 +397,12 @@ under reduced motion). Frames stay reserved for controls that change what you se
 - *No cursor trail:* tried, the user found it ugly.
 Rules: `edit`, `field`, `since` validated; 118 rule tests pass.
 
+### D-068 · 2026-10-17 · Accepted (extends D-065, D-067)
+**Selections show in every view, not only on the board.** User request: see who has clicked which item; edits in progress need not show there.
+- *Flow:* a ring per person around the item's chip, names beside it.
+- *Table:* a bar in each person's colour down the row's left edge, names after the type.
+- *Matrix:* the matrix selects cells, so a selected cell is now broadcast as `sel = <featureId>_<competitorId>` (leaving the matrix hands
+  back your item selection). Others see rings inside that cell plus the first name in its corner; someone on a feature or competitor
+  shows as a tag in its row or column header.
+- Shared code: `src/views/workspace/PeerMarks.tsx` (`usePeersOn`, `peerRings`, `PeerTags`, `RowPeers`, `CellPeers`). No rule change.
+

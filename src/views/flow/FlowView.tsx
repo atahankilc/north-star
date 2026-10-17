@@ -11,6 +11,7 @@ import { DetailPanel } from '../canvas/DetailPanel'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { useNeighbours, useSelectionScope } from '../workspace/graph'
+import { peerRings, PeerTags, usePeersOn } from '../workspace/PeerMarks'
 import styles from './FlowView.module.css'
 
 type Row = { key: string; cells: Record<BoardType, BoardItem[]>; loose?: boolean }
@@ -131,15 +132,19 @@ export function FlowView() {
 function Chip({ item }: { item: BoardItem }) {
   const selected = useCanvas((s) => s.selectedId === item.id)
   const select = useCanvas((s) => s.select)
+  const peers = usePeersOn(item.id)
   return (
-    <button
-      className={styles.chip}
-      data-selected={selected}
-      style={{ ['--tone' as string]: TYPE_ACCENT[item.type] }}
-      onClick={() => select(selected ? null : item.id)}
-      title={item.title || 'Untitled'}
-    >
-      {item.title || 'Untitled'}
-    </button>
+    <span className={styles.chipRow}>
+      <button
+        className={styles.chip}
+        data-selected={selected}
+        style={{ ['--tone' as string]: TYPE_ACCENT[item.type], boxShadow: peerRings(peers) }}
+        onClick={() => select(selected ? null : item.id)}
+        title={item.title || 'Untitled'}
+      >
+        {item.title || 'Untitled'}
+      </button>
+      <PeerTags peers={peers} />
+    </span>
   )
 }

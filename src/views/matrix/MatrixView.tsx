@@ -10,7 +10,10 @@ import { Appear } from '../../ui/Appear'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { Choice } from '../../ui/Choice'
 import { DecodeText } from '../../ui/DecodeText'
+import { setPresenceSelection } from '../../data/presence'
+import { useCanvas } from '../../state/canvasStore'
 import { useWs } from '../workspace/context'
+import { CellPeers, PeersOn } from '../workspace/PeerMarks'
 import styles from './MatrixView.module.css'
 
 // Not assessed → none → partial → full → better → not assessed.
@@ -56,6 +59,11 @@ export function MatrixView() {
   const cellAt = (r: number, c: number) => cells.get(cellId(rows[r].id, cols[c].id))
 
   const sel = selected && selected.row < rows.length && selected.col < cols.length ? selected : null
+
+  // Your selected cell is what others see you on here (D-068); leaving the matrix hands back the item selection.
+  const selCell = sel ? cellId(rows[sel.row].id, cols[sel.col].id) : null
+  useEffect(() => setPresenceSelection(selCell ?? useCanvas.getState().selectedId), [selCell])
+  useEffect(() => () => setPresenceSelection(useCanvas.getState().selectedId), [])
 
   const setCoverage = (pos: Pos, coverage: Coverage | undefined) =>
     void setCell(wid, rows[pos.row].id, cols[pos.col].id, { coverage })
@@ -124,6 +132,7 @@ export function MatrixView() {
                   <Link to={`/w/${wid}?n=${c.id}`} title={c.name}>
                     {c.name || 'Untitled'}
                   </Link>
+                  <PeersOn id={c.id} className={styles.headPeers} max={2} />
                 </th>
               ))}
               <th className={styles.verdictHead}>reading</th>
@@ -135,7 +144,7 @@ export function MatrixView() {
               return (
                 <tr key={f.id} data-selected={sel?.row === r}>
                   <th scope="row" className={styles.feature}>
-                    <Link to={`/w/${wid}?n=${f.id}`}>{f.title || 'Untitled'}</Link>
+                    <Link to={`/w/${wid}?n=${f.id}`}>{f.title || 'Untitled'}</Link> <PeersOn id={f.id} />
                   </th>
                   <td className={styles.meta}>{f.priority ?? ''}</td>
                   <td className={styles.meta}>{f.status ?? ''}</td>
@@ -155,6 +164,7 @@ export function MatrixView() {
                         >
                           <span className={styles.glyph}>{GLYPH[cov ?? 'unset']}</span>
                           {cell?.notes && <span className={styles.noted} aria-hidden />}
+                          <CellPeers id={cellId(f.id, c.id)} />
                         </button>
                       </td>
                     )

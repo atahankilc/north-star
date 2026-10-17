@@ -75,7 +75,7 @@
 /* "not linked yet": the leftovers, set apart. */
 .row[data-loose='true'] > .cell {
   border-top: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--wash-1, rgba(255, 255, 255, 0.015));
 }
 
 .row[data-loose='true'] > .cell[data-first='true']::after {
@@ -84,6 +84,15 @@
   font-size: var(--text-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+/* A chip and, beside it, who else has it open (D-068). */
+.chipRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  min-width: 0;
 }
 
 .chip {

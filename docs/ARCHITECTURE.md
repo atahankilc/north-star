@@ -119,7 +119,8 @@ RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, edit?, fie
 - **Ephemeral data** (cursors, selection, "is typing", viewport): Realtime Database at
   `presence/{wid}/{uid}`, removed automatically with `onDisconnect()`. Throttled to about 15–20 Hz and
   interpolated on the receiving side for smooth motion. Each tab writes its whole node, so a second tab survives
-  the first one's disconnect (D-065). Cursors are board world coordinates; other views report only which view you're on. RTDB writes are free (billed by bandwidth),
+  the first one's disconnect (D-065). Cursors are board world coordinates; other views report only which view you're on. `sel` is the selected item
+  (or a matrix cell, `<featureId>_<competitorId>`), shown in every view (D-068). RTDB writes are free (billed by bandwidth),
   and Spark allows 100 simultaneous connections.
 - RTDB rules can't read Firestore membership, so any signed-in user who knows a workspace ID could
   read its cursors (name, colour, coordinates only). The IDs are random. Accepted for now (D-016).
