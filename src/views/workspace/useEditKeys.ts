@@ -1,6 +1,7 @@
 // Workspace keyboard: ⌘Z / Ctrl+Z undo, ⇧⌘Z / Ctrl+Y redo, Delete or Backspace deletes the selected item (Q-013).
 // Text fields keep their own undo and Backspace.
 import { useEffect } from 'react'
+import { deleteGroup } from '../../data/groups'
 import { redo, undo, useHistory } from '../../data/history'
 import type { BoardType } from '../../data/model'
 import { deleteNode } from '../../data/nodes'
@@ -32,10 +33,13 @@ export function useEditKeys() {
         void redo()
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && !mod) {
         const id = useCanvas.getState().selectedId
-        const found = id && findItem(ws, id)
-        if (!found) return
+        if (!id) return
+        const group = ws.groups.find((g) => g.id === id)
+        const found = !group && findItem(ws, id)
+        if (!group && !found) return
         e.preventDefault()
-        removeItem(wid, found.type, id, found.title)
+        if (group) removeGroup(wid, id, group.name)
+        else if (found) removeItem(wid, found.type, id, found.title)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -64,4 +68,12 @@ export function removeItem(wid: string, type: BoardType, id: string, title: stri
   void deleteNode(wid, type, id)
   const name = title.trim() ? ` "${title.trim()}"` : ''
   useHistory.getState().say(`Deleted ${BOARD_KINDS[type].label}${name} · ${UNDO_HINT} to undo`)
+}
+
+// Deletes a frame (not its cards) and says how to get it back.
+export function removeGroup(wid: string, id: string, name: string) {
+  useCanvas.getState().select(null)
+  void deleteGroup(wid, id)
+  const label = name.trim() ? ` "${name.trim()}"` : ''
+  useHistory.getState().say(`Deleted group${label} · ${UNDO_HINT} to undo`)
 }

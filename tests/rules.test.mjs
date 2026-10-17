@@ -135,6 +135,10 @@ await allow('competitor placed on the board', () => updateDoc(compRef, { x: 2, y
 await deny('competitor with a text position', () => updateDoc(compRef, { x: 'left' }))
 await allow('edge tagging an idea for a customer', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'c', toType: 'customer', kind: 'for' }))
 await allow('edge from an idea to a problem', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'p', toType: 'problem', kind: 'solves' }))
+// Groups: frames on the board (D-047).
+await allow('group frame', () => addDoc(sub(bob.fs, 'groups'), { name: 'Pricing', x: 0, y: 0, w: 6, h: 4, domainId: 'd1', createdAt: 1, updatedAt: 1 }))
+await deny('group without a size', () => addDoc(sub(bob.fs, 'groups'), { name: 'Pricing', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('group with a negative width', () => addDoc(sub(bob.fs, 'groups'), { name: 'x', x: 0, y: 0, w: -1, h: 4, createdAt: 1, updatedAt: 1 }))
 await deny('member promotes self to owner', () => join(bob, { [`roles.${bob.uid}`]: 'owner' }))
 await deny('member takes ownership', () => join(bob, { ownerId: bob.uid }))
 await deny('member adds someone else', () => join(bob, { memberIds: arrayUnion(carol.uid) }))

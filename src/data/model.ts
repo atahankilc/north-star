@@ -78,7 +78,18 @@ export type Idea = BoardNode &
     groupIds?: string[]
   }
 
-export type Group = { name: string; color?: string }
+// A labelled frame on the board (Q-012, D-047). Membership is spatial: whatever sits inside moves with it.
+export type Group = InOneDomain & {
+  name: string
+  color?: string
+  // Centre and size, in board units.
+  x: number
+  y: number
+  w: number
+  h: number
+  createdAt: number
+  updatedAt: number
+}
 
 export const FEATURE_PRIORITIES = ['P1', 'P2', 'P3'] as const
 export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped'] as const

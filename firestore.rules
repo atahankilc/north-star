@@ -78,6 +78,15 @@ service cloud.firestore {
         && validDomainRefs(d);
     }
 
+    // A labelled frame on the board (D-047).
+    function validGroup(d) {
+      return isText(d.name, 200)
+        && optText(d, 'color', 20)
+        && d.x is number && d.y is number
+        && d.w is number && d.h is number && d.w > 0 && d.h > 0
+        && validDomainRefs(d);
+    }
+
     function validCompetitorFeature(d) {
       return isText(d.competitorId, 128)
         && isText(d.name, 200)
@@ -113,7 +122,7 @@ service cloud.firestore {
         || (collection == 'competitorFeatures' && validCompetitorFeature(d))
         || (collection == 'comparisons' && validComparison(id, d))
         || (collection == 'edges' && validEdge(d))
-        || (collection == 'groups' && isText(d.name, 200));
+        || (collection == 'groups' && validGroup(d));
     }
 
     match /workspaces/{wid} {

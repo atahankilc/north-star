@@ -82,7 +82,7 @@ workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role
   customers/{id}        title, body, color, tags[], x, y, domainIds[]             (D-042, D-044)
   problems/{id}         title, body, color, tags[], x, y, domainId                (D-041)
   ideas/{id}            title, body, color, tags[], status, groupIds[], x, y, z, domainId
-  groups/{id}           name, color
+  groups/{id}           name, color, x, y, w, h, domainId                         (frames on the board, D-047)
   features/{id}         title, body, color, tags[], x, y, priority, status, effort, domainIds[]   (same card fields as ideas, D-037)
   competitors/{id}      name, url, description, pricing, audience, notes, color, x, y, domainIds[]
   competitorFeatures/{id}  competitorId, name, description, category
@@ -95,6 +95,7 @@ RTDB: presence/{wid}/{uid}   name, color, view, x, y, ts
 - Entities are **subcollections of their workspace**, so one rule covers them: the caller must be in `memberIds`.
 - `edges` is one generic edge collection, so any node type can connect to any other.
   Tagging an item with a customer is an edge with `kind: 'for'` (item → customer), drawn as a card label (D-044).
+- Undo/redo: every write in `src/data/` goes through `tracked()` in `history.ts`, which snapshots the touched documents (D-046).
 - Missing `domainId` / empty `domainIds` = unsorted. Deleting a domain clears it from its items (`src/data/domains.ts`).
 - Rules allow only these collections and check each one's basic shape (`firestore.rules`, mirrors `model.ts`).
 - The workspace route loads every collection once (`src/data/workspaceData.ts`); all views share it (D-036).

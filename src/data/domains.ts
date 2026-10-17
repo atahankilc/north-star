@@ -18,7 +18,7 @@ export function renameDomain(wid: string, id: string, name: string) {
   return tracked('rename domain', [ref], () => updateDoc(ref, { name }))
 }
 
-const SINGLE = ['problems', 'ideas']
+const SINGLE = ['problems', 'ideas', 'groups']
 const MULTI = ['customers', 'competitors', 'features']
 const BATCH_LIMIT = 450
 

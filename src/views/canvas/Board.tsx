@@ -6,12 +6,14 @@ import { MOUSE, TOUCH } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
-import { FOR, type Edge } from '../../data/model'
+import type { Passenger } from '../../data/groups'
+import { FOR, type Edge, type Group } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { ALL, useWsView } from '../../state/workspaceView'
 import { colors } from '../../styles/tokens'
 import { defaultKind, type BoardItem } from './boardKinds'
 import { EdgeLine } from './EdgeLine'
+import { GroupFrame } from './GroupFrame'
 import { boardPoint, NodeCard } from './NodeCard'
 
 type Props = {
@@ -19,6 +21,8 @@ type Props = {
   // Visible items only (domain tab and filters applied).
   nodes: BoardItem[]
   edges: WithId<Edge>[]
+  // Frames behind the cards (D-047), already filtered by domain.
+  groups: WithId<Group>[]
   // Double-click on empty board.
   onCreate: (at: [number, number]) => void
   // Look here first instead of where this board was last left (e.g. a link jumped to a card).
@@ -67,7 +71,7 @@ function Controls({ domElement }: { domElement: HTMLElement }) {
   )
 }
 
-function Scene({ wid, nodes, edges, onCreate, focus }: Props) {
+function Scene({ wid, nodes, edges, groups, onCreate, focus }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const selectedId = useCanvas((s) => s.selectedId)
@@ -127,6 +131,21 @@ function Scene({ wid, nodes, edges, onCreate, focus }: Props) {
   )
 
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
+
+  // Bigger frames sit behind smaller ones.
+  const frames = useMemo(() => [...groups].sort((a, b) => b.w * b.h - a.w * a.h), [groups])
+
+  // A frame carries the cards whose centre is inside it, and the frames that fit inside it.
+  const passengersOf = (g: WithId<Group>): Passenger[] => {
+    const inside = (x: number, y: number) => Math.abs(x - g.x) <= g.w / 2 && Math.abs(y - g.y) <= g.h / 2
+    return [
+      { type: 'group', id: g.id, from: [g.x, g.y] },
+      ...groups
+        .filter((o) => o.id !== g.id && inside(o.x - o.w / 2, o.y - o.h / 2) && inside(o.x + o.w / 2, o.y + o.h / 2) && o.w * o.h < g.w * g.h)
+        .map((o): Passenger => ({ type: 'group', id: o.id, from: [o.x, o.y] })),
+      ...nodes.filter((n) => inside(n.x, n.y)).map((n): Passenger => ({ type: n.type, id: n.id, from: [n.x, n.y] })),
+    ]
+  }
   const selected = selectedId ? byId.get(selectedId) : undefined
   // A selected customer lights up everything tagged for it (D-044).
   const customerId = selected?.type === 'customer' ? selected.id : null
@@ -166,6 +185,10 @@ function Scene({ wid, nodes, edges, onCreate, focus }: Props) {
         <planeGeometry args={[2000, 2000]} />
         <DotGridMaterial />
       </mesh>
+
+      {frames.map((g) => (
+        <GroupFrame key={g.id} wid={wid} group={g} passengersOf={passengersOf} />
+      ))}
 
       {edges.map((edge) => {
         const a = positions.get(edge.fromId)

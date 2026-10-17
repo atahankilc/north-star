@@ -1,7 +1,8 @@
 // /w/:wid: the main view (D-040). Every item type on one board, filtered by the domain tab and the filter bar.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { BOARD_TYPES, type BoardType } from '../../data/model'
+import { createGroup } from '../../data/groups'
 import { createBoardNode, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { ALL, useWsView } from '../../state/workspaceView'
@@ -17,7 +18,7 @@ import { DetailPanel } from './DetailPanel'
 import styles from './BoardView.module.css'
 
 export function BoardView() {
-  const { wid, edges, competitors, domains } = useWs()
+  const { wid, edges, competitors, domains, groups } = useWs()
   const all = useBoardItems()
   const nodes = useVisibleItems(all)
   const select = useCanvas((s) => s.select)
@@ -96,6 +97,21 @@ export function BoardView() {
     select(id)
   }
 
+  // Frames on this tab: the tab's own and those without a domain.
+  const frames = useMemo(
+    () => groups.filter((g) => domain === ALL || !g.domainId || g.domainId === domain || !domains.some((d) => d.id === domain)),
+    [groups, domain, domains],
+  )
+
+  // A new frame goes around the selected card, or in the middle of the view.
+  const addGroup = async () => {
+    const sel = all.find((i) => i.id === useCanvas.getState().selectedId)
+    const [x, y] = sel ? [sel.x + 1.4, sel.y - 0.6] : useCanvas.getState().viewCenter()
+    const d = domain !== ALL && domains.some((x) => x.id === domain) ? domain : undefined
+    const id = await createGroup(wid, { name: '', x, y, w: 6.2, h: 3.4, ...(d && { domainId: d }) })
+    select(id)
+  }
+
   const add = (type: BoardType) => {
     useWsView.getState().setLastType(type)
     // Clear of every card, including ones this tab hides, so switching tabs never shows a pile-up.
@@ -104,7 +120,7 @@ export function BoardView() {
 
   return (
     <main className={styles.page}>
-      <Board wid={wid} nodes={nodes} edges={edges} focus={focus} onCreate={(at) => void create(lastType, at)} />
+      <Board wid={wid} nodes={nodes} edges={edges} groups={frames} focus={focus} onCreate={(at) => void create(lastType, at)} />
 
       <FilterBar />
 
@@ -115,6 +131,9 @@ export function BoardView() {
               {BOARD_KINDS[t].addLabel}
             </AsciiButton>
           ))}
+          <AsciiButton accent="blue" onClick={() => void addGroup()}>
+            + Group
+          </AsciiButton>
         </span>
         <span className={styles.hints}>
           double-click: new {BOARD_KINDS[lastType].label} · drag: move · shift+drag: link · drag board: pan · scroll: zoom

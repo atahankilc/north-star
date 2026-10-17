@@ -236,3 +236,11 @@ Local to the tab and workspace (cleared on switching), last write wins against c
 Keys: ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y, Delete or Backspace on the selected item; text fields keep their own undo. A toast says what happened.
 Deletes are one click now (they're undoable); domain delete keeps its `delete?` step.
 Tracked writes are serialised but never wait for the server (Firestore applies writes locally in call order), so editing works offline.
+
+### D-047 · 2026-10-17 · Accepted (answers Q-012)
+**Groups are labelled frames on the board** (`groups/{id}`: name, color, x, y, w, h, domainId; `src/views/canvas/GroupFrame.tsx`).
+Membership is spatial: dragging the label moves the frame plus every card whose centre is inside it and every smaller frame that fits inside,
+as one undo step. The bottom-right corner resizes (top-left stays put). The fill has no handlers, so panning and double-click-to-create
+work inside a frame. Clicking the label opens the group panel (name, domain, colour, delete); deleting a group leaves its cards.
+A group shows on its domain's tab and on `all`; without a domain it shows everywhere. `+ Group` frames the selected card or the view centre.
+The old `groupIds` field on ideas is unused. Table and Flow ignore groups for now.

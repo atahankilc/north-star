@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (Phase 2b done)_
+_Last updated: 2026-10-17 (undo + groups)_
 
 ## Phase
 **Phase 2b: domains, customers, problems and one board** (spec: docs/specs/domains.md, D-039 to D-045).
@@ -76,8 +76,13 @@ All four build steps done (Board, Table, Flow, Matrix by domain). Phase 1 leftov
 - Undo/redo + Delete key + toast (D-046). Verified on emulators: edit undo/redo, Delete-key cascade delete restored
   (competitor + its feature + matrix cell + link), create undone, a drag undone in one step.
 
+## Done (groups, 2026-10-17)
+- Groups as frames on the board (D-047): `+ Group`, drag label to move with contents (one undo step), corner resize, group panel,
+  Delete key, domain-aware. Rules + 3 tests (69 pass), **not deployed yet**. Verified on emulators (move with members, outside card
+  untouched, undo, double-click inside creates a card, resize, delete keeps cards).
+
 ## Next steps
-1. Groups / clusters (Q-012): user said go, recommendation A (labelled frame that moves its cards)
+1. Push + deploy rules for undo and groups (ask the user)
 2. Phase 3: presence + live cursors (RTDB rules are ready)
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilic.github.io/mind-map/ (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.

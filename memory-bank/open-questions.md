@@ -20,7 +20,3 @@ Recommendation: LWW for the MVP.
 ### Q-009 · soon: Storage limits for attachments
 Blocked on D-015 (Storage needs Blaze). If Blaze: 5 GB free. What per-file cap (for example 10 MB)?
 Should images be compressed client-side?
-
-### Q-012 · soon: How should groups/clusters work?
-Option A: a group is a labelled frame you drag cards into (spatial). Option B: tag-based (all cards with a tag form a group).
-Recommendation: A, a frame on the board that moves its cards with it, since it matches the post-it mental model.

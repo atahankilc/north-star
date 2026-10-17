@@ -25,7 +25,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position, domain |
 | **Idea** (post-it) | A thought, problem, insight or feature idea | title, body, color, tags, position (x,y,z), status, attachments |
 | **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label |
-| **Group** | Cluster of ideas on the canvas | name, color, members |
+| **Group** | A labelled frame on the board; what's inside moves with it (D-047) | name, color, position, size, domain |
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, linked ideas |
 | **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor |
