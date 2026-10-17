@@ -280,7 +280,7 @@ function Conversation({ source }: { source: KeySource }) {
     // Built when sent, so it sees the board as it is now.
     send(text, () => {
       const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })
-      return { instructions: chatInstructions(brief.text, ws.workspace.name, useAiSettings.getState().web), refs: brief.refs, source }
+      return { instructions: chatInstructions(brief.text, ws.workspace.name, useAiSettings.getState().web), refs: brief.refs, source, ws }
     })
     setDraft('')
     stick.current = true
@@ -332,6 +332,7 @@ function Conversation({ source }: { source: KeySource }) {
                   {m.searching ? 'searching the web…' : `searched: ${m.queries!.join(' · ')}`}
                 </span>
               )}
+              {m.read && m.read.length > 0 && <span className={styles.searched}>read: {m.read.join(' · ')}</span>}
               {m.role === 'assistant' ? <Linked text={m.content} /> : m.content}
               {m.role === 'assistant' && busy && m === last && <span className={styles.caret} aria-hidden />}
               {m.citations && m.citations.length > 0 && (

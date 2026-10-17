@@ -522,3 +522,17 @@ export function proposalForHistory(p: Proposal, state: ProposalState): string {
 }
 
 export type ProposalState = { status: 'pending' | 'discarded' | 'applied'; applied?: number; rows?: number[] }
+
+// What the model hears back after proposing (D-084): the rows that can't be applied, so it can fix them in the same answer.
+export function proposalReport(p: Proposal): string {
+  const bad = p.changes.filter((c) => c.problem)
+  const shown = `Shown to the user as a checklist of ${p.changes.length} change${p.changes.length === 1 ? '' : 's'}; they decide what to apply.`
+  if (!p.changes.length) return 'The proposal had no valid changes. Check the arguments and call it again, or answer in words.'
+  if (!bad.length) return `${shown} Don't list the changes again; finish with at most a sentence, or nothing.`
+  const rows = bad.map((c) => `- change ${c.n + 1} (${c.raw.op}: ${c.text}): ${c.problem}`).join('\n')
+  return (
+    `${shown} These rows can't be applied and are switched off:\n${rows}\n` +
+    `If you can fix them (copy refs exactly from the workspace), call ${PROPOSE} again with the whole corrected set: it replaces ` +
+    'this one. Otherwise finish with at most a sentence.'
+  )
+}

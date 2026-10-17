@@ -2,7 +2,7 @@
 // key through our server), measures what the call used (tokens, searches, tools, time) and logs own-key calls.
 // Workspace-key calls are logged by the server, so nobody can skip or fake them.
 import { logOwnUsage, workspaceKeyFetch, type AiUsage, type KeySource } from '../data/ai'
-import { directSend, streamReply, type StreamOptions, type Usage } from './openai'
+import { directSend, streamReply, type StepResult, type StreamOptions, type Usage } from './openai'
 
 export type CallOptions = Omit<StreamOptions, 'send' | 'direct' | 'onUsage'> & {
   wid: string
@@ -12,7 +12,8 @@ export type CallOptions = Omit<StreamOptions, 'send' | 'direct' | 'onUsage'> & {
   apiKey: string
 }
 
-export async function callAi({ wid, task, source, apiKey, ...stream }: CallOptions): Promise<void> {
+// One call to OpenAI, so one log entry; an agent answer (D-084) is several of these.
+export async function callAi({ wid, task, source, apiKey, ...stream }: CallOptions): Promise<StepResult> {
   const started = Date.now()
   let usage: Usage | null = null
   let webSearches = 0
@@ -20,7 +21,7 @@ export async function callAi({ wid, task, source, apiKey, ...stream }: CallOptio
   let status: AiUsage['status'] = 'failed'
 
   try {
-    await streamReply({
+    const result = await streamReply({
       ...stream,
       send: source === 'workspace' ? (body, signal) => workspaceKeyFetch(wid, task, body, signal) : directSend(apiKey),
       direct: source === 'own',
@@ -29,12 +30,10 @@ export async function callAi({ wid, task, source, apiKey, ...stream }: CallOptio
         if (e.status === 'done') webSearches++
         stream.onSearch?.(e)
       },
-      onToolCall: (name, args) => {
-        tools.add(name)
-        stream.onToolCall?.(name, args)
-      },
     })
+    for (const c of result.calls) tools.add(c.name)
     status = 'done'
+    return result
   } catch (e) {
     status = stream.signal.aborted ? 'stopped' : 'failed'
     throw e

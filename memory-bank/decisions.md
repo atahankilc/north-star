@@ -650,3 +650,24 @@ workspace's, and the startup's name only showed inside the brief's `WORKSPACE "�
   ≤1000 characters, `describeWorkspace` in `src/data/workspaces.ts`). Rules check it's text ≤1000 on create and on member edits
   (3 new tests, 145 pass; Firestore rules deployed 2026-10-17). The example workspace and import fill it; export already carried it.
 - Not done: a set of test questions run against the example on every prompt change, and a stronger default chat model.
+
+### D-084 · 2026-10-17 · Accepted (extends D-074)
+**The assistant works in steps: it can call a tool, see the result and go on.** Before, one request per answer, and a call
+to `propose_changes` ended it. The user's first pick from the assistant roadmap (agent loop before reports, research mode,
+board layout, shared chats), because every later tool needs it.
+- *Loop* (`src/ai/chat.ts`): up to 6 OpenAI calls per answer (`MAX_STEPS`). Function calls run in the browser; the step's
+  output items (reasoning, text, calls, searches) and a `function_call_output` per call go back as input. Stateless still
+  (`store: false`): reasoning carries over through `include: ['reasoning.encrypted_content']`. The last step sends
+  `tool_choice: 'none'`, so an answer always ends in words. Text from several steps joins as paragraphs of one message.
+- *`get_items`* (`src/ai/readTools.ts`): up to 12 refs, each in full (fields up to 4000 characters, links both ways with
+  kinds, a competitor's features, matrix cells), read from the workspace as it was when the message was sent. The chat
+  shows `read: A · B`. The brief stays as it is; the prompt says to read only what it needs.
+- *Proposals check themselves:* `propose_changes` returns `proposalReport` (rows that can't be applied and why); the model
+  may call it again with the whole corrected set, which replaces the checklist.
+- *Cost and log:* each step is its own call and its own usage-log entry (the server logs workspace-key steps the same way).
+  The repeated instructions are cached by OpenAI after the first step.
+- *Server:* the `ai` proxy's whitelist passes `include` (only that value) and `tool_choice` (`auto | none`); not deployed
+  (D-079 waits for Blaze).
+- Verified on emulators with a fake OpenAI (headless Chrome): get_items with a bad ref → a proposal with a bad link →
+  the report → a corrected proposal → text; a model that never stops calling tools is cut at 6 with `none` on the last.
+  Not yet tried against the real API, in particular sending back `web_search_call` items with `store: false`.

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (assistant knows the startup, D-082)_
+_Last updated: 2026-10-17 (assistant agent loop, D-084)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -254,6 +254,14 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   `<workspace>` tags; Settings → workspace → building edits `workspace.description` (example and import fill it). Rules: 145 pass,
   Firestore rules deployed (database.rules.json left alone: another session's `edit`/`field` removal). Verified headless on
   emulators with OpenAI mocked (field shows the example text; an edit reaches the next request's instructions). Committed and pushed 2026-10-17.
+
+## Done (assistant agent loop, 2026-10-17)
+- D-084: up to 6 steps per answer, `get_items` (read items in full), proposals report bad rows back and can be redone in the
+  same answer, last step `tool_choice: none`. Proxy whitelist passes `include` + `tool_choice` (not deployed). Verified on
+  emulators with a fake OpenAI. **Not committed. To check with a real key:** a [web] answer that also calls a tool (are
+  `web_search_call` items accepted back with store:false?).
+- Assistant roadmap discussed with the user (in order): agent loop (done) → analysis modes + label/layout proposals →
+  deep research mode → saved/shared chats and reports, reading attachments (after D-083).
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs

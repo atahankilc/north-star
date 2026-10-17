@@ -151,6 +151,10 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 - **Changes** (D-074): one strict function tool, `propose_changes` (`src/ai/tools.ts`). The model proposes; the chat shows a
   checklist; only what the user applies is written, through `src/data/assistant.ts`, as one undo step. Deletes cascade like
   a delete by hand (D-075).
+- **Agent loop** (D-084): an answer is up to 6 calls. After each one, the browser runs the function tools the model called
+  (`propose_changes`, and `get_items` in `src/ai/readTools.ts`, which reads a few items in full) and sends the step's output
+  items plus the `function_call_output`s back. Reasoning carries over as `reasoning.encrypted_content` (still `store: false`).
+  The last call uses `tool_choice: none`, so every answer ends in words. Each call is its own usage-log entry.
 - **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the
   user's account). Cited sources are shown as clickable links.
 - Prompts live in `src/ai/prompts/`.

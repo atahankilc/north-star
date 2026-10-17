@@ -4,6 +4,12 @@
 const API = 'https://api.openai.com/v1'
 
 export type ChatTurn = { role: 'user' | 'assistant'; content: string }
+// What a call is given: chat turns, plus within one answer the previous steps' output items and tool results (D-084).
+export type InputItem = ChatTurn | Record<string, unknown>
+// A function call the model made; its result goes back as a `function_call_output` with the same call id.
+export type ToolCall = { callId: string; name: string; args: string }
+// One step's result: every output item (reasoning, text, calls, searches), to send back as input, and the calls to run.
+export type StepResult = { output: Record<string, unknown>[]; calls: ToolCall[] }
 
 export class AiError extends Error {}
 
@@ -57,12 +63,13 @@ export type StreamOptions = {
   direct?: boolean
   model: string
   instructions: string
-  turns: ChatTurn[]
+  turns: InputItem[]
   signal: AbortSignal
   onDelta: (text: string) => void
-  // Function tools the model may call (D-074); a call arrives whole, with its JSON arguments.
+  // Function tools the model may call (D-074); a call arrives whole, with its JSON arguments, in the result.
   tools?: object[]
-  onToolCall?: (name: string, args: string) => void
+  // 'none' keeps the tools visible (earlier steps used them) but has the model answer in text: the agent's last step.
+  toolChoice?: 'auto' | 'none'
   // OpenAI's own web search tool (D-076): every search is billed, so it's opt-in per message.
   webSearch?: boolean
   onSearch?: (e: SearchEvent) => void
@@ -70,7 +77,7 @@ export type StreamOptions = {
   onUsage?: (u: Usage) => void
 }
 
-// Streams one answer; resolves when it's complete. Aborting rejects with an AbortError.
+// Streams one step of an answer; resolves with its output when complete. Aborting rejects with an AbortError.
 export async function streamReply({
   send,
   direct = true,
@@ -80,12 +87,12 @@ export async function streamReply({
   signal,
   onDelta,
   tools = [],
-  onToolCall,
+  toolChoice = 'auto',
   webSearch,
   onSearch,
   onCitation,
   onUsage,
-}: StreamOptions): Promise<void> {
+}: StreamOptions): Promise<StepResult> {
   let res: Response
   try {
     res = await send(
@@ -97,8 +104,14 @@ export async function streamReply({
         // Nothing kept on OpenAI's side beyond what their policy requires.
         store: false,
         reasoning: { effort: 'low' },
+        // With store: false, the model's reasoning only carries over to the next step in this encrypted form (D-084).
+        include: ['reasoning.encrypted_content'],
         ...(webSearch || tools.length
-          ? { tools: [...tools, ...(webSearch ? [{ type: 'web_search', search_context_size: 'medium' }] : [])], parallel_tool_calls: false }
+          ? {
+              tools: [...tools, ...(webSearch ? [{ type: 'web_search', search_context_size: 'medium' }] : [])],
+              tool_choice: toolChoice,
+              parallel_tool_calls: false,
+            }
           : {}),
       },
       signal,
@@ -110,6 +123,8 @@ export async function streamReply({
   if (!res.ok || !res.body) throw await failure(res, model, direct)
 
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
+  const output: Record<string, unknown>[] = []
+  const calls: ToolCall[] = []
   let buffer = ''
   for (;;) {
     const { value, done } = await reader.read()
@@ -130,7 +145,7 @@ export async function streamReply({
         type: string
         delta?: string
         message?: string
-        item?: { type?: string; name?: string; arguments?: string; action?: { query?: string; queries?: string[] } }
+        item?: { type?: string; name?: string; arguments?: string; call_id?: string; action?: { query?: string; queries?: string[] } }
         annotation?: { type?: string; url?: string; title?: string }
         response?: {
           error?: { message?: string }
@@ -153,9 +168,10 @@ export async function streamReply({
           reasoningTokens: u.output_tokens_details?.reasoning_tokens ?? 0,
         })
       }
+      if (event.type === 'response.output_item.done' && event.item) output.push(event.item)
       if (event.type === 'response.output_text.delta' && event.delta) onDelta(event.delta)
       else if (event.type === 'response.output_item.done' && event.item?.type === 'function_call') {
-        onToolCall?.(event.item.name ?? '', event.item.arguments ?? '{}')
+        calls.push({ callId: event.item.call_id ?? '', name: event.item.name ?? '', args: event.item.arguments ?? '{}' })
       } else if (event.type === 'response.output_item.added' && event.item?.type === 'web_search_call') {
         onSearch?.({ status: 'searching' })
       } else if (event.type === 'response.output_item.done' && event.item?.type === 'web_search_call') {
@@ -163,11 +179,13 @@ export async function streamReply({
         onSearch?.({ status: 'done', queries: a?.queries ?? (a?.query ? [a.query] : []) })
       } else if (event.type === 'response.output_text.annotation.added' && event.annotation?.type === 'url_citation' && event.annotation.url) {
         onCitation?.({ url: event.annotation.url, title: event.annotation.title || event.annotation.url })
-      } else if (event.type === 'response.completed') return
+      } else if (event.type === 'response.completed') return { output, calls }
       else if (event.type === 'response.failed') throw new AiError(event.response?.error?.message ?? 'OpenAI stopped with an error.')
       else if (event.type === 'response.incomplete') {
         throw new AiError(`The answer was cut short (${event.response?.incomplete_details?.reason ?? 'incomplete'}).`)
       } else if (event.type === 'error') throw new AiError(event.message ?? 'OpenAI stopped with an error.')
     }
   }
+  // The stream closed without a final event: keep what arrived.
+  return { output, calls }
 }
