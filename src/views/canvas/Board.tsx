@@ -7,6 +7,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
 import { FOR, type CompetitorFeature, type Edge, type Label } from '../../data/model'
+import { usePresence } from '../../data/presence'
 import { useCanvas } from '../../state/canvasStore'
 import { isReducedMotion } from '../../state/motion'
 import { defaultKind, type BoardItem } from './boardKinds'
@@ -15,6 +16,7 @@ import { CARD_H, CARD_W, glideDt } from './cardLayout'
 import { EdgeLine } from './EdgeLine'
 import { CHIP_H, CHIP_W, FeatureChip } from './FeatureChip'
 import { boardPoint, NodeCard } from './NodeCard'
+import { CursorReporter, PeerCursors } from './PeerCursors'
 
 type Props = {
   wid: string
@@ -70,6 +72,9 @@ export function Board(props: Props) {
         <directionalLight position={[-4, 6, 10]} intensity={1.6} />
         {wrapper && <Controls domElement={wrapper} />}
         <Scene {...props} />
+        {/* Live cursors (D-065): yours goes out, everyone else's comes in. */}
+        <CursorReporter />
+        <PeerCursors />
       </Canvas>
     </div>
   )
@@ -230,6 +235,9 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   const selected = selectedId ? byId.get(selectedId) : undefined
   // A selected customer lights up everything tagged for it (D-044).
   const customerId = selected?.type === 'customer' ? selected.id : null
+  // What collaborators have selected shows as a rim in their colour (D-065).
+  const peers = usePresence((s) => s.peers)
+  const peerSelection = useMemo(() => new Map(peers.filter((p) => p.sel).map((p) => [p.sel!, p.color])), [peers])
 
   const onLinkDrop = (targetId: string) => {
     const fromId = useCanvas.getState().linkFrom
@@ -307,6 +315,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
           layer={layers.get(node.id) ?? 0}
           related={customerId !== null && node.forIds.includes(customerId)}
           stack={node.type === 'competitor' && openId !== node.id ? (theirs.get(node.id)?.length ?? 0) : 0}
+          peerColor={peerSelection.get(node.id)}
           onLinkDrop={onLinkDrop}
         />
       ))}

@@ -22,7 +22,7 @@ Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 
 ## Phase 3: Collaboration
 - Workspace sharing (invites, roles)
-- Presence: live cursors, avatars, selections
+- Presence: live cursors, avatars, selections ✅ (D-065)
 - Live edits across clients
 
 ## Phase 4: AI and settings

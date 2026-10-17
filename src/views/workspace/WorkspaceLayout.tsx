@@ -1,6 +1,6 @@
 // /w/:wid/*: loads one workspace and everything in it once, then renders the current view (D-036, D-040).
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, Outlet, useParams } from 'react-router-dom'
+import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import {
   approveJoinRequest,
@@ -16,13 +16,16 @@ import {
 } from '../../data/workspaces'
 import type { WithId } from '../../data/hooks'
 import type { JoinRequest } from '../../data/model'
+import { setPresenceSelection, usePresenceSession, type PresenceView } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
+import { useCanvas } from '../../state/canvasStore'
 import { useHoldCurtain } from '../../state/curtain'
 import { useWsView } from '../../state/workspaceView'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { DecodeText } from '../../ui/DecodeText'
 import { Hud } from '../../ui/Hud'
 import { InlineEdit } from '../../ui/InlineEdit'
+import { PeopleHere } from '../../ui/PeopleHere'
 import { Row, Section } from '../../ui/Settings'
 import { Toast } from '../../ui/Toast'
 import { forgetCamera } from '../canvas/Board'
@@ -55,6 +58,11 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   const isOwner = user?.id === workspace.ownerId
   // Non-owners query their own (empty) slice, which the rules allow; the badge only counts for the owner.
   const requests = useRequestsToMe(user?.id ?? '', wid)
+  // Presence (D-065): who's here, on which view, and what they have selected.
+  const view = viewOf(useLocation().pathname, wid)
+  usePresenceSession(wid, user, view)
+  const selectedId = useCanvas((s) => s.selectedId)
+  useEffect(() => setPresenceSelection(selectedId), [selectedId])
 
   return (
     <WorkspaceContext.Provider value={ctx}>
@@ -70,6 +78,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           { label: 'table', to: `/w/${wid}/table` },
           { label: 'matrix', to: `/w/${wid}/matrix` },
         ]}
+        right={<PeopleHere wid={wid} onBoard={view === 'board'} />}
         settings={<WorkspaceSettings wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
         settingsBadge={isOwner ? requests.data.length : 0}
       />
@@ -78,6 +87,11 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
       <Toast />
     </WorkspaceContext.Provider>
   )
+}
+
+function viewOf(path: string, wid: string): PresenceView {
+  const rest = path.slice(`/w/${wid}`.length).replace(/^\//, '').split('/')[0]
+  return rest === 'flow' || rest === 'table' || rest === 'matrix' ? rest : 'board'
 }
 
 function EditKeys() {

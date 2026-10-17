@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (settings modal with side menu, D-064; full motion default, background switch, cheaper backdrop, D-063)_
+_Last updated: 2026-10-17 (Phase 3 started: presence and live cursors, D-065)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -128,9 +128,16 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - "go to" jumps glide every time: `flyTo` now asks the on-demand board (D-063) for a frame, so the glide starts by itself; before,
   it only moved if something else happened to draw a frame. Verified headless: jump, pan, jump again (and to other labels).
 
+## Done (presence + live cursors, 2026-10-17)
+- D-065: `src/data/presence.ts` (session hook, throttled whole-node writes, heartbeat, stale filter), `PeerCursors.tsx` (cursor reporter +
+  remote cursors with glide and cell trail), peer-selection rim on cards, `PeopleHere` in the HUD.
+- RTDB rules tightened (field types, view list, no unknown fields, `ts <= now`); 116 rule tests pass; **rules deployed** 2026-10-17.
+- Verified with two headless Chromes on the emulators (Alice sees Bob's cursor and name at the right spot, his selection rim,
+  "Bob · table" after he switches views, gone after he closes the tab). **Not committed or pushed.**
+
 ## Next steps
-1. The user's review on the live site; then Phase 3 (presence, live cursors)
-2. Phase 3: presence + live cursors (RTDB rules are ready)
+1. The user's review of presence/cursors (try two browsers or Alice + Bob on the emulators); commit + push
+2. Phase 3 rest: maybe "is typing"/editing indicators in the side panel, following someone's view
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 

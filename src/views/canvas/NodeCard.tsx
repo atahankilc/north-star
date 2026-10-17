@@ -32,10 +32,12 @@ type Props = {
   related: boolean
   // A competitor's features, waiting behind it as a stack (D-058); 0 when fanned out or not a competitor.
   stack?: number
+  // A collaborator has this card selected: their colour (D-065).
+  peerColor?: string
   onLinkDrop: (targetId: string) => void
 }
 
-export function NodeCard({ wid, item: node, layer, related, stack = 0, onLinkDrop }: Props) {
+export function NodeCard({ wid, item: node, layer, related, stack = 0, peerColor, onLinkDrop }: Props) {
   const type = node.type
   const W = CARD_W
   const H = CARD_H
@@ -130,7 +132,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, onLinkDro
     if (controls) controls.enabled = true
   }
 
-  const rim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : hovered ? '#5a5a5a' : null
+  const rim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : (peerColor ?? (hovered ? '#5a5a5a' : null))
   const title = node.title.trim()
   const left = -W / 2 + 0.22
   const inner = W - 0.22 - 0.16

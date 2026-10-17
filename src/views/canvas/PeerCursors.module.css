@@ -1,0 +1,35 @@
+/* drei <Html> puts this box's top-left on the cursor's board point. */
+.anchor {
+  pointer-events: none;
+}
+
+.cursor {
+  position: relative;
+  pointer-events: none;
+  user-select: none;
+}
+
+.arrow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  fill: var(--peer);
+  stroke: var(--bg);
+  stroke-width: 1;
+}
+
+/* A tag in the person's colour, like a selected ASCII cell. */
+.name {
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  padding: 1px var(--space-1);
+  background: var(--peer);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+}

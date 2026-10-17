@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { initializeApp } from 'firebase/app'
 import { connectAuthEmulator, getAuth, GoogleAuthProvider, signInWithCredential } from 'firebase/auth'
-import { connectDatabaseEmulator, get as rtGet, getDatabase, ref, set as rtSet } from 'firebase/database'
+import { connectDatabaseEmulator, get as rtGet, getDatabase, ref, remove as rtRemove, serverTimestamp, set as rtSet } from 'firebase/database'
 import {
   addDoc,
   arrayRemove,
@@ -235,10 +235,20 @@ await deny('former member reads workspace', () => getDoc(doc(bob.fs, 'workspaces
 await deny('former member lists ideas', () => getDocs(ideas(bob.fs)))
 
 const presence = (who, uid) => ref(who.rt, `presence/${wid}/${uid}`)
-const me = (name) => ({ name, color: '#fff', view: 'canvas', ts: Date.now() })
+const me = (name, extra = {}) => ({ name, color: '#2de2e6', view: 'board', ts: serverTimestamp(), ...extra })
 await allow('write own presence', () => rtSet(presence(bob, bob.uid), me('Bob')))
+await allow('presence with cursor, selection and photo', () =>
+  rtSet(presence(bob, bob.uid), me('Bob', { x: 1.5, y: -2, sel: 'abc', photo: 'https://example.com/a.png' })),
+)
 await deny('write someone else\'s presence', () => rtSet(presence(bob, alice.uid), me('Fake')))
 await deny('presence without required fields', () => rtSet(presence(bob, bob.uid), { x: 1 }))
+await deny('presence with an unknown field', () => rtSet(presence(bob, bob.uid), me('Bob', { secret: 1 })))
+await deny('presence with an unknown view', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'canvas' })))
+await deny('presence with a non-hex colour', () => rtSet(presence(bob, bob.uid), me('Bob', { color: 'red' })))
+await deny('presence with a text cursor', () => rtSet(presence(bob, bob.uid), me('Bob', { x: 'far' })))
+await deny('presence from the future', () => rtSet(presence(bob, bob.uid), me('Bob', { ts: Date.now() + 3_600_000 })))
+await allow('remove own presence', () => rtRemove(presence(bob, bob.uid)))
+await deny('remove someone else\'s presence', () => rtRemove(presence(bob, alice.uid)))
 await allow('signed-in user reads presence', () => rtGet(ref(alice.rt, `presence/${wid}`)))
 await deny('signed-out user reads presence', () => rtGet(ref(anon.rt, `presence/${wid}`)))
 await deny('read outside /presence', () => rtGet(ref(alice.rt, '/')))

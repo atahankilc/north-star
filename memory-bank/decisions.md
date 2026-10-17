@@ -356,3 +356,17 @@ framed ⚙ square (the join-request count sits in its corner). The chip opens se
 It opens on the workspace page when someone is waiting to join, otherwise on the last page you used. Below 640 px the menu turns
 into tabs above the page.
 
+### D-065 · 2026-10-17 · Accepted
+**Presence and live cursors (Phase 3).** `src/data/presence.ts`, RTDB `presence/{wid}/{uid}` (D-016):
+`name, color, photo?, view (board|flow|table|matrix), x?, y?, sel?, ts`.
+- Each tab writes its **whole node** (≈16 Hz at most while the pointer moves, a heartbeat every 20 s), so if another tab of the
+  same person disconnects and removes the node, the next write restores it. `onDisconnect().remove()` is re-armed on every reconnect;
+  anyone silent for 60 s (server clock) is hidden. You never see yourself, not even your other tabs.
+- Colour per person: a hash of the uid over the five accents (stable, may collide).
+- **Board:** cursors in world units, so they land on the same spot at any pan/zoom. They glide to each update and leave a short trail
+  of fading cells in their colour (no trail and no glide under reduced motion). The name is a DOM tag in their colour (crisp, constant size).
+  A card someone has selected gets a rim in their colour. Panning or zooming under a still pointer moves your cursor too.
+- **HUD:** a framed square per person beside the account chip (photo or initial, tooltip "name · view"). Click: glide to their cursor
+  if you're both on the board, otherwise open their view.
+- Rules now check every field's type, the view list, `ts <= now`, and refuse unknown fields (116 rule tests pass).
+

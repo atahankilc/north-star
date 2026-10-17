@@ -90,7 +90,7 @@ workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role
 inviteCodes/{code}      workspaceId, createdBy
 joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)
 
-RTDB: presence/{wid}/{uid}   name, color, view, x, y, ts
+RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, ts   (D-065)
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: the caller must be in `memberIds`.
 - `edges` is one generic edge collection, so any node type can connect to any other.
@@ -118,7 +118,8 @@ RTDB: presence/{wid}/{uid}   name, color, view, x, y, ts
   ⏳ Concurrent editing of the *same* long text body is a later concern; the option is Yjs.
 - **Ephemeral data** (cursors, selection, "is typing", viewport): Realtime Database at
   `presence/{wid}/{uid}`, removed automatically with `onDisconnect()`. Throttled to about 15–20 Hz and
-  interpolated on the receiving side for smooth motion. RTDB writes are free (billed by bandwidth),
+  interpolated on the receiving side for smooth motion. Each tab writes its whole node, so a second tab survives
+  the first one's disconnect (D-065). Cursors are board world coordinates; other views report only which view you're on. RTDB writes are free (billed by bandwidth),
   and Spark allows 100 simultaneous connections.
 - RTDB rules can't read Firestore membership, so any signed-in user who knows a workspace ID could
   read its cursors (name, colour, coordinates only). The IDs are random. Accepted for now (D-016).
