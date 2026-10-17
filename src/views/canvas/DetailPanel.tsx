@@ -54,7 +54,6 @@ export function DetailPanel({ items }: { items: BoardItem[] }) {
           className={styles.panel}
           data-wide={Boolean(competitor)}
           aria-label={`${BOARD_KINDS[item.type].label} details`}
-          data-item={item.id}
         >
           <PeersHere itemId={item.id} />
           {competitor ? (
@@ -133,7 +132,7 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
         </button>
       </header>
 
-      <input ref={titleRef} className={styles.title} placeholder="Untitled" data-field="title" {...field('title')} />
+      <input ref={titleRef} className={styles.title} placeholder="Untitled" {...field('title')} />
 
       <div className={styles.pickers}>
         {type === 'feature' && <FeatureFields wid={wid} feature={node as WithId<Feature>} />}
@@ -142,7 +141,7 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
 
       <label className={styles.label}>
         notes
-        <textarea className={styles.body} rows={6} placeholder={kind.placeholder} data-field="notes" {...field('body')} />
+        <textarea className={styles.body} rows={6} placeholder={kind.placeholder} {...field('body')} />
       </label>
 
       <div className={styles.label}>

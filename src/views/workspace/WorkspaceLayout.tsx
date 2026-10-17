@@ -1,6 +1,7 @@
-// /w/:wid/*: loads one workspace and everything in it once, then renders the current view (D-036, D-040).
+// /workspaces/:wid/*: loads one workspace and everything in it once, then renders the current view (D-036, D-040).
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
+import { WORKSPACES, workspacePath } from '../../app/paths'
 import { useAuth } from '../../data/auth'
 import {
   approveJoinRequest,
@@ -68,15 +69,15 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
     <WorkspaceContext.Provider value={ctx}>
       <Hud
         crumbs={[
-          { label: 'workspaces', to: '/w' },
+          { label: 'workspaces', to: WORKSPACES },
           // Renaming lives in settings and on the workspaces page, not here.
           { label: workspace.name },
         ]}
         views={[
-          { label: 'board', to: `/w/${wid}`, end: true },
-          { label: 'flow', to: `/w/${wid}/flow` },
-          { label: 'table', to: `/w/${wid}/table` },
-          { label: 'matrix', to: `/w/${wid}/matrix` },
+          { label: 'board', to: workspacePath(wid), end: true },
+          { label: 'flow', to: workspacePath(wid, 'flow') },
+          { label: 'table', to: workspacePath(wid, 'table') },
+          { label: 'matrix', to: workspacePath(wid, 'matrix') },
         ]}
         right={<PeopleHere wid={wid} view={view} />}
         settings={<WorkspaceSettings wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
@@ -90,7 +91,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 }
 
 function viewOf(path: string, wid: string): PresenceView {
-  const rest = path.slice(`/w/${wid}`.length).replace(/^\//, '').split('/')[0]
+  const rest = path.slice(workspacePath(wid).length).replace(/^\//, '').split('/')[0]
   return rest === 'flow' || rest === 'table' || rest === 'matrix' ? rest : 'board'
 }
 
@@ -245,7 +246,7 @@ function Status({ text, back }: { text: string; back?: boolean }) {
         <DecodeText text={text} />
       </p>
       {back && (
-        <Link to="/w" className={styles.backLink}>
+        <Link to={WORKSPACES} className={styles.backLink}>
           ← back to workspaces
         </Link>
       )}

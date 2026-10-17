@@ -46,7 +46,7 @@
   height: 24px;
   overflow: hidden;
   background: var(--peer);
-  color: var(--bg);
+  color: var(--on-accent);
   font-size: var(--text-xs);
 }
 
@@ -86,7 +86,7 @@
   padding: 2px var(--space-2);
   border: 0;
   background: var(--peer);
-  color: var(--bg);
+  color: var(--on-accent);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   transform: translateX(-50%);

@@ -143,15 +143,15 @@ function Features({ competitorId, focus }: { competitorId: string; focus?: strin
   const features = competitorFeatures.filter((f) => f.competitorId === competitorId)
   const listId = `categories-${competitorId}`
 
-  // `?f=<id>` (from a link elsewhere) opens that feature.
+  // `?feature=<id>` (from a link elsewhere) opens that feature.
   useEffect(() => {
-    const id = params.get('f')
+    const id = params.get('feature')
     if (!id) return
     setOpen(id)
     requestAnimationFrame(() => document.getElementById(`cf-${id}`)?.scrollIntoView({ block: 'center' }))
     setParams(
       (p) => {
-        p.delete('f')
+        p.delete('feature')
         return p
       },
       { replace: true },

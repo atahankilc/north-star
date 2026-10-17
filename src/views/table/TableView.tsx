@@ -1,4 +1,4 @@
-// /w/:wid/table: everything the filters let through as a spreadsheet, grouped by type in chain order (docs/specs/board.md §4).
+// /workspaces/:wid/table: everything the filters let through as a spreadsheet, grouped by type in chain order (docs/specs/board.md §4).
 // Name, customers, priority and status edit inline; the type opens the side panel.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'

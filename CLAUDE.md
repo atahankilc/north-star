@@ -31,6 +31,9 @@ SPA on GitHub Pages, backed by Firebase (Auth, Firestore, Realtime Database). Th
 - The ASCII post-processing effect must never cover readable or editable text.
 - All DB access goes through `src/data/`. Permissions are enforced by `firestore.rules` and
   `database.rules.json`, not by the client. Change a rule and the data shape together.
-- Motion defaults to full (D-063), but reduced motion must always work: it's one click away in Settings, `system`
-  follows `prefers-reduced-motion`, and every animation reads `useMotion().reduced` / `isReducedMotion()`.
+- Defaults are always **dark theme, full motion, background animation on** (D-063, D-069), whatever the OS says. Never change
+  them, and never add a theme/motion/background control outside Settings (the landing has none). Signed-in users change them
+  in Settings → app; the choice is saved in that browser.
+- Reduced motion and light theme must always work when chosen: every animation reads `useMotion().reduced` /
+  `isReducedMotion()`, CSS colours come from tokens (light values under `[data-theme='light']`), WebGL colours from `usePalette()`.
 - Do not start work that depends on a `blocking` open question without asking the user.

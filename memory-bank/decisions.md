@@ -6,7 +6,7 @@ Format: `D-xxx · date · status (Accepted | Proposed | Superseded by D-yyy)`
 
 ### D-001 · 2026-10-17 · Accepted
 **Frontend hosted on GitHub Pages as a static SPA.**
-Why: free, reliable. Implications: no server, so use HashRouter and deploy with GitHub Actions.
+Why: free, reliable. Implications: no server, so deploy with GitHub Actions. (HashRouter at first; plain paths since D-070.)
 
 ### D-002 · 2026-10-17 · Accepted
 **No self-hosted or free-tier app server. Use a managed DB service the browser talks to directly.**
@@ -388,7 +388,7 @@ under reduced motion). Frames stay reserved for controls that change what you se
   2px frame in their colour and a "following Bob · board — esc to stop" tag at the bottom.
 - *Several people on one card:* a ring per person in their colour around the card (outermost = first in the list), and their
   names as tags above its top-left corner. Before, only one colour showed.
-- *Who's typing (user request):* focusing a text field inside an item's panel sends `edit` (item id) and `field` (the field's
+- *(Removed by D-071)* *Who's typing (user request):* focusing a text field inside an item's panel sends `edit` (item id) and `field` (the field's
   `data-field`, label or placeholder). Others see `Bob ✎ title` on the card and at the top of the panel, and the field itself gets an
   outline in Bob's colour. Panels mark their item with `data-item`. Table cells don't report editing yet.
 - *Colours:* each person still prefers a hashed accent, but colours are assigned in join order (`since`, server time) so up to five
@@ -405,4 +405,40 @@ Rules: `edit`, `field`, `since` validated; 118 rule tests pass.
   back your item selection). Others see rings inside that cell plus the first name in its corner; someone on a feature or competitor
   shows as a tag in its row or column header.
 - Shared code: `src/views/workspace/PeerMarks.tsx` (`usePeersOn`, `peerRings`, `PeerTags`, `RowPeers`, `CellPeers`). No rule change.
+
+### D-069 · 2026-10-17 · Accepted
+**Light theme, dark by default.** Settings → app → display → `theme: dark | light | system` (`src/state/theme.ts`, localStorage
+`north-star.theme`, default `dark`; `system` follows `prefers-color-scheme`). An inline script in `index.html` applies a stored light
+theme before the first paint, so dark never flashes first.
+- *CSS:* `html[data-theme='light']` overrides the tokens in `tokens.css`: neutral light grey `--bg #f5f5f5`, white surfaces, near-black text,
+  and darker accents so they stay readable on paper. New tokens in both themes: `--on-accent` (text on an accent fill, always black),
+  `--wash-1/2/3` and `--wash-cyan` (hover and stripe tints, replacing `rgba(255,255,255,…)`), `--scrim` (modal backdrop), `--menu`.
+  Never hard-code a colour in CSS; use a token.
+- *WebGL:* `palettes.dark/light` in `tokens.ts` (cards, hairlines, edges, grid shade…), read via `usePalette()`. `TYPE_ACCENT` is now CSS
+  (`var(--accent-…)`) for the DOM; WebGL uses `typeAccent(type, palette)`. The ASCII pass prints in light mode: brightness becomes
+  ink coverage over the paper, and colour keeps its hue but darkens (`AsciiEffect.setTheme`). The loading curtain rebuilds out of paper.
+- *Presence colours* stay the dark-theme hex values (they identify a person and are compared across clients); `themeAccent(hex)` /
+  `useThemeAccent()` draw them in the current theme's shade (HUD people, cursors, card rings and tags, panel strip, account chip).
+  PeerMarks (Flow/Table/Matrix) still draws the bright values.
+- *Landing:* no controls in the HUD any more (the user's call): the motion switch is gone, and motion and theme are in Settings once signed in.
+  A signed-out visitor gets the stored preference, or else the defaults.
+- *Defaults, always (user's rule, in CLAUDE.md):* dark theme, full motion, background on, regardless of the OS. Changing them is a
+  signed-in Settings thing only. The light background is a neutral grey (`#f5f5f5`); a warm off-white was tried and rejected.
+
+### D-070 · 2026-10-17 · Accepted (changes D-001's routing)
+**Readable URLs, and signing out goes back to `/`.** User feedback: after signing out the landing still showed the workspace's
+address, and `/#/w/<id>` was hard to read.
+- *Paths:* `/` landing, `/workspaces`, `/workspaces/<id>` (board), `/workspaces/<id>/flow|table|matrix`; `?item=<id>` selects an item,
+  `&feature=<id>` opens a competitor's feature (were `?n=` / `?f=`). All built by `src/app/paths.ts` (`workspacePath`, `itemPath`).
+- *No `#`:* BrowserRouter with `basename = BASE_URL`. GitHub Pages has no rewrites, so `npm run build` copies `index.html` to
+  `404.html`; a deep link gets Pages' 404 status but boots the app normally. Old `/#/w/…?n=…` links are rewritten on load.
+- *Signed out:* any path shows the landing at `/`. Opening a link while signed out remembers it (router state), and signing in
+  continues there; a page left by signing out is not remembered, so the next person starts at `/workspaces`.
+
+### D-071 · 2026-10-17 · Accepted (reverses D-067's typing indicator; closes Phase 3)
+**No "who's typing" anywhere; last write wins, no guard.** The user: seeing who has a card open (and how many people) is enough,
+so `Bob ✎ title`, the field outline and the `edit`/`field` presence writes are gone. Concurrent edits stay last-write-wins per field
+with no lock or warning (answers Q-006 for good: no Yjs). The panel strip now only says `Bob is here`.
+The RTDB rules still accept `edit`/`field` (retired, never written) so tabs still running the previous build keep working;
+drop them from the rules once that build is gone. **Phase 3 is done.**
 

@@ -3,7 +3,9 @@
 // view yourself, press Escape or click them again. While following, the page is framed in their colour.
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { workspacePath } from '../app/paths'
 import { usePresence, type Peer, type PresenceView } from '../data/presence'
+import { useThemeAccent } from '../state/theme'
 import styles from './PeopleHere.module.css'
 
 const MAX = 5
@@ -16,9 +18,10 @@ export function PeopleHere({ wid, view }: Props) {
   const peers = usePresence((s) => s.peers)
   const following = usePresence((s) => s.following)
   const follow = usePresence((s) => s.follow)
+  const tone = useThemeAccent()
   const leader = peers.find((p) => p.uid === following)
   const navigate = useNavigate()
-  const path = (v: PresenceView) => (v === 'board' ? `/w/${wid}` : `/w/${wid}/${v}`)
+  const path = (v: PresenceView) => workspacePath(wid, v)
 
   // Go where they go.
   useEffect(() => {
@@ -60,7 +63,7 @@ export function PeopleHere({ wid, view }: Props) {
             <li key={p.uid}>
               <button
                 className={styles.person}
-                style={{ ['--peer' as string]: p.color }}
+                style={{ ['--peer' as string]: tone(p.color) }}
                 title={on ? `Following ${p.name} · click or Esc to stop` : `${p.name} · ${where} · click to follow`}
                 aria-label={`${p.name}, on ${where}${on ? ', following' : ''}`}
                 aria-pressed={on}
@@ -77,7 +80,7 @@ export function PeopleHere({ wid, view }: Props) {
         {more > 0 && <li className={styles.more}>+{more}</li>}
       </ul>
       {leader && (
-        <div className={styles.following} style={{ ['--peer' as string]: leader.color }}>
+        <div className={styles.following} style={{ ['--peer' as string]: tone(leader.color) }}>
           <button className={styles.followTag} onClick={() => follow(null)}>
             following {leader.name} · {leader.view} <span className={styles.stop}>esc to stop</span>
           </button>

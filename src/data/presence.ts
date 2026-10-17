@@ -20,9 +20,6 @@ export type Presence = {
   y?: number
   // The item they have selected.
   sel?: string
-  // The item and field they're typing in (a text field has focus), so others see it (D-067).
-  edit?: string
-  field?: string
   // When they joined (server time). Earlier joiners keep their colour when someone new arrives.
   since?: number
   ts: number
@@ -114,21 +111,6 @@ export function setPresenceSelection(id: string | null) {
   patch({ sel: id ?? undefined })
 }
 
-export function setEditing(at: { item: string; field: string } | null) {
-  patch({ edit: at?.item, field: at ? at.field.slice(0, 80) : undefined })
-}
-
-// Which item and field a focused text control belongs to: the closest `[data-item]` container, and the control's
-// `data-field`, label or placeholder. Null for anything that isn't text being typed into an item.
-function editTarget(el: EventTarget | null): { item: string; field: string } | null {
-  if (!(el instanceof HTMLElement)) return null
-  const text = el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && /^(text|search|url|email|number|)$/.test(el.type))
-  if (!text && !el.isContentEditable) return null
-  const item = el.closest<HTMLElement>('[data-item]')?.dataset.item
-  const field = el.dataset.field ?? el.getAttribute('aria-label') ?? el.getAttribute('placeholder') ?? 'text'
-  return item ? { item, field: field.toLowerCase() } : null
-}
-
 const round = (v: number) => Math.round(v * 1000) / 1000
 
 // Announce yourself in a workspace while mounted, and listen for everyone else.
@@ -188,11 +170,6 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
     // A hidden tab has no pointer on the board.
     const onVisibility = () => document.hidden && setCursor(null)
     document.addEventListener('visibilitychange', onVisibility)
-    // Typing somewhere: say where (D-067).
-    const onFocusIn = (e: FocusEvent) => setEditing(editTarget(e.target))
-    const onFocusOut = () => setEditing(null)
-    document.addEventListener('focusin', onFocusIn)
-    document.addEventListener('focusout', onFocusOut)
 
     return () => {
       offConnected()
@@ -200,8 +177,6 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
       offPeers()
       window.clearInterval(beat)
       document.removeEventListener('visibilitychange', onVisibility)
-      document.removeEventListener('focusin', onFocusIn)
-      document.removeEventListener('focusout', onFocusOut)
       if (pending !== null) window.clearTimeout(pending)
       pending = null
       mine = null

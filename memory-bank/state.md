@@ -1,10 +1,12 @@
 # Project State
 
-_Last updated: 2026-10-17 (others' selections in Flow, Table and Matrix, D-068)_
+_Last updated: 2026-10-17 (Phase 3 done: typing indicator removed, LWW kept, D-071)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
-text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live cursors).
+text labels with a jump list replace them (D-050).
+**Phase 3 done: collaboration** (sharing D-021/D-062, presence and cursors D-065, follow + shared selections D-067/D-068, no typing indicator
+and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 
 ## Done
 - **Phase 0**: specs, memory bank, scaffold, ASCII design language, GitHub Pages workflow (commit `e114f34`)
@@ -154,9 +156,24 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 - Known dev-only console warning: drei `<Html>` (cursor tags, card name tags) logs "synchronously unmount a root" when the board unmounts
   while one is shown. Harmless.
 
+## Done (readable URLs, 2026-10-17)
+- D-070: `/workspaces/<id>/table?item=<id>` instead of `/#/w/<id>/table?n=<id>`; sign-out lands on `/`; a link opened while signed
+  out continues after sign-in; old hash links are upgraded; build writes `404.html`. Verified headless on emulators (old link → `/`
+  → Alice continues to it; example → table tab → reload deep link; sign out → `/` with nothing remembered → Bob lands on `/workspaces`;
+  `?item=` selects the card and opens its panel). Not committed. First push: check a deep link on the live site loads (404.html).
+
+## Done (light theme, 2026-10-17)
+- D-069: `theme: dark | light | system` in Settings → app (default dark), tokens + WebGL palettes, a printed ASCII backdrop on paper,
+  theme-aware presence colours, no-flash script in index.html, neutral grey light background (#f5f5f5; warm off-white rejected). The motion switch is removed from the landing (user request). CLAUDE.md: defaults are always dark / full motion / background on; changes only in Settings.
+- Verified headless on emulators in both themes (landing, workspaces, board + panel, table, flow, matrix, settings); dark looks unchanged. Not committed.
+
+## Done (Phase 3 wrap-up, 2026-10-17)
+- D-071: removed the typing indicator (`edit`/`field` writes, `Bob ✎ …` on cards, field outline); the panel strip says `Bob is here`.
+  Following across views verified on the new `/workspaces/…` routes (D-070). Not committed.
+
 ## Next steps
-1. The user's review of presence/follow/typing; commit + push
-2. Phase 3 rest: typing indicators in Table cells; maybe show peers' viewports; theme-aware peer colours (`themeAccent`, D-069)
+1. Commit + push the open work (light theme D-069, routing D-070, D-071)
+2. Small: PeerMarks colours through `themeAccent` (D-069); drop `edit`/`field` from database.rules.json once old tabs are gone
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 

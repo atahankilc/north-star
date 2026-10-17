@@ -6,12 +6,14 @@ import { signOut, useAuth } from '../data/auth'
 import { usePresence } from '../data/presence'
 import { useDisplay, type BackgroundPref } from '../state/display'
 import { useMotion, type MotionPref } from '../state/motion'
+import { themeAccent, useTheme, type ThemePref } from '../state/theme'
 import { AsciiButton } from './AsciiButton'
 import { Choice } from './Choice'
 import styles from './Settings.module.css'
 
 const MOTION: readonly MotionPref[] = ['full', 'reduced', 'system']
 const BACKGROUND: readonly BackgroundPref[] = ['on', 'off']
+const THEME: readonly ThemePref[] = ['dark', 'light', 'system']
 
 type Page = 'account' | 'workspace' | 'app'
 
@@ -30,6 +32,7 @@ type Props = {
 export function SettingsButton({ workspace, badge = 0 }: Props) {
   const { user } = useAuth()
   const myColor = usePresence((s) => s.myColor)
+  const theme = useTheme((s) => s.theme)
   const dialog = useRef<HTMLDialogElement>(null)
   const [open, setOpen] = useState(false)
   const [page, setPage] = useState<Page>('account')
@@ -58,7 +61,7 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
     <>
       <button className={styles.account} onClick={() => show('account')} aria-haspopup="dialog" aria-label={`Account: ${who}`}>
         {/* In a workspace, your square is in the colour the others see you in (D-067). */}
-        <span className={styles.chipAvatar} style={myColor ? { background: myColor } : undefined} aria-hidden>
+        <span className={styles.chipAvatar} style={myColor ? { background: themeAccent(myColor, theme) } : undefined} aria-hidden>
           {who.trim()[0]?.toUpperCase()}
         </span>
         <span className={styles.chipName}>{who}</span>
@@ -138,6 +141,7 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
               {current.id === 'app' && (
                 <>
                   <Section label="display">
+                    <ThemeChoice />
                     <MotionChoice />
                     <BackgroundChoice />
                   </Section>
@@ -153,6 +157,24 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
           </div>
         )}
       </dialog>
+    </>
+  )
+}
+
+function ThemeChoice() {
+  const pref = useTheme((s) => s.pref)
+  const theme = useTheme((s) => s.theme)
+  const setPref = useTheme((s) => s.setPref)
+  return (
+    <>
+      <Choice label="theme" options={THEME} value={pref} onChange={(p) => setPref(p ?? 'dark')} />
+      <p className={styles.note}>
+        {pref === 'system'
+          ? `Following your system: ${theme}.`
+          : pref === 'light'
+            ? 'Dark ink on light paper.'
+            : 'Light on black, the way North Star was drawn.'}
+      </p>
     </>
   )
 }

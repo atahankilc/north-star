@@ -36,7 +36,7 @@ export function useAuth(): Auth {
   return state
 }
 
-// Google sign-in (D-011). A popup keeps the HashRouter state intact.
+// Google sign-in (D-011). A popup keeps the page and its router state intact.
 export async function signInWithGoogle() {
   if (!firebase) return
   await signInWithPopup(firebase.auth, new GoogleAuthProvider())

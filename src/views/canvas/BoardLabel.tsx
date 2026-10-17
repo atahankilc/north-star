@@ -9,7 +9,7 @@ import type { WithId } from '../../data/hooks'
 import { deleteLabel, endLabelMove, moveLabel, updateLabel } from '../../data/labels'
 import type { Label } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
-import { colors } from '../../styles/tokens'
+import { usePalette, useThemeAccent } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
@@ -42,7 +42,9 @@ export function BoardLabel({ wid, label }: Props) {
 
   const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean } | null>(null)
   const [x, y] = live ?? [label.x, label.y]
-  const accent = label.color ?? colors.fg
+  const colors = usePalette()
+  const tone = useThemeAccent()
+  const accent = label.color ? tone(label.color) : colors.fg
 
   // Exactly under the pointer while dragging; remote moves glide (D-061).
   useFrame(({ invalidate }, delta) => {
@@ -127,7 +129,7 @@ export function BoardLabel({ wid, label }: Props) {
         {(selected || hovered) && !editing && (
           <mesh position={[0, -box[1] / 2 - 0.08, 0]}>
             <planeGeometry args={[box[0], 0.03]} />
-            <meshBasicMaterial color={selected ? colors.cyan : '#5a5a5a'} toneMapped={false} />
+            <meshBasicMaterial color={selected ? colors.cyan : colors.hover} toneMapped={false} />
           </mesh>
         )}
         {!editing && (

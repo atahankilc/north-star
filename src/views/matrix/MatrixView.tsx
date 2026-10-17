@@ -1,8 +1,9 @@
-// /w/:wid/matrix: our features × competitors. Each cell says how well that competitor covers the
+// /workspaces/:wid/matrix: our features × competitors. Each cell says how well that competitor covers the
 // feature; the last column reads the row as a whole (gap, table stakes, mixed).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { itemPath, workspacePath } from '../../app/paths'
 import { cellId, setCell } from '../../data/comparisons'
 import type { WithId } from '../../data/hooks'
 import { COVERAGES, FEATURE_PRIORITIES, type Comparison, type Coverage, type Feature } from '../../data/model'
@@ -100,7 +101,7 @@ export function MatrixView() {
         <div className={styles.emptyState}>
           <DecodeText text="The matrix compares your features with your competitors" />
           <p className={styles.emptyHint}>
-            <Link to={`/w/${wid}`}>
+            <Link to={workspacePath(wid)}>
               add {rows.length === 0 && 'a feature'}
               {rows.length === 0 && cols.length === 0 && ' and '}
               {cols.length === 0 && 'a competitor'}
@@ -129,7 +130,7 @@ export function MatrixView() {
               <th className={styles.metaHead}>status</th>
               {cols.map((c) => (
                 <th key={c.id} className={styles.compHead}>
-                  <Link to={`/w/${wid}?n=${c.id}`} title={c.name}>
+                  <Link to={itemPath(wid, c.id)} title={c.name}>
                     {c.name || 'Untitled'}
                   </Link>
                   <PeersOn id={c.id} className={styles.headPeers} max={2} />
@@ -144,7 +145,7 @@ export function MatrixView() {
               return (
                 <tr key={f.id} data-selected={sel?.row === r}>
                   <th scope="row" className={styles.feature}>
-                    <Link to={`/w/${wid}?n=${f.id}`}>{f.title || 'Untitled'}</Link> <PeersOn id={f.id} />
+                    <Link to={itemPath(wid, f.id)}>{f.title || 'Untitled'}</Link> <PeersOn id={f.id} />
                   </th>
                   <td className={styles.meta}>{f.priority ?? ''}</td>
                   <td className={styles.meta}>{f.status ?? ''}</td>

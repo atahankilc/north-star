@@ -40,6 +40,11 @@ References in [design/references/](design/references/):
 | `--accent-blue` | `#3d7bff` | AI output |
 | `--accent-green` | `#3dff8a` | success / "we're better" |
 
+**Light theme (D-069):** dark is the default; Settings → app → theme switches to light (or `system`). Light swaps the
+tokens above for neutral light grey (`--bg #f5f5f5`), white surfaces, near-black text and darker accents (magenta `#db1a7a`, cyan `#0a979c`,
+yellow `#a87d00`, blue `#2a5fe0`, green `#0f9a4b`); the ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
+(`[data-theme='light']`) and `palettes.light` in `tokens.ts`. Text on an accent fill uses `--on-accent`; tints use `--wash-*`.
+
 Collaborator cursors cycle through the accents. The matrix coverage scale runs:
 `none` = dim grey glyphs, `partial` = yellow, `full` = white, `better` = green.
 Values will be tuned against contrast checks (WCAG AA for text).
@@ -83,7 +88,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   corner when people wait to join). The chip opens settings on the account page, the gear on the last page used. It opens the settings
   modal: a side menu on the left (`> ACCOUNT`, `> WORKSPACE` only inside a workspace, `> APP`; the current one gets a cyan left bar)
   and the chosen page on the right. Below 640 px the menu becomes a row of tabs above the page (D-064).
-  Signed out, the right side is just the motion switch.
+  Signed out, the right side is empty (no motion switch on the landing, D-069).
 - Dropdowns (`src/ui/Menu.tsx`): a framed trigger `SHOW all ▾`, a framed list below (or above, for the bottom toolbar), `[x]`/`[ ]` checks.
   The create button is the one solid-magenta control on the board.
 

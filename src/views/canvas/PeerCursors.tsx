@@ -8,6 +8,7 @@ import { MathUtils, Plane, Raycaster, Vector2, Vector3, type Group } from 'three
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { setCursor, usePresence, type Peer } from '../../data/presence'
 import { isReducedMotion } from '../../state/motion'
+import { useThemeAccent } from '../../state/theme'
 import { glideDt } from './cardLayout'
 import styles from './PeerCursors.module.css'
 
@@ -107,6 +108,7 @@ export function PeerCursors() {
 function PeerCursor({ peer }: { peer: Peer }) {
   const group = useRef<Group>(null)
   const to = useRef<[number, number]>([peer.x!, peer.y!])
+  const tone = useThemeAccent()
   to.current = [peer.x!, peer.y!]
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => invalidate(), [peer.x, peer.y, invalidate])
@@ -127,7 +129,7 @@ function PeerCursor({ peer }: { peer: Peer }) {
   return (
     <group ref={group} position={[peer.x!, peer.y!, Z]}>
       <Html className={styles.anchor} zIndexRange={[1, 1]} pointerEvents="none">
-        <div className={styles.cursor} style={{ ['--peer' as string]: peer.color }}>
+        <div className={styles.cursor} style={{ ['--peer' as string]: tone(peer.color) }}>
           <svg className={styles.arrow} viewBox="0 0 16 16" aria-hidden>
             <path d="M1 1 L1 13 L4.5 9.5 L7.5 15 L9.5 14 L6.6 8.6 L11.5 8.6 Z" />
           </svg>

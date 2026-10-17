@@ -7,7 +7,7 @@ import { MathUtils, type Group } from 'three'
 import type { WithId } from '../../data/hooks'
 import type { CompetitorFeature } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
-import { colors } from '../../styles/tokens'
+import { usePalette } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { glideDt, truncate } from './cardLayout'
 
@@ -44,7 +44,8 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
     if (Math.abs(g.position.x - at[0]) > 1e-4 || Math.abs(g.position.y - at[1]) > 1e-4) invalidate()
   })
 
-  const edge = selected ? colors.yellow : linking && hovered ? colors.cyan : hovered ? '#5a5a5a' : '#2a2a2a'
+  const colors = usePalette()
+  const edge = selected ? colors.yellow : linking && hovered ? colors.cyan : hovered ? colors.hover : colors.hairline
 
   return (
     <group
@@ -79,7 +80,7 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
       </mesh>
       <mesh>
         <planeGeometry args={[CHIP_W, CHIP_H]} />
-        <meshBasicMaterial color="#161616" toneMapped={false} />
+        <meshBasicMaterial color={colors.chip} toneMapped={false} />
       </mesh>
       <mesh position={[-CHIP_W / 2 + 0.02, 0, 0.001]}>
         <planeGeometry args={[0.04, CHIP_H]} />

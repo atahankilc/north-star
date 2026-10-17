@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import type { WithId } from '../../data/hooks'
 import { FOR, type BoardType, type Edge, type EdgeKind } from '../../data/model'
 import { useWsView } from '../../state/workspaceView'
-import { colors } from '../../styles/tokens'
+import type { Palette } from '../../styles/tokens'
 import { useWs } from '../workspace/context'
 
 type Kind = {
@@ -150,11 +150,18 @@ export function useAllTags(items: BoardItem[]): { tag: string; count: number }[]
   }, [items])
 }
 
-// Accent per type where the card has no colour of its own.
+// Accent per type, as CSS for the DOM (follows the theme by itself, D-069).
 export const TYPE_ACCENT: Record<BoardType, string> = {
-  customer: colors.green,
-  problem: colors.magenta,
-  competitor: colors.yellow,
-  idea: colors.fg,
-  feature: colors.cyan,
+  customer: 'var(--accent-green)',
+  problem: 'var(--accent-magenta)',
+  competitor: 'var(--accent-yellow)',
+  idea: 'var(--fg)',
+  feature: 'var(--accent-cyan)',
+}
+
+const TYPE_KEY = { customer: 'green', problem: 'magenta', competitor: 'yellow', idea: 'fg', feature: 'cyan' } as const
+
+// The same accent as a hex for WebGL, from the current theme's palette (usePalette()).
+export function typeAccent(type: BoardType, palette: Palette): string {
+  return palette[TYPE_KEY[type]]
 }

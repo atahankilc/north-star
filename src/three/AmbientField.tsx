@@ -5,7 +5,8 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import { Color, Vector2, type ShaderMaterial } from 'three'
-import { colors } from '../styles/tokens'
+import { useTheme } from '../state/theme'
+import { palettes } from '../styles/tokens'
 import { sceneTime } from './sceneClock'
 
 const vertexShader = /* glsl */ `
@@ -94,24 +95,32 @@ void main() {
 export function AmbientField({ uvScale }: { uvScale: Vector2 }) {
   const size = useThree((s) => s.size)
   const material = useRef<ShaderMaterial>(null)
+  const theme = useTheme((s) => s.theme)
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
       uUvScale: { value: new Vector2(1, 1) },
       uAspect: { value: new Vector2(1, 1) },
-      uAccentA: { value: new Color(colors.magenta) },
-      uAccentB: { value: new Color(colors.yellow) },
-      uAccentC: { value: new Color(colors.cyan) },
+      uAccentA: { value: new Color() },
+      uAccentB: { value: new Color() },
+      uAccentC: { value: new Color() },
     }),
     [],
   )
+  const accents = useMemo(() => {
+    const p = palettes[theme]
+    return [new Color(p.magenta), new Color(p.yellow), new Color(p.cyan)]
+  }, [theme])
 
   // Write through the material: R3F copies the uniforms prop, so the memo object isn't the live one.
   useFrame(() => {
     const u = material.current?.uniforms
     if (!u) return
     u.uTime.value = sceneTime()
+    u.uAccentA.value.copy(accents[0])
+    u.uAccentB.value.copy(accents[1])
+    u.uAccentC.value.copy(accents[2])
     u.uUvScale.value.copy(uvScale)
     u.uAspect.value.set(size.width / size.height, 1)
   })

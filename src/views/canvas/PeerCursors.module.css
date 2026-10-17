@@ -27,7 +27,7 @@
   left: 12px;
   padding: 1px var(--space-1);
   background: var(--peer);
-  color: var(--bg);
+  color: var(--on-accent);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   line-height: 1.4;

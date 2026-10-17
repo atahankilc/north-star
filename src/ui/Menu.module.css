@@ -21,7 +21,7 @@
 
 .trigger[aria-expanded='true'] {
   border-color: var(--line-hover);
-  background: rgba(22, 22, 22, 0.92);
+  background: var(--menu);
 }
 
 /* Narrowing the board: the accent bar stays, the edge and value take the accent. */
@@ -106,7 +106,7 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--accent-magenta);
   background: var(--accent-magenta);
-  color: var(--bg);
+  color: var(--on-accent);
   font: inherit;
   font-size: var(--text-sm);
   letter-spacing: 0.08em;
@@ -178,7 +178,7 @@
 .item:hover,
 .item:focus-visible {
   outline: none;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--wash-2);
   color: var(--fg-strong);
 }
 

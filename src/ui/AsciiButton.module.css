@@ -34,7 +34,7 @@
 
 .button:hover,
 .button:focus-visible {
-  color: var(--bg);
+  color: var(--on-accent);
 }
 
 .bracket {
@@ -44,7 +44,7 @@
 
 .button:hover .bracket,
 .button:focus-visible .bracket {
-  color: var(--bg);
+  color: var(--on-accent);
 }
 
 .button:disabled {

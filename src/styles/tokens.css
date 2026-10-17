@@ -1,5 +1,6 @@
 /* Design tokens: docs/DESIGN.md §3–4. Mirror any change in src/styles/tokens.ts. */
 :root {
+  color-scheme: dark;
   --bg: #000000;
   --bg-raised: #0b0b0b;
   --line: #2a2a2a;
@@ -19,6 +20,15 @@
   --accent-yellow: #ffd23f;
   --accent-blue: #3d7bff;
   --accent-green: #3dff8a;
+
+  /* Text on an accent fill; faint fg washes for hovers and stripes; the modal backdrop (D-069). */
+  --on-accent: #000000;
+  --wash-1: rgba(255, 255, 255, 0.025);
+  --wash-2: rgba(255, 255, 255, 0.05);
+  --wash-3: rgba(255, 255, 255, 0.08);
+  --wash-cyan: rgba(45, 226, 230, 0.06);
+  --scrim: rgba(0, 0, 0, 0.7);
+  --menu: rgba(22, 22, 22, 0.92);
 
   --font-display: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -46,6 +56,36 @@
   --dur-fast: 200ms;
   --dur-med: 400ms;
   --dur-slow: 600ms;
+}
+
+/* Light theme (D-069), set on <html> by src/state/theme.ts. Mirror any change in palettes.light (tokens.ts). */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f5f5f5;
+  --bg-raised: #ffffff;
+  --line: #d9d9d9;
+  --fg-dim: #6b6b6b;
+  --fg-faint: #8c8c8c;
+  --placeholder: #b0b0b0;
+
+  --surface: rgba(255, 255, 255, 0.86);
+  --line-hover: #b5b5b5;
+  --fg: #161616;
+  --fg-strong: #000000;
+
+  --accent-magenta: #db1a7a;
+  --accent-cyan: #0a979c;
+  --accent-yellow: #a87d00;
+  --accent-blue: #2a5fe0;
+  --accent-green: #0f9a4b;
+
+  --on-accent: #000000;
+  --wash-1: rgba(0, 0, 0, 0.025);
+  --wash-2: rgba(0, 0, 0, 0.045);
+  --wash-3: rgba(0, 0, 0, 0.07);
+  --wash-cyan: rgba(10, 151, 156, 0.08);
+  --scrim: rgba(0, 0, 0, 0.3);
+  --menu: rgba(255, 255, 255, 0.96);
 }
 
 @media (max-width: 760px) {

@@ -20,10 +20,10 @@ Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 - Comparison matrix (spreadsheet view)
 - Cross-linking from any node to any node; view transitions
 
-## Phase 3: Collaboration
-- Workspace sharing (invites, roles)
-- Presence: live cursors, avatars, selections ✅ (D-065)
-- Live edits across clients
+## Phase 3: Collaboration ✅ done (D-071)
+- Workspace sharing (invites, roles) ✅ (D-021, D-062)
+- Presence: live cursors, avatars, selections, following ✅ (D-065, D-067, D-068)
+- Live edits across clients ✅ (last write wins per field; no typing indicator, D-071)
 
 ## Phase 4: AI and settings
 - Settings page: OpenAI key (local only), model choice, effect quality

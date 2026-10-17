@@ -2,7 +2,7 @@
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MathUtils, MOUSE, TOUCH } from 'three'
+import { MathUtils, MOUSE, TOUCH, type ShaderMaterial } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
@@ -10,6 +10,7 @@ import { FOR, type CompetitorFeature, type Edge, type Label } from '../../data/m
 import { usePresence } from '../../data/presence'
 import { useCanvas } from '../../state/canvasStore'
 import { isReducedMotion } from '../../state/motion'
+import { usePalette } from '../../state/theme'
 import { defaultKind, type BoardItem } from './boardKinds'
 import { BoardLabel, LABEL_SIZE } from './BoardLabel'
 import { CARD_H, CARD_W, glideDt } from './cardLayout'
@@ -240,13 +241,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   const peers = usePresence((s) => s.peers)
   const peerSelection = useMemo(() => {
     const map = new Map<string, { name: string; color: string }[]>()
-    for (const p of peers) {
-      for (const id of new Set([p.sel, p.edit])) {
-        if (!id) continue
-        const name = p.edit === id && p.field ? `${p.name} ✎ ${p.field}` : p.name
-        map.set(id, [...(map.get(id) ?? []), { name, color: p.color }])
-      }
-    }
+    for (const p of peers) if (p.sel) map.set(p.sel, [...(map.get(p.sel) ?? []), { name: p.name, color: p.color }])
     return map
   }, [peers])
 
@@ -336,8 +331,18 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
 
 // Faint "+" marks every unit: an ASCII-flavoured grid for spatial memory.
 function DotGridMaterial() {
+  const shade = usePalette().grid
+  const material = useRef<ShaderMaterial>(null)
+  const uniforms = useMemo(() => ({ uShade: { value: shade } }), []) // eslint-disable-line react-hooks/exhaustive-deps
+  // R3F copies the uniforms prop, so theme changes go through the material (D-028).
+  const invalidate = useThree((s) => s.invalidate)
+  useEffect(() => {
+    if (material.current) material.current.uniforms.uShade.value = shade
+    invalidate()
+  }, [shade, invalidate])
   return (
     <shaderMaterial
+      ref={material}
       transparent
       depthWrite={false}
       vertexShader={/* glsl */ `
@@ -347,8 +352,10 @@ function DotGridMaterial() {
           gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
         }
       `}
+      uniforms={uniforms}
       fragmentShader={/* glsl */ `
         varying vec2 vWorld;
+        uniform float uShade;
         void main() {
           vec2 g = abs(fract(vWorld + 0.5) - 0.5);
           float w = fwidth(vWorld.x) * 1.2;
@@ -357,7 +364,7 @@ function DotGridMaterial() {
             step(g.x, w) * step(g.y, arm),
             step(g.y, w) * step(g.x, arm)
           );
-          gl_FragColor = vec4(vec3(0.3), plus * 0.4);
+          gl_FragColor = vec4(vec3(uShade), plus * 0.4);
         }
       `}
     />

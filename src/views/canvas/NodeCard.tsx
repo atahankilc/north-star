@@ -9,9 +9,9 @@ import { MathUtils, MeshBasicMaterial, Plane, Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { endMove, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
-import { colors } from '../../styles/tokens'
+import { usePalette, useThemeAccent } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
-import { BOARD_KINDS, TYPE_ACCENT, type BoardItem } from './boardKinds'
+import { BOARD_KINDS, typeAccent, type BoardItem } from './boardKinds'
 import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import styles from './NodeCard.module.css'
@@ -67,7 +67,9 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
   const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean } | null>(null)
 
   const [x, y] = live ?? [node.x, node.y]
-  const accent = TYPE_ACCENT[type]
+  const colors = usePalette()
+  const tone = useThemeAccent()
+  const accent = typeAccent(type, colors)
 
   // The card stays flat and its size never changes (D-061): no lift or scale on hover, selection or drag, which also made
   // a dragged card land somewhere other than under the pointer. While dragging it sits exactly under the pointer;
@@ -136,7 +138,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
     if (controls) controls.enabled = true
   }
 
-  const rim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : hovered ? '#5a5a5a' : null
+  const rim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : hovered ? colors.hover : null
   const title = node.title.trim()
   const left = -W / 2 + 0.22
   const inner = W - 0.22 - 0.16
@@ -169,11 +171,11 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
           <group key={i} position={[(i + 1) * 0.07, -(i + 1) * 0.07, -0.006 - i * 0.002]}>
             <mesh position={[0, 0, -0.001]}>
               <planeGeometry args={[W + 0.02, H + 0.02]} />
-              <meshBasicMaterial color="#2a2a2a" toneMapped={false} />
+              <meshBasicMaterial color={colors.hairline} toneMapped={false} />
             </mesh>
             <mesh>
               <planeGeometry args={[W, H]} />
-              <meshBasicMaterial color="#0e0e0e" toneMapped={false} />
+              <meshBasicMaterial color={colors.cardBehind} toneMapped={false} />
             </mesh>
           </group>
         ))}
@@ -184,7 +186,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
             <group key={p.name + i} position={[0, 0, -0.003 - (peers.length - i) * 0.0004]}>
               <mesh position={[0, 0, -0.0002]}>
                 <planeGeometry args={[W + out, H + out]} />
-                <meshBasicMaterial color={p.color} toneMapped={false} />
+                <meshBasicMaterial color={tone(p.color)} toneMapped={false} />
               </mesh>
               <mesh>
                 <planeGeometry args={[W + out - RING, H + out - RING]} />
@@ -196,11 +198,11 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
         {/* Edge: a hairline, or the highlight when hovered, selected, related or a link target. */}
         <mesh position={[0, 0, -0.002]}>
           <planeGeometry args={[W + (rim ? 0.05 : 0.02), H + (rim ? 0.05 : 0.02)]} />
-          <meshBasicMaterial color={rim ?? '#2a2a2a'} toneMapped={false} />
+          <meshBasicMaterial color={rim ?? colors.hairline} toneMapped={false} />
         </mesh>
         <mesh>
           <planeGeometry args={[W, H]} />
-          <meshBasicMaterial color="#121212" toneMapped={false} />
+          <meshBasicMaterial color={colors.card} toneMapped={false} />
         </mesh>
         {/* The type, at a glance: a left border and a small label. */}
         <mesh position={[-W / 2 + 0.03, 0, 0.001]}>
@@ -265,7 +267,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
         <Html position={[-W / 2 - (0.05 + peers.length * (RING + RING_GAP)) / 2, H / 2 + (0.05 + peers.length * (RING + RING_GAP)) / 2, 0]} zIndexRange={[1, 1]} pointerEvents="none">
           <div className={styles.peers}>
             {peers.map((p, i) => (
-              <span key={p.name + i} className={styles.peer} style={{ ['--peer' as string]: p.color }}>
+              <span key={p.name + i} className={styles.peer} style={{ ['--peer' as string]: tone(p.color) }}>
                 {p.name}
               </span>
             ))}

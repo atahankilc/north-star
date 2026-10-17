@@ -6,7 +6,6 @@ import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../data/auth'
 import { useMotion } from '../state/motion'
 import styles from './Hud.module.css'
-import { MotionToggle } from './MotionToggle'
 import { SettingsButton } from './Settings'
 
 export type Crumb = {
@@ -90,8 +89,8 @@ export function Hud({ crumbs = [], views, right, settings, settingsBadge }: Prop
       )}
       <div className={styles.right}>
         {right}
-        {/* Signed in: motion lives in settings. Signed out: just the motion switch. */}
-        {user ? <SettingsButton workspace={settings} badge={settingsBadge} /> : <MotionToggle />}
+        {/* Settings (motion, theme, background) only once signed in; the landing has no controls. */}
+        {user && <SettingsButton workspace={settings} badge={settingsBadge} />}
       </div>
     </header>
   )

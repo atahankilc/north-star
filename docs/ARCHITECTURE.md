@@ -58,7 +58,8 @@ The app talks to Firebase only through **`src/data/`**, so another swap would st
 - **three.js via @react-three/fiber** with **@react-three/drei** helpers and
   **@react-three/postprocessing** for the ASCII/dither effect
 - **Zustand** for local UI state (selection, tool mode, camera)
-- **React Router** with **HashRouter**, because GitHub Pages has no server-side rewrites
+- **React Router** with **BrowserRouter** (plain paths, no `#`, D-070). GitHub Pages has no rewrites, so the build copies
+  `index.html` to `404.html`; every deep link boots the app. All paths come from `src/app/paths.ts`
 - **Framer Motion / motion** for DOM transitions, and R3F springs (`@react-spring/three`) for 3D
 - **GitHub Actions** builds and deploys to Pages
 
@@ -90,7 +91,7 @@ workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role
 inviteCodes/{code}      workspaceId, createdBy
 joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)
 
-RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, edit?, field?, since?, ts   (D-065, D-067)
+RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, since?, ts   (D-065, D-067; edit/field retired, D-071)
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: the caller must be in `memberIds`.
 - `edges` is one generic edge collection, so any node type can connect to any other.
@@ -115,7 +116,7 @@ RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, edit?, fie
 
 - **Persistent data:** DB subscriptions. Every client re-renders on change.
   The conflict model is **last-write-wins per field**, which is enough for post-it fields.
-  ⏳ Concurrent editing of the *same* long text body is a later concern; the option is Yjs.
+  Simultaneous typing in the same field: last write wins, no lock or warning (D-071, answers Q-006).
 - **Ephemeral data** (cursors, selection, "is typing", viewport): Realtime Database at
   `presence/{wid}/{uid}`, removed automatically with `onDisconnect()`. Throttled to about 15–20 Hz and
   interpolated on the receiving side for smooth motion. Each tab writes its whole node, so a second tab survives

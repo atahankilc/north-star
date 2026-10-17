@@ -1,13 +1,13 @@
 // What collaborators have selected, outside the board (D-068): in Flow, Table and Matrix an item (or matrix cell)
 // someone has open gets a ring in their colour per person, and their names as small tags. Only selection is shown,
-// not edits in progress (the side panel's PeersHere strip covers typing).
+// never edits in progress (D-071).
 import { useShallow } from 'zustand/react/shallow'
 import { usePresence, type Peer } from '../../data/presence'
 import styles from './PeerMarks.module.css'
 
-// Everyone who has `id` selected (or is typing in it), stable between renders while that doesn't change.
+// Everyone who has `id` selected, stable between renders while that doesn't change.
 export function usePeersOn(id: string): Peer[] {
-  return usePresence(useShallow((s) => s.peers.filter((p) => p.sel === id || p.edit === id)))
+  return usePresence(useShallow((s) => s.peers.filter((p) => p.sel === id)))
 }
 
 // Rings around an element, one per person, with a dark gap between: for `box-shadow`.

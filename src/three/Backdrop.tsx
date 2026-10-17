@@ -4,6 +4,8 @@
 import { advance, Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import { MathUtils } from 'three'
+import { useTheme } from '../state/theme'
+import { palettes } from '../styles/tokens'
 import { AmbientField } from './AmbientField'
 import { AsciiEffect } from './AsciiEffect'
 import { backdropDim, sceneTime } from './sceneClock'
@@ -29,6 +31,12 @@ type SceneProps = {
 export function BackdropScene({ onFrame, field = true }: SceneProps) {
   const effect = useMemo(() => new AsciiEffect({ cellSize: cellSize() }), [])
   useEffect(() => () => effect.dispose(), [effect])
+  const theme = useTheme((s) => s.theme)
+  const invalidate = useThree((s) => s.invalidate)
+  useEffect(() => {
+    effect.setTheme(theme === 'light', palettes[theme].bg)
+    invalidate()
+  }, [effect, theme, invalidate])
 
   // Priority 1 takes over rendering from R3F: the field goes into the per-cell target, then the glyphs to the screen.
   useFrame(({ gl, scene, camera }, dt) => {

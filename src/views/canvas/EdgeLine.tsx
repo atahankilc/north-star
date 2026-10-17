@@ -3,7 +3,7 @@
 import { Line, Text } from '@react-three/drei'
 import { useMemo } from 'react'
 import { Shape, Vector2 } from 'three'
-import { colors } from '../../styles/tokens'
+import { usePalette } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 
 type Vec2 = [number, number]
@@ -44,7 +44,8 @@ type Props = {
 
 export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', active }: Props) {
   const style = STYLE[kind] ?? { label: kind }
-  const color = active ? colors.cyan : style.faint ? '#3a3a3a' : '#6a6a6a'
+  const colors = usePalette()
+  const color = active ? colors.cyan : style.faint ? colors.edgeFaint : colors.edge
 
   const { start, end, angle, mid } = useMemo(() => {
     const s = exit(from, to, fromHalf)
@@ -78,9 +79,9 @@ export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', active 
         <group position={[mid[0], mid[1], 0.01]}>
           <mesh>
             <planeGeometry args={[style.label.length * 0.062 + 0.12, 0.16]} />
-            <meshBasicMaterial color="#000000" toneMapped={false} />
+            <meshBasicMaterial color={colors.bg} toneMapped={false} />
           </mesh>
-          <Text font={fontUrls.mono} fontSize={0.09} letterSpacing={0.04} color={active ? colors.cyan : '#8a8a8a'} anchorX="center" anchorY="middle">
+          <Text font={fontUrls.mono} fontSize={0.09} letterSpacing={0.04} color={active ? colors.cyan : colors.edgeLabel} anchorX="center" anchorY="middle">
             {style.label}
           </Text>
         </group>

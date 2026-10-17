@@ -1,4 +1,4 @@
-// /w/:wid/flow: the chain drawn by the app (D-045). Columns go Customers → Problems → Competitors → Ideas → Features;
+// /workspaces/:wid/flow: the chain drawn by the app (D-045). Columns go Customers → Problems → Competitors → Ideas → Features;
 // links decide the rows, and empty cells say what's missing. Nothing to drag; clicking an item opens the side panel.
 import { useMemo } from 'react'
 import { BOARD_TYPES, type BoardType } from '../../data/model'

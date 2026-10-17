@@ -10,6 +10,7 @@
 // transparent, each at its own random moment (D-035).
 import {
   CanvasTexture,
+  Color,
   LinearFilter,
   Mesh,
   NearestFilter,
@@ -47,6 +48,8 @@ uniform float uGain;
 uniform float uDim;
 uniform float uMaskMode;   // 0 off · 1 covering · 2 revealing · 3 fully covered
 uniform float uProgress;   // 0 → 1 along the sweep
+uniform float uLight;      // 1: ink on paper (light theme, D-069)
+uniform vec3 uPaper;
 
 float hash12(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 
@@ -61,6 +64,14 @@ void main() {
   float glyph = texture2D(uGlyphs, vec2((idx + local.x) / uCount, local.y)).r;
 
   vec3 col = mix(vec3(l), c, uSaturation) * uGain * uDim * glyph;
+  if (uLight > 0.5) {
+    // Same glyphs, printed: brightness becomes ink coverage over the paper, and colour keeps its hue but darkens.
+    float peak = max(c.r, max(c.g, c.b));
+    float chroma = peak > 1e-3 ? (peak - min(c.r, min(c.g, c.b))) / peak : 0.0;
+    vec3 ink = mix(vec3(0.08), c / max(peak, 1e-3) * 0.62, chroma * uSaturation);
+    float cover = clamp(l * uGain, 0.0, 1.0) * uDim * glyph;
+    col = mix(uPaper, ink, cover);
+  }
   float alpha = 1.0;
 
   if (uMaskMode > 0.5) {
@@ -145,6 +156,8 @@ export class AsciiEffect {
         uDim: { value: 1 },
         uMaskMode: { value: 0 },
         uProgress: { value: 0 },
+        uLight: { value: 0 },
+        uPaper: { value: new Color() },
       },
     })
     const mesh = new Mesh(new PlaneGeometry(2, 2), this.material)
@@ -160,6 +173,12 @@ export class AsciiEffect {
 
   setDim(value: number) {
     this.material.uniforms.uDim.value = value
+  }
+
+  // Light theme: glyphs print dark on `paper` instead of glowing on black.
+  setTheme(light: boolean, paper: string) {
+    this.material.uniforms.uLight.value = light ? 1 : 0
+    ;(this.material.uniforms.uPaper.value as Color).set(paper)
   }
 
   setMask(mode: MaskMode, progress = 0) {

@@ -13,10 +13,6 @@ Verify the model ID and pricing on openai.com when Phase 4 starts.
 Option A: upload image/SVG/PDF only (simple). Option B: built-in sketch pad (for example tldraw) saving SVG.
 Recommendation: A first, B later.
 
-### Q-006 · later: Concurrent text editing
-Is last-write-wins per field enough, or do we need Yjs for simultaneous typing in the same note body?
-Recommendation: LWW for the MVP.
-
 ### Q-009 · soon: Storage limits for attachments
 Blocked on D-015 (Storage needs Blaze). If Blaze: 5 GB free. What per-file cap (for example 10 MB)?
 Should images be compressed client-side?

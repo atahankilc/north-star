@@ -26,7 +26,7 @@ body {
 
 ::selection {
   background: var(--accent-magenta);
-  color: var(--bg);
+  color: var(--on-accent);
 }
 
 a {

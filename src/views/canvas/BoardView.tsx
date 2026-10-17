@@ -1,4 +1,4 @@
-// /w/:wid: the main view (D-040). Every item type on one board, plus text written on it (D-050), filtered by the filter bar.
+// /workspaces/:wid: the main view (D-040). Every item type on one board, plus text written on it (D-050), filtered by the filter bar.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { WithId } from '../../data/hooks'
@@ -27,13 +27,13 @@ export function BoardView() {
   const select = useCanvas((s) => s.select)
   const [params, setParams] = useSearchParams()
 
-  // `?n=<id>` (from a link in another view) selects that card, unhides it, and starts the camera on it.
+  // `?item=<id>` (from a link in another view) selects that card, unhides it, and starts the camera on it.
   const [focus] = useState(() => {
-    const n = all.find((c) => c.id === params.get('n'))
+    const n = all.find((c) => c.id === params.get('item'))
     return n ? ([n.x, n.y] as [number, number]) : undefined
   })
   useEffect(() => {
-    const id = params.get('n')
+    const id = params.get('item')
     if (!id) return
     const n = all.find((c) => c.id === id)
     if (n) {
@@ -41,10 +41,10 @@ export function BoardView() {
       select(id)
       useCanvas.getState().focusOn([n.x, n.y])
     }
-    // Keep `?f=` (a competitor feature to open in the panel).
+    // Keep `?feature=` (a competitor feature to open in the panel).
     setParams(
       (p) => {
-        p.delete('n')
+        p.delete('item')
         return p
       },
       { replace: true },

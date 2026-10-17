@@ -7,6 +7,14 @@
     <meta name="theme-color" content="#000000" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='black'/><text x='8' y='12.5' font-size='12' font-family='monospace' text-anchor='middle' fill='%23ff3d9a'>#</text></svg>" />
     <title>North Star</title>
+    <script>
+      // Apply a stored light theme before the first paint (D-069); src/state/theme.ts takes over from here.
+      try {
+        var t = localStorage.getItem('north-star.theme')
+        if (t === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+        if (t === 'light') document.documentElement.dataset.theme = 'light'
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

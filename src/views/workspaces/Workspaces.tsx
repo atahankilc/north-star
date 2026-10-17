@@ -1,7 +1,8 @@
-// /w: your workspaces, plus create, ask to join with a code, and invites waiting for you (D-012, D-062).
+// /workspaces: your workspaces, plus create, ask to join with a code, and invites waiting for you (D-012, D-062).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { workspacePath } from '../../app/paths'
 import type { AuthUser } from '../../data/auth'
 import { createExampleWorkspace } from '../../data/example'
 import type { WithId } from '../../data/hooks'
@@ -45,12 +46,12 @@ export function Workspaces({ user }: { user: AuthUser }) {
         </h1>
 
         <div className={styles.forms}>
-          <CreateForm uid={user.id} onCreated={(id) => navigate(`/w/${id}`)} />
-          <JoinForm user={user} onJoined={(id) => navigate(`/w/${id}`)} />
-          <ExampleStrip uid={user.id} onCreated={(id) => navigate(`/w/${id}`)} />
+          <CreateForm uid={user.id} onCreated={(id) => navigate(workspacePath(id))} />
+          <JoinForm user={user} onJoined={(id) => navigate(workspacePath(id))} />
+          <ExampleStrip uid={user.id} onCreated={(id) => navigate(workspacePath(id))} />
         </div>
 
-        <Pending user={user} onJoined={(id) => navigate(`/w/${id}`)} />
+        <Pending user={user} onJoined={(id) => navigate(workspacePath(id))} />
 
         {workspaces.error && <p className={styles.error}>! {workspaces.error.message}</p>}
 
@@ -63,7 +64,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
                   workspace={w}
                   uid={user.id}
                   waiting={waiting.data.filter((r) => r.workspaceId === w.id).length}
-                  onOpen={() => navigate(`/w/${w.id}`)}
+                  onOpen={() => navigate(workspacePath(w.id))}
                 />
               </Appear>
             ))}

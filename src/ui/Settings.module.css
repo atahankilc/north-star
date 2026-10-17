@@ -31,7 +31,7 @@
   width: 24px;
   height: 24px;
   background: var(--accent-cyan);
-  color: var(--bg);
+  color: var(--on-accent);
   font-size: var(--text-xs);
 }
 
@@ -103,7 +103,7 @@
   height: 16px;
   padding: 0 3px;
   background: var(--accent-cyan);
-  color: var(--bg);
+  color: var(--on-accent);
   font-size: 10px;
   line-height: 1;
 }
@@ -124,7 +124,7 @@
 }
 
 .dialog::backdrop {
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--scrim);
 }
 
 /* Side menu on the left, the chosen page on the right. */
@@ -205,7 +205,7 @@
   min-width: 16px;
   padding: 0 4px;
   background: var(--accent-cyan);
-  color: var(--bg);
+  color: var(--on-accent);
   font-size: 10px;
   letter-spacing: 0;
   text-align: center;
@@ -261,7 +261,7 @@
   width: 48px;
   height: 48px;
   background: var(--accent-cyan);
-  color: var(--bg);
+  color: var(--on-accent);
   font-size: 20px;
 }
 
