@@ -1,16 +1,16 @@
-// One card on a board (an idea post-it or a feature): a lit slab with SDF text (D-019). Editing happens in the DetailPanel.
+// One card on the board: a lit slab with SDF text (D-019), shaped by its type (docs/specs/domains.md §4).
+// Editing happens in the DetailPanel.
 import { RoundedBox, Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useMemo, useRef, useState } from 'react'
-import { MathUtils, MeshBasicMaterial, Plane, Vector3, type Group } from 'three'
+import { MathUtils, MeshBasicMaterial, Plane, Shape, Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import type { WithId } from '../../data/hooks'
-import type { BoardNode, BoardType } from '../../data/model'
 import { moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { colors } from '../../styles/tokens'
 import { fontUrls } from '../../three/fonts'
-import { CARD_H, CARD_W, truncate } from './cardLayout'
+import { BOARD_KINDS, TYPE_ACCENT, type BoardItem } from './boardKinds'
+import { CARD_H, cardWidth, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 
 const BOARD = new Plane(new Vector3(0, 0, 1), 0)
@@ -21,18 +21,37 @@ export function boardPoint(e: ThreeEvent<PointerEvent | MouseEvent>): [number, n
   return e.ray.intersectPlane(BOARD, hit) ? [hit.x, hit.y] : null
 }
 
+// Customers are the one card with soft corners.
+function roundedRect(w: number, h: number, r: number) {
+  const s = new Shape()
+  s.moveTo(-w / 2 + r, -h / 2)
+  s.lineTo(w / 2 - r, -h / 2)
+  s.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r)
+  s.lineTo(w / 2, h / 2 - r)
+  s.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2)
+  s.lineTo(-w / 2 + r, h / 2)
+  s.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r)
+  s.lineTo(-w / 2, -h / 2 + r)
+  s.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2)
+  return s
+}
+
 type Props = {
   wid: string
-  type: BoardType
-  node: WithId<BoardNode>
-  // Bottom line: tags for ideas, priority/status/effort for features.
-  meta: string
+  item: BoardItem
   // Stable stacking order, so overlapping cards layer instead of z-fighting.
   layer: number
+  // Tagged with the selected customer (D-044).
+  related: boolean
+  // Shown on the `all` tab for items without a domain.
+  unsorted: boolean
   onLinkDrop: (targetId: string) => void
 }
 
-export function NodeCard({ wid, type, node, meta, layer, onLinkDrop }: Props) {
+export function NodeCard({ wid, item: node, layer, related, unsorted, onLinkDrop }: Props) {
+  const type = node.type
+  const meta = node.meta
+  const W = cardWidth(type)
   const group = useRef<Group>(null)
   const content = useRef<Group>(null)
   // Cell-by-cell entrance (D-034): shared by all of this card's materials. Text gets its own base
@@ -55,13 +74,13 @@ export function NodeCard({ wid, type, node, meta, layer, onLinkDrop }: Props) {
   const drag = useRef<{ dx: number; dy: number; lastWrite: number; moved: boolean } | null>(null)
 
   const [x, y] = live ?? [node.x, node.y]
-  const accent = node.color ?? colors.fg
+  const accent = node.color ?? TYPE_ACCENT[type]
 
   // Glide toward the target position (remote moves animate too) and lift on hover/drag.
   useFrame((_, dt) => {
     const g = group.current
     if (!g) return
-    const lift = (drag.current ? 0.45 : hovered || selected ? 0.14 : 0) + layer * 0.004
+    const lift = (drag.current ? 0.45 : hovered || selected ? 0.14 : related ? 0.07 : 0) + layer * 0.004
     const k = drag.current ? 40 : 12
     g.position.x = MathUtils.damp(g.position.x, x, k, dt)
     g.position.y = MathUtils.damp(g.position.y, y, k, dt)
@@ -119,8 +138,12 @@ export function NodeCard({ wid, type, node, meta, layer, onLinkDrop }: Props) {
     if (controls) controls.enabled = true
   }
 
-  const rim = isLinkTarget ? colors.cyan : selected ? accent : hovered ? '#3a3a3a' : null
+  const rim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : hovered ? '#3a3a3a' : null
   const title = node.title.trim()
+  const mark = BOARD_KINDS[type].mark
+  const left = -W / 2 + 0.18
+  const customerShape = useMemo(() => (type === 'customer' ? roundedRect(W, CARD_H, 0.22) : null), [type, W])
+  const customerRim = useMemo(() => (type === 'customer' ? roundedRect(W + 0.06, CARD_H + 0.06, 0.25) : null), [type, W])
 
   return (
     <group
@@ -143,20 +166,64 @@ export function NodeCard({ wid, type, node, meta, layer, onLinkDrop }: Props) {
       }}
     >
       <group ref={content}>
-        {rim && (
-          <mesh position={[0, 0, -0.04]}>
-            <planeGeometry args={[CARD_W + 0.06, CARD_H + 0.06]} />
-            <meshBasicMaterial color={rim} toneMapped={false} />
-          </mesh>
+        {type === 'customer' && customerShape && customerRim ? (
+          <>
+            {rim && (
+              <mesh position={[0, 0, -0.04]}>
+                <shapeGeometry args={[customerRim, 8]} />
+                <meshBasicMaterial color={rim} toneMapped={false} />
+              </mesh>
+            )}
+            <mesh position={[0, 0, 0.03]}>
+              <shapeGeometry args={[customerShape, 8]} />
+              <meshStandardMaterial color="#121212" roughness={0.7} metalness={0.05} />
+            </mesh>
+            {/* A short accent tick instead of a strip: the soft corners would cut a full one. */}
+            <mesh position={[left + 0.2, CARD_H / 2 - 0.02, 0.031]}>
+              <planeGeometry args={[0.4, 0.04]} />
+              <meshBasicMaterial color={accent} toneMapped={false} />
+            </mesh>
+          </>
+        ) : (
+          <>
+            {type === 'competitor' && (
+              // Double rim: two accent lines with a dark gap.
+              <>
+                <mesh position={[0, 0, -0.06]}>
+                  <planeGeometry args={[W + 0.2, CARD_H + 0.2]} />
+                  <meshBasicMaterial color={rim ?? accent} transparent opacity={rim ? 1 : 0.45} toneMapped={false} />
+                </mesh>
+                <mesh position={[0, 0, -0.055]}>
+                  <planeGeometry args={[W + 0.16, CARD_H + 0.16]} />
+                  <meshBasicMaterial color="#000000" toneMapped={false} />
+                </mesh>
+              </>
+            )}
+            {(rim || type === 'competitor') && (
+              <mesh position={[0, 0, -0.04]}>
+                <planeGeometry args={[W + 0.06, CARD_H + 0.06]} />
+                <meshBasicMaterial color={rim ?? accent} transparent opacity={rim ? 1 : 0.45} toneMapped={false} />
+              </mesh>
+            )}
+            <RoundedBox args={[W, CARD_H, 0.06]} radius={0.025} smoothness={2}>
+              <meshStandardMaterial color="#121212" roughness={0.7} metalness={0.05} />
+            </RoundedBox>
+            {/* Accent along the top edge: a wide band marks a problem. */}
+            {type === 'problem' ? (
+              <mesh position={[0, CARD_H / 2 - 0.08, 0.031]}>
+                <planeGeometry args={[W, 0.16]} />
+                <meshBasicMaterial color={accent} toneMapped={false} />
+              </mesh>
+            ) : (
+              type !== 'competitor' && (
+                <mesh position={[0, CARD_H / 2 - 0.02, 0.031]}>
+                  <planeGeometry args={[W, 0.04]} />
+                  <meshBasicMaterial color={accent} toneMapped={false} />
+                </mesh>
+              )
+            )}
+          </>
         )}
-        <RoundedBox args={[CARD_W, CARD_H, 0.06]} radius={0.025} smoothness={2}>
-          <meshStandardMaterial color="#121212" roughness={0.7} metalness={0.05} />
-        </RoundedBox>
-        {/* Accent strip along the top edge. */}
-        <mesh position={[0, CARD_H / 2 - 0.02, 0.031]}>
-          <planeGeometry args={[CARD_W, 0.04]} />
-          <meshBasicMaterial color={accent} toneMapped={false} />
-        </mesh>
 
         <Text
           material={textMaterial}
@@ -165,11 +232,11 @@ export function NodeCard({ wid, type, node, meta, layer, onLinkDrop }: Props) {
           color={title ? colors.fg : colors.fgDim}
           anchorX="left"
           anchorY="top"
-          position={[-CARD_W / 2 + 0.18, CARD_H / 2 - 0.2, 0.032]}
-          maxWidth={CARD_W - 0.36}
+          position={[left, CARD_H / 2 - (type === 'problem' ? 0.26 : 0.2), 0.032]}
+          maxWidth={W - 0.36}
           letterSpacing={-0.01}
         >
-          {truncate(title || 'Untitled', 26)}
+          {mark + truncate(title || 'Untitled', type === 'competitor' ? 34 : 26)}
         </Text>
         {node.body && (
           <Text
@@ -177,12 +244,12 @@ export function NodeCard({ wid, type, node, meta, layer, onLinkDrop }: Props) {
             font={fontUrls.mono}
             fontSize={0.095}
             lineHeight={1.45}
-            color={colors.fgDim}
+            color={type === 'competitor' ? colors.cyan : colors.fgDim}
             anchorX="left"
             anchorY="top"
-            position={[-CARD_W / 2 + 0.18, CARD_H / 2 - 0.5, 0.032]}
-            maxWidth={CARD_W - 0.36}
-            clipRect={[0, -(CARD_H - 0.85), CARD_W, 0.01]}
+            position={[left, CARD_H / 2 - 0.5, 0.032]}
+            maxWidth={W - 0.36}
+            clipRect={[0, -(CARD_H - 0.85), W, 0.01]}
           >
             {node.body}
           </Text>
@@ -195,9 +262,22 @@ export function NodeCard({ wid, type, node, meta, layer, onLinkDrop }: Props) {
             color={node.color ?? colors.cyan}
             anchorX="left"
             anchorY="bottom"
-            position={[-CARD_W / 2 + 0.18, -CARD_H / 2 + 0.14, 0.032]}
+            position={[left, -CARD_H / 2 + 0.14, 0.032]}
           >
-            {truncate(meta, 40)}
+            {truncate(meta, (type === 'competitor' ? 52 : 40) - (unsorted ? 11 : 0))}
+          </Text>
+        )}
+        {unsorted && (
+          <Text
+            material={textMaterial}
+            font={fontUrls.mono}
+            fontSize={0.075}
+            color={colors.fgDim}
+            anchorX="right"
+            anchorY="bottom"
+            position={[W / 2 - 0.18, -CARD_H / 2 + 0.14, 0.032]}
+          >
+            unsorted
           </Text>
         )}
       </group>

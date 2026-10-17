@@ -1,10 +1,10 @@
 # Project State
 
-_Last updated: 2026-10-17_
+_Last updated: 2026-10-17 (Phase 2b step 1)_
 
 ## Phase
-**Phase 2: Competitors and features**, first pass done (checkpoint). The user is now rethinking the information
-architecture around domains (Q-015) before more Phase 2 work. Phase 1 leftovers: groups (Q-012), undo (Q-013).
+**Phase 2b: domains, customers, problems and one board** (spec: docs/specs/domains.md, D-039 to D-045).
+Build step 1 done; steps 2 (Table) and 3 (Flow) next. Phase 1 leftovers: groups (Q-012), undo (Q-013).
 
 ## Done
 - **Phase 0**: specs, memory bank, scaffold, ASCII design language, GitHub Pages workflow (commit `e114f34`)
@@ -50,8 +50,22 @@ architecture around domains (Q-015) before more Phase 2 work. Phase 1 leftovers:
 - Rules: collection allowlist + shape validation; 56 tests pass. **Not deployed yet** (old rules still allow everything for members, so the client works either way)
 - Verified on emulators with headless Chrome (tabs, promote, jump, competitors, matrix)
 
+## Done (Phase 2b step 1, 2026-10-17)
+- Spec accepted with the user: customers are items and double as segments (`for` edges drawn as card labels), user-created,
+  any kind of startup; Flow order Customers → Problems → Competitors → Ideas → Features (D-042 to D-045)
+- Data: `domains`, `customers`, `problems` collections; `domainId` / `domainIds[]` on items; competitors get `x, y`;
+  `src/data/domains.ts` (create, rename, delete → items become unsorted). Rules + 10 new tests (66 pass). **Rules not deployed yet.**
+- One board (`/w/:wid`) with all five types, each with its own card shape (customer: rounded + `@`, problem: magenta band + `!`,
+  competitor: wide double rim, feature: `◆`). Competitors without a position get a free spot on first view.
+- HUD domain tabs (`[all] … + domain`, click the current tab to rename, `×` → `delete?`), filter bar (types + `for:` customers),
+  view switch bottom-right (`board`, `matrix`). Filters and last `+` type remembered per workspace (`src/state/workspaceView.ts`).
+- Side panel for every type with domain and `for` pickers; competitors open their profile there (`CompetitorProfile.tsx`, formerly the competitors page).
+  Selecting a customer highlights its tagged items and shows those lines. Shift+drag picks a sensible link kind (`solves`, `competes-with`, `for`…).
+- Matrix follows the domain tab. Old `/features` and `/competitors` routes redirect to the board. Links use `?n=<id>` (+ `&f=` for a competitor's feature).
+- Verified on emulators with headless Chrome (seeded workspace; add/rename/delete domain, create + tag, customer highlight, competitor panel, matrix, redirects).
+
 ## Next steps
-0. Settle Q-015 (domains, problem/customer framing, Flow / Board / Table views), spec it in /docs, review with the user, then build
+0. Phase 2b step 2: Table view; step 3: Flow view (docs/specs/domains.md §4). Deploy rules when the user okays it.
 1. Groups / clusters (Q-012)
 2. Undo + Delete key (Q-013)
 3. Phase 2: competitors, competitor maps, features view, comparison matrix
@@ -71,6 +85,8 @@ architecture around domains (Q-015) before more Phase 2 work. Phase 1 leftovers:
   with `headless: 'new'`. It runs rAF normally, unlike the extension's background tab. Set `localStorage['north-star.motion'] = 'full'`
   via `evaluateOnNewDocument` first (the user's OS has Reduce Motion on). Wait for `window.__curtain.getState().revealed` before capturing.
 - The user runs their own dev server on :5173. Use another port (e.g. 5179) for yours, and stop your servers when done.
+- Ideas and features used to live on separate boards, so in old workspaces they may overlap on the shared board. Drag them apart.
+- Seed script pattern for visual checks: sign in to the auth emulator as `test-alice` with the firebase client in node, write a workspace + items, then open `/#/w/<wid>` after clicking Alice.
 - Dev hooks: `window.__sceneTime`, `__backdrop` (R3F state), `__curtain`, `__sweep`, `__canvas`, `__advance`.
 - Chrome screenshots are scaled: viewport 2560 px vs 1568 px frame, so script clientX/Y needs ×(innerWidth/1568).
 - OrbitControls listens on the Board's wrapper div (not the canvas), so card handlers run first and can disable panning.

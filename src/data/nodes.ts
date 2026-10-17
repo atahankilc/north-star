@@ -10,9 +10,23 @@ import {
   type DocumentReference,
 } from 'firebase/firestore'
 import { db } from './firebase'
-import type { BoardNode, BoardType, Comparison, Competitor, CompetitorFeature, Edge, Feature, Idea, NodeType } from './model'
+import type {
+  BoardNode,
+  BoardType,
+  Comparison,
+  Competitor,
+  CompetitorFeature,
+  Customer,
+  Edge,
+  Feature,
+  Idea,
+  NodeType,
+  Problem,
+} from './model'
 
 export const COLLECTIONS = {
+  customer: 'customers',
+  problem: 'problems',
   idea: 'ideas',
   group: 'groups',
   feature: 'features',
@@ -21,6 +35,8 @@ export const COLLECTIONS = {
 } as const satisfies Record<NodeType, string>
 
 type Fields = {
+  customer: Customer
+  problem: Problem
   idea: Idea
   group: never
   feature: Feature
@@ -40,8 +56,20 @@ export async function createNode<T extends Exclude<NodeType, 'group'>>(
   return ref.id
 }
 
-export function createBoardNode(wid: string, type: BoardType, at: { x: number; y: number }, fields: Partial<BoardNode> = {}) {
-  return createNode(wid, type, { title: '', ...fields, x: at.x, y: at.y })
+// A new card on the board. Competitors keep their title as `name`.
+export function createBoardNode(
+  wid: string,
+  type: BoardType,
+  at: { x: number; y: number },
+  fields: Partial<BoardNode> & { domainId?: string; domainIds?: string[] } = {},
+) {
+  if (type === 'competitor') {
+    const { title = '', body: _body, tags: _tags, domainId: _d, ...rest } = fields
+    return createNode(wid, 'competitor', { ...rest, name: title, x: at.x, y: at.y })
+  }
+  const { domainId, domainIds, ...rest } = fields
+  const domain = type === 'problem' || type === 'idea' ? domainId && { domainId } : domainIds?.length && { domainIds }
+  return createNode(wid, type, { title: '', ...rest, ...domain, x: at.x, y: at.y } as never)
 }
 
 // `undefined` clears a field (Firestore rejects undefined values).

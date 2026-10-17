@@ -1,77 +1,24 @@
-// /w/:wid/competitors(/:cid): a list of competitors, and one competitor's profile with its features
-// grouped by category (D-038).
+// A competitor's profile in the board's side panel (D-038, D-040): details, plus its features grouped by category.
 import { AnimatePresence } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type { WithId } from '../../data/hooks'
 import type { Competitor, CompetitorFeature } from '../../data/model'
 import { createNode, deleteNode, updateNode } from '../../data/nodes'
+import { useCanvas } from '../../state/canvasStore'
 import { Appear } from '../../ui/Appear'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { AutosaveField } from '../../ui/AutosaveField'
-import { DecodeText } from '../../ui/DecodeText'
 import { useWs } from '../workspace/context'
 import { LinkList } from '../workspace/LinkList'
-import styles from './CompetitorsView.module.css'
+import styles from './CompetitorProfile.module.css'
 
 const UNCATEGORIZED = 'uncategorized'
 
-export function CompetitorsView() {
-  const { wid, competitors, competitorFeatures } = useWs()
-  const { cid } = useParams()
-  const navigate = useNavigate()
-  const base = `/w/${wid}/competitors`
-  const sorted = useMemo(() => [...competitors].sort((a, b) => a.createdAt - b.createdAt), [competitors])
-  const competitor = competitors.find((c) => c.id === cid)
-  const [fresh, setFresh] = useState<string | null>(null)
-
-  const add = async () => {
-    const id = await createNode(wid, 'competitor', { name: '' })
-    setFresh(id)
-    navigate(`${base}/${id}`)
-  }
-
-  // The list page opens the first competitor; a deleted or unknown one falls back to the list.
-  if (!competitor && sorted.length > 0 && (!cid || cid !== fresh)) return <Navigate to={`${base}/${sorted[0].id}`} replace />
-
-  return (
-    <main className={styles.page}>
-      <div className={styles.layout}>
-        <Appear as="nav" className={styles.rail} aria-label="Competitors">
-          <span className={styles.label}>competitors</span>
-          <ul className={styles.list}>
-            {sorted.map((c) => {
-              const count = competitorFeatures.filter((f) => f.competitorId === c.id).length
-              return (
-                <li key={c.id}>
-                  <NavLink to={`${base}/${c.id}`} className={({ isActive }) => (isActive ? styles.itemActive : styles.item)}>
-                    <span className={styles.itemName}>{c.name || 'Untitled'}</span>
-                    <span className={styles.count}>{count}</span>
-                  </NavLink>
-                </li>
-              )
-            })}
-          </ul>
-          <AsciiButton accent="cyan" onClick={add}>
-            + Competitor
-          </AsciiButton>
-        </Appear>
-
-        {competitor ? (
-          <Profile key={competitor.id} competitor={competitor} autoFocus={fresh === competitor.id} />
-        ) : (
-          <div className={styles.empty}>
-            <DecodeText text="Add a competitor to break their product down into features" />
-          </div>
-        )}
-      </div>
-    </main>
-  )
-}
-
-function Profile({ competitor, autoFocus }: { competitor: WithId<Competitor>; autoFocus: boolean }) {
+// `children` sits between the facts and the features (domain and customer pickers).
+export function CompetitorProfile({ competitor, children }: { competitor: WithId<Competitor>; children?: ReactNode }) {
   const { wid } = useWs()
-  const navigate = useNavigate()
+  const select = useCanvas((s) => s.select)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const set = (fields: Partial<Competitor>) => void updateNode(wid, 'competitor', competitor.id, fields)
   const opt = (key: keyof Competitor) => (v: string) => set({ [key]: v.trim() ? v : undefined })
@@ -85,15 +32,21 @@ function Profile({ competitor, autoFocus }: { competitor: WithId<Competitor>; au
   const href = safeUrl(competitor.url)
 
   return (
-    <Appear as="section" className={styles.profile} aria-label={`${competitor.name || 'Untitled'} profile`}>
+    <div className={styles.profile}>
       <header className={styles.head}>
+        <div className={styles.kickerRow}>
+          <span className={styles.kicker}>competitor</span>
+          <button className={styles.close} onClick={() => select(null)} aria-label="Close panel">
+            [×]
+          </button>
+        </div>
         <AutosaveField
           className={styles.name}
           label="Competitor name"
           placeholder="Competitor name"
           value={competitor.name}
           onSave={(name) => set({ name: name.trim() })}
-          autoFocus={autoFocus}
+          autoFocus={!competitor.name}
         />
         <div className={styles.urlRow}>
           <AutosaveField
@@ -119,6 +72,8 @@ function Profile({ competitor, autoFocus }: { competitor: WithId<Competitor>; au
       <Field label="description" value={competitor.description} onSave={opt('description')} placeholder="What they do" multiline />
       <Field label="notes" value={competitor.notes} onSave={opt('notes')} placeholder="Strengths, weaknesses, reviews" multiline />
 
+      {children}
+
       <Features competitorId={competitor.id} />
 
       <LinkList nodeId={competitor.id} nodeType="competitor" hint="Link this competitor to ideas or features." />
@@ -129,14 +84,14 @@ function Profile({ competitor, autoFocus }: { competitor: WithId<Competitor>; au
           accent={confirmDelete ? 'magenta' : 'yellow'}
           onClick={() => {
             if (!confirmDelete) return setConfirmDelete(true)
-            navigate(`/w/${wid}/competitors`, { replace: true })
+            select(null)
             void deleteNode(wid, 'competitor', competitor.id)
           }}
         >
           {confirmDelete ? 'Confirm delete' : 'Delete competitor'}
         </AsciiButton>
       </footer>
-    </Appear>
+    </div>
   )
 }
 
@@ -176,13 +131,19 @@ function Features({ competitorId }: { competitorId: string }) {
   const features = competitorFeatures.filter((f) => f.competitorId === competitorId)
   const listId = `categories-${competitorId}`
 
-  // `?n=<id>` (from a link elsewhere) opens that feature.
+  // `?f=<id>` (from a link elsewhere) opens that feature.
   useEffect(() => {
-    const id = params.get('n')
+    const id = params.get('f')
     if (!id) return
     setOpen(id)
     requestAnimationFrame(() => document.getElementById(`cf-${id}`)?.scrollIntoView({ block: 'center' }))
-    setParams({}, { replace: true })
+    setParams(
+      (p) => {
+        p.delete('f')
+        return p
+      },
+      { replace: true },
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params])
 

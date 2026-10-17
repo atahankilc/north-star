@@ -1,7 +1,7 @@
 // /w/:wid/matrix: our features × competitors. Each cell says how well that competitor covers the
 // feature; the last column reads the row as a whole (gap, table stakes, mixed).
 import { AnimatePresence } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { cellId, setCell } from '../../data/comparisons'
 import type { WithId } from '../../data/hooks'
@@ -10,7 +10,9 @@ import { Appear } from '../../ui/Appear'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { Choice } from '../../ui/Choice'
 import { DecodeText } from '../../ui/DecodeText'
+import { ALL, useWsView } from '../../state/workspaceView'
 import { useWs } from '../workspace/context'
+import { ViewSwitch } from '../workspace/ViewSwitch'
 import styles from './MatrixView.module.css'
 
 // Not assessed → none → partial → full → better → not assessed.
@@ -47,11 +49,20 @@ const rank = (f: Feature) => {
 type Pos = { row: number; col: number }
 
 export function MatrixView() {
-  const { wid, features, competitors, comparisons } = useWs()
+  const { wid, features, competitors, comparisons, domains } = useWs()
   const [selected, setSelected] = useState<Pos | null>(null)
+  // Follows the domain tab (docs/specs/domains.md §4).
+  const domain = useWsView((s) => s.domain)
+  const inDomain = useCallback(
+    (n: { domainIds?: string[] }) => domain === ALL || !domains.some((d) => d.id === domain) || Boolean(n.domainIds?.includes(domain)),
+    [domain, domains],
+  )
 
-  const rows = useMemo(() => [...features].sort((a, b) => rank(a) - rank(b) || a.createdAt - b.createdAt), [features])
-  const cols = useMemo(() => [...competitors].sort((a, b) => a.createdAt - b.createdAt), [competitors])
+  const rows = useMemo(
+    () => features.filter(inDomain).sort((a, b) => rank(a) - rank(b) || a.createdAt - b.createdAt),
+    [features, inDomain],
+  )
+  const cols = useMemo(() => competitors.filter(inDomain).sort((a, b) => a.createdAt - b.createdAt), [competitors, inDomain])
   const cells = useMemo(() => new Map(comparisons.map((c) => [c.id, c])), [comparisons])
   const cellAt = (r: number, c: number) => cells.get(cellId(rows[r].id, cols[c].id))
 
@@ -92,12 +103,15 @@ export function MatrixView() {
         <div className={styles.emptyState}>
           <DecodeText text="The matrix compares your features with your competitors" />
           <p className={styles.emptyHint}>
-            {rows.length === 0 && <Link to={`/w/${wid}/features`}>add a feature</Link>}
-            {rows.length === 0 && cols.length === 0 && ' and '}
-            {cols.length === 0 && <Link to={`/w/${wid}/competitors`}>add a competitor</Link>}
-            {' to start.'}
+            <Link to={`/w/${wid}`}>
+              add {rows.length === 0 && 'a feature'}
+              {rows.length === 0 && cols.length === 0 && ' and '}
+              {cols.length === 0 && 'a competitor'}
+            </Link>
+            {domain === ALL ? ' on the board to start.' : ' in this domain on the board to start.'}
           </p>
         </div>
+        <ViewSwitch />
       </main>
     )
   }
@@ -119,7 +133,7 @@ export function MatrixView() {
               <th className={styles.metaHead}>status</th>
               {cols.map((c) => (
                 <th key={c.id} className={styles.compHead}>
-                  <Link to={`/w/${wid}/competitors/${c.id}`} title={c.name}>
+                  <Link to={`/w/${wid}?n=${c.id}`} title={c.name}>
                     {c.name || 'Untitled'}
                   </Link>
                 </th>
@@ -133,7 +147,7 @@ export function MatrixView() {
               return (
                 <tr key={f.id} data-selected={sel?.row === r}>
                   <th scope="row" className={styles.feature}>
-                    <Link to={`/w/${wid}/features?n=${f.id}`}>{f.title || 'Untitled'}</Link>
+                    <Link to={`/w/${wid}?n=${f.id}`}>{f.title || 'Untitled'}</Link>
                   </th>
                   <td className={styles.meta}>{f.priority ?? ''}</td>
                   <td className={styles.meta}>{f.status ?? ''}</td>
@@ -205,6 +219,7 @@ export function MatrixView() {
           />
         )}
       </AnimatePresence>
+      <ViewSwitch />
     </main>
   )
 }

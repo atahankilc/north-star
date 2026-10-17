@@ -1,4 +1,4 @@
-// A board scene (ideas or features, D-037): 2.5D (D-018) with pan/zoom camera, cards and connections.
+// The board scene: every item type on one canvas (D-040), 2.5D (D-018) with pan/zoom camera, cards and connections.
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useState } from 'react'
@@ -6,30 +6,27 @@ import { MOUSE, TOUCH } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
-import type { BoardNode, BoardType, Edge } from '../../data/model'
-import { createBoardNode } from '../../data/nodes'
+import { FOR, type Edge } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
+import { ALL, useWsView } from '../../state/workspaceView'
 import { colors } from '../../styles/tokens'
-import { cardMeta } from './boardKinds'
+import { defaultKind, type BoardItem } from './boardKinds'
 import { EdgeLine } from './EdgeLine'
 import { boardPoint, NodeCard } from './NodeCard'
 
 type Props = {
   wid: string
-  type: BoardType
-  nodes: WithId<BoardNode>[]
+  // Visible items only (domain tab and filters applied).
+  nodes: BoardItem[]
   edges: WithId<Edge>[]
+  // Double-click on empty board.
+  onCreate: (at: [number, number]) => void
   // Look here first instead of where this board was last left (e.g. a link jumped to a card).
   focus?: [number, number]
 }
 
 // Where each board's camera was left, so switching views and coming back doesn't lose your place.
 const cameras = new Map<string, { target: [number, number]; distance: number }>()
-
-// Where a board is looking (or was last left): new cards for a board you're not on go there.
-export function boardCenter(wid: string, type: BoardType): [number, number] {
-  return cameras.get(`${wid}/${type}`)?.target ?? [0, 0]
-}
 
 export function Board(props: Props) {
   // Pan/zoom listens on this wrapper, not the canvas. DOM events reach the canvas (and R3F's
@@ -70,7 +67,7 @@ function Controls({ domElement }: { domElement: HTMLElement }) {
   )
 }
 
-function Scene({ wid, type, nodes, edges, focus }: Props) {
+function Scene({ wid, nodes, edges, onCreate, focus }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const selectedId = useCanvas((s) => s.selectedId)
@@ -78,6 +75,7 @@ function Scene({ wid, type, nodes, edges, focus }: Props) {
   const linkFrom = useCanvas((s) => s.linkFrom)
   const linkPointer = useCanvas((s) => s.linkPointer)
   const { select, moveLink, endLink, setViewCenter } = useCanvas.getState()
+  const showUnsorted = useWsView((s) => s.domain === ALL)
 
   useEffect(() => {
     if (!controls) return
@@ -91,7 +89,7 @@ function Scene({ wid, type, nodes, edges, focus }: Props) {
 
   useEffect(() => {
     if (!controls) return
-    const key = `${wid}/${type}`
+    const key = wid
     const saved = cameras.get(key)
     const at = focus ?? saved?.target
     if (at) {
@@ -128,17 +126,24 @@ function Scene({ wid, type, nodes, edges, focus }: Props) {
     [nodes],
   )
 
+  const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
+  const selected = selectedId ? byId.get(selectedId) : undefined
+  // A selected customer lights up everything tagged for it (D-044).
+  const customerId = selected?.type === 'customer' ? selected.id : null
+
   const onLinkDrop = (targetId: string) => {
-    const from = useCanvas.getState().linkFrom
-    if (!from || from === targetId) return
-    if (!linked(edges, from, targetId)) void createEdge(wid, { id: from, type }, { id: targetId, type })
+    const fromId = useCanvas.getState().linkFrom
+    const from = fromId ? byId.get(fromId) : undefined
+    const to = byId.get(targetId)
+    if (!from || !to || from.id === to.id || linked(edges, from.id, to.id)) return
+    // A tag always points item → customer, whichever card you dragged from.
+    const [a, b] = to.type !== 'customer' && from.type === 'customer' ? [to, from] : [from, to]
+    void createEdge(wid, { id: a.id, type: a.type }, { id: b.id, type: b.type }, defaultKind(a.type, b.type))
   }
 
-  const onBoardDoubleClick = async (e: ThreeEvent<MouseEvent>) => {
+  const onBoardDoubleClick = (e: ThreeEvent<MouseEvent>) => {
     const p = boardPoint(e)
-    if (!p) return
-    const id = await createBoardNode(wid, type, { x: p[0], y: p[1] })
-    select(id)
+    if (p) onCreate(p)
   }
 
   const linkSource = linkFrom ? positions.get(linkFrom) : undefined
@@ -166,6 +171,8 @@ function Scene({ wid, type, nodes, edges, focus }: Props) {
         const a = positions.get(edge.fromId)
         const b = positions.get(edge.toId)
         if (!a || !b) return null
+        // Customer tags are labels on the card; their lines show only while that customer is selected.
+        if (edge.kind === FOR && edge.toId !== customerId) return null
         const active = selectedId === edge.fromId || selectedId === edge.toId
         return <EdgeLine key={edge.id} from={a} to={b} color={active ? colors.cyan : '#4a4a4a'} width={active ? 2 : 1.5} />
       })}
@@ -176,10 +183,10 @@ function Scene({ wid, type, nodes, edges, focus }: Props) {
         <NodeCard
           key={node.id}
           wid={wid}
-          type={type}
-          node={node}
-          meta={cardMeta(type, node)}
+          item={node}
           layer={layers.get(node.id) ?? 0}
+          related={customerId !== null && node.forIds.includes(customerId)}
+          unsorted={showUnsorted && node.domainIds.length === 0}
           onLinkDrop={onLinkDrop}
         />
       ))}

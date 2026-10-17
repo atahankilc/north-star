@@ -1,6 +1,9 @@
 // Firestore data model: the logical model from docs/ARCHITECTURE.md §5.
 //
 //   workspaces/{workspaceId}                 Workspace
+//     domains/{id}                           Domain (D-039)
+//     customers/{id}                         Customer (D-042, D-044)
+//     problems/{id}                          Problem (D-041)
 //     ideas/{id}                             Idea
 //     groups/{id}                            Group
 //     features/{id}                          Feature
@@ -32,10 +35,24 @@ export type InviteCode = {
   createdBy: string
 }
 
-export type NodeType = 'idea' | 'group' | 'feature' | 'competitor' | 'competitorFeature'
+export type NodeType = 'customer' | 'problem' | 'idea' | 'group' | 'feature' | 'competitor' | 'competitorFeature'
 
-// Node types that live on a board as cards (D-037).
-export type BoardType = 'idea' | 'feature'
+// Node types that live on the board as cards (D-040), in the order of the chain (D-045).
+export const BOARD_TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
+export type BoardType = (typeof BOARD_TYPES)[number]
+
+// A market or area inside a workspace; the main tabs (D-039).
+export type Domain = {
+  name: string
+  color?: string
+  description?: string
+  createdAt: number
+}
+
+// Problems and ideas sit in one domain; customers, competitors and features can sit in several (D-039).
+// Missing or empty = unsorted.
+export type InOneDomain = { domainId?: string }
+export type InDomains = { domainIds?: string[] }
 
 // Fields shared by every board card.
 export type BoardNode = {
@@ -50,10 +67,16 @@ export type BoardNode = {
   updatedAt: number
 }
 
-export type Idea = BoardNode & {
-  status?: string
-  groupIds?: string[]
-}
+// Who it's for, at any breadth; also the segment (D-044). Items are tagged with `for` edges.
+export type Customer = BoardNode & InDomains
+
+export type Problem = BoardNode & InOneDomain
+
+export type Idea = BoardNode &
+  InOneDomain & {
+    status?: string
+    groupIds?: string[]
+  }
 
 export type Group = { name: string; color?: string }
 
@@ -61,19 +84,24 @@ export const FEATURE_PRIORITIES = ['P1', 'P2', 'P3'] as const
 export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped'] as const
 export const FEATURE_EFFORTS = ['S', 'M', 'L'] as const
 
-export type Feature = BoardNode & {
-  priority?: (typeof FEATURE_PRIORITIES)[number]
-  status?: (typeof FEATURE_STATUSES)[number]
-  effort?: (typeof FEATURE_EFFORTS)[number]
-}
+export type Feature = BoardNode &
+  InDomains & {
+    priority?: (typeof FEATURE_PRIORITIES)[number]
+    status?: (typeof FEATURE_STATUSES)[number]
+    effort?: (typeof FEATURE_EFFORTS)[number]
+  }
 
-export type Competitor = {
+// Competitors are named, not titled; on the board since D-040 (no position yet = placed on first view).
+export type Competitor = InDomains & {
   name: string
   url?: string
   description?: string
   pricing?: string
   audience?: string
   notes?: string
+  color?: string
+  x?: number
+  y?: number
   createdAt: number
   updatedAt: number
 }
@@ -102,7 +130,18 @@ export type Comparison = {
   updatedAt: number
 }
 
-export type EdgeKind = 'relates' | 'depends-on' | 'contradicts' | 'part-of' | 'inspired-by' | (string & {})
+// `for` tags an item with a customer (D-044): drawn as a label on the card, not a line.
+export const FOR = 'for'
+export type EdgeKind =
+  | 'relates'
+  | 'depends-on'
+  | 'contradicts'
+  | 'part-of'
+  | 'inspired-by'
+  | 'solves'
+  | 'competes-with'
+  | typeof FOR
+  | (string & {})
 
 export type Edge = {
   fromId: string

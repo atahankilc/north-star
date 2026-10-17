@@ -2,12 +2,12 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createEdge, deleteEdge, linked, updateEdge } from '../../data/edges'
-import type { EdgeKind, NodeType } from '../../data/model'
+import { FOR, type EdgeKind, type NodeType } from '../../data/model'
 import { useWs } from './context'
 import { TYPE_LABELS, useNodeIndex } from './nodeIndex'
 import styles from './LinkList.module.css'
 
-const EDGE_KINDS: EdgeKind[] = ['relates', 'depends-on', 'part-of', 'inspired-by', 'contradicts']
+const EDGE_KINDS: EdgeKind[] = ['relates', 'solves', 'competes-with', 'depends-on', 'part-of', 'inspired-by', 'contradicts', FOR]
 const MAX_RESULTS = 8
 
 type Props = {
@@ -22,8 +22,10 @@ export function LinkList({ nodeId, nodeType, hint }: Props) {
   const navigate = useNavigate()
   const [picking, setPicking] = useState(false)
 
+  // Customer tags have their own "for" row in the panel; a customer lists everything tagged for it here.
   const links = edges
     .filter((e) => e.fromId === nodeId || e.toId === nodeId)
+    .filter((e) => e.kind !== FOR || nodeType === 'customer')
     .map((e) => {
       const otherId = e.fromId === nodeId ? e.toId : e.fromId
       return { edge: e, other: index.get(otherId), outgoing: e.fromId === nodeId }
@@ -99,7 +101,7 @@ function Picker({ onPick, exclude }: { onPick: (id: string) => void; exclude: (i
       <input
         autoFocus
         className={styles.search}
-        placeholder="Search ideas, features, competitors"
+        placeholder="Search customers, problems, ideas, competitors, features"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         onKeyDown={(e) => {

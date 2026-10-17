@@ -88,7 +88,7 @@ export function renameWorkspace(wid: string, name: string) {
 }
 
 // Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
-const WORKSPACE_COLLECTIONS = ['ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons']
+const WORKSPACE_COLLECTIONS = ['domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons']
 const BATCH_LIMIT = 450
 
 // Owner only. Children go first: their rules check membership on the workspace doc.
