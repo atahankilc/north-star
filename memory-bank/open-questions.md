@@ -17,20 +17,14 @@ Recommendation: A first, B later.
 Is last-write-wins per field enough, or do we need Yjs for simultaneous typing in the same note body?
 Recommendation: LWW for the MVP.
 
-### Q-007 · soon: Workspace roles
-Sharing uses an invite code (D-012). Still open: owner/editor/viewer roles, or everyone is an editor for the MVP? Public read-only links?
-Recommendation: owner + editor only for the MVP.
-
-### Q-008 · later: Canvas dimensionality
-A true 3D canvas (cards at different depths, orbit camera), or 2.5D (flat board, 3D camera moves,
-tilt and parallax)? Recommendation: 2.5D for usability, with full 3D used for transitions and
-competitor maps.
-
 ### Q-009 · soon: Storage limits for attachments
 Blocked on D-015 (Storage needs Blaze). If Blaze: 5 GB free. What per-file cap (for example 10 MB)?
 Should images be compressed client-side?
 
-### Q-011 · blocking (Phase 1): Verify the Firebase security rules
-`firestore.rules` (especially the invite-code `joining()` rule) and `database.rules.json` have not been run yet.
-Recommendation: test with two Google accounts once the project exists. Optionally add emulator tests
-(`@firebase/rules-unit-testing`, needs Java).
+### Q-012 · soon: How should groups/clusters work?
+Option A: a group is a labelled frame you drag cards into (spatial). Option B: tag-based (all cards with a tag form a group).
+Recommendation: A, a frame on the board that moves its cards with it, since it matches the post-it mental model.
+
+### Q-013 · soon: Undo and keyboard delete
+Right now deleting is a two-step button only (no Delete key) because there's no undo yet.
+Recommendation: add a small local undo stack (create, move, edit, delete), then enable the Delete key and cmd+Z.

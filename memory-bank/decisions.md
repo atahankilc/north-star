@@ -74,3 +74,22 @@ Exposure is limited to name, colour and cursor coordinates, behind a random work
 **Product name: North Star** (formerly "Mind-Map"). Resolves Q-010.
 The Firebase project is `north-star-db`. The GitHub Pages base path comes from the repo name in CI, so a repo rename needs no code change.
 The local folder is still `mind-map`.
+
+### D-018 · 2026-10-17 · Accepted
+**Idea canvas is 2.5D:** a flat board in a real three.js scene, with a perspective camera that pans and zooms (no rotation),
+cards as lit 3D slabs that lift on hover and drag, and edges as curved dashed lines. Resolves Q-008.
+Full 3D stays available for transitions and competitor maps later.
+
+### D-019 · 2026-10-17 · Accepted (refines D-009)
+**Card display text is WebGL SDF text (troika via drei `<Text>`); all editing happens in the DOM detail panel.**
+Why: crisp at any zoom, no DOM churn per card, and cards stay real 3D objects. The ASCII pass still never covers the board.
+troika can't read woff2, so the scene uses static `.woff` Geist from `@fontsource/geist(-mono)`.
+
+### D-020 · 2026-10-17 · Accepted
+**Local development and tests run on Firebase emulators** (`npm run dev:emu`, `npm run test:rules`) with a `demo-` project,
+so nothing can reach production. Test users (Alice, Bob, Carol) sign in with fake Google tokens. The RTDB emulator uses port **9010**
+(9000 clashes with OrbStack). Its namespace must be `<project>-default-rtdb` for the rules to apply.
+
+### D-021 · 2026-10-17 · Accepted
+**Roles for the MVP: owner + editor.** Resolves Q-007. Owner: members, invite code, delete. Editor: everything else.
+Enforced in `firestore.rules`, covered by `tests/rules.test.mjs`.

@@ -13,6 +13,11 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/workspaces/$(wid)).data;
     }
 
+    // State after the current batch; used when a workspace and its code are created together.
+    function workspaceAfter(wid) {
+      return getAfter(/databases/$(database)/documents/workspaces/$(wid)).data;
+    }
+
     function isMember(wid) {
       return signedIn() && request.auth.uid in workspace(wid).memberIds;
     }
@@ -22,7 +27,10 @@ service cloud.firestore {
 
       allow create: if signedIn()
         && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.memberIds == [request.auth.uid];
+        && request.resource.data.memberIds == [request.auth.uid]
+        && request.resource.data.roles.keys().hasOnly([request.auth.uid])
+        && request.resource.data.roles[request.auth.uid] == 'owner'
+        && request.resource.data.inviteCode is string;
 
       allow update: if editing() || joining() || ownerManaging();
 
@@ -64,7 +72,8 @@ service cloud.firestore {
       allow get: if signedIn();
       allow list: if false;
       allow create: if signedIn()
-        && workspace(request.resource.data.workspaceId).ownerId == request.auth.uid
+        && workspaceAfter(request.resource.data.workspaceId).ownerId == request.auth.uid
+        && workspaceAfter(request.resource.data.workspaceId).inviteCode == code
         && request.resource.data.createdBy == request.auth.uid;
       allow delete: if signedIn() && workspace(resource.data.workspaceId).ownerId == request.auth.uid;
     }

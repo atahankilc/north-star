@@ -1,6 +1,12 @@
-import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as fbSignOut } from 'firebase/auth'
+import {
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithCredential,
+  signInWithPopup,
+  signOut as fbSignOut,
+} from 'firebase/auth'
 import { useEffect, useState } from 'react'
-import { firebase } from './firebase'
+import { firebase, useEmulators } from './firebase'
 
 export type AuthUser = { id: string; email: string | null; name: string | null; photoURL: string | null }
 
@@ -34,6 +40,14 @@ export function useAuth(): Auth {
 export async function signInWithGoogle() {
   if (!firebase) return
   await signInWithPopup(firebase.auth, new GoogleAuthProvider())
+}
+
+// Emulator only: sign in as a fake Google user. The auth emulator accepts unsigned ID tokens.
+export async function signInAsTestUser(name: string) {
+  if (!firebase || !useEmulators) return
+  const slug = name.toLowerCase()
+  const idToken = JSON.stringify({ sub: `test-${slug}`, email: `${slug}@example.com`, email_verified: true, name })
+  await signInWithCredential(firebase.auth, GoogleAuthProvider.credential(idToken))
 }
 
 export function signOut() {

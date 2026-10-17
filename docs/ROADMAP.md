@@ -8,7 +8,7 @@ Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 - Design tokens, fonts, base ASCII-styled UI components
 - ASCII post-processing effect prototype plus an ambient background
 
-## Phase 1: Single-user core
+## Phase 1: Single-user core (mostly done; see memory-bank/state.md)
 - Auth and workspace list
 - Idea Canvas: create, edit, move and delete post-its; connections; groups; tags
 - Detail panel

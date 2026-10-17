@@ -22,6 +22,15 @@ npm run dev                  # http://localhost:5173/
 
 Without Firebase config the UI still runs (sign-in disabled), which is handy for design work.
 
+### Local emulators (no real data touched)
+
+```sh
+npm run emulators      # terminal 1: auth, Firestore, RTDB, UI at http://localhost:4000
+npm run dev:emu        # terminal 2: app with test sign-in buttons (Alice / Bob / Carol)
+npm run test:rules     # one-off: security-rule tests (starts and stops its own emulators)
+npm run deploy:rules   # push firestore.rules + database.rules.json to north-star-db
+```
+
 ## Setup (one-time, Firebase free "Spark" plan, no card)
 
 1. **Project**: <https://console.firebase.google.com> → *Add project* (ours: `north-star-db`). Analytics can be off.

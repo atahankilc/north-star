@@ -22,6 +22,8 @@ export type Workspace = {
   memberIds: string[]
   roles: Record<string, Role>
   inviteCode: string
+  // Set by a joining member; the rules check it against inviteCode (D-012).
+  joinCode?: string
   createdAt: number
 }
 

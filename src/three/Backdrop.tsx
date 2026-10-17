@@ -30,13 +30,13 @@ function Ascii({ cellSize }: { cellSize: number }) {
   return <primitive object={effect} dispose={null} />
 }
 
-export function Backdrop({ cards = false }: { cards?: boolean }) {
+export function Backdrop({ cards = false, dim = false }: { cards?: boolean; dim?: boolean }) {
   const animate = !usePrefersReducedMotion()
   const cellSize = Math.round(9 * Math.min(window.devicePixelRatio, 2))
 
   return (
     <Canvas
-      style={{ position: 'fixed', inset: 0, zIndex: 0 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 0, opacity: dim ? 0.28 : 1, transition: 'opacity 600ms var(--ease-out)' }}
       dpr={[1, 2]}
       camera={{ position: [0, 0, 6], fov: 45 }}
       gl={{ antialias: false, powerPreference: 'high-performance' }}

@@ -66,8 +66,9 @@ The app talks to Firebase only through **`src/data/`**, so another swap would st
 Fully WebGL text editing is painful and inaccessible. So:
 - **3D layer (R3F):** scene, camera, post-it card meshes, connection curves, ambient ASCII-shaded
   backgrounds, transitions between views, and collaborator cursors in world space.
-- **DOM layer:** text editing (drei `<Html>` or overlays on the focused card), side panels,
-  the matrix/table view, settings, and modals. These are styled in the same ASCII language.
+- **DOM layer:** all text editing (the detail panel), side panels, the matrix/table view, settings,
+  and modals. These are styled in the same ASCII language.
+- **Card text** is WebGL SDF text (troika), crisp at any zoom (D-019). The board is a 2.5D scene: pan and zoom, no rotation (D-018).
 - The **ASCII post-processing** applies to decorative and ambient layers and transitions, never to
   text the user has to read or edit.
 

@@ -1,7 +1,7 @@
 import { motion } from 'motion/react'
 import { useState } from 'react'
-import { isConfigured } from '../../data/firebase'
-import { signInWithGoogle } from '../../data/auth'
+import { isConfigured, useEmulators } from '../../data/firebase'
+import { signInAsTestUser, signInWithGoogle } from '../../data/auth'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { DecodeText } from '../../ui/DecodeText'
 import styles from './Landing.module.css'
@@ -48,7 +48,16 @@ export function Landing({ error }: { error?: string | null }) {
             feature by feature and see where the gaps are, together and live.
           </p>
 
-          {isConfigured ? (
+          {useEmulators ? (
+            // Local emulators: fake Google users, so two "people" can be tested in two windows.
+            <span className={styles.testUsers}>
+              {['Alice', 'Bob', 'Carol'].map((name) => (
+                <AsciiButton key={name} accent="green" onClick={() => signInAsTestUser(name).catch((e: Error) => setSignInError(e.message))}>
+                  {name}
+                </AsciiButton>
+              ))}
+            </span>
+          ) : isConfigured ? (
             <AsciiButton onClick={() => signInWithGoogle().catch((e: Error) => setSignInError(e.message))}>Sign in with Google</AsciiButton>
           ) : (
             <p className={styles.notice}>

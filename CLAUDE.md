@@ -18,6 +18,11 @@ SPA on GitHub Pages, backed by Firebase (Auth, Firestore, Realtime Database). Th
 - A new uncertainty gets a `Q-xxx` entry in `open-questions.md` with a recommendation.
 - If a decision changes a spec, update the relevant `/docs` file in the same change.
 
+## Commands
+- `npm run dev` (real Firebase), `npm run dev:emu` + `npm run emulators` (local, test users)
+- `npm run test:rules`: run after any change to `firestore.rules` / `database.rules.json`, then `npm run deploy:rules`
+- `npm run build`: typecheck + production build
+
 ## Hard rules
 - Never store or log users' OpenAI API keys anywhere except the user's own browser storage.
 - The ASCII post-processing effect must never cover readable or editable text.
