@@ -115,7 +115,7 @@ function cleanBody(body: unknown) {
     model: b.model,
     instructions: b.instructions,
     input: b.input,
-    ...(b.tools ? { tools: b.tools, tool_choice: b.tool_choice === 'none' ? 'none' : 'auto', parallel_tool_calls: false } : {}),
+    ...(b.tools ? { tools: b.tools, tool_choice: b.tool_choice === 'none' || b.tool_choice === 'required' ? b.tool_choice : 'auto', parallel_tool_calls: false } : {}),
     ...(b.reasoning ? { reasoning: b.reasoning } : {}),
     // Reasoning carried between an answer's steps (D-084); nothing else may be asked back.
     ...(Array.isArray(b.include) && b.include.includes('reasoning.encrypted_content') ? { include: ['reasoning.encrypted_content'] } : {}),

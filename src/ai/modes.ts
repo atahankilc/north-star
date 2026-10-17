@@ -11,6 +11,8 @@ export type Mode = {
   // The kind of item it works on, if any.
   target?: Extract<NodeType, 'idea' | 'customer' | 'competitor'>
   ask: (about: string | null) => string
+  // Deep research (D-088): not one message but a planned run of web researchers; `ask` is unused.
+  deep?: boolean
 }
 
 // Mode asks are written in English; the answer should still follow the user's language.
@@ -59,6 +61,13 @@ export const MODES: Mode[] = [
       'Find the gaps in this workspace: problems with no idea, ideas that solve no problem, items for no customer, our features ' +
       'not compared with any competitor, competitors with no features broken down, matrix cells not assessed. Group them, most ' +
       `important first. Propose only the links that are clearly right, and ask about the rest. ${LANGUAGE}`,
+  },
+  {
+    id: 'research',
+    label: 'deep research',
+    hint: 'plan questions, researchers search the web, one report',
+    deep: true,
+    ask: () => '',
   },
   {
     id: 'organize',

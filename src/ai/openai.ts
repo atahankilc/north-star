@@ -69,7 +69,8 @@ export type StreamOptions = {
   // Function tools the model may call (D-074); a call arrives whole, with its JSON arguments, in the result.
   tools?: object[]
   // 'none' keeps the tools visible (earlier steps used them) but has the model answer in text: the agent's last step.
-  toolChoice?: 'auto' | 'none'
+  // 'required': it must call one (a research plan, D-088).
+  toolChoice?: 'auto' | 'none' | 'required'
   // OpenAI's own web search tool (D-076): every search is billed, so it's opt-in per message.
   webSearch?: boolean
   onSearch?: (e: SearchEvent) => void

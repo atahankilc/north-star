@@ -1,5 +1,6 @@
 // The assistant's conversation (D-073): this tab only, one per workspace, gone on reload. Collaborators never see it.
 // An answer is a short agent loop (D-084): the model may call a tool, see its result and go on, for a few steps.
+// Deep research (D-088) is a plan you review, researchers on the web, then one such answer written from their findings.
 import { create } from 'zustand'
 import type { ItemRef } from './context'
 import type { KeySource } from '../data/ai'
@@ -7,6 +8,7 @@ import type { WorkspaceCtx } from '../views/workspace/context'
 import { callAi } from './call'
 import { AiError, type ChatTurn, type Citation, type InputItem, type ToolCall } from './openai'
 import { GET_ITEMS, GET_ITEMS_TOOL, readItems } from './readTools'
+import { PARALLEL, PLAN, PLAN_TOOL, parsePlan, planAsk, reportAsk, researcherInstructions, type Research } from './research'
 import { modelFor, useAiSettings } from './settings'
 import { PROPOSE, PROPOSE_TOOL, parseProposal, proposalForHistory, proposalReport, type Proposal, type ProposalState } from './tools'
 
@@ -28,14 +30,107 @@ export type ChatMessage = ChatTurn & {
   thinking?: boolean
   // The sources the answer cites (D-076).
   citations?: Citation[]
+  // A deep research run (D-088): its plan, its researchers and where it's at.
+  research?: Research
 }
 
 // `warn`: done, but not all of it worked (a proposal with rows that can't be applied, refs that matched nothing).
-export type Step = { kind: 'read' | 'search' | 'propose'; text: string; state: 'running' | 'done' | 'warn' }
+export type Step = { kind: 'read' | 'search' | 'propose' | 'plan' | 'research'; text: string; state: 'running' | 'done' | 'warn' }
 
 // Built when a message is sent, so it sees the workspace as it is then.
 // `ws` is what the read tools see for the whole answer.
 export type Prepared = { instructions: string; refs: Map<string, ItemRef>; source: KeySource; ws: WorkspaceCtx }
+
+// Everything one answer's loop needs: where it writes (`update`), its key and model, what the tools see.
+type AnswerRun = {
+  wid: string
+  source: KeySource
+  apiKey: string
+  model: string
+  task: 'chat' | 'research'
+  webSearch: boolean
+  instructions: string
+  refs: Map<string, ItemRef>
+  ws: WorkspaceCtx
+  signal: AbortSignal
+  update: (patch: Partial<ChatMessage>) => void
+  // Carried in from earlier phases (a research run's steps), added to here.
+  steps: Step[]
+  citations: Citation[]
+}
+
+// The agent loop (D-084): up to MAX_STEPS calls, running the function tools the model calls in between.
+async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
+  const { update, steps, citations, refs, ws } = r
+  const showSteps = (patch: Partial<ChatMessage> = {}) => update({ steps: [...steps], ...patch })
+  let answer = ''
+  let proposed = false
+  // A tool's result, as the model will read it, and a step in the chat; a proposal also shows its checklist (a later
+  // one in the same answer replaces it).
+  const run = (c: ToolCall): string => {
+    if (c.name === PROPOSE) {
+      const proposal = parseProposal(c.args, refs, ws.labels.map((l) => l.text))
+      const bad = proposal.changes.filter((x) => x.problem)
+      const n = proposal.changes.length
+      const what = `${proposed ? 'corrected the proposal' : 'proposed'}: ${n} change${n === 1 ? '' : 's'}`
+      const why = [...new Set(bad.map((x) => x.problem))].join(', ')
+      steps.push({ kind: 'propose', text: bad.length ? `${what}, ${bad.length} can't be applied (${why})` : what, state: bad.length || !n ? 'warn' : 'done' })
+      proposed = true
+      showSteps({ proposal, proposalState: { status: 'pending' } })
+      return proposalReport(proposal)
+    }
+    if (c.name === GET_ITEMS) {
+      const res = readItems(c.args, ws, refs)
+      const missed = res.missed ? `${res.names.length ? ', ' : ''}${res.missed} not found` : ''
+      steps.push({ kind: 'read', text: `read ${res.names.join(' · ')}${missed}`, state: res.missed ? 'warn' : 'done' })
+      showSteps()
+      return res.text
+    }
+    return `There is no tool called ${c.name}.`
+  }
+  let input = turns
+  for (let step = 0; step < MAX_STEPS; step++) {
+    // Text from an earlier step stays; the next step's text starts a new paragraph.
+    let fresh = true
+    update({ thinking: true })
+    const { output, calls } = await callAi({
+      wid: r.wid,
+      task: r.task,
+      source: r.source,
+      apiKey: r.apiKey,
+      model: r.model,
+      instructions: r.instructions,
+      webSearch: r.webSearch,
+      onSearch: (e) => {
+        if (e.status === 'searching') {
+          steps.push({ kind: 'search', text: 'searching the web', state: 'running' })
+          return showSteps({ thinking: false })
+        }
+        const at = steps.map((x) => x.kind === 'search' && x.state === 'running').lastIndexOf(true)
+        const text = e.queries.length ? `searched ${e.queries.map((q) => `"${q}"`).join(' · ')}` : 'searched the web'
+        if (at >= 0) steps[at] = { kind: 'search', text, state: 'done' }
+        showSteps()
+      },
+      onCitation: (c) => {
+        if (citations.some((x) => x.url === c.url)) return
+        citations.push(c)
+        update({ citations: [...citations] })
+      },
+      turns: input,
+      signal: r.signal,
+      onDelta: (d) => {
+        if (fresh && answer.trim()) answer = `${answer.trimEnd()}\n\n`
+        fresh = false
+        update({ content: (answer += d), thinking: false })
+      },
+      tools: [PROPOSE_TOOL, GET_ITEMS_TOOL],
+      toolChoice: step === MAX_STEPS - 1 ? 'none' : 'auto',
+    })
+    update({ thinking: false })
+    if (!calls.length || r.signal.aborted) return
+    input = [...input, ...output, ...calls.map((c) => ({ type: 'function_call_output', call_id: c.callId, output: run(c) }))]
+  }
+}
 
 // What the model sees of an earlier answer: its text plus what it proposed and what became of it.
 function asTurn(m: ChatMessage): ChatTurn {
@@ -53,6 +148,10 @@ type ChatState = {
   // Switching workspace starts a new conversation.
   enter: (wid: string) => void
   send: (text: string, prepare: () => Prepared, shown?: string) => void
+  // Deep research (D-088): plan the questions for a topic; then, once you've picked them, run it.
+  research: (topic: string, prepare: () => Prepared, shown: string) => void
+  toggleQuestion: (id: number, question: number) => void
+  runResearch: (id: number, prepare: () => Prepared) => void
   decide: (id: number, state: ProposalState) => void
   stop: () => void
   clear: () => void
@@ -60,6 +159,55 @@ type ChatState = {
 
 let nextId = 1
 let controller: AbortController | null = null
+
+// What the model sees of the conversation so far. Failed answers aren't sent back.
+const history = (messages: ChatMessage[]): ChatTurn[] => messages.filter((m) => !m.error && (m.content || m.proposal)).map(asTurn)
+// The conversation before the ask that message `id` answers.
+const before = (messages: ChatMessage[], id: number) => messages.slice(0, Math.max(0, messages.findIndex((m) => m.id === id) - 1))
+
+// Set up a run writing into message `id`, and make it the one Stop aborts.
+function begin(id: number, p: Prepared, task: AnswerRun['task'], model: string, webSearch: boolean): AnswerRun {
+  const ctl = new AbortController()
+  controller = ctl
+  const wid = useChat.getState().wid!
+  return {
+    wid,
+    source: p.source,
+    apiKey: useAiSettings.getState().apiKey,
+    model,
+    task,
+    webSearch,
+    instructions: p.instructions,
+    refs: p.refs,
+    ws: p.ws,
+    signal: ctl.signal,
+    update: (patch) => useChat.setState((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
+    steps: [],
+    citations: [],
+  }
+}
+
+// Errors into the message, running steps closed, the chat free again.
+function finish(id: number, run: AnswerRun, work: Promise<void>) {
+  work
+    .catch((e: unknown) => {
+      if (run.signal.aborted) return
+      run.update({ error: e instanceof AiError ? e.message : 'Something went wrong talking to OpenAI.' })
+      const r = useChat.getState().messages.find((m) => m.id === id)?.research
+      if (r && r.phase !== 'done') run.update({ research: { ...r, phase: 'failed' } })
+    })
+    .finally(() => {
+      for (const [i, x] of run.steps.entries()) if (x.state === 'running') run.steps[i] = { ...x, state: 'done' }
+      run.update({ steps: [...run.steps], thinking: false })
+      if (run.signal.aborted) {
+        const r = useChat.getState().messages.find((m) => m.id === id)?.research
+        if (r && !['done', 'review'].includes(r.phase)) run.update({ research: { ...r, phase: 'cancelled' } })
+      }
+      if (controller?.signal !== run.signal) return
+      controller = null
+      useChat.setState({ busy: false })
+    })
+}
 
 export const useChat = create<ChatState>((set, get) => ({
   wid: null,
@@ -74,111 +222,127 @@ export const useChat = create<ChatState>((set, get) => ({
   },
   send: (text, prepare, shown) => {
     const settings = useAiSettings.getState()
-    const { apiKey, web } = settings
-    const model = modelFor(settings)
     const content = text.trim()
-    const wid = get().wid
-    if (!content || get().busy || !wid) return
-    // Failed answers aren't sent back as history.
-    const turns: ChatTurn[] = [
-      ...get()
-        .messages.filter((m) => !m.error && (m.content || m.proposal))
-        .map(asTurn),
-      { role: 'user', content },
-    ]
-    const { instructions, refs, source, ws } = prepare()
-    if (source === 'own' && !apiKey) return
-    const reply: ChatMessage = { id: nextId++, role: 'assistant', content: '', refs }
+    if (!content || get().busy || !get().wid) return
+    const turns = [...history(get().messages), { role: 'user' as const, content }]
+    const p = prepare()
+    if (p.source === 'own' && !settings.apiKey) return
+    const reply: ChatMessage = { id: nextId++, role: 'assistant', content: '', refs: p.refs }
     set((s) => ({ busy: true, messages: [...s.messages, { id: nextId++, role: 'user', content, shown }, reply] }))
-
-    const update = (patch: Partial<ChatMessage>) =>
-      set((s) => ({ messages: s.messages.map((m) => (m.id === reply.id ? { ...m, ...patch } : m)) }))
-    const ctl = new AbortController()
-    controller = ctl
-    let answer = ''
-    const citations: Citation[] = []
-    const steps: Step[] = []
-    const showSteps = (patch: Partial<ChatMessage> = {}) => update({ steps: [...steps], ...patch })
-    let proposed = false
-    // A tool's result, as the model will read it, and a step in the chat; a proposal also shows its checklist (a later
-    // one in the same answer replaces it).
-    const run = (c: ToolCall): string => {
-      if (c.name === PROPOSE) {
-        const proposal = parseProposal(c.args, refs, ws.labels.map((l) => l.text))
-        const bad = proposal.changes.filter((x) => x.problem)
-        const n = proposal.changes.length
-        const what = `${proposed ? 'corrected the proposal' : 'proposed'}: ${n} change${n === 1 ? '' : 's'}`
-        const why = [...new Set(bad.map((x) => x.problem))].join(', ')
-        steps.push({ kind: 'propose', text: bad.length ? `${what}, ${bad.length} can't be applied (${why})` : what, state: bad.length || !n ? 'warn' : 'done' })
-        proposed = true
-        showSteps({ proposal, proposalState: { status: 'pending' } })
-        return proposalReport(proposal)
-      }
-      if (c.name === GET_ITEMS) {
-        const r = readItems(c.args, ws, refs)
-        const missed = r.missed ? `${r.names.length ? ', ' : ''}${r.missed} not found` : ''
-        steps.push({ kind: 'read', text: `read ${r.names.join(' · ')}${missed}`, state: r.missed ? 'warn' : 'done' })
-        showSteps()
-        return r.text
-      }
-      return `There is no tool called ${c.name}.`
+    const run = begin(reply.id, p, settings.web ? 'research' : 'chat', modelFor(settings), settings.web)
+    finish(reply.id, run, runAnswer(run, turns))
+  },
+  research: (topic, prepare, shown) => {
+    const settings = useAiSettings.getState()
+    if (get().busy || !get().wid) return
+    const p = prepare()
+    if (p.source === 'own' && !settings.apiKey) return
+    const reply: ChatMessage = { id: nextId++, role: 'assistant', content: '', refs: p.refs, research: { topic, phase: 'planning', questions: [] } }
+    // The short form is what later turns see of the ask; the report carries what was found.
+    const content = `Research: ${topic || 'our market'}`
+    set((s) => ({ busy: true, messages: [...s.messages, { id: nextId++, role: 'user', content, shown }, reply] }))
+    const run = begin(reply.id, p, 'research', settings.models.research, false)
+    run.steps.push({ kind: 'plan', text: 'planning the research', state: 'running' })
+    run.update({ steps: [...run.steps] })
+    const plan = async () => {
+      const { calls } = await callAi({
+        wid: run.wid,
+        task: 'research',
+        source: run.source,
+        apiKey: run.apiKey,
+        model: run.model,
+        instructions: run.instructions,
+        turns: [...history(before(get().messages, reply.id)), { role: 'user', content: planAsk(topic) }],
+        signal: run.signal,
+        onDelta: () => {},
+        tools: [PLAN_TOOL],
+        toolChoice: 'required',
+      })
+      const questions = parsePlan(calls.find((c) => c.name === PLAN)?.args ?? '')
+      run.steps[0] = { kind: 'plan', text: questions.length ? `planned ${questions.length} questions` : "couldn't plan the research", state: questions.length ? 'done' : 'warn' }
+      run.update({ steps: [...run.steps], research: { topic, phase: questions.length ? 'review' : 'failed', questions } })
     }
-    const loop = async () => {
-      let input: InputItem[] = turns
-      for (let step = 0; step < MAX_STEPS; step++) {
-        // Text from an earlier step stays; the next step's text starts a new paragraph.
-        let fresh = true
-        update({ thinking: true })
-        const { output, calls } = await callAi({
-          wid,
-          task: web ? 'research' : 'chat',
-          source,
-          apiKey,
-          model,
-          instructions,
-          webSearch: web,
+    finish(reply.id, run, plan())
+  },
+  toggleQuestion: (id, question) =>
+    set((s) => ({
+      messages: s.messages.map((m) =>
+        m.id === id && m.research?.phase === 'review'
+          ? { ...m, research: { ...m.research, questions: m.research.questions.map((q) => (q.id === question ? { ...q, on: !q.on } : q)) } }
+          : m,
+      ),
+    })),
+  runResearch: (id, prepare) => {
+    const settings = useAiSettings.getState()
+    const msg = get().messages.find((m) => m.id === id)
+    if (get().busy || !msg?.research || msg.research.phase !== 'review') return
+    if (!msg.research.questions.some((q) => q.on)) return
+    const p = prepare()
+    if (p.source === 'own' && !settings.apiKey) return
+    set({ busy: true })
+    // The report is written like any answer, with research's model; the board as it is now.
+    const run = { ...begin(id, p, 'research', settings.models.research, false), steps: [...(msg.steps ?? [])] }
+    let research: Research = { ...msg.research, phase: 'running' }
+    const setQuestion = (q: number, patch: Partial<Research['questions'][number]>) => {
+      research = { ...research, questions: research.questions.map((x) => (x.id === q ? { ...x, ...patch } : x)) }
+      run.update({ research })
+    }
+    run.update({ research, refs: p.refs })
+    const researcher = async (q: Research['questions'][number]) => {
+      const step = run.steps.push({ kind: 'research', text: `researching "${q.question}"`, state: 'running' }) - 1
+      run.update({ steps: [...run.steps] })
+      setQuestion(q.id, { state: 'running' })
+      let findings = ''
+      const sources: Citation[] = []
+      const queries: string[] = []
+      try {
+        await callAi({
+          wid: run.wid,
+          task: 'research',
+          source: run.source,
+          apiKey: run.apiKey,
+          model: run.model,
+          instructions: researcherInstructions(p.ws, research.topic),
+          turns: [{ role: 'user', content: q.question }],
+          signal: run.signal,
+          webSearch: true,
           onSearch: (e) => {
-            if (e.status === 'searching') {
-              steps.push({ kind: 'search', text: 'searching the web', state: 'running' })
-              return showSteps({ thinking: false })
-            }
-            const at = steps.map((x) => x.kind === 'search' && x.state === 'running').lastIndexOf(true)
-            const text = e.queries.length ? `searched ${e.queries.map((q) => `"${q}"`).join(' · ')}` : 'searched the web'
-            if (at >= 0) steps[at] = { kind: 'search', text, state: 'done' }
-            showSteps()
+            if (e.status === 'done') queries.push(...e.queries)
           },
           onCitation: (c) => {
-            if (citations.some((x) => x.url === c.url)) return
-            citations.push(c)
-            update({ citations: [...citations] })
+            if (!sources.some((x) => x.url === c.url)) sources.push(c)
           },
-          turns: input,
-          signal: ctl.signal,
-          onDelta: (d) => {
-            if (fresh && answer.trim()) answer = `${answer.trimEnd()}\n\n`
-            fresh = false
-            update({ content: (answer += d), thinking: false })
-          },
-          tools: [PROPOSE_TOOL, GET_ITEMS_TOOL],
-          toolChoice: step === MAX_STEPS - 1 ? 'none' : 'auto',
+          onDelta: (d) => (findings += d),
         })
-        update({ thinking: false })
-        if (!calls.length || ctl.signal.aborted) return
-        input = [...input, ...output, ...calls.map((c) => ({ type: 'function_call_output', call_id: c.callId, output: run(c) }))]
+        run.steps[step] = { kind: 'research', text: `researched "${q.question}" · ${sources.length} source${sources.length === 1 ? '' : 's'}`, state: 'done' }
+        setQuestion(q.id, { state: 'done', findings, sources, queries })
+        for (const c of sources) if (!run.citations.some((x) => x.url === c.url)) run.citations.push(c)
+      } catch (e) {
+        if (run.signal.aborted) throw e
+        run.steps[step] = { kind: 'research', text: `couldn't research "${q.question}"`, state: 'warn' }
+        setQuestion(q.id, { state: 'failed' })
       }
+      run.update({ steps: [...run.steps], citations: [...run.citations] })
     }
-    loop()
-      .catch((e: unknown) => {
-        if (ctl.signal.aborted) return
-        update({ error: e instanceof AiError ? e.message : 'Something went wrong talking to OpenAI.' })
-      })
-      .finally(() => {
-        for (const [i, x] of steps.entries()) if (x.state === 'running') steps[i] = { ...x, state: 'done' }
-        showSteps({ thinking: false })
-        if (controller !== ctl) return
-        controller = null
-        set({ busy: false })
-      })
+    const go = async () => {
+      // A few researchers at a time: each takes the next waiting question.
+      const queue = research.questions.filter((q) => q.on)
+      await Promise.all(
+        Array.from({ length: Math.min(PARALLEL, queue.length) }, async () => {
+          for (let q = queue.shift(); q; q = queue.shift()) await researcher(q)
+        }),
+      )
+      if (!research.questions.some((q) => q.on && q.state === 'done')) {
+        run.update({ research: { ...research, phase: 'failed' }, error: 'None of the researchers came back with findings.' })
+        return
+      }
+      research = { ...research, phase: 'writing' }
+      run.update({ research })
+      const turns = [...history(before(get().messages, id)), { role: 'user' as const, content: reportAsk(research) }]
+      await runAnswer(run, turns)
+      run.update({ research: { ...research, phase: 'done' } })
+    }
+    finish(id, run, go())
   },
   decide: (id, proposalState) => set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, proposalState } : m)) })),
   stop: () => {

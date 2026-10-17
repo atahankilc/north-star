@@ -7,11 +7,12 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
-import { useChat, type Step } from '../ai/chat'
+import { useChat, type ChatMessage, type Step } from '../ai/chat'
 import { workspaceBrief } from '../ai/context'
 import { useKeySource } from '../ai/keySource'
 import { chatInstructions } from '../ai/prompts/chat'
 import { MODES, modeAbout, parseMode, type Mode } from '../ai/modes'
+import { reportMarkdown, type Research } from '../ai/research'
 import { modelFor, useAiSettings } from '../ai/settings'
 import type { KeySource } from '../data/ai'
 import type { NodeType } from '../data/model'
@@ -253,6 +254,8 @@ function Conversation({ source }: { source: KeySource }) {
   const messages = useChat((s) => s.messages)
   const busy = useChat((s) => s.busy)
   const send = useChat((s) => s.send)
+  const research = useChat((s) => s.research)
+  const runResearch = useChat((s) => s.runResearch)
   const stop = useChat((s) => s.stop)
   const web = useAiSettings((s) => s.web)
   const setWeb = useAiSettings((s) => s.setWeb)
@@ -306,22 +309,26 @@ function Conversation({ source }: { source: KeySource }) {
     input.current?.focus()
   }
 
+  // Built when sent, so it sees the board as it is now. `web`: the prompt's research rules (deep research always has them).
+  const prepareAt = (view: string, web: boolean) => {
+    const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })
+    return { instructions: chatInstructions(brief.text, ws.workspace.name, web), refs: brief.refs, source, ws }
+  }
+  const currentView = () => path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
+
   const ask = (text: string) => {
     if (!text.trim() || busy) return
     const mode = parseMode(text)
-    const view = path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
-    // Built when sent, so it sees the board as it is now.
-    const prepare = () => {
-      const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })
-      return { instructions: chatInstructions(brief.text, ws.workspace.name, useAiSettings.getState().web), refs: brief.refs, source, ws }
-    }
-    if (mode) {
+    const view = currentView()
+    if (mode?.mode.deep) research(mode.rest, () => prepareAt(view, true), text.trim())
+    else if (mode) {
+      const prepare = () => prepareAt(view, useAiSettings.getState().web)
       const sel = selectedItem()
       // Shows which card a mode ran on when it took the selection.
       const on = mode.mode.target && !mode.rest && sel?.type === mode.mode.target ? ` · ${sel.name}` : ''
       send(mode.mode.ask(modeAbout(mode.mode, mode.rest, sel)), prepare, `${text.trim()}${on}`)
     }
-    else send(text, prepare)
+    else send(text, () => prepareAt(view, useAiSettings.getState().web))
     edit('')
     stick.current = true
   }
@@ -403,6 +410,7 @@ function Conversation({ source }: { source: KeySource }) {
                 </span>
               )}
               {m.error && <span className={styles.error}>! {m.error}</span>}
+              {m.research && <ResearchPlan message={m} onRun={() => runResearch(m.id, () => prepareAt(currentView(), true))} />}
               {m.proposal && <AiProposal message={m} />}
             </span>
           </li>
@@ -588,4 +596,65 @@ function PreviewBar() {
     </>,
     host,
   )
+}
+
+// A deep research run in the chat (D-088). While you review the plan: its questions to tick and `research N`; once the
+// report is written: a download as Markdown. The run itself shows in the answer's steps.
+function ResearchPlan({ message, onRun }: { message: ChatMessage; onRun: () => void }) {
+  const r = message.research!
+  const busy = useChat((s) => s.busy)
+  const toggle = useChat((s) => s.toggleQuestion)
+  const ws = useWs()
+  const on = r.questions.filter((q) => q.on).length
+  const cancel = () =>
+    useChat.setState((s) => ({ messages: s.messages.map((m) => (m.id === message.id ? { ...m, research: { ...r, phase: 'cancelled' as Research['phase'] } } : m)) }))
+  const download = () => {
+    const blob = new Blob([reportMarkdown(r, message.content, ws.workspace.name)], { type: 'text/markdown' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `research-${(r.topic || 'market').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}.md`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+  if (r.phase === 'review')
+    return (
+      <div className={styles.proposal} data-status="pending">
+        <p className={styles.proposalHead}>
+          <span className={styles.changeKind}>research plan</span> {r.topic || 'our market'}
+        </p>
+        <ul className={styles.changes}>
+          {r.questions.map((q) => (
+            <li key={q.id} className={styles.change} data-off={!q.on || undefined}>
+              <label>
+                <input type="checkbox" checked={q.on} onChange={() => toggle(message.id, q.id)} />
+                <span className={styles.sign}>?</span>
+                <span className={styles.changeBody}>
+                  <span className={styles.changeText}>{q.question}</span>
+                  {q.why && <span className={styles.changeDetail}>{q.why}</span>}
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        <p className={styles.fine}>One researcher per question, each searching the web a few times (billed to the key in use).</p>
+        <div className={styles.proposalActions}>
+          <button className={styles.send} onClick={onRun} disabled={!on || busy}>
+            research {on}
+          </button>
+          <button className={styles.action} onClick={cancel}>
+            cancel
+          </button>
+        </div>
+      </div>
+    )
+  if (r.phase === 'done' && message.content)
+    return (
+      <div className={styles.proposalActions}>
+        <button className={styles.action} onClick={download}>
+          download report .md
+        </button>
+      </div>
+    )
+  if (r.phase === 'cancelled') return <span className={styles.fine}>research cancelled</span>
+  return null
 }
