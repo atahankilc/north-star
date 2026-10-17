@@ -20,13 +20,16 @@ export type ChatMessage = ChatTurn & {
   proposal?: Proposal
   proposalState?: ProposalState
   refs?: Map<string, ItemRef>
-  // Web search (D-076): what it looked up, whether it's looking now, and the sources the answer cites.
-  searching?: boolean
-  queries?: string[]
+  // What it did along the way, in order (D-084): reads, web searches (D-076), proposals. `thinking` while a step runs
+  // with nothing to show yet.
+  steps?: Step[]
+  thinking?: boolean
+  // The sources the answer cites (D-076).
   citations?: Citation[]
-  // Items it read in full along the way (D-084).
-  read?: string[]
 }
+
+// `warn`: done, but not all of it worked (a proposal with rows that can't be applied, refs that matched nothing).
+export type Step = { kind: 'read' | 'search' | 'propose'; text: string; state: 'running' | 'done' | 'warn' }
 
 // Built when a message is sent, so it sees the workspace as it is then.
 // `ws` is what the read tools see for the whole answer.
@@ -91,20 +94,29 @@ export const useChat = create<ChatState>((set, get) => ({
     const ctl = new AbortController()
     controller = ctl
     let answer = ''
-    const queries: string[] = []
     const citations: Citation[] = []
-    const read: string[] = []
-    // A tool's result, as the model will read it; a proposal also shows in the chat (a later one replaces it).
+    const steps: Step[] = []
+    const showSteps = (patch: Partial<ChatMessage> = {}) => update({ steps: [...steps], ...patch })
+    let proposed = false
+    // A tool's result, as the model will read it, and a step in the chat; a proposal also shows its checklist (a later
+    // one in the same answer replaces it).
     const run = (c: ToolCall): string => {
       if (c.name === PROPOSE) {
         const proposal = parseProposal(c.args, refs)
-        update({ proposal, proposalState: { status: 'pending' } })
+        const bad = proposal.changes.filter((x) => x.problem)
+        const n = proposal.changes.length
+        const what = `${proposed ? 'corrected the proposal' : 'proposed'}: ${n} change${n === 1 ? '' : 's'}`
+        const why = [...new Set(bad.map((x) => x.problem))].join(', ')
+        steps.push({ kind: 'propose', text: bad.length ? `${what}, ${bad.length} can't be applied (${why})` : what, state: bad.length || !n ? 'warn' : 'done' })
+        proposed = true
+        showSteps({ proposal, proposalState: { status: 'pending' } })
         return proposalReport(proposal)
       }
       if (c.name === GET_ITEMS) {
         const r = readItems(c.args, ws, refs)
-        read.push(...r.names.filter((n) => !read.includes(n)))
-        update({ read: [...read] })
+        const missed = r.missed ? `${r.names.length ? ', ' : ''}${r.missed} not found` : ''
+        steps.push({ kind: 'read', text: `read ${r.names.join(' · ')}${missed}`, state: r.missed ? 'warn' : 'done' })
+        showSteps()
         return r.text
       }
       return `There is no tool called ${c.name}.`
@@ -114,6 +126,7 @@ export const useChat = create<ChatState>((set, get) => ({
       for (let step = 0; step < MAX_STEPS; step++) {
         // Text from an earlier step stays; the next step's text starts a new paragraph.
         let fresh = true
+        update({ thinking: true })
         const { output, calls } = await callAi({
           wid,
           task: web ? 'research' : 'chat',
@@ -123,9 +136,14 @@ export const useChat = create<ChatState>((set, get) => ({
           instructions,
           webSearch: web,
           onSearch: (e) => {
-            if (e.status === 'searching') return update({ searching: true })
-            queries.push(...e.queries.filter((q) => !queries.includes(q)))
-            update({ searching: false, queries: [...queries] })
+            if (e.status === 'searching') {
+              steps.push({ kind: 'search', text: 'searching the web', state: 'running' })
+              return showSteps({ thinking: false })
+            }
+            const at = steps.map((x) => x.kind === 'search' && x.state === 'running').lastIndexOf(true)
+            const text = e.queries.length ? `searched ${e.queries.map((q) => `"${q}"`).join(' · ')}` : 'searched the web'
+            if (at >= 0) steps[at] = { kind: 'search', text, state: 'done' }
+            showSteps()
           },
           onCitation: (c) => {
             if (citations.some((x) => x.url === c.url)) return
@@ -137,11 +155,12 @@ export const useChat = create<ChatState>((set, get) => ({
           onDelta: (d) => {
             if (fresh && answer.trim()) answer = `${answer.trimEnd()}\n\n`
             fresh = false
-            update({ content: (answer += d) })
+            update({ content: (answer += d), thinking: false })
           },
           tools: [PROPOSE_TOOL, GET_ITEMS_TOOL],
           toolChoice: step === MAX_STEPS - 1 ? 'none' : 'auto',
         })
+        update({ thinking: false })
         if (!calls.length || ctl.signal.aborted) return
         input = [...input, ...output, ...calls.map((c) => ({ type: 'function_call_output', call_id: c.callId, output: run(c) }))]
       }
@@ -152,7 +171,8 @@ export const useChat = create<ChatState>((set, get) => ({
         update({ error: e instanceof AiError ? e.message : 'Something went wrong talking to OpenAI.' })
       })
       .finally(() => {
-        update({ searching: false })
+        for (const [i, x] of steps.entries()) if (x.state === 'running') steps[i] = { ...x, state: 'done' }
+        showSteps({ thinking: false })
         if (controller !== ctl) return
         controller = null
         set({ busy: false })

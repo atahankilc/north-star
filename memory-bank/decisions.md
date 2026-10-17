@@ -662,6 +662,10 @@ board layout, shared chats), because every later tool needs it.
 - *`get_items`* (`src/ai/readTools.ts`): up to 12 refs, each in full (fields up to 4000 characters, links both ways with
   kinds, a competitor's features, matrix cells), read from the workspace as it was when the message was sent. The chat
   shows `read: A · B`. The brief stays as it is; the prompt says to read only what it needs.
+- *Steps shown (user):* above each answer, one line per step as it happens: `searched "…"`, `read A · B`, `proposed: N
+  changes` / `corrected the proposal`, and `thinking` while a step has nothing to show yet. The running line turns (▖▘▝▗,
+  still under reduced motion); a step that only partly worked gets a yellow `!` with the reason (`1 not found`,
+  `1 can't be applied (unknown item)`). Replaces the old `searched:` / `read:` lines.
 - *Proposals check themselves:* `propose_changes` returns `proposalReport` (rows that can't be applied and why); the model
   may call it again with the whole corrected set, which replaces the checklist.
 - *Cost and log:* each step is its own call and its own usage-log entry (the server logs workspace-key steps the same way).

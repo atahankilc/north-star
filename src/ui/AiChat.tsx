@@ -6,7 +6,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type CSSProperties } from 'react'
 import { useLocation } from 'react-router-dom'
-import { useChat } from '../ai/chat'
+import { useChat, type Step } from '../ai/chat'
 import { workspaceBrief } from '../ai/context'
 import { useKeySource } from '../ai/keySource'
 import { chatInstructions } from '../ai/prompts/chat'
@@ -327,12 +327,7 @@ function Conversation({ source }: { source: KeySource }) {
           <li key={m.id} className={styles.message} data-role={m.role}>
             <span className={styles.who}>{m.role === 'user' ? 'you' : 'ai'}</span>
             <span className={styles.text}>
-              {(m.searching || m.queries?.length) && (
-                <span className={styles.searched}>
-                  {m.searching ? 'searching the web…' : `searched: ${m.queries!.join(' · ')}`}
-                </span>
-              )}
-              {m.read && m.read.length > 0 && <span className={styles.searched}>read: {m.read.join(' · ')}</span>}
+              {m.role === 'assistant' && <Steps steps={m.steps ?? []} thinking={!!m.thinking && busy && m === last} />}
               {m.role === 'assistant' ? <Linked text={m.content} /> : m.content}
               {m.role === 'assistant' && busy && m === last && <span className={styles.caret} aria-hidden />}
               {m.citations && m.citations.length > 0 && (
@@ -408,4 +403,43 @@ function Linked({ text }: { text: string }) {
   }
   parts.push(text.slice(at))
   return <>{parts.map((p, i) => (typeof p === 'string' ? <Fragment key={`t${i}`}>{p}</Fragment> : p))}</>
+}
+
+// What the assistant did on the way to its answer (D-084), one line per step: the running one turns, a step that only
+// partly worked gets a yellow `!`. `thinking` is the gap while a step has nothing to show yet.
+const FRAMES = '▖▘▝▗'
+
+function Steps({ steps, thinking }: { steps: Step[]; thinking: boolean }) {
+  if (!steps.length && !thinking) return null
+  return (
+    <ol className={styles.steps}>
+      {steps.map((s, i) => (
+        <li key={i} data-state={s.state}>
+          {s.state === 'running' ? <Spinner /> : <span className={styles.stepMark}>{s.state === 'warn' ? '!' : '·'}</span>}
+          <span>{s.text}</span>
+        </li>
+      ))}
+      {thinking && (
+        <li data-state="running">
+          <Spinner />
+          <span>thinking</span>
+        </li>
+      )}
+    </ol>
+  )
+}
+
+function Spinner() {
+  const reduced = useMotion((s) => s.reduced)
+  const [i, setI] = useState(0)
+  useEffect(() => {
+    if (reduced) return
+    const id = window.setInterval(() => setI((n) => (n + 1) % FRAMES.length), 120)
+    return () => window.clearInterval(id)
+  }, [reduced])
+  return (
+    <span className={styles.stepMark} aria-hidden>
+      {FRAMES[i]}
+    </span>
+  )
 }

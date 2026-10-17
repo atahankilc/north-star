@@ -411,12 +411,46 @@ html[data-motion='reduced'] .caret {
   color: var(--accent-cyan);
 }
 
-.searched {
-  display: block;
-  margin-bottom: var(--space-1);
+/* The steps of an answer (D-084): faint once done, bright while running, yellow `!` where something didn't work. */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
   color: var(--fg-faint);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  white-space: normal;
+}
+
+.steps li {
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.steps li > span:last-child {
+  overflow-wrap: anywhere;
+}
+
+.steps li[data-state='running'] {
+  color: var(--fg);
+}
+
+.stepMark {
+  flex: none;
+  width: 1ch;
+  color: var(--line-hover);
+}
+
+.steps li[data-state='running'] .stepMark {
+  color: var(--accent-cyan);
+}
+
+.steps li[data-state='warn'] .stepMark {
+  color: var(--accent-yellow);
 }
 
 .text a {

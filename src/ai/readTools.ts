@@ -34,13 +34,14 @@ const full = (v: string | undefined) => {
 const field = (name: string, v: string | number | undefined) => (v === undefined || v === '' ? [] : [`  ${name}: ${v}`])
 
 // The result text for one get_items call. `refs` are the brief's (ref → item), so the model's refs mean the same here.
-export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, ItemRef>): { text: string; names: string[] } {
+// `missed`: some refs matched nothing (or were deleted since).
+export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, ItemRef>): { text: string; names: string[]; missed: number } {
   let asked: string[] = []
   try {
     const data = JSON.parse(args) as { refs?: unknown }
     if (Array.isArray(data.refs)) asked = data.refs.map((r) => String(r).replace(/^\[|\]$/g, '').trim()).filter(Boolean)
   } catch {
-    return { text: 'Arguments were not valid JSON.', names: [] }
+    return { text: 'Arguments were not valid JSON.', names: [], missed: 1 }
   }
   const refOf = new Map([...refs].map(([ref, it]) => [it.id, ref]))
   const nameOf = (id: string) => {
@@ -49,14 +50,15 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
   }
 
   const names: string[] = []
+  let missed = 0
   const blocks = [...new Set(asked)].slice(0, MAX_ITEMS).map((ref) => {
     const it = refs.get(ref)
-    if (!it) return `[${ref}]: no item has this ref.`
+    if (!it) return missed++, `[${ref}]: no item has this ref.`
     const lines = [`[${ref}] ${it.type} "${it.name}"`]
     const card = [...ws.customers, ...ws.problems, ...ws.ideas, ...ws.features].find((n) => n.id === it.id)
     const comp = ws.competitors.find((c) => c.id === it.id)
     const cf = ws.competitorFeatures.find((f) => f.id === it.id)
-    if (!card && !comp && !cf) return `[${ref}]: deleted since the message was sent.`
+    if (!card && !comp && !cf) return missed++, `[${ref}]: deleted since the message was sent.`
     names.push(it.name)
     if (card) {
       const f = card as typeof card & { priority?: string; status?: string; effort?: string }
@@ -83,7 +85,7 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
     for (const c of cells) lines.push(`  ${nameOf(c.featureId)} × ${nameOf(c.competitorId)}: ${c.coverage ?? 'not assessed'}${c.notes ? `; ${full(c.notes)}` : ''}`)
     return lines.join('\n')
   })
-  if (!blocks.length) return { text: 'No refs given.', names }
+  if (!blocks.length) return { text: 'No refs given.', names, missed: 1 }
   const more = asked.length > MAX_ITEMS ? `\n\n(Only the first ${MAX_ITEMS} were read; ask for the rest in another call.)` : ''
-  return { text: blocks.join('\n\n') + more, names }
+  return { text: blocks.join('\n\n') + more, names, missed }
 }

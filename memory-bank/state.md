@@ -257,7 +257,7 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 
 ## Done (assistant agent loop, 2026-10-17)
 - D-084: up to 6 steps per answer, `get_items` (read items in full), proposals report bad rows back and can be redone in the
-  same answer, last step `tool_choice: none`. Proxy whitelist passes `include` + `tool_choice` (not deployed). Verified on
+  same answer, last step `tool_choice: none`. Each answer lists its steps live (searched / read / proposed / thinking). Proxy whitelist passes `include` + `tool_choice` (not deployed). Verified on
   emulators with a fake OpenAI. **Not committed. To check with a real key:** a [web] answer that also calls a tool (are
   `web_search_call` items accepted back with store:false?).
 - Assistant roadmap discussed with the user (in order): agent loop (done) → analysis modes + label/layout proposals →
