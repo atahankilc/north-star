@@ -57,9 +57,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Used for: ambient background forms (slowly flowing noise fields), view transitions
   (scene dissolves into glyphs and re-forms), loaders, empty states, and hover halos on cards.
 - **Never** applied over editable or readable text.
-- Respect `prefers-reduced-motion`: static ASCII, no flowing fields, crossfades only.
-- Performance budget: 60 fps on a mid-range laptop. The ASCII pass can be lowered in resolution or
-  turned off in Settings.
+- Reduced motion (Settings, or the OS when motion is `system`): static ASCII, no flowing fields, crossfades only.
+- Performance (D-063): the field renders at one texel per cell, the backdrop at 30 fps on demand, the board only when
+  something changes. Signed-in users can switch the background off in Settings; the landing always keeps it.
 
 ## 6. Components (ASCII-styled DOM)
 
@@ -99,7 +99,8 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
 - **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour
   (`<Appear>` for DOM, `CardReveal` for 3D cards), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
 - Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.
-- **Motion setting** (D-030): `system | full | reduced` in the HUD; reduced = frozen background, no waves or sweeps.
+- **Motion setting** (D-030, D-063): `full | reduced | system`, default `full`; reduced = frozen background, no waves or sweeps.
+  **Background** `on | off` beside it (signed-in pages only).
 
 - Camera flies between views (Canvas → Features → Competitor map) with eased paths
 - Cards spring in on create and dissolve into glyphs on delete

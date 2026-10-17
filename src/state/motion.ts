@@ -1,4 +1,4 @@
-// Motion preference: follow the OS (default), or force full / reduced motion in-app.
+// Motion preference: full motion (default, D-063), reduced, or follow the OS.
 // Saved per browser. Everything that animates reads `reduced` from here, never the media query directly.
 import { create } from 'zustand'
 
@@ -12,9 +12,10 @@ function load(): MotionPref {
     const v = localStorage.getItem(KEY)
     if (v === 'system' || v === 'full' || v === 'reduced') return v
   } catch {
-    // Storage blocked (private mode, etc.): fall back to the OS setting.
+    // Storage blocked (private mode, etc.): keep the default.
   }
-  return 'system'
+  // Full unless you choose otherwise: the OS setting only counts once you pick `system`.
+  return 'full'
 }
 
 const resolve = (pref: MotionPref, systemReduced: boolean) => pref === 'reduced' || (pref === 'system' && systemReduced)

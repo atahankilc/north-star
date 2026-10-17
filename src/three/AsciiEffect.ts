@@ -1,14 +1,44 @@
-// Post-processing pass that re-renders the scene as glyphs (docs/DESIGN.md §5).
-// Each screen cell samples the scene once, maps luminance to a glyph ramp and keeps the
-// scene's colour, so accent-coloured objects come through as coloured glyphs.
+// Pass that re-renders the scene as glyphs (docs/DESIGN.md §5).
+// Each screen cell shows the scene's luminance as a glyph from a ramp and keeps the scene's colour,
+// so accent-coloured objects come through as coloured glyphs.
+//
+// The scene is rendered into a target with one texel per cell, never at full resolution: the glyphs only ever
+// read one sample per cell, so the expensive field shader runs about 300× fewer times (D-063). Only this cheap
+// glyph lookup runs per screen pixel.
 //
 // It can also mask itself cell by cell (the loading curtain, D-025): cells are "covered" or
 // transparent, each at its own random moment (D-035).
-import { BlendFunction, Effect, EffectAttribute } from 'postprocessing'
-import { CanvasTexture, LinearFilter, Uniform } from 'three'
+import {
+  CanvasTexture,
+  LinearFilter,
+  Mesh,
+  NearestFilter,
+  NoBlending,
+  OrthographicCamera,
+  PlaneGeometry,
+  Scene,
+  ShaderMaterial,
+  Vector2,
+  WebGLRenderTarget,
+  type Camera,
+  type Object3D,
+  type WebGLRenderer,
+} from 'three'
 import { fonts } from '../styles/tokens'
 
+const vertexShader = /* glsl */ `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = vec4(position.xy, 0.0, 1.0);
+}
+`
+
 const fragmentShader = /* glsl */ `
+varying vec2 vUv;
+uniform sampler2D uScene;   // one texel per cell
+uniform vec2 uGrid;         // cells across, down
+uniform vec2 uResolution;   // drawing buffer, px
 uniform sampler2D uGlyphs;
 uniform float uCount;
 uniform float uCell;
@@ -20,11 +50,10 @@ uniform float uProgress;   // 0 → 1 along the sweep
 
 float hash12(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 
-void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-  vec2 px = uv * resolution;
+void main() {
+  vec2 px = vUv * uResolution;
   vec2 cell = floor(px / uCell);
-  vec2 cellUv = (cell + 0.5) * uCell / resolution;
-  vec3 c = texture2D(inputBuffer, cellUv).rgb;
+  vec3 c = texture2D(uScene, (cell + 0.5) / uGrid).rgb;
 
   float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
   float idx = floor(clamp(l * uGain, 0.0, 0.999) * uCount);
@@ -45,7 +74,8 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
     col *= covered; // premultiplied
   }
 
-  outputColor = vec4(col, alpha);
+  gl_FragColor = vec4(col, alpha);
+  #include <colorspace_fragment>
 }
 `
 
@@ -77,8 +107,16 @@ function drawAtlas(canvas: HTMLCanvasElement, ramp: string) {
   }
 }
 
-export class AsciiEffect extends Effect {
+export class AsciiEffect {
+  // How much of the screen-sized UV range the cell grid covers (it overhangs by up to one cell). The scene reads it,
+  // so each texel samples exactly the point at its cell's centre.
+  readonly uvScale = new Vector2(1, 1)
   private atlas: CanvasTexture
+  private target: WebGLRenderTarget
+  private material: ShaderMaterial
+  private quad: Scene
+  private camera = new OrthographicCamera()
+  private buffer = new Vector2()
 
   constructor({ cellSize = 9, saturation = 1, gain = 1.4, ramp = GLYPH_RAMP }: AsciiOptions = {}) {
     const canvas = document.createElement('canvas')
@@ -86,22 +124,32 @@ export class AsciiEffect extends Effect {
     const atlas = new CanvasTexture(canvas)
     atlas.minFilter = LinearFilter
     atlas.magFilter = LinearFilter
-
-    super('AsciiEffect', fragmentShader, {
-      blendFunction: BlendFunction.NORMAL,
-      attributes: EffectAttribute.CONVOLUTION,
-      uniforms: new Map<string, Uniform>([
-        ['uGlyphs', new Uniform(atlas)],
-        ['uCount', new Uniform(ramp.length)],
-        ['uCell', new Uniform(cellSize)],
-        ['uSaturation', new Uniform(saturation)],
-        ['uGain', new Uniform(gain)],
-        ['uDim', new Uniform(1)],
-        ['uMaskMode', new Uniform(0)],
-        ['uProgress', new Uniform(0)],
-      ]),
-    })
     this.atlas = atlas
+
+    this.target = new WebGLRenderTarget(1, 1, { minFilter: NearestFilter, magFilter: NearestFilter, depthBuffer: false })
+    this.material = new ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      blending: NoBlending,
+      depthTest: false,
+      depthWrite: false,
+      uniforms: {
+        uScene: { value: this.target.texture },
+        uGrid: { value: new Vector2(1, 1) },
+        uResolution: { value: new Vector2(1, 1) },
+        uGlyphs: { value: atlas },
+        uCount: { value: ramp.length },
+        uCell: { value: cellSize },
+        uSaturation: { value: saturation },
+        uGain: { value: gain },
+        uDim: { value: 1 },
+        uMaskMode: { value: 0 },
+        uProgress: { value: 0 },
+      },
+    })
+    const mesh = new Mesh(new PlaneGeometry(2, 2), this.material)
+    mesh.frustumCulled = false
+    this.quad = new Scene().add(mesh as Object3D)
 
     // Redraw once Geist Mono has loaded; the first draw may use the fallback font.
     document.fonts?.load(`48px "${fonts.mono}"`).then(() => {
@@ -111,16 +159,38 @@ export class AsciiEffect extends Effect {
   }
 
   setDim(value: number) {
-    this.uniforms.get('uDim')!.value = value
+    this.material.uniforms.uDim.value = value
   }
 
   setMask(mode: MaskMode, progress = 0) {
-    this.uniforms.get('uMaskMode')!.value = MASK_MODES[mode]
-    this.uniforms.get('uProgress')!.value = progress
+    this.material.uniforms.uMaskMode.value = MASK_MODES[mode]
+    this.material.uniforms.uProgress.value = progress
+  }
+
+  // Sizes the cell grid to the drawing buffer. Call before the scene updates its uniforms for the frame.
+  resize(gl: WebGLRenderer) {
+    const u = this.material.uniforms
+    const cell = u.uCell.value as number
+    gl.getDrawingBufferSize(this.buffer)
+    const cols = Math.max(1, Math.ceil(this.buffer.x / cell))
+    const rows = Math.max(1, Math.ceil(this.buffer.y / cell))
+    if (this.target.width !== cols || this.target.height !== rows) this.target.setSize(cols, rows)
+    u.uGrid.value.set(cols, rows)
+    u.uResolution.value.copy(this.buffer)
+    this.uvScale.set((cols * cell) / this.buffer.x, (rows * cell) / this.buffer.y)
+  }
+
+  render(gl: WebGLRenderer, scene: Scene, camera: Camera) {
+    gl.setRenderTarget(this.target)
+    gl.clear()
+    gl.render(scene, camera)
+    gl.setRenderTarget(null)
+    gl.render(this.quad, this.camera)
   }
 
   dispose() {
     this.atlas.dispose()
-    super.dispose()
+    this.target.dispose()
+    this.material.dispose()
   }
 }

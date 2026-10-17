@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from '../data/auth'
 import { useHoldCurtain } from '../state/curtain'
+import { useDisplay } from '../state/display'
 import { useMotion } from '../state/motion'
 import { Backdrop } from '../three/Backdrop'
 import { Curtain } from '../ui/Curtain'
@@ -32,13 +33,16 @@ function Shell() {
   const { pathname } = useLocation()
   const onBoard = Boolean(user) && pathname.startsWith('/w/')
   const fontsReady = useFontsReady()
+  // Switching the background off applies to signed-in pages only; the landing always flows (D-063). While auth
+  // is still loading, assume the choice applies, so a signed-in user who turned it off never sees it flash in.
+  const field = useDisplay((s) => s.background) === 'on' || (!isLoading && !user)
   useHoldCurtain('auth', isLoading)
   useHoldCurtain('fonts', !fontsReady)
 
   return (
     <>
       {/* The ambient field steps back on the board so cards stay legible. */}
-      <Backdrop dim={onBoard} />
+      {field && <Backdrop dim={onBoard} />}
       {!isLoading && (
         <Routes>
           {user ? (
@@ -59,7 +63,7 @@ function Shell() {
           )}
         </Routes>
       )}
-      <Curtain />
+      <Curtain field={field} />
     </>
   )
 }

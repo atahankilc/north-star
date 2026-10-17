@@ -9,7 +9,7 @@ import type { CompetitorFeature } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { colors } from '../../styles/tokens'
 import { fontUrls } from '../../three/fonts'
-import { truncate } from './cardLayout'
+import { glideDt, truncate } from './cardLayout'
 
 export const CHIP_W = 2
 export const CHIP_H = 0.42
@@ -31,7 +31,8 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
   const started = useRef(false)
 
   // Slide out from behind the competitor.
-  useFrame((_, dt) => {
+  useFrame(({ invalidate }, delta) => {
+    const dt = glideDt(delta)
     const g = group.current
     if (!g) return
     if (!started.current) {
@@ -40,6 +41,7 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
     }
     g.position.x = MathUtils.damp(g.position.x, at[0], 14, dt)
     g.position.y = MathUtils.damp(g.position.y, at[1], 14, dt)
+    if (Math.abs(g.position.x - at[0]) > 1e-4 || Math.abs(g.position.y - at[1]) > 1e-4) invalidate()
   })
 
   const edge = selected ? colors.yellow : linking && hovered ? colors.cyan : hovered ? '#5a5a5a' : '#2a2a2a'

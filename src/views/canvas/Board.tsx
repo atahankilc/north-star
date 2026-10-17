@@ -11,7 +11,7 @@ import { useCanvas } from '../../state/canvasStore'
 import { isReducedMotion } from '../../state/motion'
 import { defaultKind, type BoardItem } from './boardKinds'
 import { BoardLabel, LABEL_SIZE } from './BoardLabel'
-import { CARD_H, CARD_W } from './cardLayout'
+import { CARD_H, CARD_W, glideDt } from './cardLayout'
 import { EdgeLine } from './EdgeLine'
 import { CHIP_H, CHIP_W, FeatureChip } from './FeatureChip'
 import { boardPoint, NodeCard } from './NodeCard'
@@ -59,6 +59,9 @@ export function Board(props: Props) {
     <div ref={setWrapper} style={{ position: 'absolute', inset: 0, touchAction: 'none' }}>
       <Canvas
         dpr={[1, 2]}
+        // Draws only when something changes (D-063): React updates, the controls and text invalidate on their own,
+        // and every glide below asks for frames until it settles.
+        frameloop="demand"
         // `far` stays well past maxDistance, or zooming out clips everything away.
         camera={{ position: [0, 0, 11], fov: 40, near: 0.1, far: 1000 }}
         gl={{ alpha: true, antialias: true }}
@@ -125,7 +128,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     controls.addEventListener('start', cancel)
     return () => controls.removeEventListener('start', cancel)
   }, [controls])
-  useFrame((_, dt) => {
+  useFrame(({ invalidate }, delta) => {
+    const dt = glideDt(delta)
     const to = flight.current
     if (!to || !controls) return
     const x = MathUtils.damp(controls.target.x, to[0], 5, dt)
@@ -135,6 +139,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     controls.target.set(x, y, 0)
     controls.update()
     if (Math.hypot(to[0] - x, to[1] - y) < 0.01) flight.current = null
+    else invalidate()
   })
 
   useEffect(() => {

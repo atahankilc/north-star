@@ -12,7 +12,7 @@ import { useCanvas } from '../../state/canvasStore'
 import { colors } from '../../styles/tokens'
 import { fontUrls } from '../../three/fonts'
 import { BOARD_KINDS, TYPE_ACCENT, type BoardItem } from './boardKinds'
-import { CARD_H, CARD_W, truncate } from './cardLayout'
+import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 
 const BOARD = new Plane(new Vector3(0, 0, 1), 0)
@@ -66,7 +66,8 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, onLinkDro
   // The card stays flat and its size never changes (D-061): no lift or scale on hover, selection or drag, which also made
   // a dragged card land somewhere other than under the pointer. While dragging it sits exactly under the pointer;
   // otherwise it glides to its position, so collaborators' moves animate. The dragged card is drawn on top.
-  useFrame((_, dt) => {
+  useFrame(({ invalidate }, delta) => {
+    const dt = glideDt(delta)
     const g = group.current
     if (!g) return
     // Stacking uses tiny depth steps, too small to make a card look bigger or drift from the pointer.
@@ -75,6 +76,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, onLinkDro
       g.position.x = MathUtils.damp(g.position.x, x, 12, dt)
       g.position.y = MathUtils.damp(g.position.y, y, 12, dt)
       g.position.z = Math.min(layer, 150) * 0.0003
+      if (Math.abs(g.position.x - x) > 1e-4 || Math.abs(g.position.y - y) > 1e-4) invalidate()
     }
   })
 

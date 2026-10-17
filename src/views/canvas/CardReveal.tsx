@@ -64,8 +64,10 @@ export function CardReveal({ content, uniforms }: Props) {
     if (content.current) install(content.current)
   }, [install, content])
 
-  useFrame(() => {
+  useFrame(({ invalidate }) => {
     if (done || !content.current) return
+    // The board renders on demand: keep frames coming until the card has fully built up.
+    invalidate()
     // Materials that mount later (e.g. the hover rim) join in.
     install(content.current)
 

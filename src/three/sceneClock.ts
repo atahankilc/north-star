@@ -3,6 +3,11 @@
 // depend on per-canvas state (own clocks, pointer position, etc.).
 import { isReducedMotion } from '../state/motion'
 
+// The field drifts slowly, so it only needs a new frame this often (D-063). Time moves in these steps, so every
+// canvas that draws the backdrop shows the same frame, and the backdrop only re-renders when the step changes.
+export const BACKDROP_FPS = 30
+const step = (t: number) => Math.floor(t * BACKDROP_FPS) / BACKDROP_FPS
+
 let base = performance.now()
 let frozenAt: number | null = null
 
@@ -11,13 +16,13 @@ export function sceneTime(): number {
   const now = performance.now()
   if (isReducedMotion()) {
     frozenAt ??= (now - base) / 1000
-    return frozenAt
+    return step(frozenAt)
   }
   if (frozenAt !== null) {
     base = now - frozenAt * 1000
     frozenAt = null
   }
-  return (now - base) / 1000
+  return step((now - base) / 1000)
 }
 
 // Backdrop brightness (1 = full, lower on the board so cards stay legible). Eased by the backdrop

@@ -1,13 +1,12 @@
 // The persistent 3D layer behind all DOM views. Lives once in the app shell so route changes
 // never tear down the WebGL context. <BackdropScene> is also reused by the loading curtain,
 // which draws an identical copy on top of the page (D-025).
-import { advance, Canvas, useFrame } from '@react-three/fiber'
-import { EffectComposer } from '@react-three/postprocessing'
+import { advance, Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import { MathUtils } from 'three'
 import { AmbientField } from './AmbientField'
 import { AsciiEffect } from './AsciiEffect'
-import { backdropDim } from './sceneClock'
+import { backdropDim, sceneTime } from './sceneClock'
 
 // Dev-only: step frames manually, e.g. from automation in a background tab where rAF is paused.
 if (import.meta.env.DEV) {
@@ -23,22 +22,43 @@ export function cellSize() {
 type SceneProps = {
   // Called every frame with this canvas's ASCII pass, before rendering.
   onFrame?: (effect: AsciiEffect, dt: number) => void
+  // Without the field the pass draws only empty cells, so the curtain can still rebuild the page out of black.
+  field?: boolean
 }
 
-export function BackdropScene({ onFrame }: SceneProps) {
+export function BackdropScene({ onFrame, field = true }: SceneProps) {
   const effect = useMemo(() => new AsciiEffect({ cellSize: cellSize() }), [])
   useEffect(() => () => effect.dispose(), [effect])
 
-  useFrame((_, dt) => onFrame?.(effect, dt))
+  // Priority 1 takes over rendering from R3F: the field goes into the per-cell target, then the glyphs to the screen.
+  useFrame(({ gl, scene, camera }, dt) => {
+    onFrame?.(effect, dt)
+    effect.resize(gl)
+    effect.render(gl, scene, camera)
+  }, 1)
 
-  return (
-    <>
-      <AmbientField />
-      <EffectComposer multisampling={0}>
-        <primitive object={effect} dispose={null} />
-      </EffectComposer>
-    </>
-  )
+  return field ? <AmbientField uvScale={effect.uvScale} /> : null
+}
+
+// Renders only when there is something new to show (D-063): a new step of the scene clock, or the dim easing.
+// Under reduced motion the clock stands still, so the backdrop costs nothing between changes.
+function Pace() {
+  const invalidate = useThree((s) => s.invalidate)
+  useEffect(() => {
+    let raf = 0
+    let last = -1
+    const tick = () => {
+      const t = sceneTime()
+      if (t !== last || Math.abs(backdropDim.current - backdropDim.target) > 0.001) {
+        last = t
+        invalidate()
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [invalidate])
+  return null
 }
 
 export function Backdrop({ dim = false }: { dim?: boolean }) {
@@ -51,13 +71,16 @@ export function Backdrop({ dim = false }: { dim?: boolean }) {
     <Canvas
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
+      frameloop="demand"
       camera={BACKDROP_CAMERA}
-      gl={{ antialias: false, powerPreference: 'high-performance' }}
+      // A slow ambient field doesn't need the discrete GPU on dual-GPU machines.
+      gl={{ antialias: false, powerPreference: 'low-power' }}
       aria-hidden
       onCreated={(state) => {
         if (import.meta.env.DEV) (window as unknown as { __backdrop: typeof state }).__backdrop = state
       }}
     >
+      <Pace />
       <BackdropScene
         onFrame={(effect, dt) => {
           backdropDim.current = MathUtils.damp(backdropDim.current, backdropDim.target, 5, dt)

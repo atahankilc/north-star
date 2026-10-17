@@ -23,7 +23,8 @@ type Phase = 'covering' | 'covered' | 'revealing'
 // The sweep runs inside the render loop so it stays in lockstep with the frames it masks.
 type Sweep = { phase: Phase; startedAt: number }
 
-export function Curtain() {
+// `field: false` when the background is switched off: the copy is then plain black cells (D-063).
+export function Curtain({ field = true }: { field?: boolean }) {
   const holds = useCurtain((s) => s.holds)
   const setRevealed = useCurtain((s) => s.setRevealed)
   const busy = Object.keys(holds).length > 0
@@ -99,7 +100,7 @@ export function Curtain() {
           aria-hidden
         >
           <Canvas dpr={[1, 2]} camera={BACKDROP_CAMERA} gl={{ antialias: false, alpha: true, premultipliedAlpha: true }}>
-            <BackdropScene onFrame={onFrame} />
+            <BackdropScene onFrame={onFrame} field={field} />
           </Canvas>
         </div>
       )}

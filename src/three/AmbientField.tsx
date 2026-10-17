@@ -10,8 +10,9 @@ import { sceneTime } from './sceneClock'
 
 const vertexShader = /* glsl */ `
 varying vec2 vUv;
+uniform vec2 uUvScale;
 void main() {
-  vUv = uv;
+  vUv = uv * uUvScale;
   gl_Position = vec4(position.xy, 0.999, 1.0);
 }
 `
@@ -89,13 +90,15 @@ void main() {
 }
 `
 
-export function AmbientField() {
+// Rendered at one texel per ASCII cell (D-063); `uvScale` maps those texels back to screen UVs.
+export function AmbientField({ uvScale }: { uvScale: Vector2 }) {
   const size = useThree((s) => s.size)
   const material = useRef<ShaderMaterial>(null)
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
+      uUvScale: { value: new Vector2(1, 1) },
       uAspect: { value: new Vector2(1, 1) },
       uAccentA: { value: new Color(colors.magenta) },
       uAccentB: { value: new Color(colors.yellow) },
@@ -109,6 +112,7 @@ export function AmbientField() {
     const u = material.current?.uniforms
     if (!u) return
     u.uTime.value = sceneTime()
+    u.uUvScale.value.copy(uvScale)
     u.uAspect.value.set(size.width / size.height, 1)
   })
 

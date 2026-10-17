@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (safer joining: email invites + approved join requests)_
+_Last updated: 2026-10-17 (full motion default, background switch, cheaper backdrop, D-063)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -114,6 +114,12 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
   deploy rules and push together. Verified on emulators with headless Chrome (Bob asks → Alice lets in; Carol invited by email → joins;
   duplicate request message; new code).
 
+## Done (motion default + background switch + GPU, 2026-10-17)
+- Full motion by default, `background: on | off` in Settings → app (signed-in pages only), field at one texel per cell,
+  backdrop 30 fps on demand + low-power context, board on demand (D-063). `postprocessing` packages removed.
+- Verified with headless Chrome on emulators: landing 30 renders/s, idle board 0 draws, panning draws, background off removes
+  the canvas, the landing still flows after sign-out; same frame as before at a pinned clock (glyphs a touch crisper). Not committed.
+
 ## Next steps
 1. The user's review on the live site; then Phase 3 (presence, live cursors)
 2. Phase 3: presence + live cursors (RTDB rules are ready)
@@ -130,8 +136,8 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
   short and observe with MutationObserver; hide `[role=status]` to look past a stuck curtain.
 - **For visual or animation checks, use headless Chrome via puppeteer-core.** Install it in the session scratchpad
   (`npm i puppeteer-core@24`, never in the repo) and launch `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
-  with `headless: 'new'`. It runs rAF normally, unlike the extension's background tab. Set `localStorage['north-star.motion'] = 'full'`
-  via `evaluateOnNewDocument` first (the user's OS has Reduce Motion on). Wait for `window.__curtain.getState().revealed` before capturing.
+  with `headless: 'new'`. It runs rAF normally, unlike the extension's background tab. Motion is `full` by default now (D-063),
+  so no setup is needed unless a stored preference says otherwise. Wait for `window.__curtain.getState().revealed` before capturing.
 - The user runs their own dev server on :5173. Use another port (e.g. 5179) for yours, and stop your servers when done.
 - Ideas and features used to live on separate boards, so in old workspaces they may overlap on the shared board. Drag them apart.
 - The quickest realistic test data is the example workspace: click Alice, then "Create example" (emulators).

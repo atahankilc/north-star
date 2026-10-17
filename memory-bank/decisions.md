@@ -333,3 +333,16 @@ and a code never expired, so one leaked code was enough. Now:
 Kept the 8-character code: guessing it isn't the risk (31⁸ ≈ 8.5×10¹¹), a leaked one is, and approval covers that.
 Rules: `joiningByInvite()`, `decliningInvite()`, `joinRequests` match; the old `joining()` is gone. 108 rule tests pass.
 
+### D-063 · 2026-10-17 · Accepted (changes D-030's default)
+**Full motion by default, an off switch for the background, and a much cheaper backdrop.**
+- Motion defaults to `full`; the OS Reduce Motion setting only counts once you pick `system` (the user's call; `reduced` is one
+  click away in Settings → app). Order in the picker: `full reduced system`.
+- `background: on | off` under motion (`src/state/display.ts`, localStorage). Off removes the backdrop canvas on signed-in pages
+  only; the landing always flows. While auth loads, a stored `off` already applies, so it never flashes in. The loading curtain
+  then rebuilds the page out of plain black cells.
+- Performance: the field shader renders into a target with **one texel per ASCII cell** (it used to run per screen pixel while the glyph
+  pass read one sample per cell, about 300× waste); `AsciiEffect` is now our own two-step pass, `postprocessing` is gone.
+  The backdrop renders on demand at **30 fps** (`BACKDROP_FPS`; `sceneTime()` moves in those steps so both canvases match), and not
+  at all while frozen. Its WebGL context asks for `low-power`. The board canvas renders on demand too: React updates, controls
+  and text invalidate it, glides invalidate until they settle (`glideDt` caps the delta so they still animate after a pause).
+- Measured (headless, 1440×900 @2x): backdrop 30 renders/s instead of one per display refresh; idle board 0 draws (was every frame).

@@ -12,6 +12,7 @@ import { useCanvas } from '../../state/canvasStore'
 import { colors } from '../../styles/tokens'
 import { fontUrls } from '../../three/fonts'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
+import { glideDt } from './cardLayout'
 import { boardPoint } from './NodeCard'
 import styles from './BoardLabel.module.css'
 
@@ -44,13 +45,15 @@ export function BoardLabel({ wid, label }: Props) {
   const accent = label.color ?? colors.fg
 
   // Exactly under the pointer while dragging; remote moves glide (D-061).
-  useFrame((_, dt) => {
+  useFrame(({ invalidate }, delta) => {
+    const dt = glideDt(delta)
     const g = group.current
     if (!g) return
     if (drag.current) g.position.set(x, y, 0.01)
     else {
       g.position.x = MathUtils.damp(g.position.x, x, 12, dt)
       g.position.y = MathUtils.damp(g.position.y, y, 12, dt)
+      if (Math.abs(g.position.x - x) > 1e-4 || Math.abs(g.position.y - y) > 1e-4) invalidate()
     }
   })
 

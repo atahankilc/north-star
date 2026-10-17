@@ -3,6 +3,10 @@ export const CARD_W = 2.4
 // Type label, a title of up to two lines, tags and one meta line (no notes, D-057).
 export const CARD_H = 1.25
 
+// The board renders on demand (D-063), so the first frame after a pause can report a long delta. Glides use at most
+// this much per frame, or they'd jump straight to their target instead of moving there.
+export const glideDt = (dt: number) => Math.min(dt, 1 / 30)
+
 export function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text
 }
