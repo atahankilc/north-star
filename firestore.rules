@@ -22,6 +22,80 @@ service cloud.firestore {
       return signedIn() && request.auth.uid in workspace(wid).memberIds;
     }
 
+    // ---- Workspace content shapes ----
+
+    function isText(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    function optText(d, key, max) {
+      return !(key in d) || isText(d[key], max);
+    }
+
+    function optIn(d, key, values) {
+      return !(key in d) || d[key] in values;
+    }
+
+    // Ideas and features: cards on a board (D-037).
+    function validCard(d) {
+      return isText(d.title, 200)
+        && optText(d, 'body', 20000)
+        && optText(d, 'color', 20)
+        && (!('tags' in d) || (d.tags is list && d.tags.size() <= 30))
+        && d.x is number && d.y is number;
+    }
+
+    function validFeature(d) {
+      return validCard(d)
+        && optIn(d, 'priority', ['P1', 'P2', 'P3'])
+        && optIn(d, 'status', ['idea', 'planned', 'building', 'shipped'])
+        && optIn(d, 'effort', ['S', 'M', 'L']);
+    }
+
+    function validCompetitor(d) {
+      return isText(d.name, 200)
+        && optText(d, 'url', 2000)
+        && optText(d, 'description', 20000)
+        && optText(d, 'pricing', 2000)
+        && optText(d, 'audience', 2000)
+        && optText(d, 'notes', 20000);
+    }
+
+    function validCompetitorFeature(d) {
+      return isText(d.competitorId, 128)
+        && isText(d.name, 200)
+        && optText(d, 'description', 20000)
+        && optText(d, 'category', 100);
+    }
+
+    // One matrix cell per (feature, competitor): the id is fixed by its two ends.
+    function validComparison(id, d) {
+      return isText(d.featureId, 128)
+        && isText(d.competitorId, 128)
+        && id == d.featureId + '_' + d.competitorId
+        && optIn(d, 'coverage', ['none', 'partial', 'full', 'better'])
+        && optText(d, 'notes', 20000)
+        && optText(d, 'competitorFeatureId', 128);
+    }
+
+    function validEdge(d) {
+      let types = ['idea', 'group', 'feature', 'competitor', 'competitorFeature'];
+      return isText(d.fromId, 128) && isText(d.toId, 128) && d.fromId != d.toId
+        && d.fromType in types && d.toType in types
+        && isText(d.kind, 40)
+        && optText(d, 'label', 200);
+    }
+
+    function valid(collection, id, d) {
+      return (collection == 'ideas' && validCard(d))
+        || (collection == 'features' && validFeature(d))
+        || (collection == 'competitors' && validCompetitor(d))
+        || (collection == 'competitorFeatures' && validCompetitorFeature(d))
+        || (collection == 'comparisons' && validComparison(id, d))
+        || (collection == 'edges' && validEdge(d))
+        || (collection == 'groups' && isText(d.name, 200));
+    }
+
     match /workspaces/{wid} {
       allow read: if signedIn() && request.auth.uid in resource.data.memberIds;
 
@@ -74,9 +148,11 @@ service cloud.firestore {
           && !(request.auth.uid in request.resource.data.roles);
       }
 
-      // ideas, groups, features, competitors, competitorFeatures, comparisons, edges
+      // Workspace content: members only, known collections only, with a sane shape.
+      // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
-        allow read, write: if isMember(wid);
+        allow read, delete: if isMember(wid) && collection in ['ideas', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges'];
+        allow create, update: if isMember(wid) && valid(collection, docId, request.resource.data);
       }
     }
 

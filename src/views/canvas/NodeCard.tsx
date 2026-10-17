@@ -1,12 +1,12 @@
-// One post-it on the board: a lit slab with SDF text (D-019). Editing happens in the DetailPanel.
+// One card on a board (an idea post-it or a feature): a lit slab with SDF text (D-019). Editing happens in the DetailPanel.
 import { RoundedBox, Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useMemo, useRef, useState } from 'react'
 import { MathUtils, MeshBasicMaterial, Plane, Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
-import { moveIdea } from '../../data/ideas'
-import type { Idea } from '../../data/model'
+import type { BoardNode, BoardType } from '../../data/model'
+import { moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { colors } from '../../styles/tokens'
 import { fontUrls } from '../../three/fonts'
@@ -23,13 +23,16 @@ export function boardPoint(e: ThreeEvent<PointerEvent | MouseEvent>): [number, n
 
 type Props = {
   wid: string
-  idea: WithId<Idea>
+  type: BoardType
+  node: WithId<BoardNode>
+  // Bottom line: tags for ideas, priority/status/effort for features.
+  meta: string
   // Stable stacking order, so overlapping cards layer instead of z-fighting.
   layer: number
   onLinkDrop: (targetId: string) => void
 }
 
-export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
+export function NodeCard({ wid, type, node, meta, layer, onLinkDrop }: Props) {
   const group = useRef<Group>(null)
   const content = useRef<Group>(null)
   // Cell-by-cell entrance (D-034): shared by all of this card's materials. Text gets its own base
@@ -43,16 +46,16 @@ export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
   const [hovered, setHovered] = useState(false)
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
 
-  const selected = useCanvas((s) => s.selectedId === idea.id)
-  const live = useCanvas((s) => s.dragging[idea.id])
-  const isLinkSource = useCanvas((s) => s.linkFrom === idea.id)
-  const isLinkTarget = useCanvas((s) => s.linkFrom !== null && s.linkFrom !== idea.id) && hovered
+  const selected = useCanvas((s) => s.selectedId === node.id)
+  const live = useCanvas((s) => s.dragging[node.id])
+  const isLinkSource = useCanvas((s) => s.linkFrom === node.id)
+  const isLinkTarget = useCanvas((s) => s.linkFrom !== null && s.linkFrom !== node.id) && hovered
   const { select, startLink, endLink, setDragging } = useCanvas.getState()
 
   const drag = useRef<{ dx: number; dy: number; lastWrite: number; moved: boolean } | null>(null)
 
-  const [x, y] = live ?? [idea.x, idea.y]
-  const accent = idea.color ?? colors.fg
+  const [x, y] = live ?? [node.x, node.y]
+  const accent = node.color ?? colors.fg
 
   // Glide toward the target position (remote moves animate too) and lift on hover/drag.
   useFrame((_, dt) => {
@@ -74,9 +77,9 @@ export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
     if (controls) controls.enabled = false
     const p = boardPoint(e)
     if (!p) return
-    select(idea.id)
+    select(node.id)
     if (e.shiftKey) {
-      startLink(idea.id, p)
+      startLink(node.id, p)
       return
     }
     drag.current = { dx: p[0] - x, dy: p[1] - y, lastWrite: 0, moved: false }
@@ -90,12 +93,12 @@ export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
     if (!p) return
     const next: [number, number] = [p[0] - d.dx, p[1] - d.dy]
     d.moved = true
-    setDragging(idea.id, next)
+    setDragging(node.id, next)
     // Stream the move so collaborators see it live, without a write per frame.
     const now = performance.now()
     if (now - d.lastWrite > WRITE_EVERY_MS) {
       d.lastWrite = now
-      void moveIdea(wid, idea.id, next[0], next[1])
+      void moveNode(wid, type, node.id, next[0], next[1])
     }
   }
 
@@ -105,20 +108,19 @@ export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
       e.stopPropagation()
       drag.current = null
       ;(e.target as Element).releasePointerCapture(e.pointerId)
-      const final = useCanvas.getState().dragging[idea.id]
-      if (d.moved && final) void moveIdea(wid, idea.id, final[0], final[1])
-      setDragging(idea.id, null)
+      const final = useCanvas.getState().dragging[node.id]
+      if (d.moved && final) void moveNode(wid, type, node.id, final[0], final[1])
+      setDragging(node.id, null)
     } else if (useCanvas.getState().linkFrom && !isLinkSource) {
       e.stopPropagation()
-      onLinkDrop(idea.id)
+      onLinkDrop(node.id)
       endLink()
     }
     if (controls) controls.enabled = true
   }
 
   const rim = isLinkTarget ? colors.cyan : selected ? accent : hovered ? '#3a3a3a' : null
-  const title = idea.title.trim()
-  const tags = (idea.tags ?? []).map((t) => `#${t}`).join('  ')
+  const title = node.title.trim()
 
   return (
     <group
@@ -169,7 +171,7 @@ export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
         >
           {truncate(title || 'Untitled', 26)}
         </Text>
-        {idea.body && (
+        {node.body && (
           <Text
             material={textMaterial}
             font={fontUrls.mono}
@@ -182,20 +184,20 @@ export function IdeaCard({ wid, idea, layer, onLinkDrop }: Props) {
             maxWidth={CARD_W - 0.36}
             clipRect={[0, -(CARD_H - 0.85), CARD_W, 0.01]}
           >
-            {idea.body}
+            {node.body}
           </Text>
         )}
-        {tags && (
+        {meta && (
           <Text
             material={textMaterial}
             font={fontUrls.mono}
             fontSize={0.085}
-            color={idea.color ?? colors.cyan}
+            color={node.color ?? colors.cyan}
             anchorX="left"
             anchorY="bottom"
             position={[-CARD_W / 2 + 0.18, -CARD_H / 2 + 0.14, 0.032]}
           >
-            {truncate(tags, 40)}
+            {truncate(meta, 40)}
           </Text>
         )}
       </group>

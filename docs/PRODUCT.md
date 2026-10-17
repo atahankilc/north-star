@@ -33,10 +33,10 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 
 1. **Idea Canvas.** A 3D/2.5D infinite board of post-its with connections, groups, zoom/pan,
    mini-map, and live collaborator cursors.
-2. **Features View.** A separate space for our features. Each feature links back to its source
-   ideas and forward to competitor comparisons.
-3. **Competitor Maps.** One canvas per competitor, with their product broken down into feature
-   nodes. Those nodes can be linked to our ideas and features.
+2. **Features View.** A 3D board like the idea canvas, for our features (priority, status, effort).
+   Each feature links back to its source ideas ("promote to feature") and forward to comparisons (D-037).
+3. **Competitors.** A list of competitors; each has a profile (URL, pricing, audience, notes) and its
+   features grouped by category. Those features can be linked to our ideas and features (D-038).
 4. **Comparison Matrix.** A spreadsheet-style view: rows are our features, columns are competitors,
    and each cell holds coverage plus notes. Extra columns hold description, priority and status.
    Shows gaps (opportunities) and table stakes.

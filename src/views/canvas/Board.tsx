@@ -1,21 +1,34 @@
-// The idea canvas scene: 2.5D board (D-018) with pan/zoom camera, cards and connections.
+// A board scene (ideas or features, D-037): 2.5D (D-018) with pan/zoom camera, cards and connections.
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useState } from 'react'
 import { MOUSE, TOUCH } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
-import { createEdge, createIdea } from '../../data/ideas'
-import type { Edge, Idea } from '../../data/model'
+import { createEdge, linked } from '../../data/edges'
+import type { BoardNode, BoardType, Edge } from '../../data/model'
+import { createBoardNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { colors } from '../../styles/tokens'
-import { boardPoint, IdeaCard } from './IdeaCard'
+import { cardMeta } from './boardKinds'
 import { EdgeLine } from './EdgeLine'
+import { boardPoint, NodeCard } from './NodeCard'
 
 type Props = {
   wid: string
-  ideas: WithId<Idea>[]
+  type: BoardType
+  nodes: WithId<BoardNode>[]
   edges: WithId<Edge>[]
+  // Look here first instead of where this board was last left (e.g. a link jumped to a card).
+  focus?: [number, number]
+}
+
+// Where each board's camera was left, so switching views and coming back doesn't lose your place.
+const cameras = new Map<string, { target: [number, number]; distance: number }>()
+
+// Where a board is looking (or was last left): new cards for a board you're not on go there.
+export function boardCenter(wid: string, type: BoardType): [number, number] {
+  return cameras.get(`${wid}/${type}`)?.target ?? [0, 0]
 }
 
 export function Board(props: Props) {
@@ -57,8 +70,9 @@ function Controls({ domElement }: { domElement: HTMLElement }) {
   )
 }
 
-function Scene({ wid, ideas, edges }: Props) {
+function Scene({ wid, type, nodes, edges, focus }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
+  const camera = useThree((s) => s.camera)
   const selectedId = useCanvas((s) => s.selectedId)
   const dragging = useCanvas((s) => s.dragging)
   const linkFrom = useCanvas((s) => s.linkFrom)
@@ -68,7 +82,29 @@ function Scene({ wid, ideas, edges }: Props) {
   useEffect(() => {
     if (!controls) return
     setViewCenter(() => [controls.target.x, controls.target.y])
-  }, [controls, setViewCenter])
+    useCanvas.getState().setFocusOn(([x, y]) => {
+      camera.position.set(x, y, camera.position.z)
+      controls.target.set(x, y, 0)
+      controls.update()
+    })
+  }, [controls, camera, setViewCenter])
+
+  useEffect(() => {
+    if (!controls) return
+    const key = `${wid}/${type}`
+    const saved = cameras.get(key)
+    const at = focus ?? saved?.target
+    if (at) {
+      controls.target.set(at[0], at[1], 0)
+      camera.position.set(at[0], at[1], saved?.distance ?? camera.position.z)
+      controls.update()
+    }
+    return () => {
+      cameras.set(key, { target: [controls.target.x, controls.target.y], distance: camera.position.z })
+    }
+    // Only on mount: `focus` is where to start, not something to follow.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controls])
 
   // A link released anywhere but on a card is cancelled; controls always come back.
   useEffect(() => {
@@ -82,29 +118,26 @@ function Scene({ wid, ideas, edges }: Props) {
 
   const positions = useMemo(() => {
     const map = new Map<string, [number, number]>()
-    for (const i of ideas) map.set(i.id, dragging[i.id] ?? [i.x, i.y])
+    for (const n of nodes) map.set(n.id, dragging[n.id] ?? [n.x, n.y])
     return map
-  }, [ideas, dragging])
+  }, [nodes, dragging])
 
   // Older cards sit lower; newer ones on top.
   const layers = useMemo(
-    () => new Map([...ideas].sort((a, b) => a.createdAt - b.createdAt).map((i, n) => [i.id, n])),
-    [ideas],
+    () => new Map([...nodes].sort((a, b) => a.createdAt - b.createdAt).map((c, n) => [c.id, n])),
+    [nodes],
   )
 
   const onLinkDrop = (targetId: string) => {
     const from = useCanvas.getState().linkFrom
     if (!from || from === targetId) return
-    const exists = edges.some(
-      (e) => (e.fromId === from && e.toId === targetId) || (e.fromId === targetId && e.toId === from),
-    )
-    if (!exists) void createEdge(wid, { id: from, type: 'idea' }, { id: targetId, type: 'idea' })
+    if (!linked(edges, from, targetId)) void createEdge(wid, { id: from, type }, { id: targetId, type })
   }
 
   const onBoardDoubleClick = async (e: ThreeEvent<MouseEvent>) => {
     const p = boardPoint(e)
     if (!p) return
-    const id = await createIdea(wid, { x: p[0], y: p[1] })
+    const id = await createBoardNode(wid, type, { x: p[0], y: p[1] })
     select(id)
   }
 
@@ -139,12 +172,14 @@ function Scene({ wid, ideas, edges }: Props) {
 
       {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} color={colors.cyan} width={2} />}
 
-      {ideas.map((idea) => (
-        <IdeaCard
-          key={idea.id}
+      {nodes.map((node) => (
+        <NodeCard
+          key={node.id}
           wid={wid}
-          idea={idea}
-          layer={layers.get(idea.id) ?? 0}
+          type={type}
+          node={node}
+          meta={cardMeta(type, node)}
+          layer={layers.get(node.id) ?? 0}
           onLinkDrop={onLinkDrop}
         />
       ))}

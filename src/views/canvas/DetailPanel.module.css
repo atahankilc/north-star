@@ -124,73 +124,6 @@
   text-transform: none;
 }
 
-.links {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  letter-spacing: normal;
-  text-transform: none;
-}
-
-.link {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) 0;
-  border-bottom: 1px dashed var(--line);
-}
-
-.arrow {
-  color: var(--accent-cyan);
-}
-
-.linkTitle {
-  overflow: hidden;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.linkTitle:hover {
-  color: var(--fg-strong);
-  text-decoration: underline;
-  text-decoration-color: var(--accent-cyan);
-}
-
-.kind {
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-}
-
-.kind option {
-  background: var(--bg-raised);
-}
-
-.unlink {
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-}
-
-.unlink:hover {
-  color: var(--accent-magenta);
-}
-
 .foot {
   display: flex;
   justify-content: space-between;
@@ -203,4 +136,9 @@
 .meta {
   color: var(--fg-faint);
   font-size: var(--text-xs);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
 }

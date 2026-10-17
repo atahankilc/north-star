@@ -34,13 +34,15 @@ export type InviteCode = {
 
 export type NodeType = 'idea' | 'group' | 'feature' | 'competitor' | 'competitorFeature'
 
-export type Idea = {
+// Node types that live on a board as cards (D-037).
+export type BoardType = 'idea' | 'feature'
+
+// Fields shared by every board card.
+export type BoardNode = {
   title: string
   body?: string
   color?: string
   tags?: string[]
-  status?: string
-  groupIds?: string[]
   x: number
   y: number
   z?: number
@@ -48,15 +50,21 @@ export type Idea = {
   updatedAt: number
 }
 
+export type Idea = BoardNode & {
+  status?: string
+  groupIds?: string[]
+}
+
 export type Group = { name: string; color?: string }
 
-export type Feature = {
-  name: string
-  description?: string
-  priority?: string
-  status?: string
-  effort?: string
-  createdAt: number
+export const FEATURE_PRIORITIES = ['P1', 'P2', 'P3'] as const
+export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped'] as const
+export const FEATURE_EFFORTS = ['S', 'M', 'L'] as const
+
+export type Feature = BoardNode & {
+  priority?: (typeof FEATURE_PRIORITIES)[number]
+  status?: (typeof FEATURE_STATUSES)[number]
+  effort?: (typeof FEATURE_EFFORTS)[number]
 }
 
 export type Competitor = {
@@ -67,24 +75,31 @@ export type Competitor = {
   audience?: string
   notes?: string
   createdAt: number
+  updatedAt: number
 }
 
+// Listed on its competitor's page, grouped by category (D-038).
 export type CompetitorFeature = {
   competitorId: string
   name: string
   description?: string
   category?: string
-  x?: number
-  y?: number
+  createdAt: number
+  updatedAt: number
 }
 
-export type Coverage = 'none' | 'partial' | 'full' | 'better'
+export const COVERAGES = ['none', 'partial', 'full', 'better'] as const
+export type Coverage = (typeof COVERAGES)[number]
 
+// One matrix cell. Doc id is `${featureId}_${competitorId}`, so a cell can't be created twice.
 export type Comparison = {
   featureId: string
   competitorId: string
-  coverage: Coverage
+  // Missing = not assessed yet.
+  coverage?: Coverage
   notes?: string
+  competitorFeatureId?: string
+  updatedAt: number
 }
 
 export type EdgeKind = 'relates' | 'depends-on' | 'contradicts' | 'part-of' | 'inspired-by' | (string & {})

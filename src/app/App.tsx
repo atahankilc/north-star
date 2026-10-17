@@ -7,8 +7,11 @@ import { useHoldCurtain } from '../state/curtain'
 import { useMotion } from '../state/motion'
 import { Backdrop } from '../three/Backdrop'
 import { Curtain } from '../ui/Curtain'
-import { CanvasView } from '../views/canvas/CanvasView'
+import { BoardView } from '../views/canvas/BoardView'
+import { CompetitorsView } from '../views/competitors/CompetitorsView'
 import { Landing } from '../views/landing/Landing'
+import { MatrixView } from '../views/matrix/MatrixView'
+import { WorkspaceLayout } from '../views/workspace/WorkspaceLayout'
 import { Workspaces } from '../views/workspaces/Workspaces'
 
 export function App() {
@@ -40,7 +43,12 @@ function Shell() {
           {user ? (
             <>
               <Route path="/w" element={<Workspaces user={user} />} />
-              <Route path="/w/:wid" element={<CanvasView />} />
+              <Route path="/w/:wid" element={<WorkspaceLayout />}>
+                <Route index element={<BoardView type="idea" />} />
+                <Route path="features" element={<BoardView type="feature" />} />
+                <Route path="competitors/:cid?" element={<CompetitorsView />} />
+                <Route path="matrix" element={<MatrixView />} />
+              </Route>
               <Route path="*" element={<Navigate to="/w" replace />} />
             </>
           ) : (

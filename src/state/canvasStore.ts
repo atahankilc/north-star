@@ -12,6 +12,8 @@ type CanvasState = {
   dragging: Record<string, Vec2>
   // Set by the board once mounted: where the camera is looking.
   viewCenter: () => Vec2
+  // Set by the board once mounted: move the camera to look at a point.
+  focusOn: (at: Vec2) => void
 
   select: (id: string | null) => void
   startLink: (id: string, at: Vec2) => void
@@ -19,6 +21,7 @@ type CanvasState = {
   endLink: () => void
   setDragging: (id: string, at: Vec2 | null) => void
   setViewCenter: (fn: () => Vec2) => void
+  setFocusOn: (fn: (at: Vec2) => void) => void
 }
 
 export const useCanvas = create<CanvasState>((set) => ({
@@ -27,6 +30,7 @@ export const useCanvas = create<CanvasState>((set) => ({
   linkPointer: null,
   dragging: {},
   viewCenter: () => [0, 0],
+  focusOn: () => {},
 
   select: (id) => set({ selectedId: id }),
   startLink: (id, at) => set({ linkFrom: id, linkPointer: at }),
@@ -40,6 +44,7 @@ export const useCanvas = create<CanvasState>((set) => ({
       return { dragging }
     }),
   setViewCenter: (fn) => set({ viewCenter: fn }),
+  setFocusOn: (fn) => set({ focusOn: fn }),
 }))
 
 // Dev-only handle for inspecting state from the console or automation.

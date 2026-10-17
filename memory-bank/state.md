@@ -3,7 +3,8 @@
 _Last updated: 2026-10-17_
 
 ## Phase
-**Phase 1: Single-user core**, mostly done. Remaining: groups (Q-012), undo/keyboard delete (Q-013).
+**Phase 2: Competitors and features**, first pass done (checkpoint). The user is now rethinking the information
+architecture around domains (Q-015) before more Phase 2 work. Phase 1 leftovers: groups (Q-012), undo (Q-013).
 
 ## Done
 - **Phase 0**: specs, memory bank, scaffold, ASCII design language, GitHub Pages workflow (commit `e114f34`)
@@ -38,7 +39,19 @@ _Last updated: 2026-10-17_
 - Consistent framed surfaces everywhere (D-024)
 - Rules: 41 tests pass; deployed
 
+## Done (Phase 2 first pass, checkpoint commit)
+- Workspace layout route loads all collections once; HUD tabs `[ideas] features competitors matrix` (D-036)
+- Data layer: generic `nodes.ts` (create/update/move/cascading delete), `edges.ts`, `comparisons.ts`; `ideas.ts` removed
+- Board/cards/detail panel generic over `idea | feature`; features board with priority/status/effort; idea → "To feature" (D-037)
+- Camera position remembered per board; `?n=<id>` selects and focuses a node from any link
+- LinkList with a "+ link" picker across all node types; links into other views navigate there
+- Competitors: rail + profile (autosave fields) + features grouped by category (D-038)
+- Matrix: features × competitors, click to select / click again or 1–4 to set coverage, notes, "their version", verdict (gap / table stakes / mixed)
+- Rules: collection allowlist + shape validation; 56 tests pass. **Not deployed yet** (old rules still allow everything for members, so the client works either way)
+- Verified on emulators with headless Chrome (tabs, promote, jump, competitors, matrix)
+
 ## Next steps
+0. Settle Q-015 (domains, problem/customer framing, Flow / Board / Table views), spec it in /docs, review with the user, then build
 1. Groups / clusters (Q-012)
 2. Undo + Delete key (Q-013)
 3. Phase 2: competitors, competitor maps, features view, comparison matrix

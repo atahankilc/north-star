@@ -60,3 +60,50 @@ a.link:hover {
   gap: var(--space-4);
   color: var(--fg-dim);
 }
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.tab,
+.tabActive {
+  color: var(--fg-dim);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.tab:hover {
+  color: var(--fg-strong);
+}
+
+/* `[ideas]`: every tab reserves its brackets, so switching views doesn't shift the row. */
+.tab::before,
+.tabActive::before {
+  content: '[';
+}
+
+.tab::after,
+.tabActive::after {
+  content: ']';
+}
+
+.tab::before,
+.tab::after {
+  color: transparent;
+}
+
+.tabActive {
+  color: var(--fg-strong);
+}
+
+.tabActive::before,
+.tabActive::after {
+  color: var(--accent-magenta);
+}
+
+@media (max-width: 760px) {
+  .tabs {
+    gap: 0;
+  }
+}

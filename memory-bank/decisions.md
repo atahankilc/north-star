@@ -185,3 +185,17 @@ Shared math: `src/ui/cellReveal.ts`. Entrances wait for `settled`.
 - **Nothing waits:** every entrance and text decode starts the moment the page is revealed (`revealed`). There are no staggers or delays,
   and nothing waits for the page-load rebuild to finish (the `settled` state was removed).
 - **Faster:** components 320 ms, landing headline 400 ms, page-load reveal 400 ms, text decode 260 ms (nav 220 ms). (Halved, then about 25% more on request.)
+
+### D-036 · 2026-10-17 · Accepted
+**Workspace views switch from tabs in the HUD breadcrumb:** `# north-star / workspaces / <name> / [ideas] features competitors matrix`.
+Routes: `/w/:wid` (ideas), `/w/:wid/features`, `/w/:wid/competitors(/:cid)`, `/w/:wid/matrix`. One workspace layout route loads every
+collection once and shares it with all views, so switching tabs is instant and any panel can show links to nodes in other views.
+
+### D-037 · 2026-10-17 · Accepted
+**The Features view is a 3D board like the idea canvas.** The Board, cards and detail panel are generic over board node types
+(`idea`, `feature`). Ideas and features share their board fields (`title`, `body`, `color`, `tags`, `x`, `y`); features add
+`priority`, `status`, `effort`. An idea can be promoted to a feature (new feature + `inspired-by` edge).
+
+### D-038 · 2026-10-17 · Accepted
+**Competitors are profiles with a categorized feature list, not a spatial map.** The competitor page shows name, URL, pricing,
+audience and notes, plus its features grouped by `category`. `CompetitorFeature` has no position.

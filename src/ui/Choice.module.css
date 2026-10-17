@@ -1,0 +1,62 @@
+/* `priority  [P1] P2 P3`: one-of choice row (docs/DESIGN.md §6 bracket language). */
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.label {
+  flex-shrink: 0;
+  width: 76px;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.options {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.option {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.option::before {
+  content: '[';
+  color: transparent;
+}
+
+.option::after {
+  content: ']';
+  color: transparent;
+}
+
+.option:hover {
+  color: var(--fg-strong);
+}
+
+.option[data-active='true'] {
+  color: var(--fg-strong);
+}
+
+.option[data-active='true']::before,
+.option[data-active='true']::after {
+  color: var(--accent-cyan);
+}
+
+.option[data-tone] {
+  color: var(--fg-dim);
+}
+
+.option[data-active='true'][data-tone] {
+  color: var(--tone);
+}

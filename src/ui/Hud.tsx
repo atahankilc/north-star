@@ -1,7 +1,7 @@
 // The top bar on every page: breadcrumb on the left, page actions on the right.
 // Same position and margins everywhere (--hud-x / --hud-y), so nothing shifts between pages.
 import { Fragment, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import styles from './Hud.module.css'
 import { MotionToggle } from './MotionToggle'
 
@@ -11,7 +11,12 @@ export type Crumb = {
   to?: string
 }
 
-export function Hud({ crumbs = [], right }: { crumbs?: Crumb[]; right?: ReactNode }) {
+// View switcher after the breadcrumb (D-036): `[ideas] features competitors matrix`.
+export type Tab = { label: string; to: string; end?: boolean }
+
+type Props = { crumbs?: Crumb[]; tabs?: Tab[]; right?: ReactNode }
+
+export function Hud({ crumbs = [], tabs, right }: Props) {
   const atRoot = crumbs.length === 0
 
   return (
@@ -33,8 +38,8 @@ export function Hud({ crumbs = [], right }: { crumbs?: Crumb[]; right?: ReactNod
               <span className={styles.sep} aria-hidden>
                 /
               </span>
-              {last || !c.to ? (
-                <span className={last ? styles.current : styles.link} aria-current={last ? 'page' : undefined}>
+              {(last && !tabs) || !c.to ? (
+                <span className={last && !tabs ? styles.current : styles.link} aria-current={last && !tabs ? 'page' : undefined}>
                   {c.label}
                 </span>
               ) : (
@@ -45,6 +50,20 @@ export function Hud({ crumbs = [], right }: { crumbs?: Crumb[]; right?: ReactNod
             </Fragment>
           )
         })}
+        {tabs && (
+          <>
+            <span className={styles.sep} aria-hidden>
+              /
+            </span>
+            <span className={styles.tabs}>
+              {tabs.map((t) => (
+                <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? styles.tabActive : styles.tab)}>
+                  {t.label}
+                </NavLink>
+              ))}
+            </span>
+          </>
+        )}
       </nav>
       <div className={styles.right}>
         {right}

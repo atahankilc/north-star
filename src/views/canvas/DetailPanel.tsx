@@ -1,75 +1,89 @@
-// Side panel for the selected idea: all editing happens here, in the DOM (D-009).
+// Side panel for the selected card: all editing happens here, in the DOM (D-009).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { WithId } from '../../data/hooks'
-import { deleteEdge, deleteIdea, updateEdge, updateIdea } from '../../data/ideas'
-import type { Edge, EdgeKind, Idea } from '../../data/model'
+import { createEdge } from '../../data/edges'
+import {
+  FEATURE_EFFORTS,
+  FEATURE_PRIORITIES,
+  FEATURE_STATUSES,
+  type BoardNode,
+  type BoardType,
+  type Feature,
+} from '../../data/model'
+import { createBoardNode, deleteNode, updateNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { Appear } from '../../ui/Appear'
-import { IDEA_COLORS } from './cardLayout'
+import { Choice } from '../../ui/Choice'
+import { useWs } from '../workspace/context'
+import { LinkList } from '../workspace/LinkList'
+import { boardCenter } from './Board'
+import { BOARD_KINDS } from './boardKinds'
+import { findFreeSpot, IDEA_COLORS } from './cardLayout'
 import styles from './DetailPanel.module.css'
 
-const EDGE_KINDS: EdgeKind[] = ['relates', 'depends-on', 'part-of', 'inspired-by', 'contradicts']
 const SAVE_AFTER_MS = 400
 
 type Draft = { title: string; body: string; tags: string }
 
-const toDraft = (i: Idea): Draft => ({ title: i.title, body: i.body ?? '', tags: (i.tags ?? []).join(', ') })
+const toDraft = (n: BoardNode): Draft => ({ title: n.title, body: n.body ?? '', tags: (n.tags ?? []).join(', ') })
 
 const parseTags = (s: string) =>
   [...new Set(s.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean))]
 
 type Props = {
-  wid: string
-  ideas: WithId<Idea>[]
-  edges: WithId<Edge>[]
+  type: BoardType
+  nodes: WithId<BoardNode>[]
 }
 
-export function DetailPanel({ wid, ideas, edges }: Props) {
+export function DetailPanel({ type, nodes }: Props) {
   const selectedId = useCanvas((s) => s.selectedId)
-  const idea = ideas.find((i) => i.id === selectedId)
+  const node = nodes.find((n) => n.id === selectedId)
 
   return (
     <AnimatePresence>
-      {idea && (
-        <Appear as="aside" key="panel" className={styles.panel} aria-label="Idea details">
-          <IdeaEditor key={idea.id} wid={wid} idea={idea} ideas={ideas} edges={edges} />
+      {node && (
+        <Appear as="aside" key="panel" className={styles.panel} aria-label={`${BOARD_KINDS[type].label} details`}>
+          <NodeEditor key={node.id} type={type} node={node} />
         </Appear>
       )}
     </AnimatePresence>
   )
 }
 
-function IdeaEditor({ wid, idea, ideas, edges }: Props & { idea: WithId<Idea> }) {
+function NodeEditor({ type, node }: { type: BoardType; node: WithId<BoardNode> }) {
+  const { wid, features } = useWs()
   const select = useCanvas((s) => s.select)
-  const [draft, setDraft] = useState<Draft>(() => toDraft(idea))
+  const [draft, setDraft] = useState<Draft>(() => toDraft(node))
   const focused = useRef<keyof Draft | null>(null)
-  const pending = useRef<Partial<Idea>>({})
+  const pending = useRef<Partial<BoardNode>>({})
   const timer = useRef<number | undefined>(undefined)
   const titleRef = useRef<HTMLInputElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [promoted, setPromoted] = useState(false)
+  const kind = BOARD_KINDS[type]
 
   // Remote edits flow in, except into the field you're typing in.
   useEffect(() => {
-    const remote = toDraft(idea)
+    const remote = toDraft(node)
     setDraft((d) => {
       const next = { ...d }
       for (const k of Object.keys(remote) as (keyof Draft)[]) if (focused.current !== k) next[k] = remote[k]
       return next
     })
-  }, [idea])
+  }, [node])
 
-  // New, empty ideas open ready to type.
+  // New, empty cards open ready to type.
   useEffect(() => {
-    if (!idea.title) titleRef.current?.focus()
+    if (!node.title) titleRef.current?.focus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const flush = () => {
     window.clearTimeout(timer.current)
     if (Object.keys(pending.current).length === 0) return
-    void updateIdea(wid, idea.id, pending.current)
+    void updateNode(wid, type, node.id, pending.current)
     pending.current = {}
   }
   useEffect(() => flush, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -97,17 +111,20 @@ function IdeaEditor({ wid, idea, ideas, edges }: Props & { idea: WithId<Idea> })
     return () => window.clearTimeout(t)
   }, [confirmDelete])
 
-  const links = edges
-    .filter((e) => e.fromId === idea.id || e.toId === idea.id)
-    .map((e) => {
-      const otherId = e.fromId === idea.id ? e.toId : e.fromId
-      return { edge: e, other: ideas.find((i) => i.id === otherId), outgoing: e.fromId === idea.id }
-    })
+  // D-037: the idea's text becomes a new feature that remembers where it came from.
+  const promote = async () => {
+    flush()
+    setPromoted(true)
+    const [x, y] = findFreeSpot(boardCenter(wid, 'feature'), features)
+    const { title, body, tags, color } = { ...node, ...pending.current }
+    const id = await createBoardNode(wid, 'feature', { x, y }, { title, ...(body && { body }), ...(tags?.length && { tags }), ...(color && { color }) })
+    await createEdge(wid, { id, type: 'feature' }, { id: node.id, type: 'idea' }, 'inspired-by')
+  }
 
   return (
     <div className={styles.inner}>
       <header className={styles.head}>
-        <span className={styles.kicker}>idea</span>
+        <span className={styles.kicker}>{kind.label}</span>
         <button className={styles.close} onClick={() => select(null)} aria-label="Close panel">
           [×]
         </button>
@@ -115,9 +132,11 @@ function IdeaEditor({ wid, idea, ideas, edges }: Props & { idea: WithId<Idea> })
 
       <input ref={titleRef} className={styles.title} placeholder="Untitled" {...field('title')} />
 
+      {type === 'feature' && <FeatureFields wid={wid} feature={node as WithId<Feature>} />}
+
       <label className={styles.label}>
         notes
-        <textarea className={styles.body} rows={6} placeholder="What's the thought?" {...field('body')} />
+        <textarea className={styles.body} rows={6} placeholder={kind.placeholder} {...field('body')} />
       </label>
 
       <label className={styles.label}>
@@ -129,7 +148,7 @@ function IdeaEditor({ wid, idea, ideas, edges }: Props & { idea: WithId<Idea> })
         colour
         <div className={styles.swatches} role="radiogroup" aria-label="Card colour">
           {IDEA_COLORS.map((c) => {
-            const active = (idea.color ?? IDEA_COLORS[0].value) === c.value
+            const active = (node.color ?? IDEA_COLORS[0].value) === c.value
             return (
               <button
                 key={c.name}
@@ -139,59 +158,46 @@ function IdeaEditor({ wid, idea, ideas, edges }: Props & { idea: WithId<Idea> })
                 className={styles.swatch}
                 data-active={active}
                 style={{ ['--swatch' as string]: c.value }}
-                onClick={() => void updateIdea(wid, idea.id, { color: c.name === 'none' ? undefined : c.value })}
+                onClick={() => void updateNode(wid, type, node.id, { color: c.name === 'none' ? undefined : c.value })}
               />
             )
           })}
         </div>
       </div>
 
-      <div className={styles.label}>
-        links
-        {links.length === 0 ? (
-          <p className={styles.hint}>Shift + drag from this card onto another to connect them.</p>
-        ) : (
-          <ul className={styles.links}>
-            {links.map(({ edge, other, outgoing }) => (
-              <li key={edge.id} className={styles.link}>
-                <span className={styles.arrow}>{outgoing ? '→' : '←'}</span>
-                <button className={styles.linkTitle} onClick={() => other && select(other.id)}>
-                  {other?.title || 'Untitled'}
-                </button>
-                <select
-                  className={styles.kind}
-                  value={edge.kind}
-                  onChange={(e) => void updateEdge(wid, edge.id, { kind: e.target.value })}
-                  aria-label="Link type"
-                >
-                  {EDGE_KINDS.map((k) => (
-                    <option key={k} value={k}>
-                      {k}
-                    </option>
-                  ))}
-                </select>
-                <button className={styles.unlink} onClick={() => void deleteEdge(wid, edge.id)} aria-label="Remove link">
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <LinkList nodeId={node.id} nodeType={type} hint="Shift + drag from this card onto another to connect them." />
 
       <footer className={styles.foot}>
-        <span className={styles.meta}>created {new Date(idea.createdAt).toLocaleDateString()}</span>
-        <AsciiButton
-          accent={confirmDelete ? 'magenta' : 'yellow'}
-          onClick={() => {
-            if (!confirmDelete) return setConfirmDelete(true)
-            select(null)
-            void deleteIdea(wid, idea.id)
-          }}
-        >
-          {confirmDelete ? 'Confirm delete' : 'Delete'}
-        </AsciiButton>
+        <span className={styles.meta}>created {new Date(node.createdAt).toLocaleDateString()}</span>
+        <span className={styles.actions}>
+          {type === 'idea' && (
+            <AsciiButton accent="cyan" onClick={promote} disabled={promoted}>
+              {promoted ? 'Promoted' : 'To feature'}
+            </AsciiButton>
+          )}
+          <AsciiButton
+            accent={confirmDelete ? 'magenta' : 'yellow'}
+            onClick={() => {
+              if (!confirmDelete) return setConfirmDelete(true)
+              select(null)
+              void deleteNode(wid, type, node.id)
+            }}
+          >
+            {confirmDelete ? 'Confirm delete' : 'Delete'}
+          </AsciiButton>
+        </span>
       </footer>
     </div>
+  )
+}
+
+function FeatureFields({ wid, feature }: { wid: string; feature: WithId<Feature> }) {
+  const set = (fields: Partial<Feature>) => void updateNode(wid, 'feature', feature.id, fields)
+  return (
+    <>
+      <Choice label="priority" options={FEATURE_PRIORITIES} value={feature.priority} onChange={(priority) => set({ priority })} />
+      <Choice label="status" options={FEATURE_STATUSES} value={feature.status} onChange={(status) => set({ status })} />
+      <Choice label="effort" options={FEATURE_EFFORTS} value={feature.effort} onChange={(effort) => set({ effort })} />
+    </>
   )
 }

@@ -80,10 +80,10 @@ Source of truth: `src/data/model.ts`.
 workspaces/{wid}        name, description, ownerId, memberIds[], roles{uid: role}, inviteCode
   ideas/{id}            title, body, color, tags[], status, groupIds[], x, y, z
   groups/{id}           name, color
-  features/{id}         name, description, priority, status, effort
+  features/{id}         title, body, color, tags[], x, y, priority, status, effort   (same card fields as ideas, D-037)
   competitors/{id}      name, url, description, pricing, audience, notes
-  competitorFeatures/{id}  competitorId, name, description, category, x, y
-  comparisons/{id}      featureId, competitorId, coverage, notes
+  competitorFeatures/{id}  competitorId, name, description, category
+  comparisons/{id}      featureId, competitorId, coverage?, notes, competitorFeatureId   (id = featureId_competitorId)
   edges/{id}            fromId, fromType, toId, toType, kind, label
 inviteCodes/{code}      workspaceId, createdBy
 
@@ -91,6 +91,8 @@ RTDB: presence/{wid}/{uid}   name, color, view, x, y, ts
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: the caller must be in `memberIds`.
 - `edges` is one generic edge collection, so any node type can connect to any other.
+- Rules allow only these collections and check each one's basic shape (`firestore.rules`, mirrors `model.ts`).
+- The workspace route loads every collection once (`src/data/workspaceData.ts`); all views share it (D-036).
 - "My workspaces" = `where('memberIds', 'array-contains', uid)`.
 - **Joining (D-012):** read `inviteCodes/{code}` (get only, never list) → update the workspace to add yourself
   to `memberIds` with `joinCode = code`. The rules only allow this when the code matches the
