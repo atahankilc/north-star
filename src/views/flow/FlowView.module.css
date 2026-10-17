@@ -1,11 +1,5 @@
 .page {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  /* Room for the filter row above. */
-  padding: calc(var(--hud-h) + 48px) var(--hud-x) var(--hud-y);
+  composes: page from '../../ui/Page.module.css';
 }
 
 .frame {
@@ -35,7 +29,7 @@
   background: var(--bg-raised);
   color: var(--fg-dim);
   font-size: var(--text-xs);
-  letter-spacing: 0.12em;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
@@ -82,7 +76,7 @@
   content: 'not linked yet';
   color: var(--fg-faint);
   font-size: var(--text-xs);
-  letter-spacing: 0.12em;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 

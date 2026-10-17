@@ -62,7 +62,7 @@ export function AiKeyForm({ onSaved }: { onSaved?: () => void }) {
           spellCheck={false}
         />
         <AsciiButton type="submit" accent="cyan" disabled={!key || checking}>
-          {checking ? 'Checking' : 'Save'}
+          {checking ? 'checking' : 'save'}
         </AsciiButton>
       </div>
       {error && <p className={styles.error}>! {error}</p>}
@@ -248,7 +248,7 @@ function OwnerKey({ wid, ownerId, memberIds, config }: { wid: string; ownerId: s
                 spellCheck={false}
               />
               <AsciiButton type="submit" accent="cyan" disabled={!draft.trim() || busy}>
-                {busy ? 'Checking' : 'Save'}
+                {busy ? 'checking' : 'save'}
               </AsciiButton>
             </div>
           </form>
@@ -344,7 +344,7 @@ function ModelPicker({ task }: { task: AiTask }) {
             spellCheck={false}
           />
           <AsciiButton type="submit" accent="cyan" disabled={!draft.trim() || checking || draft.trim() === current}>
-            Use
+            use
           </AsciiButton>
         </form>
       )}

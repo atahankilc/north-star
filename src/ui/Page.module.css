@@ -1,0 +1,36 @@
+/* The page of a workspace view other than the board (D-093): content starts at --hud-x, under the filter row or the
+   view's own toolbar, so switching views never moves the content. Compose: `composes: page from '../../ui/Page.module.css'`. */
+.page {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* Room for the filter row (Bars.module.css) or the toolbar above. */
+  padding: calc(var(--hud-h) + 48px) var(--hud-x) var(--hud-y);
+}
+
+/* A view without filters puts its own controls where the filter row sits, at the same height. */
+.toolbar {
+  position: absolute;
+  top: var(--hud-h);
+  left: var(--hud-x);
+  right: var(--hud-x);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 30px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* Page, panel and report titles: Geist at the heading size. */
+.title {
+  margin: 0;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-heading);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: var(--track-title);
+}

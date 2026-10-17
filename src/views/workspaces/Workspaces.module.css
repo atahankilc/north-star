@@ -6,7 +6,6 @@
   padding: var(--hud-h) var(--hud-x) 0;
 }
 
-
 .content {
   max-width: 1100px;
   margin: 0 auto;
@@ -16,10 +15,10 @@
 .title {
   margin: 0 0 var(--space-8);
   font-family: var(--font-display);
-  font-size: clamp(48px, 8vw, 112px);
+  font-size: var(--text-hero);
   font-weight: 400;
   line-height: 0.9;
-  letter-spacing: -0.045em;
+  letter-spacing: var(--track-display);
   color: var(--fg-strong);
 }
 
@@ -96,7 +95,7 @@
 }
 
 .codeInput {
-  letter-spacing: 0.18em;
+  letter-spacing: var(--track-label);
 }
 
 .error {
@@ -104,7 +103,6 @@
   color: var(--accent-yellow);
   font-size: var(--text-xs);
 }
-
 
 .ok {
   margin: 0;
@@ -142,8 +140,8 @@
 .pendingName {
   color: var(--fg-strong);
   font-family: var(--font-display);
-  font-size: 18px;
-  letter-spacing: -0.01em;
+  font-size: var(--text-lg);
+  letter-spacing: var(--track-title);
 }
 
 .pendingMeta {
@@ -225,8 +223,8 @@
   z-index: 1;
   align-self: flex-start;
   font-family: var(--font-display);
-  font-size: 22px;
-  letter-spacing: -0.02em;
+  font-size: var(--text-lg);
+  letter-spacing: var(--track-title);
   color: var(--fg-strong);
 }
 
@@ -273,41 +271,7 @@ span.cardName {
 }
 
 .action {
-  padding: 2px var(--space-2);
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.action::before {
-  content: '[';
-  color: var(--line-hover);
-}
-
-.action::after {
-  content: ']';
-  color: var(--line-hover);
-}
-
-.action:hover {
-  color: var(--fg-strong);
-}
-
-.action[data-tone='danger']:hover {
-  color: var(--accent-magenta);
-}
-
-.action[data-tone='primary'] {
-  color: var(--fg-strong);
-}
-
-.action:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+  composes: small from '../../ui/AsciiButton.module.css';
 }
 
 .nameInput {
@@ -319,7 +283,6 @@ span.cardName {
   outline: none;
   caret-color: var(--accent-magenta);
 }
-
 
 .warn {
   min-width: 0;

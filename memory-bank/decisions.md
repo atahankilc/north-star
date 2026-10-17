@@ -894,3 +894,31 @@ save reports rather than whole chats (chats stay in the tab, D-073); every repor
   again turns it back. Not shift-sensitive, ignored with ⌘/Ctrl/Alt; no rest time for this. One keydown listener on the orb,
   only the last three letters kept. No `/nar` in the chat (user declined it). It stays undocumented in the UI on purpose.
 - Never under reduced motion (no antics there, no `nar` listener). Dev hook: `__orbPom()` does what `nar` does.
+
+### D-093 · 2026-10-18 · Accepted (refines D-024, D-027; DESIGN.md §4, §6)
+**One page system: shared tokens, two labels, two button sizes, every view from the same left edge.** User: the pages looked
+inconsistent with each other. Audited with screenshots (dark 1440, light 1440, dark 390) of board + panel, flow, table, reports,
+the report screen and every Settings page; the assistant chat was left out on purpose (the user will redesign it).
+- *Found:* reports was a centred 880 px column while the other views start at `--hud-x`, and its header sat neither where the
+  filter row is nor at its height; the table frame stopped where its columns ended while Flow's filled the width; 23 raw
+  font sizes (26 px was the de facto heading size) and five letter-spacings; four styles of section label; two button styles
+  copied by hand in five files, so `[ DELETE ]` and `[delete]` both existed; Settings rows had a 136 px label column and its
+  choices 76 px, so values didn't line up between pages; a stale "coming later: Attachments" row; table names cut mid-letter.
+- *Tokens:* `--text-lg` 18, `--text-heading` 26 (20 on phones), `--text-hero`; 10 px folded into `--text-xs` 11 (user);
+  `--track-label/title/display`; `--measure` 760. No raw sizes or tracking left outside the assistant chat.
+- *Shared pieces:* `src/ui/Page.module.css` (`page`, `toolbar`, `title`); `fieldLabel` beside `label` in Frame.module.css;
+  `small` in AsciiButton.module.css for `[verb]` row actions (reports, report screen, Settings, workspaces cards).
+- *Layout:* reports left-aligned at `--measure` (user's pick over centred), header in the filter row's place; the table fills the
+  width ("linked to" takes the spare room) and names end in "…"; Settings shares one label column (`--label-w`); the
+  "coming later" section is gone; on phones the side panel covers the filter row instead of sliding under it.
+- *Fonts (user):* Geist for titles and long reading text, Geist Mono for everything else, as it already was.
+- *Case (user, follow-up):* every action is lowercase: `[ create ]`, `[ delete ]`, `[+ attach]`, `[+ link]`, the Settings menu
+  (`> account`). Uppercase is only for labels. Before, `[ DELETE ]` (panel) and `[delete]` (lists) both existed. The
+  `--track-button` token went with it. `sign in with Google` keeps the name's capital; test users stay `Alice`/`Bob`/`Carol`.
+- *Fix (follow-up):* the shared-button swap had split the workspace card's hover selector, so on hover the actions took the
+  name input's full width and pushed out "owner · 1 member"; restored.
+- Kept: the report screen stays centred (a reading screen over the app, D-089); the Matrix keeps its fit-content width (D-060);
+  the /workspaces page only got tokens (its card titles went 22 → 18 px).
+- Verified with headless Chrome on the emulators in the same three setups: no horizontal scroll, light theme reads the same.
+  The white focus box on Settings' first menu item after opening shows only when the dialog opens without a pointer (keyboard,
+  or a script); left as is.

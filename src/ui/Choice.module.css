@@ -6,12 +6,10 @@
 }
 
 .label {
+  composes: fieldLabel from './Frame.module.css';
   flex-shrink: 0;
-  width: 76px;
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  /* Settings sets one column for all its rows (D-093). */
+  width: var(--label-w, 76px);
 }
 
 .options {

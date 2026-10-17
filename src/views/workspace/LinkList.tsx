@@ -36,7 +36,7 @@ export function LinkList({ nodeId, nodeType, hint }: Props) {
       <div className={styles.head}>
         links
         <button className={styles.add} onClick={() => setPicking((p) => !p)} aria-expanded={picking}>
-          {picking ? '[ done ]' : '[ + link ]'}
+          {picking ? 'done' : '+ link'}
         </button>
       </div>
 

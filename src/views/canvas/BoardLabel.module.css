@@ -7,7 +7,7 @@
   background: none;
   color: var(--fg-strong);
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--track-title);
   line-height: 1;
   text-align: center;
   outline: none;

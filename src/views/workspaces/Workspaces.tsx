@@ -238,7 +238,7 @@ function CreateForm({ uid, onCreated }: { uid: string; onCreated: (id: string) =
           maxLength={80}
         />
         <AsciiButton type="submit" disabled={busy || !name.trim()}>
-          Create
+          create
         </AsciiButton>
       </div>
       {error && <p className={styles.error}>! {error}</p>}
@@ -269,7 +269,7 @@ function ExampleStrip({ uid, onCreated }: { uid: string; onCreated: (id: string)
         A made-up startup with every view filled in: customers, problems, competitors, ideas, a roadmap and the matrix.
       </p>
       <AsciiButton accent="green" onClick={create} disabled={busy}>
-        {busy ? 'Creating' : 'Create example'}
+        {busy ? 'creating' : 'create example'}
       </AsciiButton>
       {error && <p className={styles.error}>! {error}</p>}
     </Appear>
@@ -312,7 +312,7 @@ function ImportStrip({ uid, onCreated }: { uid: string; onCreated: (id: string) 
       </p>
       <input ref={input} type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => void load(e.target.files?.[0])} />
       <AsciiButton accent="cyan" onClick={() => input.current?.click()} disabled={busy}>
-        {busy ? 'Importing' : 'Choose file'}
+        {busy ? 'importing' : 'choose file'}
       </AsciiButton>
       {leftOut && (
         <>
@@ -321,7 +321,7 @@ function ImportStrip({ uid, onCreated }: { uid: string; onCreated: (id: string) 
             stored here yet.
           </p>
           <AsciiButton accent="green" onClick={() => onCreated(leftOut.id)}>
-            Open workspace
+            open workspace
           </AsciiButton>
         </>
       )}
@@ -370,7 +370,7 @@ function JoinForm({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =
           maxLength={12}
         />
         <AsciiButton type="submit" accent="cyan" disabled={busy || !code.trim()}>
-          Ask
+          ask
         </AsciiButton>
       </div>
       {error && <p className={styles.error}>! {error}</p>}

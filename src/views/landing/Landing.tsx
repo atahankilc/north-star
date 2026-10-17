@@ -68,7 +68,7 @@ export function Landing({ error }: { error?: string | null }) {
               ))}
             </span>
           ) : isConfigured ? (
-            <AsciiButton onClick={() => signInWithGoogle().catch((e: Error) => setSignInError(e.message))}>Sign in with Google</AsciiButton>
+            <AsciiButton onClick={() => signInWithGoogle().catch((e: Error) => setSignInError(e.message))}>sign in with Google</AsciiButton>
           ) : (
             <p className={styles.notice}>
               <span className={styles.warn}>!</span> Add the <code>VITE_FIREBASE_*</code> config to{' '}

@@ -197,7 +197,7 @@ function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
         <Row label="code">
           <span className={styles.code}>{pretty}</span>
           <AsciiButton accent="cyan" onClick={copy}>
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? 'copied' : 'copy'}
           </AsciiButton>
           {isOwner && user && (
             <button className={styles.action} onClick={() => run(renewInviteCode(wid, code, user.id))}>
@@ -272,7 +272,7 @@ function ExportSection() {
     <Section label="export">
       <Row label="workspace">
         <AsciiButton accent="cyan" onClick={() => void bundle()} disabled={zipping}>
-          {zipping ? 'Packing' : 'Download .zip'}
+          {zipping ? 'packing' : 'download .zip'}
         </AsciiButton>
         <span className={styles.role}>
           {items} {items === 1 ? 'item' : 'items'}, {ws.edges.length} {ws.edges.length === 1 ? 'link' : 'links'}
@@ -281,12 +281,12 @@ function ExportSection() {
       </Row>
       <Row label="matrix">
         <AsciiButton accent="cyan" onClick={tsv} disabled={ws.features.length === 0 || ws.competitors.length === 0}>
-          Download .tsv
+          download .tsv
         </AsciiButton>
       </Row>
       <Row label="board">
         <AsciiButton accent="cyan" onClick={png} disabled={!snapshot || busy}>
-          {busy ? 'Drawing' : 'Download .png'}
+          {busy ? 'drawing' : 'download .png'}
         </AsciiButton>
         {!snapshot && <span className={styles.role}>open the board view first</span>}
       </Row>
@@ -329,7 +329,7 @@ function EmailInvites({ wid, invited, onError }: { wid: string; invited: string[
           spellCheck={false}
         />
         <AsciiButton type="submit" accent="cyan" disabled={!valid || invited.includes(email)}>
-          Invite
+          invite
         </AsciiButton>
       </form>
       {invited.length > 0 && (

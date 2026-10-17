@@ -44,12 +44,17 @@
   transform: scaleX(1);
 }
 
-/* Small uppercase label with a box-corner glyph: "┌ NEW WORKSPACE". */
-.label {
+/* The two labels (D-093). A field label names one field or list: "NOTES". */
+.fieldLabel {
   color: var(--fg-dim);
   font-size: var(--text-xs);
-  letter-spacing: 0.12em;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
+}
+
+/* A section label starts a group, with a box-corner glyph: "┌ NEW WORKSPACE". */
+.label {
+  composes: fieldLabel;
 }
 
 .label::before {

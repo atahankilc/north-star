@@ -137,7 +137,7 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
                     <Row label="method">Google</Row>
                     <div className={styles.actions}>
                       <AsciiButton accent="cyan" onClick={() => signOut()}>
-                        Sign out
+                        sign out
                       </AsciiButton>
                     </div>
                   </Section>
@@ -151,17 +151,11 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
               {current.id === 'ai-usage' && <AiUsagePage />}
 
               {current.id === 'app' && (
-                <>
-                  <Section label="display">
-                    <ThemeChoice />
-                    <MotionChoice />
-                    <BackgroundChoice />
-                  </Section>
-
-                  <Section label="coming later">
-                    <Later name="Attachments" detail="Images, PDFs and drawings on items" phase="phase 5" />
-                  </Section>
-                </>
+                <Section label="display">
+                  <ThemeChoice />
+                  <MotionChoice />
+                  <BackgroundChoice />
+                </Section>
               )}
             </div>
           </div>
@@ -236,16 +230,6 @@ export function Row({ label, children }: { label: string; children: ReactNode })
     <div className={styles.row}>
       <span className={styles.rowLabel}>{label}</span>
       <span className={styles.rowValue}>{children}</span>
-    </div>
-  )
-}
-
-function Later({ name, detail, phase }: { name: string; detail: string; phase: string }) {
-  return (
-    <div className={styles.later}>
-      <span className={styles.laterName}>{name}</span>
-      <span className={styles.laterDetail}>{detail}</span>
-      <span className={styles.laterPhase}>{phase}</span>
     </div>
   )
 }

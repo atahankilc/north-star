@@ -46,8 +46,19 @@
   --text-xs: 11px;
   --text-sm: 13px;
   --text-md: 15px;
+  --text-lg: 18px; /* card and list titles */
+  --text-heading: 26px; /* page, panel and report titles; 20px on phones */
   --text-xl: clamp(28px, 4vw, 44px);
+  --text-hero: clamp(48px, 8vw, 112px); /* the workspaces page title */
   --text-display: clamp(72px, 14vw, 220px);
+
+  /* Tracking (D-093): small uppercase labels, sans titles, the display headline. Actions are lowercase, untracked. */
+  --track-label: 0.12em;
+  --track-title: -0.02em;
+  --track-display: -0.045em;
+
+  /* Reading width: the report screen and the reports list. */
+  --measure: 760px;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -130,5 +141,11 @@
   :root {
     --hud-x: var(--space-4);
     --hud-y: var(--space-3);
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --text-heading: 20px;
   }
 }

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -305,6 +305,15 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   at the same moment took 45 ms). The emulators speak HTTP/1.1, so Chrome's per-host connection limit queues the request; the live
   Firestore and Storage use HTTP/2, which doesn't queue like this. Watch for it once attachments are live anyway.
 - At 390 px the board's filter bar overlaps the top of the side panel (was already so; not from attachments).
+
+## Done (consistent pages, 2026-10-18)
+- D-093: audit (headless screenshots, dark/light/390) of board + panel, flow, table, reports, report screen, Settings; the assistant
+  chat left out on purpose. New tokens (`--text-lg`, `--text-heading`, `--text-hero`, `--track-*`, `--measure`), `src/ui/Page.module.css`
+  (page, toolbar, title), `fieldLabel` (Frame), `small` `[verb]` button (AsciiButton.module.css) replacing five hand-made copies.
+  Reports left-aligned with its header in the filter row's place; table fills the width with "…" names; one Settings label column;
+  stale "coming later" removed; phone side panel covers the filters. No raw font sizes or letter-spacing outside AiChat.
+  Follow-ups: all actions lowercase (uppercase only for labels); workspace-card hover regression fixed.
+  Build passes; verified headless on emulators (no horizontal scroll at 390, light theme). Committed and pushed 2026-10-18.
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs

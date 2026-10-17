@@ -111,7 +111,7 @@ function Section({ node }: { node: Node }) {
           attachments{mine.length > 0 && ` · ${mine.length}`}
         </span>
         <button className={styles.add} onClick={() => input.current?.click()}>
-          [ + attach ]
+          + attach
         </button>
         <input
           ref={input}

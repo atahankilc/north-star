@@ -9,8 +9,9 @@
   color: var(--fg-strong);
   font: inherit;
   font-size: var(--text-sm);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  /* Actions are lowercase, labels uppercase (D-093). */
+  letter-spacing: normal;
+  text-transform: none;
   cursor: pointer;
   isolation: isolate;
 }
@@ -58,4 +59,49 @@
 
 .label {
   white-space: nowrap;
+}
+
+/* The small `[verb]` button for row and inline actions (D-093): lowercase, dim, faint brackets. Compose it:
+   `composes: small from '../../ui/AsciiButton.module.css'`. `data-tone="primary"` is cyan, `"danger"` turns magenta on hover. */
+.small {
+  padding: 2px var(--space-1);
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.small::before {
+  content: '[';
+  color: var(--line-hover);
+}
+
+.small::after {
+  content: ']';
+  color: var(--line-hover);
+}
+
+.small:hover,
+.small:focus-visible {
+  color: var(--fg-strong);
+}
+
+.small[data-tone='primary'] {
+  color: var(--accent-cyan);
+}
+
+.small[data-tone='danger']:hover,
+.small[data-tone='danger']:focus-visible {
+  color: var(--accent-magenta);
+}
+
+.small:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

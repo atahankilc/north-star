@@ -97,7 +97,7 @@ export function CompetitorProfile({
         <span className={styles.meta}>added {new Date(competitor.createdAt).toLocaleDateString()}</span>
         {/* Undoable, so one click (Q-013). */}
         <AsciiButton accent="yellow" onClick={() => removeItem(wid, 'competitor', competitor.id, competitor.name)}>
-          Delete competitor
+          delete competitor
         </AsciiButton>
       </footer>
     </div>
@@ -268,7 +268,7 @@ function FeatureRow({
                   useHistory.getState().say(`Deleted "${feature.name || 'feature'}" · ${UNDO_HINT} to undo`)
                 }}
               >
-                Delete
+                delete
               </AsciiButton>
             </div>
           </Appear>

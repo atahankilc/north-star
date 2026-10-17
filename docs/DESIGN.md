@@ -54,6 +54,16 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - **Display / UI:** **Geist** (D-013)
 - **Data / labels / ASCII:** **Geist Mono**
 - Big size contrast: huge display titles, small mono labels.
+- *Which face (D-093):* Geist for titles and long reading text (report answers and points); Geist Mono for everything else:
+  data, labels, controls, inputs, meta lines.
+- *Scale (tokens.css; no raw px sizes):* `--text-xs` 11 (labels, meta, small buttons; nothing smaller), `--text-sm` 13 (body
+  and controls), `--text-md` 15 (report body), `--text-lg` 18 (card and list titles), `--text-heading` 26, 20 on phones (page,
+  panel and report titles), `--text-xl`, `--text-hero` (the workspaces page title), `--text-display` (landing headline).
+- *Case:* uppercase means a label (`NOTES`, `┌ DISPLAY`, column heads, type names); everything you click is lowercase
+  (buttons, view tabs, the Settings menu, choices).
+- *Tracking:* `--track-label` 0.12em on every small uppercase label, `--track-title` -0.02em on Geist titles,
+  `--track-display` -0.045em on the display headline. Lowercase actions are untracked.
+- *Reading width:* `--measure` (760 px) for the report screen and the reports list.
 
 ## 5. ASCII rendering
 
@@ -69,7 +79,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
 ## 6. Components (ASCII-styled DOM)
 
 - Boxes drawn with box characters (`┌─┐│└┘`) or 1px lines that echo them
-- Buttons: `[ CREATE ]` style labels, with an accent fill on hover
+- Buttons, two sizes, both lowercase (`src/ui/AsciiButton.module.css`, D-093): `<AsciiButton>` `[ create ]` (spaced coloured
+  brackets, accent fill on hover) for the main action of a form or panel; `small` `[share]` (dim, faint brackets;
+  `data-tone="primary"` cyan, `"danger"` magenta on hover) for row and inline actions. Compose `small`; never redraw brackets.
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
 - Cards: flat, one shape for every type (D-055). A left border and a small uppercase label in the type's colour say what it is
@@ -97,7 +109,16 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
 - `frame`: translucent near-black (`--surface`) + 10px backdrop blur + 1px `--line` border
 - `interactive`: frame + hover border lift + accent bar wiping in along the top edge (`--accent` sets the colour)
 - `dashed`: empty or placeholder states
-- `label`: `┌ UPPERCASE MONO` section label
+- `label`: `┌ UPPERCASE MONO` section label, starts a group (Settings sections, report blocks, panel kicker)
+- `fieldLabel`: the same without the glyph, names one field or list (`NOTES`, `LINKS`, Settings row labels, Choice)
+
+### Pages (D-093)
+Every workspace view except the board composes `src/ui/Page.module.css`:
+- `page`: content from `--hud-x`, starting below the filter row, so switching views never moves it. Frames fill the width
+  (Flow, Table); the Matrix keeps its fit-content width at full height (D-060); Reports keeps `--measure`, left-aligned.
+- `toolbar`: a view without filters (Reports) puts its controls exactly where the filter row sits, 30 px tall.
+- `title`: Geist at `--text-heading`, for Settings pages, side panels, the competitor profile, the matrix panel and the report screen.
+Settings rows and choices share one label column (`--label-w`, 136 px; 96 px on phones). On phones a side panel covers the filter row.
 
 ## 7. Motion
 

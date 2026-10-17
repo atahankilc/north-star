@@ -18,11 +18,11 @@
 }
 
 .card {
+  composes: frame from './Frame.module.css';
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--line);
 }
 
 .card[data-accent] {
@@ -30,16 +30,13 @@
 }
 
 .cardLabel {
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  composes: fieldLabel from './Frame.module.css';
 }
 
 .cardValue {
   color: var(--fg-strong);
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: var(--text-lg);
 }
 
 .card[data-accent] .cardValue {

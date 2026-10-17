@@ -173,7 +173,7 @@ export function ReportView() {
 
         {report.implications.length > 0 && (
           <section className={styles.block}>
-            <h2>What it means for us</h2>
+            <h2 className={styles.blockLabel}>What it means for us</h2>
             <ul className={styles.points}>
               {report.implications.map((x, i) => (
                 <li key={i}>
@@ -195,7 +195,7 @@ export function ReportView() {
 
         {report.openQuestions.length > 0 && (
           <section className={styles.block}>
-            <h2>Open questions</h2>
+            <h2 className={styles.blockLabel}>Open questions</h2>
             <ul className={styles.points}>
               {report.openQuestions.map((q, i) => (
                 <li key={i}>{q}</li>
@@ -206,7 +206,7 @@ export function ReportView() {
 
         {report.sources.length > 0 && (
           <section className={styles.block}>
-            <h2>Sources</h2>
+            <h2 className={styles.blockLabel}>Sources</h2>
             <ol className={styles.sources}>
               {report.sources.map((s, i) => (
                 <li key={s.url}>

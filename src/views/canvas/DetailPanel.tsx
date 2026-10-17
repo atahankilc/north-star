@@ -175,7 +175,7 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
               removeItem(wid, type, node.id, draft.title)
             }}
           >
-            Delete
+            delete
           </AsciiButton>
         </span>
       </footer>

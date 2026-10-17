@@ -81,7 +81,7 @@
 }
 
 .gear {
-  font-size: 17px;
+  font-size: var(--text-lg);
   line-height: 1;
   transition: transform var(--dur-med) var(--ease-out);
 }
@@ -104,7 +104,7 @@
   padding: 0 3px;
   background: var(--accent-cyan);
   color: var(--on-accent);
-  font-size: 10px;
+  font-size: var(--text-xs);
   line-height: 1;
 }
 
@@ -146,9 +146,9 @@
   margin: 0;
   color: var(--fg-strong);
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: var(--text-lg);
   font-weight: 400;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--track-title);
 }
 
 .navList {
@@ -172,10 +172,8 @@
   background: none;
   color: var(--fg-dim);
   font: inherit;
-  font-size: var(--text-xs);
-  letter-spacing: 0.12em;
+  font-size: var(--text-sm);
   text-align: left;
-  text-transform: uppercase;
   cursor: pointer;
   transition:
     color var(--dur-fast) var(--ease-out),
@@ -198,7 +196,7 @@
   padding: var(--space-2) var(--space-3) 2px;
   color: var(--fg-faint);
   font-size: var(--text-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
@@ -220,12 +218,14 @@
   padding: 0 4px;
   background: var(--accent-cyan);
   color: var(--on-accent);
-  font-size: 10px;
+  font-size: var(--text-xs);
   letter-spacing: 0;
   text-align: center;
 }
 
 .page {
+  /* One label column for every settings page: Row and Choice both read it (D-093). */
+  --label-w: 136px;
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -241,12 +241,7 @@
 }
 
 .title {
-  margin: 0;
-  color: var(--fg-strong);
-  font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  composes: title from './Page.module.css';
 }
 
 .close {
@@ -276,7 +271,7 @@
   height: 48px;
   background: var(--accent-cyan);
   color: var(--on-accent);
-  font-size: 20px;
+  font-size: var(--text-lg);
 }
 
 .profileText {
@@ -320,12 +315,9 @@
 }
 
 .rowLabel {
+  composes: fieldLabel from './Frame.module.css';
   flex-shrink: 0;
-  width: 136px;
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  width: var(--label-w);
 }
 
 .rowValue {
@@ -350,25 +342,6 @@
   font-size: var(--text-xs);
 }
 
-.later {
-  display: grid;
-  grid-template-columns: 140px minmax(0, 1fr) auto;
-  gap: var(--space-3);
-  align-items: baseline;
-  color: var(--fg-faint);
-  font-size: var(--text-sm);
-}
-
-.laterName {
-  color: var(--fg-dim);
-}
-
-.laterPhase {
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 /* Narrow screens: the side menu becomes a row of tabs above the page, and the chip keeps only its initial. */
 @media (max-width: 640px) {
   .chipName {
@@ -389,10 +362,6 @@
     padding: var(--space-4) var(--space-4) 0;
     border-right: 0;
     border-bottom: 1px solid var(--line);
-  }
-
-  .navTitle {
-    font-size: 20px;
   }
 
   .navList {
@@ -426,6 +395,7 @@
   }
 
   .page {
+    --label-w: 96px;
     padding: var(--space-4) var(--space-4) var(--space-6);
   }
 
@@ -442,11 +412,4 @@
     width: 100%;
   }
 
-  .later {
-    grid-template-columns: 1fr auto;
-  }
-
-  .laterDetail {
-    display: none;
-  }
 }

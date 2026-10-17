@@ -11,7 +11,7 @@
 
 .code {
   color: var(--accent-cyan);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-label);
 }
 
 .role {
@@ -89,35 +89,7 @@
 }
 
 .action {
-  padding: 2px var(--space-2);
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
-}
-
-.action::before {
-  content: '[';
-  color: var(--line-hover);
-}
-
-.action::after {
-  content: ']';
-  color: var(--line-hover);
-}
-
-.action:hover {
-  color: var(--fg-strong);
-}
-
-.action[data-tone='primary'] {
-  color: var(--accent-cyan);
-}
-
-.action[data-tone='danger']:hover {
-  color: var(--accent-magenta);
+  composes: small from '../../ui/AsciiButton.module.css';
 }
 
 .status {

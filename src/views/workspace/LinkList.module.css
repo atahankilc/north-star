@@ -72,30 +72,16 @@
 }
 
 .head {
+  composes: fieldLabel from '../../ui/Frame.module.css';
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 .add {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
+  composes: small from '../../ui/AsciiButton.module.css';
 }
 
-.add:hover {
-  color: var(--accent-cyan);
-}
 
 .hint {
   margin: 0;
