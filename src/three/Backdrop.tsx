@@ -44,8 +44,8 @@ export function BackdropScene({ onFrame }: SceneProps) {
 export function Backdrop({ dim = false }: { dim?: boolean }) {
   // The field steps back in a workspace so cards stay legible: dimmer and slower (D-061).
   useEffect(() => {
-    backdropDim.target = dim ? 0.18 : 1
-    backdropPace.target = dim ? 0.45 : 1
+    backdropDim.target = dim ? 0.14 : 1
+    backdropPace.target = dim ? 0.35 : 1
   }, [dim])
 
   return (
