@@ -43,7 +43,7 @@ _Last updated: 2026-10-17_
 2. Undo + Delete key (Q-013)
 3. Phase 2: competitors, competitor maps, features view, comparison matrix
 4. Phase 3 polish: presence + live cursors (RTDB rules are ready)
-5. Deploy: add `atahankilic.github.io` to Firebase Authorized domains, add the GitHub Pages variables, then push
+5. ~~Deploy~~ done 2026-10-17: live at https://atahankilic.github.io/mind-map/ (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 
 ## Blockers
 - None
