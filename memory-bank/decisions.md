@@ -816,3 +816,58 @@ asks for plain text without headings, the chat rendered no Markdown, and a long 
   the ask has SOURCES and `[n]` findings; the screen opens by itself with sections, an inference, citations linking to their
   URLs (an out-of-range number dropped), item chips selecting the card, Esc; the next turn carries `REPORT:`.
 
+
+### D-090 · 2026-10-18 · Accepted (extends D-088, D-089)
+**Reports are kept in a reports tab, private until shared, and any chat can be written up as one.** The user's picks:
+save reports rather than whole chats (chats stay in the tab, D-073); every report is saved for its author only, and a
+`share` makes it everyone's in the workspace; then "turn anything into a report", not only `/research`.
+- *Data:* `workspaces/{wid}/reports/{id}`, `SavedReport` (`src/data/model.ts`): the report as the screen shows it (title,
+  answer, sections of points with source numbers, implications with our items' **ids**, open questions, numbered sources),
+  plus `kind` (`research` | `chat`; none = research), `topic`, `uid`, `name`, `model`, `shared`, `createdAt`. Never the chat's
+  messages or the researchers' raw findings. Implications used to hold the chat's refs; they now hold ids, resolved when the
+  report is parsed, so a saved report keeps pointing at the right cards after the chat is gone.
+- *Rules:* read if member and (`shared` or yours); create your own (the owner may also create someone's *shared* one: undoing
+  their delete); update only `shared`, only the author; delete the author, or the owner when shared. Limits (12 sections, 10
+  implications, 20 open questions, 200 sources, text sizes) in `REPORT_LIMITS` and the rules. Lists need a query the rules
+  can prove: `shared == true` and `uid == me`, merged in `useReports`. 191 rule tests pass (new: reports, presence on `reports`).
+- *Saving:* a research report is saved the moment `write_report` returns (an id is made first, so the chat points at it at once).
+  A chat write-up waits: `make_report` (`CHAT_REPORT_TOOL`, `src/ai/research.ts`) is offered on every normal chat answer;
+  the prompt calls it only when the user asks for a report, a write-up or a summary to save. Its points cite the URLs cited
+  earlier in the chat (numbered like research), not inferences. It opens on the report screen with `not saved yet` and
+  `save to reports` (also on the chat's card); `download .md` works either way.
+- *Reports tab* (`/workspaces/<id>/reports`, `src/views/reports/ReportsView.tsx`): newest first; title, two lines of the answer,
+  `topic · by · date · N questions/sections · N sources`, `only you` / `shared` (cyan), `share`/`unshare` and `delete` for the
+  author, `delete` for the owner on shared ones (undoable, toast). A row opens the report screen and the URL gets
+  `?report=<id>`, so a shared report can be linked; a link to one you can't see says so. Presence view `reports`
+  (database.rules.json), and the open report is broadcast as `sel`, so others see who's reading which (D-068 row bars).
+- *Report screen* (D-089): shows the saved copy (or the chat's while saving or if saving failed), says who can see it, and has
+  save / share / delete beside download and close. Chat write-ups have sections, not questions, and no `inference` marks.
+- *Assistant:* the brief lists the newest 10 reports you can see (title, date, private/shared, answer) as RESEARCH REPORTS.
+- *Export/import:* reports you can see go in `workspace.json`'s optional `reports` (no uid); import makes them yours, keeps
+  `shared`, remaps item ids.
+- *Workspace delete:* the owner's browser deletes the shared reports and its own; other members' private ones are deleted by
+  `cleanUpWorkspaceAi` once functions are deployed (D-079); until then they stay, unreadable (the workspace is gone).
+- Verified on emulators with headless Chrome and a fake OpenAI: `/research` → saved, "only you can see it", item chips; a chat
+  "write this up as a report" → `make_report` → not saved → save; tab lists both, share one; Bob (joined) sees only the shared one,
+  his link to Alice's private one says it isn't shared, the shared link opens without share/delete; Alice sees Bob on that row;
+  delete + ⌘Z; light theme at 390 px with no horizontal scroll; export → import keeps both with item links remapped.
+
+### D-091 · 2026-10-18 · Accepted (extends D-090)
+**Upload your own report as a Markdown file.** User request: a button so people can add reports they wrote elsewhere.
+- *Where:* `[upload .md]` on the reports tab (top right), or drop a file anywhere on the tab (cyan edge). `.md`, `.markdown` or
+  `.txt`, at most 512 KB; another type, a bigger file or one with no text is refused in plain words. Saved like the others:
+  yours only (`kind: 'upload'`, `topic` = the file name, `model` empty) until you share it; it opens on the report screen.
+- *Reading* (`src/io/reportMarkdown.ts`, no Markdown library): `#` → title (else the file name); text before the first `##`
+  → the answer (more paragraphs there become an "Overview" section); each `##`/`###` → a section whose list items (with their
+  continuation lines) and paragraphs are points; headings "What it means for us" / "Implications" / "Next steps" →
+  implications, "Open questions" → open questions, "Sources" / "References" → numbered sources. `[n]` cites a listed source;
+  `[text](url)` keeps the text and cites the URL (a link in parentheses on its own is only a citation); tables become one
+  point per row (`a · b`); code blocks become plain text; bold, italics and backticks are dropped. An implication ending in
+  `(Name, Name)` links those items again when every name is an item's exact title.
+- *Round trip:* a `.md` downloaded from the report screen uploads back identical (title, answer, sections, citations, item
+  links, open questions, sources).
+- *Limits raised* for longer files: 30 sections, 40 points each, 20 implications, 30 open questions, 4000 characters per text
+  (`REPORT_LIMITS`, firestore.rules; deployed 2026-10-18). Rules: 193 pass.
+- Verified on emulators with headless Chrome: a PDF and an empty file refused; a hand-written file (bold, a cited link, a list
+  item over two lines, a table, next steps, open questions) read as intended; an export-format file with `[1]` and item names;
+  download → upload identical.

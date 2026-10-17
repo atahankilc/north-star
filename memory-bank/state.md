@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -273,8 +273,14 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-089 (2026-10-18): research reports are structured (`write_report`) and open on a report screen (answer, sections with
   numbered sources, implications with item links, open questions, sources, .md); light Markdown (lists, bold) in answers.
   Verified on emulators with a fake OpenAI. The user ran a real `/research` with D-088 + D-089: works. Committed (`576d826`), **not pushed**.
-- Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research (all done) →
-  saved/shared chats and reports, reading attachments (after D-083) → the user's own redesign of the assistant UI and the preview.
+- D-090 (2026-10-18): reports tab (`/workspaces/<id>/reports`): research reports saved at once for their author, `share` shows
+  them to the workspace; any chat can be written up as a report on request (`make_report`), saved when you press save.
+  Rules: 191 pass. Verified on emulators with headless Chrome, two users and a fake OpenAI. Firestore + RTDB rules **deployed** 2026-10-18
+  (a superset, safe for the live client). D-091: `upload .md` on the reports tab (own Markdown reports, parsed to the same
+  shape; round-trips the report screen's download); rules 193 pass, deployed 2026-10-18. Committed (`a86583c`), **not pushed**. Not yet tried with a real key.
+- Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research, saved
+  reports (all done; whole chats stay unsaved, the user chose reports instead) → reading attachments (after D-083) → the
+  user's own redesign of the assistant UI and the preview.
 
 ## Done (Phase 5: attachments, 2026-10-17, on the emulators only)
 - D-083: images, SVGs and PDFs on every card and competitor (`src/data/attachments.ts`, `src/views/workspace/Attachments.tsx`):

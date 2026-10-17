@@ -164,6 +164,13 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 - **Deep research** (D-088): `/research` → a planned set of questions you pick → one web-searching call per question (3 at a
   time) → the agent loop writes one report from the findings (`src/ai/research.ts`); the report comes through `write_report`
   and opens on the report screen (`src/ui/ReportView.tsx`, D-089).
+- **Saved reports** (D-090): `workspaces/{wid}/reports/{id}` (`SavedReport` in `src/data/model.ts`: the report, `kind`
+  research | chat, `topic, uid, name, model, shared, createdAt`; data in `src/data/reports.ts`). A research report is saved
+  as it's written; a chat write-up (`make_report`, any chat, when asked) when you press save. Only the author reads it until
+  `shared`; then every member does. The client lists it with two queries (`shared == true`, `uid == me`). Author shares,
+  unshares (only that field changes) and deletes; the owner may delete a shared one. Shown on the reports tab
+  (`/workspaces/<id>/reports`, `?report=<id>` opens one); the brief lists the newest 10 by title and answer.
+  `upload .md` (D-091) reads a Markdown file into the same shape (`src/io/reportMarkdown.ts`, `kind: 'upload'`).
 - **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the
   user's account). Cited sources are shown as clickable links.
 - Prompts live in `src/ai/prompts/`.
@@ -192,7 +199,8 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
     for `getBytes` in export).
 - **Drawing:** upload only (Q-004 → D-083): draw elsewhere and attach the SVG/PNG/PDF. A built-in sketch pad may come later.
 - **Export** ✅ (D-080, Settings → workspace → export): a workspace bundle as `.zip` holding `workspace.json`
-  (`format: north-star.workspace`, `version: 1`; every item, link, matrix cell and label, never members, codes or AI data),
+  (`format: north-star.workspace`, `version: 1`; every item, link, matrix cell and label, and the research reports you can
+  see without their author's uid (D-090); never members, codes or AI keys and usage),
   plus each attachment's file at `attachments/<id>/<name>` with its record in `workspace.json`'s optional `attachments` (D-083;
   still version 1). Code: `src/io/bundle.ts`.
 - **Import** ✅ (D-080, workspaces page; attachments D-083: files uploaded under new ids, or left out with a note where Storage isn't live): a bundle becomes a new workspace you own, docs rebuilt to the rules' shapes, IDs remapped,

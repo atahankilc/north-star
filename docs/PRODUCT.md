@@ -47,7 +47,9 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    Shows gaps (opportunities) and table stakes.
 5. **Detail Panel.** A side panel for any node: edit fields, see all links, attachments,
    and AI actions.
-6. **Settings.** Profile, workspace members, AI config (OpenAI key, model), export/import.
+6. **Reports.** Research reports, write-ups of assistant chats and uploaded `.md` files (D-091), saved per person and shared with the workspace by
+   choice (D-090). One tab beside board, flow, table and matrix.
+7. **Settings.** Profile, workspace members, AI config (OpenAI key, model), export/import.
 
 ## 5. Key flows
 
