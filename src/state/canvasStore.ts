@@ -20,6 +20,8 @@ type CanvasState = {
   flyTo: (at: Vec2) => void
   // The text label being typed into on the board, if any.
   editingLabel: string | null
+  // Set by the board while mounted: the whole board as a PNG (D-080).
+  snapshot: (() => Promise<Blob>) | null
 
   select: (id: string | null) => void
   startLink: (id: string, at: Vec2) => void
@@ -31,6 +33,7 @@ type CanvasState = {
   setFocusOn: (fn: (at: Vec2) => void) => void
   setFlyTo: (fn: (at: Vec2) => void) => void
   setEditingLabel: (id: string | null) => void
+  setSnapshot: (fn: (() => Promise<Blob>) | null) => void
 }
 
 export const useCanvas = create<CanvasState>((set) => ({
@@ -43,6 +46,7 @@ export const useCanvas = create<CanvasState>((set) => ({
   focusOn: () => {},
   flyTo: () => {},
   editingLabel: null,
+  snapshot: null,
 
   select: (id) => set({ selectedId: id }),
   startLink: (id, at) => set({ linkFrom: id, linkPointer: at }),
@@ -60,6 +64,7 @@ export const useCanvas = create<CanvasState>((set) => ({
   setFocusOn: (fn) => set({ focusOn: fn }),
   setFlyTo: (fn) => set({ flyTo: fn }),
   setEditingLabel: (id) => set({ editingLabel: id }),
+  setSnapshot: (fn) => set({ snapshot: fn }),
 }))
 
 // Dev-only handle for inspecting state from the console or automation.

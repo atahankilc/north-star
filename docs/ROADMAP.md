@@ -31,8 +31,8 @@ Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 
 ## Phase 5: Files, export and import
 - Attachments (images, PDFs, drawings)
-- Workspace export/import (zip bundle)
-- Matrix → CSV, canvas → PNG
+- Workspace export/import (zip bundle) ✅ (D-080)
+- Matrix → TSV, canvas → PNG ✅ (D-080)
 
 ## Later
 - Templates, version history, comments, collaborative text (Yjs)

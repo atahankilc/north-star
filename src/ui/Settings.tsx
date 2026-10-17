@@ -159,7 +159,7 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
                   </Section>
 
                   <Section label="coming later">
-                    <Later name="Export and import" detail="A whole workspace as one file" phase="phase 5" />
+                    <Later name="Attachments" detail="Images, PDFs and drawings on items" phase="phase 5" />
                   </Section>
                 </>
               )}

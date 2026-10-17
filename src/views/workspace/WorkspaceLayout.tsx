@@ -31,7 +31,9 @@ import { PeopleHere } from '../../ui/PeopleHere'
 import { Row, Section } from '../../ui/Settings'
 import { Toast } from '../../ui/Toast'
 import { forgetCamera } from '../canvas/Board'
-import { WorkspaceContext, type WorkspaceCtx } from './context'
+import { download, fileSlug, makeBundle, zipBundle } from '../../io/bundle'
+import { matrixTsv } from '../../io/tsv'
+import { useWs, WorkspaceContext, type WorkspaceCtx } from './context'
 import { useEditKeys } from './useEditKeys'
 import styles from './WorkspaceLayout.module.css'
 
@@ -186,8 +188,68 @@ function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
             : 'People who enter the code ask to join; the owner lets them in.'}
         </p>
       </Section>
+      <ExportSection />
       {error && <p className={styles.error}>! {error}</p>}
     </>
+  )
+}
+
+// Export (D-080): the whole workspace as a file you can import again, the matrix for a spreadsheet, the board as a picture.
+function ExportSection() {
+  const ws = useWs()
+  const snapshot = useCanvas((s) => s.snapshot)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const slug = fileSlug(ws.workspace.name)
+  const date = new Date().toISOString().slice(0, 10)
+
+  const bundle = () => download(zipBundle(makeBundle(ws.workspace.name, ws.workspace.description, ws)), `${slug}-${date}.zip`)
+  const tsv = () =>
+    download(
+      new Blob([matrixTsv(ws.features, ws.competitors, ws.comparisons)], { type: 'text/tab-separated-values;charset=utf-8' }),
+      `${slug}-matrix.tsv`,
+    )
+  const png = async () => {
+    if (!snapshot) return
+    setBusy(true)
+    setError(null)
+    try {
+      download(await snapshot(), `${slug}-board.png`)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const items = ws.customers.length + ws.problems.length + ws.ideas.length + ws.features.length + ws.competitors.length
+
+  return (
+    <Section label="export">
+      <Row label="workspace">
+        <AsciiButton accent="cyan" onClick={bundle}>
+          Download .zip
+        </AsciiButton>
+        <span className={styles.role}>
+          {items} {items === 1 ? 'item' : 'items'}, {ws.edges.length} {ws.edges.length === 1 ? 'link' : 'links'}
+        </span>
+      </Row>
+      <Row label="matrix">
+        <AsciiButton accent="cyan" onClick={tsv} disabled={ws.features.length === 0 || ws.competitors.length === 0}>
+          Download .tsv
+        </AsciiButton>
+      </Row>
+      <Row label="board">
+        <AsciiButton accent="cyan" onClick={png} disabled={!snapshot || busy}>
+          {busy ? 'Drawing' : 'Download .png'}
+        </AsciiButton>
+        {!snapshot && <span className={styles.role}>open the board view first</span>}
+      </Row>
+      <p className={styles.hint}>
+        The .zip holds every item, link, matrix cell and label. Import it from the workspaces page to make a copy you own; members,
+        invite codes and assistant keys stay here. The picture is the whole board as it's filtered now.
+      </p>
+      {error && <p className={styles.error}>! {error}</p>}
+    </Section>
   )
 }
 

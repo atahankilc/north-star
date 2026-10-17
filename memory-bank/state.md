@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-17 (workspace key + usage log, D-079)_
+_Last updated: 2026-10-17 (export / import / TSV / PNG, D-080)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -226,13 +226,19 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   was refused once, OR_BAOOC_15; retrying after 24 h, likely a profile country vs German card mismatch), `AI_KEY_SECRET`,
   `npm run deploy:functions`, flip the flag, try with a real key.** Workspace-delete cleanup trigger not exercised yet.
 
+## Done (Phase 5 part 1: export, import, TSV, PNG, 2026-10-17)
+- D-080: Settings → workspace → export (.zip bundle, matrix .tsv, board .png without the grid); "import" strip on the workspaces page. `src/io/` (bundle, tsv),
+  `src/data/importWorkspace.ts`, `src/views/matrix/reading.ts`, `Snapshot` in Board.tsx. New dependency: `fflate`. No rule change.
+- Verified headless on emulators in dark and light: example → zip/tsv/png downloaded; zip imported as a new workspace whose re-export has
+  the same counts, the same links and the same matrix cells by name, with new ids; a non-export file is refused. Build passes. Committed and pushed 2026-10-17.
+
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs
    `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`, then `npm run deploy:functions`, set
    `WORKSPACE_KEYS_LIVE = true` in src/data/ai.ts, push, and try with a real key as owner + member (also the delete cleanup).
-   Then Phase 5 parts that don't need Blaze: workspace export/import, Matrix → CSV, board → PNG.
+   (Export/import, TSV and PNG are done, D-080.)
 2. Small: PeerMarks colours through `themeAccent` (D-069); drop `edit`/`field` from database.rules.json once old tabs are gone
-3. Phase 5: files, export/import (attachments need Blaze, D-015 / Q-009)
+3. Phase 5: attachments (need Blaze, D-015 / Q-009; Q-004 drawings); the bundle then gains `attachments/`
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilc.github.io/north-star/ (repo and local folder renamed `mind-map` → `north-star` on 2026-10-17; the old URL 404s) (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.
 
 ## Blockers

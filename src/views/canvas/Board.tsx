@@ -2,7 +2,18 @@
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MathUtils, MOUSE, TOUCH, type ShaderMaterial } from 'three'
+import {
+  Color,
+  MathUtils,
+  MOUSE,
+  OrthographicCamera,
+  SRGBColorSpace,
+  TOUCH,
+  Vector2,
+  WebGLRenderTarget,
+  type PerspectiveCamera,
+  type ShaderMaterial,
+} from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
@@ -53,6 +64,21 @@ function chipSpot(c: [number, number], i: number): [number, number] {
 const CARD_HALF: [number, number] = [CARD_W / 2, CARD_H / 2]
 const CHIP_HALF: [number, number] = [CHIP_W / 2, CHIP_H / 2]
 
+// Every card and label, with a margin: [x0, y0, x1, y1] in board units, or null on an empty board.
+function boardBounds(nodes: BoardItem[], labels: WithId<Label>[]): [number, number, number, number] | null {
+  const boxes = [
+    ...nodes.map((n) => [n.x - CARD_W / 2, n.y - CARD_H / 2, n.x + CARD_W / 2, n.y + CARD_H / 2]),
+    ...labels.map((l) => [l.x - l.text.length * LABEL_SIZE * 0.32, l.y - LABEL_SIZE / 2, l.x + l.text.length * LABEL_SIZE * 0.32, l.y + LABEL_SIZE / 2]),
+  ]
+  if (boxes.length === 0) return null
+  return [
+    Math.min(...boxes.map((b) => b[0])) - MARGIN,
+    Math.min(...boxes.map((b) => b[1])) - MARGIN,
+    Math.max(...boxes.map((b) => b[2])) + MARGIN,
+    Math.max(...boxes.map((b) => b[3])) + MARGIN,
+  ]
+}
+
 export function Board(props: Props) {
   // Pan/zoom listens on this wrapper, not the canvas. DOM events reach the canvas (and R3F's
   // handlers) first, so a card's pointerdown can switch the controls off before they react.
@@ -77,6 +103,7 @@ export function Board(props: Props) {
         <CursorReporter />
         <PeerCursors />
         <FollowCamera />
+        <Snapshot nodes={props.nodes} labels={props.labels} />
       </Canvas>
     </div>
   )
@@ -173,16 +200,9 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
 
   // Frame every card and label, as close as the zoom limits allow.
   function fitAll() {
-    if (!controls) return
-    const boxes = [
-      ...nodes.map((n) => [n.x - CARD_W / 2, n.y - CARD_H / 2, n.x + CARD_W / 2, n.y + CARD_H / 2]),
-      ...labels.map((l) => [l.x - l.text.length * LABEL_SIZE * 0.32, l.y - LABEL_SIZE / 2, l.x + l.text.length * LABEL_SIZE * 0.32, l.y + LABEL_SIZE / 2]),
-    ]
-    if (boxes.length === 0) return
-    const x0 = Math.min(...boxes.map((b) => b[0])) - MARGIN
-    const y0 = Math.min(...boxes.map((b) => b[1])) - MARGIN
-    const x1 = Math.max(...boxes.map((b) => b[2])) + MARGIN
-    const y1 = Math.max(...boxes.map((b) => b[3])) + MARGIN
+    const bounds = boardBounds(nodes, labels)
+    if (!controls || !bounds) return
+    const [x0, y0, x1, y1] = bounds
     const fov = ((camera as { fov?: number }).fov ?? 40) * (Math.PI / 180)
     const tan = Math.tan(fov / 2)
     const usable = Math.max(0.3, (size.height - CHROME_PX) / size.height)
@@ -292,6 +312,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   return (
     <>
       <mesh
+        // Hidden while the board is drawn as a picture (Snapshot).
+        name="grid"
         position={[0, 0, -0.1]}
         onClick={(e) => {
           // A click (not the end of a pan) on empty board clears the selection.
@@ -345,6 +367,79 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
       ))}
     </>
   )
+}
+
+// Board → PNG (D-080): the whole board as it's filtered, drawn once offscreen from straight above (no perspective), at
+// PNG_PPU pixels per board unit (smaller for huge boards), on the plain page background without the grid. Cursors and names are DOM, so they stay out.
+const PNG_PPU = 120
+const PNG_MAX = 8192
+
+function Snapshot({ nodes, labels }: { nodes: BoardItem[]; labels: WithId<Label>[] }) {
+  const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
+  const camera = useThree((s) => s.camera)
+  const latest = useRef({ nodes, labels })
+  latest.current = { nodes, labels }
+
+  useEffect(() => {
+    const snapshot = async (): Promise<Blob> => {
+      const { nodes, labels } = latest.current
+      // Nothing on the board: what's in view.
+      const view = camera as PerspectiveCamera
+      const half = Math.tan(MathUtils.degToRad(view.fov / 2)) * view.position.z
+      const [x0, y0, x1, y1] = boardBounds(nodes, labels) ?? [
+        view.position.x - half * view.aspect, view.position.y - half, view.position.x + half * view.aspect, view.position.y + half,
+      ]
+      const ppu = Math.min(PNG_PPU, Math.min(PNG_MAX, gl.capabilities.maxTextureSize) / Math.max(x1 - x0, y1 - y0))
+      const w = Math.round((x1 - x0) * ppu)
+      const h = Math.round((y1 - y0) * ppu)
+      const shot = new OrthographicCamera(x0, x1, y1, y0, 0.1, 1000)
+      shot.position.set(0, 0, 100)
+      shot.updateMatrixWorld()
+      const target = new WebGLRenderTarget(w, h, { samples: 4, colorSpace: SRGBColorSpace })
+
+      // Line widths are in screen pixels against a resolution: as if the board were shown at 2x.
+      const lines: [{ resolution: Vector2 }, Vector2][] = []
+      scene.traverse((o) => {
+        const m = (o as { material?: { resolution?: Vector2 } }).material
+        if (m?.resolution instanceof Vector2) lines.push([m as { resolution: Vector2 }, m.resolution.clone()])
+      })
+      for (const [m] of lines) m.resolution.set(w / 2, h / 2)
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#000'
+      const clear = gl.getClearColor(new Color())
+      const alpha = gl.getClearAlpha()
+      const pixels = new Uint8Array(w * h * 4)
+      // The picture is the cards, links and labels on a plain background: no "+" grid.
+      const grid = scene.getObjectByName('grid')
+      if (grid) grid.visible = false
+      try {
+        gl.setRenderTarget(target)
+        gl.setClearColor(new Color(bg), 1)
+        gl.clear()
+        gl.render(scene, shot)
+        gl.readRenderTargetPixels(target, 0, 0, w, h, pixels)
+      } finally {
+        if (grid) grid.visible = true
+        gl.setRenderTarget(null)
+        gl.setClearColor(clear, alpha)
+        for (const [m, r] of lines) m.resolution.copy(r)
+        target.dispose()
+      }
+
+      // WebGL rows run bottom-up.
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const image = new ImageData(w, h)
+      const row = w * 4
+      for (let y = 0; y < h; y++) image.data.set(pixels.subarray((h - 1 - y) * row, (h - y) * row), y * row)
+      canvas.getContext('2d')!.putImageData(image, 0, 0)
+      return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not make the picture.'))), 'image/png'))
+    }
+    useCanvas.getState().setSnapshot(snapshot)
+    return () => useCanvas.getState().setSnapshot(null)
+  }, [gl, scene, camera])
+  return null
 }
 
 // Faint "+" marks every unit: an ASCII-flavoured grid for spatial memory.

@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import { workspacePath } from '../../app/paths'
 import type { AuthUser } from '../../data/auth'
 import { createExampleWorkspace } from '../../data/example'
+import { importWorkspace } from '../../data/importWorkspace'
+import { readBundle } from '../../io/bundle'
 import type { WithId } from '../../data/hooks'
 import type { JoinRequest, Workspace } from '../../data/model'
 import {
@@ -49,6 +51,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
           <CreateForm uid={user.id} onCreated={(id) => navigate(workspacePath(id))} />
           <JoinForm user={user} onJoined={(id) => navigate(workspacePath(id))} />
           <ExampleStrip uid={user.id} onCreated={(id) => navigate(workspacePath(id))} />
+          <ImportStrip uid={user.id} onCreated={(id) => navigate(workspacePath(id))} />
         </div>
 
         <Pending user={user} onJoined={(id) => navigate(workspacePath(id))} />
@@ -267,6 +270,42 @@ function ExampleStrip({ uid, onCreated }: { uid: string; onCreated: (id: string)
       </p>
       <AsciiButton accent="green" onClick={create} disabled={busy}>
         {busy ? 'Creating' : 'Create example'}
+      </AsciiButton>
+      {error && <p className={styles.error}>! {error}</p>}
+    </Appear>
+  )
+}
+
+// D-080: an exported .zip becomes a new workspace you own.
+function ImportStrip({ uid, onCreated }: { uid: string; onCreated: (id: string) => void }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const input = useRef<HTMLInputElement>(null)
+
+  const load = async (file: File | undefined) => {
+    if (!file) return
+    setBusy(true)
+    setError(null)
+    try {
+      const bundle = await readBundle(file)
+      onCreated((await importWorkspace(bundle, uid)).workspaceId)
+    } catch (err) {
+      setError((err as Error).message)
+      setBusy(false)
+    } finally {
+      if (input.current) input.current.value = ''
+    }
+  }
+
+  return (
+    <Appear className={styles.example}>
+      <span className={styles.label}>import</span>
+      <p className={styles.exampleText}>
+        A workspace exported from North Star (.zip, in settings → workspace) becomes a new workspace you own.
+      </p>
+      <input ref={input} type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => void load(e.target.files?.[0])} />
+      <AsciiButton accent="cyan" onClick={() => input.current?.click()} disabled={busy}>
+        {busy ? 'Importing' : 'Choose file'}
       </AsciiButton>
       {error && <p className={styles.error}>! {error}</p>}
     </Appear>

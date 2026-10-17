@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { itemPath, workspacePath } from '../../app/paths'
 import { cellId, setCell } from '../../data/comparisons'
 import type { WithId } from '../../data/hooks'
-import { COVERAGES, FEATURE_PRIORITIES, type Comparison, type Coverage, type Feature } from '../../data/model'
+import { COVERAGES, type Comparison, type Coverage, type Feature } from '../../data/model'
 import { Appear } from '../../ui/Appear'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { Choice } from '../../ui/Choice'
@@ -16,6 +16,7 @@ import { useCanvas } from '../../state/canvasStore'
 import { useWs } from '../workspace/context'
 import { CellPeers, PeersOn } from '../workspace/PeerMarks'
 import styles from './MatrixView.module.css'
+import { matrixCols, matrixRows, verdict } from './reading'
 
 // Not assessed → none → partial → full → better → not assessed.
 const GLYPH: Record<Coverage | 'unset', string> = { unset: '·', none: '○', partial: '◐', full: '●', better: '★' }
@@ -29,33 +30,14 @@ const TONE: Record<Coverage, string> = {
 const next = (c: Coverage | undefined): Coverage | undefined =>
   c === undefined ? COVERAGES[0] : COVERAGES[COVERAGES.indexOf(c) + 1]
 
-type Verdict = { label: string; tone: string; title: string }
-
-// Gap: nobody covers it (an opening). Table stakes: most competitors fully cover it.
-function verdict(cells: (Comparison | undefined)[]): Verdict | null {
-  const assessed = cells.filter((c) => c?.coverage)
-  if (cells.length === 0 || assessed.length === 0) return null
-  const covered = assessed.filter((c) => c!.coverage === 'full' || c!.coverage === 'better').length
-  const some = assessed.filter((c) => c!.coverage !== 'none').length
-  if (some === 0) return { label: 'gap', tone: 'var(--accent-green)', title: 'No competitor covers this: an opening' }
-  if (covered * 2 >= cells.length)
-    return { label: 'table stakes', tone: 'var(--accent-yellow)', title: 'Most competitors cover this fully' }
-  return { label: 'mixed', tone: 'var(--fg-dim)', title: 'Some competitors cover this' }
-}
-
-const rank = (f: Feature) => {
-  const p = FEATURE_PRIORITIES.indexOf(f.priority as (typeof FEATURE_PRIORITIES)[number])
-  return p < 0 ? FEATURE_PRIORITIES.length : p
-}
-
 type Pos = { row: number; col: number }
 
 export function MatrixView() {
   const { wid, features, competitors, comparisons } = useWs()
   const [selected, setSelected] = useState<Pos | null>(null)
 
-  const rows = useMemo(() => [...features].sort((a, b) => rank(a) - rank(b) || a.createdAt - b.createdAt), [features])
-  const cols = useMemo(() => [...competitors].sort((a, b) => a.createdAt - b.createdAt), [competitors])
+  const rows = useMemo(() => matrixRows(features), [features])
+  const cols = useMemo(() => matrixCols(competitors), [competitors])
   const cells = useMemo(() => new Map(comparisons.map((c) => [c.id, c])), [comparisons])
   const cellAt = (r: number, c: number) => cells.get(cellId(rows[r].id, cols[c].id))
 

@@ -161,10 +161,12 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   plan (card required, 5 GB free). Deferred to Phase 5 (D-015).
 - **Drawing:** ⏳ either upload drawing files, or a built-in sketch pad (for example tldraw or a
   simple canvas) that saves as SVG/PNG.
-- **Export:** a workspace bundle as `.zip` holding `workspace.json` (all entities and links) plus
-  `attachments/`.
-- **Import:** load a bundle into a new workspace, remapping IDs.
-- Later: matrix → CSV, canvas → PNG/PDF.
+- **Export** ✅ (D-080, Settings → workspace → export): a workspace bundle as `.zip` holding `workspace.json`
+  (`format: north-star.workspace`, `version: 1`; every item, link, matrix cell and label, never members, codes or AI data),
+  plus `attachments/` once attachments exist. Code: `src/io/bundle.ts`.
+- **Import** ✅ (D-080, workspaces page): a bundle becomes a new workspace you own, docs rebuilt to the rules' shapes, IDs remapped,
+  dangling references dropped (`src/data/importWorkspace.ts`).
+- **Matrix → TSV** ✅ (`src/io/tsv.ts`; tabs, since Excel splits CSV by region) and **board → PNG** ✅ (offscreen render in `Board.tsx`). PDF later.
 
 ## 10. Repo layout (planned)
 

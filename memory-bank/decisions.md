@@ -571,3 +571,23 @@ no server, and it works with the user's key.
   Until then the workspace key can't be set on the live site; own keys keep working.
 - Emulators: `functions/.secret.local` (a dummy secret) and `functions/.env.local` (`OPENAI_API_BASE` → a fake OpenAI for tests); both
   gitignored, never deployed.
+
+### D-080 · 2026-10-17 · Accepted (Phase 5, the parts that don't need Blaze)
+**Export and import a workspace, the matrix as a spreadsheet (TSV), the board as a PNG.** All in the browser, no server.
+- *Where:* Settings → workspace → export (`[ Download .zip ]`, `.tsv`, `.png`), and an "import" strip under "example" on the
+  workspaces page. No new buttons on the board or the matrix (D-053: fewer controls).
+- *Bundle* (`src/io/bundle.ts`): a `.zip` (fflate) holding `workspace.json`: `format: north-star.workspace`, `version: 1`, `exportedAt`,
+  the workspace name, and every doc of labels, customers, problems, ideas, features, competitors, competitorFeatures, comparisons and edges
+  with its id. Never members, roles, invite codes, join requests or anything AI (keys, usage). `attachments/` joins the zip once attachments exist.
+  A bare `workspace.json` imports too; a newer `version` is refused.
+- *Import* (`src/data/importWorkspace.ts`): a new workspace you own, under the file's name. Every doc is rebuilt from known fields only, in the
+  shapes `firestore.rules` accepts (the file may have been edited), with new ids; links, matrix cells (id = `feature_competitor`, re-derived) and
+  competitor features follow their items; anything pointing at a missing item, self-links and duplicate links are dropped. Written in batches of
+  450; if one fails, the half-made workspace is deleted. No rule change.
+- *TSV* (`src/io/tsv.ts`): rows and columns in the matrix's order (`src/views/matrix/reading.ts`, shared with the view): feature, priority, status,
+  effort, then per competitor its coverage and its notes, then the reading (gap / table stakes / mixed). UTF-8 BOM + CRLF for Excel.
+  Tab-separated `.tsv`, not CSV (user): the user's Excel split a comma CSV wrongly (a `;` list-separator region), and `;` breaks English Excel;
+  tabs read the same everywhere. Tabs and line breaks inside a cell become spaces. Download only, no copy button (user).
+- *PNG* (`Snapshot` in `Board.tsx`, `canvasStore.snapshot`): the whole board as filtered, drawn once offscreen with an orthographic camera
+  from straight above at 120 px per board unit (less for huge boards, max side 8192), on the theme's `--bg` without the `+` grid (user), line widths as at 2x. Cursors and
+  names (DOM) stay out; your own selection highlight is in it. Only while the board view is mounted ("open the board view first" otherwise).
