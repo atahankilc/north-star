@@ -10,11 +10,13 @@ type Filters = {
   types: BoardType[]
   // Customer ids for the `for:` filter; empty = any customer.
   forIds: string[]
+  // Tags for the `tag:` filter (D-056); empty = any tag.
+  tags: string[]
   // Double-click on the board creates one of these.
   lastType: NewThing
 }
 
-const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], lastType: 'idea' }
+const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], lastType: 'idea' }
 
 type State = Filters & {
   wid: string | null
@@ -22,6 +24,8 @@ type State = Filters & {
   toggleType: (type: BoardType) => void
   toggleFor: (customerId: string) => void
   clearFor: () => void
+  toggleTag: (tag: string) => void
+  clearTags: () => void
   setLastType: (type: NewThing) => void
   // Undo whatever filter hides this item, so a link can always land on it.
   reveal: (item: { type: BoardType }) => void
@@ -37,6 +41,7 @@ function read(wid: string): Filters {
     return {
       types: (saved.types ?? DEFAULTS.types).filter((t) => BOARD_TYPES.includes(t)),
       forIds: saved.forIds ?? [],
+      tags: saved.tags ?? [],
       lastType: saved.lastType ?? DEFAULTS.lastType,
     }
   } catch {
@@ -47,10 +52,10 @@ function read(wid: string): Filters {
 export const useWsView = create<State>((set, get) => {
   const save = (patch: Partial<Filters>) => {
     set(patch)
-    const { wid, types, forIds, lastType } = get()
+    const { wid, types, forIds, tags, lastType } = get()
     if (!wid) return
     try {
-      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, lastType }))
+      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, lastType }))
     } catch {
       // Private mode or blocked storage: filters just won't be remembered.
     }
@@ -71,12 +76,18 @@ export const useWsView = create<State>((set, get) => {
       save({ forIds: forIds.includes(id) ? forIds.filter((f) => f !== id) : [...forIds, id] })
     },
     clearFor: () => save({ forIds: [] }),
+    toggleTag: (tag) => {
+      const tags = get().tags
+      save({ tags: tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag] })
+    },
+    clearTags: () => save({ tags: [] }),
     setLastType: (lastType) => save({ lastType }),
     reveal: (item) => {
       const { types } = get()
       save({
         types: types.includes(item.type) ? types : BOARD_TYPES.filter((t) => t === item.type || types.includes(t)),
         forIds: [],
+        tags: [],
       })
     },
   }

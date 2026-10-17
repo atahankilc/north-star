@@ -44,6 +44,7 @@ export type BoardType = (typeof BOARD_TYPES)[number]
 export type BoardNode = {
   title: string
   body?: string
+  // Retired (D-055): colour now means the card's type. Older cards may still carry it; it's ignored.
   color?: string
   tags?: string[]
   x: number
@@ -85,6 +86,8 @@ export type Feature = BoardNode & {
 // Competitors are named, not titled; on the board since D-040 (no position yet = placed on first view).
 export type Competitor = {
   name: string
+  // Grouping within competitors, like every other card (D-056).
+  tags?: string[]
   url?: string
   description?: string
   pricing?: string

@@ -21,7 +21,8 @@ import { ForPicker } from '../workspace/ItemPickers'
 import { LinkList } from '../workspace/LinkList'
 import { removeItem } from '../workspace/useEditKeys'
 import { BOARD_KINDS, type BoardItem } from './boardKinds'
-import { findFreeSpot, IDEA_COLORS } from './cardLayout'
+import { findFreeSpot } from './cardLayout'
+import { parseTags, TAG_HINT } from './tags'
 import styles from './DetailPanel.module.css'
 
 const SAVE_AFTER_MS = 400
@@ -30,8 +31,6 @@ type Draft = { title: string; body: string; tags: string }
 
 const toDraft = (n: BoardNode): Draft => ({ title: n.title, body: n.body ?? '', tags: (n.tags ?? []).join(', ') })
 
-const parseTags = (s: string) =>
-  [...new Set(s.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean))]
 
 type CardType = Exclude<BoardItem['type'], 'competitor'>
 
@@ -128,8 +127,8 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
     flush()
     setPromoted(true)
     const [x, y] = findFreeSpot([node.x + 2.7, node.y], nodes)
-    const { title, body, tags, color } = { ...node, ...pending.current }
-    const id = await createBoardNode(wid, 'feature', { x, y }, { title, ...(body && { body }), ...(tags?.length && { tags }), ...(color && { color }) })
+    const { title, body, tags } = { ...node, ...pending.current }
+    const id = await createBoardNode(wid, 'feature', { x, y }, { title, ...(body && { body }), ...(tags?.length && { tags }) })
     await createEdge(wid, { id, type: 'feature' }, { id: node.id, type: 'idea' }, 'inspired-by')
   }
 
@@ -156,29 +155,9 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
 
       <label className={styles.label}>
         tags
-        <input className={styles.input} placeholder="pricing, onboarding" {...field('tags')} />
+        <input className={styles.input} placeholder="mvp, pricing" {...field('tags')} />
+        <span className={styles.hint}>{TAG_HINT}</span>
       </label>
-
-      <div className={styles.label}>
-        colour
-        <div className={styles.swatches} role="radiogroup" aria-label="Card colour">
-          {IDEA_COLORS.map((c) => {
-            const active = (node.color ?? IDEA_COLORS[0].value) === c.value
-            return (
-              <button
-                key={c.name}
-                role="radio"
-                aria-checked={active}
-                aria-label={c.name}
-                className={styles.swatch}
-                data-active={active}
-                style={{ ['--swatch' as string]: c.value }}
-                onClick={() => void updateNode(wid, type, node.id, { color: c.name === 'none' ? undefined : c.value })}
-              />
-            )
-          })}
-        </div>
-      </div>
 
       <LinkList
         nodeId={node.id}

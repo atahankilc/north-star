@@ -67,8 +67,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Buttons: `[ CREATE ]` style labels, with an accent fill on hover
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
-- Cards: dark lit slabs, one silhouette per type, outlined in the type's colour (D-051, [specs/board.md](specs/board.md) §2): customer pill,
-  problem with a folded corner, competitor wide with a double rim, idea post-it, feature tag. Lift on hover and drag.
+- Cards: flat, one shape for every type (D-055). A left border and a small uppercase label in the type's colour say what it is
+  (customer green, problem magenta, competitor yellow, idea white, feature cyan); a hairline edge brightens on hover/selection.
+  Type colours are reserved for type: tags are white `#chips` (D-056). Lift on hover and drag.
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
 - Connections: curved lines made of dotted or glyph segments, animated flow toward the target
 

@@ -139,7 +139,6 @@ function Chip({ item }: { item: BoardItem }) {
       onClick={() => select(selected ? null : item.id)}
       title={item.title || 'Untitled'}
     >
-      {BOARD_KINDS[item.type].mark}
       {item.title || 'Untitled'}
     </button>
   )

@@ -1,9 +1,9 @@
-// `[ SHOW 5/5 ▾ ] [ FOR any ▾ ] [ GO TO ▾ ]` under the HUD (docs/specs/board.md §3, D-053).
+// `[ SHOW all ▾ ] [ FOR any ▾ ] [ TAG any ▾ ] [ GO TO ▾ ]` under the HUD (docs/specs/board.md §3, D-053, D-056).
 import { useMemo } from 'react'
 import { BOARD_TYPES } from '../../data/model'
 import { useWsView } from '../../state/workspaceView'
 import { Menu, type MenuEntry } from '../../ui/Menu'
-import { BOARD_KINDS, TYPE_ACCENT } from '../canvas/boardKinds'
+import { BOARD_KINDS, TYPE_ACCENT, useAllTags, useBoardItems } from '../canvas/boardKinds'
 import { useWs } from './context'
 import styles from './Bars.module.css'
 
@@ -14,7 +14,8 @@ type Props = {
 
 export function FilterBar({ goTo }: Props) {
   const { customers } = useWs()
-  const { types, forIds, toggleType, toggleFor, clearFor } = useWsView()
+  const { types, forIds, tags, toggleType, toggleFor, clearFor, toggleTag, clearTags } = useWsView()
+  const allTags = useAllTags(useBoardItems())
   const sorted = useMemo(() => [...customers].sort((a, b) => a.createdAt - b.createdAt), [customers])
 
   const show: MenuEntry[] = BOARD_TYPES.map((t) => ({
@@ -38,6 +39,18 @@ export function FilterBar({ goTo }: Props) {
   const forSummary =
     forIds.length === 0 ? 'any' : forIds.length === 1 ? (sorted.find((c) => c.id === forIds[0])?.title ?? '1') : `${forIds.length}`
 
+  const tagItems: MenuEntry[] = [
+    { key: 'any', label: 'any tag', checked: tags.length === 0, onSelect: clearTags },
+    ...allTags.map(({ tag, count }) => ({
+      key: tag,
+      label: `#${tag}`,
+      checked: tags.includes(tag),
+      hint: `${count}`,
+      onSelect: () => toggleTag(tag),
+    })),
+  ]
+  const tagSummary = tags.length === 0 ? 'any' : tags.length === 1 ? `#${tags[0]}` : `${tags.length}`
+
   return (
     <div className={styles.filters}>
       <Menu
@@ -52,6 +65,13 @@ export function FilterBar({ goTo }: Props) {
         items={forItems}
         ariaLabel="Only items for these customers"
         empty="No customers yet: create one with +"
+      />
+      <Menu
+        label="tag"
+        summary={tagSummary}
+        items={allTags.length ? tagItems : []}
+        ariaLabel="Only items with these tags"
+        empty="No tags yet: add some in a card's panel"
       />
       {goTo && (
         <Menu

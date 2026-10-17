@@ -1,32 +1,22 @@
-// One card on the board: a lit slab with SDF text (D-019), shaped by its type (D-051, cardShapes.ts).
+// One card on the board: a flat card with SDF text (D-019). Every type has the same shape; a left border and a small
+// label in the type's colour say what it is (D-055). Tags (white #chips) group cards within a type (D-056).
 // Editing happens in the DetailPanel.
 import { Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useMemo, useRef, useState } from 'react'
-import { MathUtils, MeshBasicMaterial, Plane, Shape, Vector3, type Group } from 'three'
+import { MathUtils, MeshBasicMaterial, Plane, Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { endMove, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { colors } from '../../styles/tokens'
 import { fontUrls } from '../../three/fonts'
 import { BOARD_KINDS, TYPE_ACCENT, type BoardItem } from './boardKinds'
-import { truncate } from './cardLayout'
-import { CARD_SIZE, DOG_EAR, outlineGeometry, slabGeometry, TEXT_INSET } from './cardShapes'
+import { CARD_H, CARD_W, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 
 const BOARD = new Plane(new Vector3(0, 0, 1), 0)
 const hit = new Vector3()
 const WRITE_EVERY_MS = 120
-
-// The problem card's folded corner: the flap inside the cut.
-const dogEar = (() => {
-  const t = new Shape()
-  t.moveTo(-DOG_EAR / 2, -DOG_EAR / 2)
-  t.lineTo(DOG_EAR / 2, -DOG_EAR / 2)
-  t.lineTo(-DOG_EAR / 2, DOG_EAR / 2)
-  t.closePath()
-  return t
-})()
 
 export function boardPoint(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] | null {
   return e.ray.intersectPlane(BOARD, hit) ? [hit.x, hit.y] : null
@@ -44,8 +34,8 @@ type Props = {
 
 export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props) {
   const type = node.type
-  const meta = node.meta
-  const [W, H] = CARD_SIZE[type]
+  const W = CARD_W
+  const H = CARD_H
   const group = useRef<Group>(null)
   const content = useRef<Group>(null)
   // Cell-by-cell entrance (D-034): shared by all of this card's materials. Text gets its own base
@@ -70,7 +60,7 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
   const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean } | null>(null)
 
   const [x, y] = live ?? [node.x, node.y]
-  const accent = node.color ?? TYPE_ACCENT[type]
+  const accent = TYPE_ACCENT[type]
 
   // Glide toward the target position (remote moves animate too) and lift on hover/drag.
   useFrame((_, dt) => {
@@ -135,15 +125,16 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
     if (controls) controls.enabled = true
   }
 
-  const rim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : hovered ? colors.fg : null
+  const rim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : hovered ? '#5a5a5a' : null
   const title = node.title.trim()
-  const mark = BOARD_KINDS[type].mark
-  const left = -W / 2 + TEXT_INSET[type]
-  const inner = W - TEXT_INSET[type] * 2
-  // Short shapes (pill, tag) carry a title and one meta line; the rest also show notes.
-  const tall = H > 1.2
-  const maxChars = Math.floor(inner / 0.092)
-  const titleTop = H / 2 - 0.22
+  const left = -W / 2 + 0.22
+  const inner = W - 0.22 - 0.16
+  const titleTop = H / 2 - 0.32
+  const tags = node.tags.map((t) => `#${t}`).join('  ')
+  // Notes stop above the tag and meta lines.
+  const bottomLines = (tags ? 0.16 : 0) + (node.meta ? 0.16 : 0)
+  const bodyTop = titleTop - titleH - 0.08
+  const bodyBottom = -H / 2 + 0.14 + bottomLines
 
   return (
     <group
@@ -166,38 +157,32 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
       }}
     >
       <group ref={content}>
-        {/* Competitor: an outer rim with a dark gap, so its edge reads double. */}
-        {type === 'competitor' && (
-          <>
-            <mesh position={[0, 0, -0.06]} geometry={outlineGeometry(type, 0.11)}>
-              <meshBasicMaterial color={rim ?? accent} transparent opacity={rim ? 1 : 0.6} toneMapped={false} />
-            </mesh>
-            <mesh position={[0, 0, -0.055]} geometry={outlineGeometry(type, 0.08)}>
-              <meshBasicMaterial color="#000000" toneMapped={false} />
-            </mesh>
-          </>
-        )}
-        {/* The outline is always there in the type's colour; it brightens on hover, selection and link targets. */}
-        <mesh position={[0, 0, -0.04]} geometry={outlineGeometry(type, 0.035)}>
-          <meshBasicMaterial color={rim ?? accent} transparent opacity={rim ? 1 : 0.6} toneMapped={false} />
+        {/* Edge: a hairline, or the highlight when hovered, selected, related or a link target. */}
+        <mesh position={[0, 0, -0.002]}>
+          <planeGeometry args={[W + (rim ? 0.05 : 0.02), H + (rim ? 0.05 : 0.02)]} />
+          <meshBasicMaterial color={rim ?? '#2a2a2a'} toneMapped={false} />
         </mesh>
-        <mesh geometry={slabGeometry(type)}>
-          <meshStandardMaterial color="#121212" roughness={0.7} metalness={0.05} />
+        <mesh>
+          <planeGeometry args={[W, H]} />
+          <meshBasicMaterial color="#121212" toneMapped={false} />
         </mesh>
-        {type === 'problem' && (
-          // The folded corner.
-          <mesh position={[W / 2 - DOG_EAR / 2, H / 2 - DOG_EAR / 2, 0.031]}>
-            <shapeGeometry args={[dogEar]} />
-            <meshBasicMaterial color={accent} toneMapped={false} />
-          </mesh>
-        )}
-        {type === 'idea' && (
-          // Post-it strip along the top edge.
-          <mesh position={[0, H / 2 - 0.03, 0.031]}>
-            <planeGeometry args={[W - 0.08, 0.06]} />
-            <meshBasicMaterial color={accent} toneMapped={false} />
-          </mesh>
-        )}
+        {/* The type, at a glance: a left border and a small label. */}
+        <mesh position={[-W / 2 + 0.03, 0, 0.001]}>
+          <planeGeometry args={[0.06, H]} />
+          <meshBasicMaterial color={accent} toneMapped={false} />
+        </mesh>
+        <Text
+          material={textMaterial}
+          font={fontUrls.mono}
+          fontSize={0.072}
+          letterSpacing={0.14}
+          color={accent}
+          anchorX="left"
+          anchorY="top"
+          position={[left, H / 2 - 0.13, 0.002]}
+        >
+          {BOARD_KINDS[type].label.toUpperCase()}
+        </Text>
 
         <Text
           material={textMaterial}
@@ -205,10 +190,9 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
           fontSize={0.17}
           color={title ? colors.fg : colors.fgDim}
           anchorX="left"
-          // Short cards: the title grows upward from just above the meta line, so two lines never meet it.
-          anchorY={tall ? 'top' : meta ? 'bottom' : 'middle'}
-          position={[left, tall ? titleTop : meta ? 0.01 : 0, 0.032]}
-          maxWidth={inner - (type === 'problem' ? DOG_EAR : 0)}
+          anchorY="top"
+          position={[left, titleTop, 0.002]}
+          maxWidth={inner}
           letterSpacing={-0.01}
           // Notes start under however many lines the title took.
           onSync={(t) => {
@@ -216,36 +200,48 @@ export function NodeCard({ wid, item: node, layer, related, onLinkDrop }: Props)
             if (b) setTitleH(b[3] - b[1])
           }}
         >
-          {mark + truncate(title || 'Untitled', tall ? 48 : 40)}
+          {truncate(title || 'Untitled', 48)}
         </Text>
-        {tall && node.body && (
+        {node.body && bodyTop - bodyBottom > 0.1 && (
           <Text
             material={textMaterial}
             font={fontUrls.mono}
-            fontSize={0.095}
+            fontSize={0.09}
             lineHeight={1.45}
             color={type === 'competitor' ? colors.cyan : colors.fgDim}
             anchorX="left"
             anchorY="top"
-            position={[left, titleTop - titleH - 0.1, 0.032]}
+            position={[left, bodyTop, 0.002]}
             maxWidth={inner}
-            // Stop above the meta line.
-            clipRect={[0, -(titleTop - titleH - 0.1 + H / 2 - 0.3), W, 0.01]}
+            clipRect={[0, -(bodyTop - bodyBottom), W, 0.01]}
           >
             {node.body}
           </Text>
         )}
-        {meta && (
+        {tags && (
           <Text
             material={textMaterial}
             font={fontUrls.mono}
             fontSize={0.085}
-            color={node.color ?? (type === 'idea' ? colors.cyan : accent)}
+            color={colors.fg}
             anchorX="left"
-            anchorY={tall ? 'bottom' : 'top'}
-            position={[left, tall ? -H / 2 + 0.14 : -0.07, 0.032]}
+            anchorY="bottom"
+            position={[left, -H / 2 + 0.14 + (node.meta ? 0.16 : 0), 0.002]}
           >
-            {truncate(meta, maxChars)}
+            {truncate(tags, 40)}
+          </Text>
+        )}
+        {node.meta && (
+          <Text
+            material={textMaterial}
+            font={fontUrls.mono}
+            fontSize={0.08}
+            color={colors.fgDim}
+            anchorX="left"
+            anchorY="bottom"
+            position={[left, -H / 2 + 0.14, 0.002]}
+          >
+            {truncate(node.meta, 42)}
           </Text>
         )}
       </group>

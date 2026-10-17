@@ -11,6 +11,7 @@ import { Appear } from '../../ui/Appear'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { useWs } from '../workspace/context'
+import { parseTags, TAG_HINT } from '../canvas/tags'
 import { LinkList } from '../workspace/LinkList'
 import { removeItem, UNDO_HINT } from '../workspace/useEditKeys'
 import styles from './CompetitorProfile.module.css'
@@ -66,6 +67,20 @@ export function CompetitorProfile({ competitor, children }: { competitor: WithId
       </div>
       <Field label="description" value={competitor.description} onSave={opt('description')} placeholder="What they do" multiline />
       <Field label="notes" value={competitor.notes} onSave={opt('notes')} placeholder="Strengths, weaknesses, reviews" multiline />
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>tags</span>
+        <AutosaveField
+          className={styles.input}
+          label="Tags"
+          placeholder="direct, status quo"
+          value={(competitor.tags ?? []).join(', ')}
+          onSave={(v) => {
+            const tags = parseTags(v)
+            set({ tags: tags.length ? tags : undefined })
+          }}
+        />
+        <span className={styles.hint}>{TAG_HINT}</span>
+      </label>
 
       {children}
 

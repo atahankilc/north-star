@@ -1,18 +1,6 @@
-import { colors } from '../../styles/tokens'
-
-// Card sizes in world units, per type: cardShapes.ts. Positions stored in Firestore are card centres.
-// The largest card, for spacing new cards apart.
-const MAX_W = 3
-const MAX_H = 1.5
-
-export const IDEA_COLORS = [
-  { name: 'none', value: colors.fg },
-  { name: 'magenta', value: colors.magenta },
-  { name: 'cyan', value: colors.cyan },
-  { name: 'yellow', value: colors.yellow },
-  { name: 'blue', value: colors.blue },
-  { name: 'green', value: colors.green },
-] as const
+// Card size in world units, the same for every type (D-055). Positions stored in Firestore are card centres.
+export const CARD_W = 2.4
+export const CARD_H = 1.5
 
 export function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text
@@ -20,8 +8,8 @@ export function truncate(text: string, max: number): string {
 
 // Nearest spot to `near` where a new card doesn't overlap any existing one (spiral search).
 export function findFreeSpot(near: [number, number], cards: { x: number; y: number }[]): [number, number] {
-  const gapX = MAX_W + 0.3
-  const gapY = MAX_H + 0.3
+  const gapX = CARD_W + 0.3
+  const gapY = CARD_H + 0.3
   const free = (x: number, y: number) => cards.every((c) => Math.abs(c.x - x) >= gapX || Math.abs(c.y - y) >= gapY)
   for (let ring = 0; ring < 12; ring++) {
     for (let dx = -ring; dx <= ring; dx++) {

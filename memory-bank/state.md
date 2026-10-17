@@ -91,10 +91,14 @@ text labels with a jump list replace them (D-050). Next: Phase 3 (presence, live
 ## Done (controls + settings, 2026-10-17)
 - Zoom-out no longer clips cards (far plane 1000, limit 150). One `+` create menu, `show`/`for`/`go to` dropdowns,
   views as a menu bar beside the breadcrumb (D-053). Settings modal with account, workspace invite code, motion, later-phase
-  placeholders (D-054). Verified on emulators with headless Chrome. **Not pushed yet** (no rule changes).
+  placeholders (D-054). Verified on emulators with headless Chrome. Pushed later with the flat-card change.
+
+## Done (flat cards + tags, 2026-10-17)
+- Flat cards with type-colour left border + label, no colour picker (D-055); tags as grouping with TAG filter and Table column,
+  competitor tags (D-056); breadcrumb name not editable. Rules: 71 pass, **not deployed**. Not pushed.
 
 ## Next steps
-1. Push (ask the user), their review on the live site; then Phase 3 (presence, live cursors)
+1. Deploy rules + push (ask the user), their review on the live site; then Phase 3 (presence, live cursors)
 2. Phase 3: presence + live cursors (RTDB rules are ready)
 3. Phase 4: settings + AI (BYOK); Phase 5: files, export/import
 5. ~~Deploy~~ done 2026-10-17: live at https://atahankilic.github.io/mind-map/ (Pages source = GitHub Actions; 5 `VITE_FIREBASE_*` repo variables set; github.io is an authorized domain). Every push to `main` redeploys.

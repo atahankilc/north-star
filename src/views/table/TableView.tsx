@@ -10,15 +10,17 @@ import { AutosaveField } from '../../ui/AutosaveField'
 import { DecodeText } from '../../ui/DecodeText'
 import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems, type BoardItem } from '../canvas/boardKinds'
 import { DetailPanel } from '../canvas/DetailPanel'
+import { parseTags } from '../canvas/tags'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { linkSummary, useSelectionScope } from '../workspace/graph'
 import { ForPicker } from '../workspace/ItemPickers'
 import styles from './TableView.module.css'
 
-type SortKey = 'name' | 'for' | 'links' | 'pri' | 'status'
+type SortKey = 'name' | 'tags' | 'for' | 'links' | 'pri' | 'status'
 const COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'name', label: 'name' },
+  { key: 'tags', label: 'tags' },
   { key: 'for', label: 'for' },
   { key: 'links', label: 'linked to' },
   { key: 'pri', label: 'pri' },
@@ -65,6 +67,8 @@ export function TableView() {
       switch (sort.key) {
         case 'name':
           return r.item.title.toLowerCase()
+        case 'tags':
+          return r.item.tags.join(' ') || LAST
         case 'for':
           return r.customers || LAST
         case 'links':
@@ -149,6 +153,18 @@ export function TableView() {
                       </td>
                       <td className={styles.nameCell}>
                         <AutosaveField className={styles.name} label="Name" placeholder="Untitled" value={item.title} onSave={setName} />
+                      </td>
+                      <td className={styles.tagsCell}>
+                        <AutosaveField
+                          className={styles.tags}
+                          label="Tags"
+                          placeholder="—"
+                          value={item.tags.map((t) => `#${t}`).join(' ')}
+                          onSave={(v) => {
+                            const tags = parseTags(v.replace(/\s+(?=#)/g, ','))
+                            void updateNode(wid, item.type, item.id, { tags: tags.length ? tags : undefined } as never)
+                          }}
+                        />
                       </td>
                       <td>
                         {item.type === 'customer' ? (

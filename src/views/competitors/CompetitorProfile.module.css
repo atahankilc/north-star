@@ -260,6 +260,11 @@
   border-top: 1px solid var(--line);
 }
 
+.hint {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
 .meta {
   color: var(--fg-faint);
   font-size: var(--text-xs);

@@ -17,9 +17,6 @@ import { findFreeSpot } from './cardLayout'
 import { DetailPanel } from './DetailPanel'
 import styles from './BoardView.module.css'
 
-// The shape each type has on the board (D-051), as a glyph for the create menu.
-const GLYPHS = { customer: '◖', problem: '◣', competitor: '▭', idea: '▢', feature: '◆' } as const
-
 // A jump lands with the label near the top of the view, so the area under it is in sight.
 const LAND_BELOW = 2.5
 
@@ -127,7 +124,8 @@ export function BoardView() {
             ...BOARD_TYPES.map((t) => ({
               key: t,
               label: BOARD_KINDS[t].label,
-              glyph: GLYPHS[t],
+              // The card's left border, in its type colour (D-055).
+              glyph: '▌',
               tone: TYPE_ACCENT[t],
               hint: lastType === t ? 'double-click' : undefined,
               onSelect: () => add(t),

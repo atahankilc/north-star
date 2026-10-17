@@ -103,29 +103,6 @@
   border-bottom-color: var(--accent-magenta);
 }
 
-.swatches {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.swatch {
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid var(--line);
-  background: var(--swatch);
-  cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-
-.swatch:hover {
-  transform: translateY(-2px);
-}
-
-.swatch[data-active='true'] {
-  outline: 1px solid var(--fg-strong);
-  outline-offset: 3px;
-}
 
 .hint {
   margin: 0;

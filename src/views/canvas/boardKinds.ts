@@ -1,7 +1,7 @@
 // What differs between the item types on the board (D-040). Everything else is shared.
 import { useMemo } from 'react'
 import type { WithId } from '../../data/hooks'
-import { FOR, type BoardType, type Edge, type EdgeKind, type Feature } from '../../data/model'
+import { FOR, type BoardType, type Edge, type EdgeKind } from '../../data/model'
 import { useWsView } from '../../state/workspaceView'
 import { colors } from '../../styles/tokens'
 import { useWs } from '../workspace/context'
@@ -11,8 +11,6 @@ type Kind = {
   plural: string
   addLabel: string
   placeholder: string
-  // Mark before the title on the card (docs/specs/board.md §4).
-  mark: string
 }
 
 export const BOARD_KINDS: Record<BoardType, Kind> = {
@@ -21,35 +19,30 @@ export const BOARD_KINDS: Record<BoardType, Kind> = {
     plural: 'customers',
     addLabel: '+ Customer',
     placeholder: 'Who are they? What do they do all day?',
-    mark: '@ ',
   },
   problem: {
     label: 'problem',
     plural: 'problems',
     addLabel: '+ Problem',
     placeholder: 'What hurts, how often, and what does it cost them?',
-    mark: '! ',
   },
   competitor: {
     label: 'competitor',
     plural: 'competitors',
     addLabel: '+ Competitor',
     placeholder: '',
-    mark: '',
   },
   idea: {
     label: 'idea',
     plural: 'ideas',
     addLabel: '+ Idea',
     placeholder: "What's the thought?",
-    mark: '',
   },
   feature: {
     label: 'feature',
     plural: 'features',
     addLabel: '+ Feature',
     placeholder: 'What does it do, and for whom?',
-    mark: '◆ ',
   },
 }
 
@@ -59,13 +52,14 @@ export type BoardItem = {
   type: BoardType
   title: string
   body?: string
-  color?: string
+  // The user's own grouping within a type (D-056), shown as #chips.
+  tags: string[]
   x: number
   y: number
   createdAt: number
   // Customers this item is `for` (D-044).
   forIds: string[]
-  // Bottom line of the card.
+  // Bottom line of the card: who it's for, plus type-specific facts.
   meta: string
 }
 
@@ -97,17 +91,16 @@ export function useBoardItems(): BoardItem[] {
     const names = new Map(customers.map((c) => [c.id, c.title || 'Untitled']))
     const labels = (id: string) => (tags.get(id) ?? []).map((c) => `[${names.get(c) ?? '?'}]`).join(' ')
     const line = (...parts: (string | undefined)[]) => parts.filter(Boolean).join('   ')
-    const hashtags = (t?: string[]) => (t ?? []).map((s) => `#${s}`).join('  ')
     const counts = new Map<string, number>()
     for (const f of competitorFeatures) counts.set(f.competitorId, (counts.get(f.competitorId) ?? 0) + 1)
 
     const items: BoardItem[] = []
     for (const c of customers) {
       const tagged = edges.filter((e) => e.kind === FOR && e.toId === c.id).length
-      items.push({ ...c, type: 'customer', forIds: [], meta: tagged ? `${tagged} tagged` : '' })
+      items.push({ ...c, type: 'customer', tags: c.tags ?? [], forIds: [], meta: tagged ? `${tagged} tagged for them` : '' })
     }
-    for (const p of problems) items.push({ ...p, type: 'problem', forIds: tags.get(p.id) ?? [], meta: line(labels(p.id), hashtags(p.tags)) })
-    for (const i of ideas) items.push({ ...i, type: 'idea', forIds: tags.get(i.id) ?? [], meta: line(labels(i.id), hashtags(i.tags)) })
+    for (const p of problems) items.push({ ...p, type: 'problem', tags: p.tags ?? [], forIds: tags.get(p.id) ?? [], meta: labels(p.id) })
+    for (const i of ideas) items.push({ ...i, type: 'idea', tags: i.tags ?? [], forIds: tags.get(i.id) ?? [], meta: labels(i.id) })
     for (const c of competitors) {
       const n = counts.get(c.id) ?? 0
       items.push({
@@ -115,7 +108,7 @@ export function useBoardItems(): BoardItem[] {
         type: 'competitor',
         title: c.name,
         body: c.url,
-        color: c.color,
+        tags: c.tags ?? [],
         x: c.x ?? 0,
         y: c.y ?? 0,
         createdAt: c.createdAt,
@@ -125,7 +118,7 @@ export function useBoardItems(): BoardItem[] {
     }
     for (const f of features) {
       const fields = [f.priority, f.status, f.effort].filter(Boolean).join(' · ')
-      items.push({ ...f, type: 'feature', forIds: tags.get(f.id) ?? [], meta: line(labels(f.id), fields, hashtags((f as Feature).tags)) })
+      items.push({ ...f, type: 'feature', tags: f.tags ?? [], forIds: tags.get(f.id) ?? [], meta: line(fields, labels(f.id)) })
     }
     return items
   }, [customers, problems, ideas, competitors, features, competitorFeatures, edges])
@@ -135,13 +128,26 @@ export function useBoardItems(): BoardItem[] {
 export function useVisibleItems(items: BoardItem[]): BoardItem[] {
   const types = useWsView((s) => s.types)
   const forIds = useWsView((s) => s.forIds)
+  const tagFilter = useWsView((s) => s.tags)
   return useMemo(
     () =>
       items.filter(
-        (i) => types.includes(i.type) && (forIds.length === 0 || i.type === 'customer' || i.forIds.some((f) => forIds.includes(f))),
+        (i) =>
+          types.includes(i.type) &&
+          (forIds.length === 0 || i.type === 'customer' || i.forIds.some((f) => forIds.includes(f))) &&
+          (tagFilter.length === 0 || i.tags.some((t) => tagFilter.includes(t))),
       ),
-    [items, types, forIds],
+    [items, types, forIds, tagFilter],
   )
+}
+
+// Every tag in use, most used first (D-056).
+export function useAllTags(items: BoardItem[]): { tag: string; count: number }[] {
+  return useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const i of items) for (const t of i.tags) counts.set(t, (counts.get(t) ?? 0) + 1)
+    return [...counts].map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+  }, [items])
 }
 
 // Accent per type where the card has no colour of its own.

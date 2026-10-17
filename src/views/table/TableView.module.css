@@ -143,6 +143,30 @@ tr[data-selected='true'] .type::after {
   color: var(--placeholder);
 }
 
+.tagsCell {
+  min-width: 140px;
+}
+
+/* `#mvp #pricing`: type them with or without the #. */
+.tags {
+  width: 100%;
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  outline: none;
+  caret-color: var(--accent-magenta);
+}
+
+.tags:focus {
+  box-shadow: inset 0 -1px 0 var(--accent-magenta);
+}
+
+.tags::placeholder {
+  color: var(--fg-faint);
+}
+
 .links {
   max-width: 360px;
   overflow: hidden;

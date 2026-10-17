@@ -1,51 +1,53 @@
 // A complete example workspace (D-052): one fictional startup with every item type, link kind, customer tag,
-// matrix cell and area label filled in, so each view has something real to show. Competitors are made up.
+// card tag (D-056), matrix cell and area label filled in, so each view has something real to show. Competitors are made up.
 import { collection, doc, writeBatch } from 'firebase/firestore'
 import { db } from './firebase'
 import type { BoardType, Coverage, EdgeKind, NodeType } from './model'
 import { COLLECTIONS } from './nodes'
 import { createWorkspace } from './workspaces'
 
-type Card = { key: string; title: string; body?: string; tags?: string[]; color?: string }
+type Card = { key: string; title: string; body?: string; tags?: string[] }
 type Feature = Card & { priority: 'P1' | 'P2' | 'P3'; status: 'idea' | 'planned' | 'building' | 'shipped'; effort: 'S' | 'M' | 'L' }
-type Competitor = { key: string; name: string; url: string; pricing: string; audience: string; description: string; notes: string; features: [string, string, string][] }
+type Competitor = { key: string; tags: string[]; name: string; url: string; pricing: string; audience: string; description: string; notes: string; features: [string, string, string][] }
 
 // Areas sit far apart, so the jump list has somewhere to go. Each column is one link in the chain (D-045).
 const COLUMN_X = { customer: -24, problem: -16, competitor: -8, idea: 0, feature: 8 } as const
 const TOP = 4
+// Every card is the same size (D-055), so one row height fits all.
+const ROW = 2.1
 
 const customers: Card[] = [
-  { key: 'owners', title: 'Independent restaurant owners', body: 'One or two sites, 10–40 staff. Do the rota themselves on Sunday night.' },
-  { key: 'managers', title: 'Shift managers', body: 'Run the floor, field every sick call, own the group chat.' },
-  { key: 'staff', title: 'Part-time staff', body: 'Students and second-jobbers. Want more shifts, on short notice, from their phone.' },
-  { key: 'chains', title: 'Small café chains (2–5 sites)', body: 'Need one view across sites and labour cost per site.' },
+  { key: 'owners', tags: ['buyer'], title: 'Independent restaurant owners', body: 'One or two sites, 10–40 staff. Do the rota themselves on Sunday night.' },
+  { key: 'managers', tags: ['buyer', 'user'], title: 'Shift managers', body: 'Run the floor, field every sick call, own the group chat.' },
+  { key: 'staff', tags: ['user'], title: 'Part-time staff', body: 'Students and second-jobbers. Want more shifts, on short notice, from their phone.' },
+  { key: 'chains', tags: ['buyer', 'later'], title: 'Small café chains (2–5 sites)', body: 'Need one view across sites and labour cost per site.' },
 ]
 
 const problems: Card[] = [
-  { key: 'sick', title: 'Sick calls leave shifts empty', body: 'Managers text 10 people one by one at 7am. Half the time the shift runs short.', tags: ['urgent'] },
-  { key: 'chat', title: 'The rota lives in a WhatsApp group', body: 'A photo of a paper sheet, re-posted after every change. Nobody knows which one is current.' },
-  { key: 'swap', title: "Staff can't swap without the manager", body: 'Every swap goes through one person, who is busy running service.' },
-  { key: 'cost', title: 'Labour cost is only known at month end', body: 'Owners find out they overstaffed Tuesdays when payroll lands.' },
+  { key: 'sick', title: 'Sick calls leave shifts empty', body: 'Managers text 10 people one by one at 7am. Half the time the shift runs short.', tags: ['urgent', 'daily'] },
+  { key: 'chat', title: 'The rota lives in a WhatsApp group', body: 'A photo of a paper sheet, re-posted after every change. Nobody knows which one is current.', tags: ['daily'] },
+  { key: 'swap', title: "Staff can't swap without the manager", body: 'Every swap goes through one person, who is busy running service.', tags: ['daily'] },
+  { key: 'cost', title: 'Labour cost is only known at month end', body: 'Owners find out they overstaffed Tuesdays when payroll lands.', tags: ['monthly'] },
 ]
 
 const competitors: Competitor[] = [
   {
-    key: 'shiftgrid', name: 'ShiftGrid', url: 'shiftgrid.example', pricing: '$4 / user / month', audience: 'Mid-size restaurant groups',
+    key: 'shiftgrid', tags: ['direct'], name: 'ShiftGrid', url: 'shiftgrid.example', pricing: '$4 / user / month', audience: 'Mid-size restaurant groups',
     description: 'Full scheduling suite with time clock and forecasting.', notes: 'Strong on reports, heavy to set up. Swaps always need a manager.',
     features: [['Drag-and-drop rota', 'scheduling', ''], ['Swap requests', 'scheduling', 'Every swap waits for a manager'], ['Time clock', 'payroll', ''], ['Labour cost forecast', 'reporting', 'Weekly, not live']],
   },
   {
-    key: 'crewly', name: 'Crewly', url: 'crewly.example', pricing: '$29 / location / month', audience: 'Cafés and bars',
+    key: 'crewly', tags: ['direct'], name: 'Crewly', url: 'crewly.example', pricing: '$29 / location / month', audience: 'Cafés and bars',
     description: 'Simple rota app with team chat.', notes: 'Loved for its availability form. No cost tracking at all.',
     features: [['Rota templates', 'scheduling', ''], ['Team chat', 'communication', ''], ['Availability collection', 'scheduling', 'Staff mark free days each week']],
   },
   {
-    key: 'paper', name: 'Paper rota + WhatsApp', url: '', pricing: 'Free', audience: 'Most small restaurants today',
+    key: 'paper', tags: ['status-quo'], name: 'Paper rota + WhatsApp', url: '', pricing: 'Free', audience: 'Most small restaurants today',
     description: 'The status quo: a printed sheet in the kitchen and a photo of it in the group chat.', notes: 'Free and everyone already has it. The real competitor.',
     features: [['Group chat', 'communication', ''], ['Photo of the rota', 'scheduling', 'Out of date after the first change']],
   },
   {
-    key: 'bigchain', name: 'BigChain HR', url: 'bigchainhr.example', pricing: 'Enterprise, on request', audience: 'Chains with 50+ sites',
+    key: 'bigchain', tags: ['enterprise'], name: 'BigChain HR', url: 'bigchainhr.example', pricing: 'Enterprise, on request', audience: 'Chains with 50+ sites',
     description: 'HR suite with scheduling as one module.', notes: 'Overkill and too expensive for independents.',
     features: [['Payroll integration', 'payroll', ''], ['Compliance reports', 'reporting', ''], ['Labour cost forecast', 'reporting', 'Live, per site']],
   },
@@ -59,12 +61,12 @@ const ideas: Card[] = [
 ]
 
 const features: Feature[] = [
-  { key: 'broadcast', title: 'Open shifts broadcast', body: 'Push to qualified staff, first accept wins.', priority: 'P1', status: 'building', effort: 'M' },
-  { key: 'rules', title: 'Rule-based swap approval', priority: 'P1', status: 'planned', effort: 'M' },
-  { key: 'costmeter', title: 'Labour cost meter', priority: 'P2', status: 'planned', effort: 'S' },
-  { key: 'avail', title: 'Availability collection', priority: 'P2', status: 'shipped', effort: 'S' },
-  { key: 'ocr', title: 'Rota photo import', priority: 'P3', status: 'idea', effort: 'L' },
-  { key: 'payroll', title: 'Payroll export', priority: 'P3', status: 'idea', effort: 'M' },
+  { key: 'broadcast', title: 'Open shifts broadcast', body: 'Push to qualified staff, first accept wins.', priority: 'P1', status: 'building', effort: 'M', tags: ['mvp'] },
+  { key: 'rules', title: 'Rule-based swap approval', priority: 'P1', status: 'planned', effort: 'M', tags: ['mvp'] },
+  { key: 'costmeter', title: 'Labour cost meter', priority: 'P2', status: 'planned', effort: 'S', tags: ['v2'] },
+  { key: 'avail', title: 'Availability collection', priority: 'P2', status: 'shipped', effort: 'S', tags: ['mvp'] },
+  { key: 'ocr', title: 'Rota photo import', priority: 'P3', status: 'idea', effort: 'L', tags: ['onboarding'] },
+  { key: 'payroll', title: 'Payroll export', priority: 'P3', status: 'idea', effort: 'M', tags: ['v2'] },
 ]
 // The last two sit under "LATER", away from the roadmap.
 const LATER = new Set(['ocr', 'payroll'])
@@ -155,18 +157,18 @@ export async function createExampleWorkspace(uid: string): Promise<string> {
     })
 
   const card = (c: Card, x: number, y: number) => ({ title: c.title, x, y, ...(c.body && { body: c.body }), ...(c.tags && { tags: c.tags }) })
-  place('customer', customers, 1.6, card)
-  place('problem', problems, 2.1, card)
-  place('idea', ideas, 2.1, card)
-  place('competitor', competitors, 2.1, (c: Competitor, x, y) => ({
-    name: c.name, x, y, pricing: c.pricing, audience: c.audience, description: c.description, notes: c.notes, ...(c.url && { url: c.url }),
+  place('customer', customers, ROW, card)
+  place('problem', problems, ROW, card)
+  place('idea', ideas, ROW, card)
+  place('competitor', competitors, ROW, (c: Competitor, x, y) => ({
+    name: c.name, tags: c.tags, x, y, pricing: c.pricing, audience: c.audience, description: c.description, notes: c.notes, ...(c.url && { url: c.url }),
   }))
   // Roadmap and later each stack from the top.
   const rows = { roadmap: 0, later: 0 }
-  place('feature', features, 1.6, (f: Feature, x) => {
+  place('feature', features, ROW, (f: Feature, x) => {
     const later = LATER.has(f.key)
-    const y = TOP - (later ? rows.later++ : rows.roadmap++) * 1.6
-    return { title: f.title, priority: f.priority, status: f.status, effort: f.effort, x: later ? x + 8 : x, y, ...(f.body && { body: f.body }) }
+    const y = TOP - (later ? rows.later++ : rows.roadmap++) * ROW
+    return { title: f.title, priority: f.priority, status: f.status, effort: f.effort, x: later ? x + 8 : x, y, ...(f.body && { body: f.body }), ...(f.tags && { tags: f.tags }) }
   })
 
   for (const c of competitors) {

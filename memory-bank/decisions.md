@@ -261,7 +261,7 @@ The board's "go to" row lists every label in reading order (top→bottom, left�
 (instant under reduced motion; your own pan/zoom cancels the glide). Only labels are jumpable: no other text anywhere (user's words).
 Zoom-out limit raised from 60 (later capped at 150 with the camera far plane at 1000, after cards vanished past the old far plane of 200).
 
-### D-051 · 2026-10-17 · Accepted
+### D-051 · 2026-10-17 · Superseded by D-055
 **One silhouette per card type** (user picked shapes over colour headers): customer pill (green), problem with a folded top-right
 corner (magenta), competitor wide with a double rim (yellow), idea post-it with a top strip (neutral), feature tag with pointed ends
 (cyan). Each is outlined in its colour. Geometry in `src/views/canvas/cardShapes.ts` (extruded shapes, shared per type).
@@ -281,3 +281,14 @@ rather than more path.
 **Settings modal** (`src/ui/Settings.tsx`, a native `<dialog>`), opened from an account button on every signed-in page:
 account + sign out, the workspace's name / members / invite code (moved out of the HUD), motion (moved out of the HUD),
 and a "coming later" list (AI key, live cursors, export). Later phases add their settings here. Board shortcuts ignore keys inside it.
+
+### D-055 · 2026-10-17 · Accepted (replaces D-051)
+**Flat cards; colour means type.** The user disliked the 3D silhouettes. Every card is the same flat rectangle; a left border and a
+small uppercase label in the type colour identify it (customer green, problem magenta, competitor yellow, idea white, feature cyan).
+The per-card colour picker is gone, because it clashed with the type colours; old `color` values are ignored.
+The workspace name in the breadcrumb is plain text (rename in settings / workspaces page only).
+
+### D-056 · 2026-10-17 · Accepted
+**Tags group cards within a type.** Shown as white `#chips` on every card (never type colours); a `TAG ▾` filter beside SHOW and FOR;
+an editable tags column in Table (`#a #b` or `a, b`); competitors gained `tags` (rules + 2 tests). Chosen over colours or symbols because
+a tag carries its meaning in its name and works the same in every view. The example workspace tags everything.

@@ -40,7 +40,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
       <Hud
         crumbs={[
           { label: 'workspaces', to: '/w' },
-          { label: <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} /> },
+          // Renaming lives in settings and on the workspaces page, not here.
+          { label: workspace.name },
         ]}
         views={[
           { label: 'board', to: `/w/${wid}`, end: true },

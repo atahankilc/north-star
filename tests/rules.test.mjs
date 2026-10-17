@@ -132,6 +132,8 @@ await deny('problem with a numeric domain', () => addDoc(sub(bob.fs, 'problems')
 await deny('customer with domainIds as a string', () => addDoc(sub(bob.fs, 'customers'), { ...card, domainIds: 'd1' }))
 await allow('competitor placed on the board', () => updateDoc(compRef, { x: 2, y: 3, domainIds: ['d1'] }))
 await deny('competitor with a text position', () => updateDoc(compRef, { x: 'left' }))
+await allow('competitor with tags (D-056)', () => updateDoc(compRef, { tags: ['direct', 'enterprise'] }))
+await deny('competitor with tags as a string', () => updateDoc(compRef, { tags: 'direct' }))
 await allow('edge tagging an idea for a customer', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'c', toType: 'customer', kind: 'for' }))
 await allow('edge from an idea to a problem', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'p', toType: 'problem', kind: 'solves' }))
 // Labels: text on the board (D-050). Groups are retired (D-049).
