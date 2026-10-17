@@ -464,7 +464,8 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
           const h = Math.max(ry * 2 * shut, R * 0.08)
           const w = rx * 2 * (1 + (1 - shut) * 0.12)
           ctx.save()
-          ctx.roundRect(e.x - w / 2, e.y - h / 2, w, h, Math.min(w, h) * 0.32)
+          // A springing eye can overshoot to a negative width for a frame; roundRect throws on a negative radius.
+          ctx.roundRect(e.x - w / 2, e.y - h / 2, w, h, Math.max(0, Math.min(w, h) * 0.32))
           ctx.clip()
           ctx.fill()
           // Lids cut out of the top: flat ones (bored, suspicious) and a slant, low on the inside (angry).
