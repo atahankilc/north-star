@@ -10,6 +10,8 @@ import { useCanvas } from '../../state/canvasStore'
 import { usePalette } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { glideDt, truncate } from './cardLayout'
+import { useDetail, useReadable } from './detail'
+import { FarNode, SMALL_NODE_R } from './FarNode'
 
 export const CHIP_W = 2
 export const CHIP_H = 0.42
@@ -44,6 +46,11 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
     if (Math.abs(g.position.x - at[0]) > 1e-4 || Math.abs(g.position.y - at[1]) > 1e-4) invalidate()
   })
 
+  // Drawn like the cards at the same size on screen (D-111): name and category; the name alone, bigger; or a small star.
+  const detail = useDetail((s) => s.card)
+  const full = detail === 'full'
+  const far = detail === 'far'
+  const categoryReadable = useReadable(0.07) && full
   const colors = usePalette()
   const edge = selected ? colors.yellow : linking && hovered ? colors.cyan : hovered ? colors.hover : colors.hairline
 
@@ -74,42 +81,47 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
         document.body.style.cursor = ''
       }}
     >
-      <mesh position={[0, 0, -0.002]}>
-        <planeGeometry args={[CHIP_W + 0.02, CHIP_H + 0.02]} />
-        <meshBasicMaterial color={edge} toneMapped={false} />
-      </mesh>
-      <mesh>
-        <planeGeometry args={[CHIP_W, CHIP_H]} />
-        <meshBasicMaterial color={colors.chip} toneMapped={false} />
-      </mesh>
-      <mesh position={[-CHIP_W / 2 + 0.02, 0, 0.001]}>
-        <planeGeometry args={[0.04, CHIP_H]} />
-        <meshBasicMaterial color={colors.yellow} transparent opacity={0.6} toneMapped={false} />
-      </mesh>
-      <Text
-        font={fontUrls.mono}
-        fontSize={0.1}
-        color={colors.fg}
-        anchorX="left"
-        anchorY="middle"
-        position={[-CHIP_W / 2 + 0.14, 0, 0.002]}
-        maxWidth={CHIP_W - 0.7}
-      >
-        {truncate(feature.name || 'Untitled', 24)}
-      </Text>
-      {feature.category && (
+      {far && <FarNode color={colors.yellow} rim={selected || hovered ? edge : null} r={SMALL_NODE_R} />}
+      <group visible={!far}>
+        <mesh position={[0, 0, -0.002]}>
+          <planeGeometry args={[CHIP_W + 0.02, CHIP_H + 0.02]} />
+          <meshBasicMaterial color={edge} toneMapped={false} />
+        </mesh>
+        <mesh>
+          <planeGeometry args={[CHIP_W, CHIP_H]} />
+          <meshBasicMaterial color={colors.chip} toneMapped={false} />
+        </mesh>
+        <mesh position={[-CHIP_W / 2 + 0.02, 0, 0.001]}>
+          <planeGeometry args={[0.04, CHIP_H]} />
+          <meshBasicMaterial color={colors.yellow} transparent opacity={0.6} toneMapped={false} />
+        </mesh>
         <Text
-          font={fontUrls.mono}
-          fontSize={0.07}
-          letterSpacing={0.08}
-          color={colors.fgDim}
-          anchorX="right"
+          // Without its category the name gets the whole chip, as large as it fits (like a card's compact title).
+          font={full ? fontUrls.mono : fontUrls.display}
+          fontSize={full ? 0.1 : 0.26}
+          color={colors.fg}
+          anchorX="left"
           anchorY="middle"
-          position={[CHIP_W / 2 - 0.12, 0, 0.002]}
+          position={[-CHIP_W / 2 + 0.14, 0, 0.002]}
+          maxWidth={full ? CHIP_W - 0.7 : undefined}
         >
-          {truncate(feature.category.toUpperCase(), 12)}
+          {truncate(feature.name || 'Untitled', full ? 24 : 13)}
         </Text>
-      )}
+        {feature.category && (
+          <Text
+            visible={categoryReadable}
+            font={fontUrls.mono}
+            fontSize={0.07}
+            letterSpacing={0.08}
+            color={colors.fgDim}
+            anchorX="right"
+            anchorY="middle"
+            position={[CHIP_W / 2 - 0.12, 0, 0.002]}
+          >
+            {truncate(feature.category.toUpperCase(), 12)}
+          </Text>
+        )}
+      </group>
     </group>
   )
 }

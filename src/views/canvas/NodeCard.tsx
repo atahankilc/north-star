@@ -14,6 +14,8 @@ import { fontUrls } from '../../three/fonts'
 import { BOARD_KINDS, typeAccent, type BoardItem } from './boardKinds'
 import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
+import { COMPACT_TITLE, useDetail } from './detail'
+import { FarNode } from './FarNode'
 import { endGroup, moveGroup, startGroup } from './groupDrag'
 import { snapPoint } from './snap'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
@@ -128,6 +130,11 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
   // A deleted card stays on the preview, greyed out (D-096).
   const accent = deleted ? colors.fgDim : typeAccent(type, colors)
   const markColor = mark ? colors.diff[mark] : undefined
+  // How it's drawn depends on how big it is on screen (D-111): everything; the title alone, bigger and centred, once
+  // the small text can't be read; or, with no text readable at all, a star in its type's colour (FarNode).
+  const detail = useDetail((s) => s.card)
+  const full = detail === 'full'
+  const far = detail === 'far'
   // troika reports a text's layout only when it changes, so the title's is kept for whenever the card gets deleted.
   const [titleLayout, setTitleLayout] = useState<TextLayout>()
   const [wasStrikes, setWasStrikes] = useState<Strike[]>([])
@@ -235,7 +242,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
   const title = node.title.trim()
   const left = -W / 2 + 0.22
   const inner = W - 0.22 - 0.16
-  const titleTop = H / 2 - 0.27
+  const titleTop = full ? H / 2 - 0.27 : 0
   const tags = node.tags.map((t) => `#${t}`).join('  ')
 
   return (
@@ -266,7 +273,8 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
         if (mark) unlight()
       }}
     >
-      <group ref={content}>
+      {far && <FarNode color={accent} rim={rim} mark={markColor} />}
+      <group ref={content} visible={!far}>
         {/* Up to three plates peeking out behind: this competitor has features to fan out. */}
         {Array.from({ length: Math.min(3, stack) }, (_, i) => (
           <group key={i} position={[(i + 1) * 0.07, -(i + 1) * 0.07, -0.006 - i * 0.002]}>
@@ -325,6 +333,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
           <meshBasicMaterial color={accent} toneMapped={false} />
         </mesh>
         <Text
+          visible={full}
           material={textMaterial}
           font={fontUrls.mono}
           fontSize={0.072}
@@ -338,26 +347,28 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
         </Text>
 
         <Text
+          visible={!far}
           material={textMaterial}
           font={fontUrls.display}
-          fontSize={0.17}
+          fontSize={full ? 0.17 : COMPACT_TITLE}
           color={title && !deleted ? colors.fg : colors.fgDim}
           onSync={(t: { textRenderInfo?: TextLayout }) => setTitleLayout(t.textRenderInfo)}
           anchorX="left"
-          anchorY="top"
+          anchorY={full ? 'top' : 'middle'}
           position={[left, titleTop, 0.002]}
           maxWidth={inner}
           letterSpacing={-0.01}
         >
-          {truncate(title || 'Untitled', 44)}
+          {truncate(title || 'Untitled', full ? 44 : 26)}
         </Text>
-        {deleted && (
+        {deleted && !far && (
           <group position={[left, titleTop, 0]}>
             <StrikeLines strikes={strikesOf(titleLayout)} color={colors.diff.deleted} />
           </group>
         )}
         {tags && (
           <Text
+            visible={full}
             material={textMaterial}
             font={fontUrls.mono}
             fontSize={0.085}
@@ -371,6 +382,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
         )}
         {node.meta && (
           <Text
+            visible={full}
             material={textMaterial}
             font={fontUrls.mono}
             fontSize={0.08}
@@ -395,7 +407,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
                 <meshBasicMaterial color={colors.card} toneMapped={false} />
               </mesh>
             )}
-            <Text material={textMaterial} font={fontUrls.mono} fontSize={0.12} color={lit ? colors.bg : markColor} anchorX="center" anchorY="middle" position={[0, 0.005, 0.001]}>
+            <Text visible={!far} material={textMaterial} font={fontUrls.mono} fontSize={0.12} color={lit ? colors.bg : markColor} anchorX="center" anchorY="middle" position={[0, 0.005, 0.001]}>
               {MARK_SIGN[mark]}
             </Text>
           </group>
@@ -407,11 +419,12 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
               <planeGeometry args={[W, WAS_H]} />
               <meshBasicMaterial color={colors.cardBehind} toneMapped={false} />
             </mesh>
-            <Text material={textMaterial} font={fontUrls.mono} fontSize={0.08} color={colors.diff.edited} anchorX="left" anchorY="middle" position={[left, 0, 0.002]}>
+            <Text visible={full} material={textMaterial} font={fontUrls.mono} fontSize={0.08} color={colors.diff.edited} anchorX="left" anchorY="middle" position={[left, 0, 0.002]}>
               {was.label}
             </Text>
             <group position={[left + was.label.length * 0.05 + 0.06, 0, 0]}>
               <Text
+                visible={full}
                 material={textMaterial}
                 font={fontUrls.mono}
                 fontSize={0.08}
@@ -423,7 +436,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
               >
                 {truncate(was.value, Math.max(8, 40 - was.label.length))}
               </Text>
-              <StrikeLines strikes={wasStrikes} color={colors.diff.edited} />
+              {full && <StrikeLines strikes={wasStrikes} color={colors.diff.edited} />}
             </group>
           </group>
         )}
@@ -460,7 +473,8 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
           </mesh>
         </group>
       )}
-      <CardReveal content={content} uniforms={cell} />
+      {/* Coming back from a star, the card builds up again. */}
+      <CardReveal key={far ? 'far' : 'card'} content={content} uniforms={cell} />
     </group>
   )
 }

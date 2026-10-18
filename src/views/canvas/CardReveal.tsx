@@ -62,7 +62,12 @@ export function CardReveal({ content, uniforms }: Props) {
 
   useLayoutEffect(() => {
     if (content.current) install(content.current)
-  }, [install, content])
+    // Mounted again (a card coming back from far out, D-111): start over.
+    if (!isReducedMotion()) {
+      uniforms.uCellMode.value = 1
+      uniforms.uCellProgress.value = 0
+    }
+  }, [install, content, uniforms])
 
   useFrame(({ invalidate }) => {
     if (done || !content.current) return

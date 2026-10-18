@@ -421,9 +421,11 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   Verified headless (clip-path runs right after the tab switch). Typecheck passes.
 
 ## Done (board depth + level of detail, 2026-10-18)
-- D-111: near/far follow the camera (no more z-fighting: flicker, link colours over text during fit-all), text left out by
-  on-screen pixel size, cards full / compact (big title) / far (filled with the type colour). Verified headless on emulators
-  at 1440 × 900 and 2560 × 1440. Light theme not checked. Not committed (NodeCard.tsx also holds the other session's handle hunks).
+- D-111: near/far follow the camera (no more z-fighting: flicker, link colours over text during fit-all); what's drawn
+  depends on on-screen size: cards full / compact (big centred title) / far (stars in the type colour, built up cell by
+  cell), competitor feature chips the same (big name / small stars beside the competitor's star), link chips, notes and
+  headings left out when too small. Verified headless on emulators: dark 1440 × 900 and 2560 × 1440, light 1440 × 900,
+  fit-all glide frames, a competitor's chips at three distances. Committed 2026-10-18 (not pushed).
 
 ## Done (snap to grid, 2026-10-18)
 - D-112: drags snap card/label centres to a 0.25 grid (group drags too, alt = free), a switch beside fit-all + `g`, on by

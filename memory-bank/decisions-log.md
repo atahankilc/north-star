@@ -1259,8 +1259,10 @@ on some cards and links vanished and others didn't. Cause: `near 0.1 / far 1000`
 - *Cards in three looks* (`CardDetail`, 10% hysteresis): `full` while the small text (≈0.075) is ≥ 4 px; `compact`: the
   title alone, bigger and centred (0.28, 26 characters) down to 5 px; `far`: a star (`FarNode`): a ring in the type's colour
   round a small core in `--fg`, an outer ring when hovered, selected or marked, built up cell by cell (D-034); coming back,
-  the card builds up again (`CardReveal` restarts on remount). Links end at the star's circle. Feature chips' and notes'
-  text follow `useReadable`, and so do headings (gone under 6 px).
+  the card builds up again (`CardReveal` restarts on remount). Links end at the star's circle. A competitor's fanned
+  features (FeatureChip) follow the same levels: compact = the name alone in Geist 0.26 (13 characters), far = small yellow
+  stars (`SMALL_NODE_R`) in a column beside the competitor's star (`chipSpot(…, far)`). Notes and headings follow
+  `useReadable` (gone under 6 px).
   *Second pass (user):* the first thresholds (full only while the small text was ≥ 6 px) dropped most of a card's context
   at a normal working zoom; a band where the small text was gone left the title small at the top of an empty card; and
   the far look (cards filled with 40% of their colour) glowed like blobs.

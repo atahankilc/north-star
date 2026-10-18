@@ -37,6 +37,8 @@ import { linkStyle } from './linkKinds'
 import { CHIP_H, CHIP_W, FeatureChip } from './FeatureChip'
 import { boardPoint, NodeCard } from './NodeCard'
 import { SNAP_STEP, useSnap } from './snap'
+import { BoardDetail, useDetail } from './detail'
+import { NODE_R, SMALL_NODE_R } from './FarNode'
 import { CursorReporter, FollowCamera, PeerCursors } from './PeerCursors'
 
 type Props = {
@@ -69,12 +71,16 @@ const CHROME_PX = 170
 type Flight = [number, number, number?]
 const MARGIN = 1.2
 
-// Feature chips fan out to the right of their competitor, top-aligned with it.
-function chipSpot(c: [number, number], i: number): [number, number] {
+// Feature chips fan out to the right of their competitor, top-aligned with it; far out, as small stars beside its star (D-111).
+function chipSpot(c: [number, number], i: number, far = false): [number, number] {
+  if (far) return [c[0] + NODE_R + 0.45 + SMALL_NODE_R, c[1] + NODE_R - SMALL_NODE_R - i * (SMALL_NODE_R * 2 + 0.15)]
   return [c[0] + CARD_W / 2 + 0.3 + CHIP_W / 2, c[1] + CARD_H / 2 - CHIP_H / 2 - i * (CHIP_H + 0.1)]
 }
 const CARD_HALF: [number, number] = [CARD_W / 2, CARD_H / 2]
 const CHIP_HALF: [number, number] = [CHIP_W / 2, CHIP_H / 2]
+// Far out a card is a star (D-111), and links end at its circle.
+const NODE_HALF: [number, number] = [NODE_R, NODE_R]
+const SMALL_NODE_HALF: [number, number] = [SMALL_NODE_R, SMALL_NODE_R]
 
 // Every card and label, with a margin: [x0, y0, x1, y1] in board units, or null on an empty board.
 function boardBounds(nodes: BoardItem[], labels: WithId<Label>[]): [number, number, number, number] | null {
@@ -106,10 +112,11 @@ export function Board(props: Props) {
         // Draws only when something changes (D-063): React updates, the controls and text invalidate on their own,
         // and every glide below asks for frames until it settles.
         frameloop="demand"
-        // `far` stays well past maxDistance, or zooming out clips everything away.
+        // near / far follow the camera's height from here on (BoardDetail), so the board's thin layers never z-fight.
         camera={{ position: [0, 0, 11], fov: 40, near: 0.1, far: 1000 }}
         gl={{ alpha: true, antialias: true }}
       >
+        <BoardDetail />
         <ambientLight intensity={0.7} />
         <directionalLight position={[-4, 6, 10]} intensity={1.6} />
         {wrapper && <Controls domElement={wrapper} />}
@@ -298,13 +305,14 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     return competitorFeatures.find((f) => f.id === selectedId)?.competitorId ?? null
   }, [selectedId, pressing, theirs, competitorFeatures])
 
+  const far = useDetail((s) => s.card) === 'far'
   const positions = useMemo(() => {
     const map = new Map<string, [number, number]>()
     for (const n of nodes) map.set(n.id, dragging[n.id] ?? [n.x, n.y])
     const c = openId ? map.get(openId) : undefined
-    if (c) (theirs.get(openId!) ?? []).forEach((f, i) => map.set(f.id, chipSpot(c, i)))
+    if (c) (theirs.get(openId!) ?? []).forEach((f, i) => map.set(f.id, chipSpot(c, i, far)))
     return map
-  }, [nodes, dragging, openId, theirs])
+  }, [nodes, dragging, openId, theirs, far])
   const chips = new Set(openId ? (theirs.get(openId) ?? []).map((f) => f.id) : [])
 
   // Older cards sit lower; newer ones on top.
@@ -423,6 +431,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   }, [box, nodes, labels, controls])
 
   const linkSource = linkFrom ? positions.get(linkFrom) : undefined
+  const cardHalf = far ? NODE_HALF : CARD_HALF
+  const chipHalf = far ? SMALL_NODE_HALF : CHIP_HALF
 
   return (
     <>
@@ -468,8 +478,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
             key={edge.id}
             from={positions.get(from)!}
             to={positions.get(to)!}
-            fromHalf={chips.has(from) ? CHIP_HALF : CARD_HALF}
-            toHalf={chips.has(to) ? CHIP_HALF : CARD_HALF}
+            fromHalf={chips.has(from) ? chipHalf : cardHalf}
+            toHalf={chips.has(to) ? chipHalf : cardHalf}
             kind={edge.kind}
             label={edge.label}
             active={active}
@@ -501,12 +511,12 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
       )}
       {box && <SelectBox from={box.from} to={box.to} color={palette.cyan} />}
 
-      {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={CARD_HALF} toHalf={[0, 0]} active />}
+      {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={cardHalf} toHalf={[0, 0]} active />}
 
       {openId &&
         positions.get(openId) &&
         (theirs.get(openId) ?? []).map((f, i) => (
-          <FeatureChip key={f.id} feature={f} at={chipSpot(positions.get(openId)!, i)} from={positions.get(openId)!} onLinkDrop={onLinkDrop} />
+          <FeatureChip key={f.id} feature={f} at={chipSpot(positions.get(openId)!, i, far)} from={positions.get(openId)!} onLinkDrop={onLinkDrop} />
         ))}
 
       {nodes.map((node) => (

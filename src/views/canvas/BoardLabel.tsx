@@ -13,6 +13,7 @@ import { usePalette, useThemeAccent } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
+import { useReadable } from './detail'
 import { endGroup, moveGroup, startGroup } from './groupDrag'
 import { boardPoint } from './NodeCard'
 import { snapPoint } from './snap'
@@ -48,6 +49,8 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const size = labelSize(label)
   const note = label.size === 'note'
   const [hovered, setHovered] = useState(false)
+  // Text that would be under a few pixels on screen is left out rather than drawn as a smudge (D-111).
+  const readable = useReadable(size)
   // Measured from the rendered text, for the hit area and underline.
   const [box, setBox] = useState<[number, number]>([2, size])
 
@@ -190,6 +193,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
         )}
         {!editing && (
           <Text
+            visible={readable}
             material={textMaterial}
             font={note ? fontUrls.mono : fontUrls.display}
             fontSize={size}

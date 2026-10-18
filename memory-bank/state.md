@@ -22,9 +22,6 @@ something is finished, add its entry to state-history.md and leave at most one l
   `edit_link` / `add_note` (D-108).
 
 ## In progress (uncommitted in the working tree)
-- D-111 board depth range + level of detail, far cards as stars (detail.ts, FarNode.tsx, CardReveal.tsx, Board.tsx, BoardLabel.tsx, EdgeLine.tsx, FeatureChip.tsx, NodeCard.tsx).
-  Verified headless at 1440 × 900 and 2560 × 1440; light theme not checked. NodeCard.tsx also holds another session's
-  link-handle hunks.
 - D-112 snap to grid while dragging (snap.ts, BoardView.tsx, BoardView.module.css; shares Board.tsx / NodeCard.tsx /
   BoardLabel.tsx with D-111). Verified headless on emulators.
 - D-109's `N cards` scope case + the brief listing a multi-selection wait for D-108's `selection` in that tree.
