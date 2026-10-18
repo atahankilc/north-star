@@ -12,6 +12,7 @@ import {
   COVERAGES,
   CRITERION_SCORES,
   FEATURE_EFFORTS,
+  FEATURE_IMPACTS,
   FEATURE_PRIORITIES,
   FEATURE_STATUSES,
   LABEL_SIZES,
@@ -97,6 +98,7 @@ const OPS = [
     priority: optEnum(FEATURE_PRIORITIES, 'Features only.'),
     status: optEnum(FEATURE_STATUSES, 'Features only.'),
     effort: optEnum(FEATURE_EFFORTS, 'Features only.'),
+    impact: optEnum(FEATURE_IMPACTS, 'Features only: how much it would move things for the customer.'),
     near,
   }),
   op('add_competitor', 'A new competitor card.', {
@@ -125,6 +127,7 @@ const OPS = [
     priority: optEnum(FEATURE_PRIORITIES, 'Features only.'),
     status: optEnum(FEATURE_STATUSES, 'Features only.'),
     effort: optEnum(FEATURE_EFFORTS, 'Features only.'),
+    impact: optEnum(FEATURE_IMPACTS, 'Features only: how much it would move things for the customer.'),
     validation: optEnum(
       VALIDATIONS,
       'Customers, problems and ideas: how far from a guess. validated or invalidated only when its evidence shows it.',
@@ -457,7 +460,7 @@ export function parseProposal(
     switch (raw.op) {
       case 'add_card': {
         const type = raw.type as BoardType
-        const meta = [s(raw.priority), s(raw.status), s(raw.effort) && `effort ${s(raw.effort)}`].filter(Boolean).join(' · ')
+        const meta = [s(raw.priority), s(raw.status), s(raw.effort) && `effort ${s(raw.effort)}`, s(raw.impact) && `impact ${s(raw.impact)}`].filter(Boolean).join(' · ')
         return {
           ...base,
           sign: '+',
@@ -1192,7 +1195,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
       case 'add_card': {
         const type = r.type as BoardType
         const at = layout?.cards.get(s(r.key)!) ?? spot(s(r.key)!, type, r.near)
-        const extra = type === 'feature' ? { priority: text(r.priority), status: text(r.status), effort: text(r.effort) } : {}
+        const extra = type === 'feature' ? { priority: text(r.priority), status: text(r.status), effort: text(r.effort), impact: text(r.impact) } : {}
         return {
           do: 'create',
           key: s(r.key)!,
@@ -1238,6 +1241,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
                 priority: text(r.priority),
                 status: text(r.status),
                 effort: text(r.effort),
+                impact: text(r.impact),
                 validation: text(r.validation),
               })
             : compact({

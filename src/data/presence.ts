@@ -8,7 +8,7 @@ import { accents } from '../styles/tokens'
 import type { AuthUser } from './auth'
 import { firebase } from './firebase'
 
-export type PresenceView = 'board' | 'flow' | 'table' | 'matrix' | 'reports'
+export type PresenceView = 'board' | 'flow' | 'table' | 'matrix' | 'priorities' | 'reports'
 
 export type Presence = {
   name: string

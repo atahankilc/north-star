@@ -5,6 +5,7 @@ import type { ReportContent, ReportPoint } from '../data/model'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
 import { cellLine, criteriaLine } from '../views/matrix/reading'
+import { confidenceOf } from '../views/priorities/reading'
 
 export const GET_ITEMS = 'get_items'
 
@@ -67,6 +68,11 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
       const f = card as typeof card & { priority?: string; status?: string; effort?: string }
       lines.push(...field('notes', full(card.body)), ...field('tags', card.tags?.join(', ')))
       lines.push(...field('priority', f.priority), ...field('status', f.status), ...field('effort', f.effort))
+      // Impact and the confidence its chain gives it (D-138).
+      if (card && ws.features.some((x) => x.id === card.id)) {
+        const c = confidenceOf(card, ws)
+        lines.push(...field('impact', (f as { impact?: string }).impact), `  confidence: ${c.level} (${c.why})`)
+      }
       const must = criteriaLine(ws.features.find((x) => x.id === card.id))
       if (must) lines.push(`  ${must}`)
       // Status and evidence (D-137), in full.

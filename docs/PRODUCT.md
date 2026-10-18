@@ -25,7 +25,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Text label** | Text written on the board; names an area and is a place to jump to (D-050) | text, position |
 | **Idea** (post-it) | A thought, problem, insight or feature idea | title, body, color, tags, position (x,y,z), status, attachments |
 | **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label |
-| **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, linked ideas |
+| **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, impact (D-138), linked ideas |
 | **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor |
 | **Evidence** | What was learned about a customer, problem or idea: listed in its panel, counted on its card (D-137) | card, kind (`interview`/`quote`/`data`/`observation`/`link`), text, supports or contradicts, source, link, date |
@@ -48,7 +48,9 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    criteria (its must-haves); a cell then scores each one and shows which are met, and the row counts the criteria no
    competitor meets: the white space (D-133).
    Shows gaps (opportunities) and table stakes.
-5. **Detail Panel.** A side panel for any node: edit fields, see all links, attachments,
+5. **Priorities** (D-138). Our features on impact × effort, each with a confidence read from the status of the ideas,
+   problems and customers it rests on, and the order impact × confidence ÷ effort suggests beside the priority we set.
+6. **Detail Panel.** A side panel for any node: edit fields, see all links, attachments,
    and AI actions.
 6. **Reports.** Research reports, write-ups of assistant chats and uploaded `.md` files (D-091), saved per person and shared with the workspace by
    choice (D-090). One tab beside board, flow, table and matrix.

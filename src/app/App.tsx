@@ -13,6 +13,7 @@ import { BoardView } from '../views/canvas/BoardView'
 import { FlowView } from '../views/flow/FlowView'
 import { Landing } from '../views/landing/Landing'
 import { MatrixView } from '../views/matrix/MatrixView'
+import { PrioritiesView } from '../views/priorities/PrioritiesView'
 import { ReportsView } from '../views/reports/ReportsView'
 import { TableView } from '../views/table/TableView'
 import { WorkspaceLayout } from '../views/workspace/WorkspaceLayout'
@@ -65,6 +66,7 @@ function Shell() {
                 <Route path="flow" element={<FlowView />} />
                 <Route path="table" element={<TableView />} />
                 <Route path="matrix" element={<MatrixView />} />
+                <Route path="priorities" element={<PrioritiesView />} />
                 <Route path="reports" element={<ReportsView />} />
                 {/* Old per-type pages (D-036) now live on the board (D-040). */}
                 <Route path="*" element={<Navigate to=".." replace />} />

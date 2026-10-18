@@ -83,6 +83,18 @@ export const MODES: Mode[] = [
       `features are left for another round. ${LANGUAGE}`,
   },
   {
+    id: 'prioritize',
+    label: 'prioritize features',
+    hint: 'impact, confidence and effort; what to build first',
+    ask: () =>
+      'Help me decide what to build first. Each feature has an effort, an impact and a confidence that comes from the status ' +
+      'of the ideas, problems and customers it rests on (FEATURES). For features with no impact, read what they solve and ' +
+      'for whom, and propose an impact (update_card), saying why in a line each. Then rank the features by impact × ' +
+      'confidence ÷ effort and point out where the priority we set disagrees with that order. For the top three, say what ' +
+      'we would need to learn (and from whom) to raise their confidence. Propose only impacts, never priorities: those are ' +
+      `ours to set. ${LANGUAGE}`,
+  },
+  {
     id: 'research',
     label: 'deep research',
     hint: 'plan questions, researchers search the web, one report',

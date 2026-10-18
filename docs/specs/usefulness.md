@@ -1,6 +1,6 @@
 # Spec: from research to decisions (Phase 6)
 
-Status: **slices 1–5 built (D-133–D-137)**; the rest planned. Each slice gets its own D-number when it's built.
+Status: **slices 1–6 built (D-133–D-138)**; the rest planned. Each slice gets its own D-number when it's built.
 
 ## 1. Why
 
@@ -75,7 +75,7 @@ Each slice ships on its own, with its decision, docs and tests. Order is the rec
   the evidence informs it and a status it doesn't back is flagged (the user's choice, 2026-10-19).
 - Possibly an **assumption** card with experiments ("Regulated mid-market will pay for traceability").
 
-### Slice 6: real prioritisation
+### Slice 6: real prioritisation (built, D-138)
 - Impact, confidence and effort on features (confidence fed by evidence), and a 2 × 2 view.
 
 ### Slice 7: bets

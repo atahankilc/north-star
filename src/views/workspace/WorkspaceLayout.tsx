@@ -99,6 +99,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             { label: 'flow', to: workspacePath(wid, 'flow') },
             { label: 'table', to: workspacePath(wid, 'table') },
             { label: 'matrix', to: workspacePath(wid, 'matrix') },
+            // Features ranked by impact, confidence and effort (D-138).
+            { label: 'priorities', to: workspacePath(wid, 'priorities') },
             { label: 'reports', to: workspacePath(wid, 'reports') },
           ]}
           right={<PeopleHere wid={wid} view={view} />}
@@ -118,7 +120,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 function viewOf(path: string, wid: string): PresenceView {
   const rest = path.slice(workspacePath(wid).length).replace(/^\//, '').split('/')[0]
   // The focus view is the board with most of it hidden (D-127): same places, so cursors and follow still line up.
-  return rest === 'flow' || rest === 'table' || rest === 'matrix' || rest === 'reports' ? rest : 'board'
+  return rest === 'flow' || rest === 'table' || rest === 'matrix' || rest === 'priorities' || rest === 'reports' ? rest : 'board'
 }
 
 function EditKeys() {

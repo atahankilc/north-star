@@ -1868,3 +1868,24 @@ by hand that the evidence informs (not one worked out by a rule).
   warning shown); deleting the card removed its 3 pieces, ⌘Z brought back card and pieces; with a fake OpenAI, one
   proposal added a piece and set `testing` (card `testing +1 −0`). Rules 267 pass (the 2 usage-log tests fail as before).
   `npm run build`. Firestore rules deployed 2026-10-19.
+
+### D-138 · 2026-10-19 · Accepted (slice 6 of Phase 6)
+**A priorities tab: impact × effort, confidence from the chain, a suggested order.** In BUBBLES 11 of 19 features were P1
+and 17 effort L: priority carried no information, and nothing said how sure we were of any of it.
+- *Impact* (`low | medium | high`) on features, in their panel under effort; rules, export/import, TSV column.
+- *Confidence* is never set by hand: the customers, problems and ideas a feature rests on (its chain, `focusSet` as the
+  focus view follows it, D-127) score validated 2, testing 1, else 0; share ≥ 0.75 high, ≥ 0.34 medium, else low. Nothing
+  behind it, or anything on it invalidated: low, with why. Shown in the feature's panel (`confidence ▮▯▯ low`, and "Of the
+  5 it rests on: 1 validated, 4 still a guess").
+- *Score* impact × confidence ÷ effort (each 1–3); 0 when it rests on something invalidated (first tried without: a cheap
+  feature on an invalidated problem ranked first). Rated features split in thirds as suggested P1–P3, equal scores alike;
+  a suggestion only, never written.
+- *Tab `priorities`* (after matrix; `/workspaces/<id>/priorities`, presence view `priorities`, RTDB rule): a 3 × 3 grid,
+  impact rows high → low, effort columns S M L; corners named (quick wins washed green, big bets, fill-ins, money pits);
+  a chip per feature with its confidence blocks, `!`, priority. "Not rated yet" lists the rest. Beside it, the suggested
+  order with score, and `P2 → P1` in yellow where the set priority differs. Clicking opens the feature's panel.
+- *Assistant:* impact in `add_card` / `update_card`, impact and confidence in the brief and `get_items`; `/prioritize`
+  proposes missing impacts (never priorities), ranks, and says what to learn to raise the top three's confidence.
+- *Verified* in headless Chrome on the emulators (example workspace, impacts and statuses set): grid, chips, order, the
+  invalidated feature at 0.0 / P3, the panel's confidence. Rules 270 pass (the 2 usage-log tests fail as before).
+  `npm run build`. Firestore + RTDB rules deployed 2026-10-19.

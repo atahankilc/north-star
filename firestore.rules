@@ -105,6 +105,7 @@ service cloud.firestore {
         && optIn(d, 'priority', ['P1', 'P2', 'P3'])
         && optIn(d, 'status', ['idea', 'planned', 'building', 'shipped'])
         && optIn(d, 'effort', ['S', 'M', 'L'])
+        && optIn(d, 'impact', ['low', 'medium', 'high'])
         // What it must do (D-133): a short list; the cells score against it.
         && (!('criteria' in d) || (d.criteria is list && d.criteria.size() <= 8));
     }

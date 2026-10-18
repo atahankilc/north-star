@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-19 (D-137 status and evidence)_
+_Last updated: 2026-10-19 (D-138 priorities)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -26,7 +26,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   committed, rules deployed 2026-10-19. Slice 2, the assistant writes criteria (D-134), committed;
   try `/criteria` on BUBBLES with a real key. Slice 3, competitor lines off by default (D-135), committed.
   Slice 4, not relevant + confidence (D-136), committed, rules deployed 2026-10-19.
-  Slice 5, status + evidence (D-137), committed, rules deployed 2026-10-19. Next: slice 6 (prioritisation).
+  Slice 5, status + evidence (D-137), committed, rules deployed 2026-10-19.
+  Slice 6, priorities (D-138), committed, rules deployed 2026-10-19. Next: planes (docs/specs/planes.md).
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

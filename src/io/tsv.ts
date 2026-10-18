@@ -21,7 +21,7 @@ export function matrixTsv(features: WithId<Feature>[], competitors: WithId<Compe
   const rows = matrixRows(features)
   const cols = matrixCols(competitors)
   const cells = new Map(comparisons.map((c) => [c.id, c]))
-  const head = ['feature', 'priority', 'status', 'effort', ...cols.flatMap((c) => [c.name || 'untitled', `${c.name || 'untitled'} notes`]), 'reading', 'nobody meets']
+  const head = ['feature', 'priority', 'status', 'effort', 'impact', ...cols.flatMap((c) => [c.name || 'untitled', `${c.name || 'untitled'} notes`]), 'reading', 'nobody meets']
   const body = rows.map((f) => {
     const mine = cols.map((c) => cells.get(`${f.id}_${c.id}`))
     return [
@@ -29,6 +29,7 @@ export function matrixTsv(features: WithId<Feature>[], competitors: WithId<Compe
       f.priority ?? '',
       f.status ?? '',
       f.effort ?? '',
+      f.impact ?? '',
       ...mine.flatMap((m) => [coverageText(m, f), m?.notes ?? '']),
       verdict(mine, f)?.label ?? '',
       (openCriteria(f, mine) ?? []).map((k) => k.text).join('; '),

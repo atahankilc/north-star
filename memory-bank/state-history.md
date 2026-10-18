@@ -534,3 +534,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - `validation` on customers/problems/ideas, `evidence` collection; panel status row + evidence list, card meta
   `testing +2 −1` / `!`; cascade, workspace delete, export/import; assistant brief, `add_evidence`, `update_card.validation`,
   /validate and /gaps. Verified in headless Chrome on the emulators (and a fake OpenAI); rules tests (7 new); build.
+
+## Done (D-138 priorities, 2026-10-19)
+- Impact on features; confidence from the chain's status; priorities tab (impact × effort, suggested order); `/prioritize`.
+  Verified in headless Chrome on the emulators; rules tests; `npm run build`.

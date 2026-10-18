@@ -4,7 +4,7 @@
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, EVIDENCE_KINDS, LABEL_SIZES, MAX_CRITERIA, REPORT_LIMITS, STANCES, VALIDATIONS, type SavedReport } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, EVIDENCE_KINDS, LABEL_SIZES, MAX_CRITERIA, REPORT_LIMITS, STANCES, VALIDATIONS, type SavedReport } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -164,6 +164,7 @@ export function cleanFeature(d: Doc, now: number) {
       priority: oneOf(d.priority, FEATURE_PRIORITIES),
       status: oneOf(d.status, FEATURE_STATUSES),
       effort: oneOf(d.effort, FEATURE_EFFORTS),
+      impact: oneOf(d.impact, FEATURE_IMPACTS),
       criteria: criteria(d.criteria),
     }),
   }

@@ -196,6 +196,8 @@ await deny('unknown collection', () => addDoc(sub(bob.fs, 'secrets'), { title: '
 await deny('idea without a position', () => addDoc(ideas(bob.fs), { title: 'x', createdAt: 1, updatedAt: 1 }))
 await deny('idea with a numeric title', () => addDoc(ideas(bob.fs), { ...card, title: 5 }))
 await allow('feature with priority, status, effort', () => addDoc(sub(bob.fs, 'features'), { ...card, priority: 'P1', status: 'planned', effort: 'M' }))
+await allow('feature with an impact', () => addDoc(sub(bob.fs, 'features'), { ...card, impact: 'high' }))
+await deny('feature with an unknown impact', () => addDoc(sub(bob.fs, 'features'), { ...card, impact: 'huge' }))
 await deny('feature with an unknown status', () => addDoc(sub(bob.fs, 'features'), { ...card, status: 'someday' }))
 // Status and evidence (D-137).
 await allow('problem with a validation status', () => addDoc(sub(bob.fs, 'problems'), { ...card, validation: 'testing' }))
@@ -490,6 +492,7 @@ await deny('write someone else\'s presence', () => rtSet(presence(bob, alice.uid
 await deny('presence without required fields', () => rtSet(presence(bob, bob.uid), { x: 1 }))
 await deny('presence with an unknown field', () => rtSet(presence(bob, bob.uid), me('Bob', { secret: 1 })))
 await allow('presence on the reports tab (D-090)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'reports' })))
+await allow('presence on the priorities tab (D-138)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'priorities' })))
 await deny('presence with an unknown view', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'canvas' })))
 await deny('presence with a non-hex colour', () => rtSet(presence(bob, bob.uid), me('Bob', { color: 'red' })))
 await deny('presence with the retired typing fields (D-071)', () => rtSet(presence(bob, bob.uid), me('Bob', { edit: 'abc', field: 'title' })))

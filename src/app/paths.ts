@@ -2,7 +2,7 @@
 //   /                                   landing
 //   /workspaces                         your workspaces
 //   /workspaces/<id>                    a workspace's board
-//   /workspaces/<id>/flow|table|matrix  its other views
+//   /workspaces/<id>/flow|table|matrix|priorities  its other views (priorities: D-138)
 //   /workspaces/<id>/focus?on=<id>      the board showing one card and its chain (D-127)
 //   /workspaces/<id>/reports            saved research reports (D-090); ?report=<id> is one as a page
 //   ?item=<id>                          selects an item (board); &feature=<id> opens a competitor's feature

@@ -5,6 +5,7 @@ import type { WithId } from '../../data/hooks'
 import {
   BOARD_TYPES,
   FEATURE_EFFORTS,
+  FEATURE_IMPACTS,
   FEATURE_PRIORITIES,
   FEATURE_STATUSES,
   type BoardNode,
@@ -18,6 +19,7 @@ import { Appear } from '../../ui/Appear'
 import { Choice } from '../../ui/Choice'
 import { CompetitorProfile } from '../competitors/CompetitorProfile'
 import { CriteriaEditor } from '../matrix/Criteria'
+import { FeatureConfidence } from '../priorities/FeatureConfidence'
 import { FocusButton } from './focus'
 import { useWs } from '../workspace/context'
 import { Attachments } from '../workspace/Attachments'
@@ -232,6 +234,9 @@ function FeatureFields({ wid, feature }: { wid: string; feature: WithId<Feature>
       <Choice label="priority" options={FEATURE_PRIORITIES} value={feature.priority} onChange={(priority) => set({ priority })} />
       <Choice label="status" options={FEATURE_STATUSES} value={feature.status} onChange={(status) => set({ status })} />
       <Choice label="effort" options={FEATURE_EFFORTS} value={feature.effort} onChange={(effort) => set({ effort })} />
+      {/* With effort and the chain's confidence, it ranks the feature in priorities (D-138). */}
+      <Choice label="impact" options={FEATURE_IMPACTS} value={feature.impact} onChange={(impact) => set({ impact })} />
+      <FeatureConfidence feature={feature} />
       {/* What it must do: the matrix scores competitors against these (D-133). */}
       <CriteriaEditor feature={feature} />
     </>

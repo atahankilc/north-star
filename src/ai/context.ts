@@ -10,6 +10,7 @@ import { holdsRect, isSection, rectOf, sectionsAt } from '../views/canvas/sectio
 import type { WorkspaceCtx } from '../views/workspace/context'
 import { reportFull } from './readTools'
 import { cellLine, criteriaLine } from '../views/matrix/reading'
+import { confidenceOf } from '../views/priorities/reading'
 
 // Far beyond a real workspace; keeps a runaway one from becoming an expensive prompt.
 const MAX_CHARS = 120_000
@@ -158,8 +159,11 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
     return `${s ? ` [${s}]` : ''}${statusOf(n)}`
   })
   section('FEATURES', ws.features, (n) => {
-    const f = n as WithId<BoardNode> & { priority?: string; status?: string; effort?: string }
-    const meta = [f.priority, f.status, f.effort && `effort ${f.effort}`].filter(Boolean).join(', ')
+    const f = n as WithId<BoardNode> & { priority?: string; status?: string; effort?: string; impact?: string }
+    // Impact (set) and confidence (from its chain's status, D-138).
+    const meta = [f.priority, f.status, f.effort && `effort ${f.effort}`, f.impact && `impact ${f.impact}`, `confidence ${confidenceOf(f, ws).level}`]
+      .filter(Boolean)
+      .join(', ')
     const must = criteriaLine(f as Feature)
     return `${meta ? ` [${meta}]` : ''}${must ? `; ${must}` : ''}`
   })

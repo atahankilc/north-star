@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-10-18T11:24:13.830Z",
         "reason": "agent judgement: the / menu and folded steps open by height on purpose so the chat box grows with them instead of jumping (D-095, D-114); small lists, 220 ms"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/views/priorities/PrioritiesView.module.css"
+        ],
+        "createdAt": "2026-10-18T23:15:47.345Z",
+        "reason": "project design system D-055: every card's type is its coloured left border; the feature chip mirrors the board's feature card"
       }
     ]
   }

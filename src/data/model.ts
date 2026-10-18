@@ -146,6 +146,8 @@ export type Label = {
 export const FEATURE_PRIORITIES = ['P1', 'P2', 'P3'] as const
 export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped'] as const
 export const FEATURE_EFFORTS = ['S', 'M', 'L'] as const
+// How much it would move things for the customer (D-138); with effort and the chain's confidence, it ranks features.
+export const FEATURE_IMPACTS = ['low', 'medium', 'high'] as const
 
 // What a feature must do to count (D-133): the matrix scores each competitor against these, so a partial cell says
 // which part. The id is the feature's own (it outlives renames and survives an import unchanged).
@@ -156,6 +158,7 @@ export type Feature = BoardNode & {
   priority?: (typeof FEATURE_PRIORITIES)[number]
   status?: (typeof FEATURE_STATUSES)[number]
   effort?: (typeof FEATURE_EFFORTS)[number]
+  impact?: (typeof FEATURE_IMPACTS)[number]
   criteria?: Criterion[]
 }
 
