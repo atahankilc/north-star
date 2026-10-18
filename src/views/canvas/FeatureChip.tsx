@@ -59,6 +59,8 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
       ref={group}
       position={[from[0], from[1], 0.2]}
       onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+        // No menu of its own (D-117), and not the board's either.
+        if (e.button === 2) e.stopPropagation()
         if (e.button !== 0) return
         e.stopPropagation()
         if (!useCanvas.getState().linkFrom) select(feature.id)

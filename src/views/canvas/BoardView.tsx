@@ -15,7 +15,9 @@ import { Board } from './Board'
 import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems } from './boardKinds'
 import { findFreeSpot } from './cardLayout'
 import { copySelection, duplicateSelection, pasteClip } from './clipboard'
+import { BoardMenu } from './BoardMenu'
 import { DetailPanel } from './DetailPanel'
+import { useGuides } from './guides'
 import { useSnap } from './snap'
 import { copied } from '../../data/selection'
 import { editLocked, useViewer } from '../workspace/viewerLock'
@@ -29,6 +31,7 @@ export function BoardView() {
   const { wid, edges, competitors, competitorFeatures, labels } = ws
   const viewer = useViewer((s) => s.viewer)
   const snap = useSnap((s) => s.on)
+  const guides = useGuides((s) => s.on)
   const all = useBoardItems()
   const nodes = useVisibleItems(all)
   const select = useCanvas((s) => s.select)
@@ -108,6 +111,8 @@ export function BoardView() {
       }
       if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) useCanvas.getState().fitAll()
       if (key === 'g' && !mod && !e.altKey && !editLocked()) useSnap.getState().toggle()
+      // a switches the alignment guides (D-117).
+      if (key === 'a' && !mod && !e.altKey && !editLocked()) useGuides.getState().toggle()
       if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const place = places[Number(e.key) - 1]
         if (place) jump(place)
@@ -192,11 +197,26 @@ export function BoardView() {
               </svg>
             </button>
           )}
+          {/* Line up with other cards while dragging (D-117); lit while on. */}
+          {!viewer && (
+            <button
+              className={`${styles.fit} ${guides ? styles.on : ''}`}
+              onClick={() => useGuides.getState().toggle()}
+              aria-pressed={guides}
+              aria-label={guides ? 'Alignment guides: on' : 'Alignment guides: off'}
+            >
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden>
+                <rect x="2" y="2.5" width="5" height="4" fill="currentColor" />
+                <rect x="9" y="9.5" width="5" height="4" fill="none" stroke="currentColor" strokeWidth="1" />
+                <path d="M7.5 0.5v15" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="1.5 1.5" />
+              </svg>
+            </button>
+          )}
         </span>
         <span className={styles.hints}>
           {viewer ? 'viewing only · scroll: zoom' : `drag: move${snap ? ' on the grid (alt: freely)' : ''} · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom`}
           {' · 0: fit all'}
-          {!viewer && ' · g: snap'}
+          {!viewer && ' · g: snap · a: guides · right-click: menu'}
           {places.length > 0 && ' · 1–9: go to'}
         </span>
       </footer>
@@ -211,6 +231,8 @@ export function BoardView() {
           <DecodeText text="Nothing here with these filters" />
         </div>
       )}
+
+      <BoardMenu ws={ws} create={(type, at) => void create(type, at)} />
 
       <DetailPanel items={all} />
     </main>

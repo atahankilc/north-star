@@ -13,10 +13,11 @@ import { usePalette, useThemeAccent } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
+import { rightPress } from './rightClick'
 import { useReadable } from './detail'
 import { endGroup, moveGroup, startGroup } from './groupDrag'
 import { boardPoint } from './NodeCard'
-import { snapPoint } from './snap'
+import { clearGuides, placeDragged, unitsPerPixel } from './guides'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
 import { markHover, unlight } from '../workspace/stage'
@@ -42,6 +43,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     return m
   }, [cell])
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
+  const getThree = useThree((s) => s.get)
   const selected = useCanvas((s) => s.selection.includes(label.id))
   const editing = useCanvas((s) => s.editingLabel === label.id)
   const live = useCanvas((s) => s.dragging[label.id])
@@ -76,6 +78,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   })
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    if (!editing && rightPress(e, { kind: 'label', id: label.id })) return
     if (e.button !== 0 || editing) return
     e.stopPropagation()
     if (controls) controls.enabled = false
@@ -99,8 +102,9 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     if (!d) return
     const p = boardPoint(e)
     if (!p) return
-    // On the grid while snapping is on (D-112); alt drags freely.
-    const next = snapPoint([p[0] - d.dx, p[1] - d.dy], e.altKey)
+    // In line with other cards (D-117) or on the grid (D-112), as switched on; alt drags freely.
+    const { camera, size } = getThree()
+    const next = placeDragged(label.id, [p[0] - d.dx, p[1] - d.dy], e.altKey, unitsPerPixel(camera, size.height))
     d.moved = true
     if (d.group) {
       moveGroup(wid, [next[0] - d.from[0], next[1] - d.from[1]])
@@ -120,6 +124,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
       e.stopPropagation()
       drag.current = null
       ;(e.target as Element).releasePointerCapture(e.pointerId)
+      clearGuides()
       if (d.group) {
         if (!endGroup(wid)) select(label.id)
       } else {

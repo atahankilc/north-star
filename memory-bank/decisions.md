@@ -82,6 +82,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Grid: `+` turns to dots and fades by camera distance (D-110). Depth range follows the camera; text and card detail by
   on-screen pixel size (full / compact / far) (D-111).
 - Drags snap centres to a 0.25 grid (group drags keep their layout, alt = free); switch beside fit-all + `g`, on by default (D-112).
+- Alignment guides: a dragged card pulls to other cards' edges/centres within 6 px, magenta lines; own switch + `a`, on by
+  default. Right-click menu on cards, text, links, empty board (a right drag still pans) (D-117).
 - Filters SHOW / FOR / TAG / LINKS, remembered per workspace (D-053, D-056, D-108).
 
 ## Other views

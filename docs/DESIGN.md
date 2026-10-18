@@ -106,6 +106,14 @@ Values will be tuned against contrast checks (WCAG AA for text).
   0.32 apart (closer if the end is too small), their chips moved along the lines so they don't overlap (D-113)
 - Floating bars (D-108, `FloatBar.module.css`): a selected link or text label gets a small solid bar under it (2px top edge
   in its colour) with its tools; the only tool UI drawn on the board itself
+- Alignment guides (D-117): while dragging, a card pulls into line with other cards' edges and centres (text by its centre)
+  within 6 px, and 1 px magenta lines run across everything it lines up with (a card in the same column: the centre line
+  only). Gone when the drag ends. Switch beside the grid's, `a`, cyan while on, on by default; alt drags freely
+- Right-click menu (D-117): the dropdown's panel and rows (`Menu.module.css`) at the pointer, flipped to stay on screen, built
+  cell by cell like any panel. A right drag still pans; the menu opens only if the pointer stayed put. Card / text: copy,
+  duplicate, zoom to, delete (for the whole selection if it's in it); link: its kinds (`●` the current one), reverse,
+  remove; empty board: `add here` each type and text, paste here, fit all, the grid and guide switches. While it's open on a
+  link or text, their floating bar waits
 
 ### HUD (D-027, D-053, D-054)
 - Fixed top bar, same on every page: breadcrumb left (`# north-star / workspaces / <name>`), actions right.

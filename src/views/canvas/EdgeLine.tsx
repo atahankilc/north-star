@@ -65,9 +65,11 @@ type Props = {
   // A link the assistant's preview adds, in its diff colour (D-096).
   tint?: string
   onSelect?: () => void
+  // A right press on it (the board's menu, D-117).
+  onRightPress?: (e: ThreeEvent<PointerEvent>) => void
 }
 
-export function EdgeLine({ from, to, fromHalf, toHalf, chipShift = 0, kind = 'relates', label, active, dim, selected, tint, onSelect }: Props) {
+export function EdgeLine({ from, to, fromHalf, toHalf, chipShift = 0, kind = 'relates', label, active, dim, selected, tint, onSelect, onRightPress }: Props) {
   const style = linkStyle(kind)
   const colors = usePalette()
   const [hovered, setHovered] = useState(false)
@@ -99,6 +101,7 @@ export function EdgeLine({ from, to, fromHalf, toHalf, chipShift = 0, kind = 're
   const shift = Math.max(-room, Math.min(room, chipShift))
   const chipW = text.length * CHAR_W + 0.18
   const handlers = onSelect && {
+    onPointerDown: (e: ThreeEvent<PointerEvent>) => onRightPress?.(e),
     onClick: (e: ThreeEvent<MouseEvent>) => {
       e.stopPropagation()
       if (e.delta < 4) onSelect()

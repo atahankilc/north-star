@@ -50,13 +50,14 @@ export function copySelection(ws: WorkspaceCtx) {
   useHistory.getState().say(`Copied ${clip.pieces.length} thing${clip.pieces.length === 1 ? '' : 's'}`)
 }
 
-export async function pasteClip(ws: WorkspaceCtx) {
+// Centred on `centre` (a right-click's spot, D-117), or on the view.
+export async function pasteClip(ws: WorkspaceCtx, centre?: [number, number]) {
   const clip = copied()
   if (!clip) return
   const xs = clip.pieces.map((p) => p.data.x as number)
   const ys = clip.pieces.map((p) => p.data.y as number)
-  // Centred on the view: the top-left corner goes half the clip's size up and left of it.
-  const [cx, cy] = useCanvas.getState().viewCenter()
+  // The top-left corner goes half the clip's size up and left of the centre.
+  const [cx, cy] = centre ?? useCanvas.getState().viewCenter()
   const at: [number, number] = [cx - (Math.max(...xs) - Math.min(...xs)) / 2, cy + (Math.max(...ys) - Math.min(...ys)) / 2]
   const made = await paste(ws.wid, at, customersOf(ws), clip)
   useCanvas.getState().selectMany(made.map((m) => m.id))

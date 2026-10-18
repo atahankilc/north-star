@@ -4,6 +4,7 @@ import { moveLabel } from '../../data/labels'
 import { moveNode } from '../../data/nodes'
 import { endMoveMany, type Piece } from '../../data/selection'
 import { useCanvas } from '../../state/canvasStore'
+import { clearGuides } from './guides'
 
 type Where = Piece & { x: number; y: number }
 
@@ -13,6 +14,7 @@ export function setPieces(next: Map<string, Where>) {
   pieces = next
 }
 export const pieceOf = (id: string) => pieces.get(id)
+export const piecesOnBoard = () => pieces.values()
 
 const WRITE_EVERY_MS = 120
 let group: { from: Where[]; lastWrite: number; moved: boolean } | null = null
@@ -51,6 +53,7 @@ export function endGroup(wid: string): boolean {
   })
   if (moved && moves.length) void endMoveMany(wid, moves)
   for (const p of group.from) setDragging(p.id, null)
+  clearGuides()
   group = null
   return moved
 }

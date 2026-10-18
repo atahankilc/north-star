@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (D-116 go to: no notes, a search field; cross-workspace paste and minimap rejected)_
+_Last updated: 2026-10-18 (D-117: alignment guides and a right-click menu on the board)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -9,7 +9,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Phase
 - Phases 0–4 done: scaffold + design language, one board (D-040–D-052), collaboration (D-065–D-071), settings + AI (D-073–D-079).
 - Phase 5 in part: export/import/TSV/PNG done (D-080); attachments built, emulator-only (D-083).
-- Ongoing: the user's assistant redesign (D-094–D-101, D-114 done) and board editing (D-108–D-113, D-115).
+- Ongoing: the user's assistant redesign (D-094–D-101, D-114 done) and board editing (D-108–D-113, D-115, D-117).
 
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. Firestore + RTDB rules and indexes deployed
@@ -20,7 +20,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   `edit_link` / `add_note` (D-108).
 
 ## In progress
-- Nothing in progress; D-113, D-115 and D-116 committed (not pushed yet). Keep this section true: empty it when work is committed.
+- Nothing of D-117 in progress: committed (not pushed). Keep this section true: empty it when work is committed.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
@@ -28,8 +28,6 @@ something is finished, add its entry to state-history.md and leave at most one l
    - Link chips already hide when too small (D-111); left: draw them at a constant screen size.
    - Lines crossing cards or other links' chips: nudge chips apart (parallel links between a pair are done, D-113).
    - Multi-select: align / distribute, arrow-key nudge, broadcast the whole selection (presence `sel` carries only the last one).
-   - Alignment guides while dragging (to other cards' edges and centres); grid snapping is done (D-112).
-   - A right-click menu on a card, a link and the empty board.
    - Formatting in card notes (the chat's light Markdown, D-089).
    - `add_note` notes can overlap a link chip: offset or left-align them.
 1. Finish the workspace key (D-079) once Blaze goes through: user runs

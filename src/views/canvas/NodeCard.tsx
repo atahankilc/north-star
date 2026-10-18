@@ -16,8 +16,9 @@ import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { COMPACT_TITLE, useDetail } from './detail'
 import { FarNode } from './FarNode'
+import { rightPress } from './rightClick'
 import { endGroup, moveGroup, startGroup } from './groupDrag'
-import { snapPoint } from './snap'
+import { clearGuides, placeDragged, unitsPerPixel } from './guides'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
 import { markHover, unlight } from '../workspace/stage'
@@ -110,6 +111,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
   }, [cell])
   const [hovered, setHovered] = useState(false)
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
+  const getThree = useThree((s) => s.get)
 
   const selected = useCanvas((s) => s.selection.includes(node.id))
   const live = useCanvas((s) => s.dragging[node.id])
@@ -157,6 +159,8 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
   })
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    // A right click opens the board's menu on it (D-117); a right drag pans.
+    if (rightPress(e, { kind: 'card', id: node.id })) return
     if (e.button !== 0) return
     e.stopPropagation()
     // Runs before OrbitControls' own listener, so the board doesn't pan.
@@ -192,8 +196,9 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
     if (!d) return
     const p = boardPoint(e)
     if (!p) return
-    // On the grid while snapping is on (D-112); alt drags freely.
-    const next = snapPoint([p[0] - d.dx, p[1] - d.dy], e.altKey)
+    // In line with other cards (D-117) or on the grid (D-112), as switched on; alt drags freely.
+    const { camera, size } = getThree()
+    const next = placeDragged(node.id, [p[0] - d.dx, p[1] - d.dy], e.altKey, unitsPerPixel(camera, size.height))
     d.moved = true
     if (d.group) {
       moveGroup(wid, [next[0] - d.from[0], next[1] - d.from[1]])
@@ -215,6 +220,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
       e.stopPropagation()
       drag.current = null
       ;(e.target as Element).releasePointerCapture(e.pointerId)
+      clearGuides()
       if (d.group) {
         // A click (no drag) on one of several selected cards picks just that one.
         if (!endGroup(wid)) select(node.id)

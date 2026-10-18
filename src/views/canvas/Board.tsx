@@ -30,7 +30,9 @@ import { defaultKind, type BoardItem } from './boardKinds'
 import { BoardLabel, labelSize } from './BoardLabel'
 import { CARD_H, CARD_W, glideDt } from './cardLayout'
 import { EdgeLine } from './EdgeLine'
+import { rightPress, useBoardMenu } from './rightClick'
 import { setPieces } from './groupDrag'
+import { useGuides } from './guides'
 import { LabelBar } from './LabelBar'
 import { LinkBar } from './LinkBar'
 import { linkStyle } from './linkKinds'
@@ -106,7 +108,8 @@ export function Board(props: Props) {
   const [wrapper, setWrapper] = useState<HTMLDivElement | null>(null)
 
   return (
-    <div ref={setWrapper} style={{ position: 'absolute', inset: 0, touchAction: 'none' }}>
+    // The browser's own menu gives way to the board's (D-117).
+    <div ref={setWrapper} style={{ position: 'absolute', inset: 0, touchAction: 'none' }} onContextMenu={(e) => e.preventDefault()}>
       <Canvas
         dpr={[1, 2]}
         // Draws only when something changes (D-063): React updates, the controls and text invalidate on their own,
@@ -412,6 +415,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   const selectedLine = edgeId ? lines.find((l) => l.edge.id === edgeId) : undefined
   const selectedLabel = selection.length === 1 ? labels.find((l) => l.id === selection[0]) : undefined
   const editingLabel = useCanvas((s) => s.editingLabel)
+  // A right-click menu open on it stands in for its bar until it closes (D-117).
+  const menuOn = useBoardMenu((s) => (s.open && s.open.target.kind !== 'board' ? s.open.target.id : null))
 
   // Alt+drag on empty board draws a box; what's inside is selected (shift keeps what was) (D-108).
   const [box, setBox] = useState<{ from: [number, number]; to: [number, number]; add: boolean } | null>(null)
@@ -455,6 +460,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
           if (e.delta < 4 && !e.altKey) select(null)
         }}
         onPointerDown={(e) => {
+          if (rightPress(e, { kind: 'board' })) return
           if (e.button !== 0 || !e.altKey) return
           const p = boardPoint(e)
           if (!p) return
@@ -502,17 +508,18 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
             // The assistant's preview: links it adds in the new colour, links it edits (D-108) in the edited one.
             tint={edge.id.startsWith('preview-') ? palette.diff.new : preview?.marks.get(edge.id) === 'edited' ? palette.diff.edited : undefined}
             onSelect={preview ? undefined : () => useCanvas.getState().selectEdge(edge.id)}
+            onRightPress={(e) => rightPress(e, { kind: 'link', id: edge.id })}
           />
         )
       })}
-      {editable && selectedLine && (
+      {editable && selectedLine && menuOn !== selectedLine.edge.id && (
         <LinkBar
           wid={wid}
           edge={selectedLine.edge}
           at={selectedLinkAt(selectedLine)}
         />
       )}
-      {editable && selectedLabel && !editingLabel && (
+      {editable && selectedLabel && !editingLabel && menuOn !== selectedLabel.id && (
         <LabelBar
           wid={wid}
           label={selectedLabel}
@@ -524,6 +531,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
         />
       )}
       {box && <SelectBox from={box.from} to={box.to} color={palette.cyan} />}
+      <GuideLines color={palette.magenta} />
 
       {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={cardHalf} toHalf={[0, 0]} active />}
 
@@ -588,6 +596,26 @@ function sideBySide(
     to: [to[0] + nx, to[1] + ny],
     chipShift: k * CHIP_STAGGER * (Math.abs(to[1] - from[1]) / len),
   }
+}
+
+// What a dragged card lines up with (D-117): thin lines over the cards, gone when the drag ends.
+function GuideLines({ color }: { color: string }) {
+  const lines = useGuides((s) => s.lines)
+  const invalidate = useThree((s) => s.invalidate)
+  useEffect(() => invalidate(), [lines, invalidate])
+  return (
+    <group position={[0, 0, 0.08]}>
+      {lines.map((g) => (
+        <Line
+          key={`${g.axis}${g.at}`}
+          points={g.axis === 'x' ? [[g.at, g.from, 0], [g.at, g.to, 0]] : [[g.from, g.at, 0], [g.to, g.at, 0]]}
+          color={color}
+          lineWidth={1}
+          toneMapped={false}
+        />
+      ))}
+    </group>
+  )
 }
 
 // The box being drawn round things to select them (D-108).

@@ -1340,3 +1340,30 @@ the open item from D-108 ("decide whether notes belong in the jump list"); the 1
   goes back, Escape closes. `No match` when nothing fits; the query clears on close. Only `go to` uses it today.
 - The same user turn also turned down two board ideas: copy/paste across tabs and workspaces through the system clipboard
   (the in-tab clipboard of D-108 stays), and a minimap for big boards. Both are under "Rejected".
+
+### D-117 · 2026-10-18 · Accepted (extends D-112, D-108)
+**Alignment guides while dragging, with their own switch; a right-click menu on cards, text, links and the empty board.**
+User: "do the right click menu and alignment guides if they are turned on" (both from the board ideas listed after D-108).
+- *Guides* (`src/views/canvas/guides.ts`): a dragged card's left edge, centre and right edge (and bottom, centre, top) pull
+  to the same lines of other cards on the board once within 6 screen pixels (centres to centres, edges to either edge, so
+  a card can also start where another ends); text lines up by its centre. Each axis on its own: the nearest pull wins, and
+  where nothing is close the grid (D-112) applies as before. 1 px magenta lines (`palette.magenta`, apart from the cyan of
+  selection) run across the dragged card and everything it's in line with, also when the grid alone put it there; for a
+  card in the same column only the centre line is drawn, not three. In a group drag the piece you hold aligns and the rest
+  keep their layout; the selection isn't aligned against itself. Alt drags freely, as with the grid.
+- *Switch:* "if they are turned on" read as a switch of their own: a framed square beside the grid's (cyan while on,
+  `aria-pressed`) and the `a` key; on by default, remembered in this browser (`north-star.board-guides`). Viewers don't get it.
+- *Right-click menu* (`BoardMenu.tsx`, `rightClick.ts`): right-click already pans (D-018), so a right press only records
+  what's under the pointer (R3F hit: card, text, link, or the board) and the menu opens on release if the pointer moved
+  ≤ 5 px; the browser's own menu is off on the board. What it's opened on becomes the selection unless it's already part
+  of it, so a group stays together. Rows: card / text → (edit text,) copy, duplicate, zoom to, delete, for the whole
+  selection when it's one of several; link → every kind (current `●`), reverse (not for a customer tag), remove; board →
+  `add here` each type and text (at the pointer, on the grid when snapping), paste here (when something's copied), fit
+  all, `[x]` snap to grid, `[x]` alignment guides. Viewers and the assistant's preview get only zoom to / fit all. Same
+  panel and rows as the dropdowns, keyboard as there (arrows, Home/End, Escape), closes on a press elsewhere, the wheel,
+  resize or blur. A competitor's fanned features open no menu. A link's or label's floating bar waits while the menu is open on it.
+- Not done: equal-spacing guides, guides to fanned feature chips, ctrl+click on a Mac as a right click.
+- Verified headless on emulators (example workspace, dark, 1440 × 900): a card dragged to 0.05 below another's row landed
+  exactly on it with the magenta line drawn; right-click on the board, a card and a link opened the right rows; `idea` from
+  `add here` made a card; a kind picked from the link menu was saved (`solves` → `depends on`); a right drag panned
+  without opening the menu. Build passes.
