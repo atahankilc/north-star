@@ -826,3 +826,56 @@ html[data-motion='reduced'] :global([data-side-panel]) {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* What the next message works on, above the prompt: a bar in the type's colour and the card's name when a panel is
+   open, a quiet "workspace" line otherwise. */
+.scope {
+  display: flex;
+  min-width: 0;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border-left: 2px solid var(--line-hover);
+  align-items: baseline;
+  gap: 1ch;
+  font-size: var(--text-xs);
+  line-height: 18px;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.scope[data-focused] {
+  border-left-color: var(--tone);
+  background: var(--wash-1);
+}
+
+.scopeLabel {
+  flex: none;
+  color: var(--fg-faint);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.scopeKind {
+  flex: none;
+  color: var(--tone);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.scopeName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scope[data-focused] .scopeName {
+  color: var(--fg-strong);
+}
+
+html[data-motion='reduced'] .scope {
+  transition: none;
+}

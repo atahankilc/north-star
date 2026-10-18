@@ -1234,3 +1234,11 @@ line height (Table's sort buttons), the Matrix's `┌` before "our features", an
 - Kept as each column's own (user: allowed): Flow's type-colour squares, Table's sort (bright when sorted, cyan arrow),
   the Matrix's competitor names in `--fg` and centred. The Matrix's `┌` is gone.
 - Verified with headless Chrome on the emulators: every header 40 px with the same fill, colour, size and tracking.
+
+### D-109 · 2026-10-18 · Accepted (refines D-085)
+**The chat says what the next message works on, right above the prompt.** User: when a panel is open the assistant works on
+that card, but the chat only said so in a faint line of the empty state. Now a `working on` line sits above the prompt
+in every state: `WORKING ON PROBLEM <title>` with a bar and the kind in the type's colour while a card's panel is open,
+`REPORT <title>` while a report is open (D-099), and a quiet
+`WHOLE WORKSPACE N items` otherwise. With D-108's multi-select it also shows `N CARDS <titles>` (cyan), and the brief
+lists every selected item (it used to name only the last one picked); that part goes in with D-108. `Scope` in src/ui/AiChat.tsx; the matrix's cell selection isn't in the brief, so it isn't shown.

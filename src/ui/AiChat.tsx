@@ -26,6 +26,8 @@ import { reportPath, workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
 import { isReducedMotion, useMotion } from '../state/motion'
 import { useWs } from '../views/workspace/context'
+import { TYPE_LABELS, useNodeIndex } from '../views/workspace/nodeIndex'
+import { TYPE_ACCENT } from '../views/canvas/boardKinds'
 import { MARK_SIGN, MARK_VAR, OutsidePreview, usePreview, type Mark } from '../views/workspace/preview'
 import { stepBy } from '../views/workspace/previewNav'
 import { goToSection } from '../views/workspace/reportNav'
@@ -457,7 +459,7 @@ function Conversation({ source }: { source: KeySource }) {
           <li className={styles.empty}>
             {/* Just the invitation: the commands are a `/` away (D-095), so they aren't listed here. */}
             <p className={styles.lead}>Ask about this workspace: what's missing, what to build next, how you compare.</p>
-            <p className={styles.fine}>Type / for commands. On a selected card, they work on that card.</p>
+            <p className={styles.fine}>Type / for commands. Open a card and the assistant works on it; the line above the prompt says which.</p>
           </li>
         )}
         {messages.map((m) => (
@@ -492,6 +494,7 @@ function Conversation({ source }: { source: KeySource }) {
       </ol>
       <form className={styles.composer} onSubmit={submit}>
         <ModeMenu modes={modes} pick={Math.min(pick, modes.length - 1)} selected={selectedItem()} openReport={openReport?.report.title ?? null} onChoose={choose} />
+        <Scope report={openReport?.report.title ?? null} />
         <span className={styles.promptLine}>
           <span className={styles.ps} aria-hidden>
             &gt;
@@ -530,6 +533,43 @@ function Conversation({ source }: { source: KeySource }) {
         </span>
       </form>
     </>
+  )
+}
+
+// What the next message works on, always above the prompt: the card whose panel is open (the brief marks it as
+// "this"), the report being read, or else the whole workspace.
+function Scope({ report }: { report: string | null }) {
+  const ws = useWs()
+  const index = useNodeIndex()
+  const selectedId = useCanvas((s) => s.selectedId)
+  const one = selectedId ? index.get(selectedId) : undefined
+  let tone = 'var(--fg-dim)'
+  let kind: string
+  let name: string
+  let hint: string
+  if (one && one.type !== 'competitorFeature') {
+    kind = TYPE_LABELS[one.type]
+    name = one.title
+    tone = TYPE_ACCENT[one.type]
+    hint = 'this card, with the rest of the workspace for context'
+  } else if (report) {
+    kind = 'report'
+    name = report
+    tone = 'var(--accent-cyan)'
+    hint = 'the open report, with the workspace for context'
+  } else {
+    const count = ws.customers.length + ws.problems.length + ws.ideas.length + ws.features.length + ws.competitors.length
+    kind = 'whole workspace'
+    name = `${count} ${count === 1 ? 'item' : 'items'}`
+    hint = 'open a card to focus on it'
+  }
+  const focused = kind !== 'whole workspace'
+  return (
+    <span className={styles.scope} data-focused={focused || undefined} style={{ ['--tone' as string]: tone }} title={`The assistant works on ${hint}.`}>
+      <span className={styles.scopeLabel}>working on</span>
+      <span className={styles.scopeKind}>{kind}</span>
+      <span className={styles.scopeName}>{name}</span>
+    </span>
   )
 }
 

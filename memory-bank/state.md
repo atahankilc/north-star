@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (one table header, D-107; reports tab lined up with the other views; reports table, side reader, numbered pages, filters, D-106; scroll bars, D-105; upload icon button, D-103; reports tab as list + reader, D-102; chat report on the stage box, D-101; report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (assistant scope line, D-109; one table header, D-107; reports tab lined up with the other views; reports table, side reader, numbered pages, filters, D-106; scroll bars, D-105; upload icon button, D-103; reports tab as list + reader, D-102; chat report on the stage box, D-101; report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -393,6 +393,10 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 ## Done (scroll bars, 2026-10-18)
 - D-105: one thin square scroll bar for the whole app (global.css; hover brighter, cyan while dragged; Firefox via the
   standard properties). Verified headless on emulators, dark/light 1440 and 390. Committed and pushed 2026-10-18.
+
+## Done (assistant scope line, 2026-10-18)
+- D-109: `working on …` line above the chat's prompt (card / report / whole workspace). Committed.
+  The `N cards` case + the brief listing a multi-selection wait in the working tree for D-108 (needs its `selection`).
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs
