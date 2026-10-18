@@ -21,7 +21,7 @@ import { Choice } from './Choice'
 import { Select } from './Select'
 import { AsciiButton } from './AsciiButton'
 import styles from './AiSettings.module.css'
-import { Row, Section } from './Settings'
+import { Note, Row, Section } from './Settings'
 
 export const KEY_PRIVACY =
   'Kept only in this browser and sent only to OpenAI, never to North Star or your collaborators. Each person uses their own key.'
@@ -79,9 +79,20 @@ export function AiKeysPage() {
 
   return (
     <>
-      <Section label="your key">
+      <Section
+        label="your key"
+        note={
+          <>
+            {KEY_PRIVACY} Get one at{' '}
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">
+              platform.openai.com/api-keys
+            </a>
+            .
+          </>
+        }
+      >
         {apiKey && !replacing ? (
-          <Row label="key">
+          <Row label="OpenAI key" hint="Used for your own calls.">
             <span className={styles.key}>{maskKey(apiKey)}</span>
             <button className={styles.action} onClick={() => setReplacing(true)}>
               replace
@@ -91,52 +102,36 @@ export function AiKeysPage() {
             </button>
           </Row>
         ) : (
-          <Row label="key">
+          <Row label="OpenAI key" hint="Paste a key; it's checked with OpenAI before it's kept.">
             <AiKeyForm onSaved={() => setReplacing(false)} />
           </Row>
         )}
-        <p className={styles.note}>
-          {KEY_PRIVACY} Get one at{' '}
-          <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">
-            platform.openai.com/api-keys
-          </a>
-          .
-        </p>
       </Section>
       {ws && !workspaceKeysAvailable ? (
-        <Section label="workspace key">
-          <p className={styles.note}>
-            Coming soon: the owner sets one key that chosen members use, kept on North Star&apos;s server where nobody can
-            read it. For now everyone uses their own key.
-          </p>
-        </Section>
+        <Section
+          label="workspace key"
+          note="Coming soon: the owner sets one key that chosen members use, kept on North Star's server where nobody can read it. For now everyone uses their own key."
+        />
       ) : ws ? (
         <WorkspaceKey wid={ws.wid} ownerId={ws.workspace.ownerId} memberIds={ws.workspace.memberIds} />
       ) : (
-        <Section label="workspace key">
-          <p className={styles.note}>Open a workspace to see or set its shared key.</p>
-        </Section>
+        <Section label="workspace key" note="Open a workspace to see or set its shared key." />
       )}
-      <Section label="models">
-        <Row label="chat">
+      <Section
+        label="models"
+        note="Each message sends the whole workspace, so reading is most of a call's cost; usage shows what each call used."
+      >
+        <Row label="chat" hint="Answers questions and proposes changes.">
           <ModelPicker task="chat" />
         </Row>
-        <Row label="research">
+        <Row label="research" hint="Messages sent with [web] on, where a stronger model finds and reads more.">
           <ModelPicker task="research" />
         </Row>
-        <p className={styles.note}>
-          Chat answers questions and proposes changes; research is used for messages sent with [web] on, where a stronger
-          model finds and reads more. Each message sends the whole workspace, so reading is most of a call&apos;s cost; see
-          usage for what each call used.
-        </p>
       </Section>
-      <Section label="what it sees">
-        <p className={styles.note}>
-          When you ask something, the workspace you&apos;re in (cards, links, competitors, the matrix) goes to OpenAI with your
-          question. The chat stays in this tab and is gone when you reload. It only changes the workspace when you apply
-          one of its proposals.
-        </p>
-      </Section>
+      <Section
+        label="what it sees"
+        note="When you ask something, the workspace you're in (cards, links, competitors, the matrix) goes to OpenAI with your question. The chat stays in this tab and is gone when you reload. It only changes the workspace when you apply one of its proposals."
+      />
     </>
   )
 }
@@ -153,29 +148,34 @@ function WorkspaceKey({ wid, ownerId, memberIds }: { wid: string; ownerId: strin
   const source = keySourceFor({ apiKey, keyChoice: choice ? { [wid]: choice } : {} }, wid, usable)
 
   return (
-    <Section label="workspace key">
+    <Section
+      label="workspace key"
+      note={
+        isOwner
+          ? "Your key is sent once to North Star's server, kept encrypted there and never shown to anyone again, you included. Calls on it go through the server, which logs what each one used (usage). Anyone may still use their own key instead."
+          : 'The owner pays for the workspace key; the owner sees what you use on it. Calls on your own key are seen only by you.'
+      }
+    >
       {isOwner ? (
         <OwnerKey wid={wid} ownerId={ownerId} memberIds={memberIds} config={config} />
       ) : (
-        <Row label="key">
+        <Row label="shared key">
           <span className={styles.key}>
             {!config?.hasKey ? 'none' : usable ? `${config.keyHint ?? 'set'} · you may use it` : "set · the owner hasn't let you use it"}
           </span>
         </Row>
       )}
       {(usable || apiKey) && (
-        <Choice
-          label="this workspace uses"
-          options={(['workspace', 'own'] as const).filter((o) => (o === 'own' ? apiKey : usable))}
-          value={source ?? undefined}
-          onChange={(v) => v && setKeyChoice(wid, v)}
-        />
+        <Row label="this workspace uses" hint="Which key your calls here go on.">
+          <Choice
+            label="this workspace uses"
+            bare
+            options={(['workspace', 'own'] as const).filter((o) => (o === 'own' ? apiKey : usable))}
+            value={source ?? undefined}
+            onChange={(v) => v && setKeyChoice(wid, v)}
+          />
+        </Row>
       )}
-      <p className={styles.note}>
-        {isOwner
-          ? 'Your key is sent once to North Star\'s server, kept encrypted there and never shown to anyone again, you included. Calls on it go through the server, which logs what each one used (usage). Anyone may still use their own key instead.'
-          : 'The owner pays for the workspace key; the owner sees what you use on it. Calls on your own key are seen only by you.'}
-      </p>
     </Section>
   )
 }
@@ -219,7 +219,7 @@ function OwnerKey({ wid, ownerId, memberIds, config }: { wid: string; ownerId: s
   return (
     <>
       {config?.hasKey && !replacing ? (
-        <Row label="key">
+        <Row label="shared key" hint="Paid by you, used by the people you pick.">
           <span className={styles.key}>{config.keyHint}</span>
           <button className={styles.action} onClick={() => setReplacing(true)}>
             replace
@@ -229,7 +229,7 @@ function OwnerKey({ wid, ownerId, memberIds, config }: { wid: string; ownerId: s
           </button>
         </Row>
       ) : (
-        <Row label="key">
+        <Row label="shared key" hint="Paid by you, used by the people you pick.">
           <form
             className={styles.form}
             onSubmit={(e) => {
@@ -241,7 +241,7 @@ function OwnerKey({ wid, ownerId, memberIds, config }: { wid: string; ownerId: s
               <input
                 className={styles.input}
                 type="password"
-                placeholder="sk-… (paid by you, used by the people you pick)"
+                placeholder="sk-…"
                 aria-label="Workspace OpenAI API key"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -255,26 +255,28 @@ function OwnerKey({ wid, ownerId, memberIds, config }: { wid: string; ownerId: s
           </form>
         </Row>
       )}
-      {error && <p className={styles.error}>! {error}</p>}
-      <Choice label="who may use it" options={['everyone', 'chosen'] as const} value={access} onChange={(v) => v && setAccess(v)} />
-      {access === 'chosen' && (
-        <div className={styles.members}>
-          {members === null ? (
-            <span className={styles.note}>loading members…</span>
-          ) : (
-            // The owner always may; the list is everyone else.
-            members
-              .filter((m) => m.uid !== ownerId)
-              .map((m) => (
-                <label key={m.uid} className={styles.member}>
-                  <input type="checkbox" checked={allowed.includes(m.uid)} onChange={() => toggle(m.uid)} />
-                  <span>{m.name}</span>
-                  {m.email && <span className={styles.note}>{m.email}</span>}
-                </label>
-              ))
-          )}
-        </div>
-      )}
+      {error && <Note tone="error">! {error}</Note>}
+      <Row label="who may use it" hint={access === 'chosen' ? 'Only the members you tick; you always may.' : 'Every member of this workspace.'}>
+        <Choice label="who may use it" bare options={['everyone', 'chosen'] as const} value={access} onChange={(v) => v && setAccess(v)} />
+        {access === 'chosen' && (
+          <div className={styles.members}>
+            {members === null ? (
+              <span className={styles.note}>loading members…</span>
+            ) : (
+              // The owner always may; the list is everyone else.
+              members
+                .filter((m) => m.uid !== ownerId)
+                .map((m) => (
+                  <label key={m.uid} className={styles.member}>
+                    <input type="checkbox" checked={allowed.includes(m.uid)} onChange={() => toggle(m.uid)} />
+                    <span>{m.name}</span>
+                    {m.email && <span className={styles.note}>{m.email}</span>}
+                  </label>
+                ))
+            )}
+          </div>
+        )}
+      </Row>
     </>
   )
 }

@@ -1000,3 +1000,22 @@ what you type; so the tall chat stops short of the top.
 - *Header:* one line, the model (and which key) on the left, `[clear]` and `[×]` on the right. No title.
 - Verified on emulators with headless Chrome and a fake OpenAI, dark and light, 1440: open (box rises, orb lifted), first
   message (box grows, orb sinks to peek), preview (column crosses left, orb with it), Esc, apply. Build passes.
+
+### D-097 · 2026-10-18 · Accepted (refines D-064, D-093)
+**Settings reorganised: grouped menu, smaller pages, framed sections, readable help next to each setting.** User: the modal
+looked unorganised and things were hard to see. Audit (headless screenshots): help text was `--fg-faint` (#4d4d4d on #0b0b0b,
+about 2.3:1) in 11 px mono; section labels, row labels and hints were all the same small uppercase grey, so nothing led the
+eye; hints sat at the left edge under a row instead of beside it; the workspace page was one long scroll of four sections.
+- *Menu:* three groups, `YOU` (account, display: was "app"), `WORKSPACE` with the workspace's name (general, people, export:
+  the old workspace page split in three) and `ASSISTANT` (keys, usage). Waiting join requests open on, and badge, people.
+  `SettingsButton` takes `workspace: (page) => ReactNode` and `workspaceName`; `WorkspaceSettings` renders one page.
+- *Page:* title plus a one-line description; the close `[×]` sits in the dialog's corner and doesn't scroll. Dialog 960 × 720
+  (was 780 × 600), nav 216 px on a faint wash.
+- *Sections* (`Section` in Settings.tsx): a framed box, its label (`fieldLabel`, no `┌`, the box is the corner) in the top
+  edge, rows split by hairlines, an optional `note` at the foot on a wash (Geist, readable).
+- *Rows* (`Row`): name (mono, strong, 30 px line so it lines up with the control) with an optional `hint` under it, control
+  on the right. `Choice` gained `bare` (options only) so choices sit in rows. `Note` for messages inside a section.
+- *Colour:* new token `--fg-muted` (dark #9a9a9a, light #555555) for help text; usage tables, card details, times and
+  "you're the owner" moved off `--fg-faint`.
+- Row labels are lowercase names, not uppercase labels: they read as the setting itself; section labels stay uppercase (D-093).
+

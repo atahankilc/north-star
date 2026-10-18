@@ -32,7 +32,7 @@ import { Hud } from '../../ui/Hud'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { InlineEdit } from '../../ui/InlineEdit'
 import { PeopleHere } from '../../ui/PeopleHere'
-import { Row, Section } from '../../ui/Settings'
+import { Note, Row, Section, type WorkspacePage } from '../../ui/Settings'
 import { Toast } from '../../ui/Toast'
 import { forgetCamera } from '../canvas/Board'
 import { attachmentEntry, download, fileSlug, makeBundle, zipBundle } from '../../io/bundle'
@@ -92,7 +92,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             { label: 'reports', to: workspacePath(wid, 'reports') },
           ]}
           right={<PeopleHere wid={wid} view={view} />}
-          settings={<WorkspaceSettings wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
+          settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
+          settingsName={workspace.name}
           settingsBadge={isOwner ? requests.data.length : 0}
         />
         {!isLoading && <Outlet />}
@@ -114,10 +115,11 @@ function EditKeys() {
   return null
 }
 
-// The workspace page of the settings modal (D-054, D-064): its name, who's in it, and how people get in (D-062).
-type SettingsProps = { wid: string; workspace: WorkspaceCtx['workspace']; requests: WithId<JoinRequest>[] }
+// The workspace's pages in the settings modal (D-054, D-064, D-097): general (name, what we're building), people (members,
+// who's asking, email invites, the invite code; D-062) and export (D-080).
+type SettingsProps = { page: WorkspacePage; wid: string; workspace: WorkspaceCtx['workspace']; requests: WithId<JoinRequest>[] }
 
-function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
+function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
@@ -138,34 +140,44 @@ function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
     p.catch((e: Error) => setError(e.message))
   }
 
+  if (page === 'export') return <ExportSection />
+
+  if (page === 'general') {
+    return (
+      <>
+        <Section label="about">
+          <Row label="name" hint="Shown in the breadcrumb and on the workspaces page.">
+            <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} />
+          </Row>
+          <Row label="what we're building" hint="A sentence or two. The assistant reads it first.">
+            <AutosaveField
+              multiline
+              rows={3}
+              className={`${styles.input} ${styles.about}`}
+              label="what we're building"
+              placeholder="e.g. Tablebook: shift scheduling for independent restaurants"
+              maxLength={DESCRIPTION_MAX}
+              value={workspace.description ?? ''}
+              onSave={(d) => run(describeWorkspace(wid, d))}
+            />
+          </Row>
+        </Section>
+        {error && <Note tone="error">! {error}</Note>}
+      </>
+    )
+  }
+
   return (
     <>
-      <Section label="general">
-        <Row label="name">
-          <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} />
-        </Row>
-        <Row label="building">
-          <AutosaveField
-            multiline
-            rows={2}
-            className={`${styles.input} ${styles.about}`}
-            label="what we're building"
-            placeholder="e.g. Tablebook: shift scheduling for independent restaurants"
-            maxLength={DESCRIPTION_MAX}
-            value={workspace.description ?? ''}
-            onSave={(d) => run(describeWorkspace(wid, d))}
-          />
-        </Row>
-        <p className={styles.hint}>What the team is building, in a sentence or two. The assistant reads it first.</p>
-        <Row label="members">
-          {members} {members === 1 ? 'person' : 'people'}
+      <Section label="members">
+        <Row label="in this workspace">
+          <span>
+            {members} {members === 1 ? 'person' : 'people'}
+          </span>
           {role && <span className={styles.role}>you're the {role}</span>}
         </Row>
-      </Section>
-
-      {isOwner && (
-        <Section label="people">
-          <Row label="asking to join">
+        {isOwner && (
+          <Row label="asking to join" hint="People who entered the invite code.">
             {requests.length === 0 ? (
               <span className={styles.role}>no one is waiting</span>
             ) : (
@@ -189,12 +201,19 @@ function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
               </ul>
             )}
           </Row>
-          <EmailInvites wid={wid} invited={workspace.invitedEmails ?? []} onError={setError} />
-        </Section>
-      )}
+        )}
+        {isOwner && <EmailInvites wid={wid} invited={workspace.invitedEmails ?? []} onError={setError} />}
+      </Section>
 
-      <Section label="invite code">
-        <Row label="code">
+      <Section
+        label="invite code"
+        note={
+          isOwner
+            ? 'People who enter the code ask to join, and you let them in above. A new code stops the old one; invited addresses join without one.'
+            : 'People who enter the code ask to join; the owner lets them in.'
+        }
+      >
+        <Row label="code" hint="Share it with the people you want in.">
           <span className={styles.code}>{pretty}</span>
           <AsciiButton accent="cyan" onClick={copy}>
             {copied ? 'copied' : 'copy'}
@@ -205,14 +224,8 @@ function WorkspaceSettings({ wid, workspace, requests }: SettingsProps) {
             </button>
           )}
         </Row>
-        <p className={styles.hint}>
-          {isOwner
-            ? 'People who enter the code ask to join, and you let them in here. A new code stops the old one; invited addresses join without one.'
-            : 'People who enter the code ask to join; the owner lets them in.'}
-        </p>
       </Section>
-      <ExportSection />
-      {error && <p className={styles.error}>! {error}</p>}
+      {error && <Note tone="error">! {error}</Note>}
     </>
   )
 }
@@ -269,8 +282,20 @@ function ExportSection() {
   const items = ws.customers.length + ws.problems.length + ws.ideas.length + ws.features.length + ws.competitors.length
 
   return (
-    <Section label="export">
-      <Row label="workspace">
+    <>
+      <Section
+        label="files"
+        note={
+          <>
+            <p>
+              The .zip holds every item, link, matrix cell, label and attachment, and the research reports you can see. Import it from
+              the workspaces page to make a copy you own; members, invite codes and assistant keys stay here.
+            </p>
+            {note && <p>{note}</p>}
+        </>
+      }
+    >
+      <Row label="workspace" hint="Everything, to import again later.">
         <AsciiButton accent="cyan" onClick={() => void bundle()} disabled={zipping}>
           {zipping ? 'packing' : 'download .zip'}
         </AsciiButton>
@@ -279,24 +304,20 @@ function ExportSection() {
           {ws.attachments.length > 0 && `, ${ws.attachments.length} ${ws.attachments.length === 1 ? 'file' : 'files'}`}
         </span>
       </Row>
-      <Row label="matrix">
+      <Row label="matrix" hint="Features × competitors, for a spreadsheet.">
         <AsciiButton accent="cyan" onClick={tsv} disabled={ws.features.length === 0 || ws.competitors.length === 0}>
           download .tsv
         </AsciiButton>
       </Row>
-      <Row label="board">
+      <Row label="board" hint="A picture of the whole board as it's filtered now.">
         <AsciiButton accent="cyan" onClick={png} disabled={!snapshot || busy}>
           {busy ? 'drawing' : 'download .png'}
         </AsciiButton>
         {!snapshot && <span className={styles.role}>open the board view first</span>}
       </Row>
-      <p className={styles.hint}>
-        The .zip holds every item, link, matrix cell, label and attachment, and the research reports you can see. Import it from the workspaces page to make a copy you own; members,
-        invite codes and assistant keys stay here. The picture is the whole board as it's filtered now.
-      </p>
-      {note && <p className={styles.hint}>{note}</p>}
-      {error && <p className={styles.error}>! {error}</p>}
     </Section>
+    {error && <Note tone="error">! {error}</Note>}
+    </>
   )
 }
 
@@ -316,7 +337,7 @@ function EmailInvites({ wid, invited, onError }: { wid: string; invited: string[
   }
 
   return (
-    <Row label="invite by email">
+    <Row label="invite by email" hint="No mail is sent: they find the invite when they sign in with that Google address.">
       <form className={styles.inviteForm} onSubmit={submit}>
         <input
           className={styles.input}

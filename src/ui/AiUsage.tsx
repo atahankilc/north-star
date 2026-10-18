@@ -8,7 +8,7 @@ import type { WithId } from '../data/hooks'
 import { WorkspaceContext } from '../views/workspace/context'
 import styles from './AiUsage.module.css'
 import { Choice } from './Choice'
-import { Section } from './Settings'
+import { Note, Row, Section } from './Settings'
 
 type Show = 'all' | 'workspace' | 'own'
 const SHOW: readonly Show[] = ['all', 'workspace', 'own']
@@ -38,9 +38,7 @@ export function AiUsagePage() {
   const ws = useContext(WorkspaceContext)
   if (!ws) {
     return (
-      <Section label="usage">
-        <p className={styles.note}>Open a workspace to see what the assistant used there.</p>
-      </Section>
+      <Section label="usage" note="Open a workspace to see what the assistant used there." />
     )
   }
   return <Usage wid={ws.wid} ownerId={ws.workspace.ownerId} />
@@ -86,7 +84,7 @@ function Usage({ wid, ownerId }: { wid: string; ownerId: string }) {
       {isOwner && (
         <Section label="workspace key by person">
           {people.length === 0 ? (
-            <p className={styles.note}>Nobody has used the workspace key this month.</p>
+            <Note>Nobody has used the workspace key this month.</Note>
           ) : (
             <div className={styles.table} role="table" aria-label="Workspace key use by person">
               <div className={styles.head} role="row">
@@ -112,14 +110,19 @@ function Usage({ wid, ownerId }: { wid: string; ownerId: string }) {
         </Section>
       )}
 
-      <Section label="calls">
-        <Choice label="key" options={SHOW} value={show} onChange={(v) => setShow(v ?? 'all')} />
+      <Section
+        label="calls"
+        note={`Tokens are exactly what OpenAI reported. Costs are estimates from OpenAI's prices on ${PRICES_AS_OF}; your OpenAI dashboard has the real bill. Messages themselves are never logged.`}
+      >
+        <Row label="show" hint="The last 100 calls.">
+          <Choice label="key" bare options={SHOW} value={show} onChange={(v) => setShow(v ?? 'all')} />
+        </Row>
         {error ? (
-          <p className={styles.error}>! Couldn&apos;t load the log.</p>
+          <Note tone="error">! Couldn&apos;t load the log.</Note>
         ) : isLoading ? (
-          <p className={styles.note}>loading…</p>
+          <Note>loading…</Note>
         ) : listed.length === 0 ? (
-          <p className={styles.note}>No calls yet.</p>
+          <Note>No calls yet.</Note>
         ) : (
           <ol className={styles.calls}>
             {listed.map((e) => (
@@ -127,10 +130,6 @@ function Usage({ wid, ownerId }: { wid: string; ownerId: string }) {
             ))}
           </ol>
         )}
-        <p className={styles.note}>
-          Tokens are exactly what OpenAI reported. Costs are estimates from OpenAI&apos;s prices on {PRICES_AS_OF}; your OpenAI
-          dashboard has the real bill. Messages themselves are never logged.
-        </p>
       </Section>
     </>
   )

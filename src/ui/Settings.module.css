@@ -116,8 +116,8 @@
 
 .dialog {
   composes: frame from './Frame.module.css';
-  width: min(780px, calc(100vw - 2 * var(--space-4)));
-  height: min(600px, calc(100vh - 2 * var(--space-8)));
+  width: min(960px, calc(100vw - 2 * var(--space-4)));
+  height: min(720px, calc(100vh - 2 * var(--space-8)));
   padding: 0;
   color: var(--fg);
   background: var(--bg-raised);
@@ -127,10 +127,11 @@
   background: var(--scrim);
 }
 
-/* Side menu on the left, the chosen page on the right. */
+/* Grouped side menu on the left, the chosen page on the right (D-097). */
 .inner {
+  position: relative;
   display: grid;
-  grid-template-columns: 188px minmax(0, 1fr);
+  grid-template-columns: 216px minmax(0, 1fr);
   height: 100%;
 }
 
@@ -138,12 +139,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-6) var(--space-3) var(--space-6) var(--space-6);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-3) var(--space-6) var(--space-4);
   border-right: 1px solid var(--line);
+  background: var(--wash-1);
 }
 
 .navTitle {
   margin: 0;
+  padding: 0 var(--space-3);
   color: var(--fg-strong);
   font-family: var(--font-display);
   font-size: var(--text-lg);
@@ -151,10 +156,35 @@
   letter-spacing: var(--track-title);
 }
 
-.navList {
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* YOU · WORKSPACE · ASSISTANT; the workspace group also names the workspace. */
+.navGroupLabel {
+  composes: fieldLabel from './Frame.module.css';
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: 0 var(--space-3) var(--space-1);
+}
+
+.navGroupName {
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+  letter-spacing: normal;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.navList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -166,11 +196,11 @@
   align-items: center;
   gap: var(--space-2);
   width: 100%;
-  padding: var(--space-2) var(--space-3);
+  padding: 6px var(--space-3);
   border: 0;
   border-left: 2px solid transparent;
   background: none;
-  color: var(--fg-dim);
+  color: var(--fg-muted);
   font: inherit;
   font-size: var(--text-sm);
   text-align: left;
@@ -181,27 +211,14 @@
 }
 
 .navItem:hover {
+  background: var(--wash-2);
   color: var(--fg-strong);
 }
 
 .navItem[aria-current='page'] {
   border-left-color: var(--accent-cyan);
-  background: color-mix(in srgb, var(--accent-cyan) 7%, transparent);
+  background: var(--wash-cyan);
   color: var(--fg-strong);
-}
-
-/* A heading over sub-pages (ai → keys, usage; D-079). */
-.navGroup {
-  display: block;
-  padding: var(--space-2) var(--space-3) 2px;
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
-
-.navItem[data-sub] {
-  padding-left: var(--space-6);
 }
 
 .navLabel::before {
@@ -224,27 +241,40 @@
 }
 
 .page {
-  /* One label column for every settings page: Row and Choice both read it (D-093). */
-  --label-w: 136px;
+  /* The text column of every row (name + what it does); Choice outside a Row reads it too (D-093). */
+  --label-w: 260px;
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-6) var(--space-6) var(--space-8);
+  padding: var(--space-6) var(--space-8) var(--space-8);
 }
 
 .head {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  flex-direction: column;
+  gap: var(--space-1);
+  /* Room for the close button in the corner. */
+  padding-right: var(--space-8);
 }
 
 .title {
   composes: title from './Page.module.css';
 }
 
+.about {
+  margin: 0;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+}
+
 .close {
+  position: absolute;
+  top: var(--space-6);
+  right: var(--space-6);
+  padding: 2px;
   border: 0;
   background: none;
   color: var(--fg-dim);
@@ -252,11 +282,12 @@
   cursor: pointer;
 }
 
-.close:hover {
+.close:hover,
+.close:focus-visible {
   color: var(--fg-strong);
 }
 
-/* Account page: who you are, large. */
+/* Account: who you are, large. */
 .profile {
   display: flex;
   align-items: center;
@@ -288,58 +319,127 @@
 }
 
 .profileEmail {
-  color: var(--fg-dim);
+  color: var(--fg-muted);
   font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
 
+/* A section is a framed box: label in its top edge, rows split by hairlines, a note at the foot. */
 .section {
+  position: relative;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+}
+
+/* The box draws its own corner, so this is the plain field label, set into the top edge. */
+.label {
+  composes: fieldLabel from './Frame.module.css';
+  position: absolute;
+  top: 0;
+  left: var(--space-3);
+  margin: 0;
+  padding: 0 var(--space-2);
+  background: var(--bg-raised);
+  color: var(--fg-muted);
+  font-weight: 400;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding-top: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+}
+
+.body > * {
+  padding: var(--space-3) 0;
+}
+
+.body > * + * {
   border-top: 1px solid var(--line);
 }
 
-.label {
-  composes: label from './Frame.module.css';
+.foot {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line);
+  background: var(--wash-1);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.foot a,
+.note a,
+.hint a {
+  color: var(--fg);
+}
+
+.foot a:hover,
+.note a:hover,
+.hint a:hover {
+  color: var(--accent-cyan);
+}
+
+.foot p {
   margin: 0;
-  font-weight: 400;
+}
+
+.foot p + p {
+  margin-top: var(--space-2);
 }
 
 .row {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-4);
+  display: grid;
+  grid-template-columns: var(--label-w) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-6);
   font-size: var(--text-sm);
 }
 
+.rowText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* As tall as a control, so the name lines up with what's beside it. */
 .rowLabel {
-  composes: fieldLabel from './Frame.module.css';
-  flex-shrink: 0;
-  width: var(--label-w);
+  color: var(--fg-strong);
+  font-size: var(--text-sm);
+  line-height: 30px;
+}
+
+/* What a setting does, in readable text beside it. */
+.hint {
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.5;
 }
 
 .rowValue {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-3);
-  flex: 1;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
   min-width: 0;
+  min-height: 30px;
   color: var(--fg);
   overflow-wrap: anywhere;
 }
 
-.actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
 .note {
   margin: 0;
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.note[data-tone='error'] {
+  color: var(--accent-yellow);
 }
 
 /* Narrow screens: the side menu becomes a row of tabs above the page, and the chip keeps only its initial. */
@@ -358,19 +458,27 @@
   }
 
   .nav {
-    gap: var(--space-3);
-    padding: var(--space-4) var(--space-4) 0;
+    flex-direction: row;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding: var(--space-3) var(--space-4) 0;
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
 
+  /* Tabs have no room for the title or the group names. */
+  .navTitle,
+  .navGroupLabel {
+    display: none;
+  }
+
   .navList {
     flex-direction: row;
-    overflow-x: auto;
   }
 
   .navItem {
     width: auto;
+    white-space: nowrap;
     border-left: 0;
     border-bottom: 2px solid transparent;
   }
@@ -379,19 +487,8 @@
     border-bottom-color: var(--accent-cyan);
   }
 
-  /* Tabs have no room for the heading: the sub-pages carry it. */
-  .navGroup {
-    display: none;
-  }
-
-  .navItem[data-sub] {
-    padding-left: var(--space-3);
-  }
-
-  .navItem[data-sub] .navLabel::before,
-  .navItem[data-sub][aria-current='page'] .navLabel::before {
-    content: 'ai ';
-    color: var(--fg-faint);
+  .navLabel::before {
+    content: none;
   }
 
   .page {
@@ -399,17 +496,18 @@
     padding: var(--space-4) var(--space-4) var(--space-6);
   }
 
+  /* The tabs scroll sideways; they stop short of the close button. */
+  .nav {
+    margin-right: var(--space-12);
+  }
+
+  .close {
+    top: var(--space-3);
+    right: var(--space-3);
+  }
+
   .row {
-    flex-direction: column;
-    gap: var(--space-1);
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
   }
-
-  .rowLabel {
-    width: auto;
-  }
-
-  .rowValue {
-    width: 100%;
-  }
-
 }

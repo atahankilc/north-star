@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -330,6 +330,12 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   tall chat. Verified headless.
 - Next in the redesign (with the user): the preview's look on the stage (bar, frame, marks) and the report screen's, the
   steps/streaming states, narrow screens (below 760 px the chat still covers the stage).
+
+## Done (settings reorganised, 2026-10-18)
+- D-097: grouped menu (you: account, display · workspace: general, people, export · assistant: keys, usage), page title +
+  description, framed sections with notes at the foot, rows with the name and a readable hint beside the control, `--fg-muted`
+  for help text, `Choice bare`, dialog 960 × 720. Verified headless on emulators: every page in dark and light at 1440 and dark
+  at 390 (tabs clear of the close button). Build passes. Committed (not pushed).
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs

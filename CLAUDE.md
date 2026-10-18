@@ -36,7 +36,7 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   `database.rules.json`, not by the client. Change a rule and the data shape together.
 - Defaults are always **dark theme, full motion, background animation on** (D-063, D-069), whatever the OS says. Never change
   them, and never add a theme/motion/background control outside Settings (the landing has none). Signed-in users change them
-  in Settings → app; the choice is saved in that browser.
+  in Settings → display; the choice is saved in that browser.
 - Reduced motion and light theme must always work when chosen: every animation reads `useMotion().reduced` /
   `isReducedMotion()`, CSS colours come from tokens (light values under `[data-theme='light']`), WebGL colours from `usePalette()`.
 - Do not start work that depends on a `blocking` open question without asking the user.

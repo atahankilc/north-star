@@ -21,7 +21,7 @@
 }
 
 .role {
-  color: var(--fg-faint);
+  color: var(--fg-muted);
   font-size: var(--text-xs);
 }
 

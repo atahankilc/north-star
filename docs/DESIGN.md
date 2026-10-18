@@ -40,7 +40,7 @@ References in [design/references/](design/references/):
 | `--accent-blue` | `#3d7bff` | AI output |
 | `--accent-green` | `#3dff8a` | success / "we're better" |
 
-**Light theme (D-069):** dark is the default; Settings → app → theme switches to light (or `system`). Light swaps the
+**Light theme (D-069):** dark is the default; Settings → display → theme switches to light (or `system`). Light swaps the
 tokens above for neutral light grey (`--bg #f5f5f5`), white surfaces, near-black text and darker accents (magenta `#db1a7a`, cyan `#0a979c`,
 yellow `#a87d00`, blue `#2a5fe0`, green `#0f9a4b`); the ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
 (`[data-theme='light']`) and `palettes.light` in `tokens.ts`. Text on an accent fill uses `--on-accent`; tints use `--wash-*`.
@@ -98,8 +98,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - In a workspace, the views sit beside the breadcrumb as unframed tabs after a vertical rule (current view bright with a sliding magenta underline; D-066), and the right side holds one
   account chip (avatar initial + name; just the initial below 640 px) and, beside it, a framed ⚙ icon button (cyan count in the
   corner when people wait to join). The chip opens settings on the account page, the gear on the last page used. It opens the settings
-  modal: a side menu on the left (`> ACCOUNT`, `> WORKSPACE` only inside a workspace, `> APP`; the current one gets a cyan left bar)
-  and the chosen page on the right. Below 640 px the menu becomes a row of tabs above the page (D-064).
+  modal (D-064, D-097): a side menu on the left in three groups, `YOU` (account, display), `WORKSPACE <name>` (general, people,
+  export; only inside a workspace) and `ASSISTANT` (keys, usage); the current page gets a cyan left bar. The page on the right
+  has a title, a one-line description, and framed sections (label set into the top edge, rows split by hairlines, an optional
+  note at the foot). Below 640 px the menu becomes a row of tabs above the page.
   Signed out, the right side is empty (no motion switch on the landing, D-069).
 - Dropdowns (`src/ui/Menu.tsx`): a framed trigger `SHOW all ▾`, a framed list below (or above, for the bottom toolbar), `[x]`/`[ ]` checks.
   The create button is the one solid-magenta control on the board.
@@ -117,8 +119,9 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
 - `frame`: translucent near-black (`--surface`) + 10px backdrop blur + 1px `--line` border
 - `interactive`: frame + hover border lift + accent bar wiping in along the top edge (`--accent` sets the colour)
 - `dashed`: empty or placeholder states
-- `label`: `┌ UPPERCASE MONO` section label, starts a group (Settings sections, report blocks, panel kicker)
-- `fieldLabel`: the same without the glyph, names one field or list (`NOTES`, `LINKS`, Settings row labels, Choice)
+- `label`: `┌ UPPERCASE MONO` section label, starts a group (report blocks, panel kicker)
+- `fieldLabel`: the same without the glyph, names one field or list (`NOTES`, `LINKS`, Choice), and the label set into a
+  Settings section's top edge (the box draws its own corner)
 
 ### Pages (D-093)
 Every workspace view except the board composes `src/ui/Page.module.css`:
@@ -126,7 +129,9 @@ Every workspace view except the board composes `src/ui/Page.module.css`:
   (Flow, Table); the Matrix keeps its fit-content width at full height (D-060); Reports keeps `--measure`, left-aligned.
 - `toolbar`: a view without filters (Reports) puts its controls exactly where the filter row sits, 30 px tall.
 - `title`: Geist at `--text-heading`, for Settings pages, side panels, the competitor profile, the matrix panel and the report screen.
-Settings rows and choices share one label column (`--label-w`, 136 px; 96 px on phones). On phones a side panel covers the filter row.
+Settings rows (D-097) are two columns: on the left the setting's name (mono, `--fg-strong`) with what it does under it (Geist,
+`--fg-muted`), on the right the control (`--label-w`, 260 px; stacked on phones). Help text is never `--fg-faint` there:
+`--fg-muted` is the readable grey for explanations. On phones a side panel covers the filter row.
 
 ## 7. Motion
 

@@ -44,7 +44,7 @@
 }
 
 .cardDetail {
-  color: var(--fg-faint);
+  color: var(--fg-muted);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
@@ -66,7 +66,7 @@
 
 .head {
   border-bottom: 1px solid var(--line);
-  color: var(--fg-faint);
+  color: var(--fg-muted);
 }
 
 .row {
@@ -100,7 +100,7 @@
 }
 
 .callTime {
-  color: var(--fg-faint);
+  color: var(--fg-muted);
   font-family: var(--font-mono);
 }
 

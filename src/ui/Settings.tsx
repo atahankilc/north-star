@@ -1,6 +1,6 @@
-// Settings (D-054, D-064): your account chip and an icon button sit side by side in the HUD; either opens a modal with a side menu on the left and the chosen page on the right:
-// your account, the current workspace (name, people, invite code), the app itself (theme, motion, background, what's coming)
-// and the assistant (OpenAI key, a model per task; D-073, D-077).
+// Settings (D-054, D-064, D-097): your account chip and an icon button sit side by side in the HUD; either opens a modal with a
+// grouped side menu on the left and the chosen page on the right: you (account, display), the current workspace (general,
+// people, export) and the assistant (keys, usage; D-073, D-077, D-079).
 // A native <dialog>: focus stays inside, Escape and the backdrop close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../data/auth'
@@ -18,24 +18,32 @@ const MOTION: readonly MotionPref[] = ['full', 'reduced', 'system']
 const BACKGROUND: readonly BackgroundPref[] = ['on', 'off']
 const THEME: readonly ThemePref[] = ['dark', 'light', 'system']
 
-type Page = 'account' | 'workspace' | 'app' | 'ai-keys' | 'ai-usage'
+// The workspace's own pages; WorkspaceLayout renders each (D-097).
+export type WorkspacePage = 'general' | 'people' | 'export'
+type Page = 'account' | 'display' | WorkspacePage | 'ai-keys' | 'ai-usage'
+type Group = 'you' | 'workspace' | 'assistant'
 
-// `group` pages sit under a heading in the menu: the assistant's keys and its usage log (D-079).
-const PAGES: { id: Page; label: string; title: string; group?: string }[] = [
-  { id: 'account', label: 'account', title: 'Account' },
-  { id: 'workspace', label: 'workspace', title: 'Workspace' },
-  { id: 'app', label: 'app', title: 'App' },
-  { id: 'ai-keys', label: 'keys', title: 'Assistant keys', group: 'ai' },
-  { id: 'ai-usage', label: 'usage', title: 'Assistant usage', group: 'ai' },
+// The menu, in three groups (D-097): you, this workspace, the assistant.
+const PAGES: { id: Page; label: string; title: string; about: string; group: Group }[] = [
+  { id: 'account', label: 'account', title: 'Account', about: 'Who you are signed in as.', group: 'you' },
+  { id: 'display', label: 'display', title: 'Display', about: 'How North Star looks and moves in this browser.', group: 'you' },
+  { id: 'general', label: 'general', title: 'Workspace', about: 'Its name and what the team is building.', group: 'workspace' },
+  { id: 'people', label: 'people', title: 'People', about: 'Who is in this workspace and how others get in.', group: 'workspace' },
+  { id: 'export', label: 'export', title: 'Export', about: 'Take the workspace with you as files.', group: 'workspace' },
+  { id: 'ai-keys', label: 'keys', title: 'Assistant keys', about: 'The OpenAI key the assistant uses, and its models.', group: 'assistant' },
+  { id: 'ai-usage', label: 'usage', title: 'Assistant usage', about: 'What the assistant used here this month.', group: 'assistant' },
 ]
 
+const WORKSPACE_PAGES: readonly Page[] = ['general', 'people', 'export']
+
 type Props = {
-  // The current workspace's page, if there is one.
-  workspace?: ReactNode
+  // The current workspace's pages, if there is one.
+  workspace?: (page: WorkspacePage) => ReactNode
+  workspaceName?: string
   badge?: number
 }
 
-export function SettingsButton({ workspace, badge = 0 }: Props) {
+export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
   const { user } = useAuth()
   const myColor = usePresence((s) => s.myColor)
   const theme = useTheme((s) => s.theme)
@@ -52,14 +60,14 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
 
   if (!user) return null
   const who = user.name || user.email || 'Account'
-  const pages = PAGES.filter((p) => p.id !== 'workspace' || workspace)
-  // Outside a workspace its page doesn't exist; fall back to the account.
+  const pages = PAGES.filter((p) => p.group !== 'workspace' || workspace)
+  // Outside a workspace its pages don't exist; fall back to the account.
   const current = pages.find((p) => p.id === page) ?? pages[0]
 
   const show = (on?: Page) => {
-    // Someone waiting to join: open straight on the workspace page.
+    // Someone waiting to join: open straight on the people page.
     if (on) setPage(on)
-    else if (badge > 0 && workspace) setPage('workspace')
+    else if (badge > 0 && workspace) setPage('people')
     setOpen(true)
   }
 
@@ -96,34 +104,38 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
               <h2 id="settings-title" className={styles.navTitle}>
                 Settings
               </h2>
-              <ul className={styles.navList}>
-                {pages.map((p, i) => (
-                  <li key={p.id}>
-                    {p.group && p.group !== pages[i - 1]?.group && <span className={styles.navGroup}>{p.group}</span>}
-                    <button
-                      className={styles.navItem}
-                      data-sub={p.group ? '' : undefined}
-                      aria-current={p.id === current.id ? 'page' : undefined}
-                      onClick={() => setPage(p.id)}
-                    >
-                      <span className={styles.navLabel}>{p.label}</span>
-                      {p.id === 'workspace' && badge > 0 && <span className={styles.navBadge}>{badge}</span>}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              {(['you', 'workspace', 'assistant'] as const).map((g) => {
+                const items = pages.filter((p) => p.group === g)
+                if (items.length === 0) return null
+                return (
+                  <div key={g} className={styles.navGroup}>
+                    <span className={styles.navGroupLabel}>
+                      {g}
+                      {g === 'workspace' && workspaceName && <span className={styles.navGroupName}>{workspaceName}</span>}
+                    </span>
+                    <ul className={styles.navList}>
+                      {items.map((p) => (
+                        <li key={p.id}>
+                          <button className={styles.navItem} aria-current={p.id === current.id ? 'page' : undefined} onClick={() => setPage(p.id)}>
+                            <span className={styles.navLabel}>{p.label}</span>
+                            {p.id === 'people' && badge > 0 && <span className={styles.navBadge}>{badge}</span>}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
             </nav>
 
-            <div className={styles.page}>
+            <div className={styles.page} key={current.id}>
               <header className={styles.head}>
                 <h3 className={styles.title}>{current.title}</h3>
-                <button className={styles.close} onClick={() => setOpen(false)} aria-label="Close settings">
-                  [×]
-                </button>
+                <p className={styles.about}>{current.about}</p>
               </header>
 
               {current.id === 'account' && (
-                <>
+                <Section label="signed in">
                   <div className={styles.profile}>
                     <span className={styles.avatar} aria-hidden>
                       {who.trim()[0]?.toUpperCase()}
@@ -133,31 +145,33 @@ export function SettingsButton({ workspace, badge = 0 }: Props) {
                       {user.email && <span className={styles.profileEmail}>{user.email}</span>}
                     </span>
                   </div>
-                  <Section label="sign-in">
-                    <Row label="method">Google</Row>
-                    <div className={styles.actions}>
-                      <AsciiButton accent="cyan" onClick={() => signOut()}>
-                        sign out
-                      </AsciiButton>
-                    </div>
-                  </Section>
-                </>
+                  <Row label="method" hint="North Star signs in with Google only.">
+                    <span>Google</span>
+                    <AsciiButton accent="cyan" onClick={() => signOut()}>
+                      sign out
+                    </AsciiButton>
+                  </Row>
+                </Section>
               )}
 
-              {current.id === 'workspace' && workspace}
-
-              {current.id === 'ai-keys' && <AiKeysPage />}
-
-              {current.id === 'ai-usage' && <AiUsagePage />}
-
-              {current.id === 'app' && (
-                <Section label="display">
+              {current.id === 'display' && (
+                <Section label="appearance" note="Saved in this browser only.">
                   <ThemeChoice />
                   <MotionChoice />
                   <BackgroundChoice />
                 </Section>
               )}
+
+              {workspace && WORKSPACE_PAGES.includes(current.id) && workspace(current.id as WorkspacePage)}
+
+              {current.id === 'ai-keys' && <AiKeysPage />}
+
+              {current.id === 'ai-usage' && <AiUsagePage />}
             </div>
+
+            <button className={styles.close} onClick={() => setOpen(false)} aria-label="Close settings">
+              [×]
+            </button>
           </div>
         )}
       </dialog>
@@ -170,16 +184,18 @@ function ThemeChoice() {
   const theme = useTheme((s) => s.theme)
   const setPref = useTheme((s) => s.setPref)
   return (
-    <>
-      <Choice label="theme" options={THEME} value={pref} onChange={(p) => setPref(p ?? 'dark')} />
-      <p className={styles.note}>
-        {pref === 'system'
+    <Row
+      label="theme"
+      hint={
+        pref === 'system'
           ? `Following your system: ${theme}.`
           : pref === 'light'
             ? 'Dark ink on light paper.'
-            : 'Light on black, the way North Star was drawn.'}
-      </p>
-    </>
+            : 'Light on black, the way North Star was drawn.'
+      }
+    >
+      <Choice label="theme" bare options={THEME} value={pref} onChange={(p) => setPref(p ?? 'dark')} />
+    </Row>
   )
 }
 
@@ -188,16 +204,18 @@ function MotionChoice() {
   const reduced = useMotion((s) => s.reduced)
   const setPref = useMotion((s) => s.setPref)
   return (
-    <>
-      <Choice label="motion" options={MOTION} value={pref} onChange={(p) => setPref(p ?? 'full')} />
-      <p className={styles.note}>
-        {pref === 'system'
+    <Row
+      label="motion"
+      hint={
+        pref === 'system'
           ? `Following your system: ${reduced ? 'reduced' : 'full'} motion.`
           : pref === 'reduced'
             ? 'Animations are off: things appear at once and the background holds still.'
-            : 'All animations on, whatever your system says.'}
-      </p>
-    </>
+            : 'All animations on, whatever your system says.'
+      }
+    >
+      <Choice label="motion" bare options={MOTION} value={pref} onChange={(p) => setPref(p ?? 'full')} />
+    </Row>
   )
 }
 
@@ -205,31 +223,44 @@ function BackgroundChoice() {
   const background = useDisplay((s) => s.background)
   const setBackground = useDisplay((s) => s.setBackground)
   return (
-    <>
-      <Choice label="background" options={BACKGROUND} value={background} onChange={(b) => setBackground(b ?? 'on')} />
-      <p className={styles.note}>
-        {background === 'on'
-          ? 'The ASCII field flows behind your pages.'
-          : 'No background animation while you\'re signed in. Uses less power.'}
-      </p>
-    </>
+    <Row
+      label="background"
+      hint={background === 'on' ? 'The ASCII field flows behind your pages.' : "No background animation while you're signed in. Uses less power."}
+    >
+      <Choice label="background" bare options={BACKGROUND} value={background} onChange={(b) => setBackground(b ?? 'on')} />
+    </Row>
   )
 }
 
-export function Section({ label, children }: { label: string; children: ReactNode }) {
+// A framed group of rows (D-097): its label in the top edge, rows split by hairlines, an optional note at the foot.
+export function Section({ label, note, children }: { label: string; note?: ReactNode; children?: ReactNode }) {
   return (
     <section className={styles.section}>
       <h4 className={styles.label}>{label}</h4>
-      {children}
+      {children && <div className={styles.body}>{children}</div>}
+      {note && <div className={styles.foot}>{note}</div>}
     </section>
   )
 }
 
-export function Row({ label, children }: { label: string; children: ReactNode }) {
+// A setting: its name and what it does on the left, the control on the right.
+export function Row({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
   return (
     <div className={styles.row}>
-      <span className={styles.rowLabel}>{label}</span>
-      <span className={styles.rowValue}>{children}</span>
+      <div className={styles.rowText}>
+        <span className={styles.rowLabel}>{label}</span>
+        {hint && <span className={styles.hint}>{hint}</span>}
+      </div>
+      <div className={styles.rowValue}>{children}</div>
     </div>
+  )
+}
+
+// Readable help text inside a section (not faint).
+export function Note({ children, tone }: { children: ReactNode; tone?: 'error' }) {
+  return (
+    <p className={styles.note} data-tone={tone}>
+      {children}
+    </p>
   )
 }

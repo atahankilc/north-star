@@ -6,7 +6,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../data/auth'
 import { useMotion } from '../state/motion'
 import styles from './Hud.module.css'
-import { SettingsButton } from './Settings'
+import { SettingsButton, type WorkspacePage } from './Settings'
 
 export type Crumb = {
   label: ReactNode
@@ -21,13 +21,14 @@ type Props = {
   crumbs?: Crumb[]
   views?: Tab[]
   right?: ReactNode
-  // The current workspace's section in the settings modal.
-  settings?: ReactNode
+  // The current workspace's pages in the settings modal, and its name for the menu (D-097).
+  settings?: (page: WorkspacePage) => ReactNode
+  settingsName?: string
   // Something in settings wants attention, e.g. people asking to join (D-062).
   settingsBadge?: number
 }
 
-export function Hud({ crumbs = [], views, right, settings, settingsBadge }: Props) {
+export function Hud({ crumbs = [], views, right, settings, settingsName, settingsBadge }: Props) {
   const atRoot = crumbs.length === 0
   const { user } = useAuth()
   const reduced = useMotion((s) => s.reduced)
@@ -90,7 +91,7 @@ export function Hud({ crumbs = [], views, right, settings, settingsBadge }: Prop
       <div className={styles.right} data-glide>
         {right}
         {/* Settings (motion, theme, background) only once signed in; the landing has no controls. */}
-        {user && <SettingsButton workspace={settings} badge={settingsBadge} />}
+        {user && <SettingsButton workspace={settings} workspaceName={settingsName} badge={settingsBadge} />}
       </div>
     </header>
   )
