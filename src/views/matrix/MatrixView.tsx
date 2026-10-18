@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import { itemPath, workspacePath } from '../../app/paths'
 import { cellId, setCell } from '../../data/comparisons'
 import type { WithId } from '../../data/hooks'
-import { COVERAGES, type Comparison, type Coverage, type CriterionScore, type Feature } from '../../data/model'
+import { CONFIDENCES, COVERAGES, type Comparison, type Confidence, type Coverage, type CriterionScore, type Feature } from '../../data/model'
 import { Appear } from '../../ui/Appear'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { Choice } from '../../ui/Choice'
@@ -20,7 +20,7 @@ import { CellPeers, MarkOn, markHoverOf, markRing, PeersOn } from '../workspace/
 import { useMarkOf, useStage } from '../workspace/stage'
 import styles from './MatrixView.module.css'
 import { CriteriaEditor, CriterionScores, SCORE_TONE } from './Criteria'
-import { coverageOf, matrixCols, matrixRows, openCriteria, scoresOf, verdict } from './reading'
+import { coverageOf, matrixCols, matrixRows, openCriteria, relevant, scoresOf, verdict } from './reading'
 
 // Not assessed → none → partial → full → better → not assessed.
 const GLYPH: Record<Coverage | 'unset', string> = { unset: '·', none: '○', partial: '◐', full: '●', better: '★' }
@@ -103,11 +103,13 @@ export function MatrixView() {
     )
   }
 
+  // Out of the features this competitor is comparable on (D-136).
   const coveredIn = (c: number) =>
     rows.filter((f, r) => {
       const v = coverageOf(cellAt(r, c), f)
-      return v === 'full' || v === 'better'
+      return relevant(cellAt(r, c)) && (v === 'full' || v === 'better')
     }).length
+  const comparableIn = (c: number) => rows.filter((_, r) => relevant(cellAt(r, c))).length
 
   return (
     <main className={styles.page}>
@@ -144,8 +146,9 @@ export function MatrixView() {
                   <td className={styles.meta}>{f.status ?? ''}</td>
                   {cols.map((c, col) => {
                     const cell = cellAt(r, col)
-                    const cov = coverageOf(cell, f)
-                    const scores = scoresOf(cell, f)
+                    const out = !relevant(cell)
+                    const cov = out ? undefined : coverageOf(cell, f)
+                    const scores = out ? null : scoresOf(cell, f)
                     const isSel = sel?.row === r && sel.col === col
                     return (
                       <td key={c.id} className={styles.cellTd} data-col-selected={sel?.col === col}>
@@ -154,13 +157,24 @@ export function MatrixView() {
                           className={styles.cell}
                           data-selected={isSel}
                           style={cov ? { ['--tone' as string]: TONE[cov] } : undefined}
-                          aria-label={`${f.title || 'Untitled'} at ${c.name || 'Untitled'}: ${cov ?? 'not assessed'}${scores ? `, ${metOf(scores)}` : ''}`}
+                          aria-label={`${f.title || 'Untitled'} at ${c.name || 'Untitled'}: ${out ? 'not relevant' : (cov ?? 'not assessed')}${scores ? `, ${metOf(scores)}` : ''}${cell?.confidence ? `, ${cell.confidence}` : ''}`}
                           title={cell?.notes ? clip(cell.notes) : undefined}
-                          // Scored cells read from their criteria: clicking only selects (D-133).
-                          onClick={() => (isSel && !scores ? setCoverage({ row: r, col }, next(cell?.coverage)) : setSelected({ row: r, col }))}
+                          // Scored cells read from their criteria, and a cell left out has none: clicking only selects (D-133, D-136).
+                          onClick={() => (isSel && !scores && !out ? setCoverage({ row: r, col }, next(cell?.coverage)) : setSelected({ row: r, col }))}
                         >
-                          {scores ? <ScoreBar scores={scores} /> : <span className={styles.glyph}>{GLYPH[cov ?? 'unset']}</span>}
+                          {out ? (
+                            <span className={styles.out}>—</span>
+                          ) : scores ? (
+                            <ScoreBar scores={scores} />
+                          ) : (
+                            <span className={styles.glyph}>{GLYPH[cov ?? 'unset']}</span>
+                          )}
                           {cell?.notes && <span className={styles.noted} aria-hidden />}
+                          {!out && cell?.confidence && CONFIDENCE_MARK[cell.confidence] && (
+                            <span className={styles.sure} aria-hidden>
+                              {CONFIDENCE_MARK[cell.confidence]}
+                            </span>
+                          )}
                           <CellMark id={cellId(f.id, c.id)} />
                           <CellPeers id={cellId(f.id, c.id)} />
                         </button>
@@ -190,7 +204,7 @@ export function MatrixView() {
               </th>
               {cols.map((c, col) => (
                 <td key={c.id} className={styles.footCount}>
-                  {coveredIn(col)}/{rows.length}
+                  {coveredIn(col)}/{comparableIn(col)}
                 </td>
               ))}
               <td />
@@ -205,6 +219,12 @@ export function MatrixView() {
             {GLYPH[k]} <span className={styles.legendLabel}>{k === 'unset' ? 'not assessed' : k}</span>
           </span>
         ))}
+        <span>
+          — <span className={styles.legendLabel}>not relevant</span>
+        </span>
+        <span>
+          ~ <span className={styles.legendLabel}>inferred</span> ? <span className={styles.legendLabel}>a guess</span>
+        </span>
         <span className={styles.legendBar}>
           <ScoreBar scores={['met', 'part', 'no', undefined]} /> <span className={styles.legendLabel}>criteria: met · part · no · not assessed</span>
         </span>
@@ -228,6 +248,10 @@ export function MatrixView() {
 }
 
 const NO_MARKS = new Map<string, never>()
+const NOT_RELEVANT = ['not relevant'] as const
+
+// How sure a cell is, in its corner (D-136): documented needs no mark.
+const CONFIDENCE_MARK: Record<Confidence, string> = { documented: '', inferred: '~', guess: '?' }
 
 const clip = (s: string) => (s.length > 400 ? `${s.slice(0, 400)}…` : s)
 const metOf = (scores: (CriterionScore | undefined)[]) => `${scores.filter((s) => s === 'met').length} of ${scores.length} criteria met`
@@ -285,6 +309,7 @@ function CellPanel({
     if (!hasCriteria) setEditing(true)
   }, [hasCriteria])
   const scores = scoresOf(cell, feature)
+  const out = !relevant(cell)
 
   return (
     <Appear as="aside" className={styles.panel} data-side-panel="narrow" aria-label="Cell details">
@@ -300,32 +325,50 @@ function CellPanel({
         {competitorName || 'Untitled'}
       </h2>
 
-      {scores ? (
-        <div className={styles.derived}>
-          <span className={styles.fieldLabel}>coverage</span>
-          <span style={{ color: TONE[coverageOf(cell, feature)!] }}>{coverageOf(cell, feature)}</span>
-          <span className={styles.derivedHint}>{metOf(scores)}</span>
-        </div>
+      {/* Not comparable at all: left out of the row's reading, the counts and the white space (D-136). */}
+      <Choice
+        label="compare"
+        options={NOT_RELEVANT}
+        value={out ? 'not relevant' : undefined}
+        onChange={(v) => set({ notRelevant: v ? true : undefined })}
+      />
+      {out ? (
+        <p className={styles.outHint}>
+          They don't do this kind of thing at all, so this cell is left out of the reading and the counts. Use none when they
+          could and don't.
+        </p>
       ) : (
-        <Choice label="coverage" options={COVERAGES} value={cell?.coverage} onChange={(coverage) => set({ coverage })} tones={TONE} />
-      )}
-
-      {/* What the feature must do, and how they do on each (D-133). */}
-      <div className={styles.field}>
-        <span className={styles.criteriaHead}>
-          <span className={styles.fieldLabel}>{editing || !hasCriteria ? 'criteria of this feature' : 'criteria'}</span>
-          {hasCriteria && (
-            <button className={styles.edit} onClick={() => setEditing(!editing)}>
-              {editing ? 'done' : 'edit'}
-            </button>
-          )}
-        </span>
-        {editing || !hasCriteria ? (
-          <CriteriaEditor feature={feature} bare />
+        <>
+        {scores ? (
+          <div className={styles.derived}>
+            <span className={styles.fieldLabel}>coverage</span>
+            <span style={{ color: TONE[coverageOf(cell, feature)!] }}>{coverageOf(cell, feature)}</span>
+            <span className={styles.derivedHint}>{metOf(scores)}</span>
+          </div>
         ) : (
-          <CriterionScores feature={feature} competitorId={competitorId} cell={cell} />
+          <Choice label="coverage" options={COVERAGES} value={cell?.coverage} onChange={(coverage) => set({ coverage })} tones={TONE} />
         )}
-      </div>
+
+        {/* What the feature must do, and how they do on each (D-133). */}
+        <div className={styles.field}>
+          <span className={styles.criteriaHead}>
+            <span className={styles.fieldLabel}>{editing || !hasCriteria ? 'criteria of this feature' : 'criteria'}</span>
+            {hasCriteria && (
+              <button className={styles.edit} onClick={() => setEditing(!editing)}>
+                {editing ? 'done' : 'edit'}
+              </button>
+            )}
+          </span>
+          {editing || !hasCriteria ? (
+            <CriteriaEditor feature={feature} bare />
+          ) : (
+            <CriterionScores feature={feature} competitorId={competitorId} cell={cell} />
+          )}
+        </div>
+
+          <Choice label="sure" options={CONFIDENCES} value={cell?.confidence} onChange={(confidence) => set({ confidence })} />
+        </>
+      )}
 
       <label className={styles.field}>
         <span className={styles.fieldLabel}>their version</span>

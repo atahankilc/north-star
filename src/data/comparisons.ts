@@ -13,7 +13,7 @@ export function setCell(
   wid: string,
   featureId: string,
   competitorId: string,
-  fields: Partial<Pick<Comparison, 'coverage' | 'notes' | 'competitorFeatureId'>>,
+  fields: Partial<Pick<Comparison, 'coverage' | 'notes' | 'competitorFeatureId' | 'notRelevant' | 'confidence'>>,
 ) {
   const data: Record<string, unknown> = { featureId, competitorId, updatedAt: Date.now() }
   for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v

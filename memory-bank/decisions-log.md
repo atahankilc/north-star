@@ -1823,3 +1823,20 @@ full-sentence label whose chips piled up into unreadable text (docs/specs/useful
 - *Verified* in headless Chrome on the emulators (example workspace): no salmon lines by default, hovering ShiftGrid drew
   its two, selecting Paper rota drew its one with `competes`, cards read `vs 2 · 4 features`. Not seen on BUBBLES (the
   browser tab was signed out). `npm run build`.
+
+### D-136 · 2026-10-19 · Accepted (extends D-133, D-134; slice 4 of Phase 6)
+**A matrix cell can be "not relevant", and says how sure it is.** In BUBBLES only 145 of 418 cells were filled, and the
+matrix couldn't tell "we didn't look" from "doesn't apply"; many notes said "the reviewed docs do not establish".
+- *Not relevant* (`notRelevant: true` on the cell, only true stored): the competitor isn't comparable on this feature at
+  all. The cell shows `—`, and is left out of the row's reading, the white space and the footer, which now counts out of
+  the comparable features (`0/5`). Different from `none` (they could, and don't); the panel says so. Set in the cell panel
+  (`compare [not relevant]`, click again to undo); while set, coverage, criteria and confidence are hidden there.
+- *Confidence* (`confidence: documented | inferred | guess`; missing = not said): the panel's `sure` row. The cell's top
+  left shows `~` inferred, `?` a guess; documented needs no mark. The spec said "unknown"; `guess` says what it means.
+- *Rules:* `optBool notRelevant`, `confidence` in the three values (3 new tests). Export/import and the TSV carry both
+  (`not relevant`, `partial (2/5 met) [inferred]`).
+- *Assistant:* reads both in the brief and `get_items`; `set_matrix_cell` takes `relevant` (false / true / null keeps) and
+  `confidence` (`not said` clears); each `set_criteria` competitor entry takes a `confidence`.
+- *Verified* in headless Chrome on the emulators: a cell marked not relevant (`—`, its column's footer 0/6 → 0/5), two
+  cells given inferred / guess (marks shown); with a fake OpenAI, one proposal set a criteria row `inferred` and a cell not
+  relevant. Rules: 260 pass (the 2 usage-log tests fail as before). `npm run build`. Firestore rules deployed 2026-10-19.

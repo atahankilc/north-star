@@ -134,9 +134,10 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
           const old = list('comparisons').find((d) => d.id === id)
           const merged = { ...((old?.criteria as Record<string, unknown>) ?? {}), ...c.scores }
           const criteria = Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== null))
-          if (patch('comparisons', id, { criteria })) mark(id, 'edited')
+          const sure = c.confidence === undefined ? {} : { confidence: c.confidence ?? undefined }
+          if (patch('comparisons', id, { criteria, ...sure })) mark(id, 'edited')
           else {
-            list('comparisons').push({ id, featureId, competitorId, criteria, updatedAt: now })
+            list('comparisons').push({ id, featureId, competitorId, criteria, ...sure, updatedAt: now })
             mark(id, 'new')
           }
           ids.push(id, competitorId)

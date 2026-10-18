@@ -4,6 +4,7 @@ import type { AssistantWrite, ChangeRef } from '../data/assistant'
 import { linked } from '../data/edges'
 import { newCriterionId } from '../data/comparisons'
 import {
+  CONFIDENCES,
   COVERAGES,
   CRITERION_SCORES,
   FEATURE_EFFORTS,
@@ -46,6 +47,8 @@ const LABEL_COLORS = ['magenta', 'cyan', 'yellow', 'blue', 'green'] as const
 const LABEL_HEX: Record<string, string> = { magenta: colors.magenta, cyan: colors.cyan, yellow: colors.yellow, blue: colors.blue, green: colors.green }
 const SIDES = ['right', 'left', 'above', 'below'] as const
 const NOT_ASSESSED = 'not assessed'
+// How sure a matrix cell is (D-136); "not said" clears it.
+const NOT_SAID = 'not said'
 const str = (description: string) => ({ type: 'string', description })
 const optStr = (description: string) => ({ type: ['string', 'null'], description })
 const optEnum = (values: readonly string[], description: string) => ({ type: ['string', 'null'], enum: [...values, null], description })
@@ -63,6 +66,11 @@ const styleWords = (r: Raw) => STYLE.flatMap((k) => (r[k] === true ? [k] : r[k] 
 const SIZE_HELP = 'heading (H1, an area), subheading (H2, a part of one), minor (H3, a part of a part), or note'
 const optTags = { type: ['array', 'null'], items: { type: 'string' }, description: 'Replaces the tags. Lowercase words, no #.' }
 const ref = (what: string) => str(`${what}: a ref from the workspace (without brackets) or the key of an item added in this same proposal.`)
+const CONFIDENCE = {
+  type: ['string', 'null'],
+  enum: [...CONFIDENCES, NOT_SAID, null],
+  description: 'How sure: documented (their docs or the workspace say so), inferred (read between the lines), guess; "not said" clears it. Null keeps it.',
+}
 const near = optStr('Ref or key of a card to place the new card beside, usually the one it will be linked to. Null: beside its own kind.')
 
 function op(name: string, description: string, properties: Record<string, unknown>) {
@@ -260,6 +268,11 @@ const OPS = [
       "Their version: the ref or key of the competitor's own feature (from its breakdown) that matches ours. Empty string: none.",
     ),
     notes: optStr('Replaces the cell notes.'),
+    relevant: optBool(
+      "false: they don't do this kind of thing at all, so the cell is left out of the matrix's readings (not the same as " +
+        'coverage none: they could and don\'t). true: comparable again. Null keeps it.',
+    ),
+    confidence: CONFIDENCE,
   }),
   op(
     'set_criteria',
@@ -289,8 +302,9 @@ const OPS = [
                 'One per criterion, in order: met (the workspace shows they do it), part (some of it), no (shown not to), ' +
                 'or "not assessed" when the workspace doesn\'t say. Never guess met.',
             },
+            confidence: CONFIDENCE,
           },
-          required: ['competitor', 'scores'],
+          required: ['competitor', 'scores', 'confidence'],
           additionalProperties: false,
         },
       },
@@ -578,7 +592,9 @@ export function parseProposal(
           text: `${f?.name ?? '?'} × ${c?.name ?? '?'}`,
           detail:
             [
+              raw.relevant === false ? 'not relevant' : raw.relevant === true ? 'relevant again' : undefined,
               s(raw.coverage),
+              s(raw.confidence),
               given && (theirs ? `their version ${theirs.name}` : emptied(raw.their_feature) ? 'their version emptied' : undefined),
               emptied(raw.notes) ? 'notes emptied' : s(raw.notes) && clip(s(raw.notes)!),
             ]
@@ -595,7 +611,7 @@ export function parseProposal(
                   ? 'unknown competitor feature'
                   : theirs && (theirs.type !== 'competitorFeature' || parentOf(raw.their_feature) !== idOfRef(c.ref))
                     ? `${theirs.name} isn't one of ${c.name}'s features`
-                    : !s(raw.coverage) && typeof raw.notes !== 'string' && !given
+                    : !s(raw.coverage) && typeof raw.notes !== 'string' && !given && typeof raw.relevant !== 'boolean' && !s(raw.confidence)
                       ? 'nothing to change'
                       : undefined,
         }
@@ -911,10 +927,12 @@ export const itemsOf = (raw: Raw): unknown[] => [
 // A set_criteria row (D-133): the criteria given (trimmed, empty ones dropped), or null to keep the feature's.
 const criteriaOf = (raw: Raw): string[] | null =>
   Array.isArray(raw.criteria) ? raw.criteria.map((k) => (typeof k === 'string' ? k.trim().slice(0, 200) : '')).filter(Boolean) : null
-const scoresOf = (raw: Raw): { competitor: unknown; scores: string[] }[] =>
+const scoresOf = (raw: Raw): { competitor: unknown; scores: string[]; confidence: unknown }[] =>
   (Array.isArray(raw.scores) ? raw.scores : [])
     .filter((x): x is Raw => !!x && typeof x === 'object')
-    .map((x) => ({ competitor: x.competitor, scores: Array.isArray(x.scores) ? x.scores.map(String) : [] }))
+    .map((x) => ({ competitor: x.competitor, scores: Array.isArray(x.scores) ? x.scores.map(String) : [], confidence: x.confidence }))
+// A cell's confidence from a row (D-136): a value, null to clear ("not said"), undefined to keep.
+const sureOf = (v: unknown) => (v === NOT_SAID ? null : (CONFIDENCES as readonly unknown[]).includes(v) ? (v as string) : undefined)
 // Labels are named by their text: the same text, ignoring case and spaces at the ends. Nothing names a label with no
 // text, like the project block (D-118), whose text is empty.
 const sameLabel = (text: string, v: unknown) => !!s(v) && text.trim().toLowerCase() === s(v)!.toLowerCase()
@@ -1277,6 +1295,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
           : now
         const cells = scoresOf(r).map((x) => ({
           competitor: refOf(x.competitor),
+          confidence: sureOf(x.confidence),
           scores: Object.fromEntries(
             list.map((k, i) => [k.id, (CRITERION_SCORES as readonly string[]).includes(x.scores[i]) ? (x.scores[i] as CriterionScore) : null]),
           ),
@@ -1294,7 +1313,13 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
           do: 'cell',
           feature: refOf(r.feature),
           competitor: refOf(r.competitor),
-          fields: compact({ coverage: r.coverage === NOT_ASSESSED ? null : text(r.coverage), notes: edit(r.notes) }),
+          fields: compact({
+            coverage: r.coverage === NOT_ASSESSED ? null : text(r.coverage),
+            notes: edit(r.notes),
+            // Only true is stored (D-136).
+            notRelevant: r.relevant === false ? true : r.relevant === true ? null : undefined,
+            confidence: sureOf(r.confidence),
+          }),
           theirs: typeof r.their_feature !== 'string' ? undefined : emptied(r.their_feature) ? null : refOf(r.their_feature),
         }
     }

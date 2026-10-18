@@ -108,6 +108,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Frames as tall as their content, capped at the page (D-106).
 - Matrix criteria: a feature lists ≤ 8 must-haves, a cell scores each `met | part | no` and then reads from them (blocks per
   criterion); `◇ N open` = criteria nobody meets (white space); edited in the feature or cell panel (D-133).
+- A cell can be `not relevant` (`—`, left out of readings and counts, unlike `none`) and has a confidence
+  `documented | inferred | guess` (`~` / `?` in its corner) (D-136).
 - Reports tab: table alone, 10 a page with numbered pages, KIND/BY/SEEN BY filters + upload square in its top row; a report
   opens beside it (`?report=`), nothing opens by itself (D-103, D-106). Upload your own `.md` (≤512 KB), round-trips the download (D-091).
 

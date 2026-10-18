@@ -5,14 +5,16 @@
 // UTF-8 with a BOM and CRLF line ends, so Excel shows ş, ğ and friends right.
 import type { WithId } from '../data/hooks'
 import type { Comparison, Competitor, Feature } from '../data/model'
-import { coverageOf, matrixCols, matrixRows, openCriteria, scoresOf, verdict } from '../views/matrix/reading'
+import { coverageOf, matrixCols, matrixRows, openCriteria, relevant, scoresOf, verdict } from '../views/matrix/reading'
 
 const cell = (v: string) => v.replace(/[\t\r\n]+/g, ' ').trim()
 
 function coverageText(m: Comparison | undefined, f: Feature) {
+  if (!relevant(m)) return 'not relevant'
   const read = coverageOf(m, f) ?? ''
   const scores = scoresOf(m, f)
-  return scores ? `${read} (${scores.filter((s) => s === 'met').length}/${scores.length} met)` : read
+  const sure = m?.confidence ? ` [${m.confidence}]` : ''
+  return (scores ? `${read} (${scores.filter((s) => s === 'met').length}/${scores.length} met)` : read) + sure
 }
 
 export function matrixTsv(features: WithId<Feature>[], competitors: WithId<Competitor>[], comparisons: WithId<Comparison>[]): string {

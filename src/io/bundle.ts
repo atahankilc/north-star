@@ -4,7 +4,7 @@
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, LABEL_SIZES, MAX_CRITERIA, REPORT_LIMITS, type SavedReport } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, LABEL_SIZES, MAX_CRITERIA, REPORT_LIMITS, type SavedReport } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -216,7 +216,13 @@ export function cleanCompetitorFeature(d: Doc, now: number) {
 }
 
 export function cleanComparison(d: Doc, now: number) {
-  return { ...compact({ coverage: oneOf(d.coverage, COVERAGES), notes: str(d.notes, 20000), criteria: scores(d.criteria) }), updatedAt: num(d.updatedAt) ?? now }
+  return { ...compact({
+      coverage: oneOf(d.coverage, COVERAGES),
+      notes: str(d.notes, 20000),
+      criteria: scores(d.criteria),
+      notRelevant: d.notRelevant === true ? true : undefined,
+      confidence: oneOf(d.confidence, CONFIDENCES),
+    }), updatedAt: num(d.updatedAt) ?? now }
 }
 
 // The record's own fields; the importer adds where the file now lives, its item and who imported it.

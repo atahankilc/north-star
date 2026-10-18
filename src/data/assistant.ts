@@ -30,7 +30,7 @@ export type AssistantWrite =
   | { do: 'project'; fields: { name?: string; description?: string } }
   // A feature's criteria (D-133): the new list (undefined keeps it; scores of the ones gone leave its cells) and scores
   // per competitor by criterion id (null: not assessed).
-  | { do: 'criteria'; feature: { id: string; type: NodeType }; criteria?: Criterion[]; cells: { competitor: ChangeRef; scores: Record<string, CriterionScore | null> }[] }
+  | { do: 'criteria'; feature: { id: string; type: NodeType }; criteria?: Criterion[]; cells: { competitor: ChangeRef; scores: Record<string, CriterionScore | null>; confidence?: string | null }[] }
 
 const BATCH_LIMIT = 450
 
@@ -97,7 +97,9 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
         const competitorId = idOf(c.competitor)
         const ref = doc(col(wid, 'comparisons'), cellId(featureId, competitorId))
         const scores = Object.fromEntries(Object.entries(c.scores).map(([id, v]) => [id, v ?? deleteField()]))
-        ops.push((b) => b.set(ref, { featureId, competitorId, criteria: scores, updatedAt: now }, { merge: true }))
+        // How sure (D-136): null clears it, undefined leaves it.
+        const sure = c.confidence === undefined ? {} : { confidence: c.confidence ?? deleteField() }
+        ops.push((b) => b.set(ref, { featureId, competitorId, criteria: scores, ...sure, updatedAt: now }, { merge: true }))
         if ('key' in c.competitor) fresh.push(ref)
         else existing.push(ref)
       }

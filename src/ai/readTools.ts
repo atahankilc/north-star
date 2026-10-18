@@ -4,7 +4,7 @@ import { fetchReport } from '../data/reports'
 import type { ReportContent, ReportPoint } from '../data/model'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
-import { coverageOf, criteriaLine, scoresLine } from '../views/matrix/reading'
+import { cellLine, criteriaLine } from '../views/matrix/reading'
 
 export const GET_ITEMS = 'get_items'
 
@@ -85,14 +85,10 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
     if (out.length || into.length) lines.push('  links:')
     for (const e of out) lines.push(`  → ${e.kind} ${nameOf(e.toId)}${e.label ? ` (${e.label})` : ''}`)
     for (const e of into) lines.push(`  ← ${nameOf(e.fromId)} ${e.kind} this${e.label ? ` (${e.label})` : ''}`)
-    const cells = ws.comparisons.filter((c) => (c.featureId === it.id || c.competitorId === it.id) && (c.coverage || c.notes || c.competitorFeatureId || c.criteria))
+    const cells = ws.comparisons.filter((c) => (c.featureId === it.id || c.competitorId === it.id) && (c.coverage || c.notes || c.competitorFeatureId || c.criteria || c.notRelevant))
     if (cells.length) lines.push('  matrix:')
     const featureOf = (c: (typeof cells)[number]) => ws.features.find((x) => x.id === c.featureId)
-    const read = (c: (typeof cells)[number]) => {
-      const f = featureOf(c)
-      const scores = scoresLine(c, f)
-      return `${(f && coverageOf(c, f)) ?? c.coverage ?? 'not assessed'}${scores ? ` (${scores})` : ''}`
-    }
+    const read = (c: (typeof cells)[number]) => cellLine(c, featureOf(c))
     for (const c of cells) lines.push(`  ${nameOf(c.featureId)} × ${nameOf(c.competitorId)}: ${read(c)}${c.competitorFeatureId ? `; their version: ${nameOf(c.competitorFeatureId)}` : ''}${c.notes ? `; ${full(c.notes)}` : ''}`)
     return lines.join('\n')
   })

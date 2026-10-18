@@ -524,3 +524,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 ## Done (D-135 competitor lines off by default, 2026-10-19)
 - `competes` LINKS group hidden by default (filters v4), shown on hover/selection; competitor cards `vs N`; link labels
   only in focus. Verified in headless Chrome on the emulators; `npm run build`.
+
+## Done (D-136 not relevant and confidence in the matrix, 2026-10-19)
+- Cells: `notRelevant` (`—`, out of readings and counts) and `confidence` (`~` inferred, `?` guess); panel rows, TSV,
+  export/import, assistant (`set_matrix_cell`, `set_criteria`). Verified in headless Chrome on the emulators (also with a
+  fake OpenAI); rules tests (3 new); `npm run build`.

@@ -30,15 +30,19 @@ export function coverageOf(cell: Comparison | undefined, feature: Feature): Cove
   return 'partial'
 }
 
+// A competitor that isn't comparable on the feature at all (D-136): left out of readings, counts and the white space.
+export const relevant = (cell: Comparison | undefined) => !cell?.notRelevant
+
 // White space (D-133): the criteria no assessed competitor meets, once at least one cell is scored. Our differentiation.
 export function openCriteria(feature: Feature, cells: (Comparison | undefined)[]): Criterion[] | null {
-  const scored = cells.filter((c) => scoresOf(c, feature))
+  const scored = cells.filter((c) => relevant(c) && scoresOf(c, feature))
   if (!scored.length) return null
   return (feature.criteria ?? []).filter((k) => !scored.some((c) => c!.criteria?.[k.id] === 'met'))
 }
 
 // Gap: nobody covers it (an opening). Table stakes: most competitors fully cover it.
-export function verdict(cells: (Comparison | undefined)[], feature: Feature): Verdict | null {
+export function verdict(all: (Comparison | undefined)[], feature: Feature): Verdict | null {
+  const cells = all.filter(relevant)
   const read = cells.map((c) => coverageOf(c, feature))
   const assessed = read.filter(Boolean)
   if (cells.length === 0 || assessed.length === 0) return null
@@ -62,6 +66,13 @@ export const matrixCols = (competitors: WithId<Competitor>[]) => [...competitors
 // For the assistant (D-133): a feature's criteria, and one cell's scores against them, in a line of text.
 export const criteriaLine = (feature: Feature | undefined) =>
   feature?.criteria?.length ? `criteria: ${feature.criteria.map((k, i) => `${i + 1}. ${k.text}`).join(' | ')}` : ''
+
+// A cell for the assistant (D-136): left out, or what it reads, its criteria scores and how sure it is.
+export function cellLine(cell: Comparison, feature: Feature | undefined) {
+  if (!relevant(cell)) return 'not relevant (they don\'t do this kind of thing)'
+  const scores = scoresLine(cell, feature)
+  return `${(feature && coverageOf(cell, feature)) ?? cell.coverage ?? 'not assessed'}${scores ? ` (${scores})` : ''}${cell.confidence ? `, ${cell.confidence}` : ''}`
+}
 
 export function scoresLine(cell: Comparison, feature: Feature | undefined) {
   const scores = feature && scoresOf(cell, feature)

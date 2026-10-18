@@ -1,6 +1,6 @@
 # Spec: from research to decisions (Phase 6)
 
-Status: **slices 1–3 built (D-133–D-135)**; the rest planned. Each slice gets its own D-number when it's built.
+Status: **slices 1–4 built (D-133–D-136)**; the rest planned. Each slice gets its own D-number when it's built.
 
 ## 1. Why
 
@@ -65,9 +65,9 @@ Each slice ships on its own, with its decision, docs and tests. Order is the rec
   show only for the hovered or selected card. The `LINKS` filter still turns them all on.
 - Link chips show only the kind; the label moves to hover and the link bar.
 
-### Slice 4: matrix completeness and confidence
+### Slice 4: matrix completeness and confidence (built, D-136)
 - A cell can be `not relevant` (different from not assessed).
-- Confidence per cell: `documented | inferred | unknown`.
+- Confidence per cell: `documented | inferred | guess` (`~` / `?` in the cell's corner).
 
 ### Slice 5: evidence and status
 - Status on customers, problems and ideas: `hypothesis → testing → validated | invalidated`, shown as a badge.

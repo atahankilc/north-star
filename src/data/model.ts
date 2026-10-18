@@ -160,6 +160,10 @@ export type CompetitorFeature = {
 export const COVERAGES = ['none', 'partial', 'full', 'better'] as const
 export type Coverage = (typeof COVERAGES)[number]
 
+// How sure a cell is (D-136): their docs say so, read between the lines, or a guess. Missing = not said.
+export const CONFIDENCES = ['documented', 'inferred', 'guess'] as const
+export type Confidence = (typeof CONFIDENCES)[number]
+
 // How a competitor does on one of the feature's criteria (D-133); missing = not assessed.
 export const CRITERION_SCORES = ['met', 'part', 'no'] as const
 export type CriterionScore = (typeof CRITERION_SCORES)[number]
@@ -172,6 +176,10 @@ export type Comparison = {
   coverage?: Coverage
   // Criterion id → score. A removed criterion's score goes with it.
   criteria?: Record<string, CriterionScore>
+  // The competitor isn't comparable on this feature at all (D-136): left out of the row's reading and the counts, unlike
+  // `none` (they could, and don't). Only `true` is stored.
+  notRelevant?: boolean
+  confidence?: Confidence
   notes?: string
   competitorFeatureId?: string
   updatedAt: number
