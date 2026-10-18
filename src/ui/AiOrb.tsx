@@ -774,7 +774,11 @@ export function AiOrb({ size, mood, cue, peek = false }: { size: number; mood: O
         popped = rebuilt = false
       }
       let bt = burstAt < 0 ? -1 : (now - burstAt) / 1000
-      if (bt > BURST.back) bt = burstAt = -1
+      if (bt > BURST.back) {
+        // Back to the plain orb: ready to turn again.
+        bt = burstAt = -1
+        popped = rebuilt = false
+      }
       if (bt >= BURST.pop && !popped) {
         popped = true
         pomK = 0

@@ -286,6 +286,8 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-092: once in a long while the idle orb turns into a pomegranate (squat fruit shape, small dark calyx, speckled skin, an open slice of seeds) for 28–45 s, then bursts into seeds and the plain orb builds back;
   typing `nar` outside a text field turns it (and back). Verified headless with a temporary preview page (dark + light, `__orbPom()`;
   `nar` in an input does nothing, `Nar` on the page turns it, `nar` again turns it back). Build passes. Committed and pushed 2026-10-18.
+- Fix (2026-10-18): a second `nar` after the burst turned nothing red (`popped` stayed true after the burst, so `pomK` never
+  grew again); it's reset when the plain orb is back. Typecheck passes; not checked in a browser. Committed.
 
 ## Done (Phase 5: attachments, 2026-10-17, on the emulators only)
 - D-083: images, SVGs and PDFs on every card and competitor (`src/data/attachments.ts`, `src/views/workspace/Attachments.tsx`):
