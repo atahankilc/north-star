@@ -1493,3 +1493,25 @@ of a whole area.
   positions (text clear of cards and other text, a card below another), preview marks; `npm run build`. Not tried with a
   real key or in the browser.
 
+
+### D-124 · 2026-10-18 · Accepted (extends D-108, D-112, D-067)
+**Multi-select: line up, nudge with the arrow keys, and collaborators see the whole selection.** The user picked
+"do the multi select" from the D-108 follow-up list (align / distribute, arrow-key nudge, broadcast the whole selection).
+- *Line up* (`src/views/canvas/arrange.ts`, buttons in the "N selected" panel): left / centre / right, top / middle /
+  bottom to the selection's bounding box; `space ↔` / `space ↕` (three or more) gives equal gaps between neighbours, the
+  outermost two staying put (overlapping cards don't spread, like Figma). Sizes as the guides see them (`halfOf`): cards
+  by their box, the title block by its box, text by its centre. No snapping afterwards.
+- *Nudge:* arrows move the selection (one or many) by `SNAP_STEP` (0.25), shift by 1; skipped while typing, editing a
+  label, for viewers/preview, or when a menu/dropdown already handled the key (`defaultPrevented`). A held key repeats
+  faster than the board catches up, so the last nudge's targets are used while a piece still shows where it was found.
+- *Undo:* `placeMany` in `src/data/selection.ts`, one tracked step per line-up; nudges share a key (`nudge:<ids>`) so a
+  run within 2 s merges into one step.
+- *Presence:* `more` (string, ids joined by spaces, ≤2048 chars in `database.rules.json`) next to `sel`; `selectionOf` /
+  `hasSelected` used by the board's rings, PeerMarks and PeersHere. Old clients ignore it. The matrix and reports tab hand
+  back the whole selection when they let go. **The rules must be deployed before the client ships:** the live rules
+  refuse unknown fields, so a new client would lose its presence node against the old rules.
+- *Alternatives:* a map of ids in RTDB (more rule lines, no gain); distributing by centres (unequal gaps when text and
+  cards mix).
+- *Verified:* rules tests 247 (two new); `npm run build`; headless Chrome on the emulators with the example workspace:
+  left, space ↕, top, space ↔ moved the right cards to the right places; 4× → and shift+↑ moved +1, +1; one ⌘Z undid all
+  the nudges; the RTDB node carried `sel` + `more` with the other three ids. Not tried with two people in two windows.

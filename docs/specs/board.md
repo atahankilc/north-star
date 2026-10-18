@@ -42,6 +42,10 @@ descriptions live in the side panel only (D-057).
   keeps what was selected). Drag any of them to move all, one undo step. The panel shows what's selected, tags shared by all
   (add or remove on all), duplicate and delete. ⌘C / ⌘V copy and paste (paste lands at the view's centre, keeping the
   layout, the links among them and customer tags), ⌘D duplicates just below.
+- **Lining up** (D-124): the panel's `line up` rows align the selection's left edges, centres, right edges (top, middle,
+  bottom; text by its centre, like the guides) or space three or more out evenly between the outermost two (equal gaps).
+  The arrow keys nudge whatever is selected, one or many, by the snap step (0.25), shift by a whole unit; a run of
+  nudges is one undo step. Each line-up is one undo step. Collaborators see the whole selection ringed, not just the last pick.
 - **Text sizes** (D-108): a selected text label gets a bar with H1 (heading, the default), H2 and note (small mono), a
   colour, edit and remove.
 

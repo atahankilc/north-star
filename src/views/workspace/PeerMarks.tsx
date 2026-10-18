@@ -3,7 +3,7 @@
 // never edits in progress (D-071).
 import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { usePresence, type Peer } from '../../data/presence'
+import { hasSelected, usePresence, type Peer } from '../../data/presence'
 import { themeAccent, useTheme } from '../../state/theme'
 import { MARK_SIGN, MARK_VAR, type Mark } from './preview'
 import { markHover, useMarkOf } from './stage'
@@ -12,7 +12,7 @@ import styles from './PeerMarks.module.css'
 // Everyone who has `id` selected, stable between renders while that doesn't change. Colours come in the current
 // theme's shade (D-069), so everything below can use `p.color` as is.
 export function usePeersOn(id: string): Peer[] {
-  const peers = usePresence(useShallow((s) => s.peers.filter((p) => p.sel === id)))
+  const peers = usePresence(useShallow((s) => s.peers.filter((p) => hasSelected(p, id))))
   const theme = useTheme((s) => s.theme)
   return useMemo(() => peers.map((p) => ({ ...p, color: themeAccent(p.color, theme) })), [peers, theme])
 }

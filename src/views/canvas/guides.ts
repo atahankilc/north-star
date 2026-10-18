@@ -55,7 +55,7 @@ export function unitsPerPixel(camera: Camera, height: number): number {
 
 // Cards are the same size (D-055); text lines up by its centre only, so its size doesn't matter here. The title block
 // (D-118) is a box like a card: its edges line up too.
-const halfOf = (kind: string, id: string): [number, number] =>
+export const halfOf = (kind: string, id: string): [number, number] =>
   id === titleId() ? titleHalf() : kind === 'label' ? [0, 0] : [CARD_W / 2, CARD_H / 2]
 
 // The lines of a box on one axis: its low edge, centre and high edge (a label: its centre only).

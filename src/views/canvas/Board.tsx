@@ -18,7 +18,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
 import { type CompetitorFeature, type Edge, type Label } from '../../data/model'
-import { usePresence } from '../../data/presence'
+import { selectionOf, usePresence } from '../../data/presence'
 import { wasLine } from '../workspace/preview'
 import { usePreviewFocus, useStage } from '../workspace/stage'
 import { useCanvas } from '../../state/canvasStore'
@@ -335,7 +335,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   const peers = usePresence((s) => s.peers)
   const peerSelection = useMemo(() => {
     const map = new Map<string, { name: string; color: string }[]>()
-    for (const p of peers) if (p.sel) map.set(p.sel, [...(map.get(p.sel) ?? []), { name: p.name, color: p.color }])
+    for (const p of peers) for (const id of selectionOf(p)) map.set(id, [...(map.get(id) ?? []), { name: p.name, color: p.color }])
     return map
   }, [peers])
   // The assistant's preview (D-096): marks, what edits replaced, where moved cards were, the lit checklist row.

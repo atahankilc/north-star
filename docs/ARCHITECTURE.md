@@ -94,7 +94,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
 inviteCodes/{code}      workspaceId, createdBy
 joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)
 
-RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, since?, ts   (D-065, D-067; edit/field retired, D-071)
+RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, more?, since?, ts   (D-065, D-067, D-124; edit/field retired, D-071)
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: members (`memberIds`) read them; owners and
   editors write them (D-098).
@@ -132,7 +132,8 @@ RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, since?, ts
   `presence/{wid}/{uid}`, removed automatically with `onDisconnect()`. Throttled to about 15–20 Hz and
   interpolated on the receiving side for smooth motion. Each tab writes its whole node, so a second tab survives
   the first one's disconnect (D-065). Cursors are board world coordinates; other views report only which view you're on. `sel` is the selected item
-  (or a matrix cell, `<featureId>_<competitorId>`), shown in every view (D-068). RTDB writes are free (billed by bandwidth),
+  (or a matrix cell, `<featureId>_<competitorId>`), shown in every view (D-068); `more` is the rest of a selection of
+  several on the board, ids joined by spaces, ≤2048 characters (D-124). RTDB writes are free (billed by bandwidth),
   and Spark allows 100 simultaneous connections.
 - RTDB rules can't read Firestore membership, so any signed-in user who knows a workspace ID could
   read its cursors (name, colour, coordinates only). The IDs are random. Accepted for now (D-016).

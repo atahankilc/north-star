@@ -33,6 +33,13 @@ export async function endMoveMany(wid: string, moves: (Piece & { from: [number, 
   return tracked(`move ${moves.length} things`, refs, () => commit(moves.map((m, i) => [refs[i], { x: m.to[0], y: m.to[1] }, 'update'])), { before })
 }
 
+// New places for several pieces at once, as one undo step: lining a selection up, spacing it out, nudging it with the
+// arrow keys (D-124). Steps with the same `key` (a run of nudges) merge into one.
+export function placeMany(wid: string, label: string, places: (Piece & { to: [number, number] })[], key?: string) {
+  const refs = places.map((p) => refOf(wid, p))
+  return tracked(label, refs, () => commit(places.map((p, i) => [refs[i], { x: p.to[0], y: p.to[1] }, 'update'])), { key })
+}
+
 export async function deleteMany(wid: string, pieces: Piece[]) {
   const own = pieces.map((p) => refOf(wid, p))
   const cascades = await Promise.all(pieces.map((p) => (p.kind === 'label' ? [] : cascadeOf(wid, p.kind, p.id))))

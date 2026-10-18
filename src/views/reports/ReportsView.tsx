@@ -80,7 +80,7 @@ export function ReportsView() {
   useEffect(() => {
     if (!open) return;
     setPresenceSelection(open);
-    return () => setPresenceSelection(useCanvas.getState().selectedId);
+    return () => setPresenceSelection(useCanvas.getState().selectedId, useCanvas.getState().selection);
   }, [open]);
 
   // Opening or closing a report rebuilds the table cell by cell in its new shape (D-035), so it never jumps.

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (D-123 assistant board text and moving single cards)_
+_Last updated: 2026-10-18 (D-124 multi-select: line up, nudge, whole selection in presence)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -13,21 +13,20 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. Firestore + RTDB rules and indexes deployed
-  (latest 2026-10-18, rules 245 tests incl. the title label; reports readable while not saved yet, so a save shows at once; research written twice keeps only the newest).
+  (latest 2026-10-18, RTDB again for D-124's `more`; rules 247 tests incl. the title label; reports readable while not saved yet, so a save shows at once; research written twice keeps only the newest).
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger), `storage.rules`
   (attachments D-083). Flags `WORKSPACE_KEYS_LIVE` (src/data/ai.ts) and `ATTACHMENTS_LIVE` (src/data/attachments.ts) are `false`.
 - Tried with a real key: chat, proposals, [web], agent loop, deep research, reports. Only with a fake OpenAI: `/analyze` (D-099),
   `edit_link` / `add_note` (D-108). Not tried in the app at all: `update_project` (D-120), D-122's edits, D-123's text and moves.
 
 ## In progress
-- Nothing in progress; D-118–D-123 committed, not pushed. Keep this section true: empty it when work is committed.
+- Nothing in progress; D-124 committed, not pushed (D-118–D-123 are live). Keep this section true: empty it when work is committed.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
    - Try `edit_link` / `add_note` with a real key.
    - Link chips already hide when too small (D-111); left: draw them at a constant screen size.
    - Lines crossing cards or other links' chips: nudge chips apart (parallel links between a pair are done, D-113).
-   - Multi-select: align / distribute, arrow-key nudge, broadcast the whole selection (presence `sel` carries only the last one).
    - Formatting in card notes (the chat's light Markdown, D-089).
    - `add_note` notes can overlap a link chip: offset or left-align them.
 1. Finish the workspace key (D-079) once Blaze goes through: user runs

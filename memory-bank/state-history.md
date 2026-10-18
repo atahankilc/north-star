@@ -468,3 +468,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - `add_label`, `edit_label` (replaces `rename_label`), `move_card`; brief shows label size/colour. Verified with the
   scratchpad node script and `npm run build`; not tried with a real key or in the browser.
 
+
+## Done (2026-10-18): multi-select lines up, nudges, shows the whole selection to others (D-124)
+- Panel `line up` (align 6 ways, space ↔ ↕), arrows nudge 0.25 / shift 1 (a run is one undo step), presence `more`.
+  RTDB rules deployed. Verified: rules tests 247, `npm run build`, headless Chrome on the emulators (positions after each
+  button, nudges, one ⌘Z, the presence node); not tried with two people at once.

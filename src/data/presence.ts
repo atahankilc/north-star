@@ -18,8 +18,10 @@ export type Presence = {
   // Board cursor in world units; absent when the pointer is off the board (or on another view).
   x?: number
   y?: number
-  // The item they have selected.
+  // The item they have selected (the last one picked)…
   sel?: string
+  // …and the rest of a selection of several, ids joined by spaces (D-124). Absent with one or none.
+  more?: string
   // When they joined (server time). Earlier joiners keep their colour when someone new arrives.
   since?: number
   ts: number
@@ -107,9 +109,22 @@ export function setCursor(at: [number, number] | null) {
   patch(at ? { x: round(at[0]), y: round(at[1]) } : { x: undefined, y: undefined })
 }
 
-export function setPresenceSelection(id: string | null) {
-  patch({ sel: id ?? undefined })
+// What you have selected: `id`, plus the rest of a selection of several on the board (D-124).
+export function setPresenceSelection(id: string | null, selection: string[] = []) {
+  let more = ''
+  for (const s of selection) {
+    if (s === id || more.length + s.length + 1 > MORE_MAX) continue
+    more = more ? `${more} ${s}` : s
+  }
+  patch({ sel: id ?? undefined, more: id && more ? more : undefined })
 }
+
+// The rules' cap on `more` (database.rules.json): about a hundred ids. A bigger selection shows its first hundred.
+const MORE_MAX = 2048
+
+// Everything a peer has selected.
+export const selectionOf = (p: Presence): string[] => (p.sel ? [p.sel, ...(p.more ? p.more.split(' ') : [])] : [])
+export const hasSelected = (p: Presence, id: string) => p.sel === id || (p.more ? p.more.split(' ').includes(id) : false)
 
 const round = (v: number) => Math.round(v * 1000) / 1000
 

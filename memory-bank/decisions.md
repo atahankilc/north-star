@@ -78,6 +78,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   label, reverse, remove); LINKS filter (D-059, D-108). Several links between two cards sit side by side, chips staggered (D-113).
 - A competitor in focus (hovered, selected) lights the links to its features as well (D-115).
 - Multi-select (shift+click, alt+drag box), group drag, "N selected" panel; ⌘C/⌘V/⌘D in-tab clipboard; `○` link handle (D-108).
+  The panel lines up (align 6 ways, space out ↔ ↕), arrows nudge 0.25 (shift 1), presence `more` sends the whole selection (D-124).
 - Labels: text on the board, sizes heading/subheading/note + colour; jump list `go to` (headings and subheadings, not
   notes) with 1–9 and a search field inside the dropdown (D-050, D-108, D-116).
 - Project title block: one per board from `+`, a `kind: 'title'` label showing the workspace's name + description (edited in

@@ -142,6 +142,16 @@
   color: var(--fg);
 }
 
+.lineUp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+}
+
+.small {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
 .manyMark {
   display: inline-block;
   width: 2ch;

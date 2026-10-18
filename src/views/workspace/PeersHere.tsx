@@ -1,12 +1,12 @@
 // Inside an item's side panel: who else has this item open (D-067). What they type isn't shown; the last write wins
 // per field, which is enough (D-071).
-import { usePresence } from '../../data/presence'
+import { hasSelected, usePresence } from '../../data/presence'
 import { useTheme, themeAccent } from '../../state/theme'
 import styles from './PeersHere.module.css'
 
 export function PeersHere({ itemId }: { itemId: string }) {
   const peers = usePresence((s) => s.peers)
-  const here = peers.filter((p) => p.sel === itemId)
+  const here = peers.filter((p) => hasSelected(p, itemId))
   const theme = useTheme((s) => s.theme)
 
   return (

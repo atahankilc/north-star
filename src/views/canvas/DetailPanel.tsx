@@ -26,6 +26,7 @@ import { removeItem, removeSelection } from '../workspace/useEditKeys'
 import { useViewer } from '../workspace/viewerLock'
 import { retagMany } from '../../data/selection'
 import { TagInput } from '../../ui/TagInput'
+import { align, space, type Align } from './arrange'
 import { duplicateSelection } from './clipboard'
 import { BOARD_KINDS, TYPE_ACCENT, useAllTags, type BoardItem } from './boardKinds'
 import { TAG_HINT } from './tags'
@@ -205,7 +206,13 @@ function FeatureFields({ wid, feature }: { wid: string; feature: WithId<Feature>
   )
 }
 
-// Several things selected (D-108): what they are, tags they share (add or remove on all), duplicate, delete.
+// Lining a selection up (D-124): one row per axis, then spacing out evenly (three or more).
+const LINE_UP: { axis: 0 | 1; align: [Align, string][]; space: string }[] = [
+  { axis: 0, align: [['left', 'left'], ['centre', 'centre'], ['right', 'right']], space: 'space ↔' },
+  { axis: 1, align: [['top', 'top'], ['middle', 'middle'], ['bottom', 'bottom']], space: 'space ↕' },
+]
+
+// Several things selected (D-108): what they are, tags they share (add or remove on all), line up, duplicate, delete.
 function SelectionPanel({ items }: { items: BoardItem[] }) {
   const ws = useWs()
   const selection = useCanvas((s) => s.selection)
@@ -260,8 +267,31 @@ function SelectionPanel({ items }: { items: BoardItem[] }) {
         </div>
       )}
 
+      {!viewer && (
+        <div className={styles.label}>
+          line up
+          {LINE_UP.map((row) => (
+            <span key={row.axis} className={styles.lineUp}>
+              {row.align.map(([how, name]) => (
+                <button key={how} className={styles.small} onClick={() => align(ws.wid, how)}>
+                  {name}
+                </button>
+              ))}
+              <button
+                className={styles.small}
+                disabled={selection.length < 3}
+                title={selection.length < 3 ? 'Select three or more to space them out' : undefined}
+                onClick={() => space(ws.wid, row.axis)}
+              >
+                {row.space}
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       <p className={styles.hint}>
-        Drag any of them to move them together. Shift+click adds or takes one out; alt+drag on the board draws a box.
+        Drag any of them to move them together; the arrow keys nudge them (shift: further). Shift+click adds or takes one out; alt+drag on the board draws a box.
         {!viewer && ' ⌘C copies, ⌘V pastes, ⌘D duplicates.'}
       </p>
 

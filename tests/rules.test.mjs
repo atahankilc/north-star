@@ -458,6 +458,8 @@ await allow('write own presence', () => rtSet(presence(bob, bob.uid), me('Bob'))
 await allow('presence with cursor, selection and photo', () =>
   rtSet(presence(bob, bob.uid), me('Bob', { x: 1.5, y: -2, sel: 'abc', photo: 'https://example.com/a.png', since: serverTimestamp() })),
 )
+await allow('presence with a selection of several (D-124)', () => rtSet(presence(bob, bob.uid), me('Bob', { sel: 'abc', more: 'def ghi' })))
+await deny('presence with too long a selection', () => rtSet(presence(bob, bob.uid), me('Bob', { sel: 'abc', more: 'x'.repeat(2049) })))
 await deny('write someone else\'s presence', () => rtSet(presence(bob, alice.uid), me('Fake')))
 await deny('presence without required fields', () => rtSet(presence(bob, bob.uid), { x: 1 }))
 await deny('presence with an unknown field', () => rtSet(presence(bob, bob.uid), me('Bob', { secret: 1 })))

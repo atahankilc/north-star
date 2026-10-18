@@ -78,7 +78,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   const view = viewOf(useLocation().pathname, wid)
   usePresenceSession(wid, user, view)
   const selectedId = useCanvas((s) => s.selectedId)
-  useEffect(() => setPresenceSelection(selectedId), [selectedId])
+  const selection = useCanvas((s) => s.selection)
+  useEffect(() => setPresenceSelection(selectedId, selection), [selectedId, selection])
 
   return (
     <WorkspaceContext.Provider value={ctx}>

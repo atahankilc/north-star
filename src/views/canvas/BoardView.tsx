@@ -12,6 +12,7 @@ import { Menu } from '../../ui/Menu'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { Board } from './Board'
+import { nudge } from './arrange'
 import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems } from './boardKinds'
 import { findFreeSpot } from './cardLayout'
 import { copySelection, duplicateSelection, pasteClip } from './clipboard'
@@ -26,6 +27,9 @@ import styles from './BoardView.module.css'
 
 // A jump lands with the label near the top of the view, so the area under it is in sight.
 const LAND_BELOW = 2.5
+
+// Which way each arrow key nudges, in board units (y grows upwards).
+const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }
 
 export function BoardView() {
   const ws = useWs()
@@ -91,7 +95,7 @@ export function BoardView() {
   const jump = (l: WithId<Label>) => useCanvas.getState().flyTo(isTitle(l) ? [l.x, l.y] : [l.x, l.y - LAND_BELOW])
   const title = labels.find(isTitle)
 
-  // Escape deselects; 0 frames the whole board; g switches snapping to the grid (D-112); 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);
+  // Escape deselects; arrows nudge the selection (D-124); 0 frames the whole board; g switches snapping to the grid (D-112); 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);
   // leaving the board clears selection.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -115,6 +119,12 @@ export function BoardView() {
           void duplicateSelection(ws)
         }
       }
+      // The arrow keys nudge what's selected (D-124); a menu or dropdown that took the key keeps it.
+      const dir = ARROWS[e.key]
+      if (dir && !mod && !e.altKey && !e.defaultPrevented && !editLocked() && !useCanvas.getState().editingLabel && useCanvas.getState().selection.length) {
+        e.preventDefault()
+        nudge(wid, dir, e.shiftKey)
+      }
       if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) useCanvas.getState().fitAll()
       if (key === 'g' && !mod && !e.altKey && !editLocked()) useSnap.getState().toggle()
       // a switches the alignment guides (D-117).
@@ -126,7 +136,7 @@ export function BoardView() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [select, places, ws])
+  }, [select, places, ws, wid])
   useEffect(() => () => select(null), [select])
 
   const create = async (type: NewThing, at: [number, number]) => {

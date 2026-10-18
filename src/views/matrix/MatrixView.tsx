@@ -48,8 +48,11 @@ export function MatrixView() {
 
   // Your selected cell is what others see you on here (D-068); leaving the matrix hands back the item selection.
   const selCell = sel ? cellId(rows[sel.row].id, cols[sel.col].id) : null
-  useEffect(() => setPresenceSelection(selCell ?? useCanvas.getState().selectedId), [selCell])
-  useEffect(() => () => setPresenceSelection(useCanvas.getState().selectedId), [])
+  useEffect(() => {
+    const { selectedId, selection } = useCanvas.getState()
+    setPresenceSelection(selCell ?? selectedId, selCell ? [] : selection)
+  }, [selCell])
+  useEffect(() => () => setPresenceSelection(useCanvas.getState().selectedId, useCanvas.getState().selection), [])
 
   const setCoverage = (pos: Pos, coverage: Coverage | undefined) =>
     void setCell(wid, rows[pos.row].id, cols[pos.col].id, { coverage })
