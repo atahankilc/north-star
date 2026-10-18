@@ -359,6 +359,13 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   with its sources' URLs, get_report reads it by handle, a bad handle is a warn step, the proposal shows). Build passes.
   Committed (not pushed). Not tried with a real key yet.
 
+## Done (model selection, 2026-10-18)
+- D-104: models belong to the key that pays: own key (default + per-workspace overrides, this browser), workspace key
+  (owners' picks + allowed list, enforced by the proxy, `checkWorkspaceModel`), a per-chat switch in the chat header,
+  deep research as its own task, an "in <workspace>" summary in Settings → assistant → keys. Verified on emulators with
+  the functions and a fake OpenAI (19 browser checks + 3 server checks). Rules 237 pass. **Not deployed:** Firestore rules
+  (ai/config models) are a superset, safe to deploy any time; the functions wait for Blaze (D-079). Committed (not pushed).
+
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs
    `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`, then `npm run deploy:functions`, set

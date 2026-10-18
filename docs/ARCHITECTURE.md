@@ -145,6 +145,9 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 
 ## 8. AI (BYOK)
 
+- **Models per key** (D-104): own key: a default per task (chat, web answers, deep research) and per-workspace overrides
+  in this browser; workspace key: owners' picks per task and an allowed list in `ai/config`, enforced by the `ai` proxy.
+  `resolveModel` in `src/ai/models.ts` decides each call's model; the chat header can switch it for one conversation.
 - **Two kinds of key** (D-079): your own (below), or a **workspace key** the owner sets once in Settings → ai → keys and
   shares with everyone or chosen members. The workspace key is held only by Cloud Functions (`functions/`): encrypted in
   `aiSecrets/{wid}` (no client access), used by the `ai` function, which streams the answer back and logs the call.

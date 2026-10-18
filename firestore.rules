@@ -237,15 +237,25 @@ service cloud.firestore {
       // who may use it. hasKey / keyHint are written only by the setWorkspaceKey function, never by a client.
       match /ai/{docId} {
         function validAccess(d) {
-          return d.access in ['everyone', 'chosen'] && d.allowed is list && d.allowed.size() <= 100;
+          return (!('access' in d) || d.access in ['everyone', 'chosen'])
+            && (!('allowed' in d) || (d.allowed is list && d.allowed.size() <= 100));
+        }
+        // The owners' model per task on the workspace key, and the others members may pick (D-104).
+        function validModels(d) {
+          return (!('models' in d) || (d.models is map
+              && d.models.keys().hasOnly(['chat', 'research', 'deep'])
+              && (!('chat' in d.models) || isText(d.models.chat, 100))
+              && (!('research' in d.models) || isText(d.models.research, 100))
+              && (!('deep' in d.models) || isText(d.models.deep, 100))))
+            && (!('allowedModels' in d) || (d.allowedModels is list && d.allowedModels.size() <= 20));
         }
         allow read: if isMember(wid);
         allow create: if docId == 'config' && isOwner(wid)
-          && request.resource.data.keys().hasOnly(['access', 'allowed'])
-          && validAccess(request.resource.data);
+          && request.resource.data.keys().hasOnly(['access', 'allowed', 'models', 'allowedModels'])
+          && validAccess(request.resource.data) && validModels(request.resource.data);
         allow update: if docId == 'config' && isOwner(wid)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['access', 'allowed'])
-          && validAccess(request.resource.data);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['access', 'allowed', 'models', 'allowedModels'])
+          && validAccess(request.resource.data) && validModels(request.resource.data);
       }
 
       // What each assistant call used (D-079): time, task, model, tokens, searches; never the messages.

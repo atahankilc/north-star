@@ -274,7 +274,10 @@
   position: absolute;
   top: var(--space-6);
   right: var(--space-6);
+  z-index: 2;
   padding: 2px;
+  /* Scrolled rows pass under it. */
+  background: var(--bg-raised);
   border: 0;
   background: none;
   color: var(--fg-dim);

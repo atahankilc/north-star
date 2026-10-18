@@ -1097,3 +1097,31 @@ open, the bot should see it, read it and do what's asked (build, rework or add c
   another report or says what to focus on (`/analyze only competitors`). The `/` menu shows `on <report title>` when one is
   open, and the chat shows `/analyze · <title>`. No new buttons on the report screen (D-053).
 
+### D-104 · 2026-10-18 · Accepted (changes D-077; extends D-079)
+**Models belong to the key that pays.** User: is a model choice for everyone or just me, and can my own key and the
+workspace key have different settings? Before, one chat + research pair per browser applied to every call, whichever key
+paid, so a member could run the owner's workspace key on any model. The user's picks: owners allow a list on the
+workspace key; a switch in the chat header for one conversation; your own key's models with a default and per-workspace
+overrides.
+- *Tasks:* chat, web answers (`[web]` on) and deep research (`/research`: plan, researchers, report), which used to borrow
+  research's model.
+- *Your own key* (only you, this browser; `north-star.ai-models`, old flat saves migrate): a default per task, and in a
+  workspace "set for: here" overrides per task ("same as default" follows it). Checked against your key before kept.
+- *The workspace key* (`ai/config.models`, `allowedModels`; owners write, rules check): owners pick a model per task
+  (checked with the key by the new `checkWorkspaceModel` function) and tick others members may switch to. Members pick
+  within that, kept in their browser (`north-star.ai-workspace-models`). The `ai` proxy refuses any model outside the
+  owners' picks (unset tasks count as the default) and the extras, so nobody runs up the bill with another.
+- *One answer to "which model?"* (`src/ai/models.ts`, `resolveModel`): this chat's switch, else (own key) this
+  workspace's override or your default, else (workspace key) your allowed pick or the owners'. Each with where it came from:
+  "this chat only", "your pick for this workspace", "your default", "the owners' pick", "your pick, allowed by the owners".
+- *Settings → assistant → keys:* "in <workspace>" first: which key your calls go on (the old "this workspace uses") and
+  each task's model with its origin; then your key, its models, the workspace key, its models; each section says who it
+  applies to.
+- *Chat header* (`ModelSwitch`): `model ▾ · key`; switching changes it for this conversation only (within what the key
+  allows), shows `this chat`, offers "back to …", and clears with the chat.
+- Verified on emulators (headless Chrome, functions, a fake OpenAI): owner sets deep research and allows one extra; a
+  member's summary, pick and calls through the server; the header switch for one message and back after clear; an
+  owner's own-key default and workspace override sent straight to OpenAI; the proxy refusing a model not allowed; only
+  owners may check models. Found and fixed on the way: the server allowed only explicitly set tasks, refusing the default.
+  Rules: 237 pass (5 new).
+

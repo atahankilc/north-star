@@ -15,12 +15,16 @@ export const workspaceKeysAvailable = useEmulators || WORKSPACE_KEYS_LIVE
 export type KeyAccess = 'everyone' | 'chosen'
 
 // workspaces/{wid}/ai/config. hasKey and keyHint are written by the server only.
+// `models`: the owners' model per task on the workspace key; `allowedModels`: others members may switch to (D-104).
+// The server refuses any other model on this key.
 export type AiConfig = {
   hasKey?: boolean
   keyHint?: string
   keySetAt?: number
   access?: KeyAccess
   allowed?: string[]
+  models?: Partial<Record<'chat' | 'research' | 'deep', string>>
+  allowedModels?: string[]
 }
 
 export type KeySource = 'own' | 'workspace'
@@ -57,6 +61,16 @@ export function canUseWorkspaceKey(config: AiConfig | null | undefined, uid: str
 
 export function setKeyAccess(wid: string, access: KeyAccess, allowed: string[]) {
   return setDoc(doc(db(), configPath(wid)), { access, allowed }, { merge: true })
+}
+
+// Owners: the workspace key's model for one task, and the models members may switch to (D-104).
+export function setWorkspaceModels(wid: string, patch: Pick<AiConfig, 'models' | 'allowedModels'>) {
+  return setDoc(doc(db(), configPath(wid)), patch, { merge: true })
+}
+
+// Owners: is this model there for the workspace key? A free call made by the server with the key (D-104).
+export async function checkWorkspaceModel(wid: string, model: string): Promise<void> {
+  await call<{ wid: string; model: string }, { ok: true }>('checkWorkspaceModel')({ wid, model })
 }
 
 const call = <In, Out>(name: string) => {

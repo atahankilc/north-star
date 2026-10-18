@@ -27,7 +27,7 @@ import {
   type Report,
   type Research,
 } from './research'
-import { modelFor, useAiSettings } from './settings'
+import { useAiSettings, type AiTask } from './settings'
 import { newReportId, saveReport } from '../data/reports'
 import type { ReportKind } from '../data/model'
 import { PROPOSE, PROPOSE_TOOL, parseProposal, proposalForHistory, proposalReport, type Proposal, type ProposalState } from './tools'
@@ -65,7 +65,8 @@ export type Step = { kind: 'read' | 'search' | 'propose' | 'plan' | 'research' |
 
 // Built when a message is sent, so it sees the workspace as it is then.
 // `ws` is what the read tools see for the whole answer; `reports` the brief's report handles (D-099).
-export type Prepared = { instructions: string; refs: Map<string, ItemRef>; reports: Map<string, string>; source: KeySource; ws: WorkspaceCtx }
+// `models`: the model per task for this key and workspace (D-104, src/ai/models.ts).
+export type Prepared = { instructions: string; refs: Map<string, ItemRef>; reports: Map<string, string>; source: KeySource; ws: WorkspaceCtx; models: Record<AiTask, string> }
 
 // Everything one answer's loop needs: where it writes (`update`), its key and model, what the tools see.
 type AnswerRun = {
@@ -282,7 +283,7 @@ export const useChat = create<ChatState>((set, get) => ({
     if (p.source === 'own' && !settings.apiKey) return
     const reply: ChatMessage = { id: nextId++, role: 'assistant', content: '', refs: p.refs }
     set((s) => ({ busy: true, messages: [...s.messages, { id: nextId++, role: 'user', content, shown }, reply] }))
-    const run = begin(reply.id, p, settings.web ? 'research' : 'chat', modelFor(settings), settings.web)
+    const run = begin(reply.id, p, settings.web ? 'research' : 'chat', p.models[settings.web ? 'research' : 'chat'], settings.web)
     // Asked for a report, it writes the conversation up (D-090); it shows at once and waits for you to save it.
     let reportId: string | undefined
     run.extra = [
@@ -312,7 +313,7 @@ export const useChat = create<ChatState>((set, get) => ({
     // The short form is what later turns see of the ask; the report carries what was found.
     const content = `Research: ${topic || 'our market'}`
     set((s) => ({ busy: true, messages: [...s.messages, { id: nextId++, role: 'user', content, shown }, reply] }))
-    const run = begin(reply.id, p, 'research', settings.models.research, false)
+    const run = begin(reply.id, p, 'research', p.models.deep, false)
     run.steps.push({ kind: 'plan', text: 'planning the research', state: 'running' })
     run.update({ steps: [...run.steps] })
     const plan = async () => {
@@ -351,8 +352,8 @@ export const useChat = create<ChatState>((set, get) => ({
     const p = prepare()
     if (p.source === 'own' && !settings.apiKey) return
     set({ busy: true })
-    // The report is written like any answer, with research's model; the board as it is now.
-    const run = { ...begin(id, p, 'research', settings.models.research, false), steps: [...(msg.steps ?? [])] }
+    // The report is written like any answer, with deep research's model (D-104); the board as it is now.
+    const run = { ...begin(id, p, 'research', p.models.deep, false), steps: [...(msg.steps ?? [])] }
     let research: Research = { ...msg.research, phase: 'running' }
     const setQuestion = (q: number, patch: Partial<Research['questions'][number]>) => {
       research = { ...research, questions: research.questions.map((x) => (x.id === q ? { ...x, ...patch } : x)) }

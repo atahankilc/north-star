@@ -270,6 +270,12 @@ await deny('member lets themselves use the key', () => updateDoc(aiConfig(bob.fs
 await deny('owner fakes a key on the client', () => updateDoc(aiConfig(alice.fs), { hasKey: true, keyHint: 'sk-…abcd' }))
 await deny('owner writes an unknown access mode', () => updateDoc(aiConfig(alice.fs), { access: 'anyone' }))
 await allow('owner opens the key to everyone', () => updateDoc(aiConfig(alice.fs), { access: 'everyone' }))
+// Models on the workspace key (D-104).
+await allow("owner sets the workspace key's models", () => updateDoc(aiConfig(alice.fs), { models: { chat: 'gpt-6-luna', deep: 'gpt-6.1-sol' }, allowedModels: ['gpt-5.6-luna'] }))
+await deny('member sets the workspace key\'s models', () => updateDoc(aiConfig(bob.fs), { models: { chat: 'gpt-5.5' } }))
+await deny('models for an unknown task', () => updateDoc(aiConfig(alice.fs), { models: { summarize: 'gpt-5.5' } }))
+await deny('a model id that is not text', () => updateDoc(aiConfig(alice.fs), { models: { chat: 5 } }))
+await deny('allowed models as a string', () => updateDoc(aiConfig(alice.fs), { allowedModels: 'gpt-5.5' }))
 await deny('owner reads the encrypted key', () => getDoc(doc(alice.fs, 'aiSecrets', wid)))
 await deny('owner writes the encrypted key', () => setDoc(doc(alice.fs, 'aiSecrets', wid), { data: 'x' }))
 

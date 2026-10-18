@@ -15,7 +15,9 @@ import { useKeySource } from '../ai/keySource'
 import { chatInstructions } from '../ai/prompts/chat'
 import { MODES, modeAbout, parseMode, type Mode } from '../ai/modes'
 import type { Research } from '../ai/research'
-import { modelFor, useAiSettings } from '../ai/settings'
+import { useAiSettings } from '../ai/settings'
+import { modelIds, useModels } from '../ai/models'
+import { ModelSwitch } from './ModelSwitch'
 import type { KeySource } from '../data/ai'
 import { firebase } from '../data/firebase'
 import { useRecentReports, useReport, useReportSummary } from '../data/reports'
@@ -200,8 +202,7 @@ export function AiChat() {
 }
 
 function AiWindow({ tall, onClose }: { tall: boolean; onClose: () => void }) {
-  const { source, workspaceKeyExists } = useKeySource()
-  const model = useAiSettings(modelFor)
+  const { source, workspaceKeyExists, config } = useKeySource()
   const messages = useChat((s) => s.messages)
   const clear = useChat((s) => s.clear)
 
@@ -241,10 +242,8 @@ function AiWindow({ tall, onClose }: { tall: boolean; onClose: () => void }) {
       {tall && <ResizeEdge />}
       {/* No title: the orb on its edge says what this is. The model in use, and the two things you do to the chat. */}
       <header className={styles.head}>
-        <span className={styles.model}>
-          {model}
-          {source && ` · ${source === 'workspace' ? 'workspace key' : 'own key'}`}
-        </span>
+        {/* The model in use and which key pays; click to switch it for this chat (D-104). */}
+        <ModelSwitch source={source} config={config} />
         <span className={styles.headActions}>
           {messages.length > 0 && (
             <button className={styles.action} onClick={clear}>
@@ -315,6 +314,8 @@ function Conversation({ source }: { source: KeySource }) {
   const ws = useWs()
   // The newest reports for the brief (D-090), loaded only while the chat is open (D-098).
   const recentReports = useRecentReports(ws.wid, firebase?.auth.currentUser?.uid, true)
+  // The model per task for this key, workspace and chat (D-104).
+  const models = useModels(ws.wid, source, useKeySource().config)
   const messages = useChat((s) => s.messages)
   // The report open on the report screen goes into the brief in full (D-099): the saved copy, else the chat's own.
   const openId = useChat((s) => s.reportOpen)
@@ -381,7 +382,7 @@ function Conversation({ source }: { source: KeySource }) {
   // Built when sent, so it sees the board as it is now. `web`: the prompt's research rules (deep research always has them).
   const prepareAt = (view: string, web: boolean) => {
     const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId }, recentReports, openReport)
-    return { instructions: chatInstructions(brief.text, ws.workspace.name, web), refs: brief.refs, reports: brief.reports, source, ws }
+    return { instructions: chatInstructions(brief.text, ws.workspace.name, web), refs: brief.refs, reports: brief.reports, source, ws, models: modelIds(models!) }
   }
   const currentView = () => path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
 

@@ -21,7 +21,15 @@ const OPENAI = process.env.OPENAI_API_BASE ?? 'https://api.openai.com/v1'
 const ORIGINS = [/^https:\/\/atahankilc\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1):\d+$/]
 
 type Access = 'everyone' | 'chosen'
-type AiConfig = { hasKey?: boolean; keyHint?: string; access?: Access; allowed?: string[] }
+type AiConfig = { hasKey?: boolean; keyHint?: string; access?: Access; allowed?: string[]; models?: Record<string, string>; allowedModels?: string[] }
+
+// Models the workspace key may be used with (D-104): the owners' pick per task and the extras they allow. Owners who
+// never chose a task's model get the app's default for it (DEFAULT_MODELS in src/ai/settings.ts; workspaceModels in
+// src/ai/models.ts is the same list).
+const DEFAULT_MODEL = 'gpt-6-luna'
+const TASKS = ['chat', 'research', 'deep'] as const
+const modelsAllowed = (config: AiConfig) =>
+  new Set([...TASKS.map((t) => config.models?.[t] ?? DEFAULT_MODEL), ...(config.allowedModels ?? [])])
 type Workspace = { ownerId: string; memberIds: string[]; roles?: Record<string, string> }
 
 // Any number of owners (D-098); `ownerId` is only who created it.
@@ -86,6 +94,22 @@ export const setWorkspaceKey = onCall({ secrets: [AI_KEY_SECRET], cors: ORIGINS 
   await secretRef(id).set({ ...encrypt(clean), setBy: uid, setAt: Date.now() })
   await configRef(id).set({ hasKey: true, keyHint, keySetAt: Date.now() }, { merge: true })
   return { keyHint }
+})
+
+// ---- Owners: is a model there for the workspace key? (D-104) A free call with the key, so it's never sent anywhere ----
+
+export const checkWorkspaceModel = onCall({ secrets: [AI_KEY_SECRET], cors: ORIGINS }, async (req) => {
+  const uid = req.auth?.uid
+  const { wid, model } = (req.data ?? {}) as { wid?: unknown; model?: unknown }
+  const ws = await workspaceOf(wid)
+  if (!isOwner(ws, uid)) throw new HttpsError('permission-denied', 'Only an owner chooses the workspace key\'s models.')
+  if (typeof model !== 'string' || !/^[A-Za-z0-9._:-]{1,100}$/.test(model)) throw new HttpsError('invalid-argument', "That isn't a model id.")
+  const secret = (await secretRef(wid as string).get()).data() as { data: string; iv: string; tag: string } | undefined
+  if (!secret) throw new HttpsError('failed-precondition', 'This workspace has no key.')
+  const r = await fetch(`${OPENAI}/models/${encodeURIComponent(model)}`, { headers: { Authorization: `Bearer ${decrypt(secret)}` } })
+  if (r.status === 404) throw new HttpsError('not-found', `OpenAI has no model called ${model} for this key.`)
+  if (!r.ok) throw new HttpsError('failed-precondition', `OpenAI answered ${r.status}.`)
+  return { ok: true }
 })
 
 // ---- Members: one OpenAI call on the workspace key, streamed back and logged ----
@@ -154,6 +178,7 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
   } catch (e) {
     return fail(400, `Bad request (${(e as Error).message}).`)
   }
+  if (!modelsAllowed(config).has(payload.model)) return fail(403, `The owners haven't allowed ${payload.model} on the workspace key.`)
 
   const secret = (await secretRef(id).get()).data() as { data: string; iv: string; tag: string } | undefined
   if (!secret) return fail(412, 'This workspace has no key.')

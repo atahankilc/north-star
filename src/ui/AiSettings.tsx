@@ -3,7 +3,7 @@
 // The key form also shows inside the chat panel when no key is set.
 import { useContext, useState, type FormEvent } from 'react'
 import { checkKey } from '../ai/openai'
-import { MODELS, keySourceFor, maskKey, useAiSettings, type AiTask } from '../ai/settings'
+import { keySourceFor, maskKey, useAiSettings } from '../ai/settings'
 import {
   canUseWorkspaceKey,
   setKeyAccess,
@@ -19,8 +19,8 @@ import { isOwnerOf, useMembers } from '../data/workspaces'
 import { Loading } from './Loading'
 import { WorkspaceContext } from '../views/workspace/context'
 import { Choice } from './Choice'
-import { Select } from './Select'
 import { AsciiButton } from './AsciiButton'
+import { InThisWorkspace, OwnKeyModels, WorkspaceKeyModels } from './AiModels'
 import styles from './AiSettings.module.css'
 import { Note, Row, Section } from './Settings'
 
@@ -28,7 +28,7 @@ export const KEY_PRIVACY =
   'Kept only in this browser and sent only to OpenAI, never to North Star or your collaborators. Each person uses their own key.'
 
 export function AiKeyForm({ onSaved }: { onSaved?: () => void }) {
-  const model = useAiSettings((s) => s.models.chat)
+  const model = useAiSettings((s) => s.ownModels.default.chat)
   const setKey = useAiSettings((s) => s.setKey)
   const [draft, setDraft] = useState('')
   const [checking, setChecking] = useState(false)
@@ -80,6 +80,7 @@ export function AiKeysPage() {
 
   return (
     <>
+      {ws && <Summary wid={ws.wid} workspace={ws.workspace} />}
       <Section
         label="your key"
         note={
@@ -118,17 +119,8 @@ export function AiKeysPage() {
       ) : (
         <Section label="workspace key" note="Open a workspace to see or set its shared key." />
       )}
-      <Section
-        label="models"
-        note="Each message sends the whole workspace, so reading is most of a call's cost; usage shows what each call used."
-      >
-        <Row label="chat" hint="Answers questions and proposes changes.">
-          <ModelPicker task="chat" />
-        </Row>
-        <Row label="research" hint="Messages sent with [web] on, where a stronger model finds and reads more.">
-          <ModelPicker task="research" />
-        </Row>
-      </Section>
+      <OwnKeyModels wid={ws?.wid ?? null} name={ws?.workspace.name ?? null} />
+      {ws && workspaceKeysAvailable && <WorkspaceModels wid={ws.wid} workspace={ws.workspace} />}
       <Section
         label="what it sees"
         note="When you ask something, the workspace you're in (cards, links, competitors, the matrix) goes to OpenAI with your question. The chat stays in this tab and is gone when you reload. It only changes the workspace when you apply one of its proposals."
@@ -141,12 +133,8 @@ export function AiKeysPage() {
 function WorkspaceKey({ wid, workspace }: { wid: string; workspace: Workspace }) {
   const { user } = useAuth()
   const config = useAiConfig(wid).data
-  const apiKey = useAiSettings((s) => s.apiKey)
-  const choice = useAiSettings((s) => s.keyChoice[wid])
-  const setKeyChoice = useAiSettings((s) => s.setKeyChoice)
   const isOwner = isOwnerOf(workspace, user?.id)
   const usable = canUseWorkspaceKey(config, user?.id, isOwner)
-  const source = keySourceFor({ apiKey, keyChoice: choice ? { [wid]: choice } : {} }, wid, usable)
 
   return (
     <Section
@@ -164,17 +152,6 @@ function WorkspaceKey({ wid, workspace }: { wid: string; workspace: Workspace })
           <span className={styles.key}>
             {!config?.hasKey ? 'none' : usable ? `${config.keyHint ?? 'set'} · you may use it` : "set · the owner hasn't let you use it"}
           </span>
-        </Row>
-      )}
-      {(usable || apiKey) && (
-        <Row label="this workspace uses" hint="Which key your calls here go on.">
-          <Choice
-            label="this workspace uses"
-            bare
-            options={(['workspace', 'own'] as const).filter((o) => (o === 'own' ? apiKey : usable))}
-            value={source ?? undefined}
-            onChange={(v) => v && setKeyChoice(wid, v)}
-          />
         </Row>
       )}
     </Section>
@@ -280,82 +257,23 @@ function KeyMembers({ wid, workspace, allowed, onToggle }: { wid: string; worksp
   )
 }
 
-const OTHER = '__other'
-
-// A model for one task: one of MODELS, or any id typed in. Checked against your key (a free call) before it's kept.
-function ModelPicker({ task }: { task: AiTask }) {
+// Which key pays in this workspace and what each task runs on (D-101), at the top of the page.
+function Summary({ wid, workspace }: { wid: string; workspace: Workspace }) {
+  const { user } = useAuth()
+  const config = useAiConfig(wid).data
   const apiKey = useAiSettings((s) => s.apiKey)
-  const current = useAiSettings((s) => s.models[task])
-  const setModel = useAiSettings((s) => s.setModel)
-  const known = MODELS.some((m) => m.id === current)
-  const [typing, setTyping] = useState(!known)
-  const [draft, setDraft] = useState(known ? '' : current)
-  const [checking, setChecking] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const keyChoice = useAiSettings((s) => s.keyChoice)
+  const setKeyChoice = useAiSettings((s) => s.setKeyChoice)
+  const usable = canUseWorkspaceKey(config, user?.id, isOwnerOf(workspace, user?.id))
+  const source = keySourceFor({ apiKey, keyChoice }, wid, usable)
+  const sources = (['workspace', 'own'] as const).filter((o) => (o === 'own' ? !!apiKey : usable))
+  return <InThisWorkspace wid={wid} name={workspace.name} source={source} sources={sources} config={config} onPick={(v) => setKeyChoice(wid, v)} />
+}
 
-  const choose = (id: string) => {
-    if (!id || id === current) return
-    setError(null)
-    if (!apiKey) return setModel(task, id)
-    setChecking(true)
-    checkKey(apiKey, id)
-      .then(() => setModel(task, id))
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setChecking(false))
-  }
-
-  const info = MODELS.find((m) => m.id === current)
-
-  return (
-    <div className={styles.form}>
-      <div className={styles.line}>
-        <Select
-          className={styles.select}
-          ariaLabel={`Model for ${task}`}
-          value={typing ? OTHER : current}
-          disabled={checking}
-          options={[
-            ...MODELS.map((m) => ({ value: m.id, label: m.id })),
-            // A typed id that isn't in the list still shows as the current one.
-            ...(MODELS.some((m) => m.id === current) ? [] : [{ value: current, label: current }]),
-            { value: OTHER, label: 'other model id…' },
-          ]}
-          onChange={(v) => {
-            if (v === OTHER) return setTyping(true)
-            setTyping(false)
-            choose(v)
-          }}
-        />
-        {checking && <span className={styles.note}>checking…</span>}
-      </div>
-      {typing && (
-        <form
-          className={styles.line}
-          onSubmit={(e) => {
-            e.preventDefault()
-            choose(draft.trim())
-          }}
-        >
-          <input
-            className={styles.input}
-            placeholder="e.g. gpt-6-sol"
-            aria-label={`Model id for ${task}`}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            spellCheck={false}
-          />
-          <AsciiButton type="submit" accent="cyan" disabled={!draft.trim() || checking || draft.trim() === current}>
-            use
-          </AsciiButton>
-        </form>
-      )}
-      {error ? (
-        <p className={styles.error}>
-          ! {error} Still using {current}.
-        </p>
-      ) : (
-        <p className={styles.note}>{info ? info.note : `${current}, typed in`}</p>
-      )}
-    </div>
-  )
+function WorkspaceModels({ wid, workspace }: { wid: string; workspace: Workspace }) {
+  const { user } = useAuth()
+  const config = useAiConfig(wid).data
+  const isOwner = isOwnerOf(workspace, user?.id)
+  if (!config?.hasKey && !isOwner) return null
+  return <WorkspaceKeyModels wid={wid} config={config} isOwner={isOwner} usable={canUseWorkspaceKey(config, user?.id, isOwner)} />
 }
