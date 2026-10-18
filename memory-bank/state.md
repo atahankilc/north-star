@@ -363,8 +363,8 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-104: models belong to the key that pays: own key (default + per-workspace overrides, this browser), workspace key
   (owners' picks + allowed list, enforced by the proxy, `checkWorkspaceModel`), a per-chat switch in the chat header,
   deep research as its own task, an "in <workspace>" summary in Settings → assistant → keys. Verified on emulators with
-  the functions and a fake OpenAI (19 browser checks + 3 server checks). Rules 237 pass. **Not deployed:** Firestore rules
-  (ai/config models) are a superset, safe to deploy any time; the functions wait for Blaze (D-079). Committed (not pushed).
+  the functions and a fake OpenAI (19 browser checks + 3 server checks). Rules 237 pass. Firestore + RTDB rules deployed
+  and pushed 2026-10-18 (live deploy green). The functions (proxy enforcement, checkWorkspaceModel) wait for Blaze (D-079).
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs
