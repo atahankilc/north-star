@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -346,11 +346,9 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   as summary + body, reports/people/usage paged 20 at a time and loaded only where shown, loading lines. Rules 232 pass.
   Verified headless on emulators (seeded 25 members, 25 reports, 25 calls; 18 checks: viewer lock and toast, live role
   change, co-owner unlocks stepping down, paging, report body loading state, usage totals). Build passes.
-  **Not deployed. Deploy rules and push the client together:** the live client's workspaces-page join-request query
-  (`ownerId` only) is refused by the new rules, and it reads reports expecting sections inline. Until Blaze:
-  `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db` (indexes take a few
-  minutes to build; paged lists fail until they're ready), then push. Functions changed too (roles, aiMembers removed),
-  deployed later with D-079. Committed (not pushed).
+  **Deployed 2026-10-18:** indexes (built, READY) then Firestore + RTDB rules, and pushed (live deploy green; the live
+  bundle has the new code). Storage rules still wait for Blaze. Functions changed too (roles, aiMembers removed),
+  deployed later with D-079.
 
 ## Done (assistant builds the board from a report, 2026-10-18)
 - D-099: the report open on the report screen goes into the brief in full (`OPEN REPORT`), the brief's other reports get a
@@ -360,6 +358,12 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   Verified headless on emulators with a fake OpenAI (uploaded .md → opened → `/analyze`: the brief has the report in full
   with its sources' URLs, get_report reads it by handle, a bad handle is a warn step, the proposal shows). Build passes.
   Committed (not pushed). Not tried with a real key yet.
+
+## Done (report page, 2026-10-18)
+- D-100: reports from the tab open as a page of the tab (`ReportPage`), the chat's own report stays on the stage; shared
+  body `ReportDocument`. Verified headless on emulators (upload → page, no stage; back link and browser back; chat opened
+  beside it stays on the right; 390 px no horizontal scroll). Build passes. Not committed.
+- Next (with the user): refactor the chat's report recommendation (card + stage) the way the preview was (D-096).
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs
