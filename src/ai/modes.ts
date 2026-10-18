@@ -98,7 +98,10 @@ export const MODES: Mode[] = [
       'area a short name, reuse existing labels that still fit and remove the ones that no longer name anything. Give each ' +
       'area the shape that shows how its cards connect (rows, columns, grid, line, hub, cycle for a loop, orbit around one ' +
       'card, tree for a breakdown, quadrant for a 2 × 2 of sections), split big areas into sections, and place related areas beside ' +
-      'each other so the board reads as one picture, not a row of piles. Propose it with arrange_area rows. ' +
+      'each other so the board reads as one picture, not a row of piles. Each area becomes a section frame (its sections ' +
+      'frames inside it): reuse the names of sections already on the board that still fit, delete the frames that would ' +
+      'end up empty, and colour areas only where the colour means something (a segment, the core loop). Propose it with ' +
+      'arrange_area rows. ' +
       LANGUAGE,
   },
   {

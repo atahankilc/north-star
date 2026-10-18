@@ -148,7 +148,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - More shapes: `cycle` (a loop), `orbit` (one card, what links to it, then what links to those), `tree` (top-down by links),
   `quadrant` (an area's first four sections as a 2 × 2) (D-129).
 - Areas are section frames by default (`frame`; a reused heading stays one), their sections nested frames; frames that
-  stay are kept clear; `add_section` / `edit_section` / `delete_section`; label and section text set bold/italic/caps, H1–H3 (D-131).
+  stay are kept clear; `add_section` / `edit_section` / `delete_section`; label and section text set bold/italic/caps, H1–H3; areas take a colour (D-131).
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).
 - `[web]` switch (off by default) with numbered clickable sources (D-076). Modes `/validate /interview /swot /gaps /next
   /pitch /organize /research /analyze` (D-085, D-086, D-088, D-099).

@@ -187,6 +187,11 @@ const OPS = [
           'false: a heading (a section: a subheading) written over its cards. Null: a frame, unless it reuses a heading ' +
           'listed under AREAS ON THE BOARD, which stays a heading.',
       ),
+      color: optEnum(
+        [...LABEL_COLORS, 'default'],
+        'The frame (or heading) in this colour, to tell kinds of areas apart (e.g. one colour per customer segment, or ' +
+          'for the core loop). "default" removes it. Null: as it is (new: white).',
+      ),
     },
   ),
   op(
@@ -198,10 +203,11 @@ const OPS = [
       items: { type: 'array', items: { type: 'string' }, description: 'Refs (or keys of cards added here) of the cards to frame.' },
     },
   ),
-  op('edit_section', "Rename a section frame on the board, or set its name's size and style.", {
+  op('edit_section', "Rename a section frame on the board, or set its name's size, style and colour.", {
     label: str('Its current name, exactly as listed under SECTIONS ON THE BOARD.'),
     text: optStr('The new name. Null keeps it.'),
     size: optEnum(SECTION_SIZES, "The name's size: heading (H1, the default), subheading (H2), minor (H3). Null keeps it."),
+    color: optEnum([...LABEL_COLORS, 'default'], 'The frame and its name in this colour; "default" removes it. Null keeps it.'),
     ...styleProps('name'),
   }),
   op('delete_section', 'Remove a section frame from the board; its cards stay where they are.', {
@@ -558,6 +564,7 @@ export function parseProposal(
         const where = [
           frame ? 'frame' : 'heading',
           s(raw.layout),
+          s(raw.color) && (s(raw.color) === 'default' ? 'default colour' : s(raw.color)),
           within && `in ${clip(within, 40)}`,
           beside && `${['above', 'below'].includes(s(raw.side) ?? '') ? s(raw.side) : `${s(raw.side) ?? 'right'} of`} ${clip(beside, 40)}`,
           `${items.length} card${items.length === 1 ? '' : 's'}${hasSection(label) ? ', moves the frame' : hasLabel(label) ? ', moves the label' : ''}`,
@@ -696,7 +703,12 @@ export function parseProposal(
         }
       }
       case 'edit_section': {
-        const what = [s(raw.text) && `→ ${clip(s(raw.text)!, 60)}`, s(raw.size), ...styleWords(raw)].filter(Boolean)
+        const what = [
+          s(raw.text) && `→ ${clip(s(raw.text)!, 60)}`,
+          s(raw.size),
+          s(raw.color) && (s(raw.color) === 'default' ? 'default colour' : s(raw.color)),
+          ...styleWords(raw),
+        ].filter(Boolean)
         return {
           ...base,
           sign: '~',
@@ -1106,6 +1118,8 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
           ? // An area's name H1 (the default), a section's H2 (D-130).
             { kind: 'section', x: (a.x0 + a.x1) / 2, y: (a.y0 + a.y1) / 2, w: a.x1 - a.x0, h: a.y1 - a.y0, size: plan.sub ? 'subheading' : existing?.size ? null : undefined }
           : { x: plan.x, y: plan.y, size: plan.sub ? 'subheading' : 'heading', ...(existing && isSection(existing) ? { kind: null, w: null, h: null } : {}) }
+        // Its colour (D-131): "default" removes it, null leaves it.
+        fields.color = s(r.color) === 'default' ? (existing ? null : undefined) : LABEL_HEX[s(r.color) ?? '']
         return existing ? { do: 'label', id: existing.id, fields: compact(fields) } : { do: 'label', fields: compact({ text: plan.text, ...fields }) }
       }
       // A frame round cards where they end up in this set (D-131): placed once every card has its place, like notes.
@@ -1116,7 +1130,8 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
       }
       case 'edit_section': {
         const size = s(r.size) && SECTION_SIZES.includes(s(r.size) as never) ? s(r.size) : undefined
-        const fields = compact({ text: s(r.text)?.slice(0, 200), size, ...styleFields(r) })
+        const color = s(r.color) === 'default' ? null : LABEL_HEX[s(r.color) ?? '']
+        const fields = compact({ text: s(r.text)?.slice(0, 200), size, color, ...styleFields(r) })
         return { do: 'label', id: ws.labels.find((l) => isSection(l) && sameLabel(l.text, r.label))!.id, fields }
       }
       case 'delete_section':

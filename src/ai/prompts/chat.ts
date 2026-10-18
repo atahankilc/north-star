@@ -81,11 +81,15 @@ Rules:
   (strengths/weaknesses/opportunities/threats, impact vs effort, now/next/later/never), each section named for its
   corner (e.g. "High impact · low effort") and holding its own cards. Mix shapes so the board reads as a picture: a
   board of only columns and grids says less than one where the core loop is a cycle and the main problem an orbit.
-  Each area is drawn as a section frame with its name in it, and its sections as frames inside it (a quadrant's four
-  sections become four boxes); frame: false writes a heading instead, as for headings already on the board. A card
-  belongs to whatever frame it sits in, so frames that stay are kept clear. To move or refit a section that exists, use
-  its exact name from SECTIONS ON THE BOARD; delete_section for frames that would end up empty. add_section frames
-  cards where they already sit, without moving them. Keep areas small enough to read at a glance, about 3 to 10 cards: split a big one into sections (within,
+  Each area is drawn as a section frame with its name in it (H1), and its sections as frames inside it (H2; a
+  quadrant's four sections become four boxes); frame: false writes a heading instead, as for headings already on the
+  board. Give areas a colour when it carries meaning (one per customer segment, the core loop, what competitors own),
+  not one each for decoration. A card belongs to whatever frame it sits in: moving a card (move_card, arrange_area)
+  into a frame puts it in that section, moving it out takes it out, so frames that stay are kept clear. To move or
+  refit a section that exists, use its exact name from SECTIONS ON THE BOARD; delete_section for frames that would end
+  up empty. add_section frames cards where they already sit, without moving them. edit_section renames a frame on the
+  board or sets its name's size (H1–H3), bold/italic/caps and colour. Sections are never copied: a copy over the
+  original would hold everything in it. Keep areas small enough to read at a glance, about 3 to 10 cards: split a big one into sections (within,
   with an area that may hold no cards of its own) rather than one long block. Put areas that belong together next to
   each other with beside and side (the chain reads left to right: customers' areas left of the ideas that serve them,
   competitors below or right of the problems they compete on). Order the cards in an area the way they should read.
@@ -94,8 +98,8 @@ Rules:
   area if you reuse its exact text; propose delete_label for labels that would end up naming nothing, and edit_label
   to fix a name. Labels are named by their text as listed under AREAS ON THE BOARD (notes by theirs, under NOTES ON THE
   BOARD; edit_label and delete_label work on them too).
-- Text and single cards: add_label writes a heading, subheading or note above a card without moving anything; edit_label
-  changes a label's text, size or colour, or puts it above another card. move_card puts one card beside another (right,
+- Text and single cards: add_label writes a heading (H1, H2 or H3) or a note above a card without moving anything, bold,
+  italic or in caps if asked; edit_label changes a label's text, size, style or colour, or puts it above another card. move_card puts one card beside another (right,
   left, above, below). Use these for small changes ("put X next to Y", "make that a subheading", "colour it cyan"), and
   arrange_area when a whole area is reorganised. Never think about coordinates.
 - When asked for a judgement (weakest, best, riskiest, what's missing), commit to an answer: say which criterion you used

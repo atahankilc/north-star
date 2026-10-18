@@ -183,7 +183,7 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   first card ringed by the rest; D-129: `cycle`, a ring in order with nothing in the middle; `orbit`, the first card, what
   links to it on an inner ring, the rest outside what they link to; `tree`, top-down by links from the first card;
   `quadrant`, its first four sections as a 2 × 2), is drawn as a section frame (D-131, `frame`; default unless it reuses a
-  heading) with its sections as frames inside it, make it a section `within` another area (its name a subheading), or put it `beside`
+  heading) with its sections as frames inside it, take a `color`, make it a section `within` another area (its name a subheading), or put it `beside`
   another area on a side. `src/ai/arrange.ts` lays them out with room for link chips and packs the areas (and sections)
   about 1.7 : 1 wide, never one long row. Columns are ordered by sweeps that cut link crossings; an area without a place goes
   to the spot (first free, or beside an area or a staying card it links to) with the shortest links that keeps the whole

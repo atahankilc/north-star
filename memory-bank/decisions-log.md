@@ -1713,7 +1713,11 @@ them (frames round areas and sections, a quadrant as four boxes, existing frames
   `section`; `stillValid` turns them off once the section is gone. `parseProposal` takes the section names.
 - *Text setting (D-130's H3 and styles):* `add_label` / `edit_label` take `bold`, `italic`, `caps` (true sets, false removes
   the field, null keeps; a new label stores only true) and the size help names H1/H2/H3 (`minor`)/note; `edit_section`
-  renames or sets its name's size (H1–H3) and style. The brief shows a label's or section's size, style and colour when
+  renames or sets its name's size (H1–H3), style and colour. The prompt says moving a card into a frame puts it in
+  that section (out of it, takes it out), and that sections are never copied.
+- *Colour:* `arrange_area` takes `color` (a label colour, "default" removes it, null leaves it) for the frame or
+  heading, so `/organize` can colour areas where it means something (a segment, the core loop), not each for decoration.
+  `/organize`'s ask says areas become frames, to reuse sections that still fit, delete frames left empty, colour by meaning. The brief shows a label's or section's size, style and colour when
   not the default. A framed area's name is H1, a section's H2; the band comes from `sectionBand`.
 - *Prompt:* the brief's SECTIONS line names the ops; the arranging guidance says areas are frames, a card belongs to the
   frame it sits in, and to reuse a section's exact name.
