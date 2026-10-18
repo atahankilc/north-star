@@ -35,42 +35,36 @@ Why: no backend to hold secrets, and collaborators must not see each other's key
 (Extended by D-079: an owner can also set a workspace key, held only by our Cloud Functions; own keys stay as here.)
 
 ### D-007 · 2026-10-17 · Accepted
-**Features are their own view and entity, linked to ideas** (not just an idea with a tag).
+**Features are their own entity, linked to ideas** (not just an idea with a tag). Since D-040 they are a type on the one board, not a view of their own.
 
 ### D-008 · 2026-10-17 · Accepted
-**Web only. Authentication required. Export/import and attachments (images, PDFs, drawings) are in scope.**
+**Web only. Authentication required. Export/import and attachments are in scope.** Attachments are images, SVGs and PDFs; no drawing pad for now (D-083).
 
 ### D-009 · 2026-10-17 · Accepted
 **Hybrid rendering: 3D scene in WebGL, readable and editable text in the DOM. The ASCII effect never covers editable text.**
 Why: accessibility, text editing quality, readability.
 
 ### D-010 · 2026-10-17 · Superseded by D-014
-**Backend: InstantDB.** It covers auth, DB, permissions, storage and presence/cursors, and free projects are not paused.
-Alternatives: Firebase (mature, but presence is hand-built and storage may need a billing plan), Supabase (free projects pause after about a week of inactivity).
-Mitigation: all access goes through the `src/data/` adapter.
+Was: InstantDB as the backend. Its hosted service shut down; Firebase instead (D-014).
 
 ### D-011 · 2026-10-17 · Accepted
 **Sign-in: Google OAuth only.** (Resolves Q-002.)
 Implementation: Firebase Auth Google provider, popup flow (updated after D-014).
 
-### D-012 · 2026-10-17 · Accepted
-**Workspaces are shared with an invite code.** (Joining directly with the code is superseded by D-062.) The owner generates a code, and others sign in with Google and enter it to join.
-The code is stored on the workspace and can be regenerated to revoke it. (Partly resolves Q-007; roles are still open.)
+### D-012 · 2026-10-17 · Superseded by D-062
+Was: anyone with the invite code joined directly as an editor. Now a code only asks and an owner approves, or an owner invites an email (D-062).
 
 ### D-013 · 2026-10-17 · Accepted
 **Fonts: Geist (display/UI) + Geist Mono (data/ASCII).** (Resolves Q-005.) Self-hosted through `@fontsource-variable/geist` and `geist-mono`, with no external font CDN.
 
 ### D-014 · 2026-10-17 · Accepted
-**Backend: Firebase.** Firestore for data, Realtime Database for presence and cursors, Firebase Auth for Google sign-in. Spark (free) plan.
+**Backend: Firebase.** Firestore for data, Realtime Database for presence and cursors, Firebase Auth for Google sign-in. Spark (free) plan at first; Blaze is needed for functions and Storage (D-079, D-083).
 Why: InstantDB's hosted service is shutting down (team joined OpenAI in Aug 2026, sign-ups closed, apps stop 2027-08-31).
 Longevity became the top criterion. Firebase never pauses, has no cold starts, and is Google-backed.
 Rejected: Convex (cursor updates burn function-call quota, startup risk), Supabase (free projects pause).
 
-### D-015 · 2026-10-17 · Accepted
-**Attachments are deferred. Stay on Spark with no card for now.** Firebase Storage needs the Blaze plan
-(card required, 5 GB free). Revisit in Phase 5. Options then: Blaze plus a $1 budget alert, or an alternative store.
-*Revisited by D-083 (user):* attachments are built on Firebase Storage now and verified on the emulators; they stay hidden on the
-live site until the project is on Blaze (as D-079 also needs) and `storage.rules` are deployed.
+### D-015 · 2026-10-17 · Superseded by D-079, D-083
+Was: attachments deferred, stay on the Spark plan. Attachments are built on Firebase Storage (D-083) and the project is moving to Blaze for functions (D-079).
 
 ### D-016 · 2026-10-17 · Accepted
 **Presence lives in RTDB at `presence/{wid}/{uid}`. It is readable by any signed-in user, and each user can write only their own node.**
@@ -84,7 +78,7 @@ The local folder was renamed to `north-star` too (2026-10-17).
 
 ### D-018 · 2026-10-17 · Accepted
 **Idea canvas is 2.5D:** a flat board in a real three.js scene, with a perspective camera that pans and zooms (no rotation),
-cards as lit 3D slabs that lift on hover and drag, and edges as curved dashed lines. Resolves Q-008.
+cards on it, and links between them. Resolves Q-008. (Cards are flat and never lift, D-055, D-061; links are straight lines with arrows, D-059, D-108.)
 Full 3D stays available for transitions and competitor maps later.
 
 ### D-019 · 2026-10-17 · Accepted (refines D-009)
@@ -97,21 +91,16 @@ troika can't read woff2, so the scene uses static `.woff` Geist from `@fontsourc
 so nothing can reach production. Test users (Alice, Bob, Carol) sign in with fake Google tokens. The RTDB emulator uses port **9010**
 (9000 clashes with OrbStack). Its namespace must be `<project>-default-rtdb` for the rules to apply.
 
-### D-021 · 2026-10-17 · Accepted
-**Roles for the MVP: owner + editor.** Resolves Q-007. Owner: members, invite code, delete. Editor: everything else.
-Enforced in `firestore.rules`, covered by `tests/rules.test.mjs`.
+### D-021 · 2026-10-17 · Superseded by D-098
+Was: roles owner + editor, one owner. Now owner / editor / viewer with several owners (D-098).
 
 ### D-022 · 2026-10-17 · Superseded by D-025
-**A loading curtain covers the app until it's ready** (`src/ui/Curtain.tsx`, `src/state/curtain.ts`).
-Anything can hold it with `useHoldCurtain(key, isLoading)`: the shell holds it for auth and fonts, pages for their data.
-On first load it stays up for at least 900 ms, then opens as a shutter from the centre. After that it only appears
-if a load takes over 250 ms. Entrance animations (`DecodeText`, landing motion) wait for `revealed`.
+Was: a shutter curtain opening from the centre. The hold mechanism (`useHoldCurtain`) stays; the look is D-025, timings D-035.
 
 ### D-023 · 2026-10-17 · Accepted
-**Owners delete workspaces; editors leave them.** Delete removes every subcollection doc, then the invite code and the workspace
-(client-side, children first, since Firestore doesn't cascade). A new `leaving()` rule lets a non-owner remove only themselves,
-and `ownerManaging()` now prevents the owner from removing themselves or their owner role (no orphaned workspaces).
-Rename is open to all members (card action, or click the name in the canvas header).
+**Owners delete workspaces; others leave them** (owners may leave too unless they are the last one, D-098). Delete removes every subcollection doc, then the invite code and the workspace
+(client-side, children first, since Firestore doesn't cascade). A `leaving()` rule lets a member remove only themselves; the rules never leave a workspace without an owner (D-098).
+Rename is open to all members (workspace card action, or Settings; the breadcrumb name is plain text, D-055).
 
 ### D-024 · 2026-10-17 · Accepted
 **One framed surface for all panels, cards, forms and chips:** `src/ui/Frame.module.css` (`frame`, `dashed`, `interactive`, `label`),
@@ -120,18 +109,16 @@ using the tokens `--surface`, `--surface-blur`, `--line`, `--line-hover`. New fr
 ### D-025 · 2026-10-17 · Accepted (supersedes D-022's visuals; the hold mechanism stays)
 **Loading = the flowing background itself, then a cell-by-cell rebuild.** While held, an exact copy of the backdrop
 (`BackdropScene` in a second canvas, same clock, same dim) covers the page, with a small status (`▖ LOADING WORKSPACES`) in the
-bottom-right. When ready, the copy's ASCII pass masks itself cell by cell along a jittered top-left → bottom-right diagonal
-(magenta glyph flash at the edge, about 1.1 s), so the page rebuilds out of the background without the animation restarting.
+bottom-right. When ready, the copy's ASCII pass masks itself cell by cell in random order (400 ms, D-035; no coloured edge, D-031), so the page rebuilds out of the background without the animation restarting.
 On first load the cover is solid black until its first frame, so nothing flashes through while shaders compile.
 Requirement: **nothing in the backdrop may depend on per-canvas state** (own clocks, pointer). Use `sceneTime()` and `backdropDim` from `src/three/sceneClock.ts`.
 
 ### D-026 · 2026-10-17 · Accepted (extended by D-028)
-**The background flows by itself, like a fluid. No mouse influence.** Two levels of time-varying domain warp in `AmbientField`.
-The landing's floating cards drift on the shared clock with no pointer parallax. Dimming on the board is an ASCII-pass uniform, not CSS opacity.
+**The background flows by itself, like a fluid. No mouse influence.** Two levels of time-varying domain warp in `AmbientField`. Dimming on the board is an ASCII-pass uniform, not CSS opacity.
 
 ### D-027 · 2026-10-17 · Accepted
 **One HUD on every page** (`src/ui/Hud.tsx`): a fixed-height top bar (`--hud-h`) with a breadcrumb on the left
-(`# north-star / workspaces / <name>`; earlier segments link back, the current one is bright, the workspace name is click-to-rename)
+(`# north-star / workspaces / <name>`; earlier segments link back, the current one is bright; the name is plain text, D-055)
 and page actions on the right. Every screen-edge element (canvas toolbar, detail panel, loading status) uses `--hud-x` / `--hud-y`,
 so nothing shifts between pages. Elements inside the bar must not change its line height (InlineEdit draws underlines as decoration or shadow, not border).
 Card footers always split "message or info" on the left and "actions" on the right, in every mode (idle, renaming, confirm).
@@ -144,16 +131,12 @@ Bug fixed: R3F copies a `<shaderMaterial uniforms={…}>` object, so per-frame u
 (`material.current.uniforms`), never the memo'd object. The background had never actually animated before this fix.
 
 ### D-029 · 2026-10-17 · Superseded by D-034
-**Components enter and leave with a pixelated wave** (`src/ui/PixelWave.tsx`, after the user's reference recording): square tiles
-(about 18 px) sweep left to right, faint lead, solid core, softer tail, with the content already there behind the band (enter) or still
-there ahead of it (exit). Implemented as a per-row staircase `clip-path` on the element plus a fixed 2D canvas of tiles over its box.
-Use `<PixelWave as="li|form|aside|button" accent delay>` for framed components. Wrap in `<AnimatePresence>` for the exit wave
-(it waits via `usePresence`). Entrances wait for the loading curtain to open.
+Was: a pixelated tile wave on enter/exit (PixelWave). Rejected by the user; one cell-by-cell build-up everywhere (D-034, D-035).
 
 ### D-030 · 2026-10-17 · Accepted
-**In-app motion setting:** `motion: system | full | reduced` in the HUD (`src/state/motion.ts`), saved in localStorage, default *system*.
+**In-app motion setting:** `motion: full | reduced | system` in Settings → display (`src/state/motion.ts`), saved in localStorage, default *full* (D-063).
 Everything reads `useMotion().reduced` / `isReducedMotion()`; nothing reads the media query directly. CSS uses `html[data-motion='reduced']`.
-Why: the user's Mac has Reduce Motion on but they want the full experience, while users who need reduced motion keep it.
+Why: the user's Mac has Reduce Motion on but they want the full experience, while users who need reduced motion can pick it.
 Under reduced motion: the background freezes (and resumes seamlessly), waves and sweeps are skipped, decode text is instant.
 
 ### D-031 · 2026-10-17 · Accepted
@@ -161,30 +144,21 @@ Under reduced motion: the background freezes (and resumes seamlessly), waves and
 cell-by-cell rebuild (D-025). The user specifically likes the decode text, the workspace-card waves and the detail panel's wave.
 
 ### D-032 · 2026-10-17 · Superseded by D-034
-**Idea cards wave in too** (`src/views/canvas/CardWave.tsx`). It's the same timeline as `<PixelWave>` (shared `src/ui/waveTimeline.ts`),
-rebuilt in 3D: a 13×8 instanced tile grid sweeps across the card while one world-space clipping plane reveals its content
-(slab, rim, strip, troika text). The Board enables `gl.localClippingEnabled`. Cards present when a board opens stagger in
-(70 ms apart, up to 1 s); cards created later wave in immediately. Enter only, for now.
+Was: idea cards waving in with 3D tiles. Cards build up cell by cell like everything else (D-034, `CardReveal`).
 
-### D-033 · 2026-10-17 · Superseded by D-034 (rejected trial; the `settled` gating stays)
-**Cards and side panels enter with the landing headline's "rise"** (fade up about 40 px out of a 12 px blur, 1.1 s, `cubic-bezier(0.16,1,0.3,1)`),
-without colour. Applies to workspace cards, board idea cards and the idea detail panel. Forms, invite chip and landing CTA keep the wave.
-Switch with `?entrance=rise|wave` (remembered in localStorage, `src/ui/entrance.ts`). DOM: `<Appear effect=…>` (formerly PixelWave)
-uses the Web Animations API. 3D cards: `CardEntrance` → `CardRise` (rise + fade via material opacity and troika fillOpacity; a 0.96 → 1 scale
-stands in for blur, which WebGL can't do cheaply per object).
-**Entrances now wait for `settled`** (the page-load rebuild has fully finished), not `revealed`, so they're seen in full.
-Text decode still starts at `revealed`. Open question for the user: keep rise, or go back to wave (Q-014).
+### D-033 · 2026-10-17 · Superseded by D-034
+Was: a blur "rise" entrance (rejected trial). Entrances start at `revealed`; the `settled` state is gone (D-035).
 
 ### D-034 · 2026-10-17 · Accepted
 **One entrance everywhere: cell-by-cell build-up.** The user loved the "North Star" headline appearing piece by piece. That was the
 page-load reveal (D-025), not the headline's blur animation. Now every component builds itself the same way: content appears in
-9 px cells on the backdrop's ASCII grid, along a jittered top-left → bottom-right diagonal (0.8 position + 0.2 per-cell noise), no colour.
+9 px cells on the backdrop's ASCII grid, in random order (D-035), no colour.
 - DOM: `<Appear as=… delay duration>` (`src/ui/Appear.tsx`): a `clip-path: path()` of merged cell runs, viewport-aligned. Exit = breaks apart the same way.
 - 3D idea cards: `CardReveal` injects a `discard` into every card material via `onBeforeCompile` (screen-space cells from `gl_FragCoord`).
   Each card owns a base `MeshBasicMaterial` for its troika text (troika's derived material calls the base `onBeforeCompile`), so the shared default isn't touched.
 - The landing headline uses it too, so it builds on every visit, including after sign-out (which previously only faded in).
 - **Rejected by the user:** coloured tile waves (anywhere) and the blur "rise".
-Shared math: `src/ui/cellReveal.ts`. Entrances wait for `settled`.
+Shared math: `src/ui/cellReveal.ts`. Entrances start at `revealed` (D-035).
 
 ### D-035 · 2026-10-17 · Accepted (refines D-034, D-025)
 **Random order, all at once, fast.**
@@ -193,26 +167,20 @@ Shared math: `src/ui/cellReveal.ts`. Entrances wait for `settled`.
   and nothing waits for the page-load rebuild to finish (the `settled` state was removed).
 - **Faster:** components 320 ms, landing headline 400 ms, page-load reveal 400 ms, text decode 260 ms (nav 220 ms). (Halved, then about 25% more on request.)
 
-### D-036 · 2026-10-17 · Accepted
-**Workspace views switch from tabs in the HUD breadcrumb:** `# north-star / workspaces / <name> / [ideas] features competitors matrix`.
-Routes: `/w/:wid` (ideas), `/w/:wid/features`, `/w/:wid/competitors(/:cid)`, `/w/:wid/matrix`. One workspace layout route loads every
-collection once and shares it with all views, so switching tabs is instant and any panel can show links to nodes in other views.
+### D-036 · 2026-10-17 · Superseded by D-040
+Was: per-type tabs (ideas, features, competitors, matrix). Now one board with all types plus Flow, Table, Matrix and Reports views (D-040, D-066). The one layout route that loads every collection once stays.
 
-### D-037 · 2026-10-17 · Accepted (promote button removed by D-057)
-**The Features view is a 3D board like the idea canvas.** The Board, cards and detail panel are generic over board node types
-(`idea`, `feature`). Ideas and features share their board fields (`title`, `body`, `color`, `tags`, `x`, `y`); features add
-`priority`, `status`, `effort`. An idea can be promoted to a feature (new feature + `inspired-by` edge).
+### D-037 · 2026-10-17 · Superseded by D-040, D-057
+Was: a separate Features board and promoting an idea to a feature. Features are a type on the one board (D-040); the promote button is gone (D-057).
 
-### D-038 · 2026-10-17 · Accepted
-**Competitors are profiles with a categorized feature list, not a spatial map.** The competitor page shows name, URL, pricing,
-audience and notes, plus its features grouped by `category`. `CompetitorFeature` has no position.
+### D-038 · 2026-10-17 · Superseded by D-040, D-058
+Was: competitors as profile pages, not on a map. Competitors are cards on the board with their features stacked behind (D-058); the profile (fields + features by category) is their side panel (`CompetitorProfile.tsx`).
 
 ### D-039 · 2026-10-17 · Superseded by D-048
-**Domains organise a workspace.** A workspace holds domains (e.g. pet care, fintech). Ideas and problems belong to exactly one
-domain; competitors and features can belong to several. Domains are the main tabs. (Spec now [docs/specs/board.md](../docs/specs/board.md).)
+Was: domains organising a workspace. Removed (D-048).
 
 ### D-040 · 2026-10-17 · Accepted
-**The Board is the main view.** All item types live on one free canvas, filtered by domain and type. Flow, Table and Matrix are
+**The Board is the main view.** All item types live on one free canvas, filtered by type, customer, tag and link kind. Flow, Table and Matrix are
 other ways to view the same data. Supersedes the per-type tabs of D-036.
 
 ### D-041 · 2026-10-17 · Accepted
@@ -238,19 +206,14 @@ what we build). Competitors before ideas so the gap shows before the solution.
 ### D-046 · 2026-10-17 · Accepted (answers Q-013)
 **Undo/redo by document snapshots** (`src/data/history.ts`). Every write in `src/data/` goes through `tracked()`, which snapshots
 the documents it touches before and after; undo/redo write a snapshot back. So cascades (a competitor with its features, matrix cells
-and links; a domain and its items' domain fields) undo as one step. Typing in one field and one drag merge into one step.
+and links) undo as one step. Typing in one field and one drag merge into one step.
 Local to the tab and workspace (cleared on switching), last write wins against collaborators.
 Keys: ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y, Delete or Backspace on the selected item; text fields keep their own undo. A toast says what happened.
-Deletes are one click now (they're undoable); domain delete keeps its `delete?` step.
+Deletes are one click (they're undoable).
 Tracked writes are serialised but never wait for the server (Firestore applies writes locally in call order), so editing works offline.
 
-### D-047 · 2026-10-17 · Superseded by D-049 (answered Q-012)
-**Groups are labelled frames on the board** (`groups/{id}`: name, color, x, y, w, h, domainId; `src/views/canvas/GroupFrame.tsx`).
-Membership is spatial: dragging the label moves the frame plus every card whose centre is inside it and every smaller frame that fits inside,
-as one undo step. The bottom-right corner resizes (top-left stays put). The fill has no handlers, so panning and double-click-to-create
-work inside a frame. Clicking the label opens the group panel (name, domain, colour, delete); deleting a group leaves its cards.
-A group shows on its domain's tab and on `all`; without a domain it shows everywhere. `+ Group` frames the selected card or the view centre.
-The old `groupIds` field on ideas is unused. Table and Flow ignore groups for now.
+### D-047 · 2026-10-17 · Superseded by D-049
+Was: groups as labelled frames on the board. Removed; text labels mark areas (D-049, D-050).
 
 ### D-048 · 2026-10-17 · Accepted (reverses D-039)
 **No domains.** The user found them unnecessary: a workspace already is one idea space, and customers (the `for:` filter) plus
@@ -262,16 +225,14 @@ Rules refuse new `domains` docs but keep read/delete for clean-up; old `domainId
 
 ### D-050 · 2026-10-17 · Accepted
 **Text labels on the board are the places you jump to.** `labels/{id}`: text, color, x, y. Written straight on the canvas
-(`+ Text`, or double-click after it): a DOM input sits over the spot while typing (never WebGL), Enter saves, Escape cancels,
+(`+` menu → text): a DOM input sits over the spot while typing (never WebGL), Enter saves, Escape cancels,
 empty text deletes. Drag to move, double-click to edit, Delete to remove; all undoable, and a new label plus its first text undo as one step.
 The board's "go to" row lists every label in reading order (top→bottom, left→right); click or press 1–9 to glide the camera there
 (instant under reduced motion; your own pan/zoom cancels the glide). Only labels are jumpable: no other text anywhere (user's words).
 Zoom-out limit raised from 60 (later capped at 150 with the camera far plane at 1000, after cards vanished past the old far plane of 200).
 
 ### D-051 · 2026-10-17 · Superseded by D-055
-**One silhouette per card type** (user picked shapes over colour headers): customer pill (green), problem with a folded top-right
-corner (magenta), competitor wide with a double rim (yellow), idea post-it with a top strip (neutral), feature tag with pointed ends
-(cyan). Each is outlined in its colour. Geometry in `src/views/canvas/cardShapes.ts` (extruded shapes, shared per type).
+Was: one 3D silhouette per card type. Rejected by the user; flat cards with a type-colour border and label (D-055).
 
 ### D-052 · 2026-10-17 · Accepted
 **Built-in example workspace** ("Create example" on the workspaces page, `src/data/example.ts`): a made-up startup, Tablebook
@@ -281,13 +242,10 @@ corner (magenta), competitor wide with a double rim (yellow), idea post-it with 
 ### D-053 · 2026-10-17 · Accepted
 **Fewer, clearer controls.** One `+` create button (bottom-left, solid magenta) opens a menu of card types and text.
 `show`, `for` and `go to` are dropdowns (`src/ui/Menu.tsx`: checkbox items stay open, actions close; arrows/Home/End/Escape).
-The views (board, flow, table, matrix) moved from bottom-right to a framed menu bar beside the breadcrumb, so they read as views
-rather than more path.
+The views sit beside the breadcrumb as plain tabs (D-066).
 
-### D-054 · 2026-10-17 · Accepted
-**Settings modal** (`src/ui/Settings.tsx`, a native `<dialog>`), opened from an account button on every signed-in page:
-account + sign out, the workspace's name / members / invite code (moved out of the HUD), motion (moved out of the HUD),
-and a "coming later" list (AI key, live cursors, export). Later phases add their settings here. Board shortcuts ignore keys inside it.
+### D-054 · 2026-10-17 · Superseded by D-064, D-097
+Was: the first Settings modal (account, workspace, motion, a "coming later" list). Now a gear + account chip and a grouped menu (D-064, D-097).
 
 ### D-055 · 2026-10-17 · Accepted (replaces D-051)
 **Flat cards; colour means type.** The user disliked the 3D silhouettes. Every card is the same flat rectangle; a left border and a
@@ -317,17 +275,17 @@ Links to a stacked feature are always drawn, pointing at the competitor card (on
 
 ### D-059 · 2026-10-17 · Accepted
 **Links read as sentences.** Straight lines from card edge to card edge with an arrowhead at the target and the kind written at the
-midpoint ("solves", "competes", "inspired by"…; "relates" stays unlabelled and faint). Line pattern by kind, neutral colour,
-cyan for the selected card's links; no flowing animation.
+midpoint ("solves", "competes", "inspired by"…; "relates" stays unwritten unless it has a label). Line pattern by kind;
+no flowing animation. Colours by meaning, chips on solid plates and thicker lines for the selected card: D-108.
 
 ### D-060 · 2026-10-17 · Accepted
 **Opening a workspace frames everything** (all cards and labels, within zoom limits 9–150; room left for the HUD and toolbar).
-Switching between views inside a workspace keeps your place. The Matrix frame fills the page height.
+Switching between views inside a workspace keeps your place. (The Matrix frame is as tall as its content, D-106.)
 
 ### D-061 · 2026-10-17 · Accepted
 **Calmer board.** No double-click to create (the `+` menu is the only way; double-click still edits a text label). Cards don't lift
 or scale on hover, selection or drag: the lift moved a dragged card toward the camera, so it looked bigger and dropped away from
-the pointer. A dragged card now sits exactly under the pointer. In a workspace the backdrop is dimmer (14%, was 28%). Slowing it down was
+the pointer. A dragged card now sits exactly under the pointer. In a workspace the backdrop is dimmer (8% since D-110; 28% before). Slowing it down was
 tried and reverted: the user felt it slowed the card animations too; speed stays as it was.
 
 ### D-062 · 2026-10-17 · Accepted (supersedes the direct join of D-012)
@@ -336,7 +294,7 @@ and a code never expired, so one leaked code was enough. Now:
 - *Email invite:* the owner adds an address in Settings (`invitedEmails` on the workspace). The invite shows on that person's
   workspaces page once they sign in with that verified Google address; they join or decline. No email is sent: there is no server,
   and sending mail would need Cloud Functions / Blaze (D-015).
-- *Code:* entering it creates a `joinRequests/{wid}_{uid}` document; the owner lets them in or denies from Settings. A cyan count on
+- *Code:* entering it creates a `joinRequests/{wid}_{uid}` document; an owner lets them in or denies from Settings. A cyan count on
   the Settings button and "· N waiting" on the workspace card tell the owner someone is waiting. The requester sees the request
   under "waiting" and can withdraw it.
 - The owner can make a new code; the old one stops working at once.
@@ -346,7 +304,7 @@ Rules: `joiningByInvite()`, `decliningInvite()`, `joinRequests` match; the old `
 ### D-063 · 2026-10-17 · Accepted (changes D-030's default)
 **Full motion by default, an off switch for the background, and a much cheaper backdrop.**
 - Motion defaults to `full`; the OS Reduce Motion setting only counts once you pick `system` (the user's call; `reduced` is one
-  click away in Settings → app). Order in the picker: `full reduced system`.
+  click away in Settings → display). Order in the picker: `full reduced system`.
 - `background: on | off` under motion (`src/state/display.ts`, localStorage). Off removes the backdrop canvas on signed-in pages
   only; the landing always flows. While auth loads, a stored `off` already applies, so it never flashes in. The loading curtain
   then rebuilds the page out of plain black cells.
@@ -359,11 +317,9 @@ Rules: `joiningByInvite()`, `decliningInvite()`, `joinRequests` match; the old `
 
 ### D-064 · 2026-10-17 · Accepted (refines D-054)
 **Settings: an icon button and a modal with a side menu.** The HUD shows your account chip (avatar + name) and, beside it, a
-framed ⚙ square (the join-request count sits in its corner). The chip opens settings on the account page. The modal has a side menu on the left and the chosen page on the right:
-- *account*: avatar, name and email, sign-in method, sign out;
-- *workspace* (only inside one): general (name, members), people (asking to join, invite by email; owner only), invite code;
-- *app*: display (motion, background) and what's coming later.
-It opens on the workspace page when someone is waiting to join, otherwise on the last page you used. Below 640 px the menu turns
+framed ⚙ square (the join-request count sits in its corner). The chip opens settings on the account page. The modal has a side menu on the left and the chosen page on the right; its pages are D-097's (you: account, display ·
+workspace: general, people, export · assistant: keys, usage).
+It opens on people when someone is waiting to join, otherwise on the last page you used. Below 640 px the menu turns
 into tabs above the page.
 
 ### D-065 · 2026-10-17 · Accepted
@@ -372,12 +328,10 @@ into tabs above the page.
 - Each tab writes its **whole node** (≈16 Hz at most while the pointer moves, a heartbeat every 20 s), so if another tab of the
   same person disconnects and removes the node, the next write restores it. `onDisconnect().remove()` is re-armed on every reconnect;
   anyone silent for 60 s (server clock) is hidden. You never see yourself, not even your other tabs.
-- Colour per person: a hash of the uid over the five accents (stable, may collide).
-- **Board:** cursors in world units, so they land on the same spot at any pan/zoom. They glide to each update and leave a short trail
-  of fading cells in their colour (no trail and no glide under reduced motion). The name is a DOM tag in their colour (crisp, constant size).
+- Colour per person: assigned in join order over the five accents (D-067).
+- **Board:** cursors in world units, so they land on the same spot at any pan/zoom. They glide to each update (no glide under reduced motion; the trail was removed, D-067). The name is a DOM tag in their colour (crisp, constant size).
   A card someone has selected gets a rim in their colour. Panning or zooming under a still pointer moves your cursor too.
-- **HUD:** a framed square per person beside the account chip (photo or initial, tooltip "name · view"). Click: glide to their cursor
-  if you're both on the board, otherwise open their view.
+- **HUD:** a chip per person beside the account chip (D-067). Click: follow them (D-067).
 - Rules now check every field's type, the view list, `ts <= now`, and refuse unknown fields (116 rule tests pass).
 
 ### D-066 · 2026-10-17 · Accepted (refines D-053, D-064)
@@ -417,7 +371,7 @@ Rules: `edit`, `field`, `since` validated; 118 rule tests pass.
 - Shared code: `src/views/workspace/PeerMarks.tsx` (`usePeersOn`, `peerRings`, `PeerTags`, `RowPeers`, `CellPeers`). No rule change.
 
 ### D-069 · 2026-10-17 · Accepted
-**Light theme, dark by default.** Settings → app → display → `theme: dark | light | system` (`src/state/theme.ts`, localStorage
+**Light theme, dark by default.** Settings → display → `theme: dark | light | system` (`src/state/theme.ts`, localStorage
 `north-star.theme`, default `dark`; `system` follows `prefers-color-scheme`). An inline script in `index.html` applies a stored light
 theme before the first paint, so dark never flashes first.
 - *CSS:* `html[data-theme='light']` overrides the tokens in `tokens.css`: neutral light grey `--bg #f5f5f5`, white surfaces, near-black text,
@@ -484,14 +438,15 @@ the usual flow. (The first pass had a "space photo" look: nebula clouds, a galax
 
 ### D-073 · 2026-10-17 · Accepted (Phase 4.1; answers Q-003)
 **The assistant is an ASCII orb with eyes, bottom-right in a workspace, that opens a chat.** The user's call: no per-panel AI menus for now.
-- *Orb* (`src/ui/AiOrb.tsx`): a turning sphere of ASCII dots on its own 2D canvas (30 fps, not the backdrop pass), two eyes that follow
-  the pointer and blink; spins faster with a cyan shimmer while answering. Still under reduced motion. Moves left of an open side panel
-  (`data-side-panel`), hidden behind one below 760px.
+- *Orb* (`src/ui/AiOrb.tsx`): a turning sphere of ASCII dots on its own 2D canvas (30 fps, not the backdrop pass); spins faster
+  with a cyan shimmer while answering. Still under reduced motion. Moves left of an open side panel (`data-side-panel`).
+  Size, eyes and character: D-078.
 - *Chat* (`src/ui/AiChat.tsx`, `src/ai/`): streams from OpenAI's Responses API straight from the browser (`store: false`, low reasoning).
   Each message sends a fresh plain-text brief of the workspace (`src/ai/context.ts`: items, tags, areas, links, competitors, matrix, the
-  view and selection). Read-only; the chat lives in the tab only (one per workspace, gone on reload).
-- *Key* (D-006): pasted in the chat or Settings → ai, checked with a free `GET /v1/models/<model>`, kept only in localStorage.
-- *Model:* `gpt-6-luna` ($0.10 / $0.50 per 1M tokens, cheapest on OpenAI's model page 2026-10-17). A per-feature model picker comes later.
+  view and selection). The chat lives in the tab only (one per workspace, gone on reload). Its window: D-081, D-094, D-095;
+  changes through proposals: D-074.
+- *Key* (D-006): pasted in the chat or Settings → assistant → keys, checked with a free `GET /v1/models/<model>`, kept only in localStorage.
+- *Model:* `gpt-6-luna` by default (cheapest on OpenAI's model page 2026-10-17). Choosing models: D-104.
 - *Phase 4.2:* tools so the assistant can add competitors, links, matrix notes, summaries (done in D-074); previews you accept before anything is written
   (user's answer: preview, then accept); market research by sending agents.
 
@@ -500,7 +455,8 @@ the usual flow. (The first pass had a "space photo" look: nebula clouds, a galax
 **The assistant proposes changes; you tick and apply them.** One OpenAI function tool, `propose_changes` (`src/ai/tools.ts`), not MCP:
 the app has no server to host one, and a browser-side function tool does the same job with the same key.
 - *What it can do:* add customers, problems, ideas, features and competitors; add a competitor's features; edit cards and competitors;
-  link and `for`-tag; set matrix cells (coverage, notes). **No deletes**: it says what should go and you delete it.
+  link and `for`-tag; set matrix cells (coverage, notes). Deletes and unlinks came with D-075, board areas with D-086,
+  link edits and notes with D-108.
 - *Refs:* every item in the workspace brief starts with `[ref]` (the first 6 characters of its id, longer if two clash), so the model can
   point at existing items; new items get a key inside the proposal, so one set can add a competitor, its features, its links and its cells.
 - *Preview:* the answer shows a checklist (sign + kind in the type colour, detail line). Everything valid starts ticked; rows with an
@@ -537,16 +493,8 @@ no server, and it works with the user's key.
   With web off, the prompt says facts may be dated and suggests `[web]`.
 - Later: a deeper "send agents" research mode (several searches per competitor, one report) if single answers fall short.
 
-### D-077 · 2026-10-17 · Accepted (Phase 4.2c; closes Phase 4.2)
-**A model per task: chat and research.** Settings → ai → models has two pickers (`src/ai/settings.ts`, localStorage `north-star.ai-models`):
-- *chat*: questions and proposals; *research*: any message sent with `[web]` on (D-076), where a stronger model searches and reads better.
-  Both default to `gpt-6-luna` (cheapest); the chat header shows the model the next message will use.
-- *List* (prices shown at first, removed from the UI by D-079; OpenAI pricing page, 2026-10-17; $ per 1M in / out): `gpt-6-luna` 0.10 / 0.50, `gpt-5.6-luna` 0.20 / 1.20, `gpt-6.1-sol` 2 / 10,
-  `gpt-5.5` 5 / 30 (the model OpenAI's web search guide names for agentic search). "other model id…" takes any id.
-- *Checked before kept:* a choice is saved only after the free `GET /v1/models/<id>` succeeds with your key; otherwise the error shows and
-  the previous model stays ("Still using …"). Without a key it's saved as is (the key check uses the chat model).
-- Two tasks, not one per feature: today the assistant has only these two kinds of calls. New kinds (e.g. a deep "send agents" research)
-  get their own picker when they arrive.
+### D-077 · 2026-10-17 · Superseded by D-104
+Was: one chat + research model pair per browser for every key. Models now belong to the key that pays, per task (chat, web, deep research) (D-104).
 
 ### D-078 · 2026-10-17 · Accepted (refines D-073's orb)
 **A bigger orb with Grok-style eyes and a lot of character.** User feedback: the dot sphere was too small and its eyes were neither
@@ -580,8 +528,8 @@ cute nor pretty; then: moods under the pointer, things to do by itself, reaction
   `ai/config`: `hasKey`, `keyHint` (`sk-…abcd`), `access: everyone | chosen`, `allowed: uid[]` (owner edits the last two).
 - *Calls on it* go through `ai`, an HTTPS function that checks the ID token, membership and access, forwards a whitelisted Responses
   body (`stream: true`, `store: false` forced), streams the answer back and writes the usage entry itself, so it can't be skipped or faked.
-  OpenAI errors are scrubbed of key fragments. Functions run in europe-west1 (next to RTDB); `aiMembers` gives the owner members' names
-  (the workspace only holds ids); `cleanUpWorkspaceAi` deletes the secret and AI records when a workspace is deleted.
+  OpenAI errors are scrubbed of key fragments. Functions run in europe-west1 (next to RTDB); `cleanUpWorkspaceAi` deletes the secret
+  and AI records when a workspace is deleted. (Members' names come from the people list, D-098; `aiMembers` is gone.)
 - *Own keys stay as D-006:* in the browser, straight to OpenAI. Per workspace you pick `this workspace uses: workspace | own`
   (default: the workspace key when you may use it). The chat header says which key; without a usable one the chat asks for yours and
   says when the owner hasn't let you use theirs.
@@ -591,8 +539,8 @@ cute nor pretty; then: moods under the pointer, things to do by itself, reaction
   usage event; own-key calls are logged by the caller's browser, workspace-key calls by the server.
 - *Who sees what (user's rule):* your own-key calls only you, the owner included in "nobody else"; workspace-key calls you see your own,
   the owner sees everyone's. Enforced by the rules (two allowed queries: `uid == me`, and `keySource == workspace` for the owner).
-- *Settings → ai* is now two sub-pages: **keys** (your key, the workspace key and who may use it, which key this workspace uses, models)
-  and **usage** (this month's totals, the workspace key person by person for the owner, the last 100 calls).
+- *Settings → assistant* has two pages: **keys** (your key, the workspace key and who may use it, which key this workspace uses, models
+  per D-104) and **usage** (this month's totals, the workspace key person by person for the owner, the last 100 calls).
 - *No prices in the UI* (user: they change, everyone knows the model classes). The usage log shows exact tokens and an estimate marked ≈
   from one table (`src/ai/prices.ts`, dated); the real bill is on OpenAI's dashboard.
 - *Needs:* the Firebase project on Blaze (card; functions' free tier is far more than we use; a $1 budget alert), the secret
@@ -607,7 +555,7 @@ cute nor pretty; then: moods under the pointer, things to do by itself, reaction
   workspaces page. No new buttons on the board or the matrix (D-053: fewer controls).
 - *Bundle* (`src/io/bundle.ts`): a `.zip` (fflate) holding `workspace.json`: `format: north-star.workspace`, `version: 1`, `exportedAt`,
   the workspace name, and every doc of labels, customers, problems, ideas, features, competitors, competitorFeatures, comparisons and edges
-  with its id. Never members, roles, invite codes, join requests or anything AI (keys, usage). `attachments/` joins the zip once attachments exist.
+  with its id. Never members, roles, invite codes, join requests or anything AI (keys, usage). Attachments go in the zip too (D-083).
   A bare `workspace.json` imports too; a newer `version` is refused.
 - *Import* (`src/data/importWorkspace.ts`): a new workspace you own, under the file's name. Every doc is rebuilt from known fields only, in the
   shapes `firestore.rules` accepts (the file may have been edited), with new ids; links, matrix cells (id = `feature_competitor`, re-derived) and
@@ -629,18 +577,16 @@ cute nor pretty; then: moods under the pointer, things to do by itself, reaction
   nothing else had to change. The backdrop still spans the whole screen behind both.
 - *Width:* drag the window's left edge (cyan line on hover), 320–760 px, never leaving the app under 360 px; remembered in this
   browser (`north-star.ai-width`, default 420).
-- *The orb is the window's face:* the same orb (one instance, so its reactions carry over, D-078) glides from the corner into the
-  header's left (Motion `layout`) and back on close; clicking it closes the window. Open, its curious glances point down at the chat.
-- *Composer:* one framed box, the text on top and `[web] [send]` under it; the frame turns cyan while you type.
+- *The orb:* the same orb (one instance, so its reactions carry over, D-078); it perches on the chat's top edge (D-095).
+- *Composer:* a `>` prompt line (D-094).
 - *Narrow screens (<760 px):* the window covers the whole screen instead of sharing it.
 - The table's popovers clamp to the app box instead of the window width, so they don't slide under the assistant.
 - *Motion, second pass (user: the app took time to adapt and jumped, the + grid waited and then jumped):* the app box changes
   width at once, never eased (an easing canvas lags and snaps). The board keeps its left edge (`KeepLeftEdge` in Board.tsx shifts
   camera and target), so cards and grid stay put. The HUD's right side (`data-glide`) and open side panels glide to their new
   place (`src/ui/glide.ts`, FLIP with WAAPI, run from the chat store's `open` change so every way of opening or closing does it).
-  Opening, the window rises from below with the orb straining at its top (`heave`: `> <`, trembling); closing, the app is whole
-  again at once *under* the window, so lowering it reveals the board instead of making it wait. Header words fade in once the
-  orb has landed. Rejected: sliding in from the right (didn't match the orb rising).
+  Closing, the app is whole again at once *under* the window, so moving it away reveals the board instead of making it wait.
+  How the window opens, grows and closes: D-095. Rejected: sliding in from the right.
 - *Lower floor:* the window is the page's black at 78% with the flowing backdrop faintly through it, a soft shade along its left edge.
 - *Side panels and the orb:* the closed orb's offset is React state (a MutationObserver on `[data-side-panel]`), so Motion glides
   it aside and back instead of teleporting; it gets `bumped` (`> <`, a jolt, a wary look) and `free` (`^ ^`, a hop) via `cue`.
@@ -695,8 +641,7 @@ panels (D-073: no per-panel AI menus) and D-053 (no new board controls).
 - *Which item:* the text after the command, else the card selected on the board (or in Flow / Table) when it's the mode's
   type, else the model picks the one that needs it most and says which. The `/` menu shows `on <card>` when it will use the selection.
 - *Language:* the asks are English and tell the model to answer in the language of the user's other messages.
-- *UI:* the empty chat lists `Summarize this workspace` and the six modes (they replaced the old starters). Typing `/word`
-  opens a menu above the text: ↑↓ to move, Enter or Tab fills `/mode `, Enter again sends, Escape closes the menu only.
+- *UI:* typing `/word` opens a menu above the text (the empty chat no longer lists the modes, D-095): ↑↓ to move, Enter or Tab fills `/mode `, Enter again sends, Escape closes the menu only.
 - Also (D-084 follow-up, user): the blinking caret shows only while text streams, not while thinking or during a step.
 - Verified on emulators with a fake OpenAI (headless Chrome): empty-state list, `/va` → menu with the selected idea, Enter
   fills, Enter sends the full ask naming the selected idea, the chat shows `/validate · <idea>`, Escape closes only the menu.
@@ -757,8 +702,8 @@ pick from the roadmap. The model never deals in coordinates: it decides what bel
 
 ### D-087 · 2026-10-18 · Accepted (extends D-074, D-081)
 **Preview a proposal in the app before applying it.** User request: see what the assistant wants to change, like an artifact
-beside the chat. The chat stays on the right (D-081); the app on the left shows the workspace as if the ticked rows were applied.
-Functional first: the user will redesign the assistant UI and how the preview looks later.
+beside the chat. The app shows the workspace as if the ticked rows were applied, on the stage (D-094: the chat moves to the left while it's open).
+Its look (marks, bar, stepper) is D-096.
 - *Simulation* (`src/ai/simulate.ts`): the same writes `apply` makes (`toWrites`), played onto a copy of the workspace in memory:
   new items get `preview-…` ids, deletes keep the item (marked) and drop its links and matrix cells like `cascadeOf`, areas move
   cards and labels. Nothing reaches Firestore. Each touched item or matrix cell gets a mark: `new`, `edited`, `moved`, `deleted`.
@@ -767,8 +712,7 @@ Functional first: the user will redesign the assistant UI and how the preview lo
   changes of their own. Marks reuse the collaborator-selection marks (D-067/D-068: rings and a name tag in cyan / yellow / blue /
   magenta; replaced by diff signs and colours, D-096).
 - *A bare screen (user, second pass):* while open, the app's HUD, filters and board tools (`+`, hints) are hidden, so you can't
-  leave the workspace from it; a bar takes the HUD's place: `PREVIEW · N changes as if applied`, the four view tabs (within this
-  workspace), the colour key and `close · esc`; a cyan frame around it.
+  leave the workspace from it; the stage box's bar (D-096) has the view tabs within this workspace and `esc`.
 - *Live:* ticking or unticking a row updates the preview at once. `[preview]` / `[close preview]` beside apply and discard; opening
   glides the camera to the first added or moved card. Apply, discard, closing the chat or Esc end it.
 - *Nothing editable while open (user: "don't let me change things"):* `src/views/workspace/previewLock.ts` disables every text
@@ -809,13 +753,13 @@ asks for plain text without headings, the chat rendered no Markdown, and a long 
   an inference), what it means for us with our items' refs, open questions. Sources are numbered from the researchers'
   citations and links (`numberSources`); the findings the model reads carry `[n]` instead of URLs and a SOURCES list. Numbers
   outside the list are dropped. Then the usual proposal, and a one-sentence text answer.
-- *Report screen* (`src/ui/ReportView.tsx`): over the app's box like the preview (D-087), the chat beside it; opens by itself when
+- *Report screen* (`src/ui/ReportView.tsx`): on the stage (D-094; its box and stepper D-101), the chat beside it; opens by itself when
   the report arrives, `open report` / `close report` on the chat's report card, Esc closes; one screen at a time with the
   preview. Title and meta, the answer in a cyan-edged box, a collapsible numbered section per question with boxed source
   numbers (link + title on hover), inferences dimmed and marked, our items as buttons that close the report and select the
   item, open questions, numbered sources with domains. Body in Geist (sans) at a readable measure (760 px), labels in mono.
   `download .md` writes the same structure with numbered sources.
-- *Chat:* a report card (title, questions · sources · open questions) instead of the long text; no duplicate sources list.
+- *Chat:* a report card instead of the long text (its look: D-101); no duplicate sources list.
   Later turns see the report as compact text (`reportText`). Answers in general now render `- ` lines as a list with a hanging
   indent and `**bold**` (nothing else of Markdown).
 - Verified on emulators with a fake OpenAI (headless Chrome): `tool_choice: required` with write_report on the report step;
@@ -841,14 +785,13 @@ save reports rather than whole chats (chats stay in the tab, D-073); every repor
   the prompt calls it only when the user asks for a report, a write-up or a summary to save. Its points cite the URLs cited
   earlier in the chat (numbered like research), not inferences. It opens on the report screen with `not saved yet` and
   `save to reports` (also on the chat's card); `download .md` works either way.
-- *Reports tab* (`/workspaces/<id>/reports`, `src/views/reports/ReportsView.tsx`): newest first; title, two lines of the answer,
-  `topic · by · date · N questions/sections · N sources`, `only you` / `shared` (cyan), `share`/`unshare` and `delete` for the
-  author, `delete` for the owner on shared ones (undoable, toast). A row opens the report screen and the URL gets
+- *Reports tab* (`/workspaces/<id>/reports`, `src/views/reports/ReportsView.tsx`; its layout now D-106): `share`/`unshare` and
+  `delete` for the author, `delete` for an owner on shared ones (undoable, toast). Opening a report sets
   `?report=<id>`, so a shared report can be linked; a link to one you can't see says so. Presence view `reports`
   (database.rules.json), and the open report is broadcast as `sel`, so others see who's reading which (D-068 row bars).
-- *Report screen* (D-089): shows the saved copy (or the chat's while saving or if saving failed), says who can see it, and has
-  save / share / delete beside download and close. Chat write-ups have sections, not questions, and no `inference` marks.
-- *Assistant:* the brief lists the newest 10 reports you can see (title, date, private/shared, answer) as RESEARCH REPORTS.
+- *The chat's report on the stage* (D-089, D-101): shows the saved copy (or the chat's while saving or if saving failed), says who
+  can see it, and has save / share / delete beside download and close. Chat write-ups have sections, not questions, and no `inference` marks.
+- *Assistant:* the brief lists the newest 10 reports you can see (title, date, private/shared, answer) as REPORTS (D-099).
 - *Export/import:* reports you can see go in `workspace.json`'s optional `reports` (no uid); import makes them yours, keeps
   `shared`, remaps item ids.
 - *Workspace delete:* the owner's browser deletes the shared reports and its own; other members' private ones are deleted by
@@ -860,9 +803,9 @@ save reports rather than whole chats (chats stay in the tab, D-073); every repor
 
 ### D-091 · 2026-10-18 · Accepted (extends D-090)
 **Upload your own report as a Markdown file.** User request: a button so people can add reports they wrote elsewhere.
-- *Where:* `[upload .md]` on the reports tab (top right), or drop a file anywhere on the tab (cyan edge). `.md`, `.markdown` or
+- *Where:* the upload square in the reports table's top row (D-103, D-106), or drop a file anywhere on the tab (cyan edge). `.md`, `.markdown` or
   `.txt`, at most 512 KB; another type, a bigger file or one with no text is refused in plain words. Saved like the others:
-  yours only (`kind: 'upload'`, `topic` = the file name, `model` empty) until you share it; it opens on the report screen.
+  yours only (`kind: 'upload'`, `topic` = the file name, `model` empty) until you share it; it opens beside the table (D-106).
 - *Reading* (`src/io/reportMarkdown.ts`, no Markdown library): `#` → title (else the file name); text before the first `##`
   → the answer (more paragraphs there become an "Overview" section); each `##`/`###` → a section whose list items (with their
   continuation lines) and paragraphs are points; headings "What it means for us" / "Implications" / "Next steps" →
@@ -914,8 +857,8 @@ the report screen and every Settings page; the assistant chat was left out on pu
   `--track-label/title/display`; `--measure` 760. No raw sizes or tracking left outside the assistant chat.
 - *Shared pieces:* `src/ui/Page.module.css` (`page`, `toolbar`, `title`); `fieldLabel` beside `label` in Frame.module.css;
   `small` in AsciiButton.module.css for `[verb]` row actions (reports, report screen, Settings, workspaces cards).
-- *Layout:* reports left-aligned at `--measure` (user's pick over centred), header in the filter row's place; the table fills the
-  width ("linked to" takes the spare room) and names end in "…"; Settings shares one label column (`--label-w`); the
+- *Layout:* reports in the filter row's place (now a full-width table, D-106); the table fills the
+  width ("linked to" takes the spare room) and names end in "…"; Settings rows line up (their layout now D-097); the
   "coming later" section is gone; on phones the side panel covers the filter row instead of sliding under it.
 - *Fonts (user):* Geist for titles and long reading text, Geist Mono for everything else, as it already was.
 - *Case (user, follow-up):* every action is lowercase: `[ create ]`, `[ delete ]`, `[+ attach]`, `[+ link]`, the Settings menu
@@ -932,7 +875,7 @@ the report screen and every Settings page; the assistant chat was left out on pu
   picking links and closes it. `src/ui/floating.ts` holds the placement both dropdowns use.
 - *Fix (follow-up):* the shared-button swap had split the workspace card's hover selector, so on hover the actions took the
   name input's full width and pushed out "owner · 1 member"; restored.
-- Kept: the report screen stays centred (a reading screen over the app, D-089); the Matrix keeps its fit-content width (D-060);
+- Kept: the Matrix keeps its fit-content width;
   the /workspaces page only got tokens (its card titles went 22 → 18 px).
 - Verified with headless Chrome on the emulators in the same three setups: no horizontal scroll, light theme reads the same.
   The white focus box on Settings' first menu item after opening shows only when the dialog opens without a pointer (keyboard,
@@ -1073,8 +1016,8 @@ a viewer role plus remove (and several owners per workspace), and reports split 
   The key page's "who may use it" uses the same list; the `aiMembers` function is gone.
 - *Reports:* `reports/{id}` is a summary (title, answer, counts, meta) and `reports/{id}/content/body` holds sections,
   implications, open questions and sources; saved in one batch, deleted (and undone) together. Reports from before stay one
-  doc and are read, shared and deleted as they were (no migration). The reports tab lists summaries 20 at a time (two
-  merged queries) with a loading line and `show more`; opening one fetches its body with a loading screen (`useReport`);
+  doc and are read, shared and deleted as they were (no migration). The reports tab lists summaries (10 a page with
+  numbered pages, D-106); opening one fetches its body with a loading screen (`useReport`);
   a `?report=` link checks just that report. The brief's newest reports load only while the chat is open; export fetches
   every visible report at export time; import writes summary + body.
 - *Usage:* this month's totals are fetched once when the usage page opens; the call log is paged 20 at a time with the
@@ -1107,10 +1050,9 @@ User: the right-to-left crossing (D-094) is for what the chat recommends. Report
 another session's chat, or shared by someone else belong to the main page. First step of the report screen's redesign;
 the chat's own report (its card and the stage) is refactored next, the way the preview was (D-096).
 - *One body, two frames:* `ReportDocument` (`src/views/reports/ReportDocument.tsx`): title, meta, answer, sections, what it
-  means for us, open questions, sources; `downloadReport` for the .md. Used by `ReportPage` and the stage's `ReportView`.
-- *Report page* (`ReportPage.tsx`): `/workspaces/<id>/reports?report=<id>` renders it instead of the list, with the HUD and
-  chat untouched, left-aligned at `--measure` like the list (D-093). Toolbar in the filter row's place: `[← reports]`, who can
-  see it, share/unshare, delete, download .md. Loading line while the body comes (D-098); "isn't shared with you, or it was
+  means for us, open questions, sources; `downloadReport` for the .md. Used by the tab's reader (`ReportReader`, D-102) and the stage's `ReportView`.
+- *In the tab* (now `ReportReader.tsx` beside the table, D-102, D-106): `/workspaces/<id>/reports?report=<id>`, with the HUD and
+  chat untouched; its bar: who can see it, share/unshare, delete, download .md. Loading line while the body comes (D-098); "isn't shared with you, or it was
   deleted" for a bad link. A row and an upload *push* the URL, so browser back returns to the list. Presence: the open
   report is still broadcast as `sel` (D-090). Item chips select the card and go to it. Viewers can use it (`data-viewer-ok`).
 - *Stage:* `useChat.reportOpen` now means only the chat's report (research or a write-up, its card's `open report →`);
@@ -1138,15 +1080,13 @@ own report comes here (D-100).
 User: the tab didn't look like the other pages, used a small part of the screen, a report left lots of empty space on the
 right, and the backdrop's animation behind the text made reading hard. Their pick: list + reader (over a full-width
 table with a separate reader screen).
-- *Frame:* under the toolbar, across the page like the table's, `--bg` (not `--surface`, which is see-through and blurred).
-  Left a list column (280–360 px): title, two lines of the answer, `kind · who · date · N sections · shared|only you`,
-  the open one with a cyan edge and wash, others' presence bars (D-068), `show more`. Right the reader (`ReportReader.tsx`,
+- *The table and list are now D-106's.* What stays from here: the reader (`ReportReader.tsx`,
   replaces `ReportPage`): a bar (who can see it, share, delete, download .md), then the report at `--measure` with an
   "on this page" outline beside it (sections, what it means for us, open questions, sources): sticky, the part you're
   reading marked as you scroll, a click jumps there. The outline goes when the reader is under 1000 px wide (container query).
   Text and outline centre on very wide screens.
-- *Opening:* a wide screen opens the newest report (`replace`, no history step), so the reader is never empty; picking one
-  pushes `?report=`. Phones (≤760 px) show the list, then the report alone with `← reports`. Upload errors sit in the toolbar.
+- *Opening:* picking a report pushes `?report=`; nothing opens by itself (D-106). Phones (≤760 px) show the table, then the report
+  alone with `← reports`.
 - `ReportDocument` marks its blocks (`data-report-block`) for the outline.
 
 ### D-103 · 2026-10-18 · Accepted (refines D-091, D-102)
@@ -1203,7 +1143,7 @@ inside the table.** The user's calls after D-102: 20 a page is too many; page nu
 and not `show more`; no report opens by itself; the table stands alone and an opened report builds up with the cell effect
 while the table takes the left; no toolbar above it (the HUD already names the page); a filter row at the table's top with
 upload in it, so the table has its actions and the report its own.
-- *Table:* one solid frame (`--bg`) from the filter row's height. Top row: `KIND`, `BY`, `SEEN BY` dropdowns (the board's
+- *Table:* one frame on the shared frame surface like the other tables (the report reader stays solid `--bg`). Top row: `KIND`, `BY`, `SEEN BY` dropdowns (the board's
   `Menu`, lit while narrowing; `clear`), `N reports`, the upload square (D-103). Columns: report (title over a line of the
   answer), kind, by, date, size, seen by (`workspace` cyan / `only you`); size and seen by drop under 1100 px; on phones
   title and kind only. No row actions: share / delete / download are the open report's.
@@ -1316,13 +1256,16 @@ on some cards and links vanished and others didn't. Cause: `near 0.1 / far 1000`
 - *Scale:* CSS pixels per board unit, measured every frame (`useDetail`), so a big screen far out still reads.
   Text under 6 px is left out (`useReadable(size, minPx)`); short mono words (a card's type label, tags, meta; link chips)
   stay down to 4 px and 6.5 px, a selected link keeps its chip.
-- *Cards in three looks* (`CardDetail`, 10% hysteresis): `full` while the title (0.17) is ≥ 6 px, its small text (≈0.075)
-  going first, at 4 px; `compact`: the title alone, bigger (0.28, centred, 26 characters) down to 5 px; `far`: no text, the
-  card filled with 40% of its type's colour, so types read as areas. Feature chips' and notes' text follow `useReadable`;
-  headings stay to the zoom-out limit. *Lowered once (user):* the first thresholds (full only while the small text was
-  ≥ 6 px) dropped most of a card's context already at a normal working zoom.
-- Verified headless on emulators (example workspace, dark): 1440 × 900 and 2560 × 1440 at distances 25 / 45 / 80 / 150 and
-  frames of the fit-all glide from 150: no colour over text, same look at the same on-screen size on both screens.
+- *Cards in three looks* (`CardDetail`, 10% hysteresis): `full` while the small text (≈0.075) is ≥ 4 px; `compact`: the
+  title alone, bigger and centred (0.28, 26 characters) down to 5 px; `far`: a star (`FarNode`): a ring in the type's colour
+  round a small core in `--fg`, an outer ring when hovered, selected or marked, built up cell by cell (D-034); coming back,
+  the card builds up again (`CardReveal` restarts on remount). Links end at the star's circle. Feature chips' and notes'
+  text follow `useReadable`, and so do headings (gone under 6 px).
+  *Second pass (user):* the first thresholds (full only while the small text was ≥ 6 px) dropped most of a card's context
+  at a normal working zoom; a band where the small text was gone left the title small at the top of an empty card; and
+  the far look (cards filled with 40% of their colour) glowed like blobs.
+- Verified headless on emulators (example workspace): dark 1440 × 900 and 2560 × 1440 at distances 25–150 and frames of the
+  fit-all glide from 150 (no colour over text, same look at the same on-screen size, cards rebuild from stars); light at 45 / 80.
 
 ### D-112 · 2026-10-18 · Accepted (extends D-050, D-108; refines D-110's grid)
 **Dragging snaps to a small grid, switched on and off beside the `+`.** User: lining cards up in the same row or column by

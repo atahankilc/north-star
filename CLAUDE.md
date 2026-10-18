@@ -22,7 +22,8 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 - Update `memory-bank/state.md` (in progress / next / blockers, plus the date). It is a snapshot under ~100 lines: finished
   work gets a `## Done (…)` section in `state-history.md`, and at most one line stays in state.md.
 - A new decision gets its full `### D-xxx` entry appended to `decisions-log.md`, plus one line in the right topic of
-  `decisions.md` (edit the line it replaces; a rejected idea goes under "Rejected"). An answered question moves out of
+  `decisions.md` (edit the line it replaces; a rejected idea goes under "Rejected"). Older log entries it contradicts
+  get fixed in place, or shrink to a `Superseded by D-xxx` stub: no two entries may disagree. An answered question moves out of
   `open-questions.md`.
 - A new uncertainty gets a `Q-xxx` entry in `open-questions.md` with a recommendation.
 - If a decision changes a spec, update the relevant `/docs` file in the same change.

@@ -14,7 +14,9 @@ last one stopped. `state.md`, `decisions.md` and `open-questions.md` are auto-lo
 ## Rules
 - An open question, once answered, becomes a decision: remove it from `open-questions.md`, add
   `D-xxx` to `decisions-log.md` and its line to `decisions.md`, and update affected docs in `/docs` if needed.
-- Decisions are never silently deleted. A reversed one is marked `Superseded by D-yyy` in the log, and its line leaves `decisions.md`.
+- No entry may contradict a later one. A fully replaced decision shrinks to a two-line stub in the log (`Superseded by
+  D-yyy` + what it was); a partly changed one has its outdated sentences rewritten in place with "(D-yyy)". Numbers are
+  never reused or removed: code and docs cite them.
 - Keep `state.md` short and current. It is a snapshot, not a history; git has the history.
 - Specs live in `/docs`: [PRODUCT](../docs/PRODUCT.md), [ARCHITECTURE](../docs/ARCHITECTURE.md),
   [DESIGN](../docs/DESIGN.md), [ROADMAP](../docs/ROADMAP.md).
