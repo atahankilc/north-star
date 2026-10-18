@@ -1234,7 +1234,7 @@ that card, but the chat only said so in a faint line of the empty state. Now a `
 in every state: `WORKING ON PROBLEM <title>` with a bar and the kind in the type's colour while a card's panel is open,
 `REPORT <title>` while a report is open (D-099), and a quiet
 `WHOLE WORKSPACE N items` otherwise. With D-108's multi-select it also shows `N CARDS <titles>` (cyan), and the brief
-lists every selected item (it used to name only the last one picked); that part goes in with D-108. `Scope` in src/ui/AiChat.tsx; the matrix's cell selection isn't in the brief, so it isn't shown.
+lists every selected item (it used to name only the last one picked); that part went in with D-108. `Scope` in src/ui/AiChat.tsx; the matrix's cell selection isn't in the brief, so it isn't shown.
 
 ### D-110 · 2026-10-18 · Accepted (refines D-061)
 **A dimmer backdrop in workspaces, and the board's `+` grid gives way as you zoom out.** User: the animation behind the board

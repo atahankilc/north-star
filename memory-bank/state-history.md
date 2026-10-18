@@ -316,9 +316,9 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 
 ## Done (assistant redesign, step 1, 2026-10-18)
 - D-094: chat restyled as a terminal log; window builds up cell by cell; a preview or report opens a stage on the right while
-  the chat glides to the left (stageMotion.ts, stage.ts). Verified headless on emulators, dark and light. Committed 2026-10-18 (not pushed).
+  the chat glides to the left (stageMotion.ts, stage.ts). Verified headless on emulators, dark and light. Committed and pushed 2026-10-18.
 - D-095: empty chat = small box that rises from below and lifts the orb onto its edge; the first message grows it tall and
-  the orb drops behind the edge to peek; header = model + clear + close (perch.ts). Verified headless, dark and light. Committed 2026-10-18 (not pushed).
+  the orb drops behind the edge to peek; header = model + clear + close (perch.ts). Verified headless, dark and light. Committed and pushed 2026-10-18.
   Follow-up: in the tall chat the orb rests in the middle, wanders off to peek now and then, and when the column crosses to a
   preview it slides, is shaken, composes itself and walks back (perch.ts springs; `shaken`/`composed` in AiOrb). Verified headless.
   Second round of fixes (orb back to its corner on close, no command list in the empty box, eased `/` menu, side panels end
@@ -328,7 +328,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - D-096: the preview's look: diff signs and colours (`--diff-*`) instead of name tags, deleted items grey and struck, moved
   cards' ghosts, new links in the new colour, `was` + old values under edits, frame-all on open, a stepper (`‹ n/N ›`, n/p)
   and rows lit both ways between chat and stage, the stage as one box with its title in the top edge. Verified headless,
-  dark and light. Committed 2026-10-18 (not pushed).
+  dark and light. Committed and pushed 2026-10-18.
 - Next in the redesign (with the user): the report screen's look on the stage, the steps/streaming states, narrow screens
   (below 760 px the chat still covers the stage).
 
@@ -401,7 +401,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 
 ## Done (assistant scope line, 2026-10-18)
 - D-109: `working on …` line above the chat's prompt (card / report / whole workspace). Committed.
-  The `N cards` case + the brief listing a multi-selection wait in the working tree for D-108 (needs its `selection`).
+  The `N cards` case + the brief listing a multi-selection went in with D-108 (d1f8cc3).
 
 ## Done (backdrop + grid, 2026-10-18)
 - D-110: workspace backdrop 8% (was 14%); the board's `+` grid turns into dots and fades out by camera distance, gone before the
@@ -425,9 +425,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   depends on on-screen size: cards full / compact (big centred title) / far (stars in the type colour, built up cell by
   cell), competitor feature chips the same (big name / small stars beside the competitor's star), link chips, notes and
   headings left out when too small. Verified headless on emulators: dark 1440 × 900 and 2560 × 1440, light 1440 × 900,
-  fit-all glide frames, a competitor's chips at three distances. Committed 2026-10-18 (not pushed).
+  fit-all glide frames, a competitor's chips at three distances. Committed and pushed 2026-10-18.
 
 ## Done (snap to grid, 2026-10-18)
 - D-112: drags snap card/label centres to a 0.25 grid (group drags too, alt = free), a switch beside fit-all + `g`, on by
-  default and remembered; quarter dots on the grid close up while on. Verified headless on emulators. Not committed
-  (shares Board.tsx / NodeCard.tsx / BoardLabel.tsx with D-111's uncommitted hunks from another session).
+  default and remembered; quarter dots on the grid close up while on. Verified headless on emulators. Committed (6600505), pushed.

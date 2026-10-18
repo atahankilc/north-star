@@ -1,7 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (memory bank split: current rules in decisions.md, full entries in decisions-log.md, the done
-diary in state-history.md)_
+_Last updated: 2026-10-18 (stale "in progress" notes cleared: D-109's multi-select scope and D-112 are committed and pushed)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -21,10 +20,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Tried with a real key: chat, proposals, [web], agent loop, deep research, reports. Only with a fake OpenAI: `/analyze` (D-099),
   `edit_link` / `add_note` (D-108).
 
-## In progress (uncommitted in the working tree)
-- D-112 snap to grid while dragging (snap.ts, BoardView.tsx, BoardView.module.css; shares Board.tsx / NodeCard.tsx /
-  BoardLabel.tsx with D-111). Verified headless on emulators.
-- D-109's `N cards` scope case + the brief listing a multi-selection wait for D-108's `selection` in that tree.
+## In progress
+- Nothing uncommitted; `main` is pushed (D-108–D-112 all in). Keep this section true: empty it when work is committed.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
