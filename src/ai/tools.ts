@@ -2,10 +2,11 @@
 // them in the chat; then they go through src/data/assistant.ts as one undo step. Deletes too (D-075), with their cascade.
 import type { AssistantWrite, ChangeRef } from '../data/assistant'
 import { linked } from '../data/edges'
-import { COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, type BoardType, type Edge, type NodeType } from '../data/model'
+import { COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, LABEL_SIZES, type BoardType, type Edge, type Label, type NodeType } from '../data/model'
 import { DESCRIPTION_MAX } from '../data/workspaces'
+import { colors } from '../styles/tokens'
 import { CARD_H, CARD_W, findFreeSpot } from '../views/canvas/cardLayout'
-import { isTitle, titleHalf } from '../views/canvas/titleBlock'
+import { isTitle, labelHalf, titleHalf } from '../views/canvas/titleBlock'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
 import { arrangeAreas, type AreaPlan } from './arrange'
@@ -24,6 +25,10 @@ const NAME_MAX = 120
 // Strict schemas: every property listed and required; "not given" is null. In an edit an empty string empties a field
 // (D-122), except a title or name.
 const KEEP_OR_EMPTY = 'Null leaves a field as it is; an empty string empties it.'
+// Board text colours by name (D-123), the accents the label bar offers.
+const LABEL_COLORS = ['magenta', 'cyan', 'yellow', 'blue', 'green'] as const
+const LABEL_HEX: Record<string, string> = { magenta: colors.magenta, cyan: colors.cyan, yellow: colors.yellow, blue: colors.blue, green: colors.green }
+const SIDES = ['right', 'left', 'above', 'below'] as const
 const NOT_ASSESSED = 'not assessed'
 const str = (description: string) => ({ type: 'string', description })
 const optStr = (description: string) => ({ type: ['string', 'null'], description })
@@ -145,9 +150,23 @@ const OPS = [
       },
     },
   ),
-  op('rename_label', 'Change the text of a label on the board.', {
+  op('add_label', 'Text written on the board: a heading or subheading naming what is under it, or a note. No cards move.', {
+    text: str('The text, a few words (a note: one short sentence).'),
+    size: { type: 'string', enum: LABEL_SIZES, description: 'heading (an area), subheading (a part of one), or note.' },
+    color: optEnum(LABEL_COLORS, 'Null: the default (white).'),
+    above: optStr('Ref or key of the card it goes just above. Null: above the top-left of the board.'),
+  }),
+  op('edit_label', `Change a label on the board: its text, size, colour, or put it above another card. ${KEEP_OR_EMPTY.split(';')[0]}.`, {
     label: str('Its current text, exactly as listed under AREAS ON THE BOARD or NOTES ON THE BOARD.'),
-    text: str('The new text.'),
+    text: optStr('The new text.'),
+    size: optEnum(LABEL_SIZES, 'heading, subheading or note.'),
+    color: optEnum([...LABEL_COLORS, 'default'], '"default" removes its colour.'),
+    above: optStr('Ref or key of a card to move it just above.'),
+  }),
+  op('move_card', 'Move one card (or a competitor, with its features) next to another card. For whole areas use arrange_area.', {
+    target: ref('The card to move'),
+    near: ref('The card to put it next to'),
+    side: optEnum(SIDES, 'Which side of that card. Null: right.'),
   }),
   op('delete_label', 'Remove a label or a note from the board; its cards stay where they are.', {
     label: str('Its current text, exactly as listed under AREAS ON THE BOARD or NOTES ON THE BOARD.'),
@@ -487,15 +506,78 @@ export function parseProposal(
                   : undefined,
         }
       }
+      case 'add_label': {
+        const above = resolve(raw.above)
+        return {
+          ...base,
+          sign: '+',
+          kind: s(raw.size) ?? 'label',
+          tone: null,
+          text: clip(s(raw.text) ?? '', 120),
+          detail: [s(raw.color), above && `above ${above.name}`].filter(Boolean).join(' · ') || undefined,
+          needs: needsOf(above),
+          problem: !s(raw.text)
+            ? 'no text'
+            : raw.above != null && !above
+              ? 'unknown card'
+              : above?.type === 'competitorFeature'
+                ? `${above.name} isn't on the board`
+                : undefined,
+        }
+      }
+      // rename_label: the older name of edit_label, text only.
       case 'rename_label':
+      case 'edit_label': {
+        const above = resolve(raw.above)
+        const what = [
+          s(raw.text) && `→ ${clip(s(raw.text)!, 60)}`,
+          s(raw.size),
+          s(raw.color) && (s(raw.color) === 'default' ? 'default colour' : s(raw.color)),
+          above && `above ${above.name}`,
+        ].filter(Boolean)
         return {
           ...base,
           sign: '~',
           kind: 'label',
           tone: null,
-          text: `${s(raw.label) ?? '?'}  →  ${s(raw.text) ?? '?'}`,
-          problem: !hasLabel(raw.label) ? 'no label with this text' : !s(raw.text) ? 'no new text' : undefined,
+          text: s(raw.label) ?? '?',
+          detail: what.join(' · ') || undefined,
+          needs: needsOf(above),
+          problem: !hasLabel(raw.label)
+            ? 'no label with this text'
+            : raw.above != null && !above
+              ? 'unknown card'
+              : above?.type === 'competitorFeature'
+                ? `${above.name} isn't on the board`
+                : !what.length
+                  ? 'nothing to change'
+                  : undefined,
         }
+      }
+      case 'move_card': {
+        const t = resolve(raw.target)
+        const near = resolve(raw.near)
+        return {
+          ...base,
+          sign: '→',
+          kind: t?.type === 'competitor' ? 'competitor' : (t?.type ?? 'card'),
+          tone: t && t.type !== 'competitorFeature' ? (t.type as BoardType) : null,
+          text: t?.name ?? '?',
+          detail: near ? `${{ left: 'left of', above: 'above', below: 'below' }[s(raw.side) ?? ''] ?? 'right of'} ${near.name}` : undefined,
+          needs: needsOf(near),
+          problem: !t || !near
+            ? 'unknown item'
+            : t.type === 'competitorFeature' || near.type === 'competitorFeature'
+              ? `${(t.type === 'competitorFeature' ? t : near).name} sits behind its competitor`
+              : t.isNew
+                ? 'added in this same proposal: place it with near'
+                : idOfRef(t.ref) === idOfRef(near.ref)
+                  ? 'next to itself'
+                  : areaOf.has(refKey(raw.target)!)
+                    ? `${t.name} is already in "${areaOf.get(refKey(raw.target)!)}"`
+                    : undefined,
+        }
+      }
       case 'delete_label':
         return {
           ...base,
@@ -579,7 +661,7 @@ function linkBetween<E extends Edge>(edges: E[], a: string, b: string): E | unde
 const idOfRef = (r: ChangeRef) => ('id' in r ? r.id : r.key)
 
 // The fields of a row that name one item.
-const ITEM_FIELDS = ['target', 'from', 'to', 'competitor', 'feature', 'their_feature', 'near']
+const ITEM_FIELDS = ['target', 'from', 'to', 'competitor', 'feature', 'their_feature', 'near', 'above']
 // An edit's empty string: empty the field (D-122).
 const emptied = (v: unknown) => typeof v === 'string' && !v.trim()
 
@@ -612,7 +694,7 @@ export function stillValid(change: Change, ws: WorkspaceCtx, refs: Map<string, I
     const r = refs.get(refKey(v) ?? '')
     if (r && !exists.has(r.id)) return `${r.name} was deleted`
   }
-  if (['rename_label', 'delete_label'].includes(change.raw.op) && !ws.labels.some((l) => sameLabel(l.text, change.raw.label))) {
+  if (['rename_label', 'edit_label', 'delete_label'].includes(change.raw.op) && !ws.labels.some((l) => sameLabel(l.text, change.raw.label))) {
     return 'the label is gone'
   }
   const a = refs.get(refKey(change.raw.from) ?? '')
@@ -694,6 +776,28 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
     return at
   }
   const freshType = (key: string) => fresh.get(key)
+  // Where a card is now in this set: placed, moved or as it was.
+  const whereIs = (v: unknown) => {
+    const k = refKey(v)
+    if (!k) return undefined
+    const e = refs.get(k)
+    return placed.get(k) ?? layout?.cards.get(e?.id ?? k) ?? layout?.cards.get(k) ?? (e && position.get(e.id))
+  }
+  // move_card (D-123): beside another card, on the side asked, else the nearest free spot from there.
+  const beside = (id: string, nearRef: unknown, side: string): { x: number; y: number } | undefined => {
+    const anchor = whereIs(nearRef)
+    if (!anchor) return undefined
+    const own = position.get(id)
+    if (own && cards.includes(own)) cards.splice(cards.indexOf(own), 1)
+    const gapX = CARD_W + 0.3
+    const gapY = CARD_H + 0.3
+    const [dx, dy] = side === 'left' ? [-gapX, 0] : side === 'above' ? [0, gapY] : side === 'below' ? [0, -gapY] : [gapX, 0]
+    const [x, y] = findFreeSpot([anchor.x + dx, anchor.y + dy], cards)
+    const at = { x, y }
+    cards.push(at)
+    position.set(id, at)
+    return at
+  }
   // Up and down the column first, nearest row first; sideways only if the column is full here.
   const columnSpot = ([x, y]: [number, number]): [number, number] => {
     const gapY = CARD_H + 0.3
@@ -716,6 +820,8 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
   }
 
   const notes: { w: Extract<AssistantWrite, { do: 'label' }>; near: unknown }[] = []
+  // Text added or moved above a card (D-123): placed once every card has its place, like notes.
+  const texts: { w: Extract<AssistantWrite, { do: 'label' }>; above: unknown }[] = []
   const writes = accepted.map((c): AssistantWrite => {
     const r = c.raw
     switch (r.op) {
@@ -773,6 +879,12 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
               })
         return { do: 'update', target, fields }
       }
+      case 'move_card': {
+        const target = refOf(r.target) as { id: string; type: NodeType }
+        // An area that gathers it too has the last word.
+        const at = layout?.cards.get(target.id) ?? beside(target.id, r.near, s(r.side) ?? 'right')
+        return { do: 'update', target, fields: at ? { x: at.x, y: at.y } : {} }
+      }
       case 'update_competitor_feature':
         return {
           do: 'update',
@@ -806,8 +918,22 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         const fields = { x: plan.x, y: plan.y }
         return existing ? { do: 'label', id: existing.id, fields } : { do: 'label', fields: { text: plan.text, ...fields } }
       }
+      case 'add_label': {
+        const w: AssistantWrite = { do: 'label', fields: compact({ text: s(r.text)!.slice(0, 200), size: text(r.size), color: LABEL_HEX[s(r.color) ?? ''] }) }
+        texts.push({ w, above: r.above })
+        return w
+      }
       case 'rename_label':
-        return { do: 'label', id: ws.labels.find((l) => sameLabel(l.text, r.label))!.id, fields: { text: s(r.text)!.slice(0, 200) } }
+      case 'edit_label': {
+        const color = s(r.color) === 'default' ? null : LABEL_HEX[s(r.color) ?? '']
+        const w: AssistantWrite = {
+          do: 'label',
+          id: ws.labels.find((l) => sameLabel(l.text, r.label))!.id,
+          fields: compact({ text: text(r.text)?.slice(0, 200), size: text(r.size), color }),
+        }
+        if (refKey(r.above)) texts.push({ w, above: r.above })
+        return w
+      }
       case 'delete_label':
         return { do: 'unlabel', id: ws.labels.find((l) => sameLabel(l.text, r.label))!.id }
       case 'update_project':
@@ -839,6 +965,27 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
     under.set(k, i + 1)
     w.fields.x = at.x
     w.fields.y = at.y - CARD_H / 2 - NOTE_GAP - i * NOTE_GAP
+  }
+  // Text above a card, or above the board's top-left: clear of cards and other text, going up until it is.
+  const taken = ws.labels
+    .filter((l) => !texts.some((t) => t.w.id === l.id))
+    .map((l) => ({ x: l.x, y: l.y, half: labelHalf(l) }))
+  for (const { w, above } of texts) {
+    const old = w.id ? ws.labels.find((l) => l.id === w.id) : undefined
+    const half = labelHalf({ text: String(w.fields.text ?? old?.text ?? ''), size: (w.fields.size ?? old?.size) as Label['size'] })
+    const anchor = refKey(above) ? whereIs(above) : undefined
+    if (refKey(above) && !anchor) continue
+    const left = cards.length ? Math.min(...cards.map((c) => c.x)) - CARD_W / 2 + half[0] : 0
+    const top = cards.length ? Math.max(...cards.map((c) => c.y)) + CARD_H / 2 + 1 : 0
+    const x = anchor ? anchor.x : left
+    let y = (anchor ? anchor.y + CARD_H / 2 + 0.3 : top) + half[1]
+    const clear = (y: number) =>
+      cards.every((c) => Math.abs(c.x - x) >= CARD_W / 2 + half[0] || Math.abs(c.y - y) >= CARD_H / 2 + half[1]) &&
+      taken.every((t) => Math.abs(t.x - x) >= t.half[0] + half[0] || Math.abs(t.y - y) >= t.half[1] + half[1])
+    for (let i = 0; i < 20 && !clear(y); i++) y += half[1] * 2 + 0.2
+    w.fields.x = x
+    w.fields.y = y
+    taken.push({ x, y, half })
   }
   return [...writes, ...moves]
 }

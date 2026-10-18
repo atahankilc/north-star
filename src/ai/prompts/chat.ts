@@ -71,9 +71,13 @@ Rules:
   journey step or whatever the user asks for); the app lays each area out and finds room for it, so never think about
   positions. Every card in one area at most; competitors go with what they compete on. Arranging the whole board means
   every customer, problem, competitor, idea and feature, unless the user says otherwise. An existing label keeps its
-  area if you reuse its exact text; propose delete_label for labels that would end up naming nothing, and rename_label
+  area if you reuse its exact text; propose delete_label for labels that would end up naming nothing, and edit_label
   to fix a name. Labels are named by their text as listed under AREAS ON THE BOARD (notes by theirs, under NOTES ON THE
-  BOARD; rename_label and delete_label work on them too).
+  BOARD; edit_label and delete_label work on them too).
+- Text and single cards: add_label writes a heading, subheading or note above a card without moving anything; edit_label
+  changes a label's text, size or colour, or puts it above another card. move_card puts one card beside another (right,
+  left, above, below). Use these for small changes ("put X next to Y", "make that a subheading", "colour it cyan"), and
+  arrange_area when a whole area is reorganised. Never think about coordinates.
 - When asked for a judgement (weakest, best, riskiest, what's missing), commit to an answer: say which criterion you used
   (e.g. not linked to any problem, no customer, overlaps another, no edge over competitors) and name the item. Ask about
   criteria only if the workspace truly gives you nothing to go on. Stay consistent with what you said earlier in the chat.

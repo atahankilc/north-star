@@ -144,7 +144,7 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
           mark(id, 'new')
           ids.push(id)
         } else {
-          patch('labels', w.id, w.fields)
+          patch('labels', w.id, kept(w.fields))
           mark(w.id, before.has(w.id) ? 'edited' : 'moved')
           ids.push(w.id)
         }

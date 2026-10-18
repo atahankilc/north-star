@@ -1472,3 +1472,24 @@ listed they said "1,2,3 ü yap sonra da 4 ve 5 i yapıcaz" (4 and 5, label size/
 - *Verified* with a node script on parseProposal/toWrites/simulate (every row kind above, the refusals, null → removed
   field, a new competitor feature as their version); `npm run build`. Not tried with a real key or in the browser.
 
+### D-123 · 2026-10-18 · Accepted (extends D-086, D-108)
+**The assistant writes and styles board text and moves single cards: `add_label`, `edit_label`, `move_card`.** The
+user's 4 and 5 from the D-122 list ("1,2,3 ü yap sonra da 4 ve 5 i yapıcaz"): before, text could only appear through
+`arrange_area` (moving cards with it) or as a note, its size and colour couldn't change, and a card moved only as part
+of a whole area.
+- *`add_label`:* text, `size` heading | subheading | note, `color` by name (magenta, cyan, yellow, blue, green: the label
+  bar's accents, stored as their hex like a hand pick) or null, `above` a card (ref or new key) or null for above the
+  board's top-left. No card moves.
+- *`edit_label`* replaces `rename_label` (still parsed, for proposals already in a chat): text, size, colour (`default`
+  removes it), `above` moves it over another card. Null keeps a field.
+- *Placing text:* after every card has its place (like `add_note`): centred over the card just above its top edge, or
+  left-aligned above the board; it steps up until clear of cards (the project block included) and other text.
+- *`move_card`:* one card or competitor beside another, `side` right (default) | left | above | below; from that spot
+  the nearest free one (`findFreeSpot`). Competitor features, itself, an item added in the same proposal, or a card an
+  `arrange_area` row also gathers are refused (if the area row comes later, the area's place wins).
+- The brief marks subheadings and coloured labels in AREAS and NOTES; the prompt says to use these for small changes and
+  `arrange_area` for whole areas, never coordinates. Checklist colours for the three rows.
+- *Verified* with a node script (vite-node + jsdom) on workspaceBrief/parseProposal/toWrites/simulate: rows, refusals,
+  positions (text clear of cards and other text, a card below another), preview marks; `npm run build`. Not tried with a
+  real key or in the browser.
+

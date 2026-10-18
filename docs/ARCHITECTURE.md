@@ -169,6 +169,8 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   New cards are placed clear of the project block; a label row never names a label with no text.
   Edits (D-122): `update_competitor_feature`; `set_matrix_cell` sets `their_feature` (`competitorFeatureId`) and clears
   coverage with `not assessed`; in update rows and cells `""` empties a field (a `null` write → `deleteField()`).
+  Board text and moves (D-123): `add_label` / `edit_label` (size, colour by accent name, `above` a card; placed after the
+  cards, stepping up until clear) and `move_card` (beside another card, then the nearest free spot).
 - **Agent loop** (D-084): an answer is up to 6 calls. After each one, the browser runs the function tools the model called
   (`propose_changes`, and `get_items` in `src/ai/readTools.ts`, which reads a few items in full) and sends the step's output
   items plus the `function_call_output`s back. Reasoning carries over as `reasoning.encrypted_content` (still `store: false`).

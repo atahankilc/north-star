@@ -83,7 +83,7 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
     if (w.do === 'label') {
       if (w.id) {
         const ref = doc(col(wid, 'labels'), w.id)
-        ops.push((b) => b.update(ref, { ...w.fields, updatedAt: now }))
+        ops.push((b) => b.update(ref, { ...removing(w.fields), updatedAt: now }))
         existing.push(ref)
       } else {
         const ref = doc(col(wid, 'labels'))

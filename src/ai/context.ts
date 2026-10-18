@@ -4,6 +4,7 @@
 import type { WithId } from '../data/hooks'
 import type { BoardNode, Label, NodeType } from '../data/model'
 import type { ReportContent, ReportSummary } from '../data/model'
+import { colors } from '../styles/tokens'
 import { isTitle } from '../views/canvas/titleBlock'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import { reportFull } from './readTools'
@@ -17,6 +18,11 @@ const clip = (s: string | undefined, n = MAX_TEXT) => {
   return t.length > n ? `${t.slice(0, n)}…` : t
 }
 const tags = (t?: string[]) => (t?.length ? ` ${t.map((x) => `#${x}`).join(' ')}` : '')
+
+// Board text colours by name, as edit_label and add_label take them (D-123).
+const COLOR_NAME: Record<string, string> = Object.fromEntries(
+  (['magenta', 'cyan', 'yellow', 'blue', 'green'] as const).map((n) => [colors[n].toLowerCase(), n]),
+)
 
 // A label names the area below it (D-050): a card belongs to the nearest label above it. Notes don't name areas (D-108).
 function areaOf(labels: WithId<Label>[], x: number, y: number): string {
@@ -162,14 +168,19 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
   }
 
   const areas = ws.labels.filter((l) => l.text.trim() && l.size !== 'note')
-  if (areas.length) lines.push('', `AREAS ON THE BOARD: ${areas.map((l) => clip(l.text, 60)).join(' | ')}`)
+  // With its size and colour when not the defaults (D-123), so edit_label can change them.
+  const look = (l: Label) => {
+    const bits = [l.size === 'subheading' ? 'subheading' : '', l.color ? (COLOR_NAME[l.color.toLowerCase()] ?? 'coloured') : ''].filter(Boolean)
+    return bits.length ? ` (${bits.join(', ')})` : ''
+  }
+  if (areas.length) lines.push('', `AREAS ON THE BOARD: ${areas.map((l) => `${clip(l.text, 60)}${look(l)}`).join(' | ')}`)
   // Small notes written on the board (D-108), with the card each sits closest to.
   const notes = ws.labels.filter((l) => l.text.trim() && l.size === 'note')
   if (notes.length) {
     lines.push('', `NOTES ON THE BOARD (${notes.length})`)
     for (const l of notes) {
       const near = nearestCard(ws, l.x, l.y)
-      lines.push(`- "${clip(l.text, 200)}"${near ? ` by [${refOf.get(near)}] ${names.get(near)}` : ''}${areaOf(ws.labels, l.x, l.y)}`)
+      lines.push(`- "${clip(l.text, 200)}"${look(l)}${near ? ` by [${refOf.get(near)}] ${names.get(near)}` : ''}${areaOf(ws.labels, l.x, l.y)}`)
     }
   }
 

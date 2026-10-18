@@ -129,6 +129,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   merged; new cards placed clear of the block (D-120).
 - Edits: `update_competitor_feature`; matrix cells take `their_feature` and `not assessed`; in update rows and cells null
   keeps a field, `""` empties it (never a title/name) (D-122).
+- Board text and single cards: `add_label` (size, colour by name, above a card), `edit_label` (text, size, colour, above
+  another card; replaces `rename_label`), `move_card` beside another card; no coordinates in the prompt (D-123).
 - Proposals (`propose_changes`): checklist, tick and apply as one batch + one undo step; deletes, unlinks, `arrange_area`,
   label rows, `edit_link`, `add_note` (D-074, D-075, D-086, D-108).
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).

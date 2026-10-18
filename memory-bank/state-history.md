@@ -463,3 +463,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   nothing; workspace-doc undo restores only name/description, merged. `update_competitor_feature`, matrix `their_feature`
   and `not assessed`, `""` empties fields. Verified with a node script (vite-node + jsdom in the scratchpad) on
   parseProposal/toWrites/simulate and `npm run build`; not tried with a real key, in the browser or on the emulator's undo.
+
+## Done (2026-10-18): the assistant writes board text and moves single cards (D-123)
+- `add_label`, `edit_label` (replaces `rename_label`), `move_card`; brief shows label size/colour. Verified with the
+  scratchpad node script and `npm run build`; not tried with a real key or in the browser.
+
