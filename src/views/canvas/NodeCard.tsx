@@ -4,7 +4,7 @@
 // Editing happens in the DetailPanel.
 import { Html, Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useMemo, useRef, useState } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
 import { MathUtils, MeshBasicMaterial, Plane, Vector3, type Group, type Object3D } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { endMove, moveNode } from '../../data/nodes'
@@ -97,7 +97,9 @@ const HANDLE = 0.1
 const HANDLE_HIT = 0.2
 const WAS_H = 0.24
 
-export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], mark, was, lit = false, centre = false, onLinkDrop }: Props) {
+// Memoised: hovering, dragging or selecting one card re-renders the board, and only the cards whose props changed
+// should follow.
+export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], mark, was, lit = false, centre = false, onLinkDrop }: Props) {
   const type = node.type
   const W = CARD_W
   const H = CARD_H
@@ -498,4 +500,4 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
       <CardReveal key={far ? 'far' : 'card'} content={content} uniforms={cell} />
     </group>
   )
-}
+})

@@ -3,12 +3,13 @@
 // pattern which kind inside that group, and the kind (and the link's own label) sits on a framed chip at the midpoint
 // (moved along the line when links sit side by side).
 // Clicking the line or the chip selects the link.
-import { Line, Text } from '@react-three/drei'
+import { Text } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { Shape, Vector2 } from 'three'
 import { usePalette } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
+import { BoardLine } from './BoardLine'
 import { truncate } from './cardLayout'
 import { useReadable } from './detail'
 import { linkStyle } from './linkKinds'
@@ -69,7 +70,7 @@ type Props = {
   onRightPress?: (e: ThreeEvent<PointerEvent>) => void
 }
 
-export function EdgeLine({ from, to, fromHalf, toHalf, chipShift = 0, kind = 'relates', label, active, dim, selected, tint, onSelect, onRightPress }: Props) {
+export const EdgeLine = memo(function EdgeLine({ from, to, fromHalf, toHalf, chipShift = 0, kind = 'relates', label, active, dim, selected, tint, onSelect, onRightPress }: Props) {
   const style = linkStyle(kind)
   const colors = usePalette()
   const [hovered, setHovered] = useState(false)
@@ -119,14 +120,15 @@ export function EdgeLine({ from, to, fromHalf, toHalf, chipShift = 0, kind = 're
 
   return (
     <group position={[0, 0, -0.05]}>
-      {/* What the pointer hits: a band along the line, wider than it looks. */}
+      {/* What the pointer hits: a band along the line, wider than it looks. Never drawn (the raycast ignores
+          `visible`), so it costs no draw call. */}
       {handlers && (
-        <mesh position={[mid[0], mid[1], -0.001]} rotation={[0, 0, angle]} {...handlers}>
+        <mesh visible={false} position={[mid[0], mid[1], -0.001]} rotation={[0, 0, angle]} {...handlers}>
           <planeGeometry args={[length, HIT_W]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       )}
-      <Line
+      <BoardLine
         points={[
           [start[0], start[1], 0],
           [tip[0], tip[1], 0],
@@ -171,6 +173,23 @@ export function EdgeLine({ from, to, fromHalf, toHalf, chipShift = 0, kind = 're
       )}
     </group>
   )
+}, sameLine)
+
+// The board passes new arrays and handlers on every render; a link is drawn again only when what it shows changes.
+// Handlers only ever act on the link itself (its id is the key), so whether there is one is all that matters.
+function sameLine(a: Props, b: Props): boolean {
+  for (const k of Object.keys({ ...a, ...b }) as (keyof Props)[]) {
+    const x = a[k]
+    const y = b[k]
+    if (x === y) continue
+    if (typeof x === 'function' || typeof y === 'function') {
+      if (typeof x !== typeof y) return false
+      continue
+    }
+    if (Array.isArray(x) && Array.isArray(y) && x.length === y.length && x.every((v, i) => v === y[i])) continue
+    return false
+  }
+  return true
 }
 
 // Points along +x with its tip at the origin.

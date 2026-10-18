@@ -1,5 +1,5 @@
 // The board scene: every item type on one canvas (D-040), 2.5D (D-018) with pan/zoom camera, cards and connections.
-import { Line, OrbitControls } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -31,6 +31,7 @@ import { BoardLabel, labelSize } from './BoardLabel'
 import { BoardTitle } from './BoardTitle'
 import { isTitle, labelHalf, titleHalf } from './titleBlock'
 import { CARD_H, CARD_W, glideDt } from './cardLayout'
+import { BoardLine } from './BoardLine'
 import { EdgeLine } from './EdgeLine'
 import { rightPress, useBoardMenu } from './rightClick'
 import { setPieces } from './groupDrag'
@@ -348,7 +349,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
   const litN = usePreviewFocus((f) => f.lit)
   const litIds = useMemo(() => new Set(preview?.steps.find((st) => st.n === litN)?.ids ?? []), [preview, litN])
 
-  const onLinkDrop = (targetId: string) => {
+  const linkDrop = (targetId: string) => {
     const fromId = useCanvas.getState().linkFrom
     const from = fromId ? byId.get(fromId) : undefined
     // Onto one of a competitor's features: "inspired by" is the usual reason (D-058).
@@ -363,6 +364,11 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     const [a, b] = to.type !== 'customer' && from.type === 'customer' ? [to, from] : [from, to]
     void createEdge(wid, { id: a.id, type: a.type }, { id: b.id, type: b.type }, defaultKind(a.type, b.type))
   }
+
+  // One function for the board's whole life, so cards that didn't change skip re-rendering (NodeCard is memoised).
+  const dropLatest = useRef(linkDrop)
+  dropLatest.current = linkDrop
+  const onLinkDrop = useMemo(() => (targetId: string) => dropLatest.current(targetId), [])
 
   // Links to a competitor's stacked features point at the competitor, so they show without fanning it out (D-058).
   // Several links between the same pair of cards (both ways, or through a competitor's features) are drawn side by
@@ -618,7 +624,7 @@ function GuideLines({ color }: { color: string }) {
   return (
     <group position={[0, 0, 0.08]}>
       {lines.map((g) => (
-        <Line
+        <BoardLine
           key={`${g.axis}${g.at}`}
           points={g.axis === 'x' ? [[g.at, g.from, 0], [g.at, g.to, 0]] : [[g.from, g.at, 0], [g.to, g.at, 0]]}
           color={color}
@@ -645,7 +651,7 @@ function SelectBox({ from, to, color }: { from: [number, number]; to: [number, n
         <planeGeometry args={[Math.abs(to[0] - from[0]), Math.abs(to[1] - from[1])]} />
         <meshBasicMaterial color={color} transparent opacity={0.06} depthWrite={false} toneMapped={false} />
       </mesh>
-      <Line points={points} color={color} lineWidth={1} dashed dashSize={0.1} gapSize={0.07} toneMapped={false} />
+      <BoardLine points={points} color={color} lineWidth={1} dashed dashSize={0.1} gapSize={0.07} toneMapped={false} />
     </group>
   )
 }
@@ -663,9 +669,9 @@ function MoveGhost({ from, to, color, lit }: { from: [number, number]; to: [numb
   const far = Math.hypot(to[0] - from[0], to[1] - from[1]) > Math.hypot(hw, hh) * 2
   return (
     <group position={[0, 0, -0.06]}>
-      <Line points={corners} color={color} lineWidth={lit ? 2 : 1} dashed dashSize={0.12} gapSize={0.08} transparent opacity={lit ? 0.9 : 0.55} toneMapped={false} />
+      <BoardLine points={corners} color={color} lineWidth={lit ? 2 : 1} dashed dashSize={0.12} gapSize={0.08} transparent opacity={lit ? 0.9 : 0.55} toneMapped={false} />
       {far && (
-        <Line
+        <BoardLine
           points={[
             [from[0], from[1], 0],
             [to[0], to[1], 0],
