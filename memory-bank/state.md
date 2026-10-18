@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (assistant scope line, D-109; board editing: link colours, link bar, multi-select, copy/paste, text sizes, D-108; one table header, D-107; reports tab lined up with the other views; reports table, side reader, numbered pages, filters, D-106; scroll bars, D-105; upload icon button, D-103; reports tab as list + reader, D-102; chat report on the stage box, D-101; report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (dimmer backdrop 8% + grid fades on zoom-out, D-110; assistant scope line, D-109; board editing: link colours, link bar, multi-select, copy/paste, text sizes, D-108; one table header, D-107; reports tab lined up with the other views; reports table, side reader, numbered pages, filters, D-106; scroll bars, D-105; upload icon button, D-103; reports tab as list + reader, D-102; chat report on the stage box, D-101; report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -407,6 +407,10 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 ## Done (assistant scope line, 2026-10-18)
 - D-109: `working on …` line above the chat's prompt (card / report / whole workspace). Committed.
   The `N cards` case + the brief listing a multi-selection wait in the working tree for D-108 (needs its `selection`).
+
+## Done (backdrop + grid, 2026-10-18)
+- D-110: workspace backdrop 8% (was 14%); the board's `+` grid turns into dots and fades out by camera distance, gone before the
+  zoom-out limit. Verified headless on emulators (dark, 1728 × 1117). Committed.
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs

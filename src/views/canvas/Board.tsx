@@ -657,17 +657,22 @@ function Snapshot({ nodes, labels }: { nodes: BoardItem[]; labels: WithId<Label>
   return null
 }
 
-// Faint "+" marks every unit: an ASCII-flavoured grid for spatial memory.
+// Faint "+" marks every unit: an ASCII-flavoured grid for spatial memory. Zoomed out they shrink to dots,
+// then fade away before the zoom-out limit, so the board never turns into a dense speckle (D-110).
 function DotGridMaterial() {
   const shade = usePalette().grid
   const material = useRef<ShaderMaterial>(null)
-  const uniforms = useMemo(() => ({ uShade: { value: shade } }), []) // eslint-disable-line react-hooks/exhaustive-deps
+  const uniforms = useMemo(() => ({ uShade: { value: shade }, uDist: { value: 11 } }), []) // eslint-disable-line react-hooks/exhaustive-deps
   // R3F copies the uniforms prop, so theme changes go through the material (D-028).
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => {
     if (material.current) material.current.uniforms.uShade.value = shade
     invalidate()
   }, [shade, invalidate])
+  // The camera's distance decides the shape, so the grid is gone at the limit on any screen.
+  useFrame(({ camera }) => {
+    if (material.current) material.current.uniforms.uDist.value = camera.position.z
+  })
   return (
     <shaderMaterial
       ref={material}
@@ -684,15 +689,19 @@ function DotGridMaterial() {
       fragmentShader={/* glsl */ `
         varying vec2 vWorld;
         uniform float uShade;
+        uniform float uDist;
         void main() {
+          // A full "+" up to 30 units away, a dot by 70, faded out between 80 and ${MAX_DISTANCE - 30} (limit ${MAX_DISTANCE}).
+          float fade = 1.0 - smoothstep(80.0, ${(MAX_DISTANCE - 30).toFixed(1)}, uDist);
+          if (fade <= 0.0) discard;
           vec2 g = abs(fract(vWorld + 0.5) - 0.5);
           float w = fwidth(vWorld.x) * 1.2;
-          float arm = 0.06;
+          float arm = mix(0.06, w, smoothstep(30.0, 70.0, uDist));
           float plus = max(
             step(g.x, w) * step(g.y, arm),
             step(g.y, w) * step(g.x, arm)
           );
-          gl_FragColor = vec4(vec3(uShade), plus * 0.4);
+          gl_FragColor = vec4(vec3(uShade), plus * 0.4 * fade);
         }
       `}
     />

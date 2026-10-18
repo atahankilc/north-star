@@ -73,9 +73,9 @@ function Pace() {
 }
 
 export function Backdrop({ dim = false }: { dim?: boolean }) {
-  // The field steps back in a workspace so cards stay legible (D-061).
+  // The field steps back in a workspace so cards stay legible (D-061, D-110).
   useEffect(() => {
-    backdropDim.target = dim ? 0.14 : 1
+    backdropDim.target = dim ? 0.08 : 1
   }, [dim])
 
   return (

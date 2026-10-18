@@ -1291,3 +1291,13 @@ in every state: `WORKING ON PROBLEM <title>` with a bar and the kind in the type
 `REPORT <title>` while a report is open (D-099), and a quiet
 `WHOLE WORKSPACE N items` otherwise. With D-108's multi-select it also shows `N CARDS <titles>` (cyan), and the brief
 lists every selected item (it used to name only the last one picked); that part goes in with D-108. `Scope` in src/ui/AiChat.tsx; the matrix's cell selection isn't in the brief, so it isn't shown.
+
+### D-110 · 2026-10-18 · Accepted (refines D-061)
+**A dimmer backdrop in workspaces, and the board's `+` grid gives way as you zoom out.** User: the animation behind the board
+sometimes draws the eye; zoomed far out the `+` marks shrank into an ugly speckle.
+- *Backdrop:* 8% in a workspace (was 14%, `backdropDim.target` in Backdrop.tsx; the loading curtain follows it). Brightest
+  glyphs measured at 94/255 on screen (were ~123).
+- *Grid* (`DotGridMaterial` in Board.tsx), by camera distance so it behaves the same on every screen size: a full `+` up to 30
+  units away, shrinking to a one-pixel dot by 70, fading out between 80 and 120 (the zoom-out limit is 150). A first pass
+  measured pixels between marks instead, which left a faint grid at the limit on taller screens.
+- Verified headless on emulators (example workspace, dark, 1728 × 1117): `+` at the opening zoom, no grid at the limit.
