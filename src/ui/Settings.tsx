@@ -93,7 +93,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
       <dialog
         ref={dialog}
         className={styles.dialog}
-        aria-labelledby="settings-title"
+        aria-label="Settings"
         onClose={() => setOpen(false)}
         // A click on the backdrop lands on the <dialog> itself.
         onClick={(e) => e.target === e.currentTarget && setOpen(false)}
@@ -101,9 +101,6 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
         {open && (
           <div className={styles.inner}>
             <nav className={styles.nav} aria-label="Settings">
-              <h2 id="settings-title" className={styles.navTitle}>
-                Settings
-              </h2>
               {(['you', 'workspace', 'assistant'] as const).map((g) => {
                 const items = pages.filter((p) => p.group === g)
                 if (items.length === 0) return null

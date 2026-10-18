@@ -25,7 +25,9 @@ main.page {
   min-height: 0;
 }
 
+/* The table on the same surface as the other views' tables; the reader stays solid for long reading (D-102). */
 .table {
+  composes: frame from '../../ui/Frame.module.css';
   grid-row: 2;
   grid-column: 1;
 }
@@ -46,6 +48,9 @@ main.page {
   min-width: 0;
   min-height: 0;
   max-height: 100%;
+}
+
+.reader {
   border: 1px solid var(--line);
   background: var(--bg);
 }

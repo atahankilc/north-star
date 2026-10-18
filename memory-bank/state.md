@@ -412,6 +412,12 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-110: workspace backdrop 8% (was 14%); the board's `+` grid turns into dots and fades out by camera distance, gone before the
   zoom-out limit. Verified headless on emulators (dark, 1728 × 1117). Committed.
 
+## Done (small UI requests, 2026-10-18)
+- Workspace cards: no hover tooltip; `created <date>` is a muted line under the name. Board: a framed fit-all button beside `+`
+  (also the `0` key; viewers get it too) glides back to the whole board as the filters show it, like opening (D-060;
+  `canvasStore.fitAll`). Settings: no "Settings" title above the menu. Reports table on the shared frame surface like the
+  other tables (was solid `--bg`, D-102); the report reader stays solid. Verified headless on emulators (fit button and `0`). Committed.
+
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
    - Try `edit_link` / `add_note` with a real key (only tested with a fake OpenAI).

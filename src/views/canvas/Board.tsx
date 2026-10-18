@@ -198,6 +198,10 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     }
     useCanvas.getState().setFlyTo((at) => fly(at))
     useCanvas.getState().setFlyToFit((box) => fly(fitLatest.current(box)))
+    useCanvas.getState().setFitAll(() => {
+      const bounds = boundsLatest.current()
+      if (bounds) fly(fitLatest.current(bounds))
+    })
   }, [controls, camera, setViewCenter, invalidate])
 
   // Glide toward the flight target; any pan or zoom of your own takes over.
@@ -255,6 +259,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
 
   const fitLatest = useRef(fitView)
   fitLatest.current = fitView
+  const boundsLatest = useRef(() => boardBounds(nodes, labels))
+  boundsLatest.current = () => boardBounds(nodes, labels)
 
   // Frame every card and label.
   function fitAll() {

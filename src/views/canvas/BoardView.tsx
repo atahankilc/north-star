@@ -80,7 +80,7 @@ export function BoardView() {
   const places = useMemo(() => labels.filter((l) => l.text.trim()).sort((a, b) => b.y - a.y || a.x - b.x), [labels])
   const jump = (l: WithId<Label>) => useCanvas.getState().flyTo([l.x, l.y - LAND_BELOW])
 
-  // Escape deselects; 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);
+  // Escape deselects; 0 frames the whole board; 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);
   // leaving the board clears selection.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -104,6 +104,7 @@ export function BoardView() {
           void duplicateSelection(ws)
         }
       }
+      if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) useCanvas.getState().fitAll()
       if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const place = places[Number(e.key) - 1]
         if (place) jump(place)
@@ -141,27 +142,43 @@ export function BoardView() {
 
       {/* One create button for everything (D-053); viewers make nothing (D-098). */}
       <footer className={styles.tools} data-preview-hide>
-        {!viewer && <Menu
-          primary
-          up
-          label="+"
-          ariaLabel="Create"
-          items={[
-            { key: 'cards', heading: 'card' },
-            ...BOARD_TYPES.map((t) => ({
-              key: t,
-              label: BOARD_KINDS[t].label,
-              // The card's left border, in its type colour (D-055).
-              glyph: '▌',
-              tone: TYPE_ACCENT[t],
-              onSelect: () => add(t),
-            })),
-            { key: 'board', heading: 'on the board' },
-            { key: 'text', label: 'text', glyph: 'T', hint: 'jump point', onSelect: () => add('text') },
-          ]}
-        />}
+        <span className={styles.buttons}>
+          {!viewer && <Menu
+            primary
+            up
+            label="+"
+            ariaLabel="Create"
+            items={[
+              { key: 'cards', heading: 'card' },
+              ...BOARD_TYPES.map((t) => ({
+                key: t,
+                label: BOARD_KINDS[t].label,
+                // The card's left border, in its type colour (D-055).
+                glyph: '▌',
+                tone: TYPE_ACCENT[t],
+                onSelect: () => add(t),
+              })),
+              { key: 'board', heading: 'on the board' },
+              { key: 'text', label: 'text', glyph: 'T', hint: 'jump point', onSelect: () => add('text') },
+            ]}
+          />}
+          {/* The whole board back in view, as when it opens (D-060). */}
+          <button
+            className={styles.fit}
+            onClick={() => useCanvas.getState().fitAll()}
+            disabled={nodes.length === 0 && labels.length === 0}
+            aria-label="Fit the whole board"
+            data-nav
+          >
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden>
+              <path d="M1.5 5.5v-4h4M10.5 1.5h4v4M14.5 10.5v4h-4M5.5 14.5h-4v-4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="5.5" y="5.5" width="5" height="5" fill="currentColor" />
+            </svg>
+          </button>
+        </span>
         <span className={styles.hints}>
           {viewer ? 'viewing only · scroll: zoom' : 'drag: move · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom'}
+          {' · 0: fit all'}
           {places.length > 0 && ' · 1–9: go to'}
         </span>
       </footer>

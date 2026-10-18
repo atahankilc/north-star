@@ -146,26 +146,31 @@ function WorkspaceCard({ workspace: w, uid, onOpen }: CardProps) {
   }
 
   return (
-    <article className={styles.card} data-mode={mode} title={`Created ${new Date(w.createdAt).toLocaleDateString()}`}>
+    <article className={styles.card} data-mode={mode}>
       {/* The whole card opens the workspace; name and actions sit above this layer. */}
       <button className={styles.open} onClick={onOpen} disabled={mode !== 'idle'} aria-label={`Open ${w.name}`} />
 
-      {mode === 'renaming' ? (
-        <input
-          ref={nameInput}
-          className={`${styles.cardName} ${styles.nameInput}`}
-          value={draft}
-          maxLength={80}
-          aria-label="Workspace name"
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') saveRename()
-            if (e.key === 'Escape') setMode('idle')
-          }}
-        />
-      ) : (
-        <span className={styles.cardName}>{w.name}</span>
-      )}
+      <div className={styles.cardHead}>
+        {mode === 'renaming' ? (
+          <input
+            ref={nameInput}
+            className={`${styles.cardName} ${styles.nameInput}`}
+            value={draft}
+            maxLength={80}
+            aria-label="Workspace name"
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveRename()
+              if (e.key === 'Escape') setMode('idle')
+            }}
+          />
+        ) : (
+          <span className={styles.cardName}>{w.name}</span>
+        )}
+        <span className={styles.cardDate}>
+          created {new Date(w.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+        </span>
+      </div>
 
       {/* Every mode: info or message on the left, actions on the right. */}
       <div className={styles.cardFoot}>
