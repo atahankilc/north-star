@@ -123,6 +123,26 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
         ids.push(id, featureId, competitorId)
         break
       }
+      // A feature's criteria and its cells' scores (D-133); scores of criteria gone are left, unread, as in the app.
+      case 'criteria': {
+        const featureId = w.feature.id
+        if (w.criteria && patch('features', featureId, { criteria: w.criteria })) mark(featureId, 'edited')
+        ids.push(featureId)
+        for (const c of w.cells) {
+          const competitorId = idOf(c.competitor)
+          const id = cellId(featureId, competitorId)
+          const old = list('comparisons').find((d) => d.id === id)
+          const merged = { ...((old?.criteria as Record<string, unknown>) ?? {}), ...c.scores }
+          const criteria = Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== null))
+          if (patch('comparisons', id, { criteria })) mark(id, 'edited')
+          else {
+            list('comparisons').push({ id, featureId, competitorId, criteria, updatedAt: now })
+            mark(id, 'new')
+          }
+          ids.push(id, competitorId)
+        }
+        break
+      }
       case 'delete': {
         // Like cascadeOf (src/data/nodes.ts): a competitor's own features go too; links and matrix cells go with them.
         const gone = new Set([w.target.id])

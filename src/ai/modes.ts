@@ -9,7 +9,7 @@ export type Mode = {
   label: string
   hint: string
   // The kind of item it works on, if any.
-  target?: Extract<NodeType, 'idea' | 'customer' | 'competitor'>
+  target?: Extract<NodeType, 'idea' | 'customer' | 'competitor' | 'feature'>
   ask: (about: string | null) => string
   // Deep research (D-088): not one message but a planned run of web researchers; `ask` is unused.
   deep?: boolean
@@ -63,6 +63,21 @@ export const MODES: Mode[] = [
       'Find the gaps in this workspace: problems with no idea, ideas that solve no problem, items for no customer, our features ' +
       'not compared with any competitor, competitors with no features broken down, matrix cells not assessed. Group them, most ' +
       `important first. Propose only the links that are clearly right, and ask about the rest. ${LANGUAGE}`,
+  },
+  {
+    id: 'criteria',
+    label: 'score the matrix',
+    hint: "criteria per feature, which part each competitor covers",
+    target: 'feature',
+    ask: (about) =>
+      `Write criteria for ${about ?? 'our features in the matrix, as many as fit in one proposal, the ones with the most partial cells first'} ` +
+      'and score the competitors against them. Read each feature and its matrix cells in full first (get_items). Criteria: ' +
+      "3 to 5 must-haves that define the feature, each a few words, concrete enough to check in a competitor's docs; keep the " +
+      'criteria a feature already has unless they are vague. Score every competitor that has a matrix cell for the feature, from ' +
+      'the cell notes, their version and their features: met only where the workspace shows they do it, part where it shows ' +
+      'some of it, no where it shows they do not, "not assessed" otherwise. Never guess met. Propose one set_criteria row per ' +
+      'feature. Before the proposal, say in a few lines where the white space is (criteria no competitor meets) and which ' +
+      `features are left for another round. ${LANGUAGE}`,
   },
   {
     id: 'research',

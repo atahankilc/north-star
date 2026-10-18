@@ -115,6 +115,7 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
         ws.edges,
         ws.workspace,
         ws.labels.filter(isSection).map((l) => l.text),
+        new Map(ws.features.map((f) => [f.id, f.criteria ?? []])),
       )
       const bad = proposal.changes.filter((x) => x.problem)
       const n = proposal.changes.length

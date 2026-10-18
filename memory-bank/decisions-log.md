@@ -1784,3 +1784,24 @@ as partial but i mean how partial or what". Slice 1 of Phase 6.
   cells scored, bars and `◇ 2 open` shown, feature panel shows `met by 1` / `◇ open`; removing criterion 3 dropped its
   scores from both cells and ⌘Z brought them back. Rules: 257 pass incl. 6 new; the 2 failing usage-log tests fail the
   same on the committed rules. `npm run build`. Firestore rules deployed 2026-10-19; not tried on the live site.
+
+### D-134 · 2026-10-19 · Accepted (extends D-133, D-074, D-085)
+**The assistant writes criteria and scores the matrix against them.** Slice 2 of Phase 6 (docs/specs/usefulness.md):
+BUBBLES has 145 cells with good notes, too many to score by hand.
+- *`set_criteria`* (a `propose_changes` op): one row per feature, `feature`, `criteria` (string list replacing its
+  criteria, or null to keep them) and `scores` (per competitor, one of `met | part | no | not assessed` per criterion, in
+  order). One row carries a whole feature, so 19 features fit one proposal (the limit is 60 rows). A criterion kept word
+  for word (case and spaces ignored) keeps its id and so its scores; scores of the ones dropped leave every cell of that
+  feature in the same batch (`do: 'criteria'` in `assistant.ts`, a query of the feature's cells), one undo step.
+  `not assessed` clears a score. Only features already in the workspace (not ones added in the same proposal).
+- *Row checks:* unknown or wrong items, more than 8 criteria, a score list whose length isn't the criteria count, two rows
+  for one feature, nothing to change. The row reads `criteria <feature>`, the numbered criteria, then `met: ShiftGrid 1/3, …`.
+- *Preview* (`simulate.ts`): the feature and its cells marked edited or new; the cells show their blocks.
+- *Mode `/criteria`* ("score the matrix"): on the selected feature, the one named, or as many features as fit (most partial
+  cells first). The model reads them in full, keeps good existing criteria, scores only from the workspace (never guesses
+  `met`), and says where the white space is and which features are left.
+- *Alternatives:* scores inside `set_matrix_cell` (one row per cell: 145 rows, past the 60-row limit, and the criteria
+  would have to be set in another row first).
+- *Verified* in headless Chrome on the emulators with a fake OpenAI: `/criteria` gave one row; preview showed the cells;
+  applied, the matrix read `part,met,no` / `no,no,·` and `◇ 2 open`; a second proposal keeping one criterion word for word
+  kept its scores and dropped the rest (`◇ 1 open`); ⌘Z restored the first. Not tried with a real model. `npm run build`.

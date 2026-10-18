@@ -173,11 +173,13 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   coverage with `not assessed`; in update rows and cells `""` empties a field (a `null` write → `deleteField()`).
   Board text and moves (D-123): `add_label` / `edit_label` (size, colour by accent name, `above` a card; placed after the
   cards, stepping up until clear) and `move_card` (beside another card, then the nearest free spot).
+  Criteria (D-134): `set_criteria` sets a feature's criteria and every competitor's scores in one row (`do: 'criteria'`);
+  criteria kept word for word keep their ids, dropped ones' scores leave the feature's cells in the same batch.
 - **Agent loop** (D-084): an answer is up to 6 calls. After each one, the browser runs the function tools the model called
   (`propose_changes`, and `get_items` in `src/ai/readTools.ts`, which reads a few items in full) and sends the step's output
   items plus the `function_call_output`s back. Reasoning carries over as `reasoning.encrypted_content` (still `store: false`).
   The last call uses `tool_choice: none`, so every answer ends in words. Each call is its own usage-log entry.
-- **Analysis modes** (D-085): `/validate`, `/interview`, `/swot`, `/gaps`, `/next`, `/pitch`, `/organize`, `/analyze` (D-099) (`src/ai/modes.ts`) are canned
+- **Analysis modes** (D-085): `/validate`, `/interview`, `/swot`, `/gaps`, `/next`, `/pitch`, `/organize`, `/analyze` (D-099), `/criteria` (D-134) (`src/ai/modes.ts`) are canned
   asks sent as a normal message (the chat shows the short form); one-item modes use the selected card when it fits.
 - **Board areas** (D-086, D-125): `arrange_area` rows name an area and its cards, and may give a `layout` (`columns`: a
   column per type, linked cards level; `rows`: one band per problem with its chain beside it; `grid`; `line`; `hub`: the

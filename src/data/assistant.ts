@@ -1,10 +1,10 @@
 // Changes the assistant proposed and the user accepted (D-074, D-075), written together as one undo step.
 // The assistant never writes on its own: src/ai/ builds these from a proposal only after the user presses apply.
-import { collection, deleteField, doc, writeBatch, type DocumentReference, type WriteBatch } from 'firebase/firestore'
+import { collection, deleteField, doc, getDocs, query, where, writeBatch, type DocumentReference, type WriteBatch } from 'firebase/firestore'
 import { cellId } from './comparisons'
 import { db } from './firebase'
 import { snapshotWith, tracked } from './history'
-import type { Edge, EdgeKind, NodeType } from './model'
+import type { Comparison, Criterion, CriterionScore, Edge, EdgeKind, NodeType } from './model'
 import { COLLECTIONS, cascadeOf, nodeRef } from './nodes'
 
 // An item that exists, or one created earlier in the same set (by its key).
@@ -28,6 +28,9 @@ export type AssistantWrite =
   | { do: 'unlabel'; id: string }
   // The workspace's own name and description (D-120); undo puts back only those two (history.ts).
   | { do: 'project'; fields: { name?: string; description?: string } }
+  // A feature's criteria (D-133): the new list (undefined keeps it; scores of the ones gone leave its cells) and scores
+  // per competitor by criterion id (null: not assessed).
+  | { do: 'criteria'; feature: { id: string; type: NodeType }; criteria?: Criterion[]; cells: { competitor: ChangeRef; scores: Record<string, CriterionScore | null> }[] }
 
 const BATCH_LIMIT = 450
 
@@ -72,6 +75,32 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
       const ref = doc(db(), 'workspaces', wid)
       ops.push((b) => b.update(ref, w.fields))
       existing.push(ref)
+      continue
+    }
+    if (w.do === 'criteria') {
+      const featureId = w.feature.id
+      if (w.criteria) {
+        const ref = doc(col(wid, 'features'), featureId)
+        const list = w.criteria
+        ops.push((b) => b.update(ref, { criteria: list.length ? list : deleteField(), updatedAt: now }))
+        existing.push(ref)
+        const kept = new Set(list.map((k) => k.id))
+        const cells = await getDocs(query(col(wid, 'comparisons'), where('featureId', '==', featureId)))
+        for (const d of cells.docs) {
+          const gone = Object.keys((d.data() as Comparison).criteria ?? {}).filter((id) => !kept.has(id))
+          if (!gone.length) continue
+          ops.push((b) => b.update(d.ref, Object.fromEntries(gone.map((id) => [`criteria.${id}`, deleteField()]))))
+          existing.push(d.ref)
+        }
+      }
+      for (const c of w.cells) {
+        const competitorId = idOf(c.competitor)
+        const ref = doc(col(wid, 'comparisons'), cellId(featureId, competitorId))
+        const scores = Object.fromEntries(Object.entries(c.scores).map(([id, v]) => [id, v ?? deleteField()]))
+        ops.push((b) => b.set(ref, { featureId, competitorId, criteria: scores, updatedAt: now }, { merge: true }))
+        if ('key' in c.competitor) fresh.push(ref)
+        else existing.push(ref)
+      }
       continue
     }
     if (w.do === 'edge') {

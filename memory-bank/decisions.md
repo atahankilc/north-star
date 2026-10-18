@@ -153,9 +153,11 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   `quadrant` (an area's first four sections as a 2 × 2) (D-129).
 - Areas are section frames by default (`frame`; a reused heading stays one), their sections nested frames; frames that
   stay are kept clear; `add_section` / `edit_section` / `delete_section`; label and section text set bold/italic/caps, H1–H3; areas take a colour (D-131).
+- `set_criteria`: one row per feature, its criteria and every competitor's scores; a criterion kept word for word keeps its
+  scores, dropped ones leave the cells; mode `/criteria` scores the matrix from what the workspace shows (D-134).
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).
 - `[web]` switch (off by default) with numbered clickable sources (D-076). Modes `/validate /interview /swot /gaps /next
-  /pitch /organize /research /analyze` (D-085, D-086, D-088, D-099).
+  /pitch /organize /research /analyze /criteria` (D-085, D-086, D-088, D-099, D-134).
 - Deep research: plan → pick → ≤3 web researchers → `write_report` report on the stage (D-088, D-089). Chat write-ups via
   `make_report`, saved on request (D-090). The chat's report on a `StageBox` with a section stepper (D-101); reports from the
   tab open in the tab, not on the stage (D-100).

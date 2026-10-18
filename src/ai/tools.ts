@@ -2,7 +2,22 @@
 // them in the chat; then they go through src/data/assistant.ts as one undo step. Deletes too (D-075), with their cascade.
 import type { AssistantWrite, ChangeRef } from '../data/assistant'
 import { linked } from '../data/edges'
-import { COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, LABEL_SIZES, type BoardType, type Edge, type Label, type NodeType } from '../data/model'
+import { newCriterionId } from '../data/comparisons'
+import {
+  COVERAGES,
+  CRITERION_SCORES,
+  FEATURE_EFFORTS,
+  FEATURE_PRIORITIES,
+  FEATURE_STATUSES,
+  LABEL_SIZES,
+  MAX_CRITERIA,
+  type BoardType,
+  type Criterion,
+  type CriterionScore,
+  type Edge,
+  type Label,
+  type NodeType,
+} from '../data/model'
 import { DESCRIPTION_MAX } from '../data/workspaces'
 import { colors } from '../styles/tokens'
 import { CARD_H, CARD_W, findFreeSpot } from '../views/canvas/cardLayout'
@@ -247,6 +262,41 @@ const OPS = [
     notes: optStr('Replaces the cell notes.'),
   }),
   op(
+    'set_criteria',
+    "One of OUR features' criteria (its must-haves) and how competitors do on each, so the matrix says which part a " +
+      'partial competitor covers (D-133). One row per feature: the criteria, then a score list per competitor.',
+    {
+      feature: ref('Our feature, one already in the workspace'),
+      criteria: {
+        type: ['array', 'null'],
+        items: { type: 'string' },
+        description:
+          `Replaces its criteria: 3 to 5 (at most ${MAX_CRITERIA}), each a few words saying what it must do, e.g. "traces each ` +
+          'request end to end". Concrete enough to check against a competitor\'s docs. A criterion kept word for word keeps ' +
+          'its scores. Null keeps the ones it has (see FEATURES).',
+      },
+      scores: {
+        type: 'array',
+        description: 'How each competitor does, one entry per competitor scored. Empty: no scores.',
+        items: {
+          type: 'object',
+          properties: {
+            competitor: ref('The competitor'),
+            scores: {
+              type: 'array',
+              items: { type: 'string', enum: [...CRITERION_SCORES, NOT_ASSESSED] },
+              description:
+                'One per criterion, in order: met (the workspace shows they do it), part (some of it), no (shown not to), ' +
+                'or "not assessed" when the workspace doesn\'t say. Never guess met.',
+            },
+          },
+          required: ['competitor', 'scores'],
+          additionalProperties: false,
+        },
+      },
+    },
+  ),
+  op(
     'update_project',
     "Edit the workspace's own name or what the team is building (WORKSPACE and WHAT WE'RE BUILDING above), shown in the " +
       "board's project block and in Settings. Null leaves a field as it is.",
@@ -322,6 +372,7 @@ export function parseProposal(
   edges: Edge[] = [],
   project?: Project,
   sections: string[] = [],
+  criteria: Map<string, Criterion[]> = new Map(),
 ): Proposal {
   let data: { summary?: unknown; changes?: unknown }
   try {
@@ -547,6 +598,51 @@ export function parseProposal(
                     : !s(raw.coverage) && typeof raw.notes !== 'string' && !given
                       ? 'nothing to change'
                       : undefined,
+        }
+      }
+      case 'set_criteria': {
+        const f = resolve(raw.feature)
+        const given = criteriaOf(raw)
+        const list = given ?? (f && !f.isNew ? (criteria.get(idOfRef(f.ref)) ?? []).map((k) => k.text) : [])
+        const rows = scoresOf(raw).map((x) => ({ ...x, c: resolve(x.competitor) }))
+        const bad = rows.find((x) => !x.c || x.c.type !== 'competitor')
+        const long = rows.find((x) => x.scores.length !== list.length)
+        const twice = raws.filter((r) => r.op === 'set_criteria' && refKey(r.feature) === refKey(raw.feature)).length > 1
+        const tally = rows.map((x) => `${x.c?.name ?? '?'} ${x.scores.filter((v) => v === 'met').length}/${list.length}`)
+        return {
+          ...base,
+          sign: '▦',
+          kind: 'criteria',
+          tone: 'feature',
+          text: f?.name ?? '?',
+          detail:
+            [given && given.map((k, i) => `${i + 1}. ${clip(k, 40)}`).join(' · '), tally.length && `met: ${tally.join(', ')}`]
+              .filter(Boolean)
+              .join(' — ') || undefined,
+          needs: needsOf(f, ...rows.map((x) => x.c)),
+          problem: !f
+            ? 'unknown item'
+            : f.type !== 'feature'
+              ? `${f.name} isn't one of our features`
+              : f.isNew
+                ? 'added in this same proposal'
+                : given && !given.length
+                  ? 'no criteria'
+                  : given && given.length > MAX_CRITERIA
+                    ? `more than ${MAX_CRITERIA} criteria`
+                    : !list.length
+                      ? 'no criteria to score'
+                      : bad
+                        ? bad.c
+                          ? `${bad.c.name} isn't a competitor`
+                          : 'unknown competitor'
+                        : long
+                          ? `${long.c!.name}: ${long.scores.length} scores for ${list.length} criteria`
+                          : twice
+                            ? 'this feature has two criteria rows'
+                            : !given && !rows.length
+                              ? 'nothing to change'
+                              : undefined,
         }
       }
       case 'arrange_area': {
@@ -806,8 +902,19 @@ const ITEM_FIELDS = ['target', 'from', 'to', 'competitor', 'feature', 'their_fea
 // An edit's empty string: empty the field (D-122).
 const emptied = (v: unknown) => typeof v === 'string' && !v.trim()
 
-// An arrange_area row's cards.
-export const itemsOf = (raw: Raw): unknown[] => (Array.isArray(raw.items) ? raw.items : [])
+// An arrange_area row's cards; a set_criteria row's competitors.
+export const itemsOf = (raw: Raw): unknown[] => [
+  ...(Array.isArray(raw.items) ? raw.items : []),
+  ...(raw.op === 'set_criteria' ? scoresOf(raw).map((x) => x.competitor) : []),
+]
+
+// A set_criteria row (D-133): the criteria given (trimmed, empty ones dropped), or null to keep the feature's.
+const criteriaOf = (raw: Raw): string[] | null =>
+  Array.isArray(raw.criteria) ? raw.criteria.map((k) => (typeof k === 'string' ? k.trim().slice(0, 200) : '')).filter(Boolean) : null
+const scoresOf = (raw: Raw): { competitor: unknown; scores: string[] }[] =>
+  (Array.isArray(raw.scores) ? raw.scores : [])
+    .filter((x): x is Raw => !!x && typeof x === 'object')
+    .map((x) => ({ competitor: x.competitor, scores: Array.isArray(x.scores) ? x.scores.map(String) : [] }))
 // Labels are named by their text: the same text, ignoring case and spaces at the ends. Nothing names a label with no
 // text, like the project block (D-118), whose text is empty.
 const sameLabel = (text: string, v: unknown) => !!s(v) && text.trim().toLowerCase() === s(v)!.toLowerCase()
@@ -1160,6 +1267,22 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         return { do: 'unlabel', id: textLabels(ws.labels).find((l) => sameLabel(l.text, r.label))!.id }
       case 'update_project':
         return { do: 'project', fields: compact({ name: text(r.name)?.slice(0, NAME_MAX), description: text(r.description)?.slice(0, DESCRIPTION_MAX) }) }
+      case 'set_criteria': {
+        // Criteria kept word for word keep their ids, so their scores stay; the rest get new ones (D-133).
+        const feature = refOf(r.feature) as { id: string; type: NodeType }
+        const now = ws.features.find((f) => f.id === feature.id)?.criteria ?? []
+        const given = criteriaOf(r)
+        const list: Criterion[] = given
+          ? given.map((text) => ({ id: now.find((k) => sameLabel(k.text, text))?.id ?? newCriterionId(), text }))
+          : now
+        const cells = scoresOf(r).map((x) => ({
+          competitor: refOf(x.competitor),
+          scores: Object.fromEntries(
+            list.map((k, i) => [k.id, (CRITERION_SCORES as readonly string[]).includes(x.scores[i]) ? (x.scores[i] as CriterionScore) : null]),
+          ),
+        }))
+        return { do: 'criteria', feature, criteria: given ? list : undefined, cells }
+      }
       case 'unlink': {
         const a = (refOf(r.from) as { id: string }).id
         const b = (refOf(r.to) as { id: string }).id

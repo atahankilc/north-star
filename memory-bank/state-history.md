@@ -514,3 +514,9 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - Slice 1: features list criteria, cells score them (`met|part|no`), cells show blocks, `◇ N open` white space,
   editors in the feature and cell panels, TSV and export/import carry them, the assistant reads them.
 - Verified in headless Chrome on the emulators (add, score, remove + ⌘Z); rules tests (6 new); `npm run build`.
+
+## Done (D-134 the assistant writes criteria, 2026-10-19)
+- `set_criteria` proposal op (one row per feature: criteria + every competitor's scores), `do: 'criteria'` write with
+  stale-score cleanup, preview, mode `/criteria`.
+- Verified in headless Chrome on the emulators with a fake OpenAI (propose, preview, apply, trim keeps a kept criterion's
+  scores, ⌘Z); `npm run build`. Not tried with a real model.

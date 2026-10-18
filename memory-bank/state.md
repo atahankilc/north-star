@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-19 (D-133 matrix criteria; Phase 6 plan)_
+_Last updated: 2026-10-19 (D-134 the assistant writes criteria)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -23,7 +23,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Nothing uncommitted: D-124–D-131, autoGrow fields and the group drag fix pushed 2026-10-18 (see state-history.md).
 - D-132 (title block resize + animated fold with a bigger name) committed 2026-10-18 (see state-history.md).
 - Phase 6 (docs/specs/usefulness.md), from examining the user's BUBBLES workspace: slice 1, matrix criteria (D-133), built,
-  committed, rules deployed 2026-10-19. Next: slice 2 (assistant fills criteria).
+  committed, rules deployed 2026-10-19. Slice 2, the assistant writes criteria (D-134), committed;
+  try `/criteria` on BUBBLES with a real key. Next: slice 3 (competitor lines off the board).
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

@@ -1,6 +1,6 @@
 # Spec: from research to decisions (Phase 6)
 
-Status: **slice 1 built (D-133)**; the rest planned. Each slice gets its own D-number when it's built.
+Status: **slices 1–2 built (D-133, D-134)**; the rest planned. Each slice gets its own D-number when it's built.
 
 ## 1. Why
 
@@ -55,7 +55,7 @@ Each slice ships on its own, with its decision, docs and tests. Order is the rec
 - The note shows on hover, not only in the side panel.
 - Cells without criteria keep today's coverage, so old workspaces still read.
 
-### Slice 2: the assistant fills criteria
+### Slice 2: the assistant fills criteria (built, D-134)
 - The assistant drafts each feature's criteria and scores the cells from the notes already written, as a proposal
   (checklist, one undo step).
 
