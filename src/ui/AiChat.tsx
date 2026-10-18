@@ -18,7 +18,7 @@ import type { Research } from '../ai/research'
 import { modelFor, useAiSettings } from '../ai/settings'
 import type { KeySource } from '../data/ai'
 import { firebase } from '../data/firebase'
-import { useRecentReports, useReportSummary } from '../data/reports'
+import { useRecentReports, useReport, useReportSummary } from '../data/reports'
 import type { NodeType } from '../data/model'
 import { workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
@@ -316,6 +316,11 @@ function Conversation({ source }: { source: KeySource }) {
   // The newest reports for the brief (D-090), loaded only while the chat is open (D-098).
   const recentReports = useRecentReports(ws.wid, firebase?.auth.currentUser?.uid, true)
   const messages = useChat((s) => s.messages)
+  // The report open on the report screen goes into the brief in full (D-099): the saved copy, else the chat's own.
+  const openId = useChat((s) => s.reportOpen)
+  const openSaved = useReport(ws.wid, openId).report
+  const openChat = messages.find((m) => m.reportId === openId)?.report
+  const openReport = openId && (openSaved ?? openChat) ? { id: openId, report: (openSaved ?? openChat)!, saved: !!openSaved } : null
   const busy = useChat((s) => s.busy)
   const send = useChat((s) => s.send)
   const research = useChat((s) => s.research)
@@ -375,8 +380,8 @@ function Conversation({ source }: { source: KeySource }) {
 
   // Built when sent, so it sees the board as it is now. `web`: the prompt's research rules (deep research always has them).
   const prepareAt = (view: string, web: boolean) => {
-    const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId }, recentReports)
-    return { instructions: chatInstructions(brief.text, ws.workspace.name, web), refs: brief.refs, source, ws }
+    const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId }, recentReports, openReport)
+    return { instructions: chatInstructions(brief.text, ws.workspace.name, web), refs: brief.refs, reports: brief.reports, source, ws }
   }
   const currentView = () => path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
 
@@ -388,9 +393,10 @@ function Conversation({ source }: { source: KeySource }) {
     else if (mode) {
       const prepare = () => prepareAt(view, useAiSettings.getState().web)
       const sel = selectedItem()
-      // Shows which card a mode ran on when it took the selection.
-      const on = mode.mode.target && !mode.rest && sel?.type === mode.mode.target ? ` · ${sel.name}` : ''
-      send(mode.mode.ask(modeAbout(mode.mode, mode.rest, sel)), prepare, `${text.trim()}${on}`)
+      // Shows which card (or open report, D-099) a mode ran on when it took it.
+      const title = openReport?.report.title ?? null
+      const on = mode.mode.target && !mode.rest && sel?.type === mode.mode.target ? ` · ${sel.name}` : mode.mode.report && !mode.rest && title ? ` · ${title}` : ''
+      send(mode.mode.ask(modeAbout(mode.mode, mode.rest, sel, title)), prepare, `${text.trim()}${on}`)
     }
     else send(text, () => prepareAt(view, useAiSettings.getState().web))
     edit('')
@@ -479,7 +485,7 @@ function Conversation({ source }: { source: KeySource }) {
         ))}
       </ol>
       <form className={styles.composer} onSubmit={submit}>
-        <ModeMenu modes={modes} pick={Math.min(pick, modes.length - 1)} selected={selectedItem()} onChoose={choose} />
+        <ModeMenu modes={modes} pick={Math.min(pick, modes.length - 1)} selected={selectedItem()} openReport={openReport?.report.title ?? null} onChoose={choose} />
         <span className={styles.promptLine}>
           <span className={styles.ps} aria-hidden>
             &gt;
@@ -616,7 +622,19 @@ function Spinner() {
 // The `/` menu (D-085): modes matching what's typed; a mode that works on one item names the selected card when it fits.
 // It opens and closes by its height (and so the box around it grows and shrinks with it instead of jumping, D-095);
 // closing, it keeps showing what it last listed until it's shut.
-function ModeMenu({ modes, pick, selected, onChoose }: { modes: Mode[]; pick: number; selected: { type: NodeType; name: string } | null; onChoose: (m: Mode) => void }) {
+function ModeMenu({
+  modes,
+  pick,
+  selected,
+  openReport,
+  onChoose,
+}: {
+  modes: Mode[]
+  pick: number
+  selected: { type: NodeType; name: string } | null
+  openReport: string | null
+  onChoose: (m: Mode) => void
+}) {
   const inner = useRef<HTMLUListElement>(null)
   const [height, setHeight] = useState(0)
   const shown = useRef(modes)
@@ -647,7 +665,7 @@ function ModeMenu({ modes, pick, selected, onChoose }: { modes: Mode[]; pick: nu
           <span className={styles.modeId}>/{m.id}</span>
           <span className={styles.modeText}>
             {m.label}
-            <span className={styles.modeHint}>{m.target && selected?.type === m.target ? `on ${selected.name}` : m.hint}</span>
+            <span className={styles.modeHint}>{m.target && selected?.type === m.target ? `on ${selected.name}` : m.report && openReport ? `on ${openReport}` : m.hint}</span>
           </span>
         </li>
         ))}

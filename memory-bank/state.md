@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -351,6 +351,15 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db` (indexes take a few
   minutes to build; paged lists fail until they're ready), then push. Functions changed too (roles, aiMembers removed),
   deployed later with D-079. Committed (not pushed).
+
+## Done (assistant builds the board from a report, 2026-10-18)
+- D-099: the report open on the report screen goes into the brief in full (`OPEN REPORT`), the brief's other reports get a
+  `[report:…]` handle and `get_report` reads one in full (`src/ai/readTools.ts`, `fetchReport` in src/data/reports.ts); the
+  agent loop runs tools async now. `/analyze` (`build from a report`) turns the open (or named) report into a proposal:
+  new items wired into the chain, edits with `Sources:`, links, matrix cells, an area. The `/` menu says `on <report>`.
+  Verified headless on emulators with a fake OpenAI (uploaded .md → opened → `/analyze`: the brief has the report in full
+  with its sources' URLs, get_report reads it by handle, a bad handle is a warn step, the proposal shows). Build passes.
+  Committed (not pushed). Not tried with a real key yet.
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs

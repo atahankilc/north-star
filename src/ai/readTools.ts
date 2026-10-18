@@ -1,5 +1,7 @@
 // Tools the assistant runs to read the workspace mid-answer (D-084). The brief clips long text and lists links by name;
 // these give the whole of a few items. They run in the browser on the workspace as it was when the message was sent.
+import { fetchReport } from '../data/reports'
+import type { ReportContent, ReportPoint } from '../data/model'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
 
@@ -88,4 +90,65 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
   if (!blocks.length) return { text: 'No refs given.', names, missed: 1 }
   const more = asked.length > MAX_ITEMS ? `\n\n(Only the first ${MAX_ITEMS} were read; ask for the rest in another call.)` : ''
   return { text: blocks.join('\n\n') + more, names, missed }
+}
+
+// Reports (D-099): the one open on the report screen is in the brief in full; the others are listed by handle and read
+// with get_report, so the assistant can build or rework the board from any of them.
+export const GET_REPORT = 'get_report'
+
+export const GET_REPORT_TOOL = {
+  type: 'function',
+  name: GET_REPORT,
+  description:
+    'Read a saved report in full: its answer, every section and point with numbered sources, what it means for us (with the ' +
+    'refs of the items it concerns), open questions and the sources with their URLs. The brief lists reports with a ' +
+    '[report:…] handle and only their answer; the report the user has open is already in full under OPEN REPORT.',
+  strict: true,
+  parameters: {
+    type: 'object',
+    properties: { report: { type: 'string', description: 'The handle after "report:", without brackets.' } },
+    required: ['report'],
+    additionalProperties: false,
+  },
+}
+
+// Long enough for any report the assistant writes; an uploaded file (D-091) may be cut.
+const MAX_REPORT = 24_000
+
+// A report as the model reads it: like the report screen, sources by number with their URLs, our items by ref.
+export function reportFull(r: ReportContent, refOf: (id: string) => string | undefined): string {
+  const cite = (p: ReportPoint) => (p.sources.length ? ` ${p.sources.map((n) => `[${n}]`).join('')}` : '')
+  const items = (ids: string[]) => {
+    const refs = ids.map(refOf).filter(Boolean)
+    return refs.length ? ` (items: ${refs.map((x) => `[${x}]`).join(' ')})` : ''
+  }
+  const text = [
+    `TITLE: ${r.title}`,
+    `ANSWER: ${r.answer}`,
+    ...r.sections.flatMap((s) => ['', `## ${s.question}`, ...s.points.map((p) => `- ${p.text}${cite(p)}`)]),
+    ...(r.implications.length ? ['', '## What it means for us', ...r.implications.map((i) => `- ${i.text}${items(i.items)}`)] : []),
+    ...(r.openQuestions.length ? ['', '## Open questions', ...r.openQuestions.map((q) => `- ${q}`)] : []),
+    ...(r.sources.length ? ['', '## Sources', ...r.sources.map((s, i) => `${i + 1}. ${s.title} ${s.url}`)] : []),
+  ].join('\n')
+  return text.length > MAX_REPORT ? `${text.slice(0, MAX_REPORT)}\n… (report cut short here)` : text
+}
+
+// The result text for one get_report call. `reports`: the brief's handles (handle → report id).
+export async function readReport(
+  args: string,
+  wid: string,
+  reports: Map<string, string>,
+  refOf: (id: string) => string | undefined,
+): Promise<{ text: string; title: string | null }> {
+  let handle = ''
+  try {
+    handle = String((JSON.parse(args) as { report?: unknown }).report ?? '').replace(/^\[|\]$/g, '').replace(/^report:/, '').trim()
+  } catch {
+    return { text: 'Arguments were not valid JSON.', title: null }
+  }
+  const id = reports.get(handle)
+  if (!id) return { text: `No report has the handle ${handle}. Use one listed under REPORTS.`, title: null }
+  const r = await fetchReport(wid, id).catch(() => null)
+  if (!r) return { text: `[report:${handle}] was deleted, or it isn't shared with this user any more.`, title: null }
+  return { text: `[report:${handle}]\n${reportFull(r, refOf)}`, title: r.title }
 }

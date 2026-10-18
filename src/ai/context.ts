@@ -3,8 +3,9 @@
 // can point at it (D-074).
 import type { WithId } from '../data/hooks'
 import type { BoardNode, Label, NodeType } from '../data/model'
-import type { ReportSummary } from '../data/model'
+import type { ReportContent, ReportSummary } from '../data/model'
 import type { WorkspaceCtx } from '../views/workspace/context'
+import { reportFull } from './readTools'
 
 // Far beyond a real workspace; keeps a runaway one from becoming an expensive prompt.
 const MAX_CHARS = 120_000
@@ -49,10 +50,15 @@ function makeRefs(items: { id: string; type: NodeType; name: string }[]): { byRe
   return { byRef, refOf }
 }
 
-export type Brief = { text: string; refs: Map<string, ItemRef> }
+// `reports`: the handles of the reports it lists (handle → report id), for get_report (D-099).
+export type Brief = { text: string; refs: Map<string, ItemRef>; reports: Map<string, string> }
+
+// The report on the report screen (D-099): saved (`id`) or the chat's copy not saved yet.
+export type OpenReport = { id: string; report: ReportContent; saved: boolean }
 
 // `reports`: the newest few you may see (D-090); the chat loads them while it's open (D-098).
-export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: ReportSummary[] = []): Brief {
+// `open`: the report the user is reading, in full (D-099).
+export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<ReportSummary>[] = [], open: OpenReport | null = null): Brief {
   const names = new Map<string, string>()
   const all: ItemRef[] = []
   const boardLists = [['customer', ws.customers], ['problem', ws.problems], ['idea', ws.ideas], ['feature', ws.features]] as const
@@ -138,11 +144,28 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: ReportSu
   if (areas.length) lines.push('', `AREAS ON THE BOARD: ${areas.map((l) => clip(l.text, 60)).join(' | ')}`)
 
   // Saved research (D-090): what was found before, so it isn't researched again. The user's own and the shared ones.
+  // Each has a handle for get_report (D-099); the open one gets one too, even if it's older than the rest.
+  const handles = new Map<string, string>()
+  const handleOf = (id: string) => {
+    let n = 6
+    while (n < id.length && [...handles.values()].some((o) => o !== id && o.slice(0, n) === id.slice(0, n))) n++
+    handles.set(id.slice(0, n), id)
+    return id.slice(0, n)
+  }
   if (reports.length) {
-    lines.push('', `RESEARCH REPORTS (the newest ${reports.length}; the full text is on the reports tab)`)
+    lines.push('', `REPORTS (the newest ${reports.length}; read one in full with its [report:…] handle)`)
     for (const r of reports) {
-      lines.push(`- "${clip(r.title, 120)}" (${new Date(r.createdAt).toISOString().slice(0, 10)}, ${r.shared ? 'shared' : 'private'}): ${clip(r.answer, 300)}`)
+      lines.push(`- [report:${handleOf(r.id)}] "${clip(r.title, 120)}" (${new Date(r.createdAt).toISOString().slice(0, 10)}, ${r.shared ? 'shared' : 'private'}): ${clip(r.answer, 300)}`)
     }
+  }
+  if (open) {
+    const handle = open.saved ? ([...handles].find(([, id]) => id === open.id)?.[0] ?? handleOf(open.id)) : null
+    lines.push(
+      '',
+      `OPEN REPORT${handle ? ` [report:${handle}]` : ' (written in this chat, not saved yet)'}: the user has it open on the report screen now; "this report", "the report" and "it" probably mean it.`,
+      reportFull(open.report, (id) => refOf.get(id)),
+      'END OF OPEN REPORT',
+    )
   }
 
   lines.push('', `THE USER is in the ${where.view} view.`)
@@ -150,5 +173,5 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: ReportSu
   if (sel) lines.push(`They have "${sel}" [${refOf.get(where.selectedId!)}] selected; "this" probably means it.`)
 
   const text = lines.join('\n')
-  return { text: text.length > MAX_CHARS ? `${text.slice(0, MAX_CHARS)}\n… (workspace cut short here)` : text, refs: byRef }
+  return { text: text.length > MAX_CHARS ? `${text.slice(0, MAX_CHARS)}\n… (workspace cut short here)` : text, refs: byRef, reports: handles }
 }

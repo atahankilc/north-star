@@ -166,7 +166,7 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   (`propose_changes`, and `get_items` in `src/ai/readTools.ts`, which reads a few items in full) and sends the step's output
   items plus the `function_call_output`s back. Reasoning carries over as `reasoning.encrypted_content` (still `store: false`).
   The last call uses `tool_choice: none`, so every answer ends in words. Each call is its own usage-log entry.
-- **Analysis modes** (D-085): `/validate`, `/interview`, `/swot`, `/gaps`, `/next`, `/pitch` (`src/ai/modes.ts`) are canned
+- **Analysis modes** (D-085): `/validate`, `/interview`, `/swot`, `/gaps`, `/next`, `/pitch`, `/organize`, `/analyze` (D-099) (`src/ai/modes.ts`) are canned
   asks sent as a normal message (the chat shows the short form); one-item modes use the selected card when it fits.
 - **Board areas** (D-086): `arrange_area` rows name an area and its cards; `src/ai/arrange.ts` lays it out (label + a
   column per type) where the board has room. Labels are referred to by their text.
@@ -182,6 +182,9 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   unshares (only that field changes) and deletes; an owner may delete a shared one. Shown on the reports tab
   (`/workspaces/<id>/reports`, `?report=<id>` opens one); the brief lists the newest 10 by title and answer.
   `upload .md` (D-091) reads a Markdown file into the same shape (`src/io/reportMarkdown.ts`, `kind: 'upload'`).
+- **Reports in the assistant** (D-099): the report open on the report screen is in the brief in full; listed reports carry a
+  `[report:…]` handle that `get_report` reads in full. `/analyze` turns a report into a proposal (new items, edits with sources,
+  links, matrix cells, an area).
 - **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the
   user's account). Cited sources are shown as clickable links.
 - Prompts live in `src/ai/prompts/`.

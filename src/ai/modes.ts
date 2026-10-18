@@ -13,6 +13,8 @@ export type Mode = {
   ask: (about: string | null) => string
   // Deep research (D-088): not one message but a planned run of web researchers; `ask` is unused.
   deep?: boolean
+  // Works on a report (D-099): the one open on the report screen, else the one named after the command.
+  report?: boolean
 }
 
 // Mode asks are written in English; the answer should still follow the user's language.
@@ -70,6 +72,23 @@ export const MODES: Mode[] = [
     ask: () => '',
   },
   {
+    id: 'analyze',
+    label: 'build from a report',
+    hint: 'turn the open report into cards, links and edits',
+    report: true,
+    ask: (about) =>
+      `Analyze ${about ?? 'the report I have open (OPEN REPORT; if none is open, the newest report that fits, say which)'} and ` +
+      'bring what it found onto the board. Read it in full first (get_report if it is not under OPEN REPORT), then read the ' +
+      'items it touches. Compare the two: what the report adds that the board lacks, what it confirms, and what it ' +
+      "contradicts. Then propose, in one set: new customers, problems, competitors (with their main features and matrix " +
+      "cells) and ideas or features it clearly supports, each wired into the chain; edits to existing items where the report " +
+      'adds facts or contradicts them (keep what is there, add the finding with its source URLs as "Sources: …" at the end ' +
+      'of notes or description); links it implies; and one arrange_area for the new cards named after the report, unless ' +
+      "they clearly belong in existing areas. Don't add what already exists: update or link to it. Only what the report " +
+      "backs: no guesses dressed as findings. Propose deletes only if I asked for them. Before the proposal, say in a few " +
+      `lines what the report changes for us. ${LANGUAGE}`,
+  },
+  {
     id: 'organize',
     label: 'organize the board',
     hint: 'group cards into named areas',
@@ -106,7 +125,18 @@ export function parseMode(text: string): { mode: Mode; rest: string } | null {
 }
 
 // What the mode works on: the text after the command, else the selected item if it's the right type.
-export function modeAbout(mode: Mode, rest: string, selected: { type: NodeType; name: string } | null): string | null {
+// A report mode (D-099) names the report from the rest, or works on the open one; `openReport` is its title.
+export function modeAbout(
+  mode: Mode,
+  rest: string,
+  selected: { type: NodeType; name: string } | null,
+  openReport: string | null = null,
+): string | null {
+  if (mode.report) {
+    if (rest && openReport) return `the report I have open, "${openReport}", with this in mind: ${rest}`
+    if (rest) return `the report "${rest}" (or, if no report has that title, the open one with this in mind: ${rest})`
+    return openReport ? `the report I have open, "${openReport}"` : null
+  }
   // A mode without an item takes the rest as is (`/organize customer segment`).
   if (!mode.target) return rest || null
   if (rest) return `the ${mode.target} "${rest}"`

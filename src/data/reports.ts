@@ -146,3 +146,18 @@ export function useRecentReports(wid: string, uid: string | undefined, enabled: 
   const byId = new Map([...shared.data, ...mine.data].map((r) => [r.id, r]))
   return [...byId.values()].sort((a, b) => b.createdAt - a.createdAt).slice(0, size)
 }
+
+// One report, whole, read once (D-099): for the assistant's get_report. The summary first (the body's rule reads it);
+// null when it's gone or not yours to read (a private one throws permission-denied).
+export async function fetchReport(wid: string, id: string): Promise<WithId<SavedReport> | null> {
+  try {
+    const s = await getDoc(doc(reportsOf(wid), id))
+    if (!s.exists()) return null
+    const summary = { ...(s.data() as ReportSummary), id: s.id }
+    if (summary.sections !== undefined) return { ...summary, ...bodyOf(summary) }
+    const b = await getDoc(bodyRef(wid, id))
+    return { ...summary, ...bodyOf((b.data() as ReportBody | undefined) ?? {}) }
+  } catch {
+    return null
+  }
+}

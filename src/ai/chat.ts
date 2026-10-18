@@ -7,7 +7,7 @@ import type { KeySource } from '../data/ai'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import { callAi } from './call'
 import { AiError, type ChatTurn, type Citation, type InputItem, type ToolCall } from './openai'
-import { GET_ITEMS, GET_ITEMS_TOOL, readItems } from './readTools'
+import { GET_ITEMS, GET_ITEMS_TOOL, GET_REPORT, GET_REPORT_TOOL, readItems, readReport } from './readTools'
 import {
   CHAT_REPORT,
   CHAT_REPORT_TOOL,
@@ -64,8 +64,8 @@ export type ChatMessage = ChatTurn & {
 export type Step = { kind: 'read' | 'search' | 'propose' | 'plan' | 'research' | 'report'; text: string; state: 'running' | 'done' | 'warn' }
 
 // Built when a message is sent, so it sees the workspace as it is then.
-// `ws` is what the read tools see for the whole answer.
-export type Prepared = { instructions: string; refs: Map<string, ItemRef>; source: KeySource; ws: WorkspaceCtx }
+// `ws` is what the read tools see for the whole answer; `reports` the brief's report handles (D-099).
+export type Prepared = { instructions: string; refs: Map<string, ItemRef>; reports: Map<string, string>; source: KeySource; ws: WorkspaceCtx }
 
 // Everything one answer's loop needs: where it writes (`update`), its key and model, what the tools see.
 type AnswerRun = {
@@ -77,6 +77,7 @@ type AnswerRun = {
   webSearch: boolean
   instructions: string
   refs: Map<string, ItemRef>
+  reports: Map<string, string>
   ws: WorkspaceCtx
   signal: AbortSignal
   update: (patch: Partial<ChatMessage>) => void
@@ -84,7 +85,7 @@ type AnswerRun = {
   steps: Step[]
   citations: Citation[]
   // More function tools for this answer (the research report, D-089), and whether its first step must call one.
-  extra?: { def: object; name: string; run: (args: string) => string }[]
+  extra?: { def: object; name: string; run: (args: string) => string | Promise<string> }[]
   firstRequired?: boolean
 }
 
@@ -96,7 +97,7 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
   let proposed = false
   // A tool's result, as the model will read it, and a step in the chat; a proposal also shows its checklist (a later
   // one in the same answer replaces it).
-  const run = (c: ToolCall): string => {
+  const run = async (c: ToolCall): Promise<string> => {
     if (c.name === PROPOSE) {
       const proposal = parseProposal(c.args, refs, ws.labels.map((l) => l.text))
       const bad = proposal.changes.filter((x) => x.problem)
@@ -112,6 +113,13 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
       const res = readItems(c.args, ws, refs)
       const missed = res.missed ? `${res.names.length ? ', ' : ''}${res.missed} not found` : ''
       steps.push({ kind: 'read', text: `read ${res.names.join(' · ')}${missed}`, state: res.missed ? 'warn' : 'done' })
+      showSteps()
+      return res.text
+    }
+    if (c.name === GET_REPORT) {
+      const refOf = new Map([...refs].map(([ref, it]) => [it.id, ref]))
+      const res = await readReport(c.args, r.wid, r.reports, (id) => refOf.get(id))
+      steps.push({ kind: 'read', text: res.title ? `read the report "${res.title}"` : "couldn't read the report", state: res.title ? 'done' : 'warn' })
       showSteps()
       return res.text
     }
@@ -154,12 +162,16 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
         fresh = false
         update({ content: (answer += d), thinking: false })
       },
-      tools: [PROPOSE_TOOL, GET_ITEMS_TOOL, ...(r.extra ?? []).map((t) => t.def)],
+      tools: [PROPOSE_TOOL, GET_ITEMS_TOOL, GET_REPORT_TOOL, ...(r.extra ?? []).map((t) => t.def)],
       toolChoice: step === MAX_STEPS - 1 ? 'none' : step === 0 && r.firstRequired ? 'required' : 'auto',
     })
     update({ thinking: false })
     if (!calls.length || r.signal.aborted) return
-    input = [...input, ...output, ...calls.map((c) => ({ type: 'function_call_output', call_id: c.callId, output: run(c) }))]
+    // One at a time, in order, so steps show in the order they were called.
+    const results: InputItem[] = []
+    for (const c of calls) results.push({ type: 'function_call_output', call_id: c.callId, output: await run(c) })
+    if (r.signal.aborted) return
+    input = [...input, ...output, ...results]
   }
 }
 
@@ -217,6 +229,7 @@ function begin(id: number, p: Prepared, task: AnswerRun['task'], model: string, 
     webSearch,
     instructions: p.instructions,
     refs: p.refs,
+    reports: p.reports,
     ws: p.ws,
     signal: ctl.signal,
     update: (patch) => useChat.setState((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
