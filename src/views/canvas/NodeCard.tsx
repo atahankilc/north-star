@@ -14,6 +14,7 @@ import { fontUrls } from '../../three/fonts'
 import { BOARD_KINDS, typeAccent, type BoardItem } from './boardKinds'
 import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
+import { endGroup, moveGroup, startGroup } from './groupDrag'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
 import { markHover, unlight } from '../workspace/stage'
@@ -79,6 +80,8 @@ function StrikeLines({ strikes, color, z = 0.003 }: { strikes: Strike[]; color: 
 }
 
 const BADGE = 0.17
+// The link handle on a hovered card's right edge.
+const HANDLE = 0.1
 const WAS_H = 0.24
 
 export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], mark, was, lit = false, onLinkDrop }: Props) {
@@ -98,13 +101,17 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
   const [hovered, setHovered] = useState(false)
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
 
-  const selected = useCanvas((s) => s.selectedId === node.id)
+  const selected = useCanvas((s) => s.selection.includes(node.id))
   const live = useCanvas((s) => s.dragging[node.id])
   const isLinkSource = useCanvas((s) => s.linkFrom === node.id)
   const isLinkTarget = useCanvas((s) => s.linkFrom !== null && s.linkFrom !== node.id) && hovered
-  const { select, startLink, endLink, setDragging, setPressing } = useCanvas.getState()
+  const { select, toggleSelect, startLink, endLink, setDragging, setPressing, setHover } = useCanvas.getState()
 
-  const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean } | null>(null)
+  // `group`: the card is one of several selected, and they all move with it (groupDrag.ts).
+  const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean; group: boolean } | null>(null)
+  // Shift held at the press: a link if the pointer leaves the card, a toggle of the selection if it doesn't.
+  const shiftPress = useRef(false)
+  const overHandle = useRef(false)
 
   const [x, y] = live ?? [node.x, node.y]
   const colors = usePalette()
@@ -142,15 +149,27 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
     const p = boardPoint(e)
     if (!p) return
     setPressing(node.id)
-    select(node.id)
-    // The assistant's preview (D-087) can be looked at, not changed.
-    if (editLocked()) return
+    shiftPress.current = e.shiftKey
     if (e.shiftKey) {
-      startLink(node.id, p)
+      // The assistant's preview (D-087) can be looked at, not changed: no links there, only selecting.
+      if (!editLocked()) startLink(node.id, p)
       return
     }
-    drag.current = { dx: p[0] - x, dy: p[1] - y, from: [node.x, node.y], lastWrite: 0, moved: false }
+    // A press on one of several selected cards keeps the selection, so they can be dragged together.
+    const group = !editLocked() && startGroup(node.id)
+    if (!group) select(node.id)
+    if (editLocked()) return
+    drag.current = { dx: p[0] - x, dy: p[1] - y, from: [node.x, node.y], lastWrite: 0, moved: false, group }
     ;(e.target as Element).setPointerCapture(e.pointerId)
+  }
+
+  // The handle on the card's right edge: drag from it to link, without knowing about shift (D-108).
+  const onHandleDown = (e: ThreeEvent<PointerEvent>) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    if (controls) controls.enabled = false
+    const p = boardPoint(e)
+    if (p) startLink(node.id, p)
   }
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
@@ -160,6 +179,10 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
     if (!p) return
     const next: [number, number] = [p[0] - d.dx, p[1] - d.dy]
     d.moved = true
+    if (d.group) {
+      moveGroup(wid, [next[0] - d.from[0], next[1] - d.from[1]])
+      return
+    }
     setDragging(node.id, next)
     // Stream the move so collaborators see it live, without a write per frame.
     const now = performance.now()
@@ -176,15 +199,26 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
       e.stopPropagation()
       drag.current = null
       ;(e.target as Element).releasePointerCapture(e.pointerId)
-      const final = useCanvas.getState().dragging[node.id]
-      // One undo step for the whole drag.
-      if (d.moved && final) void endMove(wid, type, node.id, d.from, final)
-      setDragging(node.id, null)
+      if (d.group) {
+        // A click (no drag) on one of several selected cards picks just that one.
+        if (!endGroup(wid)) select(node.id)
+      } else {
+        const final = useCanvas.getState().dragging[node.id]
+        // One undo step for the whole drag.
+        if (d.moved && final) void endMove(wid, type, node.id, d.from, final)
+        setDragging(node.id, null)
+      }
     } else if (useCanvas.getState().linkFrom && !isLinkSource) {
       e.stopPropagation()
       onLinkDrop(node.id)
       endLink()
+    } else if (shiftPress.current) {
+      // Shift+click without leaving the card: in or out of the selection.
+      e.stopPropagation()
+      endLink()
+      toggleSelect(node.id)
     }
+    shiftPress.current = false
     if (controls) controls.enabled = true
   }
 
@@ -208,12 +242,14 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
       onPointerOver={(e) => {
         e.stopPropagation()
         setHovered(true)
-        document.body.style.cursor = e.shiftKey ? 'crosshair' : 'grab'
+        setHover(node.id)
+        document.body.style.cursor = e.shiftKey || overHandle.current ? 'crosshair' : 'grab'
         // Lights its row in the assistant's checklist (D-096).
         if (mark) markHover(node.id).onPointerEnter()
       }}
       onPointerOut={() => {
         setHovered(false)
+        if (useCanvas.getState().hoverId === node.id) setHover(null)
         document.body.style.cursor = ''
         if (mark) unlight()
       }}
@@ -391,6 +427,21 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
             ))}
           </div>
         </Html>
+      )}
+      {(hovered || isLinkSource) && !editLocked() && (
+        <mesh
+          position={[W / 2, 0, 0.004]}
+          onPointerDown={onHandleDown}
+          // Not stopped: the card has to keep its hover, or the handle goes away under the pointer.
+          onPointerOver={() => (overHandle.current = true)}
+          onPointerOut={() => {
+            overHandle.current = false
+            document.body.style.cursor = 'grab'
+          }}
+        >
+          <circleGeometry args={[HANDLE, 20]} />
+          <meshBasicMaterial color={isLinkSource ? colors.cyan : colors.fg} toneMapped={false} />
+        </mesh>
       )}
       <CardReveal content={content} uniforms={cell} />
     </group>

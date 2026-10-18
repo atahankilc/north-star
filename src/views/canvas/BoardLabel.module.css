@@ -22,3 +22,8 @@
 .input::placeholder {
   color: var(--placeholder);
 }
+
+.input[data-note] {
+  font-family: var(--font-mono);
+  letter-spacing: normal;
+}

@@ -22,12 +22,18 @@ import { usePresence } from '../../data/presence'
 import { wasLine } from '../workspace/preview'
 import { usePreviewFocus, useStage } from '../workspace/stage'
 import { useCanvas } from '../../state/canvasStore'
+import { useWsView } from '../../state/workspaceView'
+import { useViewer } from '../workspace/viewerLock'
 import { isReducedMotion } from '../../state/motion'
 import { usePalette } from '../../state/theme'
 import { defaultKind, type BoardItem } from './boardKinds'
-import { BoardLabel, LABEL_SIZE } from './BoardLabel'
+import { BoardLabel, labelSize } from './BoardLabel'
 import { CARD_H, CARD_W, glideDt } from './cardLayout'
 import { EdgeLine } from './EdgeLine'
+import { setPieces } from './groupDrag'
+import { LabelBar } from './LabelBar'
+import { LinkBar } from './LinkBar'
+import { linkStyle } from './linkKinds'
 import { CHIP_H, CHIP_W, FeatureChip } from './FeatureChip'
 import { boardPoint, NodeCard } from './NodeCard'
 import { CursorReporter, FollowCamera, PeerCursors } from './PeerCursors'
@@ -73,7 +79,10 @@ const CHIP_HALF: [number, number] = [CHIP_W / 2, CHIP_H / 2]
 function boardBounds(nodes: BoardItem[], labels: WithId<Label>[]): [number, number, number, number] | null {
   const boxes = [
     ...nodes.map((n) => [n.x - CARD_W / 2, n.y - CARD_H / 2, n.x + CARD_W / 2, n.y + CARD_H / 2]),
-    ...labels.map((l) => [l.x - l.text.length * LABEL_SIZE * 0.32, l.y - LABEL_SIZE / 2, l.x + l.text.length * LABEL_SIZE * 0.32, l.y + LABEL_SIZE / 2]),
+    ...labels.map((l) => {
+      const h = labelSize(l)
+      return [l.x - l.text.length * h * 0.32, l.y - h / 2, l.x + l.text.length * h * 0.32, l.y + h / 2]
+    }),
   ]
   if (boxes.length === 0) return null
   return [
@@ -333,6 +342,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
 
   // Links to a competitor's stacked features point at the competitor, so they show without fanning it out (D-058).
   // A pair of cards gets one line: a direct link wins, then the first feature link.
+  const hiddenLinks = useWsView((s) => s.hiddenLinks)
   const lines = useMemo(() => {
     const owner = new Map(competitorFeatures.map((f) => [f.id, f.competitorId]))
     const end = (id: string) => (positions.has(id) ? id : (owner.get(id) ?? id))
@@ -345,14 +355,65 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
       if (from === to || !positions.has(from) || !positions.has(to)) continue
       // Customer tags are labels on the card; their lines show only while that customer is selected.
       if (edge.kind === FOR && edge.toId !== customerId) continue
+      // Hidden by the LINKS filter (D-108), unless it's the selected card's.
+      const active = [edge.fromId, edge.toId, from, to].includes(selectedId ?? '')
+      if (hiddenLinks.includes(linkStyle(edge.kind).group) && !active) continue
       const pair = from < to ? `${from}|${to}` : `${to}|${from}`
       if (seen.has(pair)) continue
       seen.add(pair)
-      const active = [edge.fromId, edge.toId, from, to].includes(selectedId ?? '')
       out.push({ edge, from, to, active })
     }
     return out
-  }, [edges, positions, competitorFeatures, customerId, selectedId])
+  }, [edges, positions, competitorFeatures, customerId, selectedId, hiddenLinks])
+
+  // Focus (D-108): with a card under the pointer, or cards selected, links that don't touch them go faint; with a link
+  // selected, every other one does.
+  const hoverId = useCanvas((s) => s.hoverId)
+  const selection = useCanvas((s) => s.selection)
+  const edgeId = useCanvas((s) => s.edgeId)
+  const focusIds = useMemo(() => {
+    const ids = hoverId ? [hoverId] : selection.filter((id) => positions.has(id))
+    return ids.length ? new Set(ids) : null
+  }, [hoverId, selection, positions])
+  const dimmed = (line: (typeof lines)[number]) =>
+    edgeId ? line.edge.id !== edgeId : focusIds ? ![line.edge.fromId, line.edge.toId, line.from, line.to].some((id) => focusIds.has(id)) : false
+
+  // Where every card and label is, for dragging a selection together (groupDrag.ts).
+  useEffect(() => {
+    const map = new Map<string, { kind: BoardItem['type'] | 'label'; id: string; x: number; y: number }>()
+    for (const n of nodes) map.set(n.id, { kind: n.type, id: n.id, x: n.x, y: n.y })
+    for (const l of labels) map.set(l.id, { kind: 'label', id: l.id, x: l.x, y: l.y })
+    setPieces(map)
+  }, [nodes, labels])
+
+  // The bars on a selected link or text label (D-108); none while only looking (viewers, the assistant's preview).
+  const viewer = useViewer((s) => s.viewer)
+  const editable = !viewer && !preview
+  const selectedLine = edgeId ? lines.find((l) => l.edge.id === edgeId) : undefined
+  const selectedLabel = selection.length === 1 ? labels.find((l) => l.id === selection[0]) : undefined
+  const editingLabel = useCanvas((s) => s.editingLabel)
+
+  // Alt+drag on empty board draws a box; what's inside is selected (shift keeps what was) (D-108).
+  const [box, setBox] = useState<{ from: [number, number]; to: [number, number]; add: boolean } | null>(null)
+  useEffect(() => {
+    if (!box) return
+    const up = () => {
+      const x0 = Math.min(box.from[0], box.to[0])
+      const x1 = Math.max(box.from[0], box.to[0])
+      const y0 = Math.min(box.from[1], box.to[1])
+      const y1 = Math.max(box.from[1], box.to[1])
+      const inside = (x: number, y: number, hw: number, hh: number) => x + hw > x0 && x - hw < x1 && y + hh > y0 && y - hh < y1
+      const ids = [
+        ...nodes.filter((n) => inside(n.x, n.y, CARD_W / 2, CARD_H / 2)).map((n) => n.id),
+        ...labels.filter((l) => inside(l.x, l.y, (l.text.length * labelSize(l) * 0.3) || 0.3, labelSize(l) / 2)).map((l) => l.id),
+      ]
+      if (Math.abs(x1 - x0) > 0.05 || Math.abs(y1 - y0) > 0.05) useCanvas.getState().selectMany(ids, box.add)
+      setBox(null)
+      if (controls) controls.enabled = true
+    }
+    window.addEventListener('pointerup', up)
+    return () => window.removeEventListener('pointerup', up)
+  }, [box, nodes, labels, controls])
 
   const linkSource = linkFrom ? positions.get(linkFrom) : undefined
 
@@ -364,9 +425,22 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
         position={[0, 0, -0.1]}
         onClick={(e) => {
           // A click (not the end of a pan) on empty board clears the selection.
-          if (e.delta < 4) select(null)
+          if (e.delta < 4 && !e.altKey) select(null)
+        }}
+        onPointerDown={(e) => {
+          if (e.button !== 0 || !e.altKey) return
+          const p = boardPoint(e)
+          if (!p) return
+          // Runs before the controls' own listener (on the wrapper), so the board doesn't pan.
+          if (controls) controls.enabled = false
+          setBox({ from: p, to: p, add: e.shiftKey })
         }}
         onPointerMove={(e) => {
+          if (box) {
+            const p = boardPoint(e)
+            if (p) setBox((b) => b && { ...b, to: p })
+            return
+          }
           if (!useCanvas.getState().linkFrom) return
           const p = boardPoint(e)
           if (p) moveLink(p)
@@ -380,18 +454,45 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
         <BoardLabel key={l.id} wid={wid} label={l} mark={preview?.marks.get(l.id)} was={wasLine(preview?.before.get(l.id))} lit={litIds.has(l.id)} />
       ))}
 
-      {lines.map(({ edge, from, to, active }) => (
-        <EdgeLine
-          key={edge.id}
-          from={positions.get(from)!}
-          to={positions.get(to)!}
-          fromHalf={chips.has(from) ? CHIP_HALF : CARD_HALF}
-          toHalf={chips.has(to) ? CHIP_HALF : CARD_HALF}
-          kind={edge.kind}
-          active={active}
-          tint={edge.id.startsWith('preview-') ? palette.diff.new : undefined}
+      {lines.map((line) => {
+        const { edge, from, to, active } = line
+        return (
+          <EdgeLine
+            key={edge.id}
+            from={positions.get(from)!}
+            to={positions.get(to)!}
+            fromHalf={chips.has(from) ? CHIP_HALF : CARD_HALF}
+            toHalf={chips.has(to) ? CHIP_HALF : CARD_HALF}
+            kind={edge.kind}
+            label={edge.label}
+            active={active}
+            dim={dimmed(line)}
+            selected={edge.id === edgeId}
+            // The assistant's preview: links it adds in the new colour, links it edits (D-108) in the edited one.
+            tint={edge.id.startsWith('preview-') ? palette.diff.new : preview?.marks.get(edge.id) === 'edited' ? palette.diff.edited : undefined}
+            onSelect={preview ? undefined : () => useCanvas.getState().selectEdge(edge.id)}
+          />
+        )
+      })}
+      {editable && selectedLine && (
+        <LinkBar
+          wid={wid}
+          edge={selectedLine.edge}
+          at={midpoint(positions.get(selectedLine.from)!, positions.get(selectedLine.to)!)}
         />
-      ))}
+      )}
+      {editable && selectedLabel && !editingLabel && (
+        <LabelBar
+          wid={wid}
+          label={selectedLabel}
+          // Roughly where the text starts and ends (Geist at its size), so the bar sits under it.
+          at={[
+            selectedLabel.x - (selectedLabel.text.length * labelSize(selectedLabel) * 0.3),
+            selectedLabel.y - labelSize(selectedLabel) * 0.7,
+          ]}
+        />
+      )}
+      {box && <SelectBox from={box.from} to={box.to} color={palette.cyan} />}
 
       {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={CARD_HALF} toHalf={[0, 0]} active />}
 
@@ -424,6 +525,28 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
           return was ? <MoveGhost key={`ghost-${node.id}`} from={was} to={[node.x, node.y]} color={palette.diff.moved} lit={litIds.has(node.id)} /> : null
         })}
     </>
+  )
+}
+
+const midpoint = (a: [number, number], b: [number, number]): [number, number] => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+
+// The box being drawn round things to select them (D-108).
+function SelectBox({ from, to, color }: { from: [number, number]; to: [number, number]; color: string }) {
+  const points: [number, number, number][] = [
+    [from[0], from[1], 0],
+    [to[0], from[1], 0],
+    [to[0], to[1], 0],
+    [from[0], to[1], 0],
+    [from[0], from[1], 0],
+  ]
+  return (
+    <group position={[0, 0, 0.08]}>
+      <mesh position={[(from[0] + to[0]) / 2, (from[1] + to[1]) / 2, -0.001]}>
+        <planeGeometry args={[Math.abs(to[0] - from[0]), Math.abs(to[1] - from[1])]} />
+        <meshBasicMaterial color={color} transparent opacity={0.06} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <Line points={points} color={color} lineWidth={1} dashed dashSize={0.1} gapSize={0.07} toneMapped={false} />
+    </group>
   )
 }
 

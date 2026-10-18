@@ -17,12 +17,12 @@ const clip = (s: string | undefined, n = MAX_TEXT) => {
 }
 const tags = (t?: string[]) => (t?.length ? ` ${t.map((x) => `#${x}`).join(' ')}` : '')
 
-// A label names the area below it (D-050): a card belongs to the nearest label above it.
+// A label names the area below it (D-050): a card belongs to the nearest label above it. Notes don't name areas (D-108).
 function areaOf(labels: WithId<Label>[], x: number, y: number): string {
   let best: WithId<Label> | undefined
   let bestD = Infinity
   for (const l of labels) {
-    if (!l.text.trim() || l.y < y) continue
+    if (!l.text.trim() || l.size === 'note' || l.y < y) continue
     const d = Math.hypot(l.x - x, l.y - y)
     if (d < bestD) {
       bestD = d
@@ -32,7 +32,23 @@ function areaOf(labels: WithId<Label>[], x: number, y: number): string {
   return best ? ` [area: ${clip(best.text, 60)}]` : ''
 }
 
-type Where = { view: string; selectedId: string | null }
+// The card closest to a point, within a few units (a note is usually right under or beside its card).
+function nearestCard(ws: WorkspaceCtx, x: number, y: number): string | undefined {
+  let best: string | undefined
+  let bestD = 3
+  for (const n of [...ws.customers, ...ws.problems, ...ws.ideas, ...ws.features, ...ws.competitors]) {
+    if (n.x === undefined || n.y === undefined) continue
+    const d = Math.hypot(n.x - x, n.y - y)
+    if (d < bestD) {
+      bestD = d
+      best = n.id
+    }
+  }
+  return best
+}
+
+// `selection`: everything selected on the board (D-108), when it's more than the one card.
+type Where = { view: string; selectedId: string | null; selection?: string[] }
 
 export type ItemRef = { id: string; type: NodeType; name: string }
 
@@ -140,8 +156,17 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
     lines.push(`- ${names.get(c.featureId)} × ${names.get(c.competitorId)}: ${c.coverage ?? 'not assessed'}${c.notes ? `; ${clip(c.notes, 200)}` : ''}`)
   }
 
-  const areas = ws.labels.filter((l) => l.text.trim())
+  const areas = ws.labels.filter((l) => l.text.trim() && l.size !== 'note')
   if (areas.length) lines.push('', `AREAS ON THE BOARD: ${areas.map((l) => clip(l.text, 60)).join(' | ')}`)
+  // Small notes written on the board (D-108), with the card each sits closest to.
+  const notes = ws.labels.filter((l) => l.text.trim() && l.size === 'note')
+  if (notes.length) {
+    lines.push('', `NOTES ON THE BOARD (${notes.length})`)
+    for (const l of notes) {
+      const near = nearestCard(ws, l.x, l.y)
+      lines.push(`- "${clip(l.text, 200)}"${near ? ` by [${refOf.get(near)}] ${names.get(near)}` : ''}${areaOf(ws.labels, l.x, l.y)}`)
+    }
+  }
 
   // Saved research (D-090): what was found before, so it isn't researched again. The user's own and the shared ones.
   // Each has a handle for get_report (D-099); the open one gets one too, even if it's older than the rest.
@@ -170,7 +195,9 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
 
   lines.push('', `THE USER is in the ${where.view} view.`)
   const sel = where.selectedId && names.get(where.selectedId)
-  if (sel) lines.push(`They have "${sel}" [${refOf.get(where.selectedId!)}] selected; "this" probably means it.`)
+  const many = (where.selection ?? []).filter((id) => names.has(id))
+  if (many.length > 1) lines.push(`They have ${many.length} items selected: ${many.map((id) => `"${names.get(id)}" [${refOf.get(id)}]`).join(', ')}; "these" or "this" probably means them.`)
+  else if (sel) lines.push(`They have "${sel}" [${refOf.get(where.selectedId!)}] selected; "this" probably means it.`)
 
   const text = lines.join('\n')
   return { text: text.length > MAX_CHARS ? `${text.slice(0, MAX_CHARS)}\n… (workspace cut short here)` : text, refs: byRef, reports: handles }

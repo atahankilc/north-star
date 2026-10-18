@@ -7,12 +7,13 @@ import { MathUtils, MeshBasicMaterial, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { deleteLabel, endLabelMove, moveLabel, updateLabel } from '../../data/labels'
-import type { Label } from '../../data/model'
+import type { Label, LabelSize } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { usePalette, useThemeAccent } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
+import { endGroup, moveGroup, startGroup } from './groupDrag'
 import { boardPoint } from './NodeCard'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
@@ -20,6 +21,9 @@ import { markHover, unlight } from '../workspace/stage'
 import styles from './BoardLabel.module.css'
 
 export const LABEL_SIZE = 0.6
+// Heading (the default), subheading, note (D-108). Notes are mono, like an annotation.
+const SIZES: Record<LabelSize, number> = { heading: LABEL_SIZE, subheading: 0.36, note: 0.2 }
+export const labelSize = (l: Pick<Label, 'size'>) => SIZES[l.size ?? 'heading']
 const WRITE_EVERY_MS = 120
 const PAD = 0.18
 
@@ -36,15 +40,17 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     return m
   }, [cell])
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
-  const selected = useCanvas((s) => s.selectedId === label.id)
+  const selected = useCanvas((s) => s.selection.includes(label.id))
   const editing = useCanvas((s) => s.editingLabel === label.id)
   const live = useCanvas((s) => s.dragging[label.id])
-  const { select, setDragging, setEditingLabel } = useCanvas.getState()
+  const { select, toggleSelect, setDragging, setEditingLabel } = useCanvas.getState()
+  const size = labelSize(label)
+  const note = label.size === 'note'
   const [hovered, setHovered] = useState(false)
   // Measured from the rendered text, for the hit area and underline.
-  const [box, setBox] = useState<[number, number]>([2, LABEL_SIZE])
+  const [box, setBox] = useState<[number, number]>([2, size])
 
-  const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean } | null>(null)
+  const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean; group: boolean } | null>(null)
   const [x, y] = live ?? [label.x, label.y]
   const colors = usePalette()
   const tone = useThemeAccent()
@@ -71,10 +77,16 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     if (controls) controls.enabled = false
     const p = boardPoint(e)
     if (!p) return
-    select(label.id)
+    // Shift+click: in or out of the selection (D-108).
+    if (e.shiftKey) {
+      toggleSelect(label.id)
+      return
+    }
+    const group = !editLocked() && startGroup(label.id)
+    if (!group) select(label.id)
     // The assistant's preview (D-087) can be looked at, not changed.
     if (editLocked()) return
-    drag.current = { dx: p[0] - x, dy: p[1] - y, from: [label.x, label.y], lastWrite: 0, moved: false }
+    drag.current = { dx: p[0] - x, dy: p[1] - y, from: [label.x, label.y], lastWrite: 0, moved: false, group }
     ;(e.target as Element).setPointerCapture(e.pointerId)
   }
 
@@ -85,6 +97,10 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     if (!p) return
     const next: [number, number] = [p[0] - d.dx, p[1] - d.dy]
     d.moved = true
+    if (d.group) {
+      moveGroup(wid, [next[0] - d.from[0], next[1] - d.from[1]])
+      return
+    }
     setDragging(label.id, next)
     const now = performance.now()
     if (now - d.lastWrite > WRITE_EVERY_MS) {
@@ -99,9 +115,13 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
       e.stopPropagation()
       drag.current = null
       ;(e.target as Element).releasePointerCapture(e.pointerId)
-      const final = useCanvas.getState().dragging[label.id]
-      if (d.moved && final) void endLabelMove(wid, label.id, d.from, final)
-      setDragging(label.id, null)
+      if (d.group) {
+        if (!endGroup(wid)) select(label.id)
+      } else {
+        const final = useCanvas.getState().dragging[label.id]
+        if (d.moved && final) void endLabelMove(wid, label.id, d.from, final)
+        setDragging(label.id, null)
+      }
     }
     if (controls) controls.enabled = true
   }
@@ -161,48 +181,48 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
         )}
         {/* Underline: faint on hover, the label's colour when selected. */}
         {(selected || hovered) && !editing && !mark && (
-          <mesh position={[0, -box[1] / 2 - 0.08, 0]}>
-            <planeGeometry args={[box[0], 0.03]} />
+          <mesh position={[0, -box[1] / 2 - size * 0.13, 0]}>
+            <planeGeometry args={[box[0], Math.max(0.014, size * 0.05)]} />
             <meshBasicMaterial color={selected ? colors.cyan : colors.hover} toneMapped={false} />
           </mesh>
         )}
         {!editing && (
           <Text
             material={textMaterial}
-            font={fontUrls.display}
-            fontSize={LABEL_SIZE}
-            letterSpacing={-0.02}
-            color={text ? accent : colors.fgDim}
+            font={note ? fontUrls.mono : fontUrls.display}
+            fontSize={size}
+            letterSpacing={note ? 0 : -0.02}
+            color={text ? (note && !label.color ? colors.fgDim : accent) : colors.fgDim}
             anchorX="center"
             anchorY="middle"
             onSync={(t) => {
               const b = (t as unknown as { textRenderInfo?: { blockBounds: number[] } }).textRenderInfo?.blockBounds
-              if (b) setBox([Math.max(0.6, b[2] - b[0]), Math.max(LABEL_SIZE, b[3] - b[1])])
+              if (b) setBox([Math.max(size, b[2] - b[0]), Math.max(size, b[3] - b[1])])
             }}
           >
             {text || 'Text'}
           </Text>
         )}
       </group>
-      {editing && <LabelInput wid={wid} label={label} onDone={() => setEditingLabel(null)} />}
+      {editing && <LabelInput wid={wid} label={label} size={size} onDone={() => setEditingLabel(null)} />}
       <CardReveal content={content} uniforms={cell} />
     </group>
   )
 }
 
 // Enter or clicking away saves; Escape cancels. Text left empty deletes the label.
-function LabelInput({ wid, label, onDone }: { wid: string; label: WithId<Label>; onDone: () => void }) {
+function LabelInput({ wid, label, size, onDone }: { wid: string; label: WithId<Label>; size: number; onDone: () => void }) {
   const [draft, setDraft] = useState(label.text)
   const input = useRef<HTMLInputElement>(null)
   const done = useRef(false)
   // How big LABEL_SIZE world units are on screen right now, so the input matches the text it replaces.
   const camera = useThree((s) => s.camera)
-  const size = useThree((s) => s.size)
+  const view = useThree((s) => s.size)
   const fontPx = useMemo(() => {
     const fov = ((camera as { fov?: number }).fov ?? 40) * (Math.PI / 180)
     const visible = 2 * Math.tan(fov / 2) * camera.position.z
-    return (LABEL_SIZE / visible) * size.height
-  }, [camera, size])
+    return (size / visible) * view.height
+  }, [camera, view, size])
 
   useEffect(() => {
     requestAnimationFrame(() => input.current?.select())
@@ -224,6 +244,7 @@ function LabelInput({ wid, label, onDone }: { wid: string; label: WithId<Label>;
         ref={input}
         className={styles.input}
         // Roughly the width of the display face, so the underline hugs the text.
+        data-note={label.size === 'note' || undefined}
         style={{ fontSize: `${Math.max(12, fontPx)}px`, width: `${Math.max(3, draft.length * 0.62 + 0.6)}em` }}
         value={draft}
         maxLength={200}

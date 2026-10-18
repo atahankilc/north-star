@@ -2,7 +2,7 @@
 // them in the chat; then they go through src/data/assistant.ts as one undo step. Deletes too (D-075), with their cascade.
 import type { AssistantWrite, ChangeRef } from '../data/assistant'
 import { linked } from '../data/edges'
-import { COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, type BoardType, type NodeType } from '../data/model'
+import { COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, type BoardType, type Edge, type NodeType } from '../data/model'
 import { CARD_H, CARD_W, findFreeSpot } from '../views/canvas/cardLayout'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
@@ -11,6 +11,8 @@ import { arrangeAreas, type AreaPlan } from './arrange'
 export const PROPOSE = 'propose_changes'
 
 const LINK_KINDS = ['relates', 'depends-on', 'contradicts', 'part-of', 'inspired-by', 'solves', 'competes-with', 'for'] as const
+// A customer tag ("for") is added and removed, never edited into another kind (D-108).
+const EDITABLE_KINDS = LINK_KINDS.filter((k) => k !== 'for')
 const CARD_TYPES = ['customer', 'problem', 'idea', 'feature'] as const
 // Far more than one answer should hold; keeps a runaway call from flooding the board.
 const MAX_CHANGES = 60
@@ -94,6 +96,21 @@ const OPS = [
     },
     label: optStr('Rarely needed: a short note on the link.'),
   }),
+  op(
+    'edit_link',
+    'Change a link that already exists between two items: its kind, its label, or its direction. Write from and to as the ' +
+      'link should read afterwards; giving them the other way round from now turns the arrow around.',
+    {
+      from: ref('From, after the change'),
+      to: ref('To, after the change'),
+      kind: optEnum(EDITABLE_KINDS, 'The new kind. Null keeps it.'),
+      label: optStr('The new note on the link. Null keeps it; an empty string removes it.'),
+    },
+  ),
+  op('add_note', 'A small note written on the board under a card (a reminder, a question, a caveat). Not an area name.', {
+    text: str('The note, one short sentence.'),
+    near: ref('The card it is about'),
+  }),
   op('delete_item', 'Delete an item, like deleting it by hand: its links go too; a competitor takes its features and matrix cells with it.', {
     target: ref('The item'),
     reason: str('Why it should go, in a few words; shown to the user.'),
@@ -116,11 +133,11 @@ const OPS = [
     },
   ),
   op('rename_label', 'Change the text of a label on the board.', {
-    label: str('Its current text, exactly as listed under AREAS ON THE BOARD.'),
+    label: str('Its current text, exactly as listed under AREAS ON THE BOARD or NOTES ON THE BOARD.'),
     text: str('The new text.'),
   }),
-  op('delete_label', 'Remove a label from the board; its cards stay where they are.', {
-    label: str('Its current text, exactly as listed under AREAS ON THE BOARD.'),
+  op('delete_label', 'Remove a label or a note from the board; its cards stay where they are.', {
+    label: str('Its current text, exactly as listed under AREAS ON THE BOARD or NOTES ON THE BOARD.'),
     reason: str('Why it should go, in a few words; shown to the user.'),
   }),
   op('set_matrix_cell', 'One cell of the matrix: how well a competitor covers one of OUR features.', {
@@ -183,8 +200,9 @@ const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefi
 export const refKey = (v: unknown) => s(v)?.replace(/^\[|\]$/g, '')
 const clip = (t: string, n = 70) => (t.length > n ? `${t.slice(0, n - 1)}…` : t)
 
-// `labels`: the texts of the board's labels now, so label changes can be checked (D-086).
-export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: string[] = []): Proposal {
+// `labels`: the texts of the board's labels now, so label changes can be checked (D-086). `edges`: its links now, so an
+// edit_link row can say what it changes (D-108).
+export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: string[] = [], edges: Edge[] = []): Proposal {
   let data: { summary?: unknown; changes?: unknown }
   try {
     data = JSON.parse(args)
@@ -299,6 +317,52 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: 
           detail: s(raw.label),
           needs: needsOf(from, to),
           problem,
+        }
+      }
+      case 'edit_link': {
+        const from = resolve(raw.from)
+        const to = resolve(raw.to)
+        const edge = from && to && !from.isNew && !to.isNew ? linkBetween(edges, idOfRef(from.ref), idOfRef(to.ref)) : undefined
+        const kind = s(raw.kind) ?? edge?.kind ?? 'relates'
+        const label = typeof raw.label === 'string' ? raw.label.trim() : null
+        const turns = edge && from && edge.fromId !== idOfRef(from.ref)
+        const what = [
+          edge && s(raw.kind) && s(raw.kind) !== edge.kind ? `was ${edge.kind}` : undefined,
+          turns ? 'turns the arrow around' : undefined,
+          label === '' ? 'removes its label' : label ? `label "${clip(label, 50)}"` : undefined,
+        ].filter(Boolean)
+        return {
+          ...base,
+          sign: '~',
+          kind: 'link',
+          tone: null,
+          text: `${from?.name ?? '?'}  —${kind}→  ${to?.name ?? '?'}`,
+          detail: what.join(' · ') || undefined,
+          needs: needsOf(from, to),
+          problem: !from || !to
+            ? 'unknown item'
+            : from.isNew || to.isNew
+              ? 'added in this same proposal'
+              : edges.length && !edge
+                ? 'not linked'
+                : edge?.kind === 'for'
+                  ? 'a customer tag: unlink it instead'
+                  : !what.length && edges.length
+                    ? 'nothing to change'
+                    : undefined,
+        }
+      }
+      case 'add_note': {
+        const near = resolve(raw.near)
+        return {
+          ...base,
+          sign: '+',
+          kind: 'note',
+          tone: null,
+          text: clip(s(raw.text) ?? '', 120),
+          detail: near ? `under ${near.name}` : undefined,
+          needs: needsOf(near),
+          problem: !s(raw.text) ? 'no text' : !near ? 'unknown card' : near.type === 'competitorFeature' ? `${near.name} isn't on the board` : undefined,
         }
       }
       case 'set_matrix_cell': {
@@ -417,6 +481,13 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: 
   return { summary: s(data.summary) ?? 'Proposed changes', changes }
 }
 
+// The link between two items that an edit changes: any link but a customer tag first, either direction.
+function linkBetween<E extends Edge>(edges: E[], a: string, b: string): E | undefined {
+  const both = edges.filter((e) => (e.fromId === a && e.toId === b) || (e.fromId === b && e.toId === a))
+  return both.find((e) => e.kind !== 'for') ?? both[0]
+}
+const idOfRef = (r: ChangeRef) => ('id' in r ? r.id : r.key)
+
 // An arrange_area row's cards.
 export const itemsOf = (raw: Raw): unknown[] => (Array.isArray(raw.items) ? raw.items : [])
 // Labels are named by their text: the same text, ignoring case and spaces at the ends.
@@ -452,6 +523,11 @@ export function stillValid(change: Change, ws: WorkspaceCtx, refs: Map<string, I
   const b = refs.get(refKey(change.raw.to) ?? '')
   if (change.raw.op === 'link' && a && b && linked(ws.edges, a.id, b.id)) return 'already linked'
   if (change.raw.op === 'unlink' && a && b && !linked(ws.edges, a.id, b.id)) return 'not linked'
+  if (change.raw.op === 'edit_link' && a && b) {
+    const edge = linkBetween(ws.edges, a.id, b.id)
+    if (!edge) return 'not linked'
+    if (edge.kind === 'for') return 'a customer tag: unlink it instead'
+  }
   return undefined
 }
 
@@ -539,6 +615,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
     if (e) moves.push({ do: 'update', target: { id, type: e.type }, fields: { x: p.x, y: p.y } })
   }
 
+  const notes: { w: Extract<AssistantWrite, { do: 'label' }>; near: unknown }[] = []
   const writes = accepted.map((c): AssistantWrite => {
     const r = c.raw
     switch (r.op) {
@@ -598,6 +675,23 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
       }
       case 'link':
         return { do: 'link', from: refOf(r.from), to: refOf(r.to), kind: s(r.kind) ?? 'relates', label: text(r.label) }
+      case 'edit_link': {
+        const from = refOf(r.from) as { id: string; type: NodeType }
+        const to = refOf(r.to) as { id: string; type: NodeType }
+        const edge = linkBetween(ws.edges, from.id, to.id)!
+        const fields: Record<string, unknown> = {}
+        if (s(r.kind)) fields.kind = s(r.kind)
+        // null removes the label (assistant.ts).
+        if (typeof r.label === 'string') fields.label = r.label.trim() ? r.label.trim().slice(0, 200) : null
+        if (edge.fromId !== from.id) Object.assign(fields, { fromId: from.id, fromType: from.type, toId: to.id, toType: to.type })
+        return { do: 'edge', id: edge.id, fields }
+      }
+      case 'add_note': {
+        // Placed once every card has its place, below.
+        const w: AssistantWrite = { do: 'label', fields: { text: s(r.text)!.slice(0, 200), size: 'note' } }
+        notes.push({ w, near: r.near })
+        return w
+      }
       case 'delete_item':
         return { do: 'delete', target: refOf(r.target) as { id: string; type: NodeType } }
       case 'arrange_area': {
@@ -625,8 +719,23 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         }
     }
   })
+  // A note goes just under its card, where the card ends up; a second note on the same card goes under the first.
+  const under = new Map<string, number>()
+  for (const { w, near } of notes) {
+    const k = refKey(near)!
+    const e = refs.get(k)
+    const at = placed.get(k) ?? layout?.cards.get(e?.id ?? k) ?? layout?.cards.get(k) ?? (e && position.get(e.id))
+    if (!at) continue
+    const i = under.get(k) ?? 0
+    under.set(k, i + 1)
+    w.fields.x = at.x
+    w.fields.y = at.y - CARD_H / 2 - NOTE_GAP - i * NOTE_GAP
+  }
   return [...writes, ...moves]
 }
+
+// Below a card, between notes on the same card (board units).
+const NOTE_GAP = 0.32
 
 // The proposal and what became of it, as plain text for the model's next turn.
 export function proposalForHistory(p: Proposal, state: ProposalState): string {

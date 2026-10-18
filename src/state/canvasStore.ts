@@ -5,6 +5,12 @@ type Vec2 = [number, number]
 
 type CanvasState = {
   selectedId: string | null
+  // Everything selected (D-108): cards and text labels; `selectedId` is the last one picked. One item = the usual panel.
+  selection: string[]
+  // A selected link, edited from the bar at its middle (D-108). Selecting anything else clears it, and the other way round.
+  edgeId: string | null
+  // The card under the pointer: links that don't touch it dim (D-108).
+  hoverId: string | null
   // Shift+drag from a card: source id and the pointer's world position.
   linkFrom: string | null
   linkPointer: Vec2 | null
@@ -26,6 +32,12 @@ type CanvasState = {
   snapshot: (() => Promise<Blob>) | null
 
   select: (id: string | null) => void
+  // Shift+click: in or out of the selection.
+  toggleSelect: (id: string) => void
+  // A box drawn round things (alt+drag); `add` keeps what was selected.
+  selectMany: (ids: string[], add?: boolean) => void
+  selectEdge: (id: string | null) => void
+  setHover: (id: string | null) => void
   startLink: (id: string, at: Vec2) => void
   moveLink: (at: Vec2) => void
   endLink: () => void
@@ -41,6 +53,9 @@ type CanvasState = {
 
 export const useCanvas = create<CanvasState>((set) => ({
   selectedId: null,
+  selection: [],
+  edgeId: null,
+  hoverId: null,
   linkFrom: null,
   linkPointer: null,
   dragging: {},
@@ -52,7 +67,19 @@ export const useCanvas = create<CanvasState>((set) => ({
   editingLabel: null,
   snapshot: null,
 
-  select: (id) => set({ selectedId: id }),
+  select: (id) => set({ selectedId: id, selection: id ? [id] : [], edgeId: null }),
+  toggleSelect: (id) =>
+    set((s) => {
+      const selection = s.selection.includes(id) ? s.selection.filter((x) => x !== id) : [...s.selection, id]
+      return { selection, selectedId: selection[selection.length - 1] ?? null, edgeId: null }
+    }),
+  selectMany: (ids, add) =>
+    set((s) => {
+      const selection = add ? [...new Set([...s.selection, ...ids])] : ids
+      return { selection, selectedId: selection[selection.length - 1] ?? null, edgeId: null }
+    }),
+  selectEdge: (id) => set(id ? { edgeId: id, selectedId: null, selection: [] } : { edgeId: null }),
+  setHover: (id) => set({ hoverId: id }),
   startLink: (id, at) => set({ linkFrom: id, linkPointer: at }),
   moveLink: (at) => set({ linkPointer: at }),
   endLink: () => set({ linkFrom: null, linkPointer: null }),

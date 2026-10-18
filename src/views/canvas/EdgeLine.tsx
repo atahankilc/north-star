@@ -1,27 +1,27 @@
 // A link between two things on the board (D-059): a straight line from edge to edge with an arrowhead, so you can
-// read it as a sentence ("idea → solves → problem"). The kind is written at the midpoint and sets the line style.
+// read it as a sentence ("idea → solves → problem"). Its colour says what kind of link it is (D-108, linkKinds.ts), its
+// pattern which kind inside that group, and the kind (and the link's own label) sits on a framed chip at the midpoint.
+// Clicking the line or the chip selects the link.
 import { Line, Text } from '@react-three/drei'
-import { useMemo } from 'react'
+import type { ThreeEvent } from '@react-three/fiber'
+import { useMemo, useState } from 'react'
 import { Shape, Vector2 } from 'three'
 import { usePalette } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
+import { truncate } from './cardLayout'
+import { linkStyle } from './linkKinds'
 
 type Vec2 = [number, number]
 
-// Line pattern per kind; colour stays neutral (colours mean card types, D-055).
-const STYLE: Record<string, { dash?: [number, number]; faint?: boolean; label?: string }> = {
-  solves: { label: 'solves' },
-  'competes-with': { dash: [0.18, 0.1], label: 'competes' },
-  'inspired-by': { dash: [0.03, 0.07], label: 'inspired by' },
-  'depends-on': { dash: [0.18, 0.1], label: 'depends on' },
-  'part-of': { label: 'part of' },
-  contradicts: { dash: [0.06, 0.06], label: 'contradicts' },
-  for: { dash: [0.03, 0.07], label: 'for' },
-  relates: { faint: true },
-}
-
-const ARROW = 0.14
+const ARROW = 0.16
 const GAP = 0.05
+const FONT = 0.14
+// Geist Mono's advance at FONT with the letter spacing below, per character.
+const CHAR_W = FONT * 0.6 + FONT * 0.04
+const CHIP_H = 0.25
+const BORDER = 0.018
+// Wide enough to hit a thin line comfortably.
+const HIT_W = 0.22
 
 // Where the line from `a` towards `b` leaves a w×h box centred on `a`.
 function exit(a: Vec2, b: Vec2, half: Vec2): Vec2 {
@@ -32,6 +32,14 @@ function exit(a: Vec2, b: Vec2, half: Vec2): Vec2 {
   return t >= 1 ? a : [a[0] + dx * t, a[1] + dy * t]
 }
 
+// The words on a link's chip: its kind, then its own label if it has one ("relates" alone stays unwritten).
+export function chipText(kind: string, label?: string): string {
+  const style = linkStyle(kind)
+  const own = label?.trim() ? truncate(label.trim(), 32) : ''
+  if (style.group === 'plain' && kind === 'relates') return own
+  return own ? `${style.label} · ${own}` : style.label
+}
+
 type Props = {
   from: Vec2
   to: Vec2
@@ -39,52 +47,108 @@ type Props = {
   fromHalf: Vec2
   toHalf: Vec2
   kind?: string
+  label?: string
+  // Touches the selected card: drawn thicker.
   active?: boolean
+  // Something else has the focus (a hovered or selected card, another link): drawn faint.
+  dim?: boolean
+  selected?: boolean
   // A link the assistant's preview adds, in its diff colour (D-096).
   tint?: string
+  onSelect?: () => void
 }
 
-export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', active, tint }: Props) {
-  const style = STYLE[kind] ?? { label: kind }
+export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', label, active, dim, selected, tint, onSelect }: Props) {
+  const style = linkStyle(kind)
   const colors = usePalette()
-  const color = tint ?? (active ? colors.cyan : style.faint ? colors.edgeFaint : colors.edge)
+  const [hovered, setHovered] = useState(false)
+  const color = tint ?? colors.link[style.group]
+  const opacity = dim && !selected && !hovered ? 0.22 : 1
+  const text = chipText(kind, label)
 
-  const { start, end, angle, mid } = useMemo(() => {
+  const { start, end, angle, mid, length } = useMemo(() => {
     const s = exit(from, to, fromHalf)
     const e = exit(to, from, toHalf)
-    return { start: s, end: e, angle: Math.atan2(e[1] - s[1], e[0] - s[0]), mid: [(s[0] + e[0]) / 2, (s[1] + e[1]) / 2] as Vec2 }
+    return {
+      start: s,
+      end: e,
+      angle: Math.atan2(e[1] - s[1], e[0] - s[0]),
+      mid: [(s[0] + e[0]) / 2, (s[1] + e[1]) / 2] as Vec2,
+      length: Math.hypot(e[0] - s[0], e[1] - s[1]),
+    }
   }, [from, to, fromHalf, toHalf])
 
   // The line stops at the arrowhead's base.
   const tip: Vec2 = [end[0] - Math.cos(angle) * ARROW * 0.8, end[1] - Math.sin(angle) * ARROW * 0.8]
-  if (Math.hypot(end[0] - start[0], end[1] - start[1]) < ARROW * 2) return null
+  if (length < ARROW * 2) return null
+
+  const width = selected ? 3 : active || hovered ? 2.2 : 1.5
+  const chipW = text.length * CHAR_W + 0.18
+  const handlers = onSelect && {
+    onClick: (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation()
+      if (e.delta < 4) onSelect()
+    },
+    onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation()
+      setHovered(true)
+      document.body.style.cursor = 'pointer'
+    },
+    onPointerOut: () => {
+      setHovered(false)
+      document.body.style.cursor = ''
+    },
+  }
 
   return (
     <group position={[0, 0, -0.05]}>
+      {/* What the pointer hits: a band along the line, wider than it looks. */}
+      {handlers && (
+        <mesh position={[mid[0], mid[1], -0.001]} rotation={[0, 0, angle]} {...handlers}>
+          <planeGeometry args={[length, HIT_W]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
       <Line
         points={[
           [start[0], start[1], 0],
           [tip[0], tip[1], 0],
         ]}
         color={color}
-        lineWidth={active ? 2 : 1.4}
+        lineWidth={width}
         dashed={Boolean(style.dash)}
         dashSize={style.dash?.[0] ?? 1}
         gapSize={style.dash?.[1] ?? 0}
+        transparent
+        opacity={opacity}
         toneMapped={false}
       />
       <mesh position={[end[0], end[1], 0]} rotation={[0, 0, angle]}>
         <shapeGeometry args={[arrowhead]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial color={color} transparent opacity={opacity} toneMapped={false} />
       </mesh>
-      {style.label && (
-        <group position={[mid[0], mid[1], 0.01]}>
+      {text && (
+        // A framed chip on solid ground, so the words read over crossing lines and the backdrop.
+        <group position={[mid[0], mid[1], 0.01]} {...handlers}>
           <mesh>
-            <planeGeometry args={[style.label.length * 0.062 + 0.12, 0.16]} />
-            <meshBasicMaterial color={colors.bg} toneMapped={false} />
+            <planeGeometry args={[chipW + BORDER * 2, CHIP_H + BORDER * 2]} />
+            <meshBasicMaterial color={color} transparent opacity={opacity} toneMapped={false} />
           </mesh>
-          <Text font={fontUrls.mono} fontSize={0.09} letterSpacing={0.04} color={tint ?? (active ? colors.cyan : colors.edgeLabel)} anchorX="center" anchorY="middle">
-            {style.label}
+          <mesh position={[0, 0, 0.001]}>
+            <planeGeometry args={[chipW, CHIP_H]} />
+            <meshBasicMaterial color={selected ? color : colors.bg} toneMapped={false} />
+          </mesh>
+          <Text
+            font={fontUrls.mono}
+            fontSize={FONT}
+            letterSpacing={0.04}
+            color={selected ? colors.bg : color}
+            fillOpacity={opacity}
+            anchorX="center"
+            anchorY="middle"
+            position={[0, 0.004, 0.002]}
+          >
+            {text}
           </Text>
         </group>
       )}

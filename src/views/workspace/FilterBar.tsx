@@ -5,17 +5,20 @@ import { useWsView } from '../../state/workspaceView'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import menuStyles from '../../ui/Menu.module.css'
 import { BOARD_KINDS, TYPE_ACCENT, useAllTags, useBoardItems } from '../canvas/boardKinds'
+import { LINK_GROUPS, LINK_TONE } from '../canvas/linkKinds'
 import { useWs } from './context'
 import styles from './Bars.module.css'
 
 type Props = {
   // The board's jump list (D-050); other views leave it out.
   goTo?: { key: string; label: string; onSelect: () => void }[]
+  // The board's link filter, which is also its colour key (D-108); other views leave it out.
+  links?: boolean
 }
 
-export function FilterBar({ goTo }: Props) {
+export function FilterBar({ goTo, links }: Props) {
   const { customers } = useWs()
-  const { types, forIds, tags, toggleType, toggleFor, clearFor, toggleTag, clearTags } = useWsView()
+  const { types, forIds, tags, hiddenLinks, toggleType, toggleFor, clearFor, toggleTag, clearTags, toggleLinks, showAllLinks } = useWsView()
   const allTags = useAllTags(useBoardItems())
   const sorted = useMemo(() => [...customers].sort((a, b) => a.createdAt - b.createdAt), [customers])
 
@@ -52,6 +55,18 @@ export function FilterBar({ goTo }: Props) {
   ]
   const tagSummary = tags.length === 0 ? 'any' : tags.length === 1 ? `#${tags[0]}` : `${tags.length}`
 
+  const linkItems: MenuEntry[] = [
+    { key: 'all', label: 'every link', checked: hiddenLinks.length === 0, onSelect: showAllLinks },
+    ...LINK_GROUPS.map((g) => ({
+      key: g.key,
+      label: g.label,
+      checked: !hiddenLinks.includes(g.key),
+      tone: LINK_TONE[g.key],
+      glyph: '━',
+      onSelect: () => toggleLinks(g.key),
+    })),
+  ]
+
   return (
     // Hidden in the assistant's bare preview screen (D-087).
     <div className={styles.filters} data-preview-hide>
@@ -80,6 +95,17 @@ export function FilterBar({ goTo }: Props) {
         ariaLabel="Only items with these tags"
         empty="No tags yet: add some in a card's panel"
       />
+      {links && (
+        <Menu
+          label="links"
+          summary={LINK_GROUPS.map((g) => (
+            <span key={g.key} className={menuStyles.swatch} data-on={!hiddenLinks.includes(g.key)} style={{ ['--tone' as string]: LINK_TONE[g.key] }} />
+          ))}
+          active={hiddenLinks.length > 0}
+          items={linkItems}
+          ariaLabel="Show links by kind"
+        />
+      )}
       {goTo && (
         <Menu
           label="go to"

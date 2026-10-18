@@ -1,6 +1,6 @@
 // Changes the assistant proposed and the user accepted (D-074, D-075), written together as one undo step.
 // The assistant never writes on its own: src/ai/ builds these from a proposal only after the user presses apply.
-import { collection, doc, writeBatch, type DocumentReference, type WriteBatch } from 'firebase/firestore'
+import { collection, deleteField, doc, writeBatch, type DocumentReference, type WriteBatch } from 'firebase/firestore'
 import { cellId } from './comparisons'
 import { db } from './firebase'
 import { snapshotWith, tracked } from './history'
@@ -19,6 +19,8 @@ export type AssistantWrite =
   // With everything that hangs off it, like a delete by hand (nodes.ts cascadeOf).
   | { do: 'delete'; target: { id: string; type: NodeType } }
   | { do: 'unlink'; edgeIds: string[] }
+  // Changes to a link that exists (D-108): kind, label (null removes it), direction (fromId/toId swapped).
+  | { do: 'edge'; id: string; fields: Record<string, unknown> }
   // Board labels (D-086): a new one (no id), or changes to one; and removing one.
   | { do: 'label'; id?: string; fields: Record<string, unknown> }
   | { do: 'unlabel'; id: string }
@@ -56,6 +58,13 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
     }
     if (w.do === 'unlabel') {
       gone.push(doc(col(wid, 'labels'), w.id))
+      continue
+    }
+    if (w.do === 'edge') {
+      const ref = doc(col(wid, 'edges'), w.id)
+      const fields = Object.fromEntries(Object.entries(w.fields).map(([k, v]) => [k, v === null ? deleteField() : v]))
+      ops.push((b) => b.update(ref, fields))
+      existing.push(ref)
       continue
     }
     if (w.do === 'label') {

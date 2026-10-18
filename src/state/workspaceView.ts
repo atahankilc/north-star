@@ -12,9 +12,11 @@ type Filters = {
   forIds: string[]
   // Tags for the `tag:` filter (D-056); empty = any tag.
   tags: string[]
+  // Link groups hidden on the board (D-108, linkKinds.ts); empty = every link shows.
+  hiddenLinks: string[]
 }
 
-const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [] }
+const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], hiddenLinks: [] }
 
 type State = Filters & {
   wid: string | null
@@ -24,6 +26,8 @@ type State = Filters & {
   clearFor: () => void
   toggleTag: (tag: string) => void
   clearTags: () => void
+  toggleLinks: (group: string) => void
+  showAllLinks: () => void
   // Undo whatever filter hides this item, so a link can always land on it.
   reveal: (item: { type: BoardType }) => void
 }
@@ -39,6 +43,7 @@ function read(wid: string): Filters {
       types: (saved.types ?? DEFAULTS.types).filter((t) => BOARD_TYPES.includes(t)),
       forIds: saved.forIds ?? [],
       tags: saved.tags ?? [],
+      hiddenLinks: saved.hiddenLinks ?? [],
     }
   } catch {
     return DEFAULTS
@@ -48,10 +53,10 @@ function read(wid: string): Filters {
 export const useWsView = create<State>((set, get) => {
   const save = (patch: Partial<Filters>) => {
     set(patch)
-    const { wid, types, forIds, tags } = get()
+    const { wid, types, forIds, tags, hiddenLinks } = get()
     if (!wid) return
     try {
-      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags }))
+      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, hiddenLinks }))
     } catch {
       // Private mode or blocked storage: filters just won't be remembered.
     }
@@ -77,6 +82,11 @@ export const useWsView = create<State>((set, get) => {
       save({ tags: tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag] })
     },
     clearTags: () => save({ tags: [] }),
+    toggleLinks: (group) => {
+      const hidden = get().hiddenLinks
+      save({ hiddenLinks: hidden.includes(group) ? hidden.filter((g) => g !== group) : [...hidden, group] })
+    },
+    showAllLinks: () => save({ hiddenLinks: [] }),
     reveal: (item) => {
       const { types } = get()
       save({

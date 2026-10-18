@@ -3,6 +3,7 @@ import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { WithId } from '../../data/hooks'
 import {
+  BOARD_TYPES,
   FEATURE_EFFORTS,
   FEATURE_PRIORITIES,
   FEATURE_STATUSES,
@@ -21,8 +22,12 @@ import { ForPicker } from '../workspace/ItemPickers'
 import { ItemTags } from '../workspace/ItemTags'
 import { PeersHere } from '../workspace/PeersHere'
 import { LinkList } from '../workspace/LinkList'
-import { removeItem } from '../workspace/useEditKeys'
-import { BOARD_KINDS, type BoardItem } from './boardKinds'
+import { removeItem, removeSelection } from '../workspace/useEditKeys'
+import { useViewer } from '../workspace/viewerLock'
+import { retagMany } from '../../data/selection'
+import { TagInput } from '../../ui/TagInput'
+import { duplicateSelection } from './clipboard'
+import { BOARD_KINDS, TYPE_ACCENT, useAllTags, type BoardItem } from './boardKinds'
 import { TAG_HINT } from './tags'
 import styles from './DetailPanel.module.css'
 
@@ -39,6 +44,7 @@ type CardType = Exclude<BoardItem['type'], 'competitor'>
 export function DetailPanel({ items }: { items: BoardItem[] }) {
   const ws = useWs()
   const selectedId = useCanvas((s) => s.selectedId)
+  const many = useCanvas((s) => s.selection.length > 1)
   // A competitor's feature chip on the board opens its competitor, with that feature unfolded (D-058).
   const feature = ws.competitorFeatures.find((f) => f.id === selectedId)
   const item = items.find((n) => n.id === (feature ? feature.competitorId : selectedId))
@@ -48,7 +54,12 @@ export function DetailPanel({ items }: { items: BoardItem[] }) {
 
   return (
     <AnimatePresence>
-      {item && (competitor || node) && (
+      {many && (
+        <Appear as="aside" key="many" className={styles.panel} data-side-panel="narrow" aria-label="Selection">
+          <SelectionPanel items={items} />
+        </Appear>
+      )}
+      {!many && item && (competitor || node) && (
         <Appear
           as="aside"
           key="panel"
@@ -191,5 +202,82 @@ function FeatureFields({ wid, feature }: { wid: string; feature: WithId<Feature>
       <Choice label="status" options={FEATURE_STATUSES} value={feature.status} onChange={(status) => set({ status })} />
       <Choice label="effort" options={FEATURE_EFFORTS} value={feature.effort} onChange={(effort) => set({ effort })} />
     </>
+  )
+}
+
+// Several things selected (D-108): what they are, tags they share (add or remove on all), duplicate, delete.
+function SelectionPanel({ items }: { items: BoardItem[] }) {
+  const ws = useWs()
+  const selection = useCanvas((s) => s.selection)
+  const viewer = useViewer((s) => s.viewer)
+  const cards = items.filter((i) => selection.includes(i.id))
+  const labels = ws.labels.filter((l) => selection.includes(l.id))
+  const shared = cards.length ? cards[0].tags.filter((t) => cards.every((c) => c.tags.includes(t))) : []
+  const suggestions = useAllTags(items).map((t) => t.tag)
+  const counts = BOARD_TYPES.map((t) => [t, cards.filter((c) => c.type === t).length] as const).filter(([, n]) => n > 0)
+
+  return (
+    <div className={styles.inner}>
+      <header className={styles.head}>
+        <span className={styles.kicker}>{selection.length} selected</span>
+        <button className={styles.close} onClick={() => useCanvas.getState().select(null)} aria-label="Close panel">
+          [×]
+        </button>
+      </header>
+
+      <ul className={styles.many}>
+        {counts.map(([t, n]) => (
+          <li key={t} style={{ ['--tone' as string]: TYPE_ACCENT[t] }}>
+            <span className={styles.manyMark} aria-hidden>▌</span>
+            {n} {n === 1 ? BOARD_KINDS[t].label : BOARD_KINDS[t].plural}
+          </li>
+        ))}
+        {labels.length > 0 && (
+          <li>
+            <span className={styles.manyMark} aria-hidden>T</span>
+            {labels.length} text{labels.length === 1 ? '' : 's'}
+          </li>
+        )}
+      </ul>
+
+      {cards.length > 0 && !viewer && (
+        <div className={styles.label}>
+          tags on all {cards.length}
+          <TagInput
+            label="Tags on every selected card"
+            value={shared}
+            suggestions={suggestions}
+            onChange={(next) =>
+              void retagMany(
+                ws.wid,
+                cards.map((c) => ({ kind: c.type, id: c.id, tags: c.tags })),
+                next.filter((t) => !shared.includes(t)),
+                shared.filter((t) => !next.includes(t)),
+              )
+            }
+          />
+          <span className={styles.hint}>Adding a tag here adds it to every selected card; × takes it off all of them.</span>
+        </div>
+      )}
+
+      <p className={styles.hint}>
+        Drag any of them to move them together. Shift+click adds or takes one out; alt+drag on the board draws a box.
+        {!viewer && ' ⌘C copies, ⌘V pastes, ⌘D duplicates.'}
+      </p>
+
+      {!viewer && (
+        <footer className={styles.foot}>
+          <span className={styles.meta} />
+          <span className={styles.actions}>
+            <AsciiButton accent="cyan" onClick={() => void duplicateSelection(ws)}>
+              duplicate
+            </AsciiButton>
+            <AsciiButton accent="yellow" onClick={() => removeSelection(ws, selection)}>
+              delete
+            </AsciiButton>
+          </span>
+        </footer>
+      )}
+    </div>
   )
 }

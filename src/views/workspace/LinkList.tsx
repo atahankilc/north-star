@@ -4,14 +4,15 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject }
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { createEdge, deleteEdge, linked, updateEdge } from '../../data/edges'
-import { FOR, type EdgeKind, type NodeType } from '../../data/model'
+import { FOR, type NodeType } from '../../data/model'
 import { floatFrom, type Floating } from '../../ui/floating'
 import { Select } from '../../ui/Select'
+import { KindOption } from '../canvas/LinkBar'
+import { EDGE_KINDS } from '../canvas/linkKinds'
 import { useWs } from './context'
 import { TYPE_LABELS, useNodeIndex } from './nodeIndex'
 import styles from './LinkList.module.css'
 
-const EDGE_KINDS: EdgeKind[] = ['relates', 'solves', 'competes-with', 'depends-on', 'part-of', 'inspired-by', 'contradicts', FOR]
 const MAX_RESULTS = 8
 
 type Props = {
@@ -76,7 +77,7 @@ export function LinkList({ nodeId, nodeType, hint }: Props) {
               <Select
                 className={styles.kind}
                 value={edge.kind}
-                options={EDGE_KINDS.map((k) => ({ value: k, label: k }))}
+                options={EDGE_KINDS.map((k) => ({ value: k, label: <KindOption kind={k} /> }))}
                 onChange={(kind) => void updateEdge(wid, edge.id, { kind })}
                 ariaLabel="Link type"
               />

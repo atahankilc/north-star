@@ -1,0 +1,88 @@
+/* A small bar of tools floating on the board next to what's selected (D-108): a selected link, a selected text label.
+   Solid, not see-through, so it reads over cards and lines; a 2px top edge in the thing's colour (--tone). */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 4px var(--space-2) 4px var(--space-3);
+  border: 1px solid var(--line-hover);
+  border-top: 2px solid var(--tone, var(--line-hover));
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  /* Under its anchor point, centred. */
+  transform: translate(-50%, 18px);
+}
+
+/* Starting at its anchor point instead: under a text label, from the label's left edge. */
+.bar[data-align='start'] {
+  transform: translate(0, 10px);
+}
+
+.rule {
+  align-self: stretch;
+  width: 1px;
+  background: var(--line);
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: var(--space-2);
+  vertical-align: middle;
+  background: var(--tone);
+}
+
+.kind {
+  color: var(--tone, var(--fg));
+}
+
+.input {
+  width: 16ch;
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  outline: none;
+}
+
+.input:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+.button {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
+.button[aria-pressed='true'] {
+  color: var(--fg-strong);
+}
+
+/* Colour dots for a text label: the current one ringed. */
+.dot {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 1px solid var(--line-hover);
+  background: var(--tone);
+  cursor: pointer;
+}
+
+.dot[aria-pressed='true'] {
+  outline: 1px solid var(--fg-strong);
+  outline-offset: 2px;
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+}

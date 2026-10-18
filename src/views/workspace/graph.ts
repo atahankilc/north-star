@@ -4,6 +4,7 @@ import type { WithId } from '../../data/hooks'
 import { FOR, type Edge } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { BOARD_KINDS, type BoardItem } from '../canvas/boardKinds'
+import { linkStyle } from '../canvas/linkKinds'
 
 // Each node → every node it shares an edge with, any kind, either direction.
 // `alias` stands one id in for another (e.g. a competitor for each of its features).
@@ -22,8 +23,6 @@ export function useNeighbours(edges: WithId<Edge>[], alias?: Map<string, string>
   }, [edges, alias])
 }
 
-const SHORT_KIND: Record<string, string> = { 'competes-with': 'competes', 'inspired-by': 'inspired by', 'depends-on': 'depends on', 'part-of': 'part of' }
-
 // "solves: builds take 40 min · 2 ideas · 1 competitor": outgoing links by kind with names, incoming ones counted by type.
 export function linkSummary(item: BoardItem, edges: WithId<Edge>[], byId: Map<string, BoardItem>, extra?: string): string {
   const out = new Map<string, string[]>()
@@ -32,7 +31,7 @@ export function linkSummary(item: BoardItem, edges: WithId<Edge>[], byId: Map<st
     if (e.fromId === item.id && e.kind !== FOR) {
       const other = byId.get(e.toId)
       if (!other) continue
-      const kind = SHORT_KIND[e.kind] ?? e.kind
+      const kind = linkStyle(e.kind).label
       out.set(kind, [...(out.get(kind) ?? []), other.title || 'Untitled'])
     } else if (e.toId === item.id) {
       const other = byId.get(e.fromId)

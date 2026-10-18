@@ -98,6 +98,13 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
         list('edges').push({ id: `preview-edge-${n}`, fromId: idOf(w.from), fromType: w.from.type, toId: idOf(w.to), toType: w.to.type, kind: w.kind, ...(w.label ? { label: w.label } : {}) })
         ids.push(idOf(w.from), idOf(w.to))
         break
+      case 'edge': {
+        const fields = Object.fromEntries(Object.entries(w.fields).map(([k, v]) => [k, v === null ? undefined : v]))
+        if (patch('edges', w.id, fields)) mark(w.id, 'edited')
+        const e = list('edges').find((d) => d.id === w.id)
+        if (e) ids.push(e.fromId as string, e.toId as string)
+        break
+      }
       case 'cell': {
         const featureId = idOf(w.feature)
         const competitorId = idOf(w.competitor)

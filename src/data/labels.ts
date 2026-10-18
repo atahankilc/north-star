@@ -18,7 +18,7 @@ export async function createLabel(wid: string, fields: Omit<Label, 'createdAt' |
 }
 
 // `undefined` clears a field. `first`: the text a new label is given, which undoes together with creating it.
-export function updateLabel(wid: string, id: string, fields: Partial<Pick<Label, 'text' | 'color'>>, first = false) {
+export function updateLabel(wid: string, id: string, fields: Partial<Pick<Label, 'text' | 'color' | 'size'>>, first = false) {
   const data: Record<string, unknown> = { updatedAt: Date.now() }
   for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v
   const ref = doc(labelsOf(wid), id)

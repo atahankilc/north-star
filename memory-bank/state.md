@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (assistant scope line, D-109; one table header, D-107; reports tab lined up with the other views; reports table, side reader, numbered pages, filters, D-106; scroll bars, D-105; upload icon button, D-103; reports tab as list + reader, D-102; chat report on the stage box, D-101; report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (assistant scope line, D-109; board editing: link colours, link bar, multi-select, copy/paste, text sizes, D-108; one table header, D-107; reports tab lined up with the other views; reports table, side reader, numbered pages, filters, D-106; scroll bars, D-105; upload icon button, D-103; reports tab as list + reader, D-102; chat report on the stage box, D-101; report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -393,6 +393,16 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 ## Done (scroll bars, 2026-10-18)
 - D-105: one thin square scroll bar for the whole app (global.css; hover brighter, cyan while dragged; Firefox via the
   standard properties). Verified headless on emulators, dark/light 1440 and 390. Committed and pushed 2026-10-18.
+
+## Done (board editing, 2026-10-18)
+- D-108: links coloured by meaning (4 groups) on solid framed chips, hover/selection focus dims the rest, click a link → bar
+  (kind, label, reverse, remove), `LINKS` filter; shift+click / alt+drag multi-select, group drag, "N selected" panel (shared
+  tags, duplicate, delete); ⌘C/⌘V/⌘D; a `○` link handle on hovered cards; text sizes H1/H2/note + colour via a label bar.
+  Rules: `labels.size` (239 pass), **not deployed** (optional field; old rules accept labels with it already since they don't
+  list fields, so the live client works either way). Build passes. Verified headless on emulators, dark and light. Committed 2026-10-18 (not pushed).
+- D-108 follow-up: the assistant can edit a link (`edit_link`: kind, label, direction) and add a note (`add_note`);
+  notes are their own list in the brief and no longer act as area names. Verified with a fake OpenAI on emulators. Build passes.
+- Ideas left from the same talk: formatting in card notes, snap/alignment guides, a right-click menu.
 
 ## Done (assistant scope line, 2026-10-18)
 - D-109: `working on …` line above the chat's prompt (card / report / whole workspace). Committed.

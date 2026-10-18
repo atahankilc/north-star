@@ -98,8 +98,13 @@ Values will be tuned against contrast checks (WCAG AA for text).
   (customer green, problem magenta, competitor yellow, idea white, feature cyan); a hairline edge brightens on hover/selection.
   Type colours are reserved for type: tags are white `#chips` (D-056). Cards never lift, tilt or scale (D-061).
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
-- Connections (D-059): straight, edge to edge, with an arrowhead and the kind written at the midpoint; line pattern by kind
-  (solid / dashed / dotted / faint), neutral grey, cyan when attached to the selection. No animation
+- Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a framed chip (solid `--bg`, 1px
+  border in the link's colour) at the midpoint. Colour by meaning, from `--link-*` tokens kept apart from type, people and
+  diff colours: violet solves / part of, salmon competes / contradicts, sand inspired by / depends on, grey relates / for;
+  line pattern tells kinds apart inside a group. Thicker on the selected card; links not touching the hovered or selected
+  card go faint. A selected link fills its chip. No animation
+- Floating bars (D-108, `FloatBar.module.css`): a selected link or text label gets a small solid bar under it (2px top edge
+  in its colour) with its tools; the only tool UI drawn on the board itself
 
 ### HUD (D-027, D-053, D-054)
 - Fixed top bar, same on every page: breadcrumb left (`# north-star / workspaces / <name>`), actions right.

@@ -100,7 +100,7 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
   // one in the same answer replaces it).
   const run = async (c: ToolCall): Promise<string> => {
     if (c.name === PROPOSE) {
-      const proposal = parseProposal(c.args, refs, ws.labels.map((l) => l.text))
+      const proposal = parseProposal(c.args, refs, ws.labels.map((l) => l.text), ws.edges)
       const bad = proposal.changes.filter((x) => x.problem)
       const n = proposal.changes.length
       const what = `${proposed ? 'corrected the proposal' : 'proposed'}: ${n} change${n === 1 ? '' : 's'}`

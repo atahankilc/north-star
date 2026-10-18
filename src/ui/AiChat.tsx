@@ -26,7 +26,7 @@ import { reportPath, workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
 import { isReducedMotion, useMotion } from '../state/motion'
 import { useWs } from '../views/workspace/context'
-import { TYPE_LABELS, useNodeIndex } from '../views/workspace/nodeIndex'
+import { TYPE_LABELS, useNodeIndex, type NodeInfo } from '../views/workspace/nodeIndex'
 import { TYPE_ACCENT } from '../views/canvas/boardKinds'
 import { MARK_SIGN, MARK_VAR, OutsidePreview, usePreview, type Mark } from '../views/workspace/preview'
 import { stepBy } from '../views/workspace/previewNav'
@@ -388,7 +388,8 @@ function Conversation({ source }: { source: KeySource }) {
 
   // Built when sent, so it sees the board as it is now. `web`: the prompt's research rules (deep research always has them).
   const prepareAt = (view: string, web: boolean) => {
-    const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId }, recentReports, openReport)
+    const { selectedId, selection } = useCanvas.getState()
+    const brief = workspaceBrief(ws, { view, selectedId, selection }, recentReports, openReport)
     return { instructions: chatInstructions(brief.text, ws.workspace.name, web), refs: brief.refs, reports: brief.reports, source, ws, models: modelIds(models!) }
   }
   const currentView = () => path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
@@ -537,17 +538,24 @@ function Conversation({ source }: { source: KeySource }) {
 }
 
 // What the next message works on, always above the prompt: the card whose panel is open (the brief marks it as
-// "this"), the report being read, or else the whole workspace.
+// "this"), the cards selected together, the report being read, or else the whole workspace.
 function Scope({ report }: { report: string | null }) {
   const ws = useWs()
   const index = useNodeIndex()
   const selectedId = useCanvas((s) => s.selectedId)
+  const selection = useCanvas((s) => s.selection)
+  const items = selection.map((id) => index.get(id)).filter((n): n is NodeInfo => !!n && n.type !== 'competitorFeature')
   const one = selectedId ? index.get(selectedId) : undefined
   let tone = 'var(--fg-dim)'
   let kind: string
   let name: string
   let hint: string
-  if (one && one.type !== 'competitorFeature') {
+  if (items.length > 1) {
+    kind = `${items.length} cards`
+    name = items.map((n) => n.title).join(', ')
+    tone = 'var(--accent-cyan)'
+    hint = 'the selected cards'
+  } else if (one && one.type !== 'competitorFeature') {
     kind = TYPE_LABELS[one.type]
     name = one.title
     tone = TYPE_ACCENT[one.type]

@@ -4,7 +4,7 @@
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, REPORT_LIMITS, type SavedReport } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, LABEL_SIZES, REPORT_LIMITS, type SavedReport } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -172,7 +172,7 @@ export function cleanLabel(d: Doc, now: number) {
   const x = num(d.x)
   const y = num(d.y)
   if (!text || x === undefined || y === undefined) return null
-  return { text, x, y, ...times(d, now) }
+  return { text, x, y, ...compact({ color: str(d.color, 20), size: oneOf(d.size, LABEL_SIZES) }), ...times(d, now) }
 }
 
 export function cleanCompetitorFeature(d: Doc, now: number) {

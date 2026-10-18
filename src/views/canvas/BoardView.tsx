@@ -14,7 +14,9 @@ import { FilterBar } from '../workspace/FilterBar'
 import { Board } from './Board'
 import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems } from './boardKinds'
 import { findFreeSpot } from './cardLayout'
+import { copySelection, duplicateSelection, pasteClip } from './clipboard'
 import { DetailPanel } from './DetailPanel'
+import { copied } from '../../data/selection'
 import { editLocked, useViewer } from '../workspace/viewerLock'
 import styles from './BoardView.module.css'
 
@@ -22,7 +24,8 @@ import styles from './BoardView.module.css'
 const LAND_BELOW = 2.5
 
 export function BoardView() {
-  const { wid, edges, competitors, competitorFeatures, labels } = useWs()
+  const ws = useWs()
+  const { wid, edges, competitors, competitorFeatures, labels } = ws
   const viewer = useViewer((s) => s.viewer)
   const all = useBoardItems()
   const nodes = useVisibleItems(all)
@@ -77,12 +80,30 @@ export function BoardView() {
   const places = useMemo(() => labels.filter((l) => l.text.trim()).sort((a, b) => b.y - a.y || a.x - b.x), [labels])
   const jump = (l: WithId<Label>) => useCanvas.getState().flyTo([l.x, l.y - LAND_BELOW])
 
-  // Escape deselects; 1–9 jump to the places in the list; leaving the board clears selection.
+  // Escape deselects; 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);
+  // leaving the board clears selection.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
       if (t.closest('input, textarea, select, dialog') || t.isContentEditable) return
       if (e.key === 'Escape') select(null)
+      const mod = e.metaKey || e.ctrlKey
+      const key = e.key.toLowerCase()
+      // Text selected on the page copies as text, as usual.
+      const textSelected = !(window.getSelection()?.isCollapsed ?? true)
+      if (mod && !e.shiftKey && !e.altKey && !editLocked() && !textSelected) {
+        const any = useCanvas.getState().selection.length > 0
+        if (key === 'c' && any) {
+          e.preventDefault()
+          copySelection(ws)
+        } else if (key === 'v' && copied()) {
+          e.preventDefault()
+          void pasteClip(ws)
+        } else if (key === 'd' && any) {
+          e.preventDefault()
+          void duplicateSelection(ws)
+        }
+      }
       if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const place = places[Number(e.key) - 1]
         if (place) jump(place)
@@ -90,7 +111,7 @@ export function BoardView() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [select, places])
+  }, [select, places, ws])
   useEffect(() => () => select(null), [select])
 
   const create = async (type: NewThing, at: [number, number]) => {
@@ -116,7 +137,7 @@ export function BoardView() {
     <main className={styles.page}>
       <Board wid={wid} nodes={nodes} edges={edges} labels={labels} competitorFeatures={competitorFeatures} focus={focus} />
 
-      <FilterBar goTo={places.map((l) => ({ key: l.id, label: l.text.trim(), onSelect: () => jump(l) }))} />
+      <FilterBar links goTo={places.map((l) => ({ key: l.id, label: l.text.trim(), onSelect: () => jump(l) }))} />
 
       {/* One create button for everything (D-053); viewers make nothing (D-098). */}
       <footer className={styles.tools} data-preview-hide>
@@ -140,7 +161,7 @@ export function BoardView() {
           ]}
         />}
         <span className={styles.hints}>
-          {viewer ? 'viewing only · scroll: zoom' : 'drag: move · shift+drag: link · scroll: zoom'}
+          {viewer ? 'viewing only · scroll: zoom' : 'drag: move · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom'}
           {places.length > 0 && ' · 1–9: go to'}
         </span>
       </footer>

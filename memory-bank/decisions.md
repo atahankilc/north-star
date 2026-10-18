@@ -1235,6 +1235,55 @@ line height (Table's sort buttons), the Matrix's `┌` before "our features", an
   the Matrix's competitor names in `--fg` and centred. The Matrix's `┌` is gone.
 - Verified with headless Chrome on the emulators: every header 40 px with the same fill, colour, size and tracking.
 
+### D-108 · 2026-10-18 · Accepted (extends D-059, D-050; refines D-055's "colours mean type")
+**Links read better and can be edited on the board; several things can be selected; text has sizes.** User: links were hard to
+read; colour-code them (not with colours already used), give their label a solid background, select a link to change its type,
+more editing tools. Their picks: four colour groups by meaning, a floating bar at the link, and all four extras offered
+(hover focus + LINKS filter, multi-select, label styles, duplicate + an edge handle).
+- *Colours* (`src/views/canvas/linkKinds.ts`, `--link-*` tokens, `palette.link`): violet solves / part of, salmon competes /
+  contradicts, sand inspired by / depends on, grey relates / for. The type, people and diff colours fill most hues, so eight
+  distinct colours weren't possible; groups by meaning plus the existing patterns (solid / dashed / dotted) tell kinds apart.
+  The selected card's links are thicker instead of cyan. One list of kinds for the board, the bar and the panel's link list.
+- *Chip:* the kind (and the link's own `label`, after a `·`) on a solid `--bg` plate with a border in the link's colour, text
+  0.14 (was 0.09 on an invisible black plate). "relates" stays unwritten unless it has a label.
+- *Focus:* hovering a card, or having cards selected, draws every link not touching them at 22%; a selected link dims the rest.
+- *Selecting a link:* click its line (a 0.22-wide hit band) or chip; `canvasStore.edgeId`, separate from item selection. A bar
+  under the chip (`LinkBar.tsx`, drei `<Html>`): kind (the shared `Select`, colour swatches), a label field (Enter / blur saves,
+  empty clears), `⇄ reverse` (off for customer tags, which always point at the customer), `× remove`; Delete / Backspace
+  removes; Escape or a click on the board lets go. All undoable (`updateEdge`, `reverseEdge`, `deleteEdge`). No bar for
+  viewers or in the assistant's preview. No data or rule change: `label` already existed.
+- *LINKS filter* beside SHOW / FOR / TAG: one checkbox per group in its colour, remembered with the other filters
+  (`hiddenLinks`); the selected card's links always show.
+- *Multi-select* (`selection` in canvasStore; `selectedId` stays the last one picked, which presence broadcasts): shift+click a
+  card or text toggles it (shift+drag still links: a shift press that never leaves the card toggles instead); alt+drag on empty
+  board draws a cyan box (shift adds). Dragging any selected piece moves all (`groupDrag.ts`, streamed like one drag, one undo
+  step via `endMoveMany`). A press on a selected piece without moving picks just that one. The panel turns into "N selected":
+  counts by type, a tag picker for tags all of them share (adding or × applies to all, `retagMany`), duplicate, delete
+  (`deleteMany`, cascades like a hand delete, one step). Delete / Backspace deletes them all.
+- *Copy / paste / duplicate* (`src/data/selection.ts`, `clipboard.ts`): ⌘C keeps the documents in memory (this tab), with a
+  competitor's features, the links among them and their customer tags; ⌘V pastes at the view's centre keeping the layout,
+  ⌘D duplicates 0.6 down-right; new ids, one undo step, the copies end up selected. Not when text is selected on the page.
+  Matrix cells and attachments aren't copied.
+- *Edge handle:* a hovered card shows a `○` on its right edge; dragging from it links like shift+drag. The handle doesn't stop
+  the card's hover events (doing so made the card think the pointer left and the handle vanished under it).
+- *Text sizes:* `labels.size`: `heading` (default, not stored) 0.6, `subheading` 0.36, `note` 0.2 in mono and dim. A selected
+  label gets a bar (`LabelBar.tsx`) from its left edge: H1 / H2 / note, a colour (plain or the five accents, stored as the
+  dark hex like presence colours and drawn with `themeAccent`), edit, remove. Notes stay in the jump list like any label.
+  Rules: `size` in heading / subheading / note (2 new tests, 239 pass). Import keeps a label's colour and size now.
+- *The assistant knows (user, follow-up):* a proposal row `edit_link` (from / to as the link should read afterwards, so
+  giving them swapped turns it around; kind null keeps it; label null keeps it, "" removes it) changes a link in place: the
+  checklist says `was competes-with · turns the arrow around · label "…"`, the preview draws it in the edited colour, apply
+  is one `edge` write in the same undo step. Customer tags aren't edited (unlink + tag). `add_note` writes a note under a
+  card (where the card ends up, stacked if several). Notes no longer count as areas in the brief (`areaOf`, AREAS); they're
+  listed as NOTES ON THE BOARD with the card they're by, and rename_label / delete_label work on them. The prompt says when
+  to use both. Several selected cards reach the brief too (done in the other session's "working on" line, which uses `selection`).
+  Verified on emulators with a fake OpenAI: edit_link + add_note → checklist, preview, apply → the next brief has
+  `Sick calls —contradicts→ ShiftGrid (only chains)` and the note under NOTES, not AREAS.
+- Not done: formatting (bold, lists, links) in card notes; snapping and alignment guides; a right-click menu.
+- Verified with headless Chrome on the emulators, dark and light at 1440: chips and colours, hover dimming, select a link →
+  kind list → label → reverse, alt+drag box → 4 selected → group drag → ⌘D (4 copies with their links) → ⌘Z removes them,
+  label bar H2 + colour, handle drag creates a link.
+
 ### D-109 · 2026-10-18 · Accepted (refines D-085)
 **The chat says what the next message works on, right above the prompt.** User: when a panel is open the assistant works on
 that card, but the chat only said so in a faint line of the empty state. Now a `working on` line sits above the prompt

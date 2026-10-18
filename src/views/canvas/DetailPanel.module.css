@@ -130,3 +130,20 @@
     z-index: 5;
   }
 }
+
+/* A selection of several (D-108): one line per kind, its mark in the type's colour. */
+.many {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--fg);
+}
+
+.manyMark {
+  display: inline-block;
+  width: 2ch;
+  color: var(--tone, var(--fg-dim));
+}

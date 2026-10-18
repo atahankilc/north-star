@@ -31,8 +31,18 @@ descriptions live in the side panel only (D-057).
   competitor fans them out to the right as compressed cards; clicking one opens it unfolded in the competitor's panel, and
   shift+dragging a card onto one links to it (`inspired by`). Links to them show while they're fanned out.
 - **Links** (D-059) run straight from edge to edge with an arrowhead, so they read as sentences ("idea → solves → problem").
-  The kind is written at the midpoint and sets the line: solves / part of solid, competes / depends on dashed,
-  inspired by / for dotted, relates faint and unlabelled. Colour stays neutral; the selected card's links turn cyan.
+  The kind is written on a chip at the midpoint, with the link's own label after it. Colour by meaning (D-108): violet
+  solves / part of, salmon competes / contradicts, sand inspired by / depends on, grey relates / for; the pattern tells
+  kinds apart within a colour. Hovering a card (or selecting cards) dims every link that doesn't touch it.
+  Click a link to select it: a bar under it changes its kind, gives it a label, turns it around, removes it (Delete too).
+  The `LINKS` filter hides groups of links and doubles as the colour key.
+- **Linking:** drag from the `○` handle on a hovered card's right edge, or shift+drag the card, onto another card.
+- **Selecting several** (D-108): shift+click adds or removes a card or text; alt+drag on empty board draws a box (shift
+  keeps what was selected). Drag any of them to move all, one undo step. The panel shows what's selected, tags shared by all
+  (add or remove on all), duplicate and delete. ⌘C / ⌘V copy and paste (paste lands at the view's centre, keeping the
+  layout, the links among them and customer tags), ⌘D duplicates just below.
+- **Text sizes** (D-108): a selected text label gets a bar with H1 (heading, the default), H2 and note (small mono), a
+  colour, edit and remove.
 
 - **Customers are the segments** (D-044): tagging an item with a customer is a `for` link, drawn as a label chip on the card,
   not a line. Selecting a customer highlights everything tagged for it and shows those lines.
