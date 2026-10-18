@@ -413,6 +413,21 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   zoom-out limit. Verified headless on emulators (dark, 1728 × 1117). Committed.
 
 ## Next steps
+0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
+   - Try `edit_link` / `add_note` with a real key (only tested with a fake OpenAI).
+   - Link chips are world-sized, so zoomed far out they become specks: hide chips (keep the colours) below a zoom
+     threshold, or draw them at a constant screen size.
+   - Several links between the same pair, or lines crossing chips: offset parallel links and nudge chips apart; maybe
+     slightly curved lines when two links overlap.
+   - Multi-select: align / distribute (left, centre, rows, columns) in the "N selected" panel; arrow keys nudge the
+     selection; broadcast the whole selection to collaborators (presence `sel` carries only the last one).
+   - Snapping and alignment guides while dragging (to other cards' edges and centres).
+   - A right-click menu on a card, a link and the empty board (the same actions as the panel and bars, plus create here).
+   - Formatting in card notes (bold, lists, links), the same light Markdown the chat answers use (D-089).
+   - Copy/paste across tabs and workspaces through the system clipboard (today the clip lives in this tab's memory).
+   - A minimap for big boards.
+   - Notes from `add_note` sit centred under the card and can overlap a link chip: offset or left-align them.
+   - Decide whether notes (small text) belong in the `go to` jump list; today every label does.
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs
    `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`, then `npm run deploy:functions`, set
    `WORKSPACE_KEYS_LIVE = true` in src/data/ai.ts, push, and try with a real key as owner + member (also the delete cleanup).
