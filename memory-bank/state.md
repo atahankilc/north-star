@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (scroll bars, D-105; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -366,6 +366,10 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   the functions and a fake OpenAI (19 browser checks + 3 server checks). Rules 237 pass. Firestore + RTDB rules deployed
   and pushed 2026-10-18 (live deploy green). The functions (proxy enforcement, checkWorkspaceModel) wait for Blaze (D-079).
 
+## Done (scroll bars, 2026-10-18)
+- D-105: one thin square scroll bar for the whole app (global.css; hover brighter, cyan while dragged; Firefox via the
+  standard properties). Verified headless on emulators, dark/light 1440 and 390. Committed and pushed 2026-10-18.
+
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs
    `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`, then `npm run deploy:functions`, set
@@ -386,7 +390,7 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - Background (hidden) Chrome tabs pause rAF **and** heavily throttle timers after a few minutes, so long test scripts stall,
   motion exit animations never finish (the curtain stays in the DOM), and screenshots can come out stale or tiled. Keep scripts
   short and observe with MutationObserver; hide `[role=status]` to look past a stuck curtain.
-- **For visual or animation checks, use headless Chrome via puppeteer-core.** Install it in the session scratchpad
+- **For visual or animation checks, use headless Chrome via puppeteer-core** (pass `ignoreDefaultArgs: ['--hide-scrollbars']` to see scroll bars). Install it in the session scratchpad
   (`npm i puppeteer-core@24`, never in the repo) and launch `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
   with `headless: 'new'`. It runs rAF normally, unlike the extension's background tab. Motion is `full` by default now (D-063),
   so no setup is needed unless a stored preference says otherwise. Wait for `window.__curtain.getState().revealed` before capturing.

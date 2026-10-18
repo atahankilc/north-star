@@ -138,6 +138,11 @@ Settings rows (D-097) are two columns: on the left the setting's name (mono, `--
 `--fg-muted`), on the right the control (`--label-w`, 260 px; stacked on phones). Help text is never `--fg-faint` there:
 `--fg-muted` is the readable grey for explanations. On phones a side panel covers the filter row.
 
+### Scroll bars (D-105)
+One rule for every scrolling area, in `src/styles/global.css`: an 8 px track with no background, a square thumb 4 px wide in
+`--line-hover`, 6 px and `--fg-faint` on hover, `--accent-cyan` while held (the focus colour). Colours are tokens, so light
+works too. No per-component scroll bar styles; a new scrolling area gets the look by itself.
+
 ## 7. Motion
 
 - **Loading** (D-025, D-031): only the flowing background plus a `▖ STATUS` line in the bottom-right; then the page

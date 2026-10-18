@@ -1125,3 +1125,40 @@ overrides.
   owners may check models. Found and fixed on the way: the server allowed only explicitly set tasks, refusing the default.
   Rules: 237 pass (5 new).
 
+### D-105 · 2026-10-18 · Accepted
+**Every scroll bar in the app has the same thin, square, token-coloured look.** User: the browser's default bars didn't fit the design.
+Their pick: one global CSS rule, not a scroll bar component drawn in ASCII glyphs (that would need JS on every scroller and
+redoing keyboard, screen reader and touch behaviour; still possible later for the chat or report reader).
+- *Look:* an 8 px track, transparent; the thumb a square 4 px bar (`--line-hover`, inset by a transparent border), 6 px and
+  `--fg-faint` under the pointer, `--accent-cyan` while dragged. Corner transparent. Light theme from the tokens.
+- *How:* `::-webkit-scrollbar*` in `src/styles/global.css` for Chrome and Safari. The standard `scrollbar-width` /
+  `scrollbar-color` go only to Firefox (`@supports (-moz-appearance: none)`), because setting them makes Chrome ignore the
+  webkit rules (no hover, no cyan). Firefox gets the thin bar in the same colours, brighter while the area is hovered.
+- *Trade-off:* in Chrome and Safari on macOS, styled bars are always shown and take their 8 px, where the system's overlay
+  bars appeared only while scrolling.
+- Verified with headless Chrome on the emulators (puppeteer's default `--hide-scrollbars` turned off): Table and Settings in
+  dark and light at 1440, Table at 390 (both bars); hover and drag states.
+
+### D-104 · 2026-10-18 · Accepted (changes D-102, D-098's report paging)
+**The reports tab is a table on its own; a report opens beside it; ten a page with numbered pages; filters and upload
+inside the table.** The user's calls after D-102: 20 a page is too many; page numbers (1, 2, 3), not scrolling for more
+and not `show more`; no report opens by itself; the table stands alone and an opened report builds up with the cell effect
+while the table takes the left; no toolbar above it (the HUD already names the page); a filter row at the table's top with
+upload in it, so the table has its actions and the report its own.
+- *Table:* one solid frame (`--bg`) from the filter row's height. Top row: `KIND`, `BY`, `SEEN BY` dropdowns (the board's
+  `Menu`, lit while narrowing; `clear`), `N reports`, the upload square (D-103). Columns: report (title over a line of the
+  answer), kind, by, date, size, seen by (`workspace` cyan / `only you`); size and seen by drop under 1100 px; on phones
+  title and kind only. No row actions: share / delete / download are the open report's.
+- *Opening:* `?report=<id>`; the table rebuilds cell by cell (`runCells`, 320 ms) as a 300–380 px list (title, two
+  lines, a meta line) and the reader builds up beside it (`Appear`). The reader's bar ends with `×`; Esc closes (not while
+  typing or in a menu). Clicking the open row closes it too. Phones: the table, then the report alone with `← reports`.
+- *Paging* (`useReportPage` in src/data/reports.ts, replaces `useReportList`): two queries that never overlap (shared
+  reports; your own unshared ones), filters as equality clauses on them; page n listens to the newest n × 10 of each and
+  shows the n-th ten merged (no offset in Firestore; exact because they don't overlap); the total is
+  `getCountFromServer` of each, counted again when the lists change. Pages `‹ 1 2 3 … 9 ›`; a filter goes back to page 1.
+  While the next page loads the rows dim instead of emptying. Reports from before `kind` existed have none, so a kind
+  filter leaves them out (they show under `any`).
+- *Indexes* (firestore.indexes.json): reports by shared+kind, shared+uid, shared+uid+kind, uid+shared, uid+shared+kind,
+  each + createdAt desc. **Deploy them with the client** (`npx firebase deploy --only firestore:indexes --project
+  north-star-db`); filtered lists fail until they're built.
+
