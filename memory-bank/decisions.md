@@ -14,9 +14,10 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Name: North Star; the Firebase project is `north-star-db` (D-017).
 - Item types: customer, problem, competitor (+ its features), idea, feature, all on one board (D-007, D-040, D-041, D-042).
 - Customers are the segments: a `for` edge tags an item with a customer, a chip on the card and a grey dashed line; the
-  `for:` filter shows only the chosen customers' cards (D-044, D-119).
+  `for:` filter shows only the chosen customers' cards (D-044, D-119). The lines are their own LINKS group; it and
+  `relates` are hidden by default (still shown for the selected card) (D-128).
 - Chain order everywhere: customers → problems → competitors → ideas → features (D-045).
-- No domains, no groups; text labels name areas and are the places you jump to (D-048, D-049, D-050).
+- No domains; text labels name areas and are the places you jump to (D-048, D-050); sections frame and group them (D-130).
 - Tags group cards within a type: white `#chips`, TAG filter, Table column; competitors have tags too (D-056).
 - Built-in example workspace "Tablebook" with invented competitor names (D-052).
 
@@ -79,7 +80,11 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - A competitor in focus (hovered, selected) lights the links to its features as well (D-115).
 - Multi-select (shift+click, alt+drag box), group drag, "N selected" panel; ⌘C/⌘V/⌘D in-tab clipboard; `○` link handle (D-108).
   The panel lines up (align 6 ways, space out ↔ ↕), arrows nudge 0.25 (shift 1), presence `more` sends the whole selection (D-124).
-- Labels: text on the board, sizes heading/subheading/note + colour; jump list `go to` (headings and subheadings, not
+- Sections: a named frame (label `kind: 'section'`, w/h), drawn with a crosshair (press, drag, release; never placed),
+  holding by position whatever is inside it (cards, text, smaller sections); drag the band or edge carries it all, corner
+  resizes, delete leaves contents, never copied; name set like text (H1–H3, B/I/AA), not scaled; kept in the focus view
+  round the chain's cards (D-130).
+- Labels: text on the board, sizes H1/H2/H3/note (heading/subheading/minor/note), bold/italic/caps, colour (D-130); jump list `go to` (headings and subheadings, not
   notes) with 1–9 and a search field inside the dropdown (D-050, D-108, D-116).
 - Project title block: one per board from `+`, a `kind: 'title'` label showing the workspace's name + description (edited in
   place or from its right-click menu, same fields as Settings), star + `PROJECT`, rule, corner brackets (D-118).
@@ -92,7 +97,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 
 ## Other views
 - Focus tab right of Board (`/focus?on=<id>`): the board with only the card's chain (customer → problem → idea → feature
-  both ways, never turning back) + competitors linked to its problems/ideas/features, in place, magenta ring; picker,
+  both ways, never turning back) + competitors linked to its problems/ideas/features, in place, magenta ring; sections holding chain cards stay, fitted round them (D-130); picker,
   `[◎ focus]` in panels, right-click; no creating; presence says board (D-127).
 - Flow (columns in chain order, one row per problem), Table (sortable, inline edits), Matrix (features × competitors,
   coverage 1–4, verdict), Reports; all share the filter bar and side panel (D-040, D-045).
@@ -140,6 +145,10 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Organising: `arrange_area` takes a layout (columns, rows, grid, line, hub; null = the app picks), `within` (a section,
   subheading) and `beside` + side; areas pack ~1.7:1 with room for link chips, never one long row (D-125). Fewer
   crossings, areas placed by their links, a lone existing area tidied in place; the model gets a layout report and may revise once (D-126).
+- More shapes: `cycle` (a loop), `orbit` (one card, what links to it, then what links to those), `tree` (top-down by links),
+  `quadrant` (an area's first four sections as a 2 × 2) (D-129).
+- Areas are section frames by default (`frame`; a reused heading stays one), their sections nested frames; frames that
+  stay are kept clear; `add_section` / `edit_section` / `delete_section`; label and section text set bold/italic/caps, H1–H3 (D-131).
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).
 - `[web]` switch (off by default) with numbered clickable sources (D-076). Modes `/validate /interview /swot /gaps /next
   /pitch /organize /research /analyze` (D-085, D-086, D-088, D-099).
@@ -161,7 +170,7 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Coloured tile waves for entrances, the blur "rise", a magenta edge on the page reveal, staggered/diagonal reveals (D-029, D-031, D-033, D-035).
 - Floating post-its / 3D objects in the backdrop (D-028). Slowing the backdrop (D-061).
 - Per-type 3D card silhouettes; per-card colour picker; notes on cards; "To feature" button (D-051, D-055, D-057).
-- Domains; groups/frames (D-048, D-049). Double-click to create (D-061). Card lift on hover/drag (D-061).
+- Domains (D-048); the old `groups` collection (D-049, frames are now sections, D-130). Double-click to create (D-061). Card lift on hover/drag (D-061).
 - Cursor trail; typing indicator (D-067, D-071).
 - Copy/paste across tabs and workspaces via the system clipboard; a minimap for big boards (D-116).
 - A motion/theme control on the landing or outside Settings (D-069). Warm off-white light background (D-069).

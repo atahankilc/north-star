@@ -154,6 +154,8 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
     if (!g) return
     // Stacking uses tiny depth steps, too small to make a card look bigger or drift from the pointer.
     if (drag.current) g.position.set(x, y, 0.06)
+    // Carried along in a group drag (groupDrag.ts): exactly where the drag puts it too, no glide trailing the pointer.
+    else if (live) g.position.set(x, y, Math.min(layer, 150) * 0.0003)
     else {
       g.position.x = MathUtils.damp(g.position.x, x, 12, dt)
       g.position.y = MathUtils.damp(g.position.y, y, 12, dt)

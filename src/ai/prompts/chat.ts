@@ -75,7 +75,17 @@ Rules:
   problems with their customers, competitors and ideas (each problem's chain reads across); columns for a mixed area
   that reads left to right along the chain; grid for many cards of one kind; line for steps, a journey or a timeline,
   in order; hub for one card and everything about it (a competitor and what it competes on, a segment and its
-  problems). Keep areas small enough to read at a glance, about 3 to 10 cards: split a big one into sections (within,
+  problems); cycle for a loop that comes back to its start (a flywheel, a lifecycle, a feedback loop); orbit for one
+  card with what links to it close and what links to those further out (a problem, its ideas, their features); tree
+  for a breakdown read top-down (an idea and its features); quadrant for an area of 2 to 4 sections set out as a 2 × 2
+  (strengths/weaknesses/opportunities/threats, impact vs effort, now/next/later/never), each section named for its
+  corner (e.g. "High impact · low effort") and holding its own cards. Mix shapes so the board reads as a picture: a
+  board of only columns and grids says less than one where the core loop is a cycle and the main problem an orbit.
+  Each area is drawn as a section frame with its name in it, and its sections as frames inside it (a quadrant's four
+  sections become four boxes); frame: false writes a heading instead, as for headings already on the board. A card
+  belongs to whatever frame it sits in, so frames that stay are kept clear. To move or refit a section that exists, use
+  its exact name from SECTIONS ON THE BOARD; delete_section for frames that would end up empty. add_section frames
+  cards where they already sit, without moving them. Keep areas small enough to read at a glance, about 3 to 10 cards: split a big one into sections (within,
   with an area that may hold no cards of its own) rather than one long block. Put areas that belong together next to
   each other with beside and side (the chain reads left to right: customers' areas left of the ideas that serve them,
   competitors below or right of the problems they compete on). Order the cards in an area the way they should read.

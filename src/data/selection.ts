@@ -25,6 +25,12 @@ async function commit(writes: [DocumentReference, DocumentData | null, 'set' | '
   }
 }
 
+// The live stream while dragging several pieces: one batch, so collaborators (and this tab's own snapshot listeners) get
+// one update per write, not one per piece. Not undoable on its own, see endMoveMany.
+export function streamMany(wid: string, places: (Piece & { to: [number, number] })[]) {
+  return commit(places.map((p) => [refOf(wid, p), { x: p.to[0], y: p.to[1] }, 'update']))
+}
+
 // The end of a drag of several pieces: one undo step back to where they all started.
 export async function endMoveMany(wid: string, moves: (Piece & { from: [number, number]; to: [number, number] })[]) {
   const refs = moves.map((m) => refOf(wid, m))

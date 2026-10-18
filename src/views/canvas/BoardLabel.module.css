@@ -27,3 +27,9 @@
   font-family: var(--font-mono);
   letter-spacing: normal;
 }
+
+/* A section's name (D-130): from the band's left, centred on it. */
+.input[data-section] {
+  text-align: left;
+  transform: translateY(-50%);
+}

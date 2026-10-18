@@ -107,12 +107,23 @@ service cloud.firestore {
         && validDomainRefs(d);
     }
 
-    // Text on the board, and a place to jump to (D-050).
+    // Text on the board, and a place to jump to (D-050). A section (D-130) is a frame with a name: x/y its centre, w/h its size.
+    function optSize(d, key) {
+      return !(key in d) || (d[key] is number && d[key] > 0 && d[key] <= 2000);
+    }
+
+    function optBool(d, key) {
+      return !(key in d) || d[key] is bool;
+    }
+
     function validLabel(d) {
       return isText(d.text, 200)
         && optText(d, 'color', 20)
-        && optIn(d, 'size', ['heading', 'subheading', 'note'])
-        && optIn(d, 'kind', ['title'])
+        && optIn(d, 'size', ['heading', 'subheading', 'minor', 'note'])
+        && optBool(d, 'bold') && optBool(d, 'italic') && optBool(d, 'caps')
+        && optIn(d, 'kind', ['title', 'section'])
+        && optSize(d, 'w') && optSize(d, 'h')
+        && (!('kind' in d) || d.kind != 'section' || ('w' in d && 'h' in d))
         && d.x is number && d.y is number;
     }
 

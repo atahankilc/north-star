@@ -3,7 +3,7 @@
 // (guides.ts): cards by their box, text by its centre. Each is one undo step; a run of nudges merges into one.
 import { placeMany, type Piece } from '../../data/selection'
 import { useCanvas } from '../../state/canvasStore'
-import { pieceOf } from './groupDrag'
+import { contentsOf, pieceOf } from './groupDrag'
 import { halfOf } from './guides'
 import { SNAP_STEP } from './snap'
 
@@ -17,23 +17,34 @@ type Place = Piece & { to: [number, number] }
 let ahead = new Map<string, { from: [number, number]; to: [number, number] }>()
 const same = (a: [number, number], b: [number, number]) => Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6
 
-function boxes(): Box[] {
-  return useCanvas.getState().selection.flatMap((id) => {
-    const p = pieceOf(id)
-    if (!p) return []
-    const was = ahead.get(id)
-    const c: [number, number] = was && same(was.from, [p.x, p.y]) ? was.to : [p.x, p.y]
-    return [{ kind: p.kind, id: p.id, c, h: halfOf(p.kind, p.id) }]
-  })
+function boxOf(id: string): Box | null {
+  const p = pieceOf(id)
+  if (!p) return null
+  const was = ahead.get(id)
+  const c: [number, number] = was && same(was.from, [p.x, p.y]) ? was.to : [p.x, p.y]
+  return { kind: p.kind, id: p.id, c, h: halfOf(p.kind, p.id) }
 }
+
+const boxes = (): Box[] => useCanvas.getState().selection.flatMap((id) => boxOf(id) ?? [])
 
 // Only what actually moves is written.
 const moved = (b: Box, to: [number, number]) => !same(b.c, to)
 
 function place(wid: string, label: string, list: [Box, [number, number]][], key?: string) {
-  const places: Place[] = list.filter(([b, to]) => moved(b, to)).map(([b, to]) => ({ kind: b.kind, id: b.id, to }))
+  // A section (D-130) takes what it holds along, unless that has a place of its own here.
+  const own = new Set(list.map(([b]) => b.id))
+  const along = list.flatMap(([b, to]): [Box, [number, number]][] =>
+    contentsOf(b.id).flatMap((id) => {
+      const c = boxOf(id)
+      if (!c || own.has(id)) return []
+      own.add(id)
+      return [[c, [c.c[0] + to[0] - b.c[0], c.c[1] + to[1] - b.c[1]]]]
+    }),
+  )
+  const all = [...list, ...along]
+  const places: Place[] = all.filter(([b, to]) => moved(b, to)).map(([b, to]) => ({ kind: b.kind, id: b.id, to }))
   if (places.length) void placeMany(wid, label, places, key)
-  return places
+  return all
 }
 
 export function align(wid: string, how: Align) {
@@ -76,6 +87,6 @@ export function nudge(wid: string, dir: [number, number], big: boolean) {
   const step = big ? 1 : SNAP_STEP
   const list = all.map((b): [Box, [number, number]] => [b, [b.c[0] + dir[0] * step, b.c[1] + dir[1] * step]])
   const key = `nudge:${all.map((b) => b.id).sort().join(',')}`
-  place(wid, `move ${all.length} thing${all.length === 1 ? '' : 's'}`, list, key)
-  ahead = new Map(list.map(([b, to]) => [b.id, { from: [pieceOf(b.id)!.x, pieceOf(b.id)!.y], to }]))
+  const placed = place(wid, `move ${all.length} thing${all.length === 1 ? '' : 's'}`, list, key)
+  ahead = new Map(placed.map(([b, to]) => [b.id, { from: [pieceOf(b.id)!.x, pieceOf(b.id)!.y], to }]))
 }

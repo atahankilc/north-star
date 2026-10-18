@@ -1,5 +1,6 @@
 // The board scene: every item type on one canvas (D-040), 2.5D (D-018) with pan/zoom camera, cards and connections.
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Text } from '@react-three/drei'
+import { ALL_FACES } from '../../three/fonts'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -28,8 +29,11 @@ import { isReducedMotion } from '../../state/motion'
 import { usePalette } from '../../state/theme'
 import { defaultKind, type BoardItem } from './boardKinds'
 import { BoardLabel, labelSize } from './BoardLabel'
+import { BoardSection } from './BoardSection'
 import { BoardTitle } from './BoardTitle'
 import { isTitle, labelHalf, titleHalf } from './titleBlock'
+import { DRAW_MIN, MIN_H, MIN_W, depths, drawSection, holdsRect, isSection, rectOf, sizeOf, useSectionDraw, type SectionRect } from './sections'
+import { snapPoint } from './snap'
 import { CARD_H, CARD_W, glideDt } from './cardLayout'
 import { BoardLine } from './BoardLine'
 import { EdgeLine } from './EdgeLine'
@@ -61,6 +65,10 @@ type Props = {
   cameraKey?: string
   // The card the focus view is on, ringed.
   centreId?: string | null
+  // Sections (D-130) are only drawn, not moved or edited (the focus view).
+  sectionsFixed?: boolean
+  // Makes the section drawn with the crosshair (D-130); none where none can be made.
+  onDrawSection?: (rect: SectionRect) => void
 }
 
 // Where each board's camera was left, so switching views and coming back doesn't lose your place.
@@ -113,10 +121,16 @@ export function Board(props: Props) {
   // Pan/zoom listens on this wrapper, not the canvas. DOM events reach the canvas (and R3F's
   // handlers) first, so a card's pointerdown can switch the controls off before they react.
   const [wrapper, setWrapper] = useState<HTMLDivElement | null>(null)
+  // A crosshair while a section is being drawn (D-130).
+  const drawing = useSectionDraw((s) => s.on) && !!props.onDrawSection
 
   return (
     // The browser's own menu gives way to the board's (D-117).
-    <div ref={setWrapper} style={{ position: 'absolute', inset: 0, touchAction: 'none' }} onContextMenu={(e) => e.preventDefault()}>
+    <div
+      ref={setWrapper}
+      style={{ position: 'absolute', inset: 0, touchAction: 'none', cursor: drawing ? 'crosshair' : undefined }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <Canvas
         dpr={[1, 2]}
         // Draws only when something changes (D-063): React updates, the controls and text invalidate on their own,
@@ -130,6 +144,7 @@ export function Board(props: Props) {
         <ambientLight intensity={0.7} />
         <directionalLight position={[-4, 6, 10]} intensity={1.6} />
         {wrapper && <Controls domElement={wrapper} />}
+        <FontWarmup />
         <Scene {...props} />
         {/* Live cursors (D-065): yours goes out, everyone else's comes in. */}
         <CursorReporter />
@@ -139,6 +154,21 @@ export function Board(props: Props) {
         <Snapshot nodes={props.nodes} labels={props.labels} />
       </Canvas>
     </div>
+  )
+}
+
+// Every face text can be set in (D-130), loaded while the board first loads. drei's <Text> suspends the first time it
+// meets a font, and with no boundary of its own that remounts the whole board, whose cards then never play their
+// entrance again: making text bold or italic for the first time emptied the board.
+function FontWarmup() {
+  return (
+    <group visible={false}>
+      {ALL_FACES.map((url) => (
+        <Text key={url} font={url} fontSize={0.01}>
+          x
+        </Text>
+      ))}
+    </group>
   )
 }
 
@@ -182,11 +212,21 @@ function Controls({ domElement }: { domElement: HTMLElement }) {
   )
 }
 
-function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey, centreId }: Props) {
+// How many pixels of the board's right side a side panel covers (a card's details, D-040), or 0.
+function coveredRight(canvas: HTMLElement): number {
+  const panel = document.querySelector('[data-side-panel]')
+  if (!panel) return 0
+  const p = panel.getBoundingClientRect()
+  const c = canvas.getBoundingClientRect()
+  return p.width && p.left < c.right && p.right > c.left ? Math.max(0, c.right - p.left) : 0
+}
+
+function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey, centreId, sectionsFixed = false, onDrawSection }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
   const invalidate = useThree((s) => s.invalidate)
+  const gl = useThree((s) => s.gl)
   const selectedId = useCanvas((s) => s.selectedId)
   const dragging = useCanvas((s) => s.dragging)
   const linkFrom = useCanvas((s) => s.linkFrom)
@@ -263,16 +303,21 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [controls])
 
-  // Where the camera looks, and from how far, to frame a box as closely as the zoom limits allow.
+  // Where the camera looks, and from how far, to frame a box as closely as the zoom limits allow, in the part of the
+  // board a side panel (a card's details) doesn't cover.
   function fitView([x0, y0, x1, y1]: [number, number, number, number]): Flight {
     const fov = ((camera as { fov?: number }).fov ?? 40) * (Math.PI / 180)
     const tan = Math.tan(fov / 2)
     const usable = Math.max(0.3, (size.height - CHROME_PX) / size.height)
-    const distance = Math.max((y1 - y0) / 2 / (tan * usable), (x1 - x0) / 2 / (tan * (size.width / size.height)))
-    const cx = (x0 + x1) / 2
+    const cover = coveredRight(gl.domElement)
+    const open = Math.max(size.width * 0.3, size.width - cover)
+    const distance = MathUtils.clamp(Math.max((y1 - y0) / 2 / (tan * usable), (x1 - x0) / 2 / (tan * (open / size.height))), MIN_FIT, MAX_DISTANCE)
+    // The view's centre goes right by half the covered width, so the box sits in the middle of what's left.
+    const perPixel = (2 * distance * tan) / size.height
+    const cx = (x0 + x1) / 2 + ((size.width - open) / 2) * perPixel
     // The HUD covers more of the top than the toolbar covers of the bottom: nudge the view up a little.
     const cy = (y0 + y1) / 2 + ((y1 - y0) / 2) * (1 - usable) * 0.3
-    return [cx, cy, MathUtils.clamp(distance, MIN_FIT, MAX_DISTANCE)]
+    return [cx, cy, distance]
   }
 
   const fitLatest = useRef(fitView)
@@ -387,9 +432,9 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
       // What the link counts as touching for focus: its ends, where it's drawn, and the competitor whose feature it
       // reaches, so selecting a competitor lights links to its features too, fanned out or not.
       const touches = [edge.fromId, edge.toId, from, to, owner.get(edge.fromId), owner.get(edge.toId)].filter((id): id is string => Boolean(id))
-      // Hidden by the LINKS filter (D-108), unless it's the selected card's.
+      // Hidden by the LINKS filter (D-108), unless it's the selected card's or one the assistant's preview adds.
       const active = touches.includes(selectedId ?? '')
-      if (hiddenLinks.includes(linkStyle(edge.kind).group) && !active) continue
+      if (hiddenLinks.includes(linkStyle(edge.kind).group) && !active && !edge.id.startsWith('preview-')) continue
       const pair = from < to ? `${from}|${to}` : `${to}|${from}`
       const slot = count.get(pair) ?? 0
       count.set(pair, slot + 1)
@@ -411,13 +456,24 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
   const dimmed = (line: (typeof lines)[number]) =>
     edgeId ? line.edge.id !== edgeId : focusIds ? !line.touches.some((id) => focusIds.has(id)) : false
 
-  // Where every card and label is, for dragging a selection together (groupDrag.ts).
+  // Where every card and label is, for dragging a selection together (groupDrag.ts); sections with their size, so
+  // they carry what they hold (D-130).
   useEffect(() => {
-    const map = new Map<string, { kind: BoardItem['type'] | 'label'; id: string; x: number; y: number }>()
+    const map = new Map<string, { kind: BoardItem['type'] | 'label'; id: string; x: number; y: number; half?: [number, number]; section?: boolean }>()
     for (const n of nodes) map.set(n.id, { kind: n.type, id: n.id, x: n.x, y: n.y })
-    for (const l of labels) map.set(l.id, { kind: 'label', id: l.id, x: l.x, y: l.y })
+    for (const l of labels) {
+      const [w, h] = sizeOf(l)
+      map.set(l.id, isSection(l) ? { kind: 'label', id: l.id, x: l.x, y: l.y, half: [w / 2, h / 2], section: true } : { kind: 'label', id: l.id, x: l.x, y: l.y })
+    }
     setPieces(map)
   }, [nodes, labels])
+
+  // How deep each section sits in others, so inner ones draw over outer ones.
+  const sectionDepth = useMemo(() => {
+    const sections = labels.filter(isSection)
+    const d = depths(sections)
+    return new Map(sections.map((l, i) => [l.id, d[i]]))
+  }, [labels])
 
   // The bars on a selected link or text label (D-108); none while only looking (viewers, the assistant's preview).
   const viewer = useViewer((s) => s.viewer)
@@ -442,7 +498,14 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
       const ids = [
         ...nodes.filter((n) => inside(n.x, n.y, CARD_W / 2, CARD_H / 2)).map((n) => n.id),
         ...labels
-          .filter((l) => (isTitle(l) ? inside(l.x, l.y, ...titleHalf()) : inside(l.x, l.y, (l.text.length * labelSize(l) * 0.3) || 0.3, labelSize(l) / 2)))
+          .filter((l) =>
+            // A section only when the box goes all round it: touching one would pick up every big area.
+            isSection(l)
+              ? holdsRect([x0, y0, x1, y1], rectOf(l))
+              : isTitle(l)
+                ? inside(l.x, l.y, ...titleHalf())
+                : inside(l.x, l.y, (l.text.length * labelSize(l) * 0.3) || 0.3, labelSize(l) / 2),
+          )
           .map((l) => l.id),
       ]
       if (Math.abs(x1 - x0) > 0.05 || Math.abs(y1 - y0) > 0.05) useCanvas.getState().selectMany(ids, box.add)
@@ -497,7 +560,9 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
       </mesh>
 
       {labels.map((l) =>
-        isTitle(l) ? (
+        isSection(l) ? (
+          <BoardSection key={l.id} wid={wid} label={l} depth={sectionDepth.get(l.id) ?? 0} fixed={sectionsFixed} />
+        ) : isTitle(l) ? (
           <BoardTitle key={l.id} wid={wid} label={l} mark={preview?.marks.get(l.id)} was={wasLine(preview?.before.get(l.id))} />
         ) : (
           <BoardLabel key={l.id} wid={wid} label={l} mark={preview?.marks.get(l.id)} was={wasLine(preview?.before.get(l.id))} lit={litIds.has(l.id)} />
@@ -540,14 +605,17 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
         <LabelBar
           wid={wid}
           label={selectedLabel}
-          // Roughly where the text starts and ends (Geist at its size), so the bar sits under it.
-          at={[
-            selectedLabel.x - (selectedLabel.text.length * labelSize(selectedLabel) * 0.3),
-            selectedLabel.y - labelSize(selectedLabel) * 0.7,
-          ]}
+          // Roughly where the text starts and ends (Geist at its size), so the bar sits under it; a section's under its
+          // frame, where it covers nothing inside.
+          at={
+            isSection(selectedLabel)
+              ? [rectOf(selectedLabel)[0], rectOf(selectedLabel)[1]]
+              : [selectedLabel.x - selectedLabel.text.length * labelSize(selectedLabel) * 0.3, selectedLabel.y - labelSize(selectedLabel) * 0.7]
+          }
         />
       )}
       {box && <SelectBox from={box.from} to={box.to} color={palette.cyan} />}
+      {onDrawSection && <SectionDrawer onDraw={onDrawSection} color={palette.magenta} />}
       <GuideLines color={palette.magenta} />
 
       {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={cardHalf} toHalf={[0, 0]} active />}
@@ -653,6 +721,85 @@ function SelectBox({ from, to, color }: { from: [number, number]; to: [number, n
       </mesh>
       <BoardLine points={points} color={color} lineWidth={1} dashed dashSize={0.1} gapSize={0.07} toneMapped={false} />
     </group>
+  )
+}
+
+// Drawing a section (D-130). While the crosshair is on, a sheet over the whole board takes the left button, so the
+// press starts a frame even on a card; the right button and the wheel still pan and zoom. The frame follows the
+// pointer from where it was pressed (corners on the grid while snapping is on, alt: freely) and becomes a section on
+// release, at least the smallest size a section can be. A drag too short to mean anything draws nothing.
+function SectionDrawer({ onDraw, color }: { onDraw: (rect: SectionRect) => void; color: string }) {
+  const on = useSectionDraw((s) => s.on)
+  const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
+  const invalidate = useThree((s) => s.invalidate)
+  const [draft, setDraft] = useState<{ from: [number, number]; to: [number, number] } | null>(null)
+  useEffect(() => invalidate(), [on, draft, invalidate])
+
+  // Released anywhere, even off the canvas.
+  useEffect(() => {
+    if (!draft) return
+    const up = () => {
+      const [x0, x1] = [Math.min(draft.from[0], draft.to[0]), Math.max(draft.from[0], draft.to[0])]
+      const [y0, y1] = [Math.min(draft.from[1], draft.to[1]), Math.max(draft.from[1], draft.to[1])]
+      setDraft(null)
+      if (controls) controls.enabled = true
+      if (Math.max(x1 - x0, y1 - y0) < DRAW_MIN) return
+      // Grown from the corner it was drawn from, if it's below the smallest size.
+      const w = Math.max(MIN_W, x1 - x0)
+      const h = Math.max(MIN_H, y1 - y0)
+      const left = draft.to[0] < draft.from[0] ? draft.from[0] - w : draft.from[0]
+      const bottom = draft.to[1] < draft.from[1] ? draft.from[1] - h : draft.from[1]
+      drawSection(false)
+      onDraw({ x: left + w / 2, y: bottom + h / 2, w, h })
+    }
+    window.addEventListener('pointerup', up)
+    return () => window.removeEventListener('pointerup', up)
+  }, [draft, controls, onDraw])
+
+  if (!on) return null
+  const corners = draft && [
+    [draft.from[0], draft.from[1], 0],
+    [draft.to[0], draft.from[1], 0],
+    [draft.to[0], draft.to[1], 0],
+    [draft.from[0], draft.to[1], 0],
+    [draft.from[0], draft.from[1], 0],
+  ] as [number, number, number][]
+  return (
+    <>
+      <mesh
+        position={[0, 0, 0.3]}
+        onPointerDown={(e) => {
+          if (e.button !== 0) return
+          e.stopPropagation()
+          const p = boardPoint(e)
+          if (!p) return
+          // Before the controls' own listener (on the wrapper), so the board doesn't pan.
+          if (controls) controls.enabled = false
+          const at = snapPoint(p, e.altKey)
+          setDraft({ from: at, to: at })
+        }}
+        onPointerMove={(e) => {
+          if (!draft) return
+          const p = boardPoint(e)
+          if (p) setDraft((d) => d && { ...d, to: snapPoint(p, e.altKey) })
+        }}
+        onClick={(e) => e.stopPropagation()}
+        // Cards under it don't light up or show their grab hand meanwhile.
+        onPointerOver={(e) => e.stopPropagation()}
+      >
+        <planeGeometry args={[2000, 2000]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      {draft && corners && (
+        <group position={[0, 0, 0.08]}>
+          <mesh position={[(draft.from[0] + draft.to[0]) / 2, (draft.from[1] + draft.to[1]) / 2, -0.001]}>
+            <planeGeometry args={[Math.abs(draft.to[0] - draft.from[0]), Math.abs(draft.to[1] - draft.from[1])]} />
+            <meshBasicMaterial color={color} transparent opacity={0.05} depthWrite={false} toneMapped={false} />
+          </mesh>
+          <BoardLine points={corners} color={color} lineWidth={1.4} dashed dashSize={0.14} gapSize={0.09} toneMapped={false} />
+        </group>
+      )}
+    </>
   )
 }
 

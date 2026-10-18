@@ -114,7 +114,8 @@ export function FilterBar({ goTo, links, focus }: Props) {
           summary={LINK_GROUPS.map((g) => (
             <span key={g.key} className={menuStyles.swatch} data-on={!hiddenLinks.includes(g.key)} style={{ ['--tone' as string]: LINK_TONE[g.key] }} />
           ))}
-          active={hiddenLinks.length > 0}
+          // `relates` and customer tags are hidden by default (D-128), so only hiding another group counts as narrowing.
+          active={hiddenLinks.some((g) => g !== 'plain' && g !== 'for')}
           items={linkItems}
           ariaLabel="Show links by kind"
         />

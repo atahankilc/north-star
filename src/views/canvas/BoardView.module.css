@@ -71,3 +71,8 @@
     display: none;
   }
 }
+
+/* Drawing a section (D-130): the hint says what the crosshair does. */
+.drawing {
+  color: var(--accent-cyan);
+}

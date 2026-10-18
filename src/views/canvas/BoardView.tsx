@@ -23,13 +23,17 @@ import { BoardMenu } from './BoardMenu'
 import { DetailPanel } from './DetailPanel'
 import { useGuides } from './guides'
 import { useSnap } from './snap'
-import { TITLE_W, estimateTitleHalf, isTitle } from './titleBlock'
+import { TITLE_W, estimateTitleHalf, isTitle, labelHalf } from './titleBlock'
+import { drawSection, fitSections, holdsPoint, isSection, rectOf, useSectionDraw, wrapRect, type Rect, type SectionRect } from './sections'
 import { copied } from '../../data/selection'
 import { editLocked, useViewer } from '../workspace/viewerLock'
 import styles from './BoardView.module.css'
 
 // A jump lands with the label near the top of the view, so the area under it is in sight.
 const LAND_BELOW = 2.5
+
+// How high a place sits, for reading order: a section by its top edge.
+const topOf = (l: Label) => (isSection(l) ? rectOf(l)[3] : l.y)
 
 // Which way each arrow key nudges, in board units (y grows upwards).
 const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }
@@ -48,7 +52,8 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
   const navigate = useNavigate()
 
   // The focus view: the card it's on, its chain and the competitors around it; no text, no project block. The card
-  // itself shows even when the filters would hide its type.
+  // itself shows even when the filters would hide its type. The sections that hold those cards stay, drawn round them
+  // (D-130), so you still see what each card is part of.
   const onId = focusMode ? params.get('on') : null
   const centre = onId ? all.find((n) => n.id === onId) : undefined
   const chain = useMemo(
@@ -56,7 +61,16 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     [focusMode, onId, all, edges, competitorFeatures],
   )
   const nodes = useMemo(() => (chain ? visible.filter((n) => chain.has(n.id) || n.id === onId) : visible), [chain, visible, onId])
-  const labels = focusMode ? [] : ws.labels
+  const labels = useMemo(
+    () =>
+      focusMode
+        ? fitSections(
+            ws.labels.filter(isSection),
+            nodes.map((n) => ({ x: n.x, y: n.y, half: [CARD_W / 2, CARD_H / 2] as [number, number] })),
+          )
+        : ws.labels,
+    [focusMode, ws.labels, nodes],
+  )
   const features = useMemo(() => (chain ? focusFeatures(chain, competitorFeatures) : competitorFeatures), [chain, competitorFeatures])
   useEffect(() => {
     if (centre) rememberFocus(wid, centre.id)
@@ -68,10 +82,17 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     framed.current = onId
     const hw = CARD_W / 2 + 1.2
     const hh = CARD_H / 2 + 1.2
+    // With the names of the sections round them.
+    const frames = labels.map((l) => rectOf(l))
     useCanvas
       .getState()
-      .flyToFit([Math.min(...nodes.map((n) => n.x)) - hw, Math.min(...nodes.map((n) => n.y)) - hh, Math.max(...nodes.map((n) => n.x)) + hw, Math.max(...nodes.map((n) => n.y)) + hh])
-  }, [focusMode, onId, nodes])
+      .flyToFit([
+        Math.min(...nodes.map((n) => n.x - hw), ...frames.map((r) => r[0])),
+        Math.min(...nodes.map((n) => n.y - hh), ...frames.map((r) => r[1])),
+        Math.max(...nodes.map((n) => n.x + hw), ...frames.map((r) => r[2])),
+        Math.max(...nodes.map((n) => n.y + hh), ...frames.map((r) => r[3])),
+      ])
+  }, [focusMode, onId, nodes, labels])
   // Every card to focus on, by type in the chain's order (D-045).
   const focusItems = useMemo<MenuEntry[]>(
     () =>
@@ -132,13 +153,18 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     }
   }, [all, competitors, wid])
 
-  // The jump list (D-050), in reading order: top to bottom, then left to right. Notes aren't places (D-116).
-  // The title block (D-118) is a place too, under the workspace's name.
+  // The jump list (D-050), in reading order: top to bottom, then left to right. Notes and H3s aren't places (D-116, D-130).
+  // The title block (D-118) is a place too, under the workspace's name; a named section (D-130) by its top edge.
   const places = useMemo(
-    () => (focusMode ? [] : labels).filter((l) => isTitle(l) || (l.text.trim() && l.size !== 'note')).sort((a, b) => b.y - a.y || a.x - b.x),
+    () =>
+      (focusMode ? [] : labels)
+        .filter((l) => isTitle(l) || (l.text.trim() && (isSection(l) || (l.size !== 'note' && l.size !== 'minor'))))
+        .sort((a, b) => topOf(b) - topOf(a) || a.x - b.x),
     [labels, focusMode],
   )
-  const jump = (l: WithId<Label>) => useCanvas.getState().flyTo(isTitle(l) ? [l.x, l.y] : [l.x, l.y - LAND_BELOW])
+  // A section is framed whole.
+  const jump = (l: WithId<Label>) =>
+    isSection(l) ? useCanvas.getState().flyToFit(rectOf(l)) : useCanvas.getState().flyTo(isTitle(l) ? [l.x, l.y] : [l.x, l.y - LAND_BELOW])
   const title = labels.find(isTitle)
 
   // Escape deselects; arrows nudge the selection (D-124); 0 frames the whole board; g switches snapping to the grid (D-112); 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);
@@ -147,7 +173,11 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
       if (t.closest('input, textarea, select, dialog') || t.isContentEditable) return
-      if (e.key === 'Escape') select(null)
+      if (e.key === 'Escape') {
+        // Drawing a section: Escape only puts the crosshair away.
+        if (useSectionDraw.getState().on) return drawSection(false)
+        select(null)
+      }
       const mod = e.metaKey || e.ctrlKey
       const key = e.key.toLowerCase()
       // Text selected on the page copies as text, as usual.
@@ -184,8 +214,13 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [select, places, ws, wid])
   useEffect(() => () => select(null), [select])
+  // Leaving the board puts the section crosshair away.
+  useEffect(() => () => drawSection(false), [])
+  const drawing = useSectionDraw((s) => s.on)
 
   const create = async (type: NewThing, at: [number, number]) => {
+    // A section is drawn on the board, not placed.
+    if (type === 'section') return drawSection(true)
     if (type === 'text') {
       const id = await createLabel(wid, { text: '', x: at[0], y: at[1] })
       select(id)
@@ -210,7 +245,32 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     useCanvas.getState().flyTo(at)
   }
 
+  // A section (D-130) round these cards and labels, or an empty one; named straight away.
+  const addSection = async (rect: SectionRect) => {
+    const id = await createLabel(wid, { text: '', kind: 'section', ...rect })
+    select(id)
+    useCanvas.getState().setEditingLabel(id)
+  }
+  const wrap = (ids: string[]) => {
+    const boxOf = (c: [number, number], h: [number, number]) => ({ c, h })
+    const inside = new Set(ids)
+    const boxes = () => [
+      ...all.filter((n) => inside.has(n.id)).map((n) => boxOf([n.x, n.y], [CARD_W / 2, CARD_H / 2])),
+      ...labels.filter((l) => inside.has(l.id)).map((l) => boxOf([l.x, l.y], labelHalf(l))),
+    ]
+    if (!boxes().length) return
+    // Text the frame would cover (an area's heading just over its cards) goes in too, so the name band sits above it
+    // instead of on it; twice, as taking it in makes the frame taller.
+    for (let pass = 0; pass < 2; pass++) {
+      const r = wrapRect(boxes())
+      const frame: Rect = [r.x - r.w / 2, r.y - r.h / 2, r.x + r.w / 2, r.y + r.h / 2]
+      for (const l of labels) if (!isSection(l) && !isTitle(l) && holdsPoint(frame, l.x, l.y)) inside.add(l.id)
+    }
+    void addSection(wrapRect(boxes()))
+  }
+
   const add = (type: NewThing) => {
+    if (type === 'section') return drawSection(true)
     const center = useCanvas.getState().viewCenter()
     // Clear of every card, including filtered-out ones.
     void create(type, findFreeSpot(center, all))
@@ -227,6 +287,8 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         focus={focus}
         cameraKey={focusMode ? `${wid}/focus/${onId ?? ''}` : undefined}
         centreId={centre?.id}
+        sectionsFixed={focusMode}
+        onDrawSection={focusMode ? undefined : (rect) => void addSection(rect)}
       />
 
       <FilterBar
@@ -255,6 +317,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
               })),
               { key: 'board', heading: 'on the board' },
               { key: 'text', label: 'text', glyph: 'T', hint: 'jump point', onSelect: () => add('text') },
+              { key: 'section', label: 'section', glyph: '⬚', hint: 'drag to draw', onSelect: () => add('section') },
               ...(title ? [] : [{ key: 'title', label: 'project title', glyph: '✦', hint: 'name + about', onSelect: () => void addTitle() }]),
             ]}
           />}
@@ -302,11 +365,17 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
           )}
         </span>
         <span className={styles.hints}>
-          {focusMode && centre && `${nodes.length} of ${all.length} cards · `}
-          {viewer ? 'viewing only · scroll: zoom' : `drag: move${snap ? ' on the grid (alt: freely)' : ''} · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom`}
-          {' · 0: fit all'}
-          {!viewer && ' · g: snap · a: guides · right-click: menu'}
-          {places.length > 0 && ' · 1–9: go to'}
+          {drawing && !focusMode ? (
+            <span className={styles.drawing}>section: press and drag on the board to draw it · esc: cancel</span>
+          ) : (
+            <>
+              {focusMode && centre && `${nodes.length} of ${all.length} cards · `}
+              {viewer ? 'viewing only · scroll: zoom' : `drag: move${snap ? ' on the grid (alt: freely)' : ''} · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom`}
+              {' · 0: fit all'}
+              {!viewer && ' · g: snap · a: guides · right-click: menu'}
+              {places.length > 0 && ' · 1–9: go to'}
+            </>
+          )}
         </span>
       </footer>
 
@@ -326,7 +395,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         </div>
       )}
 
-      <BoardMenu ws={ws} create={focusMode ? undefined : (type, at) => void create(type, at)} />
+      <BoardMenu ws={ws} create={focusMode ? undefined : (type, at) => void create(type, at)} wrap={focusMode ? undefined : wrap} />
 
       <DetailPanel items={all} />
     </main>

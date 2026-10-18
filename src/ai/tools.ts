@@ -7,6 +7,7 @@ import { DESCRIPTION_MAX } from '../data/workspaces'
 import { colors } from '../styles/tokens'
 import { CARD_H, CARD_W, findFreeSpot } from '../views/canvas/cardLayout'
 import { isTitle, labelHalf, titleHalf } from '../views/canvas/titleBlock'
+import { DEFAULT_H, DEFAULT_W, isSection, rectOf, SECTION_SIZES, textLabels, wrapRect } from '../views/canvas/sections'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
 import { AREA_LAYOUTS, AREA_SIDES, arrangeAreas, type AreaLayout, type AreaPlan, type AreaSide } from './arrange'
@@ -33,6 +34,18 @@ const NOT_ASSESSED = 'not assessed'
 const str = (description: string) => ({ type: 'string', description })
 const optStr = (description: string) => ({ type: ['string', 'null'], description })
 const optEnum = (values: readonly string[], description: string) => ({ type: ['string', 'null'], enum: [...values, null], description })
+const optBool = (description: string) => ({ type: ['boolean', 'null'], description })
+// How text is set (D-130): true sets it, false removes it, null keeps it (a new label: plain).
+const STYLE = ['bold', 'italic', 'caps'] as const
+const styleProps = (what: string) =>
+  Object.fromEntries(STYLE.map((k) => [k, optBool(`${k === 'caps' ? 'ALL CAPS' : k[0].toUpperCase() + k.slice(1)} ${what}. true sets it, false removes it, null keeps it.`)]))
+// Only true is stored (D-130): false removes the field, null leaves it.
+const styleFields = (r: Raw): Record<string, true | null> =>
+  Object.fromEntries(STYLE.flatMap((k): [string, true | null][] => (r[k] === true ? [[k, true]] : r[k] === false ? [[k, null]] : [])))
+// A new label: only what is set.
+const newStyle = (r: Raw) => Object.fromEntries(STYLE.filter((k) => r[k] === true).map((k) => [k, true]))
+const styleWords = (r: Raw) => STYLE.flatMap((k) => (r[k] === true ? [k] : r[k] === false ? [`no ${k}`] : []))
+const SIZE_HELP = 'heading (H1, an area), subheading (H2, a part of one), minor (H3, a part of a part), or note'
 const optTags = { type: ['array', 'null'], items: { type: 'string' }, description: 'Replaces the tags. Lowercase words, no #.' }
 const ref = (what: string) => str(`${what}: a ref from the workspace (without brackets) or the key of an item added in this same proposal.`)
 const near = optStr('Ref or key of a card to place the new card beside, usually the one it will be linked to. Null: beside its own kind.')
@@ -156,7 +169,12 @@ const OPS = [
           'rows: one row per problem with its customers, competitors, ideas and features beside it, like a flow. ' +
           'grid: a compact block in the given order (many cards of one kind). line: one row in the given order (a journey, ' +
           'steps, a timeline). hub: the first card in the middle and the rest around it (one competitor, customer or problem ' +
-          'and what surrounds it). Null: the app picks.',
+          'and what surrounds it). cycle: a ring in the given order, clockwise from the top, nothing in the middle (a loop: a ' +
+          'flywheel, a lifecycle, a feedback loop). orbit: the first card in the middle, the cards linked to it on an inner ring, ' +
+          'the rest on an outer ring next to what they link to (one problem, its ideas, their features). tree: top-down from the ' +
+          'first card, each card under the one it links from (an idea and its features, a breakdown). quadrant: for an area made ' +
+          'of 2 to 4 sections: they fill a 2 × 2 in order (top-left, top-right, bottom-left, bottom-right; a SWOT, impact vs ' +
+          'effort); name each section for its corner. Null: the app picks.',
       ),
       within: optStr(
         'The label of another arrange_area in this proposal that this area is a section of: its name becomes a subheading ' +
@@ -164,18 +182,43 @@ const OPS = [
       ),
       beside: optStr('The label of another (not section) arrange_area in this proposal to put this area next to. Null: the app finds room.'),
       side: optEnum(AREA_SIDES, 'Which side of the beside area. Null: right.'),
+      frame: optBool(
+        'true: a section frame round the area with its name in the frame (sections inside it nest as smaller frames). ' +
+          'false: a heading (a section: a subheading) written over its cards. Null: a frame, unless it reuses a heading ' +
+          'listed under AREAS ON THE BOARD, which stays a heading.',
+      ),
     },
   ),
-  op('add_label', 'Text written on the board: a heading or subheading naming what is under it, or a note. No cards move.', {
+  op(
+    'add_section',
+    'Draw a section frame round cards where they are, without moving them (to move cards into place, use arrange_area). ' +
+      'Anything else inside the frame belongs to it too, so pick cards that already sit together.',
+    {
+      label: str('The section name, 1 to 4 words.'),
+      items: { type: 'array', items: { type: 'string' }, description: 'Refs (or keys of cards added here) of the cards to frame.' },
+    },
+  ),
+  op('edit_section', "Rename a section frame on the board, or set its name's size and style.", {
+    label: str('Its current name, exactly as listed under SECTIONS ON THE BOARD.'),
+    text: optStr('The new name. Null keeps it.'),
+    size: optEnum(SECTION_SIZES, "The name's size: heading (H1, the default), subheading (H2), minor (H3). Null keeps it."),
+    ...styleProps('name'),
+  }),
+  op('delete_section', 'Remove a section frame from the board; its cards stay where they are.', {
+    label: str('Its current name, exactly as listed under SECTIONS ON THE BOARD.'),
+    reason: str('Why it should go, in a few words; shown to the user.'),
+  }),
+  op('add_label', 'Text written on the board: a heading naming what is under it (H1, H2 or H3), or a note. No cards move.', {
     text: str('The text, a few words (a note: one short sentence).'),
-    size: { type: 'string', enum: LABEL_SIZES, description: 'heading (an area), subheading (a part of one), or note.' },
+    size: { type: 'string', enum: LABEL_SIZES, description: `${SIZE_HELP}.` },
     color: optEnum(LABEL_COLORS, 'Null: the default (white).'),
     above: optStr('Ref or key of the card it goes just above. Null: above the top-left of the board.'),
+    ...styleProps('text'),
   }),
   op('edit_label', `Change a label on the board: its text, size, colour, or put it above another card. ${KEEP_OR_EMPTY.split(';')[0]}.`, {
     label: str('Its current text, exactly as listed under AREAS ON THE BOARD or NOTES ON THE BOARD.'),
     text: optStr('The new text.'),
-    size: optEnum(LABEL_SIZES, 'heading, subheading or note.'),
+    size: optEnum(LABEL_SIZES, `${SIZE_HELP}.`),
     color: optEnum([...LABEL_COLORS, 'default'], '"default" removes its colour.'),
     above: optStr('Ref or key of a card to move it just above.'),
   }),
@@ -265,12 +308,14 @@ export type Project = { name: string; description?: string }
 
 // `labels`: the texts of the board's labels now, so label changes can be checked (D-086). `edges`: its links now, so an
 // edit_link row can say what it changes (D-108). `project`: its name and description now, for update_project (D-120).
+// `sections`: the names of the board's section frames now (D-131).
 export function parseProposal(
   args: string,
   refs: Map<string, ItemRef>,
   labels: string[] = [],
   edges: Edge[] = [],
   project?: Project,
+  sections: string[] = [],
 ): Proposal {
   let data: { summary?: unknown; changes?: unknown }
   try {
@@ -313,6 +358,7 @@ export function parseProposal(
   const needsOf = (...rs: (Resolved | undefined)[]) => rs.flatMap((r) => (r && 'key' in r.ref ? [r.ref.key] : []))
   const isBoardCard = (t: NodeType) => (CARD_TYPES as readonly string[]).includes(t)
   const hasLabel = (v: unknown) => labels.some((l) => sameLabel(l, v))
+  const hasSection = (v: unknown) => sections.some((l) => sameLabel(l, v))
   // Which area each card went to first: a card is in one area at most.
   const areaOf = new Map<string, string>()
   // The areas this proposal arranges, by label: a section or a beside names one of them (D-125).
@@ -507,11 +553,14 @@ export function parseProposal(
         const names = items.map((x) => x.r?.name ?? '?')
         const within = s(raw.within)
         const beside = s(raw.beside)
+        // A frame unless it says not, or reuses a heading (D-131).
+        const frame = typeof raw.frame === 'boolean' ? raw.frame : !hasLabel(label)
         const where = [
+          frame ? 'frame' : 'heading',
           s(raw.layout),
           within && `in ${clip(within, 40)}`,
           beside && `${['above', 'below'].includes(s(raw.side) ?? '') ? s(raw.side) : `${s(raw.side) ?? 'right'} of`} ${clip(beside, 40)}`,
-          `${items.length} card${items.length === 1 ? '' : 's'}${hasLabel(label) ? ', moves the label' : ''}`,
+          `${items.length} card${items.length === 1 ? '' : 's'}${hasSection(label) ? ', moves the frame' : hasLabel(label) ? ', moves the label' : ''}`,
         ].filter(Boolean)
         return {
           ...base,
@@ -544,7 +593,7 @@ export function parseProposal(
           kind: s(raw.size) ?? 'label',
           tone: null,
           text: clip(s(raw.text) ?? '', 120),
-          detail: [s(raw.color), above && `above ${above.name}`].filter(Boolean).join(' · ') || undefined,
+          detail: [s(raw.color), ...STYLE.filter((k) => raw[k] === true), above && `above ${above.name}`].filter(Boolean).join(' · ') || undefined,
           needs: needsOf(above),
           problem: !s(raw.text)
             ? 'no text'
@@ -563,6 +612,7 @@ export function parseProposal(
           s(raw.text) && `→ ${clip(s(raw.text)!, 60)}`,
           s(raw.size),
           s(raw.color) && (s(raw.color) === 'default' ? 'default colour' : s(raw.color)),
+          ...styleWords(raw),
           above && `above ${above.name}`,
         ].filter(Boolean)
         return {
@@ -618,6 +668,55 @@ export function parseProposal(
           detail: s(raw.reason),
           removes: true,
           problem: !hasLabel(raw.label) ? 'no label with this text' : undefined,
+        }
+      // Section frames (D-131).
+      case 'add_section': {
+        const items = itemsOf(raw).map((v) => resolve(v))
+        const label = s(raw.label) ?? 'Untitled'
+        return {
+          ...base,
+          sign: '▤',
+          kind: 'section',
+          tone: null,
+          text: label,
+          detail: `frame round ${items.length} card${items.length === 1 ? '' : 's'}: ${clip(items.map((r) => r?.name ?? '?').join(', '), 160)}`,
+          needs: needsOf(...items),
+          problem: !items.length
+            ? 'no cards'
+            : items.some((r) => !r)
+              ? 'unknown card'
+              : items.find((r) => r!.type === 'competitorFeature')
+                ? `${items.find((r) => r!.type === 'competitorFeature')!.name} sits behind its competitor`
+                : hasSection(label)
+                  ? `a section "${clip(label, 40)}" exists: arrange_area moves it`
+                  : // One frame per name: never a second one drawn over the first (D-130).
+                    raws.some((o, j) => (o.op === 'arrange_area' || (o.op === 'add_section' && j < i)) && sameLabel(label, o.label))
+                    ? `"${clip(label, 40)}" is already an area or section in this proposal`
+                    : undefined,
+        }
+      }
+      case 'edit_section': {
+        const what = [s(raw.text) && `→ ${clip(s(raw.text)!, 60)}`, s(raw.size), ...styleWords(raw)].filter(Boolean)
+        return {
+          ...base,
+          sign: '~',
+          kind: 'section',
+          tone: null,
+          text: s(raw.label) ?? '?',
+          detail: what.join(' · ') || undefined,
+          problem: !hasSection(raw.label) ? 'no section with this name' : !what.length ? 'nothing to change' : undefined,
+        }
+      }
+      case 'delete_section':
+        return {
+          ...base,
+          sign: '−',
+          kind: 'section',
+          tone: null,
+          text: s(raw.label) ?? '?',
+          detail: s(raw.reason),
+          removes: true,
+          problem: !hasSection(raw.label) ? 'no section with this name' : undefined,
         }
       case 'update_project': {
         const name = s(raw.name)?.slice(0, NAME_MAX)
@@ -724,8 +823,11 @@ export function stillValid(change: Change, ws: WorkspaceCtx, refs: Map<string, I
     const r = refs.get(refKey(v) ?? '')
     if (r && !exists.has(r.id)) return `${r.name} was deleted`
   }
-  if (['rename_label', 'edit_label', 'delete_label'].includes(change.raw.op) && !ws.labels.some((l) => sameLabel(l.text, change.raw.label))) {
+  if (['rename_label', 'edit_label', 'delete_label'].includes(change.raw.op) && !textLabels(ws.labels).some((l) => sameLabel(l.text, change.raw.label))) {
     return 'the label is gone'
+  }
+  if (['edit_section', 'delete_section'].includes(change.raw.op) && !ws.labels.some((l) => isSection(l) && sameLabel(l.text, change.raw.label))) {
+    return 'the section is gone'
   }
   const a = refs.get(refKey(change.raw.from) ?? '')
   const b = refs.get(refKey(change.raw.to) ?? '')
@@ -761,6 +863,10 @@ function freshRefs(accepted: Change[], refs: Map<string, ItemRef>) {
   return { fresh, refOf }
 }
 
+// An arrange_area row's area is a frame (D-131) unless it says not, or it reuses a heading on the board.
+const areaFramed = (raw: Raw, ws: WorkspaceCtx) =>
+  typeof raw.frame === 'boolean' ? raw.frame : !textLabels(ws.labels).some((l) => sameLabel(l.text, raw.label))
+
 // Where the ticked arrange_area rows put their areas (D-086, D-125, D-126): every card's position now, which ones move,
 // the links between cards, and the layout (null without areas).
 function planAreas(accepted: Change[], ws: WorkspaceCtx, refs: Map<string, ItemRef>) {
@@ -769,9 +875,9 @@ function planAreas(accepted: Change[], ws: WorkspaceCtx, refs: Map<string, ItemR
   for (const n of [...ws.customers, ...ws.problems, ...ws.ideas, ...ws.features]) position.set(n.id, { x: n.x, y: n.y })
   for (const c of ws.competitors) if (c.x !== undefined && c.y !== undefined) position.set(c.id, { x: c.x, y: c.y })
   const droppedLabels = new Set(
-    accepted.filter((c) => c.raw.op === 'delete_label').flatMap((c) => ws.labels.filter((l) => sameLabel(l.text, c.raw.label)).map((l) => l.id)),
+    accepted.filter((c) => c.raw.op === 'delete_label').flatMap((c) => textLabels(ws.labels).filter((l) => sameLabel(l.text, c.raw.label)).map((l) => l.id)),
   )
-  const kept = ws.labels.filter((l) => !droppedLabels.has(l.id))
+  const kept = textLabels(ws.labels).filter((l) => !droppedLabels.has(l.id))
   const plans: AreaPlan[] = accepted
     .filter((c) => c.raw.op === 'arrange_area')
     .map((c) => ({
@@ -781,11 +887,22 @@ function planAreas(accepted: Change[], ws: WorkspaceCtx, refs: Map<string, ItemR
       within: s(c.raw.within),
       beside: s(c.raw.beside),
       side: s(c.raw.side) as AreaSide | undefined,
+      frame: areaFramed(c.raw, ws),
     }))
-  // One area on its own (with its sections) that is on the board already: tidied where it is, not moved (D-126).
+  // Section frames (D-130): one an area names moves with it; one removed in this set is gone; the rest stay, kept clear.
+  const droppedFrames = new Set(
+    accepted.filter((c) => c.raw.op === 'delete_section').flatMap((c) => ws.labels.filter((l) => isSection(l) && sameLabel(l.text, c.raw.label)).map((l) => l.id)),
+  )
+  const frames = ws.labels.filter((l) => isSection(l) && !droppedFrames.has(l.id))
+  // One area on its own (with its sections) that is on the board already: tidied where it is, not moved (D-126); a
+  // frame from its top-left corner.
   const tops = plans.filter((p) => !p.within || !plans.some((q) => q !== p && sameLabel(q.label, p.within)))
-  const lone = tops.length === 1 ? kept.find((l) => sameLabel(l.text, tops[0].label)) : undefined
-  if (lone) tops[0].stay = { x: lone.x, y: lone.y }
+  const loneFrame = tops.length === 1 && tops[0].frame ? frames.find((l) => sameLabel(l.text, tops[0].label)) : undefined
+  const lone = tops.length === 1 && !tops[0].frame ? kept.find((l) => sameLabel(l.text, tops[0].label)) : undefined
+  if (loneFrame) {
+    const [x0, , , y1] = rectOf(loneFrame)
+    tops[0].stay = { x: x0, y: y1 }
+  } else if (lone) tops[0].stay = { x: lone.x, y: lone.y }
   const moving = new Set(plans.flatMap((p) => p.items.map((i) => i.id)))
   const movingLabels = new Set(ws.labels.filter((l) => plans.some((p) => sameLabel(l.text, p.label))).map((l) => l.id))
   // Which cards are linked, now and by this set's link rows, so an area can put linked cards together; a competitor's
@@ -800,6 +917,10 @@ function planAreas(accepted: Change[], ws: WorkspaceCtx, refs: Map<string, ItemR
         {
           cards: [...position.entries()].filter(([id]) => !moving.has(id)).map(([id, p]) => ({ id, ...p })),
           labels: kept.filter((l) => !movingLabels.has(l.id)),
+          frames: frames.filter((l) => !movingLabels.has(l.id)).map((l) => {
+            const [x0, y0, x1, y1] = rectOf(l)
+            return { x0, y0, x1, y1 }
+          }),
         },
         [...position.values()],
         links,
@@ -817,7 +938,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
   const cards = [...position.entries()].filter(([id]) => !moving.has(id)).map(([, p]) => p)
   if (layout) cards.push(...layout.cards.values())
   // The project block (D-118) is far bigger than a card: it takes up the card spots that would overlap it.
-  for (const t of ws.labels.filter(isTitle)) cards.push(...coverWithCards(t, titleHalf()))
+  for (const t of textLabels(ws.labels).filter(isTitle)) cards.push(...coverWithCards(t, titleHalf()))
   const placed = new Map<string, { x: number; y: number }>()
   const ofType = (type: BoardType) => {
     const list: { x?: number; y?: number }[] = type === 'competitor' ? ws.competitors : ws[`${type}s` as 'ideas']
@@ -882,6 +1003,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
   }
 
   const notes: { w: Extract<AssistantWrite, { do: 'label' }>; near: unknown }[] = []
+  const frames: { w: Extract<AssistantWrite, { do: 'label' }>; items: unknown[] }[] = []
   // Text added or moved above a card (D-123): placed once every card has its place, like notes.
   const texts: { w: Extract<AssistantWrite, { do: 'label' }>; above: unknown }[] = []
   const writes = accepted.map((c): AssistantWrite => {
@@ -976,12 +1098,34 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         return { do: 'delete', target: refOf(r.target) as { id: string; type: NodeType } }
       case 'arrange_area': {
         const plan = layout!.labels.find((l) => sameLabel(l.text, r.label))!
-        const existing = ws.labels.find((l) => sameLabel(l.text, r.label))
-        const fields = { x: plan.x, y: plan.y, size: plan.sub ? 'subheading' : 'heading' }
-        return existing ? { do: 'label', id: existing.id, fields } : { do: 'label', fields: { text: plan.text, ...fields } }
+        // The label of that name, a frame first when the area is one; an existing label turns into the other style in place.
+        const named = ws.labels.filter((l) => !isTitle(l) && sameLabel(l.text, r.label))
+        const existing = named.find((l) => isSection(l) === !!plan.frame) ?? named[0]
+        const a = plan.frame ? layout!.areas.find((x) => x.frame && sameLabel(x.label, r.label))! : undefined
+        const fields: Record<string, unknown> = a
+          ? // An area's name H1 (the default), a section's H2 (D-130).
+            { kind: 'section', x: (a.x0 + a.x1) / 2, y: (a.y0 + a.y1) / 2, w: a.x1 - a.x0, h: a.y1 - a.y0, size: plan.sub ? 'subheading' : existing?.size ? null : undefined }
+          : { x: plan.x, y: plan.y, size: plan.sub ? 'subheading' : 'heading', ...(existing && isSection(existing) ? { kind: null, w: null, h: null } : {}) }
+        return existing ? { do: 'label', id: existing.id, fields: compact(fields) } : { do: 'label', fields: compact({ text: plan.text, ...fields }) }
       }
+      // A frame round cards where they end up in this set (D-131): placed once every card has its place, like notes.
+      case 'add_section': {
+        const w: AssistantWrite = { do: 'label', fields: { text: s(r.label)!.slice(0, 200), kind: 'section' } }
+        frames.push({ w, items: itemsOf(r) })
+        return w
+      }
+      case 'edit_section': {
+        const size = s(r.size) && SECTION_SIZES.includes(s(r.size) as never) ? s(r.size) : undefined
+        const fields = compact({ text: s(r.text)?.slice(0, 200), size, ...styleFields(r) })
+        return { do: 'label', id: ws.labels.find((l) => isSection(l) && sameLabel(l.text, r.label))!.id, fields }
+      }
+      case 'delete_section':
+        return { do: 'unlabel', id: ws.labels.find((l) => isSection(l) && sameLabel(l.text, r.label))!.id }
       case 'add_label': {
-        const w: AssistantWrite = { do: 'label', fields: compact({ text: s(r.text)!.slice(0, 200), size: text(r.size), color: LABEL_HEX[s(r.color) ?? ''] }) }
+        const w: AssistantWrite = {
+          do: 'label',
+          fields: compact({ text: s(r.text)!.slice(0, 200), size: text(r.size), color: LABEL_HEX[s(r.color) ?? ''], ...newStyle(r) }),
+        }
         texts.push({ w, above: r.above })
         return w
       }
@@ -990,14 +1134,14 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         const color = s(r.color) === 'default' ? null : LABEL_HEX[s(r.color) ?? '']
         const w: AssistantWrite = {
           do: 'label',
-          id: ws.labels.find((l) => sameLabel(l.text, r.label))!.id,
-          fields: compact({ text: text(r.text)?.slice(0, 200), size: text(r.size), color }),
+          id: textLabels(ws.labels).find((l) => sameLabel(l.text, r.label))!.id,
+          fields: compact({ text: text(r.text)?.slice(0, 200), size: text(r.size), color, ...styleFields(r) }),
         }
         if (refKey(r.above)) texts.push({ w, above: r.above })
         return w
       }
       case 'delete_label':
-        return { do: 'unlabel', id: ws.labels.find((l) => sameLabel(l.text, r.label))!.id }
+        return { do: 'unlabel', id: textLabels(ws.labels).find((l) => sameLabel(l.text, r.label))!.id }
       case 'update_project':
         return { do: 'project', fields: compact({ name: text(r.name)?.slice(0, NAME_MAX), description: text(r.description)?.slice(0, DESCRIPTION_MAX) }) }
       case 'unlink': {
@@ -1016,6 +1160,15 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         }
     }
   })
+  // A section's frame round its cards where they end up. None found can't happen (a gone card turns the row off), but
+  // the write stays in its row's place (the preview pairs them), so it falls back to a new frame's size at the origin.
+  for (const { w, items } of frames) {
+    const boxes = items.flatMap((v) => {
+      const at = whereIs(v)
+      return at ? [{ c: [at.x, at.y] as [number, number], h: [CARD_W / 2, CARD_H / 2] as [number, number] }] : []
+    })
+    Object.assign(w.fields, boxes.length ? wrapRect(boxes) : { x: 0, y: 0, w: DEFAULT_W, h: DEFAULT_H })
+  }
   // A note goes just under its card, where the card ends up; a second note on the same card goes under the first.
   const under = new Map<string, number>()
   for (const { w, near } of notes) {
@@ -1029,11 +1182,11 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
     w.fields.y = at.y - CARD_H / 2 - NOTE_GAP - i * NOTE_GAP
   }
   // Text above a card, or above the board's top-left: clear of cards and other text, going up until it is.
-  const taken = ws.labels
+  const taken = textLabels(ws.labels)
     .filter((l) => !texts.some((t) => t.w.id === l.id))
     .map((l) => ({ x: l.x, y: l.y, half: labelHalf(l) }))
   for (const { w, above } of texts) {
-    const old = w.id ? ws.labels.find((l) => l.id === w.id) : undefined
+    const old = w.id ? textLabels(ws.labels).find((l) => l.id === w.id) : undefined
     const half = labelHalf({ text: String(w.fields.text ?? old?.text ?? ''), size: (w.fields.size ?? old?.size) as Label['size'] })
     const anchor = refKey(above) ? whereIs(above) : undefined
     if (refKey(above) && !anchor) continue

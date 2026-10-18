@@ -3,8 +3,8 @@
 import { create } from 'zustand'
 import { BOARD_TYPES, type BoardType } from '../data/model'
 
-// What the + menu makes: a card, or text (D-050).
-export type NewThing = BoardType | 'text'
+// What the + menu makes: a card, text (D-050), or a section (D-130).
+export type NewThing = BoardType | 'text' | 'section'
 
 type Filters = {
   types: BoardType[]
@@ -12,11 +12,13 @@ type Filters = {
   forIds: string[]
   // Tags for the `tag:` filter (D-056); empty = any tag.
   tags: string[]
-  // Link groups hidden on the board (D-108, linkKinds.ts); empty = every link shows.
+  // Link groups hidden on the board (D-108, linkKinds.ts); empty = every link shows. Customer tags and `relates` start hidden (D-128).
   hiddenLinks: string[]
 }
 
-const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], hiddenLinks: [] }
+const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], hiddenLinks: ['plain', 'for'] }
+// Bumped when a new link group starts hidden, so filters saved before it hide it too.
+const LINKS_VERSION = 3
 
 type State = Filters & {
   wid: string | null
@@ -34,16 +36,27 @@ type State = Filters & {
 
 const key = (wid: string) => `north-star.view.${wid}`
 
+// The groups each version started hiding; a filter saved before them hides them once, then the choice is remembered.
+const HIDDEN_SINCE: [number, string][] = [
+  [2, 'for'],
+  [3, 'plain'],
+]
+const hideNew = (hidden: string[], v: number) => [
+  ...hidden,
+  ...HIDDEN_SINCE.filter(([since, g]) => v < since && !hidden.includes(g)).map(([, g]) => g),
+]
+
 function read(wid: string): Filters {
   try {
     const raw = localStorage.getItem(key(wid))
     if (!raw) return DEFAULTS
-    const saved = JSON.parse(raw) as Partial<Filters>
+    const saved = JSON.parse(raw) as Partial<Filters> & { linksV?: number }
+    const hiddenLinks = saved.hiddenLinks ?? DEFAULTS.hiddenLinks
     return {
       types: (saved.types ?? DEFAULTS.types).filter((t) => BOARD_TYPES.includes(t)),
       forIds: saved.forIds ?? [],
       tags: saved.tags ?? [],
-      hiddenLinks: saved.hiddenLinks ?? [],
+      hiddenLinks: hideNew(hiddenLinks, saved.linksV ?? 1),
     }
   } catch {
     return DEFAULTS
@@ -56,7 +69,7 @@ export const useWsView = create<State>((set, get) => {
     const { wid, types, forIds, tags, hiddenLinks } = get()
     if (!wid) return
     try {
-      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, hiddenLinks }))
+      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, hiddenLinks, linksV: LINKS_VERSION }))
     } catch {
       // Private mode or blocked storage: filters just won't be remembered.
     }

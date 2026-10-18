@@ -4,6 +4,7 @@
 import { create } from 'zustand'
 import type { Label } from '../../data/model'
 import { labelSize } from './BoardLabel'
+import { isSection, sizeOf } from './sections'
 
 // Board units. Top to bottom: caption, name, rule, description.
 export const TITLE_W = 9
@@ -54,9 +55,14 @@ export const editTitle = (field: TitleField | null) => useTitleEdit.setState({ f
 
 export const isTitle = (l: Pick<Label, 'kind'>) => l.kind === 'title'
 
-// Half the width and height a label takes on the board, roughly (Geist at its size), or the title block's.
-export function labelHalf(l: Pick<Label, 'kind' | 'text' | 'size'>): [number, number] {
+// Half the width and height a label takes on the board, roughly (Geist at its size), or the title block's, or a section's (D-130).
+export function labelHalf(l: Pick<Label, 'kind' | 'text' | 'size' | 'w' | 'h' | 'caps' | 'bold'>): [number, number] {
   if (isTitle(l)) return titleHalf()
+  if (isSection(l)) {
+    const [w, h] = sizeOf(l)
+    return [w / 2, h / 2]
+  }
   const h = labelSize(l)
-  return [l.text.length * h * 0.32, h / 2]
+  // Capitals and bold run wider.
+  return [l.text.length * h * 0.32 * (l.caps || l.bold ? 1.18 : 1), h / 2]
 }

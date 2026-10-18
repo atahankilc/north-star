@@ -44,6 +44,8 @@ type CanvasState = {
   moveLink: (at: Vec2) => void
   endLink: () => void
   setDragging: (id: string, at: Vec2 | null) => void
+  // Several at once (a selection being dragged): one update, so the board re-renders once per pointer move, not once per card.
+  setDraggingMany: (places: [string, Vec2 | null][]) => void
   setPressing: (id: string | null) => void
   setViewCenter: (fn: () => Vec2) => void
   setFocusOn: (fn: (at: Vec2) => void) => void
@@ -92,6 +94,15 @@ export const useCanvas = create<CanvasState>((set) => ({
       const dragging = { ...s.dragging }
       if (at) dragging[id] = at
       else delete dragging[id]
+      return { dragging }
+    }),
+  setDraggingMany: (places) =>
+    set((s) => {
+      const dragging = { ...s.dragging }
+      for (const [id, at] of places) {
+        if (at) dragging[id] = at
+        else delete dragging[id]
+      }
       return { dragging }
     }),
   setPressing: (id) => set({ pressing: id }),

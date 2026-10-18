@@ -6,6 +6,7 @@ import type { BoardNode, Label, NodeType } from '../data/model'
 import type { ReportContent, ReportSummary } from '../data/model'
 import { colors } from '../styles/tokens'
 import { isTitle } from '../views/canvas/titleBlock'
+import { holdsRect, isSection, rectOf, sectionsAt } from '../views/canvas/sections'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import { reportFull } from './readTools'
 
@@ -25,11 +26,18 @@ const COLOR_NAME: Record<string, string> = Object.fromEntries(
 )
 
 // A label names the area below it (D-050): a card belongs to the nearest label above it. Notes don't name areas (D-108).
+// The named sections round a point (D-130) say it first, outermost to innermost.
 function areaOf(labels: WithId<Label>[], x: number, y: number): string {
+  const frames = sectionsAt(labels, x, y)
+  const inSection = frames.length ? ` [section: ${frames.map((l) => clip(l.text, 60)).join(' › ')}]` : ''
+  return inSection + textAreaOf(labels, x, y)
+}
+
+function textAreaOf(labels: WithId<Label>[], x: number, y: number): string {
   let best: WithId<Label> | undefined
   let bestD = Infinity
   for (const l of labels) {
-    if (!l.text.trim() || l.size === 'note' || l.y < y) continue
+    if (!l.text.trim() || l.size === 'note' || l.y < y || isSection(l)) continue
     const d = Math.hypot(l.x - x, l.y - y)
     if (d < bestD) {
       bestD = d
@@ -167,15 +175,28 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
     lines.push(`- ${names.get(c.featureId)} × ${names.get(c.competitorId)}: ${c.coverage ?? 'not assessed'}${theirs ? `; their version [${refOf.get(c.competitorFeatureId!)}]` : ''}${c.notes ? `; ${clip(c.notes, 200)}` : ''}`)
   }
 
-  const areas = ws.labels.filter((l) => l.text.trim() && l.size !== 'note')
-  // With its size and colour when not the defaults (D-123), so edit_label can change them.
+  // With its size, style and colour when not the defaults (D-123, D-130), so edit_label / edit_section can change them.
   const look = (l: Label) => {
-    const bits = [l.size === 'subheading' ? 'subheading' : '', l.color ? (COLOR_NAME[l.color.toLowerCase()] ?? 'coloured') : ''].filter(Boolean)
+    const bits = [
+      l.size === 'subheading' ? 'subheading (H2)' : l.size === 'minor' ? 'minor (H3)' : '',
+      l.bold ? 'bold' : '',
+      l.italic ? 'italic' : '',
+      l.caps ? 'caps' : '',
+      l.color ? (COLOR_NAME[l.color.toLowerCase()] ?? 'coloured') : '',
+    ].filter(Boolean)
     return bits.length ? ` (${bits.join(', ')})` : ''
   }
+  // Sections (D-130): frames the team drew round parts of the board, nested; a card's [section: …] says which it's in.
+  const frames = ws.labels.filter((l) => isSection(l) && l.text.trim())
+  if (frames.length) {
+    const path = (l: Label) => [...sectionsAt(ws.labels, l.x, l.y).filter((o) => o !== l && holdsRect(rectOf(o), rectOf(l))), l].map((o) => clip(o.text, 60)).join(' › ') + look(l)
+    lines.push('', `SECTIONS ON THE BOARD (named frames round areas, outer › inner; arrange_area with a section's exact name moves and refits it, edit_section renames, delete_section removes it; the label rows don't touch them): ${frames.map(path).join(' | ')}`)
+  }
+  const areas = ws.labels.filter((l) => l.text.trim() && l.size !== 'note' && !isSection(l))
+
   if (areas.length) lines.push('', `AREAS ON THE BOARD: ${areas.map((l) => `${clip(l.text, 60)}${look(l)}`).join(' | ')}`)
   // Small notes written on the board (D-108), with the card each sits closest to.
-  const notes = ws.labels.filter((l) => l.text.trim() && l.size === 'note')
+  const notes = ws.labels.filter((l) => l.text.trim() && l.size === 'note' && !isSection(l))
   if (notes.length) {
     lines.push('', `NOTES ON THE BOARD (${notes.length})`)
     for (const l of notes) {

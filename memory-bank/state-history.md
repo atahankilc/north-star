@@ -482,3 +482,21 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   tried with a real model yet.
 - **D-127** focus view: `/focus?on=<id>`, the board with one card's chain + its competitors, in place; picker, panel
   `[◎ focus]`, right-click. Checked in headless Chrome on the emulators.
+
+## Done (2026-10-18, pushed together: D-124–D-131, side-panel fields, group drag fix, board speed)
+- Not committed: side-panel text fields grow with their text, never scroll (card title, notes, competitor name/description/notes,
+  their-feature description, matrix cell notes, workspace description; `src/ui/autoGrow.ts`, `AutosaveField` `wrap`). Checked in
+  headless Chrome.
+- Not committed: group drag fix (`groupDrag.ts`: one `setDraggingMany` + one batched `streamMany` write per move instead of one
+  per piece; carried pieces snap, not glide; held at the drop until `endMoveMany` lands). Checked in headless Chrome.
+- Board speed (committed): links drawn with `BoardLine.tsx` (keeps its geometry and material; drei `<Line>` disposed them
+  every render, so three recompiled the line shaders ~200× per few seconds of hover/pan/drag); `NodeCard`/`EdgeLine` memoised,
+  stable `onLinkDrop`; link hit bands `visible={false}` (461 → 361 draws a frame). 40 cards + 100 links in headless Chrome:
+  hover/pan/drag p95 33 → 16.8 ms, long tasks 160–870 ms → 0. Use `BoardLine`, never drei `<Line>`, on the board.
+- Not committed: D-128, customer-tag (`for`) lines are their own LINKS group; it and `relates` hidden by default (build only, not tried in a browser).
+- Not committed: D-129 (`arrange_area` layouts `cycle`, `orbit`, `tree`, `quadrant`) and D-131 (areas drawn as section frames,
+  section ops) in `src/ai/arrange.ts`, `tools.ts`, prompts, plus small hunks in `context.ts`/`chat.ts`; checked in node with
+  pictures and a synthetic workspace, not tried with a real model. D-131 builds on D-130: commit after (or with) it.
+- Not committed: D-130 sections (frames that hold what's inside them, kept in focus); checked in headless Chrome; Firestore rules deployed. Files:
+  `sections.ts`, `BoardSection.tsx`, `focusField.ts` (new) + Board, BoardView, BoardMenu, LabelBar, groupDrag, guides,
+  arrange, clipboard, titleBlock, DetailPanel (one hunk), labels/model/bundle, rules + tests, ai/context, tools, chat.

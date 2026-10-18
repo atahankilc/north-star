@@ -1,8 +1,8 @@
 // What a link says, and how the board draws it (D-108): four groups by meaning, each with its own colour, and a line
-// pattern per kind inside the group. Shared by the board, the link bar, the LINKS filter and the panel's link list.
+// pattern per kind inside the group. Customer tags (`for`) are a group of their own; they and `relates` are hidden by default (D-128). Shared by the board, the link bar, the LINKS filter and the panel's link list.
 import { FOR, type EdgeKind } from '../../data/model'
 
-export type LinkGroup = 'solves' | 'clashes' | 'draws' | 'plain'
+export type LinkGroup = 'solves' | 'clashes' | 'draws' | 'plain' | 'for'
 
 type KindStyle = { label: string; group: LinkGroup; dash?: [number, number] }
 
@@ -14,7 +14,7 @@ export const LINK_KINDS: Record<string, KindStyle> = {
   'inspired-by': { label: 'inspired by', group: 'draws', dash: [0.03, 0.07] },
   'depends-on': { label: 'depends on', group: 'draws', dash: [0.18, 0.1] },
   relates: { label: 'relates', group: 'plain' },
-  [FOR]: { label: 'for', group: 'plain', dash: [0.03, 0.07] },
+  [FOR]: { label: 'for', group: 'for', dash: [0.03, 0.07] },
 }
 
 // In the order the kind pickers list them.
@@ -24,7 +24,8 @@ export const LINK_GROUPS: { key: LinkGroup; label: string }[] = [
   { key: 'solves', label: 'solves · part of' },
   { key: 'clashes', label: 'competes · contradicts' },
   { key: 'draws', label: 'inspired by · depends on' },
-  { key: 'plain', label: 'relates · for' },
+  { key: 'plain', label: 'relates' },
+  { key: 'for', label: 'for (customer tags)' },
 ]
 
 // For the DOM (follows the theme by itself); WebGL uses `palette.link[group]`.
@@ -33,6 +34,7 @@ export const LINK_TONE: Record<LinkGroup, string> = {
   clashes: 'var(--link-clashes)',
   draws: 'var(--link-draws)',
   plain: 'var(--link-plain)',
+  for: 'var(--link-plain)',
 }
 
 export function linkStyle(kind: string): KindStyle {

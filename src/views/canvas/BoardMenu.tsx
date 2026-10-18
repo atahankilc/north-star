@@ -23,7 +23,8 @@ import { pieceOf } from './groupDrag'
 import { useGuides } from './guides'
 import { EDGE_KINDS, LINK_TONE, linkStyle } from './linkKinds'
 import { snapPoint, useSnap } from './snap'
-import { editTitle, isTitle } from './titleBlock'
+import { editTitle, isTitle, labelHalf } from './titleBlock'
+import { isSection } from './sections'
 import styles from './BoardMenu.module.css'
 
 const MOD = navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl+'
@@ -50,9 +51,11 @@ type Props = {
   ws: WorkspaceCtx
   // Makes a card or text at a board point (BoardView's create); none in the focus view, where it would vanish (D-127).
   create?: (type: NewThing, at: [number, number]) => void
+  // Draws a section round these cards and labels (D-130); none in the focus view.
+  wrap?: (ids: string[]) => void
 }
 
-export function BoardMenu({ ws, create }: Props) {
+export function BoardMenu({ ws, create, wrap }: Props) {
   const open = useBoardMenu((s) => s.open)
   const close = useBoardMenu((s) => s.close)
   // Re-reads the switches while open, so their checks follow.
@@ -78,7 +81,7 @@ export function BoardMenu({ ws, create }: Props) {
   useEffect(() => close, [close])
 
   const navigate = useNavigate()
-  const rows = open ? rowsFor(open.target, open.at, ws, create, (id) => navigate(focusPath(ws.wid, id))) : []
+  const rows = open ? rowsFor(open.target, open.at, ws, create, wrap, (id) => navigate(focusPath(ws.wid, id))) : []
   return (
     <AnimatePresence>
       {open && rows.length > 0 && (
@@ -184,22 +187,39 @@ function MenuPanel({ x, y, rows, onClose }: { x: number; y: number; rows: Row[];
   )
 }
 
-// Glide so these cards and labels fill the view (as far as the zoom limits allow).
-function zoomTo(ids: string[]) {
-  const at = ids.flatMap((id) => {
+// Glide so these cards, text and sections fill the view (as far as the zoom limits allow), each by its own size, with
+// room round them: one card shows with what's near it rather than filling the screen.
+const ZOOM_MARGIN = 1.2
+const ZOOM_LEAST: [number, number] = [18, 10]
+function zoomTo(ws: WorkspaceCtx, ids: string[]) {
+  const boxes = ids.flatMap((id): [number, number, number, number][] => {
+    const label = ws.labels.find((l) => l.id === id)
     const p = pieceOf(id)
-    return p ? [p] : []
+    if (!label && !p) return []
+    const [x, y] = label ? [label.x, label.y] : [p!.x, p!.y]
+    const [hw, hh] = label ? labelHalf(label) : [CARD_W / 2, CARD_H / 2]
+    return [[x - hw, y - hh, x + hw, y + hh]]
   })
-  if (!at.length) return
-  const hw = CARD_W / 2 + 0.6
-  const hh = CARD_H / 2 + 0.6
-  useCanvas
-    .getState()
-    .flyToFit([Math.min(...at.map((p) => p.x)) - hw, Math.min(...at.map((p) => p.y)) - hh, Math.max(...at.map((p) => p.x)) + hw, Math.max(...at.map((p) => p.y)) + hh])
+  if (!boxes.length) return
+  let [x0, y0, x1, y1] = [Math.min(...boxes.map((b) => b[0])), Math.min(...boxes.map((b) => b[1])), Math.max(...boxes.map((b) => b[2])), Math.max(...boxes.map((b) => b[3]))]
+  const grow = (lo: number, hi: number, least: number): [number, number] => {
+    const pad = Math.max(ZOOM_MARGIN, (least - (hi - lo)) / 2)
+    return [lo - pad, hi + pad]
+  }
+  ;[x0, x1] = grow(x0, x1, ZOOM_LEAST[0])
+  ;[y0, y1] = grow(y0, y1, ZOOM_LEAST[1])
+  useCanvas.getState().flyToFit([x0, y0, x1, y1])
 }
 
 // `focusOn`: opens the focus view on a card (D-127).
-function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, create: Props['create'], focusOn: (id: string) => void): Row[] {
+function rowsFor(
+  target: MenuTarget,
+  at: [number, number],
+  ws: WorkspaceCtx,
+  create: Props['create'],
+  wrap: Props['wrap'],
+  focusOn: (id: string) => void,
+): Row[] {
   const locked = editLocked()
   const { selection } = useCanvas.getState()
 
@@ -215,6 +235,7 @@ function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, cre
       { key: 'add', heading: 'add here' },
       ...BOARD_TYPES.map((t): Row => ({ key: t, label: BOARD_KINDS[t].label, glyph: '▌', tone: TYPE_ACCENT[t], run: () => create(t, here) })),
       { key: 'text', label: 'text', glyph: 'T', run: () => create('text', here) },
+      { key: 'section', label: 'section', glyph: '⬚', run: () => create('section', here) },
       ...(copied() ? [{ key: 'paste', label: 'paste here', hint: `${MOD}V`, run: () => void pasteClip(ws, at) } as Row] : []),
       ...board,
       { key: 'snap', label: 'snap to grid', hint: 'g', checked: useSnap.getState().on, run: () => useSnap.getState().toggle() },
@@ -249,8 +270,9 @@ function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, cre
   if (!label && !item) return []
   // The title block (D-118): edit its name or description; it isn't copied (one per board), and deleting takes it off the board only.
   const title = !many && !!label && isTitle(label)
-  const heading = many ? `${ids.length} selected` : title ? 'project title' : label ? 'text' : BOARD_KINDS[item!.type].label
-  const zoom: Row = { key: 'zoom', label: 'zoom to', run: () => zoomTo(ids) }
+  const section = !many && !!label && isSection(label)
+  const heading = many ? `${ids.length} selected` : title ? 'project title' : section ? 'section' : label ? 'text' : BOARD_KINDS[item!.type].label
+  const zoom: Row = { key: 'zoom', label: 'zoom to', run: () => zoomTo(ws, ids) }
   // The card's chain in the focus view (D-127).
   const focus: Row[] = item && !many ? [{ key: 'focus', label: 'focus', glyph: '◎', run: () => focusOn(target.id) }] : []
   if (locked) return [{ key: 'h', heading }, zoom, ...focus]
@@ -262,10 +284,12 @@ function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, cre
           { key: 'about', label: 'edit description', run: () => editTitle('description') } as Row,
         ]
       : label && !many
-        ? [{ key: 'edit', label: 'edit text', run: () => useCanvas.getState().setEditingLabel(label.id) } as Row]
+        ? [{ key: 'edit', label: section ? 'rename' : 'edit text', run: () => useCanvas.getState().setEditingLabel(label.id) } as Row]
         : []),
-    // The selection is what's copied; opening the menu made it this.
-    ...(title
+    // A frame round what's selected (D-130).
+    ...(wrap ? [{ key: 'wrap', label: 'put in a section', glyph: '⬚', run: () => wrap(ids) } as Row] : []),
+    // The selection is what's copied; opening the menu made it this. A section isn't (D-130).
+    ...(title || section
       ? []
       : [
           { key: 'copy', label: 'copy', hint: `${MOD}C`, run: () => copySelection(ws) } as Row,
@@ -281,7 +305,7 @@ function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, cre
       danger: true,
       run: () => {
         if (many) removeSelection(ws, ids)
-        else if (label) removeLabel(ws.wid, label.id, label.text)
+        else if (label) removeLabel(ws.wid, label.id, label.text, section)
         else removeItem(ws.wid, item!.type, target.id, item!.title)
       },
     },

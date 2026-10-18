@@ -173,8 +173,22 @@ export function cleanLabel(d: Doc, now: number) {
   const y = num(d.y)
   // The title block (D-118) has no text of its own: it shows the workspace's name and description.
   const title = d.kind === 'title'
-  if ((!text && !title) || x === undefined || y === undefined) return null
-  return { text: title ? '' : text!, x, y, ...compact({ color: str(d.color, 20), size: oneOf(d.size, LABEL_SIZES), kind: title ? 'title' : undefined }), ...times(d, now) }
+  // A section (D-130) keeps its size; one without a usable size isn't one.
+  const w = num(d.w)
+  const h = num(d.h)
+  const section = d.kind === 'section' && !!w && !!h && w > 0 && h > 0 && w <= 2000 && h <= 2000
+  if ((!text && !title && !section) || x === undefined || y === undefined) return null
+  return {
+    text: title ? '' : (text ?? ''),
+    x,
+    y,
+    ...compact({ color: str(d.color, 20), size: oneOf(d.size, LABEL_SIZES), kind: title ? 'title' : section ? 'section' : undefined }),
+    ...(d.bold === true && { bold: true }),
+    ...(d.italic === true && { italic: true }),
+    ...(d.caps === true && { caps: true }),
+    ...(section && { w, h }),
+    ...times(d, now),
+  }
 }
 
 export function cleanCompetitorFeature(d: Doc, now: number) {

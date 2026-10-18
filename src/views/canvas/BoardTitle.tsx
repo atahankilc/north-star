@@ -137,7 +137,8 @@ export function BoardTitle({ wid, label, mark, was }: Props) {
   useFrame(({ invalidate }, delta) => {
     const g = group.current
     if (!g) return
-    if (drag.current) g.position.set(x, y, 0.01)
+    // Also when carried along in a group drag (groupDrag.ts).
+    if (drag.current || live) g.position.set(x, y, 0.01)
     else {
       const dt = glideDt(delta)
       g.position.x = MathUtils.damp(g.position.x, x, 12, dt)

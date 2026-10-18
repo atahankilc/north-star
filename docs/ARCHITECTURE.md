@@ -87,7 +87,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
   ideas/{id}            title, body, color, tags[], status, x, y
   features/{id}         title, body, color, tags[], x, y, priority, status, effort   (same card fields as ideas, D-037)
   competitors/{id}      name, url, description, pricing, audience, notes, color, x, y
-  labels/{id}           text, color, size, kind?, x, y                            (text on the board, D-050; kind 'title': the project title block, D-118)
+  labels/{id}           text, color, size, kind?, x, y                            (text on the board, D-050; size heading|subheading|minor|note, bold/italic/caps true or absent; kind 'title': the project title block, D-118; kind 'section' + w, h: a frame, D-130)
   competitorFeatures/{id}  competitorId, name, description, category
   comparisons/{id}      featureId, competitorId, coverage?, notes, competitorFeatureId   (id = featureId_competitorId)
   edges/{id}            fromId, fromType, toId, toType, kind, label
@@ -108,7 +108,7 @@ RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, more?, sin
 - `edges` is one generic edge collection, so any node type can connect to any other.
   Tagging an item with a customer is an edge with `kind: 'for'` (item → customer), drawn as a card label (D-044).
 - Undo/redo: every write in `src/data/` goes through `tracked()` in `history.ts`, which snapshots the touched documents (D-046).
-- `domains` and `groups` are retired (D-048, D-049): rules allow only reading and deleting them, so old workspaces can be cleaned up.
+- `domains` and `groups` are retired (D-048, D-049; frames came back as section labels, D-130): rules allow only reading and deleting them, so old workspaces can be cleaned up.
 - Rules allow only these collections and check each one's basic shape (`firestore.rules`, mirrors `model.ts`).
 - The workspace route loads every collection once (`src/data/workspaceData.ts`); all views share it (D-036).
 - "My workspaces" = `where('memberIds', 'array-contains', uid)`.
@@ -180,12 +180,17 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   asks sent as a normal message (the chat shows the short form); one-item modes use the selected card when it fits.
 - **Board areas** (D-086, D-125): `arrange_area` rows name an area and its cards, and may give a `layout` (`columns`: a
   column per type, linked cards level; `rows`: one band per problem with its chain beside it; `grid`; `line`; `hub`: the
-  first card ringed by the rest), make it a section `within` another area (its name a subheading), or put it `beside`
+  first card ringed by the rest; D-129: `cycle`, a ring in order with nothing in the middle; `orbit`, the first card, what
+  links to it on an inner ring, the rest outside what they link to; `tree`, top-down by links from the first card;
+  `quadrant`, its first four sections as a 2 × 2), is drawn as a section frame (D-131, `frame`; default unless it reuses a
+  heading) with its sections as frames inside it, make it a section `within` another area (its name a subheading), or put it `beside`
   another area on a side. `src/ai/arrange.ts` lays them out with room for link chips and packs the areas (and sections)
   about 1.7 : 1 wide, never one long row. Columns are ordered by sweeps that cut link crossings; an area without a place goes
   to the spot (first free, or beside an area or a staying card it links to) with the shortest links that keeps the whole
   compact; a lone area with an existing label is tidied in place (D-126). After a proposal with areas, `layoutReport`
   tells the model the outlines, crossings and long links, and it may propose once more. Labels are referred to by their text.
+  Section frames that stay are obstacles, so no card lands in one by accident; `add_section` frames cards where they are,
+  `edit_section` renames, `delete_section` removes the frame only (D-131).
 - **Preview** (D-087): `src/ai/simulate.ts` plays a proposal's writes onto an in-memory copy; while open, `useWs()` serves that copy
   to every view (not to the assistant window), marks show on items, and `tracked()` refuses writes.
 - **Deep research** (D-088): `/research` → a planned set of questions you pick → one web-searching call per question (3 at a

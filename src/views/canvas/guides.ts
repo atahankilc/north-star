@@ -6,7 +6,7 @@ import type { Camera } from 'three'
 import { create } from 'zustand'
 import { useCanvas } from '../../state/canvasStore'
 import { CARD_H, CARD_W } from './cardLayout'
-import { pieceOf, piecesOnBoard } from './groupDrag'
+import { groupIds, pieceOf, piecesOnBoard } from './groupDrag'
 import { snapPoint } from './snap'
 import { titleHalf, titleId } from './titleBlock'
 
@@ -54,9 +54,9 @@ export function unitsPerPixel(camera: Camera, height: number): number {
 }
 
 // Cards are the same size (D-055); text lines up by its centre only, so its size doesn't matter here. The title block
-// (D-118) is a box like a card: its edges line up too.
+// (D-118) and sections (D-130) are boxes like a card: their edges line up too.
 export const halfOf = (kind: string, id: string): [number, number] =>
-  id === titleId() ? titleHalf() : kind === 'label' ? [0, 0] : [CARD_W / 2, CARD_H / 2]
+  id === titleId() ? titleHalf() : (pieceOf(id)?.half ?? (kind === 'label' ? [0, 0] : [CARD_W / 2, CARD_H / 2]))
 
 // The lines of a box on one axis: its low edge, centre and high edge (a label: its centre only).
 type Mark = { role: -1 | 0 | 1; v: number }
@@ -109,7 +109,8 @@ export function placeDragged(id: string, p: [number, number], free: boolean, per
     return grid
   }
   const { selection } = useCanvas.getState()
-  const moving = new Set(selection.includes(id) ? selection : [id])
+  // A section's contents (D-130) move with it: nothing to line up with there.
+  const moving = groupIds() ?? new Set(selection.includes(id) ? selection : [id])
   const own: Box = { c: p, h: halfOf(piece.kind, piece.id) }
   const others: Box[] = []
   for (const o of piecesOnBoard()) {

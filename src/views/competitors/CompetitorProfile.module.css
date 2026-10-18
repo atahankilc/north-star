@@ -46,6 +46,9 @@
   background: none;
   outline: none;
   caret-color: var(--accent-magenta);
+  resize: none;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .urlRow {
@@ -105,7 +108,8 @@
   font-size: var(--text-sm);
   line-height: 1.6;
   outline: none;
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
   caret-color: var(--accent-magenta);
   transition: border-color var(--dur-fast) var(--ease-out);
 }

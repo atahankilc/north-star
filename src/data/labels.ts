@@ -18,7 +18,7 @@ export async function createLabel(wid: string, fields: Omit<Label, 'createdAt' |
 }
 
 // `undefined` clears a field. `first`: the text a new label is given, which undoes together with creating it.
-export function updateLabel(wid: string, id: string, fields: Partial<Pick<Label, 'text' | 'color' | 'size'>>, first = false) {
+export function updateLabel(wid: string, id: string, fields: Partial<Pick<Label, 'text' | 'color' | 'size' | 'bold' | 'italic' | 'caps'>>, first = false) {
   const data: Record<string, unknown> = { updatedAt: Date.now() }
   for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v
   const ref = doc(labelsOf(wid), id)
@@ -42,4 +42,16 @@ export async function endLabelMove(wid: string, id: string, from: [number, numbe
   const ref = doc(labelsOf(wid), id)
   const before = await snapshotWith(ref, { x: from[0], y: from[1] })
   return tracked('move text', [ref], () => updateDoc(ref, { x: to[0], y: to[1] }), { before })
+}
+
+// A section's frame (D-130) while its corner is dragged: its centre and size together, streamed like a move.
+export type SectionRect = { x: number; y: number; w: number; h: number }
+export function resizeSection(wid: string, id: string, r: SectionRect) {
+  return updateDoc(doc(labelsOf(wid), id), r)
+}
+
+export async function endSectionResize(wid: string, id: string, from: SectionRect, to: SectionRect) {
+  const ref = doc(labelsOf(wid), id)
+  const before = await snapshotWith(ref, from)
+  return tracked('resize section', [ref], () => updateDoc(ref, { ...to, updatedAt: Date.now() }), { before })
 }

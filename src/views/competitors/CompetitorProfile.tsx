@@ -54,6 +54,7 @@ export function CompetitorProfile({
         </div>
         <AutosaveField
           className={styles.name}
+          wrap
           label="Competitor name"
           placeholder="Competitor name"
           value={competitor.name}

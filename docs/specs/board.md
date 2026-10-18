@@ -33,7 +33,7 @@ descriptions live in the side panel only (D-057).
   shift+dragging a card onto one links to it (`inspired by`). Links to them show while they're fanned out.
 - **Links** (D-059) run straight from edge to edge with an arrowhead, so they read as sentences ("idea → solves → problem").
   The kind is written on a chip at the midpoint, with the link's own label after it. Colour by meaning (D-108): violet
-  solves / part of, salmon competes / contradicts, sand inspired by / depends on, grey relates / for; the pattern tells
+  solves / part of, salmon competes / contradicts, sand inspired by / depends on, grey relates and customer tags (`for`, its own group); both hidden by default, still shown for the selected card (D-128); the pattern tells
   kinds apart within a colour. Hovering a card (or selecting cards) dims every link that doesn't touch it.
   Click a link to select it: a bar under it changes its kind, gives it a label, turns it around, removes it (Delete too).
   The `LINKS` filter hides groups of links and doubles as the colour key.
@@ -46,15 +46,28 @@ descriptions live in the side panel only (D-057).
   bottom; text by its centre, like the guides) or space three or more out evenly between the outermost two (equal gaps).
   The arrow keys nudge whatever is selected, one or many, by the snap step (0.25), shift by a whole unit; a run of
   nudges is one undo step. Each line-up is one undo step. Collaborators see the whole selection ringed, not just the last pick.
-- **Text sizes** (D-108): a selected text label gets a bar with H1 (heading, the default), H2 and note (small mono), a
+- **Text sizes** (D-108, D-130): a selected text label gets a bar with H1 (heading, the default), H2, H3 and note (small
+  mono), then B / I / AA (bold, italic, capitals: the real Geist faces, each switch drawn in its own style), a
   colour, edit and remove.
 
 - **Customers are the segments** (D-044): tagging an item with a customer is a `for` link, drawn as a label chip on the card
-  and as a grey dashed line (D-119; the LINKS filter's `relates · for` hides it). Selecting a customer highlights everything tagged for it.
+  and as a grey dashed line (D-119). The line is its own LINKS group, `for (customer tags)`, hidden by default; the chips stay (D-128). Selecting a customer highlights everything tagged for it.
 - Anything can link to anything. Typical links: idea → solves → problem; competitor → competes with → problem or idea;
   feature → inspired by → idea or a competitor's feature. Shift+drag picks a sensible link kind.
 - **Text labels** name areas of the board ("COMPETITORS", "PRICING IDEAS"). Headings and subheadings are places in the
   jump list (`go to`, with a search field at the top); notes are not (D-116).
+- **Sections** (D-130): a named frame round part of the board. Drawn, never placed: `+` → section (or "section" in the
+  empty board's right-click) turns the pointer into a crosshair, and a press, drag and release on the board draws the
+  frame (corners on the grid while snapping, alt freely; a drag under 1 unit draws nothing; Esc cancels; the footer
+  says so). A selection's right-click also has "put in a section" (round it, taking in text it would cover). What it holds is decided by position, nothing stored: cards and text whose
+  centre is inside it, and smaller sections wholly inside it, so sections nest. Its name sits in a band across the top
+  (set like text: H1, H2 or H3, bold, italic, capitals, from its bar; the frame's size never changes it); a faint wash marks the area. Grab the band or an edge
+  to drag it with everything it holds (one undo step); the bottom-right corner resizes it (top-left stays, contents don't
+  move); double-click the name or `rename` in its bar (colour, rename, remove) to rename it. Deleting it leaves its
+  contents. The middle belongs to the board: clicks there reach the cards or pan. An alt+drag box selects a section
+  only when it goes all round it. Sections are never copied or duplicated (a copy over the original would hold all
+  of it); arrow keys and line-up move their contents with them. Named
+  sections are in `go to` (framed whole, by their top edge).
 - **Project title** (D-118): one block per board, added from the `+` menu ("project title", gone once there is one). A
   small magenta north star and `PROJECT`, the workspace's name big (Geist, display tracking), a magenta lead on a hairline
   rule and what the team is building (Geist, muted, wrapped); four corner brackets frame it (grey, lit on hover, cyan when selected). The name and description are the workspace's own
@@ -99,7 +112,8 @@ cancels, empty text removes it; double-click a label to edit it, drag to move, D
 is on the board. From the card the chain customer → problem → idea → feature is followed both ways without turning back
 (an idea: its problems, their customers, the customers it is for, its features, theirs; not other ideas for the same
 problem), plus competitors linked to any of its problems, ideas or features (a link to a competitor's feature counts).
-No text or project block; no creating (a new card would vanish). The card in focus has a magenta ring. Pick it in
+No text or project block, but every section holding a card in the chain stays, drawn round those cards only (with its
+nested parents), so you still see what each card is part of; they can't be moved or edited there (D-130). No creating (a new card would vanish). The card in focus has a magenta ring. Pick it in
 `FOCUS │ card ▾` (search, by type), `[◎ focus]` in a card's or competitor's panel (any view; closes the panel), or a
 card's right-click `◎ focus`; the tab opens on the selected card, or the last one focused. Each change frames the chain;
 browser back goes to the previous card. SHOW/FOR/TAG/LINKS still apply, except the card in focus always shows.

@@ -27,6 +27,7 @@ import { removeItem, removeSelection } from '../workspace/useEditKeys'
 import { useViewer } from '../workspace/viewerLock'
 import { retagMany } from '../../data/selection'
 import { TagInput } from '../../ui/TagInput'
+import { useAutoGrow } from '../../ui/autoGrow'
 import { align, space, type Align } from './arrange'
 import { duplicateSelection } from './clipboard'
 import { BOARD_KINDS, TYPE_ACCENT, useAllTags, type BoardItem } from './boardKinds'
@@ -94,7 +95,7 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
   const focused = useRef<keyof Draft | null>(null)
   const pending = useRef<Partial<BoardNode>>({})
   const timer = useRef<number | undefined>(undefined)
-  const titleRef = useRef<HTMLInputElement>(null)
+  const titleRef = useRef<HTMLTextAreaElement>(null)
   const kind = BOARD_KINDS[type]
 
   // Remote edits flow in, except into the field you're typing in.
@@ -112,6 +113,10 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
     if (!node.title) titleRef.current?.focus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const bodyRef = useRef<HTMLTextAreaElement>(null)
+  useAutoGrow(titleRef, draft.title)
+  useAutoGrow(bodyRef, draft.body)
 
   const flush = () => {
     window.clearTimeout(timer.current)
@@ -150,7 +155,21 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
         </span>
       </header>
 
-      <input ref={titleRef} className={styles.title} placeholder="Untitled" {...field('title')} />
+      <textarea
+        ref={titleRef}
+        className={styles.title}
+        rows={1}
+        placeholder="Untitled"
+        {...field('title')}
+        // A title is one line of text, only wrapped: Enter finishes it, pasted line breaks become spaces.
+        onChange={(e) => edit('title', e.target.value.replace(/\s*\n\s*/g, ' '))}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+            e.preventDefault()
+            e.currentTarget.blur()
+          }
+        }}
+      />
 
       <div className={styles.pickers}>
         {type === 'feature' && <FeatureFields wid={wid} feature={node as WithId<Feature>} />}
@@ -159,7 +178,7 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
 
       <label className={styles.label}>
         notes
-        <textarea className={styles.body} rows={6} placeholder={kind.placeholder} {...field('body')} />
+        <textarea ref={bodyRef} className={styles.body} rows={6} placeholder={kind.placeholder} {...field('body')} />
       </label>
 
       <div className={styles.label}>
@@ -222,7 +241,8 @@ function SelectionPanel({ items }: { items: BoardItem[] }) {
   const selection = useCanvas((s) => s.selection)
   const viewer = useViewer((s) => s.viewer)
   const cards = items.filter((i) => selection.includes(i.id))
-  const labels = ws.labels.filter((l) => selection.includes(l.id))
+  const labels = ws.labels.filter((l) => selection.includes(l.id) && l.kind !== 'section')
+  const sections = ws.labels.filter((l) => selection.includes(l.id) && l.kind === 'section')
   const shared = cards.length ? cards[0].tags.filter((t) => cards.every((c) => c.tags.includes(t))) : []
   const suggestions = useAllTags(items).map((t) => t.tag)
   const counts = BOARD_TYPES.map((t) => [t, cards.filter((c) => c.type === t).length] as const).filter(([, n]) => n > 0)
@@ -247,6 +267,13 @@ function SelectionPanel({ items }: { items: BoardItem[] }) {
           <li>
             <span className={styles.manyMark} aria-hidden>T</span>
             {labels.length} text{labels.length === 1 ? '' : 's'}
+          </li>
+        )}
+        {/* Sections (D-130) move what they hold along. */}
+        {sections.length > 0 && (
+          <li>
+            <span className={styles.manyMark} aria-hidden>⬚</span>
+            {sections.length} section{sections.length === 1 ? '' : 's'}
           </li>
         )}
       </ul>

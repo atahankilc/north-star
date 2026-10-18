@@ -220,8 +220,9 @@ Was: groups as labelled frames on the board. Removed; text labels mark areas (D-
 text labels cover slicing and naming areas. Removed tabs, pickers, unsorted marks and the domain filters on Table/Matrix.
 Rules refuse new `domains` docs but keep read/delete for clean-up; old `domainId`/`domainIds` fields are tolerated and ignored.
 
-### D-049 · 2026-10-17 · Accepted (reverses D-047)
-**No groups.** Replaced by text labels (D-050) to mark areas. Rules refuse new `groups` docs, keep read/delete for clean-up.
+### D-049 · 2026-10-17 · Accepted (reverses D-047; frames return as sections, D-130)
+**No groups collection.** Replaced by text labels (D-050) to mark areas. Rules refuse new `groups` docs, keep read/delete
+for clean-up. Named frames came back in D-130 as a kind of label, by the user's request.
 
 ### D-050 · 2026-10-17 · Accepted
 **Text labels on the board are the places you jump to.** `labels/{id}`: text, color, x, y. Written straight on the canvas
@@ -1596,3 +1597,130 @@ opens the panel, a button refocuses.
 - *Verified:* `npm run build`; headless Chrome on emulators with the example: an idea (7 of 22 cards, as above), the
   picker (search → Enter refocuses and frames), back returns to the previous card, no `?on` shows the prompt, a
   feature's panel button → its idea, problem, customer and ShiftGrid; tab href carries the selected card; no page errors.
+
+### D-128 · 2026-10-18 · Accepted (extends D-108, D-119)
+**Customer-tag lines are their own LINKS group; they and `relates` are hidden by default.**
+- *Why:* the user: "for linkleri çok yer karmaşıklaşmasına neden oluyor. For linklerini ayıralım ve otomatik disable
+  edelim" (`for` links clutter the board a lot; separate them and turn them off automatically). Every tagged card drew a
+  grey dashed line to its customer, so a segmented board was mostly those lines.
+- *What:* `linkKinds.ts` gets a fifth group `for` (label `for (customer tags)`, same grey as `relates`, which now stands
+  alone as `relates`). `workspaceView` defaults `hiddenLinks` to `['for']`; filters saved before this (no `linksV`, or
+  `linksV < 2`) get `for` added once, so existing workspaces turn it off too; after that the choice is remembered.
+  Then the user: "do the same for relates one -> not selected automatically": `plain` (relates) is hidden by default
+  too; `HIDDEN_SINCE` adds each newly hidden group once to saved filters (`for` at `linksV` 2, `plain` at 3).
+  The LINKS filter only lights when a group other than `plain` / `for` is hidden. Still shown while hidden: the selected card's
+  lines (select a customer to see who's tagged), and tag lines the assistant's preview adds. The customer chips on
+  cards, the FOR filter, Table's `for` column and the focus view's chain (D-127, which reads edges, not lines) are untouched.
+- *Alternatives:* drop the lines entirely (chips already say it, but selecting a customer would lose its fan of lines);
+  a separate switch beside fit-all (another control, when the LINKS filter already is the place).
+- *Verified:* `npm run build`.
+
+### D-129 · 2026-10-18 · Accepted (extends D-125, D-126)
+**Organising, more shapes: `cycle`, `orbit`, `tree`, `quadrant`.** The user: "when doing /organize, can our bot make
+circles or different kinds of shape to make more meaningful designs", then, offered five shapes with three recommended:
+"yeah i just want it to be more capable when we use /organize command". Built the three plus `tree` (left for later in D-126).
+- *`cycle`*: the cards in the given order round an oval (about 2 : 1, cards being wide), clockwise from the top, nothing in
+  the middle: a flywheel, a lifecycle, a feedback loop. Under 3 cards: a line.
+- *`orbit`*: the first card in the middle; the cards linked to it on an inner ring; the rest on an outer ring, each at the
+  (circular) mean angle of the inner cards it links to, spread just enough to keep clear; unlinked ones after the rest. No
+  card linked to the centre: everything on the inner ring (like `hub`). Distance from the centre = how close a card is.
+- *`tree`*: top-down from the first card, each card under the card it was first reached from over links (children in the
+  area's order), a parent centred over its children; cards it doesn't reach start trees of their own beside it.
+- *`quadrant`*: on an area whose sections are its content: the first four sections in a 2 × 2 of equal cells (top-left,
+  top-right, bottom-left, bottom-right), more sections and its own cards packed beside. Fewer than 2 sections: packed as
+  before. Axes are only the sections' names ("High impact · low effort"): the board has no drawn lines or boxes.
+- *Rings* keep a chip's room between neighbours (a card width + 1.4 across, or a card height + 1.2 down), growing the oval
+  until they do. `hub` unchanged.
+- *Prompt:* the tool's layout description, the chat's arranging guidance ("mix shapes so the board reads as a picture") and
+  `/organize`'s ask name the new shapes and when each fits.
+- *Alternatives:* drawn shapes on the board (circles, axis lines, boxes): a new item type, rules and data shape, for later
+  if labels aren't enough; `funnel`/`pyramid` (which cards on which row needs the model to group them: sections do that).
+- *Verified:* `npm run build`; vite-node + jsdom: a picture of all four on synthetic links (29 cards, 0 overlaps), and edge
+  cases (rings of 2/3/12, orbit with no links, unlinked outer cards, 14 on one inner card, tree with no links or a loop,
+  quadrant with 2 or 5 sections or none): 0 overlaps, no NaN. Not tried with a real model or in the app.
+
+### D-130 · 2026-10-18 · Accepted (brings frames back after D-047/D-049; extends D-050, D-127)
+**Sections: named frames that group part of the board, kept in the focus view.** The user: "lets add sections to the
+board. For example A section can contain, cards, texts and other sections and they are used to label them and group them
+together. And when i go to foucs tab, we protect the section labels tooo. So that user can still understand what the
+cards are for."
+- *Data:* a label of `kind: 'section'` with `w`, `h` (x/y its centre); rules require both, > 0, ≤ 2000 (`validLabel`);
+  import keeps them (`cleanLabel`). So it selects, copies, undoes, syncs and exports like text, with no new collection.
+- *Membership by position, nothing stored* (`sections.ts`, `groupDrag.contentsOf`): a card's or text's centre inside the
+  frame, or a smaller section wholly inside it. Drop a card in and it belongs; nesting falls out of containment.
+  Rejected: stored member ids (they go stale with every drag, need rules and cascades, and disagree with what you see).
+- *Board* (`BoardSection.tsx`): thin frame, faint wash, a name band across the top, set like text (below); grab the band or the left/right/bottom edge to drag (the group drag carries the contents, one undo step,
+  guides ignore what's carried); bottom-right handle resizes (top-left fixed, grid snap, contents stay); double-click
+  renames; the middle has no hit area, so cards inside and panning work as before. Under every card, inner over outer.
+  Bar under its frame: colour, rename, remove (contents stay). Box select takes a section only when wholly inside the box.
+  Nudge and line-up move contents with it. Named sections are `go to` places (framed whole).
+- *Never copied:* the user: "dont alow a section to duplicate because then it stoles every content to itself" (a copy
+  laid over the original holds everything in it). Copy/duplicate skip sections; their menu rows are gone for one.
+- *Drawing one:* the user: "when i click to a section, my curser changes in to a aim or like + and then i start
+  constructing its dimention with clicling to a space and then draging and then cinally releasing the click. I dont want
+  to have a section created automatically to a random place". `+` → section, or "section" in the empty board's
+  right-click, arms a crosshair (`useSectionDraw`); a sheet over the board takes the left button (so a press on a card
+  starts a frame too; right drag and wheel still pan and zoom); press, drag, release draws it, grown to 4 × 3 at least,
+  corners snapped; under 1 unit draws nothing; Esc or leaving the board disarms; the footer hint says what to do.
+  Replaced the first version, which placed a 16 × 10 frame mid-view or wrapped the selection. A selection's right-click
+  keeps "put in a section" (round it, taking in text it would cover so the name band sits above an area's heading).
+  The name field opens at once. Empty names allowed ("Section" shown).
+- *Setting text* (`textStyle.ts`): the user: "when i change the size of a section, its titles size change but lets make it
+  like already existing text. Give options for h1, h2, and h3 also (add h3 to text fields too). and maybe more options can
+  be given to any text field. Maybe doing it italic or idk, more configuration". A section's name is H1 (default), H2 or
+  H3, never scaled by the frame (the first version grew it 0.3–1.4 with the section). Text gets H3 (`size: 'minor'`,
+  0.27; not a `go to` place, like notes). Both get bold, italic and capitals (`bold`/`italic`/`caps`, only `true`
+  stored; rules check booleans): the real Geist 500/700 normal/italic faces (mono for notes), caps a little tracked; the
+  editing field matches. All eight faces are warmed when the board loads (`FontWarmup`): drei's `<Text>` suspends on
+  a new font and, with no boundary, remounted the board, whose cards then stayed invisible (seen on the first italic).
+- *Focus view:* every section holding a card in the chain stays, refitted round those cards (inner first, parents round
+  them), drawn only. The camera frames the chain with them.
+- *Assistant:* reads them (`SECTIONS ON THE BOARD`, a card's `[section: Outer › Inner]`); its label rows skip sections
+  (`textLabels`). Section ops and arrange_area frames are the assistant session's (agreed with it).
+- *Also fixed, "zoom to"* (the user: "zoom to da düzgün çalışmıyor"): it framed every piece as a card-sized point
+  (text and sections wrong), flew in until one card filled a quarter of the screen, and centred on the whole canvas
+  though the card's side panel (opened by the right-click) covers its right part. Now each piece by its real extent
+  (`labelHalf`), at least an 18 × 10 area round it, and every fit (`fitView`: zoom to, fit all, focus, previews) frames
+  within the part a `[data-side-panel]` leaves open. Checked: a card lands left of the panel with its neighbours; a
+  section is framed whole.
+- *Also fixed:* the text/section name field could miss focus (drei `<Html>` attaches it after it renders), so typing
+  went to the `+` button and Enter reopened the menu; now retried per frame until focused (`focusField.ts`).
+- *Verified:* `npm run build`; rules 251 pass (4 new); headless Chrome on emulators with the example: three sections from
+  the `+` menu (two round cards, one round both), dragging Discovery's band moved its 8 cards by the same 5.1 and nothing
+  else, one undo restored them, the corner resized without moving cards, the focus view on an idea kept Discovery,
+  Solution and Product fitted round the chain. Drawing: a click draws nothing and stays armed, Esc disarms, a drag
+  starting on a card made the section and opened its name; ⌘D on a section added nothing. Text: H3 + B + I + AA from the
+  bar (all pressed after, drawn bold italic caps, board intact); a section in italic kept its name size when resized. Not tried: light theme, a collaborator watching, the assistant reading them.
+
+### D-131 · 2026-10-18 · Accepted (extends D-125, D-129, D-130)
+**The assistant draws sections: organised areas become frames, frames that stay are kept clear, and it can add, rename
+and remove them.** After D-129 the other session's D-130 brought section frames; asked whether `/organize` should use
+them (frames round areas and sections, a quadrant as four boxes, existing frames respected, section ops), the user said
+"go ahead when other agent finishes its task".
+- *Areas as frames:* `arrange_area` takes `frame` (null = a frame, unless the label reuses a heading on the board, which
+  stays a heading; false = a heading as before). A framed area is a `kind: 'section'` label round its block: padded 1,
+  the name's band on top (as `wrapRect`), at least `MIN_W` × `MIN_H` and as wide as its name; its `within` sections are
+  frames inside it, so they nest by position. A quadrant's framed sections are stretched to equal cells: four boxes.
+- *Reuse:* an area named like a section on the board moves and refits that frame (a lone one keeps its top-left corner,
+  as D-126 keeps a heading). `frame: true` on a heading turns that label into a frame in place (size removed); `frame:
+  false` on a frame turns it into a heading (kind, w, h removed). Same document either way.
+- *Frames that stay* (not named by an area, not deleted in the set) go to the layout as obstacles (`Fixed.frames`), so no
+  moved card lands in one and changes what it holds. Before, they were left out entirely.
+- *Ops:* `add_section` (a frame round cards where they end up in the set, `wrapRect`; placed after every card has its
+  place, like notes, so it can frame cards added in the same proposal; off for unknown cards, a competitor's feature, a
+  name a section already has, or one another area or section in the same proposal has: never a second frame laid over
+  the first, as D-130 never copies a section), `edit_section` (rename), `delete_section` (the frame only; its cards stay). Checklist kind
+  `section`; `stillValid` turns them off once the section is gone. `parseProposal` takes the section names.
+- *Text setting (D-130's H3 and styles):* `add_label` / `edit_label` take `bold`, `italic`, `caps` (true sets, false removes
+  the field, null keeps; a new label stores only true) and the size help names H1/H2/H3 (`minor`)/note; `edit_section`
+  renames or sets its name's size (H1–H3) and style. The brief shows a label's or section's size, style and colour when
+  not the default. A framed area's name is H1, a section's H2; the band comes from `sectionBand`.
+- *Prompt:* the brief's SECTIONS line names the ops; the arranging guidance says areas are frames, a card belongs to the
+  frame it sits in, and to reuse a section's exact name.
+- *Alternatives:* frames only as an option the model asks for (headings stay the default): the user asked for more
+  visible designs, and a frame says what belongs together better than a heading over a gap.
+- *Verified:* `npm run build`; vite-node + jsdom: a picture (frames, a stretched quadrant, a heading area, a staying
+  frame kept clear); a synthetic workspace through brief → `parseProposal` → `toWrites` → `simulate`: every card inside its
+  own frame, none in the staying frame, quadrant sections inside their parent, the existing section moved (same id), a
+  reused heading kept, bad rows off; `add_section` round three cards and one added later in the same set; heading ↔ frame
+  both ways with no leftover fields. Not tried with a real model or in the app.

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (D-127 focus view: one card's chain on the board)_
+_Last updated: 2026-10-18 (D-131 the assistant draws sections)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -13,18 +13,14 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. Firestore + RTDB rules and indexes deployed
-  (latest 2026-10-18, RTDB again for D-124's `more`; rules 247 tests incl. the title label; reports readable while not saved yet, so a save shows at once; research written twice keeps only the newest).
+  (latest 2026-10-18, RTDB again for D-124's `more`; rules 253 tests incl. sections and text setting (D-130); reports readable while not saved yet, so a save shows at once; research written twice keeps only the newest).
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger), `storage.rules`
   (attachments D-083). Flags `WORKSPACE_KEYS_LIVE` (src/data/ai.ts) and `ATTACHMENTS_LIVE` (src/data/attachments.ts) are `false`.
 - Tried with a real key: chat, proposals, [web], agent loop, deep research, reports. Only with a fake OpenAI: `/analyze` (D-099),
-  `edit_link` / `add_note` (D-108). Not tried in the app at all: `update_project` (D-120), D-122's edits, D-123's text and moves, D-125/D-126's layouts.
+  `edit_link` / `add_note` (D-108). Not tried in the app at all: `update_project` (D-120), D-122's edits, D-123's text and moves, D-125/D-126/D-129's layouts, D-131's frames.
 
 ## In progress
-- Board speed (committed): links drawn with `BoardLine.tsx` (keeps its geometry and material; drei `<Line>` disposed them
-  every render, so three recompiled the line shaders ~200× per few seconds of hover/pan/drag); `NodeCard`/`EdgeLine` memoised,
-  stable `onLinkDrop`; link hit bands `visible={false}` (461 → 361 draws a frame). 40 cards + 100 links in headless Chrome:
-  hover/pan/drag p95 33 → 16.8 ms, long tasks 160–870 ms → 0. Use `BoardLine`, never drei `<Line>`, on the board.
-- Nothing else in progress; D-124–D-127 committed, not pushed (D-118–D-123 are live). Keep this section true: empty it when work is committed.
+- Nothing uncommitted: D-124–D-131, autoGrow fields and the group drag fix pushed 2026-10-18 (see state-history.md).
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
@@ -50,6 +46,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The bundle is about 1.6 MB (three + drei + firebase). Code-split views later.
 
 ## Notes for future sessions
+- On the board, draw lines with `BoardLine`, never drei `<Line>` (it recompiled line shaders on every render).
 - **Visual or animation checks: headless Chrome via puppeteer-core.** Install it in the session scratchpad
   (`npm i puppeteer-core@24`, never in the repo), launch `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` with
   `headless: 'new'` (add `ignoreDefaultArgs: ['--hide-scrollbars']` to see scroll bars). Wait for

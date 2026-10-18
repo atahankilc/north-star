@@ -2,12 +2,14 @@
 // its cards are laid out, whether it is a section of another area and which area it sits beside; this works out where.
 // Each area is a label with its cards (and its sections) under it, ordered so links cross as little as they can. An
 // area without a place of its own goes where its links are shortest while the whole stays compact (about ASPECT wide
-// to tall, never one long line); a lone area that already has a label stays where it is.
+// to tall, never one long line); a lone area that already has a label stays where it is. An area (and a section of
+// one) is a frame round its cards with its name in the frame's band (D-130, D-131), or a heading over them.
 import type { NodeType } from '../data/model'
 import { CARD_H, CARD_W } from '../views/canvas/cardLayout'
+import { MIN_H, MIN_W, sectionBand, sectionNameSize } from '../views/canvas/sections'
 import { labelHalf } from '../views/canvas/titleBlock'
 
-export const AREA_LAYOUTS = ['columns', 'rows', 'grid', 'line', 'hub'] as const
+export const AREA_LAYOUTS = ['columns', 'rows', 'grid', 'line', 'hub', 'cycle', 'orbit', 'tree', 'quadrant'] as const
 export type AreaLayout = (typeof AREA_LAYOUTS)[number]
 export const AREA_SIDES = ['right', 'left', 'above', 'below'] as const
 export type AreaSide = (typeof AREA_SIDES)[number]
@@ -27,11 +29,14 @@ const GAP = 3
 // Width to height the areas (and sections) are packed to.
 const ASPECT = 1.7
 const STEP = 0.5
+// Room between a frame and what it holds (as sections.ts wrapRect leaves).
+const FRAME_PAD = 1
 
 export type Point = { x: number; y: number }
 
 // `id`: an item's id, or the key of one created in the same proposal. `layout`: undefined picks one from the cards.
-// `within`: the label of the area this one is a section of. `beside`/`side`: the area it goes next to.
+// `within`: the label of the area this one is a section of. `beside`/`side`: the area it goes next to. `frame`: drawn as a
+// section frame (D-131), else a heading over its cards.
 export type AreaPlan = {
   label: string
   items: { id: string; type: NodeType }[]
@@ -39,17 +44,20 @@ export type AreaPlan = {
   within?: string
   beside?: string
   side?: AreaSide
-  // Where its label is now: the area is rearranged there rather than moved.
+  frame?: boolean
+  // Where its label is now (a frame: its top-left corner): the area is rearranged there rather than moved.
   stay?: Point
 }
-// Everything on the board that stays where it is; a card's id lets an area go near what it links to.
-export type Fixed = { cards: (Point & { id?: string })[]; labels: (Point & { text: string; kind?: string; size?: string })[] }
 type Rect = { x0: number; y0: number; x1: number; y1: number }
-// `sub`: a section's name, written as a subheading. `areas`: each area's and section's outline and the layout it got.
+// Everything on the board that stays where it is; a card's id lets an area go near what it links to. `frames`: the
+// sections that stay, kept clear so no card lands in (or a new area over) one by accident.
+export type Fixed = { cards: (Point & { id?: string })[]; labels: (Point & { text: string; kind?: string; size?: string })[]; frames?: Rect[] }
+// `sub`: a section's name, written as a subheading. `frame`: drawn as a frame; its outline is its area's. `areas`: each
+// area's and section's outline and the layout it got.
 export type Arranged = {
-  labels: (Point & { text: string; sub: boolean })[]
+  labels: (Point & { text: string; sub: boolean; frame?: boolean })[]
   cards: Map<string, Point>
-  areas: (Rect & { label: string; layout?: AreaLayout; sub: boolean })[]
+  areas: (Rect & { label: string; layout?: AreaLayout; sub: boolean; frame?: boolean })[]
 }
 
 type Item = AreaPlan['items'][number]
@@ -58,7 +66,7 @@ type Block = {
   w: number
   h: number
   cards: { id: string; x: number; y: number }[]
-  labels: { text: string; sub: boolean; x: number; y: number }[]
+  labels: { text: string; sub: boolean; frame?: boolean; x: number; y: number }[]
   areas: Arranged['areas']
 }
 const EMPTY: Block = { w: 0, h: 0, cards: [], labels: [], areas: [] }
@@ -185,7 +193,6 @@ const line = (items: Item[]): Block => table(items.map((item, i) => ({ item, col
 function hub(items: Item[]): Block {
   const [centre, ...ring] = items
   if (!ring.length) return line(items)
-  const clear = (a: Point, b: Point) => Math.abs(a.x - b.x) >= CARD_W + COL_GAP * 0.7 || Math.abs(a.y - b.y) >= CARD_H + ROW_GAP
   let pts: Point[] = []
   for (let ry = CARD_H + ROW_GAP + 0.4; ry < 60; ry *= 1.08) {
     const rx = Math.max(CARD_W + COL_GAP, ry * 2.1)
@@ -196,12 +203,143 @@ function hub(items: Item[]): Block {
     const all = [{ x: 0, y: 0 }, ...pts]
     if (all.every((a, i) => all.every((b, j) => j <= i || clear(a, b)))) break
   }
-  const all = [{ id: centre.id, x: 0, y: 0 }, ...ring.map((it, i) => ({ id: it.id, ...pts[i] }))]
-  const x0 = Math.min(...all.map((p) => p.x)) - CARD_W / 2
-  const y1 = Math.max(...all.map((p) => p.y)) + CARD_H / 2
-  const w = Math.max(...all.map((p) => p.x)) + CARD_W / 2 - x0
-  const h = y1 - (Math.min(...all.map((p) => p.y)) - CARD_H / 2)
-  return { w, h, cards: all.map((p) => ({ id: p.id, x: p.x - x0, y: p.y - y1 })), labels: [], areas: [] }
+  return placed([{ id: centre.id, x: 0, y: 0 }, ...ring.map((it, i) => ({ id: it.id, ...pts[i] }))])
+}
+
+// Far enough apart that two cards (and a chip between them) don't touch.
+const clear = (a: Point, b: Point) => Math.abs(a.x - b.x) >= CARD_W + COL_GAP * 0.7 || Math.abs(a.y - b.y) >= CARD_H + ROW_GAP
+// Cards at points around 0,0 (y up) as a block.
+function placed(pts: (Point & { id: string })[]): Block {
+  const x0 = Math.min(...pts.map((p) => p.x)) - CARD_W / 2
+  const y1 = Math.max(...pts.map((p) => p.y)) + CARD_H / 2
+  const w = Math.max(...pts.map((p) => p.x)) + CARD_W / 2 - x0
+  const h = y1 - (Math.min(...pts.map((p) => p.y)) - CARD_H / 2)
+  return { w, h, cards: pts.map((p) => ({ id: p.id, x: p.x - x0, y: p.y - y1 })), labels: [], areas: [] }
+}
+// A point on an oval `ry` tall (and about twice as wide, cards being wide), `t` turns clockwise from the top.
+const onOval = (ry: number, t: number, min = 0): Point => {
+  const rx = Math.max(CARD_W + COL_GAP, ry * 2.1, min)
+  return { x: rx * Math.sin(2 * Math.PI * t), y: ry * Math.cos(2 * Math.PI * t) }
+}
+// On a ring, links run between neighbours: room for a chip between them either way.
+const roomy = (a: Point, b: Point) => Math.abs(a.x - b.x) >= CARD_W + COL_GAP || Math.abs(a.y - b.y) >= CARD_H + 1.2
+// The smallest oval, from `from` up, on which cards at `turns` keep clear of each other and of `others`.
+function ring(turns: number[], from: number, others: Point[] = [], min = 0): Point[] {
+  let pts: Point[] = []
+  for (let ry = from; ry < 80; ry *= 1.05) {
+    pts = turns.map((t) => onOval(ry, t, min))
+    if (pts.every((a, i) => pts.every((b, j) => j <= i || roomy(a, b)) && others.every((o) => roomy(a, o)))) break
+  }
+  return pts
+}
+// Turns as near the wanted ones as they can be while at least `gap` apart (all of them in order round the ring).
+function spread(want: number[], gap: number): number[] {
+  const t = [...want]
+  for (let pass = 0; pass < 30; pass++) {
+    for (let i = 1; i < t.length; i++) t[i] = Math.max(t[i], t[i - 1] + gap)
+    // The last one wraps round towards the first.
+    const over = t.length > 1 ? t[t.length - 1] - (t[0] + 1 - gap) : 0
+    const drift = t.reduce((a, v, i) => a + v - want[i], 0) / t.length + Math.max(0, over) / t.length
+    for (let i = 0; i < t.length; i++) t[i] -= drift
+    for (let i = t.length - 2; i >= 0; i--) t[i] = Math.min(t[i], t[i + 1] - gap)
+  }
+  return t
+}
+
+// In the given order around a ring, clockwise from the top, nothing in the middle: a loop (a flywheel, a lifecycle).
+function cycle(items: Item[]): Block {
+  if (items.length < 3) return line(items)
+  const pts = ring(items.map((_, i) => i / items.length), CARD_H + 1.2)
+  return placed(items.map((it, i) => ({ id: it.id, ...pts[i] })))
+}
+
+// The first card in the middle, the cards linked to it on a ring around it, the rest on an outer ring, each outside
+// the inner card it links to: how close a card sits says how close it is to the centre.
+function orbit(items: Item[], links: Map<string, Set<string>>): Block {
+  const [centre, ...rest] = items
+  if (!rest.length) return line(items)
+  let inner = rest.filter((i) => links.get(centre.id)?.has(i.id))
+  if (!inner.length) inner = rest
+  const outer = rest.filter((i) => !inner.includes(i))
+  // Where on the ring each outer card wants to be: the (circular) mean of the inner cards it links to; unlinked ones
+  // (NaN) go last and don't turn the ring.
+  const turnOf = (k: number) => k / inner.length
+  const want = outer.map((i) => {
+    const ks = inner.map((n, k) => (links.get(i.id)?.has(n.id) ? k : -1)).filter((k) => k >= 0)
+    if (!ks.length) return NaN
+    const [x, y] = ks.reduce(([x, y], k) => [x + Math.cos(2 * Math.PI * turnOf(k)), y + Math.sin(2 * Math.PI * turnOf(k))], [0, 0])
+    return ((Math.atan2(y, x) / (2 * Math.PI)) + 1) % 1
+  })
+  const sortKey = (k: number) => (Number.isNaN(want[k]) ? 2 : want[k])
+  const order = outer.map((_, k) => k).sort((a, b) => sortKey(a) - sortKey(b))
+  // Gathered at the inner card they hang from, spread just enough to keep clear (unlinked ones after the rest).
+  const m = outer.length
+  const linked = order.filter((k) => !Number.isNaN(want[k]))
+  const last = linked.length ? want[linked[linked.length - 1]] : 0
+  const turns = spread(
+    order.map((k, i) => (Number.isNaN(want[k]) ? last + (i - linked.length + 1) / (m + 1) : want[k])),
+    Math.min(1 / Math.max(m, 1), 0.08),
+  )
+  const ins = ring(inner.map((_, k) => turnOf(k)), CARD_H + 1.2, [{ x: 0, y: 0 }])
+  const ry = Math.max(...ins.map((p) => Math.abs(p.y)), CARD_H) + CARD_H + 1.2
+  const rx = Math.max(...ins.map((p) => Math.abs(p.x)), CARD_W) + CARD_W + COL_GAP
+  const outs = m ? ring(turns, ry, [{ x: 0, y: 0 }, ...ins], rx) : []
+  return placed([
+    { id: centre.id, x: 0, y: 0 },
+    ...inner.map((it, k) => ({ id: it.id, ...ins[k] })),
+    ...order.map((k, i) => ({ id: outer[k].id, ...outs[i] })),
+  ])
+}
+
+// Top-down from the first card: each card under the one it was first reached from over links, a parent centred over
+// its children. Cards it doesn't reach start trees of their own beside it, in the given order.
+function tree(items: Item[], links: Map<string, Set<string>>): Block {
+  const inArea = new Set(items.map((i) => i.id))
+  const kids = new Map<string, string[]>()
+  const seen = new Set<string>()
+  const roots: string[] = []
+  for (const it of items) {
+    if (seen.has(it.id)) continue
+    roots.push(it.id)
+    seen.add(it.id)
+    let front = [it.id]
+    while (front.length) {
+      const next: string[] = []
+      for (const id of front) {
+        // In the area's order, so the model's order reads left to right.
+        const ns = items.map((i) => i.id).filter((n) => links.get(id)?.has(n) && inArea.has(n) && !seen.has(n))
+        for (const n of ns) seen.add(n)
+        kids.set(id, ns)
+        next.push(...ns)
+      }
+      front = next
+    }
+  }
+  const width = new Map<string, number>()
+  const span = (id: string): number => {
+    const ks = kids.get(id) ?? []
+    const w = Math.max(CARD_W, ks.reduce((a, k) => a + span(k), 0) + COL_GAP * Math.max(0, ks.length - 1))
+    width.set(id, w)
+    return w
+  }
+  const pts: (Point & { id: string })[] = []
+  const lay = (id: string, x: number, depth: number) => {
+    pts.push({ id, x: x + width.get(id)! / 2, y: -depth * (CARD_H + COL_GAP) })
+    const ks = kids.get(id) ?? []
+    const inner = ks.reduce((a, k) => a + width.get(k)!, 0) + COL_GAP * Math.max(0, ks.length - 1)
+    let at = x + (width.get(id)! - inner) / 2
+    for (const k of ks) {
+      lay(k, at, depth + 1)
+      at += width.get(k)! + COL_GAP
+    }
+  }
+  let x = 0
+  for (const r of roots) {
+    const w = span(r)
+    lay(r, x, 0)
+    x += w + COL_GAP * 1.5
+  }
+  return placed(pts)
 }
 
 // When the model leaves it open: one kind of card → a grid (a line if few); several problems → their bands; else columns.
@@ -217,6 +355,11 @@ function content(layout: AreaLayout, plan: AreaPlan, links: Map<string, Set<stri
   if (layout === 'grid') return grid(plan.items)
   if (layout === 'line') return line(plan.items)
   if (layout === 'hub') return hub(plan.items)
+  if (layout === 'cycle') return cycle(plan.items)
+  if (layout === 'orbit') return orbit(plan.items, links)
+  if (layout === 'tree') return tree(plan.items, links)
+  // A quadrant's own cards (its sections take the corners).
+  if (layout === 'quadrant') return content(pick(plan.items), plan, links)
   return columns(plan.items, links)
 }
 
@@ -246,16 +389,69 @@ function pack(blocks: Block[], gap: number): Block {
   return out
 }
 
+// A section's name is H1 for an area, H2 for a section of one (D-130).
+const frameNameSize = (sub: boolean): 'heading' | 'subheading' => (sub ? 'subheading' : 'heading')
+// A frame's size round a body: padded, with the name's band on top (as sections.ts wrapRect), at least the smallest
+// frame and as wide as its name (about 0.62 of the name's size per letter, plus a margin).
+function frameSize(label: string, bw: number, bh: number, sub: boolean): [number, number] {
+  const size = { size: frameNameSize(sub) }
+  const w = Math.max(MIN_W, bw + 2 * FRAME_PAD, label.trim().length * sectionNameSize(size) * 0.62 + 2 * FRAME_PAD)
+  return [w, Math.max(MIN_H, bh + 2 * FRAME_PAD + sectionBand(size))]
+}
+
+// An area drawn as a frame (D-131): its body padded inside, under the name's band; the label's point is the frame's centre.
+function framed(label: string, layout: AreaLayout | undefined, sub: boolean, body: Block): Block {
+  const [w, h] = frameSize(label, body.w, body.h, sub)
+  const moved = shift(body, (w - body.w) / 2, -(h - FRAME_PAD - body.h))
+  return {
+    w,
+    h,
+    cards: moved.cards,
+    labels: [{ text: label, sub, frame: true, x: w / 2, y: -h / 2 }, ...moved.labels],
+    areas: [{ label, layout, sub, frame: true, x0: 0, x1: w, y0: -h, y1: 0 }, ...moved.areas],
+  }
+}
+
+// A framed block made `w` × `h`: the frame grows, what it holds keeps its place under the band, centred across.
+function stretch(b: Block, w: number, h: number): Block {
+  const moved = shift({ ...b, labels: b.labels.slice(1), areas: b.areas.slice(1) }, (w - b.w) / 2, 0)
+  return {
+    w,
+    h,
+    cards: moved.cards,
+    labels: [{ ...b.labels[0], x: w / 2, y: -h / 2 }, ...moved.labels],
+    areas: [{ ...b.areas[0], x0: 0, x1: w, y0: -h, y1: 0 }, ...moved.areas],
+  }
+}
+
 // An area: its name over its own cards and its sections, packed together; the name centred over all of it.
 function areaBlock(plan: AreaPlan, sections: Map<string, AreaPlan[]>, links: Map<string, Set<string>>, sub: boolean, seen: Set<string>): Block {
   seen.add(nameKey(plan.label))
   const parts: Block[] = []
-  const layout = plan.items.length ? (plan.layout ?? pick(plan.items)) : undefined
-  if (layout) parts.push(content(layout, plan, links))
+  const layout = plan.items.length ? (plan.layout ?? pick(plan.items)) : plan.layout === 'quadrant' ? 'quadrant' : undefined
+  if (plan.items.length && layout) parts.push(content(layout, plan, links))
+  const subs: Block[] = []
   for (const s of sections.get(nameKey(plan.label)) ?? []) {
-    if (!seen.has(nameKey(s.label))) parts.push(areaBlock(s, sections, links, true, seen))
+    if (!seen.has(nameKey(s.label))) subs.push(areaBlock(s, sections, links, true, seen))
   }
+  // A quadrant: its first four sections in a 2 × 2 of equal cells (a matrix, a SWOT), framed ones stretched to fill
+  // their cell; anything else beside.
+  if (layout === 'quadrant' && subs.length >= 2) {
+    const cw = Math.max(...subs.slice(0, 4).map((b) => b.w))
+    const ch = Math.max(...subs.slice(0, 4).map((b) => b.h))
+    const four = subs.slice(0, 4).map((b) => (b.labels[0]?.frame ? stretch(b, cw, ch) : b))
+    const gap = SECTION_GAP * 1.5
+    const q: Block = { w: four.length > 1 ? 2 * cw + gap : cw, h: four.length > 2 ? 2 * ch + gap : ch, cards: [], labels: [], areas: [] }
+    four.forEach((b, i) => {
+      const moved = shift(b, (i % 2) * (cw + gap) + (cw - b.w) / 2, -Math.floor(i / 2) * (ch + gap))
+      q.cards.push(...moved.cards)
+      q.labels.push(...moved.labels)
+      q.areas.push(...moved.areas)
+    })
+    parts.push(q, ...subs.slice(4))
+  } else parts.push(...subs)
   const body: Block = parts.length > 1 ? pack(parts, SECTION_GAP) : (parts[0] ?? EMPTY)
+  if (plan.frame) return framed(plan.label, layout, sub, body)
   const [hw, hh] = labelHalf({ text: plan.label, size: sub ? 'subheading' : 'heading' })
   const w = Math.max(body.w, 2 * hw)
   const head = 2 * hh + HEAD_GAP
@@ -288,8 +484,8 @@ export function arrangeAreas(areas: AreaPlan[], fixed: Fixed, everything: Point[
   // Sections in a loop (each within the other) never reach a top-level area: lay them out on their own.
   for (const a of areas) if (!seen.has(nameKey(a.label))) tops.push({ plan: a, block: areaBlock({ ...a, within: undefined }, sections, near, false, seen) })
 
-  const taken: Rect[] = [...fixed.cards.map(cardRect), ...fixed.labels.map(labelRect)].map((r) => grow(r, GAP / 2))
-  const all = [...everything.map(cardRect), ...fixed.labels.map(labelRect)]
+  const taken: Rect[] = [...fixed.cards.map(cardRect), ...fixed.labels.map(labelRect), ...(fixed.frames ?? [])].map((r) => grow(r, GAP / 2))
+  const all = [...everything.map(cardRect), ...fixed.labels.map(labelRect), ...(fixed.frames ?? [])]
   const left = all.length ? Math.min(...all.map((r) => r.x0)) : 0
   const top = all.length ? Math.max(...all.map((r) => r.y1)) : 0
   const area = tops.reduce((s, t) => s + (t.block.w + GAP) * (t.block.h + GAP), 0)
@@ -386,9 +582,11 @@ export function arrangeAreas(areas: AreaPlan[], fixed: Fixed, everything: Point[
     }
     return pick
   }
-  // A lone area that has a label already is rearranged where it is: its label stays put, the cards go under it.
+  // A lone area that has a label already is rearranged where it is: its label stays put, the cards go under it; a
+  // frame keeps its top-left corner.
   const placeOf = (t: (typeof tops)[number]): Point => {
     if (!t.plan.stay) return best(t.block)
+    if (t.plan.frame) return nearestFree(t.block, t.plan.stay)
     const head = t.block.labels[0]
     return nearestFree(t.block, { x: t.plan.stay.x - head.x, y: t.plan.stay.y - head.y })
   }

@@ -51,7 +51,7 @@ export function useEditKeys() {
         const found = !label && findItem(ws, id)
         if (!label && !found) return
         e.preventDefault()
-        if (label) removeLabel(wid, id, label.text)
+        if (label) removeLabel(wid, id, label.text, label.kind === 'section')
         else if (found) removeItem(wid, found.type, id, found.title)
       }
     }
@@ -84,11 +84,12 @@ export function removeItem(wid: string, type: BoardType, id: string, title: stri
 }
 
 // Deletes a text label and says how to get it back.
-export function removeLabel(wid: string, id: string, text: string) {
+// A section (D-130) goes alone: what it held stays on the board.
+export function removeLabel(wid: string, id: string, text: string, section = false) {
   useCanvas.getState().select(null)
   void deleteLabel(wid, id)
   const quoted = text.trim() ? ` "${text.trim()}"` : ''
-  useHistory.getState().say(`Deleted text${quoted} · ${UNDO_HINT} to undo`)
+  useHistory.getState().say(`Deleted ${section ? 'section' : 'text'}${quoted} · ${UNDO_HINT} to undo`)
 }
 
 // Removes a link and says how to get it back (D-108).

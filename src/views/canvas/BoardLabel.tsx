@@ -7,7 +7,7 @@ import { MathUtils, MeshBasicMaterial, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { deleteLabel, endLabelMove, moveLabel, updateLabel } from '../../data/labels'
-import type { Label, LabelSize } from '../../data/model'
+import type { Label } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { usePalette, useThemeAccent } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
@@ -17,16 +17,16 @@ import { rightPress } from './rightClick'
 import { useReadable } from './detail'
 import { endGroup, moveGroup, startGroup } from './groupDrag'
 import { boardPoint } from './NodeCard'
+import { focusField } from './focusField'
 import { clearGuides, placeDragged, unitsPerPixel } from './guides'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
 import { markHover, unlight } from '../workspace/stage'
+import { inputStyle, labelFace, labelSize, labelTracking, shownText } from './textStyle'
 import styles from './BoardLabel.module.css'
 
-export const LABEL_SIZE = 0.6
-// Heading (the default), subheading, note (D-108). Notes are mono, like an annotation.
-const SIZES: Record<LabelSize, number> = { heading: LABEL_SIZE, subheading: 0.36, note: 0.2 }
-export const labelSize = (l: Pick<Label, 'size'>) => SIZES[l.size ?? 'heading']
+// Sizes and setting live in textStyle.ts (D-108, D-130).
+export { LABEL_SIZE, labelSize } from './textStyle'
 const WRITE_EVERY_MS = 120
 const PAD = 0.18
 
@@ -69,7 +69,8 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     const dt = glideDt(delta)
     const g = group.current
     if (!g) return
-    if (drag.current) g.position.set(x, y, 0.01)
+    // Also when carried along in a group drag (groupDrag.ts).
+    if (drag.current || live) g.position.set(x, y, 0.01)
     else {
       g.position.x = MathUtils.damp(g.position.x, x, 12, dt)
       g.position.y = MathUtils.damp(g.position.y, y, 12, dt)
@@ -200,9 +201,9 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
           <Text
             visible={readable}
             material={textMaterial}
-            font={note ? fontUrls.mono : fontUrls.display}
+            font={labelFace(label)}
             fontSize={size}
-            letterSpacing={note ? 0 : -0.02}
+            letterSpacing={labelTracking(label)}
             color={text ? (note && !label.color ? colors.fgDim : accent) : colors.fgDim}
             anchorX="center"
             anchorY="middle"
@@ -211,7 +212,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
               if (b) setBox([Math.max(size, b[2] - b[0]), Math.max(size, b[3] - b[1])])
             }}
           >
-            {text || 'Text'}
+            {text ? shownText(label, text) : 'Text'}
           </Text>
         )}
       </group>
@@ -235,9 +236,7 @@ function LabelInput({ wid, label, size, onDone }: { wid: string; label: WithId<L
     return (size / visible) * view.height
   }, [camera, view, size])
 
-  useEffect(() => {
-    requestAnimationFrame(() => input.current?.select())
-  }, [])
+  useEffect(() => focusField(() => input.current), [])
 
   const finish = (save: boolean) => {
     if (done.current) return
@@ -256,7 +255,7 @@ function LabelInput({ wid, label, size, onDone }: { wid: string; label: WithId<L
         className={styles.input}
         // Roughly the width of the display face, so the underline hugs the text.
         data-note={label.size === 'note' || undefined}
-        style={{ fontSize: `${Math.max(12, fontPx)}px`, width: `${Math.max(3, draft.length * 0.62 + 0.6)}em` }}
+        style={{ ...inputStyle(label), fontSize: `${Math.max(12, fontPx)}px`, width: `${Math.max(3, draft.length * (label.caps || label.bold ? 0.72 : 0.62) + 0.6)}em` }}
         value={draft}
         maxLength={200}
         placeholder="Text"

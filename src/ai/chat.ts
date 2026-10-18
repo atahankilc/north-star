@@ -31,6 +31,7 @@ import { useAiSettings, type AiTask } from './settings'
 import { discardReport, newReportId, saveReport } from '../data/reports'
 import type { ReportKind } from '../data/model'
 import { PROPOSE, PROPOSE_TOOL, layoutReport, parseProposal, proposalForHistory, proposalReport, type Proposal, type ProposalState } from './tools'
+import { isSection, textLabels } from '../views/canvas/sections'
 
 // Calls to OpenAI per answer. The last one may not use tools, so an answer always ends in words.
 const MAX_STEPS = 6
@@ -107,7 +108,14 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
   // one in the same answer replaces it).
   const run = async (c: ToolCall): Promise<string> => {
     if (c.name === PROPOSE) {
-      const proposal = parseProposal(c.args, refs, ws.labels.map((l) => l.text), ws.edges, ws.workspace)
+      const proposal = parseProposal(
+        c.args,
+        refs,
+        textLabels(ws.labels).map((l) => l.text),
+        ws.edges,
+        ws.workspace,
+        ws.labels.filter(isSection).map((l) => l.text),
+      )
       const bad = proposal.changes.filter((x) => x.problem)
       const n = proposal.changes.length
       const what = `${proposed ? 'corrected the proposal' : 'proposed'}: ${n} change${n === 1 ? '' : 's'}`

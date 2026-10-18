@@ -87,20 +87,29 @@ export type Idea = BoardNode & {
 }
 
 // Text written on the board (D-050). Headings and subheadings are places you can jump to; notes aren't (D-116).
-// How big text on the board is (D-108): an area's heading (the default), a subheading, or a small note.
-export const LABEL_SIZES = ['heading', 'subheading', 'note'] as const
+// How big text on the board is (D-108): an area's heading (the default), a subheading, a minor heading (H3, D-130),
+// or a small note. A section's name takes the first three.
+export const LABEL_SIZES = ['heading', 'subheading', 'minor', 'note'] as const
 export type LabelSize = (typeof LABEL_SIZES)[number]
-// A label's kind: plain text (none), or the project's title block (D-118), which shows the workspace's name and
-// description instead of its own text. One per board.
-export type LabelKind = 'title'
+// A label's kind: plain text (none), the project's title block (D-118), which shows the workspace's name and
+// description instead of its own text (one per board), or a section (D-130): a named frame round part of the board,
+// `w` × `h` centred on x/y, holding whatever lies inside it (cards, text, smaller sections).
+export type LabelKind = 'title' | 'section'
 
 export type Label = {
   text: string
   color?: string
   size?: LabelSize
   kind?: LabelKind
+  // How it's set (D-130): only `true` is stored.
+  bold?: boolean
+  italic?: boolean
+  caps?: boolean
   x: number
   y: number
+  // A section's size (D-130).
+  w?: number
+  h?: number
   createdAt: number
   updatedAt: number
 }

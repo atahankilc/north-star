@@ -1,5 +1,6 @@
 // ⌘C / ⌘V / ⌘D on the board (D-108): what's selected becomes a clip of its documents (selection.ts), pasted at the
-// view's centre or, for a duplicate, just below and right of the originals.
+// view's centre or, for a duplicate, just below and right of the originals. Sections (D-130) are never copied: a copy
+// laid over the original would hold everything in it.
 import type { DocumentData } from 'firebase/firestore'
 import { copied, copy, paste, type Clip } from '../../data/selection'
 import { useHistory } from '../../data/history'
@@ -28,7 +29,7 @@ export function clipOf(ws: WorkspaceCtx, ids: string[]): Clip | null {
     for (const [kind, list] of lists) {
       const d = (list as ({ id: string } & DocumentData)[]).find((x) => x.id === id)
       // A competitor without a place yet isn't on the board; the title block (D-118) is one of a kind.
-      if (d && typeof d.x === 'number' && d.kind !== 'title') pieces.push({ kind, id, data: bare(d) })
+      if (d && typeof d.x === 'number' && d.kind !== 'title' && d.kind !== 'section') pieces.push({ kind, id, data: bare(d) })
     }
   }
   if (pieces.length === 0) return null
