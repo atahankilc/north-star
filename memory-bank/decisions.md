@@ -565,6 +565,8 @@ cute nor pretty; then: moods under the pointer, things to do by itself, reaction
   out, tipped over, no spin), 2.4 s, then revives with a shake.
 - Reduced motion: still, drawn once per mood, no antics or reactions. Colours are re-read every few frames (theme tokens transition).
 - Dev hooks: `__orbAntic('race')`, `__orbFace('angry')`, `__orbReact('dead')`.
+- *Rejected 2026-10-18 (user: "çok korkunç"):* kaomoji eyes and mouth (one glyph each: `o ^ > < ♥ T`…), and the face
+  sampled into small `@#*` glyph cells (unreadable at 88 px). The rounded-square eyes stay.
 
 ### D-079 · 2026-10-17 · Accepted (Phase 4.3; extends D-006, needs Blaze, reverses D-015's "stay on Spark")
 **A workspace key the owner shares, and a usage log for every assistant call.** User's request and choices.
