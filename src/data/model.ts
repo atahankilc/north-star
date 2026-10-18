@@ -86,7 +86,7 @@ export type Idea = BoardNode & {
   status?: string
 }
 
-// Text written on the board (D-050). Every label is a place you can jump to.
+// Text written on the board (D-050). Headings and subheadings are places you can jump to; notes aren't (D-116).
 // How big text on the board is (D-108): an area's heading (the default), a subheading, or a small note.
 export const LABEL_SIZES = ['heading', 'subheading', 'note'] as const
 export type LabelSize = (typeof LABEL_SIZES)[number]

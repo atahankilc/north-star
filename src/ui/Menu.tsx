@@ -1,5 +1,6 @@
 // A dropdown menu (D-053): `[ show ▾ ]` opens a framed list. Checkbox items toggle and keep it open; action items run and
-// close it. Arrow keys move, Home/End jump, Escape closes and returns focus, a click outside closes.
+// close it. Arrow keys move, Home/End jump, Escape closes and returns focus, a click outside closes. With `search`, a field
+// at the top narrows the list as you type; Enter picks the first match (D-116).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Appear } from './Appear'
@@ -37,24 +38,34 @@ type Props = {
   active?: boolean
   ariaLabel: string
   empty?: string
+  // The search field's placeholder; without it there is no field.
+  search?: string
 }
 
-export function Menu({ label, summary, items, up, alignEnd, primary, active, ariaLabel, empty }: Props) {
+const text = (n: ReactNode): string => (typeof n === 'string' || typeof n === 'number' ? String(n) : '')
+
+export function Menu({ label, summary, items, up, alignEnd, primary, active, ariaLabel, empty, search }: Props) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const field = useRef<HTMLInputElement>(null)
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const list = useRef<HTMLDivElement>(null)
   const id = useId()
 
+  const q = query.trim().toLowerCase()
+  const shown = search && q ? items.filter((item) => !('heading' in item) && text(item.label).toLowerCase().includes(q)) : items
+
   const close = (refocus = true) => {
     setOpen(false)
+    setQuery('')
     if (refocus) trigger.current?.focus()
   }
 
-  // Focus the first item on open; close on a click outside.
+  // Focus the search field or the first item on open; close on a click outside.
   useEffect(() => {
     if (!open) return
-    requestAnimationFrame(() => list.current?.querySelector<HTMLElement>('[role^=menuitem]')?.focus())
+    requestAnimationFrame(() => (field.current ?? list.current?.querySelector<HTMLElement>('[role^=menuitem]'))?.focus())
     const onDown = (e: PointerEvent) => {
       if (!root.current?.contains(e.target as Node)) close(false)
     }
@@ -67,12 +78,16 @@ export function Menu({ label, summary, items, up, alignEnd, primary, active, ari
     const all = [...(list.current?.querySelectorAll<HTMLElement>('[role^=menuitem]') ?? [])]
     const at = all.indexOf(document.activeElement as HTMLElement)
     const go = (i: number) => all[(i + all.length) % all.length]?.focus()
+    const inField = document.activeElement === field.current
     // Keys stay in the menu: the board's own shortcuts (Delete, 1–9, ⌘Z) don't fire.
     e.stopPropagation()
-    if (e.key === 'ArrowDown') (e.preventDefault(), go(at + 1))
+    // Up from the first item goes back to the field.
+    if (e.key === 'ArrowUp' && at === 0 && field.current) (e.preventDefault(), field.current.focus())
+    else if (e.key === 'ArrowDown') (e.preventDefault(), go(inField ? 0 : at + 1))
     else if (e.key === 'ArrowUp') (e.preventDefault(), go(at - 1))
-    else if (e.key === 'Home') (e.preventDefault(), go(0))
-    else if (e.key === 'End') (e.preventDefault(), go(all.length - 1))
+    else if (e.key === 'Enter' && inField) (e.preventDefault(), all[0]?.click())
+    else if (e.key === 'Home' && !inField) (e.preventDefault(), go(0))
+    else if (e.key === 'End' && !inField) (e.preventDefault(), go(all.length - 1))
     else if (e.key === 'Escape') (e.preventDefault(), close())
     else if (e.key === 'Tab') close(false)
   }
@@ -87,7 +102,7 @@ export function Menu({ label, summary, items, up, alignEnd, primary, active, ari
         data-active={active || undefined}
         aria-controls={open ? id : undefined}
         aria-label={ariaLabel}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => (open ? close(false) : setOpen(true))}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown' && !open) (e.preventDefault(), setOpen(true))
         }}
@@ -103,9 +118,24 @@ export function Menu({ label, summary, items, up, alignEnd, primary, active, ari
       <AnimatePresence>
         {open && (
           <Appear key="menu" className={styles.panel} data-up={up} data-end={alignEnd}>
+            {search && items.length > 0 && (
+              <input
+                ref={field}
+                className={styles.search}
+                type="text"
+                value={query}
+                placeholder={search}
+                aria-label={search}
+                aria-controls={id}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            )}
             <div ref={list} id={id} role="menu" aria-label={ariaLabel}>
               {items.length === 0 && <p className={styles.empty}>{empty ?? 'Nothing here yet'}</p>}
-              {items.map((item) =>
+              {items.length > 0 && shown.length === 0 && <p className={styles.empty}>No match</p>}
+              {shown.map((item) =>
                 'heading' in item ? (
                   <div key={item.key} className={styles.heading} role="presentation">
                     {item.heading}

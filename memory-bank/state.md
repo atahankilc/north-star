@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (D-113 side-by-side links, D-115 a competitor's focus lights its features' links)_
+_Last updated: 2026-10-18 (D-116 go to: no notes, a search field; cross-workspace paste and minimap rejected)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -20,7 +20,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   `edit_link` / `add_note` (D-108).
 
 ## In progress
-- Nothing in progress; D-113 and D-115 committed (not pushed yet). Keep this section true: empty it when work is committed.
+- Nothing in progress; D-113, D-115 and D-116 committed (not pushed yet). Keep this section true: empty it when work is committed.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
@@ -31,10 +31,7 @@ something is finished, add its entry to state-history.md and leave at most one l
    - Alignment guides while dragging (to other cards' edges and centres); grid snapping is done (D-112).
    - A right-click menu on a card, a link and the empty board.
    - Formatting in card notes (the chat's light Markdown, D-089).
-   - Copy/paste across tabs and workspaces through the system clipboard.
-   - A minimap for big boards.
    - `add_note` notes can overlap a link chip: offset or left-align them.
-   - Decide whether notes belong in the `go to` jump list; today every label does.
 1. Finish the workspace key (D-079) once Blaze goes through: user runs
    `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`, then `npm run deploy:functions`, set
    `WORKSPACE_KEYS_LIVE = true`, push, try with a real key as owner + member (also the workspace-delete cleanup).

@@ -149,6 +149,28 @@
   right: 0;
 }
 
+/* The search field at the top of a long list (go to, D-116). */
+.search {
+  display: block;
+  width: calc(100% - 2 * var(--space-2));
+  margin: var(--space-1) var(--space-2) var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.search::placeholder {
+  color: var(--fg-faint);
+}
+
+.search:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+}
+
 .heading {
   padding: var(--space-2) var(--space-3) var(--space-1);
   color: var(--fg-faint);

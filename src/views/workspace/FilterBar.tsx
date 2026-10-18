@@ -111,7 +111,8 @@ export function FilterBar({ goTo, links }: Props) {
           label="go to"
           items={goTo.map((g, i) => ({ ...g, glyph: '↳', hint: i < 9 ? `${i + 1}` : undefined }))}
           ariaLabel="Go to a label on the board"
-          empty="Write text on the board (+ → Text) to jump to it from here"
+          search="find a place"
+          empty="Write a heading on the board (+ → Text) to jump to it from here"
         />
       )}
     </div>

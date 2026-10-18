@@ -77,7 +77,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   label, reverse, remove); LINKS filter (D-059, D-108). Several links between two cards sit side by side, chips staggered (D-113).
 - A competitor in focus (hovered, selected) lights the links to its features as well (D-115).
 - Multi-select (shift+click, alt+drag box), group drag, "N selected" panel; ⌘C/⌘V/⌘D in-tab clipboard; `○` link handle (D-108).
-- Labels: text on the board, sizes heading/subheading/note + colour; jump list `go to` with 1–9 (D-050, D-108).
+- Labels: text on the board, sizes heading/subheading/note + colour; jump list `go to` (headings and subheadings, not
+  notes) with 1–9 and a search field inside the dropdown (D-050, D-108, D-116).
 - Grid: `+` turns to dots and fades by camera distance (D-110). Depth range follows the camera; text and card detail by
   on-screen pixel size (full / compact / far) (D-111).
 - Drags snap centres to a 0.25 grid (group drags keep their layout, alt = free); switch beside fit-all + `g`, on by default (D-112).
@@ -142,6 +143,7 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Per-type 3D card silhouettes; per-card colour picker; notes on cards; "To feature" button (D-051, D-055, D-057).
 - Domains; groups/frames (D-048, D-049). Double-click to create (D-061). Card lift on hover/drag (D-061).
 - Cursor trail; typing indicator (D-067, D-071).
+- Copy/paste across tabs and workspaces via the system clipboard; a minimap for big boards (D-116).
 - A motion/theme control on the landing or outside Settings (D-069). Warm off-white light background (D-069).
 - Intro: galaxy, nebula, Milky Way, shooting stars, Little Dipper lines, aurora; fades/fronts for the night sky (D-072).
 - Orb: glossy anime eyes, eyes with pupils, pink blush on hover, kaomoji faces, glyph-cell faces; pomegranate as a "red

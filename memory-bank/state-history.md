@@ -435,3 +435,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - D-114: steps as a live log with times (`t0`/`t1` stamped in `begin`, chat.ts), `thinking` / `writing the answer` as the last
   line, folded into `▸ N steps · 8.1s` once answered; on phones a `chat · preview|report` switch beside a stage, the chat
   shrinking to its header along the bottom; the phone's chat solid. Verified headless (1440 dark, 390). Build passes.
+
+## Done (go to: search, no notes, 2026-10-18)
+- D-116: `go to` lists headings and subheadings only (notes left it, 1–9 follow); `Menu` got an optional `search` field
+  (focused on open, Enter picks the first match, `No match`). Cross-workspace paste and a minimap rejected. Verified headless
+  on emulators (example workspace): field focused, "road" → ROADMAP with its `5`, Enter picks it and closes the menu, Escape closes. tsc passes.

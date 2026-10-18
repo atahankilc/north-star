@@ -78,8 +78,8 @@ export function BoardView() {
     }
   }, [all, competitors, wid])
 
-  // The jump list (D-050), in reading order: top to bottom, then left to right.
-  const places = useMemo(() => labels.filter((l) => l.text.trim()).sort((a, b) => b.y - a.y || a.x - b.x), [labels])
+  // The jump list (D-050), in reading order: top to bottom, then left to right. Notes aren't places (D-116).
+  const places = useMemo(() => labels.filter((l) => l.text.trim() && l.size !== 'note').sort((a, b) => b.y - a.y || a.x - b.x), [labels])
   const jump = (l: WithId<Label>) => useCanvas.getState().flyTo([l.x, l.y - LAND_BELOW])
 
   // Escape deselects; 0 frames the whole board; g switches snapping to the grid (D-112); 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);

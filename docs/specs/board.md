@@ -48,7 +48,8 @@ descriptions live in the side panel only (D-057).
   not a line. Selecting a customer highlights everything tagged for it and shows those lines.
 - Anything can link to anything. Typical links: idea → solves → problem; competitor → competes with → problem or idea;
   feature → inspired by → idea or a competitor's feature. Shift+drag picks a sensible link kind.
-- **Text labels** name areas of the board ("COMPETITORS", "PRICING IDEAS"). Every label is a place in the jump list.
+- **Text labels** name areas of the board ("COMPETITORS", "PRICING IDEAS"). Headings and subheadings are places in the
+  jump list (`go to`, with a search field at the top); notes are not (D-116).
 
 ## 3. Layout
 

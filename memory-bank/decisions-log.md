@@ -227,7 +227,7 @@ Rules refuse new `domains` docs but keep read/delete for clean-up; old `domainId
 **Text labels on the board are the places you jump to.** `labels/{id}`: text, color, x, y. Written straight on the canvas
 (`+` menu → text): a DOM input sits over the spot while typing (never WebGL), Enter saves, Escape cancels,
 empty text deletes. Drag to move, double-click to edit, Delete to remove; all undoable, and a new label plus its first text undo as one step.
-The board's "go to" row lists every label in reading order (top→bottom, left→right); click or press 1–9 to glide the camera there
+The board's "go to" row lists every label (headings and subheadings since D-116, with a search field) in reading order (top→bottom, left→right); click or press 1–9 to glide the camera there
 (instant under reduced motion; your own pan/zoom cancels the glide). Only labels are jumpable: no other text anywhere (user's words).
 Zoom-out limit raised from 60 (later capped at 150 with the camera far plane at 1000, after cards vanished past the old far plane of 200).
 
@@ -1212,7 +1212,7 @@ more editing tools. Their picks: four colour groups by meaning, a floating bar a
   the card's hover events (doing so made the card think the pointer left and the handle vanished under it).
 - *Text sizes:* `labels.size`: `heading` (default, not stored) 0.6, `subheading` 0.36, `note` 0.2 in mono and dim. A selected
   label gets a bar (`LabelBar.tsx`) from its left edge: H1 / H2 / note, a colour (plain or the five accents, stored as the
-  dark hex like presence colours and drawn with `themeAccent`), edit, remove. Notes stay in the jump list like any label.
+  dark hex like presence colours and drawn with `themeAccent`), edit, remove. Notes stay in the jump list like any label (no longer: notes left it, D-116).
   Rules: `size` in heading / subheading / note (2 new tests, 239 pass). Import keeps a label's colour and size now.
 - *The assistant knows (user, follow-up):* a proposal row `edit_link` (from / to as the link should read afterwards, so
   giving them swapped turns it around; kind null keeps it; label null keeps it, "" removes it) changes a link in place: the
@@ -1330,3 +1330,13 @@ them. Now each line's `touches` (Board.tsx) adds the competitor that owns a feat
 focus and `active` (thicker, kept through the LINKS filter).
 - Verified headless on emulators (example workspace, dark, 1440 × 900): Crewly selected, its `competes` link and the
   `inspired by` link to its "Availability collection" feature lit, everything else faint.
+
+### D-116 · 2026-10-18 · Accepted (refines D-050, D-108)
+**The `go to` jump list holds headings and subheadings only, not notes, and has a search field at the top.** User: "Notes
+do not belong to go to jump. Also go to jump filter should have a search bar implemented inside the dropdown." This answers
+the open item from D-108 ("decide whether notes belong in the jump list"); the 1–9 keys follow the same list.
+- `src/ui/Menu.tsx` takes an optional `search` (the field's placeholder). The field is focused on open and narrows the items
+  by their label as you type (case-insensitive); Enter picks the first match, ↓ moves into the list, ↑ from the first item
+  goes back, Escape closes. `No match` when nothing fits; the query clears on close. Only `go to` uses it today.
+- The same user turn also turned down two board ideas: copy/paste across tabs and workspaces through the system clipboard
+  (the in-tab clipboard of D-108 stays), and a minimap for big boards. Both are under "Rejected".
