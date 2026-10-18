@@ -1,15 +1,49 @@
 // How the matrix orders its rows and columns and reads each row; shared by the view and the CSV export (D-080).
 import type { WithId } from '../../data/hooks'
-import { FEATURE_PRIORITIES, type Comparison, type Competitor, type Feature } from '../../data/model'
+import {
+  FEATURE_PRIORITIES,
+  type Comparison,
+  type Competitor,
+  type Coverage,
+  type Criterion,
+  type CriterionScore,
+  type Feature,
+} from '../../data/model'
 
 export type Verdict = { label: string; tone: string; title: string }
 
+// The feature's criteria scored in one cell (D-133), in the feature's order; null when none is scored yet.
+export function scoresOf(cell: Comparison | undefined, feature: Feature): (CriterionScore | undefined)[] | null {
+  const list = feature.criteria ?? []
+  const scores = list.map((c) => cell?.criteria?.[c.id])
+  return scores.some(Boolean) ? scores : null
+}
+
+// What a cell reads: from its scores once any is scored (all met = full, none met or part = none), else as set by hand.
+// `better` set by hand stays when every criterion is met.
+export function coverageOf(cell: Comparison | undefined, feature: Feature): Coverage | undefined {
+  const scores = scoresOf(cell, feature)
+  if (!scores) return cell?.coverage
+  const scored = scores.filter(Boolean)
+  if (scored.every((s) => s === 'no')) return 'none'
+  if (scores.every((s) => s === 'met')) return cell?.coverage === 'better' ? 'better' : 'full'
+  return 'partial'
+}
+
+// White space (D-133): the criteria no assessed competitor meets, once at least one cell is scored. Our differentiation.
+export function openCriteria(feature: Feature, cells: (Comparison | undefined)[]): Criterion[] | null {
+  const scored = cells.filter((c) => scoresOf(c, feature))
+  if (!scored.length) return null
+  return (feature.criteria ?? []).filter((k) => !scored.some((c) => c!.criteria?.[k.id] === 'met'))
+}
+
 // Gap: nobody covers it (an opening). Table stakes: most competitors fully cover it.
-export function verdict(cells: (Comparison | undefined)[]): Verdict | null {
-  const assessed = cells.filter((c) => c?.coverage)
+export function verdict(cells: (Comparison | undefined)[], feature: Feature): Verdict | null {
+  const read = cells.map((c) => coverageOf(c, feature))
+  const assessed = read.filter(Boolean)
   if (cells.length === 0 || assessed.length === 0) return null
-  const covered = assessed.filter((c) => c!.coverage === 'full' || c!.coverage === 'better').length
-  const some = assessed.filter((c) => c!.coverage !== 'none').length
+  const covered = assessed.filter((c) => c === 'full' || c === 'better').length
+  const some = assessed.filter((c) => c !== 'none').length
   if (some === 0) return { label: 'gap', tone: 'var(--accent-green)', title: 'No competitor covers this: an opening' }
   if (covered * 2 >= cells.length)
     return { label: 'table stakes', tone: 'var(--accent-yellow)', title: 'Most competitors cover this fully' }
@@ -24,3 +58,13 @@ const rank = (f: Feature) => {
 // Rows: by priority, then oldest first. Columns: oldest competitor first.
 export const matrixRows = (features: WithId<Feature>[]) => [...features].sort((a, b) => rank(a) - rank(b) || a.createdAt - b.createdAt)
 export const matrixCols = (competitors: WithId<Competitor>[]) => [...competitors].sort((a, b) => a.createdAt - b.createdAt)
+
+// For the assistant (D-133): a feature's criteria, and one cell's scores against them, in a line of text.
+export const criteriaLine = (feature: Feature | undefined) =>
+  feature?.criteria?.length ? `criteria: ${feature.criteria.map((k, i) => `${i + 1}. ${k.text}`).join(' | ')}` : ''
+
+export function scoresLine(cell: Comparison, feature: Feature | undefined) {
+  const scores = feature && scoresOf(cell, feature)
+  if (!feature || !scores) return ''
+  return `criteria ${scores.map((s, i) => `${i + 1} ${s ?? 'not assessed'}`).join(', ')}`
+}

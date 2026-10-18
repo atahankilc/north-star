@@ -1756,3 +1756,31 @@ callapse to just project name".
   left edge fixed), ⌘Z restored it; zoomed out, the name grew (~1.5× for "Example: Tablebook" at width 9) and the block
   shrank to it; screencast frames show the fold and unfold travelling; a narrowed block folds without breaking words.
   The assistant's use of the unfolded size not tried with a model. `npm run build`.
+
+### D-133 · 2026-10-19 · Accepted (extends D-040's matrix, D-080)
+**A feature's criteria: the matrix says which part a competitor covers.** From examining the user's BUBBLES workspace
+(docs/specs/usefulness.md): 116 of 145 cells were `partial`, every competitor "fully covered 0/19", while the notes
+behind the cells all said "they cover X but not Y". User: "Matrix page dont tell much, like most of the stuff is selected
+as partial but i mean how partial or what". Slice 1 of Phase 6.
+- *Data:* a feature gets `criteria: {id, text}[]` (≤ 8, ids its own, base-36, kept by export/import); a cell gets
+  `criteria: {criterionId: 'met' | 'part' | 'no'}` (missing = not assessed). Rules check a list ≤ 8 and a map ≤ 8 with
+  only those three values. Removing a criterion removes its scores from the feature's cells in the same undo step
+  (`setCriteria`); typing in one merges into one step.
+- *Reading:* once any criterion is scored, the cell reads from its scores (all met = full, or `better` if set so by hand;
+  all `no` = none; else partial), and so do the row's reading, the footer's "fully covered" and the TSV. Unscored cells
+  keep their hand-set coverage, so old workspaces read as before.
+- *Matrix:* a scored cell shows one block per criterion (met cyan, part yellow, no an outline, not assessed a dot); a
+  cell's note shows on hover (`title`, 400 chars). The reading column adds `◇ N open`: criteria no assessed competitor
+  meets, the white space (hover lists them). The cell panel scores each criterion (`met part no`, click again clears),
+  coverage then shown as derived (`partial · 1 of 3 criteria met`); `edit` opens the list, which stays open while a
+  feature's first criteria are written.
+- *Feature panel:* a `CRITERIA` list under effort: edit, remove (×), add (Enter); each says `met by N` or `◇ open` once any
+  cell is scored.
+- *TSV:* `partial (2/5 met)` and a last `nobody meets` column. *Assistant:* reads criteria and scores (brief and
+  `get_items`); writing them is slice 2.
+- *Alternatives:* a finer coverage scale (still says nothing about which part); per-competitor feature lists only
+  (already there as "their version", not comparable across competitors).
+- *Verified* in headless Chrome on the emulators (example workspace): three criteria added from the cell panel, two
+  cells scored, bars and `◇ 2 open` shown, feature panel shows `met by 1` / `◇ open`; removing criterion 3 dropped its
+  scores from both cells and ⌘Z brought them back. Rules: 257 pass incl. 6 new; the 2 failing usage-log tests fail the
+  same on the committed rules. `npm run build`. Firestore rules deployed 2026-10-19; not tried on the live site.

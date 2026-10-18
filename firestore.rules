@@ -90,7 +90,9 @@ service cloud.firestore {
       return validCard(d)
         && optIn(d, 'priority', ['P1', 'P2', 'P3'])
         && optIn(d, 'status', ['idea', 'planned', 'building', 'shipped'])
-        && optIn(d, 'effort', ['S', 'M', 'L']);
+        && optIn(d, 'effort', ['S', 'M', 'L'])
+        // What it must do (D-133): a short list; the cells score against it.
+        && (!('criteria' in d) || (d.criteria is list && d.criteria.size() <= 8));
     }
 
     function validCompetitor(d) {
@@ -141,7 +143,10 @@ service cloud.firestore {
         && id == d.featureId + '_' + d.competitorId
         && optIn(d, 'coverage', ['none', 'partial', 'full', 'better'])
         && optText(d, 'notes', 20000)
-        && optText(d, 'competitorFeatureId', 128);
+        && optText(d, 'competitorFeatureId', 128)
+        // Criterion id → score (D-133).
+        && (!('criteria' in d) || (d.criteria is map && d.criteria.size() <= 8
+          && d.criteria.values().hasOnly(['met', 'part', 'no'])));
     }
 
     function validEdge(d) {

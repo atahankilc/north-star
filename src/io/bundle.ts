@@ -4,7 +4,7 @@
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, LABEL_SIZES, REPORT_LIMITS, type SavedReport } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, LABEL_SIZES, MAX_CRITERIA, REPORT_LIMITS, type SavedReport } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -146,8 +146,26 @@ export function cleanFeature(d: Doc, now: number) {
       priority: oneOf(d.priority, FEATURE_PRIORITIES),
       status: oneOf(d.status, FEATURE_STATUSES),
       effort: oneOf(d.effort, FEATURE_EFFORTS),
+      criteria: criteria(d.criteria),
     }),
   }
+}
+
+// A feature's criteria (D-133): ids kept as they are (the cells' scores refer to them), only safe ones.
+const CRITERION_ID = /^[a-z0-9]{1,16}$/
+function criteria(v: unknown) {
+  if (!Array.isArray(v)) return undefined
+  const list = v
+    .filter((c): c is Doc => !!c && typeof c === 'object' && typeof c.id === 'string' && CRITERION_ID.test(c.id))
+    .map((c) => ({ id: c.id as string, text: str(c.text, 200) ?? '' }))
+    .slice(0, MAX_CRITERIA)
+  return list.length ? list : undefined
+}
+
+function scores(v: unknown) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined
+  const kept = Object.entries(v).filter(([id, s]) => CRITERION_ID.test(id) && oneOf(s, CRITERION_SCORES)).slice(0, MAX_CRITERIA)
+  return kept.length ? Object.fromEntries(kept) : undefined
 }
 
 export function cleanCompetitor(d: Doc, now: number) {
@@ -198,7 +216,7 @@ export function cleanCompetitorFeature(d: Doc, now: number) {
 }
 
 export function cleanComparison(d: Doc, now: number) {
-  return { ...compact({ coverage: oneOf(d.coverage, COVERAGES), notes: str(d.notes, 20000) }), updatedAt: num(d.updatedAt) ?? now }
+  return { ...compact({ coverage: oneOf(d.coverage, COVERAGES), notes: str(d.notes, 20000), criteria: scores(d.criteria) }), updatedAt: num(d.updatedAt) ?? now }
 }
 
 // The record's own fields; the importer adds where the file now lives, its item and who imported it.

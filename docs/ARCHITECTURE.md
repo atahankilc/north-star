@@ -89,7 +89,8 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
   competitors/{id}      name, url, description, pricing, audience, notes, color, x, y
   labels/{id}           text, color, size, kind?, x, y                            (text on the board, D-050; size heading|subheading|minor|note, bold/italic/caps true or absent; kind 'title': the project title block, D-118, + w once resized, D-132; kind 'section' + w, h: a frame, D-130)
   competitorFeatures/{id}  competitorId, name, description, category
-  comparisons/{id}      featureId, competitorId, coverage?, notes, competitorFeatureId   (id = featureId_competitorId)
+  comparisons/{id}      featureId, competitorId, coverage?, notes, competitorFeatureId, criteria? {criterionId: met|part|no}
+                        (id = featureId_competitorId; a feature's own `criteria: {id, text}[]`, ≤ 8, D-133)
   edges/{id}            fromId, fromType, toId, toType, kind, label
 inviteCodes/{code}      workspaceId, createdBy
 joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)

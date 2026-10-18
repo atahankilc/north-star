@@ -118,10 +118,16 @@ export const FEATURE_PRIORITIES = ['P1', 'P2', 'P3'] as const
 export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped'] as const
 export const FEATURE_EFFORTS = ['S', 'M', 'L'] as const
 
+// What a feature must do to count (D-133): the matrix scores each competitor against these, so a partial cell says
+// which part. The id is the feature's own (it outlives renames and survives an import unchanged).
+export type Criterion = { id: string; text: string }
+export const MAX_CRITERIA = 8
+
 export type Feature = BoardNode & {
   priority?: (typeof FEATURE_PRIORITIES)[number]
   status?: (typeof FEATURE_STATUSES)[number]
   effort?: (typeof FEATURE_EFFORTS)[number]
+  criteria?: Criterion[]
 }
 
 // Competitors are named, not titled; on the board since D-040 (no position yet = placed on first view).
@@ -154,12 +160,18 @@ export type CompetitorFeature = {
 export const COVERAGES = ['none', 'partial', 'full', 'better'] as const
 export type Coverage = (typeof COVERAGES)[number]
 
+// How a competitor does on one of the feature's criteria (D-133); missing = not assessed.
+export const CRITERION_SCORES = ['met', 'part', 'no'] as const
+export type CriterionScore = (typeof CRITERION_SCORES)[number]
+
 // One matrix cell. Doc id is `${featureId}_${competitorId}`, so a cell can't be created twice.
 export type Comparison = {
   featureId: string
   competitorId: string
-  // Missing = not assessed yet.
+  // Missing = not assessed yet. Once any criterion is scored, the scores decide what the cell reads (D-133).
   coverage?: Coverage
+  // Criterion id → score. A removed criterion's score goes with it.
+  criteria?: Record<string, CriterionScore>
   notes?: string
   competitorFeatureId?: string
   updatedAt: number

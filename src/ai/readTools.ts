@@ -4,6 +4,7 @@ import { fetchReport } from '../data/reports'
 import type { ReportContent, ReportPoint } from '../data/model'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
+import { coverageOf, criteriaLine, scoresLine } from '../views/matrix/reading'
 
 export const GET_ITEMS = 'get_items'
 
@@ -66,6 +67,8 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
       const f = card as typeof card & { priority?: string; status?: string; effort?: string }
       lines.push(...field('notes', full(card.body)), ...field('tags', card.tags?.join(', ')))
       lines.push(...field('priority', f.priority), ...field('status', f.status), ...field('effort', f.effort))
+      const must = criteriaLine(ws.features.find((x) => x.id === card.id))
+      if (must) lines.push(`  ${must}`)
     }
     if (comp) {
       lines.push(...field('url', comp.url), ...field('description', full(comp.description)), ...field('pricing', full(comp.pricing)))
@@ -82,9 +85,15 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
     if (out.length || into.length) lines.push('  links:')
     for (const e of out) lines.push(`  → ${e.kind} ${nameOf(e.toId)}${e.label ? ` (${e.label})` : ''}`)
     for (const e of into) lines.push(`  ← ${nameOf(e.fromId)} ${e.kind} this${e.label ? ` (${e.label})` : ''}`)
-    const cells = ws.comparisons.filter((c) => (c.featureId === it.id || c.competitorId === it.id) && (c.coverage || c.notes || c.competitorFeatureId))
+    const cells = ws.comparisons.filter((c) => (c.featureId === it.id || c.competitorId === it.id) && (c.coverage || c.notes || c.competitorFeatureId || c.criteria))
     if (cells.length) lines.push('  matrix:')
-    for (const c of cells) lines.push(`  ${nameOf(c.featureId)} × ${nameOf(c.competitorId)}: ${c.coverage ?? 'not assessed'}${c.competitorFeatureId ? `; their version: ${nameOf(c.competitorFeatureId)}` : ''}${c.notes ? `; ${full(c.notes)}` : ''}`)
+    const featureOf = (c: (typeof cells)[number]) => ws.features.find((x) => x.id === c.featureId)
+    const read = (c: (typeof cells)[number]) => {
+      const f = featureOf(c)
+      const scores = scoresLine(c, f)
+      return `${(f && coverageOf(c, f)) ?? c.coverage ?? 'not assessed'}${scores ? ` (${scores})` : ''}`
+    }
+    for (const c of cells) lines.push(`  ${nameOf(c.featureId)} × ${nameOf(c.competitorId)}: ${read(c)}${c.competitorFeatureId ? `; their version: ${nameOf(c.competitorFeatureId)}` : ''}${c.notes ? `; ${full(c.notes)}` : ''}`)
     return lines.join('\n')
   })
   if (!blocks.length) return { text: 'No refs given.', names, missed: 1 }

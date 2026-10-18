@@ -2,13 +2,14 @@
 // built fresh for each message so it always sees the live board. Each item carries a short ref so a proposal
 // can point at it (D-074).
 import type { WithId } from '../data/hooks'
-import type { BoardNode, Label, NodeType } from '../data/model'
+import type { BoardNode, Feature, Label, NodeType } from '../data/model'
 import type { ReportContent, ReportSummary } from '../data/model'
 import { colors } from '../styles/tokens'
 import { isTitle } from '../views/canvas/titleBlock'
 import { holdsRect, isSection, rectOf, sectionsAt } from '../views/canvas/sections'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import { reportFull } from './readTools'
+import { coverageOf, criteriaLine, scoresLine } from '../views/matrix/reading'
 
 // Far beyond a real workspace; keeps a runaway one from becoming an expensive prompt.
 const MAX_CHARS = 120_000
@@ -149,7 +150,8 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
   section('FEATURES', ws.features, (n) => {
     const f = n as WithId<BoardNode> & { priority?: string; status?: string; effort?: string }
     const meta = [f.priority, f.status, f.effort && `effort ${f.effort}`].filter(Boolean).join(', ')
-    return meta ? ` [${meta}]` : ''
+    const must = criteriaLine(f as Feature)
+    return `${meta ? ` [${meta}]` : ''}${must ? `; ${must}` : ''}`
   })
 
   lines.push('', `COMPETITORS (${ws.competitors.length})`)
@@ -168,11 +170,14 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
   lines.push('', `LINKS (${links.length})`)
   for (const e of links) lines.push(`- ${names.get(e.fromId)} —${e.kind}→ ${names.get(e.toId)}${e.label ? ` (${clip(e.label, 80)})` : ''}`)
 
-  const cells = ws.comparisons.filter((c) => (c.coverage || c.notes || c.competitorFeatureId) && names.has(c.featureId) && names.has(c.competitorId))
-  lines.push('', `MATRIX: our feature × competitor (${cells.length} filled cells; coverage none | partial | full | better)`)
+  const cells = ws.comparisons.filter((c) => (c.coverage || c.notes || c.competitorFeatureId || c.criteria) && names.has(c.featureId) && names.has(c.competitorId))
+  // Scored cells read from the feature's criteria (D-133), numbered as in FEATURES.
+  lines.push('', `MATRIX: our feature × competitor (${cells.length} filled cells; coverage none | partial | full | better; criteria met | part | no)`)
   for (const c of cells) {
+    const f = ws.features.find((x) => x.id === c.featureId)
     const theirs = c.competitorFeatureId && names.get(c.competitorFeatureId)
-    lines.push(`- ${names.get(c.featureId)} × ${names.get(c.competitorId)}: ${c.coverage ?? 'not assessed'}${theirs ? `; their version [${refOf.get(c.competitorFeatureId!)}]` : ''}${c.notes ? `; ${clip(c.notes, 200)}` : ''}`)
+    const scores = scoresLine(c, f)
+    lines.push(`- ${names.get(c.featureId)} × ${names.get(c.competitorId)}: ${(f && coverageOf(c, f)) ?? c.coverage ?? 'not assessed'}${scores ? ` (${scores})` : ''}${theirs ? `; their version [${refOf.get(c.competitorFeatureId!)}]` : ''}${c.notes ? `; ${clip(c.notes, 200)}` : ''}`)
   }
 
   // With its size, style and colour when not the defaults (D-123, D-130), so edit_label / edit_section can change them.

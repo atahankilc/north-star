@@ -16,6 +16,7 @@ import { AsciiButton } from '../../ui/AsciiButton'
 import { Appear } from '../../ui/Appear'
 import { Choice } from '../../ui/Choice'
 import { CompetitorProfile } from '../competitors/CompetitorProfile'
+import { CriteriaEditor } from '../matrix/Criteria'
 import { FocusButton } from './focus'
 import { useWs } from '../workspace/context'
 import { Attachments } from '../workspace/Attachments'
@@ -225,6 +226,8 @@ function FeatureFields({ wid, feature }: { wid: string; feature: WithId<Feature>
       <Choice label="priority" options={FEATURE_PRIORITIES} value={feature.priority} onChange={(priority) => set({ priority })} />
       <Choice label="status" options={FEATURE_STATUSES} value={feature.status} onChange={(status) => set({ status })} />
       <Choice label="effort" options={FEATURE_EFFORTS} value={feature.effort} onChange={(effort) => set({ effort })} />
+      {/* What it must do: the matrix scores competitors against these (D-133). */}
+      <CriteriaEditor feature={feature} />
     </>
   )
 }

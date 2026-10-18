@@ -28,7 +28,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, linked ideas |
 | **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor |
-| **Comparison** | How a competitor covers one of our features | feature, competitor, coverage (`none`/`partial`/`full`/`better`), notes, linked competitor feature |
+| **Comparison** | How a competitor covers one of our features | feature, competitor, coverage (`none`/`partial`/`full`/`better`), notes, linked competitor feature, a score per feature criterion (`met`/`part`/`no`, D-133) |
 | **Attachment** | Image, SVG or PDF on any card (D-083; upload only, no sketch pad) | file, type, name, size, owner item |
 
 ## 4. Views
@@ -43,7 +43,9 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 3. **Competitors.** A list of competitors; each has a profile (URL, pricing, audience, notes) and its
    features grouped by category. Those features can be linked to our ideas and features (D-038).
 4. **Comparison Matrix.** A spreadsheet-style view: rows are our features, columns are competitors,
-   and each cell holds coverage plus notes. Extra columns hold description, priority and status.
+   and each cell holds coverage plus notes. Extra columns hold description, priority and status. A feature can list
+   criteria (its must-haves); a cell then scores each one and shows which are met, and the row counts the criteria no
+   competitor meets: the white space (D-133).
    Shows gaps (opportunities) and table stakes.
 5. **Detail Panel.** A side panel for any node: edit fields, see all links, attachments,
    and AI actions.

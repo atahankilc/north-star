@@ -34,5 +34,9 @@ Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 - Workspace export/import (zip bundle) ✅ (D-080)
 - Matrix → TSV, canvas → PNG ✅ (D-080)
 
+## Phase 6: from research to decisions
+- Matrix criteria and white space, evidence and status, prioritisation, bets, an overview page; competitor lines off the
+  board. Slices in [specs/usefulness.md](specs/usefulness.md).
+
 ## Later
 - Templates, version history, comments, collaborative text (Yjs)

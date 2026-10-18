@@ -1,12 +1,13 @@
 // /workspaces/:wid/matrix: our features × competitors. Each cell says how well that competitor covers the
-// feature; the last column reads the row as a whole (gap, table stakes, mixed).
+// feature: once the feature has criteria, which of them they meet (D-133). The last column reads the row as a whole
+// (gap, table stakes, mixed) and counts the criteria nobody meets.
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { itemPath, workspacePath } from '../../app/paths'
 import { cellId, setCell } from '../../data/comparisons'
 import type { WithId } from '../../data/hooks'
-import { COVERAGES, type Comparison, type Coverage, type Feature } from '../../data/model'
+import { COVERAGES, type Comparison, type Coverage, type CriterionScore, type Feature } from '../../data/model'
 import { Appear } from '../../ui/Appear'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { Choice } from '../../ui/Choice'
@@ -18,7 +19,8 @@ import { useWs } from '../workspace/context'
 import { CellPeers, MarkOn, markHoverOf, markRing, PeersOn } from '../workspace/PeerMarks'
 import { useMarkOf, useStage } from '../workspace/stage'
 import styles from './MatrixView.module.css'
-import { matrixCols, matrixRows, verdict } from './reading'
+import { CriteriaEditor, CriterionScores, SCORE_TONE } from './Criteria'
+import { coverageOf, matrixCols, matrixRows, openCriteria, scoresOf, verdict } from './reading'
 
 // Not assessed → none → partial → full → better → not assessed.
 const GLYPH: Record<Coverage | 'unset', string> = { unset: '·', none: '○', partial: '◐', full: '●', better: '★' }
@@ -101,9 +103,9 @@ export function MatrixView() {
     )
   }
 
-  const coverageOf = (c: number) =>
-    rows.filter((_, r) => {
-      const v = cellAt(r, c)?.coverage
+  const coveredIn = (c: number) =>
+    rows.filter((f, r) => {
+      const v = coverageOf(cellAt(r, c), f)
       return v === 'full' || v === 'better'
     }).length
 
@@ -130,7 +132,9 @@ export function MatrixView() {
           </thead>
           <tbody>
             {rows.map((f, r) => {
-              const v = verdict(cols.map((_, c) => cellAt(r, c)))
+              const mine = cols.map((_, c) => cellAt(r, c))
+              const v = verdict(mine, f)
+              const open = openCriteria(f, mine)
               return (
                 <tr key={f.id} data-selected={sel?.row === r}>
                   <th scope="row" className={styles.feature} data-mark={marks.get(f.id)} data-mark-id={marks.has(f.id) ? f.id : undefined} {...markHoverOf(f.id, marks.get(f.id))}>
@@ -140,7 +144,8 @@ export function MatrixView() {
                   <td className={styles.meta}>{f.status ?? ''}</td>
                   {cols.map((c, col) => {
                     const cell = cellAt(r, col)
-                    const cov = cell?.coverage
+                    const cov = coverageOf(cell, f)
+                    const scores = scoresOf(cell, f)
                     const isSel = sel?.row === r && sel.col === col
                     return (
                       <td key={c.id} className={styles.cellTd} data-col-selected={sel?.col === col}>
@@ -149,10 +154,12 @@ export function MatrixView() {
                           className={styles.cell}
                           data-selected={isSel}
                           style={cov ? { ['--tone' as string]: TONE[cov] } : undefined}
-                          aria-label={`${f.title || 'Untitled'} at ${c.name || 'Untitled'}: ${cov ?? 'not assessed'}`}
-                          onClick={() => (isSel ? setCoverage({ row: r, col }, next(cov)) : setSelected({ row: r, col }))}
+                          aria-label={`${f.title || 'Untitled'} at ${c.name || 'Untitled'}: ${cov ?? 'not assessed'}${scores ? `, ${metOf(scores)}` : ''}`}
+                          title={cell?.notes ? clip(cell.notes) : undefined}
+                          // Scored cells read from their criteria: clicking only selects (D-133).
+                          onClick={() => (isSel && !scores ? setCoverage({ row: r, col }, next(cell?.coverage)) : setSelected({ row: r, col }))}
                         >
-                          <span className={styles.glyph}>{GLYPH[cov ?? 'unset']}</span>
+                          {scores ? <ScoreBar scores={scores} /> : <span className={styles.glyph}>{GLYPH[cov ?? 'unset']}</span>}
                           {cell?.notes && <span className={styles.noted} aria-hidden />}
                           <CellMark id={cellId(f.id, c.id)} />
                           <CellPeers id={cellId(f.id, c.id)} />
@@ -164,6 +171,11 @@ export function MatrixView() {
                     {v && (
                       <span style={{ color: v.tone }} title={v.title}>
                         {v.label}
+                      </span>
+                    )}
+                    {open && open.length > 0 && (
+                      <span className={styles.open} title={`Nobody meets: ${open.map((k) => k.text).join(' · ')}`}>
+                        ◇ {open.length} open
                       </span>
                     )}
                   </td>
@@ -178,7 +190,7 @@ export function MatrixView() {
               </th>
               {cols.map((c, col) => (
                 <td key={c.id} className={styles.footCount}>
-                  {coverageOf(col)}/{rows.length}
+                  {coveredIn(col)}/{rows.length}
                 </td>
               ))}
               <td />
@@ -193,6 +205,9 @@ export function MatrixView() {
             {GLYPH[k]} <span className={styles.legendLabel}>{k === 'unset' ? 'not assessed' : k}</span>
           </span>
         ))}
+        <span className={styles.legendBar}>
+          <ScoreBar scores={['met', 'part', 'no', undefined]} /> <span className={styles.legendLabel}>criteria: met · part · no · not assessed</span>
+        </span>
         <span className={styles.hints} data-preview-hide>click: select · click again or 1–4: coverage · 0: clear · arrows: move</span>
       </footer>
 
@@ -213,6 +228,20 @@ export function MatrixView() {
 }
 
 const NO_MARKS = new Map<string, never>()
+
+const clip = (s: string) => (s.length > 400 ? `${s.slice(0, 400)}…` : s)
+const metOf = (scores: (CriterionScore | undefined)[]) => `${scores.filter((s) => s === 'met').length} of ${scores.length} criteria met`
+
+// One block per criterion, in the feature's order (D-133): met cyan, part yellow, no a dim outline, not assessed a dot.
+function ScoreBar({ scores }: { scores: (CriterionScore | undefined)[] }) {
+  return (
+    <span className={styles.bar} aria-hidden>
+      {scores.map((s, i) => (
+        <span key={i} className={styles.block} data-score={s ?? 'unset'} style={s ? { ['--tone' as string]: SCORE_TONE[s] } : undefined} />
+      ))}
+    </span>
+  )
+}
 
 // A cell the assistant's preview changes (D-096): a ring and its diff sign inside, and an edit's old coverage before the
 // new one (`○→◐`; a struck circle would read as another glyph).
@@ -249,6 +278,13 @@ function CellPanel({
   const { wid, competitorFeatures } = useWs()
   const theirs = competitorFeatures.filter((f) => f.competitorId === competitorId)
   const set = (fields: Parameters<typeof setCell>[3]) => void setCell(wid, feature.id, competitorId, fields)
+  const hasCriteria = (feature.criteria?.length ?? 0) > 0
+  // Writing a feature's first criteria keeps the list open for the next one, until `done`.
+  const [editing, setEditing] = useState(!hasCriteria)
+  useEffect(() => {
+    if (!hasCriteria) setEditing(true)
+  }, [hasCriteria])
+  const scores = scoresOf(cell, feature)
 
   return (
     <Appear as="aside" className={styles.panel} data-side-panel="narrow" aria-label="Cell details">
@@ -264,13 +300,32 @@ function CellPanel({
         {competitorName || 'Untitled'}
       </h2>
 
-      <Choice
-        label="coverage"
-        options={COVERAGES}
-        value={cell?.coverage}
-        onChange={(coverage) => set({ coverage })}
-        tones={TONE}
-      />
+      {scores ? (
+        <div className={styles.derived}>
+          <span className={styles.fieldLabel}>coverage</span>
+          <span style={{ color: TONE[coverageOf(cell, feature)!] }}>{coverageOf(cell, feature)}</span>
+          <span className={styles.derivedHint}>{metOf(scores)}</span>
+        </div>
+      ) : (
+        <Choice label="coverage" options={COVERAGES} value={cell?.coverage} onChange={(coverage) => set({ coverage })} tones={TONE} />
+      )}
+
+      {/* What the feature must do, and how they do on each (D-133). */}
+      <div className={styles.field}>
+        <span className={styles.criteriaHead}>
+          <span className={styles.fieldLabel}>{editing || !hasCriteria ? 'criteria of this feature' : 'criteria'}</span>
+          {hasCriteria && (
+            <button className={styles.edit} onClick={() => setEditing(!editing)}>
+              {editing ? 'done' : 'edit'}
+            </button>
+          )}
+        </span>
+        {editing || !hasCriteria ? (
+          <CriteriaEditor feature={feature} bare />
+        ) : (
+          <CriterionScores feature={feature} competitorId={competitorId} cell={cell} />
+        )}
+      </div>
 
       <label className={styles.field}>
         <span className={styles.fieldLabel}>their version</span>

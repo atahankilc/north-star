@@ -508,3 +508,9 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   to what's left; narrow blocks shrink the name rather than break a word.
 - Assistant placement and layouts use the unfolded size (`titleFullHalf`, `labelRoom`).
 - Verified in headless Chrome on the emulators (resize, ⌘Z, fold/unfold screencast, narrow block); `npm run build`.
+
+## Done (D-133 matrix criteria and white space, 2026-10-19)
+- Examined the user's BUBBLES workspace; findings and the slice plan in `docs/specs/usefulness.md` (Phase 6 in ROADMAP).
+- Slice 1: features list criteria, cells score them (`met|part|no`), cells show blocks, `◇ N open` white space,
+  editors in the feature and cell panels, TSV and export/import carry them, the assistant reads them.
+- Verified in headless Chrome on the emulators (add, score, remove + ⌘Z); rules tests (6 new); `npm run build`.

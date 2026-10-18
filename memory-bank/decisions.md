@@ -104,6 +104,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Flow (columns in chain order, one row per problem), Table (sortable, inline edits), Matrix (features × competitors,
   coverage 1–4, verdict), Reports; all share the filter bar and side panel (D-040, D-045).
 - Frames as tall as their content, capped at the page (D-106).
+- Matrix criteria: a feature lists ≤ 8 must-haves, a cell scores each `met | part | no` and then reads from them (blocks per
+  criterion); `◇ N open` = criteria nobody meets (white space); edited in the feature or cell panel (D-133).
 - Reports tab: table alone, 10 a page with numbered pages, KIND/BY/SEEN BY filters + upload square in its top row; a report
   opens beside it (`?report=`), nothing opens by itself (D-103, D-106). Upload your own `.md` (≤512 KB), round-trips the download (D-091).
 
