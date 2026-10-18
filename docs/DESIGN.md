@@ -103,6 +103,14 @@ Values will be tuned against contrast checks (WCAG AA for text).
   Signed out, the right side is empty (no motion switch on the landing, D-069).
 - Dropdowns (`src/ui/Menu.tsx`): a framed trigger `SHOW all ▾`, a framed list below (or above, for the bottom toolbar), `[x]`/`[ ]` checks.
   The create button is the one solid-magenta control on the board.
+- One-of pickers (`src/ui/Select.tsx`, D-093): never the browser's `<select>`. An inline `value ▾` trigger opens a compact list
+  right under it, the same as the tag picker's suggestions (frame, tight rows, a wash on the row under the pointer, the current
+  value bright), with no build-up animation; it opens upward only when it doesn't fit below, stays inside its side panel,
+  follows its trigger when something scrolls, and Escape closes only the list. Used for link kinds, Table priority/status,
+  the Matrix's "their version" and Settings models.
+- Adding a link (`+ link`, LinkList): a dropdown hanging from the links heading, as wide as the section, never spread into the
+  panel: a search box on top, matches below in the same compact rows (type dim, title); arrows move, Enter links and closes,
+  Escape or a click outside closes. Placement shared with Select (`src/ui/floating.ts`).
 
 ### Surfaces (D-024)
 Every framed element (panels, cards, forms, chips, empty states) composes `src/ui/Frame.module.css`:

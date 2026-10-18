@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../data/auth'
 import { WorkspaceContext } from '../views/workspace/context'
 import { Choice } from './Choice'
+import { Select } from './Select'
 import { AsciiButton } from './AsciiButton'
 import styles from './AiSettings.module.css'
 import { Row, Section } from './Settings'
@@ -307,24 +308,23 @@ function ModelPicker({ task }: { task: AiTask }) {
   return (
     <div className={styles.form}>
       <div className={styles.line}>
-        <select
+        <Select
           className={styles.select}
-          aria-label={`Model for ${task}`}
+          ariaLabel={`Model for ${task}`}
           value={typing ? OTHER : current}
           disabled={checking}
-          onChange={(e) => {
-            if (e.target.value === OTHER) return setTyping(true)
+          options={[
+            ...MODELS.map((m) => ({ value: m.id, label: m.id })),
+            // A typed id that isn't in the list still shows as the current one.
+            ...(MODELS.some((m) => m.id === current) ? [] : [{ value: current, label: current }]),
+            { value: OTHER, label: 'other model id…' },
+          ]}
+          onChange={(v) => {
+            if (v === OTHER) return setTyping(true)
             setTyping(false)
-            choose(e.target.value)
+            choose(v)
           }}
-        >
-          {MODELS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.id}
-            </option>
-          ))}
-          <option value={OTHER}>other model id…</option>
-        </select>
+        />
         {checking && <span className={styles.note}>checking…</span>}
       </div>
       {typing && (

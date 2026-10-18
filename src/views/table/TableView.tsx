@@ -8,6 +8,7 @@ import { useCanvas } from '../../state/canvasStore'
 import { Appear } from '../../ui/Appear'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { DecodeText } from '../../ui/DecodeText'
+import { Select } from '../../ui/Select'
 import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems, type BoardItem } from '../canvas/boardKinds'
 import { DetailPanel } from '../canvas/DetailPanel'
 import { useWs } from '../workspace/context'
@@ -175,32 +176,24 @@ export function TableView() {
                       </td>
                       <td>
                         {r.feature && (
-                          <select
+                          <Select
                             className={styles.select}
-                            aria-label="Priority"
+                            ariaLabel="Priority"
                             value={r.feature.priority ?? ''}
-                            onChange={(e) => void updateNode(wid, 'feature', item.id, { priority: (e.target.value || undefined) as Feature['priority'] })}
-                          >
-                            <option value="">—</option>
-                            {FEATURE_PRIORITIES.map((p) => (
-                              <option key={p}>{p}</option>
-                            ))}
-                          </select>
+                            options={[{ value: '', label: '—' }, ...FEATURE_PRIORITIES.map((p) => ({ value: p, label: p }))]}
+                            onChange={(v) => void updateNode(wid, 'feature', item.id, { priority: (v || undefined) as Feature['priority'] })}
+                          />
                         )}
                       </td>
                       <td>
                         {r.feature && (
-                          <select
+                          <Select
                             className={styles.select}
-                            aria-label="Status"
+                            ariaLabel="Status"
                             value={r.feature.status ?? ''}
-                            onChange={(e) => void updateNode(wid, 'feature', item.id, { status: (e.target.value || undefined) as Feature['status'] })}
-                          >
-                            <option value="">—</option>
-                            {FEATURE_STATUSES.map((s) => (
-                              <option key={s}>{s}</option>
-                            ))}
-                          </select>
+                            options={[{ value: '', label: '—' }, ...FEATURE_STATUSES.map((s) => ({ value: s, label: s }))]}
+                            onChange={(v) => void updateNode(wid, 'feature', item.id, { status: (v || undefined) as Feature['status'] })}
+                          />
                         )}
                       </td>
                     </tr>

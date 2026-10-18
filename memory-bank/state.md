@@ -313,6 +313,8 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   Reports left-aligned with its header in the filter row's place; table fills the width with "…" names; one Settings label column;
   stale "coming later" removed; phone side panel covers the filters. No raw font sizes or letter-spacing outside AiChat.
   Follow-ups: all actions lowercase (uppercase only for labels); workspace-card hover regression fixed.
+  Later the same day: `src/ui/Select.tsx` replaces every native `<select>`, and `+ link` opens as a dropdown instead of spreading
+  inside the panel (`src/ui/floating.ts`); verified headless, dark, light and 390. Committed and pushed 2026-10-18.
   Build passes; verified headless on emulators (no horizontal scroll at 390, light theme). Committed and pushed 2026-10-18.
 
 ## Next steps

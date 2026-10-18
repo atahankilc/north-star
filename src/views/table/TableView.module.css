@@ -158,15 +158,6 @@ tr[data-selected='true'] .type::after {
 
 .select {
   padding: var(--space-1) 0;
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  cursor: pointer;
-}
-
-.select option {
-  background: var(--bg-raised);
 }
 
 .popoverCell {

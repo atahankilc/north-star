@@ -11,6 +11,7 @@ import { Appear } from '../../ui/Appear'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { Choice } from '../../ui/Choice'
 import { DecodeText } from '../../ui/DecodeText'
+import { Select } from '../../ui/Select'
 import { setPresenceSelection } from '../../data/presence'
 import { useCanvas } from '../../state/canvasStore'
 import { useWs } from '../workspace/context'
@@ -245,19 +246,16 @@ function CellPanel({
 
       <label className={styles.field}>
         <span className={styles.fieldLabel}>their version</span>
-        <select
+        <Select
           className={styles.select}
+          ariaLabel="Their version"
           value={cell?.competitorFeatureId ?? ''}
-          onChange={(e) => set({ competitorFeatureId: e.target.value || undefined })}
-        >
-          <option value="">{theirs.length ? '— none —' : 'no features listed yet'}</option>
-          {theirs.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.category ? `${f.category} · ` : ''}
-              {f.name || 'Untitled'}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: theirs.length ? '— none —' : 'no features listed yet' },
+            ...theirs.map((f) => ({ value: f.id, label: `${f.category ? `${f.category} · ` : ''}${f.name || 'Untitled'}` })),
+          ]}
+          onChange={(v) => set({ competitorFeatureId: v || undefined })}
+        />
       </label>
 
       <label className={styles.field}>

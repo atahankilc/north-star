@@ -42,15 +42,7 @@
 }
 
 .kind {
-  border: 0;
-  background: none;
   color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-}
-
-.kind option {
-  background: var(--bg-raised);
 }
 
 .unlink {
@@ -94,17 +86,29 @@
   color: var(--fg-faint);
 }
 
+.dropdown {
+  /* The `+ link` dropdown, the tag picker's list with a search box on top (TagInput.module.css), fixed where floatFrom put it. */
+  composes: frame from '../../ui/Frame.module.css';
+  position: fixed;
+  z-index: 60;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
 .search {
   width: 100%;
-  padding: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
   border: 0;
-  border-bottom: 1px solid var(--accent-cyan);
+  border-bottom: 1px solid var(--line);
   background: none;
   color: var(--fg);
   font: inherit;
-  font-size: var(--text-sm);
   outline: none;
   caret-color: var(--accent-magenta);
+}
+
+.search:focus {
+  border-bottom-color: var(--accent-cyan);
 }
 
 .search::placeholder {
@@ -112,10 +116,10 @@
 }
 
 .results {
-  display: flex;
-  flex-direction: column;
-  margin: var(--space-2) 0 0;
-  padding: 0;
+  max-height: min(40vh, 220px);
+  margin: 0;
+  padding: var(--space-1) 0;
+  overflow-y: auto;
   list-style: none;
 }
 
@@ -123,24 +127,33 @@
   display: flex;
   gap: var(--space-2);
   width: 100%;
-  padding: var(--space-1) 0;
+  padding: var(--space-1) var(--space-3);
   border: 0;
   background: none;
   color: var(--fg);
   font: inherit;
-  font-size: var(--text-sm);
   text-align: left;
   cursor: pointer;
 }
 
-.result:hover,
-.result:focus-visible {
+.result[data-active='true'] {
+  background: var(--wash-3);
   color: var(--fg-strong);
-  outline: none;
 }
 
-.result:hover::before,
-.result:focus-visible::before {
-  content: '→';
-  color: var(--accent-cyan);
+.result .type {
+  flex: none;
+  white-space: nowrap;
+}
+
+.resultTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.none {
+  padding: var(--space-1) var(--space-3);
+  color: var(--fg-faint);
 }

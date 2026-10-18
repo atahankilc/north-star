@@ -915,6 +915,15 @@ the report screen and every Settings page; the assistant chat was left out on pu
 - *Case (user, follow-up):* every action is lowercase: `[ create ]`, `[ delete ]`, `[+ attach]`, `[+ link]`, the Settings menu
   (`> account`). Uppercase is only for labels. Before, `[ DELETE ]` (panel) and `[delete]` (lists) both existed. The
   `--track-button` token went with it. `sign in with Google` keeps the name's capital; test users stay `Alice`/`Bob`/`Carol`.
+- *No native dropdowns (user, follow-up):* the five `<select>`s (link kind in the side panel, Table priority and status, the
+  Matrix's "their version", Settings models) opened the macOS menu. `src/ui/Select.tsx` replaces them. First pass used the filter menu's
+  list (tall rows, cell build-up, `>` marks); the user found it looked like an accordion opening, so it now matches the tag
+  picker's suggestion list (compact rows, wash on hover, current value bright, no animation, opens downward when it fits), in a portal fixed to the viewport (inside the Settings dialog when it's in one), following its
+  trigger on scroll, Escape closing only the list; `data-edit` so the preview lock disables it. The competitor category field's
+  `<datalist>` suggestions are still native.
+- *`+ link` as a dropdown (user, follow-up):* the link search used to spread inside the panel (search box, results, `done`),
+  pushing the links down. Now it opens as a dropdown under the links heading, the tag list's look with a search box on top;
+  picking links and closes it. `src/ui/floating.ts` holds the placement both dropdowns use.
 - *Fix (follow-up):* the shared-button swap had split the workspace card's hover selector, so on hover the actions took the
   name input's full width and pushed out "owner · 1 member"; restored.
 - Kept: the report screen stays centred (a reading screen over the app, D-089); the Matrix keeps its fit-content width (D-060);
