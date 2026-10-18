@@ -398,8 +398,8 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-108: links coloured by meaning (4 groups) on solid framed chips, hover/selection focus dims the rest, click a link → bar
   (kind, label, reverse, remove), `LINKS` filter; shift+click / alt+drag multi-select, group drag, "N selected" panel (shared
   tags, duplicate, delete); ⌘C/⌘V/⌘D; a `○` link handle on hovered cards; text sizes H1/H2/note + colour via a label bar.
-  Rules: `labels.size` (239 pass), **not deployed** (optional field; old rules accept labels with it already since they don't
-  list fields, so the live client works either way). Build passes. Verified headless on emulators, dark and light. Committed 2026-10-18 (not pushed).
+  Rules: `labels.size` (239 pass), deployed 2026-10-18 (optional field; old rules accept labels with it already since they don't
+  list fields, so the live client works either way). Build passes. Verified headless on emulators, dark and light. Committed, pushed and rules deployed 2026-10-18 (live deploy green).
 - D-108 follow-up: the assistant can edit a link (`edit_link`: kind, label, direction) and add a note (`add_note`);
   notes are their own list in the brief and no longer act as area names. Verified with a fake OpenAI on emulators. Build passes.
 - Ideas left from the same talk: formatting in card notes, snap/alignment guides, a right-click menu.
