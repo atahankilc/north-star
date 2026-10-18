@@ -11,7 +11,7 @@ type Feature = Card & { priority: 'P1' | 'P2' | 'P3'; status: 'idea' | 'planned'
 type Competitor = { key: string; tags: string[]; name: string; url: string; pricing: string; audience: string; description: string; notes: string; features: [string, string, string][] }
 
 // Areas sit far apart, so the jump list has somewhere to go. Each column is one link in the chain (D-045).
-const COLUMN_X = { customer: -24, problem: -16, competitor: -8, idea: 0, feature: 8 } as const
+const COLUMN_X = { customer: -24, problem: -16, competitor: -8, idea: 0, feature: 8, package: 16 } as const
 const TOP = 4
 // Every card is the same size (D-055), so one row height fits all.
 const ROW = 2.1

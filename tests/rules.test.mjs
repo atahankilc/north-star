@@ -208,6 +208,12 @@ await deny('a placement with a free id', () => place('random', { planeId: 'p1', 
 await deny('a placement of a competitor feature', () => place('p1_f1', { planeId: 'p1', itemId: 'f1', itemType: 'competitorFeature', x: 1, y: 2 }))
 await deny('a placement without a position', () => place('p1_c2', { planeId: 'p1', itemId: 'c2', itemType: 'idea' }))
 await allow('text on a plane', () => addDoc(sub(bob.fs, 'labels'), { text: 'MVP', planeId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+// Packages (D-141).
+await allow('a package', () => addDoc(sub(bob.fs, 'packages'), { ...card, memberIds: ['a', 'b'], homePlaneId: 'p1', impact: 'high', effort: 'M' }))
+await deny('a package without its home plane', () => addDoc(sub(bob.fs, 'packages'), { ...card, memberIds: ['a'] }))
+await deny('a package with members that are not a list', () => addDoc(sub(bob.fs, 'packages'), { ...card, memberIds: 'a', homePlaneId: 'p1' }))
+await allow('a package placed on a plane', () => place('p1_k1', { planeId: 'p1', itemId: 'k1', itemType: 'package', x: 0, y: 0 }))
+await allow('a link from a package', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'k1', fromType: 'package', toId: 'p1', toType: 'problem', kind: 'solves' }))
 // Status and evidence (D-137).
 await allow('problem with a validation status', () => addDoc(sub(bob.fs, 'problems'), { ...card, validation: 'testing' }))
 await deny('problem with an unknown validation status', () => addDoc(sub(bob.fs, 'problems'), { ...card, validation: 'proven' }))

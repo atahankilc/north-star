@@ -82,6 +82,7 @@ export function findItem(ws: ReturnType<typeof useWs>, id: string): { type: Boar
     ['idea', ws.ideas],
     ['competitor', ws.competitors],
     ['feature', ws.features],
+    ['package', ws.packages],
   ]
   for (const [type, list] of lists) {
     const n = list.find((x) => x.id === id)

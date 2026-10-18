@@ -20,10 +20,11 @@ export const TYPE_LABELS: Record<NodeType, string> = {
   feature: 'feature',
   competitor: 'competitor',
   competitorFeature: 'their feature',
+  package: 'package',
 }
 
 export function useNodeIndex(): Map<string, NodeInfo> {
-  const { wid, customers, problems, ideas, features, competitors, competitorFeatures } = useWs()
+  const { wid, customers, problems, ideas, features, competitors, competitorFeatures, packages } = useWs()
   return useMemo(() => {
         const index = new Map<string, NodeInfo>()
     const add = (id: string, type: NodeType, title: string, path: string) => index.set(id, { id, type, title, path })
@@ -31,6 +32,7 @@ export function useNodeIndex(): Map<string, NodeInfo> {
     for (const p of problems) add(p.id, 'problem', p.title || 'Untitled', itemPath(wid, p.id))
     for (const i of ideas) add(i.id, 'idea', i.title || 'Untitled', itemPath(wid, i.id))
     for (const f of features) add(f.id, 'feature', f.title || 'Untitled', itemPath(wid, f.id))
+    for (const k of packages) add(k.id, 'package', k.title || 'Untitled', itemPath(wid, k.id))
     const names = new Map(competitors.map((c) => [c.id, c.name]))
     for (const c of competitors) add(c.id, 'competitor', c.name || 'Untitled', itemPath(wid, c.id))
     for (const f of competitorFeatures) {
@@ -38,5 +40,5 @@ export function useNodeIndex(): Map<string, NodeInfo> {
       add(f.id, 'competitorFeature', `${owner ? `${owner} · ` : ''}${f.name || 'Untitled'}`, itemPath(wid, f.competitorId, f.id))
     }
     return index
-  }, [wid, customers, problems, ideas, features, competitors, competitorFeatures])
+  }, [wid, customers, problems, ideas, features, competitors, competitorFeatures, packages])
 }

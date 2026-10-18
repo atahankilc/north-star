@@ -24,6 +24,7 @@ export function clipOf(ws: WorkspaceCtx, ids: string[]): Clip | null {
     ['idea', ws.ideas],
     ['feature', ws.features],
     ['competitor', ws.competitors],
+    ['package', ws.packages],
     ['label', ws.labels],
   ] as const
   for (const id of ids) {

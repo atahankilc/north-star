@@ -35,6 +35,7 @@ const LIST: Record<NodeType, keyof WorkspaceCtx> = {
   feature: 'features',
   competitor: 'competitors',
   competitorFeature: 'competitorFeatures',
+  package: 'packages',
 }
 
 const POSITION = new Set(['x', 'y'])

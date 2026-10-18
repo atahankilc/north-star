@@ -542,3 +542,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 ## Done (D-140 planes on the board, 2026-10-19)
 - Plane switcher, placements, `existing ▾`, panel `planes` row, ⌫ = take off plane, plane text/sections, presence per
   plane, export/import. Verified in headless Chrome on the emulators; rules tests (9 new); `npm run build`.
+
+## Done (D-141 packages, 2026-10-19)
+- `package` card type, `package these`, home plane frame, panel (holds, confidence, open its plane), priorities, export/
+  import, links. Verified in headless Chrome on the emulators; rules tests (5 new); `npm run build`.

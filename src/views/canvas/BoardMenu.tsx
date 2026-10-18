@@ -7,7 +7,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { focusPath } from '../../app/paths'
 import { reverseEdge, updateEdge } from '../../data/edges'
-import { BOARD_TYPES, FOR } from '../../data/model'
+import { FOR, MADE_TYPES } from '../../data/model'
 import { copied } from '../../data/selection'
 import { useCanvas } from '../../state/canvasStore'
 import type { NewThing } from '../../state/workspaceView'
@@ -235,7 +235,7 @@ function rowsFor(
     const here = snapPoint(at, false)
     return [
       { key: 'add', heading: 'add here' },
-      ...BOARD_TYPES.map((t): Row => ({ key: t, label: BOARD_KINDS[t].label, glyph: '▌', tone: TYPE_ACCENT[t], run: () => create(t, here) })),
+      ...MADE_TYPES.map((t): Row => ({ key: t, label: BOARD_KINDS[t].label, glyph: '▌', tone: TYPE_ACCENT[t], run: () => create(t, here) })),
       { key: 'text', label: 'text', glyph: 'T', run: () => create('text', here) },
       { key: 'section', label: 'section', glyph: '⬚', run: () => create('section', here) },
       ...(copied() ? [{ key: 'paste', label: 'paste here', hint: `${MOD}V`, run: () => void pasteClip(ws, at) } as Row] : []),

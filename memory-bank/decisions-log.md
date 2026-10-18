@@ -1935,3 +1935,29 @@ cards, planes split only where they're looked at. The user went with the recomme
   column, ⌫ took a card off (toast) and ⌘Z put it back, `[` / `]` switched, deleting the plane kept all 23 cards; text on a
   plane only there; export → import kept the plane, 3 placements and its text. Rules 279 pass (the 2 usage-log tests
   fail as before). `npm run build`. Firestore + RTDB rules deployed 2026-10-19.
+
+### D-141 · 2026-10-19 · Accepted (step 2 of D-139)
+**Packages: a piece of the chain as one card.** As the spec says (docs/specs/planes.md §4), with these choices:
+- *A card type* `package` (blue, `--accent-blue`), last in `BOARD_TYPES`: the board's card, drag, link, select, panel,
+  SHOW filter and Table work as for any card. Not in the create menus (`MADE_TYPES`) nor in Flow (not on the chain).
+  Saved filters from before it show it once (`TYPES_VERSION` 2).
+- *Data* `packages/{id}`: a card (title, notes, tags, x/y on All) + `memberIds` (≤ 60), `homePlaneId`, `impact?`,
+  `effort?`. Members that no longer exist are skipped, never cleaned up, so undoing a card's delete puts it back in.
+  Deleting a package takes its links and placements; its members and home plane stay. Links accept `package` both ends.
+- *Made from a selection:* `package these` in the N-selected panel (any cards but packages). On a plane other than All,
+  that plane is its home and the package lands in All's right column; on All, a new plane named after it holds the
+  members where they are, and the package goes just right of them. Named "Package N", renamed in its panel. One undo step
+  (package, plane, placements).
+- *On its home plane:* a dashed blue frame round its members with `PACKAGE · name` (computed from where they sit; not
+  movable or editable itself).
+- *Card:* meta `1 problem · 1 idea · 3 features · impact high · M`.
+- *Panel:* impact, effort, confidence (its members and what they rest on, the D-138 rule), `holds` (members by chain
+  order, click to select), `open its plane: <name>`, planes row, links, tags.
+- *Priorities:* packages rated and ranked with features (`package · <name>`, a blue edge); no priority of their own.
+- *Elsewhere:* export/import (members and home remapped; one without a home dropped), copy (keeps members), the assistant's
+  brief lists them (editing them is step 3). Fixed on the way: `duplicate` in the N-selected panel used All's positions on a
+  plane.
+- *Verified* in headless Chrome on the emulators: three cards packaged on All (toast, card `1 problem · 1 idea · 1
+  feature`, its own plane with the frame round the three), a link from it, rated in priorities; ⌘Z removed package,
+  plane and placements together; export → import kept it (3 members, home found). Rules 284 pass (the 2 usage-log tests
+  fail as before). `npm run build`. Firestore rules deployed 2026-10-19.

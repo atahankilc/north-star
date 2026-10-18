@@ -28,6 +28,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, impact (D-138), linked ideas |
 | **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor |
+| **Package** | A piece of the chain as one card: on its home plane its members sit in its frame; elsewhere it links and is rated like a feature (D-141) | name, notes, tags, members, home plane, impact, effort |
 | **Evidence** | What was learned about a customer, problem or idea: listed in its panel, counted on its card (D-137) | card, kind (`interview`/`quote`/`data`/`observation`/`link`), text, supports or contradicts, source, link, date |
 | **Comparison** | How a competitor covers one of our features | feature, competitor, coverage (`none`/`partial`/`full`/`better`), notes, linked competitor feature, a score per feature criterion (`met`/`part`/`no`, D-133), not relevant, confidence (`documented`/`inferred`/`guess`, D-136) |
 | **Attachment** | Image, SVG or PDF on any card (D-083; upload only, no sketch pad) | file, type, name, size, owner item |

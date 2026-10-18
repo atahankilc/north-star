@@ -145,6 +145,15 @@ service cloud.firestore {
         && d.x is number && d.y is number;
     }
 
+    // A package (D-141): a card holding a piece of the chain by id, laid out on its home plane.
+    function validPackage(d) {
+      return validCard(d)
+        && d.memberIds is list && d.memberIds.size() <= 60
+        && isText(d.homePlaneId, 128)
+        && optIn(d, 'impact', ['low', 'medium', 'high'])
+        && optIn(d, 'effort', ['S', 'M', 'L']);
+    }
+
     // A plane (D-139): a name and its place in the list.
     function validPlane(d) {
       return isText(d.name, 80) && d.name.size() > 0
@@ -157,7 +166,7 @@ service cloud.firestore {
       return isText(d.planeId, 128)
         && isText(d.itemId, 128)
         && id == d.planeId + '_' + d.itemId
-        && d.itemType in ['customer', 'problem', 'idea', 'feature', 'competitor']
+        && d.itemType in ['customer', 'problem', 'idea', 'feature', 'competitor', 'package']
         && d.x is number && d.y is number;
     }
 
@@ -185,7 +194,7 @@ service cloud.firestore {
     }
 
     function validEdge(d) {
-      let types = ['customer', 'problem', 'idea', 'feature', 'competitor', 'competitorFeature'];
+      let types = ['customer', 'problem', 'idea', 'feature', 'competitor', 'competitorFeature', 'package'];
       return isText(d.fromId, 128) && isText(d.toId, 128) && d.fromId != d.toId
         && d.fromType in types && d.toType in types
         && isText(d.kind, 40)
@@ -221,6 +230,7 @@ service cloud.firestore {
         || (collection == 'edges' && validEdge(d))
         || (collection == 'attachments' && validAttachment(wid, id, d))
         || (collection == 'evidence' && validEvidence(d))
+        || (collection == 'packages' && validPackage(d))
         || (collection == 'planes' && validPlane(d))
         || (collection == 'placements' && validPlacement(id, d));
     }
@@ -423,7 +433,7 @@ service cloud.firestore {
       match /{collection}/{docId} {
         // `domains` and `groups` are retired (D-048, D-049): still readable and deletable so old workspaces can be cleaned up.
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'evidence', 'planes', 'placements', 'domains', 'groups'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'evidence', 'planes', 'placements', 'packages', 'domains', 'groups'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();

@@ -95,6 +95,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
   edges/{id}            fromId, fromType, toId, toType, kind, label
   planes/{id}           name, order (D-139); All has no doc
   placements/{id}       planeId, itemId, itemType, x, y (id = planeId_itemId; a card's place on a plane other than All)
+  packages/{id}         title, body?, tags?, x, y, memberIds (≤ 60), homePlaneId, impact?, effort? (D-141)
   evidence/{id}         nodeId, nodeType (customer|problem|idea), kind, text, stance (supports|contradicts), source?, url?,
                         date? (YYYY-MM-DD) (D-137); customers, problems and ideas carry validation? (hypothesis|testing|validated|invalidated)
 inviteCodes/{code}      workspaceId, createdBy

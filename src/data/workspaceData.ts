@@ -4,7 +4,7 @@ import { attachmentsAvailable } from './attachments'
 import { db } from './firebase'
 import type { WithId } from './hooks'
 import { useQuery, useWorkspaceCollection } from './hooks'
-import type { Attachment, Comparison, Competitor, CompetitorFeature, Customer, Edge, Evidence, Feature, Idea, Label, Placement, Plane, Problem } from './model'
+import type { Attachment, Comparison, Competitor, CompetitorFeature, Customer, Edge, Evidence, Feature, Idea, Label, Package, Placement, Plane, Problem } from './model'
 
 export type WorkspaceData = {
   labels: WithId<Label>[]
@@ -20,6 +20,8 @@ export type WorkspaceData = {
   evidence: WithId<Evidence>[]
   // Planes and where cards sit on them (D-139); All has neither.
   planes: WithId<Plane>[]
+  // Packages (D-141): cards holding a piece of the chain.
+  packages: WithId<Package>[]
   placements: WithId<Placement>[]
   // Empty where attachments aren't available yet (D-083).
   attachments: WithId<Attachment>[]
@@ -38,6 +40,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const edges = useWorkspaceCollection<Edge>(wid, 'edges')
   const evidence = useWorkspaceCollection<Evidence>(wid, 'evidence')
   const planes = useWorkspaceCollection<Plane>(wid, 'planes')
+  const packages = useWorkspaceCollection<Package>(wid, 'packages')
   const placements = useWorkspaceCollection<Placement>(wid, 'placements')
   const attachments = useQuery<Attachment>(
     attachmentsAvailable ? collection(db(), 'workspaces', wid, 'attachments') : null,
@@ -45,7 +48,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   )
   // Planes (D-139) draw the board, so they hold the loading screen; like evidence, they can't fail the workspace.
   const all = [labels, customers, problems, ideas, features, competitors, competitorFeatures, comparisons, edges]
-  const loadingPlanes = planes.isLoading || placements.isLoading
+  const loadingPlanes = planes.isLoading || placements.isLoading || packages.isLoading
 
   return {
     data: {
@@ -60,6 +63,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
       edges: edges.data,
       evidence: evidence.data,
       planes: planes.data,
+      packages: packages.data,
       placements: placements.data,
       attachments: attachments.data,
     },

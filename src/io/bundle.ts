@@ -23,6 +23,7 @@ export const BUNDLE_COLLECTIONS = [
   'evidence',
   'planes',
   'placements',
+  'packages',
 ] as const satisfies readonly (keyof WorkspaceData)[]
 export type BundleCollection = (typeof BUNDLE_COLLECTIONS)[number]
 
@@ -145,6 +146,13 @@ export function cleanCard(d: Doc, now: number) {
     y,
     ...times(d, now),
   }
+}
+
+// A package (D-141), without its members and home plane: the importer maps those to the new ids.
+export function cleanPackage(d: Doc, now: number) {
+  const card = cleanCard(d, now)
+  if (!card) return null
+  return { ...card, ...compact({ impact: oneOf(d.impact, FEATURE_IMPACTS), effort: oneOf(d.effort, FEATURE_EFFORTS) }) }
 }
 
 // A plane (D-139); its placements follow it with new ids.

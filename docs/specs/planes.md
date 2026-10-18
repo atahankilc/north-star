@@ -1,6 +1,6 @@
 # Spec: planes and packages (Phase 6)
 
-Status: **step 1 built (D-140)**; packages next. The user's idea (2026-10-19); the three open choices went with the
+Status: **steps 1–2 built (D-140, D-141)**; the assistant on planes next. The user's idea (2026-10-19); the three open choices went with the
 recommendations (D-139). Replaces slice 7 (bets) and "later, board readability"
 in [usefulness.md](usefulness.md).
 

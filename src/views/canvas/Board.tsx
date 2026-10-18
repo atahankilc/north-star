@@ -35,6 +35,7 @@ import { isTitle, labelHalf, titleHalf } from './titleBlock'
 import { DRAW_MIN, MIN_H, MIN_W, depths, drawSection, holdsRect, isSection, rectOf, sizeOf, useSectionDraw, type SectionRect } from './sections'
 import { snapPoint } from './snap'
 import { CARD_H, CARD_W, glideDt } from './cardLayout'
+import { PackageFrame, type Frame } from './PackageFrame'
 import { BoardLine } from './BoardLine'
 import { EdgeLine } from './EdgeLine'
 import { rightPress, useBoardMenu } from './rightClick'
@@ -69,6 +70,8 @@ type Props = {
   sectionsFixed?: boolean
   // Makes the section drawn with the crosshair (D-130); none where none can be made.
   onDrawSection?: (rect: SectionRect) => void
+  // Packages whose home is this plane, framed round their members (D-141).
+  frames?: Frame[]
 }
 
 // Where each board's camera was left, so switching views and coming back doesn't lose your place.
@@ -221,7 +224,7 @@ function coveredRight(canvas: HTMLElement): number {
   return p.width && p.left < c.right && p.right > c.left ? Math.max(0, c.right - p.left) : 0
 }
 
-function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey, centreId, sectionsFixed = false, onDrawSection }: Props) {
+function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey, centreId, sectionsFixed = false, onDrawSection, frames = [] }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
@@ -563,6 +566,9 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
         <DotGridMaterial />
       </mesh>
 
+      {frames.map((f) => (
+        <PackageFrame key={f.id} frame={f} />
+      ))}
       {labels.map((l) =>
         isSection(l) ? (
           <BoardSection key={l.id} wid={wid} label={l} depth={sectionDepth.get(l.id) ?? 0} fixed={sectionsFixed} />

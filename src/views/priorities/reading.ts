@@ -26,6 +26,15 @@ type Chain = Pick<WorkspaceCtx, 'customers' | 'problems' | 'ideas' | 'features' 
 const POINTS: Partial<Record<Validation, number>> = { validated: 2, testing: 1 }
 
 export function confidenceOf(feature: { id: string }, ws: Chain): Confidence {
+  return confidenceFrom([feature.id], ws)
+}
+
+// A package's (D-141): what its members are and rest on, together.
+export function packageConfidence(pkg: { memberIds: string[] }, ws: Chain): Confidence {
+  return confidenceFrom(pkg.memberIds, ws)
+}
+
+function confidenceFrom(seeds: string[], ws: Chain): Confidence {
   const cards = [
     ...ws.customers.map((c) => ({ ...c, type: 'customer' as const })),
     ...ws.problems.map((c) => ({ ...c, type: 'problem' as const })),
@@ -36,7 +45,8 @@ export function confidenceOf(feature: { id: string }, ws: Chain): Confidence {
     ...ws.features.map((f) => ({ id: f.id, type: 'feature' as const })),
     ...ws.competitors.map((c) => ({ id: c.id, type: 'competitor' as const })),
   ]
-  const chain = focusSet(feature.id, items, ws.edges, ws.competitorFeatures)
+  const chain = new Set<string>()
+  for (const id of seeds) for (const n of focusSet(id, items, ws.edges, ws.competitorFeatures)) chain.add(n)
   const basis: Basis[] = cards.filter((c) => chain.has(c.id)).map((c) => ({ id: c.id, type: c.type, title: c.title || 'Untitled', validation: c.validation }))
   const invalidated = basis.filter((b) => b.validation === 'invalidated')
   if (!basis.length) return { level: 'low', basis, invalidated, why: 'Nothing behind it: link it to the idea and problem it comes from.' }
@@ -62,15 +72,21 @@ export function scoreOf(f: Feature, confidence: Confidence): number | null {
   return (impact * rank(LEVELS, confidence.level)) / effort
 }
 
-export type Ranked = { feature: WithId<Feature>; confidence: Confidence; score: number | null; suggested?: 'P1' | 'P2' | 'P3' }
+// `feature` is a package (D-141) when `pkg` is set: rated the same way, with no priority of its own.
+export type Ranked = { feature: WithId<Feature>; pkg?: boolean; confidence: Confidence; score: number | null; suggested?: 'P1' | 'P2' | 'P3' }
 
-// Every feature with its confidence and score, best first; the rated ones split into thirds as P1, P2, P3 (a
-// suggestion beside the priority you set, never written).
-export function ranked(ws: Chain): Ranked[] {
+// Every feature and package with its confidence and score, best first; the rated ones split into thirds as P1, P2, P3
+// (a suggestion beside the priority you set, never written).
+export function ranked(ws: Chain & Partial<Pick<WorkspaceCtx, 'packages'>>): Ranked[] {
   const all = ws.features.map((feature) => {
     const confidence = confidenceOf(feature, ws)
     return { feature, confidence, score: scoreOf(feature, confidence) } as Ranked
   })
+  for (const k of ws.packages ?? []) {
+    const confidence = packageConfidence(k, ws)
+    const feature = { ...k, memberIds: undefined } as unknown as WithId<Feature>
+    all.push({ feature, pkg: true, confidence, score: scoreOf(feature, confidence) })
+  }
   const rated = all.filter((r) => r.score !== null).sort((a, b) => b.score! - a.score! || a.feature.createdAt - b.feature.createdAt)
   // Equal scores share a suggestion: by where the first of them stands.
   rated.forEach((r) => {

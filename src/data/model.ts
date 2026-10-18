@@ -57,11 +57,14 @@ export type JoinRequest = {
   createdAt: number
 }
 
-export type NodeType = 'customer' | 'problem' | 'idea' | 'feature' | 'competitor' | 'competitorFeature'
+export type NodeType = 'customer' | 'problem' | 'idea' | 'feature' | 'competitor' | 'competitorFeature' | 'package'
 
-// Node types that live on the board as cards (D-040), in the order of the chain (D-045).
-export const BOARD_TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
+// Node types that live on the board as cards (D-040), in the order of the chain (D-045); packages (D-141) after it, as
+// they bundle a piece of it.
+export const BOARD_TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package'] as const
 export type BoardType = (typeof BOARD_TYPES)[number]
+// What + makes: every card but a package, which is made from a selection.
+export const MADE_TYPES = BOARD_TYPES.filter((t): t is Exclude<BoardType, 'package'> => t !== 'package')
 
 // Fields shared by every board card.
 export type BoardNode = {
@@ -107,6 +110,17 @@ export type Placement = {
   itemType: BoardType
   x: number
   y: number
+}
+
+// A piece of the chain made one card (D-139, D-141): a problem, the idea that solves it, its features. On its home plane
+// its members are laid out inside its frame; anywhere else it's one card that links and is rated like a feature.
+// Members that no longer exist are skipped (so undoing a card's delete puts it back in).
+export const MAX_MEMBERS = 60
+export type Package = BoardNode & {
+  memberIds: string[]
+  homePlaneId: string
+  impact?: (typeof FEATURE_IMPACTS)[number]
+  effort?: (typeof FEATURE_EFFORTS)[number]
 }
 
 // What was learned, on a customer, problem or idea (D-137): listed in its panel, counted on its card.

@@ -2,7 +2,7 @@
 import { useMemo } from 'react'
 import type { WithId } from '../../data/hooks'
 import { mismatch, tally } from '../../data/evidence'
-import { FOR, type BoardType, type Edge, type EdgeKind, type Evidence, type Validation } from '../../data/model'
+import { BOARD_TYPES, FOR, type BoardType, type Edge, type EdgeKind, type Evidence, type Validation } from '../../data/model'
 import { useWsView } from '../../state/workspaceView'
 import type { Palette } from '../../styles/tokens'
 import { useWs } from '../workspace/context'
@@ -45,6 +45,13 @@ export const BOARD_KINDS: Record<BoardType, Kind> = {
     addLabel: '+ Feature',
     placeholder: 'What does it do, and for whom?',
   },
+  // A piece of the chain as one card (D-141); made from a selection, not from +.
+  package: {
+    label: 'package',
+    plural: 'packages',
+    addLabel: '',
+    placeholder: 'What this piece delivers, and what it bets on.',
+  },
 }
 
 // Everything the board needs to draw one card, whatever its type.
@@ -86,7 +93,7 @@ export function defaultKind(from: BoardType, to: BoardType): EdgeKind {
 // Every board item in the workspace (unfiltered). Competitors without a position yet sit at the origin
 // until the board places them.
 export function useBoardItems(): BoardItem[] {
-  const { customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments, evidence } = useWs()
+  const { customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments, evidence, packages } = useWs()
   return useMemo(() => {
     const tags = forTags(edges)
     const names = new Map(customers.map((c) => [c.id, c.title || 'Untitled']))
@@ -149,8 +156,20 @@ export function useBoardItems(): BoardItem[] {
       const fields = [f.priority, f.status, f.effort].filter(Boolean).join(' · ')
       items.push({ ...f, type: 'feature', tags: f.tags ?? [], forIds: tags.get(f.id) ?? [], meta: line(fields, labels(f.id), files(f.id)) })
     }
+    // Packages (D-141): what they hold, by type (`1 problem · 1 idea · 3 features`), and their rating.
+    const typeOf = new Map(items.map((i) => [i.id, i.type]))
+    for (const k of packages) {
+      const held = new Map<BoardType, number>()
+      for (const id of k.memberIds) {
+        const t = typeOf.get(id)
+        if (t) held.set(t, (held.get(t) ?? 0) + 1)
+      }
+      const holds = BOARD_TYPES.flatMap((t) => (held.get(t) ? [`${held.get(t)} ${held.get(t) === 1 ? BOARD_KINDS[t].label : BOARD_KINDS[t].plural}`] : [])).join(' · ')
+      const rating = [k.impact && `impact ${k.impact}`, k.effort].filter(Boolean).join(' · ')
+      items.push({ ...k, type: 'package', tags: k.tags ?? [], forIds: [], meta: line(holds || 'empty', rating, files(k.id)) })
+    }
     return items
-  }, [customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments, evidence])
+  }, [customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments, evidence, packages])
 }
 
 // What the filters let through; under a `for:` filter only the chosen customers' cards stay (D-119).
@@ -186,9 +205,10 @@ export const TYPE_ACCENT: Record<BoardType, string> = {
   competitor: 'var(--accent-yellow)',
   idea: 'var(--fg)',
   feature: 'var(--accent-cyan)',
+  package: 'var(--accent-blue)',
 }
 
-const TYPE_KEY = { customer: 'green', problem: 'magenta', competitor: 'yellow', idea: 'fg', feature: 'cyan' } as const
+const TYPE_KEY = { customer: 'green', problem: 'magenta', competitor: 'yellow', idea: 'fg', feature: 'cyan', package: 'blue' } as const
 
 // The same accent as a hex for WebGL, from the current theme's palette (usePalette()).
 export function typeAccent(type: BoardType, palette: Palette): string {

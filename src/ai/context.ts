@@ -168,6 +168,18 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
     return `${meta ? ` [${meta}]` : ''}${must ? `; ${must}` : ''}`
   })
 
+  // Packages (D-141): a piece of the chain as one card; listed with what they hold (the assistant edits them in step 3).
+  if (ws.packages.length) {
+    const title = new Map([...ws.customers, ...ws.problems, ...ws.ideas, ...ws.features].map((n) => [n.id, n.title || 'Untitled']))
+    for (const c of ws.competitors) title.set(c.id, c.name || 'Untitled')
+    lines.push('', `PACKAGES (${ws.packages.length})`)
+    for (const k of ws.packages) {
+      const held = k.memberIds.flatMap((id) => (title.has(id) ? [title.get(id)!] : []))
+      const rating = [k.impact && `impact ${k.impact}`, k.effort && `effort ${k.effort}`].filter(Boolean).join(', ')
+      lines.push(`- ${k.title || 'Untitled'}${rating ? ` [${rating}]` : ''}: holds ${held.join(', ') || 'nothing'}`)
+    }
+  }
+
   lines.push('', `COMPETITORS (${ws.competitors.length})`)
   for (const c of ws.competitors) {
     const facts = [c.url, c.pricing && `pricing: ${clip(c.pricing, 120)}`, c.audience && `audience: ${clip(c.audience, 120)}`].filter(Boolean)

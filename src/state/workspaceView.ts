@@ -23,6 +23,8 @@ export const QUIET_LINKS = ['plain', 'for', 'competes']
 const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], hiddenLinks: QUIET_LINKS }
 // Bumped when a new link group starts hidden, so filters saved before it hide it too.
 const LINKS_VERSION = 4
+// Bumped when a new card type arrives, so filters saved before it show it (D-141).
+const TYPES_VERSION = 2
 
 type State = Filters & {
   wid: string | null
@@ -55,10 +57,12 @@ function read(wid: string): Filters {
   try {
     const raw = localStorage.getItem(key(wid))
     if (!raw) return DEFAULTS
-    const saved = JSON.parse(raw) as Partial<Filters> & { linksV?: number }
+    const saved = JSON.parse(raw) as Partial<Filters> & { linksV?: number; typesV?: number }
+    // Packages (D-141) came after: a filter saved before them shows them once, then the choice is remembered.
+    const types = saved.types && (saved.typesV ?? 1) < TYPES_VERSION ? [...saved.types, 'package' as const] : saved.types
     const hiddenLinks = saved.hiddenLinks ?? DEFAULTS.hiddenLinks
     return {
-      types: (saved.types ?? DEFAULTS.types).filter((t) => BOARD_TYPES.includes(t)),
+      types: (types ?? DEFAULTS.types).filter((t) => BOARD_TYPES.includes(t)),
       forIds: saved.forIds ?? [],
       tags: saved.tags ?? [],
       hiddenLinks: hideNew(hiddenLinks, saved.linksV ?? 1),
@@ -74,7 +78,7 @@ export const useWsView = create<State>((set, get) => {
     const { wid, types, forIds, tags, hiddenLinks } = get()
     if (!wid) return
     try {
-      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, hiddenLinks, linksV: LINKS_VERSION }))
+      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, hiddenLinks, linksV: LINKS_VERSION, typesV: TYPES_VERSION }))
     } catch {
       // Private mode or blocked storage: filters just won't be remembered.
     }

@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { focusPath } from '../../app/paths'
 import type { WithId } from '../../data/hooks'
 import { createLabel } from '../../data/labels'
-import { BOARD_TYPES, type Label } from '../../data/model'
+import { BOARD_TYPES, MADE_TYPES, type Label } from '../../data/model'
 import { createBoardNode, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { useWsView, type NewThing } from '../../state/workspaceView'
@@ -20,6 +20,7 @@ import { focusFeatures, focusSet, rememberFocus } from './focus'
 import { CARD_H, CARD_W, findFreeSpot } from './cardLayout'
 import { copySelection, duplicateSelection, pasteClip } from './clipboard'
 import { BoardMenu } from './BoardMenu'
+import type { Frame } from './PackageFrame'
 import { DetailPanel } from './DetailPanel'
 import { useGuides } from './guides'
 import { useSnap } from './snap'
@@ -80,6 +81,29 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     [focusMode, pws.labels, nodes],
   )
   const features = useMemo(() => (chain ? focusFeatures(chain, competitorFeatures) : competitorFeatures), [chain, competitorFeatures])
+  // Packages at home on this plane (D-141): a frame round their members, as they sit here.
+  const frames = useMemo<Frame[]>(() => {
+    if (plane === ALL) return []
+    const at = new Map(all.map((n) => [n.id, n]))
+    return ws.packages.flatMap((k) => {
+      if (k.homePlaneId !== plane) return []
+      const here = k.memberIds.flatMap((id) => (at.has(id) ? [at.get(id)!] : []))
+      if (!here.length) return []
+      const pad = 0.5
+      return [
+        {
+          id: k.id,
+          name: k.title,
+          rect: [
+            Math.min(...here.map((n) => n.x)) - CARD_W / 2 - pad,
+            Math.min(...here.map((n) => n.y)) - CARD_H / 2 - pad,
+            Math.max(...here.map((n) => n.x)) + CARD_W / 2 + pad,
+            Math.max(...here.map((n) => n.y)) + CARD_H / 2 + pad,
+          ] as [number, number, number, number],
+        },
+      ]
+    })
+  }, [plane, all, ws.packages])
   useEffect(() => {
     if (centre) rememberFocus(wid, centre.id)
   }, [wid, centre])
@@ -317,6 +341,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         centreId={centre?.id}
         sectionsFixed={focusMode}
         onDrawSection={focusMode ? undefined : (rect) => void addSection(rect)}
+        frames={frames}
       />
 
       <FilterBar
@@ -336,7 +361,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
             ariaLabel="Create"
             items={[
               { key: 'cards', heading: 'card' },
-              ...BOARD_TYPES.map((t) => ({
+              ...MADE_TYPES.map((t) => ({
                 key: t,
                 label: BOARD_KINDS[t].label,
                 // The card's left border, in its type colour (D-055).

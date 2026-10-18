@@ -10,6 +10,7 @@ import {
   FEATURE_STATUSES,
   type BoardNode,
   type Feature,
+  type Package,
   type Validation,
 } from '../../data/model'
 import { updateNode } from '../../data/nodes'
@@ -20,6 +21,10 @@ import { Choice } from '../../ui/Choice'
 import { CompetitorProfile } from '../competitors/CompetitorProfile'
 import { CriteriaEditor } from '../matrix/Criteria'
 import { CardPlanes } from './CardPlanes'
+import { usePlaneWs } from './planes'
+import { usePlaneView } from '../../state/plane'
+import { packageSelection } from './packageThese'
+import { PackageFields } from '../workspace/PackageFields'
 import { FeatureConfidence } from '../priorities/FeatureConfidence'
 import { FocusButton } from './focus'
 import { useWs } from '../workspace/context'
@@ -57,7 +62,7 @@ export function DetailPanel({ items }: { items: BoardItem[] }) {
   // A competitor's feature chip on the board opens its competitor, with that feature unfolded (D-058).
   const feature = ws.competitorFeatures.find((f) => f.id === selectedId)
   const item = items.find((n) => n.id === (feature ? feature.competitorId : selectedId))
-  const docs = { customer: ws.customers, problem: ws.problems, idea: ws.ideas, feature: ws.features }
+  const docs = { customer: ws.customers, problem: ws.problems, idea: ws.ideas, feature: ws.features, package: ws.packages }
   const competitor = item?.type === 'competitor' ? ws.competitors.find((c) => c.id === item.id) : undefined
   const node = item && item.type !== 'competitor' ? (docs[item.type] as WithId<BoardNode>[]).find((n) => n.id === item.id) : undefined
 
@@ -86,7 +91,7 @@ export function DetailPanel({ items }: { items: BoardItem[] }) {
               </div>
             </CompetitorProfile>
           ) : (
-            node && <NodeEditor key={item.id} item={item} node={node} />
+            node && <NodeEditor key={item.id} item={item} node={node} items={items} />
           )}
         </Appear>
       )}
@@ -94,7 +99,7 @@ export function DetailPanel({ items }: { items: BoardItem[] }) {
   )
 }
 
-function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }) {
+function NodeEditor({ item, node, items }: { item: BoardItem; node: WithId<BoardNode>; items: BoardItem[] }) {
   const type = item.type as CardType
   const { wid } = useWs()
   const select = useCanvas((s) => s.select)
@@ -180,9 +185,11 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
 
       <div className={styles.pickers}>
         {type === 'feature' && <FeatureFields wid={wid} feature={node as WithId<Feature>} />}
+        {/* A package (D-141): rated like a feature, and what it holds. */}
+        {type === 'package' && <PackageFields pkg={node as WithId<Package>} items={items} />}
         {/* How far from a guess it is, set by hand (D-137). */}
-        {type !== 'feature' && <ValidationField node={node as { id: string; validation?: Validation }} type={type} />}
-        {type !== 'customer' && <ForPicker item={item} />}
+        {type !== 'feature' && type !== 'package' && <ValidationField node={node as { id: string; validation?: Validation }} type={type} />}
+        {type !== 'customer' && type !== 'package' && <ForPicker item={item} />}
         {/* The planes it's on (D-139). */}
         <CardPlanes item={item} />
       </div>
@@ -192,7 +199,7 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
         <textarea ref={bodyRef} className={styles.body} rows={6} placeholder={kind.placeholder} {...field('body')} />
       </label>
 
-      {type !== 'feature' && <EvidenceList node={node} type={type} />}
+      {type !== 'feature' && type !== 'package' && <EvidenceList node={node} type={type} />}
 
       <div className={styles.label}>
         tags
@@ -264,6 +271,7 @@ function SelectionPanel({ items }: { items: BoardItem[] }) {
   const shared = cards.length ? cards[0].tags.filter((t) => cards.every((c) => c.tags.includes(t))) : []
   const suggestions = useAllTags(items).map((t) => t.tag)
   const counts = BOARD_TYPES.map((t) => [t, cards.filter((c) => c.type === t).length] as const).filter(([, n]) => n > 0)
+  const pws = usePlaneWs(ws, usePlaneView((s) => s.plane))
 
   return (
     <div className={styles.inner}>
@@ -348,7 +356,14 @@ function SelectionPanel({ items }: { items: BoardItem[] }) {
         <footer className={styles.foot}>
           <span className={styles.meta} />
           <span className={styles.actions}>
-            <AsciiButton accent="cyan" onClick={() => void duplicateSelection(ws)}>
+            {/* A piece of the chain as one card, with a plane of its own (D-141). */}
+            {cards.some((c) => c.type !== 'package') && (
+              <AsciiButton accent="blue" onClick={() => void packageSelection(ws, cards)}>
+                package these
+              </AsciiButton>
+            )}
+            {/* On a plane, from where they are there (D-139). */}
+            <AsciiButton accent="cyan" onClick={() => void duplicateSelection(pws)}>
               duplicate
             </AsciiButton>
             <AsciiButton accent="yellow" onClick={() => removeSelection(ws, selection)}>

@@ -289,3 +289,13 @@
     width: 100%;
   }
 }
+
+/* A package (D-141): its colour on the chip's edge and before its name. */
+.chip[data-pkg='true'] {
+  border-left-color: var(--accent-blue);
+}
+
+.pkg {
+  color: var(--accent-blue);
+  font-size: var(--text-xs);
+}

@@ -6,6 +6,7 @@ import {
   cleanCard,
   cleanComparison,
   cleanEvidence,
+  cleanPackage,
   cleanPlacement,
   cleanPlane,
   cleanCompetitor,
@@ -18,7 +19,7 @@ import {
 } from '../io/bundle'
 import { attachmentsAvailable, uploadImported } from './attachments'
 import { db } from './firebase'
-import { BOARD_TYPES, EVIDENCE_TYPES, type NodeType, type Workspace } from './model'
+import { BOARD_TYPES, EVIDENCE_TYPES, MAX_MEMBERS, type NodeType, type Workspace } from './model'
 import { placementId } from './planes'
 import { COLLECTIONS } from './nodes'
 import { createWorkspace, deleteWorkspace } from './workspaces'
@@ -64,6 +65,16 @@ export async function importWorkspace(bundle: LoadedBundle, uid: string): Promis
     const ref = doc(col('planes'))
     planeIds.set(d.id, ref.id)
     writes.push([ref, fields])
+  }
+  // Packages (D-141) once the cards and planes have new ids: their members and home follow; one without a home is dropped.
+  for (const d of bundle.packages) {
+    const home = planeIds.get(d.homePlaneId as string)
+    const fields = cleanPackage(d, now)
+    const members = (Array.isArray(d.memberIds) ? d.memberIds : []).flatMap((m) => {
+      const to = ids.get(m as string)
+      return to ? [to.id] : []
+    })
+    add('package', d.id, home && fields ? { ...fields, memberIds: members.slice(0, MAX_MEMBERS), homePlaneId: home } : null)
   }
   for (const d of bundle.placements) {
     const plane = planeIds.get(d.planeId as string)

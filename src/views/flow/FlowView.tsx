@@ -15,9 +15,11 @@ import { MarkSign, markHoverOf, markRing, peerRings, PeerTags, usePeersOn, Was }
 import { useMarkOf } from '../workspace/stage'
 import styles from './FlowView.module.css'
 
-type Row = { key: string; cells: Record<BoardType, BoardItem[]>; loose?: boolean }
+// The chain's columns (D-045); packages (D-141) aren't on it.
+type Chain = Exclude<BoardType, 'package'>
+type Row = { key: string; cells: Record<Chain, BoardItem[]>; loose?: boolean }
 
-const MISSING: Record<BoardType, string> = {
+const MISSING: Record<Chain, string> = {
   customer: '(who has it?)',
   problem: '(no problem yet)',
   competitor: '(none researched)',
@@ -26,7 +28,7 @@ const MISSING: Record<BoardType, string> = {
 }
 
 const byAge = (a: BoardItem, b: BoardItem) => a.createdAt - b.createdAt
-const emptyCells = (): Record<BoardType, BoardItem[]> => ({ customer: [], problem: [], competitor: [], idea: [], feature: [] })
+const emptyCells = (): Record<Chain, BoardItem[]> => ({ customer: [], problem: [], competitor: [], idea: [], feature: [] })
 
 // One row per problem; then ideas that solve no problem yet; then customers with neither; then whatever links to nothing.
 function buildRows(items: BoardItem[], neighbours: Map<string, Set<string>>): Row[] {
@@ -37,7 +39,7 @@ function buildRows(items: BoardItem[], neighbours: Map<string, Set<string>>): Ro
   }
   const placed = new Set<string>()
   const rows: Row[] = []
-  const push = (key: string, cells: Record<BoardType, BoardItem[]>) => {
+  const push = (key: string, cells: Record<Chain, BoardItem[]>) => {
     for (const list of Object.values(cells)) for (const i of list) placed.add(i.id)
     rows.push({ key, cells })
   }
@@ -79,7 +81,7 @@ export function FlowView() {
   const neighbours = useNeighbours(edges, owners)
   useSelectionScope()
 
-  const columns = BOARD_TYPES.filter((t) => types.includes(t))
+  const columns = BOARD_TYPES.filter((t): t is Chain => t !== 'package' && types.includes(t))
   // A row with nothing in the shown columns (types filtered off) is dropped.
   const rows = useMemo(
     () => buildRows(visible, neighbours).filter((r) => columns.some((t) => r.cells[t].length > 0)),

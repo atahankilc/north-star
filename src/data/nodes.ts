@@ -24,6 +24,7 @@ import type {
   Customer,
   Edge,
   Evidence,
+  Package,
   Placement,
   Feature,
   Idea,
@@ -38,6 +39,7 @@ export const COLLECTIONS = {
   feature: 'features',
   competitor: 'competitors',
   competitorFeature: 'competitorFeatures',
+  package: 'packages',
 } as const satisfies Record<NodeType, string>
 
 type Fields = {
@@ -47,6 +49,7 @@ type Fields = {
   feature: Feature
   competitor: Competitor
   competitorFeature: CompetitorFeature
+  package: Package
 }
 
 const col = (wid: string, name: string) => collection(db(), 'workspaces', wid, name)
@@ -69,6 +72,7 @@ const LABELS: Record<NodeType, string> = {
   feature: 'feature',
   competitor: 'competitor',
   competitorFeature: 'competitor feature',
+  package: 'package',
 }
 
 // A new card on the board. Competitors keep their title as `name`. Made on a plane other than All (D-139), it's placed

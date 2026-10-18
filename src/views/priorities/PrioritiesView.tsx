@@ -131,11 +131,15 @@ function Chip({ r }: { r: Ranked }) {
   return (
     <button
       className={styles.chip}
+      data-pkg={r.pkg}
       data-selected={selected}
       title={why}
       onClick={() => useCanvas.getState().select(selected ? null : r.feature.id)}
     >
-      <span className={styles.chipTitle}>{r.feature.title || 'Untitled'}</span>
+      <span className={styles.chipTitle}>
+        {r.pkg && <span className={styles.pkg}>package · </span>}
+        {r.feature.title || 'Untitled'}
+      </span>
       <span className={styles.chipMeta}>
         <Sure level={level} />
         {invalidated.length > 0 && <span className={styles.warn}>!</span>}
@@ -153,7 +157,10 @@ function RankRow({ r, n }: { r: Ranked; n: number }) {
     <li>
       <button className={styles.rank} data-selected={selected} title={r.confidence.why} onClick={() => useCanvas.getState().select(selected ? null : r.feature.id)}>
         <span className={styles.n}>{n}</span>
-        <span className={styles.rankTitle}>{r.feature.title || 'Untitled'}</span>
+        <span className={styles.rankTitle}>
+          {r.pkg && <span className={styles.pkg}>package · </span>}
+          {r.feature.title || 'Untitled'}
+        </span>
         <Sure level={r.confidence.level} />
         <span className={styles.score}>{r.score!.toFixed(1)}</span>
         <span className={styles.pri} data-differs={!!differs}>

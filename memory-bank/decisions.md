@@ -88,6 +88,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   migration); per-plane placements, sections and text; links drawn when both ends are on the plane; packages are cards.
 - On the board (D-140): `PLANE ▾` switcher, `existing ▾` to bring cards in, ⌫ takes cards off a plane (delete stays
   everywhere), cards made on a plane also land right of All, `on N planes` / `+N off-plane`, cursors per plane.
+- Packages (D-141): a blue card type made with `package these` (home plane: the open one, or a new one from All), a
+  frame round its members there, rated in priorities with confidence from its members; members by id, never cleaned up.
 - Sections: a named frame (label `kind: 'section'`, w/h), drawn with a crosshair (press, drag, release; never placed),
   holding by position whatever is inside it (cards, text, smaller sections); drag the band or edge carries it all, corner
   resizes, delete leaves contents, never copied; name set like text (H1–H3, B/I/AA), not scaled; kept in the focus view
