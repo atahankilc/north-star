@@ -11,6 +11,7 @@ import { firebase } from '../data/firebase'
 import { useHistory } from '../data/history'
 import { useCanvas } from '../state/canvasStore'
 import { usePreview } from '../views/workspace/preview'
+import { useStage } from '../views/workspace/stage'
 import { useWs } from '../views/workspace/context'
 import { useNodeIndex } from '../views/workspace/nodeIndex'
 import { UNDO_HINT } from '../views/workspace/useEditKeys'
@@ -21,11 +22,13 @@ const day = (t: number) => new Date(t).toLocaleDateString('en-CA')
 const count = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export function ReportView() {
-  const id = useChat((s) => s.reportOpen)
+  // The report on the stage (D-094); `asked` is the one asked for, which the stage follows once the app has made way.
+  const id = useStage((s) => s.reportId)
+  const asked = useChat((s) => s.reportOpen)
   const ws = useWs()
   // The saved copy (D-090); until it arrives, or if saving failed, the chat's own.
   const saved = ws.reports.find((r) => r.id === id)
-  const message = useChat((s) => (s.reportOpen ? s.messages.find((m) => m.reportId === s.reportOpen) : undefined))
+  const message = useChat((s) => (id ? s.messages.find((m) => m.reportId === id) : undefined))
   const report = saved ?? message?.report
   const index = useNodeIndex()
   const navigate = useNavigate()
@@ -44,10 +47,10 @@ export function ReportView() {
 
   // One screen at a time: a preview opening closes the report, and the other way round.
   useEffect(() => {
-    if (id === null) return
+    if (asked === null) return
     usePreview.getState().close()
     return usePreview.subscribe((s) => s.ws && useChat.getState().showReport(null))
-  }, [id])
+  }, [asked])
   useEffect(() => {
     if (id === null) return
     const onKey = (e: KeyboardEvent) => {

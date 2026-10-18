@@ -16,9 +16,14 @@ import { CELL_PX, cellTime, DURATION_MS, OVERSHOOT } from './cellReveal'
 
 const HIDDEN = 'polygon(0 0, 0 0, 0 0)'
 
-type Mode = 'enter' | 'exit'
+export type Mode = 'enter' | 'exit'
 
-function runCells(el: HTMLElement, mode: Mode, delay: number, duration: number, onDone?: () => void): () => void {
+// `sweep` (D-094): cells come (or go) mostly in order from that side, still a little at random, like a wake behind
+// something crossing the element; without it, in random order (D-035).
+export type Sweep = 'left' | 'right'
+const SWEEP = 0.7
+
+export function runCells(el: HTMLElement, mode: Mode, delay: number, duration: number, onDone?: () => void, sweep?: Sweep): () => void {
   if (isReducedMotion()) {
     el.style.clipPath = mode === 'enter' ? '' : HIDDEN
     onDone?.()
@@ -52,7 +57,9 @@ function runCells(el: HTMLElement, mode: Mode, delay: number, duration: number, 
         for (let c = 0; c <= cols; c++) {
           let visible = false
           if (c < cols) {
-            const shown = cellTime(gx0 + c, gy0 + r) <= p
+            const t = cellTime(gx0 + c, gy0 + r)
+            const along = sweep === 'left' ? c / cols : sweep === 'right' ? 1 - c / cols : 0
+            const shown = (sweep ? along * SWEEP + t * (1 - SWEEP) : t) <= p
             visible = mode === 'enter' ? shown : !shown
           }
           if (visible && runStart < 0) runStart = c

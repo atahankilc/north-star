@@ -9,6 +9,12 @@
   contain: layout;
 }
 
+/* Beside the chat on the left, the app's box is the stage (a preview or a report, D-094). */
+:global(html[data-ai-open][data-ai-stage]) .app {
+  right: 0;
+  left: var(--ai-w);
+}
+
 .code {
   color: var(--accent-cyan);
   letter-spacing: var(--track-label);

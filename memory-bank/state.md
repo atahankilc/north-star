@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -279,8 +279,8 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   (a superset, safe for the live client). D-091: `upload .md` on the reports tab (own Markdown reports, parsed to the same
   shape; round-trips the report screen's download); rules 193 pass, deployed 2026-10-18. Committed and **pushed 2026-10-18** (`a86583c`, live deploy green). The user tried reports with a real key 2026-10-18: works.
 - Assistant roadmap with the user (in order): agent loop, analysis modes, board layout, preview, deep research, saved
-  reports (all done; whole chats stay unsaved, the user chose reports instead) → reading attachments (after D-083) → the
-  user's own redesign of the assistant UI and the preview.
+  reports (all done; whole chats stay unsaved, the user chose reports instead) → the user's
+  own redesign of the assistant UI and the preview (started: D-094) → reading attachments (after D-083).
 
 ## Done (orb easter egg, 2026-10-18)
 - D-092: once in a long while the idle orb turns into a pomegranate (squat fruit shape, small dark calyx, speckled skin, an open slice of seeds) for 28–45 s, then bursts into seeds and the plain orb builds back;
@@ -316,6 +316,20 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   Later the same day: `src/ui/Select.tsx` replaces every native `<select>`, and `+ link` opens as a dropdown instead of spreading
   inside the panel (`src/ui/floating.ts`); verified headless, dark, light and 390. Committed and pushed 2026-10-18.
   Build passes; verified headless on emulators (no horizontal scroll at 390, light theme). Committed and pushed 2026-10-18.
+
+## Done (assistant redesign, step 1, 2026-10-18)
+- D-094: chat restyled as a terminal log; window builds up cell by cell; a preview or report opens a stage on the right while
+  the chat glides to the left (stageMotion.ts, stage.ts). Verified headless on emulators, dark and light. Committed 2026-10-18 (not pushed).
+- D-095: empty chat = small box that rises from below and lifts the orb onto its edge; the first message grows it tall and
+  the orb drops behind the edge to peek; header = model + clear + close (perch.ts). Verified headless, dark and light. Committed 2026-10-18 (not pushed).
+  Follow-up: in the tall chat the orb rests in the middle, wanders off to peek now and then, and when the column crosses to a
+  preview it slides, is shaken, composes itself and walks back (perch.ts springs; `shaken`/`composed` in AiOrb). Verified headless.
+  Second round of fixes (orb back to its corner on close, no command list in the empty box, eased `/` menu, side panels end
+  above the small box, side panels glide when the tall chat closes). Verified headless.
+  Then: a side panel knocks the orb aside on the small box; the tall chat slides whole on open/close; the orb is 1.5× on the
+  tall chat. Verified headless.
+- Next in the redesign (with the user): the preview's look on the stage (bar, frame, marks) and the report screen's, the
+  steps/streaming states, narrow screens (below 760 px the chat still covers the stage).
 
 ## Next steps
 1. Finish the workspace key (D-079) once the user's Blaze upgrade goes through: user runs

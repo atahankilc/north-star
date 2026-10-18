@@ -11,7 +11,17 @@ import { useCanvas } from '../state/canvasStore'
 import { TYPE_ACCENT } from '../views/canvas/boardKinds'
 import { useWs } from '../views/workspace/context'
 import { usePreview } from '../views/workspace/preview'
+import { useStage } from '../views/workspace/stage'
 import styles from './AiChat.module.css'
+
+// A box's title written into its top edge, like `┌ proposal · 6 ────┐` (D-094).
+export function BoxHead({ label }: { label: string }) {
+  return (
+    <p className={styles.proposalHead}>
+      <span>{label}</span>
+    </p>
+  )
+}
 
 const keyOf = (c: Change) => (['add_card', 'add_competitor', 'add_competitor_feature'].includes(c.raw.op) && typeof c.raw.key === 'string' ? c.raw.key.trim() : '')
 
@@ -83,10 +93,18 @@ export function AiProposal({ message }: { message: ChatMessage }) {
       return
     }
     usePreview.getState().show(message.id, sim.ws, sim.marks, accepted.length)
-    // Glide to the first card it adds or moves, so the change is on screen.
+    // Glide to the first card it adds or moves, so the change is on screen: once the preview is on the stage (D-094), so
+    // the stage remembers the view you had before.
     const cards = [...sim.ws.customers, ...sim.ws.problems, ...sim.ws.ideas, ...sim.ws.features, ...sim.ws.competitors]
     const first = cards.find((c) => sim.marks.get(c.id) && sim.marks.get(c.id) !== 'deleted' && c.x !== undefined)
-    if (first) useCanvas.getState().flyTo([first.x!, first.y!])
+    if (!first) return
+    const fly = () => useCanvas.getState().flyTo([first.x!, first.y!])
+    if (useStage.getState().preview) return fly()
+    const off = useStage.subscribe((st) => {
+      if (!st.preview) return
+      off()
+      fly()
+    })
   }
 
   const toggle = (n: number) =>
@@ -130,9 +148,8 @@ export function AiProposal({ message }: { message: ChatMessage }) {
 
   return (
     <div className={styles.proposal} data-status={state.status}>
-      <p className={styles.proposalHead}>
-        <span className={styles.kicker}>proposed</span> {proposal.summary}
-      </p>
+      <BoxHead label={`proposal · ${proposal.changes.length} change${proposal.changes.length === 1 ? '' : 's'}`} />
+      {proposal.summary && <p className={styles.proposalSummary}>{proposal.summary}</p>}
       {proposal.changes.length === 0 ? (
         <p className={styles.fine}>No usable changes came back.</p>
       ) : (
@@ -171,19 +188,20 @@ export function AiProposal({ message }: { message: ChatMessage }) {
       <div className={styles.proposalActions}>
         {pending ? (
           <>
-            <button className={styles.send} onClick={apply} disabled={count === 0}>
-              apply {count}
-            </button>
-            <button className={styles.action} onClick={() => decide(message.id, { status: 'discarded' })}>
-              discard
-            </button>
+            {/* Preview first: it opens the stage beside the chat (D-094). */}
             <button
               className={styles.action}
               aria-pressed={previewing}
               disabled={count === 0 && !previewing}
               onClick={() => (previewing ? usePreview.getState().close() : openPreview())}
             >
-              {previewing ? 'close preview' : 'preview'}
+              {previewing ? 'close preview' : 'preview →'}
+            </button>
+            <button className={styles.send} onClick={apply} disabled={count === 0}>
+              apply {count}
+            </button>
+            <button className={styles.action} onClick={() => decide(message.id, { status: 'discarded' })}>
+              discard
             </button>
           </>
         ) : state.status === 'applied' ? (

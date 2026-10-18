@@ -1,10 +1,12 @@
-// The assistant (D-073): an ASCII orb with eyes in the bottom-right corner of a workspace. Clicking it opens the
-// assistant's window, a full-height column on the right that the app makes room for (D-081); the orb glides up into its
-// header and stays there as its face. The chat knows the workspace and proposes changes you accept before they're
+// The assistant (D-073): an ASCII orb with eyes in the bottom-right corner of a workspace. Clicking it opens the chat
+// (D-095): an empty chat is a small box that rises from below and lifts the orb onto its top edge; with the first message
+// it grows into a tall column on the right that the app makes room for (D-081), and the orb drops behind its edge and
+// peeks over it (perch.ts). It reads like a terminal (D-094). When a preview or a report opens, the column crosses to the
+// left and the stage takes the right (stageMotion.ts). The chat knows the workspace and proposes changes you accept before they're
 // written (D-074). Your own OpenAI key (D-006)
 // or the workspace's, if the owner set one and lets you use it (D-079).
 import { AnimatePresence, motion } from 'motion/react'
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type CSSProperties } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useChat, type ChatMessage, type Step } from '../ai/chat'
@@ -22,11 +24,14 @@ import { useMotion } from '../state/motion'
 import { themeAccent, useTheme } from '../state/theme'
 import { useWs } from '../views/workspace/context'
 import { MARK_COLOR, OutsidePreview, usePreview, type Mark } from '../views/workspace/preview'
+import { useStage } from '../views/workspace/stage'
 import { lockApp } from '../views/workspace/previewLock'
 import { AiKeyForm, KEY_PRIVACY } from './AiSettings'
 import { AiOrb, type OrbCue, type OrbMood } from './AiOrb'
-import { glide, GLIDE_MS } from './glide'
-import { AiProposal } from './AiProposal'
+import { glide } from './glide'
+import { morph, usePerch, type PerchCue } from './perch'
+import { useStageMotion } from './stageMotion'
+import { AiProposal, BoxHead } from './AiProposal'
 import { ReportView } from './ReportView'
 import styles from './AiChat.module.css'
 
@@ -59,8 +64,11 @@ function readWidth() {
   }
 }
 
-const EASE = [0.16, 1, 0.3, 1] as const
-const GLIDE = { duration: GLIDE_MS / 1000, ease: EASE }
+// The small box growing into the tall column (and back, on clear).
+const GROW_MS = 650
+const GROW_EASE = 'cubic-bezier(0.33, 1, 0.68, 1)'
+// The window sliding up on open and down on close: as gentle as the growth, so you see it travel.
+const SLIDE = { duration: 0.6, ease: [0.33, 1, 0.68, 1] as const }
 
 // Which side panel is open in the app, if any (an item's, or the matrix cell's): the closed orb steps aside for it.
 function useSidePanel() {
@@ -75,8 +83,6 @@ function useSidePanel() {
   return side
 }
 
-const STARTER = 'Summarize this workspace'
-
 export function AiChat() {
   const { wid } = useWs()
   const open = useChat((s) => s.open)
@@ -85,29 +91,61 @@ export function AiChat() {
   const enter = useChat((s) => s.enter)
   const [hover, setHover] = useState(false)
   const size = useNarrow() ? ORB_NARROW : ORB
-  const reduced = useMotion((s) => s.reduced)
   useEffect(() => enter(wid), [enter, wid])
+  useStageMotion()
+  // Tall once there's a conversation, or something on the stage beside it; empty, it's the small box (D-095).
+  const talked = useChat((s) => s.messages.length > 0)
+  const staged = useStage((s) => s.preview !== null || s.reportId !== null)
+  const tall = open && (talked || staged)
 
-  // `html[data-ai-open]` gives the app its room (`--ai-w`, AiChat.module.css); the width is a variable on <html> too.
+  // `html[data-ai-open]` gives the app its room (`--ai-w`, AiChat.module.css) while the chat is tall; the width is a
+  // variable on <html> too.
   useEffect(() => {
     const html = document.documentElement
     html.style.setProperty('--ai-width', `${readWidth()}px`)
     html.style.setProperty('--orb', `${size}px`)
   }, [size])
   // The app takes its new width at once (the board keeps its left edge, Board.tsx); the HUD's right side and side panels
-  // glide over (glide.ts). Opening, the window is lifted up by the orb; closing, the app is already whole under it as it
-  // goes down. Run from the store, before React renders, whoever opens or closes it.
-  useEffect(() => {
+  // glide over (glide.ts), and the box grows into the column (or shrinks back) by its edges, so its text never stretches.
+  // Opening or closing tall, the window slides up or down on its own (AiWindow, which keeps its tall shape while it goes)
+  // and the app is whole under it at once.
+  const wasTall = useRef(tall)
+  const wasOpen = useRef(open)
+  // The window as it was last drawn (recorded below, after this): by the time this runs, the render that makes it tall
+  // or small has already resized it.
+  const lastBox = useRef<DOMRect | null>(null)
+  useLayoutEffect(() => {
     const html = document.documentElement
-    html.toggleAttribute('data-ai-open', useChat.getState().open)
-    const unsubscribe = useChat.subscribe((s, prev) => {
-      if (s.open !== prev.open) glide(() => html.toggleAttribute('data-ai-open', s.open))
-    })
-    return () => {
-      unsubscribe()
-      html.removeAttribute('data-ai-open')
+    // The small box over the app: side panels end above it and its orb (AiChat.module.css).
+    html.toggleAttribute('data-ai-small', open && !tall)
+    const toggle = () => html.toggleAttribute('data-ai-open', tall)
+    const grew = tall !== wasTall.current
+    const stayedOpen = open && wasOpen.current
+    wasTall.current = tall
+    wasOpen.current = open
+    if (!grew) {
+      toggle()
+      return
     }
-  }, [])
+    // Growing or shrinking while open, the box moves by its edges; opening or closing tall, the window slides on its own.
+    // Either way the app's side panels and the HUD's right side glide to their new place.
+    if (!stayedOpen) {
+      glide(toggle)
+      return
+    }
+    glide(() => morph(document.querySelector('[data-ai-window]'), toggle, GROW_MS, GROW_EASE, lastBox.current))
+    if (tall) setCue((c) => ({ kind: 'fall', n: (c?.n ?? 0) + 1 }))
+  }, [tall, open])
+  useLayoutEffect(() => {
+    lastBox.current = document.querySelector('[data-ai-window]')?.getBoundingClientRect() ?? null
+  })
+  useEffect(
+    () => () => {
+      document.documentElement.removeAttribute('data-ai-open')
+      document.documentElement.removeAttribute('data-ai-small')
+    },
+    [],
+  )
 
   // A side panel shoves the closed orb aside (it glides, and gets bumped); closing it lets the orb back (relieved).
   const side = useSidePanel()
@@ -123,6 +161,11 @@ export function AiChat() {
   }, [side, open])
   const sideRoom = side ? `calc(min(${side === 'wide' ? 520 : 380}px, 100vw - 2 * var(--space-4)) + var(--space-4))` : '0px'
 
+  // On the box's edge while open (perch.ts): lifted (startled), swept along when the column crosses (shaken, composed).
+  const orb = useRef<HTMLButtonElement>(null)
+  const perchCue = useCallback((kind: PerchCue) => setCue((c) => ({ kind, n: (c?.n ?? 0) + 1 })), [])
+  usePerch(orb, open, tall, perchCue)
+
   // Thinking until the first words arrive, then talking while they stream in.
   const talking = useChat((s) => s.busy && !!s.messages[s.messages.length - 1]?.content)
   const mood: OrbMood = busy ? (talking ? 'talking' : 'thinking') : open ? 'open' : hover ? 'hover' : 'idle'
@@ -132,27 +175,29 @@ export function AiChat() {
     <OutsidePreview.Provider value={true}>
       <PreviewBar />
       <ReportView />
-      <AnimatePresence>{open && <AiWindow key="chat" onClose={() => setOpen(false)} />}</AnimatePresence>
-      {/* One orb for both places, so its reactions carry over; `layout` glides it between the corner and the header. */}
-      <motion.button
-        layout={!reduced}
-        transition={GLIDE}
+      <AnimatePresence>{open && <AiWindow key="chat" tall={tall} onClose={() => setOpen(false)} />}</AnimatePresence>
+      {/* One orb, in its corner or on the chat's edge, so its reactions carry over. */}
+      <button
+        ref={orb}
         className={styles.orb}
+        data-ai-orb
         style={{ '--side-room': sideRoom } as CSSProperties}
         data-open={open || undefined}
+        // Bigger on the tall chat, where it peeks over the edge (D-095).
+        data-tall={tall || undefined}
         onClick={() => setOpen(!open)}
         onPointerEnter={() => setHover(true)}
         onPointerLeave={() => setHover(false)}
         aria-expanded={open}
         aria-label={open ? 'Close the assistant' : 'Ask the assistant'}
       >
-        <AiOrb size={size} mood={mood} cue={cue} />
-      </motion.button>
+        <AiOrb size={size} mood={mood} cue={cue} peek={tall} />
+      </button>
     </OutsidePreview.Provider>
   )
 }
 
-function AiWindow({ onClose }: { onClose: () => void }) {
+function AiWindow({ tall, onClose }: { tall: boolean; onClose: () => void }) {
   const { source, workspaceKeyExists } = useKeySource()
   const model = useAiSettings(modelFor)
   const messages = useChat((s) => s.messages)
@@ -166,26 +211,37 @@ function AiWindow({ onClose }: { onClose: () => void }) {
   }
 
   const reduced = useMotion((s) => s.reduced)
+  // The small box's height, for the side panels that end above it.
+  const box = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = box.current
+    if (!el || tall) return
+    const html = document.documentElement
+    const watch = new ResizeObserver(() => html.style.setProperty('--ai-small-h', `${el.offsetHeight}px`))
+    watch.observe(el)
+    return () => watch.disconnect()
+  }, [tall])
 
   return (
+    // Rises from below (lifting the orb onto its edge, perch.ts) and goes back down on close.
     <motion.aside
+      ref={box}
       className={styles.window}
       aria-label="Assistant"
       onKeyDown={onKeyDown}
-      // Lifted up from below by the orb (which glides up to its header at the same pace), lowered the same way.
-      initial={reduced ? false : { y: '100%' }}
+      data-ai-window
+      data-tall={tall || undefined}
+      initial={reduced ? false : { y: '115%' }}
       animate={{ y: 0 }}
-      exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { y: '100%' }}
-      transition={GLIDE}
+      exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { y: '115%' }}
+      transition={SLIDE}
     >
-      <ResizeEdge />
+      {tall && <ResizeEdge />}
+      {/* No title: the orb on its edge says what this is. The model in use, and the two things you do to the chat. */}
       <header className={styles.head}>
-        <span className={styles.title}>
-          <span className={styles.name}>assistant</span>
-          <span className={styles.model}>
-            {model}
-            {source && ` · ${source === 'workspace' ? 'workspace key' : 'own key'}`}
-          </span>
+        <span className={styles.model}>
+          {model}
+          {source && ` · ${source === 'workspace' ? 'workspace key' : 'own key'}`}
         </span>
         <span className={styles.headActions}>
           {messages.length > 0 && (
@@ -203,7 +259,7 @@ function AiWindow({ onClose }: { onClose: () => void }) {
   )
 }
 
-// The window's left edge: drag to resize. While dragging the app follows at once (no easing).
+// The window's inner edge (left, or right while it's beside a stage): drag to resize. While dragging the app follows at once (no easing).
 function ResizeEdge() {
   const onPointerDown = (e: ReactPointerEvent) => {
     e.preventDefault()
@@ -212,7 +268,9 @@ function ResizeEdge() {
     let width = readWidth()
     const move = (ev: PointerEvent) => {
       const max = Math.min(WIDTH.max, window.innerWidth - 360)
-      width = Math.round(Math.min(max, Math.max(WIDTH.min, window.innerWidth - ev.clientX)))
+      // On the left beside a stage (D-094) the edge is the window's right one.
+      const from = html.hasAttribute('data-ai-left') ? ev.clientX : window.innerWidth - ev.clientX
+      width = Math.round(Math.min(max, Math.max(WIDTH.min, from)))
       html.style.setProperty('--ai-width', `${width}px`)
     }
     const up = () => {
@@ -378,25 +436,21 @@ function Conversation({ source }: { source: KeySource }) {
           stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24
         }}
       >
+        {/* A terminal's log (D-094): your messages are `>` prompt lines, the answers sit under them. */}
         {messages.length === 0 && (
           <li className={styles.empty}>
+            {/* Just the invitation: the commands are a `/` away (D-095), so they aren't listed here. */}
             <p className={styles.lead}>Ask about this workspace: what's missing, what to build next, how you compare.</p>
-            <div className={styles.starters}>
-              <button className={styles.starter} onClick={() => ask(STARTER)}>
-                {STARTER}
-              </button>
-              {MODES.map((m) => (
-                <button key={m.id} className={styles.starter} onClick={() => ask(`/${m.id}`)} title={m.hint}>
-                  <span className={styles.modeId}>/{m.id}</span> {m.label}
-                </button>
-              ))}
-            </div>
-            <p className={styles.fine}>Type / in the box for these any time. On a selected card, they work on that card.</p>
+            <p className={styles.fine}>Type / for commands. On a selected card, they work on that card.</p>
           </li>
         )}
         {messages.map((m) => (
           <li key={m.id} className={styles.message} data-role={m.role}>
-            <span className={styles.who}>{m.role === 'user' ? 'you' : 'ai'}</span>
+            {m.role === 'user' && (
+              <span className={styles.ps} aria-label="you">
+                &gt;
+              </span>
+            )}
             <span className={styles.text}>
               {m.role === 'assistant' && <Steps steps={m.steps ?? []} thinking={!!m.thinking && busy && m === last} />}
               {m.role === 'assistant' ? <Rich text={m.content} /> : (m.shown ?? m.content)}
@@ -421,18 +475,24 @@ function Conversation({ source }: { source: KeySource }) {
         ))}
       </ol>
       <form className={styles.composer} onSubmit={submit}>
-        {modes.length > 0 && <ModeMenu modes={modes} pick={Math.min(pick, modes.length - 1)} selected={selectedItem()} onChoose={choose} />}
-        <textarea
-          ref={input}
-          className={styles.input}
-          rows={1}
-          placeholder="Ask anything…"
-          aria-label="Message the assistant"
-          value={draft}
-          onChange={(e) => edit(e.target.value)}
-          onKeyDown={onKey}
-        />
+        <ModeMenu modes={modes} pick={Math.min(pick, modes.length - 1)} selected={selectedItem()} onChoose={choose} />
+        <span className={styles.promptLine}>
+          <span className={styles.ps} aria-hidden>
+            &gt;
+          </span>
+          <textarea
+            ref={input}
+            className={styles.input}
+            rows={1}
+            placeholder="ask anything, / for modes"
+            aria-label="Message the assistant"
+            value={draft}
+            onChange={(e) => edit(e.target.value)}
+            onKeyDown={onKey}
+          />
+        </span>
         <span className={styles.composerBar}>
+          <span className={styles.footnote}>{web ? 'web on · each search is billed' : 'enter sends · shift+enter: new line'}</span>
           <button
             type="button"
             className={styles.web}
@@ -453,9 +513,6 @@ function Conversation({ source }: { source: KeySource }) {
           )}
         </span>
       </form>
-      <p className={styles.footnote}>
-        Proposes changes; nothing is written until you apply. {web ? 'Web search on: each search is billed.' : 'Enter sends, Shift+Enter adds a line.'}
-      </p>
     </>
   )
 }
@@ -523,7 +580,7 @@ function Steps({ steps, thinking }: { steps: Step[]; thinking: boolean }) {
     <ol className={styles.steps}>
       {steps.map((s, i) => (
         <li key={i} data-state={s.state}>
-          {s.state === 'running' ? <Spinner /> : <span className={styles.stepMark}>{s.state === 'warn' ? '!' : '·'}</span>}
+          {s.state === 'running' ? <Spinner /> : <span className={styles.stepMark}>{s.state === 'warn' ? '!' : '✓'}</span>}
           <span>{s.text}</span>
         </li>
       ))}
@@ -553,10 +610,27 @@ function Spinner() {
 }
 
 // The `/` menu (D-085): modes matching what's typed; a mode that works on one item names the selected card when it fits.
+// It opens and closes by its height (and so the box around it grows and shrinks with it instead of jumping, D-095);
+// closing, it keeps showing what it last listed until it's shut.
 function ModeMenu({ modes, pick, selected, onChoose }: { modes: Mode[]; pick: number; selected: { type: NodeType; name: string } | null; onChoose: (m: Mode) => void }) {
+  const inner = useRef<HTMLUListElement>(null)
+  const [height, setHeight] = useState(0)
+  const shown = useRef(modes)
+  if (modes.length) shown.current = modes
+  const open = modes.length > 0
+  useLayoutEffect(() => {
+    const el = inner.current
+    if (!el) return
+    const measure = () => setHeight(el.offsetHeight)
+    measure()
+    const watch = new ResizeObserver(measure)
+    watch.observe(el)
+    return () => watch.disconnect()
+  }, [])
   return (
-    <ul className={styles.modes} role="listbox" aria-label="Analysis modes">
-      {modes.map((m, i) => (
+    <div className={styles.modesBox} style={{ height: open ? height : 0 }} aria-hidden={!open || undefined}>
+      <ul ref={inner} className={styles.modes} role="listbox" aria-label="Analysis modes">
+        {shown.current.map((m, i) => (
         <li
           key={m.id}
           role="option"
@@ -572,17 +646,19 @@ function ModeMenu({ modes, pick, selected, onChoose }: { modes: Mode[]; pick: nu
             <span className={styles.modeHint}>{m.target && selected?.type === m.target ? `on ${selected.name}` : m.hint}</span>
           </span>
         </li>
-      ))}
-    </ul>
+        ))}
+      </ul>
+    </div>
   )
 }
 
 // While the preview is open (D-087): a frame around the app and a bar saying what you're looking at, with the marks'
 // colours. Esc closes it. Drawn inside the app's box, so it stays clear of the assistant's window.
 function PreviewBar() {
-  const showing = usePreview((s) => s.ws !== null)
-  const wid = usePreview((s) => s.ws?.wid)
-  const count = usePreview((s) => s.count)
+  // What's on the stage (D-094), which trails what was asked for while the app makes way.
+  const showing = useStage((s) => s.preview !== null)
+  const wid = useStage((s) => s.preview?.ws.wid)
+  const count = useStage((s) => s.preview?.count ?? 0)
   const theme = useTheme((s) => s.theme)
   const [host, setHost] = useState<Element | null>(null)
   useEffect(() => setHost(document.querySelector('[data-app]')), [])
@@ -644,9 +720,8 @@ function ResearchPlan({ message, onRun }: { message: ChatMessage; onRun: () => v
   if (r.phase === 'review')
     return (
       <div className={styles.proposal} data-status="pending">
-        <p className={styles.proposalHead}>
-          <span className={styles.changeKind}>research plan</span> {r.topic || 'our market'}
-        </p>
+        <BoxHead label={`research plan · ${r.questions.length} questions`} />
+        <p className={styles.proposalSummary}>{r.topic || 'our market'}</p>
         <ul className={styles.changes}>
           {r.questions.map((q) => (
             <li key={q.id} className={styles.change} data-off={!q.on || undefined}>
@@ -694,9 +769,8 @@ function ReportCard({ message }: { message: ChatMessage }) {
         : 'not saved yet'
   return (
     <div className={styles.proposal}>
-      <p className={styles.proposalHead}>
-        <span className={styles.changeKind}>report</span> {report.title}
-      </p>
+      <BoxHead label="report" />
+      <p className={styles.proposalSummary}>{report.title}</p>
       <p className={styles.fine}>
         {report.sections.length} {research ? 'question' : 'section'}
         {report.sections.length === 1 ? '' : 's'}
@@ -706,7 +780,7 @@ function ReportCard({ message }: { message: ChatMessage }) {
       <p className={styles.fine}>{status}</p>
       <div className={styles.proposalActions}>
         <button className={styles.send} onClick={() => id && useChat.getState().showReport(reportOpen ? null : id)}>
-          {reportOpen ? 'close report' : 'open report'}
+          {reportOpen ? 'close report' : 'open report →'}
         </button>
         {!saved && !research && (
           <button className={styles.action} onClick={() => useChat.getState().keepReport(message.id)}>

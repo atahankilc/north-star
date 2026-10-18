@@ -147,6 +147,10 @@ Settings rows and choices share one label column (`--label-w`, 136 px; 96 px on 
 - **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour
   (`<Appear>` for DOM, `CardReveal` for 3D cards), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
 - Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.
+- **Assistant** (D-094, D-095): an empty chat is a small box that slides up from below and lifts the orb onto its top edge
+  (startled); the first message grows it into a tall column (by its edges, 650 ms) while the orb sinks behind the edge to peek. When a preview or a report opens, the chat glides across
+  to the left (700 ms, eased in and out) while the app breaks apart and the stage builds up in its wake from the right; closing
+  runs it back. Instant under reduced motion.
 - **Motion setting** (D-030, D-063): `full | reduced | system`, default `full`; reduced = frozen background, no waves or sweeps.
   **Background** `on | off` beside it (signed-in pages only).
 

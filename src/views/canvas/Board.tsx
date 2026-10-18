@@ -19,7 +19,8 @@ import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
 import { FOR, type CompetitorFeature, type Edge, type Label } from '../../data/model'
 import { usePresence } from '../../data/presence'
-import { markTag, usePreview } from '../workspace/preview'
+import { markTag } from '../workspace/preview'
+import { useStagedMarks } from '../workspace/stage'
 import { useCanvas } from '../../state/canvasStore'
 import { isReducedMotion } from '../../state/motion'
 import { usePalette } from '../../state/theme'
@@ -286,7 +287,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   // What collaborators have selected: a ring per person in their colour, and their names (D-065, D-067).
   // The assistant's preview (D-087) marks cards the same way, as the first ring.
   const peers = usePresence((s) => s.peers)
-  const marks = usePreview((s) => s.marks)
+  const marks = useStagedMarks()
   const peerSelection = useMemo(() => {
     const map = new Map<string, { name: string; color: string }[]>()
     for (const [id, m] of marks) map.set(id, [markTag(m)])

@@ -6,6 +6,7 @@ import { create } from 'zustand'
 import { setReadOnly } from '../../data/history'
 import { colors } from '../../styles/tokens'
 import type { WorkspaceCtx } from './context'
+import { useStage } from './stage'
 
 // What a change does to an item (or a matrix cell), shown on it in every view.
 export type Mark = 'new' | 'edited' | 'moved' | 'deleted'
@@ -41,6 +42,7 @@ export const usePreview = create<PreviewState>((set) => ({
 export const MARK_COLOR: Record<Mark, string> = { new: colors.cyan, edited: colors.yellow, moved: colors.blue, deleted: colors.magenta }
 export const markTag = (m: Mark) => ({ uid: `preview:${m}`, name: m, color: MARK_COLOR[m] })
 
-export const isPreviewing = () => usePreview.getState().ws !== null
+// Asked for or still on the stage (D-094): either way nothing may start an edit.
+export const isPreviewing = () => usePreview.getState().ws !== null || useStage.getState().preview !== null
 
 export const OutsidePreview = createContext(false)

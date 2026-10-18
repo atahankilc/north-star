@@ -9,9 +9,11 @@
 // - Open, it's curious: tilts its head, one eye bigger, glances down over the chat, a `?` now and then. Waiting for the answer,
 //   the sphere spins faster with a cyan shimmer and the eyes narrow in thought; while the answer streams in it yaps
 //   (chattering mouth, bouncing); after talking it is tired for a few seconds. Closing the chat makes it sad (a tear)
-//   or play dead (X eyes, tongue out, tipped over, not spinning), and then it pulls itself together. Opening, it heaves
-//   its window up from below (D-081): eyes squeezed, a strain.
-// - Cues from outside (`cue`): a side panel shoving it aside bumps it; the panel closing frees it.
+//   or play dead (X eyes, tongue out, tipped over, not spinning), and then it pulls itself together.
+// - Cues from outside (`cue`): a side panel shoving it aside bumps it; the panel closing frees it. The chat's box rising
+//   under it and lifting it onto its top edge startles it; the box growing tall drops it behind its edge (D-095).
+// - `peek` (D-095): it sits behind the tall chat with only the top of its head showing, so its face rides high and its
+//   eyes never look so far down that they'd go under the edge: it peeks over at you and what you type.
 // - Easter egg: once in a long while, instead of an antic, it turns into a pomegranate (nar) with a crown and stays one
 //   for half a minute or so, face and moods and all; then it swells, bursts into seeds and peel, and the plain orb builds
 //   itself back. Typing `nar` outside a text field turns it (or back).
@@ -22,7 +24,7 @@ import { useTheme } from '../state/theme'
 
 export type OrbMood = 'idle' | 'hover' | 'open' | 'thinking' | 'talking'
 // Something that happened to it; a new `n` plays `kind` once.
-export type OrbCue = { kind: 'bumped' | 'free'; n: number }
+export type OrbCue = { kind: 'bumped' | 'free' | 'startled' | 'fall' | 'shaken' | 'composed'; n: number }
 
 // Light glyphs only: heavy ones (# % @) made the sphere loud enough to drown out the face.
 const GLYPHS = ' .·:-=+*'
@@ -181,8 +183,11 @@ const BURST = { pop: 0.7, gone: 1.15, back: 1.75 }
 const angleTo = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)))
 
 // Reactions to the chat: after talking, and after the chat closes (sad or dead, then reviving).
-type React = 'tired' | 'sad' | 'dead' | 'revive' | 'heave' | 'bumped' | 'free'
-const REACT_DUR: Record<React, number> = { tired: 3.5, sad: 2.4, dead: 2.4, revive: 0.9, heave: 0.6, bumped: 1.1, free: 0.9 }
+type React = 'tired' | 'sad' | 'dead' | 'revive' | 'startled' | 'fall' | 'shaken' | 'composed' | 'bumped' | 'free'
+const REACT_DUR: Record<React, number> = { tired: 3.5, sad: 2.4, dead: 2.4, revive: 0.9, startled: 1.3, fall: 1, shaken: 1, composed: 0.8, bumped: 1.1, free: 0.9 }
+// How far the face rides up while peeking (in sphere radii), and how far down the eyes may look then.
+const PEEK_RISE = 0.3
+const PEEK_LOOK = 0.3
 const chatting = (m: OrbMood) => m === 'open' || m === 'thinking' || m === 'talking'
 
 const smooth = (t: number) => t * t * (3 - 2 * t)
@@ -203,12 +208,14 @@ type Particle = {
 }
 type Eye = { s: number; x: number; y: number; rx: number; ry: number }
 
-export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: OrbCue }) {
+export function AiOrb({ size, mood, cue, peek = false }: { size: number; mood: OrbMood; cue?: OrbCue; peek?: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const moodRef = useRef(mood)
   moodRef.current = mood
   const cueRef = useRef(cue)
   cueRef.current = cue
+  const peekRef = useRef(peek)
+  peekRef.current = peek
   const reduced = useMotion((s) => s.reduced)
   const theme = useTheme((s) => s.theme)
   // Reduced motion redraws when the mood changes; the animated loop reads it live.
@@ -219,7 +226,8 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
     const el = canvas.current
     const ctx = el?.getContext('2d')
     if (!el || !ctx) return
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    // Drawn finer than the screen needs: on the tall chat it's shown 1.5× bigger (D-095) and must stay crisp.
+    const dpr = Math.min((window.devicePixelRatio || 1) * 1.5, 3)
     el.width = full * dpr
     el.height = full * dpr
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -398,9 +406,24 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
           case 'dead':
             // Plays dead: X eyes, tongue out, tipped over, the sphere stops.
             return { ...f, look: { x: 0.3, y: 0.3 }, rate: 6, shape: ['cross', 'cross'], tilt: 0.55, droop: 0.12, mouth: 'dead', spin: 0, blink: false }
-          case 'heave':
-            // Lifting its window: eyes squeezed shut with the effort, a tremble, teeth gritted.
-            return { ...f, look: { x: 0, y: -0.3 }, rate: 20, shape: ['squeeze', 'squeeze'], mouth: 'grin', shake: 0.6, blink: false }
+          case 'startled':
+            // Something rose under it and lifted it: a jolt, eyes wide, an `!`; then a look down at what it's sitting on.
+            if (at < 0.05 && now - emittedAt > 500) {
+              emittedAt = now
+              emit({ g: '!', color: 'cyan', x: c + R * 0.75, y: c - R * 0.8, vx: 6, vy: -14, life: 1, size: R * 0.42 }, now)
+            }
+            if (at < 0.7) return { ...f, look: { x: 0, y: -0.3 }, rate: 24, wide: 1.35, mouth: 'o', shake: at < 0.25 ? 1 : 0, bounce: 1, blink: false }
+            return { ...f, look: { x: -0.2, y: 0.7 }, rate: 10, wide: 1.1, mouth: 'none', blink: false }
+          case 'fall':
+            // Dropping behind the box's edge: eyes wide, mouth open, then it settles to peek.
+            return { ...f, look: { x: 0, y: -0.5 }, rate: 20, wide: 1.3, mouth: 'o', blink: false }
+          case 'shaken':
+            // Slid along the edge when the chat crossed the screen (D-095): squeezed shut and rattled, then dazed.
+            if (at < 0.45) return { ...f, look: { x: 0, y: 0 }, rate: 24, shape: ['squeeze', 'squeeze'], mouth: 'o', shake: 1, blink: false }
+            return { ...f, look: { x: Math.sin(at * 9) * 0.5, y: 0.1 }, rate: 12, shape: ['spiral', 'spiral'], mouth: 'wobble', sway: 0.6, blink: false }
+          case 'composed':
+            // Pulls itself together: a quick shake of the head, then a straight look, ready.
+            return { ...f, look: { x: 0, y: 0.1 }, rate: 16, shake: at < 0.3 ? 0.7 : 0, wide: at < 0.3 ? 1 : 1.05, mouth: at < 0.5 ? 'flat' : 'none', blink: false }
           case 'bumped':
             // Shoved aside by a side panel: > < and a jolt, then a wary look at what pushed it.
             if (at < 0.4) return { ...f, look: { x: -0.4, y: 0 }, rate: 24, shape: ['squeeze', 'squeeze'], mouth: 'o', shake: 1, blink: false }
@@ -705,11 +728,11 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
       // Reactions: tired after talking; closing the chat makes it sad or play dead, then it revives.
       if (!reduced && cueRef.current && cueRef.current.n !== lastCue) {
         lastCue = cueRef.current.n
-        if (!chatting(m)) react = { kind: cueRef.current.kind, at: now }
+        // Whoever sends a cue decides when it fits (AiChat for the closed orb, perch.ts while the chat is open).
+        react = { kind: cueRef.current.kind, at: now }
       }
       if (m !== prevMood) {
-        if (!reduced && !chatting(prevMood) && m === 'open') react = { kind: 'heave', at: now }
-        else if (!reduced && prevMood === 'talking' && m === 'open') react = { kind: 'tired', at: now }
+        if (!reduced && prevMood === 'talking' && m === 'open') react = { kind: 'tired', at: now }
         else if (!reduced && chatting(prevMood) && !chatting(m)) react = { kind: Math.random() < 0.5 ? 'sad' : 'dead', at: now }
         else if (m === 'thinking' || m === 'talking') react = null
         prevMood = m
@@ -774,11 +797,15 @@ export function AiOrb({ size, mood, cue }: { size: number; mood: OrbMood; cue?: 
       if (!popped) pomK += (+(pom || bt >= 0) - pomK) * (reduced ? 1 : 1 - Math.exp(-dt * (pom ? 1.6 : 3)))
 
       const want = expression(m, now)
+      if (peekRef.current) {
+        want.droop -= PEEK_RISE
+        if (want.look) want.look = { x: want.look.x, y: Math.min(want.look.y, PEEK_LOOK) }
+      }
       const ease = (r: number) => (reduced ? 1 : 1 - Math.exp(-dt * r))
       const to = (k: 'wide' | 'squash' | 'slant' | 'sad' | 'tilt' | 'droop' | 'hot' | 'blush' | 'bounce' | 'shake' | 'sway' | 'pulse' | 'spin' | 'reach', r: number) => {
         cur[k] += (want[k] - cur[k]) * ease(r)
       }
-      const goal = want.look ?? target
+      const goal = want.look ?? (peekRef.current ? { x: target.x, y: Math.min(target.y, PEEK_LOOK) } : target)
       look.x += (goal.x - look.x) * ease(want.rate)
       look.y += (goal.y - look.y) * ease(want.rate)
       to('wide', 14)

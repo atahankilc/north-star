@@ -933,3 +933,70 @@ the report screen and every Settings page; the assistant chat was left out on pu
 - Verified with headless Chrome on the emulators in the same three setups: no horizontal scroll, light theme reads the same.
   The white focus box on Settings' first menu item after opening shows only when the dialog opens without a pointer (keyboard,
   or a script); left as is.
+
+### D-094 · 2026-10-18 · Accepted (changes D-081, D-087, D-089; first step of the user's assistant redesign)
+**The chat is a terminal; a preview or a report opens a stage, and the chat glides across to make room.** The user's picks:
+placement first, then look, then motion. The preview and report screen keep their old look for now (next steps of the redesign).
+- *Placement (user):* at rest the chat is the window on the right (D-081). When a proposal's preview or a report opens, the chat
+  moves to the left edge and the app's box becomes the **stage** on its right, showing the preview or the report. The real app
+  is hidden meanwhile (user's pick over "shrunk behind" or "side by side"). Closing runs it back. With the chat closed a report
+  still opens over the app as before; opening the chat beside a staged report puts it straight on the left.
+- *Look (user: "terminal log"):* all Geist Mono. Your messages are `>` prompt lines (cyan `>`), answers sit under them indented
+  2ch; steps are log lines (`✓` done, turning `▖▘▝▗` while running, yellow `!`); the empty chat lists commands one per line
+  (`/validate   validate an idea`), lit by a cyan left bar on hover; the composer is a `>` prompt line under a rule that turns
+  cyan while typing, with the hint and `[web] [send]` on one line below. Proposals, research plans and report cards are boxes
+  with their title in the top edge (`┌ proposal · 2 changes ───┐`, `BoxHead`), cyan while undecided; `[preview →]` comes first.
+- *Appearing (user: cell by cell; replaced by D-095: the small box slides up from below):* the window builds up cell by cell like every surface (D-034, `<Appear>`), and breaks apart on
+  close, while the orb glides into its header. The rise-from-below of D-081 is gone.
+- *The crossing (user: "glide across"):* `src/ui/stageMotion.ts`. The chat and its orb glide 700 ms, eased in and out (an ease-out
+  had them across in ~100 ms, unreadable), FLIP on `html[data-ai-left]`. Meanwhile the app breaks apart (220 ms, random); then the
+  stage swaps in and builds up in the chat's wake (460 ms, mostly from the side the chat leaves first: `runCells(..., sweep)`).
+  Preview ↔ report breaks the stage apart and rebuilds it in place. Instant under reduced motion, below 760 px, or with the chat closed.
+- *Stage vs asked:* the preview store and `reportOpen` say what is asked for; `useStage` (`src/views/workspace/stage.ts`) is what is
+  on screen, and follows only once the app has broken apart, so the old screen never turns into the new one in place. `useWs()`,
+  preview marks, the preview bar and the report screen read the stage. The board remembers its view when a preview opens and
+  returns to it on close (not after apply: then it glides to what went in); the preview glides to its first change once staged.
+- Verified on emulators with headless Chrome and a fake OpenAI, dark and light, 1440: open (cells + orb), proposal box, preview →
+  chat crosses left, stage builds from the right; Esc → back, board view identical (-10.87, 2.33); preview → apply writes the card,
+  chat back on the right. Build passes.
+
+### D-095 · 2026-10-18 · Accepted (refines D-094, D-078)
+**An empty chat is a small box with the orb perched on it; a conversation makes it tall, and the orb peeks over its edge.**
+User feedback on D-094: the chat needn't be big with nothing in it; the header's "assistant" meant nothing; the orb looked
+alone up in the header. Their picks: the orb perches on the box's top edge; the box rises from below and startles it; when
+it grows tall the orb drops behind the box and only the top of its head and its eyes show, as if peeking over at you and
+what you type; so the tall chat stops short of the top.
+- *Small box:* empty (no messages, nothing staged) the chat is a framed box in the bottom-right corner, over the app (the app
+  keeps its width), as tall as its content: header, commands, prompt. It slides up from below on open and down on close.
+- *Tall:* the first message (or a preview/report on the stage, D-094) grows it into the column beside the app (D-081), from
+  `--ai-top` (0.56 × the orb) to the bottom. It grows by its edges (`morph` in `src/ui/perch.ts`, WAAPI on top/left/width/height,
+  650 ms ease-out-cubic), not a transform, so the text never stretches; the growth starts from the box as it was drawn before
+  the message landed. `clear` shrinks it back the same way. Resizing the width only in the column.
+- *Orb* (`usePerch`, perch.ts): keeps its corner in CSS and, while the chat is open, follows the box's top edge every frame
+  with a `translate` and a `clip-path` that hides what is below the edge. Sunk 14% into the small box, 44% behind the tall one.
+  It never goes below its corner, so the rising box picks it up (cue `startled`: a jolt, wide eyes, an `!`, then a look down at
+  the box) and sets it down on close. Growing tall plays `fall` (wide eyes, mouth open) as it sinks. While tall it peeks
+  (`peek` prop): its face rides 0.3 R higher and its eyes look down at most 0.3, so they stay over the edge. Replaces the
+  header seat and the heave (D-081).
+- *Along the edge (user, follow-up):* a little body on a spring. On the small box near its right end; on the tall column in
+  the middle, from where every 7–14 s (not while answering) it wanders up to 35% of the width along the edge and stretches
+  up (sunk only 20%) to peek for 2.6 s, then comes back. When the column crosses to a preview or report (D-094) it can't keep
+  up: it slides along the edge and is carried at whichever end it reaches, then, once the column stops, is rattled (cue
+  `shaken`: `> <` and a jolt, then spiral eyes and a wobble) for 1 s, pulls itself together (`composed`: a quick head shake,
+  a straight look) and walks back to the middle. Instant and centred under reduced motion; no sweep while resizing.
+- *Fixes (user, second round):* the orb went back to its corner on close only if nothing restarted its tracking mid-move;
+  it now carries on from its current offset. The empty box shows only the invitation and "Type / for commands" (the commands
+  aren't listed). The `/` menu eases open and shut by its height, so the box grows with it instead of jumping. While the box
+  is small, side panels end just above it (`html[data-ai-small]`, `--ai-small-h`), over the orb's spot, and ease to their new
+  length (bottom, 450 ms), whether the panel or the chat opened first. The orb is knocked aside as when the chat is closed
+  (cue `bumped`: `> <`, a jolt, a wary look at the panel) to the panel's left, hanging off the box's end if it must, and hops
+  back (`free`) when the panel goes (user's pick over bumping its head on the panel).
+- *Tall open/close and a bigger orb (user, third round):* the window carries its tall shape itself (`data-tall`), kept while
+  it slides away, so a tall chat slides down whole on close and up whole on open (it used to snap to the small box first);
+  the growth by edges runs only while the chat stays open. Open/close slide 600 ms ease-out-cubic (the expo ease looked
+  instant). On the tall chat the orb is 1.5× (CSS `scale` from its bottom centre, 600 ms; drawn at 1.5× the pixel ratio so it
+  stays crisp), and `--ai-top` is 1.5 × 0.56 × the orb. Closing the tall chat glides side panels and the HUD back again (glide.ts),
+  as opening did (D-081).
+- *Header:* one line, the model (and which key) on the left, `[clear]` and `[×]` on the right. No title.
+- Verified on emulators with headless Chrome and a fake OpenAI, dark and light, 1440: open (box rises, orb lifted), first
+  message (box grows, orb sinks to peek), preview (column crosses left, orb with it), Esc, apply. Build passes.
