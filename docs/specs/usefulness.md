@@ -78,13 +78,13 @@ Each slice ships on its own, with its decision, docs and tests. Order is the rec
 ### Slice 6: real prioritisation (built, D-138)
 - Impact, confidence and effort on features (confidence fed by evidence), and a 2 × 2 view.
 
-### Slice 7: bets
+### Slice 7: bets (replaced by planes and packages, [planes.md](planes.md))
 - Group features into now / next / later or a named MVP slice, each with the riskiest assumption it depends on.
 
 ### Slice 8: overview page
 - A one-screen "so what" when a workspace opens: strongest and weakest-evidenced problems, the matrix's white space, the
   riskiest untested assumptions, next experiments, warnings ("11 features are P1", "a competitor linked to 6+ features").
 
-### Later, board readability
+### Later, board readability (planes cover most of it, [planes.md](planes.md))
 - Past a zoom threshold, a section shows as a summary tile (name, counts per type, top titles) instead of dots.
 - A "story" layout: one lane per problem (customer → problem → idea → feature).

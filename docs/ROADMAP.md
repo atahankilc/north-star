@@ -36,7 +36,7 @@ Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 
 ## Phase 6: from research to decisions
 - Matrix criteria and white space, evidence and status, prioritisation, bets, an overview page; competitor lines off the
-  board. Slices in [specs/usefulness.md](specs/usefulness.md).
+  board. Slices in [specs/usefulness.md](specs/usefulness.md). Then planes and packages: [specs/planes.md](specs/planes.md).
 
 ## Later
 - Templates, version history, comments, collaborative text (Yjs)

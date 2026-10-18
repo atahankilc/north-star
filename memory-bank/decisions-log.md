@@ -1889,3 +1889,16 @@ and 17 effort L: priority carried no information, and nothing said how sure we w
 - *Verified* in headless Chrome on the emulators (example workspace, impacts and statuses set): grid, chips, order, the
   invalidated feature at 0.0 / P3, the panel's confidence. Rules 270 pass (the 2 usage-log tests fail as before).
   `npm run build`. Firestore + RTDB rules deployed 2026-10-19.
+
+### D-139 · 2026-10-19 · Accepted (answers Q-016, Q-017, Q-018; spec docs/specs/planes.md)
+**Planes and packages: one set of cards, placed on many planes.** The user's idea: planes to keep cards (a competitors
+plane), planes to show an MVP from problem to idea to feature, packages of those, and reusing the same cards across
+planes "instead of creating a new one all the time". Unlike per-type boards (D-036) and domains (D-048), which split the
+cards, planes split only where they're looked at. The user went with the recommendations:
+- *All plane* (Q-016): every workspace has All, showing every card; it can't be deleted or emptied; a card made on another
+  plane lands there too. All is today's board: positions stay on the cards, no migration.
+- *Packages are cards* (Q-017): `packages/{id}` with members by id and a home plane; on other planes one card that links
+  and rates in priorities (replaces slice 7, bets).
+- *Sections and text per plane* (Q-018): `planeId` on labels, missing = All.
+- Data: `planes/{pid}`, `placements/{pid}_{itemId}` (x, y), links stay the workspace's (drawn when both ends are on the
+  plane, `+N off-plane` otherwise). Steps: planes, packages, the assistant on planes, a plane filter in other views.

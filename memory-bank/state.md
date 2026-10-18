@@ -27,7 +27,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   try `/criteria` on BUBBLES with a real key. Slice 3, competitor lines off by default (D-135), committed.
   Slice 4, not relevant + confidence (D-136), committed, rules deployed 2026-10-19.
   Slice 5, status + evidence (D-137), committed, rules deployed 2026-10-19.
-  Slice 6, priorities (D-138), committed, rules deployed 2026-10-19. Next: planes (docs/specs/planes.md).
+  Slice 6, priorities (D-138), committed, rules deployed 2026-10-19. Planes and packages (D-139, docs/specs/planes.md): step 1, planes, in progress.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

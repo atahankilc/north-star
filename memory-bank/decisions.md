@@ -84,6 +84,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - A competitor in focus (hovered, selected) lights the links to its features as well (D-115).
 - Multi-select (shift+click, alt+drag box), group drag, "N selected" panel; ⌘C/⌘V/⌘D in-tab clipboard; `○` link handle (D-108).
   The panel lines up (align 6 ways, space out ↔ ↕), arrows nudge 0.25 (shift 1), presence `more` sends the whole selection (D-124).
+- Planes (D-139, spec planes.md): one set of cards placed on many planes; All shows every card (today's board, no
+  migration); per-plane placements, sections and text; links drawn when both ends are on the plane; packages are cards.
 - Sections: a named frame (label `kind: 'section'`, w/h), drawn with a crosshair (press, drag, release; never placed),
   holding by position whatever is inside it (cards, text, smaller sections); drag the band or edge carries it all, corner
   resizes, delete leaves contents, never copied; name set like text (H1–H3, B/I/AA), not scaled; kept in the focus view

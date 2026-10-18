@@ -5,4 +5,4 @@ Once answered → move to [decisions.md](decisions.md).
 
 ---
 
-_No open questions right now. Q-004 and Q-009 were answered by D-083._
+_No open questions right now. Q-016–Q-018 were answered by D-139._
