@@ -30,7 +30,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 ## Accounts, sharing, roles
 - Google sign-in only (popup) (D-011).
 - Roles `owner | editor | viewer`; several owners, never none; `ownerId` is only the creator. Owners: people, roles, codes,
-  invites, requests, workspace key, delete. Editors: all content. Viewers: read, own reports, own-key calls (D-021, D-098).
+  invites, requests, workspace key, delete. Editors: all content. Viewers: read, own reports, own-key calls (D-098).
 - Joining: a code only *asks*, an owner approves in Settings; or an owner invites an email (no mail sent); new code revokes (D-062).
 - Owners delete a workspace (client-side cascade); others leave; anyone but the last owner may leave (D-023, D-098).
 - People list `members/{uid}` written by each member on open; Settings → people pages it 20 at a time (D-098).
@@ -90,6 +90,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   opens beside it (`?report=`), nothing opens by itself (D-103, D-106). Upload your own `.md` (≤512 KB), round-trips the download (D-091).
 
 ## Collaboration
+- Real-time collaboration with presence and live cursors is in scope (D-005).
 - Presence in RTDB `presence/{wid}/{uid}`, readable by any signed-in user, own node writable; whole-node writes (D-016, D-065).
 - Live cursors on the board in world units; people chips in the HUD; follow someone (view + cursor, Esc stops) (D-065, D-067).
 - Colours by join order (no clash up to 5), stored as dark hex, drawn with `themeAccent` (D-067, D-069).
@@ -126,7 +127,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Export `.zip` bundle (format `north-star.workspace` v1), matrix `.tsv` (not CSV), board `.png`; import makes a new
   workspace with new ids, rebuilt from known fields (D-080).
 - Attachments: images, SVG, PDF ≤10 MB in Firebase Storage, thumbnails, files never downloaded up front; hidden on the
-  live site (`ATTACHMENTS_LIVE`) until Blaze (D-015, D-083).
+  live site (`ATTACHMENTS_LIVE`) until Blaze (D-083).
 
 ---
 

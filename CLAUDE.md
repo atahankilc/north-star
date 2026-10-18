@@ -24,13 +24,15 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 - A new decision gets its full `### D-xxx` entry appended to `decisions-log.md`, plus one line in the right topic of
   `decisions.md` (edit the line it replaces; a rejected idea goes under "Rejected"). Older log entries it contradicts
   get fixed in place, or shrink to a `Superseded by D-xxx` stub: no two entries may disagree. An answered question moves out of
-  `open-questions.md`.
+  `open-questions.md`. Then run `npm run check:memory`.
 - A new uncertainty gets a `Q-xxx` entry in `open-questions.md` with a recommendation.
 - If a decision changes a spec, update the relevant `/docs` file in the same change.
 
 ## Commands
 - `npm run dev` (real Firebase), `npm run dev:emu` + `npm run emulators` (local, test users; builds and runs the functions too)
 - `npm run test:rules`: run after any change to `firestore.rules` / `database.rules.json`, then `npm run deploy:rules`
+- `npm run check:memory`: the memory bank agrees with itself (log numbering, every standing decision has a line in
+  decisions.md, nothing superseded cited as a rule, state.md ≤ 120 lines); run after editing memory-bank/
 - `npm run build`: typecheck + production build; `npm run build:functions`, `npm run deploy:functions` (needs the Blaze plan)
 
 ## Hard rules
