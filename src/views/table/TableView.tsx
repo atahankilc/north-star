@@ -102,7 +102,7 @@ export function TableView() {
   )
 
   const header = (key: SortKey, label: string) => (
-    <th key={key} aria-sort={sort?.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : undefined}>
+    <th key={key} className={styles.head} aria-sort={sort?.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : undefined}>
       <button
         className={styles.sort}
         onClick={() => setSort((s) => ({ key, dir: s?.key === key ? (-s.dir as 1 | -1) : 1 }))}
@@ -127,7 +127,7 @@ export function TableView() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th className={styles.typeHead} />
+                <th className={`${styles.head} ${styles.typeHead}`} />
                 {COLUMNS.map((c) => header(c.key, c.label))}
               </tr>
             </thead>

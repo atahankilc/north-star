@@ -1212,7 +1212,25 @@ upload in it, so the table has its actions and the report its own.
   `getCountFromServer` of each, counted again when the lists change. Pages `‹ 1 2 3 … 9 ›`; a filter goes back to page 1.
   While the next page loads the rows dim instead of emptying. Reports from before `kind` existed have none, so a kind
   filter leaves them out (they show under `any`).
+- *Lined up with the other views (user, follow-up):* the filters and upload sit in the filter row's place on the backdrop
+  (no solid fill), across the page also beside a report, and the table and report frames start where every view's table
+  does (48 px under the HUD). The frames stay solid black for reading. Cause of the empty band above the table: the page's
+  `padding-top` override lost to the composed `Page.module.css` padding whenever that stylesheet loaded later; it is
+  `main.page` now.
+- *Frames as tall as their content (user, follow-up; changes D-060's full-height Matrix):* Flow and Table already were;
+  the Matrix frame and the reports table and report frames now end under their last row too, and stop at the page's
+  bottom edge (then scroll inside) instead of always filling the height. The matrix legend sits right under its frame.
 - *Indexes* (firestore.indexes.json): reports by shared+kind, shared+uid, shared+uid+kind, uid+shared, uid+shared+kind,
   each + createdAt desc. Deployed 2026-10-18 (`npx firebase deploy --only firestore:indexes --project north-star-db`);
   filtered lists fail until they're built.
 
+### D-107 · 2026-10-18 · Accepted (refines D-093)
+**One column header for every table-like view.** User: the headers of Flow, Table, Matrix and Reports looked different
+(heights, sizes, other details). They differed in height (32 to 41 px), fill (Reports on `--bg`, the rest `--bg-raised`),
+line height (Table's sort buttons), the Matrix's `┌` before "our features", and its `!important` overrides.
+- `src/ui/TableHead.module.css` (`head`, zero specificity through `:where` so a view's own rules always win): `--head-h`
+  40 px, `--bg-raised`, a solid bottom line, Geist Mono `--text-xs` uppercase at `--track-label`, `--fg-dim`, line height 1,
+  centred vertically. Each view composes it and sets only its side padding (to line up with its cells) and its own marks.
+- Kept as each column's own (user: allowed): Flow's type-colour squares, Table's sort (bright when sorted, cyan arrow),
+  the Matrix's competitor names in `--fg` and centred. The Matrix's `┌` is gone.
+- Verified with headless Chrome on the emulators: every header 40 px with the same fill, colour, size and tracking.

@@ -136,8 +136,12 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
 ### Pages (D-093)
 Every workspace view except the board composes `src/ui/Page.module.css`:
 - `page`: content from `--hud-x`, starting below the filter row, so switching views never moves it. Frames fill the width
-  (Flow, Table); the Matrix keeps its fit-content width at full height (D-060); Reports keeps `--measure`, left-aligned.
-- `toolbar`: a view without filters (Reports) puts its controls exactly where the filter row sits, 30 px tall.
+  (Flow, Table, Reports); the Matrix keeps its fit-content width (D-060). Every frame is as tall as its content and stops at
+  the page's bottom edge, scrolling inside past that; none stretches to the full height when it has less to show.
+- `toolbar`: a view without filters puts its controls exactly where the filter row sits, 30 px tall. Reports puts its
+  filters and upload there (D-106).
+- Column headers (D-107): every table-like view composes `head` from `src/ui/TableHead.module.css` (40 px, `--bg-raised`,
+  mono `--text-xs` uppercase, `--fg-dim`) and sets only its side padding; a column may add its own mark or colour.
 - `title`: Geist at `--text-heading`, for Settings pages, side panels, the competitor profile, the matrix panel and the report screen.
 Settings rows (D-097) are two columns: on the left the setting's name (mono, `--fg-strong`) with what it does under it (Geist,
 `--fg-muted`), on the right the control (`--label-w`, 260 px; stacked on phones). Help text is never `--fg-faint` there:

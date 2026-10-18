@@ -183,94 +183,94 @@ export function ReportsView() {
       }}
     >
       <div className={styles.split}>
-        <section className={styles.table} ref={table} aria-label="Reports">
-          {/* The table's own actions: what it lists, and adding one. */}
-          <div className={styles.tools}>
-            <div className={styles.filters}>
-              <Menu
-                label="kind"
-                summary={filter.kind ? KIND_WORD[filter.kind] : "any"}
-                active={filter.kind !== null}
-                items={choose(kinds, filter.kind, (kind) => pick({ kind }))}
-                ariaLabel="Filter by kind"
-              />
-              <Menu
-                label="by"
-                summary={filter.mine ? "me" : "anyone"}
-                active={filter.mine}
-                items={choose<boolean>(
-                  [
-                    [false, "anyone"],
-                    [true, "me"],
-                  ],
-                  filter.mine,
-                  (mine) => pick({ mine }),
-                )}
-                ariaLabel="Filter by author"
-              />
-              <Menu
-                label="seen by"
-                summary={
-                  filter.sharing === "any"
-                    ? "any"
-                    : filter.sharing === "shared"
-                      ? "workspace"
-                      : "only me"
-                }
-                active={filter.sharing !== "any"}
-                items={choose(sharings, filter.sharing, (sharing) =>
-                  pick({ sharing }),
-                )}
-                ariaLabel="Filter by who can see it"
-              />
-              {narrowing && (
-                <button
-                  className={styles.action}
-                  onClick={() => pick(ANY_REPORTS)}
-                >
-                  clear
-                </button>
-              )}
-            </div>
-            <span className={styles.count}>
-              {reports.total !== null && reports.total >= 0
-                ? count(reports.total, "report")
-                : ""}
-            </span>
-            {/* Adding one: a solid square like the board's `+` (D-103). */}
-            <button
-              className={styles.upload}
-              onClick={() => file.current?.click()}
-              disabled={upload?.busy}
-              data-busy={upload?.busy || undefined}
-              title={
-                upload?.busy
-                  ? "Uploading…"
-                  : "Upload a report (.md), or drop one here"
-              }
-              aria-label="Upload a report from a Markdown file"
-            >
-              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden>
-                <path
-                  d="M8 11V2.5M4.5 6 8 2.5 11.5 6M2.5 10.5v3h11v-3"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="square"
-                />
-              </svg>
-            </button>
-            <input
-              ref={file}
-              type="file"
-              accept=".md,.markdown,.txt,text/markdown,text/plain"
-              hidden
-              onChange={(e) => {
-                void load(e.target.files?.[0]);
-                e.target.value = "";
-              }}
+        {/* The table's actions in the filter row's place, like every view's filters: what it lists, and adding one. */}
+        <div className={styles.tools}>
+          <div className={styles.filters}>
+            <Menu
+              label="kind"
+              summary={filter.kind ? KIND_WORD[filter.kind] : "any"}
+              active={filter.kind !== null}
+              items={choose(kinds, filter.kind, (kind) => pick({ kind }))}
+              ariaLabel="Filter by kind"
             />
+            <Menu
+              label="by"
+              summary={filter.mine ? "me" : "anyone"}
+              active={filter.mine}
+              items={choose<boolean>(
+                [
+                  [false, "anyone"],
+                  [true, "me"],
+                ],
+                filter.mine,
+                (mine) => pick({ mine }),
+              )}
+              ariaLabel="Filter by author"
+            />
+            <Menu
+              label="seen by"
+              summary={
+                filter.sharing === "any"
+                  ? "any"
+                  : filter.sharing === "shared"
+                    ? "workspace"
+                    : "only me"
+              }
+              active={filter.sharing !== "any"}
+              items={choose(sharings, filter.sharing, (sharing) =>
+                pick({ sharing }),
+              )}
+              ariaLabel="Filter by who can see it"
+            />
+            {narrowing && (
+              <button
+                className={styles.action}
+                onClick={() => pick(ANY_REPORTS)}
+              >
+                clear
+              </button>
+            )}
           </div>
+          <span className={styles.count}>
+            {reports.total !== null && reports.total >= 0
+              ? count(reports.total, "report")
+              : ""}
+          </span>
+          {/* Adding one: a solid square like the board's `+` (D-103). */}
+          <button
+            className={styles.upload}
+            onClick={() => file.current?.click()}
+            disabled={upload?.busy}
+            data-busy={upload?.busy || undefined}
+            title={
+              upload?.busy
+                ? "Uploading…"
+                : "Upload a report (.md), or drop one here"
+            }
+            aria-label="Upload a report from a Markdown file"
+          >
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden>
+              <path
+                d="M8 11V2.5M4.5 6 8 2.5 11.5 6M2.5 10.5v3h11v-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="square"
+              />
+            </svg>
+          </button>
+          <input
+            ref={file}
+            type="file"
+            accept=".md,.markdown,.txt,text/markdown,text/plain"
+            hidden
+            onChange={(e) => {
+              void load(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+        </div>
+        <section className={styles.table} ref={table} aria-label="Reports">
           {upload?.error && (
             <p className={styles.note}>
               ! {upload.error}{" "}

@@ -25,27 +25,27 @@
   vertical-align: middle;
 }
 
-.table thead th {
+.head {
+  composes: head from '../../ui/TableHead.module.css';
   position: sticky;
   top: 0;
   z-index: 2;
   padding: 0;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-raised);
-  text-align: left;
 }
 
+/* The whole header cell is the sort button, so it takes the header's look and height. */
 .sort {
   width: 100%;
-  padding: var(--space-3);
+  /* Less the header's bottom border. */
+  height: calc(var(--head-h) - 1px);
+  padding: 0 var(--space-3);
   border: 0;
   background: none;
-  color: var(--fg-dim);
+  color: inherit;
   font: inherit;
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
+  letter-spacing: inherit;
   text-align: left;
-  text-transform: uppercase;
+  text-transform: inherit;
   cursor: pointer;
 }
 

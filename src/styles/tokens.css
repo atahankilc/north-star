@@ -79,6 +79,8 @@
   --hud-x: var(--space-6);
   --hud-y: var(--space-4);
   --hud-h: 56px;
+  /* Column headers of the table-like views (TableHead.module.css). */
+  --head-h: 40px;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 200ms;

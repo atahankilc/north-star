@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (reports table, side reader, numbered pages, filters, D-106; scroll bars, D-105; upload icon button, D-103; reports tab as list + reader, D-102; chat report on the stage box, D-101; report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (one table header, D-107; reports tab lined up with the other views; reports table, side reader, numbered pages, filters, D-106; scroll bars, D-105; upload icon button, D-103; reports tab as list + reader, D-102; chat report on the stage box, D-101; report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -367,6 +367,10 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   itself, a report opens beside the table with the cell effect. Verified headless on emulators with 23 seeded reports
   (pages 10/10/3, kind filter 8, side by side dark + light, Esc closes, 390 px no horizontal scroll). Build passes.
   Indexes deployed 2026-10-18.
+- D-106 follow-up: reports tab lined up with the other views (filters on the backdrop in the filter row's place, frames
+  48 px under the HUD, no empty band). Verified headless on emulators (filters 56 px / frame 104 px like Table; beside a
+  report; 390 px no horizontal scroll). Then: Matrix and Reports frames as tall as their content, capped at the page
+  (verified: matrix 64–365, a short report 104–554, a long one stops at 884 of 900). The matrix's key hints follow the legend on the left (were pushed right). D-107: one column header (TableHead.module.css) in Flow, Table, Matrix, Reports. Build passes. Committed (not pushed).
 - D-103: upload on the reports tab is a solid magenta icon square like the board's `+`. Verified headless (dark, hover, light).
 - D-102: reports tab redone (user: didn't look like other pages, empty right side, animation behind the text): one
   solid full-width frame, list left, reader right with a scroll-following outline; newest opens on wide screens; phones
