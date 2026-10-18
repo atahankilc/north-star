@@ -9,7 +9,7 @@ import { CARD_H, CARD_W, findFreeSpot } from '../views/canvas/cardLayout'
 import { isTitle, labelHalf, titleHalf } from '../views/canvas/titleBlock'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
-import { arrangeAreas, type AreaPlan } from './arrange'
+import { AREA_LAYOUTS, AREA_SIDES, arrangeAreas, type AreaLayout, type AreaPlan, type AreaSide } from './arrange'
 
 export const PROPOSE = 'propose_changes'
 
@@ -139,15 +139,31 @@ const OPS = [
   }),
   op(
     'arrange_area',
-    'Gather cards into one area of the board under a text label. You choose what goes together; the app lays the area out ' +
-      '(a column per type in the order customers, problems, competitors, ideas, features) and puts it where the board has room.',
+    'Gather cards into one area of the board under a text label. You choose what goes together, how it is laid out, ' +
+      'and where it sits; the app works out the positions with room between cards and areas.',
     {
       label: str('The area name as written on the board, 1 to 4 words. If a label with this text exists, it moves with its cards.'),
       items: {
         type: 'array',
         items: { type: 'string' },
-        description: 'Refs (or keys of cards added here) of the cards and competitors in this area, in the order to show them. A card goes in one area at most.',
+        description:
+          'Refs (or keys of cards added here) of the cards and competitors in this area, in the order to show them. A card goes in ' +
+          'one area at most. May be empty for an area made only of sections.',
       },
+      layout: optEnum(
+        AREA_LAYOUTS,
+        'columns: a column per type (customers, problems, competitors, ideas, features), linked cards level with each other. ' +
+          'rows: one row per problem with its customers, competitors, ideas and features beside it, like a flow. ' +
+          'grid: a compact block in the given order (many cards of one kind). line: one row in the given order (a journey, ' +
+          'steps, a timeline). hub: the first card in the middle and the rest around it (one competitor, customer or problem ' +
+          'and what surrounds it). Null: the app picks.',
+      ),
+      within: optStr(
+        'The label of another arrange_area in this proposal that this area is a section of: its name becomes a subheading ' +
+          'inside that area. Null: an area of its own.',
+      ),
+      beside: optStr('The label of another (not section) arrange_area in this proposal to put this area next to. Null: the app finds room.'),
+      side: optEnum(AREA_SIDES, 'Which side of the beside area. Null: right.'),
     },
   ),
   op('add_label', 'Text written on the board: a heading or subheading naming what is under it, or a note. No cards move.', {
@@ -299,6 +315,8 @@ export function parseProposal(
   const hasLabel = (v: unknown) => labels.some((l) => sameLabel(l, v))
   // Which area each card went to first: a card is in one area at most.
   const areaOf = new Map<string, string>()
+  // The areas this proposal arranges, by label: a section or a beside names one of them (D-125).
+  const areaNames = raws.filter((r) => r.op === 'arrange_area').map((r) => s(r.label) ?? 'Untitled')
 
   const changes: Change[] = raws.map((raw, i) => {
     const base = { n: i, raw, needs: [] as string[], clashes: [] as number[] }
@@ -487,17 +505,29 @@ export function parseProposal(
         const twice = items.find((x) => x.r && areaOf.has(refKey(x.v)!))
         for (const x of items) if (x.r && !areaOf.has(refKey(x.v)!)) areaOf.set(refKey(x.v)!, label)
         const names = items.map((x) => x.r?.name ?? '?')
+        const within = s(raw.within)
+        const beside = s(raw.beside)
+        const where = [
+          s(raw.layout),
+          within && `in ${clip(within, 40)}`,
+          beside && `${['above', 'below'].includes(s(raw.side) ?? '') ? s(raw.side) : `${s(raw.side) ?? 'right'} of`} ${clip(beside, 40)}`,
+          `${items.length} card${items.length === 1 ? '' : 's'}${hasLabel(label) ? ', moves the label' : ''}`,
+        ].filter(Boolean)
         return {
           ...base,
           sign: '▤',
-          kind: 'area',
+          kind: within ? 'section' : 'area',
           tone: null,
           text: label,
-          detail: `${items.length} card${items.length === 1 ? '' : 's'}${hasLabel(label) ? ', moves the label' : ''}: ${clip(names.join(', '), 160)}`,
+          detail: `${where.join(' · ')}${items.length ? `: ${clip(names.join(', '), 160)}` : ''}`,
           needs: needsOf(...items.map((x) => x.r)),
-          problem: !items.length
+          problem: !items.length && !raws.some((r) => r.op === 'arrange_area' && sameLabel(label, r.within))
             ? 'no cards'
-            : unknown
+            : within && (sameLabel(label, within) || !areaNames.some((n) => sameLabel(n, within)))
+              ? `no area "${clip(within, 40)}" in this proposal`
+              : beside && (sameLabel(label, beside) || !areaNames.some((n) => sameLabel(n, beside)))
+                ? `no area "${clip(beside, 40)}" in this proposal`
+                : unknown
               ? `${unknown} unknown item${unknown === 1 ? '' : 's'}`
               : wrong
                 ? `${wrong.r!.name} can't be moved on its own (it sits behind its competitor)`
@@ -711,7 +741,8 @@ export function stillValid(change: Change, ws: WorkspaceCtx, refs: Map<string, I
 
 // ---- Accepted rows → writes ----
 
-export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string, ItemRef>): AssistantWrite[] {
+// The ticked rows' new items by key, and a row's ref as an id or a key.
+function freshRefs(accepted: Change[], refs: Map<string, ItemRef>) {
   const fresh = new Map<string, NodeType>()
   for (const c of accepted) {
     const key = s(c.raw.key)
@@ -727,31 +758,62 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
     const e = refs.get(k)!
     return { id: e.id, type: e.type }
   }
+  return { fresh, refOf }
+}
 
-  // New cards go in their own kind's column (the board usually reads as columns, D-045): level with the card they're
-  // placed near, or under the last of their kind; then the nearest free spot, never on top of another card.
+// Where the ticked arrange_area rows put their areas (D-086, D-125, D-126): every card's position now, which ones move,
+// the links between cards, and the layout (null without areas).
+function planAreas(accepted: Change[], ws: WorkspaceCtx, refs: Map<string, ItemRef>) {
+  const { refOf } = freshRefs(accepted, refs)
   const position = new Map<string, { x: number; y: number }>()
   for (const n of [...ws.customers, ...ws.problems, ...ws.ideas, ...ws.features]) position.set(n.id, { x: n.x, y: n.y })
   for (const c of ws.competitors) if (c.x !== undefined && c.y !== undefined) position.set(c.id, { x: c.x, y: c.y })
-  // Areas first (D-086): their cards (new ones too) get their place from the layout, and what's left is placed around them.
-  const plans: AreaPlan[] = accepted
-    .filter((c) => c.raw.op === 'arrange_area')
-    .map((c) => ({ label: s(c.raw.label)!, items: itemsOf(c.raw).map((v) => refOf(v)).map((r) => ({ id: 'id' in r ? r.id : r.key, type: r.type })) }))
-  const moving = new Set(plans.flatMap((p) => p.items.map((i) => i.id)))
-  const movingLabels = new Set(ws.labels.filter((l) => plans.some((p) => sameLabel(l.text, p.label))).map((l) => l.id))
   const droppedLabels = new Set(
     accepted.filter((c) => c.raw.op === 'delete_label').flatMap((c) => ws.labels.filter((l) => sameLabel(l.text, c.raw.label)).map((l) => l.id)),
   )
+  const kept = ws.labels.filter((l) => !droppedLabels.has(l.id))
+  const plans: AreaPlan[] = accepted
+    .filter((c) => c.raw.op === 'arrange_area')
+    .map((c) => ({
+      label: s(c.raw.label)!,
+      items: itemsOf(c.raw).map((v) => refOf(v)).map((r) => ({ id: idOfRef(r), type: r.type })),
+      layout: s(c.raw.layout) as AreaLayout | undefined,
+      within: s(c.raw.within),
+      beside: s(c.raw.beside),
+      side: s(c.raw.side) as AreaSide | undefined,
+    }))
+  // One area on its own (with its sections) that is on the board already: tidied where it is, not moved (D-126).
+  const tops = plans.filter((p) => !p.within || !plans.some((q) => q !== p && sameLabel(q.label, p.within)))
+  const lone = tops.length === 1 ? kept.find((l) => sameLabel(l.text, tops[0].label)) : undefined
+  if (lone) tops[0].stay = { x: lone.x, y: lone.y }
+  const moving = new Set(plans.flatMap((p) => p.items.map((i) => i.id)))
+  const movingLabels = new Set(ws.labels.filter((l) => plans.some((p) => sameLabel(l.text, p.label))).map((l) => l.id))
+  // Which cards are linked, now and by this set's link rows, so an area can put linked cards together; a competitor's
+  // features stand for the competitor (they sit behind it, D-058).
+  const owner = new Map(ws.competitorFeatures.map((f) => [f.id, f.competitorId]))
+  const lift = (id: string) => owner.get(id) ?? id
+  const rows = accepted.filter((c) => c.raw.op === 'link').map((c) => [idOfRef(refOf(c.raw.from)), idOfRef(refOf(c.raw.to))])
+  const links = [...ws.edges.map((e) => [e.fromId, e.toId]), ...rows].map(([a, b]): [string, string] => [lift(a), lift(b)])
   const layout = plans.length
     ? arrangeAreas(
         plans,
         {
-          cards: [...position.entries()].filter(([id]) => !moving.has(id)).map(([, p]) => p),
-          labels: ws.labels.filter((l) => !movingLabels.has(l.id) && !droppedLabels.has(l.id)),
+          cards: [...position.entries()].filter(([id]) => !moving.has(id)).map(([id, p]) => ({ id, ...p })),
+          labels: kept.filter((l) => !movingLabels.has(l.id)),
         },
         [...position.values()],
+        links,
       )
     : null
+  return { position, moving, links, layout }
+}
+
+export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string, ItemRef>): AssistantWrite[] {
+  const { fresh, refOf } = freshRefs(accepted, refs)
+  // New cards go in their own kind's column (the board usually reads as columns, D-045): level with the card they're
+  // placed near, or under the last of their kind; then the nearest free spot, never on top of another card.
+  // Areas first (D-086): their cards (new ones too) get their place from the layout, and what's left is placed around them.
+  const { position, moving, layout } = planAreas(accepted, ws, refs)
   const cards = [...position.entries()].filter(([id]) => !moving.has(id)).map(([, p]) => p)
   if (layout) cards.push(...layout.cards.values())
   // The project block (D-118) is far bigger than a card: it takes up the card spots that would overlap it.
@@ -915,7 +977,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
       case 'arrange_area': {
         const plan = layout!.labels.find((l) => sameLabel(l.text, r.label))!
         const existing = ws.labels.find((l) => sameLabel(l.text, r.label))
-        const fields = { x: plan.x, y: plan.y }
+        const fields = { x: plan.x, y: plan.y, size: plan.sub ? 'subheading' : 'heading' }
         return existing ? { do: 'label', id: existing.id, fields } : { do: 'label', fields: { text: plan.text, ...fields } }
       }
       case 'add_label': {
@@ -1028,5 +1090,80 @@ export function proposalReport(p: Proposal): string {
     `${shown} These rows can't be applied and are switched off:\n${rows}\n` +
     `If you can fix them (copy refs exactly from the workspace), call ${PROPOSE} again with the whole corrected set: it replaces ` +
     'this one. Otherwise finish with at most a sentence.'
+  )
+}
+
+// How a proposal's areas come out (D-126), for the model to check its own arrangement and propose again if it can do
+// better: each area's outline and layout, the board's size, how many links cross, and the longest ones. Empty without
+// areas. `final`: it has already corrected once, so it shouldn't again.
+export function layoutReport(p: Proposal, ws: WorkspaceCtx, refs: Map<string, ItemRef>, final = false): string {
+  const accepted = p.changes.filter((c) => !c.problem)
+  if (!accepted.some((c) => c.raw.op === 'arrange_area')) return ''
+  let plan
+  try {
+    plan = planAreas(accepted, ws, refs)
+  } catch {
+    return ''
+  }
+  const { position, moving, links, layout } = plan
+  if (!layout?.areas.length) return ''
+  const at = new Map<string, { x: number; y: number }>()
+  for (const [id, q] of position) if (!moving.has(id)) at.set(id, q)
+  for (const [id, q] of layout.cards) at.set(id, q)
+  const name = new Map([...refs.values()].map((r) => [r.id, r.name]))
+  for (const c of accepted) if (s(c.raw.key)) name.set(s(c.raw.key)!, s(c.raw.title) ?? s(c.raw.name) ?? s(c.raw.key)!)
+  // The innermost area or section a card is in.
+  const areaOf = (q: { x: number; y: number }) =>
+    layout.areas
+      .filter((a) => q.x >= a.x0 && q.x <= a.x1 && q.y >= a.y0 && q.y <= a.y1)
+      .sort((a, b) => (a.x1 - a.x0) * (a.y1 - a.y0) - (b.x1 - b.x0) * (b.y1 - b.y0))[0]?.label
+  const x0 = Math.min(...layout.areas.map((a) => a.x0))
+  const y1 = Math.max(...layout.areas.map((a) => a.y1))
+  const r = (v: number) => Math.round(v)
+  const lines = layout.areas.map(
+    (a) =>
+      `- ${a.sub ? 'section' : 'area'} "${a.label}"${a.layout ? ` (${a.layout})` : ''}: x ${r(a.x0 - x0)}–${r(a.x1 - x0)}, y ${r(y1 - a.y1)}–${r(y1 - a.y0)}`,
+  )
+  const w = Math.max(...layout.areas.map((a) => a.x1)) - x0
+  const h = y1 - Math.min(...layout.areas.map((a) => a.y0))
+
+  // Links with at least one end moved, each once.
+  const seen = new Set<string>()
+  const segs: { a: string; b: string; p: { x: number; y: number }; q: { x: number; y: number }; len: number }[] = []
+  for (const [a, b] of links) {
+    const k = [a, b].sort().join('|')
+    const p = at.get(a)
+    const q = at.get(b)
+    if (seen.has(k) || !p || !q || (!layout.cards.has(a) && !layout.cards.has(b))) continue
+    seen.add(k)
+    segs.push({ a, b, p, q, len: Math.hypot(p.x - q.x, p.y - q.y) })
+  }
+  const side = (o: { x: number; y: number }, p: { x: number; y: number }, q: { x: number; y: number }) => Math.sign((p.x - o.x) * (q.y - o.y) - (p.y - o.y) * (q.x - o.x))
+  let crossings = 0
+  for (let i = 0; i < segs.length; i++) {
+    for (let j = i + 1; j < segs.length; j++) {
+      const s1 = segs[i]
+      const s2 = segs[j]
+      if ([s1.a, s1.b].some((e) => e === s2.a || e === s2.b)) continue
+      if (side(s1.p, s1.q, s2.p) * side(s1.p, s1.q, s2.q) < 0 && side(s2.p, s2.q, s1.p) * side(s2.p, s2.q, s1.q) < 0) crossings++
+    }
+  }
+  const long = segs.filter((x) => x.len > 12).sort((a, b) => b.len - a.len)
+  const where = (id: string) => {
+    const a = areaOf(at.get(id)!)
+    return a ? ` (${a})` : ''
+  }
+  const longLines = long.slice(0, 8).map((x) => `- ${name.get(x.a) ?? '?'}${where(x.a)} — ${name.get(x.b) ?? '?'}${where(x.b)}: ${r(x.len)}`)
+  return (
+    `\n\nHow the areas come out (board units, x to the right and y down from the top-left; a card is 2.4 × 1.25), ` +
+    `${r(w)} × ${r(h)} in all:\n${lines.join('\n')}\n` +
+    `${segs.length} links touch the moved cards; ${crossings} pairs cross; ${long.length} ${long.length === 1 ? 'is' : 'are'} longer than 12 units` +
+    `${longLines.length ? `:\n${longLines.join('\n')}` : '.'}\n` +
+    (final
+      ? 'This is the arrangement the user sees; leave it.'
+      : 'Check it like a designer: areas linked by several long links should sit beside each other (beside/side), an area ' +
+        'that is much taller or wider than the rest may read better as sections or another layout, and many crossings ' +
+        'mean the cards could be grouped or ordered better. If one of these clearly applies, call ' +
+        `${PROPOSE} once more with the whole improved set (it replaces this one); otherwise don't.`)
   )
 }

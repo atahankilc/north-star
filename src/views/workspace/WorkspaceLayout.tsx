@@ -1,7 +1,7 @@
 // /workspaces/:wid/*: loads one workspace and everything in it once, then renders the current view (D-036, D-040).
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
-import { WORKSPACES, workspacePath } from '../../app/paths'
+import { focusPath, WORKSPACES, workspacePath } from '../../app/paths'
 import { attachmentBytes, useOrphanSweep } from '../../data/attachments'
 import { useAuth } from '../../data/auth'
 import {
@@ -35,6 +35,7 @@ import { PeopleSettings } from './PeopleSettings'
 import { useViewerLock } from './viewerLock'
 import { Toast } from '../../ui/Toast'
 import { forgetCamera } from '../canvas/Board'
+import { lastFocus } from '../canvas/focus'
 import { attachmentEntry, download, fileSlug, makeBundle, zipBundle } from '../../io/bundle'
 import { matrixTsv } from '../../io/tsv'
 import { useWs, WorkspaceContext, type WorkspaceCtx } from './context'
@@ -93,6 +94,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           ]}
           views={[
             { label: 'board', to: workspacePath(wid), end: true },
+            // The selected card's chain (D-127), or the last one focused here.
+            { label: 'focus', to: focusPath(wid, selectedId ?? lastFocus(wid)) },
             { label: 'flow', to: workspacePath(wid, 'flow') },
             { label: 'table', to: workspacePath(wid, 'table') },
             { label: 'matrix', to: workspacePath(wid, 'matrix') },
@@ -114,6 +117,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 
 function viewOf(path: string, wid: string): PresenceView {
   const rest = path.slice(workspacePath(wid).length).replace(/^\//, '').split('/')[0]
+  // The focus view is the board with most of it hidden (D-127): same places, so cursors and follow still line up.
   return rest === 'flow' || rest === 'table' || rest === 'matrix' || rest === 'reports' ? rest : 'board'
 }
 

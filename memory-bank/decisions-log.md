@@ -1515,3 +1515,84 @@ of a whole area.
 - *Verified:* rules tests 247 (two new); `npm run build`; headless Chrome on the emulators with the example workspace:
   left, space ↕, top, space ↔ moved the right cards to the right places; 4× → and shift+↑ moved +1, +1; one ⌘Z undid all
   the nudges; the RTDB node carried `sel` + `more` with the other three ids. Not tried with two people in two windows.
+
+### D-125 · 2026-10-18 · Accepted (extends D-086)
+**The assistant designs the board when it organises it: a layout per area, sections, areas placed beside each other, more room.**
+The user: "while agent is reorganizing the board, it should be able to create more meaningful design and orderings. Right
+now, whatever it creates looks too crowded and it always creates in a row. Let's give it more power."
+- *Why it looked like that:* D-086's layout had one shape (a column per type), packed areas left to right up to the
+  board's width (at least 40 units, so a few areas always made one row), 0.8 between columns (a link chip didn't fit),
+  and ignored the label's own width.
+- *New `arrange_area` fields* (strict, null = not given): `layout` — `columns` (column per type in chain order, a card
+  level with what it links to in earlier columns), `rows` (a band per problem, else per customer/competitor/idea when
+  there are two or more; every other card goes to its nearest lead over links, like the Flow view; the rest in a last
+  band), `grid` (given order, about 1.7:1), `line` (one row in order: journeys, steps), `hub` (the first card in the
+  middle, the rest on an oval around it). Null picks: one type → line (≤4) or grid; two or more problems → rows; else
+  columns. `within`: another area of the proposal this is a section of; its name is written as a subheading, the parent
+  may have no cards of its own; the parent's own cards and its sections are packed inside it. `beside` + `side`
+  (right/left/above/below): next to another (top-level) area of the proposal, sliding out until clear, placed right
+  after that area so later areas don't take the spot.
+- *Spacing:* columns 1.4 apart (room for a chip), rows 0.6, bands 1.1, sections 2, areas 3 apart and from anything that
+  stays; an area is at least as wide as its name. Areas without a place pack from the board's top-left to about 1.7:1
+  over their total size, not the board's width. Links (current edges plus the proposal's link rows, a competitor feature
+  standing for its competitor) feed `columns` and `rows`.
+- *Checklist:* the area row shows `layout · in X · below Y · N cards`; a section's kind is `section`. Off with a reason: a
+  `within`/`beside` naming no area of the proposal (or itself); no cards and no sections. An unticked parent or beside
+  target: the area stands on its own / finds room.
+- *Writes:* area labels get `size: heading`, section labels `subheading`. Prompt (chat + `/organize`): pick the layout
+  for what the area shows, keep areas to ~3–10 cards with sections for big ones, put related areas beside each other.
+- *Alternatives:* coordinates from the model (rejected in D-086: models are bad at it); one smarter automatic layout
+  with no model choice (the model knows what the areas mean, the app doesn't).
+- *Verified:* `npm run build`; the layout engine in node on the example board (26 cards, 0 overlaps; sections, hub,
+  beside below/right) and a rendered before/after picture. Not tried in the app with a real key or the fake OpenAI.
+
+### D-126 · 2026-10-18 · Accepted (extends D-125)
+**Organising, second step: fewer crossings, areas placed by their links, one area tidied in place, and the assistant
+checks its own layout.** Asked "can we make improvements over this?", I suggested six; the user said go ahead with my
+pick (1–3). Left for later: `group_by` inside an area (status, priority, tag, customer), `tree` and `matrix` layouts,
+area colours and captions.
+- *Crossings* (`src/ai/arrange.ts` `columns`): cards in each column are sorted by the mean place of what they link to,
+  four sweeps forwards and back, then aligned level with earlier columns as in D-125. `line`/`grid` keep the model's order.
+- *Placement by links:* an area without `beside` tries the first free spot from the top-left, every side of each placed
+  area, and every side of up to 6 staying cards it links to; it takes the cheapest: link lengths (each capped at 40,
+  ×0.7) + the half-perimeter of everything placed so far + a penalty for straying from 1.7:1 + a penalty for going
+  above or left of the board's start. `Fixed.cards` now carry ids for this.
+- *In place:* when the ticked rows hold one top-level area (its sections aside) whose label exists and isn't deleted,
+  the area keeps its label where it is and the cards go under it (nearest free spot). Before, "tidy the roadmap" threw
+  the area to the board's top-left.
+- *Layout report* (`layoutReport` in `src/ai/tools.ts`, used by `chat.ts`): after a proposal with areas, the tool
+  result adds each area's and section's outline (x right, y down from its top-left) and layout, the total size, how many
+  links touch moved cards, how many pairs cross, and the links longer than 12 units with their areas; the model is told
+  to propose once more only if it clearly reads badly. After a second proposal in the same answer it is told to leave it.
+  `toWrites` and the report share `planAreas`, so the report is what the user gets.
+- *Verified:* `npm run build`; vite-node + jsdom on the example board: rows and problems, the report (31 × 18, 7
+  crossings, 2 long links), ROADMAP alone kept its label at (8, 6.6); rendered pictures with and without `beside`.
+  Not tried with a real model.
+
+### D-127 · 2026-10-18 · Accepted (extends D-040, D-045)
+**A focus view: the board showing one card and its chain.** The user: "lets add another view, next to board. If i
+select that, everything except the thing i selected and the connection of it and also connected cards and things that
+are connected to them [is hidden] (… i select a idea, and then on a new view, i only see the problems and features
+connected to it, but also customers that are connected to that problem or competitors that are connected to the
+features and problems)". Asked how far, how laid out and what a click does, the user chose: "only the flow from customer
+to problem to idea to feature and the connected competitors to them"; board positions with the rest hidden; a click
+opens the panel, a button refocuses.
+- *What shows* (`src/views/canvas/focus.tsx` `focusSet`): from the card, follow links up the chain (to customers) and
+  down it (to features), each direction only one way, so an idea brings its problems and their customers, the customers
+  it is tagged for, its features, but not other ideas for the same problems. Same-step links (feature depends-on feature)
+  aren't followed. Then every competitor linked to one of its problems, ideas or features (a competitor's feature stands
+  for it); not through customer tags: that brought every competitor serving the same segment (seen in the first try).
+  A competitor in focus starts from the chain cards it is linked to.
+- *View:* route `focus` → `BoardView focusMode`; cards keep their positions; no labels or project block, no `+` and no
+  create/paste on right-click (the card would vanish); the card in focus has a magenta ring (`NodeCard centre`). Filters
+  still apply, except to the card in focus. Footer: `N of M cards`. Empty: "Pick a card in focus ▾ to see its chain";
+  a deleted card: "That card is gone".
+- *Choosing:* `FOCUS │ card ▾` first in the filter bar (every card by type in chain order, search, ◎ on the current one,
+  closes on choice); `[◎ focus]` in a card's and a competitor's panel header (any view; closes the panel so it doesn't
+  cover the card; hidden on the card already in focus); right-click `◎ focus` on a card. The tab links to the selected
+  card, else the last one focused in this workspace (in memory). URL `?on=<id>`, so back/forward walk the history.
+- *Camera:* remembered per focused card (`Board cameraKey`); the first open frames the chain, each refocus glides to frame it.
+- *Presence:* reported as `board` (same world positions, so cursors and follow line up); no RTDB rules change.
+- *Verified:* `npm run build`; headless Chrome on emulators with the example: an idea (7 of 22 cards, as above), the
+  picker (search → Enter refocuses and frames), back returns to the previous card, no `?on` shows the prompt, a
+  feature's panel button → its idea, problem, customer and ShiftGrid; tab href carries the selected card; no page errors.

@@ -94,6 +94,17 @@ The free canvas. Opening a workspace frames every card and label (switching view
 side panel to edit. Text: `+ Text` or double-click (after `+ Text`) opens an input right on the board; Enter saves, Escape
 cancels, empty text removes it; double-click a label to edit it, drag to move, Delete to remove.
 
+### Focus (D-127)
+`/workspaces/<id>/focus?on=<card>`, the tab right of Board: the board showing one card's chain only, every card where it
+is on the board. From the card the chain customer → problem → idea → feature is followed both ways without turning back
+(an idea: its problems, their customers, the customers it is for, its features, theirs; not other ideas for the same
+problem), plus competitors linked to any of its problems, ideas or features (a link to a competitor's feature counts).
+No text or project block; no creating (a new card would vanish). The card in focus has a magenta ring. Pick it in
+`FOCUS │ card ▾` (search, by type), `[◎ focus]` in a card's or competitor's panel (any view; closes the panel), or a
+card's right-click `◎ focus`; the tab opens on the selected card, or the last one focused. Each change frames the chain;
+browser back goes to the previous card. SHOW/FOR/TAG/LINKS still apply, except the card in focus always shows.
+Presence reports it as the board (same positions, so cursors and follow line up).
+
 ### Flow
 Columns in chain order (D-045): Customers → Problems → Competitors → Ideas → Features. One row per problem (its customers,
 the competitors of it or its ideas, its ideas, and the features for any of those), then ideas without a problem, customers with

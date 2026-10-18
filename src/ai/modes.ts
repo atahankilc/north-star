@@ -95,8 +95,10 @@ export const MODES: Mode[] = [
     ask: (about) =>
       `Organize the board into areas${about ? ` by ${about}` : ''}. Group every card the way that makes this startup easiest to ` +
       'read (a customer segment, a theme or a journey step per area; say which you chose and why in a sentence), give each ' +
-      'area a short name, reuse existing labels that still fit and remove the ones that no longer name anything. Propose it ' +
-      `with arrange_area rows. ${LANGUAGE}`,
+      'area a short name, reuse existing labels that still fit and remove the ones that no longer name anything. Give each ' +
+      'area the layout that shows how its cards connect, split big areas into sections, and place related areas beside ' +
+      'each other so the board reads as one picture, not a row of piles. Propose it with arrange_area rows. ' +
+      LANGUAGE,
   },
   {
     id: 'next',

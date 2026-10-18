@@ -14,6 +14,7 @@ import { AutosaveField } from '../../ui/AutosaveField'
 import { Attachments } from '../workspace/Attachments'
 import { useWs } from '../workspace/context'
 import { TAG_HINT } from '../canvas/tags'
+import { FocusButton } from '../canvas/focus'
 import { ItemTags } from '../workspace/ItemTags'
 import { LinkList } from '../workspace/LinkList'
 import { removeItem, UNDO_HINT } from '../workspace/useEditKeys'
@@ -44,9 +45,12 @@ export function CompetitorProfile({
       <header className={styles.head}>
         <div className={styles.kickerRow}>
           <span className={styles.kicker}>competitor</span>
-          <button className={styles.close} onClick={() => select(null)} aria-label="Close panel">
-            [×]
-          </button>
+          <span className={styles.headActions}>
+            <FocusButton wid={wid} id={competitor.id} />
+            <button className={styles.close} onClick={() => select(null)} aria-label="Close panel">
+              [×]
+            </button>
+          </span>
         </div>
         <AutosaveField
           className={styles.name}

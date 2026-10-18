@@ -61,6 +61,7 @@ function Shell() {
               <Route path={WORKSPACES} element={<Workspaces user={user} />} />
               <Route path={`${WORKSPACES}/:wid`} element={<WorkspaceLayout />}>
                 <Route index element={<BoardView />} />
+                <Route path="focus" element={<BoardView focusMode />} />
                 <Route path="flow" element={<FlowView />} />
                 <Route path="table" element={<TableView />} />
                 <Route path="matrix" element={<MatrixView />} />

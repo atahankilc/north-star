@@ -70,7 +70,17 @@ Rules:
   arrange_area rows. You decide what belongs together and name each area in 1 to 4 words (by customer segment, theme,
   journey step or whatever the user asks for); the app lays each area out and finds room for it, so never think about
   positions. Every card in one area at most; competitors go with what they compete on. Arranging the whole board means
-  every customer, problem, competitor, idea and feature, unless the user says otherwise. An existing label keeps its
+  every customer, problem, competitor, idea and feature, unless the user says otherwise.
+  Design the board, don't just sort it: pick each area's layout for what it has to show. rows when an area holds several
+  problems with their customers, competitors and ideas (each problem's chain reads across); columns for a mixed area
+  that reads left to right along the chain; grid for many cards of one kind; line for steps, a journey or a timeline,
+  in order; hub for one card and everything about it (a competitor and what it competes on, a segment and its
+  problems). Keep areas small enough to read at a glance, about 3 to 10 cards: split a big one into sections (within,
+  with an area that may hold no cards of its own) rather than one long block. Put areas that belong together next to
+  each other with beside and side (the chain reads left to right: customers' areas left of the ideas that serve them,
+  competitors below or right of the problems they compete on). Order the cards in an area the way they should read.
+  Tidying one area that is already on the board (its label reused, no other area) rearranges it where it is. After you
+  propose areas, the tool says how they come out (outlines, crossings, long links); improve it once if it reads badly. An existing label keeps its
   area if you reuse its exact text; propose delete_label for labels that would end up naming nothing, and edit_label
   to fix a name. Labels are named by their text as listed under AREAS ON THE BOARD (notes by theirs, under NOTES ON THE
   BOARD; edit_label and delete_label work on them too).

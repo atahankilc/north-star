@@ -30,7 +30,7 @@ import {
 import { useAiSettings, type AiTask } from './settings'
 import { discardReport, newReportId, saveReport } from '../data/reports'
 import type { ReportKind } from '../data/model'
-import { PROPOSE, PROPOSE_TOOL, parseProposal, proposalForHistory, proposalReport, type Proposal, type ProposalState } from './tools'
+import { PROPOSE, PROPOSE_TOOL, layoutReport, parseProposal, proposalForHistory, proposalReport, type Proposal, type ProposalState } from './tools'
 
 // Calls to OpenAI per answer. The last one may not use tools, so an answer always ends in words.
 const MAX_STEPS = 6
@@ -113,9 +113,11 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
       const what = `${proposed ? 'corrected the proposal' : 'proposed'}: ${n} change${n === 1 ? '' : 's'}`
       const why = [...new Set(bad.map((x) => x.problem))].join(', ')
       steps.push({ kind: 'propose', text: bad.length ? `${what}, ${bad.length} can't be applied (${why})` : what, state: bad.length || !n ? 'warn' : 'done' })
+      // The layout's outcome goes back to the model, so it can rearrange once more if it reads badly (D-126).
+      const layout = layoutReport(proposal, ws, refs, proposed)
       proposed = true
       showSteps({ proposal, proposalState: { status: 'pending' } })
-      return proposalReport(proposal)
+      return proposalReport(proposal) + layout
     }
     if (c.name === GET_ITEMS) {
       const res = readItems(c.args, ws, refs)

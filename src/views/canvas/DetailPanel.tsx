@@ -16,6 +16,7 @@ import { AsciiButton } from '../../ui/AsciiButton'
 import { Appear } from '../../ui/Appear'
 import { Choice } from '../../ui/Choice'
 import { CompetitorProfile } from '../competitors/CompetitorProfile'
+import { FocusButton } from './focus'
 import { useWs } from '../workspace/context'
 import { Attachments } from '../workspace/Attachments'
 import { ForPicker } from '../workspace/ItemPickers'
@@ -141,9 +142,12 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
     <div className={styles.inner}>
       <header className={styles.head}>
         <span className={styles.kicker}>{kind.label}</span>
-        <button className={styles.close} onClick={() => select(null)} aria-label="Close panel">
-          [×]
-        </button>
+        <span className={styles.headActions}>
+          <FocusButton wid={wid} id={item.id} />
+          <button className={styles.close} onClick={() => select(null)} aria-label="Close panel">
+            [×]
+          </button>
+        </span>
       </header>
 
       <input ref={titleRef} className={styles.title} placeholder="Untitled" {...field('title')} />

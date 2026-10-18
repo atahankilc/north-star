@@ -14,9 +14,11 @@ type Props = {
   goTo?: { key: string; label: string; onSelect: () => void }[]
   // The board's link filter, which is also its colour key (D-108); other views leave it out.
   links?: boolean
+  // The focus view's card picker (D-127): what it's on, and every card to choose from.
+  focus?: { summary: string; items: MenuEntry[] }
 }
 
-export function FilterBar({ goTo, links }: Props) {
+export function FilterBar({ goTo, links, focus }: Props) {
   const { customers } = useWs()
   const { types, forIds, tags, hiddenLinks, toggleType, toggleFor, clearFor, toggleTag, clearTags, toggleLinks, showAllLinks } = useWsView()
   const allTags = useAllTags(useBoardItems())
@@ -70,6 +72,17 @@ export function FilterBar({ goTo, links }: Props) {
   return (
     // Hidden in the assistant's bare preview screen (D-087).
     <div className={styles.filters} data-preview-hide>
+      {focus && (
+        <Menu
+          label="focus"
+          summary={focus.summary}
+          active={focus.summary !== 'none'}
+          items={focus.items}
+          ariaLabel="Focus on a card"
+          search="find a card"
+          empty="No cards yet: add some on the board"
+        />
+      )}
       <Menu
         label="show"
         summary={BOARD_TYPES.map((t) => (

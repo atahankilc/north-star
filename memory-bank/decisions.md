@@ -91,6 +91,9 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Filters SHOW / FOR / TAG / LINKS, remembered per workspace (D-053, D-056, D-108).
 
 ## Other views
+- Focus tab right of Board (`/focus?on=<id>`): the board with only the card's chain (customer → problem → idea → feature
+  both ways, never turning back) + competitors linked to its problems/ideas/features, in place, magenta ring; picker,
+  `[◎ focus]` in panels, right-click; no creating; presence says board (D-127).
 - Flow (columns in chain order, one row per problem), Table (sortable, inline edits), Matrix (features × competitors,
   coverage 1–4, verdict), Reports; all share the filter bar and side panel (D-040, D-045).
 - Frames as tall as their content, capped at the page (D-106).
@@ -134,6 +137,9 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   another card; replaces `rename_label`), `move_card` beside another card; no coordinates in the prompt (D-123).
 - Proposals (`propose_changes`): checklist, tick and apply as one batch + one undo step; deletes, unlinks, `arrange_area`,
   label rows, `edit_link`, `add_note` (D-074, D-075, D-086, D-108).
+- Organising: `arrange_area` takes a layout (columns, rows, grid, line, hub; null = the app picks), `within` (a section,
+  subheading) and `beside` + side; areas pack ~1.7:1 with room for link chips, never one long row (D-125). Fewer
+  crossings, areas placed by their links, a lone existing area tidied in place; the model gets a layout report and may revise once (D-126).
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).
 - `[web]` switch (off by default) with numbered clickable sources (D-076). Modes `/validate /interview /swot /gaps /next
   /pitch /organize /research /analyze` (D-085, D-086, D-088, D-099).

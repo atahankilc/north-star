@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (D-124 multi-select: line up, nudge, whole selection in presence)_
+_Last updated: 2026-10-18 (D-127 focus view: one card's chain on the board)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -17,10 +17,10 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger), `storage.rules`
   (attachments D-083). Flags `WORKSPACE_KEYS_LIVE` (src/data/ai.ts) and `ATTACHMENTS_LIVE` (src/data/attachments.ts) are `false`.
 - Tried with a real key: chat, proposals, [web], agent loop, deep research, reports. Only with a fake OpenAI: `/analyze` (D-099),
-  `edit_link` / `add_note` (D-108). Not tried in the app at all: `update_project` (D-120), D-122's edits, D-123's text and moves.
+  `edit_link` / `add_note` (D-108). Not tried in the app at all: `update_project` (D-120), D-122's edits, D-123's text and moves, D-125/D-126's layouts.
 
 ## In progress
-- Nothing in progress; D-124 committed, not pushed (D-118–D-123 are live). Keep this section true: empty it when work is committed.
+- Nothing in progress; D-124–D-127 committed, not pushed (D-118–D-123 are live). Keep this section true: empty it when work is committed.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

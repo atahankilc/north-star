@@ -3,6 +3,7 @@
 //   /workspaces                         your workspaces
 //   /workspaces/<id>                    a workspace's board
 //   /workspaces/<id>/flow|table|matrix  its other views
+//   /workspaces/<id>/focus?on=<id>      the board showing one card and its chain (D-127)
 //   /workspaces/<id>/reports            saved research reports (D-090); ?report=<id> is one as a page
 //   ?item=<id>                          selects an item (board); &feature=<id> opens a competitor's feature
 import type { PresenceView } from '../data/presence'
@@ -11,6 +12,11 @@ export const WORKSPACES = '/workspaces'
 
 export function workspacePath(wid: string, view: PresenceView = 'board') {
   return view === 'board' ? `${WORKSPACES}/${wid}` : `${WORKSPACES}/${wid}/${view}`
+}
+
+// The focus view (D-127), on a card or (without one) asking for one.
+export function focusPath(wid: string, itemId?: string | null) {
+  return `${WORKSPACES}/${wid}/focus${itemId ? `?on=${itemId}` : ''}`
 }
 
 export function itemPath(wid: string, itemId: string, featureId?: string) {

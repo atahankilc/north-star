@@ -157,3 +157,10 @@
   width: 2ch;
   color: var(--tone, var(--fg-dim));
 }
+
+/* The panel's own actions, right of its kind: focus (D-127) and close. */
+.headActions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}

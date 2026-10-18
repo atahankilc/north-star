@@ -1,6 +1,8 @@
 // /workspaces/:wid: the main view (D-040). Every item type on one board, plus text written on it (D-050), filtered by the filter bar.
+// /workspaces/:wid/focus?on=<id>: the same board showing one card's chain only, in place (D-127, focus.tsx).
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { focusPath } from '../../app/paths'
 import type { WithId } from '../../data/hooks'
 import { createLabel } from '../../data/labels'
 import { BOARD_TYPES, type Label } from '../../data/model'
@@ -8,13 +10,14 @@ import { createBoardNode, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
 import { useWsView, type NewThing } from '../../state/workspaceView'
 import { DecodeText } from '../../ui/DecodeText'
-import { Menu } from '../../ui/Menu'
+import { Menu, type MenuEntry } from '../../ui/Menu'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { Board } from './Board'
 import { nudge } from './arrange'
 import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems } from './boardKinds'
-import { findFreeSpot } from './cardLayout'
+import { focusFeatures, focusSet, rememberFocus } from './focus'
+import { CARD_H, CARD_W, findFreeSpot } from './cardLayout'
 import { copySelection, duplicateSelection, pasteClip } from './clipboard'
 import { BoardMenu } from './BoardMenu'
 import { DetailPanel } from './DetailPanel'
@@ -31,16 +34,59 @@ const LAND_BELOW = 2.5
 // Which way each arrow key nudges, in board units (y grows upwards).
 const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }
 
-export function BoardView() {
+// `focusMode`: the focus view (D-127).
+export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
   const ws = useWs()
-  const { wid, edges, competitors, competitorFeatures, labels } = ws
+  const { wid, edges, competitors, competitorFeatures } = ws
   const viewer = useViewer((s) => s.viewer)
   const snap = useSnap((s) => s.on)
   const guides = useGuides((s) => s.on)
   const all = useBoardItems()
-  const nodes = useVisibleItems(all)
+  const visible = useVisibleItems(all)
   const select = useCanvas((s) => s.select)
   const [params, setParams] = useSearchParams()
+  const navigate = useNavigate()
+
+  // The focus view: the card it's on, its chain and the competitors around it; no text, no project block. The card
+  // itself shows even when the filters would hide its type.
+  const onId = focusMode ? params.get('on') : null
+  const centre = onId ? all.find((n) => n.id === onId) : undefined
+  const chain = useMemo(
+    () => (focusMode ? focusSet(onId ?? '', all, edges, competitorFeatures) : null),
+    [focusMode, onId, all, edges, competitorFeatures],
+  )
+  const nodes = useMemo(() => (chain ? visible.filter((n) => chain.has(n.id) || n.id === onId) : visible), [chain, visible, onId])
+  const labels = focusMode ? [] : ws.labels
+  const features = useMemo(() => (chain ? focusFeatures(chain, competitorFeatures) : competitorFeatures), [chain, competitorFeatures])
+  useEffect(() => {
+    if (centre) rememberFocus(wid, centre.id)
+  }, [wid, centre])
+  // Moving the focus to another card frames its chain; the first one is framed as the board opens.
+  const framed = useRef(onId)
+  useEffect(() => {
+    if (!focusMode || framed.current === onId || !nodes.length) return
+    framed.current = onId
+    const hw = CARD_W / 2 + 1.2
+    const hh = CARD_H / 2 + 1.2
+    useCanvas
+      .getState()
+      .flyToFit([Math.min(...nodes.map((n) => n.x)) - hw, Math.min(...nodes.map((n) => n.y)) - hh, Math.max(...nodes.map((n) => n.x)) + hw, Math.max(...nodes.map((n) => n.y)) + hh])
+  }, [focusMode, onId, nodes])
+  // Every card to focus on, by type in the chain's order (D-045).
+  const focusItems = useMemo<MenuEntry[]>(
+    () =>
+      BOARD_TYPES.flatMap((t) => {
+        const of = all.filter((n) => n.type === t).sort((a, b) => a.title.localeCompare(b.title))
+        return of.length
+          ? [
+              { key: `h-${t}`, heading: BOARD_KINDS[t].plural },
+              // The card in focus is marked ◎; choosing one closes the menu.
+              ...of.map((n) => ({ key: n.id, label: n.title || 'Untitled', tone: TYPE_ACCENT[t], glyph: n.id === onId ? '◎' : '▌', onSelect: () => navigate(focusPath(wid, n.id)) })),
+            ]
+          : []
+      }),
+    [all, onId, navigate, wid],
+  )
 
   // `?item=<id>` (from a link in another view) selects that card, unhides it, and starts the camera on it.
   const [focus] = useState(() => {
@@ -89,8 +135,8 @@ export function BoardView() {
   // The jump list (D-050), in reading order: top to bottom, then left to right. Notes aren't places (D-116).
   // The title block (D-118) is a place too, under the workspace's name.
   const places = useMemo(
-    () => labels.filter((l) => isTitle(l) || (l.text.trim() && l.size !== 'note')).sort((a, b) => b.y - a.y || a.x - b.x),
-    [labels],
+    () => (focusMode ? [] : labels).filter((l) => isTitle(l) || (l.text.trim() && l.size !== 'note')).sort((a, b) => b.y - a.y || a.x - b.x),
+    [labels, focusMode],
   )
   const jump = (l: WithId<Label>) => useCanvas.getState().flyTo(isTitle(l) ? [l.x, l.y] : [l.x, l.y - LAND_BELOW])
   const title = labels.find(isTitle)
@@ -172,14 +218,27 @@ export function BoardView() {
 
   return (
     <main className={styles.page}>
-      <Board wid={wid} nodes={nodes} edges={edges} labels={labels} competitorFeatures={competitorFeatures} focus={focus} />
+      <Board
+        wid={wid}
+        nodes={nodes}
+        edges={edges}
+        labels={labels}
+        competitorFeatures={features}
+        focus={focus}
+        cameraKey={focusMode ? `${wid}/focus/${onId ?? ''}` : undefined}
+        centreId={centre?.id}
+      />
 
-      <FilterBar links goTo={places.map((l) => ({ key: l.id, label: isTitle(l) ? ws.workspace.name : l.text.trim(), onSelect: () => jump(l) }))} />
+      <FilterBar
+        links
+        focus={focusMode ? { summary: centre ? centre.title || 'Untitled' : 'none', items: focusItems } : undefined}
+        goTo={focusMode ? undefined : places.map((l) => ({ key: l.id, label: isTitle(l) ? ws.workspace.name : l.text.trim(), onSelect: () => jump(l) }))}
+      />
 
       {/* One create button for everything (D-053); viewers make nothing (D-098). */}
       <footer className={styles.tools} data-preview-hide>
         <span className={styles.buttons}>
-          {!viewer && <Menu
+          {!viewer && !focusMode && <Menu
             primary
             up
             label="+"
@@ -243,6 +302,7 @@ export function BoardView() {
           )}
         </span>
         <span className={styles.hints}>
+          {focusMode && centre && `${nodes.length} of ${all.length} cards · `}
           {viewer ? 'viewing only · scroll: zoom' : `drag: move${snap ? ' on the grid (alt: freely)' : ''} · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom`}
           {' · 0: fit all'}
           {!viewer && ' · g: snap · a: guides · right-click: menu'}
@@ -255,13 +315,18 @@ export function BoardView() {
           <DecodeText text={viewer ? 'Nothing on this board yet' : 'Add your first card with the + button'} />
         </div>
       )}
-      {all.length > 0 && nodes.length === 0 && labels.length === 0 && (
+      {all.length > 0 && focusMode && !centre && (
+        <div className={styles.empty}>
+          <DecodeText text={onId ? 'That card is gone: pick another in focus ▾' : 'Pick a card in focus ▾ to see its chain'} />
+        </div>
+      )}
+      {all.length > 0 && (!focusMode || centre) && nodes.length === 0 && labels.length === 0 && (
         <div className={styles.empty}>
           <DecodeText text="Nothing here with these filters" />
         </div>
       )}
 
-      <BoardMenu ws={ws} create={(type, at) => void create(type, at)} />
+      <BoardMenu ws={ws} create={focusMode ? undefined : (type, at) => void create(type, at)} />
 
       <DetailPanel items={all} />
     </main>

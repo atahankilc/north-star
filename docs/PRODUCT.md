@@ -49,6 +49,8 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    and AI actions.
 6. **Reports.** Research reports, write-ups of assistant chats and uploaded `.md` files (D-091), saved per person and shared with the workspace by
    choice (D-090). One tab beside board, flow, table and matrix.
+8. **Focus.** The board showing one card's chain only (customers → problems → ideas → features both ways from it, and the
+   competitors around them), cards in place; the tab right of Board (D-127, [specs/board.md](specs/board.md)).
 7. **Settings.** Profile, workspace members, AI config (OpenAI key, model), export/import.
 
 ## 5. Key flows

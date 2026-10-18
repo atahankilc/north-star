@@ -4,6 +4,8 @@
 // Arrow keys move, Escape or a click elsewhere closes, as in the dropdowns (Menu.tsx).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { focusPath } from '../../app/paths'
 import { reverseEdge, updateEdge } from '../../data/edges'
 import { BOARD_TYPES, FOR } from '../../data/model'
 import { copied } from '../../data/selection'
@@ -46,8 +48,8 @@ type Row =
 
 type Props = {
   ws: WorkspaceCtx
-  // Makes a card or text at a board point (BoardView's create).
-  create: (type: NewThing, at: [number, number]) => void
+  // Makes a card or text at a board point (BoardView's create); none in the focus view, where it would vanish (D-127).
+  create?: (type: NewThing, at: [number, number]) => void
 }
 
 export function BoardMenu({ ws, create }: Props) {
@@ -75,7 +77,8 @@ export function BoardMenu({ ws, create }: Props) {
   // Leaving the board or the workspace closes it.
   useEffect(() => close, [close])
 
-  const rows = open ? rowsFor(open.target, open.at, ws, create) : []
+  const navigate = useNavigate()
+  const rows = open ? rowsFor(open.target, open.at, ws, create, (id) => navigate(focusPath(ws.wid, id))) : []
   return (
     <AnimatePresence>
       {open && rows.length > 0 && (
@@ -195,7 +198,8 @@ function zoomTo(ids: string[]) {
     .flyToFit([Math.min(...at.map((p) => p.x)) - hw, Math.min(...at.map((p) => p.y)) - hh, Math.max(...at.map((p) => p.x)) + hw, Math.max(...at.map((p) => p.y)) + hh])
 }
 
-function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, create: Props['create']): Row[] {
+// `focusOn`: opens the focus view on a card (D-127).
+function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, create: Props['create'], focusOn: (id: string) => void): Row[] {
   const locked = editLocked()
   const { selection } = useCanvas.getState()
 
@@ -204,7 +208,7 @@ function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, cre
       { key: 'board', heading: 'board' },
       { key: 'fit', label: 'fit all', hint: '0', run: () => useCanvas.getState().fitAll() },
     ]
-    if (locked) return board
+    if (locked || !create) return board
     // Where the pointer is, on the grid if snapping's on (D-112).
     const here = snapPoint(at, false)
     return [
@@ -247,7 +251,9 @@ function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, cre
   const title = !many && !!label && isTitle(label)
   const heading = many ? `${ids.length} selected` : title ? 'project title' : label ? 'text' : BOARD_KINDS[item!.type].label
   const zoom: Row = { key: 'zoom', label: 'zoom to', run: () => zoomTo(ids) }
-  if (locked) return [{ key: 'h', heading }, zoom]
+  // The card's chain in the focus view (D-127).
+  const focus: Row[] = item && !many ? [{ key: 'focus', label: 'focus', glyph: '◎', run: () => focusOn(target.id) }] : []
+  if (locked) return [{ key: 'h', heading }, zoom, ...focus]
   return [
     { key: 'h', heading },
     ...(title
@@ -266,6 +272,7 @@ function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, cre
           { key: 'dup', label: 'duplicate', hint: `${MOD}D`, run: () => void duplicateSelection(ws) } as Row,
         ]),
     zoom,
+    ...focus,
     { key: 'r', rule: true },
     {
       key: 'delete',

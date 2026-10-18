@@ -56,6 +56,10 @@ type Props = {
   competitorFeatures: WithId<CompetitorFeature>[]
   // Look here first instead of where this board was last left (e.g. a link jumped to a card).
   focus?: [number, number]
+  // Where the camera is remembered between views: the workspace, or the focus view's card (D-127).
+  cameraKey?: string
+  // The card the focus view is on, ringed.
+  centreId?: string | null
 }
 
 // Where each board's camera was left, so switching views and coming back doesn't lose your place.
@@ -177,7 +181,7 @@ function Controls({ domElement }: { domElement: HTMLElement }) {
   )
 }
 
-function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) {
+function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey, centreId }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
@@ -241,7 +245,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
 
   useEffect(() => {
     if (!controls) return
-    const key = wid
+    const key = cameraKey ?? wid
     const saved = cameras.get(key)
     const at = focus ?? saved?.target
     if (at) {
@@ -560,6 +564,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
           mark={preview?.marks.get(node.id)}
           was={wasLine(preview?.before.get(node.id))}
           lit={litIds.has(node.id)}
+          centre={node.id === centreId}
           onLinkDrop={onLinkDrop}
         />
       ))}

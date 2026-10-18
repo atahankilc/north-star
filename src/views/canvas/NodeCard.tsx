@@ -51,6 +51,8 @@ type Props = {
   mark?: Mark
   was?: { label: string; value: string }
   lit?: boolean
+  // The card the focus view is on (D-127): a magenta ring.
+  centre?: boolean
   onLinkDrop: (targetId: string) => void
 }
 
@@ -95,7 +97,7 @@ const HANDLE = 0.1
 const HANDLE_HIT = 0.2
 const WAS_H = 0.24
 
-export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], mark, was, lit = false, onLinkDrop }: Props) {
+export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], mark, was, lit = false, centre = false, onLinkDrop }: Props) {
   const type = node.type
   const W = CARD_W
   const H = CARD_H
@@ -320,6 +322,19 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
             </mesh>
             <mesh>
               <planeGeometry args={[W + 0.05, H + 0.05 + (was ? WAS_H + 0.02 : 0)]} />
+              <meshBasicMaterial color={colors.bg} toneMapped={false} />
+            </mesh>
+          </group>
+        )}
+        {/* The focus view's card (D-127): a ring like the preview's, in magenta. */}
+        {centre && !markColor && (
+          <group position={[0, 0, -0.0025]}>
+            <mesh position={[0, 0, -0.0002]}>
+              <planeGeometry args={[W + 0.16, H + 0.16]} />
+              <meshBasicMaterial color={colors.magenta} toneMapped={false} />
+            </mesh>
+            <mesh>
+              <planeGeometry args={[W + 0.06, H + 0.06]} />
               <meshBasicMaterial color={colors.bg} toneMapped={false} />
             </mesh>
           </group>

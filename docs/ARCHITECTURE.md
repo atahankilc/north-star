@@ -178,8 +178,14 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   The last call uses `tool_choice: none`, so every answer ends in words. Each call is its own usage-log entry.
 - **Analysis modes** (D-085): `/validate`, `/interview`, `/swot`, `/gaps`, `/next`, `/pitch`, `/organize`, `/analyze` (D-099) (`src/ai/modes.ts`) are canned
   asks sent as a normal message (the chat shows the short form); one-item modes use the selected card when it fits.
-- **Board areas** (D-086): `arrange_area` rows name an area and its cards; `src/ai/arrange.ts` lays it out (label + a
-  column per type) where the board has room. Labels are referred to by their text.
+- **Board areas** (D-086, D-125): `arrange_area` rows name an area and its cards, and may give a `layout` (`columns`: a
+  column per type, linked cards level; `rows`: one band per problem with its chain beside it; `grid`; `line`; `hub`: the
+  first card ringed by the rest), make it a section `within` another area (its name a subheading), or put it `beside`
+  another area on a side. `src/ai/arrange.ts` lays them out with room for link chips and packs the areas (and sections)
+  about 1.7 : 1 wide, never one long row. Columns are ordered by sweeps that cut link crossings; an area without a place goes
+  to the spot (first free, or beside an area or a staying card it links to) with the shortest links that keeps the whole
+  compact; a lone area with an existing label is tidied in place (D-126). After a proposal with areas, `layoutReport`
+  tells the model the outlines, crossings and long links, and it may propose once more. Labels are referred to by their text.
 - **Preview** (D-087): `src/ai/simulate.ts` plays a proposal's writes onto an in-memory copy; while open, `useWs()` serves that copy
   to every view (not to the assistant window), marks show on items, and `tracked()` refuses writes.
 - **Deep research** (D-088): `/research` → a planned set of questions you pick → one web-searching call per question (3 at a

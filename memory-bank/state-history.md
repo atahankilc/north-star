@@ -473,3 +473,12 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - Panel `line up` (align 6 ways, space ↔ ↕), arrows nudge 0.25 / shift 1 (a run is one undo step), presence `more`.
   RTDB rules deployed. Verified: rules tests 247, `npm run build`, headless Chrome on the emulators (positions after each
   button, nudges, one ⌘Z, the presence node); not tried with two people at once.
+
+## Done (assistant board design + focus view, 2026-10-18)
+- **D-125** organising: `arrange_area` layout (columns/rows/grid/line/hub), sections (`within`), `beside` + side, more room,
+  areas packed ~1.7:1 (`src/ai/arrange.ts` rewritten). Checked in node on the example board (26 cards, no overlaps).
+- **D-126** organising, second step: crossing-reducing column sweeps, areas placed by link length + compactness, one
+  existing area tidied in place, `layoutReport` back to the model (may revise once). vite-node + jsdom checks. Neither
+  tried with a real model yet.
+- **D-127** focus view: `/focus?on=<id>`, the board with one card's chain + its competitors, in place; picker, panel
+  `[◎ focus]`, right-click. Checked in headless Chrome on the emulators.
