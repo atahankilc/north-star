@@ -79,6 +79,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Multi-select (shift+click, alt+drag box), group drag, "N selected" panel; ⌘C/⌘V/⌘D in-tab clipboard; `○` link handle (D-108).
 - Labels: text on the board, sizes heading/subheading/note + colour; jump list `go to` (headings and subheadings, not
   notes) with 1–9 and a search field inside the dropdown (D-050, D-108, D-116).
+- Project title block: one per board from `+`, a `kind: 'title'` label showing the workspace's name + description (edited in
+  place or from its right-click menu, same fields as Settings), star + `PROJECT`, rule, corner brackets (D-118).
 - Grid: `+` turns to dots and fades by camera distance (D-110). Depth range follows the camera; text and card detail by
   on-screen pixel size (full / compact / far) (D-111).
 - Drags snap centres to a 0.25 grid (group drags keep their layout, alt = free); switch beside fit-all + `g`, on by default (D-112).

@@ -4,6 +4,7 @@
 import type { NodeType } from '../data/model'
 import { LABEL_SIZE } from '../views/canvas/BoardLabel'
 import { CARD_H, CARD_W } from '../views/canvas/cardLayout'
+import { titleHalf } from '../views/canvas/titleBlock'
 
 const ORDER: NodeType[] = ['customer', 'problem', 'competitor', 'idea', 'feature']
 const COL_GAP = 0.8
@@ -22,14 +23,19 @@ export type Point = { x: number; y: number }
 // `id`: an item's id, or the key of one created in the same proposal.
 export type AreaPlan = { label: string; items: { id: string; type: NodeType }[] }
 // Everything on the board that stays where it is.
-export type Fixed = { cards: Point[]; labels: (Point & { text: string })[] }
+export type Fixed = { cards: Point[]; labels: (Point & { text: string; kind?: string })[] }
 
 export type Arranged = { labels: (Point & { text: string })[]; cards: Map<string, Point> }
 
 const overlaps = (a: Rect, b: Rect) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
 const cardRect = (p: Point): Rect => ({ x0: p.x - CARD_W / 2, x1: p.x + CARD_W / 2, y0: p.y - CARD_H / 2, y1: p.y + CARD_H / 2 })
 // Label text is about 0.55 of its size wide per character.
-const labelRect = (p: Point & { text: string }): Rect => {
+const labelRect = (p: Point & { text: string; kind?: string }): Rect => {
+  if (p.kind === 'title') {
+    // The title block (D-118) is far bigger than its (empty) text.
+    const [hw, hh] = titleHalf()
+    return { x0: p.x - hw, x1: p.x + hw, y0: p.y - hh, y1: p.y + hh }
+  }
   const w = Math.max(1, p.text.length * LABEL_SIZE * 0.55)
   return { x0: p.x - w / 2, x1: p.x + w / 2, y0: p.y - LABEL_SIZE / 2, y1: p.y + LABEL_SIZE / 2 }
 }

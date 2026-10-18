@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (D-117: alignment guides and a right-click menu on the board)_
+_Last updated: 2026-10-18 (D-118 project title block on the board)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -13,14 +13,14 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. Firestore + RTDB rules and indexes deployed
-  (latest 2026-10-18, rules 243 tests; reports readable while not saved yet, so a save shows at once; research written twice keeps only the newest).
+  (latest 2026-10-18, rules 245 tests incl. the title label; reports readable while not saved yet, so a save shows at once; research written twice keeps only the newest).
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger), `storage.rules`
   (attachments D-083). Flags `WORKSPACE_KEYS_LIVE` (src/data/ai.ts) and `ATTACHMENTS_LIVE` (src/data/attachments.ts) are `false`.
 - Tried with a real key: chat, proposals, [web], agent loop, deep research, reports. Only with a fake OpenAI: `/analyze` (D-099),
   `edit_link` / `add_note` (D-108).
 
 ## In progress
-- Nothing of D-117 in progress: committed (not pushed). Keep this section true: empty it when work is committed.
+- Nothing in progress; D-118 (project title block) committed, not pushed. Keep this section true: empty it when work is committed.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

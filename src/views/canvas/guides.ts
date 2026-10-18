@@ -8,6 +8,7 @@ import { useCanvas } from '../../state/canvasStore'
 import { CARD_H, CARD_W } from './cardLayout'
 import { pieceOf, piecesOnBoard } from './groupDrag'
 import { snapPoint } from './snap'
+import { titleHalf, titleId } from './titleBlock'
 
 // How close (in screen pixels) an edge or centre has to come before it's pulled into line.
 const PULL_PX = 6
@@ -52,8 +53,10 @@ export function unitsPerPixel(camera: Camera, height: number): number {
   return (2 * camera.position.z * Math.tan(fov / 2)) / Math.max(1, height)
 }
 
-// Cards are the same size (D-055); text lines up by its centre only, so its size doesn't matter here.
-const halfOf = (kind: string): [number, number] => (kind === 'label' ? [0, 0] : [CARD_W / 2, CARD_H / 2])
+// Cards are the same size (D-055); text lines up by its centre only, so its size doesn't matter here. The title block
+// (D-118) is a box like a card: its edges line up too.
+const halfOf = (kind: string, id: string): [number, number] =>
+  id === titleId() ? titleHalf() : kind === 'label' ? [0, 0] : [CARD_W / 2, CARD_H / 2]
 
 // The lines of a box on one axis: its low edge, centre and high edge (a label: its centre only).
 type Mark = { role: -1 | 0 | 1; v: number }
@@ -107,10 +110,10 @@ export function placeDragged(id: string, p: [number, number], free: boolean, per
   }
   const { selection } = useCanvas.getState()
   const moving = new Set(selection.includes(id) ? selection : [id])
-  const own: Box = { c: p, h: halfOf(piece.kind) }
+  const own: Box = { c: p, h: halfOf(piece.kind, piece.id) }
   const others: Box[] = []
   for (const o of piecesOnBoard()) {
-    if (!moving.has(o.id)) others.push({ c: [o.x, o.y], h: halfOf(o.kind) })
+    if (!moving.has(o.id)) others.push({ c: [o.x, o.y], h: halfOf(o.kind, o.id) })
   }
   const reach = PULL_PX * perPixel
   const dx = pull(own, others, 0, reach)

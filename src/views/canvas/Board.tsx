@@ -28,6 +28,8 @@ import { isReducedMotion } from '../../state/motion'
 import { usePalette } from '../../state/theme'
 import { defaultKind, type BoardItem } from './boardKinds'
 import { BoardLabel, labelSize } from './BoardLabel'
+import { BoardTitle } from './BoardTitle'
+import { isTitle, labelHalf, titleHalf } from './titleBlock'
 import { CARD_H, CARD_W, glideDt } from './cardLayout'
 import { EdgeLine } from './EdgeLine'
 import { rightPress, useBoardMenu } from './rightClick'
@@ -89,8 +91,8 @@ function boardBounds(nodes: BoardItem[], labels: WithId<Label>[]): [number, numb
   const boxes = [
     ...nodes.map((n) => [n.x - CARD_W / 2, n.y - CARD_H / 2, n.x + CARD_W / 2, n.y + CARD_H / 2]),
     ...labels.map((l) => {
-      const h = labelSize(l)
-      return [l.x - l.text.length * h * 0.32, l.y - h / 2, l.x + l.text.length * h * 0.32, l.y + h / 2]
+      const [hw, hh] = labelHalf(l)
+      return [l.x - hw, l.y - hh, l.x + hw, l.y + hh]
     }),
   ]
   if (boxes.length === 0) return null
@@ -413,7 +415,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   const viewer = useViewer((s) => s.viewer)
   const editable = !viewer && !preview
   const selectedLine = edgeId ? lines.find((l) => l.edge.id === edgeId) : undefined
-  const selectedLabel = selection.length === 1 ? labels.find((l) => l.id === selection[0]) : undefined
+  // The title block (D-118) has no size or colour to pick.
+  const selectedLabel = selection.length === 1 ? labels.find((l) => l.id === selection[0] && !isTitle(l)) : undefined
   const editingLabel = useCanvas((s) => s.editingLabel)
   // A right-click menu open on it stands in for its bar until it closes (D-117).
   const menuOn = useBoardMenu((s) => (s.open && s.open.target.kind !== 'board' ? s.open.target.id : null))
@@ -430,7 +433,9 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
       const inside = (x: number, y: number, hw: number, hh: number) => x + hw > x0 && x - hw < x1 && y + hh > y0 && y - hh < y1
       const ids = [
         ...nodes.filter((n) => inside(n.x, n.y, CARD_W / 2, CARD_H / 2)).map((n) => n.id),
-        ...labels.filter((l) => inside(l.x, l.y, (l.text.length * labelSize(l) * 0.3) || 0.3, labelSize(l) / 2)).map((l) => l.id),
+        ...labels
+          .filter((l) => (isTitle(l) ? inside(l.x, l.y, ...titleHalf()) : inside(l.x, l.y, (l.text.length * labelSize(l) * 0.3) || 0.3, labelSize(l) / 2)))
+          .map((l) => l.id),
       ]
       if (Math.abs(x1 - x0) > 0.05 || Math.abs(y1 - y0) > 0.05) useCanvas.getState().selectMany(ids, box.add)
       setBox(null)
@@ -483,9 +488,13 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
         <DotGridMaterial />
       </mesh>
 
-      {labels.map((l) => (
-        <BoardLabel key={l.id} wid={wid} label={l} mark={preview?.marks.get(l.id)} was={wasLine(preview?.before.get(l.id))} lit={litIds.has(l.id)} />
-      ))}
+      {labels.map((l) =>
+        isTitle(l) ? (
+          <BoardTitle key={l.id} wid={wid} label={l} />
+        ) : (
+          <BoardLabel key={l.id} wid={wid} label={l} mark={preview?.marks.get(l.id)} was={wasLine(preview?.before.get(l.id))} lit={litIds.has(l.id)} />
+        ),
+      )}
 
       {lines.map((line) => {
         const { edge, from, to, active } = line

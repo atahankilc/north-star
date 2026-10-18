@@ -224,6 +224,8 @@ await allow('edge from an idea to a problem', () => addDoc(sub(bob.fs, 'edges'),
 // Labels: text on the board (D-050). Groups are retired (D-049).
 await allow('text label', () => addDoc(sub(bob.fs, 'labels'), { text: 'COMPETITORS', x: 0, y: 5, createdAt: 1, updatedAt: 1 }))
 await allow('text label as a note', () => addDoc(sub(bob.fs, 'labels'), { text: 'check pricing', size: 'note', x: 0, y: 4, createdAt: 1, updatedAt: 1 }))
+await allow('the project title block', () => addDoc(sub(bob.fs, 'labels'), { text: '', kind: 'title', x: 0, y: 8, createdAt: 1, updatedAt: 1 }))
+await deny('a label of an unknown kind', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', kind: 'banner', x: 0, y: 4, createdAt: 1, updatedAt: 1 }))
 await deny('text label with an unknown size', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', size: 'huge', x: 0, y: 4, createdAt: 1, updatedAt: 1 }))
 await deny('label without a position', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', createdAt: 1, updatedAt: 1 }))
 await deny('label with a numeric text', () => addDoc(sub(bob.fs, 'labels'), { text: 3, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))

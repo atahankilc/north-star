@@ -27,8 +27,8 @@ export function clipOf(ws: WorkspaceCtx, ids: string[]): Clip | null {
   for (const id of ids) {
     for (const [kind, list] of lists) {
       const d = (list as ({ id: string } & DocumentData)[]).find((x) => x.id === id)
-      // A competitor without a place yet isn't on the board.
-      if (d && typeof d.x === 'number') pieces.push({ kind, id, data: bare(d) })
+      // A competitor without a place yet isn't on the board; the title block (D-118) is one of a kind.
+      if (d && typeof d.x === 'number' && d.kind !== 'title') pieces.push({ kind, id, data: bare(d) })
     }
   }
   if (pieces.length === 0) return null

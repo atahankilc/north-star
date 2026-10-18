@@ -440,3 +440,10 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - D-116: `go to` lists headings and subheadings only (notes left it, 1–9 follow); `Menu` got an optional `search` field
   (focused on open, Enter picks the first match, `No match`). Cross-workspace paste and a minimap rejected. Verified headless
   on emulators (example workspace): field focused, "road" → ROADMAP with its `5`, Enter picks it and closes the menu, Escape closes. tsc passes.
+
+## Done (2026-10-18): D-118 project title block on the board
+- `+` → "project title": one block per board (a `kind: 'title'` label) showing the workspace's name and description, edited
+  in place or from its right-click menu (edit name / edit description); star + `PROJECT`, magenta-led rule, corner brackets.
+  The counts row was tried and dropped at the user's request. Rules allow `kind: 'title'` (245 tests), deployed.
+- Verified in headless Chrome on the emulators: placement clear of the headings, rename (breadcrumb follows), description
+  edit (caret at the end, field at full height), right-click menu. `npm run build` passes.

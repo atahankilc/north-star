@@ -1367,3 +1367,31 @@ User: "do the right click menu and alignment guides if they are turned on" (both
   exactly on it with the magenta line drawn; right-click on the board, a card and a link opened the right rows; `idea` from
   `add here` made a card; a kind picked from the link menu was saved (`solves` → `depends on`); a right drag panned
   without opening the menu. Build passes.
+
+### D-118 · 2026-10-18 · Accepted (extends D-050, D-082)
+**The project's title block on the board: the workspace's name and description, big, framed, one per board.**
+User: "like different cards and text, i wanna be able to add the workspace/project name and description of the project. It
+will be a big one and maybe has its own design. We already have those fields in settings/workspace/general tab but i want to
+carry it (the current one can stay inside settings) to the board view".
+- *Data:* a label with `kind: 'title'` and empty `text` (`Label.kind`, firestore.rules `validLabel` allows `kind in
+  ['title']`, 2 new rules tests). The name and description stay on the workspace doc (`renameWorkspace`,
+  `describeWorkspace`), so the board and Settings always agree. Being a label gives it moving, the group drag, box
+  selection, Delete and undo of moves for free. Alternative: a position field on the workspace doc, rejected: none of
+  that would apply, and undoing a workspace-doc snapshot could put back roles.
+- *Look* (`BoardTitle.tsx`, layout in `titleBlock.ts`): 9 units wide; a magenta four-pointed star (the app's mark) and
+  `PROJECT` in small mono, the name in Geist at 1.15 (display tracking -0.045), a 1.2-unit magenta lead on a hairline rule,
+  the description in Geist 0.32 muted and wrapped. A row of counts per type was tried and dropped: "customer yada problem
+  sayılarını görmek çok da umrumda değil. O satırı kaldırabiliriz". Corner brackets like a viewfinder: grey, lit on hover, cyan when selected. Reveals cell by cell like every card.
+- *Editing:* double-click above the rule edits the name (selected, to retype), below it the description (caret at the
+  end); a DOM field over the text at its size (the text is never WebGL while typed); Enter or blur saves, Escape cancels,
+  shift+Enter breaks a line in the description. Not tracked by undo, like Settings. Viewers and the assistant's preview
+  can't edit. The right-click menu has "edit name" and "edit description" (user: "edit name in yanına edit description
+  ekleyelim"), sent through `editTitle()` in titleBlock.ts.
+- *One per board:* `+` → "project title" only while there is none; placed above the top-left of the board (size estimated
+  from the text), or mid-view on an empty board. Not copied or duplicated (`clipOf` skips it); the right-click menu says
+  "project title", edit name / edit description, no copy/duplicate, "remove from board". Delete takes the block away, never the name.
+- *Elsewhere:* framing, box selection, alignment guides (edges, like a card) and the assistant's `arrange_area` layout use
+  its measured size (`titleHalf()`); `go to` lists it under the workspace's name and flies to its centre; export/import
+  keep it (`cleanLabel` accepts the empty text for a title). The assistant's context skips it (empty text), as before.
+- *Verified* in headless Chrome on the emulators: added from `+` on the example workspace (placed clear of the headings),
+  renamed on the board (the breadcrumb followed), description edited, right-click menu; `npm run test:rules` 245 passed.

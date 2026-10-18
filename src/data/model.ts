@@ -90,11 +90,15 @@ export type Idea = BoardNode & {
 // How big text on the board is (D-108): an area's heading (the default), a subheading, or a small note.
 export const LABEL_SIZES = ['heading', 'subheading', 'note'] as const
 export type LabelSize = (typeof LABEL_SIZES)[number]
+// A label's kind: plain text (none), or the project's title block (D-118), which shows the workspace's name and
+// description instead of its own text. One per board.
+export type LabelKind = 'title'
 
 export type Label = {
   text: string
   color?: string
   size?: LabelSize
+  kind?: LabelKind
   x: number
   y: number
   createdAt: number

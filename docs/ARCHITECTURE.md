@@ -87,7 +87,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
   ideas/{id}            title, body, color, tags[], status, x, y
   features/{id}         title, body, color, tags[], x, y, priority, status, effort   (same card fields as ideas, D-037)
   competitors/{id}      name, url, description, pricing, audience, notes, color, x, y
-  labels/{id}           text, color, x, y                                         (text on the board, D-050)
+  labels/{id}           text, color, size, kind?, x, y                            (text on the board, D-050; kind 'title': the project title block, D-118)
   competitorFeatures/{id}  competitorId, name, description, category
   comparisons/{id}      featureId, competitorId, coverage?, notes, competitorFeatureId   (id = featureId_competitorId)
   edges/{id}            fromId, fromType, toId, toType, kind, label

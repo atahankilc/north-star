@@ -23,6 +23,7 @@ a `TAG ▾` filter, and a tags column in Table.
 | **Feature** (ours) | title, notes, tags, priority, status, effort | cyan |
 | **Competitor feature** | name, description, category | no card: listed in its competitor's panel |
 | **Text label** (D-050) | text | large text on the board, no card |
+| **Project title** (D-118) | the workspace's name and description | one block per board, framed by corner brackets |
 
 Card layout, top to bottom: `TYPE` label · title (up to two lines) · `#tags` · who it's for and type facts. Notes and
 descriptions live in the side panel only (D-057).
@@ -50,6 +51,14 @@ descriptions live in the side panel only (D-057).
   feature → inspired by → idea or a competitor's feature. Shift+drag picks a sensible link kind.
 - **Text labels** name areas of the board ("COMPETITORS", "PRICING IDEAS"). Headings and subheadings are places in the
   jump list (`go to`, with a search field at the top); notes are not (D-116).
+- **Project title** (D-118): one block per board, added from the `+` menu ("project title", gone once there is one). A
+  small magenta north star and `PROJECT`, the workspace's name big (Geist, display tracking), a magenta lead on a hairline
+  rule and what the team is building (Geist, muted, wrapped); four corner brackets frame it (grey, lit on hover, cyan when selected). The name and description are the workspace's own
+  fields (Settings → general shows the same): double-click the name or the description to edit it in place (Enter or
+  clicking away saves, Escape cancels, shift+Enter a new line in the description); its right-click menu has "edit name"
+  and "edit description". Viewers see it but can't edit; an empty
+  description shows a prompt to editors only. It drags, snaps, aligns by its edges, selects and undoes its moves like text;
+  it isn't copied or duplicated; deleting it takes it off the board, never the name. It's a place in `go to`, under the name.
 
 ## 3. Layout
 

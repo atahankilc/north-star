@@ -112,6 +112,7 @@ service cloud.firestore {
       return isText(d.text, 200)
         && optText(d, 'color', 20)
         && optIn(d, 'size', ['heading', 'subheading', 'note'])
+        && optIn(d, 'kind', ['title'])
         && d.x is number && d.y is number;
     }
 

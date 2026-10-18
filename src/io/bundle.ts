@@ -171,8 +171,10 @@ export function cleanLabel(d: Doc, now: number) {
   const text = str(d.text, 200)
   const x = num(d.x)
   const y = num(d.y)
-  if (!text || x === undefined || y === undefined) return null
-  return { text, x, y, ...compact({ color: str(d.color, 20), size: oneOf(d.size, LABEL_SIZES) }), ...times(d, now) }
+  // The title block (D-118) has no text of its own: it shows the workspace's name and description.
+  const title = d.kind === 'title'
+  if ((!text && !title) || x === undefined || y === undefined) return null
+  return { text: title ? '' : text!, x, y, ...compact({ color: str(d.color, 20), size: oneOf(d.size, LABEL_SIZES), kind: title ? 'title' : undefined }), ...times(d, now) }
 }
 
 export function cleanCompetitorFeature(d: Doc, now: number) {

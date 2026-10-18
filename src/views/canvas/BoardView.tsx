@@ -19,6 +19,7 @@ import { BoardMenu } from './BoardMenu'
 import { DetailPanel } from './DetailPanel'
 import { useGuides } from './guides'
 import { useSnap } from './snap'
+import { TITLE_W, estimateTitleHalf, isTitle } from './titleBlock'
 import { copied } from '../../data/selection'
 import { editLocked, useViewer } from '../workspace/viewerLock'
 import styles from './BoardView.module.css'
@@ -82,8 +83,13 @@ export function BoardView() {
   }, [all, competitors, wid])
 
   // The jump list (D-050), in reading order: top to bottom, then left to right. Notes aren't places (D-116).
-  const places = useMemo(() => labels.filter((l) => l.text.trim() && l.size !== 'note').sort((a, b) => b.y - a.y || a.x - b.x), [labels])
-  const jump = (l: WithId<Label>) => useCanvas.getState().flyTo([l.x, l.y - LAND_BELOW])
+  // The title block (D-118) is a place too, under the workspace's name.
+  const places = useMemo(
+    () => labels.filter((l) => isTitle(l) || (l.text.trim() && l.size !== 'note')).sort((a, b) => b.y - a.y || a.x - b.x),
+    [labels],
+  )
+  const jump = (l: WithId<Label>) => useCanvas.getState().flyTo(isTitle(l) ? [l.x, l.y] : [l.x, l.y - LAND_BELOW])
+  const title = labels.find(isTitle)
 
   // Escape deselects; 0 frames the whole board; g switches snapping to the grid (D-112); 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);
   // leaving the board clears selection.
@@ -136,6 +142,18 @@ export function BoardView() {
     select(id)
   }
 
+  // The project's title block (D-118), one per board: over the top-left of everything on it, or mid-view on an empty board.
+  const addTitle = async () => {
+    const [, hh] = estimateTitleHalf(ws.workspace.name, ws.workspace.description ?? '')
+    const pts = [...all, ...labels]
+    const at: [number, number] = pts.length
+      ? [Math.min(...pts.map((p) => p.x)) - 1.2 + TITLE_W / 2, Math.max(...pts.map((p) => p.y)) + 1.5 + hh]
+      : useCanvas.getState().viewCenter()
+    const id = await createLabel(wid, { text: '', kind: 'title', x: at[0], y: at[1] })
+    select(id)
+    useCanvas.getState().flyTo(at)
+  }
+
   const add = (type: NewThing) => {
     const center = useCanvas.getState().viewCenter()
     // Clear of every card, including filtered-out ones.
@@ -146,7 +164,7 @@ export function BoardView() {
     <main className={styles.page}>
       <Board wid={wid} nodes={nodes} edges={edges} labels={labels} competitorFeatures={competitorFeatures} focus={focus} />
 
-      <FilterBar links goTo={places.map((l) => ({ key: l.id, label: l.text.trim(), onSelect: () => jump(l) }))} />
+      <FilterBar links goTo={places.map((l) => ({ key: l.id, label: isTitle(l) ? ws.workspace.name : l.text.trim(), onSelect: () => jump(l) }))} />
 
       {/* One create button for everything (D-053); viewers make nothing (D-098). */}
       <footer className={styles.tools} data-preview-hide>
@@ -168,6 +186,7 @@ export function BoardView() {
               })),
               { key: 'board', heading: 'on the board' },
               { key: 'text', label: 'text', glyph: 'T', hint: 'jump point', onSelect: () => add('text') },
+              ...(title ? [] : [{ key: 'title', label: 'project title', glyph: '✦', hint: 'name + about', onSelect: () => void addTitle() }]),
             ]}
           />}
           {/* The whole board back in view, as when it opens (D-060). */}

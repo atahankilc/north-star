@@ -21,6 +21,7 @@ import { pieceOf } from './groupDrag'
 import { useGuides } from './guides'
 import { EDGE_KINDS, LINK_TONE, linkStyle } from './linkKinds'
 import { snapPoint, useSnap } from './snap'
+import { editTitle, isTitle } from './titleBlock'
 import styles from './BoardMenu.module.css'
 
 const MOD = navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl+'
@@ -242,20 +243,33 @@ function rowsFor(target: MenuTarget, at: [number, number], ws: WorkspaceCtx, cre
   const label = target.kind === 'label' ? ws.labels.find((l) => l.id === target.id) : undefined
   const item = target.kind === 'card' ? findItem(ws, target.id) : null
   if (!label && !item) return []
-  const heading = many ? `${ids.length} selected` : label ? 'text' : BOARD_KINDS[item!.type].label
+  // The title block (D-118): edit its name or description; it isn't copied (one per board), and deleting takes it off the board only.
+  const title = !many && !!label && isTitle(label)
+  const heading = many ? `${ids.length} selected` : title ? 'project title' : label ? 'text' : BOARD_KINDS[item!.type].label
   const zoom: Row = { key: 'zoom', label: 'zoom to', run: () => zoomTo(ids) }
   if (locked) return [{ key: 'h', heading }, zoom]
   return [
     { key: 'h', heading },
-    ...(label && !many ? [{ key: 'edit', label: 'edit text', run: () => useCanvas.getState().setEditingLabel(label.id) } as Row] : []),
+    ...(title
+      ? [
+          { key: 'edit', label: 'edit name', run: () => editTitle('name') } as Row,
+          { key: 'about', label: 'edit description', run: () => editTitle('description') } as Row,
+        ]
+      : label && !many
+        ? [{ key: 'edit', label: 'edit text', run: () => useCanvas.getState().setEditingLabel(label.id) } as Row]
+        : []),
     // The selection is what's copied; opening the menu made it this.
-    { key: 'copy', label: 'copy', hint: `${MOD}C`, run: () => copySelection(ws) },
-    { key: 'dup', label: 'duplicate', hint: `${MOD}D`, run: () => void duplicateSelection(ws) },
+    ...(title
+      ? []
+      : [
+          { key: 'copy', label: 'copy', hint: `${MOD}C`, run: () => copySelection(ws) } as Row,
+          { key: 'dup', label: 'duplicate', hint: `${MOD}D`, run: () => void duplicateSelection(ws) } as Row,
+        ]),
     zoom,
     { key: 'r', rule: true },
     {
       key: 'delete',
-      label: 'delete',
+      label: title ? 'remove from board' : 'delete',
       hint: '⌫',
       danger: true,
       run: () => {
