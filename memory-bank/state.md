@@ -328,8 +328,12 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   above the small box, side panels glide when the tall chat closes). Verified headless.
   Then: a side panel knocks the orb aside on the small box; the tall chat slides whole on open/close; the orb is 1.5× on the
   tall chat. Verified headless.
-- Next in the redesign (with the user): the preview's look on the stage (bar, frame, marks) and the report screen's, the
-  steps/streaming states, narrow screens (below 760 px the chat still covers the stage).
+- D-096: the preview's look: diff signs and colours (`--diff-*`) instead of name tags, deleted items grey and struck, moved
+  cards' ghosts, new links in the new colour, `was` + old values under edits, frame-all on open, a stepper (`‹ n/N ›`, n/p)
+  and rows lit both ways between chat and stage, the stage as one box with its title in the top edge. Verified headless,
+  dark and light. Not committed yet.
+- Next in the redesign (with the user): the report screen's look on the stage, the steps/streaming states, narrow screens
+  (below 760 px the chat still covers the stage).
 
 ## Done (settings reorganised, 2026-10-18)
 - D-097: grouped menu (you: account, display · workspace: general, people, export · assistant: keys, usage), page title +

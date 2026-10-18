@@ -23,7 +23,7 @@ type Staged = { preview: StagedPreview | null; reportId: string | null }
 // What the stores ask for: a preview wins over a report (they close each other anyway, ReportView).
 function wanted(): Staged {
   const p = usePreview.getState()
-  if (p.ws && p.messageId !== null) return { preview: { messageId: p.messageId, ws: p.ws, marks: p.marks, count: p.count }, reportId: null }
+  if (p.sim && p.messageId !== null) return { preview: { ...p.sim, messageId: p.messageId, count: p.count }, reportId: null }
   return { preview: null, reportId: useChat.getState().reportOpen }
 }
 

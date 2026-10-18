@@ -18,6 +18,8 @@ type CanvasState = {
   focusOn: (at: Vec2) => void
   // Set by the board once mounted: glide the camera to a point (jump list, D-050). Instant under reduced motion.
   flyTo: (at: Vec2) => void
+  // Set by the board once mounted: glide so the box [x0, y0, x1, y1] fills the view, within the zoom limits (D-096).
+  flyToFit: (box: [number, number, number, number]) => void
   // The text label being typed into on the board, if any.
   editingLabel: string | null
   // Set by the board while mounted: the whole board as a PNG (D-080).
@@ -32,6 +34,7 @@ type CanvasState = {
   setViewCenter: (fn: () => Vec2) => void
   setFocusOn: (fn: (at: Vec2) => void) => void
   setFlyTo: (fn: (at: Vec2) => void) => void
+  setFlyToFit: (fn: (box: [number, number, number, number]) => void) => void
   setEditingLabel: (id: string | null) => void
   setSnapshot: (fn: (() => Promise<Blob>) | null) => void
 }
@@ -45,6 +48,7 @@ export const useCanvas = create<CanvasState>((set) => ({
   viewCenter: () => [0, 0],
   focusOn: () => {},
   flyTo: () => {},
+  flyToFit: () => {},
   editingLabel: null,
   snapshot: null,
 
@@ -63,6 +67,7 @@ export const useCanvas = create<CanvasState>((set) => ({
   setViewCenter: (fn) => set({ viewCenter: fn }),
   setFocusOn: (fn) => set({ focusOn: fn }),
   setFlyTo: (fn) => set({ flyTo: fn }),
+  setFlyToFit: (fn) => set({ flyToFit: fn }),
   setEditingLabel: (id) => set({ editingLabel: id }),
   setSnapshot: (fn) => set({ snapshot: fn }),
 }))

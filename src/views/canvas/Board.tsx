@@ -1,5 +1,5 @@
 // The board scene: every item type on one canvas (D-040), 2.5D (D-018) with pan/zoom camera, cards and connections.
-import { OrbitControls } from '@react-three/drei'
+import { Line, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -19,8 +19,8 @@ import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
 import { FOR, type CompetitorFeature, type Edge, type Label } from '../../data/model'
 import { usePresence } from '../../data/presence'
-import { markTag } from '../workspace/preview'
-import { useStagedMarks } from '../workspace/stage'
+import { wasLine } from '../workspace/preview'
+import { usePreviewFocus, useStage } from '../workspace/stage'
 import { useCanvas } from '../../state/canvasStore'
 import { isReducedMotion } from '../../state/motion'
 import { usePalette } from '../../state/theme'
@@ -57,6 +57,9 @@ const MIN_FIT = 9
 const MAX_DISTANCE = 150
 // Room left for the HUD and filters above, the toolbar below (in px), and a margin around the cards (in board units).
 const CHROME_PX = 170
+
+// Where the camera glides: a point, and a distance when it frames something.
+type Flight = [number, number, number?]
 const MARGIN = 1.2
 
 // Feature chips fan out to the right of their competitor, top-aligned with it.
@@ -163,7 +166,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   const linkPointer = useCanvas((s) => s.linkPointer)
   const { select, moveLink, endLink, setViewCenter } = useCanvas.getState()
   // Where the camera is gliding to, if anywhere (jump list).
-  const flight = useRef<[number, number] | null>(null)
+  // A distance too when it frames something (D-096).
+  const flight = useRef<Flight | null>(null)
 
   useEffect(() => {
     if (!controls) return
@@ -174,12 +178,17 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
       controls.update()
     }
     useCanvas.getState().setFocusOn(jump)
-    useCanvas.getState().setFlyTo((at) => {
-      if (isReducedMotion()) return jump(at)
+    const fly = (at: Flight) => {
+      if (isReducedMotion()) {
+        if (at[2] !== undefined) camera.position.z = at[2]
+        return jump([at[0], at[1]])
+      }
       flight.current = at
       // The board draws on demand: without a first frame the glide below never starts.
       invalidate()
-    })
+    }
+    useCanvas.getState().setFlyTo((at) => fly(at))
+    useCanvas.getState().setFlyToFit((box) => fly(fitLatest.current(box)))
   }, [controls, camera, setViewCenter, invalidate])
 
   // Glide toward the flight target; any pan or zoom of your own takes over.
@@ -197,9 +206,10 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     const y = MathUtils.damp(controls.target.y, to[1], 5, dt)
     camera.position.x += x - controls.target.x
     camera.position.y += y - controls.target.y
+    if (to[2] !== undefined) camera.position.z = MathUtils.damp(camera.position.z, to[2], 5, dt)
     controls.target.set(x, y, 0)
     controls.update()
-    if (Math.hypot(to[0] - x, to[1] - y) < 0.01) flight.current = null
+    if (Math.hypot(to[0] - x, to[1] - y) < 0.01 && (to[2] === undefined || Math.abs(to[2] - camera.position.z) < 0.02)) flight.current = null
     else invalidate()
   })
 
@@ -222,11 +232,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [controls])
 
-  // Frame every card and label, as close as the zoom limits allow.
-  function fitAll() {
-    const bounds = boardBounds(nodes, labels)
-    if (!controls || !bounds) return
-    const [x0, y0, x1, y1] = bounds
+  // Where the camera looks, and from how far, to frame a box as closely as the zoom limits allow.
+  function fitView([x0, y0, x1, y1]: [number, number, number, number]): Flight {
     const fov = ((camera as { fov?: number }).fov ?? 40) * (Math.PI / 180)
     const tan = Math.tan(fov / 2)
     const usable = Math.max(0.3, (size.height - CHROME_PX) / size.height)
@@ -234,8 +241,19 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     const cx = (x0 + x1) / 2
     // The HUD covers more of the top than the toolbar covers of the bottom: nudge the view up a little.
     const cy = (y0 + y1) / 2 + ((y1 - y0) / 2) * (1 - usable) * 0.3
+    return [cx, cy, MathUtils.clamp(distance, MIN_FIT, MAX_DISTANCE)]
+  }
+
+  const fitLatest = useRef(fitView)
+  fitLatest.current = fitView
+
+  // Frame every card and label.
+  function fitAll() {
+    const bounds = boardBounds(nodes, labels)
+    if (!controls || !bounds) return
+    const [cx, cy, z] = fitView(bounds)
     controls.target.set(cx, cy, 0)
-    camera.position.set(cx, cy, MathUtils.clamp(distance, MIN_FIT, MAX_DISTANCE))
+    camera.position.set(cx, cy, z!)
     controls.update()
   }
 
@@ -285,15 +303,17 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   // A selected customer lights up everything tagged for it (D-044).
   const customerId = selected?.type === 'customer' ? selected.id : null
   // What collaborators have selected: a ring per person in their colour, and their names (D-065, D-067).
-  // The assistant's preview (D-087) marks cards the same way, as the first ring.
   const peers = usePresence((s) => s.peers)
-  const marks = useStagedMarks()
   const peerSelection = useMemo(() => {
     const map = new Map<string, { name: string; color: string }[]>()
-    for (const [id, m] of marks) map.set(id, [markTag(m)])
     for (const p of peers) if (p.sel) map.set(p.sel, [...(map.get(p.sel) ?? []), { name: p.name, color: p.color }])
     return map
-  }, [peers, marks])
+  }, [peers])
+  // The assistant's preview (D-096): marks, what edits replaced, where moved cards were, the lit checklist row.
+  const palette = usePalette()
+  const preview = useStage((s) => s.preview)
+  const litN = usePreviewFocus((f) => f.lit)
+  const litIds = useMemo(() => new Set(preview?.steps.find((st) => st.n === litN)?.ids ?? []), [preview, litN])
 
   const onLinkDrop = (targetId: string) => {
     const fromId = useCanvas.getState().linkFrom
@@ -357,7 +377,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
       </mesh>
 
       {labels.map((l) => (
-        <BoardLabel key={l.id} wid={wid} label={l} />
+        <BoardLabel key={l.id} wid={wid} label={l} mark={preview?.marks.get(l.id)} was={wasLine(preview?.before.get(l.id))} lit={litIds.has(l.id)} />
       ))}
 
       {lines.map(({ edge, from, to, active }) => (
@@ -369,6 +389,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
           toHalf={chips.has(to) ? CHIP_HALF : CARD_HALF}
           kind={edge.kind}
           active={active}
+          tint={edge.id.startsWith('preview-') ? palette.diff.new : undefined}
         />
       ))}
 
@@ -389,10 +410,54 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
           related={customerId !== null && node.forIds.includes(customerId)}
           stack={node.type === 'competitor' && openId !== node.id ? (theirs.get(node.id)?.length ?? 0) : 0}
           peers={peerSelection.get(node.id)}
+          mark={preview?.marks.get(node.id)}
+          was={wasLine(preview?.before.get(node.id))}
+          lit={litIds.has(node.id)}
           onLinkDrop={onLinkDrop}
         />
       ))}
+
+      {/* Where a moved card was: a dashed outline and a line to where it goes. */}
+      {preview &&
+        nodes.map((node) => {
+          const was = preview.from.get(node.id)
+          return was ? <MoveGhost key={`ghost-${node.id}`} from={was} to={[node.x, node.y]} color={palette.diff.moved} lit={litIds.has(node.id)} /> : null
+        })}
     </>
+  )
+}
+
+// A moved card's old place in the assistant's preview (D-096).
+function MoveGhost({ from, to, color, lit }: { from: [number, number]; to: [number, number]; color: string; lit: boolean }) {
+  const [hw, hh] = CARD_HALF
+  const corners: [number, number, number][] = [
+    [from[0] - hw, from[1] + hh, 0],
+    [from[0] + hw, from[1] + hh, 0],
+    [from[0] + hw, from[1] - hh, 0],
+    [from[0] - hw, from[1] - hh, 0],
+    [from[0] - hw, from[1] + hh, 0],
+  ]
+  const far = Math.hypot(to[0] - from[0], to[1] - from[1]) > Math.hypot(hw, hh) * 2
+  return (
+    <group position={[0, 0, -0.06]}>
+      <Line points={corners} color={color} lineWidth={lit ? 2 : 1} dashed dashSize={0.12} gapSize={0.08} transparent opacity={lit ? 0.9 : 0.55} toneMapped={false} />
+      {far && (
+        <Line
+          points={[
+            [from[0], from[1], 0],
+            [to[0], to[1], 0],
+          ]}
+          color={color}
+          lineWidth={lit ? 1.6 : 1}
+          dashed
+          dashSize={0.12}
+          gapSize={0.12}
+          transparent
+          opacity={lit ? 0.8 : 0.35}
+          toneMapped={false}
+        />
+      )}
+    </group>
   )
 }
 

@@ -21,10 +21,10 @@ import type { NodeType } from '../data/model'
 import { workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
 import { useMotion } from '../state/motion'
-import { themeAccent, useTheme } from '../state/theme'
 import { useWs } from '../views/workspace/context'
-import { MARK_COLOR, OutsidePreview, usePreview, type Mark } from '../views/workspace/preview'
-import { useStage } from '../views/workspace/stage'
+import { MARK_SIGN, MARK_VAR, OutsidePreview, usePreview, type Mark } from '../views/workspace/preview'
+import { stepBy } from '../views/workspace/previewNav'
+import { usePreviewFocus, useStage } from '../views/workspace/stage'
 import { lockApp } from '../views/workspace/previewLock'
 import { AiKeyForm, KEY_PRIVACY } from './AiSettings'
 import { AiOrb, type OrbCue, type OrbMood } from './AiOrb'
@@ -652,14 +652,19 @@ function ModeMenu({ modes, pick, selected, onChoose }: { modes: Mode[]; pick: nu
   )
 }
 
-// While the preview is open (D-087): a frame around the app and a bar saying what you're looking at, with the marks'
-// colours. Esc closes it. Drawn inside the app's box, so it stays clear of the assistant's window.
+// While the preview is open (D-087, D-096): the stage is one box, like the chat's own boxes, with its title written into
+// its top edge: what you're looking at and how many of each change, this workspace's views, a stepper through the
+// checklist's rows (‹ n/N ›, or n and p) and esc. Drawn inside the app's box, so it stays clear of the assistant's window.
 function PreviewBar() {
   // What's on the stage (D-094), which trails what was asked for while the app makes way.
   const showing = useStage((s) => s.preview !== null)
   const wid = useStage((s) => s.preview?.ws.wid)
   const count = useStage((s) => s.preview?.count ?? 0)
-  const theme = useTheme((s) => s.theme)
+  const marks = useStage((s) => s.preview?.marks)
+  // A competitor's own features go with it but never show on their own: count what you can see.
+  const hidden = useStage((s) => s.preview?.ws.competitorFeatures)
+  const steps = useStage((s) => s.preview?.steps.length ?? 0)
+  const step = usePreviewFocus((f) => f.step)
   const [host, setHost] = useState<Element | null>(null)
   useEffect(() => setHost(document.querySelector('[data-app]')), [])
   // The app becomes a bare preview screen meanwhile: no HUD, filters or tools, nothing editable (previewLock.ts).
@@ -667,24 +672,45 @@ function PreviewBar() {
   useEffect(() => {
     if (!showing) return
     const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key !== 'Escape') return
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        usePreview.getState().close()
+        return
+      }
+      // n / p step through the changes, unless you're typing (the chat's prompt stays live beside the stage).
+      const t = e.target as HTMLElement | null
+      if (e.metaKey || e.ctrlKey || e.altKey || t?.closest('input, textarea, select, [contenteditable="true"]')) return
+      const k = e.key.toLowerCase()
+      if (k !== 'n' && k !== 'p') return
       e.preventDefault()
-      e.stopImmediatePropagation()
-      usePreview.getState().close()
+      stepBy(k === 'n' ? 1 : -1)
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
   }, [showing])
   if (!showing || !host || !wid) return null
+  // How many of each, in the checklist's signs and the diff colours (only the kinds this preview has).
+  const tally = (['new', 'edited', 'moved', 'deleted'] as Mark[])
+    .map((m) => ({ m, n: [...(marks?.entries() ?? [])].filter(([id, x]) => x === m && !hidden?.some((f) => f.id === id)).length }))
+    .filter((t) => t.n > 0)
   return createPortal(
     <>
       <div className={styles.previewFrame} aria-hidden />
       {/* In the HUD's place: the only way around is between this workspace's views. */}
       <div className={styles.previewBar} role="status" data-preview-bar>
-        <span className={styles.previewTitle}>preview</span>
-        <span className={styles.previewCount}>
-          {count} change{count === 1 ? '' : 's'} as if applied · nothing is written yet
+        <span className={styles.previewTitle}>
+          preview · {count} change{count === 1 ? '' : 's'}
         </span>
+        <span className={styles.previewKey} title="nothing is written until you apply">
+          {tally.map(({ m, n }) => (
+            <span key={m} style={{ color: MARK_VAR[m] }} title={`${n} ${m}`}>
+              {MARK_SIGN[m]}
+              {n}
+            </span>
+          ))}
+        </span>
+        <span className={styles.previewRule} />
         <nav className={styles.previewViews} aria-label="Preview views">
           {(['board', 'flow', 'table', 'matrix'] as const).map((v) => (
             <NavLink key={v} to={workspacePath(wid, v === 'board' ? undefined : v)} end={v === 'board'}>
@@ -692,15 +718,23 @@ function PreviewBar() {
             </NavLink>
           ))}
         </nav>
-        <span className={styles.previewKey}>
-          {(Object.keys(MARK_COLOR) as Mark[]).map((m) => (
-            <span key={m} style={{ color: themeAccent(MARK_COLOR[m], theme) }}>
-              ■ {m}
+        <span className={styles.previewRule} />
+        {steps > 0 && (
+          <span className={styles.previewStepper}>
+            <button onClick={() => stepBy(-1)} aria-label="Previous change (p)" title="previous · p">
+              ‹
+            </button>
+            <span className={styles.previewStep}>
+              {step === null ? '–' : step + 1}/{steps}
             </span>
-          ))}
-        </span>
-        <button className={styles.action} onClick={() => usePreview.getState().close()}>
-          close · esc
+            <button onClick={() => stepBy(1)} aria-label="Next change (n)" title="next · n">
+              ›
+            </button>
+          </span>
+        )}
+        <span className={styles.previewRuleShort} />
+        <button className={styles.previewClose} onClick={() => usePreview.getState().close()}>
+          esc
         </button>
       </div>
     </>,

@@ -761,7 +761,7 @@ Functional first: the user will redesign the assistant UI and how the preview lo
 - *Showing it* (`src/views/workspace/preview.ts`): a store with the previewed workspace; `useWs()` returns it everywhere except inside
   `<OutsidePreview>` (the assistant's window, which keeps the real one). So board, flow, table and matrix all show it with no
   changes of their own. Marks reuse the collaborator-selection marks (D-067/D-068: rings and a name tag in cyan / yellow / blue /
-  magenta).
+  magenta; replaced by diff signs and colours, D-096).
 - *A bare screen (user, second pass):* while open, the app's HUD, filters and board tools (`+`, hints) are hidden, so you can't
   leave the workspace from it; a bar takes the HUD's place: `PREVIEW · N changes as if applied`, the four view tabs (within this
   workspace), the colour key and `close · esc`; a cyan frame around it.
@@ -1018,4 +1018,32 @@ eye; hints sat at the left edge under a row instead of beside it; the workspace 
 - *Colour:* new token `--fg-muted` (dark #9a9a9a, light #555555) for help text; usage tables, card details, times and
   "you're the owner" moved off `--fg-faint`.
 - Row labels are lowercase names, not uppercase labels: they read as the setting itself; section labels stay uppercase (D-093).
+
+### D-096 · 2026-10-18 · Accepted (changes D-087's marks and bar; second step of the assistant redesign)
+**The preview marks changes as diffs, shows what an edit replaced, and lets you step through the changes.** User feedback
+on the first look: the marks used the type colours (magenta = problem and deleted, cyan = feature and new, yellow =
+competitor and edited) and looked like collaborators' name tags; deleted items looked alive; an edit didn't show what it
+replaced; the board glided to the first change and left the rest off screen. The user's picks:
+- *Marks (user: diff signs, still colour-coded):* the checklist's signs, `+` new, `~` edited, `→` moved, `−` deleted, in diff
+  colours of their own (`--diff-*`, lime / orange / blue / red, darker in light; `palettes.*.diff` in WebGL). On a board card:
+  a sign badge in the top-right corner and a ring; in Table a sign after the type and a bar down the row; in Flow a ring and a
+  sign beside the chip; in the matrix a ring and sign inside the cell, struck headers. A deleted item stays, grey and struck
+  through. A moved card leaves a dashed ghost where it was with a line to its new place; links the proposal adds are drawn in
+  the new colour; board labels get an underline and sign. In the chat's checklist the sign takes the diff colour and the kind
+  word the type colour. Collaborator rings and name tags show only people again.
+- *Old values (user: under the new):* an edit keeps what it replaced (`before` in `src/ai/simulate.ts`): a `was …` strip
+  under the board card (title, else the first changed field), `was` + the old value struck under each changed Table cell and
+  Flow chip, `○→◐` in a matrix cell, `was …` under a renamed label.
+- *Getting around (user: stepper + linked rows):* opening frames every change (`flyToFit` on the board). `‹ n/N ›` in the bar,
+  or n / p when you're not typing, steps through the checklist's rows (`steps` from simulate: the ids each row touches): the
+  board glides to frame that row's items (never closer than about 14 × 8 units), other views scroll to them (`data-mark-id`),
+  the row lights in the chat and scrolls into view. Hovering a row lights its items on the stage (thick ring, filled sign,
+  row wash); hovering a marked item lights its row. `usePreviewFocus` in stage.ts, kept apart from the preview so a hover
+  never restages it; `src/views/workspace/previewNav.ts`.
+- *Bar (user: a box like the chat's):* the stage is one cyan box with its title written into the top edge, like the
+  proposal box: `preview · N changes` and how many of each kind in their signs and colours (a competitor's hidden features
+  not counted), the four views, the stepper, `esc`. The matrix's editing hints are hidden while previewing.
+- Verified on emulators with headless Chrome and a fake OpenAI, dark and light, 1440: a six-row proposal (new idea + link,
+  rename, competitor delete, matrix cell, an area) on all four views; row hover lights the deleted competitor; n steps to the
+  rename (card framed with its `was` strip) and the delete (title struck); Esc → the real workspace; apply writes everything.
 

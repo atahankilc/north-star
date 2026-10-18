@@ -349,3 +349,40 @@ tr[data-selected='true'] .feature::before {
   justify-content: center;
   margin-top: 2px;
 }
+
+/* The assistant's preview (D-096): a changed cell gets a ring and its diff sign inside; an edit's old coverage is struck
+   through beside the new one. A deleted feature or competitor is struck through. */
+.cellMark {
+  position: absolute;
+  inset: 3px;
+}
+
+.cellSign {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: 13px;
+  min-width: 13px;
+  font-size: 10px;
+}
+
+/* Left of the new glyph: old → new. */
+.cellWas {
+  position: absolute;
+  top: 50%;
+  right: calc(50% + 7px);
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  transform: translateY(-50%);
+}
+
+.headMark {
+  margin-left: var(--space-1);
+  vertical-align: middle;
+}
+
+.compHead[data-mark='deleted'] a,
+.feature[data-mark='deleted'] a {
+  color: var(--fg-dim);
+  text-decoration: line-through;
+}

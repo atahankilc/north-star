@@ -180,7 +180,7 @@ type Resolved = { ref: ChangeRef; name: string; type: NodeType; isNew: boolean }
 
 const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
 // Models sometimes copy a ref with its brackets.
-const refKey = (v: unknown) => s(v)?.replace(/^\[|\]$/g, '')
+export const refKey = (v: unknown) => s(v)?.replace(/^\[|\]$/g, '')
 const clip = (t: string, n = 70) => (t.length > n ? `${t.slice(0, n - 1)}…` : t)
 
 // `labels`: the texts of the board's labels now, so label changes can be checked (D-086).
@@ -418,7 +418,7 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: 
 }
 
 // An arrange_area row's cards.
-const itemsOf = (raw: Raw): unknown[] => (Array.isArray(raw.items) ? raw.items : [])
+export const itemsOf = (raw: Raw): unknown[] => (Array.isArray(raw.items) ? raw.items : [])
 // Labels are named by their text: the same text, ignoring case and spaces at the ends.
 const sameLabel = (text: string, v: unknown) => text.trim().toLowerCase() === (s(v) ?? '').toLowerCase()
 

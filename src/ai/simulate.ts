@@ -1,15 +1,31 @@
 // A proposal applied in memory (D-087): the same writes `apply` would make (toWrites), played onto a copy of the
-// workspace, plus a mark per item or matrix cell they touch. Nothing reaches Firestore. Deleted items stay, marked,
-// so the preview can show what goes; what goes with them (links, matrix cells) is dropped.
+// workspace, plus a mark per item, matrix cell or label they touch. Nothing reaches Firestore. Deleted items and labels
+// stay, marked, so the preview can show what goes; what goes with them (links, matrix cells) is dropped.
+// For the preview's look (D-096) it also keeps what an edit replaced, where a moved card was, and which items each
+// checklist row touches (the stepper and the rows lit between chat and stage).
 import { cellId } from '../data/comparisons'
 import type { ChangeRef } from '../data/assistant'
 import type { NodeType } from '../data/model'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { Mark } from '../views/workspace/preview'
 import type { ItemRef } from './context'
-import { toWrites, type Change } from './tools'
+import { itemsOf, refKey, toWrites, type Change } from './tools'
 
 type Doc = { id: string } & Record<string, unknown>
+
+// One checklist row on the stage: its number in the proposal and the ids it touches (items, cells, labels), the one to
+// look at first.
+export type Step = { n: number; ids: string[] }
+
+export type Simulation = {
+  ws: WorkspaceCtx
+  marks: Map<string, Mark>
+  // Per edited item or cell: the fields an edit changed, with their values before.
+  before: Map<string, Record<string, unknown>>
+  // Per moved card or label: where it was.
+  from: Map<string, [number, number]>
+  steps: Step[]
+}
 
 const LIST: Record<NodeType, keyof WorkspaceCtx> = {
   customer: 'customers',
@@ -20,7 +36,9 @@ const LIST: Record<NodeType, keyof WorkspaceCtx> = {
   competitorFeature: 'competitorFeatures',
 }
 
-export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string, ItemRef>): { ws: WorkspaceCtx; marks: Map<string, Mark> } {
+const POSITION = new Set(['x', 'y'])
+
+export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string, ItemRef>): Simulation {
   const writes = toWrites(accepted, ws, refs)
   const now = Date.now()
   const lists = new Map<keyof WorkspaceCtx, Doc[]>()
@@ -29,6 +47,8 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
     return lists.get(k)!
   }
   const marks = new Map<string, Mark>()
+  const before = new Map<string, Record<string, unknown>>()
+  const from = new Map<string, [number, number]>()
   // Edited wins over moved; new and deleted win over both.
   const mark = (id: string, m: Mark) => {
     const was = marks.get(id)
@@ -36,30 +56,47 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
     marks.set(id, m)
   }
   const idOf = (r: ChangeRef) => ('id' in r ? r.id : `preview-${r.key}`)
+  // Applies `fields` and remembers what they replaced (the first value, if two rows touch the same field).
   const patch = (k: keyof WorkspaceCtx, id: string, fields: Record<string, unknown>) => {
     const l = list(k)
     const i = l.findIndex((d) => d.id === id)
-    if (i >= 0) l[i] = { ...l[i], ...fields, updatedAt: now }
-    return i >= 0
+    if (i < 0) return false
+    const old = l[i]
+    const changed = Object.keys(fields).filter((f) => !POSITION.has(f) && fields[f] !== old[f] && JSON.stringify(fields[f]) !== JSON.stringify(old[f]))
+    if (changed.length) before.set(id, { ...Object.fromEntries(changed.map((f) => [f, old[f]])), ...before.get(id) })
+    if ((fields.x !== undefined || fields.y !== undefined) && typeof old.x === 'number' && typeof old.y === 'number' && !from.has(id)) {
+      if (fields.x !== old.x || fields.y !== old.y) from.set(id, [old.x, old.y])
+    }
+    l[i] = { ...old, ...fields, updatedAt: now }
+    return true
   }
   const drop = (k: keyof WorkspaceCtx, gone: (d: Doc) => boolean) => lists.set(k, list(k).filter((d) => !gone(d)))
+  // The ids each write touches, for its row's step.
+  const touched: string[][] = []
 
   writes.forEach((w, n) => {
+    const ids: string[] = []
+    touched[n] = ids
     switch (w.do) {
       case 'create': {
         const id = idOf({ key: w.key, type: w.type })
         const parent = w.parent ? { competitorId: idOf(w.parent) } : {}
         list(LIST[w.type]).push({ ...w.fields, ...parent, id, createdAt: now, updatedAt: now })
         mark(id, 'new')
+        ids.push(id)
+        // A competitor's feature sits behind its card on the board: look at the card.
+        if (w.parent) ids.push(idOf(w.parent))
         break
       }
       case 'update':
         if (patch(LIST[w.target.type], w.target.id, w.fields)) {
-          mark(w.target.id, Object.keys(w.fields).every((k) => k === 'x' || k === 'y') ? 'moved' : 'edited')
+          mark(w.target.id, before.has(w.target.id) ? 'edited' : from.has(w.target.id) ? 'moved' : 'edited')
         }
+        ids.push(w.target.id)
         break
       case 'link':
         list('edges').push({ id: `preview-edge-${n}`, fromId: idOf(w.from), fromType: w.from.type, toId: idOf(w.to), toType: w.to.type, kind: w.kind, ...(w.label ? { label: w.label } : {}) })
+        ids.push(idOf(w.from), idOf(w.to))
         break
       case 'cell': {
         const featureId = idOf(w.feature)
@@ -70,28 +107,53 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
           list('comparisons').push({ ...w.fields, id, featureId, competitorId, updatedAt: now })
           mark(id, 'new')
         }
+        ids.push(id, featureId, competitorId)
         break
       }
       case 'delete': {
         // Like cascadeOf (src/data/nodes.ts): a competitor's own features go too; links and matrix cells go with them.
-        const ids = new Set([w.target.id])
-        if (w.target.type === 'competitor') for (const f of list('competitorFeatures')) if (f.competitorId === w.target.id) ids.add(f.id)
-        for (const id of ids) mark(id, 'deleted')
-        drop('edges', (e) => ids.has(e.fromId as string) || ids.has(e.toId as string))
-        drop('comparisons', (c) => ids.has(c.featureId as string) || ids.has(c.competitorId as string))
+        const gone = new Set([w.target.id])
+        if (w.target.type === 'competitor') for (const f of list('competitorFeatures')) if (f.competitorId === w.target.id) gone.add(f.id)
+        for (const id of gone) mark(id, 'deleted')
+        drop('edges', (e) => gone.has(e.fromId as string) || gone.has(e.toId as string))
+        drop('comparisons', (c) => gone.has(c.featureId as string) || gone.has(c.competitorId as string))
+        ids.push(w.target.id)
         break
       }
       case 'unlink':
+        for (const e of list('edges')) if (w.edgeIds.includes(e.id)) ids.push(e.fromId as string, e.toId as string)
         drop('edges', (e) => w.edgeIds.includes(e.id))
         break
       case 'label':
-        if (!w.id) list('labels').push({ ...w.fields, id: `preview-label-${n}`, createdAt: now, updatedAt: now })
-        else patch('labels', w.id, w.fields)
+        if (!w.id) {
+          const id = `preview-label-${n}`
+          list('labels').push({ ...w.fields, id, createdAt: now, updatedAt: now })
+          mark(id, 'new')
+          ids.push(id)
+        } else {
+          patch('labels', w.id, w.fields)
+          mark(w.id, before.has(w.id) ? 'edited' : 'moved')
+          ids.push(w.id)
+        }
         break
+      // Kept on the board, marked, like a deleted card.
       case 'unlabel':
-        drop('labels', (l) => l.id === w.id)
+        mark(w.id, 'deleted')
+        ids.push(w.id)
         break
     }
   })
-  return { ws: { ...ws, ...Object.fromEntries(lists) }, marks }
+
+  // The first writes are the rows, in order (toWrites); an area's row also covers the cards it gathers.
+  const steps = accepted.map((c, i): Step => {
+    const ids = [...(touched[i] ?? [])]
+    if (c.raw.op === 'arrange_area') {
+      for (const v of itemsOf(c.raw)) {
+        const k = refKey(v)
+        if (k) ids.push(refs.get(k)?.id ?? `preview-${k}`)
+      }
+    }
+    return { n: c.n, ids: [...new Set(ids)] }
+  })
+  return { ws: { ...ws, ...Object.fromEntries(lists) }, marks, before, from, steps }
 }

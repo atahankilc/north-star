@@ -40,12 +40,14 @@ type Props = {
   toHalf: Vec2
   kind?: string
   active?: boolean
+  // A link the assistant's preview adds, in its diff colour (D-096).
+  tint?: string
 }
 
-export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', active }: Props) {
+export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', active, tint }: Props) {
   const style = STYLE[kind] ?? { label: kind }
   const colors = usePalette()
-  const color = active ? colors.cyan : style.faint ? colors.edgeFaint : colors.edge
+  const color = tint ?? (active ? colors.cyan : style.faint ? colors.edgeFaint : colors.edge)
 
   const { start, end, angle, mid } = useMemo(() => {
     const s = exit(from, to, fromHalf)
@@ -81,7 +83,7 @@ export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', active 
             <planeGeometry args={[style.label.length * 0.062 + 0.12, 0.16]} />
             <meshBasicMaterial color={colors.bg} toneMapped={false} />
           </mesh>
-          <Text font={fontUrls.mono} fontSize={0.09} letterSpacing={0.04} color={active ? colors.cyan : colors.edgeLabel} anchorX="center" anchorY="middle">
+          <Text font={fontUrls.mono} fontSize={0.09} letterSpacing={0.04} color={tint ?? (active ? colors.cyan : colors.edgeLabel)} anchorX="center" anchorY="middle">
             {style.label}
           </Text>
         </group>

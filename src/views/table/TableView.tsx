@@ -16,7 +16,8 @@ import { FilterBar } from '../workspace/FilterBar'
 import { linkSummary, useSelectionScope } from '../workspace/graph'
 import { ForPicker } from '../workspace/ItemPickers'
 import { ItemTags } from '../workspace/ItemTags'
-import { RowPeers } from '../workspace/PeerMarks'
+import { MarkSign, markHoverOf, RowPeers, Was } from '../workspace/PeerMarks'
+import { usePreviewFocus, useStage } from '../workspace/stage'
 import styles from './TableView.module.css'
 
 type SortKey = 'name' | 'tags' | 'for' | 'links' | 'pri' | 'status'
@@ -36,6 +37,9 @@ export function TableView() {
   const all = useBoardItems()
   const visible = useVisibleItems(all)
   const selectedId = useCanvas((s) => s.selectedId)
+  const preview = useStage((s) => s.preview)
+  const litN = usePreviewFocus((f) => f.lit)
+  const litIds = useMemo(() => new Set(preview?.steps.find((st) => st.n === litN)?.ids ?? []), [preview, litN])
   const select = useCanvas((s) => s.select)
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 } | null>(null)
   const [open, setOpen] = useState<string | null>(null)
@@ -139,10 +143,14 @@ export function TableView() {
                 {g.rows.map((r) => {
                   const key = `${g.id}:${r.item.id}`
                   const { item } = r
+                  // The assistant's preview (D-096): a bar and sign in the change's colour, old values under the new.
+                  const mark = preview?.marks.get(item.id)
+                  const before = preview?.before.get(item.id)
+                  const lit = litIds.has(item.id)
                   const setName = (v: string) =>
                     void updateNode(wid, item.type, item.id, (item.type === 'competitor' ? { name: v.trim() } : { title: v.trim() }) as never)
                   return (
-                    <tr key={key} data-selected={selectedId === item.id}>
+                    <tr key={key} data-selected={selectedId === item.id} data-mark={mark} data-mark-id={mark ? item.id : undefined} data-lit={lit || undefined} {...markHoverOf(item.id, mark)}>
                       <td className={styles.typeCell}>
                         <button
                           className={styles.type}
@@ -152,15 +160,19 @@ export function TableView() {
                         >
                           {BOARD_KINDS[item.type].label}
                         </button>
+                        {mark && <MarkSign mark={mark} lit={lit} className={styles.mark} />}
+                        {mark && <span className={styles.markBar} aria-hidden />}
                         <RowPeers id={item.id} />
                       </td>
                       <td className={styles.nameCell}>
                         <AutosaveField className={styles.name} label="Name" placeholder="Untitled" value={item.title} onSave={setName} />
+                        <Was before={before} field={['title', 'name']} className={styles.was} />
                       </td>
                       <td className={styles.tagsCell}>
                         <Popover id={`${key}:tags`} open={open} setOpen={setOpen} text={item.tags.map((t) => `#${t}`).join(' ')}>
                           <ItemTags item={item} />
                         </Popover>
+                        <Was before={before} field="tags" className={styles.was} />
                       </td>
                       <td>
                         {item.type === 'customer' ? (
@@ -184,6 +196,7 @@ export function TableView() {
                             onChange={(v) => void updateNode(wid, 'feature', item.id, { priority: (v || undefined) as Feature['priority'] })}
                           />
                         )}
+                        <Was before={before} field="priority" className={styles.was} />
                       </td>
                       <td>
                         {r.feature && (
@@ -195,6 +208,7 @@ export function TableView() {
                             onChange={(v) => void updateNode(wid, 'feature', item.id, { status: (v || undefined) as Feature['status'] })}
                           />
                         )}
+                        <Was before={before} field="status" className={styles.was} />
                       </td>
                     </tr>
                   )

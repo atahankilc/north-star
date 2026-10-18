@@ -5,21 +5,16 @@ import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { usePresence, type Peer } from '../../data/presence'
 import { themeAccent, useTheme } from '../../state/theme'
-import { markTag } from './preview'
-import { useStage } from './stage'
+import { MARK_SIGN, MARK_VAR, type Mark } from './preview'
+import { markHover, useMarkOf } from './stage'
 import styles from './PeerMarks.module.css'
 
 // Everyone who has `id` selected, stable between renders while that doesn't change. Colours come in the current
 // theme's shade (D-069), so everything below can use `p.color` as is.
-// The assistant's preview (D-087) marks what a change does to the item the same way, first.
 export function usePeersOn(id: string): Peer[] {
   const peers = usePresence(useShallow((s) => s.peers.filter((p) => p.sel === id)))
-  const mark = useStage((s) => s.preview?.marks.get(id))
   const theme = useTheme((s) => s.theme)
-  return useMemo(
-    () => [...(mark ? [markTag(mark) as Peer] : []), ...peers].map((p) => ({ ...p, color: themeAccent(p.color, theme) })),
-    [peers, mark, theme],
-  )
+  return useMemo(() => peers.map((p) => ({ ...p, color: themeAccent(p.color, theme) })), [peers, theme])
 }
 
 // Rings around an element, one per person, with a dark gap between: for `box-shadow`.
@@ -76,3 +71,45 @@ export function CellPeers({ id }: { id: string }) {
     </>
   )
 }
+
+// The assistant's preview (D-087, D-096): what a change does, as the checklist's diff sign in a diff colour. Filled while
+// its checklist row is lit (hovered in the chat, or the stepper's step).
+export function MarkSign({ mark, lit, className }: { mark: Mark; lit?: boolean; className?: string }) {
+  return (
+    <span className={`${styles.mark} ${className ?? ''}`} data-lit={lit || undefined} style={{ ['--mark' as string]: MARK_VAR[mark] }} title={mark}>
+      {MARK_SIGN[mark]}
+    </span>
+  )
+}
+
+// The same for one item, for places that render items in a loop.
+export function MarkOn({ id, className }: { id: string; className?: string }) {
+  const { mark, lit } = useMarkOf(id)
+  return mark ? <MarkSign mark={mark} lit={lit} className={className} /> : null
+}
+
+// A ring in the mark's colour, for `box-shadow` (thicker while lit).
+export const markRing = (mark: Mark | undefined, lit = false, inset = false) =>
+  mark ? `${inset ? 'inset ' : ''}0 0 0 ${lit ? 3 : 1}px ${MARK_VAR[mark]}` : undefined
+
+// What an edit replaced, in a few words: tags as #chips, nothing as "—".
+export function shownValue(v: unknown): string {
+  if (Array.isArray(v)) return v.length ? v.map((t) => `#${t}`).join(' ') : '—'
+  if (v === undefined || v === null || v === '') return '—'
+  const t = String(v).replace(/\s+/g, ' ').trim()
+  return t.length > 80 ? `${t.slice(0, 79)}…` : t
+}
+
+// The old value under the new one, struck through (D-096). Nothing when `field` wasn't changed.
+export function Was({ before, field, className }: { before: Record<string, unknown> | undefined; field: string | string[]; className?: string }) {
+  const key = (Array.isArray(field) ? field : [field]).find((f) => before && f in before)
+  if (!before || !key) return null
+  return (
+    <span className={`${styles.was} ${className ?? ''}`}>
+      <span className={styles.wasLabel}>was</span> <s>{shownValue(before[key])}</s>
+    </span>
+  )
+}
+
+// Hover handlers that light the item's checklist row, only for marked items.
+export const markHoverOf = (id: string, mark: Mark | undefined) => (mark ? markHover(id) : {})

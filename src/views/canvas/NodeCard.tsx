@@ -14,7 +14,8 @@ import { fontUrls } from '../../three/fonts'
 import { BOARD_KINDS, typeAccent, type BoardItem } from './boardKinds'
 import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
-import { isPreviewing } from '../workspace/preview'
+import { isPreviewing, MARK_SIGN, type Mark } from '../workspace/preview'
+import { markHover, unlight } from '../workspace/stage'
 import styles from './NodeCard.module.css'
 
 const BOARD = new Plane(new Vector3(0, 0, 1), 0)
@@ -39,10 +40,47 @@ type Props = {
   stack?: number
   // Collaborators who have this card selected, in their colours (D-065, D-067).
   peers?: { name: string; color: string }[]
+  // The assistant's preview (D-096): what a change does to it, an edit's old value in a few words, and whether its
+  // checklist row is lit.
+  mark?: Mark
+  was?: { label: string; value: string }
+  lit?: boolean
   onLinkDrop: (targetId: string) => void
 }
 
-export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], onLinkDrop }: Props) {
+// Where the lines of a text sit, from troika's caret positions (left, right, bottom, top per character): for strikes.
+type Strike = { x0: number; x1: number; y: number }
+type TextLayout = { caretPositions?: Float32Array }
+function strikesOf(info: TextLayout | undefined): Strike[] {
+  const c = info?.caretPositions
+  if (!c) return []
+  const lines = new Map<number, Strike>()
+  for (let i = 0; i < c.length; i += 4) {
+    const bottom = c[i + 2]
+    const key = Math.round(bottom * 1000)
+    const y = bottom + (c[i + 3] - bottom) * 0.42
+    const l = lines.get(key)
+    if (l) {
+      l.x0 = Math.min(l.x0, c[i], c[i + 1])
+      l.x1 = Math.max(l.x1, c[i], c[i + 1])
+    } else lines.set(key, { x0: Math.min(c[i], c[i + 1]), x1: Math.max(c[i], c[i + 1]), y })
+  }
+  return [...lines.values()].filter((l) => l.x1 > l.x0)
+}
+
+function StrikeLines({ strikes, color, z = 0.003 }: { strikes: Strike[]; color: string; z?: number }) {
+  return strikes.map((l, i) => (
+    <mesh key={i} position={[(l.x0 + l.x1) / 2, l.y, z]}>
+      <planeGeometry args={[l.x1 - l.x0 + 0.04, 0.014]} />
+      <meshBasicMaterial color={color} toneMapped={false} />
+    </mesh>
+  ))
+}
+
+const BADGE = 0.17
+const WAS_H = 0.24
+
+export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], mark, was, lit = false, onLinkDrop }: Props) {
   const type = node.type
   const W = CARD_W
   const H = CARD_H
@@ -70,7 +108,13 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
   const [x, y] = live ?? [node.x, node.y]
   const colors = usePalette()
   const tone = useThemeAccent()
-  const accent = typeAccent(type, colors)
+  const deleted = mark === 'deleted'
+  // A deleted card stays on the preview, greyed out (D-096).
+  const accent = deleted ? colors.fgDim : typeAccent(type, colors)
+  const markColor = mark ? colors.diff[mark] : undefined
+  // troika reports a text's layout only when it changes, so the title's is kept for whenever the card gets deleted.
+  const [titleLayout, setTitleLayout] = useState<TextLayout>()
+  const [wasStrikes, setWasStrikes] = useState<Strike[]>([])
 
   // The card stays flat and its size never changes (D-061): no lift or scale on hover, selection or drag, which also made
   // a dragged card land somewhere other than under the pointer. While dragging it sits exactly under the pointer;
@@ -164,10 +208,13 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
         e.stopPropagation()
         setHovered(true)
         document.body.style.cursor = e.shiftKey ? 'crosshair' : 'grab'
+        // Lights its row in the assistant's checklist (D-096).
+        if (mark) markHover(node.id).onPointerEnter()
       }}
       onPointerOut={() => {
         setHovered(false)
         document.body.style.cursor = ''
+        if (mark) unlight()
       }}
     >
       <group ref={content}>
@@ -200,6 +247,20 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
             </group>
           )
         })}
+        {/* The preview's mark (D-096): a ring in the change's colour, thicker while its checklist row is lit. */}
+        {markColor && (
+          // Takes in the "was" strip under the card too.
+          <group position={[0, was ? -(WAS_H + 0.02) / 2 : 0, -0.0025]}>
+            <mesh position={[0, 0, -0.0002]}>
+              <planeGeometry args={[W + (lit ? 0.2 : 0.11), H + (lit ? 0.2 : 0.11) + (was ? WAS_H + 0.02 : 0)]} />
+              <meshBasicMaterial color={markColor} toneMapped={false} />
+            </mesh>
+            <mesh>
+              <planeGeometry args={[W + 0.05, H + 0.05 + (was ? WAS_H + 0.02 : 0)]} />
+              <meshBasicMaterial color={colors.bg} toneMapped={false} />
+            </mesh>
+          </group>
+        )}
         {/* Edge: a hairline, or the highlight when hovered, selected, related or a link target. */}
         <mesh position={[0, 0, -0.002]}>
           <planeGeometry args={[W + (rim ? 0.05 : 0.02), H + (rim ? 0.05 : 0.02)]} />
@@ -231,7 +292,8 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
           material={textMaterial}
           font={fontUrls.display}
           fontSize={0.17}
-          color={title ? colors.fg : colors.fgDim}
+          color={title && !deleted ? colors.fg : colors.fgDim}
+          onSync={(t: { textRenderInfo?: TextLayout }) => setTitleLayout(t.textRenderInfo)}
           anchorX="left"
           anchorY="top"
           position={[left, titleTop, 0.002]}
@@ -240,6 +302,11 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
         >
           {truncate(title || 'Untitled', 44)}
         </Text>
+        {deleted && (
+          <group position={[left, titleTop, 0]}>
+            <StrikeLines strikes={strikesOf(titleLayout)} color={colors.diff.deleted} />
+          </group>
+        )}
         {tags && (
           <Text
             material={textMaterial}
@@ -265,6 +332,51 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
           >
             {truncate(node.meta, 42)}
           </Text>
+        )}
+        {/* The diff sign in the top-right corner: outlined, filled while lit. */}
+        {mark && markColor && (
+          <group position={[W / 2 - BADGE / 2 - 0.08, H / 2 - BADGE / 2 - 0.08, 0.002]}>
+            <mesh>
+              <planeGeometry args={[BADGE, BADGE]} />
+              <meshBasicMaterial color={markColor} toneMapped={false} />
+            </mesh>
+            {!lit && (
+              <mesh position={[0, 0, 0.0005]}>
+                <planeGeometry args={[BADGE - 0.03, BADGE - 0.03]} />
+                <meshBasicMaterial color={colors.card} toneMapped={false} />
+              </mesh>
+            )}
+            <Text material={textMaterial} font={fontUrls.mono} fontSize={0.12} color={lit ? colors.bg : markColor} anchorX="center" anchorY="middle" position={[0, 0.005, 0.001]}>
+              {MARK_SIGN[mark]}
+            </Text>
+          </group>
+        )}
+        {/* An edit's old value on a strip under the card: "was" and the old text, struck through. */}
+        {was && (
+          <group position={[0, -H / 2 - WAS_H / 2 - 0.02, 0]}>
+            <mesh position={[0, 0, -0.001]}>
+              <planeGeometry args={[W, WAS_H]} />
+              <meshBasicMaterial color={colors.cardBehind} toneMapped={false} />
+            </mesh>
+            <Text material={textMaterial} font={fontUrls.mono} fontSize={0.08} color={colors.diff.edited} anchorX="left" anchorY="middle" position={[left, 0, 0.002]}>
+              {was.label}
+            </Text>
+            <group position={[left + was.label.length * 0.05 + 0.06, 0, 0]}>
+              <Text
+                material={textMaterial}
+                font={fontUrls.mono}
+                fontSize={0.08}
+                color={colors.fgDim}
+                anchorX="left"
+                anchorY="middle"
+                position={[0, 0, 0.002]}
+                onSync={(t: { textRenderInfo?: { caretPositions?: Float32Array } }) => setWasStrikes(strikesOf(t.textRenderInfo))}
+              >
+                {truncate(was.value, Math.max(8, 40 - was.label.length))}
+              </Text>
+              <StrikeLines strikes={wasStrikes} color={colors.diff.edited} />
+            </group>
+          </group>
         )}
       </group>
       {peers.length > 0 && (

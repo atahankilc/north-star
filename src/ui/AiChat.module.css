@@ -744,43 +744,70 @@ html[data-motion='reduced'] :global([data-side-panel]) {
   }
 }
 
-/* The preview (D-087): a bare screen over the app. A frame, and a bar in the HUD's place (the HUD, filters and board
-   tools are hidden, previewLock.ts). Functional for now; the design comes later. */
+/* The preview (D-087, D-096): a bare screen over the app (the HUD, filters and board tools are hidden, previewLock.ts),
+   drawn as one box like the chat's proposal box: cyan while undecided, its title written into the top edge with the
+   views, the stepper and esc between runs of the line. */
 .previewFrame {
   position: fixed;
-  inset: 0;
+  inset: calc(var(--hud-h) / 2) 6px 6px;
   z-index: 40;
-  border: 2px solid var(--accent-cyan);
+  border: 1px solid var(--accent-cyan);
   pointer-events: none;
 }
 
 .previewBar {
   position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
+  top: calc(var(--hud-h) / 2 - 10px);
+  right: 6px;
+  left: 6px;
   z-index: 41;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-4);
-  min-height: var(--hud-h);
-  padding: var(--space-2) var(--hud-x);
-  border-bottom: 1px solid var(--accent-cyan);
-  background: var(--bg);
+  height: 20px;
   color: var(--fg);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+/* Each run of text sits on the page's black, so the frame's line breaks around it. */
+.previewBar > :not(.previewRule, .previewRuleShort) {
+  padding: 0 1ch;
+  background: var(--bg);
+}
+
+.previewBar::before {
+  content: '';
+  flex: none;
+  width: var(--space-3);
+  border-top: 1px solid var(--accent-cyan);
+}
+
+.previewRule,
+.previewRuleShort {
+  height: 0;
+  border-top: 1px solid var(--accent-cyan);
+}
+
+.previewRule {
+  flex: 1;
+  min-width: var(--space-3);
+}
+
+.previewRuleShort {
+  flex: none;
+  width: var(--space-3);
 }
 
 .previewTitle {
   color: var(--accent-cyan);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  padding-right: 0 !important;
 }
 
-.previewCount {
-  color: var(--fg-dim);
+.previewKey {
+  display: flex;
+  gap: 1.5ch;
 }
 
 .previewViews {
@@ -804,10 +831,44 @@ html[data-motion='reduced'] :global([data-side-panel]) {
   text-underline-offset: 4px;
 }
 
-.previewKey {
+.previewStepper {
   display: flex;
-  gap: var(--space-2);
-  margin-left: auto;
+  align-items: center;
+  gap: 0.5ch;
+}
+
+.previewStepper button,
+.previewClose {
+  padding: 0 0.5ch;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.previewStepper button:hover,
+.previewClose:hover {
+  color: var(--fg-strong);
+}
+
+.previewStep {
+  min-width: 4ch;
+  color: var(--fg-strong);
+  text-align: center;
+}
+
+.previewBar::after {
+  content: '';
+  flex: none;
+  width: var(--space-3);
+  border-top: 1px solid var(--accent-cyan);
+}
+
+/* The proposal's row lit from the stage or the stepper (D-096). */
+.change[data-lit] {
+  background: var(--wash-2);
+  box-shadow: -6px 0 0 var(--wash-2), 6px 0 0 var(--wash-2);
 }
 
 /* What the bare preview screen leaves out. */

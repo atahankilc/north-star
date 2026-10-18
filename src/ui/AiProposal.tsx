@@ -1,6 +1,6 @@
 // Changes the assistant proposed (D-074), as a checklist under its answer. Everything valid starts checked;
 // unchecking a new item unchecks what depends on it. Apply writes the checked rows as one undo step.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useChat, type ChatMessage } from '../ai/chat'
 import { simulate } from '../ai/simulate'
@@ -8,10 +8,12 @@ import { stillValid, toWrites, type Change } from '../ai/tools'
 import { itemPath } from '../app/paths'
 import { applyAssistantChanges } from '../data/assistant'
 import { useCanvas } from '../state/canvasStore'
+import { isReducedMotion } from '../state/motion'
 import { TYPE_ACCENT } from '../views/canvas/boardKinds'
 import { useWs } from '../views/workspace/context'
-import { usePreview } from '../views/workspace/preview'
-import { useStage } from '../views/workspace/stage'
+import { MARK_VAR, usePreview, type Mark } from '../views/workspace/preview'
+import { frameAllChanges } from '../views/workspace/previewNav'
+import { unlight, usePreviewFocus, useStage } from '../views/workspace/stage'
 import styles from './AiChat.module.css'
 
 // A box's title written into its top edge, like `┌ proposal · 6 ────┐` (D-094).
@@ -21,6 +23,22 @@ export function BoxHead({ label }: { label: string }) {
       <span>{label}</span>
     </p>
   )
+}
+
+// What a row does, in the preview's diff colours (D-096); the kind word keeps the type colour.
+const ROW_MARK: Record<string, Mark> = {
+  add_card: 'new',
+  add_competitor: 'new',
+  add_competitor_feature: 'new',
+  link: 'new',
+  update_card: 'edited',
+  update_competitor: 'edited',
+  set_matrix_cell: 'edited',
+  rename_label: 'edited',
+  arrange_area: 'moved',
+  delete_item: 'deleted',
+  delete_label: 'deleted',
+  unlink: 'deleted',
 }
 
 const keyOf = (c: Change) => (['add_card', 'add_competitor', 'add_competitor_feature'].includes(c.raw.op) && typeof c.raw.key === 'string' ? c.raw.key.trim() : '')
@@ -71,8 +89,7 @@ export function AiProposal({ message }: { message: ChatMessage }) {
     if (!pending) return close()
     try {
       const accepted = proposal.changes.filter((c) => on.has(c.n))
-      const sim = simulate(ws, accepted, refs)
-      show(message.id, sim.ws, sim.marks, accepted.length)
+      show(message.id, simulate(ws, accepted, refs), accepted.length)
     } catch {
       close()
       setError("Couldn't preview these changes.")
@@ -92,18 +109,13 @@ export function AiProposal({ message }: { message: ChatMessage }) {
       setError("Couldn't preview these changes.")
       return
     }
-    usePreview.getState().show(message.id, sim.ws, sim.marks, accepted.length)
-    // Glide to the first card it adds or moves, so the change is on screen: once the preview is on the stage (D-094), so
-    // the stage remembers the view you had before.
-    const cards = [...sim.ws.customers, ...sim.ws.problems, ...sim.ws.ideas, ...sim.ws.features, ...sim.ws.competitors]
-    const first = cards.find((c) => sim.marks.get(c.id) && sim.marks.get(c.id) !== 'deleted' && c.x !== undefined)
-    if (!first) return
-    const fly = () => useCanvas.getState().flyTo([first.x!, first.y!])
-    if (useStage.getState().preview) return fly()
+    usePreview.getState().show(message.id, sim, accepted.length)
+    // Frame every change (D-096): once the preview is on the stage (D-094), so the stage remembers the view you had before.
+    if (useStage.getState().preview) return frameAllChanges()
     const off = useStage.subscribe((st) => {
       if (!st.preview) return
       off()
-      fly()
+      frameAllChanges()
     })
   }
 
@@ -145,6 +157,14 @@ export function AiProposal({ message }: { message: ChatMessage }) {
   }
 
   const count = on.size
+  // The row lit from the stage or the stepper (D-096); the stepper's row scrolls into view.
+  const lit = usePreviewFocus((f) => (previewing ? f.lit : null))
+  const stepping = usePreviewFocus((f) => previewing && f.step !== null)
+  const list = useRef<HTMLUListElement>(null)
+  useEffect(() => {
+    if (!stepping || lit === null) return
+    list.current?.querySelector(`[data-n="${lit}"]`)?.scrollIntoView({ block: 'nearest', behavior: isReducedMotion() ? 'auto' : 'smooth' })
+  }, [lit, stepping])
 
   return (
     <div className={styles.proposal} data-status={state.status}>
@@ -153,12 +173,21 @@ export function AiProposal({ message }: { message: ChatMessage }) {
       {proposal.changes.length === 0 ? (
         <p className={styles.fine}>No usable changes came back.</p>
       ) : (
-        <ul className={styles.changes}>
+        <ul className={styles.changes} ref={list}>
           {proposal.changes.map((c) => {
             const problem = problems.get(c.n)
             const blocked = pending && !problem && !unchecked.has(c.n) && !on.has(c.n)
             return (
-              <li key={c.n} className={styles.change} data-off={!on.has(c.n) || undefined} data-removes={c.removes || undefined}>
+              <li
+                key={c.n}
+                className={styles.change}
+                data-n={c.n}
+                data-off={!on.has(c.n) || undefined}
+                data-removes={c.removes || undefined}
+                data-lit={(previewing && lit === c.n) || undefined}
+                onPointerEnter={previewing && on.has(c.n) ? () => usePreviewFocus.setState({ lit: c.n }) : undefined}
+                onPointerLeave={previewing ? unlight : undefined}
+              >
                 <label>
                   <input
                     type="checkbox"
@@ -166,11 +195,13 @@ export function AiProposal({ message }: { message: ChatMessage }) {
                     disabled={!pending || Boolean(problem) || blocked}
                     onChange={() => toggle(c.n)}
                   />
-                  <span className={styles.sign} style={c.tone && !c.removes ? { color: TYPE_ACCENT[c.tone] } : undefined}>
+                  <span className={styles.sign} style={ROW_MARK[c.raw.op] ? { color: MARK_VAR[ROW_MARK[c.raw.op]] } : undefined}>
                     {c.sign}
                   </span>
                   <span className={styles.changeBody}>
-                    <span className={styles.changeKind}>{c.kind}</span> <span className={styles.changeText}>{c.text}</span>
+                    <span className={styles.changeKind} style={c.tone ? { color: TYPE_ACCENT[c.tone] } : undefined}>
+                      {c.kind}
+                    </span> <span className={styles.changeText}>{c.text}</span>
                     {c.detail && <span className={styles.changeDetail}>{c.detail}</span>}
                     {(problem || blocked) && (
                       <span className={styles.changeProblem}>

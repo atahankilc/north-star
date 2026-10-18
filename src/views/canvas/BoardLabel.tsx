@@ -14,16 +14,18 @@ import { fontUrls } from '../../three/fonts'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
 import { boardPoint } from './NodeCard'
-import { isPreviewing } from '../workspace/preview'
+import { isPreviewing, MARK_SIGN, type Mark } from '../workspace/preview'
+import { markHover, unlight } from '../workspace/stage'
 import styles from './BoardLabel.module.css'
 
 export const LABEL_SIZE = 0.6
 const WRITE_EVERY_MS = 120
 const PAD = 0.18
 
-type Props = { wid: string; label: WithId<Label> }
+// In the assistant's preview (D-096): what a change does to it, its old text, whether its checklist row is lit.
+type Props = { wid: string; label: WithId<Label>; mark?: Mark; was?: { label: string; value: string }; lit?: boolean }
 
-export function BoardLabel({ wid, label }: Props) {
+export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const group = useRef<Group>(null)
   const content = useRef<Group>(null)
   const cell = useMemo(makeCellUniforms, [])
@@ -45,7 +47,9 @@ export function BoardLabel({ wid, label }: Props) {
   const [x, y] = live ?? [label.x, label.y]
   const colors = usePalette()
   const tone = useThemeAccent()
-  const accent = label.color ? tone(label.color) : colors.fg
+  const deleted = mark === 'deleted'
+  const accent = deleted ? colors.fgDim : label.color ? tone(label.color) : colors.fg
+  const markColor = mark ? colors.diff[mark] : undefined
 
   // Exactly under the pointer while dragging; remote moves glide (D-061).
   useFrame(({ invalidate }, delta) => {
@@ -119,17 +123,43 @@ export function BoardLabel({ wid, label }: Props) {
             e.stopPropagation()
             setHovered(true)
             document.body.style.cursor = 'grab'
+            if (mark) markHover(label.id).onPointerEnter()
           }}
           onPointerOut={() => {
             setHovered(false)
             document.body.style.cursor = ''
+            if (mark) unlight()
           }}
         >
           <planeGeometry args={[box[0] + PAD * 2, box[1] + PAD]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
+        {/* The preview's mark (D-096): an underline in the change's colour, its diff sign before the text, a strike
+            through a removed label, and a renamed one's old text under it. */}
+        {markColor && mark && !editing && (
+          <>
+            <mesh position={[0, -box[1] / 2 - 0.08, 0]}>
+              <planeGeometry args={[box[0], lit ? 0.07 : 0.035]} />
+              <meshBasicMaterial color={markColor} toneMapped={false} />
+            </mesh>
+            <Text material={textMaterial} font={fontUrls.mono} fontSize={0.34} color={markColor} anchorX="right" anchorY="middle" position={[-box[0] / 2 - 0.16, 0, 0]}>
+              {MARK_SIGN[mark]}
+            </Text>
+            {deleted && (
+              <mesh position={[0, -0.02, 0.001]}>
+                <planeGeometry args={[box[0] + 0.1, 0.035]} />
+                <meshBasicMaterial color={markColor} toneMapped={false} />
+              </mesh>
+            )}
+            {was && (
+              <Text material={textMaterial} font={fontUrls.mono} fontSize={0.16} color={colors.fgDim} anchorX="center" anchorY="top" position={[0, -box[1] / 2 - 0.2, 0]}>
+                {`${was.label} ${was.value}`}
+              </Text>
+            )}
+          </>
+        )}
         {/* Underline: faint on hover, the label's colour when selected. */}
-        {(selected || hovered) && !editing && (
+        {(selected || hovered) && !editing && !mark && (
           <mesh position={[0, -box[1] / 2 - 0.08, 0]}>
             <planeGeometry args={[box[0], 0.03]} />
             <meshBasicMaterial color={selected ? colors.cyan : colors.hover} toneMapped={false} />

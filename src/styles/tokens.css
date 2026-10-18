@@ -22,6 +22,12 @@
   --accent-blue: #3d7bff;
   --accent-green: #3dff8a;
 
+  /* What an assistant proposal does to an item in its preview (D-096): diff colours, kept apart from the type colours. */
+  --diff-new: #a6ff3d;
+  --diff-edited: #ff9f1c;
+  --diff-moved: #3d7bff;
+  --diff-deleted: #ff4545;
+
   /* The assistant orb's pomegranate easter egg (AiOrb.tsx): skin, its shaded side, its shine, its warm patches, the crown,
      and the open slice: seeds and the pale pith between them. */
   --pom-skin: #e8263c;
@@ -87,13 +93,13 @@
   --bg-raised: #ffffff;
   --line: #d9d9d9;
   --fg-dim: #6b6b6b;
+  --fg-muted: #555555;
   --fg-faint: #8c8c8c;
   --placeholder: #b0b0b0;
 
   --surface: rgba(255, 255, 255, 0.86);
   --line-hover: #b5b5b5;
   --fg: #161616;
-  --fg-muted: #555555;
   --fg-strong: #000000;
 
   --accent-magenta: #db1a7a;
@@ -101,6 +107,11 @@
   --accent-yellow: #a87d00;
   --accent-blue: #2a5fe0;
   --accent-green: #0f9a4b;
+
+  --diff-new: #4f9400;
+  --diff-edited: #c56a00;
+  --diff-moved: #2a5fe0;
+  --diff-deleted: #d42a2a;
 
   --pom-skin: #c0142b;
   --pom-shade: #e3a0aa;

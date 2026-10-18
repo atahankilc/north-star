@@ -15,7 +15,8 @@ import { Select } from '../../ui/Select'
 import { setPresenceSelection } from '../../data/presence'
 import { useCanvas } from '../../state/canvasStore'
 import { useWs } from '../workspace/context'
-import { CellPeers, PeersOn } from '../workspace/PeerMarks'
+import { CellPeers, MarkOn, markHoverOf, markRing, PeersOn } from '../workspace/PeerMarks'
+import { useMarkOf, useStage } from '../workspace/stage'
 import styles from './MatrixView.module.css'
 import { matrixCols, matrixRows, verdict } from './reading'
 
@@ -35,6 +36,7 @@ type Pos = { row: number; col: number }
 
 export function MatrixView() {
   const { wid, features, competitors, comparisons } = useWs()
+  const marks = useStage((s) => s.preview?.marks) ?? NO_MARKS
   const [selected, setSelected] = useState<Pos | null>(null)
 
   const rows = useMemo(() => matrixRows(features), [features])
@@ -112,10 +114,11 @@ export function MatrixView() {
               <th className={styles.metaHead}>pri</th>
               <th className={styles.metaHead}>status</th>
               {cols.map((c) => (
-                <th key={c.id} className={styles.compHead}>
+                <th key={c.id} className={styles.compHead} data-mark={marks.get(c.id)} data-mark-id={marks.has(c.id) ? c.id : undefined} {...markHoverOf(c.id, marks.get(c.id))}>
                   <Link to={itemPath(wid, c.id)} title={c.name}>
                     {c.name || 'Untitled'}
                   </Link>
+                  <MarkOn id={c.id} className={styles.headMark} />
                   <PeersOn id={c.id} className={styles.headPeers} max={2} />
                 </th>
               ))}
@@ -127,8 +130,8 @@ export function MatrixView() {
               const v = verdict(cols.map((_, c) => cellAt(r, c)))
               return (
                 <tr key={f.id} data-selected={sel?.row === r}>
-                  <th scope="row" className={styles.feature}>
-                    <Link to={itemPath(wid, f.id)}>{f.title || 'Untitled'}</Link> <PeersOn id={f.id} />
+                  <th scope="row" className={styles.feature} data-mark={marks.get(f.id)} data-mark-id={marks.has(f.id) ? f.id : undefined} {...markHoverOf(f.id, marks.get(f.id))}>
+                    <Link to={itemPath(wid, f.id)}>{f.title || 'Untitled'}</Link> <MarkOn id={f.id} /> <PeersOn id={f.id} />
                   </th>
                   <td className={styles.meta}>{f.priority ?? ''}</td>
                   <td className={styles.meta}>{f.status ?? ''}</td>
@@ -148,6 +151,7 @@ export function MatrixView() {
                         >
                           <span className={styles.glyph}>{GLYPH[cov ?? 'unset']}</span>
                           {cell?.notes && <span className={styles.noted} aria-hidden />}
+                          <CellMark id={cellId(f.id, c.id)} />
                           <CellPeers id={cellId(f.id, c.id)} />
                         </button>
                       </td>
@@ -186,7 +190,7 @@ export function MatrixView() {
             {GLYPH[k]} <span className={styles.legendLabel}>{k === 'unset' ? 'not assessed' : k}</span>
           </span>
         ))}
-        <span className={styles.hints}>click: select · click again or 1–4: coverage · 0: clear · arrows: move</span>
+        <span className={styles.hints} data-preview-hide>click: select · click again or 1–4: coverage · 0: clear · arrows: move</span>
       </footer>
 
       <AnimatePresence>
@@ -202,6 +206,27 @@ export function MatrixView() {
         )}
       </AnimatePresence>
     </main>
+  )
+}
+
+const NO_MARKS = new Map<string, never>()
+
+// A cell the assistant's preview changes (D-096): a ring and its diff sign inside, and an edit's old coverage before the
+// new one (`○→◐`; a struck circle would read as another glyph).
+function CellMark({ id }: { id: string }) {
+  const { mark, before, lit } = useMarkOf(id)
+  if (!mark) return null
+  const was = before && 'coverage' in before ? GLYPH[(before.coverage as keyof typeof GLYPH | undefined) ?? 'unset'] : null
+  return (
+    <span className={styles.cellMark} data-mark-id={id} style={{ boxShadow: markRing(mark, lit, true) }} {...markHoverOf(id, mark)}>
+      {/* With the old value beside it there's no room for the sign too; the ring's colour already says edited. */}
+      {!was && <MarkOn id={id} className={styles.cellSign} />}
+      {was && (
+        <span className={styles.cellWas} title="before">
+          {was}→
+        </span>
+      )}
+    </span>
   )
 }
 

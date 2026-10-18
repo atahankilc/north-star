@@ -45,6 +45,11 @@ tokens above for neutral light grey (`--bg #f5f5f5`), white surfaces, near-black
 yellow `#a87d00`, blue `#2a5fe0`, green `#0f9a4b`); the ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
 (`[data-theme='light']`) and `palettes.light` in `tokens.ts`. Text on an accent fill uses `--on-accent`; tints use `--wash-*`.
 
+**Diff colours (D-096):** the assistant's preview marks what a proposal does with the checklist's signs in their own colours,
+apart from the type colours: `--diff-new` `+` (`#a6ff3d`), `--diff-edited` `~` (`#ff9f1c`), `--diff-moved` `→` (`#3d7bff`),
+`--diff-deleted` `−` (`#ff4545`); darker in light (`palettes.*.diff` for WebGL). Only the sign badge, the ring and the moved
+ghost carry them; a deleted item turns grey and struck through, an edit shows `was` and the old value under the new.
+
 Collaborator cursors cycle through the accents. The matrix coverage scale runs:
 `none` = dim grey glyphs, `partial` = yellow, `full` = white, `better` = green.
 Values will be tuned against contrast checks (WCAG AA for text).

@@ -118,6 +118,24 @@
   color: var(--fg-strong);
 }
 
+.chipStack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* In the assistant's preview (D-096): a deleted item stays, dimmed and struck through. */
+.chip[data-mark='deleted'] {
+  border-left-color: var(--fg-faint);
+  color: var(--fg-dim);
+  text-decoration: line-through;
+}
+
+.was {
+  padding: 2px var(--space-2) 0;
+}
+
 .missing {
   padding: var(--space-1) 0;
   color: var(--fg-faint);

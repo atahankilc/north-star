@@ -49,7 +49,7 @@ export function ReportView() {
   useEffect(() => {
     if (asked === null) return
     usePreview.getState().close()
-    return usePreview.subscribe((s) => s.ws && useChat.getState().showReport(null))
+    return usePreview.subscribe((s) => s.sim && useChat.getState().showReport(null))
   }, [asked])
   useEffect(() => {
     if (id === null) return

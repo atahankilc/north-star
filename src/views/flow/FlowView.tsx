@@ -11,7 +11,8 @@ import { DetailPanel } from '../canvas/DetailPanel'
 import { useWs } from '../workspace/context'
 import { FilterBar } from '../workspace/FilterBar'
 import { useNeighbours, useSelectionScope } from '../workspace/graph'
-import { peerRings, PeerTags, usePeersOn } from '../workspace/PeerMarks'
+import { MarkSign, markHoverOf, markRing, peerRings, PeerTags, usePeersOn, Was } from '../workspace/PeerMarks'
+import { useMarkOf } from '../workspace/stage'
 import styles from './FlowView.module.css'
 
 type Row = { key: string; cells: Record<BoardType, BoardItem[]>; loose?: boolean }
@@ -133,17 +134,25 @@ function Chip({ item }: { item: BoardItem }) {
   const selected = useCanvas((s) => s.selectedId === item.id)
   const select = useCanvas((s) => s.select)
   const peers = usePeersOn(item.id)
+  // The assistant's preview (D-096): its diff sign and ring, an edit's old title under the chip.
+  const { mark, before, lit } = useMarkOf(item.id)
+  const ring = [markRing(mark, lit), peerRings(peers)].filter(Boolean).join(', ') || undefined
   return (
-    <span className={styles.chipRow}>
-      <button
-        className={styles.chip}
-        data-selected={selected}
-        style={{ ['--tone' as string]: TYPE_ACCENT[item.type], boxShadow: peerRings(peers) }}
-        onClick={() => select(selected ? null : item.id)}
-        title={item.title || 'Untitled'}
-      >
-        {item.title || 'Untitled'}
-      </button>
+    <span className={styles.chipRow} data-mark-id={mark ? item.id : undefined} {...markHoverOf(item.id, mark)}>
+      <span className={styles.chipStack}>
+        <button
+          className={styles.chip}
+          data-selected={selected}
+          data-mark={mark}
+          style={{ ['--tone' as string]: TYPE_ACCENT[item.type], boxShadow: ring }}
+          onClick={() => select(selected ? null : item.id)}
+          title={item.title || 'Untitled'}
+        >
+          {item.title || 'Untitled'}
+        </button>
+        <Was before={before} field={['title', 'name']} className={styles.was} />
+      </span>
+      {mark && <MarkSign mark={mark} lit={lit} />}
       <PeerTags peers={peers} />
     </span>
   )

@@ -26,6 +26,8 @@ export type Palette = {
   yellow: string
   blue: string
   green: string
+  // A proposal's preview (D-096): new, edited, moved, deleted.
+  diff: { new: string; edited: string; moved: string; deleted: string }
   ember: string // welcome sunrise (D-072), WebGL only
   dawn: string
   night: string // the welcome's sky in light theme (D-072); dark never uses it
@@ -44,6 +46,7 @@ export type Palette = {
 export const palettes: Record<Theme, Palette> = {
   dark: {
     ...colors,
+    diff: { new: '#a6ff3d', edited: '#ff9f1c', moved: '#3d7bff', deleted: '#ff4545' },
     ember: '#ff4a26',
     dawn: '#ff9a2e',
     night: '#000000',
@@ -67,6 +70,7 @@ export const palettes: Record<Theme, Palette> = {
     yellow: '#a87d00',
     blue: '#2a5fe0',
     green: '#0f9a4b',
+    diff: { new: '#4f9400', edited: '#c56a00', moved: '#2a5fe0', deleted: '#d42a2a' },
     // Same as dark: the ASCII pass prints brightness as ink and darkens the hue itself, so darker values would barely show.
     ember: '#ff4a26',
     dawn: '#ff9a2e',

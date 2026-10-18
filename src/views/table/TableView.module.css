@@ -206,3 +206,52 @@ tr[data-selected='true'] .type::after {
 .typeCell > span:last-child {
   margin-left: var(--space-2);
 }
+
+/* The assistant's preview (D-096): the change's diff sign after the type, a bar in its colour down the row's left edge,
+   old values under the new ones; a deleted row stays, dimmed and struck through. */
+.mark {
+  margin-left: var(--space-2);
+  vertical-align: middle;
+}
+
+.markBar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--mark-color);
+}
+
+tr[data-mark='new'] {
+  --mark-color: var(--diff-new);
+}
+
+tr[data-mark='edited'] {
+  --mark-color: var(--diff-edited);
+}
+
+tr[data-mark='moved'] {
+  --mark-color: var(--diff-moved);
+}
+
+tr[data-mark='deleted'] {
+  --mark-color: var(--diff-deleted);
+}
+
+tr[data-lit] td {
+  background: var(--wash-2);
+}
+
+tr[data-mark='deleted'] td {
+  color: var(--fg-dim);
+}
+
+tr[data-mark='deleted'] .name {
+  color: var(--fg-dim);
+  text-decoration: line-through;
+}
+
+.was {
+  padding-bottom: var(--space-1);
+}
