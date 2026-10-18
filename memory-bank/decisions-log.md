@@ -1728,3 +1728,31 @@ them (frames round areas and sections, a quadrant as four boxes, existing frames
   own frame, none in the staying frame, quadrant sections inside their parent, the existing section moved (same id), a
   reused heading kept, bad rows off; `add_section` round three cards and one added later in the same set; heading ↔ frame
   both ways with no leftover fields. Not tried with a real model or in the app.
+
+### D-132 · 2026-10-18 · Accepted (extends D-118, D-111)
+**The project title block resizes, and folds to its name when zoomed out.** User: "i want the project card to be
+resizeable And when i am zoomed out enough, the description part becomes invisible. so when that happens, card can
+callapse to just project name".
+- *Resize:* a grip along the block's right edge (cursor `ew-resize`, lights the brackets) drags its width, the left
+  edge staying put; the name and description rewrap and the height follows the text. Width 5–30 units (default 9),
+  in quarter units while snapping is on (alt free). Stored as `w` on the title label (rules already allowed `w` on any
+  label; export/import keep it), streamed while dragging, one undo step (`resizeTitle` / `endTitleResize` in labels.ts).
+  Width only, not a scale: the text sizes stay. Alternative, a corner that scales the whole block: not done, ask if wanted.
+- *Fold:* when the description is too small to draw (`useReadable(DESC)`, the same 6 px rule as all board text, D-111),
+  the caption, rule and description go; never while the description is being edited. User, next: "instead of first
+  collapsing, lets try to maximize the font size and then collapse if there is empty space left". So the name grows
+  into the room they leave: the biggest size whose lines fit the unfolded block's height (same width) without breaking a
+  word, the star beside its first line, sized to it; the block then shrinks, about its centre, only to the name's height.
+  Typeset with troika's `getTextRenderInfo` (now a direct dependency; types in `src/types/`), a binary search on the
+  size. In a block too narrow for the name beside the star, the folded name may go below the unfolded size (to 0.6×)
+  rather than break a word.
+- *Animated* (320 ms, ease in-out, from where it is if reversed midway; instant with reduced motion): the caption, rule
+  and description fade in the first half, the star travels and grows, the name slides and scales, the brackets close in.
+  The name is laid out at its new size at once and scaled from the size troika last laid it out at, so nothing jumps.
+- *Sizes:* `titleHalf` is the block as drawn (framing, selection, guides); `titleFullHalf` / `labelRoom` the unfolded
+  block, which the assistant's placement and layouts (`tools.ts`, `arrange.ts`) use whatever the zoom, so new cards never
+  land where the description shows up close.
+- *Verified* in headless Chrome on the emulators: example workspace, title added, edge dragged narrower (text rewrapped,
+  left edge fixed), ⌘Z restored it; zoomed out, the name grew (~1.5× for "Example: Tablebook" at width 9) and the block
+  shrank to it; screencast frames show the fold and unfold travelling; a narrowed block folds without breaking words.
+  The assistant's use of the unfolded size not tried with a model. `npm run build`.

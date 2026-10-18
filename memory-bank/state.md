@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (D-131 the assistant draws sections)_
+_Last updated: 2026-10-18 (D-132 project title resizes and folds)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -21,6 +21,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## In progress
 - Nothing uncommitted: D-124–D-131, autoGrow fields and the group drag fix pushed 2026-10-18 (see state-history.md).
+- D-132 (title block resize + animated fold with a bigger name) committed 2026-10-18 (see state-history.md).
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

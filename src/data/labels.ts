@@ -55,3 +55,16 @@ export async function endSectionResize(wid: string, id: string, from: SectionRec
   const before = await snapshotWith(ref, from)
   return tracked('resize section', [ref], () => updateDoc(ref, { ...to, updatedAt: Date.now() }), { before })
 }
+
+// The project title block's width (D-132) while its edge is dragged, its left edge staying put: centre and width
+// together, streamed like a move. Its height follows its text.
+export type TitleSpan = { x: number; w: number }
+export function resizeTitle(wid: string, id: string, s: TitleSpan) {
+  return updateDoc(doc(labelsOf(wid), id), s)
+}
+
+export async function endTitleResize(wid: string, id: string, from: TitleSpan, to: TitleSpan) {
+  const ref = doc(labelsOf(wid), id)
+  const before = await snapshotWith(ref, from)
+  return tracked('resize project title', [ref], () => updateDoc(ref, { ...to, updatedAt: Date.now() }), { before })
+}

@@ -500,3 +500,11 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - Not committed: D-130 sections (frames that hold what's inside them, kept in focus); checked in headless Chrome; Firestore rules deployed. Files:
   `sections.ts`, `BoardSection.tsx`, `focusField.ts` (new) + Board, BoardView, BoardMenu, LabelBar, groupDrag, guides,
   arrange, clipboard, titleBlock, DetailPanel (one hunk), labels/model/bundle, rules + tests, ai/context, tools, chat.
+
+## Done (D-132 project title resizes and folds, 2026-10-18)
+- Right edge drags the title block's width (5–30, `w` on the label, one undo step, kept by export/import).
+- Zoomed out past the description's readable size it folds, animated (320 ms, instant with reduced motion): the name
+  grows to the biggest size that fits the unfolded block (troika `getTextRenderInfo`, binary search), the block shrinks
+  to what's left; narrow blocks shrink the name rather than break a word.
+- Assistant placement and layouts use the unfolded size (`titleFullHalf`, `labelRoom`).
+- Verified in headless Chrome on the emulators (resize, ⌘Z, fold/unfold screencast, narrow block); `npm run build`.

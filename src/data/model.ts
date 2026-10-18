@@ -107,7 +107,7 @@ export type Label = {
   caps?: boolean
   x: number
   y: number
-  // A section's size (D-130).
+  // A section's size (D-130); the title block's width when resized (D-132), its height following its text.
   w?: number
   h?: number
   createdAt: number

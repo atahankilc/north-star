@@ -88,6 +88,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   notes) with 1–9 and a search field inside the dropdown (D-050, D-108, D-116).
 - Project title block: one per board from `+`, a `kind: 'title'` label showing the workspace's name + description (edited in
   place or from its right-click menu, same fields as Settings), star + `PROJECT`, rule, corner brackets (D-118).
+  Its right edge drags its width (5–30, text rewraps, height follows); too far out to read the description it folds
+  (animated): the name grows to fill the block, which shrinks only to what's left; the assistant keeps clear of it unfolded (D-132).
 - Grid: `+` turns to dots and fades by camera distance (D-110). Depth range follows the camera; text and card detail by
   on-screen pixel size (full / compact / far) (D-111).
 - Drags snap centres to a 0.25 grid (group drags keep their layout, alt = free); switch beside fit-all + `g`, on by default (D-112).

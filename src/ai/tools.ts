@@ -6,7 +6,7 @@ import { COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, LABEL
 import { DESCRIPTION_MAX } from '../data/workspaces'
 import { colors } from '../styles/tokens'
 import { CARD_H, CARD_W, findFreeSpot } from '../views/canvas/cardLayout'
-import { isTitle, labelHalf, titleHalf } from '../views/canvas/titleBlock'
+import { isTitle, labelRoom, titleFullHalf } from '../views/canvas/titleBlock'
 import { DEFAULT_H, DEFAULT_W, isSection, rectOf, SECTION_SIZES, textLabels, wrapRect } from '../views/canvas/sections'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
@@ -949,8 +949,9 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
   const { position, moving, layout } = planAreas(accepted, ws, refs)
   const cards = [...position.entries()].filter(([id]) => !moving.has(id)).map(([, p]) => p)
   if (layout) cards.push(...layout.cards.values())
-  // The project block (D-118) is far bigger than a card: it takes up the card spots that would overlap it.
-  for (const t of textLabels(ws.labels).filter(isTitle)) cards.push(...coverWithCards(t, titleHalf()))
+  // The project block (D-118) is far bigger than a card: it takes up the card spots that would overlap it. Unfolded,
+  // even when it's drawn folded right now (D-132), so nothing lands where its description shows up close.
+  for (const t of textLabels(ws.labels).filter(isTitle)) cards.push(...coverWithCards(t, titleFullHalf()))
   const placed = new Map<string, { x: number; y: number }>()
   const ofType = (type: BoardType) => {
     const list: { x?: number; y?: number }[] = type === 'competitor' ? ws.competitors : ws[`${type}s` as 'ideas']
@@ -1199,10 +1200,10 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
   // Text above a card, or above the board's top-left: clear of cards and other text, going up until it is.
   const taken = textLabels(ws.labels)
     .filter((l) => !texts.some((t) => t.w.id === l.id))
-    .map((l) => ({ x: l.x, y: l.y, half: labelHalf(l) }))
+    .map((l) => ({ x: l.x, y: l.y, half: labelRoom(l) }))
   for (const { w, above } of texts) {
     const old = w.id ? textLabels(ws.labels).find((l) => l.id === w.id) : undefined
-    const half = labelHalf({ text: String(w.fields.text ?? old?.text ?? ''), size: (w.fields.size ?? old?.size) as Label['size'] })
+    const half = labelRoom({ text: String(w.fields.text ?? old?.text ?? ''), size: (w.fields.size ?? old?.size) as Label['size'] })
     const anchor = refKey(above) ? whereIs(above) : undefined
     if (refKey(above) && !anchor) continue
     const left = cards.length ? Math.min(...cards.map((c) => c.x)) - CARD_W / 2 + half[0] : 0

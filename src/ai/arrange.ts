@@ -7,7 +7,7 @@
 import type { NodeType } from '../data/model'
 import { CARD_H, CARD_W } from '../views/canvas/cardLayout'
 import { MIN_H, MIN_W, sectionBand, sectionNameSize } from '../views/canvas/sections'
-import { labelHalf } from '../views/canvas/titleBlock'
+import { labelRoom } from '../views/canvas/titleBlock'
 
 export const AREA_LAYOUTS = ['columns', 'rows', 'grid', 'line', 'hub', 'cycle', 'orbit', 'tree', 'quadrant'] as const
 export type AreaLayout = (typeof AREA_LAYOUTS)[number]
@@ -74,7 +74,7 @@ const EMPTY: Block = { w: 0, h: 0, cards: [], labels: [], areas: [] }
 const overlaps = (a: Rect, b: Rect) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
 const cardRect = (p: Point): Rect => ({ x0: p.x - CARD_W / 2, x1: p.x + CARD_W / 2, y0: p.y - CARD_H / 2, y1: p.y + CARD_H / 2 })
 const labelRect = (p: Point & { text: string; kind?: string; size?: string }): Rect => {
-  const [hw, hh] = labelHalf(p as Parameters<typeof labelHalf>[0])
+  const [hw, hh] = labelRoom(p as Parameters<typeof labelRoom>[0])
   return { x0: p.x - hw, x1: p.x + hw, y0: p.y - hh, y1: p.y + hh }
 }
 const grow = (r: Rect, by: number): Rect => ({ x0: r.x0 - by, x1: r.x1 + by, y0: r.y0 - by, y1: r.y1 + by })
@@ -452,7 +452,7 @@ function areaBlock(plan: AreaPlan, sections: Map<string, AreaPlan[]>, links: Map
   } else parts.push(...subs)
   const body: Block = parts.length > 1 ? pack(parts, SECTION_GAP) : (parts[0] ?? EMPTY)
   if (plan.frame) return framed(plan.label, layout, sub, body)
-  const [hw, hh] = labelHalf({ text: plan.label, size: sub ? 'subheading' : 'heading' })
+  const [hw, hh] = labelRoom({ text: plan.label, size: sub ? 'subheading' : 'heading' })
   const w = Math.max(body.w, 2 * hw)
   const head = 2 * hh + HEAD_GAP
   const moved = shift(body, (w - body.w) / 2, -head)

@@ -187,6 +187,8 @@ export function cleanLabel(d: Doc, now: number) {
     ...(d.italic === true && { italic: true }),
     ...(d.caps === true && { caps: true }),
     ...(section && { w, h }),
+    // The title block's width (D-132), when it was resized.
+    ...(title && w && w > 0 && w <= 2000 && { w }),
     ...times(d, now),
   }
 }
