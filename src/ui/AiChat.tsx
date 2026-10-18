@@ -8,7 +8,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useChat, type ChatMessage, type Step } from '../ai/chat'
 import { workspaceBrief } from '../ai/context'
 import { useKeySource } from '../ai/keySource'
@@ -22,13 +22,14 @@ import type { KeySource } from '../data/ai'
 import { firebase } from '../data/firebase'
 import { useRecentReports, useReport, useReportSummary } from '../data/reports'
 import type { NodeType } from '../data/model'
-import { workspacePath } from '../app/paths'
+import { reportPath, workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
-import { useMotion } from '../state/motion'
+import { isReducedMotion, useMotion } from '../state/motion'
 import { useWs } from '../views/workspace/context'
 import { MARK_SIGN, MARK_VAR, OutsidePreview, usePreview, type Mark } from '../views/workspace/preview'
 import { stepBy } from '../views/workspace/previewNav'
-import { usePreviewFocus, useStage } from '../views/workspace/stage'
+import { goToSection } from '../views/workspace/reportNav'
+import { unlightSection, usePreviewFocus, useReportFocus, useStage } from '../views/workspace/stage'
 import { lockApp } from '../views/workspace/previewLock'
 import { AiKeyForm, KEY_PRIVACY } from './AiSettings'
 import { AiOrb, type OrbCue, type OrbMood } from './AiOrb'
@@ -37,6 +38,7 @@ import { morph, usePerch, type PerchCue } from './perch'
 import { useStageMotion } from './stageMotion'
 import { AiProposal, BoxHead } from './AiProposal'
 import { ReportView } from './ReportView'
+import { BarButton, Part, Rule, StageBox, Stepper, stageBoxStyles } from './StageBox'
 import styles from './AiChat.module.css'
 
 // The orb's size: big enough for its face to read; smaller on phones.
@@ -317,8 +319,11 @@ function Conversation({ source }: { source: KeySource }) {
   // The model per task for this key, workspace and chat (D-104).
   const models = useModels(ws.wid, source, useKeySource().config)
   const messages = useChat((s) => s.messages)
-  // The report open on the report screen goes into the brief in full (D-099): the saved copy, else the chat's own.
-  const openId = useChat((s) => s.reportOpen)
+  // The report open goes into the brief in full (D-099): the one on the stage, else the reports tab's page; the saved
+  // copy, else the chat's own.
+  const location = useLocation()
+  const pageReport = location.pathname.endsWith('/reports') ? new URLSearchParams(location.search).get('report') : null
+  const openId = useChat((s) => s.reportOpen) ?? pageReport
   const openSaved = useReport(ws.wid, openId).report
   const openChat = messages.find((m) => m.reportId === openId)?.report
   const openReport = openId && (openSaved ?? openChat) ? { id: openId, report: (openSaved ?? openChat)!, saved: !!openSaved } : null
@@ -329,7 +334,7 @@ function Conversation({ source }: { source: KeySource }) {
   const stop = useChat((s) => s.stop)
   const web = useAiSettings((s) => s.web)
   const setWeb = useAiSettings((s) => s.setWeb)
-  const path = useLocation().pathname
+  const path = location.pathname
   const [draft, setDraft] = useState('')
   // The `/` menu of analysis modes (D-085): open while the draft is a bare `/word`, until Escape.
   const [pick, setPick] = useState(0)
@@ -718,49 +723,31 @@ function PreviewBar() {
     .map((m) => ({ m, n: [...(marks?.entries() ?? [])].filter(([id, x]) => x === m && !hidden?.some((f) => f.id === id)).length }))
     .filter((t) => t.n > 0)
   return createPortal(
-    <>
-      <div className={styles.previewFrame} aria-hidden />
-      {/* In the HUD's place: the only way around is between this workspace's views. */}
-      <div className={styles.previewBar} role="status" data-preview-bar>
-        <span className={styles.previewTitle}>
-          preview · {count} change{count === 1 ? '' : 's'}
-        </span>
-        <span className={styles.previewKey} title="nothing is written until you apply">
-          {tally.map(({ m, n }) => (
-            <span key={m} style={{ color: MARK_VAR[m] }} title={`${n} ${m}`}>
-              {MARK_SIGN[m]}
-              {n}
-            </span>
-          ))}
-        </span>
-        <span className={styles.previewRule} />
-        <nav className={styles.previewViews} aria-label="Preview views">
+    // In the HUD's place: the only way around is between this workspace's views.
+    <StageBox title={`preview · ${count} change${count === 1 ? '' : 's'}`} barProps={{ 'data-preview-bar': true }}>
+      <Part className={styles.previewKey} title="nothing is written until you apply">
+        {tally.map(({ m, n }) => (
+          <span key={m} style={{ color: MARK_VAR[m] }} title={`${n} ${m}`}>
+            {MARK_SIGN[m]}
+            {n}
+          </span>
+        ))}
+      </Part>
+      <Rule long />
+      <nav className={stageBoxStyles.part} aria-label="Preview views">
+        <span className={styles.previewViews}>
           {(['board', 'flow', 'table', 'matrix'] as const).map((v) => (
             <NavLink key={v} to={workspacePath(wid, v === 'board' ? undefined : v)} end={v === 'board'}>
               {v}
             </NavLink>
           ))}
-        </nav>
-        <span className={styles.previewRule} />
-        {steps > 0 && (
-          <span className={styles.previewStepper}>
-            <button onClick={() => stepBy(-1)} aria-label="Previous change (p)" title="previous · p">
-              ‹
-            </button>
-            <span className={styles.previewStep}>
-              {step === null ? '–' : step + 1}/{steps}
-            </span>
-            <button onClick={() => stepBy(1)} aria-label="Next change (n)" title="next · n">
-              ›
-            </button>
-          </span>
-        )}
-        <span className={styles.previewRuleShort} />
-        <button className={styles.previewClose} onClick={() => usePreview.getState().close()}>
-          esc
-        </button>
-      </div>
-    </>,
+        </span>
+      </nav>
+      <Rule long />
+      {steps > 0 && <Stepper step={step} steps={steps} noun="change" onStep={stepBy} />}
+      <Rule />
+      <BarButton onClick={() => usePreview.getState().close()}>esc</BarButton>
+    </StageBox>,
     host,
   )
 }
@@ -809,13 +796,20 @@ function ResearchPlan({ message, onRun }: { message: ChatMessage; onRun: () => v
   return null
 }
 
-// A report in the chat: from /research (D-089) or a write-up of the conversation (D-090). It opens on the report screen;
-// research is saved to the reports tab as it's written, a write-up when you save it. Either is yours until you share it.
+// A report in the chat: from /research (D-089) or a write-up of the conversation (D-090), as a box like a proposal
+// (D-101): its title and answer, a row per section, and what to do with it. Cyan while it waits for you to save it.
+// It opens on the stage (D-094); a row goes to its section there, and the section lit on the stage lights its row.
+// Research is saved to the reports tab as it's written, a write-up when you save it; either is yours until you share it.
 function ReportCard({ message }: { message: ChatMessage }) {
   const report = message.report!
   const id = message.reportId
+  const wid = useWs().wid
+  const navigate = useNavigate()
   const reportOpen = useChat((s) => !!id && s.reportOpen === id)
-  const saved = useReportSummary(useWs().wid, id ?? null).data
+  const staged = useStage((s) => !!id && s.reportId === id)
+  const lit = useReportFocus((f) => (staged ? f.lit : null))
+  const stepping = useReportFocus((f) => staged && f.step !== null)
+  const saved = useReportSummary(wid, id ?? null).data
   const research = message.reportMeta?.kind !== 'chat'
   const status = saved
     ? `saved in reports · ${saved.shared ? 'shared with the workspace' : 'only you can see it'}`
@@ -824,24 +818,85 @@ function ReportCard({ message }: { message: ChatMessage }) {
       : research
         ? 'saving to reports…'
         : 'not saved yet'
+  const list = useRef<HTMLUListElement>(null)
+  useEffect(() => {
+    if (!stepping || lit === null) return
+    list.current?.querySelector(`[data-n="${lit}"]`)?.scrollIntoView({ block: 'nearest', behavior: isReducedMotion() ? 'auto' : 'smooth' })
+  }, [lit, stepping])
+  // To a section: at once if the report is on the stage, else once it has opened there.
+  const goTo = (i: number) => {
+    if (!id) return
+    if (staged) return goToSection(i)
+    useChat.getState().showReport(id)
+    const off = useStage.subscribe((st) => {
+      if (st.reportId !== id) return
+      off()
+      requestAnimationFrame(() => goToSection(i))
+    })
+  }
+  // Saved, it can be read as a page of the reports tab too (D-100).
+  const inTab = () => {
+    if (!id) return
+    useChat.getState().showReport(null)
+    navigate(reportPath(wid, id))
+  }
+  const count = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
   return (
-    <div className={styles.proposal}>
-      <BoxHead label="report" />
+    <div className={styles.proposal} data-status={!saved && !research && !message.reportError ? 'pending' : undefined}>
+      <BoxHead label={`report · ${count(report.sections.length, research ? 'question' : 'section')}`} />
       <p className={styles.proposalSummary}>{report.title}</p>
+      <p className={styles.reportAnswer}>{report.answer}</p>
+      {report.sections.length > 0 && (
+        <ul className={styles.changes} ref={list}>
+          {report.sections.map((s, i) => (
+            <li
+              key={i}
+              className={styles.change}
+              data-n={i}
+              data-lit={lit === i || undefined}
+              onPointerEnter={staged ? () => useReportFocus.setState({ lit: i }) : undefined}
+              onPointerLeave={staged ? unlightSection : undefined}
+            >
+              <button className={styles.reportRow} onClick={() => goTo(i)} title={staged ? 'Go to it' : 'Open the report here'}>
+                <span className={styles.reportNum}>{String(i + 1).padStart(2, '0')}</span>
+                <span className={styles.changeBody}>
+                  <span className={styles.changeText}>{s.question}</span>
+                  <span className={styles.changeDetail}>
+                    {count(s.points.length, 'point')}
+                    {(() => {
+                      const n = new Set(s.points.flatMap((p) => p.sources)).size
+                      return n ? ` · ${count(n, 'source')}` : ''
+                    })()}
+                  </span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <p className={styles.fine}>
-        {report.sections.length} {research ? 'question' : 'section'}
-        {report.sections.length === 1 ? '' : 's'}
-        {report.sources.length ? ` · ${report.sources.length} source${report.sources.length === 1 ? '' : 's'}` : ''}
-        {report.openQuestions.length ? ` · ${report.openQuestions.length} open question${report.openQuestions.length === 1 ? '' : 's'}` : ''}
+        {[
+          report.implications.length && count(report.implications.length, 'thing') + ' for us',
+          report.openQuestions.length && count(report.openQuestions.length, 'open question'),
+          report.sources.length && count(report.sources.length, 'source'),
+        ]
+          .filter(Boolean)
+          .join(' · ')}
       </p>
       <p className={styles.fine}>{status}</p>
       <div className={styles.proposalActions}>
-        <button className={styles.send} onClick={() => id && useChat.getState().showReport(reportOpen ? null : id)}>
+        {/* Open first: it opens the stage beside the chat (D-094), like a proposal's preview. */}
+        <button className={styles.action} aria-pressed={reportOpen} onClick={() => id && useChat.getState().showReport(reportOpen ? null : id)}>
           {reportOpen ? 'close report' : 'open report →'}
         </button>
         {!saved && !research && (
-          <button className={styles.action} onClick={() => useChat.getState().keepReport(message.id)}>
+          <button className={styles.send} onClick={() => useChat.getState().keepReport(message.id)}>
             save to reports
+          </button>
+        )}
+        {saved && (
+          <button className={styles.action} onClick={inTab}>
+            open in reports
           </button>
         )}
       </div>

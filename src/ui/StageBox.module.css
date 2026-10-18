@@ -1,0 +1,99 @@
+/* The stage as one box (D-096, D-101): drawn like the chat's proposal box, cyan, its title written into the top edge with
+   the screen's controls between runs of the line. Inside the app's box, so it stays clear of the assistant's window. */
+.frame {
+  position: fixed;
+  inset: calc(var(--hud-h) / 2) 6px 6px;
+  z-index: 40;
+  border: 1px solid var(--accent-cyan);
+  pointer-events: none;
+}
+
+.bar {
+  position: fixed;
+  top: calc(var(--hud-h) / 2 - 10px);
+  right: 6px;
+  left: 6px;
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  height: 20px;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.bar::before,
+.bar::after {
+  content: '';
+  flex: none;
+  width: var(--space-3);
+  border-top: 1px solid var(--accent-cyan);
+}
+
+/* Each run of text sits on the page's black, so the frame's line breaks around it. */
+.part,
+.title {
+  flex: none;
+  padding: 0 1ch;
+  background: var(--bg);
+}
+
+.title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--accent-cyan);
+  text-overflow: ellipsis;
+}
+
+.rule,
+.ruleShort {
+  height: 0;
+  border-top: 1px solid var(--accent-cyan);
+}
+
+.rule {
+  flex: 1;
+  min-width: var(--space-3);
+}
+
+.ruleShort {
+  flex: none;
+  width: var(--space-3);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.5ch;
+}
+
+.stepper button,
+.button {
+  border: 0;
+  background: var(--bg);
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.stepper button {
+  padding: 0 0.5ch;
+}
+
+.stepper button:hover,
+.button:hover {
+  color: var(--fg-strong);
+}
+
+.button[data-primary] {
+  color: var(--accent-cyan);
+}
+
+.step {
+  min-width: 4ch;
+  color: var(--fg-strong);
+  text-align: center;
+}

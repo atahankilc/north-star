@@ -183,9 +183,9 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   as it's written; a chat write-up (`make_report`, any chat, when asked) when you press save. Only the author reads it until
   `shared`; then every member does. The client lists it with two queries (`shared == true`, `uid == me`). Author shares,
   unshares (only that field changes) and deletes; an owner may delete a shared one. Shown on the reports tab
-  (`/workspaces/<id>/reports`, `?report=<id>` opens one); the brief lists the newest 10 by title and answer.
+  (`/workspaces/<id>/reports`, `?report=<id>` opens one in the tab's reader beside the table, `src/views/reports/ReportReader.tsx`, D-100/D-102/D-106; the table is paged 10 at a time with numbered pages and filters, `useReportPage`; only a report the chat just wrote opens on the assistant's stage); the brief lists the newest 10 by title and answer.
   `upload .md` (D-091) reads a Markdown file into the same shape (`src/io/reportMarkdown.ts`, `kind: 'upload'`).
-- **Reports in the assistant** (D-099): the report open on the report screen is in the brief in full; listed reports carry a
+- **Reports in the assistant** (D-099): the report open (on the stage, else the tab's reader, D-100) is in the brief in full; listed reports carry a
   `[report:…]` handle that `get_report` reads in full. `/analyze` turns a report into a proposal (new items, edits with sources,
   links, matrix cells, an area).
 - **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the

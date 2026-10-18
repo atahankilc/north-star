@@ -1097,6 +1097,60 @@ open, the bot should see it, read it and do what's asked (build, rework or add c
   another report or says what to focus on (`/analyze only competitors`). The `/` menu shows `on <report title>` when one is
   open, and the chat shows `/analyze · <title>`. No new buttons on the report screen (D-053).
 
+### D-100 · 2026-10-18 · Accepted (changes D-089, D-090, D-094)
+**A report from the reports tab opens as a page of the tab; only a report the chat just wrote goes on the assistant's stage.**
+User: the right-to-left crossing (D-094) is for what the chat recommends. Reports that were uploaded (D-091), saved from
+another session's chat, or shared by someone else belong to the main page. First step of the report screen's redesign;
+the chat's own report (its card and the stage) is refactored next, the way the preview was (D-096).
+- *One body, two frames:* `ReportDocument` (`src/views/reports/ReportDocument.tsx`): title, meta, answer, sections, what it
+  means for us, open questions, sources; `downloadReport` for the .md. Used by `ReportPage` and the stage's `ReportView`.
+- *Report page* (`ReportPage.tsx`): `/workspaces/<id>/reports?report=<id>` renders it instead of the list, with the HUD and
+  chat untouched, left-aligned at `--measure` like the list (D-093). Toolbar in the filter row's place: `[← reports]`, who can
+  see it, share/unshare, delete, download .md. Loading line while the body comes (D-098); "isn't shared with you, or it was
+  deleted" for a bad link. A row and an upload *push* the URL, so browser back returns to the list. Presence: the open
+  report is still broadcast as `sel` (D-090). Item chips select the card and go to it. Viewers can use it (`data-viewer-ok`).
+- *Stage:* `useChat.reportOpen` now means only the chat's report (research or a write-up, its card's `open report →`);
+  `ReportView` no longer touches the URL. The assistant's brief counts the stage's report, else the page's (D-099), so
+  `/analyze` works on either.
+
+### D-101 · 2026-10-18 · Accepted (changes D-089's report screen and card; extends D-096, D-100)
+**The chat's report is drawn like the preview: a stage box with a section stepper, and a card whose rows go to the sections.**
+Second step of the report redesign (user: "refactor the chat's report recommendation part like the preview"). Only the chat's
+own report comes here (D-100).
+- *Stage box* (`src/ui/StageBox.tsx`): the preview's frame and top-edge bar became a shared component (`StageBox`, `Rule`,
+  `Part`, `Stepper`, `BarButton`); `PreviewBar` uses it unchanged in look. The report's bar: `report · <title>`, who can see it,
+  `‹ n/N ›` through its sections (n / p when not typing), `save to reports` (cyan) / share / delete / download .md, `esc`.
+  The report scrolls inside the box, starting under the bar; the 2 px cyan border and the old HUD-like bar are gone.
+- *Lit both ways* (`useReportFocus` in stage.ts, `src/views/workspace/reportNav.ts`): stepping or clicking a row opens the
+  section, scrolls it to the top and lights it (a wash) on the stage and its row in the chat (scrolled into view); hovering
+  either lights the other. `ReportDocument` takes `lit` and `sectionProps` for this; the tab's page passes neither.
+- *Card in the chat:* a box like a proposal's (`report · N questions|sections`, cyan while a write-up waits to be saved):
+  title, the answer in three lines, a row per section (`01` + heading, `N points · N sources`) that goes to it (opening the
+  stage first if it's closed), a line of implications / open questions / sources, the status, then `open report →` /
+  `close report`, `save to reports`, and once saved `open in reports` (closes the stage, opens the tab's page, D-100).
+
+### D-102 · 2026-10-18 · Accepted (changes D-090's tab layout and D-100's report page)
+**The reports tab is a list and a reader in one full-width frame, on a solid background, with an outline beside the text.**
+User: the tab didn't look like the other pages, used a small part of the screen, a report left lots of empty space on the
+right, and the backdrop's animation behind the text made reading hard. Their pick: list + reader (over a full-width
+table with a separate reader screen).
+- *Frame:* under the toolbar, across the page like the table's, `--bg` (not `--surface`, which is see-through and blurred).
+  Left a list column (280–360 px): title, two lines of the answer, `kind · who · date · N sections · shared|only you`,
+  the open one with a cyan edge and wash, others' presence bars (D-068), `show more`. Right the reader (`ReportReader.tsx`,
+  replaces `ReportPage`): a bar (who can see it, share, delete, download .md), then the report at `--measure` with an
+  "on this page" outline beside it (sections, what it means for us, open questions, sources): sticky, the part you're
+  reading marked as you scroll, a click jumps there. The outline goes when the reader is under 1000 px wide (container query).
+  Text and outline centre on very wide screens.
+- *Opening:* a wide screen opens the newest report (`replace`, no history step), so the reader is never empty; picking one
+  pushes `?report=`. Phones (≤760 px) show the list, then the report alone with `← reports`. Upload errors sit in the toolbar.
+- `ReportDocument` marks its blocks (`data-report-block`) for the outline.
+
+### D-103 · 2026-10-18 · Accepted (refines D-091, D-102)
+**Upload is the reports tab's solid button, with an icon.** User: `[upload .md]` looked like an unimportant label; use a
+prominent button like the board's `+`, an icon instead of words. It's the board `+`'s solid magenta square (Menu.module.css
+`.primary`) at the toolbar's 30 px height, an arrow-into-tray SVG; hover empties it to `--bg` with a magenta edge and icon;
+while uploading the arrow keeps rising (still under reduced motion). The tooltip says ".md, or drop one here".
+
 ### D-104 · 2026-10-18 · Accepted (changes D-077; extends D-079)
 **Models belong to the key that pays.** User: is a model choice for everyone or just me, and can my own key and the
 workspace key have different settings? Before, one chat + research pair per browser applied to every call, whichever key
@@ -1139,7 +1193,7 @@ redoing keyboard, screen reader and touch behaviour; still possible later for th
 - Verified with headless Chrome on the emulators (puppeteer's default `--hide-scrollbars` turned off): Table and Settings in
   dark and light at 1440, Table at 390 (both bars); hover and drag states.
 
-### D-104 · 2026-10-18 · Accepted (changes D-102, D-098's report paging)
+### D-106 · 2026-10-18 · Accepted (changes D-102, D-098's report paging)
 **The reports tab is a table on its own; a report opens beside it; ten a page with numbered pages; filters and upload
 inside the table.** The user's calls after D-102: 20 a page is too many; page numbers (1, 2, 3), not scrolling for more
 and not `show more`; no report opens by itself; the table stands alone and an opened report builds up with the cell effect
@@ -1159,6 +1213,6 @@ upload in it, so the table has its actions and the report its own.
   While the next page loads the rows dim instead of emptying. Reports from before `kind` existed have none, so a kind
   filter leaves them out (they show under `any`).
 - *Indexes* (firestore.indexes.json): reports by shared+kind, shared+uid, shared+uid+kind, uid+shared, uid+shared+kind,
-  each + createdAt desc. **Deploy them with the client** (`npx firebase deploy --only firestore:indexes --project
-  north-star-db`); filtered lists fail until they're built.
+  each + createdAt desc. Deployed 2026-10-18 (`npx firebase deploy --only firestore:indexes --project north-star-db`);
+  filtered lists fail until they're built.
 

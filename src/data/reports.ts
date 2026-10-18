@@ -1,10 +1,11 @@
 // Saved reports (D-090). A research report is saved the moment it's written, a chat's write-up when you save it; either
 // way only you see it until you share it with everyone in the workspace. Sharing and deleting are undoable (history.ts);
 // saving isn't a step of its own.
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, updateDoc, where, writeBatch } from 'firebase/firestore'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { collection, doc, getCountFromServer, getDoc, getDocs, limit, onSnapshot, orderBy, query, updateDoc, where, writeBatch, type Query } from 'firebase/firestore'
 import { db, firebase } from './firebase'
 import { tracked } from './history'
-import { useDoc, usePaged, useQuery, type WithId } from './hooks'
+import { useDoc, useQuery, type WithId } from './hooks'
 import { REPORT_LIMITS, type ReportBody, type ReportContent, type ReportKind, type ReportSummary, type SavedReport } from './model'
 
 const reportsOf = (wid: string) => collection(db(), 'workspaces', wid, 'reports')
@@ -75,16 +76,89 @@ export function deleteReport(wid: string, id: string) {
 export const sectionCount = (r: ReportSummary) => r.sectionCount ?? r.sections?.length ?? 0
 export const sourceCount = (r: ReportSummary) => r.sourceCount ?? r.sources?.length ?? 0
 
-// What you may see, newest first, a page at a time: everything shared, and your own. Two queries, since the rules
-// only allow lists they can prove (as with the usage log, D-079). Only the reports tab asks for it (D-098).
-export function useReportList(wid: string, uid: string | undefined, size = 20) {
-  return usePaged<ReportSummary>(
-    [query(reportsOf(wid), where('shared', '==', true)), uid ? query(reportsOf(wid), where('uid', '==', uid)) : null],
-    `reports:${wid}:${uid ?? ''}`,
-    'createdAt',
-    'desc',
-    size,
-  )
+// The reports tab's filters (D-106): what kind, whose, and who can see it.
+export type ReportFilter = { kind: ReportKind | null; mine: boolean; sharing: 'any' | 'shared' | 'private' }
+export const ANY_REPORTS: ReportFilter = { kind: null, mine: false, sharing: 'any' }
+export const REPORTS_PAGE = 10
+
+// What you may see under a filter, as at most two queries the rules can prove (as with the usage log, D-079) that
+// never overlap: shared reports (yours or anyone's), and your own unshared ones. Reports from before `kind` existed
+// are research but have no field, so a kind filter leaves them out.
+function reportQueries(wid: string, uid: string | undefined, f: ReportFilter): Query[] {
+  const kind = f.kind ? [where('kind', '==', f.kind)] : []
+  const out: Query[] = []
+  if (f.sharing !== 'private' && (!f.mine || uid))
+    out.push(query(reportsOf(wid), where('shared', '==', true), ...(f.mine ? [where('uid', '==', uid)] : []), ...kind))
+  if (f.sharing !== 'shared' && uid) out.push(query(reportsOf(wid), where('uid', '==', uid), where('shared', '==', false), ...kind))
+  return out
+}
+
+type PageState = { key: string; lists: (WithId<ReportSummary>[] | null)[]; error: Error | null }
+
+// One numbered page of the tab (D-106), newest first, live. Page n reads the newest n × 10 of each query and shows
+// the n-th ten of them merged (Firestore has no offset; the queries don't overlap, so that's exact). The total comes
+// from a count of each, taken again whenever the lists change. Only the reports tab asks for it (D-098).
+export function useReportPage(wid: string, uid: string | undefined, f: ReportFilter, page: number) {
+  const fkey = `${wid}:${uid ?? ''}:${f.kind ?? ''}:${f.mine}:${f.sharing}`
+  const key = `${fkey}:${page}`
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const qs = useMemo(() => reportQueries(wid, uid, f), [fkey])
+  const [state, setState] = useState<PageState>({ key: '', lists: [], error: null })
+  const [total, setTotal] = useState<{ fkey: string; n: number } | null>(null)
+  // What was on screen, kept while the next page or filter loads, so the table doesn't empty out in between.
+  const shown = useRef<WithId<ReportSummary>[]>([])
+
+  useEffect(() => {
+    setState({ key, lists: qs.map(() => null), error: null })
+    const offs = qs.map((q, i) =>
+      onSnapshot(
+        query(q, orderBy('createdAt', 'desc'), limit(page * REPORTS_PAGE)),
+        (snap) =>
+          setState((s) => {
+            if (s.key !== key) return s
+            const lists = [...s.lists]
+            lists[i] = snap.docs.map((d) => ({ ...(d.data() as ReportSummary), id: d.id }))
+            return { ...s, lists }
+          }),
+        (error) => setState((s) => (s.key === key ? { ...s, error } : s)),
+      ),
+    )
+    return () => offs.forEach((off) => off())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+
+  // Counted again when what's listed changes (a report added, shared or deleted).
+  const ready = state.key === key && state.lists.every(Boolean)
+  const sig = ready ? state.lists.map((l) => l!.map((d) => d.id + d.shared).join()).join('|') : null
+  useEffect(() => {
+    if (sig === null) return
+    let live = true
+    Promise.all(qs.map((q) => getCountFromServer(q)))
+      .then((counts) => live && setTotal({ fkey, n: counts.reduce((a, c) => a + c.data().count, 0) }))
+      .catch(() => live && setTotal({ fkey, n: -1 }))
+    return () => {
+      live = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig, fkey])
+
+  if (ready) {
+    shown.current = state.lists
+      .flat()
+      .filter((d): d is WithId<ReportSummary> => !!d)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice((page - 1) * REPORTS_PAGE, page * REPORTS_PAGE)
+  }
+  const n = total?.fkey === fkey ? total.n : null
+  return {
+    data: shown.current,
+    // Nothing to show yet: the first load, or a filter with no rows kept from before.
+    isLoading: !ready && !state.error,
+    error: state.error,
+    // How many match, and pages; null while counting (or -1 if counting failed: then only "next" is offered).
+    total: n,
+    pages: n === null || n < 0 ? null : Math.max(1, Math.ceil(n / REPORTS_PAGE)),
+  }
 }
 
 // One report's summary, live (shared or not, deleted): for the report screen and the chat's report card.

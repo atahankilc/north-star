@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (scroll bars, D-105; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
+_Last updated: 2026-10-18 (reports table, side reader, numbered pages, filters, D-106; scroll bars, D-105; upload icon button, D-103; reports tab as list + reader, D-102; chat report on the stage box, D-101; report page in the tab, D-100; assistant reads reports + /analyze, D-099; roles, people list, lazy paged reports/usage, D-098; settings reorganised, D-097; assistant terminal + stage, D-094; small box + perched orb, D-095; consistent pages, D-093; orb pomegranate easter egg, D-092; reports and [web] + tools tried with a real key; upload .md reports, D-091; reports tab + chat write-ups, D-090; research report screen, D-089; deep research, D-088; preview, D-087; attachments, D-083)_
 
 ## Phase
 **Phase 2b done: one board** (spec: docs/specs/board.md, D-040 to D-052). Domains and groups were tried and removed (D-048, D-049);
@@ -358,6 +358,24 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   Verified headless on emulators with a fake OpenAI (uploaded .md → opened → `/analyze`: the brief has the report in full
   with its sources' URLs, get_report reads it by handle, a bad handle is a warn step, the proposal shows). Build passes.
   Committed (not pushed). Not tried with a real key yet.
+
+## Done (reports: tab page, chat report on the stage, table + reader, 2026-10-18)
+- D-100: reports from the tab open as a page of the tab (`ReportPage`), the chat's own report stays on the stage; shared
+  body `ReportDocument`. Verified headless on emulators (upload → page, no stage; back link and browser back; chat opened
+  beside it stays on the right; 390 px no horizontal scroll). Build passes.
+- D-106: reports tab = table alone (filters + upload in its top row), 10 a page with numbered pages, nothing opens by
+  itself, a report opens beside the table with the cell effect. Verified headless on emulators with 23 seeded reports
+  (pages 10/10/3, kind filter 8, side by side dark + light, Esc closes, 390 px no horizontal scroll). Build passes.
+  Indexes deployed 2026-10-18.
+- D-103: upload on the reports tab is a solid magenta icon square like the board's `+`. Verified headless (dark, hover, light).
+- D-102: reports tab redone (user: didn't look like other pages, empty right side, animation behind the text): one
+  solid full-width frame, list left, reader right with a scroll-following outline; newest opens on wide screens; phones
+  list → report. Verified headless on emulators (dark + light 1440, 1920, 390 with no horizontal scroll) in a worktree of
+  HEAD + these files, because another session's in-progress `src/ai/settings.ts` change (models) doesn't typecheck in
+  the main folder then.
+- D-101: the chat's report refactored like the preview: shared `StageBox` (preview uses it too), section stepper, card rows
+  lit both ways with the stage, `open in reports`. Verified headless on emulators (dark + light 1440: card, stage, n/p,
+  row click open and closed, Esc; preview still draws with the shared box). Build passes.
 
 ## Done (model selection, 2026-10-18)
 - D-104: models belong to the key that pays: own key (default + per-workspace overrides, this browser), workspace key

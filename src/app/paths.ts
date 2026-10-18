@@ -3,7 +3,7 @@
 //   /workspaces                         your workspaces
 //   /workspaces/<id>                    a workspace's board
 //   /workspaces/<id>/flow|table|matrix  its other views
-//   /workspaces/<id>/reports            saved research reports (D-090); ?report=<id> opens one
+//   /workspaces/<id>/reports            saved research reports (D-090); ?report=<id> is one as a page
 //   ?item=<id>                          selects an item (board); &feature=<id> opens a competitor's feature
 import type { PresenceView } from '../data/presence'
 

@@ -68,7 +68,12 @@ Values will be tuned against contrast checks (WCAG AA for text).
   (buttons, view tabs, the Settings menu, choices).
 - *Tracking:* `--track-label` 0.12em on every small uppercase label, `--track-title` -0.02em on Geist titles,
   `--track-display` -0.045em on the display headline. Lowercase actions are untracked.
-- *Reading width:* `--measure` (760 px) for the report screen and the reports list.
+- *Reading width:* `--measure` (760 px) for a report's text (the tab's reader, the stage's report).
+- *Reports tab (D-102, D-106):* a table on solid `--bg` (never the see-through surface: nothing animates behind reading
+  text) with its filters and upload in its top row, numbered pages; an opened report builds up beside it while the table
+  rebuilds as a list on the left; the reader has an "on this page" outline that follows the scroll.
+- *The assistant's stage (D-096, D-101):* one cyan box (`src/ui/StageBox.tsx`) with its title and controls written into the top
+  edge; the preview and the chat's report both use it, each with a `‹ n/N ›` stepper (n / p) lit both ways with the chat's box.
 
 ## 5. ASCII rendering
 

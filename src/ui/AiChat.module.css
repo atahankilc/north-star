@@ -744,67 +744,7 @@ html[data-motion='reduced'] :global([data-side-panel]) {
   }
 }
 
-/* The preview (D-087, D-096): a bare screen over the app (the HUD, filters and board tools are hidden, previewLock.ts),
-   drawn as one box like the chat's proposal box: cyan while undecided, its title written into the top edge with the
-   views, the stepper and esc between runs of the line. */
-.previewFrame {
-  position: fixed;
-  inset: calc(var(--hud-h) / 2) 6px 6px;
-  z-index: 40;
-  border: 1px solid var(--accent-cyan);
-  pointer-events: none;
-}
-
-.previewBar {
-  position: fixed;
-  top: calc(var(--hud-h) / 2 - 10px);
-  right: 6px;
-  left: 6px;
-  z-index: 41;
-  display: flex;
-  align-items: center;
-  height: 20px;
-  color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  line-height: 20px;
-  white-space: nowrap;
-}
-
-/* Each run of text sits on the page's black, so the frame's line breaks around it. */
-.previewBar > :not(.previewRule, .previewRuleShort) {
-  padding: 0 1ch;
-  background: var(--bg);
-}
-
-.previewBar::before {
-  content: '';
-  flex: none;
-  width: var(--space-3);
-  border-top: 1px solid var(--accent-cyan);
-}
-
-.previewRule,
-.previewRuleShort {
-  height: 0;
-  border-top: 1px solid var(--accent-cyan);
-}
-
-.previewRule {
-  flex: 1;
-  min-width: var(--space-3);
-}
-
-.previewRuleShort {
-  flex: none;
-  width: var(--space-3);
-}
-
-.previewTitle {
-  color: var(--accent-cyan);
-  padding-right: 0 !important;
-}
-
+/* The preview's parts in the stage box's bar (StageBox, D-096): how many of each change, and the views. */
 .previewKey {
   display: flex;
   gap: 1.5ch;
@@ -831,44 +771,48 @@ html[data-motion='reduced'] :global([data-side-panel]) {
   text-underline-offset: 4px;
 }
 
-.previewStepper {
-  display: flex;
-  align-items: center;
-  gap: 0.5ch;
-}
-
-.previewStepper button,
-.previewClose {
-  padding: 0 0.5ch;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-}
-
-.previewStepper button:hover,
-.previewClose:hover {
-  color: var(--fg-strong);
-}
-
-.previewStep {
-  min-width: 4ch;
-  color: var(--fg-strong);
-  text-align: center;
-}
-
-.previewBar::after {
-  content: '';
-  flex: none;
-  width: var(--space-3);
-  border-top: 1px solid var(--accent-cyan);
-}
-
 /* The proposal's row lit from the stage or the stepper (D-096). */
 .change[data-lit] {
   background: var(--wash-2);
   box-shadow: -6px 0 0 var(--wash-2), 6px 0 0 var(--wash-2);
+}
+
+/* A report's card (D-101): its answer in three lines, a row per section that goes to it on the stage. */
+.reportAnswer {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  line-height: 18px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.reportRow {
+  display: grid;
+  grid-template-columns: 3ch minmax(0, 1fr);
+  gap: var(--space-1);
+  align-items: baseline;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reportRow:hover .changeText {
+  color: var(--fg-strong);
+}
+
+.reportNum {
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 18px;
 }
 
 /* What the bare preview screen leaves out. */

@@ -45,3 +45,11 @@ export function markHover(id: string) {
     onPointerLeave: unlight,
   }
 }
+
+// The same for a staged report (D-101): which section is lit, from hovering its row in the chat's report card or
+// stepping to it on the stage. Sections by index.
+export const useReportFocus = create<{ lit: number | null; step: number | null }>(() => ({ lit: null, step: null }))
+
+export function unlightSection() {
+  useReportFocus.setState((f) => ({ lit: f.step }))
+}

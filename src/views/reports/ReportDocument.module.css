@@ -1,0 +1,210 @@
+/* A report laid out to read (D-089): Geist at a readable measure, labels in mono. The page around it scrolls. */
+.doc {
+  max-width: var(--measure);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  line-height: 1.6;
+}
+
+.title {
+  composes: title from '../../ui/Page.module.css';
+  margin: 0 0 var(--space-1);
+}
+
+.meta {
+  margin: 0 0 var(--space-6);
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* The answer: the one thing to read if nothing else. */
+.answer {
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4);
+  border-left: 2px solid var(--accent-cyan);
+  background: var(--wash-1);
+  color: var(--fg-strong);
+  font-size: var(--text-lg);
+}
+
+.section {
+  margin: 0 0 var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+/* Lit from the chat's report card or the stage's stepper (D-101), like a proposal's row (D-096). */
+.section[data-lit] {
+  background: var(--wash-1);
+  box-shadow: -12px 0 0 var(--wash-1), 12px 0 0 var(--wash-1);
+  scroll-margin-top: var(--space-4);
+}
+
+.section {
+  scroll-margin-top: var(--space-4);
+}
+
+.section summary {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  color: var(--fg-strong);
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+
+.section summary::-webkit-details-marker {
+  display: none;
+}
+
+.section summary::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--fg-faint);
+}
+
+.section:not([open]) summary::after {
+  content: '▸';
+}
+
+.num {
+  flex: none;
+  min-width: 2ch;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: inherit;
+}
+
+.points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0 0 0 calc(2ch + var(--space-3));
+  list-style: none;
+}
+
+.points li {
+  position: relative;
+}
+
+.points li::before {
+  content: '·';
+  position: absolute;
+  left: -1.4ch;
+  color: var(--fg-faint);
+}
+
+.points li[data-inferred] {
+  color: var(--fg-dim);
+}
+
+.cites {
+  margin-left: var(--space-1);
+  white-space: nowrap;
+}
+
+/* A source number: small, boxed, links to the page; the title shows on hover. */
+.cite {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 2px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 16px;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: 2px;
+}
+
+.cite:hover {
+  border-color: var(--accent-cyan);
+}
+
+.inferred {
+  margin-left: var(--space-2);
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+}
+
+.block {
+  margin: var(--space-6) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.blockLabel {
+  composes: label from '../../ui/Frame.module.css';
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
+
+.block .points {
+  padding-left: calc(2ch + var(--space-3));
+}
+
+.items {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-left: var(--space-2);
+}
+
+/* One of our items: a link back to it on the board. */
+.item {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.item:hover {
+  border-color: var(--accent-cyan);
+  color: var(--fg-strong);
+}
+
+.sources {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.sources li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  align-items: baseline;
+}
+
+.sources a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--line-hover);
+  text-underline-offset: 2px;
+}
+
+.sources a:hover {
+  color: var(--accent-cyan);
+}
+
+.domain {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
