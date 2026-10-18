@@ -13,7 +13,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Startup-ideation workspace for any kind of startup (B2B, B2C, anything); web only, sign-in required (D-008, D-043).
 - Name: North Star; the Firebase project is `north-star-db` (D-017).
 - Item types: customer, problem, competitor (+ its features), idea, feature, all on one board (D-007, D-040, D-041, D-042).
-- Customers are the segments: a `for` edge tags an item with a customer, drawn as a chip on the card, not a line (D-044).
+- Customers are the segments: a `for` edge tags an item with a customer, a chip on the card and a grey dashed line; the
+  `for:` filter shows only the chosen customers' cards (D-044, D-119).
 - Chain order everywhere: customers → problems → competitors → ideas → features (D-045).
 - No domains, no groups; text labels name areas and are the places you jump to (D-048, D-049, D-050).
 - Tags group cards within a type: white `#chips`, TAG filter, Table column; competitors have tags too (D-056).

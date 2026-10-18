@@ -131,7 +131,7 @@ export function useBoardItems(): BoardItem[] {
   }, [customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments])
 }
 
-// What the filters let through (customer cards stay visible under a `for:` filter).
+// What the filters let through; under a `for:` filter only the chosen customers' cards stay (D-119).
 export function useVisibleItems(items: BoardItem[]): BoardItem[] {
   const types = useWsView((s) => s.types)
   const forIds = useWsView((s) => s.forIds)
@@ -141,7 +141,7 @@ export function useVisibleItems(items: BoardItem[]): BoardItem[] {
       items.filter(
         (i) =>
           types.includes(i.type) &&
-          (forIds.length === 0 || i.type === 'customer' || i.forIds.some((f) => forIds.includes(f))) &&
+          (forIds.length === 0 || (i.type === 'customer' ? forIds.includes(i.id) : i.forIds.some((f) => forIds.includes(f)))) &&
           (tagFilter.length === 0 || i.tags.some((t) => tagFilter.includes(t))),
       ),
     [items, types, forIds, tagFilter],

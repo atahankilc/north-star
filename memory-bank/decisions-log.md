@@ -197,7 +197,7 @@ picked from start-ups / scale-ups / SMEs / enterprises. How they attach: D-044.
 ### D-044 · 2026-10-17 · Accepted
 **Customers are the segments.** One user-created Customer item at any breadth ("SMEs", "solo game devs"); no separate segment type or
 segment fields. Tagging an item with a customer is a `for` edge, drawn on the board as a label chip on the item's card, not a line.
-Selecting a customer card highlights the items tagged with it and shows those lines while selected. The `for:` filter lists customers.
+Selecting a customer card highlights the items tagged with it. The `for:` filter lists customers. (Lines and filter changed by D-119.)
 
 ### D-045 · 2026-10-17 · Accepted
 **Flow columns: Customers → Problems → Competitors → Ideas → Features** (who hurts, what hurts, how they cope today, our answer,
@@ -1395,3 +1395,13 @@ carry it (the current one can stay inside settings) to the board view".
   keep it (`cleanLabel` accepts the empty text for a title). The assistant's context skips it (empty text), as before.
 - *Verified* in headless Chrome on the emulators: added from `+` on the example workspace (placed clear of the headings),
   renamed on the board (the breadcrumb followed), description edited, right-click menu; `npm run test:rules` 245 passed.
+
+### D-119 · 2026-10-18 · Accepted (changes D-044)
+**`for` links drawn as lines; the `for:` filter hides the other customers.** User: "for linkleri default olarak gözükmüyor,
+neden? … gösterelim bakalım" and "for filtresinde bir customer seçtiğimde, sadece o customer card ı gözüksün".
+- `for` edges are drawn on the board like any other link (grey, dashed, `relates · for` group), so the LINKS filter hides them;
+  the customer chip on the card stays. Before, they showed only while their customer was selected.
+- Under a `for:` filter only the chosen customers' cards stay (board, Flow, Table: `useVisibleItems`); before, every
+  customer card stayed visible. The dropdown still lists every customer.
+- *Alternative kept in mind:* if the lines turn out too busy, turn the `relates · for` group off by default or give `for`
+  its own LINKS entry.

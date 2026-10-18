@@ -45,8 +45,8 @@ descriptions live in the side panel only (D-057).
 - **Text sizes** (D-108): a selected text label gets a bar with H1 (heading, the default), H2 and note (small mono), a
   colour, edit and remove.
 
-- **Customers are the segments** (D-044): tagging an item with a customer is a `for` link, drawn as a label chip on the card,
-  not a line. Selecting a customer highlights everything tagged for it and shows those lines.
+- **Customers are the segments** (D-044): tagging an item with a customer is a `for` link, drawn as a label chip on the card
+  and as a grey dashed line (D-119; the LINKS filter's `relates · for` hides it). Selecting a customer highlights everything tagged for it.
 - Anything can link to anything. Typical links: idea → solves → problem; competitor → competes with → problem or idea;
   feature → inspired by → idea or a competitor's feature. Shift+drag picks a sensible link kind.
 - **Text labels** name areas of the board ("COMPETITORS", "PRICING IDEAS"). Headings and subheadings are places in the
@@ -73,7 +73,7 @@ descriptions live in the side panel only (D-057).
 ```
 
 - **Views** are tabs beside the breadcrumb, after a vertical rule: no frame (frames mean filters), the current one underlined in magenta (D-053, D-066).
-- **Filters** are dropdowns (D-053): `show` (item types), `for` (customers) and `tag` (D-056). Remembered per workspace.
+- **Filters** are dropdowns (D-053): `show` (item types), `for` (customers; only the chosen customers' cards stay, D-119) and `tag` (D-056). Remembered per workspace.
 - **Go to** lists every text label in reading order (top to bottom, then left to right). Choosing one, or pressing 1–9,
   glides the camera there (instant under reduced motion). Any pan or zoom of your own takes over.
 - **Create**: one `+` button opens a menu of everything you can create (D-053).

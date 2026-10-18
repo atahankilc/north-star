@@ -17,7 +17,7 @@ import {
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked } from '../../data/edges'
-import { FOR, type CompetitorFeature, type Edge, type Label } from '../../data/model'
+import { type CompetitorFeature, type Edge, type Label } from '../../data/model'
 import { usePresence } from '../../data/presence'
 import { wasLine } from '../workspace/preview'
 import { usePreviewFocus, useStage } from '../workspace/stage'
@@ -374,8 +374,6 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
       const from = end(edge.fromId)
       const to = end(edge.toId)
       if (from === to || !positions.has(from) || !positions.has(to)) continue
-      // Customer tags are labels on the card; their lines show only while that customer is selected.
-      if (edge.kind === FOR && edge.toId !== customerId) continue
       // What the link counts as touching for focus: its ends, where it's drawn, and the competitor whose feature it
       // reaches, so selecting a competitor lights links to its features too, fanned out or not.
       const touches = [edge.fromId, edge.toId, from, to, owner.get(edge.fromId), owner.get(edge.toId)].filter((id): id is string => Boolean(id))
@@ -389,7 +387,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     }
     for (const line of out) line.of = count.get(line.pair)!
     return out
-  }, [edges, positions, competitorFeatures, customerId, selectedId, hiddenLinks])
+  }, [edges, positions, competitorFeatures, selectedId, hiddenLinks])
 
   // Focus (D-108): with a card under the pointer, or cards selected, links that don't touch them go faint; with a link
   // selected, every other one does.

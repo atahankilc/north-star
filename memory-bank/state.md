@@ -20,7 +20,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   `edit_link` / `add_note` (D-108).
 
 ## In progress
-- Nothing in progress; D-118 (project title block) committed, not pushed. Keep this section true: empty it when work is committed.
+- Nothing in progress; D-118 and D-119 committed, not pushed. Keep this section true: empty it when work is committed.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

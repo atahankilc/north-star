@@ -447,3 +447,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   The counts row was tried and dropped at the user's request. Rules allow `kind: 'title'` (245 tests), deployed.
 - Verified in headless Chrome on the emulators: placement clear of the headings, rename (breadcrumb follows), description
   edit (caret at the end, field at full height), right-click menu. `npm run build` passes.
+
+## Done (2026-10-18): D-119 `for` links as lines, `for:` filter hides the other customers
+- `for` edges drawn like any link (grey dashed, LINKS `relates · for` hides them); under a `for:` filter only the chosen
+  customers' cards stay (`useVisibleItems`, so board, Flow and Table). Verified: `tsc -b` passes; not checked on screen by
+  Claude, the user committed after their own look.
