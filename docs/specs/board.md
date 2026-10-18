@@ -32,8 +32,11 @@ descriptions live in the side panel only (D-057).
   competitor fans them out to the right as compressed cards; clicking one opens it unfolded in the competitor's panel, and
   shift+dragging a card onto one links to it (`inspired by`). Links to them show while they're fanned out.
 - **Links** (D-059) run straight from edge to edge with an arrowhead, so they read as sentences ("idea → solves → problem").
-  The kind is written on a chip at the midpoint, with the link's own label after it. Colour by meaning (D-108): violet
-  solves / part of, salmon competes / contradicts, sand inspired by / depends on, grey relates and customer tags (`for`, its own group); both hidden by default, still shown for the selected card (D-128); the pattern tells
+  The kind is written on a chip at the midpoint; the link's own label follows it only while the link is hovered,
+  selected or the selected card's (D-135). Colour by meaning (D-108): violet
+  solves / part of, salmon competes / contradicts, sand inspired by / depends on, grey relates and customer tags (`for`, its own group); both hidden by default, still shown for the selected card (D-128). `competes` is its own LINKS group,
+  hidden by default too: a competitor's lines show while it (or a card it competes with) is hovered or selected, and its
+  card says how many it competes with (`vs 8`) (D-135); the pattern tells
   kinds apart within a colour. Hovering a card (or selecting cards) dims every link that doesn't touch it.
   Click a link to select it: a bar under it changes its kind, gives it a label, turns it around, removes it (Delete too).
   The `LINKS` filter hides groups of links and doubles as the colour key.

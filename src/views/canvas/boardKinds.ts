@@ -93,6 +93,16 @@ export function useBoardItems(): BoardItem[] {
     const line = (...parts: (string | undefined)[]) => parts.filter(Boolean).join('   ')
     const counts = new Map<string, number>()
     for (const f of competitorFeatures) counts.set(f.competitorId, (counts.get(f.competitorId) ?? 0) + 1)
+    // What a competitor competes with (D-135): its lines are hidden by default, so the card says how many there are
+    // (`vs 8`; the board's mono font is a Latin subset, no ⚔).
+    const rivals = new Map<string, Set<string>>()
+    for (const e of edges) {
+      if (e.kind !== 'competes-with') continue
+      for (const [c, other] of [[e.fromId, e.toId], [e.toId, e.fromId]]) {
+        if (!rivals.has(c)) rivals.set(c, new Set())
+        rivals.get(c)!.add(other)
+      }
+    }
     // Attachments (D-083): a count at the end of the card's meta line.
     const fileCounts = new Map<string, number>()
     for (const a of attachments) fileCounts.set(a.nodeId, (fileCounts.get(a.nodeId) ?? 0) + 1)
@@ -120,7 +130,7 @@ export function useBoardItems(): BoardItem[] {
         y: c.y ?? 0,
         createdAt: c.createdAt,
         forIds: tags.get(c.id) ?? [],
-        meta: line(labels(c.id), `${n} feature${n === 1 ? '' : 's'}`, files(c.id)),
+        meta: line(rivals.get(c.id)?.size ? `vs ${rivals.get(c.id)!.size}` : undefined, `${n} feature${n === 1 ? '' : 's'}`, labels(c.id), files(c.id)),
       })
     }
     for (const f of features) {

@@ -1,15 +1,17 @@
 // What a link says, and how the board draws it (D-108): four groups by meaning, each with its own colour, and a line
-// pattern per kind inside the group. Customer tags (`for`) are a group of their own; they and `relates` are hidden by default (D-128). Shared by the board, the link bar, the LINKS filter and the panel's link list.
+// pattern per kind inside the group. Customer tags (`for`) are a group of their own; they and `relates` are hidden by default (D-128).
+// `competes` is its own group too, in the clashes colour, hidden by default (D-135): the matrix says the same, and its
+// lines cross the whole board. Shared by the board, the link bar, the LINKS filter and the panel's link list.
 import { FOR, type EdgeKind } from '../../data/model'
 
-export type LinkGroup = 'solves' | 'clashes' | 'draws' | 'plain' | 'for'
+export type LinkGroup = 'solves' | 'competes' | 'clashes' | 'draws' | 'plain' | 'for'
 
 type KindStyle = { label: string; group: LinkGroup; dash?: [number, number] }
 
 export const LINK_KINDS: Record<string, KindStyle> = {
   solves: { label: 'solves', group: 'solves' },
   'part-of': { label: 'part of', group: 'solves', dash: [0.18, 0.1] },
-  'competes-with': { label: 'competes', group: 'clashes' },
+  'competes-with': { label: 'competes', group: 'competes' },
   contradicts: { label: 'contradicts', group: 'clashes', dash: [0.06, 0.06] },
   'inspired-by': { label: 'inspired by', group: 'draws', dash: [0.03, 0.07] },
   'depends-on': { label: 'depends on', group: 'draws', dash: [0.18, 0.1] },
@@ -22,7 +24,8 @@ export const EDGE_KINDS: EdgeKind[] = ['relates', 'solves', 'part-of', 'competes
 
 export const LINK_GROUPS: { key: LinkGroup; label: string }[] = [
   { key: 'solves', label: 'solves · part of' },
-  { key: 'clashes', label: 'competes · contradicts' },
+  { key: 'competes', label: 'competes (competitors)' },
+  { key: 'clashes', label: 'contradicts' },
   { key: 'draws', label: 'inspired by · depends on' },
   { key: 'plain', label: 'relates' },
   { key: 'for', label: 'for (customer tags)' },
@@ -31,6 +34,7 @@ export const LINK_GROUPS: { key: LinkGroup; label: string }[] = [
 // For the DOM (follows the theme by itself); WebGL uses `palette.link[group]`.
 export const LINK_TONE: Record<LinkGroup, string> = {
   solves: 'var(--link-solves)',
+  competes: 'var(--link-clashes)',
   clashes: 'var(--link-clashes)',
   draws: 'var(--link-draws)',
   plain: 'var(--link-plain)',

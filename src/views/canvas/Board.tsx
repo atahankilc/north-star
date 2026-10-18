@@ -419,6 +419,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
   // Several links between the same pair of cards (both ways, or through a competitor's features) are drawn side by
   // side: `slot` is a line's place in its pair, direct links first, and `of` how many the pair has.
   const hiddenLinks = useWsView((s) => s.hiddenLinks)
+  // A competitor's hidden `competes` lines also show while its card (or the card they reach) is under the pointer (D-135).
+  const hoverId = useCanvas((s) => s.hoverId)
   const lines = useMemo(() => {
     const owner = new Map(competitorFeatures.map((f) => [f.id, f.competitorId]))
     const end = (id: string) => (positions.has(id) ? id : (owner.get(id) ?? id))
@@ -432,9 +434,12 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
       // What the link counts as touching for focus: its ends, where it's drawn, and the competitor whose feature it
       // reaches, so selecting a competitor lights links to its features too, fanned out or not.
       const touches = [edge.fromId, edge.toId, from, to, owner.get(edge.fromId), owner.get(edge.toId)].filter((id): id is string => Boolean(id))
-      // Hidden by the LINKS filter (D-108), unless it's the selected card's or one the assistant's preview adds.
+      // Hidden by the LINKS filter (D-108), unless it's the selected card's or one the assistant's preview adds; a
+      // competes line also for the hovered card (D-135).
       const active = touches.includes(selectedId ?? '')
-      if (hiddenLinks.includes(linkStyle(edge.kind).group) && !active && !edge.id.startsWith('preview-')) continue
+      const group = linkStyle(edge.kind).group
+      const shown = active || edge.id.startsWith('preview-') || (group === 'competes' && touches.includes(hoverId ?? ''))
+      if (hiddenLinks.includes(group) && !shown) continue
       const pair = from < to ? `${from}|${to}` : `${to}|${from}`
       const slot = count.get(pair) ?? 0
       count.set(pair, slot + 1)
@@ -442,11 +447,10 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     }
     for (const line of out) line.of = count.get(line.pair)!
     return out
-  }, [edges, positions, competitorFeatures, selectedId, hiddenLinks])
+  }, [edges, positions, competitorFeatures, selectedId, hiddenLinks, hoverId])
 
   // Focus (D-108): with a card under the pointer, or cards selected, links that don't touch them go faint; with a link
   // selected, every other one does.
-  const hoverId = useCanvas((s) => s.hoverId)
   const selection = useCanvas((s) => s.selection)
   const edgeId = useCanvas((s) => s.edgeId)
   const focusIds = useMemo(() => {

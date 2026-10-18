@@ -77,6 +77,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Links: straight, arrowhead, kind written on a solid chip; colour by meaning in 4 groups (violet solves/part of, salmon
   competes/contradicts, sand inspired/depends, grey relates/for); hover/selection dims others; click a link → bar (kind,
   label, reverse, remove); LINKS filter (D-059, D-108). Several links between two cards sit side by side, chips staggered (D-113).
+- `competes` lines are their own LINKS group, hidden by default, shown for the hovered or selected card; competitor cards say
+  `vs N`; a link's own label shows on its chip only while it's hovered, selected or the selected card's (D-135).
 - A competitor in focus (hovered, selected) lights the links to its features as well (D-115).
 - Multi-select (shift+click, alt+drag box), group drag, "N selected" panel; ⌘C/⌘V/⌘D in-tab clipboard; `○` link handle (D-108).
   The panel lines up (align 6 ways, space out ↔ ↕), arrows nudge 0.25 (shift 1), presence `more` sends the whole selection (D-124).

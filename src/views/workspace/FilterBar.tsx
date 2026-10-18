@@ -1,7 +1,7 @@
 // `[ SHOW all ▾ ] [ FOR any ▾ ] [ TAG any ▾ ] [ GO TO ▾ ]` under the HUD (docs/specs/board.md §3, D-053, D-056).
 import { useMemo } from 'react'
 import { BOARD_TYPES } from '../../data/model'
-import { useWsView } from '../../state/workspaceView'
+import { QUIET_LINKS, useWsView } from '../../state/workspaceView'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import menuStyles from '../../ui/Menu.module.css'
 import { BOARD_KINDS, TYPE_ACCENT, useAllTags, useBoardItems } from '../canvas/boardKinds'
@@ -114,8 +114,9 @@ export function FilterBar({ goTo, links, focus }: Props) {
           summary={LINK_GROUPS.map((g) => (
             <span key={g.key} className={menuStyles.swatch} data-on={!hiddenLinks.includes(g.key)} style={{ ['--tone' as string]: LINK_TONE[g.key] }} />
           ))}
-          // `relates` and customer tags are hidden by default (D-128), so only hiding another group counts as narrowing.
-          active={hiddenLinks.some((g) => g !== 'plain' && g !== 'for')}
+          // `relates`, customer tags (D-128) and competes lines (D-135) are hidden by default, so only hiding another group
+          // counts as narrowing.
+          active={hiddenLinks.some((g) => !QUIET_LINKS.includes(g))}
           items={linkItems}
           ariaLabel="Show links by kind"
         />

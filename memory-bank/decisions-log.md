@@ -1805,3 +1805,21 @@ BUBBLES has 145 cells with good notes, too many to score by hand.
 - *Verified* in headless Chrome on the emulators with a fake OpenAI: `/criteria` gave one row; preview showed the cells;
   applied, the matrix read `part,met,no` / `no,no,·` and `◇ 2 open`; a second proposal keeping one criterion word for word
   kept its scores and dropped the rest (`◇ 1 open`); ⌘Z restored the first. Not tried with a real model. `npm run build`.
+
+### D-135 · 2026-10-19 · Accepted (extends D-108, D-128; slice 3 of Phase 6)
+**Competitors' lines are off the board by default; link labels show in focus only.** In BUBBLES 67 of 252 links were
+competitor `competes with` lines crossing the whole board, repeating what the matrix says, and 127 links carried a
+full-sentence label whose chips piled up into unreadable text (docs/specs/usefulness.md).
+- *Group:* `competes-with` leaves `clashes` (now `contradicts` alone) for its own LINKS group `competes (competitors)`,
+  same salmon colour (`palette.link.competes`). Hidden by default (`QUIET_LINKS` with `plain` and `for`); the saved
+  filters' version goes to 4, so boards opened before hide it once, then the choice is remembered. Hiding it doesn't count
+  as narrowing (the LINKS filter isn't lit for it).
+- *Shown* for the selected card (as every hidden group, D-128) and, for this group only, for the hovered card, so pointing
+  at a competitor draws what it competes with. The assistant's preview still shows links it adds.
+- *Count:* a competitor card's meta line starts `vs N`, the distinct cards it competes with. Not ⚔: the board's Geist Mono
+  is the Latin subset, which hasn't the glyph.
+- *Chips:* the kind only; the link's own label joins it while the link is hovered, selected, or touches the selected card.
+  Labels stay in the link bar and the panel's link list.
+- *Verified* in headless Chrome on the emulators (example workspace): no salmon lines by default, hovering ShiftGrid drew
+  its two, selecting Paper rota drew its one with `competes`, cards read `vs 2 · 4 features`. Not seen on BUBBLES (the
+  browser tab was signed out). `npm run build`.

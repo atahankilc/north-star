@@ -520,3 +520,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   stale-score cleanup, preview, mode `/criteria`.
 - Verified in headless Chrome on the emulators with a fake OpenAI (propose, preview, apply, trim keeps a kept criterion's
   scores, ⌘Z); `npm run build`. Not tried with a real model.
+
+## Done (D-135 competitor lines off by default, 2026-10-19)
+- `competes` LINKS group hidden by default (filters v4), shown on hover/selection; competitor cards `vs N`; link labels
+  only in focus. Verified in headless Chrome on the emulators; `npm run build`.

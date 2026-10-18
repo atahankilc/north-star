@@ -1,6 +1,6 @@
 # Spec: from research to decisions (Phase 6)
 
-Status: **slices 1–2 built (D-133, D-134)**; the rest planned. Each slice gets its own D-number when it's built.
+Status: **slices 1–3 built (D-133–D-135)**; the rest planned. Each slice gets its own D-number when it's built.
 
 ## 1. Why
 
@@ -59,8 +59,9 @@ Each slice ships on its own, with its decision, docs and tests. Order is the rec
 - The assistant drafts each feature's criteria and scores the cells from the notes already written, as a proposal
   (checklist, one undo step).
 
-### Slice 3: competitor lines off the board by default
-- `competes with` lines hidden by default; a competitor's card shows `⚔ N` (the cards it competes with), and its lines
+### Slice 3: competitor lines off the board by default (built, D-135)
+- `competes with` lines hidden by default; a competitor's card shows `vs N` (the cards it competes with; the board font has
+  no ⚔), and its lines
   show only for the hovered or selected card. The `LINKS` filter still turns them all on.
 - Link chips show only the kind; the label moves to hover and the link bar.
 

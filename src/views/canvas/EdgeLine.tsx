@@ -1,7 +1,7 @@
 // A link between two things on the board (D-059): a straight line from edge to edge with an arrowhead, so you can
 // read it as a sentence ("idea → solves → problem"). Its colour says what kind of link it is (D-108, linkKinds.ts), its
-// pattern which kind inside that group, and the kind (and the link's own label) sits on a framed chip at the midpoint
-// (moved along the line when links sit side by side).
+// pattern which kind inside that group, and the kind sits on a framed chip at the midpoint, with the link's own label
+// while it's hovered, selected or the selected card's (D-135) (moved along the line when links sit side by side).
 // Clicking the line or the chip selects the link.
 import { Text } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
@@ -76,7 +76,8 @@ export const EdgeLine = memo(function EdgeLine({ from, to, fromHalf, toHalf, chi
   const [hovered, setHovered] = useState(false)
   const color = tint ?? colors.link[style.group]
   const opacity = dim && !selected && !hovered ? 0.22 : 1
-  const text = chipText(kind, label)
+  // The link's own label only when it has the focus (D-135): long labels on every chip pile up into unreadable text.
+  const text = chipText(kind, selected || active || hovered ? label : undefined)
   // Too small to read (D-111; mono caps on a small chip need a little more than other text): the colour and pattern still say what kind it is; a selected link keeps its chip.
   const readable = useReadable(FONT, 6.5)
 

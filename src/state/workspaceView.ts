@@ -12,13 +12,17 @@ type Filters = {
   forIds: string[]
   // Tags for the `tag:` filter (D-056); empty = any tag.
   tags: string[]
-  // Link groups hidden on the board (D-108, linkKinds.ts); empty = every link shows. Customer tags and `relates` start hidden (D-128).
+  // Link groups hidden on the board (D-108, linkKinds.ts); empty = every link shows. Customer tags and `relates` start hidden
+  // (D-128), and competitors' `competes` lines (D-135).
   hiddenLinks: string[]
 }
 
-const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], hiddenLinks: ['plain', 'for'] }
+// Link groups hidden until shown (D-128, D-135).
+export const QUIET_LINKS = ['plain', 'for', 'competes']
+
+const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], hiddenLinks: QUIET_LINKS }
 // Bumped when a new link group starts hidden, so filters saved before it hide it too.
-const LINKS_VERSION = 3
+const LINKS_VERSION = 4
 
 type State = Filters & {
   wid: string | null
@@ -40,6 +44,7 @@ const key = (wid: string) => `north-star.view.${wid}`
 const HIDDEN_SINCE: [number, string][] = [
   [2, 'for'],
   [3, 'plain'],
+  [4, 'competes'],
 ]
 const hideNew = (hidden: string[], v: number) => [
   ...hidden,
