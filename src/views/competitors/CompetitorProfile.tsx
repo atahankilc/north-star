@@ -227,7 +227,7 @@ function FeatureRow({
   return (
     <li id={`cf-${feature.id}`} className={styles.row} data-open={open}>
       <div className={styles.rowHead}>
-        <button className={styles.toggle} onClick={onToggle} aria-expanded={open} aria-label={`Details for ${feature.name || 'feature'}`}>
+        <button className={styles.toggle} data-nav onClick={onToggle} aria-expanded={open} aria-label={`Details for ${feature.name || 'feature'}`}>
           {open ? '▾' : '▸'}
         </button>
         <AutosaveField

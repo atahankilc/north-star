@@ -78,7 +78,10 @@ Fully WebGL text editing is painful and inaccessible. So:
 Source of truth: `src/data/model.ts`.
 
 ```
-workspaces/{wid}        name, description (≤1000, D-082), ownerId, memberIds[], roles{uid: role}, inviteCode, invitedEmails[]
+workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), memberIds[], roles{uid: owner|editor|viewer}, inviteCode, invitedEmails[]
+  members/{uid}         name, email?, photo?, joinedAt                            (people list, D-098)
+  reports/{id}          title, answer, sectionCount, sourceCount, kind, topic, uid, name, model, shared, createdAt   (summary, D-098)
+    content/body        sections, implications, openQuestions, sources            (fetched when opened, D-098)
   customers/{id}        title, body, color, tags[], x, y                          (D-042, D-044)
   problems/{id}         title, body, color, tags[], x, y                          (D-041)
   ideas/{id}            title, body, color, tags[], status, x, y
@@ -93,7 +96,15 @@ joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt
 
 RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, since?, ts   (D-065, D-067; edit/field retired, D-071)
 ```
-- Entities are **subcollections of their workspace**, so one rule covers them: the caller must be in `memberIds`.
+- Entities are **subcollections of their workspace**, so one rule covers them: members (`memberIds`) read them; owners and
+  editors write them (D-098).
+- **Roles** (D-098): `owner` (any number, never none: people, roles, the invite code, the assistant key, deleting it),
+  `editor` (all content), `viewer` (reads everything, keeps their own reports). Authority comes from `roles`; `ownerId` is
+  only the creator. Viewers get the preview's lock in viewer mode (`viewerLock.ts`) and writes are refused in `history.ts`.
+- **Loaded on demand** (D-098): opening a workspace loads its items, links, matrix and attachment records, nothing else.
+  Reports (summaries, 20 at a time; a body when opened), the people list (20 at a time), the usage log (20 at a time; the
+  month's totals once per visit) load only where they're shown. Paged live queries: `usePaged` in `src/data/hooks.ts`
+  (several queries merged, never skipping rows). Composite indexes in `firestore.indexes.json`.
 - `edges` is one generic edge collection, so any node type can connect to any other.
   Tagging an item with a customer is an edge with `kind: 'for'` (item → customer), drawn as a card label (D-044).
 - Undo/redo: every write in `src/data/` goes through `tracked()` in `history.ts`, which snapshots the touched documents (D-046).
@@ -164,11 +175,11 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 - **Deep research** (D-088): `/research` → a planned set of questions you pick → one web-searching call per question (3 at a
   time) → the agent loop writes one report from the findings (`src/ai/research.ts`); the report comes through `write_report`
   and opens on the report screen (`src/ui/ReportView.tsx`, D-089).
-- **Saved reports** (D-090): `workspaces/{wid}/reports/{id}` (`SavedReport` in `src/data/model.ts`: the report, `kind`
+- **Saved reports** (D-090; split into summary + `content/body` by D-098, older one-doc reports still read): `workspaces/{wid}/reports/{id}` (`SavedReport` in `src/data/model.ts`: the report, `kind`
   research | chat, `topic, uid, name, model, shared, createdAt`; data in `src/data/reports.ts`). A research report is saved
   as it's written; a chat write-up (`make_report`, any chat, when asked) when you press save. Only the author reads it until
   `shared`; then every member does. The client lists it with two queries (`shared == true`, `uid == me`). Author shares,
-  unshares (only that field changes) and deletes; the owner may delete a shared one. Shown on the reports tab
+  unshares (only that field changes) and deletes; an owner may delete a shared one. Shown on the reports tab
   (`/workspaces/<id>/reports`, `?report=<id>` opens one); the brief lists the newest 10 by title and answer.
   `upload .md` (D-091) reads a Markdown file into the same shape (`src/io/reportMarkdown.ts`, `kind: 'upload'`).
 - **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the

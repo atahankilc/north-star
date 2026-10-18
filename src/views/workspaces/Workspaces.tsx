@@ -21,7 +21,11 @@ import {
   useMyInvites,
   useMyJoinRequests,
   useMyWorkspaces,
-  useRequestsToMe,
+  useJoinRequests,
+  canEditIn,
+  isOwnerOf,
+  ownerCount,
+  roleOf,
   withdrawJoinRequest,
 } from '../../data/workspaces'
 import { useHoldCurtain } from '../../state/curtain'
@@ -33,7 +37,6 @@ import styles from './Workspaces.module.css'
 
 export function Workspaces({ user }: { user: AuthUser }) {
   const workspaces = useMyWorkspaces(user.id)
-  const waiting = useRequestsToMe(user.id)
   const navigate = useNavigate()
   useHoldCurtain('workspaces', workspaces.isLoading)
   const sorted = [...workspaces.data].sort((a, b) => b.createdAt - a.createdAt)
@@ -66,7 +69,6 @@ export function Workspaces({ user }: { user: AuthUser }) {
                 <WorkspaceCard
                   workspace={w}
                   uid={user.id}
-                  waiting={waiting.data.filter((r) => r.workspaceId === w.id).length}
                   onOpen={() => navigate(workspacePath(w.id))}
                 />
               </Appear>
@@ -88,11 +90,17 @@ export function Workspaces({ user }: { user: AuthUser }) {
 
 type Mode = 'idle' | 'renaming' | 'confirm' | 'busy'
 
-type CardProps = { workspace: WithId<Workspace>; uid: string; waiting: number; onOpen: () => void }
+type CardProps = { workspace: WithId<Workspace>; uid: string; onOpen: () => void }
 
-function WorkspaceCard({ workspace: w, uid, waiting, onOpen }: CardProps) {
-  const isOwner = w.ownerId === uid
+function WorkspaceCard({ workspace: w, uid, onOpen }: CardProps) {
+  // Roles (D-098): owners delete it, and may leave while another owner remains; everyone else leaves.
+  const isOwner = isOwnerOf(w, uid)
+  const role = roleOf(w, uid) ?? 'editor'
+  const canLeave = !isOwner || ownerCount(w) > 1
+  // Only owners may list who's asking to join; any of them settles it.
+  const waiting = useJoinRequests(isOwner ? w.id : null).data.length
   const [mode, setMode] = useState<Mode>('idle')
+  const [doing, setDoing] = useState<'delete' | 'leave'>(isOwner ? 'delete' : 'leave')
   const [draft, setDraft] = useState(w.name)
   const [error, setError] = useState<string | null>(null)
   const nameInput = useRef<HTMLInputElement>(null)
@@ -125,14 +133,17 @@ function WorkspaceCard({ workspace: w, uid, waiting, onOpen }: CardProps) {
     setMode('busy')
     setError(null)
     try {
-      await (isOwner ? deleteWorkspace(w.id, w.inviteCode, uid) : leaveWorkspace(w.id, uid))
+      await (doing === 'delete' ? deleteWorkspace(w.id, w.inviteCode, uid) : leaveWorkspace(w.id, uid))
     } catch (e) {
       setError((e as Error).message)
       setMode('idle')
     }
   }
 
-  const verb = isOwner ? 'delete' : 'leave'
+  const ask = (what: 'delete' | 'leave') => {
+    setDoing(what)
+    setMode('confirm')
+  }
 
   return (
     <article className={styles.card} data-mode={mode} title={`Created ${new Date(w.createdAt).toLocaleDateString()}`}>
@@ -172,10 +183,10 @@ function WorkspaceCard({ workspace: w, uid, waiting, onOpen }: CardProps) {
           </>
         ) : mode === 'confirm' ? (
           <>
-            <span className={styles.warn}>{isOwner ? 'Delete it and all its ideas?' : 'Leave this workspace?'}</span>
+            <span className={styles.warn}>{doing === 'delete' ? 'Delete it and all its ideas?' : 'Leave this workspace?'}</span>
             <span className={styles.actions} data-active>
               <button className={styles.action} data-tone="danger" onClick={remove}>
-                {verb}
+                {doing}
               </button>
               <button className={styles.action} onClick={() => setMode('idle')}>
                 cancel
@@ -183,19 +194,26 @@ function WorkspaceCard({ workspace: w, uid, waiting, onOpen }: CardProps) {
             </span>
           </>
         ) : mode === 'busy' ? (
-          <span className={styles.warn}>{isOwner ? 'deleting…' : 'leaving…'}</span>
+          <span className={styles.warn}>{doing === 'delete' ? 'deleting…' : 'leaving…'}</span>
         ) : (
           <>
             <span className={styles.cardMeta}>
-              {isOwner ? 'owner' : 'editor'} · {w.memberIds.length} {w.memberIds.length === 1 ? 'member' : 'members'}
+              {role} · {w.memberIds.length} {w.memberIds.length === 1 ? 'member' : 'members'}
               {waiting > 0 && <span className={styles.waiting}> · {waiting} waiting</span>}
             </span>
             <span className={styles.actions}>
-              <button className={styles.action} onClick={startRename}>
-                rename
-              </button>
-              <button className={styles.action} data-tone="danger" onClick={() => setMode('confirm')}>
-                {verb}
+              {canEditIn(w, uid) && (
+                <button className={styles.action} onClick={startRename}>
+                  rename
+                </button>
+              )}
+              {isOwner && canLeave && (
+                <button className={styles.action} onClick={() => ask('leave')}>
+                  leave
+                </button>
+              )}
+              <button className={styles.action} data-tone="danger" onClick={() => ask(isOwner ? 'delete' : 'leave')}>
+                {isOwner ? 'delete' : 'leave'}
               </button>
             </span>
           </>

@@ -1,21 +1,22 @@
 // The assistant's keys (D-073, D-079): your own OpenAI key (only in this browser, D-006), the workspace's shared key
 // (kept on the server; the owner picks who may use it), which one this workspace uses, and a model per task (D-077).
 // The key form also shows inside the chat panel when no key is set.
-import { useContext, useEffect, useState, type FormEvent } from 'react'
+import { useContext, useState, type FormEvent } from 'react'
 import { checkKey } from '../ai/openai'
 import { MODELS, keySourceFor, maskKey, useAiSettings, type AiTask } from '../ai/settings'
 import {
   canUseWorkspaceKey,
-  listMembers,
   setKeyAccess,
   setWorkspaceKey,
   useAiConfig,
   type AiConfig,
   type KeyAccess,
-  type Member,
   workspaceKeysAvailable,
 } from '../data/ai'
 import { useAuth } from '../data/auth'
+import type { Workspace } from '../data/model'
+import { isOwnerOf, useMembers } from '../data/workspaces'
+import { Loading } from './Loading'
 import { WorkspaceContext } from '../views/workspace/context'
 import { Choice } from './Choice'
 import { Select } from './Select'
@@ -113,7 +114,7 @@ export function AiKeysPage() {
           note="Coming soon: the owner sets one key that chosen members use, kept on North Star's server where nobody can read it. For now everyone uses their own key."
         />
       ) : ws ? (
-        <WorkspaceKey wid={ws.wid} ownerId={ws.workspace.ownerId} memberIds={ws.workspace.memberIds} />
+        <WorkspaceKey wid={ws.wid} workspace={ws.workspace} />
       ) : (
         <Section label="workspace key" note="Open a workspace to see or set its shared key." />
       )}
@@ -137,14 +138,14 @@ export function AiKeysPage() {
 }
 
 // The workspace's shared key (D-079): the owner sets it and picks who may use it; it never comes back to any browser.
-function WorkspaceKey({ wid, ownerId, memberIds }: { wid: string; ownerId: string; memberIds: string[] }) {
+function WorkspaceKey({ wid, workspace }: { wid: string; workspace: Workspace }) {
   const { user } = useAuth()
   const config = useAiConfig(wid).data
   const apiKey = useAiSettings((s) => s.apiKey)
   const choice = useAiSettings((s) => s.keyChoice[wid])
   const setKeyChoice = useAiSettings((s) => s.setKeyChoice)
-  const isOwner = user?.id === ownerId
-  const usable = canUseWorkspaceKey(config, user?.id, ownerId)
+  const isOwner = isOwnerOf(workspace, user?.id)
+  const usable = canUseWorkspaceKey(config, user?.id, isOwner)
   const source = keySourceFor({ apiKey, keyChoice: choice ? { [wid]: choice } : {} }, wid, usable)
 
   return (
@@ -157,7 +158,7 @@ function WorkspaceKey({ wid, ownerId, memberIds }: { wid: string; ownerId: strin
       }
     >
       {isOwner ? (
-        <OwnerKey wid={wid} ownerId={ownerId} memberIds={memberIds} config={config} />
+        <OwnerKey wid={wid} workspace={workspace} config={config} />
       ) : (
         <Row label="shared key">
           <span className={styles.key}>
@@ -180,26 +181,13 @@ function WorkspaceKey({ wid, ownerId, memberIds }: { wid: string; ownerId: strin
   )
 }
 
-function OwnerKey({ wid, ownerId, memberIds, config }: { wid: string; ownerId: string; memberIds: string[]; config: AiConfig | null }) {
+function OwnerKey({ wid, workspace, config }: { wid: string; workspace: Workspace; config: AiConfig | null }) {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [replacing, setReplacing] = useState(false)
-  const [members, setMembers] = useState<Member[] | null>(null)
   const access = config?.access ?? 'chosen'
   const allowed = config?.allowed ?? []
-
-  // Names come from the server (the workspace only holds ids); fetched again whenever someone joins or leaves.
-  const memberKey = memberIds.join(',')
-  useEffect(() => {
-    let live = true
-    listMembers(wid)
-      .then((m) => live && setMembers(m))
-      .catch(() => live && setMembers([]))
-    return () => {
-      live = false
-    }
-  }, [wid, memberKey])
 
   const save = (key: string) => {
     setBusy(true)
@@ -256,28 +244,39 @@ function OwnerKey({ wid, ownerId, memberIds, config }: { wid: string; ownerId: s
         </Row>
       )}
       {error && <Note tone="error">! {error}</Note>}
-      <Row label="who may use it" hint={access === 'chosen' ? 'Only the members you tick; you always may.' : 'Every member of this workspace.'}>
+      <Row label="who may use it" hint={access === 'chosen' ? 'Only the members you tick; owners always may.' : 'Every member of this workspace.'}>
         <Choice label="who may use it" bare options={['everyone', 'chosen'] as const} value={access} onChange={(v) => v && setAccess(v)} />
-        {access === 'chosen' && (
-          <div className={styles.members}>
-            {members === null ? (
-              <span className={styles.note}>loading members…</span>
-            ) : (
-              // The owner always may; the list is everyone else.
-              members
-                .filter((m) => m.uid !== ownerId)
-                .map((m) => (
-                  <label key={m.uid} className={styles.member}>
-                    <input type="checkbox" checked={allowed.includes(m.uid)} onChange={() => toggle(m.uid)} />
-                    <span>{m.name}</span>
-                    {m.email && <span className={styles.note}>{m.email}</span>}
-                  </label>
-                ))
-            )}
-          </div>
-        )}
+        {access === 'chosen' && <KeyMembers wid={wid} workspace={workspace} allowed={allowed} onToggle={toggle} />}
       </Row>
     </>
+  )
+}
+
+// Who may use the key, from the people list (D-098), a page at a time; owners always may, so they aren't listed.
+function KeyMembers({ wid, workspace, allowed, onToggle }: { wid: string; workspace: Workspace; allowed: string[]; onToggle: (uid: string) => void }) {
+  const members = useMembers(wid)
+  const others = members.data.filter((m) => workspace.memberIds.includes(m.id) && !isOwnerOf(workspace, m.id))
+  return (
+    <div className={styles.members}>
+      {members.isLoading ? (
+        <Loading label="loading members…" />
+      ) : others.length === 0 && !members.hasMore ? (
+        <span className={styles.note}>No one else is in this workspace yet.</span>
+      ) : (
+        others.map((m) => (
+          <label key={m.id} className={styles.member}>
+            <input type="checkbox" checked={allowed.includes(m.id)} onChange={() => onToggle(m.id)} />
+            <span>{m.name}</span>
+            {m.email && <span className={styles.note}>{m.email}</span>}
+          </label>
+        ))
+      )}
+      {members.hasMore && (
+        <button className={styles.action} onClick={members.more} disabled={members.loadingMore}>
+          {members.loadingMore ? 'loading…' : 'show more'}
+        </button>
+      )}
+    </div>
   )
 }
 

@@ -14,7 +14,8 @@ import { fontUrls } from '../../three/fonts'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
 import { boardPoint } from './NodeCard'
-import { isPreviewing, MARK_SIGN, type Mark } from '../workspace/preview'
+import { MARK_SIGN, type Mark } from '../workspace/preview'
+import { editLocked } from '../workspace/viewerLock'
 import { markHover, unlight } from '../workspace/stage'
 import styles from './BoardLabel.module.css'
 
@@ -72,7 +73,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     if (!p) return
     select(label.id)
     // The assistant's preview (D-087) can be looked at, not changed.
-    if (isPreviewing()) return
+    if (editLocked()) return
     drag.current = { dx: p[0] - x, dy: p[1] - y, from: [label.x, label.y], lastWrite: 0, moved: false }
     ;(e.target as Element).setPointerCapture(e.pointerId)
   }
@@ -117,7 +118,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={(e) => {
             e.stopPropagation()
-            if (!isPreviewing()) setEditingLabel(label.id)
+            if (!editLocked()) setEditingLabel(label.id)
           }}
           onPointerOver={(e) => {
             e.stopPropagation()

@@ -1,10 +1,11 @@
 // The assistant's workspace key and usage log (D-079). The key itself never reaches a browser: the owner hands it to
 // setWorkspaceKey once, and members call OpenAI through the `ai` function. Rules: firestore.rules (ai, aiUsage, aiSecrets).
-import { addDoc, collection, doc, query, setDoc, where } from 'firebase/firestore'
+import { addDoc, collection, doc, getDocs, orderBy, query, setDoc, where, type Query } from 'firebase/firestore'
+import { useEffect, useState } from 'react'
 import { httpsCallable } from 'firebase/functions'
 import { useAuth } from './auth'
 import { aiProxyUrl, db, firebase, useEmulators } from './firebase'
-import { useDoc, useQuery } from './hooks'
+import { useDoc, usePaged } from './hooks'
 
 // The workspace key needs our Cloud Functions, which need the Blaze plan (D-079). Until they're deployed on the live
 // project, the feature is shown only on the emulators. Set to true in the same change that runs `npm run deploy:functions`.
@@ -42,18 +43,16 @@ export type AiUsage = {
   at: number
 }
 
-export type Member = { uid: string; name: string; email: string | null }
-
 const configPath = (wid: string) => `workspaces/${wid}/ai/config`
 
 export function useAiConfig(wid: string | null) {
   return useDoc<AiConfig>(wid ? configPath(wid) : null)
 }
 
-// May this person use the workspace key? The server checks the same thing on every call.
-export function canUseWorkspaceKey(config: AiConfig | null | undefined, uid: string | undefined, ownerId: string): boolean {
+// May this person use the workspace key? Owners always may (D-098: any of them). The server checks the same on every call.
+export function canUseWorkspaceKey(config: AiConfig | null | undefined, uid: string | undefined, owner: boolean): boolean {
   if (!workspaceKeysAvailable || !config?.hasKey || !uid) return false
-  return uid === ownerId || config.access === 'everyone' || (config.allowed ?? []).includes(uid)
+  return owner || config.access === 'everyone' || (config.allowed ?? []).includes(uid)
 }
 
 export function setKeyAccess(wid: string, access: KeyAccess, allowed: string[]) {
@@ -69,10 +68,6 @@ const call = <In, Out>(name: string) => {
 export async function setWorkspaceKey(wid: string, key: string): Promise<string | null> {
   const res = await call<{ wid: string; key: string }, { keyHint: string | null }>('setWorkspaceKey')({ wid, key })
   return res.data.keyHint
-}
-
-export async function listMembers(wid: string): Promise<Member[]> {
-  return (await call<{ wid: string }, Member[]>('aiMembers')({ wid })).data
 }
 
 // One call on the workspace key: the same request body OpenAI's Responses API takes, streamed back as it is.
@@ -95,20 +90,45 @@ export function logOwnUsage(wid: string, entry: Omit<AiUsage, 'keySource' | 'uid
   return addDoc(collection(db(), 'workspaces', wid, 'aiUsage'), { ...entry, uid: user.uid, name, keySource: 'own' })
 }
 
-// Your own entries (both keys); the owner also gets everyone's workspace-key entries. Rules allow exactly these two queries.
-export function useAiUsage(wid: string | null, isOwner: boolean) {
+const usageOf = (wid: string) => collection(db(), 'workspaces', wid, 'aiUsage')
+
+// This month's entries, for the totals (D-098: fetched once when the usage page opens, not kept live): your own on
+// either key, and for an owner everyone's on the workspace key. The rules allow exactly these two queries.
+export function useUsageMonth(wid: string, isOwner: boolean, since: number) {
   const { user } = useAuth()
   const uid = user?.id
-  const usage = (wid: string) => collection(db(), 'workspaces', wid, 'aiUsage')
-  const mine = useQuery<AiUsage>(wid && uid ? query(usage(wid), where('uid', '==', uid)) : null, `${wid}/aiUsage/mine/${uid}`)
-  const shared = useQuery<AiUsage>(
-    wid && isOwner ? query(usage(wid), where('keySource', '==', 'workspace')) : null,
-    `${wid}/aiUsage/workspace/${isOwner}`,
-  )
-  const byId = new Map([...mine.data, ...shared.data].map((e) => [e.id, e]))
-  return {
-    entries: [...byId.values()].sort((a, b) => b.at - a.at),
-    isLoading: mine.isLoading || shared.isLoading,
-    error: mine.error ?? shared.error,
-  }
+  const [state, setState] = useState<{ mine: AiUsage[]; shared: AiUsage[]; isLoading: boolean; error: Error | null }>({
+    mine: [],
+    shared: [],
+    isLoading: true,
+    error: null,
+  })
+  useEffect(() => {
+    if (!uid) return
+    let live = true
+    const month = (q: Query) => getDocs(query(q, where('at', '>=', since), orderBy('at', 'desc'))).then((s) => s.docs.map((d) => d.data() as AiUsage))
+    Promise.all([month(query(usageOf(wid), where('uid', '==', uid))), isOwner ? month(query(usageOf(wid), where('keySource', '==', 'workspace'))) : []])
+      .then(([mine, shared]) => live && setState({ mine, shared, isLoading: false, error: null }))
+      .catch((error: Error) => live && setState({ mine: [], shared: [], isLoading: false, error }))
+    return () => {
+      live = false
+    }
+  }, [wid, uid, isOwner, since])
+  return state
+}
+
+export type UsageShow = 'all' | 'workspace' | 'own'
+
+// The call log, newest first, a page at a time (D-098). Which queries depends on what's shown and who you are.
+export function useUsageCalls(wid: string, isOwner: boolean, show: UsageShow) {
+  const { user } = useAuth()
+  const uid = user?.id
+  const mine = uid ? query(usageOf(wid), where('uid', '==', uid)) : null
+  const queries =
+    show === 'own'
+      ? [uid ? query(usageOf(wid), where('uid', '==', uid), where('keySource', '==', 'own')) : null]
+      : show === 'workspace'
+        ? [isOwner ? query(usageOf(wid), where('keySource', '==', 'workspace')) : uid ? query(usageOf(wid), where('uid', '==', uid), where('keySource', '==', 'workspace')) : null]
+        : [mine, isOwner ? query(usageOf(wid), where('keySource', '==', 'workspace')) : null]
+  return usePaged<AiUsage>(queries, `usage:${wid}:${uid}:${isOwner}:${show}`, 'at', 'desc')
 }

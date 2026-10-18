@@ -342,6 +342,85 @@ await allow('author unshares it', () => updateDoc(repDoc(bob.fs, 'r1'), { shared
 await deny('owner deletes a private report', () => deleteDoc(repDoc(alice.fs, 'r1')))
 await allow('author deletes their report', () => deleteDoc(repDoc(bob.fs, 'r1')))
 
+// Roles (D-098): viewers read only; any number of owners, never none.
+const role = (who, uid, r) => join(who, { [`roles.${uid}`]: r })
+await allow('owner makes a member a viewer', () => role(alice, dave.uid, 'viewer'))
+await allow('viewer reads ideas', () => getDocs(ideas(dave.fs)))
+await deny('viewer creates an idea', () => addDoc(ideas(dave.fs), { title: 'x', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('viewer deletes an idea', async () => {
+  const one = (await getDocs(ideas(dave.fs))).docs[0]
+  await deleteDoc(doc(dave.fs, one.ref.path))
+})
+await deny('viewer renames the workspace', () => join(dave, { name: 'Mine' }))
+await deny('viewer uploads a file', () => uploadBytes(file(dave, 'v.pdf'), pdf, { contentType: 'application/pdf' }))
+await deny('viewer makes themselves an editor', () => role(dave, dave.uid, 'editor'))
+await deny('owner gives an unknown role', () => role(alice, dave.uid, 'admin'))
+await deny('owner gives a role to someone outside', () => role(alice, erin.uid, 'editor'))
+
+// Members directory (D-098).
+const memberDoc = (fs, uid) => doc(fs, 'workspaces', wid, 'members', uid)
+const member = (name, extra = {}) => ({ name, email: `${name}@example.com`, joinedAt: 1, ...extra })
+await allow('member writes their own entry', () => setDoc(memberDoc(dave.fs, dave.uid), member('dave')))
+await deny("member writes someone else's entry", () => setDoc(memberDoc(dave.fs, bob.uid), member('bob')))
+await allow('owner writes an entry for someone they let in', () => setDoc(memberDoc(alice.fs, bob.uid), member('bob')))
+await deny('entry with an unknown field', () => setDoc(memberDoc(dave.fs, dave.uid), member('dave', { role: 'owner' })))
+await allow('member lists the members', () => getDocs(collection(bob.fs, 'workspaces', wid, 'members')))
+await deny('outsider lists the members', () => getDocs(collection(erin.fs, 'workspaces', wid, 'members')))
+
+// Reports as a summary + body (D-098).
+const bodyDoc = (fs, id) => doc(fs, 'workspaces', wid, 'reports', id, 'content', 'body')
+const summaryOf = (who, extra = {}) => ({ title: 'Market', answer: 'Small.', topic: 'market', uid: who.uid, name: 'x', model: 'm', shared: false, createdAt: 1, sectionCount: 1, sourceCount: 1, ...extra })
+const body = { sections: [{ question: 'Who?', points: [{ text: 'A', sources: [1] }] }], implications: [], openQuestions: [], sources: [{ title: 'S', url: 'https://example.com' }] }
+const saveSplit = (who, id, extra) => {
+  const b = writeBatch(who.fs)
+  b.set(repDoc(who.fs, id), summaryOf(who, extra))
+  b.set(bodyDoc(who.fs, id), body)
+  return b.commit()
+}
+await allow('member saves a report as summary + body', () => saveSplit(bob, 'r20'))
+await allow('viewer saves their own report', () => saveSplit(dave, 'r22'))
+await deny('summary without its counts', () => setDoc(repDoc(bob.fs, 'r23'), { ...summaryOf(bob), sectionCount: 'one' }))
+await deny('body without its summary', () => setDoc(bodyDoc(bob.fs, 'r21'), body))
+await allow('author reads the body', () => getDoc(bodyDoc(bob.fs, 'r20')))
+await deny('another member reads a private body', () => getDoc(bodyDoc(dave.fs, 'r20')))
+await allow('author shares it', () => updateDoc(repDoc(bob.fs, 'r20'), { shared: true }))
+await allow('member reads a shared body', () => getDoc(bodyDoc(dave.fs, 'r20')))
+await deny('another member deletes a shared body', () => deleteDoc(bodyDoc(dave.fs, 'r20')))
+await allow('owner deletes a shared report and its body', () => {
+  const b = writeBatch(alice.fs)
+  b.delete(bodyDoc(alice.fs, 'r20'))
+  b.delete(repDoc(alice.fs, 'r20'))
+  return b.commit()
+})
+await allow("owner's undo restores a shared summary + body", () => saveSplit({ fs: alice.fs, uid: bob.uid }, 'r20', { shared: true }))
+
+// Several owners.
+await allow('owner makes a member a co-owner', () => role(alice, bob.uid, 'owner'))
+await allow("co-owner lists the workspace's requests", () => getDocs(query(collection(bob.fs, 'joinRequests'), where('workspaceId', '==', wid))))
+await allow('co-owner invites an email', () => join(bob, { invitedEmails: arrayUnion('frank@example.com') }))
+await allow('co-owner deletes a shared report', () => deleteDoc(repDoc(bob.fs, 'r20')))
+await deny('editor lists the workspace\'s requests', async () => {
+  await role(alice, dave.uid, 'editor')
+  await getDocs(query(collection(dave.fs, 'joinRequests'), where('workspaceId', '==', wid)))
+})
+await allow('owner steps down while another owner remains', () => role(alice, alice.uid, 'editor'))
+await deny('former owner makes themselves owner again', () => role(alice, alice.uid, 'owner'))
+await allow('co-owner makes them owner again', () => role(bob, alice.uid, 'owner'))
+await allow('co-owner steps down to editor', () => role(bob, bob.uid, 'editor'))
+await deny('the last owner steps down', () => role(alice, alice.uid, 'editor'))
+await deny('the last owner leaves', () => join(alice, { memberIds: arrayRemove(alice.uid), [`roles.${alice.uid}`]: deleteField() }))
+await allow('an owner leaves while another owner remains', async () => {
+  await role(alice, dave.uid, 'owner')
+  await join(dave, { memberIds: arrayRemove(dave.uid), [`roles.${dave.uid}`]: deleteField() })
+})
+await allow('owner removes a member and their entry', async () => {
+  await join(alice, { memberIds: arrayUnion(dave.uid), [`roles.${dave.uid}`]: 'viewer' })
+  const b = writeBatch(alice.fs)
+  b.update(doc(alice.fs, 'workspaces', wid), { memberIds: arrayRemove(dave.uid), [`roles.${dave.uid}`]: deleteField() })
+  b.delete(memberDoc(alice.fs, dave.uid))
+  return b.commit()
+})
+
 await deny('outsider still cannot read after others join', () => getDoc(doc(carol.fs, 'workspaces', wid)))
 
 await deny('member removes someone else', () => join(bob, { memberIds: arrayRemove(alice.uid) }))

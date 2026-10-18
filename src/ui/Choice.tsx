@@ -21,6 +21,8 @@ export function Choice<T extends string>({ label, options, value, onChange, tone
           role="radio"
           aria-checked={value === o}
           className={styles.option}
+          // A picker: locked for a viewer it still shows the value (D-098).
+          data-edit
           data-active={value === o}
           data-tone={tones?.[o] ? '' : undefined}
           style={tones?.[o] ? { ['--tone' as string]: tones[o] } : undefined}

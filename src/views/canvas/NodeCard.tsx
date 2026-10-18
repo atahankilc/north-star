@@ -14,7 +14,8 @@ import { fontUrls } from '../../three/fonts'
 import { BOARD_KINDS, typeAccent, type BoardItem } from './boardKinds'
 import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
-import { isPreviewing, MARK_SIGN, type Mark } from '../workspace/preview'
+import { MARK_SIGN, type Mark } from '../workspace/preview'
+import { editLocked } from '../workspace/viewerLock'
 import { markHover, unlight } from '../workspace/stage'
 import styles from './NodeCard.module.css'
 
@@ -143,7 +144,7 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
     setPressing(node.id)
     select(node.id)
     // The assistant's preview (D-087) can be looked at, not changed.
-    if (isPreviewing()) return
+    if (editLocked()) return
     if (e.shiftKey) {
       startLink(node.id, p)
       return

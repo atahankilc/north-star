@@ -15,7 +15,7 @@ import { Board } from './Board'
 import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems } from './boardKinds'
 import { findFreeSpot } from './cardLayout'
 import { DetailPanel } from './DetailPanel'
-import { isPreviewing } from '../workspace/preview'
+import { editLocked, useViewer } from '../workspace/viewerLock'
 import styles from './BoardView.module.css'
 
 // A jump lands with the label near the top of the view, so the area under it is in sight.
@@ -23,6 +23,7 @@ const LAND_BELOW = 2.5
 
 export function BoardView() {
   const { wid, edges, competitors, competitorFeatures, labels } = useWs()
+  const viewer = useViewer((s) => s.viewer)
   const all = useBoardItems()
   const nodes = useVisibleItems(all)
   const select = useCanvas((s) => s.select)
@@ -61,7 +62,7 @@ export function BoardView() {
   // Competitors made before the board (D-040) have no position yet: give each a free spot once.
   const placed = useRef(new Set<string>())
   useEffect(() => {
-    if (isPreviewing()) return
+    if (editLocked()) return
     const taken = all.filter((i) => i.type !== 'competitor' || competitors.find((c) => c.id === i.id)?.x !== undefined)
     for (const c of competitors) {
       if (c.x !== undefined || placed.current.has(c.id)) continue
@@ -117,9 +118,9 @@ export function BoardView() {
 
       <FilterBar goTo={places.map((l) => ({ key: l.id, label: l.text.trim(), onSelect: () => jump(l) }))} />
 
-      {/* One create button for everything (D-053). */}
+      {/* One create button for everything (D-053); viewers make nothing (D-098). */}
       <footer className={styles.tools} data-preview-hide>
-        <Menu
+        {!viewer && <Menu
           primary
           up
           label="+"
@@ -137,16 +138,16 @@ export function BoardView() {
             { key: 'board', heading: 'on the board' },
             { key: 'text', label: 'text', glyph: 'T', hint: 'jump point', onSelect: () => add('text') },
           ]}
-        />
+        />}
         <span className={styles.hints}>
-          drag: move · shift+drag: link · scroll: zoom
+          {viewer ? 'viewing only · scroll: zoom' : 'drag: move · shift+drag: link · scroll: zoom'}
           {places.length > 0 && ' · 1–9: go to'}
         </span>
       </footer>
 
       {all.length === 0 && labels.length === 0 && (
         <div className={styles.empty}>
-          <DecodeText text="Add your first card with the + button" />
+          <DecodeText text={viewer ? 'Nothing on this board yet' : 'Add your first card with the + button'} />
         </div>
       )}
       {all.length > 0 && nodes.length === 0 && labels.length === 0 && (

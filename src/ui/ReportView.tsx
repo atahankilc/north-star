@@ -6,7 +6,9 @@ import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useChat } from '../ai/chat'
 import { reportMarkdown, type ReportPoint } from '../ai/research'
-import { deleteReport, shareReport } from '../data/reports'
+import { deleteReport, shareReport, useReport } from '../data/reports'
+import { isOwnerOf } from '../data/workspaces'
+import { Loading } from './Loading'
 import { firebase } from '../data/firebase'
 import { useHistory } from '../data/history'
 import { useCanvas } from '../state/canvasStore'
@@ -26,8 +28,9 @@ export function ReportView() {
   const id = useStage((s) => s.reportId)
   const asked = useChat((s) => s.reportOpen)
   const ws = useWs()
-  // The saved copy (D-090); until it arrives, or if saving failed, the chat's own.
-  const saved = ws.reports.find((r) => r.id === id)
+  // The saved copy (D-090), its body fetched only now (D-098); until it arrives, or if saving failed, the chat's own.
+  const loaded = useReport(ws.wid, id)
+  const saved = loaded.report
   const message = useChat((s) => (id ? s.messages.find((m) => m.reportId === id) : undefined))
   const report = saved ?? message?.report
   const index = useNodeIndex()
@@ -63,10 +66,36 @@ export function ReportView() {
     return () => window.removeEventListener('keydown', onKey, true)
   })
 
-  if (!report || !host || id === null) return null
+  if (!host || id === null) return null
+  // Opened from the list or a link: say so while its body comes, or that it can't be read.
+  if (!report) {
+    if (!loaded.isLoading && !loaded.missing) return null
+    return createPortal(
+      <div className={styles.screen} role="dialog" aria-label="Report">
+        <div className={styles.bar}>
+          <span className={styles.kicker}>report</span>
+          <span className={styles.barTitle}>{loaded.summary?.title ?? ''}</span>
+          <button className={styles.action} onClick={close} aria-label="Close the report">
+            close · esc
+          </button>
+        </div>
+        <article className={styles.page}>
+          {loaded.isLoading ? (
+            <>
+              {loaded.summary && <h1 className={styles.title}>{loaded.summary.title}</h1>}
+              <Loading label="loading the report…" />
+            </>
+          ) : (
+            <p className={styles.meta}>! This report was deleted, or it isn&apos;t shared with you.</p>
+          )}
+        </article>
+      </div>,
+      host,
+    )
+  }
   const me = firebase?.auth.currentUser?.uid
   const mine = !!saved && saved.uid === me
-  const isOwner = ws.workspace.ownerId === me
+  const isOwner = isOwnerOf(ws.workspace, me)
   const nameOf = (item: string) => index.get(item)?.title
   const open = (item: string) => {
     const it = index.get(item)
@@ -76,7 +105,7 @@ export function ReportView() {
     navigate(it.path)
   }
   const download = () => {
-    const blob = new Blob([reportMarkdown(report, ws.workspace.name, nameOf, saved && day(saved.createdAt))], { type: 'text/markdown' })
+    const blob = new Blob([reportMarkdown(report, ws.workspace.name, nameOf, saved ? day(saved.createdAt) : undefined)], { type: 'text/markdown' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `${report.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'report'}.md`

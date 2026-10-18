@@ -5,16 +5,25 @@ rules_version = '2';
 // Deploy (needs Blaze): npm run deploy:rules
 service firebase.storage {
   match /b/{bucket}/o {
+    function ws(wid) {
+      return firestore.get(/databases/(default)/documents/workspaces/$(wid)).data;
+    }
+
     function isMember(wid) {
-      return request.auth != null
-        && request.auth.uid in firestore.get(/databases/(default)/documents/workspaces/$(wid)).data.memberIds;
+      return request.auth != null && request.auth.uid in ws(wid).memberIds;
+    }
+
+    // Owners and editors; viewers only look (D-098).
+    function canEdit(wid) {
+      return isMember(wid) && ws(wid).roles[request.auth.uid] in ['owner', 'editor'];
     }
 
     match /workspaces/{wid}/attachments/{path=**} {
-      // get, list (the orphan sweep and workspace delete list the prefix) and delete: members.
-      allow read, delete: if isMember(wid);
+      // get and list (the orphan sweep and workspace delete list the prefix): members. Delete: owners and editors.
+      allow read: if isMember(wid);
+      allow delete: if canEdit(wid);
       // Up to 10 MB, images, SVGs and PDFs only; the same list as src/data/attachments.ts.
-      allow create, update: if isMember(wid)
+      allow create, update: if canEdit(wid)
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType in ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'];
     }

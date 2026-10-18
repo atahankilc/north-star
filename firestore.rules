@@ -22,6 +22,28 @@ service cloud.firestore {
       return signedIn() && request.auth.uid in workspace(wid).memberIds;
     }
 
+    // Roles (D-098): owners (any number, never none), editors, viewers. Viewers read and keep their own reports only.
+    function roleIn(data) {
+      return signedIn() && request.auth.uid in data.memberIds && request.auth.uid in data.roles
+        ? data.roles[request.auth.uid] : null;
+    }
+
+    function isOwner(wid) {
+      return roleIn(workspace(wid)) == 'owner';
+    }
+
+    function canEdit(wid) {
+      return roleIn(workspace(wid)) in ['owner', 'editor'];
+    }
+
+    // Every member has one known role, and at least one of them owns it.
+    function validRoles(d) {
+      return d.roles.keys().hasOnly(d.memberIds)
+        && d.memberIds.toSet().hasOnly(d.roles.keys().toSet())
+        && d.roles.values().hasOnly(['owner', 'editor', 'viewer'])
+        && d.roles.values().hasAny(['owner']);
+    }
+
     // Your verified Google address, lowercased like the invite list (D-062).
     function myEmail() {
       return request.auth.token.email.lower();
@@ -161,23 +183,22 @@ service cloud.firestore {
 
       allow update: if editing() || joiningByInvite() || decliningInvite() || leaving() || ownerManaging();
 
-      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+      allow delete: if roleIn(resource.data) == 'owner';
 
-      // Members edit content fields only.
+      // Owners and editors rename it and say what it's building.
       function editing() {
-        return signedIn()
-          && request.auth.uid in resource.data.memberIds
+        return roleIn(resource.data) in ['owner', 'editor']
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description'])
           && optText(request.resource.data, 'description', 1000);
       }
 
-      // Owner manages members, roles and the invite code, but can't orphan the workspace.
+      // Owners manage members, roles and the invite code (D-098): any role for anyone, themselves included, as long as
+      // someone still owns it. The creator (`ownerId`) never changes.
       function ownerManaging() {
-        return signedIn()
-          && resource.data.ownerId == request.auth.uid
+        return roleIn(resource.data) == 'owner'
           && request.resource.data.ownerId == resource.data.ownerId
-          && request.auth.uid in request.resource.data.memberIds
-          && request.resource.data.roles[request.auth.uid] == 'owner'
+          && validRoles(request.resource.data)
+          && optText(request.resource.data, 'description', 1000)
           && (!('invitedEmails' in request.resource.data)
             || (request.resource.data.invitedEmails is list && request.resource.data.invitedEmails.size() <= 100));
       }
@@ -201,11 +222,11 @@ service cloud.firestore {
           && request.resource.data.invitedEmails == resource.data.invitedEmails.removeAll([myEmail()]);
       }
 
-      // A non-owner removes only themselves. Owners delete the workspace instead.
+      // Anyone removes only themselves, as long as someone still owns it (the last owner deletes it instead).
       function leaving() {
         return signedIn()
           && request.auth.uid in resource.data.memberIds
-          && request.auth.uid != resource.data.ownerId
+          && request.resource.data.roles.values().hasAny(['owner'])
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'roles'])
           && request.resource.data.memberIds == resource.data.memberIds.removeAll([request.auth.uid])
           && request.resource.data.roles.diff(resource.data.roles).affectedKeys().hasOnly([request.auth.uid])
@@ -215,17 +236,14 @@ service cloud.firestore {
       // The assistant's workspace key settings (D-079). Members read them (is there a key, may I use it); the owner picks
       // who may use it. hasKey / keyHint are written only by the setWorkspaceKey function, never by a client.
       match /ai/{docId} {
-        function isOwner() {
-          return signedIn() && workspace(wid).ownerId == request.auth.uid;
-        }
         function validAccess(d) {
           return d.access in ['everyone', 'chosen'] && d.allowed is list && d.allowed.size() <= 100;
         }
         allow read: if isMember(wid);
-        allow create: if docId == 'config' && isOwner()
+        allow create: if docId == 'config' && isOwner(wid)
           && request.resource.data.keys().hasOnly(['access', 'allowed'])
           && validAccess(request.resource.data);
-        allow update: if docId == 'config' && isOwner()
+        allow update: if docId == 'config' && isOwner(wid)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['access', 'allowed'])
           && validAccess(request.resource.data);
       }
@@ -252,44 +270,96 @@ service cloud.firestore {
           && request.resource.data.at is int && request.resource.data.at <= request.time.toMillis() + 60000;
         allow read: if signedIn()
           && (resource.data.uid == request.auth.uid
-            || (resource.data.keySource == 'workspace' && workspace(wid).ownerId == request.auth.uid));
+            || (resource.data.keySource == 'workspace' && isOwner(wid)));
       }
 
       // Research reports (D-090). Saved by whoever ran them and seen only by them until they share it; then every member
-      // reads it. Only the author shares or unshares it, and nothing else in it changes. The author deletes it; the owner
-      // may delete a shared one. Undoing the owner's delete restores someone else's shared report, so the owner may create that too.
-      // Shape mirrors SavedReport and REPORT_LIMITS in src/data/model.ts.
+      // reads it. Only the author shares or unshares it, and nothing else in it changes. The author deletes it; an owner
+      // may delete a shared one. Undoing an owner's delete restores someone else's shared report, so owners may create that too.
+      // D-098: the doc is a summary (title, answer, counts) and the rest is in content/body. Reports saved before that hold
+      // everything in one doc; they stay readable, shareable and deletable, and undoing their delete may restore them.
+      // Shapes mirror ReportSummary / ReportBody and REPORT_LIMITS in src/data/model.ts.
       match /reports/{id} {
-        function validReport(d) {
-          return d.keys().hasOnly(['kind', 'title', 'answer', 'sections', 'implications', 'openQuestions', 'sources', 'topic', 'uid', 'name', 'model', 'shared', 'createdAt'])
-            && optIn(d, 'kind', ['research', 'chat', 'upload'])
+        function validMeta(d) {
+          return optIn(d, 'kind', ['research', 'chat', 'upload'])
             && isText(d.title, 300) && isText(d.answer, 4000)
-            && d.sections is list && d.sections.size() <= 30
-            && d.implications is list && d.implications.size() <= 20
-            && d.openQuestions is list && d.openQuestions.size() <= 30
-            && d.sources is list && d.sources.size() <= 200
             && isText(d.topic, 500) && isText(d.uid, 128) && isText(d.name, 200) && isText(d.model, 100)
             && d.shared is bool
             && d.createdAt is number;
         }
-        function isOwner() {
-          return workspace(wid).ownerId == request.auth.uid;
+        function validBody(d) {
+          return d.sections is list && d.sections.size() <= 30
+            && d.implications is list && d.implications.size() <= 20
+            && d.openQuestions is list && d.openQuestions.size() <= 30
+            && d.sources is list && d.sources.size() <= 200;
         }
-        allow read: if isMember(wid) && (resource.data.shared == true || resource.data.uid == request.auth.uid);
-        allow create: if isMember(wid) && validReport(request.resource.data)
-          && (request.resource.data.uid == request.auth.uid || (request.resource.data.shared == true && isOwner()));
+        function validSummary(d) {
+          return d.keys().hasOnly(['kind', 'title', 'answer', 'topic', 'uid', 'name', 'model', 'shared', 'createdAt', 'sectionCount', 'sourceCount'])
+            && validMeta(d)
+            && d.sectionCount is int && d.sectionCount >= 0
+            && d.sourceCount is int && d.sourceCount >= 0;
+        }
+        function validWhole(d) {
+          return d.keys().hasOnly(['kind', 'title', 'answer', 'sections', 'implications', 'openQuestions', 'sources', 'topic', 'uid', 'name', 'model', 'shared', 'createdAt'])
+            && validMeta(d) && validBody(d);
+        }
+        function mayRead(d) {
+          return isMember(wid) && (d.shared == true || d.uid == request.auth.uid);
+        }
+        allow read: if mayRead(resource.data);
+        allow create: if isMember(wid) && (validSummary(request.resource.data) || validWhole(request.resource.data))
+          && (request.resource.data.uid == request.auth.uid || (request.resource.data.shared == true && isOwner(wid)));
         allow update: if isMember(wid) && resource.data.uid == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared'])
           && request.resource.data.shared is bool;
-        allow delete: if isMember(wid) && (resource.data.uid == request.auth.uid || (resource.data.shared == true && isOwner()));
+        allow delete: if isMember(wid) && (resource.data.uid == request.auth.uid || (resource.data.shared == true && isOwner(wid)));
+
+        // The body follows its summary: read by whoever reads the report, written with it (the summary in the same
+        // batch, hence getAfter), deleted by whoever may delete it.
+        function summary() {
+          return get(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id)).data;
+        }
+        function summaryAfter() {
+          return getAfter(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id)).data;
+        }
+        match /content/{part} {
+          allow read: if part == 'body' && mayRead(summary());
+          allow create: if part == 'body' && isMember(wid)
+            && request.resource.data.keys().hasOnly(['sections', 'implications', 'openQuestions', 'sources'])
+            && validBody(request.resource.data)
+            && (summaryAfter().uid == request.auth.uid || (summaryAfter().shared == true && isOwner(wid)));
+          allow delete: if part == 'body' && isMember(wid)
+            && (!exists(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id))
+              || summary().uid == request.auth.uid || (summary().shared == true && isOwner(wid)));
+        }
       }
 
-      // Workspace content: members only, known collections only, with a sane shape.
+      // Who is in the workspace, by name (D-098). Each member writes their own entry; owners write one when they let
+      // someone in, and remove it with them. Their role lives on the workspace doc.
+      match /members/{uid} {
+        function validMember(d) {
+          return d.keys().hasOnly(['name', 'email', 'photo', 'joinedAt'])
+            && isText(d.name, 200)
+            && optText(d, 'email', 320)
+            && optText(d, 'photo', 2000)
+            && d.joinedAt is number;
+        }
+        allow read: if isMember(wid);
+        allow create, update: if validMember(request.resource.data)
+          && ((request.auth.uid == uid && isMember(wid)) || isOwner(wid));
+        allow delete: if signedIn() && (request.auth.uid == uid || isOwner(wid));
+      }
+
+      // Workspace content: members read it, owners and editors change it (D-098); known collections only, with a sane shape.
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
         // `domains` and `groups` are retired (D-048, D-049): still readable and deletable so old workspaces can be cleaned up.
-        allow read, delete: if isMember(wid) && collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'domains', 'groups'];
-        allow create, update: if isMember(wid) && valid(wid, collection, docId, request.resource.data);
+        function known() {
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'domains', 'groups'];
+        }
+        allow read: if isMember(wid) && known();
+        allow delete: if canEdit(wid) && known();
+        allow create, update: if canEdit(wid) && valid(wid, collection, docId, request.resource.data);
       }
     }
 
@@ -302,16 +372,15 @@ service cloud.firestore {
     match /inviteCodes/{code} {
       allow get: if signedIn();
       allow list: if false;
-      allow create: if signedIn()
-        && workspaceAfter(request.resource.data.workspaceId).ownerId == request.auth.uid
+      allow create: if roleIn(workspaceAfter(request.resource.data.workspaceId)) == 'owner'
         && workspaceAfter(request.resource.data.workspaceId).inviteCode == code
         && request.resource.data.createdBy == request.auth.uid;
-      allow delete: if signedIn() && workspace(resource.data.workspaceId).ownerId == request.auth.uid;
+      allow delete: if isOwner(resource.data.workspaceId);
     }
 
     // Asking to join with a code (D-062). The id is `<workspaceId>_<uid>`: one request per person per workspace.
-    // The owner approves (adds the member and deletes the request in one batch) or denies (deletes it).
-    // `ownerId` is copied in so the owner can query their requests without a get() per document.
+    // An owner approves (adds the member and deletes the request in one batch) or denies (deletes it). Since D-098 any
+    // owner settles them, querying by workspace; `ownerId` (the creator) is still copied in.
     match /joinRequests/{id} {
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(['workspaceId', 'ownerId', 'uid', 'name', 'email', 'code', 'createdAt'])
@@ -323,9 +392,9 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && isText(request.resource.data.name, 200)
         && request.resource.data.createdAt is number;
-      // The requester sees and withdraws their own; the owner sees and settles theirs.
+      // The requester sees and withdraws their own; the workspace's owners see and settle them.
       allow read, delete: if signedIn()
-        && (resource.data.uid == request.auth.uid || resource.data.ownerId == request.auth.uid);
+        && (resource.data.uid == request.auth.uid || isOwner(resource.data.workspaceId));
     }
   }
 }

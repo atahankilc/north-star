@@ -96,7 +96,11 @@ export async function importWorkspace(bundle: LoadedBundle, uid: string): Promis
       continue
     }
     const implications = fields.implications.map((x) => ({ ...x, items: x.items.map((i) => ids.get(i)?.id).filter((i): i is string => !!i) }))
-    writes.push([doc(col('reports')), { ...fields, implications, uid }])
+    // A summary and its body (D-098); the summary is written first, as the body's rule reads it.
+    const { sections, openQuestions, sources, implications: _old, ...meta } = fields
+    const ref = doc(col('reports'))
+    writes.push([ref, { ...meta, sectionCount: sections.length, sourceCount: sources.length, uid }])
+    writes.push([doc(ref, 'content', 'body'), { sections, implications, openQuestions, sources }])
   }
 
   let written = writes.length

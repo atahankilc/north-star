@@ -11,19 +11,24 @@
 //     comparisons/{id}                       Comparison
 //     edges/{id}                             Edge (any node ↔ any node)
 //     attachments/{id}                       Attachment (D-083); the file is in Storage at `path`
-//     reports/{id}                           SavedReport (D-090): a research report, yours until you share it
+//     reports/{id}                           ReportSummary (D-090, D-098): a report's title, answer and counts
+//       content/body                         ReportBody (D-098): its sections and sources, fetched when it's opened
+//     members/{uid}                          Member (D-098): a member's name and email, for the people list
 //   inviteCodes/{code}                       InviteCode (D-012)
 //   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)
 //
 // Realtime Database (ephemeral):
 //   presence/{workspaceId}/{uid}             Presence (D-016)
 
-export type Role = 'owner' | 'editor'
+// D-098: any number of owners (never none), editors, and viewers who read but don't change the workspace.
+export type Role = 'owner' | 'editor' | 'viewer'
+export const ROLES: readonly Role[] = ['owner', 'editor', 'viewer']
 
 export type Workspace = {
   name: string
   // What the team is building (D-082), for people and the assistant.
   description?: string
+  // Who created it. Authority comes from `roles` (D-098); this never changes.
   ownerId: string
   memberIds: string[]
   roles: Record<string, Role>
@@ -43,7 +48,7 @@ export type InviteCode = {
 // Someone entered the code and waits for the owner (D-062).
 export type JoinRequest = {
   workspaceId: string
-  // Copied from the workspace so the owner can query their requests.
+  // The workspace's creator when it was asked (unused since D-098: owners query by workspace).
   ownerId: string
   uid: string
   name: string
@@ -206,7 +211,7 @@ export type ReportContent = {
 // conversation when asked (D-090). `upload`: someone's own .md file (D-091). Older reports have no kind and are research.
 export type ReportKind = 'research' | 'chat' | 'upload'
 
-export type SavedReport = ReportContent & {
+type ReportMeta = {
   kind?: ReportKind
   topic: string
   // Who ran it and their name then.
@@ -215,6 +220,29 @@ export type SavedReport = ReportContent & {
   model: string
   shared: boolean
   createdAt: number
+}
+
+// What a report's list row needs (D-098): small, so the reports tab can list many. Its body is a doc of its own.
+// Reports saved before D-098 are one doc holding everything (sections etc. inline, no counts); both shapes are read.
+export type ReportSummary = ReportMeta & {
+  title: string
+  answer: string
+  sectionCount?: number
+  sourceCount?: number
+} & Partial<ReportBody>
+
+export type ReportBody = Pick<ReportContent, 'sections' | 'implications' | 'openQuestions' | 'sources'>
+
+// A whole report, as the report screen, export and the chat use it.
+export type SavedReport = ReportContent & ReportMeta
+
+// A member of a workspace as the people list shows them (D-098). Written by the member when they open it, or by an
+// owner who lets them in. Their role is on the workspace (`roles`), not here.
+export type Member = {
+  name: string
+  email?: string
+  photo?: string
+  joinedAt: number
 }
 
 // Uploaded files (D-091) can be longer than what the assistant writes, so these leave room.

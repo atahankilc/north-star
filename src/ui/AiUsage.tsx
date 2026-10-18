@@ -2,16 +2,17 @@
 // was said. You see your own calls on either key; the owner also sees everyone's calls on the workspace key.
 import { useContext, useMemo, useState } from 'react'
 import { estimateCost, PRICES_AS_OF } from '../ai/prices'
-import { useAiUsage, type AiUsage } from '../data/ai'
+import { useUsageCalls, useUsageMonth, type AiUsage, type UsageShow } from '../data/ai'
 import { useAuth } from '../data/auth'
+import { isOwnerOf } from '../data/workspaces'
+import { Loading } from './Loading'
 import type { WithId } from '../data/hooks'
 import { WorkspaceContext } from '../views/workspace/context'
 import styles from './AiUsage.module.css'
 import { Choice } from './Choice'
 import { Note, Row, Section } from './Settings'
 
-type Show = 'all' | 'workspace' | 'own'
-const SHOW: readonly Show[] = ['all', 'workspace', 'own']
+const SHOW: readonly UsageShow[] = ['all', 'workspace', 'own']
 
 const tokens = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 const money = (n: number | null) => (n === null ? '?' : n === 0 ? '$0' : n < 0.0001 ? '<$0.0001' : `$${n < 0.1 ? n.toFixed(4) : n.toFixed(2)}`)
@@ -41,22 +42,22 @@ export function AiUsagePage() {
       <Section label="usage" note="Open a workspace to see what the assistant used there." />
     )
   }
-  return <Usage wid={ws.wid} ownerId={ws.workspace.ownerId} />
+  return <Usage wid={ws.wid} isOwner={isOwnerOf(ws.workspace, useAuth().user?.id)} />
 }
 
-function Usage({ wid, ownerId }: { wid: string; ownerId: string }) {
+// D-098: nothing here loads with the workspace. The month's totals are fetched once when this page opens; the calls
+// below come a page at a time.
+function Usage({ wid, isOwner }: { wid: string; isOwner: boolean }) {
   const { user } = useAuth()
-  const isOwner = user?.id === ownerId
-  const { entries, isLoading, error } = useAiUsage(wid, isOwner)
-  const [show, setShow] = useState<Show>('all')
-
+  const [show, setShow] = useState<UsageShow>('all')
   const monthStart = useMemo(() => {
     const d = new Date()
     return new Date(d.getFullYear(), d.getMonth(), 1).getTime()
   }, [])
-  const thisMonth = entries.filter((e) => e.at >= monthStart)
-  const mine = thisMonth.filter((e) => e.uid === user?.id)
-  const shared = thisMonth.filter((e) => e.keySource === 'workspace')
+  const month = useUsageMonth(wid, isOwner, monthStart)
+  const calls = useUsageCalls(wid, isOwner, show)
+  const mine = month.mine
+  const shared = month.shared
 
   // The owner's view of the workspace key, person by person.
   const people = useMemo(() => {
@@ -69,21 +70,28 @@ function Usage({ wid, ownerId }: { wid: string; ownerId: string }) {
     return [...by.entries()].map(([uid, p]) => ({ uid, name: p.name, ...total(p.entries) })).sort((a, b) => b.cost - a.cost)
   }, [shared])
 
-  const listed = entries.filter((e) => show === 'all' || e.keySource === show).slice(0, 100)
 
   return (
     <>
       <Section label="this month">
-        <div className={styles.cards}>
-          <Card label="you, own key" t={total(mine.filter((e) => e.keySource === 'own'))} />
-          <Card label="you, workspace key" t={total(mine.filter((e) => e.keySource === 'workspace'))} />
-          {isOwner && <Card label="workspace key, everyone" t={total(shared)} accent />}
-        </div>
+        {month.isLoading ? (
+          <Loading label="adding up this month…" />
+        ) : month.error ? (
+          <Note tone="error">! Couldn&apos;t add up this month.</Note>
+        ) : (
+          <div className={styles.cards}>
+            <Card label="you, own key" t={total(mine.filter((e) => e.keySource === 'own'))} />
+            <Card label="you, workspace key" t={total(mine.filter((e) => e.keySource === 'workspace'))} />
+            {isOwner && <Card label="workspace key, everyone" t={total(shared)} accent />}
+          </div>
+        )}
       </Section>
 
       {isOwner && (
         <Section label="workspace key by person">
-          {people.length === 0 ? (
+          {month.isLoading ? (
+            <Loading label="loading…" />
+          ) : people.length === 0 ? (
             <Note>Nobody has used the workspace key this month.</Note>
           ) : (
             <div className={styles.table} role="table" aria-label="Workspace key use by person">
@@ -114,21 +122,28 @@ function Usage({ wid, ownerId }: { wid: string; ownerId: string }) {
         label="calls"
         note={`Tokens are exactly what OpenAI reported. Costs are estimates from OpenAI's prices on ${PRICES_AS_OF}; your OpenAI dashboard has the real bill. Messages themselves are never logged.`}
       >
-        <Row label="show" hint="The last 100 calls.">
+        <Row label="show" hint="Newest first, 20 at a time.">
           <Choice label="key" bare options={SHOW} value={show} onChange={(v) => setShow(v ?? 'all')} />
         </Row>
-        {error ? (
+        {calls.error ? (
           <Note tone="error">! Couldn&apos;t load the log.</Note>
-        ) : isLoading ? (
-          <Note>loading…</Note>
-        ) : listed.length === 0 ? (
+        ) : calls.isLoading ? (
+          <Loading label="loading calls…" />
+        ) : calls.data.length === 0 ? (
           <Note>No calls yet.</Note>
         ) : (
           <ol className={styles.calls}>
-            {listed.map((e) => (
+            {calls.data.map((e) => (
               <Call key={e.id} e={e} showWho={isOwner && e.uid !== user?.id} />
             ))}
           </ol>
+        )}
+        {calls.hasMore && (
+          <div>
+            <button className={styles.more} onClick={calls.more} disabled={calls.loadingMore}>
+              {calls.loadingMore ? 'loading…' : 'show more'}
+            </button>
+          </div>
         )}
       </Section>
     </>

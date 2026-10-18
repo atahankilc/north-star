@@ -148,3 +148,8 @@
     display: none;
   }
 }
+
+/* Paging the call log (D-098). */
+.more {
+  composes: small from './AsciiButton.module.css';
+}

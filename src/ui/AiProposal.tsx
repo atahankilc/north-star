@@ -13,6 +13,7 @@ import { TYPE_ACCENT } from '../views/canvas/boardKinds'
 import { useWs } from '../views/workspace/context'
 import { MARK_VAR, usePreview, type Mark } from '../views/workspace/preview'
 import { frameAllChanges } from '../views/workspace/previewNav'
+import { useViewer } from '../views/workspace/viewerLock'
 import { unlight, usePreviewFocus, useStage } from '../views/workspace/stage'
 import styles from './AiChat.module.css'
 
@@ -83,6 +84,7 @@ export function AiProposal({ message }: { message: ChatMessage }) {
 
   // The preview (D-087): every view shows the ticked changes as if applied, and follows the ticks live.
   const previewing = usePreview((s) => s.messageId === message.id)
+  const viewer = useViewer((s) => s.viewer)
   useEffect(() => {
     if (!previewing) return
     const { show, close } = usePreview.getState()
@@ -228,7 +230,8 @@ export function AiProposal({ message }: { message: ChatMessage }) {
             >
               {previewing ? 'close preview' : 'preview →'}
             </button>
-            <button className={styles.send} onClick={apply} disabled={count === 0}>
+            {/* Viewers may look, not apply (D-098). */}
+            <button className={styles.send} onClick={apply} disabled={count === 0 || viewer} title={viewer ? "You're a viewer here" : undefined}>
               apply {count}
             </button>
             <button className={styles.action} onClick={() => decide(message.id, { status: 'discarded' })}>

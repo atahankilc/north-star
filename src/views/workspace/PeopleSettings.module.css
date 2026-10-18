@@ -1,0 +1,144 @@
+/* Settings → workspace → people (D-098). */
+.list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One person: initial, name and email, their role and what an owner can do. */
+.member {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.member + .member {
+  border-top: 1px solid var(--line);
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line-hover);
+  color: var(--fg);
+  font-size: var(--text-xs);
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  color: var(--fg-strong);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.email {
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.role {
+  min-width: 84px;
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--fg-strong);
+  font-size: var(--text-sm);
+}
+
+.roleText {
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+}
+
+.roleText[data-role='owner'] {
+  color: var(--accent-cyan);
+}
+
+.request {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+}
+
+.more {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dim {
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+}
+
+.code {
+  color: var(--accent-cyan);
+  letter-spacing: var(--track-label);
+}
+
+.action {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
+.inviteForm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+  caret-color: var(--accent-cyan);
+}
+
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+.input:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+@media (max-width: 640px) {
+  .member {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .controls {
+    grid-column: 2;
+  }
+}

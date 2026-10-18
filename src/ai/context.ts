@@ -3,6 +3,7 @@
 // can point at it (D-074).
 import type { WithId } from '../data/hooks'
 import type { BoardNode, Label, NodeType } from '../data/model'
+import type { ReportSummary } from '../data/model'
 import type { WorkspaceCtx } from '../views/workspace/context'
 
 // Far beyond a real workspace; keeps a runaway one from becoming an expensive prompt.
@@ -50,7 +51,8 @@ function makeRefs(items: { id: string; type: NodeType; name: string }[]): { byRe
 
 export type Brief = { text: string; refs: Map<string, ItemRef> }
 
-export function workspaceBrief(ws: WorkspaceCtx, where: Where): Brief {
+// `reports`: the newest few you may see (D-090); the chat loads them while it's open (D-098).
+export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: ReportSummary[] = []): Brief {
   const names = new Map<string, string>()
   const all: ItemRef[] = []
   const boardLists = [['customer', ws.customers], ['problem', ws.problems], ['idea', ws.ideas], ['feature', ws.features]] as const
@@ -136,9 +138,8 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where): Brief {
   if (areas.length) lines.push('', `AREAS ON THE BOARD: ${areas.map((l) => clip(l.text, 60)).join(' | ')}`)
 
   // Saved research (D-090): what was found before, so it isn't researched again. The user's own and the shared ones.
-  const reports = ws.reports.slice(0, 10)
   if (reports.length) {
-    lines.push('', `RESEARCH REPORTS (${ws.reports.length}, newest first; the full text is on the reports tab)`)
+    lines.push('', `RESEARCH REPORTS (the newest ${reports.length}; the full text is on the reports tab)`)
     for (const r of reports) {
       lines.push(`- "${clip(r.title, 120)}" (${new Date(r.createdAt).toISOString().slice(0, 10)}, ${r.shared ? 'shared' : 'private'}): ${clip(r.answer, 300)}`)
     }

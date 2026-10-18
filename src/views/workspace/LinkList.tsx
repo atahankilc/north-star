@@ -69,7 +69,7 @@ export function LinkList({ nodeId, nodeType, hint }: Props) {
           {links.map(({ edge, other, outgoing }) => (
             <li key={edge.id} className={styles.link}>
               <span className={styles.arrow}>{outgoing ? '→' : '←'}</span>
-              <button className={styles.linkTitle} onClick={() => other && navigate(other.path)} title={other?.title}>
+              <button className={styles.linkTitle} data-nav onClick={() => other && navigate(other.path)} title={other?.title}>
                 {other && other.type !== nodeType && <span className={styles.type}>{TYPE_LABELS[other.type]} · </span>}
                 {other?.title ?? 'Missing'}
               </button>

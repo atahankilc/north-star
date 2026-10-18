@@ -1047,3 +1047,35 @@ replaced; the board glided to the first change and left the rest off screen. The
   rename, competitor delete, matrix cell, an area) on all four views; row hover lights the deleted competitor; n steps to the
   rename (card framed with its `was` strip) and the delete (title struck); Esc → the real workspace; apply writes everything.
 
+### D-098 · 2026-10-18 · Accepted (extends D-021, D-090, D-079)
+**Viewers and several owners; a people list owners edit; nothing beyond the workspace's items loads until it's shown.**
+The user's asks: don't load usage, the people list or reports when a workspace opens; a people section where owners edit
+roles; loading screens for the report list and for opening a report; paging for people, usage and reports. Their picks:
+a viewer role plus remove (and several owners per workspace), and reports split into a summary and a body.
+- *Roles:* `owner | editor | viewer` in `roles`. Any number of owners, never none (rules: `validRoles`, `roles.values().hasAny(['owner'])`).
+  Owners: people, roles (anyone's, their own too while another owner remains), invite code and email invites, join
+  requests (queried by workspace, so every owner sees them), the assistant key and its usage, deleting the workspace.
+  Editors: all content. Viewers: read everything, keep and share their own reports, log their own-key calls; no content
+  writes (Firestore and Storage rules). `ownerId` stays as the creator and never changes; rules, functions and the client
+  read `roles` (`roleOf`, `isOwnerOf`, `canEditIn` in workspaces.ts). Anyone but the last owner may leave; owners may too.
+- *Viewers in the app:* the preview's lock in a viewer mode (previewLock.ts): fields locked but readable, panel buttons
+  that change things hidden, navigation (`data-nav`), filters, Settings and the reports tab usable; no `+` create; drags
+  and label edits don't start (`editLocked`); tracked writes refused with a toast (read-only reasons are keyed now, so the
+  preview closing doesn't unlock a viewer); apply disabled on proposals. A role change applies live, no reload.
+- *People:* `workspaces/{wid}/members/{uid}` (name, email, photo, joinedAt), written by each member when they open the
+  workspace (if missing or changed) and by an owner who lets someone in; removed with them. Settings → workspace → people
+  lists it by name, 20 at a time: initial, name, email, a role picker and `remove` (confirm) for owners, the role as text
+  for others; the last owner's picker is locked. Members who haven't opened it since show once the list is complete.
+  The key page's "who may use it" uses the same list; the `aiMembers` function is gone.
+- *Reports:* `reports/{id}` is a summary (title, answer, counts, meta) and `reports/{id}/content/body` holds sections,
+  implications, open questions and sources; saved in one batch, deleted (and undone) together. Reports from before stay one
+  doc and are read, shared and deleted as they were (no migration). The reports tab lists summaries 20 at a time (two
+  merged queries) with a loading line and `show more`; opening one fetches its body with a loading screen (`useReport`);
+  a `?report=` link checks just that report. The brief's newest reports load only while the chat is open; export fetches
+  every visible report at export time; import writes summary + body.
+- *Usage:* this month's totals are fetched once when the usage page opens; the call log is paged 20 at a time with the
+  right queries per filter. *Paging:* `usePaged` (hooks.ts): live, several queries merged, rows past a full page's edge
+  held back so none are skipped. `Loading` (src/ui/Loading.tsx): the turning ▖▘▝▗ with a label.
+- *Indexes:* `firestore.indexes.json` (reports by shared/uid + createdAt; aiUsage by uid, keySource, both + at), deployed by
+  `deploy:rules` now. Rules: 232 tests pass (39 new).
+

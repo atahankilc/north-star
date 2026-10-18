@@ -206,7 +206,7 @@ function Thumb({ attachment: a, onOpen }: { attachment: WithId<Attachment>; onOp
     )
   }
   return (
-    <button className={styles.thumb} onClick={onOpen} aria-label={`View ${a.name}`} title={`${a.name} · ${formatSize(a.size)}`}>
+    <button className={styles.thumb} data-nav onClick={onOpen} aria-label={`View ${a.name}`} title={`${a.name} · ${formatSize(a.size)}`}>
       {file.url && <img src={file.url} alt="" loading="lazy" draggable={false} />}
     </button>
   )
@@ -232,7 +232,7 @@ function FileRow({ attachment: a, onOpen }: { attachment: WithId<Attachment>; on
             {label}
           </a>
         ) : (
-          <button className={styles.open} onClick={onOpen} title={`View ${a.name}`}>
+          <button className={styles.open} data-nav onClick={onOpen} title={`View ${a.name}`}>
             {label}
           </button>
         )

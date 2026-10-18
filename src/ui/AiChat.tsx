@@ -17,6 +17,8 @@ import { MODES, modeAbout, parseMode, type Mode } from '../ai/modes'
 import type { Research } from '../ai/research'
 import { modelFor, useAiSettings } from '../ai/settings'
 import type { KeySource } from '../data/ai'
+import { firebase } from '../data/firebase'
+import { useRecentReports, useReportSummary } from '../data/reports'
 import type { NodeType } from '../data/model'
 import { workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
@@ -303,7 +305,7 @@ function NoKey({ workspaceKeyExists }: { workspaceKeyExists: boolean }) {
         <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">
           platform.openai.com/api-keys
         </a>
-        ; change it later in Settings → ai.
+        ; change it later in Settings → assistant → keys.
       </p>
     </div>
   )
@@ -311,6 +313,8 @@ function NoKey({ workspaceKeyExists }: { workspaceKeyExists: boolean }) {
 
 function Conversation({ source }: { source: KeySource }) {
   const ws = useWs()
+  // The newest reports for the brief (D-090), loaded only while the chat is open (D-098).
+  const recentReports = useRecentReports(ws.wid, firebase?.auth.currentUser?.uid, true)
   const messages = useChat((s) => s.messages)
   const busy = useChat((s) => s.busy)
   const send = useChat((s) => s.send)
@@ -371,7 +375,7 @@ function Conversation({ source }: { source: KeySource }) {
 
   // Built when sent, so it sees the board as it is now. `web`: the prompt's research rules (deep research always has them).
   const prepareAt = (view: string, web: boolean) => {
-    const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId })
+    const brief = workspaceBrief(ws, { view, selectedId: useCanvas.getState().selectedId }, recentReports)
     return { instructions: chatInstructions(brief.text, ws.workspace.name, web), refs: brief.refs, source, ws }
   }
   const currentView = () => path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
@@ -792,7 +796,7 @@ function ReportCard({ message }: { message: ChatMessage }) {
   const report = message.report!
   const id = message.reportId
   const reportOpen = useChat((s) => !!id && s.reportOpen === id)
-  const saved = useWs().reports.find((x) => x.id === id)
+  const saved = useReportSummary(useWs().wid, id ?? null).data
   const research = message.reportMeta?.kind !== 'chat'
   const status = saved
     ? `saved in reports · ${saved.shared ? 'shared with the workspace' : 'only you can see it'}`

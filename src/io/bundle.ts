@@ -4,7 +4,7 @@
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, REPORT_LIMITS } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, REPORT_LIMITS, type SavedReport } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -40,7 +40,8 @@ export type LoadedBundle = Bundle & { files: Record<string, Uint8Array> }
 
 export class BundleError extends Error {}
 
-export function makeBundle(name: string, description: string | undefined, data: WorkspaceData): Bundle {
+// `reports`: the ones you may see, whole; fetched only when exporting (D-098).
+export function makeBundle(name: string, description: string | undefined, data: WorkspaceData, reports: (SavedReport & { id: string })[] = []): Bundle {
   const bundle = {
     format: BUNDLE_FORMAT,
     version: BUNDLE_VERSION,
@@ -55,7 +56,7 @@ export function makeBundle(name: string, description: string | undefined, data: 
       file: attachmentEntry(rest.id, path),
     }))
   }
-  if (data.reports.length) bundle.reports = data.reports.map(({ uid: _uid, ...rest }) => ({ ...rest }) as Doc)
+  if (reports.length) bundle.reports = reports.map(({ uid: _uid, ...rest }) => ({ ...rest }) as Doc)
   return bundle
 }
 

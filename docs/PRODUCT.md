@@ -19,7 +19,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 
 | Entity | Description | Key fields |
 |---|---|---|
-| **Workspace** | One startup idea space; the unit of sharing | name, description, members, roles |
+| **Workspace** | One startup idea space; the unit of sharing | name, description, members, roles (owners, editors, viewers; D-098) |
 | **Customer** | Who it's for, at any breadth; doubles as the segment (D-044) | title, notes, position |
 | **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position |
 | **Text label** | Text written on the board; names an area and is a place to jump to (D-050) | text, position |

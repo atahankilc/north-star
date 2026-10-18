@@ -1,6 +1,7 @@
 // /workspaces/<id>/reports (D-090): the research reports you may see, newest first: your own (only you, until you share
 // one) and those others shared. A row opens the report screen (D-089); `?report=<id>` opens it from a link. `upload .md`
-// (or a dropped file) adds your own (D-091).
+// (or a dropped file) adds your own (D-091). The list loads only here, 20 at a time, as small summaries; a report's
+// body loads when it's opened (D-098).
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useChat } from '../../ai/chat'
@@ -10,8 +11,10 @@ import { setPresenceSelection } from '../../data/presence'
 import { useCanvas } from '../../state/canvasStore'
 import { useHistory } from '../../data/history'
 import type { WithId } from '../../data/hooks'
-import type { SavedReport } from '../../data/model'
-import { deleteReport, newReportId, saveReport, shareReport } from '../../data/reports'
+import type { ReportSummary } from '../../data/model'
+import { deleteReport, newReportId, saveReport, sectionCount, shareReport, sourceCount, useReportList, useReportSummary } from '../../data/reports'
+import { isOwnerOf } from '../../data/workspaces'
+import { Loading } from '../../ui/Loading'
 import { parseReportMarkdown, REPORT_FILE_MAX } from '../../io/reportMarkdown'
 import { Appear } from '../../ui/Appear'
 import { DecodeText } from '../../ui/DecodeText'
@@ -31,7 +34,8 @@ export function ReportsView() {
   const linked = params.get('report')
   const open = useChat((s) => s.reportOpen)
   const me = firebase?.auth.currentUser?.uid
-  const isOwner = ws.workspace.ownerId === me
+  const isOwner = isOwnerOf(ws.workspace, me)
+  const reports = useReportList(ws.wid, me)
 
   // Others see which report you have open, like a selected card (D-068); closing hands back your card selection.
   useEffect(() => {
@@ -40,17 +44,19 @@ export function ReportsView() {
     return () => setPresenceSelection(useCanvas.getState().selectedId)
   }, [open])
 
-  // A link opens its report; the screen closing takes `?report=` away again (ReportView).
-  const found = !!linked && ws.reports.some((r) => r.id === linked)
+  // A link opens its report (it may be far down the list); the screen closing takes `?report=` away again (ReportView).
+  const linkedReport = useReportSummary(ws.wid, linked)
+  const found = !!linked && !!linkedReport.data
+  const notFound = !!linked && !linkedReport.isLoading && !linkedReport.data
   useEffect(() => {
     if (found) useChat.getState().showReport(linked)
   }, [found, linked])
 
-  const show = (r: WithId<SavedReport>) => {
+  const show = (r: WithId<ReportSummary>) => {
     useChat.getState().showReport(r.id)
     navigate(reportPath(ws.wid, r.id), { replace: true })
   }
-  const remove = (r: WithId<SavedReport>) => {
+  const remove = (r: WithId<ReportSummary>) => {
     deleteReport(ws.wid, r.id).catch(() => useHistory.getState().say("Couldn't delete the report"))
     useHistory.getState().say(`Deleted "${r.title}" · ${UNDO_HINT} to undo`)
   }
@@ -83,12 +89,11 @@ export function ReportsView() {
     setDropping(on)
   }
 
-  const mine = ws.reports.filter((r) => r.uid === me)
-  const sharedByOthers = ws.reports.length - mine.length
-
   return (
     <main
       className={styles.page}
+      // A viewer keeps their own reports (D-098): uploading stays open to them.
+      data-viewer-ok
       data-dropping={dropping || undefined}
       onDragOver={(e) => drag(e, true)}
       onDragLeave={(e) => drag(e, false)}
@@ -99,9 +104,7 @@ export function ReportsView() {
     >
       <header className={styles.head}>
         <h1 className={styles.heading}>reports</h1>
-        <span className={styles.count}>
-          {mine.length} yours · {sharedByOthers} shared by others
-        </span>
+        <span className={styles.count}>{reports.isLoading ? '' : `${reports.data.length}${reports.hasMore ? '+' : ''} · newest first`}</span>
         <button className={styles.action} data-tone="primary" onClick={() => file.current?.click()} disabled={upload?.busy} title="Add a report from a Markdown file">
           {upload?.busy ? 'uploading…' : 'upload .md'}
         </button>
@@ -124,7 +127,7 @@ export function ReportsView() {
           </button>
         </p>
       )}
-      {linked && !found && (
+      {notFound && (
         <p className={styles.note}>
           ! That report isn't shared with you, or it was deleted.{' '}
           <button className={styles.action} onClick={() => navigate(workspacePath(ws.wid, 'reports'), { replace: true })}>
@@ -132,7 +135,11 @@ export function ReportsView() {
           </button>
         </p>
       )}
-      {ws.reports.length === 0 ? (
+      {reports.isLoading ? (
+        <Loading label="loading reports…" className={styles.loading} />
+      ) : reports.error ? (
+        <p className={styles.note}>! Couldn&apos;t load the reports.</p>
+      ) : reports.data.length === 0 ? (
         <div className={styles.empty}>
           <DecodeText text="No reports yet" />
           <p>
@@ -142,7 +149,7 @@ export function ReportsView() {
         </div>
       ) : (
         <Appear as="ul" className={styles.list}>
-          {ws.reports.map((r) => {
+          {reports.data.map((r) => {
             const yours = r.uid === me
             return (
               <li key={r.id} className={styles.row} data-open={open === r.id || undefined}>
@@ -151,8 +158,8 @@ export function ReportsView() {
                   <span className={styles.answer}>{r.answer}</span>
                   <span className={styles.meta}>
                     {r.kind === 'chat' ? 'from a chat' : r.kind === 'upload' ? `uploaded ${r.topic}` : r.topic || 'research'} · by {yours ? 'you' : r.name} · {day(r.createdAt)} ·{' '}
-                    {count(r.sections.length, r.kind === 'chat' || r.kind === 'upload' ? 'section' : 'question')}
-                    {r.sources.length > 0 && ` · ${count(r.sources.length, 'source')}`}
+                    {count(sectionCount(r), r.kind === 'chat' || r.kind === 'upload' ? 'section' : 'question')}
+                    {sourceCount(r) > 0 && ` · ${count(sourceCount(r), 'source')}`}
                   </span>
                 </button>
                 <span className={styles.side}>
@@ -176,6 +183,13 @@ export function ReportsView() {
             )
           })}
         </Appear>
+      )}
+      {reports.hasMore && (
+        <div className={styles.more}>
+          <button className={styles.action} onClick={reports.more} disabled={reports.loadingMore}>
+            {reports.loadingMore ? 'loading…' : 'show more'}
+          </button>
+        </div>
       )}
     </main>
   )

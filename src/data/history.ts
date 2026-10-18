@@ -89,16 +89,19 @@ function serial<T>(fn: () => Promise<T>): Promise<T> {
 
 // Runs `write` and records it as one undoable step.
 // Resolves once the write is confirmed, like the Firestore call it wraps.
-// Set while the workspace on screen isn't the real one (the assistant's preview, D-087): every tracked write, undo and
-// redo is refused with this message instead.
-let readOnly: string | null = null
-export const setReadOnly = (why: string | null) => {
-  readOnly = why
+// Set while the workspace on screen isn't the real one (the assistant's preview, D-087), or while you only view it (a
+// viewer, D-098): every tracked write, undo and redo is refused with the message instead. One reason per `key`, so the
+// preview closing doesn't unlock a viewer.
+const readOnly = new Map<string, string>()
+export const setReadOnly = (why: string | null, key = 'preview') => {
+  if (why) readOnly.set(key, why)
+  else readOnly.delete(key)
 }
 // False (and says why) while writes are refused.
 export function writable(): boolean {
-  if (readOnly) useHistory.getState().say(readOnly)
-  return !readOnly
+  const why = [...readOnly.values()][0]
+  if (why) useHistory.getState().say(why)
+  return !why
 }
 
 export function tracked(label: string, refs: DocumentReference[], write: () => Promise<unknown>, opts: Options = {}) {

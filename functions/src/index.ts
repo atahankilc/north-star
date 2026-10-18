@@ -22,7 +22,10 @@ const ORIGINS = [/^https:\/\/atahankilc\.github\.io$/, /^http:\/\/(localhost|127
 
 type Access = 'everyone' | 'chosen'
 type AiConfig = { hasKey?: boolean; keyHint?: string; access?: Access; allowed?: string[] }
-type Workspace = { ownerId: string; memberIds: string[] }
+type Workspace = { ownerId: string; memberIds: string[]; roles?: Record<string, string> }
+
+// Any number of owners (D-098); `ownerId` is only who created it.
+const isOwner = (ws: Workspace, uid: string | undefined) => !!uid && ws.memberIds.includes(uid) && ws.roles?.[uid] === 'owner'
 
 const db = () => getFirestore()
 const configRef = (wid: string) => db().doc(`workspaces/${wid}/ai/config`)
@@ -63,7 +66,7 @@ export const setWorkspaceKey = onCall({ secrets: [AI_KEY_SECRET], cors: ORIGINS 
   const uid = req.auth?.uid
   const { wid, key } = (req.data ?? {}) as { wid?: unknown; key?: unknown }
   const ws = await workspaceOf(wid)
-  if (!uid || ws.ownerId !== uid) throw new HttpsError('permission-denied', 'Only the owner manages the workspace key.')
+  if (!isOwner(ws, uid)) throw new HttpsError('permission-denied', 'Only an owner manages the workspace key.')
   const id = wid as string
 
   if (key === '' || key === null) {
@@ -83,16 +86,6 @@ export const setWorkspaceKey = onCall({ secrets: [AI_KEY_SECRET], cors: ORIGINS 
   await secretRef(id).set({ ...encrypt(clean), setBy: uid, setAt: Date.now() })
   await configRef(id).set({ hasKey: true, keyHint, keySetAt: Date.now() }, { merge: true })
   return { keyHint }
-})
-
-// ---- Owner: members' names, for choosing who may use the key ----
-
-export const aiMembers = onCall({ cors: ORIGINS }, async (req) => {
-  const uid = req.auth?.uid
-  const ws = await workspaceOf((req.data as { wid?: unknown } | undefined)?.wid)
-  if (!uid || ws.ownerId !== uid) throw new HttpsError('permission-denied', 'Only the owner sees this.')
-  const { users } = await getAuth().getUsers(ws.memberIds.map((id) => ({ uid: id })))
-  return users.map((u) => ({ uid: u.uid, name: u.displayName ?? u.email ?? 'Someone', email: u.email ?? null }))
 })
 
 // ---- Members: one OpenAI call on the workspace key, streamed back and logged ----
@@ -151,7 +144,7 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
   if (!ws.memberIds.includes(uid)) return fail(403, "You're not a member of this workspace.")
   const id = wid as string
   const config = ((await configRef(id).get()).data() ?? {}) as AiConfig
-  const allowed = uid === ws.ownerId || config.access === 'everyone' || (config.allowed ?? []).includes(uid)
+  const allowed = isOwner(ws, uid) || config.access === 'everyone' || (config.allowed ?? []).includes(uid)
   if (!config.hasKey) return fail(412, 'This workspace has no key.')
   if (!allowed) return fail(403, "The owner hasn't let you use the workspace key.")
 
@@ -268,6 +261,8 @@ export const cleanUpWorkspaceAi = onDocumentDeleted('workspaces/{wid}', async (e
   await secretRef(wid).delete()
   await db().recursiveDelete(db().collection(`workspaces/${wid}/ai`))
   await db().recursiveDelete(db().collection(`workspaces/${wid}/aiUsage`))
-  // Members' private research reports (D-090), which the owner's browser can't read to delete.
+  // Members' private research reports (D-090) with their bodies (D-098), which an owner's browser can't read to delete,
+  // and anything left of the people list.
   await db().recursiveDelete(db().collection(`workspaces/${wid}/reports`))
+  await db().recursiveDelete(db().collection(`workspaces/${wid}/members`))
 })

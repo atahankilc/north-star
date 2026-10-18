@@ -15,9 +15,9 @@ import {
 } from 'firebase/firestore'
 import { attachmentsAvailable, deleteAttachmentFiles } from './attachments'
 import { db } from './firebase'
-import { useDoc, useQuery } from './hooks'
+import { useDoc, usePaged, useQuery } from './hooks'
 import type { AuthUser } from './auth'
-import type { InviteCode, JoinRequest, Workspace } from './model'
+import type { InviteCode, JoinRequest, Member, Role, Workspace } from './model'
 
 // No 0/O/1/I/L: codes get read aloud and typed by hand.
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -30,6 +30,16 @@ export function newInviteCode(length = 8): string {
 export function normalizeInviteCode(input: string): string {
   return input.toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
+
+// Roles (D-098): authority comes from `roles`, not `ownerId` (the creator). A workspace can have several owners.
+export const roleOf = (w: Pick<Workspace, 'roles' | 'memberIds'>, uid: string | undefined): Role | null =>
+  uid && w.memberIds.includes(uid) ? (w.roles[uid] ?? null) : null
+export const isOwnerOf = (w: Pick<Workspace, 'roles' | 'memberIds'>, uid: string | undefined) => roleOf(w, uid) === 'owner'
+export const canEditIn = (w: Pick<Workspace, 'roles' | 'memberIds'>, uid: string | undefined) => {
+  const r = roleOf(w, uid)
+  return r === 'owner' || r === 'editor'
+}
+export const ownerCount = (w: Pick<Workspace, 'roles'>) => Object.values(w.roles).filter((r) => r === 'owner').length
 
 export function useMyWorkspaces(uid: string) {
   return useQuery<Workspace>(
@@ -108,10 +118,12 @@ export function useMyJoinRequests(uid: string) {
   return useQuery<JoinRequest>(query(collection(db(), 'joinRequests'), where('uid', '==', uid)), `joinRequests:mine:${uid}`)
 }
 
-// Requests to join workspaces you own; pass a workspace to narrow it down.
-export function useRequestsToMe(uid: string, wid?: string) {
-  const mine = [where('ownerId', '==', uid), ...(wid ? [where('workspaceId', '==', wid)] : [])]
-  return useQuery<JoinRequest>(query(collection(db(), 'joinRequests'), ...mine), `joinRequests:owner:${uid}:${wid ?? ''}`)
+// Requests to join a workspace; only its owners may list them (D-098), so pass null when you aren't one.
+export function useJoinRequests(wid: string | null) {
+  return useQuery<JoinRequest>(
+    wid ? query(collection(db(), 'joinRequests'), where('workspaceId', '==', wid)) : null,
+    `joinRequests:${wid ?? ''}`,
+  )
 }
 
 export function withdrawJoinRequest(wid: string, uid: string) {
@@ -120,11 +132,51 @@ export function withdrawJoinRequest(wid: string, uid: string) {
 
 export const denyJoinRequest = withdrawJoinRequest
 
-// Owner only: add them as an editor and clear the request in one go.
-export function approveJoinRequest(wid: string, uid: string) {
+// Owners only: add them as an editor, put them in the people list and clear the request in one go.
+export function approveJoinRequest(wid: string, r: JoinRequest) {
   const batch = writeBatch(db())
-  batch.update(doc(db(), 'workspaces', wid), { memberIds: arrayUnion(uid), [`roles.${uid}`]: 'editor' })
-  batch.delete(doc(db(), 'joinRequests', requestId(wid, uid)))
+  batch.update(doc(db(), 'workspaces', wid), { memberIds: arrayUnion(r.uid), [`roles.${r.uid}`]: 'editor' })
+  batch.set(memberRef(wid, r.uid), memberEntry(r.name, r.email))
+  batch.delete(doc(db(), 'joinRequests', requestId(wid, r.uid)))
+  return batch.commit()
+}
+
+// ---- People (D-098) ----
+
+const memberRef = (wid: string, uid: string) => doc(db(), 'workspaces', wid, 'members', uid)
+
+const memberEntry = (name: string, email?: string | null, photo?: string | null): Member => ({
+  name: (name || email || 'Someone').slice(0, 200),
+  ...(email && { email: email.slice(0, 320) }),
+  ...(photo && { photo: photo.slice(0, 2000) }),
+  joinedAt: Date.now(),
+})
+
+// Your own entry in the people list, written when you open the workspace if it's missing or your name changed.
+export async function ensureMemberEntry(wid: string, user: AuthUser) {
+  const ref = memberRef(wid, user.id)
+  const snap = await getDoc(ref)
+  const now = memberEntry(user.name ?? '', user.email, user.photoURL)
+  const was = snap.data() as Member | undefined
+  if (was && was.name === now.name && (was.email ?? null) === (now.email ?? null) && (was.photo ?? null) === (now.photo ?? null)) return
+  await setDoc(ref, { ...now, joinedAt: was?.joinedAt ?? now.joinedAt })
+}
+
+// The people list, by name, a page at a time.
+export function useMembers(wid: string, size = 20) {
+  return usePaged<Member>([collection(db(), 'workspaces', wid, 'members')], `members:${wid}`, 'name', 'asc', size)
+}
+
+// Owners only. The rules keep at least one owner.
+export function setRole(wid: string, uid: string, role: Role) {
+  return updateDoc(doc(db(), 'workspaces', wid), { [`roles.${uid}`]: role })
+}
+
+// Owners only: they lose access at once; their entry in the people list goes with them.
+export function removeMember(wid: string, uid: string) {
+  const batch = writeBatch(db())
+  batch.update(doc(db(), 'workspaces', wid), { memberIds: arrayRemove(uid), [`roles.${uid}`]: deleteField() })
+  batch.delete(memberRef(wid, uid))
   return batch.commit()
 }
 
@@ -167,12 +219,13 @@ export function useMyInvites(email: string | null) {
   )
 }
 
-export function acceptInvite(wid: string, user: AuthUser) {
-  return updateDoc(doc(db(), 'workspaces', wid), {
+export async function acceptInvite(wid: string, user: AuthUser) {
+  await updateDoc(doc(db(), 'workspaces', wid), {
     memberIds: arrayUnion(user.id),
     [`roles.${user.id}`]: 'editor',
     invitedEmails: arrayRemove(normalizeEmail(user.email ?? '')),
   })
+  await ensureMemberEntry(wid, user).catch(() => {})
 }
 
 export function declineInvite(wid: string, email: string) {
@@ -199,20 +252,30 @@ const WORKSPACE_COLLECTIONS = [
 ]
 const BATCH_LIMIT = 450
 
-// Owner only. Children go first: their rules check membership on the workspace doc. Attachment files go before any
+// Owners only. Children go first: their rules check membership on the workspace doc. Attachment files go before any
 // doc (storage.rules check membership the same way), so none are left behind.
 export async function deleteWorkspace(wid: string, inviteCode: string, uid: string) {
   await deleteAttachmentFiles(wid)
-  const snaps = await Promise.all([
-    ...WORKSPACE_COLLECTIONS.map((c) => getDocs(collection(db(), 'workspaces', wid, c))),
-    getDocs(query(collection(db(), 'joinRequests'), where('ownerId', '==', uid), where('workspaceId', '==', wid))),
-    // Reports (D-090): the shared ones and the owner's own. Others' private reports can't be read here; the
+  const reports = await Promise.all([
+    // Reports (D-090): the shared ones and yours. Others' private reports can't be read here; the
     // cleanUpWorkspaceAi function takes them once functions are deployed.
     getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('shared', '==', true))),
     getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('uid', '==', uid))),
   ])
+  const snaps = await Promise.all([
+    ...WORKSPACE_COLLECTIONS.map((c) => getDocs(collection(db(), 'workspaces', wid, c))),
+    getDocs(query(collection(db(), 'joinRequests'), where('workspaceId', '==', wid))),
+    getDocs(collection(db(), 'workspaces', wid, 'members')),
+  ])
+  // A report's body (D-098) goes before its summary, which its rule reads.
+  const reportRefs = reports.flatMap((r) => r.docs.map((d) => d.ref))
+  const bodies = reportRefs.map((r) => doc(r, 'content', 'body'))
   // Once each: your own shared reports come back from both report queries.
-  const refs = [...new Map(snaps.flatMap((s) => s.docs.map((d) => [d.ref.path, d.ref] as const))).values()]
+  const refs = [
+    ...new Map(
+      [...bodies, ...snaps.flatMap((s) => s.docs.map((d) => d.ref)), ...reportRefs].map((r) => [r.path, r] as const),
+    ).values(),
+  ]
   for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
     const batch = writeBatch(db())
     for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)
@@ -224,9 +287,10 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
   await batch.commit()
 }
 
-// Non-owners leave instead of deleting.
-export function leaveWorkspace(wid: string, uid: string) {
-  return updateDoc(doc(db(), 'workspaces', wid), {
+// Anyone but the last owner may leave (D-098); your entry in the people list goes first, while you're still a member.
+export async function leaveWorkspace(wid: string, uid: string) {
+  await deleteDoc(memberRef(wid, uid)).catch(() => {})
+  await updateDoc(doc(db(), 'workspaces', wid), {
     memberIds: arrayRemove(uid),
     [`roles.${uid}`]: deleteField(),
   })

@@ -1,23 +1,20 @@
 // /workspaces/:wid/*: loads one workspace and everything in it once, then renders the current view (D-036, D-040).
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
 import { WORKSPACES, workspacePath } from '../../app/paths'
 import { attachmentBytes, useOrphanSweep } from '../../data/attachments'
 import { useAuth } from '../../data/auth'
 import {
-  approveJoinRequest,
-  denyJoinRequest,
-  inviteEmail,
-  isEmail,
-  normalizeEmail,
+  canEditIn,
   describeWorkspace,
   DESCRIPTION_MAX,
+  ensureMemberEntry,
+  isOwnerOf,
   renameWorkspace,
-  renewInviteCode,
-  uninviteEmail,
-  useRequestsToMe,
+  useJoinRequests,
   useWorkspace,
 } from '../../data/workspaces'
+import { fetchReports } from '../../data/reports'
 import type { WithId } from '../../data/hooks'
 import type { JoinRequest } from '../../data/model'
 import { setPresenceSelection, usePresenceSession, type PresenceView } from '../../data/presence'
@@ -33,6 +30,9 @@ import { AutosaveField } from '../../ui/AutosaveField'
 import { InlineEdit } from '../../ui/InlineEdit'
 import { PeopleHere } from '../../ui/PeopleHere'
 import { Note, Row, Section, type WorkspacePage } from '../../ui/Settings'
+import { firebase } from '../../data/firebase'
+import { PeopleSettings } from './PeopleSettings'
+import { useViewerLock } from './viewerLock'
 import { Toast } from '../../ui/Toast'
 import { forgetCamera } from '../canvas/Board'
 import { attachmentEntry, download, fileSlug, makeBundle, zipBundle } from '../../io/bundle'
@@ -55,7 +55,7 @@ export function WorkspaceLayout() {
 
 function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['workspace'] }) {
   const { user } = useAuth()
-  const { data, isLoading } = useWorkspaceData(wid, user?.id)
+  const { data, isLoading } = useWorkspaceData(wid)
   useHoldCurtain('board', isLoading)
   // Attachment files nobody points at any more, at most once a day (D-083).
   useOrphanSweep(wid)
@@ -65,9 +65,15 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   // Opening a workspace frames all its cards; switching views inside it keeps your place.
   // During the first render, so it's done before the board below reads its camera.
   useState(() => forgetCamera(wid))
-  const isOwner = user?.id === workspace.ownerId
-  // Non-owners query their own (empty) slice, which the rules allow; the badge only counts for the owner.
-  const requests = useRequestsToMe(user?.id ?? '', wid)
+  const isOwner = isOwnerOf(workspace, user?.id)
+  // Only owners may list who's asking (D-098); any of them settles a request.
+  const requests = useJoinRequests(isOwner ? wid : null)
+  // Your name in the people list (D-098), written when it's missing or changed.
+  useEffect(() => {
+    if (user) ensureMemberEntry(wid, user).catch(() => {})
+  }, [wid, user])
+  // Viewers read only (D-098): the app is locked like the preview, writes are refused underneath.
+  useViewerLock(!canEditIn(workspace, user?.id))
   // Presence (D-065): who's here, on which view, and what they have selected.
   const view = viewOf(useLocation().pathname, wid)
   usePresenceSession(wid, user, view)
@@ -92,9 +98,9 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             { label: 'reports', to: workspacePath(wid, 'reports') },
           ]}
           right={<PeopleHere wid={wid} view={view} />}
-          settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={isOwner ? requests.data : []} />}
+          settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={requests.data} />}
           settingsName={workspace.name}
-          settingsBadge={isOwner ? requests.data.length : 0}
+          settingsBadge={requests.data.length}
         />
         {!isLoading && <Outlet />}
         <EditKeys />
@@ -115,41 +121,30 @@ function EditKeys() {
   return null
 }
 
-// The workspace's pages in the settings modal (D-054, D-064, D-097): general (name, what we're building), people (members,
-// who's asking, email invites, the invite code; D-062) and export (D-080).
+// The workspace's pages in the settings modal (D-054, D-064, D-097): general (name, what we're building), people
+// (PeopleSettings.tsx: members and roles, requests, invites, the code; D-062, D-098) and export (D-080).
 type SettingsProps = { page: WorkspacePage; wid: string; workspace: WorkspaceCtx['workspace']; requests: WithId<JoinRequest>[] }
 
 function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
-  const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
-  const code = workspace.inviteCode
-  const pretty = `${code.slice(0, 4)}-${code.slice(4)}`
-  const members = workspace.memberIds.length
-  const role = user ? workspace.roles[user.id] : undefined
-  const isOwner = role === 'owner'
+  const editor = canEditIn(workspace, user?.id)
 
-  const copy = async () => {
-    await navigator.clipboard.writeText(code)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1500)
-  }
+  if (page === 'export') return <ExportSection />
+  if (page === 'people') return <PeopleSettings wid={wid} workspace={workspace} requests={requests} />
 
   const run = (p: Promise<unknown>) => {
     setError(null)
     p.catch((e: Error) => setError(e.message))
   }
-
-  if (page === 'export') return <ExportSection />
-
-  if (page === 'general') {
-    return (
-      <>
-        <Section label="about">
-          <Row label="name" hint="Shown in the breadcrumb and on the workspaces page.">
-            <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} />
-          </Row>
-          <Row label="what we're building" hint="A sentence or two. The assistant reads it first.">
+  return (
+    <>
+      <Section label="about" note={editor ? undefined : "You're a viewer here: an owner can make you an editor."}>
+        <Row label="name" hint="Shown in the breadcrumb and on the workspaces page.">
+          {editor ? <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} /> : <span>{workspace.name}</span>}
+        </Row>
+        <Row label="what we're building" hint="A sentence or two. The assistant reads it first.">
+          {editor ? (
             <AutosaveField
               multiline
               rows={3}
@@ -160,68 +155,8 @@ function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
               value={workspace.description ?? ''}
               onSave={(d) => run(describeWorkspace(wid, d))}
             />
-          </Row>
-        </Section>
-        {error && <Note tone="error">! {error}</Note>}
-      </>
-    )
-  }
-
-  return (
-    <>
-      <Section label="members">
-        <Row label="in this workspace">
-          <span>
-            {members} {members === 1 ? 'person' : 'people'}
-          </span>
-          {role && <span className={styles.role}>you're the {role}</span>}
-        </Row>
-        {isOwner && (
-          <Row label="asking to join" hint="People who entered the invite code.">
-            {requests.length === 0 ? (
-              <span className={styles.role}>no one is waiting</span>
-            ) : (
-              <ul className={styles.list}>
-                {requests.map((r) => (
-                  <li key={r.id} className={styles.item}>
-                    <span className={styles.who}>
-                      {r.name}
-                      {r.email && r.email !== r.name && <span className={styles.role}> {r.email}</span>}
-                    </span>
-                    <span>
-                      <button className={styles.action} data-tone="primary" onClick={() => run(approveJoinRequest(wid, r.uid))}>
-                        let in
-                      </button>
-                      <button className={styles.action} data-tone="danger" onClick={() => run(denyJoinRequest(wid, r.uid))}>
-                        deny
-                      </button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Row>
-        )}
-        {isOwner && <EmailInvites wid={wid} invited={workspace.invitedEmails ?? []} onError={setError} />}
-      </Section>
-
-      <Section
-        label="invite code"
-        note={
-          isOwner
-            ? 'People who enter the code ask to join, and you let them in above. A new code stops the old one; invited addresses join without one.'
-            : 'People who enter the code ask to join; the owner lets them in.'
-        }
-      >
-        <Row label="code" hint="Share it with the people you want in.">
-          <span className={styles.code}>{pretty}</span>
-          <AsciiButton accent="cyan" onClick={copy}>
-            {copied ? 'copied' : 'copy'}
-          </AsciiButton>
-          {isOwner && user && (
-            <button className={styles.action} onClick={() => run(renewInviteCode(wid, code, user.id))}>
-              new code
-            </button>
+          ) : (
+            <span>{workspace.description || 'not written yet'}</span>
           )}
         </Row>
       </Section>
@@ -254,7 +189,10 @@ function ExportSection() {
         if (bytes) files[attachmentEntry(a.id, a.path)] = bytes
         else missing++
       }
-      download(zipBundle(makeBundle(ws.workspace.name, ws.workspace.description, ws), files), `${slug}-${date}.zip`)
+      // Reports aren't loaded with the workspace (D-098): fetched, whole, only now.
+      const uid = firebase?.auth.currentUser?.uid
+      const reports = uid ? await fetchReports(ws.wid, uid) : []
+      download(zipBundle(makeBundle(ws.workspace.name, ws.workspace.description, ws, reports), files), `${slug}-${date}.zip`)
       if (missing) setNote(`${missing} ${missing === 1 ? 'attachment is' : 'attachments are'} missing their file and stayed out of the .zip.`)
     } catch (e) {
       setError((e as Error).message)
@@ -318,56 +256,6 @@ function ExportSection() {
     </Section>
     {error && <Note tone="error">! {error}</Note>}
     </>
-  )
-}
-
-// No email is sent: the invite shows up on their workspaces page once they sign in with that Google address.
-function EmailInvites({ wid, invited, onError }: { wid: string; invited: string[]; onError: (e: string | null) => void }) {
-  const [draft, setDraft] = useState('')
-  const email = normalizeEmail(draft)
-  const valid = isEmail(email)
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault()
-    if (!valid) return
-    onError(null)
-    inviteEmail(wid, email)
-      .then(() => setDraft(''))
-      .catch((err: Error) => onError(err.message))
-  }
-
-  return (
-    <Row label="invite by email" hint="No mail is sent: they find the invite when they sign in with that Google address.">
-      <form className={styles.inviteForm} onSubmit={submit}>
-        <input
-          className={styles.input}
-          type="email"
-          placeholder="name@gmail.com"
-          aria-label="Email to invite"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          autoComplete="off"
-          spellCheck={false}
-        />
-        <AsciiButton type="submit" accent="cyan" disabled={!valid || invited.includes(email)}>
-          invite
-        </AsciiButton>
-      </form>
-      {invited.length > 0 && (
-        <ul className={styles.list}>
-          {invited.map((address) => (
-            <li key={address} className={styles.item}>
-              <span className={styles.who}>
-                {address} <span className={styles.role}>invited</span>
-              </span>
-              <button className={styles.action} data-tone="danger" onClick={() => uninviteEmail(wid, address).catch((e: Error) => onError(e.message))}>
-                remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Row>
   )
 }
 
