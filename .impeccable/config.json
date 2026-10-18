@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "layout-transition",
+        "value": "*",
+        "files": [
+          "src/ui/AiChat.module.css"
+        ],
+        "createdAt": "2026-10-18T11:24:13.830Z",
+        "reason": "agent judgement: the / menu and folded steps open by height on purpose so the chat box grows with them instead of jumping (D-095, D-114); small lists, 220 ms"
+      }
+    ]
+  }
+}

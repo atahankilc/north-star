@@ -535,8 +535,61 @@ html[data-motion='reduced'] .modesBox {
   min-width: 0;
 }
 
-.steps li > span:last-child {
+.stepText {
+  flex: 1;
+  min-width: 0;
   overflow-wrap: anywhere;
+}
+
+/* How long it took, at the end of the line (D-114). */
+.stepTime {
+  flex: none;
+  color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Once the answer is done the steps fold into one line that opens them again. */
+.stepsFold {
+  display: block;
+  margin: 0 0 var(--space-2);
+}
+
+.stepsLine {
+  display: flex;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-faint);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.stepsLine:hover {
+  color: var(--fg);
+}
+
+.stepsLine:focus-visible {
+  outline: 1px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+.stepsWarn {
+  color: var(--accent-yellow);
+}
+
+.unfold {
+  overflow: hidden;
+  transition: height 220ms var(--ease-out);
+}
+
+.unfold .steps {
+  margin: var(--space-1) 0 0;
+}
+
+html[data-motion='reduced'] .unfold {
+  transition: none;
 }
 
 .steps li[data-state='running'] {
@@ -735,13 +788,56 @@ html[data-motion='reduced'] :global([data-side-panel]) {
     --ai-w: 0px;
   }
 
+  /* Solid: covering the screen, what's behind it would only show through its text. */
   .window[data-tall] {
     border-width: 1px 0 0;
+    background: var(--bg);
   }
 
   :global(html:has([data-side-panel])) .orb:not([data-open]) {
     display: none;
   }
+
+  /* Showing the stage (D-114): the chat is only its header along the bottom, and the stage ends above it. */
+  :global(html[data-ai-face]) .window[data-tall] {
+    top: auto;
+  }
+
+  :global(html[data-ai-face]) .window[data-tall] > :not(header) {
+    display: none;
+  }
+
+  :global(html[data-ai-face]) [data-app] {
+    bottom: var(--ai-head-h, 0px);
+  }
+}
+
+/* chat │ preview: which one a phone shows beside a stage (D-114). */
+.faces {
+  display: flex;
+  flex: none;
+  gap: var(--space-3);
+}
+
+.faces button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.faces button:hover,
+.faces button[aria-selected='true'] {
+  color: var(--fg-strong);
+}
+
+.faces button[aria-selected='true'] {
+  text-decoration: underline;
+  text-decoration-color: var(--accent-cyan);
+  text-underline-offset: 4px;
 }
 
 /* The preview's parts in the stage box's bar (StageBox, D-096): how many of each change, and the views. */

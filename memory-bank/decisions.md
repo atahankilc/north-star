@@ -110,10 +110,12 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   workspace key, enforced by the proxy; per-chat switch in the header; tasks chat / web / deep research (D-104).
 - Orb: ASCII sphere with rounded-square eyes, moods, antics, chat reactions; pomegranate easter egg (`nar`) (D-073, D-078, D-092).
 - Chat: terminal log look; empty = small box with the orb perched; first message grows it into a column beside the app
-  (`[data-app]` narrows); a preview or report opens a stage, the chat glides left (D-081, D-094, D-095).
+  (`[data-app]` narrows); a preview or report opens a stage, the chat glides left (D-081, D-094, D-095). Phones (≤760 px):
+  the chat covers the screen, solid; beside a stage a `chat · preview|report` switch, the stage shrinking the chat to its header (D-114).
 - `working on …` scope line above the prompt (D-109).
 - Brief: plain text in `<workspace>` tags, data not instructions; North Star is the app, never the startup (D-082).
-- Agent loop: up to 6 steps, `get_items`, `get_report`, last step `tool_choice: none`; steps listed live (D-084, D-099).
+- Agent loop: up to 6 steps, `get_items`, `get_report`, last step `tool_choice: none`; steps listed live with their times,
+  folded into `▸ N steps · 4.7s` once answered (D-084, D-099, D-114).
 - Proposals (`propose_changes`): checklist, tick and apply as one batch + one undo step; deletes, unlinks, `arrange_area`,
   label rows, `edit_link`, `add_note` (D-074, D-075, D-086, D-108).
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).

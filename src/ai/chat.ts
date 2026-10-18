@@ -48,6 +48,10 @@ export type ChatMessage = ChatTurn & {
   // with nothing to show yet.
   steps?: Step[]
   thinking?: boolean
+  // When the run now going began, and how long its runs took in all once done (a research run is two), for the steps'
+  // times and their folded line (D-114).
+  runAt?: number
+  took?: number
   // The sources the answer cites (D-076).
   citations?: Citation[]
   // A deep research run (D-088): its plan, its researchers and where it's at; its report (D-089).
@@ -61,7 +65,8 @@ export type ChatMessage = ChatTurn & {
 }
 
 // `warn`: done, but not all of it worked (a proposal with rows that can't be applied, refs that matched nothing).
-export type Step = { kind: 'read' | 'search' | 'propose' | 'plan' | 'research' | 'report'; text: string; state: 'running' | 'done' | 'warn' }
+// `t0`/`t1`: when it began and ended (D-114), stamped by the run.
+export type Step = { kind: 'read' | 'search' | 'propose' | 'plan' | 'research' | 'report'; text: string; state: 'running' | 'done' | 'warn'; t0?: number; t1?: number }
 
 // Built when a message is sent, so it sees the workspace as it is then.
 // `ws` is what the read tools see for the whole answer; `reports` the brief's report handles (D-099).
@@ -81,6 +86,8 @@ type AnswerRun = {
   reports: Map<string, string>
   ws: WorkspaceCtx
   signal: AbortSignal
+  // When this run began.
+  at: number
   update: (patch: Partial<ChatMessage>) => void
   // Carried in from earlier phases (a research run's steps), added to here.
   steps: Step[]
@@ -223,6 +230,23 @@ function begin(id: number, p: Prepared, task: AnswerRun['task'], model: string, 
   const ctl = new AbortController()
   controller = ctl
   const wid = useChat.getState().wid!
+  const at = Date.now()
+  const write = (patch: Partial<ChatMessage>) => useChat.setState((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, ...patch } : m)) }))
+  // Each step's time (D-114), kept by its place in the list (a step is replaced when it finishes): it runs from the end of
+  // the step before it, or from the start of this run, so it counts the model's thinking that led to it.
+  const stamps: { t0: number; t1?: number }[] = []
+  const stamp = (steps: Step[]) => {
+    const now = Date.now()
+    let mark = at
+    return steps.map((x, i) => {
+      const t0 = x.t0 ?? stamps[i]?.t0 ?? mark
+      const t1 = x.state === 'running' ? undefined : (x.t1 ?? stamps[i]?.t1 ?? now)
+      stamps[i] = { t0, t1 }
+      mark = Math.max(mark, t1 ?? t0)
+      return { ...x, t0, t1 }
+    })
+  }
+  write({ runAt: at })
   return {
     wid,
     source: p.source,
@@ -235,7 +259,8 @@ function begin(id: number, p: Prepared, task: AnswerRun['task'], model: string, 
     reports: p.reports,
     ws: p.ws,
     signal: ctl.signal,
-    update: (patch) => useChat.setState((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
+    at,
+    update: (patch) => write(patch.steps ? { ...patch, steps: stamp(patch.steps) } : patch),
     steps: [],
     citations: [],
   }
@@ -252,7 +277,8 @@ function finish(id: number, run: AnswerRun, work: Promise<void>) {
     })
     .finally(() => {
       for (const [i, x] of run.steps.entries()) if (x.state === 'running') run.steps[i] = { ...x, state: 'done' }
-      run.update({ steps: [...run.steps], thinking: false })
+      const took = (useChat.getState().messages.find((m) => m.id === id)?.took ?? 0) + Date.now() - run.at
+      run.update({ steps: [...run.steps], thinking: false, runAt: undefined, took })
       if (run.signal.aborted) {
         const r = useChat.getState().messages.find((m) => m.id === id)?.research
         if (r && !['done', 'review'].includes(r.phase)) run.update({ research: { ...r, phase: 'cancelled' } })

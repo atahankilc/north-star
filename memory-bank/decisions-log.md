@@ -1284,3 +1284,22 @@ hand was too hard; keep the grid small so any shape is still possible; a button 
 - Not done: alignment guides to other cards' edges (separate idea in state.md).
 - Verified headless on emulators (example workspace, dark, 1440): a drag lands on (−22.75, 1.25); alt+drag lands off the
   grid; button and `g` switch it and it's remembered; the quarter dots show close up.
+
+### D-114 · 2026-10-18 · Accepted (extends D-084, D-094; next step of the assistant redesign)
+**Steps are a live log with times that folds once the answer is done; on a phone the chat and the stage take turns.**
+The user's picks, from three options each: "live log, then fold" (over an ASCII progress bar, or polishing the lines as they
+were) and "toggle chat ↔ stage" (over a bottom sheet, or the stage hiding the chat behind a prompt bar).
+- *Times:* each step carries `t0`/`t1`, stamped by the run by its place in the list (`begin` in `src/ai/chat.ts`). A step's time
+  runs from the end of the step before it (or the run's start), so it counts the model's thinking that led to it. The message
+  keeps `runAt` while a run goes and `took` (all its runs, a research run being two; your review of the plan isn't counted).
+- *Live:* one line per step with its time on the right (ticking every 100 ms, every second under reduced motion), and a last
+  running line with nothing else to show: `thinking`, then `writing the answer` while the text streams under it.
+- *Folded:* once the answer is done, `▸ N steps · 1 partly worked · 8.1s` (the warn count yellow); a click opens the list by its
+  height (as the `/` menu), `▾` closes it. An answer with no steps shows no line. A research run unfolds again while it runs.
+- *Phones (≤760 px):* beside a stage the header gets `chat · preview|report` (current one underlined cyan). Something new on the
+  stage shows it: the chat shrinks to its header along the bottom (`html[data-ai-face]`, morph 450 ms), model and `clear` hidden,
+  the app's box ending above it (`--ai-head-h`), the orb on its edge. `chat` brings the conversation back; nothing staged, the
+  switch goes. The phone's chat is solid (`--bg`): over the whole screen, what's behind only showed through its text.
+- Verified on emulators with headless Chrome and a fake OpenAI streaming in the page (fetch wrapped, slow on purpose): 1440 dark
+  (thinking → read 1.4s → `!` 1.8s → writing → folded 8.1s → unfolded) and 390 (fold, proposal, preview → strip at the bottom
+  with the stage above it, `chat` back, Esc ends the preview and the switch). Build passes.

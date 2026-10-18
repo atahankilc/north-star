@@ -179,7 +179,9 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
 - **Assistant** (D-094, D-095): an empty chat is a small box that slides up from below and lifts the orb onto its top edge
   (startled); the first message grows it into a tall column (by its edges, 650 ms) while the orb sinks behind the edge to peek. When a preview or a report opens, the chat glides across
   to the left (700 ms, eased in and out) while the app breaks apart and the stage builds up in its wake from the right; closing
-  runs it back. Instant under reduced motion.
+  runs it back. Instant under reduced motion. Steps (D-114): a live log, each with its time on the right, and a last line
+  `thinking` / `writing the answer`; once answered it folds into `▸ N steps · 4.7s`, which opens by its height. On phones the
+  chat covers the screen; beside a stage a `chat · preview` switch shrinks it to its header along the bottom (450 ms).
 - **Motion setting** (D-030, D-063): `full | reduced | system`, default `full`; reduced = frozen background, no waves or sweeps.
   **Background** `on | off` beside it (signed-in pages only).
 

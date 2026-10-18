@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (stale "in progress" notes cleared: D-109's multi-select scope and D-112 are committed and pushed)_
+_Last updated: 2026-10-18 (D-114: assistant steps with times, phones switch between chat and stage)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -9,8 +9,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Phase
 - Phases 0–4 done: scaffold + design language, one board (D-040–D-052), collaboration (D-065–D-071), settings + AI (D-073–D-079).
 - Phase 5 in part: export/import/TSV/PNG done (D-080); attachments built, emulator-only (D-083).
-- Ongoing: the user's assistant redesign (D-094–D-101 done; next: steps/streaming states, narrow screens where the chat
-  still covers the stage below 760 px) and board editing (D-108–D-112).
+- Ongoing: the user's assistant redesign (D-094–D-101, D-114 done) and board editing (D-108–D-112).
 
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. Firestore + RTDB rules and indexes deployed

@@ -430,3 +430,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 ## Done (snap to grid, 2026-10-18)
 - D-112: drags snap card/label centres to a 0.25 grid (group drags too, alt = free), a switch beside fit-all + `g`, on by
   default and remembered; quarter dots on the grid close up while on. Verified headless on emulators. Committed (6600505), pushed.
+
+## Done (assistant steps + phones, 2026-10-18)
+- D-114: steps as a live log with times (`t0`/`t1` stamped in `begin`, chat.ts), `thinking` / `writing the answer` as the last
+  line, folded into `▸ N steps · 8.1s` once answered; on phones a `chat · preview|report` switch beside a stage, the chat
+  shrinking to its header along the bottom; the phone's chat solid. Verified headless (1440 dark, 390). Build passes.

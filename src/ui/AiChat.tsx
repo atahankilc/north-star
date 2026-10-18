@@ -75,6 +75,8 @@ function readWidth() {
 // The small box growing into the tall column (and back, on clear).
 const GROW_MS = 650
 const GROW_EASE = 'cubic-bezier(0.33, 1, 0.68, 1)'
+// A phone's chat shrinking to its header beside the stage, and back (D-114).
+const FACE_MS = 450
 // The window sliding up on open and down on close: as gentle as the growth, so you see it travel.
 const SLIDE = { duration: 0.6, ease: [0.33, 1, 0.68, 1] as const }
 
@@ -98,13 +100,27 @@ export function AiChat() {
   const busy = useChat((s) => s.busy)
   const enter = useChat((s) => s.enter)
   const [hover, setHover] = useState(false)
-  const size = useNarrow() ? ORB_NARROW : ORB
+  const narrow = useNarrow()
+  const size = narrow ? ORB_NARROW : ORB
   useEffect(() => enter(wid), [enter, wid])
   useStageMotion()
   // Tall once there's a conversation, or something on the stage beside it; empty, it's the small box (D-095).
   const talked = useChat((s) => s.messages.length > 0)
   const staged = useStage((s) => s.preview !== null || s.reportId !== null)
   const tall = open && (talked || staged)
+
+  // On a phone the chat covers the screen, so beside a stage it switches between the two (D-114): something new on the
+  // stage shows it, and the chat shrinks to its header along the bottom (`html[data-ai-face]`), the orb on its edge.
+  const stagedAs = useStage((s) => (s.preview ? `preview:${s.preview.messageId}` : s.reportId ? `report:${s.reportId}` : null))
+  const [face, setFace] = useState<Face>('chat')
+  useEffect(() => setFace(stagedAs ? 'stage' : 'chat'), [stagedAs])
+  const switchable = narrow && open && stagedAs !== null
+  useLayoutEffect(() => {
+    const html = document.documentElement
+    const on = switchable && face === 'stage'
+    if (html.hasAttribute('data-ai-face') === on) return
+    morph(document.querySelector('[data-ai-window]'), () => html.toggleAttribute('data-ai-face', on), FACE_MS, GROW_EASE)
+  }, [switchable, face])
 
   // `html[data-ai-open]` gives the app its room (`--ai-w`, AiChat.module.css) while the chat is tall; the width is a
   // variable on <html> too.
@@ -151,6 +167,7 @@ export function AiChat() {
     () => () => {
       document.documentElement.removeAttribute('data-ai-open')
       document.documentElement.removeAttribute('data-ai-small')
+      document.documentElement.removeAttribute('data-ai-face')
     },
     [],
   )
@@ -183,7 +200,7 @@ export function AiChat() {
     <OutsidePreview.Provider value={true}>
       <PreviewBar />
       <ReportView />
-      <AnimatePresence>{open && <AiWindow key="chat" tall={tall} onClose={() => setOpen(false)} />}</AnimatePresence>
+      <AnimatePresence>{open && <AiWindow key="chat" tall={tall} face={switchable ? face : null} stage={stagedAs?.split(':')[0] ?? ''} onFace={setFace} onClose={() => setOpen(false)} />}</AnimatePresence>
       {/* One orb, in its corner or on the chat's edge, so its reactions carry over. */}
       <button
         ref={orb}
@@ -205,7 +222,9 @@ export function AiChat() {
   )
 }
 
-function AiWindow({ tall, onClose }: { tall: boolean; onClose: () => void }) {
+type Face = 'chat' | 'stage'
+
+function AiWindow({ tall, face, stage, onFace, onClose }: { tall: boolean; face: Face | null; stage: string; onFace: (f: Face) => void; onClose: () => void }) {
   const { source, workspaceKeyExists, config } = useKeySource()
   const messages = useChat((s) => s.messages)
   const clear = useChat((s) => s.clear)
@@ -228,6 +247,15 @@ function AiWindow({ tall, onClose }: { tall: boolean; onClose: () => void }) {
     watch.observe(el)
     return () => watch.disconnect()
   }, [tall])
+  // The header's height: all that's left of the chat while a phone shows the stage, which ends above it.
+  const head = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = head.current
+    if (!el) return
+    const watch = new ResizeObserver(() => document.documentElement.style.setProperty('--ai-head-h', `${el.offsetHeight}px`))
+    watch.observe(el)
+    return () => watch.disconnect()
+  }, [])
 
   return (
     // Rises from below (lifting the orb onto its edge, perch.ts) and goes back down on close.
@@ -245,11 +273,21 @@ function AiWindow({ tall, onClose }: { tall: boolean; onClose: () => void }) {
     >
       {tall && <ResizeEdge />}
       {/* No title: the orb on its edge says what this is. The model in use, and the two things you do to the chat. */}
-      <header className={styles.head}>
+      <header ref={head} className={styles.head}>
+        {face && (
+          <span className={styles.faces} role="tablist" aria-label="Show">
+            <button role="tab" aria-selected={face === 'chat'} onClick={() => onFace('chat')}>
+              chat
+            </button>
+            <button role="tab" aria-selected={face === 'stage'} onClick={() => onFace('stage')}>
+              {stage}
+            </button>
+          </span>
+        )}
         {/* The model in use and which key pays; click to switch it for this chat (D-104). */}
-        <ModelSwitch source={source} config={config} />
+        {face !== 'stage' && <ModelSwitch source={source} config={config} />}
         <span className={styles.headActions}>
-          {messages.length > 0 && (
+          {messages.length > 0 && face !== 'stage' && (
             <button className={styles.action} onClick={clear}>
               clear
             </button>
@@ -471,7 +509,7 @@ function Conversation({ source }: { source: KeySource }) {
               </span>
             )}
             <span className={styles.text}>
-              {m.role === 'assistant' && <Steps steps={m.steps ?? []} thinking={!!m.thinking && busy && m === last} />}
+              {m.role === 'assistant' && <Steps message={m} live={busy && m === last} />}
               {m.role === 'assistant' ? <Rich text={m.content} /> : (m.shown ?? m.content)}
               {m.role === 'assistant' && busy && m === last && writing(m) && <span className={styles.caret} aria-hidden />}
               {/* A research report lists its sources on the report screen (D-089). */}
@@ -632,29 +670,97 @@ function Linked({ text }: { text: string }) {
 }
 
 // What the assistant did on the way to its answer (D-084), one line per step: the running one turns, a step that only
-// partly worked gets a yellow `!`. `thinking` is the gap while a step has nothing to show yet.
+// partly worked gets a yellow `!`. While it works it's a live log with each step's time, and a last line for what it's
+// doing with nothing to show yet: thinking, then writing the answer. Once the answer is done the log folds into one
+// line (`▸ 3 steps · 4.7s`) that opens it again (D-114).
 const FRAMES = '▖▘▝▗'
 
 // The caret only follows text as it streams; while it thinks or works a step, the steps say so.
 const writing = (m: { thinking?: boolean; steps?: Step[] }) => !m.thinking && !m.steps?.some((s) => s.state === 'running')
 
-function Steps({ steps, thinking }: { steps: Step[]; thinking: boolean }) {
-  if (!steps.length && !thinking) return null
-  return (
+// 0.4s, 12s, 1m 05s.
+function took(ms: number) {
+  const s = Math.max(0, ms) / 1000
+  if (s < 10) return `${s.toFixed(1)}s`
+  if (s < 60) return `${Math.floor(s)}s`
+  return `${Math.floor(s / 60)}m ${String(Math.floor(s % 60)).padStart(2, '0')}s`
+}
+
+// The clock for running times: ticks while `on`, every tenth of a second (every second under reduced motion).
+function useNow(on: boolean) {
+  const reduced = useMotion((s) => s.reduced)
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    if (!on) return
+    setNow(Date.now())
+    const id = window.setInterval(() => setNow(Date.now()), reduced ? 1000 : 100)
+    return () => window.clearInterval(id)
+  }, [on, reduced])
+  return now
+}
+
+function Steps({ message: m, live }: { message: ChatMessage; live: boolean }) {
+  const steps = m.steps ?? []
+  const now = useNow(live)
+  const [unfolded, setUnfolded] = useState(false)
+  // Thinking until words come, then writing them; nothing while a step runs (it says what's going on).
+  const doing = !live ? null : m.thinking ? 'thinking' : writing(m) && m.content ? 'writing the answer' : null
+  if (!steps.length && !doing) return null
+  // The last line's time runs from where the steps left off.
+  const mark = Math.max(m.runAt ?? now, ...steps.map((s) => s.t1 ?? 0))
+  const warned = steps.filter((s) => s.state === 'warn').length
+  const folded = !live && !unfolded
+  const list = (
     <ol className={styles.steps}>
       {steps.map((s, i) => (
         <li key={i} data-state={s.state}>
           {s.state === 'running' ? <Spinner /> : <span className={styles.stepMark}>{s.state === 'warn' ? '!' : '✓'}</span>}
-          <span>{s.text}</span>
+          <span className={styles.stepText}>{s.text}</span>
+          {s.t0 !== undefined && <span className={styles.stepTime}>{took((s.t1 ?? now) - s.t0)}</span>}
         </li>
       ))}
-      {thinking && (
+      {doing && (
         <li data-state="running">
           <Spinner />
-          <span>thinking</span>
+          <span className={styles.stepText}>{doing}</span>
+          {m.runAt !== undefined && <span className={styles.stepTime}>{took(now - mark)}</span>}
         </li>
       )}
     </ol>
+  )
+  if (live) return list
+  return (
+    <div className={styles.stepsFold}>
+      <button className={styles.stepsLine} aria-expanded={!folded} onClick={() => setUnfolded(!unfolded)}>
+        <span className={styles.stepMark}>{folded ? '▸' : '▾'}</span>
+        <span>
+          {steps.length} step{steps.length === 1 ? '' : 's'}
+          {warned > 0 && <span className={styles.stepsWarn}> · {warned} partly worked</span>}
+          {m.took !== undefined && ` · ${took(m.took)}`}
+        </span>
+      </button>
+      <Unfold open={!folded}>{list}</Unfold>
+    </div>
+  )
+}
+
+// Opens and shuts by its height, like the `/` menu.
+function Unfold({ open, children }: { open: boolean; children: ReactNode }) {
+  const inner = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(0)
+  useLayoutEffect(() => {
+    const el = inner.current
+    if (!el) return
+    const measure = () => setHeight(el.offsetHeight)
+    measure()
+    const watch = new ResizeObserver(measure)
+    watch.observe(el)
+    return () => watch.disconnect()
+  }, [])
+  return (
+    <div className={styles.unfold} style={{ height: open ? height : 0 }} aria-hidden={!open || undefined}>
+      <div ref={inner}>{children}</div>
+    </div>
   )
 }
 
