@@ -49,7 +49,9 @@ const ROW_MARK: Record<string, Mark> = {
   unlink: 'deleted',
 }
 
-const keyOf = (c: Change) => (['add_card', 'add_competitor', 'add_competitor_feature'].includes(c.raw.op) && typeof c.raw.key === 'string' ? c.raw.key.trim() : '')
+// Rows that make something other rows can point at by key: cards, packages and planes (D-142).
+const keyOf = (c: Change) =>
+  ['add_card', 'add_competitor', 'add_competitor_feature', 'add_package', 'add_plane'].includes(c.raw.op) && typeof c.raw.key === 'string' ? c.raw.key.trim() : ''
 
 export function AiProposal({ message }: { message: ChatMessage }) {
   const ws = useWs()
@@ -98,7 +100,7 @@ export function AiProposal({ message }: { message: ChatMessage }) {
     if (!pending) return close()
     try {
       const accepted = proposal.changes.filter((c) => on.has(c.n))
-      show(message.id, simulate(ws, accepted, refs), accepted.length)
+      show(message.id, simulate(ws, accepted, refs, proposal.plane), accepted.length)
     } catch {
       close()
       setError("Couldn't preview these changes.")
@@ -113,7 +115,7 @@ export function AiProposal({ message }: { message: ChatMessage }) {
     const accepted = proposal.changes.filter((c) => on.has(c.n))
     let sim
     try {
-      sim = simulate(ws, accepted, refs)
+      sim = simulate(ws, accepted, refs, proposal.plane)
     } catch {
       setError("Couldn't preview these changes.")
       return
@@ -144,7 +146,7 @@ export function AiProposal({ message }: { message: ChatMessage }) {
     setError('')
     let writes
     try {
-      writes = toWrites(accepted, ws, refs)
+      writes = toWrites(accepted, ws, refs, proposal.plane)
     } catch {
       setError("Couldn't read these changes. Ask again?")
       return

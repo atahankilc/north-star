@@ -11,6 +11,7 @@ import { isTitle } from '../views/canvas/titleBlock'
 import type { Mark } from '../views/workspace/preview'
 import type { ItemRef } from './context'
 import { itemsOf, refKey, toWrites, type Change } from './tools'
+import { ALL } from '../data/planes'
 
 type Doc = { id: string } & Record<string, unknown>
 
@@ -42,8 +43,9 @@ const POSITION = new Set(['x', 'y'])
 // A write's null removes a field (D-122): here it's left undefined.
 const kept = (fields: Record<string, unknown>) => Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v === null ? undefined : v]))
 
-export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string, ItemRef>): Simulation {
-  const writes = toWrites(accepted, ws, refs)
+// `plane`: the proposal's plane (D-142); its placements change there, as apply would.
+export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string, ItemRef>, plane = ALL): Simulation {
+  const writes = toWrites(accepted, ws, refs, plane)
   const now = Date.now()
   const lists = new Map<keyof WorkspaceCtx, Doc[]>()
   const list = (k: keyof WorkspaceCtx) => {
@@ -122,6 +124,47 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
           mark(id, 'new')
         }
         ids.push(id, featureId, competitorId)
+        break
+      }
+      // Planes and packages (D-142).
+      case 'plane':
+        list('planes').push({ id: `preview-plane-${w.key}`, name: w.name, order: w.order, createdAt: now, updatedAt: now })
+        break
+      case 'placement': {
+        const planeId = 'id' in w.plane ? w.plane.id : `preview-plane-${w.plane.key}`
+        const itemId = idOf(w.item)
+        const id = `${planeId}_${itemId}`
+        const was = list('placements').find((d) => d.id === id)
+        if (was) {
+          if (was.x !== w.x || was.y !== w.y) from.set(itemId, [was.x as number, was.y as number])
+          patch('placements', id, { x: w.x, y: w.y })
+          mark(itemId, 'moved')
+        } else {
+          list('placements').push({ id, planeId, itemId, itemType: w.item.type, x: w.x, y: w.y })
+          if (!marks.has(itemId)) mark(itemId, 'moved')
+        }
+        ids.push(itemId)
+        break
+      }
+      case 'unplace':
+        drop('placements', (d) => d.planeId === w.plane && w.itemIds.includes(d.itemId as string))
+        ids.push(...w.itemIds)
+        break
+      case 'package': {
+        const fields = {
+          ...kept(w.fields),
+          ...(w.members && { memberIds: w.members.map(idOf) }),
+          ...(w.home && { homePlaneId: 'id' in w.home ? w.home.id : `preview-plane-${w.home.key}` }),
+        }
+        if (w.id) {
+          if (patch('packages', w.id, fields)) mark(w.id, 'edited')
+          ids.push(w.id)
+        } else {
+          const id = idOf({ key: w.key!, type: 'package' })
+          list('packages').push({ ...fields, id, createdAt: now, updatedAt: now })
+          mark(id, 'new')
+          ids.push(id)
+        }
         break
       }
       // Evidence (D-137): in its card's panel and tally; the card is what changes on the board.

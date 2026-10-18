@@ -6,9 +6,12 @@ import { db } from './firebase'
 import { snapshotWith, tracked } from './history'
 import type { Comparison, Criterion, CriterionScore, Edge, EdgeKind, NodeType } from './model'
 import { COLLECTIONS, cascadeOf, nodeRef } from './nodes'
+import { placementRef } from './planes'
 
 // An item that exists, or one created earlier in the same set (by its key).
 export type ChangeRef = { id: string; type: NodeType } | { key: string; type: NodeType }
+// A plane that exists, or one made in the same set (D-142).
+export type PlaneRef = { id: string } | { key: string }
 
 export type AssistantWrite =
   // `parent` fills a competitor feature's competitorId.
@@ -32,6 +35,12 @@ export type AssistantWrite =
   // per competitor by criterion id (null: not assessed).
   // A piece of evidence on a card (D-137), new or added in the same set.
   | { do: 'evidence'; on: ChangeRef; fields: Record<string, string> }
+  // Planes and packages (D-142): a new plane; a card's place on a plane (made or moved); cards off a plane; a package
+  // made (`key`) or changed (`id`), its members and home given by ref.
+  | { do: 'plane'; key: string; name: string; order: number }
+  | { do: 'placement'; plane: PlaneRef; item: ChangeRef; x: number; y: number }
+  | { do: 'unplace'; plane: string; itemIds: string[] }
+  | { do: 'package'; key?: string; id?: string; fields: Record<string, unknown>; members?: ChangeRef[]; home?: PlaneRef }
   | { do: 'criteria'; feature: { id: string; type: NodeType }; criteria?: Criterion[]; cells: { competitor: ChangeRef; scores: Record<string, CriterionScore | null>; confidence?: string | null }[] }
 
 const BATCH_LIMIT = 450
@@ -52,6 +61,12 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
     if (!ref) throw new Error(`Nothing named ${r.key} in this set`)
     return ref.id
   }
+
+  const planes = new Map<string, DocumentReference>()
+  for (const w of writes) if (w.do === 'plane') planes.set(w.key, doc(col(wid, 'planes')))
+  const planeOf = (p: PlaneRef) => ('id' in p ? p.id : planes.get(p.key)!.id)
+  // New packages get their ids up front too, so links and placements in the same set can point at them.
+  for (const w of writes) if (w.do === 'package' && w.key) created.set(w.key, doc(col(wid, 'packages')))
 
   const now = Date.now()
   // Queued, then committed in batches of BATCH_LIMIT (a big cascade can pass Firestore's 500).
@@ -77,6 +92,43 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
       const ref = doc(db(), 'workspaces', wid)
       ops.push((b) => b.update(ref, w.fields))
       existing.push(ref)
+      continue
+    }
+    if (w.do === 'plane') {
+      const ref = planes.get(w.key)!
+      ops.push((b) => b.set(ref, { name: w.name.slice(0, 80), order: w.order, createdAt: now, updatedAt: now }))
+      fresh.push(ref)
+      continue
+    }
+    if (w.do === 'placement') {
+      const planeId = planeOf(w.plane)
+      const ref = placementRef(wid, planeId, idOf(w.item))
+      const data = { planeId, itemId: idOf(w.item), itemType: w.item.type, x: w.x, y: w.y }
+      ops.push((b) => b.set(ref, data))
+      // Its snapshot before (absent if it wasn't on the plane) undoes it; a new plane's or card's can't exist yet.
+      if ('key' in w.plane || 'key' in w.item) fresh.push(ref)
+      else existing.push(ref)
+      continue
+    }
+    if (w.do === 'unplace') {
+      gone.push(...w.itemIds.map((id) => placementRef(wid, w.plane, id)))
+      continue
+    }
+    if (w.do === 'package') {
+      const ref = w.key ? created.get(w.key)! : doc(col(wid, 'packages'), w.id!)
+      const data = {
+        ...removing(w.fields),
+        ...(w.members && { memberIds: w.members.map(idOf) }),
+        ...(w.home && { homePlaneId: planeOf(w.home) }),
+        updatedAt: now,
+      }
+      if (w.key) {
+        ops.push((b) => b.set(ref, { ...data, createdAt: now }))
+        fresh.push(ref)
+      } else {
+        ops.push((b) => b.update(ref, data))
+        existing.push(ref)
+      }
       continue
     }
     if (w.do === 'evidence') {

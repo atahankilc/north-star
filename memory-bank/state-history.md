@@ -546,3 +546,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 ## Done (D-141 packages, 2026-10-19)
 - `package` card type, `package these`, home plane frame, panel (holds, confidence, open its plane), priorities, export/
   import, links. Verified in headless Chrome on the emulators; rules tests (5 new); `npm run build`.
+
+## Done (D-142 the assistant on planes, 2026-10-19)
+- Proposals land on their plane; brief lists planes and packages; five plane/package rows; `/organize` may propose planes.
+  Verified in headless Chrome on the emulators with a fake OpenAI; `npm run build`. Not tried with a real model.

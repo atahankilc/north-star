@@ -179,6 +179,9 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   coverage with `not assessed`; in update rows and cells `""` empties a field (a `null` write → `deleteField()`).
   Board text and moves (D-123): `add_label` / `edit_label` (size, colour by accent name, `above` a card; placed after the
   cards, stepping up until clear) and `move_card` (beside another card, then the nearest free spot).
+  Planes (D-142): a proposal lands on the plane open when it was made (`proposal.plane`): planned on `layoutWs`, moves
+  become placements, new cards placed there and on All's right column; rows `add_plane`, `place_on_plane`,
+  `take_off_plane`, `add_package`, `edit_package`.
   Criteria (D-134): `set_criteria` sets a feature's criteria and every competitor's scores in one row (`do: 'criteria'`);
   criteria kept word for word keep their ids, dropped ones' scores leave the feature's cells in the same batch.
 - **Agent loop** (D-084): an answer is up to 6 calls. After each one, the browser runs the function tools the model called

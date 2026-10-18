@@ -1,6 +1,8 @@
 // The assistant's conversation (D-073): this tab only, one per workspace, gone on reload. Collaborators never see it.
 // An answer is a short agent loop (D-084): the model may call a tool, see its result and go on, for a few steps.
 // Deep research (D-088) is a plan you review, researchers on the web, then one such answer written from their findings.
+import { usePlaneView } from '../state/plane'
+import { layoutWs } from '../views/canvas/planes'
 import { create } from 'zustand'
 import type { ItemRef } from './context'
 import type { KeySource } from '../data/ai'
@@ -108,15 +110,20 @@ async function runAnswer(r: AnswerRun, turns: InputItem[]): Promise<void> {
   // one in the same answer replaces it).
   const run = async (c: ToolCall): Promise<string> => {
     if (c.name === PROPOSE) {
+      // On the plane open now (D-142): its text and sections are the ones label rows name, and its layout changes land there.
+      const plane = usePlaneView.getState().plane
+      const lw = layoutWs(ws, plane)
       const proposal = parseProposal(
         c.args,
         refs,
-        textLabels(ws.labels).map((l) => l.text),
+        textLabels(lw.labels).map((l) => l.text),
         ws.edges,
         ws.workspace,
-        ws.labels.filter(isSection).map((l) => l.text),
+        lw.labels.filter(isSection).map((l) => l.text),
         new Map(ws.features.map((f) => [f.id, f.criteria ?? []])),
+        { planes: ws.planes, packages: ws.packages, placements: ws.placements, open: plane },
       )
+      proposal.plane = plane
       const bad = proposal.changes.filter((x) => x.problem)
       const n = proposal.changes.length
       const what = `${proposed ? 'corrected the proposal' : 'proposed'}: ${n} change${n === 1 ? '' : 's'}`

@@ -94,3 +94,31 @@ export function allSpot(spots: { x: number; y: number }[]): [number, number] {
   const right = Math.max(...spots.map((s) => s.x)) + CARD_W + 1
   return findFreeSpot([right, Math.max(...spots.map((s) => s.y))], spots)
 }
+
+// The workspace laid out as a plane has it (D-139), for planning a layout there (the assistant, D-142): only the cards
+// placed on it, at their places there; its own text and sections. Edges, criteria and the rest stay whole. All: as is.
+export function layoutWs(ws: WorkspaceCtx, plane: string): WorkspaceCtx {
+  if (plane === ALL) return { ...ws, labels: ws.labels.filter((l) => !l.planeId) }
+  const at = placesOn(ws.placements, plane)
+  const on = <T extends { id: string; x?: number; y?: number }>(list: T[]) =>
+    list.flatMap((d) => {
+      const p = at.get(d.id)
+      return p ? [{ ...d, x: p.x, y: p.y }] : []
+    })
+  return {
+    ...ws,
+    customers: on(ws.customers),
+    problems: on(ws.problems),
+    ideas: on(ws.ideas),
+    features: on(ws.features),
+    competitors: on(ws.competitors),
+    packages: on(ws.packages),
+    labels: ws.labels.filter((l) => l.planeId === plane),
+  }
+}
+
+// Every card's place on All, so cards made on another plane land clear of them there.
+export const allSpotsOf = (ws: WorkspaceCtx) =>
+  [...ws.customers, ...ws.problems, ...ws.ideas, ...ws.features, ...ws.competitors, ...ws.packages].flatMap((d) =>
+    d.x !== undefined && d.y !== undefined ? [{ x: d.x, y: d.y }] : [],
+  )

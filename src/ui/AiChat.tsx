@@ -5,6 +5,7 @@
 // left and the stage takes the right (stageMotion.ts). The chat knows the workspace and proposes changes you accept before they're
 // written (D-074). Your own OpenAI key (D-006)
 // or the workspace's, if the owner set one and lets you use it (D-079).
+import { usePlaneView } from '../state/plane'
 import { AnimatePresence, motion } from 'motion/react'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
@@ -430,7 +431,8 @@ function Conversation({ source }: { source: KeySource }) {
   // Built when sent, so it sees the board as it is now. `web`: the prompt's research rules (deep research always has them).
   const prepareAt = (view: string, web: boolean) => {
     const { selectedId, selection } = useCanvas.getState()
-    const brief = workspaceBrief(ws, { view, selectedId, selection }, recentReports, openReport)
+    // The plane the board has open (D-142): its areas and text, and where layout changes land.
+    const brief = workspaceBrief(ws, { view, selectedId, selection, plane: usePlaneView.getState().plane }, recentReports, openReport)
     return { instructions: chatInstructions(brief.text, ws.workspace.name, web), refs: brief.refs, reports: brief.reports, source, ws, models: modelIds(models!) }
   }
   const currentView = () => path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'

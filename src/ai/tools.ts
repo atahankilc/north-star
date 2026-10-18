@@ -1,6 +1,6 @@
 // The assistant's one tool (D-074): propose a set of changes. Nothing is written until the user accepts some of
 // them in the chat; then they go through src/data/assistant.ts as one undo step. Deletes too (D-075), with their cascade.
-import type { AssistantWrite, ChangeRef } from '../data/assistant'
+import type { AssistantWrite, ChangeRef, PlaneRef } from '../data/assistant'
 import { linked } from '../data/edges'
 import { newCriterionId } from '../data/comparisons'
 import {
@@ -17,13 +17,18 @@ import {
   FEATURE_STATUSES,
   LABEL_SIZES,
   MAX_CRITERIA,
+  MAX_MEMBERS,
   type BoardType,
   type Criterion,
   type CriterionScore,
   type Edge,
   type Label,
   type NodeType,
+  type Package,
+  type Placement,
+  type Plane,
 } from '../data/model'
+import type { WithId } from '../data/hooks'
 import { DESCRIPTION_MAX } from '../data/workspaces'
 import { colors } from '../styles/tokens'
 import { CARD_H, CARD_W, findFreeSpot } from '../views/canvas/cardLayout'
@@ -31,6 +36,8 @@ import { isTitle, labelRoom, titleFullHalf } from '../views/canvas/titleBlock'
 import { DEFAULT_H, DEFAULT_W, isSection, rectOf, SECTION_SIZES, textLabels, wrapRect } from '../views/canvas/sections'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
+import { ALL } from '../data/planes'
+import { allSpot, allSpotsOf, layoutWs } from '../views/canvas/planes'
 import { AREA_LAYOUTS, AREA_SIDES, arrangeAreas, type AreaLayout, type AreaPlan, type AreaSide } from './arrange'
 
 export const PROPOSE = 'propose_changes'
@@ -331,6 +338,48 @@ const OPS = [
     },
   ),
   op(
+    'add_plane',
+    'A new plane (D-142): a board of its own showing the same cards, placed where it wants them, e.g. one per segment, ' +
+      'an MVP slice, or a home for the competitors. All keeps every card. The cards given are laid out in columns by type.',
+    {
+      key: str('A short name for this new plane, so other rows here can put cards or a package on it.'),
+      name: str('Its name, 1 to 4 words.'),
+      items: { type: 'array', items: { type: 'string' }, description: 'Refs (or keys of cards added here) of the cards to place on it.' },
+    },
+  ),
+  op('place_on_plane', 'Put cards that exist (or are added here) on a plane too, in columns right of what is on it. They stay everywhere else.', {
+    plane: str('The plane: its name as listed under PLANES, or the key of a plane added here.'),
+    items: { type: 'array', items: { type: 'string' }, description: 'Refs or keys of the cards.' },
+  }),
+  op('take_off_plane', 'Take cards off a plane (not All); they stay on All and every other plane.', {
+    plane: str('The plane: its name as listed under PLANES.'),
+    items: { type: 'array', items: { type: 'string' }, description: 'Refs of the cards.' },
+    reason: str('Why, in a few words; shown to the user.'),
+  }),
+  op(
+    'add_package',
+    'A package (D-141): a piece of the chain (a problem, the idea that solves it, its features…) as one card, rated like a ' +
+      'feature and linked like any card. Its home plane shows its cards inside its frame.',
+    {
+      key: str('A short name for this new package, so link rows here can use it.'),
+      name: str('Its name, a few words saying what this piece delivers.'),
+      notes: optStr('What it delivers and what it bets on.'),
+      items: { type: 'array', items: { type: 'string' }, description: 'Refs or keys of its cards, in chain order.' },
+      plane: optStr("Its home plane: a name under PLANES or a plane key added here. Null: a new plane named after it."),
+      impact: optEnum(FEATURE_IMPACTS, 'How much it would move things for the customer.'),
+      effort: optEnum(FEATURE_EFFORTS, 'S, M or L.'),
+    },
+  ),
+  op('edit_package', `Change a package: its name, notes, rating, or which cards it holds. ${KEEP_OR_EMPTY.split(';')[0]}.`, {
+    target: ref('The package'),
+    name: optStr('New name (never empty).'),
+    notes: optStr('Replaces its notes.'),
+    add: { type: 'array', items: { type: 'string' }, description: 'Refs or keys of cards to add to it. Empty: none.' },
+    remove: { type: 'array', items: { type: 'string' }, description: 'Refs of cards to take out of it. Empty: none.' },
+    impact: optEnum(FEATURE_IMPACTS, 'Null keeps it.'),
+    effort: optEnum(FEATURE_EFFORTS, 'Null keeps it.'),
+  }),
+  op(
     'update_project',
     "Edit the workspace's own name or what the team is building (WORKSPACE and WHAT WE'RE BUILDING above), shown in the " +
       "board's project block and in Settings. Null leaves a field as it is.",
@@ -384,7 +433,8 @@ export type Change = {
   clashes: number[]
 }
 
-export type Proposal = { summary: string; changes: Change[] }
+// `plane`: the plane open when it was made (D-142); its layout changes land there.
+export type Proposal = { summary: string; changes: Change[]; plane?: string }
 
 type Resolved = { ref: ChangeRef; name: string; type: NodeType; isNew: boolean }
 
@@ -392,6 +442,9 @@ const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefi
 // Models sometimes copy a ref with its brackets.
 export const refKey = (v: unknown) => s(v)?.replace(/^\[|\]$/g, '')
 const clip = (t: string, n = 70) => (t.length > n ? `${t.slice(0, n - 1)}…` : t)
+
+// What parseProposal needs to check plane and package rows (D-142).
+export type PlanesNow = { planes: WithId<Plane>[]; packages: WithId<Package>[]; placements: WithId<Placement>[]; open: string }
 
 // The workspace's own name and description (D-120), as the project block shows them.
 export type Project = { name: string; description?: string }
@@ -407,6 +460,8 @@ export function parseProposal(
   project?: Project,
   sections: string[] = [],
   criteria: Map<string, Criterion[]> = new Map(),
+  // Planes, packages and placements now, and the plane open (D-142).
+  planesNow: PlanesNow = { planes: [], packages: [], placements: [], open: ALL },
 ): Proposal {
   let data: { summary?: unknown; changes?: unknown }
   try {
@@ -425,7 +480,19 @@ export function parseProposal(
     if (r.op === 'add_card') fresh.set(key, { type: r.type as NodeType, name: s(r.title) ?? 'Untitled' })
     if (r.op === 'add_competitor') fresh.set(key, { type: 'competitor', name: s(r.name) ?? 'Untitled' })
     if (r.op === 'add_competitor_feature') fresh.set(key, { type: 'competitorFeature', name: s(r.name) ?? 'Untitled', parent: r.competitor })
+    if (r.op === 'add_package') fresh.set(key, { type: 'package', name: s(r.name) ?? 'Untitled' })
   }
+  // Planes by name (existing) or key (added here), D-142.
+  const freshPlanes = new Map(raws.filter((r) => r.op === 'add_plane' && s(r.key)).map((r) => [s(r.key)!, s(r.name) ?? 'Untitled']))
+  const planeOf = (v: unknown): { ref: PlaneRef; name: string } | undefined => {
+    const k = refKey(v)
+    if (!k) return undefined
+    if (freshPlanes.has(k)) return { ref: { key: k }, name: freshPlanes.get(k)! }
+    const p = planesNow.planes.find((x) => sameLabel(x.name, k))
+    return p ? { ref: { id: p.id }, name: p.name } : undefined
+  }
+  const listOf = (v: unknown) => (Array.isArray(v) ? v : []).map((x) => ({ v: x, r: resolve(x) }))
+  const onBoard = (t: NodeType) => t !== 'competitorFeature'
   const resolve = (v: unknown): Resolved | undefined => {
     const k = refKey(v)
     if (!k) return undefined
@@ -701,6 +768,123 @@ export function parseProposal(
                             : !given && !rows.length
                               ? 'nothing to change'
                               : undefined,
+        }
+      }
+      case 'add_plane': {
+        const name = s(raw.name)
+        const cards = listOf(raw.items)
+        return {
+          ...base,
+          sign: '+',
+          kind: 'plane',
+          tone: null,
+          text: name ?? 'Untitled',
+          detail: cards.length ? `with ${cards.map((c) => c.r?.name ?? '?').join(', ')}` : undefined,
+          needs: needsOf(...cards.map((c) => c.r)),
+          problem: !name
+            ? 'no name'
+            : sameLabel('all', name) || planesNow.planes.some((p) => sameLabel(p.name, name))
+              ? `there's a plane called ${name} already`
+              : cards.some((c) => !c.r)
+                ? 'unknown item'
+                : cards.some((c) => !onBoard(c.r!.type))
+                  ? "a competitor's feature goes with its competitor"
+                  : undefined,
+        }
+      }
+      case 'place_on_plane':
+      case 'take_off_plane': {
+        const p = planeOf(raw.plane)
+        const cards = listOf(raw.items)
+        const off = raw.op === 'take_off_plane'
+        const placed = new Set(planesNow.placements.filter((x) => p && 'id' in p.ref && x.planeId === p.ref.id).map((x) => x.itemId))
+        return {
+          ...base,
+          sign: off ? '−' : '→',
+          kind: off ? 'take off' : 'place',
+          tone: null,
+          text: `${cards.map((c) => c.r?.name ?? '?').join(', ')} ${off ? 'off' : 'on'} ${p?.name ?? '?'}`,
+          detail: off ? s(raw.reason) : undefined,
+          removes: off,
+          // A plane added here is needed like a new card.
+          needs: [...needsOf(...cards.map((c) => c.r)), ...(p && 'key' in p.ref ? [p.ref.key] : [])],
+          problem: !p
+            ? sameLabel('all', raw.plane) ? 'every card is on All' : 'unknown plane'
+            : off && 'key' in p.ref
+              ? 'added in this same proposal'
+              : !cards.length
+                ? 'no cards'
+                : cards.some((c) => !c.r)
+                  ? 'unknown item'
+                  : cards.some((c) => !onBoard(c.r!.type))
+                    ? "a competitor's feature goes with its competitor"
+                    : off && cards.some((c) => c.r!.isNew || !placed.has(idOfRef(c.r!.ref)))
+                      ? 'not on that plane'
+                      : undefined,
+        }
+      }
+      case 'add_package': {
+        const cards = listOf(raw.items)
+        const home = raw.plane === null || raw.plane === undefined ? null : planeOf(raw.plane)
+        return {
+          ...base,
+          sign: '+',
+          kind: 'package',
+          tone: 'package',
+          text: s(raw.name) ?? 'Untitled',
+          detail: [`holds ${cards.map((c) => c.r?.name ?? '?').join(', ')}`, home ? `home ${home.name}` : 'a new plane', s(raw.impact) && `impact ${s(raw.impact)}`, s(raw.effort)]
+            .filter(Boolean)
+            .join(' · '),
+          needs: [...needsOf(...cards.map((c) => c.r)), ...(home && 'key' in home.ref ? [home.ref.key] : [])],
+          problem: !s(raw.name)
+            ? 'no name'
+            : !cards.length
+              ? 'no cards'
+              : cards.length > MAX_MEMBERS
+                ? `more than ${MAX_MEMBERS} cards`
+                : cards.some((c) => !c.r)
+                  ? 'unknown item'
+                  : cards.some((c) => !onBoard(c.r!.type) || c.r!.type === 'package')
+                    ? 'a package holds cards, not features of competitors or other packages'
+                    : raw.plane && !home
+                      ? 'unknown plane'
+                      : undefined,
+        }
+      }
+      case 'edit_package': {
+        const t = resolve(raw.target)
+        const add = listOf(raw.add)
+        const remove = listOf(raw.remove)
+        const now = t && !t.isNew ? planesNow.packages.find((k) => k.id === idOfRef(t.ref)) : undefined
+        const edits = [
+          s(raw.name) && `name ${clip(s(raw.name)!, 40)}`,
+          typeof raw.notes === 'string' && (emptied(raw.notes) ? 'notes emptied' : 'notes'),
+          add.length && `adds ${add.map((c) => c.r?.name ?? '?').join(', ')}`,
+          remove.length && `takes out ${remove.map((c) => c.r?.name ?? '?').join(', ')}`,
+          s(raw.impact) && `impact ${s(raw.impact)}`,
+          s(raw.effort),
+        ].filter(Boolean)
+        return {
+          ...base,
+          sign: '~',
+          kind: 'package',
+          tone: 'package',
+          text: t?.name ?? '?',
+          detail: edits.join(' · ') || undefined,
+          needs: needsOf(t, ...add.map((c) => c.r)),
+          problem: !t
+            ? 'unknown item'
+            : t.type !== 'package'
+              ? `${t.name} isn't a package`
+              : t.isNew || !now
+                ? 'added in this same proposal'
+                : typeof raw.name === 'string' && emptied(raw.name)
+                  ? "a name can't be empty"
+                  : [...add, ...remove].some((c) => !c.r)
+                    ? 'unknown item'
+                    : !edits.length
+                      ? 'nothing to change'
+                      : undefined,
         }
       }
       case 'arrange_area': {
@@ -1034,6 +1218,7 @@ function freshRefs(accepted: Change[], refs: Map<string, ItemRef>) {
     if (c.raw.op === 'add_card') fresh.set(key, c.raw.type as NodeType)
     if (c.raw.op === 'add_competitor') fresh.set(key, 'competitor')
     if (c.raw.op === 'add_competitor_feature') fresh.set(key, 'competitorFeature')
+    if (c.raw.op === 'add_package') fresh.set(key, 'package')
   }
   const refOf = (v: unknown): ChangeRef => {
     const k = refKey(v)!
@@ -1111,7 +1296,11 @@ function planAreas(accepted: Change[], ws: WorkspaceCtx, refs: Map<string, ItemR
   return { position, moving, links, layout }
 }
 
-export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string, ItemRef>): AssistantWrite[] {
+// `plane`: the plane the proposal was made on (D-142). Layout is planned with that plane's cards and text (`lw`), and
+// every place lands there: a card's moves become its placement, a new card is placed there and lands on All's right
+// column, new text belongs to it. Content (links, criteria) reads the whole workspace.
+export function toWrites(accepted: Change[], full: WorkspaceCtx, refs: Map<string, ItemRef>, plane: string = ALL): AssistantWrite[] {
+  const ws = layoutWs(full, plane)
   const { fresh, refOf } = freshRefs(accepted, refs)
   // New cards go in their own kind's column (the board usually reads as columns, D-045): level with the card they're
   // placed near, or under the last of their kind; then the nearest free spot, never on top of another card.
@@ -1180,6 +1369,25 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
 
   // Existing cards an area moves: one position update each.
   const moves: AssistantWrite[] = []
+  // Planes and packages (D-142): cards placed on planes after the rows; new planes ordered after the ones there.
+  const planeWrites: AssistantWrite[] = []
+  let order = Math.max(0, ...full.planes.map((p) => p.order))
+  const nextOrder = () => ++order
+  const planeRefOf = (v: unknown): PlaneRef => {
+    const k = refKey(v)!
+    if (accepted.some((c) => c.raw.op === 'add_plane' && s(c.raw.key) === k)) return { key: k }
+    return { id: full.planes.find((p) => sameLabel(p.name, k))!.id }
+  }
+  const allSpots = allSpotsOf(full)
+  const typeOfId = (id: string): NodeType => [...refs.values()].find((e) => e.id === id)?.type ?? 'idea'
+  // Cards in columns by type in the chain's order (D-045), from `at` (the top-left card's centre).
+  const inColumns = (cards: ChangeRef[], at: [number, number]): [ChangeRef, number, number][] => {
+    const order = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package']
+    const types = order.filter((t) => cards.some((c) => c.type === t))
+    return types.flatMap((t, col) =>
+      cards.filter((c) => c.type === t).map((c, row): [ChangeRef, number, number] => [c, at[0] + col * (CARD_W + 1.2), at[1] - row * (CARD_H + 0.4)]),
+    )
+  }
   for (const [id, p] of layout?.cards ?? []) {
     const e = [...refs.values()].find((x) => x.id === id)
     if (e) moves.push({ do: 'update', target: { id, type: e.type }, fields: { x: p.x, y: p.y } })
@@ -1272,7 +1480,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
       case 'edit_link': {
         const from = refOf(r.from) as { id: string; type: NodeType }
         const to = refOf(r.to) as { id: string; type: NodeType }
-        const edge = linkBetween(ws.edges, from.id, to.id)!
+        const edge = linkBetween(full.edges, from.id, to.id)!
         const fields: Record<string, unknown> = {}
         if (s(r.kind)) fields.kind = s(r.kind)
         // null removes the label (assistant.ts).
@@ -1339,6 +1547,67 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         return { do: 'unlabel', id: textLabels(ws.labels).find((l) => sameLabel(l.text, r.label))!.id }
       case 'update_project':
         return { do: 'project', fields: compact({ name: text(r.name)?.slice(0, NAME_MAX), description: text(r.description)?.slice(0, DESCRIPTION_MAX) }) }
+      // Planes and packages (D-142): the row's own write here; the cards' placements after the rows (planeWrites).
+      case 'add_plane': {
+        const key = s(r.key)!
+        const cards = itemsOf(r).map((v) => refOf(v))
+        planeWrites.push(...inColumns(cards, [0, 0]).map(([item, x, y]): AssistantWrite => ({ do: 'placement', plane: { key }, item, x, y })))
+        return { do: 'plane', key, name: s(r.name)!.slice(0, 80), order: nextOrder() }
+      }
+      case 'place_on_plane': {
+        const p = planeRefOf(r.plane)
+        const on = 'id' in p ? full.placements.filter((x) => x.planeId === p.id) : []
+        const right: [number, number] = on.length ? [Math.max(...on.map((x) => x.x)) + CARD_W + 2, Math.max(...on.map((x) => x.y))] : [0, 0]
+        const [first, ...rest] = inColumns(itemsOf(r).map((v) => refOf(v)), right).map(([item, x, y]): AssistantWrite => ({ do: 'placement', plane: p, item, x, y }))
+        planeWrites.push(...rest)
+        return first
+      }
+      case 'take_off_plane':
+        return { do: 'unplace', plane: (planeRefOf(r.plane) as { id: string }).id, itemIds: itemsOf(r).map((v) => idOfRef(refOf(v))) }
+      case 'add_package': {
+        const key = s(r.key)!
+        const members = itemsOf(r).map((v) => refOf(v))
+        // Its home: the plane named, or a new one named after it holding its cards.
+        let home: PlaneRef
+        if (s(r.plane)) {
+          home = planeRefOf(r.plane)
+          const on = new Set('id' in home ? full.placements.filter((x) => x.planeId === (home as { id: string }).id).map((x) => x.itemId) : [])
+          const missing = members.filter((m) => !('id' in m) || !on.has(m.id))
+          const there = 'id' in home ? full.placements.filter((x) => x.planeId === (home as { id: string }).id) : []
+          const right: [number, number] = there.length ? [Math.max(...there.map((x) => x.x)) + CARD_W + 2, Math.max(...there.map((x) => x.y))] : [0, 0]
+          planeWrites.push(...inColumns(missing, right).map(([item, x, y]): AssistantWrite => ({ do: 'placement', plane: home, item, x, y })))
+        } else {
+          home = { key: `${key}·plane` }
+          planeWrites.push({ do: 'plane', key: `${key}·plane`, name: s(r.name)!.slice(0, 80), order: nextOrder() })
+          planeWrites.push(...inColumns(members, [0, 0]).map(([item, x, y]): AssistantWrite => ({ do: 'placement', plane: home, item, x, y })))
+        }
+        const [x, y] = allSpot(allSpots)
+        allSpots.push({ x, y })
+        return {
+          do: 'package',
+          key,
+          fields: compact({ title: s(r.name)!.slice(0, 200), body: text(r.notes), impact: text(r.impact), effort: text(r.effort), x, y }),
+          members,
+          home,
+        }
+      }
+      case 'edit_package': {
+        const target = refOf(r.target) as { id: string; type: NodeType }
+        const now = full.packages.find((k) => k.id === target.id)!
+        const out = new Set((Array.isArray(r.remove) ? r.remove : []).map((v) => refs.get(refKey(v) ?? '')?.id))
+        const add = (Array.isArray(r.add) ? r.add : []).map((v) => refOf(v))
+        const kept = now.memberIds.filter((id) => !out.has(id))
+        const members =
+          add.length || out.size
+            ? [...kept.map((id): ChangeRef => ({ id, type: typeOfId(id) })), ...add.filter((a) => !('id' in a) || !kept.includes(a.id))]
+            : undefined
+        return {
+          do: 'package',
+          id: target.id,
+          fields: compact({ title: text(r.name)?.slice(0, 200), body: edit(r.notes), impact: text(r.impact), effort: text(r.effort) }),
+          members,
+        }
+      }
       case 'add_evidence':
         return {
           do: 'evidence',
@@ -1357,7 +1626,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
       case 'set_criteria': {
         // Criteria kept word for word keep their ids, so their scores stay; the rest get new ones (D-133).
         const feature = refOf(r.feature) as { id: string; type: NodeType }
-        const now = ws.features.find((f) => f.id === feature.id)?.criteria ?? []
+        const now = full.features.find((f) => f.id === feature.id)?.criteria ?? []
         const given = criteriaOf(r)
         const list: Criterion[] = given
           ? given.map((text) => ({ id: now.find((k) => sameLabel(k.text, text))?.id ?? newCriterionId(), text }))
@@ -1374,7 +1643,7 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
       case 'unlink': {
         const a = (refOf(r.from) as { id: string }).id
         const b = (refOf(r.to) as { id: string }).id
-        const edgeIds = ws.edges.filter((e) => (e.fromId === a && e.toId === b) || (e.fromId === b && e.toId === a)).map((e) => e.id)
+        const edgeIds = full.edges.filter((e) => (e.fromId === a && e.toId === b) || (e.fromId === b && e.toId === a)).map((e) => e.id)
         return { do: 'unlink', edgeIds }
       }
       default:
@@ -1435,7 +1704,31 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
     w.fields.y = y
     taken.push({ x, y, half })
   }
-  return [...writes, ...moves]
+  return onPlane([...writes, ...moves, ...planeWrites], full, plane)
+}
+
+// The writes on a plane other than All (D-142): moves of cards become placements there (kept in their rows' places, the
+// placements after them), new cards are placed there and land on All's right column, new text belongs to the plane.
+function onPlane(writes: AssistantWrite[], full: WorkspaceCtx, plane: string): AssistantWrite[] {
+  if (plane === ALL) return writes
+  const spots = allSpotsOf(full)
+  const placements: AssistantWrite[] = []
+  const isCard = (t: NodeType) => t !== 'competitorFeature'
+  for (const w of writes) {
+    if (w.do === 'create' && isCard(w.type) && typeof w.fields.x === 'number') {
+      placements.push({ do: 'placement', plane: { id: plane }, item: { key: w.key, type: w.type }, x: w.fields.x as number, y: w.fields.y as number })
+      const [x, y] = allSpot(spots)
+      spots.push({ x, y })
+      Object.assign(w.fields, { x, y })
+    } else if (w.do === 'update' && isCard(w.target.type) && (typeof w.fields.x === 'number' || typeof w.fields.y === 'number')) {
+      const { x, y, ...rest } = w.fields
+      placements.push({ do: 'placement', plane: { id: plane }, item: w.target, x: x as number, y: y as number })
+      w.fields = rest
+    } else if (w.do === 'label' && !w.id) {
+      w.fields.planeId = plane
+    }
+  }
+  return [...writes, ...placements]
 }
 
 // Below a card, between notes on the same card (board units).
@@ -1487,7 +1780,7 @@ export function layoutReport(p: Proposal, ws: WorkspaceCtx, refs: Map<string, It
   if (!accepted.some((c) => c.raw.op === 'arrange_area')) return ''
   let plan
   try {
-    plan = planAreas(accepted, ws, refs)
+    plan = planAreas(accepted, layoutWs(ws, p.plane ?? ALL), refs)
   } catch {
     return ''
   }

@@ -11,6 +11,8 @@ import type { WorkspaceCtx } from '../views/workspace/context'
 import { reportFull } from './readTools'
 import { cellLine, criteriaLine } from '../views/matrix/reading'
 import { confidenceOf } from '../views/priorities/reading'
+import { ALL } from '../data/planes'
+import { layoutWs } from '../views/canvas/planes'
 
 // Far beyond a real workspace; keeps a runaway one from becoming an expensive prompt.
 const MAX_CHARS = 120_000
@@ -65,7 +67,8 @@ function nearestCard(ws: WorkspaceCtx, x: number, y: number): string | undefined
 }
 
 // `selection`: everything selected on the board (D-108), when it's more than the one card.
-type Where = { view: string; selectedId: string | null; selection?: string[] }
+// `plane`: the plane the board has open (D-142); missing = All.
+type Where = { view: string; selectedId: string | null; selection?: string[]; plane?: string }
 
 // `parent`: a competitor feature's competitor (D-122), so a matrix cell's "their version" can be checked.
 export type ItemRef = { id: string; type: NodeType; name: string; parent?: string }
@@ -92,7 +95,20 @@ export type OpenReport = { id: string; report: ReportContent; saved: boolean }
 
 // `reports`: the newest few you may see (D-090); the chat loads them while it's open (D-098).
 // `open`: the report the user is reading, in full (D-099).
-export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<ReportSummary>[] = [], open: OpenReport | null = null): Brief {
+export function workspaceBrief(full: WorkspaceCtx, where: Where, reports: WithId<ReportSummary>[] = [], open: OpenReport | null = null): Brief {
+  // Areas, text and sections as the open plane has them (D-142); cards not on it have no area there.
+  const plane = where.plane ?? ALL
+  const ws = { ...full, labels: layoutWs(full, plane).labels }
+  const placed = layoutWs(full, plane)
+  const spot = new Map(
+    [...placed.customers, ...placed.problems, ...placed.ideas, ...placed.features, ...placed.competitors].flatMap((d) =>
+      d.x !== undefined && d.y !== undefined ? [[d.id, { x: d.x, y: d.y }] as const] : [],
+    ),
+  )
+  const areaHere = (id: string) => {
+    const p = spot.get(id)
+    return p ? areaOf(ws.labels, p.x, p.y) : ''
+  }
   const names = new Map<string, string>()
   const all: ItemRef[] = []
   const boardLists = [['customer', ws.customers], ['problem', ws.problems], ['idea', ws.ideas], ['feature', ws.features]] as const
@@ -109,6 +125,10 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
   for (const f of ws.competitorFeatures) {
     names.set(f.id, `${names.get(f.competitorId) ?? '?'}: ${f.name || 'Untitled'}`)
     all.push({ id: f.id, type: 'competitorFeature', name: names.get(f.id)!, parent: f.competitorId })
+  }
+  for (const k of ws.packages) {
+    names.set(k.id, k.title || 'Untitled')
+    all.push({ id: k.id, type: 'package', name: k.title || 'Untitled' })
   }
   const { byRef, refOf } = makeRefs(all)
   const r = (id: string) => `[${refOf.get(id)}] `
@@ -147,7 +167,7 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
     lines.push('', `${title} (${items.length})`)
     for (const n of items) {
       const body = clip(n.body)
-      lines.push(`- ${r(n.id)}${n.title || 'Untitled'}${extra(n)}${tags(n.tags)}${forText(n.id)}${areaOf(ws.labels, n.x, n.y)}${body ? `: ${body}` : ''}`)
+      lines.push(`- ${r(n.id)}${n.title || 'Untitled'}${extra(n)}${tags(n.tags)}${forText(n.id)}${areaHere(n.id)}${body ? `: ${body}` : ''}`)
       lines.push(...filesLine(n.id), ...evidenceLines(n.id))
     }
   }
@@ -168,22 +188,30 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
     return `${meta ? ` [${meta}]` : ''}${must ? `; ${must}` : ''}`
   })
 
-  // Packages (D-141): a piece of the chain as one card; listed with what they hold (the assistant edits them in step 3).
+  // Packages (D-141): a piece of the chain as one card, with what they hold and their home plane.
+  const planeName = new Map(ws.planes.map((p) => [p.id, p.name]))
   if (ws.packages.length) {
-    const title = new Map([...ws.customers, ...ws.problems, ...ws.ideas, ...ws.features].map((n) => [n.id, n.title || 'Untitled']))
-    for (const c of ws.competitors) title.set(c.id, c.name || 'Untitled')
     lines.push('', `PACKAGES (${ws.packages.length})`)
     for (const k of ws.packages) {
-      const held = k.memberIds.flatMap((id) => (title.has(id) ? [title.get(id)!] : []))
+      const held = k.memberIds.flatMap((id) => (names.has(id) ? [`${r(id)}${names.get(id)}`] : []))
       const rating = [k.impact && `impact ${k.impact}`, k.effort && `effort ${k.effort}`].filter(Boolean).join(', ')
-      lines.push(`- ${k.title || 'Untitled'}${rating ? ` [${rating}]` : ''}: holds ${held.join(', ') || 'nothing'}`)
+      lines.push(`- ${r(k.id)}${k.title || 'Untitled'}${rating ? ` [${rating}]` : ''}${k.body ? `: ${clip(k.body)}` : ''}`)
+      lines.push(`  holds: ${held.join(', ') || 'nothing'}; home plane: ${planeName.get(k.homePlaneId) ?? '?'}`)
     }
+  }
+
+  // Planes (D-139, D-142): All shows every card; each other plane shows the cards placed on it.
+  const sorted = [...ws.planes].sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
+  lines.push('', `PLANES (All + ${sorted.length}); the user has ${plane === ALL ? 'All' : `"${planeName.get(plane) ?? '?'}"`} open: layout changes (arrange_area, sections, text, move_card, new cards) land on it.`)
+  for (const p of sorted) {
+    const on = ws.placements.filter((x) => x.planeId === p.id).map((x) => `${r(x.itemId)}${names.get(x.itemId) ?? '?'}`)
+    lines.push(`- ${p.name}: ${on.length ? on.join(', ') : 'empty'}`)
   }
 
   lines.push('', `COMPETITORS (${ws.competitors.length})`)
   for (const c of ws.competitors) {
     const facts = [c.url, c.pricing && `pricing: ${clip(c.pricing, 120)}`, c.audience && `audience: ${clip(c.audience, 120)}`].filter(Boolean)
-    const area = c.x !== undefined && c.y !== undefined ? areaOf(ws.labels, c.x, c.y) : ''
+    const area = areaHere(c.id)
     lines.push(`- ${r(c.id)}${c.name || 'Untitled'}${tags(c.tags)}${forText(c.id)}${area}${facts.length ? ` (${facts.join('; ')})` : ''}`)
     if (c.description) lines.push(`  about: ${clip(c.description)}`)
     if (c.notes) lines.push(`  notes: ${clip(c.notes)}`)
@@ -230,7 +258,7 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
   if (notes.length) {
     lines.push('', `NOTES ON THE BOARD (${notes.length})`)
     for (const l of notes) {
-      const near = nearestCard(ws, l.x, l.y)
+      const near = nearestCard(placed, l.x, l.y)
       lines.push(`- "${clip(l.text, 200)}"${look(l)}${near ? ` by [${refOf.get(near)}] ${names.get(near)}` : ''}${areaOf(ws.labels, l.x, l.y)}`)
     }
   }

@@ -131,7 +131,8 @@ export const MODES: Mode[] = [
       'each other so the board reads as one picture, not a row of piles. Each area becomes a section frame (its sections ' +
       'frames inside it): reuse the names of sections already on the board that still fit, delete the frames that would ' +
       'end up empty, and colour areas only where the colour means something (a segment, the core loop). Propose it with ' +
-      'arrange_area rows. ' +
+      'arrange_area rows. If one board is too much to read (dozens of cards, several separate stories), also propose planes ' +
+      '(add_plane): e.g. one holding the competitors, one per segment or MVP slice; All keeps every card. ' +
       LANGUAGE,
   },
   {

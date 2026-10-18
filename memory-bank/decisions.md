@@ -90,6 +90,9 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   everywhere), cards made on a plane also land right of All, `on N planes` / `+N off-plane`, cursors per plane.
 - Packages (D-141): a blue card type made with `package these` (home plane: the open one, or a new one from All), a
   frame round its members there, rated in priorities with confidence from its members; members by id, never cleaned up.
+- The assistant on planes (D-142): a proposal lands on the plane open when it was made (moves → placements, new cards
+  there + All's right column, text there); brief lists planes and packages; rows `add_plane`, `place_on_plane`,
+  `take_off_plane`, `add_package`, `edit_package`; `/organize` may propose planes.
 - Sections: a named frame (label `kind: 'section'`, w/h), drawn with a crosshair (press, drag, release; never placed),
   holding by position whatever is inside it (cards, text, smaller sections); drag the band or edge carries it all, corner
   resizes, delete leaves contents, never copied; name set like text (H1–H3, B/I/AA), not scaled; kept in the focus view

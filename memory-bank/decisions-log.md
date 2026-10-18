@@ -1961,3 +1961,28 @@ cards, planes split only where they're looked at. The user went with the recomme
   feature`, its own plane with the frame round the three), a link from it, rated in priorities; ⌘Z removed package,
   plane and placements together; export → import kept it (3 members, home found). Rules 284 pass (the 2 usage-log tests
   fail as before). `npm run build`. Firestore rules deployed 2026-10-19.
+
+### D-142 · 2026-10-19 · Accepted (step 3 of D-139)
+**The assistant works on planes and packages.** As the spec says (docs/specs/planes.md §7), with these choices:
+- *Its plane:* a proposal keeps the plane open when the model made it (`proposal.plane`). Layout is planned on that
+  plane (`layoutWs`: its placed cards at their places, its text and sections; links, criteria and the rest whole), and
+  lands there (`onPlane` in tools.ts): card moves become placements (after the rows' writes), new cards are placed there
+  and land on All's right column, new text and frames get its `planeId`. Preview (`simulate`) does the same, so a plane's
+  preview shows its placements changing. On All nothing changes, except that All's planning no longer sees other
+  planes' text (a step-1 leak).
+- *Brief:* `PLANES (All + N)` with the open plane named ("layout changes … land on it") and each plane's cards; `PACKAGES`
+  with refs, what they hold, rating and home plane; areas and notes as the open plane has them (cards not on it have no
+  area there); packages have refs (link, delete, edit).
+- *New rows:* `add_plane` (key, name, cards laid out in columns by chain type), `place_on_plane` (a plane by name or a
+  key added here; columns right of what's there), `take_off_plane` (an existing plane; "not on that plane" checked),
+  `add_package` (key, name, notes, cards, home plane by name/key or null = a new plane named after it holding them in
+  columns; cards missing from a named home are placed there; impact, effort; the package lands on All's right column),
+  `edit_package` (name, notes, add, remove, impact, effort). A row on a plane added here needs that row, like a new card.
+- *Apply* (`assistant.ts`): write kinds `plane`, `placement`, `unplace`, `package`; ids for new planes and packages made up
+  front so rows can point at them; one undo step as before.
+- `/organize` may propose planes when one board is too much to read.
+- *Not done:* `delete_plane` / renaming planes by the assistant; the focus view and other views still ignore planes (step 4).
+- *Verified* in headless Chrome on the emulators with a fake OpenAI: on All, one proposal added a "Competitors" plane with
+  the 4 competitors, a package of 3 cards with its own plane (impact high, M) and a link from it (7 placements, link
+  written); then on the Competitors plane, an `arrange_area` and an `add_card` landed there (label `Direct` with the
+  plane's id, the new idea placed there and on All's right column, All's positions untouched). `npm run build`.
