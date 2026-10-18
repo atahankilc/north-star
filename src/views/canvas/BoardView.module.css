@@ -36,6 +36,16 @@
   color: var(--fg-strong);
 }
 
+/* Snapping on (D-112): lit like a filter that narrows (D-066). */
+.fit.on {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.fit.on:hover {
+  color: var(--accent-cyan);
+}
+
 .fit:disabled {
   opacity: 0.4;
   cursor: default;

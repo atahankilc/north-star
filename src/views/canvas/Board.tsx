@@ -36,6 +36,7 @@ import { LinkBar } from './LinkBar'
 import { linkStyle } from './linkKinds'
 import { CHIP_H, CHIP_W, FeatureChip } from './FeatureChip'
 import { boardPoint, NodeCard } from './NodeCard'
+import { SNAP_STEP, useSnap } from './snap'
 import { CursorReporter, FollowCamera, PeerCursors } from './PeerCursors'
 
 type Props = {
@@ -665,16 +666,21 @@ function Snapshot({ nodes, labels }: { nodes: BoardItem[]; labels: WithId<Label>
 
 // Faint "+" marks every unit: an ASCII-flavoured grid for spatial memory. Zoomed out they shrink to dots,
 // then fade away before the zoom-out limit, so the board never turns into a dense speckle (D-110).
+// While snapping is on (D-112), close up, faint dots between them show the points a dragged card lands on.
 function DotGridMaterial() {
   const shade = usePalette().grid
+  const snap = useSnap((s) => s.on)
   const material = useRef<ShaderMaterial>(null)
-  const uniforms = useMemo(() => ({ uShade: { value: shade }, uDist: { value: 11 } }), []) // eslint-disable-line react-hooks/exhaustive-deps
+  const uniforms = useMemo(() => ({ uShade: { value: shade }, uDist: { value: 11 }, uSnap: { value: snap ? 1 : 0 } }), []) // eslint-disable-line react-hooks/exhaustive-deps
   // R3F copies the uniforms prop, so theme changes go through the material (D-028).
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => {
-    if (material.current) material.current.uniforms.uShade.value = shade
+    if (material.current) {
+      material.current.uniforms.uShade.value = shade
+      material.current.uniforms.uSnap.value = snap ? 1 : 0
+    }
     invalidate()
-  }, [shade, invalidate])
+  }, [shade, snap, invalidate])
   // The camera's distance decides the shape, so the grid is gone at the limit on any screen.
   useFrame(({ camera }) => {
     if (material.current) material.current.uniforms.uDist.value = camera.position.z
@@ -696,6 +702,7 @@ function DotGridMaterial() {
         varying vec2 vWorld;
         uniform float uShade;
         uniform float uDist;
+        uniform float uSnap;
         void main() {
           // A full "+" up to 30 units away, a dot by 70, faded out between 80 and ${MAX_DISTANCE - 30} (limit ${MAX_DISTANCE}).
           float fade = 1.0 - smoothstep(80.0, ${(MAX_DISTANCE - 30).toFixed(1)}, uDist);
@@ -707,7 +714,10 @@ function DotGridMaterial() {
             step(g.x, w) * step(g.y, arm),
             step(g.y, w) * step(g.x, arm)
           );
-          gl_FragColor = vec4(vec3(uShade), plus * 0.4 * fade);
+          // The snap points between the "+" marks: one-pixel dots, gone by 34 units away, where they'd crowd.
+          vec2 s = abs(fract(vWorld / ${SNAP_STEP.toFixed(4)} + 0.5) - 0.5) * ${SNAP_STEP.toFixed(4)};
+          float snapDot = uSnap * step(s.x, w * 1.5) * step(s.y, w * 1.5) * (1.0 - smoothstep(22.0, 34.0, uDist));
+          gl_FragColor = vec4(vec3(uShade), max(plus * 0.4, snapDot * 0.35) * fade);
         }
       `}
     />

@@ -15,6 +15,7 @@ import { BOARD_KINDS, typeAccent, type BoardItem } from './boardKinds'
 import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { endGroup, moveGroup, startGroup } from './groupDrag'
+import { snapPoint } from './snap'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
 import { markHover, unlight } from '../workspace/stage'
@@ -184,7 +185,8 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
     if (!d) return
     const p = boardPoint(e)
     if (!p) return
-    const next: [number, number] = [p[0] - d.dx, p[1] - d.dy]
+    // On the grid while snapping is on (D-112); alt drags freely.
+    const next = snapPoint([p[0] - d.dx, p[1] - d.dy], e.altKey)
     d.moved = true
     if (d.group) {
       moveGroup(wid, [next[0] - d.from[0], next[1] - d.from[1]])

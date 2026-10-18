@@ -16,6 +16,7 @@ import { BOARD_KINDS, TYPE_ACCENT, useBoardItems, useVisibleItems } from './boar
 import { findFreeSpot } from './cardLayout'
 import { copySelection, duplicateSelection, pasteClip } from './clipboard'
 import { DetailPanel } from './DetailPanel'
+import { useSnap } from './snap'
 import { copied } from '../../data/selection'
 import { editLocked, useViewer } from '../workspace/viewerLock'
 import styles from './BoardView.module.css'
@@ -27,6 +28,7 @@ export function BoardView() {
   const ws = useWs()
   const { wid, edges, competitors, competitorFeatures, labels } = ws
   const viewer = useViewer((s) => s.viewer)
+  const snap = useSnap((s) => s.on)
   const all = useBoardItems()
   const nodes = useVisibleItems(all)
   const select = useCanvas((s) => s.select)
@@ -80,7 +82,7 @@ export function BoardView() {
   const places = useMemo(() => labels.filter((l) => l.text.trim()).sort((a, b) => b.y - a.y || a.x - b.x), [labels])
   const jump = (l: WithId<Label>) => useCanvas.getState().flyTo([l.x, l.y - LAND_BELOW])
 
-  // Escape deselects; 0 frames the whole board; 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);
+  // Escape deselects; 0 frames the whole board; g switches snapping to the grid (D-112); 1–9 jump to the places in the list; ⌘C / ⌘V / ⌘D copy, paste, duplicate (D-108);
   // leaving the board clears selection.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -105,6 +107,7 @@ export function BoardView() {
         }
       }
       if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) useCanvas.getState().fitAll()
+      if (key === 'g' && !mod && !e.altKey && !editLocked()) useSnap.getState().toggle()
       if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const place = places[Number(e.key) - 1]
         if (place) jump(place)
@@ -175,10 +178,25 @@ export function BoardView() {
               <rect x="5.5" y="5.5" width="5" height="5" fill="currentColor" />
             </svg>
           </button>
+          {/* Snap to the grid while dragging (D-112); lit while on. Viewers move nothing, so they don't get it. */}
+          {!viewer && (
+            <button
+              className={`${styles.fit} ${snap ? styles.on : ''}`}
+              onClick={() => useSnap.getState().toggle()}
+              aria-pressed={snap}
+              aria-label={snap ? 'Snap to grid: on' : 'Snap to grid: off'}
+            >
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden>
+                <path d="M1.5 4.5h13M1.5 11.5h13M4.5 1.5v13M11.5 1.5v13" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                <rect x="3" y="3" width="3" height="3" fill="currentColor" />
+              </svg>
+            </button>
+          )}
         </span>
         <span className={styles.hints}>
-          {viewer ? 'viewing only · scroll: zoom' : 'drag: move · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom'}
+          {viewer ? 'viewing only · scroll: zoom' : `drag: move${snap ? ' on the grid (alt: freely)' : ''} · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom`}
           {' · 0: fit all'}
+          {!viewer && ' · g: snap'}
           {places.length > 0 && ' · 1–9: go to'}
         </span>
       </footer>
