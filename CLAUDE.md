@@ -9,7 +9,9 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 1. The memory bank is auto-loaded into context via these imports (no need to read them manually):
    - @memory-bank/state.md
    - @memory-bank/open-questions.md
-   - @memory-bank/decisions.md
+   - @memory-bank/decisions.md (current rules by topic; the full entries are in `decisions-log.md`)
+   Not auto-loaded, read on demand: `memory-bank/decisions-log.md` (every D-xxx in full: why, alternatives, user quotes)
+   and `memory-bank/state-history.md` (what was done and verified, session by session). Grep them by D-number.
 2. Consult `/docs` as needed:
    - `docs/PRODUCT.md`: what we're building (entities, views, flows)
    - `docs/ARCHITECTURE.md`: stack, backend, data model, collaboration, AI, export/import
@@ -17,8 +19,11 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
    - `docs/ROADMAP.md`: phases
 
 ## Session end, or after meaningful progress: always
-- Update `memory-bank/state.md` (done / in progress / next / blockers, plus the date).
-- A new decision gets a `D-xxx` entry in `decisions.md`. An answered question moves out of `open-questions.md`.
+- Update `memory-bank/state.md` (in progress / next / blockers, plus the date). It is a snapshot under ~100 lines: finished
+  work gets a `## Done (…)` section in `state-history.md`, and at most one line stays in state.md.
+- A new decision gets its full `### D-xxx` entry appended to `decisions-log.md`, plus one line in the right topic of
+  `decisions.md` (edit the line it replaces; a rejected idea goes under "Rejected"). An answered question moves out of
+  `open-questions.md`.
 - A new uncertainty gets a `Q-xxx` entry in `open-questions.md` with a recommendation.
 - If a decision changes a spec, update the relevant `/docs` file in the same change.
 
