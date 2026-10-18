@@ -331,7 +331,7 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
 - D-096: the preview's look: diff signs and colours (`--diff-*`) instead of name tags, deleted items grey and struck, moved
   cards' ghosts, new links in the new colour, `was` + old values under edits, frame-all on open, a stepper (`‹ n/N ›`, n/p)
   and rows lit both ways between chat and stage, the stage as one box with its title in the top edge. Verified headless,
-  dark and light. Not committed yet.
+  dark and light. Committed 2026-10-18 (not pushed).
 - Next in the redesign (with the user): the report screen's look on the stage, the steps/streaming states, narrow screens
   (below 760 px the chat still covers the stage).
 
