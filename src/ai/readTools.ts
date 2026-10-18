@@ -69,6 +69,14 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
       lines.push(...field('priority', f.priority), ...field('status', f.status), ...field('effort', f.effort))
       const must = criteriaLine(ws.features.find((x) => x.id === card.id))
       if (must) lines.push(`  ${must}`)
+      // Status and evidence (D-137), in full.
+      lines.push(...field('status', (card as typeof card & { validation?: string }).validation))
+      const learned = ws.evidence.filter((e) => e.nodeId === card.id)
+      if (learned.length) lines.push(`  evidence (${learned.length}):`)
+      for (const e of learned) {
+        const from = [e.source, e.date, e.url].filter(Boolean).join(', ')
+        lines.push(`  ${e.stance === 'supports' ? '+' : '−'} ${e.kind}: ${full(e.text)}${from ? ` (${from})` : ''}`)
+      }
     }
     if (comp) {
       lines.push(...field('url', comp.url), ...field('description', full(comp.description)), ...field('pricing', full(comp.pricing)))

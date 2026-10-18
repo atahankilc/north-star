@@ -22,6 +22,7 @@ import type {
   CompetitorFeature,
   Customer,
   Edge,
+  Evidence,
   Feature,
   Idea,
   NodeType,
@@ -114,7 +115,7 @@ async function deleteAll(refs: DocumentReference[]): Promise<void> {
   }
 }
 
-// Everything that hangs off a node and goes with it: its edges, its attachments (records only; the files stay for undo,
+// Everything that hangs off a node and goes with it: its edges, its evidence (D-137), its attachments (records only; the files stay for undo,
 // D-083), a feature's or competitor's matrix cells, and a competitor's own features (with their edges).
 // Firestore doesn't cascade. The node itself is not included.
 export async function cascadeOf(wid: string, type: NodeType, id: string): Promise<DocumentReference[]> {
@@ -138,6 +139,11 @@ export async function cascadeOf(wid: string, type: NodeType, id: string): Promis
   for (const d of edges.docs) {
     const e = d.data() as Edge
     if (ids.has(e.fromId) || ids.has(e.toId)) refs.push(d.ref)
+  }
+  // Evidence about it (D-137).
+  if (type === 'customer' || type === 'problem' || type === 'idea') {
+    const evidence = await getDocs(col(wid, 'evidence'))
+    for (const d of evidence.docs) if ((d.data() as Evidence).nodeId === id) refs.push(d.ref)
   }
   if (attachmentsAvailable) {
     const files = await getDocs(col(wid, 'attachments'))

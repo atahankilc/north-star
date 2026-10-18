@@ -5,6 +5,7 @@ import {
   cleanAttachment,
   cleanCard,
   cleanComparison,
+  cleanEvidence,
   cleanCompetitor,
   cleanCompetitorFeature,
   cleanEdge,
@@ -15,7 +16,7 @@ import {
 } from '../io/bundle'
 import { attachmentsAvailable, uploadImported } from './attachments'
 import { db } from './firebase'
-import type { NodeType, Workspace } from './model'
+import { EVIDENCE_TYPES, type NodeType, type Workspace } from './model'
 import { COLLECTIONS } from './nodes'
 import { createWorkspace, deleteWorkspace } from './workspaces'
 
@@ -86,6 +87,17 @@ export async function importWorkspace(bundle: LoadedBundle, uid: string): Promis
         ...(theirs?.type === 'competitorFeature' && { competitorFeatureId: theirs.id }),
       },
     ])
+  }
+
+  // Evidence (D-137) follows its card; evidence on a card that didn't come over is dropped.
+  for (const d of bundle.evidence) {
+    const on = ids.get(d.nodeId as string)
+    const fields = cleanEvidence(d, now)
+    if (!fields || !on || !(EVIDENCE_TYPES as readonly string[]).includes(on.type)) {
+      skipped++
+      continue
+    }
+    writes.push([doc(col('evidence')), { nodeId: on.id, nodeType: on.type, ...fields }])
   }
 
   // Research reports (D-090): yours now, shared as they were; their items follow, unknown ones are dropped.

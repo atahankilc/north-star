@@ -9,6 +9,7 @@ import {
   FEATURE_STATUSES,
   type BoardNode,
   type Feature,
+  type Validation,
 } from '../../data/model'
 import { updateNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
@@ -20,6 +21,7 @@ import { CriteriaEditor } from '../matrix/Criteria'
 import { FocusButton } from './focus'
 import { useWs } from '../workspace/context'
 import { Attachments } from '../workspace/Attachments'
+import { EvidenceList, ValidationField } from '../workspace/Evidence'
 import { ForPicker } from '../workspace/ItemPickers'
 import { ItemTags } from '../workspace/ItemTags'
 import { PeersHere } from '../workspace/PeersHere'
@@ -174,6 +176,8 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
 
       <div className={styles.pickers}>
         {type === 'feature' && <FeatureFields wid={wid} feature={node as WithId<Feature>} />}
+        {/* How far from a guess it is, set by hand (D-137). */}
+        {type !== 'feature' && <ValidationField node={node as { id: string; validation?: Validation }} type={type} />}
         {type !== 'customer' && <ForPicker item={item} />}
       </div>
 
@@ -181,6 +185,8 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
         notes
         <textarea ref={bodyRef} className={styles.body} rows={6} placeholder={kind.placeholder} {...field('body')} />
       </label>
+
+      {type !== 'feature' && <EvidenceList node={node} type={type} />}
 
       <div className={styles.label}>
         tags

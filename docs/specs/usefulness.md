@@ -1,6 +1,6 @@
 # Spec: from research to decisions (Phase 6)
 
-Status: **slices 1–4 built (D-133–D-136)**; the rest planned. Each slice gets its own D-number when it's built.
+Status: **slices 1–5 built (D-133–D-137)**; the rest planned. Each slice gets its own D-number when it's built.
 
 ## 1. Why
 
@@ -69,9 +69,10 @@ Each slice ships on its own, with its decision, docs and tests. Order is the rec
 - A cell can be `not relevant` (different from not assessed).
 - Confidence per cell: `documented | inferred | guess` (`~` / `?` in the cell's corner).
 
-### Slice 5: evidence and status
+### Slice 5: evidence and status (built, D-137)
 - Status on customers, problems and ideas: `hypothesis → testing → validated | invalidated`, shown as a badge.
-- A new **evidence** item (interview, quote, data, link) attached to cards, which moves their status.
+- **Evidence** (interview, quote, data, observation, link) in the card's panel, counted on the card; you set the status,
+  the evidence informs it and a status it doesn't back is flagged (the user's choice, 2026-10-19).
 - Possibly an **assumption** card with experiments ("Regulated mid-market will pay for traceability").
 
 ### Slice 6: real prioritisation

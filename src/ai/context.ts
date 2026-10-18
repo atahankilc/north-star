@@ -124,6 +124,15 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
   const filesOf = new Map<string, string[]>()
   for (const a of ws.attachments) filesOf.set(a.nodeId, [...(filesOf.get(a.nodeId) ?? []), clip(a.name, 80)])
   const filesLine = (id: string) => (filesOf.has(id) ? [`  files: ${filesOf.get(id)!.join(', ')}`] : [])
+  // Evidence (D-137): each piece on a line of its own under its card, `+` supports, `−` contradicts.
+  const evidenceLines = (id: string) =>
+    ws.evidence
+      .filter((e) => e.nodeId === id)
+      .map((e) => `  ${e.stance === 'supports' ? '+' : '−'} ${e.kind}: ${clip(e.text, 200)}${[e.source, e.date].some(Boolean) ? ` (${[e.source, e.date].filter(Boolean).join(', ')})` : ''}`)
+  const statusOf = (n: WithId<BoardNode>) => {
+    const v = (n as { validation?: string }).validation
+    return v ? ` {${v}}` : ''
+  }
 
   const about = clip(ws.workspace.description, 1000)
   const lines: string[] = [
@@ -138,14 +147,15 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
     for (const n of items) {
       const body = clip(n.body)
       lines.push(`- ${r(n.id)}${n.title || 'Untitled'}${extra(n)}${tags(n.tags)}${forText(n.id)}${areaOf(ws.labels, n.x, n.y)}${body ? `: ${body}` : ''}`)
-      lines.push(...filesLine(n.id))
+      lines.push(...filesLine(n.id), ...evidenceLines(n.id))
     }
   }
-  section('CUSTOMERS', ws.customers)
-  section('PROBLEMS', ws.problems)
+  // {status} on customers, problems and ideas (D-137): hypothesis | testing | validated | invalidated.
+  section('CUSTOMERS', ws.customers, statusOf)
+  section('PROBLEMS', ws.problems, statusOf)
   section('IDEAS', ws.ideas, (n) => {
     const s = (n as { status?: string }).status
-    return s ? ` [${s}]` : ''
+    return `${s ? ` [${s}]` : ''}${statusOf(n)}`
   })
   section('FEATURES', ws.features, (n) => {
     const f = n as WithId<BoardNode> & { priority?: string; status?: string; effort?: string }

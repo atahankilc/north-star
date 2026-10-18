@@ -123,6 +123,14 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
         ids.push(id, featureId, competitorId)
         break
       }
+      // Evidence (D-137): in its card's panel and tally; the card is what changes on the board.
+      case 'evidence': {
+        const nodeId = idOf(w.on)
+        list('evidence').push({ ...w.fields, id: `preview-evidence-${n}`, nodeId, nodeType: w.on.type, createdAt: now, updatedAt: now })
+        if (!marks.has(nodeId)) mark(nodeId, 'edited')
+        ids.push(nodeId)
+        break
+      }
       // A feature's criteria and its cells' scores (D-133); scores of criteria gone are left, unread, as in the app.
       case 'criteria': {
         const featureId = w.feature.id

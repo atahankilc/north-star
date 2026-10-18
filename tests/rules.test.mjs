@@ -197,6 +197,15 @@ await deny('idea without a position', () => addDoc(ideas(bob.fs), { title: 'x', 
 await deny('idea with a numeric title', () => addDoc(ideas(bob.fs), { ...card, title: 5 }))
 await allow('feature with priority, status, effort', () => addDoc(sub(bob.fs, 'features'), { ...card, priority: 'P1', status: 'planned', effort: 'M' }))
 await deny('feature with an unknown status', () => addDoc(sub(bob.fs, 'features'), { ...card, status: 'someday' }))
+// Status and evidence (D-137).
+await allow('problem with a validation status', () => addDoc(sub(bob.fs, 'problems'), { ...card, validation: 'testing' }))
+await deny('problem with an unknown validation status', () => addDoc(sub(bob.fs, 'problems'), { ...card, validation: 'proven' }))
+const ev = { nodeId: 'p1', nodeType: 'problem', kind: 'interview', text: 'We lose three shifts a week', stance: 'supports', createdAt: 1, updatedAt: 1 }
+await allow('evidence on a problem', () => addDoc(sub(bob.fs, 'evidence'), { ...ev, source: 'Anna, café owner', date: '2026-10-12' }))
+await deny('evidence without text', () => addDoc(sub(bob.fs, 'evidence'), { ...ev, text: '' }))
+await deny('evidence on a feature', () => addDoc(sub(bob.fs, 'evidence'), { ...ev, nodeType: 'feature' }))
+await deny('evidence with an unknown stance', () => addDoc(sub(bob.fs, 'evidence'), { ...ev, stance: 'maybe' }))
+await deny('evidence with a free-text date', () => addDoc(sub(bob.fs, 'evidence'), { ...ev, date: 'last week' }))
 // Criteria (D-133): a short list on the feature, scored per cell.
 const crit = (n) => Array.from({ length: n }, (_, i) => ({ id: `c${i}`, text: `must ${i}` }))
 await allow('feature with criteria', () => addDoc(sub(bob.fs, 'features'), { ...card, criteria: crit(3) }))

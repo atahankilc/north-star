@@ -4,7 +4,7 @@ import { attachmentsAvailable } from './attachments'
 import { db } from './firebase'
 import type { WithId } from './hooks'
 import { useQuery, useWorkspaceCollection } from './hooks'
-import type { Attachment, Comparison, Competitor, CompetitorFeature, Customer, Edge, Feature, Idea, Label, Problem } from './model'
+import type { Attachment, Comparison, Competitor, CompetitorFeature, Customer, Edge, Evidence, Feature, Idea, Label, Problem } from './model'
 
 export type WorkspaceData = {
   labels: WithId<Label>[]
@@ -16,6 +16,8 @@ export type WorkspaceData = {
   competitorFeatures: WithId<CompetitorFeature>[]
   comparisons: WithId<Comparison>[]
   edges: WithId<Edge>[]
+  // What was learned about customers, problems and ideas (D-137): small, and counted on the cards, so loaded up front.
+  evidence: WithId<Evidence>[]
   // Empty where attachments aren't available yet (D-083).
   attachments: WithId<Attachment>[]
   // Reports aren't here (D-098): the reports tab, the report screen and the chat each load what they show.
@@ -31,6 +33,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const competitorFeatures = useWorkspaceCollection<CompetitorFeature>(wid, 'competitorFeatures')
   const comparisons = useWorkspaceCollection<Comparison>(wid, 'comparisons')
   const edges = useWorkspaceCollection<Edge>(wid, 'edges')
+  const evidence = useWorkspaceCollection<Evidence>(wid, 'evidence')
   const attachments = useQuery<Attachment>(
     attachmentsAvailable ? collection(db(), 'workspaces', wid, 'attachments') : null,
     `${wid}/attachments`,
@@ -48,9 +51,11 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
       competitorFeatures: competitorFeatures.data,
       comparisons: comparisons.data,
       edges: edges.data,
+      evidence: evidence.data,
       attachments: attachments.data,
     },
-    // Attachment records don't hold the workspace's loading screen: the board needs only their counts, which fill in.
+    // Attachment records and evidence (D-137) don't hold the workspace's loading screen: the board needs only their
+    // counts, which fill in. Evidence can't fail the workspace either (a rule not deployed yet reads as none).
     isLoading: all.some((l) => l.isLoading),
     error: [...all, attachments].find((l) => l.error)?.error ?? null,
   }

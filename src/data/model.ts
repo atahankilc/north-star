@@ -78,12 +78,41 @@ export type BoardNode = {
 }
 
 // Who it's for, at any breadth; also the segment (D-044). Items are tagged with `for` edges.
-export type Customer = BoardNode
+// How far a customer, problem or idea is from a guess (D-137): set by hand; its evidence informs it.
+export const VALIDATIONS = ['hypothesis', 'testing', 'validated', 'invalidated'] as const
+export type Validation = (typeof VALIDATIONS)[number]
 
-export type Problem = BoardNode
+export type Customer = BoardNode & { validation?: Validation }
+
+export type Problem = BoardNode & { validation?: Validation }
 
 export type Idea = BoardNode & {
   status?: string
+  validation?: Validation
+}
+
+// What was learned, on a customer, problem or idea (D-137): listed in its panel, counted on its card.
+export const EVIDENCE_TYPES = ['customer', 'problem', 'idea'] as const
+export type EvidenceType = (typeof EVIDENCE_TYPES)[number]
+export const EVIDENCE_KINDS = ['interview', 'quote', 'data', 'observation', 'link'] as const
+export type EvidenceKind = (typeof EVIDENCE_KINDS)[number]
+export const STANCES = ['supports', 'contradicts'] as const
+export type Stance = (typeof STANCES)[number]
+
+export type Evidence = {
+  nodeId: string
+  nodeType: EvidenceType
+  kind: EvidenceKind
+  // What was learned, in a sentence or a quote.
+  text: string
+  stance: Stance
+  // Who or where it came from ("Anna, café owner").
+  source?: string
+  url?: string
+  // When it was learned, `YYYY-MM-DD`.
+  date?: string
+  createdAt: number
+  updatedAt: number
 }
 
 // Text written on the board (D-050). Headings and subheadings are places you can jump to; notes aren't (D-116).

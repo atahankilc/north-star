@@ -4,7 +4,7 @@
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, LABEL_SIZES, MAX_CRITERIA, REPORT_LIMITS, type SavedReport } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, EVIDENCE_KINDS, LABEL_SIZES, MAX_CRITERIA, REPORT_LIMITS, STANCES, VALIDATIONS, type SavedReport } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -19,6 +19,8 @@ export const BUNDLE_COLLECTIONS = [
   'competitorFeatures',
   'comparisons',
   'edges',
+  // Missing in older exports (D-137): read as none.
+  'evidence',
 ] as const satisfies readonly (keyof WorkspaceData)[]
 export type BundleCollection = (typeof BUNDLE_COLLECTIONS)[number]
 
@@ -134,7 +136,23 @@ export function cleanCard(d: Doc, now: number) {
   const x = num(d.x)
   const y = num(d.y)
   if (x === undefined || y === undefined) return null
-  return { title: str(d.title, 200) ?? '', ...compact({ body: str(d.body, 20000), tags: tags(d.tags) }), x, y, ...times(d, now) }
+  return {
+    title: str(d.title, 200) ?? '',
+    ...compact({ body: str(d.body, 20000), tags: tags(d.tags), validation: oneOf(d.validation, VALIDATIONS) }),
+    x,
+    y,
+    ...times(d, now),
+  }
+}
+
+// One piece of evidence (D-137), without its card: the importer adds where it now points.
+export function cleanEvidence(d: Doc, now: number) {
+  const text = str(d.text, 2000)?.trim()
+  const kind = oneOf(d.kind, EVIDENCE_KINDS)
+  const stance = oneOf(d.stance, STANCES)
+  if (!text || !kind || !stance) return null
+  const date = typeof d.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.date) ? d.date : undefined
+  return { text, kind, stance, ...compact({ source: str(d.source, 200), url: str(d.url, 2000), date }), ...times(d, now) }
 }
 
 export function cleanFeature(d: Doc, now: number) {

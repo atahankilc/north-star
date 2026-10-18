@@ -30,6 +30,8 @@ export type AssistantWrite =
   | { do: 'project'; fields: { name?: string; description?: string } }
   // A feature's criteria (D-133): the new list (undefined keeps it; scores of the ones gone leave its cells) and scores
   // per competitor by criterion id (null: not assessed).
+  // A piece of evidence on a card (D-137), new or added in the same set.
+  | { do: 'evidence'; on: ChangeRef; fields: Record<string, string> }
   | { do: 'criteria'; feature: { id: string; type: NodeType }; criteria?: Criterion[]; cells: { competitor: ChangeRef; scores: Record<string, CriterionScore | null>; confidence?: string | null }[] }
 
 const BATCH_LIMIT = 450
@@ -75,6 +77,13 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
       const ref = doc(db(), 'workspaces', wid)
       ops.push((b) => b.update(ref, w.fields))
       existing.push(ref)
+      continue
+    }
+    if (w.do === 'evidence') {
+      const ref = doc(col(wid, 'evidence'))
+      const on = w.on
+      ops.push((b) => b.set(ref, { ...w.fields, nodeId: idOf(on), nodeType: on.type, createdAt: now, updatedAt: now }))
+      fresh.push(ref)
       continue
     }
     if (w.do === 'criteria') {

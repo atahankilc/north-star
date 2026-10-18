@@ -5,6 +5,10 @@ import { linked } from '../data/edges'
 import { newCriterionId } from '../data/comparisons'
 import {
   CONFIDENCES,
+  EVIDENCE_KINDS,
+  EVIDENCE_TYPES,
+  STANCES,
+  VALIDATIONS,
   COVERAGES,
   CRITERION_SCORES,
   FEATURE_EFFORTS,
@@ -121,6 +125,19 @@ const OPS = [
     priority: optEnum(FEATURE_PRIORITIES, 'Features only.'),
     status: optEnum(FEATURE_STATUSES, 'Features only.'),
     effort: optEnum(FEATURE_EFFORTS, 'Features only.'),
+    validation: optEnum(
+      VALIDATIONS,
+      'Customers, problems and ideas: how far from a guess. validated or invalidated only when its evidence shows it.',
+    ),
+  }),
+  op('add_evidence', 'Something learned about a customer, problem or idea (an interview, a quote, a number, a link), listed in its panel.', {
+    target: ref('The customer, problem or idea'),
+    kind: { type: 'string', enum: EVIDENCE_KINDS },
+    text: str('What was learned: a finding or a quote, one or two sentences. Only what the user or a source said, never made up.'),
+    stance: { type: 'string', enum: STANCES, description: 'Whether it supports the card or contradicts it.' },
+    source: optStr('Who or where it came from, e.g. "Anna, café owner".'),
+    url: optStr('A link to it, if there is one.'),
+    date: optStr('When it was learned, YYYY-MM-DD.'),
   }),
   op('update_competitor', `Edit an existing competitor. ${KEEP_OR_EMPTY}`, {
     target: ref('The competitor'),
@@ -616,6 +633,28 @@ export function parseProposal(
                       : undefined,
         }
       }
+      case 'add_evidence': {
+        const t = resolve(raw.target)
+        const stance = s(raw.stance)
+        return {
+          ...base,
+          sign: '+',
+          kind: 'evidence',
+          tone: t && (EVIDENCE_TYPES as readonly string[]).includes(t.type) ? (t.type as BoardType) : null,
+          text: `${t?.name ?? '?'}: ${stance === 'contradicts' ? '−' : '+'} ${clip(s(raw.text) ?? '', 80)}`,
+          detail: [s(raw.kind), s(raw.source), isDate(raw.date) && s(raw.date)].filter(Boolean).join(' · ') || undefined,
+          needs: needsOf(t),
+          problem: !t
+            ? 'unknown item'
+            : !(EVIDENCE_TYPES as readonly string[]).includes(t.type)
+              ? `${t.name} isn't a customer, problem or idea`
+              : !s(raw.text)
+                ? 'no text'
+                : !(STANCES as readonly string[]).includes(stance ?? '') || !(EVIDENCE_KINDS as readonly string[]).includes(s(raw.kind) ?? '')
+                  ? 'unknown kind or stance'
+                  : undefined,
+        }
+      }
       case 'set_criteria': {
         const f = resolve(raw.feature)
         const given = criteriaOf(raw)
@@ -924,6 +963,9 @@ export const itemsOf = (raw: Raw): unknown[] => [
   ...(raw.op === 'set_criteria' ? scoresOf(raw).map((x) => x.competitor) : []),
 ]
 
+// A `YYYY-MM-DD` date (D-137).
+const isDate = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v.trim())
+
 // A set_criteria row (D-133): the criteria given (trimmed, empty ones dropped), or null to keep the feature's.
 const criteriaOf = (raw: Raw): string[] | null =>
   Array.isArray(raw.criteria) ? raw.criteria.map((k) => (typeof k === 'string' ? k.trim().slice(0, 200) : '')).filter(Boolean) : null
@@ -1189,7 +1231,15 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         const target = refOf(r.target) as { id: string; type: NodeType }
         const fields =
           r.op === 'update_card'
-            ? compact({ title: text(r.title), body: edit(r.notes), tags: tags(r.tags), priority: text(r.priority), status: text(r.status), effort: text(r.effort) })
+            ? compact({
+                title: text(r.title),
+                body: edit(r.notes),
+                tags: tags(r.tags),
+                priority: text(r.priority),
+                status: text(r.status),
+                effort: text(r.effort),
+                validation: text(r.validation),
+              })
             : compact({
                 name: text(r.name),
                 url: edit(r.url),
@@ -1285,6 +1335,21 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         return { do: 'unlabel', id: textLabels(ws.labels).find((l) => sameLabel(l.text, r.label))!.id }
       case 'update_project':
         return { do: 'project', fields: compact({ name: text(r.name)?.slice(0, NAME_MAX), description: text(r.description)?.slice(0, DESCRIPTION_MAX) }) }
+      case 'add_evidence':
+        return {
+          do: 'evidence',
+          on: refOf(r.target),
+          fields: {
+            kind: s(r.kind)!,
+            text: s(r.text)!.slice(0, 2000),
+            stance: s(r.stance)!,
+            ...Object.fromEntries(
+              Object.entries({ source: s(r.source)?.slice(0, 200), url: s(r.url)?.slice(0, 2000), date: isDate(r.date) ? s(r.date) : undefined }).filter(
+                ([, v]) => v !== undefined,
+              ),
+            ),
+          },
+        }
       case 'set_criteria': {
         // Criteria kept word for word keep their ids, so their scores stay; the rest get new ones (D-133).
         const feature = refOf(r.feature) as { id: string; type: NodeType }

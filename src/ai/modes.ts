@@ -31,7 +31,9 @@ export const MODES: Mode[] = [
       'List the assumptions it rests on: who the customer is, that the problem hurts enough, that our answer works for them, that ' +
       "they'd pay, that we can reach them. For each, say how far the workspace backs it. Name the riskiest one and why. For the three " +
       'riskiest, suggest a cheap test we could run this week and the result that would prove us wrong. Then propose adding them under ' +
-      `"Assumptions & tests" at the end of the idea's notes, keeping what's there. ${LANGUAGE}`,
+      `"Assumptions & tests" at the end of the idea's notes, keeping what's there. If I have told you what we learned (an ` +
+      'interview, a number, a quote), propose it as evidence (add_evidence) on the idea, problem or customer it is about, ' +
+      `and a status that follows from the evidence. ${LANGUAGE}`,
   },
   {
     id: 'interview',
@@ -61,7 +63,8 @@ export const MODES: Mode[] = [
     hint: "what's missing or not linked yet",
     ask: () =>
       'Find the gaps in this workspace: problems with no idea, ideas that solve no problem, items for no customer, our features ' +
-      'not compared with any competitor, competitors with no features broken down, matrix cells not assessed. Group them, most ' +
+      'not compared with any competitor, competitors with no features broken down, matrix cells not assessed, customers, ' +
+      'problems and ideas with no evidence (still guesses) or whose status their evidence does not back. Group them, most ' +
       `important first. Propose only the links that are clearly right, and ask about the rest. ${LANGUAGE}`,
   },
   {

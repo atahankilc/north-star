@@ -1840,3 +1840,31 @@ matrix couldn't tell "we didn't look" from "doesn't apply"; many notes said "the
 - *Verified* in headless Chrome on the emulators: a cell marked not relevant (`—`, its column's footer 0/6 → 0/5), two
   cells given inferred / guess (marks shown); with a fake OpenAI, one proposal set a criteria row `inferred` and a cell not
   relevant. Rules: 260 pass (the 2 usage-log tests fail as before). `npm run build`. Firestore rules deployed 2026-10-19.
+
+### D-137 · 2026-10-19 · Accepted (slice 5 of Phase 6)
+**Status and evidence on customers, problems and ideas.** Every card in BUBBLES said "Hypothesis, not validated demand"
+in its notes, and nothing could ever stop being one: the app had nowhere to put what was learned. Asked two things, the
+user chose: evidence in the card's panel (not evidence cards on the board, which already felt too busy), and a status set
+by hand that the evidence informs (not one worked out by a rule).
+- *Status* (`validation`: hypothesis | testing | validated | invalidated) on customers, problems and ideas, a row in their
+  panel coloured dim / yellow / green / magenta. Not on features: they have their own status.
+- *Evidence:* `workspaces/{wid}/evidence/{id}` (`nodeId, nodeType, kind, text, stance, source?, url?, date?`), kinds
+  interview, quote, data, observation, link; supports or contradicts; date `YYYY-MM-DD`, defaulting to today (local).
+  Its own collection (people add pieces at once; each write its own undo step), loaded with the workspace like
+  attachments (small, and counted on cards). Deleted with its card (`cascadeOf`) and with the workspace; export/import
+  carry it (`evidence` in the bundle, missing = none; version stays 1).
+- *Panel:* `EVIDENCE [add]` opens a form (what, supports / contradicts, kind, from, date); a piece reads `+ interview` /
+  its text / `source · date`, and opens to edit (text, stance, kind, source, date, link) or remove. Under the status,
+  `+2 −1` and a warning when they disagree: validated with nothing for it, or more against than for; invalidated with
+  nothing against.
+- *Card:* the meta line starts with the status and the tally, `!` on a mismatch: `validated ! +1 −2`.
+- *Assistant:* the brief lists `{status}` and each piece under its card (`get_items` in full); `update_card` takes
+  `validation`; `add_evidence` (on a card, also one added in the same proposal; only what the user or a source said).
+  `/validate` proposes what you told it as evidence plus a status; `/gaps` lists cards with no evidence or a status their
+  evidence doesn't back.
+- *Rules:* `validation` in `validCard`; `validEvidence`; `evidence` a known collection (7 new tests).
+- *Not done:* an `assumption` card with experiments (spec's "possibly"); a STATUS filter; status in Table/Flow.
+- *Verified* in headless Chrome on the emulators: a problem set validated (`validated !`), three pieces added (+1 −2, the
+  warning shown); deleting the card removed its 3 pieces, ⌘Z brought back card and pieces; with a fake OpenAI, one
+  proposal added a piece and set `testing` (card `testing +1 −0`). Rules 267 pass (the 2 usage-log tests fail as before).
+  `npm run build`. Firestore rules deployed 2026-10-19.

@@ -93,6 +93,8 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         notRelevant?: true, confidence? documented|inferred|guess (D-136)
                         (id = featureId_competitorId; a feature's own `criteria: {id, text}[]`, ≤ 8, D-133)
   edges/{id}            fromId, fromType, toId, toType, kind, label
+  evidence/{id}         nodeId, nodeType (customer|problem|idea), kind, text, stance (supports|contradicts), source?, url?,
+                        date? (YYYY-MM-DD) (D-137); customers, problems and ideas carry validation? (hypothesis|testing|validated|invalidated)
 inviteCodes/{code}      workspaceId, createdBy
 joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)
 

@@ -1,0 +1,152 @@
+/* A card's status and its evidence (D-137), in its side panel. */
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* The tally and a mismatch, under the status's options. */
+.statusNote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  padding-left: calc(76px + var(--space-4));
+  font-size: var(--text-xs);
+}
+
+.warn {
+  color: var(--accent-yellow);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.label {
+  composes: fieldLabel from '../../ui/Frame.module.css';
+}
+
+.small {
+  composes: small from '../../ui/AsciiButton.module.css';
+  text-decoration: none;
+}
+
+.small:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hint {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  border-bottom: 1px dashed var(--line);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover .text {
+  color: var(--fg-strong);
+}
+
+/* `+` supports in green, `−` contradicts in yellow. */
+.sign {
+  flex-shrink: 0;
+  width: 1ch;
+  color: var(--tone);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.kind {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+.meta {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) 0 var(--space-3);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-2) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+  resize: none;
+  caret-color: var(--accent-magenta);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] .input {
+  color-scheme: light;
+}
+
+.input:focus {
+  border-bottom-color: var(--accent-magenta);
+}
+
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-3);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+}

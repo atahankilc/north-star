@@ -529,3 +529,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - Cells: `notRelevant` (`—`, out of readings and counts) and `confidence` (`~` inferred, `?` guess); panel rows, TSV,
   export/import, assistant (`set_matrix_cell`, `set_criteria`). Verified in headless Chrome on the emulators (also with a
   fake OpenAI); rules tests (3 new); `npm run build`.
+
+## Done (D-137 status and evidence, 2026-10-19)
+- `validation` on customers/problems/ideas, `evidence` collection; panel status row + evidence list, card meta
+  `testing +2 −1` / `!`; cascade, workspace delete, export/import; assistant brief, `add_evidence`, `update_card.validation`,
+  /validate and /gaps. Verified in headless Chrome on the emulators (and a fake OpenAI); rules tests (7 new); build.

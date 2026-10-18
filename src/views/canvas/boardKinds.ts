@@ -1,7 +1,8 @@
 // What differs between the item types on the board (D-040). Everything else is shared.
 import { useMemo } from 'react'
 import type { WithId } from '../../data/hooks'
-import { FOR, type BoardType, type Edge, type EdgeKind } from '../../data/model'
+import { mismatch, tally } from '../../data/evidence'
+import { FOR, type BoardType, type Edge, type EdgeKind, type Evidence, type Validation } from '../../data/model'
 import { useWsView } from '../../state/workspaceView'
 import type { Palette } from '../../styles/tokens'
 import { useWs } from '../workspace/context'
@@ -85,7 +86,7 @@ export function defaultKind(from: BoardType, to: BoardType): EdgeKind {
 // Every board item in the workspace (unfiltered). Competitors without a position yet sit at the origin
 // until the board places them.
 export function useBoardItems(): BoardItem[] {
-  const { customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments } = useWs()
+  const { customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments, evidence } = useWs()
   return useMemo(() => {
     const tags = forTags(edges)
     const names = new Map(customers.map((c) => [c.id, c.title || 'Untitled']))
@@ -111,13 +112,24 @@ export function useBoardItems(): BoardItem[] {
       return n ? `${n} file${n === 1 ? '' : 's'}` : undefined
     }
 
+    // Status and its evidence (D-137): `testing +2 −1`, with `!` when the evidence doesn't back the status.
+    const learned = new Map<string, Evidence[]>()
+    for (const e of evidence) learned.set(e.nodeId, [...(learned.get(e.nodeId) ?? []), e])
+    const proof = (n: { id: string; validation?: Validation }) => {
+      const list = learned.get(n.id) ?? []
+      const t = tally(list)
+      const counts = list.length ? `+${t.supports} −${t.contradicts}` : ''
+      if (!n.validation) return counts || undefined
+      return `${n.validation}${mismatch(n.validation, list) ? ' !' : ''}${counts ? ` ${counts}` : ''}`
+    }
+
     const items: BoardItem[] = []
     for (const c of customers) {
       const tagged = edges.filter((e) => e.kind === FOR && e.toId === c.id).length
-      items.push({ ...c, type: 'customer', tags: c.tags ?? [], forIds: [], meta: line(tagged ? `${tagged} tagged for them` : '', files(c.id)) })
+      items.push({ ...c, type: 'customer', tags: c.tags ?? [], forIds: [], meta: line(proof(c), tagged ? `${tagged} tagged for them` : '', files(c.id)) })
     }
-    for (const p of problems) items.push({ ...p, type: 'problem', tags: p.tags ?? [], forIds: tags.get(p.id) ?? [], meta: line(labels(p.id), files(p.id)) })
-    for (const i of ideas) items.push({ ...i, type: 'idea', tags: i.tags ?? [], forIds: tags.get(i.id) ?? [], meta: line(labels(i.id), files(i.id)) })
+    for (const p of problems) items.push({ ...p, type: 'problem', tags: p.tags ?? [], forIds: tags.get(p.id) ?? [], meta: line(proof(p), labels(p.id), files(p.id)) })
+    for (const i of ideas) items.push({ ...i, type: 'idea', tags: i.tags ?? [], forIds: tags.get(i.id) ?? [], meta: line(proof(i), labels(i.id), files(i.id)) })
     for (const c of competitors) {
       const n = counts.get(c.id) ?? 0
       items.push({
@@ -138,7 +150,7 @@ export function useBoardItems(): BoardItem[] {
       items.push({ ...f, type: 'feature', tags: f.tags ?? [], forIds: tags.get(f.id) ?? [], meta: line(fields, labels(f.id), files(f.id)) })
     }
     return items
-  }, [customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments])
+  }, [customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments, evidence])
 }
 
 // What the filters let through; under a `for:` filter only the chosen customers' cards stay (D-119).

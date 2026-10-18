@@ -20,14 +20,15 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | Entity | Description | Key fields |
 |---|---|---|
 | **Workspace** | One startup idea space; the unit of sharing | name, description, members, roles (owners, editors, viewers; D-098) |
-| **Customer** | Who it's for, at any breadth; doubles as the segment (D-044) | title, notes, position |
-| **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position |
+| **Customer** | Who it's for, at any breadth; doubles as the segment (D-044) | title, notes, position, status (D-137) |
+| **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position, status (D-137) |
 | **Text label** | Text written on the board; names an area and is a place to jump to (D-050) | text, position |
 | **Idea** (post-it) | A thought, problem, insight or feature idea | title, body, color, tags, position (x,y,z), status, attachments |
 | **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label |
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, linked ideas |
 | **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor |
+| **Evidence** | What was learned about a customer, problem or idea: listed in its panel, counted on its card (D-137) | card, kind (`interview`/`quote`/`data`/`observation`/`link`), text, supports or contradicts, source, link, date |
 | **Comparison** | How a competitor covers one of our features | feature, competitor, coverage (`none`/`partial`/`full`/`better`), notes, linked competitor feature, a score per feature criterion (`met`/`part`/`no`, D-133), not relevant, confidence (`documented`/`inferred`/`guess`, D-136) |
 | **Attachment** | Image, SVG or PDF on any card (D-083; upload only, no sketch pad) | file, type, name, size, owner item |
 

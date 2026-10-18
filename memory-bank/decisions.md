@@ -13,6 +13,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Startup-ideation workspace for any kind of startup (B2B, B2C, anything); web only, sign-in required (D-008, D-043).
 - Name: North Star; the Firebase project is `north-star-db` (D-017).
 - Item types: customer, problem, competitor (+ its features), idea, feature, all on one board (D-007, D-040, D-041, D-042).
+- Customers, problems and ideas have a status you set (hypothesis, testing, validated, invalidated) and evidence in their
+  panel (kind, text, supports/contradicts, source, date, link); the card reads `testing +2 −1`, `!` when they disagree (D-137).
 - Customers are the segments: a `for` edge tags an item with a customer, a chip on the card and a grey dashed line; the
   `for:` filter shows only the chosen customers' cards (D-044, D-119). The lines are their own LINKS group; it and
   `relates` are hidden by default (still shown for the selected card) (D-128).
@@ -157,6 +159,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   `quadrant` (an area's first four sections as a 2 × 2) (D-129).
 - Areas are section frames by default (`frame`; a reused heading stays one), their sections nested frames; frames that
   stay are kept clear; `add_section` / `edit_section` / `delete_section`; label and section text set bold/italic/caps, H1–H3; areas take a colour (D-131).
+- `add_evidence` (on a customer, problem or idea) and `validation` in `update_card`; `/validate` logs what you learned,
+  `/gaps` lists unbacked cards (D-137).
 - `set_criteria`: one row per feature, its criteria and every competitor's scores; a criterion kept word for word keeps its
   scores, dropped ones leave the cells; mode `/criteria` scores the matrix from what the workspace shows (D-134).
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).
