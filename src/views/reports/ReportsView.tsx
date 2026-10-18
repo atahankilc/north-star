@@ -270,7 +270,8 @@ export function ReportsView() {
             }}
           />
         </div>
-        <section className={styles.table} ref={table} aria-label="Reports">
+        {/* Builds up cell by cell like every view's frame (D-034); opening a report rebuilds it again (below). */}
+        <Appear as="section" className={styles.table} elRef={table} aria-label="Reports">
           {upload?.error && (
             <p className={styles.note}>
               ! {upload.error}{" "}
@@ -418,7 +419,7 @@ export function ReportsView() {
               </button>
             </nav>
           )}
-        </section>
+        </Appear>
 
         {open && (
           <Appear key={open} className={styles.reader}>

@@ -418,6 +418,13 @@ and last write wins D-071). Next: Phase 4 (settings + AI, BYOK).
   `canvasStore.fitAll`). Settings: no "Settings" title above the menu. Reports table on the shared frame surface like the
   other tables (was solid `--bg`, D-102); the report reader stays solid. Verified headless on emulators (fit button and `0`). Committed.
 
+## Done (link handle + reports entrance, 2026-10-18)
+- The `○` link handle (D-108) no longer flickers: the card ignores a pointer-out while the pointer is still on one of its own
+  parts, and the handle has a wider invisible hit circle (0.2) carrying its handlers. Verified headless on emulators: a sweep
+  across the handle gives one leave and one enter (was a dozen), presses on the handle start a link.
+- The reports table builds up cell by cell on entering the tab like the other views (`Appear` gained `elRef` for the open/close rebuild).
+  Verified headless (clip-path runs right after the tab switch). Typecheck passes.
+
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
    - Try `edit_link` / `add_note` with a real key (only tested with a fake OpenAI).

@@ -5,7 +5,7 @@
 import { Html, Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useMemo, useRef, useState } from 'react'
-import { MathUtils, MeshBasicMaterial, Plane, Vector3, type Group } from 'three'
+import { MathUtils, MeshBasicMaterial, Plane, Vector3, type Group, type Object3D } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { endMove, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
@@ -79,9 +79,16 @@ function StrikeLines({ strikes, color, z = 0.003 }: { strikes: Strike[]; color: 
   ))
 }
 
+const isWithin = (o: Object3D | null, root: Object3D | null) => {
+  for (; o; o = o.parent) if (o === root) return true
+  return false
+}
+
 const BADGE = 0.17
 // The link handle on a hovered card's right edge.
 const HANDLE = 0.1
+// What the pointer can grab around it: wider than it looks, it's small.
+const HANDLE_HIT = 0.2
 const WAS_H = 0.24
 
 export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], mark, was, lit = false, onLinkDrop }: Props) {
@@ -247,7 +254,10 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
         // Lights its row in the assistant's checklist (D-096).
         if (mark) markHover(node.id).onPointerEnter()
       }}
-      onPointerOut={() => {
+      onPointerOut={(e) => {
+        // Moving between the card's own parts (body, text, the link handle) isn't leaving it: R3F reports an out
+        // whenever the part first hit is no longer under the pointer.
+        if (e.intersections.some((h) => isWithin(h.object, group.current))) return
         setHovered(false)
         if (useCanvas.getState().hoverId === node.id) setHover(null)
         document.body.style.cursor = ''
@@ -429,19 +439,24 @@ export function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [
         </Html>
       )}
       {(hovered || isLinkSource) && !editLocked() && (
-        <mesh
-          position={[W / 2, 0, 0.004]}
-          onPointerDown={onHandleDown}
-          // Not stopped: the card has to keep its hover, or the handle goes away under the pointer.
-          onPointerOver={() => (overHandle.current = true)}
-          onPointerOut={() => {
-            overHandle.current = false
-            document.body.style.cursor = 'grab'
-          }}
-        >
-          <circleGeometry args={[HANDLE, 20]} />
-          <meshBasicMaterial color={isLinkSource ? colors.cyan : colors.fg} toneMapped={false} />
-        </mesh>
+        <group position={[W / 2, 0, 0.004]}>
+          <mesh
+            onPointerDown={onHandleDown}
+            // Not stopped: the card has to keep its hover, or the handle goes away under the pointer.
+            onPointerOver={() => (overHandle.current = true)}
+            onPointerOut={() => {
+              overHandle.current = false
+              document.body.style.cursor = 'grab'
+            }}
+          >
+            <circleGeometry args={[HANDLE_HIT, 20]} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
+          </mesh>
+          <mesh>
+            <circleGeometry args={[HANDLE, 20]} />
+            <meshBasicMaterial color={isLinkSource ? colors.cyan : colors.fg} toneMapped={false} />
+          </mesh>
+        </group>
       )}
       <CardReveal content={content} uniforms={cell} />
     </group>

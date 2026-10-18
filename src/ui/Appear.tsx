@@ -9,6 +9,7 @@ import {
   useRef,
   type ComponentPropsWithoutRef,
   type ElementType,
+  type RefObject,
 } from 'react'
 import { useRevealed } from '../state/curtain'
 import { isReducedMotion } from '../state/motion'
@@ -91,9 +92,11 @@ type Props<T extends ElementType> = {
   // Stagger lists: ms before this element starts building.
   delay?: number
   duration?: number
+  // The element itself, for a caller that runs its own rebuild on it later (runCells).
+  elRef?: RefObject<HTMLElement | null>
 } & Omit<ComponentPropsWithoutRef<T>, 'as'>
 
-export function Appear<T extends ElementType = 'div'>({ as, delay = 0, duration = DURATION_MS, ...rest }: Props<T>) {
+export function Appear<T extends ElementType = 'div'>({ as, delay = 0, duration = DURATION_MS, elRef, ...rest }: Props<T>) {
   const Tag = (as ?? 'div') as ElementType
   const ref = useRef<HTMLElement>(null)
   const [isPresent, safeToRemove] = usePresence()
@@ -123,5 +126,13 @@ export function Appear<T extends ElementType = 'div'>({ as, delay = 0, duration 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPresent])
 
-  return <Tag ref={ref} {...rest} />
+  return (
+    <Tag
+      ref={(el: HTMLElement | null) => {
+        ref.current = el
+        if (elRef) elRef.current = el
+      }}
+      {...rest}
+    />
+  )
 }
