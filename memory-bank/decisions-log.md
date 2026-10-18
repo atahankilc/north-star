@@ -1285,6 +1285,24 @@ hand was too hard; keep the grid small so any shape is still possible; a button 
 - Verified headless on emulators (example workspace, dark, 1440): a drag lands on (−22.75, 1.25); alt+drag lands off the
   grid; button and `g` switch it and it's remembered; the quarter dots show close up.
 
+### D-113 · 2026-10-18 · Accepted (refines D-059, D-058)
+**Several links between the same two cards are all drawn, side by side.** User: "do the offsetting thing if there are two or
+more links between two cards". Until now the board drew one line per pair of cards (a direct link won, then the first
+link to one of a competitor's stacked features), so the others were invisible on the board.
+- *Lines* (`sideBySide` in `src/views/canvas/Board.tsx`): every link of a pair is drawn, moved square to the line so the
+  set is centred on the cards' centres, 0.32 units apart (a chip's height and a little); with many links the spacing
+  shrinks so the spread stays within 80% of the smaller end's shorter side (a card, a fanned feature, or a star far
+  out), and every line still leaves its card. The side is taken from the pair (ids in order), not the link's direction,
+  so A → B and B → A sit apart. Direct links come first, then links through a competitor's stacked features (D-058).
+- *Chips* (`chipShift` on `EdgeLine`): on steep lines the chips (wider than the spacing) would sit on each other, so each
+  moves along its line by 0.36 × its slot × how steep the line is; never past the visible line, so between close cards
+  they bunch up instead of going under a card. The link bar sits at the moved line's middle.
+- Making links is unchanged: dragging the `○` handle still refuses a second direct link between two cards; pairs come from
+  both directions, competitor features, the assistant's proposals, imports.
+- Also answered: link chips already hide when too small to read (D-111); the remaining idea is a constant on-screen size.
+- Verified headless on emulators (example workspace, dark, 1440 × 900): three links (solves, depends on reversed,
+  contradicts) on a diagonal pair, a vertical pair and two close vertical cards; fit-all with chips hidden.
+
 ### D-114 · 2026-10-18 · Accepted (extends D-084, D-094; next step of the assistant redesign)
 **Steps are a live log with times that folds once the answer is done; on a phone the chat and the stage take turns.**
 The user's picks, from three options each: "live log, then fold" (over an ASCII progress bar, or polishing the lines as they
@@ -1303,3 +1321,12 @@ were) and "toggle chat ↔ stage" (over a bottom sheet, or the stage hiding the 
 - Verified on emulators with headless Chrome and a fake OpenAI streaming in the page (fetch wrapped, slow on purpose): 1440 dark
   (thinking → read 1.4s → `!` 1.8s → writing → folded 8.1s → unfolded) and 390 (fold, proposal, preview → strip at the bottom
   with the stage above it, `chat` back, Esc ends the preview and the switch). Build passes.
+
+### D-115 · 2026-10-18 · Accepted (refines D-108's focus, D-058)
+**Selecting (or hovering) a competitor lights the links to its features too, not only its own.** User: "if I selected a
+competitor and there are links to its features, those links should be highlighted too, besides the ones going straight
+to the competitor". Fanned out, those links end at the feature chips, so the focus check (ends and drawn ends only) dimmed
+them. Now each line's `touches` (Board.tsx) adds the competitor that owns a feature end; it drives both the faint/lit
+focus and `active` (thicker, kept through the LINKS filter).
+- Verified headless on emulators (example workspace, dark, 1440 × 900): Crewly selected, its `competes` link and the
+  `inspired by` link to its "Availability collection" feature lit, everything else faint.

@@ -1,6 +1,7 @@
 // A link between two things on the board (D-059): a straight line from edge to edge with an arrowhead, so you can
 // read it as a sentence ("idea → solves → problem"). Its colour says what kind of link it is (D-108, linkKinds.ts), its
-// pattern which kind inside that group, and the kind (and the link's own label) sits on a framed chip at the midpoint.
+// pattern which kind inside that group, and the kind (and the link's own label) sits on a framed chip at the midpoint
+// (moved along the line when links sit side by side).
 // Clicking the line or the chip selects the link.
 import { Line, Text } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
@@ -52,6 +53,8 @@ type Props = {
   // Half the size of what sits at each end, so the line stops at its edge (0 for the pointer while linking).
   fromHalf: Vec2
   toHalf: Vec2
+  // Moves the chip this far along the line from its middle (board units), so side-by-side links' chips don't overlap.
+  chipShift?: number
   kind?: string
   label?: string
   // Touches the selected card: drawn thicker.
@@ -64,7 +67,7 @@ type Props = {
   onSelect?: () => void
 }
 
-export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', label, active, dim, selected, tint, onSelect }: Props) {
+export function EdgeLine({ from, to, fromHalf, toHalf, chipShift = 0, kind = 'relates', label, active, dim, selected, tint, onSelect }: Props) {
   const style = linkStyle(kind)
   const colors = usePalette()
   const [hovered, setHovered] = useState(false)
@@ -91,6 +94,9 @@ export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', label, 
   if (length < ARROW * 2) return null
 
   const width = selected ? 3 : active || hovered ? 2.2 : 1.5
+  // The chip stays on the visible line, even between close cards.
+  const room = Math.max(0, (length - CHIP_H) / 2 - ARROW)
+  const shift = Math.max(-room, Math.min(room, chipShift))
   const chipW = text.length * CHAR_W + 0.18
   const handlers = onSelect && {
     onClick: (e: ThreeEvent<MouseEvent>) => {
@@ -137,7 +143,7 @@ export function EdgeLine({ from, to, fromHalf, toHalf, kind = 'relates', label, 
       </mesh>
       {text && (readable || selected) && (
         // A framed chip on solid ground, so the words read over crossing lines and the backdrop.
-        <group position={[mid[0], mid[1], 0.01]} {...handlers}>
+        <group position={[mid[0] + Math.cos(angle) * shift, mid[1] + Math.sin(angle) * shift, 0.01]} {...handlers}>
           <mesh>
             <planeGeometry args={[chipW + BORDER * 2, CHIP_H + BORDER * 2]} />
             <meshBasicMaterial color={color} transparent opacity={opacity} toneMapped={false} />

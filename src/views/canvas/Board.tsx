@@ -356,13 +356,14 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   }
 
   // Links to a competitor's stacked features point at the competitor, so they show without fanning it out (D-058).
-  // A pair of cards gets one line: a direct link wins, then the first feature link.
+  // Several links between the same pair of cards (both ways, or through a competitor's features) are drawn side by
+  // side: `slot` is a line's place in its pair, direct links first, and `of` how many the pair has.
   const hiddenLinks = useWsView((s) => s.hiddenLinks)
   const lines = useMemo(() => {
     const owner = new Map(competitorFeatures.map((f) => [f.id, f.competitorId]))
     const end = (id: string) => (positions.has(id) ? id : (owner.get(id) ?? id))
-    const seen = new Set<string>()
-    const out: { edge: (typeof edges)[number]; from: string; to: string; active: boolean }[] = []
+    const count = new Map<string, number>()
+    const out: { edge: (typeof edges)[number]; from: string; to: string; touches: string[]; active: boolean; pair: string; slot: number; of: number }[] = []
     const viaStack = (e: (typeof edges)[number]) => end(e.fromId) !== e.fromId || end(e.toId) !== e.toId
     for (const edge of [...edges].sort((x, y) => Number(viaStack(x)) - Number(viaStack(y)))) {
       const from = end(edge.fromId)
@@ -370,14 +371,18 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
       if (from === to || !positions.has(from) || !positions.has(to)) continue
       // Customer tags are labels on the card; their lines show only while that customer is selected.
       if (edge.kind === FOR && edge.toId !== customerId) continue
+      // What the link counts as touching for focus: its ends, where it's drawn, and the competitor whose feature it
+      // reaches, so selecting a competitor lights links to its features too, fanned out or not.
+      const touches = [edge.fromId, edge.toId, from, to, owner.get(edge.fromId), owner.get(edge.toId)].filter((id): id is string => Boolean(id))
       // Hidden by the LINKS filter (D-108), unless it's the selected card's.
-      const active = [edge.fromId, edge.toId, from, to].includes(selectedId ?? '')
+      const active = touches.includes(selectedId ?? '')
       if (hiddenLinks.includes(linkStyle(edge.kind).group) && !active) continue
       const pair = from < to ? `${from}|${to}` : `${to}|${from}`
-      if (seen.has(pair)) continue
-      seen.add(pair)
-      out.push({ edge, from, to, active })
+      const slot = count.get(pair) ?? 0
+      count.set(pair, slot + 1)
+      out.push({ edge, from, to, touches, active, pair, slot, of: 0 })
     }
+    for (const line of out) line.of = count.get(line.pair)!
     return out
   }, [edges, positions, competitorFeatures, customerId, selectedId, hiddenLinks])
 
@@ -391,7 +396,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
     return ids.length ? new Set(ids) : null
   }, [hoverId, selection, positions])
   const dimmed = (line: (typeof lines)[number]) =>
-    edgeId ? line.edge.id !== edgeId : focusIds ? ![line.edge.fromId, line.edge.toId, line.from, line.to].some((id) => focusIds.has(id)) : false
+    edgeId ? line.edge.id !== edgeId : focusIds ? !line.touches.some((id) => focusIds.has(id)) : false
 
   // Where every card and label is, for dragging a selection together (groupDrag.ts).
   useEffect(() => {
@@ -433,6 +438,11 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
   const linkSource = linkFrom ? positions.get(linkFrom) : undefined
   const cardHalf = far ? NODE_HALF : CARD_HALF
   const chipHalf = far ? SMALL_NODE_HALF : CHIP_HALF
+  const halfOf = (id: string) => (chips.has(id) ? chipHalf : cardHalf)
+  const selectedLinkAt = (line: (typeof lines)[number]) => {
+    const { from, to } = sideBySide(line, positions.get(line.from)!, positions.get(line.to)!, Math.min(...halfOf(line.from), ...halfOf(line.to)))
+    return midpoint(from, to)
+  }
 
   return (
     <>
@@ -473,13 +483,17 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
 
       {lines.map((line) => {
         const { edge, from, to, active } = line
+        const fromHalf = halfOf(from)
+        const toHalf = halfOf(to)
+        const { from: a, to: b, chipShift } = sideBySide(line, positions.get(from)!, positions.get(to)!, Math.min(...fromHalf, ...toHalf))
         return (
           <EdgeLine
             key={edge.id}
-            from={positions.get(from)!}
-            to={positions.get(to)!}
-            fromHalf={chips.has(from) ? chipHalf : cardHalf}
-            toHalf={chips.has(to) ? chipHalf : cardHalf}
+            from={a}
+            to={b}
+            fromHalf={fromHalf}
+            toHalf={toHalf}
+            chipShift={chipShift}
             kind={edge.kind}
             label={edge.label}
             active={active}
@@ -495,7 +509,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
         <LinkBar
           wid={wid}
           edge={selectedLine.edge}
-          at={midpoint(positions.get(selectedLine.from)!, positions.get(selectedLine.to)!)}
+          at={selectedLinkAt(selectedLine)}
         />
       )}
       {editable && selectedLabel && !editingLabel && (
@@ -546,6 +560,35 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
 }
 
 const midpoint = (a: [number, number], b: [number, number]): [number, number] => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+
+// Room between links drawn side by side: a chip's height and a little, so their chips don't overlap.
+const LINK_SPACING = 0.32
+// How far the chips of side-by-side links move along their lines, for steep lines, where the chips (wider than the
+// spacing) would otherwise sit on each other.
+const CHIP_STAGGER = 0.36
+
+// Moves one of a pair's links sideways, square to the line, so the pair's links sit side by side centred on the cards'
+// centres. The side comes from the pair (not the link's direction), so A → B and B → A part instead of swapping. The
+// spread stays inside the smaller end (`half`, its smallest half size), so every line still leaves the card.
+function sideBySide(
+  line: { pair: string; from: string; slot: number; of: number },
+  from: [number, number],
+  to: [number, number],
+  half: number,
+): { from: [number, number]; to: [number, number]; chipShift: number } {
+  const len = Math.hypot(to[0] - from[0], to[1] - from[1])
+  if (line.of < 2 || len === 0) return { from, to, chipShift: 0 }
+  const step = Math.min(LINK_SPACING, (half * 1.6) / (line.of - 1))
+  const sign = line.pair.startsWith(`${line.from}|`) ? 1 : -1
+  const k = (line.slot - (line.of - 1) / 2) * sign
+  const nx = (-(to[1] - from[1]) / len) * k * step
+  const ny = ((to[0] - from[0]) / len) * k * step
+  return {
+    from: [from[0] + nx, from[1] + ny],
+    to: [to[0] + nx, to[1] + ny],
+    chipShift: k * CHIP_STAGGER * (Math.abs(to[1] - from[1]) / len),
+  }
+}
 
 // The box being drawn round things to select them (D-108).
 function SelectBox({ from, to, color }: { from: [number, number]; to: [number, number]; color: string }) {

@@ -74,7 +74,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Competitor features stack behind it and fan out once the click is released (D-058).
 - Links: straight, arrowhead, kind written on a solid chip; colour by meaning in 4 groups (violet solves/part of, salmon
   competes/contradicts, sand inspired/depends, grey relates/for); hover/selection dims others; click a link → bar (kind,
-  label, reverse, remove); LINKS filter (D-059, D-108).
+  label, reverse, remove); LINKS filter (D-059, D-108). Several links between two cards sit side by side, chips staggered (D-113).
+- A competitor in focus (hovered, selected) lights the links to its features as well (D-115).
 - Multi-select (shift+click, alt+drag box), group drag, "N selected" panel; ⌘C/⌘V/⌘D in-tab clipboard; `○` link handle (D-108).
 - Labels: text on the board, sizes heading/subheading/note + colour; jump list `go to` with 1–9 (D-050, D-108).
 - Grid: `+` turns to dots and fades by camera distance (D-110). Depth range follows the camera; text and card detail by

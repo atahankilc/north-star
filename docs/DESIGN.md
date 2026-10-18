@@ -102,7 +102,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   border in the link's colour) at the midpoint. Colour by meaning, from `--link-*` tokens kept apart from type, people and
   diff colours: violet solves / part of, salmon competes / contradicts, sand inspired by / depends on, grey relates / for;
   line pattern tells kinds apart inside a group. Thicker on the selected card; links not touching the hovered or selected
-  card go faint. A selected link fills its chip. No animation
+  card go faint (a competitor's include the links to its features, D-115). A selected link fills its chip. No animation. Several links between the same two cards sit side by side,
+  0.32 apart (closer if the end is too small), their chips moved along the lines so they don't overlap (D-113)
 - Floating bars (D-108, `FloatBar.module.css`): a selected link or text label gets a small solid bar under it (2px top edge
   in its colour) with its tools; the only tool UI drawn on the board itself
 
