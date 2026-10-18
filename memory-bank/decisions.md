@@ -86,6 +86,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   The panel lines up (align 6 ways, space out ↔ ↕), arrows nudge 0.25 (shift 1), presence `more` sends the whole selection (D-124).
 - Planes (D-139, spec planes.md): one set of cards placed on many planes; All shows every card (today's board, no
   migration); per-plane placements, sections and text; links drawn when both ends are on the plane; packages are cards.
+- On the board (D-140): `PLANE ▾` switcher, `existing ▾` to bring cards in, ⌫ takes cards off a plane (delete stays
+  everywhere), cards made on a plane also land right of All, `on N planes` / `+N off-plane`, cursors per plane.
 - Sections: a named frame (label `kind: 'section'`, w/h), drawn with a crosshair (press, drag, release; never placed),
   holding by position whatever is inside it (cards, text, smaller sections); drag the band or edge carries it all, corner
   resizes, delete leaves contents, never copied; name set like text (H1–H3, B/I/AA), not scaled; kept in the focus view

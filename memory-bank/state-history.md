@@ -538,3 +538,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 ## Done (D-138 priorities, 2026-10-19)
 - Impact on features; confidence from the chain's status; priorities tab (impact × effort, suggested order); `/prioritize`.
   Verified in headless Chrome on the emulators; rules tests; `npm run build`.
+
+## Done (D-140 planes on the board, 2026-10-19)
+- Plane switcher, placements, `existing ▾`, panel `planes` row, ⌫ = take off plane, plane text/sections, presence per
+  plane, export/import. Verified in headless Chrome on the emulators; rules tests (9 new); `npm run build`.

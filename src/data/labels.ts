@@ -4,13 +4,16 @@ import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc } from 'fire
 import { db } from './firebase'
 import { absent, snapshotWith, tracked } from './history'
 import type { Label } from './model'
+import { ALL, openPlane } from './planes'
 
 const labelsOf = (wid: string) => collection(db(), 'workspaces', wid, 'labels')
 
+// On the open plane (D-139): text and sections belong to one plane.
 export async function createLabel(wid: string, fields: Omit<Label, 'createdAt' | 'updatedAt'>) {
   const now = Date.now()
   const ref = doc(labelsOf(wid))
-  await tracked('new text', [ref], () => setDoc(ref, { ...fields, createdAt: now, updatedAt: now }), {
+  const plane = openPlane() === ALL ? {} : { planeId: openPlane() }
+  await tracked('new text', [ref], () => setDoc(ref, { ...fields, ...plane, createdAt: now, updatedAt: now }), {
     before: absent([ref]),
     key: `label:${ref.id}:text`,
   })

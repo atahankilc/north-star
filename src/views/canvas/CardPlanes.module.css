@@ -1,0 +1,44 @@
+/* `planes  All · MVP · Competitors  [place on ▾]` (D-139), lined up with the Choice rows (Choice.module.css). */
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.label {
+  composes: fieldLabel from '../../ui/Frame.module.css';
+  flex-shrink: 0;
+  width: var(--label-w, 76px);
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.plane {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.plane:hover {
+  color: var(--fg-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-cyan);
+}
+
+/* The plane open now. */
+.plane[data-open='true'] {
+  color: var(--fg-strong);
+}
+
+.small {
+  composes: small from '../../ui/AsciiButton.module.css';
+}

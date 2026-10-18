@@ -5,7 +5,12 @@ import type { WorkspaceData } from '../../data/workspaceData'
 import { OutsidePreview } from './preview'
 import { useStage } from './stage'
 
-export type WorkspaceCtx = WorkspaceData & { wid: string; workspace: WithId<Workspace> }
+// `plane`: set when the board shows a plane other than All (D-139), with every card's place on All.
+export type WorkspaceCtx = WorkspaceData & {
+  wid: string
+  workspace: WithId<Workspace>
+  plane?: { id: string; allSpots: { x: number; y: number }[] }
+}
 
 export const WorkspaceContext = createContext<WorkspaceCtx | null>(null)
 

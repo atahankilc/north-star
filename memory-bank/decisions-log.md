@@ -1902,3 +1902,36 @@ cards, planes split only where they're looked at. The user went with the recomme
 - *Sections and text per plane* (Q-018): `planeId` on labels, missing = All.
 - Data: `planes/{pid}`, `placements/{pid}_{itemId}` (x, y), links stay the workspace's (drawn when both ends are on the
   plane, `+N off-plane` otherwise). Steps: planes, packages, the assistant on planes, a plane filter in other views.
+
+### D-140 · 2026-10-19 · Accepted (step 1 of D-139)
+**Planes on the board.** Built as the spec says (docs/specs/planes.md §2–§3, §5), with these choices:
+- *Positions:* the board draws the open plane: on All the cards' own x/y, elsewhere only the placed cards at their
+  `placements/{planeId}_{itemId}`. Every position write goes through `positionRef` (nodes.ts) / `placeOf` (selection.ts),
+  which follow the open plane (`usePlaneView` in state/plane.ts, mirrored into data/planes.ts `openPlane()`): drags,
+  group drags, nudges, align/space. Anything but the board writes to All (it resets on leaving), so other views and the
+  assistant are unchanged.
+- *New things on a plane:* a card is made with its placement in one undo step, and lands on All in a column right of
+  everything there (`allSpot`); paste and duplicate the same. Text and sections get `planeId`; the project title block
+  stays on All only (not offered elsewhere).
+- *Delete:* on a plane other than All the ⌫ key takes cards off it ("Took "Crewly" off Competitors (still on All)",
+  undoable); text there is deleted. The right-click menu has `take off this plane` (⌫) and `delete everywhere`; the
+  panel's delete still deletes everywhere.
+- *Switcher:* `PLANE │ All ▾` first in the filter bar: All and each plane with card counts, `new plane` (named "Plane N",
+  renamed in place straight away), rename, delete (its placements, text and sections; cards stay; one undo step).
+  `?plane=<id>`; `[` / `]` step through them. Each plane keeps its own camera.
+- *Bringing cards in:* `existing ▾` beside `+` on a plane: every card not on it, by type, searchable; placed at the
+  view's centre, clear of the plane's cards. A card's panel has a `planes` row: All and the planes it's on (click to see it
+  there), `place on ▾` another, `take off this plane`.
+- *Cards:* meta starts `on 3 planes` when on more than All; on a plane, `+4 off-plane` counts links to cards not on it
+  (a competitor's features count as it). Links are drawn only when both ends are on the plane.
+- *Presence:* `plane` beside `view` (RTDB rule); cursors only for people on the same plane; following someone switches to
+  their plane.
+- *Data:* `planes`, `placements` load with the workspace (they hold the loading screen but can't fail it); placements go
+  with their card (cascade) and with the workspace; export/import carry planes, placements and plane text (new ids).
+- *Not yet:* the focus view stays on All; the assistant's writes and previews are on All (step 3); no plane filter in
+  other views (step 4); a plane's own title block.
+- *Verified* in headless Chrome on the emulators: new plane renamed "Competitors", two cards brought in with `existing`
+  (meta `on 2 planes · +2 off-plane`), a nudge moved only the placement, a new idea landed on the plane and on All's right
+  column, ⌫ took a card off (toast) and ⌘Z put it back, `[` / `]` switched, deleting the plane kept all 23 cards; text on a
+  plane only there; export → import kept the plane, 3 placements and its text. Rules 279 pass (the 2 usage-log tests
+  fail as before). `npm run build`. Firestore + RTDB rules deployed 2026-10-19.

@@ -13,6 +13,7 @@ import {
 import { attachmentsAvailable } from './attachments'
 import { db } from './firebase'
 import { absent, snapshotWith, tracked } from './history'
+import { ALL, openPlane, placementRef } from './planes'
 import type {
   Attachment,
   BoardNode,
@@ -23,6 +24,7 @@ import type {
   Customer,
   Edge,
   Evidence,
+  Placement,
   Feature,
   Idea,
   NodeType,
@@ -69,19 +71,41 @@ const LABELS: Record<NodeType, string> = {
   competitorFeature: 'competitor feature',
 }
 
-// A new card on the board. Competitors keep their title as `name`.
-export function createBoardNode(
+// A new card on the board. Competitors keep their title as `name`. Made on a plane other than All (D-139), it's placed
+// there at `at` and lands on All at `allAt` (a free spot there), as one undo step.
+export async function createBoardNode(
   wid: string,
   type: BoardType,
   at: { x: number; y: number },
   fields: Partial<BoardNode> = {},
+  allAt: { x: number; y: number } = at,
 ) {
-  if (type === 'competitor') {
-    const { title = '', body: _body, tags: _tags, ...rest } = fields
-    return createNode(wid, 'competitor', { ...rest, name: title, x: at.x, y: at.y })
-  }
-  return createNode(wid, type, { title: '', ...fields, x: at.x, y: at.y } as never)
+  const plane = openPlane()
+  const own =
+    type === 'competitor'
+      ? (({ title = '', body: _body, tags: _tags, ...rest }) => ({ ...rest, name: title }))(fields)
+      : { title: '', ...fields }
+  if (plane === ALL) return createNode(wid, type, { ...own, x: at.x, y: at.y } as never)
+  const now = Date.now()
+  const ref = doc(col(wid, COLLECTIONS[type]))
+  const spot = placementRef(wid, plane, ref.id)
+  await tracked(
+    `new ${LABELS[type]}`,
+    [ref, spot],
+    async () => {
+      const batch = writeBatch(db())
+      batch.set(ref, { ...own, x: allAt.x, y: allAt.y, createdAt: now, updatedAt: now })
+      batch.set(spot, { planeId: plane, itemId: ref.id, itemType: type, x: at.x, y: at.y })
+      await batch.commit()
+    },
+    { before: absent([ref, spot]) },
+  )
+  return ref.id
 }
+
+// Where a card's place on the open plane is stored (D-139): its own doc on All, its placement on another plane.
+export const positionRef = (wid: string, type: BoardType, id: string) =>
+  openPlane() === ALL ? doc(col(wid, COLLECTIONS[type]), id) : placementRef(wid, openPlane(), id)
 
 // `undefined` clears a field (Firestore rejects undefined values).
 // Typing in one field merges into one undo step.
@@ -95,12 +119,12 @@ export function updateNode<T extends NodeType>(wid: string, type: T, id: string,
 
 // The live stream while dragging: not undoable on its own, see endMove.
 export function moveNode(wid: string, type: BoardType, id: string, x: number, y: number) {
-  return updateDoc(doc(col(wid, COLLECTIONS[type]), id), { x, y })
+  return updateDoc(positionRef(wid, type, id), { x, y })
 }
 
 // The end of a drag: one undo step from where the card started.
 export async function endMove(wid: string, type: BoardType, id: string, from: [number, number], to: [number, number]) {
-  const ref = doc(col(wid, COLLECTIONS[type]), id)
+  const ref = positionRef(wid, type, id)
   const before = await snapshotWith(ref, { x: from[0], y: from[1] })
   return tracked(`move ${LABELS[type]}`, [ref], () => updateDoc(ref, { x: to[0], y: to[1] }), { before })
 }
@@ -139,6 +163,11 @@ export async function cascadeOf(wid: string, type: NodeType, id: string): Promis
   for (const d of edges.docs) {
     const e = d.data() as Edge
     if (ids.has(e.fromId) || ids.has(e.toId)) refs.push(d.ref)
+  }
+  // Its places on planes (D-139).
+  if (type !== 'competitorFeature') {
+    const places = await getDocs(col(wid, 'placements'))
+    for (const d of places.docs) if ((d.data() as Placement).itemId === id) refs.push(d.ref)
   }
   // Evidence about it (D-137).
   if (type === 'customer' || type === 'problem' || type === 'idea') {

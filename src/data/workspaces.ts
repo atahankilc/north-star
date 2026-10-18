@@ -247,7 +247,7 @@ export function describeWorkspace(wid: string, description: string) {
 // Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
 // `domains` and `groups` are retired (D-048, D-049) but older workspaces may still hold some.
 const WORKSPACE_COLLECTIONS = [
-  'labels', 'domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'evidence',
+  'labels', 'domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'evidence', 'planes', 'placements',
   ...(attachmentsAvailable ? ['attachments'] : []),
 ]
 const BATCH_LIMIT = 450

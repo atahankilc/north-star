@@ -4,7 +4,7 @@ import { attachmentsAvailable } from './attachments'
 import { db } from './firebase'
 import type { WithId } from './hooks'
 import { useQuery, useWorkspaceCollection } from './hooks'
-import type { Attachment, Comparison, Competitor, CompetitorFeature, Customer, Edge, Evidence, Feature, Idea, Label, Problem } from './model'
+import type { Attachment, Comparison, Competitor, CompetitorFeature, Customer, Edge, Evidence, Feature, Idea, Label, Placement, Plane, Problem } from './model'
 
 export type WorkspaceData = {
   labels: WithId<Label>[]
@@ -18,6 +18,9 @@ export type WorkspaceData = {
   edges: WithId<Edge>[]
   // What was learned about customers, problems and ideas (D-137): small, and counted on the cards, so loaded up front.
   evidence: WithId<Evidence>[]
+  // Planes and where cards sit on them (D-139); All has neither.
+  planes: WithId<Plane>[]
+  placements: WithId<Placement>[]
   // Empty where attachments aren't available yet (D-083).
   attachments: WithId<Attachment>[]
   // Reports aren't here (D-098): the reports tab, the report screen and the chat each load what they show.
@@ -34,11 +37,15 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const comparisons = useWorkspaceCollection<Comparison>(wid, 'comparisons')
   const edges = useWorkspaceCollection<Edge>(wid, 'edges')
   const evidence = useWorkspaceCollection<Evidence>(wid, 'evidence')
+  const planes = useWorkspaceCollection<Plane>(wid, 'planes')
+  const placements = useWorkspaceCollection<Placement>(wid, 'placements')
   const attachments = useQuery<Attachment>(
     attachmentsAvailable ? collection(db(), 'workspaces', wid, 'attachments') : null,
     `${wid}/attachments`,
   )
+  // Planes (D-139) draw the board, so they hold the loading screen; like evidence, they can't fail the workspace.
   const all = [labels, customers, problems, ideas, features, competitors, competitorFeatures, comparisons, edges]
+  const loadingPlanes = planes.isLoading || placements.isLoading
 
   return {
     data: {
@@ -52,11 +59,13 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
       comparisons: comparisons.data,
       edges: edges.data,
       evidence: evidence.data,
+      planes: planes.data,
+      placements: placements.data,
       attachments: attachments.data,
     },
     // Attachment records and evidence (D-137) don't hold the workspace's loading screen: the board needs only their
     // counts, which fill in. Evidence can't fail the workspace either (a rule not deployed yet reads as none).
-    isLoading: all.some((l) => l.isLoading),
+    isLoading: all.some((l) => l.isLoading) || loadingPlanes,
     error: [...all, attachments].find((l) => l.error)?.error ?? null,
   }
 }

@@ -3,6 +3,8 @@
 // view yourself, press Escape or click them again. While following, the page is framed in their colour.
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ALL } from '../data/planes'
+import { usePlaneView } from '../state/plane'
 import { workspacePath } from '../app/paths'
 import { usePresence, type Peer, type PresenceView } from '../data/presence'
 import { useThemeAccent } from '../state/theme'
@@ -28,6 +30,14 @@ export function PeopleHere({ wid, view }: Props) {
     if (leader && leader.view !== view) navigate(path(leader.view))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leader?.view])
+  // And to the plane they're on (D-139).
+  const plane = usePlaneView((s) => s.plane)
+  useEffect(() => {
+    if (!leader || leader.view !== 'board' || view !== 'board') return
+    const theirs = leader.plane ?? ALL
+    if (theirs !== plane) navigate(theirs === ALL ? path('board') : `${path('board')}?plane=${theirs}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leader?.plane, leader?.view])
   // Switching view yourself stops following.
   useEffect(() => {
     const { following, peers } = usePresence.getState()
@@ -47,7 +57,7 @@ export function PeopleHere({ wid, view }: Props) {
   const toggle = (p: Peer) => {
     if (following === p.uid) return follow(null)
     follow(p.uid)
-    if (p.view !== view) navigate(path(p.view))
+    if (p.view !== view) navigate(path(p.view) + (p.view === 'board' && p.plane ? `?plane=${p.plane}` : ''))
   }
 
   const shown = peers.slice(0, MAX)

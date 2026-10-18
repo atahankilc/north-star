@@ -6,6 +6,8 @@ import {
   cleanCard,
   cleanComparison,
   cleanEvidence,
+  cleanPlacement,
+  cleanPlane,
   cleanCompetitor,
   cleanCompetitorFeature,
   cleanEdge,
@@ -16,7 +18,8 @@ import {
 } from '../io/bundle'
 import { attachmentsAvailable, uploadImported } from './attachments'
 import { db } from './firebase'
-import { EVIDENCE_TYPES, type NodeType, type Workspace } from './model'
+import { BOARD_TYPES, EVIDENCE_TYPES, type NodeType, type Workspace } from './model'
+import { placementId } from './planes'
 import { COLLECTIONS } from './nodes'
 import { createWorkspace, deleteWorkspace } from './workspaces'
 
@@ -50,9 +53,33 @@ export async function importWorkspace(bundle: LoadedBundle, uid: string): Promis
     add('competitorFeature', d.id, owner?.type === 'competitor' ? { competitorId: owner.id, ...cleanCompetitorFeature(d, now) } : null)
   }
 
+  // Planes (D-139) with new ids; their placements and text follow them. Text on a plane that didn't come over goes to All.
+  const planeIds = new Map<string, string>()
+  for (const d of bundle.planes) {
+    const fields = cleanPlane(d, now)
+    if (!fields) {
+      skipped++
+      continue
+    }
+    const ref = doc(col('planes'))
+    planeIds.set(d.id, ref.id)
+    writes.push([ref, fields])
+  }
+  for (const d of bundle.placements) {
+    const plane = planeIds.get(d.planeId as string)
+    const item = ids.get(d.itemId as string)
+    const at = cleanPlacement(d)
+    if (!plane || !item || !at || !(BOARD_TYPES as readonly string[]).includes(item.type)) {
+      skipped++
+      continue
+    }
+    writes.push([doc(col('placements'), placementId(plane, item.id)), { planeId: plane, itemId: item.id, itemType: item.type, ...at }])
+  }
+
   for (const d of bundle.labels) {
     const fields = cleanLabel(d, now)
-    if (fields) writes.push([doc(col('labels')), fields])
+    const plane = planeIds.get(d.planeId as string)
+    if (fields) writes.push([doc(col('labels')), { ...fields, ...(plane && { planeId: plane }) }])
     else skipped++
   }
 

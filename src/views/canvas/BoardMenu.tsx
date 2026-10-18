@@ -13,7 +13,9 @@ import { useCanvas } from '../../state/canvasStore'
 import type { NewThing } from '../../state/workspaceView'
 import { Appear } from '../../ui/Appear'
 import type { WorkspaceCtx } from '../workspace/context'
-import { findItem, removeItem, removeLabel, removeLink, removeSelection } from '../workspace/useEditKeys'
+import { findItem, removeItem, removeLabel, removeLink, removeSelection, unplaceCards } from '../workspace/useEditKeys'
+import { ALL } from '../../data/planes'
+import { usePlaneView } from '../../state/plane'
 import { editLocked } from '../workspace/viewerLock'
 import { BOARD_KINDS, TYPE_ACCENT } from './boardKinds'
 import { rightRelease, useBoardMenu, type MenuTarget } from './rightClick'
@@ -273,6 +275,9 @@ function rowsFor(
   const section = !many && !!label && isSection(label)
   const heading = many ? `${ids.length} selected` : title ? 'project title' : section ? 'section' : label ? 'text' : BOARD_KINDS[item!.type].label
   const zoom: Row = { key: 'zoom', label: 'zoom to', run: () => zoomTo(ws, ids) }
+  const plane = usePlaneView.getState().plane
+  const offAll = plane !== ALL
+  const cardIds = ids.filter((id) => findItem(ws, id))
   // The card's chain in the focus view (D-127).
   const focus: Row[] = item && !many ? [{ key: 'focus', label: 'focus', glyph: '◎', run: () => focusOn(target.id) }] : []
   if (locked) return [{ key: 'h', heading }, zoom, ...focus]
@@ -298,10 +303,14 @@ function rowsFor(
     zoom,
     ...focus,
     { key: 'r', rule: true },
+    // On a plane other than All (D-139), ⌫ takes cards off it; delete still removes them everywhere.
+    ...(offAll && cardIds.length
+      ? [{ key: 'unplace', label: 'take off this plane', hint: '⌫', run: () => unplaceCards(ws, plane, cardIds) } as Row]
+      : []),
     {
       key: 'delete',
-      label: title ? 'remove from board' : 'delete',
-      hint: '⌫',
+      label: title ? 'remove from board' : offAll && cardIds.length ? 'delete everywhere' : 'delete',
+      hint: offAll && cardIds.length ? undefined : '⌫',
       danger: true,
       run: () => {
         if (many) removeSelection(ws, ids)

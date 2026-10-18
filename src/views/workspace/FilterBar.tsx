@@ -1,5 +1,5 @@
 // `[ SHOW all ▾ ] [ FOR any ▾ ] [ TAG any ▾ ] [ GO TO ▾ ]` under the HUD (docs/specs/board.md §3, D-053, D-056).
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { BOARD_TYPES } from '../../data/model'
 import { QUIET_LINKS, useWsView } from '../../state/workspaceView'
 import { Menu, type MenuEntry } from '../../ui/Menu'
@@ -16,9 +16,11 @@ type Props = {
   links?: boolean
   // The focus view's card picker (D-127): what it's on, and every card to choose from.
   focus?: { summary: string; items: MenuEntry[] }
+  // The board's plane switcher (D-139), first in the bar.
+  plane?: ReactNode
 }
 
-export function FilterBar({ goTo, links, focus }: Props) {
+export function FilterBar({ goTo, links, focus, plane }: Props) {
   const { customers } = useWs()
   const { types, forIds, tags, hiddenLinks, toggleType, toggleFor, clearFor, toggleTag, clearTags, toggleLinks, showAllLinks } = useWsView()
   const allTags = useAllTags(useBoardItems())
@@ -72,6 +74,7 @@ export function FilterBar({ goTo, links, focus }: Props) {
   return (
     // Hidden in the assistant's bare preview screen (D-087).
     <div className={styles.filters} data-preview-hide>
+      {plane}
       {focus && (
         <Menu
           label="focus"

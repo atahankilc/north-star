@@ -91,6 +91,24 @@ export type Idea = BoardNode & {
   validation?: Validation
 }
 
+// A board of its own in the workspace (D-139): the same cards, placed where this plane wants them. All, the plane every
+// workspace has, has no doc: its id is `all` and a card's own x/y are its place there.
+export type Plane = {
+  name: string
+  order: number
+  createdAt: number
+  updatedAt: number
+}
+
+// Where a card sits on a plane other than All (D-139). Doc id `${planeId}_${itemId}`, so it's there once at most.
+export type Placement = {
+  planeId: string
+  itemId: string
+  itemType: BoardType
+  x: number
+  y: number
+}
+
 // What was learned, on a customer, problem or idea (D-137): listed in its panel, counted on its card.
 export const EVIDENCE_TYPES = ['customer', 'problem', 'idea'] as const
 export type EvidenceType = (typeof EVIDENCE_TYPES)[number]
@@ -127,6 +145,8 @@ export type LabelKind = 'title' | 'section'
 
 export type Label = {
   text: string
+  // The plane it's written on (D-139); missing = All.
+  planeId?: string
   color?: string
   size?: LabelSize
   kind?: LabelKind

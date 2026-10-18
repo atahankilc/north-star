@@ -7,6 +7,8 @@ import { useEffect, useRef } from 'react'
 import { MathUtils, Plane, Raycaster, Vector2, Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { setCursor, usePresence, type Peer } from '../../data/presence'
+import { ALL } from '../../data/planes'
+import { usePlaneView } from '../../state/plane'
 import { isReducedMotion } from '../../state/motion'
 import { useThemeAccent } from '../../state/theme'
 import { glideDt } from './cardLayout'
@@ -66,7 +68,9 @@ export function FollowCamera() {
   const following = usePresence((s) => s.following)
   const peer = usePresence((s) => s.peers.find((p) => p.uid === s.following))
   const to = useRef<[number, number] | null>(null)
-  to.current = peer && peer.view === 'board' && peer.x !== undefined && peer.y !== undefined ? [peer.x, peer.y] : null
+  const plane = usePlaneView((s) => s.plane)
+  // On another plane (D-139), their cursor isn't here: PeopleHere takes you to their plane first.
+  to.current = peer && peer.view === 'board' && samePlane(peer, plane) && peer.x !== undefined && peer.y !== undefined ? [peer.x, peer.y] : null
   useEffect(() => invalidate(), [peer?.x, peer?.y, invalidate])
 
   useEffect(() => {
@@ -93,9 +97,13 @@ export function FollowCamera() {
   return null
 }
 
+// Someone is on the plane you have open (D-139); no plane = All.
+const samePlane = (p: Peer, plane: string) => (p.plane ?? ALL) === plane
+
 export function PeerCursors() {
   const peers = usePresence((s) => s.peers)
-  const here = peers.filter((p) => p.view === 'board' && p.x !== undefined && p.y !== undefined)
+  const plane = usePlaneView((s) => s.plane)
+  const here = peers.filter((p) => p.view === 'board' && samePlane(p, plane) && p.x !== undefined && p.y !== undefined)
   return (
     <>
       {here.map((p) => (

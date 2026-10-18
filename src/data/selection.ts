@@ -4,13 +4,16 @@ import { doc, collection, writeBatch, type DocumentData, type DocumentReference 
 import { db } from './firebase'
 import { absent, snapshotWith, tracked, workspaceDoc } from './history'
 import type { BoardType, Edge } from './model'
-import { cascadeOf, COLLECTIONS } from './nodes'
+import { cascadeOf, COLLECTIONS, positionRef } from './nodes'
+import { ALL, openPlane, placementRef } from './planes'
 
 // A card (by its type) or a text label.
 export type Piece = { kind: BoardType | 'label'; id: string }
 
 const collectionOf = (kind: Piece['kind']) => (kind === 'label' ? 'labels' : COLLECTIONS[kind])
 const refOf = (wid: string, p: Piece) => workspaceDoc(wid, collectionOf(p.kind), p.id)
+// Where a piece's place on the open plane is (D-139): a label's own doc (it belongs to one plane), a card's per plane.
+const placeOf = (wid: string, p: Piece) => (p.kind === 'label' ? refOf(wid, p) : positionRef(wid, p.kind, p.id))
 const BATCH_LIMIT = 450
 
 async function commit(writes: [DocumentReference, DocumentData | null, 'set' | 'update'][]) {
@@ -28,12 +31,12 @@ async function commit(writes: [DocumentReference, DocumentData | null, 'set' | '
 // The live stream while dragging several pieces: one batch, so collaborators (and this tab's own snapshot listeners) get
 // one update per write, not one per piece. Not undoable on its own, see endMoveMany.
 export function streamMany(wid: string, places: (Piece & { to: [number, number] })[]) {
-  return commit(places.map((p) => [refOf(wid, p), { x: p.to[0], y: p.to[1] }, 'update']))
+  return commit(places.map((p) => [placeOf(wid, p), { x: p.to[0], y: p.to[1] }, 'update']))
 }
 
 // The end of a drag of several pieces: one undo step back to where they all started.
 export async function endMoveMany(wid: string, moves: (Piece & { from: [number, number]; to: [number, number] })[]) {
-  const refs = moves.map((m) => refOf(wid, m))
+  const refs = moves.map((m) => placeOf(wid, m))
   // The live stream already wrote the new places; what's undone to is where the drag began.
   const before = (await Promise.all(moves.map((m, i) => snapshotWith(refs[i], { x: m.from[0], y: m.from[1] })))).flat()
   return tracked(`move ${moves.length} things`, refs, () => commit(moves.map((m, i) => [refs[i], { x: m.to[0], y: m.to[1] }, 'update'])), { before })
@@ -42,7 +45,7 @@ export async function endMoveMany(wid: string, moves: (Piece & { from: [number, 
 // New places for several pieces at once, as one undo step: lining a selection up, spacing it out, nudging it with the
 // arrow keys (D-124). Steps with the same `key` (a run of nudges) merge into one.
 export function placeMany(wid: string, label: string, places: (Piece & { to: [number, number] })[], key?: string) {
-  const refs = places.map((p) => refOf(wid, p))
+  const refs = places.map((p) => placeOf(wid, p))
   return tracked(label, refs, () => commit(places.map((p, i) => [refs[i], { x: p.to[0], y: p.to[1] }, 'update'])), { key })
 }
 
@@ -87,8 +90,16 @@ export function copy(next: Clip) {
 }
 
 // Pastes the clip with its top-left card at `at` (board units), keeping the layout, links among the pasted things and
-// customer tags to customers that still exist here. Returns the new ids in the clip's order.
-export async function paste(wid: string, at: [number, number], customers: Set<string>, source: Clip | null = clip): Promise<Piece[]> {
+// customer tags to customers that still exist here. Returns the new ids in the clip's order. On a plane other than All
+// (D-139) the cards are placed there at `at` and land on All with their top-left at `allAt`; text stays on the plane.
+export async function paste(
+  wid: string,
+  at: [number, number],
+  customers: Set<string>,
+  source: Clip | null = clip,
+  allAt: [number, number] = at,
+): Promise<Piece[]> {
+  const plane = openPlane()
   if (!source || source.pieces.length === 0) return []
   const x0 = Math.min(...source.pieces.map((p) => p.data.x as number))
   const y0 = Math.max(...source.pieces.map((p) => p.data.y as number))
@@ -100,7 +111,15 @@ export async function paste(wid: string, at: [number, number], customers: Set<st
     const ref = doc(collection(db(), 'workspaces', wid, collectionOf(p.kind)))
     ids.set(p.id, ref.id)
     made.push({ kind: p.kind, id: ref.id })
-    writes.push([ref, { ...p.data, x: at[0] + (p.data.x as number) - x0, y: at[1] + (p.data.y as number) - y0, createdAt: now, updatedAt: now }])
+    const dx = (p.data.x as number) - x0
+    const dy = (p.data.y as number) - y0
+    if (plane === ALL || p.kind === 'label') {
+      const { planeId: _plane, ...data } = p.data
+      writes.push([ref, { ...data, ...(plane !== ALL && { planeId: plane }), x: at[0] + dx, y: at[1] + dy, createdAt: now, updatedAt: now }])
+    } else {
+      writes.push([ref, { ...p.data, x: allAt[0] + dx, y: allAt[1] + dy, createdAt: now, updatedAt: now }])
+      writes.push([placementRef(wid, plane, ref.id), { planeId: plane, itemId: ref.id, itemType: p.kind, x: at[0] + dx, y: at[1] + dy }])
+    }
   }
   for (const f of source.features) {
     const owner = ids.get(f.data.competitorId as string)

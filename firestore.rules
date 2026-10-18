@@ -141,6 +141,23 @@ service cloud.firestore {
         && optIn(d, 'kind', ['title', 'section'])
         && optSize(d, 'w') && optSize(d, 'h')
         && (!('kind' in d) || d.kind != 'section' || ('w' in d && 'h' in d))
+        && optText(d, 'planeId', 128)
+        && d.x is number && d.y is number;
+    }
+
+    // A plane (D-139): a name and its place in the list.
+    function validPlane(d) {
+      return isText(d.name, 80) && d.name.size() > 0
+        && d.order is number
+        && d.createdAt is number;
+    }
+
+    // A card's place on a plane (D-139): the id is fixed by the two.
+    function validPlacement(id, d) {
+      return isText(d.planeId, 128)
+        && isText(d.itemId, 128)
+        && id == d.planeId + '_' + d.itemId
+        && d.itemType in ['customer', 'problem', 'idea', 'feature', 'competitor']
         && d.x is number && d.y is number;
     }
 
@@ -203,7 +220,9 @@ service cloud.firestore {
         || (collection == 'comparisons' && validComparison(id, d))
         || (collection == 'edges' && validEdge(d))
         || (collection == 'attachments' && validAttachment(wid, id, d))
-        || (collection == 'evidence' && validEvidence(d));
+        || (collection == 'evidence' && validEvidence(d))
+        || (collection == 'planes' && validPlane(d))
+        || (collection == 'placements' && validPlacement(id, d));
     }
 
     match /workspaces/{wid} {
@@ -404,7 +423,7 @@ service cloud.firestore {
       match /{collection}/{docId} {
         // `domains` and `groups` are retired (D-048, D-049): still readable and deletable so old workspaces can be cleaned up.
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'evidence', 'domains', 'groups'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'evidence', 'planes', 'placements', 'domains', 'groups'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();

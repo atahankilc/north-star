@@ -6,6 +6,7 @@ import { copied, copy, paste, type Clip } from '../../data/selection'
 import { useHistory } from '../../data/history'
 import { useCanvas } from '../../state/canvasStore'
 import type { WorkspaceCtx } from '../workspace/context'
+import { allSpot } from './planes'
 
 const OFFSET = 0.6
 
@@ -60,15 +61,19 @@ export async function pasteClip(ws: WorkspaceCtx, centre?: [number, number]) {
   // The top-left corner goes half the clip's size up and left of the centre.
   const [cx, cy] = centre ?? useCanvas.getState().viewCenter()
   const at: [number, number] = [cx - (Math.max(...xs) - Math.min(...xs)) / 2, cy + (Math.max(...ys) - Math.min(...ys)) / 2]
-  const made = await paste(ws.wid, at, customersOf(ws), clip)
+  const made = await paste(ws.wid, at, customersOf(ws), clip, onAll(ws, at))
   useCanvas.getState().selectMany(made.map((m) => m.id))
 }
+
+// On a plane other than All (D-139), the copies also land on All: in a column right of everything there.
+const onAll = (ws: WorkspaceCtx, at: [number, number]): [number, number] => (ws.plane ? allSpot(ws.plane.allSpots) : at)
 
 export async function duplicateSelection(ws: WorkspaceCtx) {
   const clip = clipOf(ws, useCanvas.getState().selection)
   if (!clip) return
   const x0 = Math.min(...clip.pieces.map((p) => p.data.x as number))
   const y0 = Math.max(...clip.pieces.map((p) => p.data.y as number))
-  const made = await paste(ws.wid, [x0 + OFFSET, y0 - OFFSET], customersOf(ws), clip)
+  const at: [number, number] = [x0 + OFFSET, y0 - OFFSET]
+  const made = await paste(ws.wid, at, customersOf(ws), clip, onAll(ws, at))
   useCanvas.getState().selectMany(made.map((m) => m.id))
 }

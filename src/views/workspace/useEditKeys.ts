@@ -6,7 +6,9 @@ import { deleteLabel } from '../../data/labels'
 import { redo, undo, useHistory } from '../../data/history'
 import type { BoardType } from '../../data/model'
 import { deleteNode } from '../../data/nodes'
+import { ALL, unplace } from '../../data/planes'
 import { deleteMany, type Piece } from '../../data/selection'
+import { usePlaneView } from '../../state/plane'
 import { useCanvas } from '../../state/canvasStore'
 import { BOARD_KINDS } from '../canvas/boardKinds'
 import { useWs } from './context'
@@ -40,6 +42,19 @@ export function useEditKeys() {
           e.preventDefault()
           removeLink(wid, edgeId)
           return
+        }
+        // On a plane other than All (D-139), Delete takes cards off the plane; they stay everywhere else.
+        const plane = usePlaneView.getState().plane
+        if (plane !== ALL) {
+          const ids = selection.length > 1 ? selection : id ? [id] : []
+          const cards = ids.filter((x) => findItem(ws, x))
+          if (cards.length) {
+            e.preventDefault()
+            unplaceCards(ws, plane, cards)
+            const labels = ids.filter((x) => ws.labels.some((l) => l.id === x))
+            if (labels.length) removeSelection(ws, labels)
+            return
+          }
         }
         if (selection.length > 1) {
           e.preventDefault()
@@ -90,6 +105,15 @@ export function removeLabel(wid: string, id: string, text: string, section = fal
   void deleteLabel(wid, id)
   const quoted = text.trim() ? ` "${text.trim()}"` : ''
   useHistory.getState().say(`Deleted ${section ? 'section' : 'text'}${quoted} · ${UNDO_HINT} to undo`)
+}
+
+// Takes cards off a plane (D-139) and says where they still are.
+export function unplaceCards(ws: ReturnType<typeof useWs>, planeId: string, ids: string[]) {
+  useCanvas.getState().select(null)
+  void unplace(ws.wid, planeId, ids)
+  const name = ws.planes.find((p) => p.id === planeId)?.name ?? 'this plane'
+  const what = ids.length === 1 ? `"${findItem(ws, ids[0])?.title.trim() || 'Untitled'}"` : `${ids.length} cards`
+  useHistory.getState().say(`Took ${what} off ${name} (still on All) · ${UNDO_HINT} to undo`)
 }
 
 // Removes a link and says how to get it back (D-108).

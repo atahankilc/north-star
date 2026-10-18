@@ -15,6 +15,8 @@ export type Presence = {
   color: string
   photo?: string
   view: PresenceView
+  // The plane they have open on the board (D-139); absent = All.
+  plane?: string
   // Board cursor in world units; absent when the pointer is off the board (or on another view).
   x?: number
   y?: number
@@ -107,6 +109,11 @@ function patch(p: Partial<Omit<Presence, 'ts' | 'since'>>) {
 // Board pointer in world units, or null when it leaves the board.
 export function setCursor(at: [number, number] | null) {
   patch(at ? { x: round(at[0]), y: round(at[1]) } : { x: undefined, y: undefined })
+}
+
+// The plane the board shows (D-139): cursors are only drawn for people on the same one.
+export function setPresencePlane(plane: string | undefined) {
+  patch({ plane })
 }
 
 // What you have selected: `id`, plus the rest of a selection of several on the board (D-124).

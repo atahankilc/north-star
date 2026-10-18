@@ -26,6 +26,9 @@ import { useSnap } from './snap'
 import { TITLE_W, estimateTitleHalf, isTitle, labelHalf } from './titleBlock'
 import { drawSection, fitSections, holdsPoint, isSection, rectOf, useSectionDraw, wrapRect, type Rect, type SectionRect } from './sections'
 import { copied } from '../../data/selection'
+import { ALL } from '../../data/planes'
+import { allSpot, useOpenPlane, usePlaneItems, usePlaneWs } from './planes'
+import { ExistingCards, PlaneSwitcher } from './PlaneSwitcher'
 import { editLocked, useViewer } from '../workspace/viewerLock'
 import styles from './BoardView.module.css'
 
@@ -45,7 +48,12 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
   const viewer = useViewer((s) => s.viewer)
   const snap = useSnap((s) => s.on)
   const guides = useGuides((s) => s.on)
-  const all = useBoardItems()
+  // The plane the board shows (D-139): on one other than All, only the cards placed there, at their places there, and its
+  // own text. `every` is every card, for the panel and what's brought in.
+  const plane = useOpenPlane(ws, focusMode)
+  const pws = usePlaneWs(ws, plane)
+  const every = useBoardItems()
+  const all = usePlaneItems(every, ws, plane)
   const visible = useVisibleItems(all)
   const select = useCanvas((s) => s.select)
   const [params, setParams] = useSearchParams()
@@ -65,11 +73,11 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     () =>
       focusMode
         ? fitSections(
-            ws.labels.filter(isSection),
+            pws.labels.filter(isSection),
             nodes.map((n) => ({ x: n.x, y: n.y, half: [CARD_W / 2, CARD_H / 2] as [number, number] })),
           )
-        : ws.labels,
-    [focusMode, ws.labels, nodes],
+        : pws.labels,
+    [focusMode, pws.labels, nodes],
   )
   const features = useMemo(() => (chain ? focusFeatures(chain, competitorFeatures) : competitorFeatures), [chain, competitorFeatures])
   useEffect(() => {
@@ -118,6 +126,14 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     const id = params.get('item')
     if (!id) return
     const n = all.find((c) => c.id === id)
+    // A card that isn't on this plane opens on All.
+    if (!n && plane !== ALL && every.some((c) => c.id === id)) {
+      setParams((p) => {
+        p.delete('plane')
+        return p
+      })
+      return
+    }
     if (n) {
       useWsView.getState().reveal(n)
       select(id)
@@ -139,10 +155,10 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     if (import.meta.env.DEV) (window as unknown as { __boardItems: typeof all }).__boardItems = all
   }, [all])
 
-  // Competitors made before the board (D-040) have no position yet: give each a free spot once.
+  // Competitors made before the board (D-040) have no position yet: give each a free spot once (on All).
   const placed = useRef(new Set<string>())
   useEffect(() => {
-    if (editLocked()) return
+    if (editLocked() || plane !== ALL) return
     const taken = all.filter((i) => i.type !== 'competitor' || competitors.find((c) => c.id === i.id)?.x !== undefined)
     for (const c of competitors) {
       if (c.x !== undefined || placed.current.has(c.id)) continue
@@ -151,7 +167,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
       taken.push({ ...all.find((i) => i.id === c.id)!, x, y })
       void moveNode(wid, 'competitor', c.id, x, y)
     }
-  }, [all, competitors, wid])
+  }, [all, competitors, wid, plane])
 
   // The jump list (D-050), in reading order: top to bottom, then left to right. Notes and H3s aren't places (D-116, D-130).
   // The title block (D-118) is a place too, under the workspace's name; a named section (D-130) by its top edge.
@@ -186,13 +202,13 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         const any = useCanvas.getState().selection.length > 0
         if (key === 'c' && any) {
           e.preventDefault()
-          copySelection(ws)
+          copySelection(pws)
         } else if (key === 'v' && copied()) {
           e.preventDefault()
-          void pasteClip(ws)
+          void pasteClip(pws)
         } else if (key === 'd' && any) {
           e.preventDefault()
-          void duplicateSelection(ws)
+          void duplicateSelection(pws)
         }
       }
       // The arrow keys nudge what's selected (D-124); a menu or dropdown that took the key keeps it.
@@ -202,6 +218,16 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         nudge(wid, dir, e.shiftKey)
       }
       if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) useCanvas.getState().fitAll()
+      // [ and ] step through the planes (D-139), All first.
+      if ((e.key === '[' || e.key === ']') && !mod && !e.altKey && !focusMode && ws.planes.length) {
+        const order = [ALL, ...[...ws.planes].sort((a, b) => a.order - b.order || a.createdAt - b.createdAt).map((p) => p.id)]
+        const next = order[(order.indexOf(plane) + (e.key === ']' ? 1 : order.length - 1)) % order.length]
+        setParams((p) => {
+          if (next === ALL) p.delete('plane')
+          else p.set('plane', next)
+          return p
+        })
+      }
       if (key === 'g' && !mod && !e.altKey && !editLocked()) useSnap.getState().toggle()
       // a switches the alignment guides (D-117).
       if (key === 'a' && !mod && !e.altKey && !editLocked()) useGuides.getState().toggle()
@@ -212,7 +238,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [select, places, ws, wid])
+  }, [select, places, pws, wid, ws.planes, plane, focusMode, setParams])
   useEffect(() => () => select(null), [select])
   // Leaving the board puts the section crosshair away.
   useEffect(() => () => drawSection(false), [])
@@ -227,7 +253,9 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
       useCanvas.getState().setEditingLabel(id)
       return
     }
-    const id = await createBoardNode(wid, type, { x: at[0], y: at[1] })
+    // Made on a plane other than All, it lands on All too, right of everything there (D-139).
+    const [ax, ay] = pws.plane ? allSpot(pws.plane.allSpots) : at
+    const id = await createBoardNode(wid, type, { x: at[0], y: at[1] }, {}, { x: ax, y: ay })
     const { types, toggleType } = useWsView.getState()
     if (!types.includes(type)) toggleType(type)
     select(id)
@@ -285,13 +313,14 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         labels={labels}
         competitorFeatures={features}
         focus={focus}
-        cameraKey={focusMode ? `${wid}/focus/${onId ?? ''}` : undefined}
+        cameraKey={focusMode ? `${wid}/focus/${onId ?? ''}` : plane !== ALL ? `${wid}/plane/${plane}` : undefined}
         centreId={centre?.id}
         sectionsFixed={focusMode}
         onDrawSection={focusMode ? undefined : (rect) => void addSection(rect)}
       />
 
       <FilterBar
+        plane={focusMode ? undefined : <PlaneSwitcher ws={ws} plane={plane} cards={all.length} locked={viewer} />}
         links
         focus={focusMode ? { summary: centre ? centre.title || 'Untitled' : 'none', items: focusItems } : undefined}
         goTo={focusMode ? undefined : places.map((l) => ({ key: l.id, label: isTitle(l) ? ws.workspace.name : l.text.trim(), onSelect: () => jump(l) }))}
@@ -318,9 +347,12 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
               { key: 'board', heading: 'on the board' },
               { key: 'text', label: 'text', glyph: 'T', hint: 'jump point', onSelect: () => add('text') },
               { key: 'section', label: 'section', glyph: '⬚', hint: 'drag to draw', onSelect: () => add('section') },
-              ...(title ? [] : [{ key: 'title', label: 'project title', glyph: '✦', hint: 'name + about', onSelect: () => void addTitle() }]),
+              // One title block, on All (D-118, D-139).
+              ...(title || plane !== ALL ? [] : [{ key: 'title', label: 'project title', glyph: '✦', hint: 'name + about', onSelect: () => void addTitle() }]),
             ]}
           />}
+          {/* Cards already in the workspace, onto this plane (D-139). */}
+          {!viewer && !focusMode && plane !== ALL && <ExistingCards wid={wid} plane={plane} all={every} here={all} />}
           {/* The whole board back in view, as when it opens (D-060). */}
           <button
             className={styles.fit}
@@ -372,6 +404,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
               {focusMode && centre && `${nodes.length} of ${all.length} cards · `}
               {viewer ? 'viewing only · scroll: zoom' : `drag: move${snap ? ' on the grid (alt: freely)' : ''} · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom`}
               {' · 0: fit all'}
+              {!focusMode && ws.planes.length > 0 && ' · [ ]: planes'}
               {!viewer && ' · g: snap · a: guides · right-click: menu'}
               {places.length > 0 && ' · 1–9: go to'}
             </>
@@ -381,7 +414,15 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
 
       {all.length === 0 && labels.length === 0 && (
         <div className={styles.empty}>
-          <DecodeText text={viewer ? 'Nothing on this board yet' : 'Add your first card with the + button'} />
+          <DecodeText
+            text={
+              viewer
+                ? 'Nothing on this board yet'
+                : plane !== ALL
+                  ? 'Bring cards in with existing, or make new ones with +'
+                  : 'Add your first card with the + button'
+            }
+          />
         </div>
       )}
       {all.length > 0 && focusMode && !centre && (
@@ -395,9 +436,9 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         </div>
       )}
 
-      <BoardMenu ws={ws} create={focusMode ? undefined : (type, at) => void create(type, at)} wrap={focusMode ? undefined : wrap} />
+      <BoardMenu ws={pws} create={focusMode ? undefined : (type, at) => void create(type, at)} wrap={focusMode ? undefined : wrap} />
 
-      <DetailPanel items={all} />
+      <DetailPanel items={every} />
     </main>
   )
 }

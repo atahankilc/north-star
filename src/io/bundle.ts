@@ -19,8 +19,10 @@ export const BUNDLE_COLLECTIONS = [
   'competitorFeatures',
   'comparisons',
   'edges',
-  // Missing in older exports (D-137): read as none.
+  // Missing in older exports (D-137, D-139): read as none.
   'evidence',
+  'planes',
+  'placements',
 ] as const satisfies readonly (keyof WorkspaceData)[]
 export type BundleCollection = (typeof BUNDLE_COLLECTIONS)[number]
 
@@ -143,6 +145,19 @@ export function cleanCard(d: Doc, now: number) {
     y,
     ...times(d, now),
   }
+}
+
+// A plane (D-139); its placements follow it with new ids.
+export function cleanPlane(d: Doc, now: number) {
+  const name = str(d.name, 80)?.trim()
+  if (!name) return null
+  return { name, order: num(d.order) ?? 0, ...times(d, now) }
+}
+
+export function cleanPlacement(d: Doc) {
+  const x = num(d.x)
+  const y = num(d.y)
+  return x === undefined || y === undefined ? null : { x, y }
 }
 
 // One piece of evidence (D-137), without its card: the importer adds where it now points.

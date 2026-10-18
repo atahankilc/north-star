@@ -19,6 +19,7 @@ import { Appear } from '../../ui/Appear'
 import { Choice } from '../../ui/Choice'
 import { CompetitorProfile } from '../competitors/CompetitorProfile'
 import { CriteriaEditor } from '../matrix/Criteria'
+import { CardPlanes } from './CardPlanes'
 import { FeatureConfidence } from '../priorities/FeatureConfidence'
 import { FocusButton } from './focus'
 import { useWs } from '../workspace/context'
@@ -81,6 +82,7 @@ export function DetailPanel({ items }: { items: BoardItem[] }) {
             <CompetitorProfile key={item.id} competitor={competitor} focusFeature={feature?.id}>
               <div className={styles.pickers}>
                 <ForPicker item={item} />
+                <CardPlanes item={item} />
               </div>
             </CompetitorProfile>
           ) : (
@@ -181,6 +183,8 @@ function NodeEditor({ item, node }: { item: BoardItem; node: WithId<BoardNode> }
         {/* How far from a guess it is, set by hand (D-137). */}
         {type !== 'feature' && <ValidationField node={node as { id: string; validation?: Validation }} type={type} />}
         {type !== 'customer' && <ForPicker item={item} />}
+        {/* The planes it's on (D-139). */}
+        <CardPlanes item={item} />
       </div>
 
       <label className={styles.label}>
