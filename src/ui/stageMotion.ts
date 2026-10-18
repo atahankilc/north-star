@@ -16,6 +16,8 @@ import { runCells } from './Appear'
 export const CROSS_MS = 700
 const CROSS_EASE = 'cubic-bezier(0.65, 0, 0.35, 1)'
 const OUT_MS = 220
+// How long the chat takes to slide away (AiChat's SLIDE).
+const CHAT_SLIDE_MS = 600
 const IN_MS = 460
 
 type Staged = { preview: StagedPreview | null; reportId: string | null }
@@ -51,6 +53,10 @@ export function useStageMotion() {
     const app = () => document.querySelector<HTMLElement>('[data-app]')
     let busy = false
     let stopCells = () => {}
+    // The chat is sliding away with a preview staged beside it: the preview ends with it, and the stage still breaks apart
+    // and the app builds back up in place, while the chat goes down where it is (it takes its side again once it's gone).
+    let closing = false
+    let sideBack = 0
 
     // A preview glides the board to its changes; closing it puts back the view you had, unless it was applied (then the
     // board glides to what went in, AiProposal).
@@ -75,7 +81,7 @@ export function useStageMotion() {
       const to = kindOf(next)
       const open = useChat.getState().open
       const el = app()
-      if (from === to || !open || isReducedMotion() || narrow() || !el) {
+      if (from === to || (!open && !closing) || isReducedMotion() || narrow() || !el) {
         // Ticking rows in a preview lands here too: the stage follows at once.
         show(next)
         // A closing chat breaks apart where it is; it takes its side again when it opens.
@@ -83,16 +89,18 @@ export function useStageMotion() {
         return
       }
       busy = true
-      const crossing = (from === null) !== (to === null)
+      // Closing, the chat doesn't cross: it slides down on whichever side it was.
+      const crossing = open && (from === null) !== (to === null)
       if (crossing) setSide(to !== null, true)
       stopCells = runCells(el, 'exit', 0, OUT_MS, () => {
         // Whatever is asked for by now, which may have changed while the app broke apart.
         const now = wanted()
         show(now)
-        setSide(kindOf(now) !== null, true)
+        if (useChat.getState().open) setSide(kindOf(now) !== null, true)
         const wake = !crossing ? undefined : kindOf(now) ? 'right' : 'left'
         stopCells = runCells(el, 'enter', 0, IN_MS, () => {
           busy = false
+          closing = false
           sync()
         }, wake)
       })
@@ -101,12 +109,26 @@ export function useStageMotion() {
     sync()
     const offPreview = usePreview.subscribe(sync)
     const offChat = useChat.subscribe((s, prev) => {
+      if (prev.open && !s.open) {
+        window.clearTimeout(sideBack)
+        // Back on the right once it has slid away (AiChat's SLIDE), so the next open starts there.
+        sideBack = window.setTimeout(() => {
+          if (!useChat.getState().open) setSide(false, false)
+        }, CHAT_SLIDE_MS)
+        // Closing the chat ends its preview at once (it used to linger until the proposal left the screen).
+        if (usePreview.getState().sim) {
+          closing = true
+          usePreview.getState().close()
+          return
+        }
+      }
       if (s.reportOpen !== prev.reportOpen || s.open !== prev.open) sync()
     })
     return () => {
       offPreview()
       offChat()
       stopCells()
+      window.clearTimeout(sideBack)
       app()?.style.removeProperty('clip-path')
       useStage.setState({ preview: null, reportId: null })
       html.removeAttribute('data-ai-stage')
