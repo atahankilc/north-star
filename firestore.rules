@@ -317,7 +317,9 @@ service cloud.firestore {
         function mayRead(d) {
           return isMember(wid) && (d.shared == true || d.uid == request.auth.uid);
         }
-        allow read: if mayRead(resource.data);
+        // A report not saved yet reads as missing to any member: the chat listens for it before you save it, and a
+        // listener refused once never comes back, so the save would go unseen and a second one be refused as an edit.
+        allow read: if resource == null ? isMember(wid) : mayRead(resource.data);
         allow create: if isMember(wid) && (validSummary(request.resource.data) || validWhole(request.resource.data))
           && (request.resource.data.uid == request.auth.uid || (request.resource.data.shared == true && isOwner(wid)));
         allow update: if isMember(wid) && resource.data.uid == request.auth.uid

@@ -28,7 +28,7 @@ import {
   type Research,
 } from './research'
 import { useAiSettings, type AiTask } from './settings'
-import { newReportId, saveReport } from '../data/reports'
+import { discardReport, newReportId, saveReport } from '../data/reports'
 import type { ReportKind } from '../data/model'
 import { PROPOSE, PROPOSE_TOOL, parseProposal, proposalForHistory, proposalReport, type Proposal, type ProposalState } from './tools'
 
@@ -210,6 +210,8 @@ type ChatState = {
 
 let nextId = 1
 let controller: AbortController | null = null
+// Chat write-ups being saved or saved by keepReport, by report id.
+const keeping = new Set<string>()
 
 // What the model sees of the conversation so far. Failed answers aren't sent back.
 const history = (messages: ChatMessage[]): ChatTurn[] => messages.filter((m) => !m.error && (m.content || m.proposal)).map(asTurn)
@@ -412,8 +414,9 @@ export const useChat = create<ChatState>((set, get) => ({
       run.update({ research })
       const turns = [...history(before(get().messages, id)), { role: 'user' as const, content: reportAsk(research) }]
       // The report comes through write_report (D-089) and opens on the report screen; the text answer is one sentence.
-      // Saved as soon as it's written, under one id even if the model writes it again.
-      const reportId = newReportId(run.wid)
+      // Saved as soon as it's written. A saved report can't be edited, so if the model writes it again the new one is
+      // saved under a new id and the old one removed once its own save is through: the tab holds what's on screen.
+      let saving: { id: string; done: Promise<unknown> } | null = null
       run.extra = [
         {
           def: REPORT_TOOL,
@@ -423,10 +426,14 @@ export const useChat = create<ChatState>((set, get) => ({
             if (!report) return 'The report came back garbled. Call write_report again with every field filled.'
             run.steps.push({ kind: 'report', text: `wrote the report · ${report.sections.length} sections · ${report.sources.length} sources`, state: 'done' })
             const reportMeta = { kind: 'research' as const, topic: research.topic, model: run.model }
+            const reportId = newReportId(run.wid)
+            const before = saving
             run.update({ report, reportId, reportError: undefined, reportMeta, steps: [...run.steps] })
-            saveReport(run.wid, reportId, report, reportMeta).catch((e: Error) =>
-              run.update({ reportError: e.message }),
-            )
+            const done = saveReport(run.wid, reportId, report, reportMeta).catch((e: Error) => {
+              if (saving?.id === reportId) run.update({ reportError: e.message })
+            })
+            saving = { id: reportId, done }
+            if (before) void before.done.then(() => discardReport(run.wid, before.id)).catch(() => {})
             // It opens by itself: that's what the run was for.
             useChat.setState({ reportOpen: reportId })
             return 'Shown to the user on the report screen. Now propose changes if they help, then finish with one short sentence.'
@@ -444,8 +451,15 @@ export const useChat = create<ChatState>((set, get) => ({
     const wid = get().wid
     if (!m?.report || !m.reportId || !m.reportMeta || !wid) return
     const update = (patch: Partial<ChatMessage>) => set((s) => ({ messages: s.messages.map((x) => (x.id === id ? { ...x, ...patch } : x)) }))
+    // Once: a second save of the same report is an edit, which the rules refuse.
+    if (keeping.has(m.reportId)) return
+    const rid = m.reportId
+    keeping.add(rid)
     update({ reportError: undefined })
-    saveReport(wid, m.reportId, m.report, m.reportMeta).catch((e: Error) => update({ reportError: e.message }))
+    saveReport(wid, rid, m.report, m.reportMeta).catch((e: Error) => {
+      keeping.delete(rid)
+      update({ reportError: e.message })
+    })
   },
   decide: (id, proposalState) => set((s) => ({ messages: s.messages.map((m) => (m.id === id ? { ...m, proposalState } : m)) })),
   stop: () => {

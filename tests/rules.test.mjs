@@ -332,6 +332,9 @@ await deny('report with an unknown field', () => setDoc(repDoc(bob.fs, 'r3'), re
 await deny('report with too many sources', () => setDoc(repDoc(bob.fs, 'r4'), report(bob, { sources: Array(201).fill({ title: 'x', url: 'https://x' }) })))
 await deny('outsider saves a report', () => setDoc(repDoc(carol.fs, 'r5'), report(carol)))
 await allow('author reads their private report', () => getDoc(repDoc(bob.fs, 'r1')))
+await allow('member reads a report not saved yet (the chat listens before saving)', () => getDoc(repDoc(dave.fs, 'unsaved')))
+await deny('outsider reads a report not saved yet', () => getDoc(repDoc(carol.fs, 'unsaved')))
+await deny('saving the same report again', () => setDoc(repDoc(bob.fs, 'r7'), report(bob, { kind: 'chat' })))
 await deny('another member reads a private report', () => getDoc(repDoc(dave.fs, 'r1')))
 await deny('owner reads a private report', () => getDoc(repDoc(alice.fs, 'r1')))
 await deny('member lists every report', () => getDocs(reports(dave.fs)))
@@ -399,6 +402,13 @@ await allow('owner deletes a shared report and its body', () => {
   b.delete(bodyDoc(alice.fs, 'r20'))
   b.delete(repDoc(alice.fs, 'r20'))
   return b.commit()
+})
+await allow('author removes a rewritten report and its body (research written again)', async () => {
+  await saveSplit(dave, 'r24')
+  const b = writeBatch(dave.fs)
+  b.delete(bodyDoc(dave.fs, 'r24'))
+  b.delete(repDoc(dave.fs, 'r24'))
+  await b.commit()
 })
 await allow("owner's undo restores a shared summary + body", () => saveSplit({ fs: alice.fs, uid: bob.uid }, 'r20', { shared: true }))
 

@@ -38,6 +38,14 @@ export function saveReport(wid: string, id: string, report: ReportContent, meta:
   batch.set(bodyRef(wid, id), body)
   return batch.commit()
 }
+// A report the model wrote again (research, D-089): the old copy goes, not as an undo step since you never had it.
+// The body first: its rule reads the summary.
+export function discardReport(wid: string, id: string) {
+  const batch = writeBatch(db())
+  batch.delete(bodyRef(wid, id))
+  batch.delete(doc(reportsOf(wid), id))
+  return batch.commit()
+}
 // Within the limits the rules check, whatever the model wrote.
 function fit(r: ReportContent): ReportContent {
   const L = REPORT_LIMITS
