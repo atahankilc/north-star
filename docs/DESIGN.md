@@ -186,7 +186,8 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
   (`<Appear>` for DOM, `CardReveal` for 3D cards), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
 - Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.
 - **Assistant** (D-094, D-095): an empty chat is a small box that slides up from below and lifts the orb onto its top edge
-  (startled); the first message grows it into a tall column (by its edges, 650 ms) while the orb sinks behind the edge to peek. When a preview or a report opens, the chat glides across
+  (startled); a side panel wider than the box pushes the orb off its end (D-121): it falls, bounces on the floor (squashed,
+  dust, dizzy stars, then cross), peeks around the box's left side, and hops back up once there's room. The first message grows it into a tall column (by its edges, 650 ms) while the orb sinks behind the edge to peek. When a preview or a report opens, the chat glides across
   to the left (700 ms, eased in and out) while the app breaks apart and the stage builds up in its wake from the right; closing
   runs it back. Instant under reduced motion. Steps (D-114): a live log, each with its time on the right, and a last line
   `thinking` / `writing the answer`; once answered it folds into `▸ N steps · 4.7s`, which opens by its height. On phones the

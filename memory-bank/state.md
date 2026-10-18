@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-18 (D-118 project title block on the board)_
+_Last updated: 2026-10-18 (D-121 the orb falls off the chat box and peeks around its side)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -9,7 +9,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Phase
 - Phases 0–4 done: scaffold + design language, one board (D-040–D-052), collaboration (D-065–D-071), settings + AI (D-073–D-079).
 - Phase 5 in part: export/import/TSV/PNG done (D-080); attachments built, emulator-only (D-083).
-- Ongoing: the user's assistant redesign (D-094–D-101, D-114 done) and board editing (D-108–D-113, D-115, D-117).
+- Ongoing: the user's assistant redesign (D-094–D-101, D-114, D-121 done) and board editing (D-108–D-113, D-115, D-117).
 
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. Firestore + RTDB rules and indexes deployed
@@ -20,7 +20,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   `edit_link` / `add_note` (D-108).
 
 ## In progress
-- Nothing in progress; D-118 and D-119 committed, not pushed. Keep this section true: empty it when work is committed.
+- Nothing in progress; D-118, D-119 and D-121 committed, not pushed. Keep this section true: empty it when work is committed.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

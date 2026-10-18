@@ -186,10 +186,13 @@ export function AiChat() {
   }, [side, open])
   const sideRoom = side ? `calc(min(${side === 'wide' ? 520 : 380}px, 100vw - 2 * var(--space-4)) + var(--space-4))` : '0px'
 
-  // On the box's edge while open (perch.ts): lifted (startled), swept along when the column crosses (shaken, composed).
+  // On the box's edge while open (perch.ts): lifted (startled), swept along when the column crosses (shaken, composed),
+  // knocked off its end (fall, crash, climb).
   const orb = useRef<HTMLButtonElement>(null)
+  // Pushed off the small box by a wide side panel, it lands on the floor and peeks around the box's side (D-121).
   const perchCue = useCallback((kind: PerchCue) => setCue((c) => ({ kind, n: (c?.n ?? 0) + 1 })), [])
-  usePerch(orb, open, tall, perchCue)
+  const [floored, setFloored] = useState(false)
+  usePerch(orb, open, tall, perchCue, setFloored)
 
   // Thinking until the first words arrive, then talking while they stream in.
   const talking = useChat((s) => s.busy && !!s.messages[s.messages.length - 1]?.content)
@@ -216,7 +219,7 @@ export function AiChat() {
         aria-expanded={open}
         aria-label={open ? 'Close the assistant' : 'Ask the assistant'}
       >
-        <AiOrb size={size} mood={mood} cue={cue} peek={tall} />
+        <AiOrb size={size} mood={mood} cue={cue} peek={tall ? 'top' : floored ? 'side' : undefined} />
       </button>
     </OutsidePreview.Provider>
   )

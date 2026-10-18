@@ -116,6 +116,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Models belong to the key that pays: own key default + per-workspace overrides; owners pick and allow models on the
   workspace key, enforced by the proxy; per-chat switch in the header; tasks chat / web / deep research (D-104).
 - Orb: ASCII sphere with rounded-square eyes, moods, antics, chat reactions; pomegranate easter egg (`nar`) (D-073, D-078, D-092).
+- Orb pushed off the small chat box's end by a wide side panel: falls, crashes on the floor (dizzy, then cross), peeks
+  around the box's left side, hops back up when there's room (`perch.ts`) (D-121).
 - Chat: terminal log look; empty = small box with the orb perched; first message grows it into a column beside the app
   (`[data-app]` narrows); a preview or report opens a stage, the chat glides left (D-081, D-094, D-095). Phones (≤760 px):
   the chat covers the screen, solid; beside a stage a `chat · preview|report` switch, the stage shrinking the chat to its header (D-114).

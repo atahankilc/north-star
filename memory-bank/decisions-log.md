@@ -1405,3 +1405,26 @@ neden? … gösterelim bakalım" and "for filtresinde bir customer seçtiğimde,
   customer card stayed visible. The dropdown still lists every customer.
 - *Alternative kept in mind:* if the lines turn out too busy, turn the `relates · for` group off by default or give `for`
   its own LINKS entry.
+
+### D-121 · 2026-10-18 · Accepted (extends D-095)
+**Pushed off the small chat box, the orb falls, crashes and peeks around the box's side.** The user saw the orb hanging in
+mid-air left of the small chat box with a side panel open, worst with the competitor panel (the widest, 520 px), and
+asked for it to fall and hit the floor instead, get angry or upset with some cute effects, then keep peeking from
+behind the box, "bu sefer üstten değil yandan" (from the side this time, not over the top).
+- *Physics (`src/ui/perch.ts`):* a vertical state `edge | falling | floor | climbing` next to the edge spring. On the
+  small box, once the orb's middle is pushed past the box's left end it falls (gravity 2800 px/s², bounces keeping 30% of
+  its speed) to its corner's height, beside the box. On the floor it sits with 30% of itself behind the box's left side
+  (10% when it leans out to look, on the same 7–14 s timer as peeking over the tall box). Once the box has room again
+  (its middle fits with 6 px to spare), or the box grows tall, it hops back up in 520 ms (smoothstep across, a parabola
+  0.7 orb sizes high) and lands with `free`. The box coming up with a wide panel already open leaves it on the floor
+  (no lift); closing the chat walks it back to its corner. Off the edge the clip is an evenodd `path()` cutting out the
+  box and the side panel, so it is drawn behind both. Reduced motion: placed directly, no cues.
+- *Face (`src/ui/AiOrb.tsx`):* cues `fall` (an `!`, wide eyes, mouth open), `crash` 3.4 s (squashed around its bottom
+  and springing back, a puff of dust, `> <`; dizzy spiral eyes with three stars circling its head until 1.7 s; then cross,
+  slanted eyes, the sphere hot magenta, frown, magenta `~` steam), `climb` (eyes on the edge). `peek` is now `top` (the
+  tall chat) or `side` (on the floor: eyes look no further right than −0.35, head tilted −0.16).
+- *Wiring:* `usePerch` takes `onFloor`; AiChat keeps `floored` and passes `peek={tall ? 'top' : floored ? 'side' : undefined}`.
+- *Verified* in headless Chrome on the emulators (1440×900, Tablebook): small chat open, competitor panel opened → bumped,
+  falls, crash frames (squeeze + dust, spirals, angry), then peeking around the side; Esc closes the panel → hops back
+  onto the edge. Chat opened with the panel already open → stays on the floor, peeking; chat closed → back to its corner.
+  `npm run build`.

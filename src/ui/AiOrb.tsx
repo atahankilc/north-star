@@ -11,9 +11,12 @@
 //   (chattering mouth, bouncing); after talking it is tired for a few seconds. Closing the chat makes it sad (a tear)
 //   or play dead (X eyes, tongue out, tipped over, not spinning), and then it pulls itself together.
 // - Cues from outside (`cue`): a side panel shoving it aside bumps it; the panel closing frees it. The chat's box rising
-//   under it and lifting it onto its top edge startles it; the box growing tall drops it behind its edge (D-095).
-// - `peek` (D-095): it sits behind the tall chat with only the top of its head showing, so its face rides high and its
-//   eyes never look so far down that they'd go under the edge: it peeks over at you and what you type.
+//   under it and lifting it onto its top edge startles it; the box growing tall drops it behind its edge (D-095). Pushed
+//   off the box's end (D-121) it falls (wide eyes), crashes on the floor (squashed, a puff of dust, dizzy with stars
+//   going round, then cross, steaming), and later hops back up (`climb`, then `free`).
+// - `peek` (D-095): `top`, it sits behind the tall chat with only the top of its head showing, so its face rides high and
+//   its eyes never look so far down that they'd go under the edge: it peeks over at you and what you type. `side`
+//   (D-121), it's on the floor half behind the box's left side, so its face turns left, its head tilted around the corner.
 // - Easter egg: once in a long while, instead of an antic, it turns into a pomegranate (nar) with a crown and stays one
 //   for half a minute or so, face and moods and all; then it swells, bursts into seeds and peel, and the plain orb builds
 //   itself back. Typing `nar` outside a text field turns it (or back).
@@ -24,7 +27,7 @@ import { useTheme } from '../state/theme'
 
 export type OrbMood = 'idle' | 'hover' | 'open' | 'thinking' | 'talking'
 // Something that happened to it; a new `n` plays `kind` once.
-export type OrbCue = { kind: 'bumped' | 'free' | 'startled' | 'fall' | 'shaken' | 'composed'; n: number }
+export type OrbCue = { kind: 'bumped' | 'free' | 'startled' | 'fall' | 'crash' | 'climb' | 'shaken' | 'composed'; n: number }
 
 // Light glyphs only: heavy ones (# % @) made the sphere loud enough to drown out the face.
 const GLYPHS = ' .·:-=+*'
@@ -183,11 +186,16 @@ const BURST = { pop: 0.7, gone: 1.15, back: 1.75 }
 const angleTo = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)))
 
 // Reactions to the chat: after talking, and after the chat closes (sad or dead, then reviving).
-type React = 'tired' | 'sad' | 'dead' | 'revive' | 'startled' | 'fall' | 'shaken' | 'composed' | 'bumped' | 'free'
-const REACT_DUR: Record<React, number> = { tired: 3.5, sad: 2.4, dead: 2.4, revive: 0.9, startled: 1.3, fall: 1, shaken: 1, composed: 0.8, bumped: 1.1, free: 0.9 }
+type React = 'tired' | 'sad' | 'dead' | 'revive' | 'startled' | 'fall' | 'crash' | 'climb' | 'shaken' | 'composed' | 'bumped' | 'free'
+const REACT_DUR: Record<React, number> = { tired: 3.5, sad: 2.4, dead: 2.4, revive: 0.9, startled: 1.3, fall: 1, crash: 3.4, climb: 0.55, shaken: 1, composed: 0.8, bumped: 1.1, free: 0.9 }
+// The crash (s from landing): squashed until `hit`, dizzy with stars going round until `dizzy`, then cross to the end.
+const CRASH = { hit: 0.35, dizzy: 1.7 }
 // How far the face rides up while peeking (in sphere radii), and how far down the eyes may look then.
 const PEEK_RISE = 0.3
 const PEEK_LOOK = 0.3
+// Peeking around the box's side: the eyes look no further right than this (the right of it is hidden), the head tilted.
+const SIDE_LOOK = -0.35
+const SIDE_TILT = -0.16
 const chatting = (m: OrbMood) => m === 'open' || m === 'thinking' || m === 'talking'
 
 const smooth = (t: number) => t * t * (3 - 2 * t)
@@ -208,7 +216,7 @@ type Particle = {
 }
 type Eye = { s: number; x: number; y: number; rx: number; ry: number }
 
-export function AiOrb({ size, mood, cue, peek = false }: { size: number; mood: OrbMood; cue?: OrbCue; peek?: boolean }) {
+export function AiOrb({ size, mood, cue, peek }: { size: number; mood: OrbMood; cue?: OrbCue; peek?: 'top' | 'side' }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const moodRef = useRef(mood)
   moodRef.current = mood
@@ -415,8 +423,36 @@ export function AiOrb({ size, mood, cue, peek = false }: { size: number; mood: O
             if (at < 0.7) return { ...f, look: { x: 0, y: -0.3 }, rate: 24, wide: 1.35, mouth: 'o', shake: at < 0.25 ? 1 : 0, bounce: 1, blink: false }
             return { ...f, look: { x: -0.2, y: 0.7 }, rate: 10, wide: 1.1, mouth: 'none', blink: false }
           case 'fall':
-            // Dropping behind the box's edge: eyes wide, mouth open, then it settles to peek.
+            // Going over the box's end (D-121): an `!`, eyes wide, mouth open, looking up at where it was.
+            if (at < 0.05 && now - emittedAt > 500) {
+              emittedAt = now
+              emit({ g: '!', color: 'cyan', x: c - R * 0.75, y: c - R * 0.8, vx: -6, vy: -14, life: 0.9, size: R * 0.42 }, now)
+            }
             return { ...f, look: { x: 0, y: -0.5 }, rate: 20, wide: 1.3, mouth: 'o', blink: false }
+          case 'crash':
+            // Landed on the floor: squeezed shut with a puff of dust, then dizzy (stars go round, drawn below), then cross,
+            // glaring up at what pushed it, steam coming off.
+            if (at < CRASH.hit) {
+              if (now - emittedAt > 1000) {
+                emittedAt = now
+                for (let i = 0; i < 8; i++) {
+                  const s = i % 2 ? 1 : -1
+                  const v = 30 + (i >> 1) * 14
+                  emit({ g: i % 3 ? '·' : '∙', color: 'dim', x: c + s * R * 0.55, y: c + R * 0.92, vx: s * v, vy: -12 - (i >> 1) * 6, fall: R * 1.5, life: 0.55, size: R * 0.26 }, now)
+                }
+              }
+              return { ...f, look: { x: 0, y: 0.2 }, rate: 30, shape: ['squeeze', 'squeeze'], mouth: 'o', shake: 1, blink: false }
+            }
+            if (at < CRASH.dizzy) return { ...f, look: { x: Math.sin(at * 7) * 0.4, y: 0.05 }, rate: 12, shape: ['spiral', 'spiral'], mouth: 'wobble', sway: 0.7, blink: false }
+            if (now - emittedAt > 420) {
+              emittedAt = now
+              const s = Math.random() < 0.5 ? -1 : 1
+              emit({ g: '~', color: 'magenta', x: c + s * R * 0.7, y: c - R * 0.65, vx: s * 10, vy: -24, life: 1, size: R * 0.32 }, now)
+            }
+            return { ...f, look: { x: 0.3, y: -0.45 }, rate: 10, slant: 1, hot: 1, mouth: 'frown', shake: +(Math.sin(at * 9) > 0.6), blink: false }
+          case 'climb':
+            // The jump back up: eyes on the edge, determined.
+            return { ...f, look: { x: 0.2, y: -0.7 }, rate: 20, wide: 1.15, mouth: 'flat', blink: false }
           case 'shaken':
             // Slid along the edge when the chat crossed the screen (D-095): squeezed shut and rattled, then dazed.
             if (at < 0.45) return { ...f, look: { x: 0, y: 0 }, rate: 24, shape: ['squeeze', 'squeeze'], mouth: 'o', shake: 1, blink: false }
@@ -801,15 +837,19 @@ export function AiOrb({ size, mood, cue, peek = false }: { size: number; mood: O
       if (!popped) pomK += (+(pom || bt >= 0) - pomK) * (reduced ? 1 : 1 - Math.exp(-dt * (pom ? 1.6 : 3)))
 
       const want = expression(m, now)
-      if (peekRef.current) {
+      if (peekRef.current === 'top') {
         want.droop -= PEEK_RISE
         if (want.look) want.look = { x: want.look.x, y: Math.min(want.look.y, PEEK_LOOK) }
+      } else if (peekRef.current === 'side') {
+        want.tilt += SIDE_TILT
+        want.reach = Math.max(want.reach, 1.3)
+        want.look = { x: Math.min((want.look ?? target).x, SIDE_LOOK), y: (want.look ?? target).y }
       }
       const ease = (r: number) => (reduced ? 1 : 1 - Math.exp(-dt * r))
       const to = (k: 'wide' | 'squash' | 'slant' | 'sad' | 'tilt' | 'droop' | 'hot' | 'blush' | 'bounce' | 'shake' | 'sway' | 'pulse' | 'spin' | 'reach', r: number) => {
         cur[k] += (want[k] - cur[k]) * ease(r)
       }
-      const goal = want.look ?? (peekRef.current ? { x: target.x, y: Math.min(target.y, PEEK_LOOK) } : target)
+      const goal = want.look ?? (peekRef.current === 'top' ? { x: target.x, y: Math.min(target.y, PEEK_LOOK) } : target)
       look.x += (goal.x - look.x) * ease(want.rate)
       look.y += (goal.y - look.y) * ease(want.rate)
       to('wide', 14)
@@ -865,6 +905,14 @@ export function AiOrb({ size, mood, cue, peek = false }: { size: number; mood: O
       ctx.translate(c, c)
       ctx.scale(scale, scale)
       ctx.translate(-c, -c)
+      // Landing on the floor (D-121): squashed flat around its bottom, springing back up through a stretch.
+      const crashAt = react?.kind === 'crash' ? (now - react.at) / 1000 : -1
+      if (r && crashAt >= 0 && crashAt < 0.7) {
+        const q = Math.exp(-crashAt * 7) * Math.cos(crashAt * 20)
+        ctx.translate(c, c + R)
+        ctx.scale(1 + 0.24 * q, 1 - 0.3 * q)
+        ctx.translate(-c, -c - R)
+      }
       ctx.font = `600 ${font}px ${mono}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
@@ -969,6 +1017,25 @@ export function AiOrb({ size, mood, cue, peek = false }: { size: number; mood: O
       const md = R * 0.36 * cur.wide
       drawMouth(fx - md * ts, fy + md * tc, mouthPop)
       ctx.restore()
+      // Dizzy after the crash: three stars going round over its head, fading in and out.
+      if (r && crashAt >= CRASH.hit && crashAt < CRASH.dizzy) {
+        const fade = Math.min(1, (crashAt - CRASH.hit) * 6, (CRASH.dizzy - crashAt) * 4)
+        ctx.save()
+        ctx.font = `700 ${Math.round(R * 0.3)}px ${mono}`
+        ctx.lineWidth = 3
+        ctx.strokeStyle = colors.bg
+        for (let i = 0; i < 3; i++) {
+          const a = crashAt * 6 + (i * Math.PI * 2) / 3
+          const front = Math.sin(a) > 0
+          ctx.globalAlpha = fade * (front ? 1 : 0.45)
+          ctx.fillStyle = i ? colors.fg : colors.cyan
+          const sx = fx + Math.cos(a) * R * 0.7
+          const sy = cy0 - R * 0.92 + Math.sin(a) * R * 0.16
+          ctx.strokeText(i ? '*' : '✦', sx, sy)
+          ctx.fillText(i ? '*' : '✦', sx, sy)
+        }
+        ctx.restore()
+      }
       drawParticles(now)
     }
 
