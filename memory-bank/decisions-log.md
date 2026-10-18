@@ -1392,7 +1392,7 @@ carry it (the current one can stay inside settings) to the board view".
   "project title", edit name / edit description, no copy/duplicate, "remove from board". Delete takes the block away, never the name.
 - *Elsewhere:* framing, box selection, alignment guides (edges, like a card) and the assistant's `arrange_area` layout use
   its measured size (`titleHalf()`); `go to` lists it under the workspace's name and flies to its centre; export/import
-  keep it (`cleanLabel` accepts the empty text for a title). The assistant's context skips it (empty text), as before.
+  keep it (`cleanLabel` accepts the empty text for a title). The assistant's context skips it (empty text); D-120 says whether it's there and lets the assistant edit its two fields.
 - *Verified* in headless Chrome on the emulators: added from `+` on the example workspace (placed clear of the headings),
   renamed on the board (the breadcrumb followed), description edited, right-click menu; `npm run test:rules` 245 passed.
 
@@ -1405,6 +1405,30 @@ neden? … gösterelim bakalım" and "for filtresinde bir customer seçtiğimde,
   customer card stayed visible. The dropdown still lists every customer.
 - *Alternative kept in mind:* if the lines turn out too busy, turn the `relates · for` group off by default or give `for`
   its own LINKS entry.
+
+### D-120 · 2026-10-18 · Accepted (extends D-074, D-118)
+**The assistant can edit the project: `update_project`; proposals keep clear of the project block.** User asked whether
+the agent can edit the new project card and whether its functions still cover everything ("agentımız yeni eklediğimiz
+project cartını düzenleyebiliyor mu?"), then "yap bakalım" to the four fixes below.
+- *`update_project`* (`src/ai/tools.ts`): a `propose_changes` row with `name` and `description` (null keeps one), the
+  same two fields as the block and Settings → general. Checklist row `~ project <new name>` with `was …` and the new
+  description; "nothing to change" when both match. Name clipped to 120, description to `DESCRIPTION_MAX` (1000). The
+  write is `{ do: 'project' }` in `src/data/assistant.ts`, in the same batch and undo step as the rest. No rule change:
+  editors and owners may already change exactly `name` and `description`.
+- *Undo of the workspace doc:* `history.ts` snapshots only `name` and `description` of `workspaces/{wid}` (missing
+  description as '') and restores them with `merge`, never deletes it. A full-doc restore would put back roles, codes and
+  invites (and an editor's would be refused). Hand edits on the block and in Settings stay untracked, as in D-118.
+- *Context:* the brief says `PROJECT BLOCK ON THE BOARD: yes/no` after `WHAT WE'RE BUILDING`; the prompt says when to
+  propose `update_project` (rename, write or sharpen what it's building, fill in an empty description on request).
+- *Preview:* the simulated workspace carries the new name/description, so the block shows them; the block gets the
+  edited mark (brackets in the diff colour, `~ was …` under it) and is the row's stepper target.
+- *Placement fix:* new cards (`add_card`, `add_competitor`) took only cards into account and could land on the block;
+  the block's rectangle now fills the spots it covers. *Label fix:* `sameLabel` matched an empty label name to the block
+  (its text is empty), so `rename_label`/`delete_label` with `""` could hit it; an empty name now matches nothing.
+- *Not done:* the assistant can't add, move or remove the block (it's one click in `+`); suggest it in words.
+- *Verified* with a node script on parseProposal/toWrites/simulate (rows, writes, preview marks, empty label refused; a
+  card placed where the block is now lands clear of it, before the fix it overlapped); `npm run build`. Not yet tried in
+  the browser or against the emulator's undo.
 
 ### D-121 · 2026-10-18 · Accepted (extends D-095)
 **Pushed off the small chat box, the orb falls, crashes and peeks around the box's side.** The user saw the orb hanging in
@@ -1428,3 +1452,23 @@ behind the box, "bu sefer üstten değil yandan" (from the side this time, not o
   falls, crash frames (squeeze + dust, spirals, angry), then peeking around the side; Esc closes the panel → hops back
   onto the edge. Chat opened with the panel already open → stays on the floor, peeking; chat closed → back to its corner.
   `npm run build`.
+
+### D-122 · 2026-10-18 · Accepted (extends D-074, D-108)
+**The assistant edits competitor features, a matrix cell's "their version", and empties fields.** After D-120 the user
+asked whether the agent was now capable everywhere ("agentımız her konuda daha capable oldu mu artık?"); of the gaps
+listed they said "1,2,3 ü yap sonra da 4 ve 5 i yapıcaz" (4 and 5, label size/colour/headings and moving one card, next).
+- *`update_competitor_feature`* (`src/ai/tools.ts`): name, category, description of a feature in a competitor's
+  breakdown. Before, the only way was delete + add, which lost its links and matrix "their version". Wrong type or a
+  feature added in the same proposal is refused.
+- *Matrix:* `set_matrix_cell` takes `their_feature` (the competitor feature matching ours, `competitorFeatureId`; a
+  ref, or the key of one added in the same proposal; `""` removes it) and `coverage: "not assessed"` to clear coverage.
+  A feature of another competitor is refused (refs carry `parent`, the competitor id; new ones take their row's
+  competitor). The brief and `get_items` show `their version` on cells, and list cells that have only that.
+- *Emptying:* in `update_card`, `update_competitor`, `update_competitor_feature` and `set_matrix_cell`, null keeps a
+  field and `""` empties it (row detail `notes emptied`); a title or name can't be emptied. Writes carry `null`, which
+  `src/data/assistant.ts` turns into `deleteField()` (as `edit_link` already did for labels); the preview leaves it undefined.
+  Feature priority/status/effort still can't be cleared (enums; one click by hand).
+- Checklist colours: `update_competitor_feature`, `update_project`, `edit_link`, `add_note` were missing from `ROW_MARK`.
+- *Verified* with a node script on parseProposal/toWrites/simulate (every row kind above, the refusals, null → removed
+  field, a new competitor feature as their version); `npm run build`. Not tried with a real key or in the browser.
+

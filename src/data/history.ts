@@ -41,15 +41,21 @@ export const useHistory = create<History>((set, get) => ({
 }))
 
 async function read(ref: DocumentReference): Promise<DocumentData | null> {
+  let data: DocumentData | null
   try {
     // Every workspace collection has a live listener, so the cache is current.
     const snap = await getDocFromCache(ref)
-    return snap.exists() ? snap.data() : null
+    data = snap.exists() ? snap.data() : null
   } catch {
     const snap = await getDoc(ref)
-    return snap.exists() ? snap.data() : null
+    data = snap.exists() ? snap.data() : null
   }
+  return data && isWorkspaceDoc(ref) ? { name: data.name, description: data.description ?? '' } : data
 }
+
+// The workspace document itself (the assistant's update_project, D-120): only its name and description are tracked, and
+// put back merged, so an undo never touches its people, roles or codes.
+const isWorkspaceDoc = (ref: DocumentReference) => ref.path.split('/').length === 2
 
 const snapshot = (refs: DocumentReference[]) => Promise.all(refs.map(async (ref) => ({ ref, data: await read(ref) })))
 
@@ -59,8 +65,8 @@ function restore(snap: Snapshot): Promise<unknown> {
   for (let i = 0; i < snap.length; i += BATCH_LIMIT) {
     const batch = writeBatch(db())
     for (const { ref, data } of snap.slice(i, i + BATCH_LIMIT)) {
-      if (data) batch.set(ref, data)
-      else batch.delete(ref)
+      if (data) batch.set(ref, data, { merge: isWorkspaceDoc(ref) })
+      else if (!isWorkspaceDoc(ref)) batch.delete(ref)
     }
     commits.push(batch.commit())
   }

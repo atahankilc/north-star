@@ -3,7 +3,9 @@
 import type { AssistantWrite, ChangeRef } from '../data/assistant'
 import { linked } from '../data/edges'
 import { COVERAGES, FEATURE_EFFORTS, FEATURE_PRIORITIES, FEATURE_STATUSES, type BoardType, type Edge, type NodeType } from '../data/model'
+import { DESCRIPTION_MAX } from '../data/workspaces'
 import { CARD_H, CARD_W, findFreeSpot } from '../views/canvas/cardLayout'
+import { isTitle, titleHalf } from '../views/canvas/titleBlock'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
 import { arrangeAreas, type AreaPlan } from './arrange'
@@ -16,8 +18,13 @@ const EDITABLE_KINDS = LINK_KINDS.filter((k) => k !== 'for')
 const CARD_TYPES = ['customer', 'problem', 'idea', 'feature'] as const
 // Far more than one answer should hold; keeps a runaway call from flooding the board.
 const MAX_CHANGES = 60
+// A project name is a few words; Settings has no limit, a model's answer gets one.
+const NAME_MAX = 120
 
-// Strict schemas: every property listed and required; "not given" is null.
+// Strict schemas: every property listed and required; "not given" is null. In an edit an empty string empties a field
+// (D-122), except a title or name.
+const KEEP_OR_EMPTY = 'Null leaves a field as it is; an empty string empties it.'
+const NOT_ASSESSED = 'not assessed'
 const str = (description: string) => ({ type: 'string', description })
 const optStr = (description: string) => ({ type: ['string', 'null'], description })
 const optEnum = (values: readonly string[], description: string) => ({ type: ['string', 'null'], enum: [...values, null], description })
@@ -65,24 +72,30 @@ const OPS = [
     category: optStr('Groups features in the breakdown, e.g. "scheduling", "payroll".'),
     description: optStr('How they do it.'),
   }),
-  op('update_card', 'Edit an existing customer, problem, idea or feature. Null leaves a field as it is.', {
+  op('update_card', `Edit an existing customer, problem, idea or feature. ${KEEP_OR_EMPTY}`, {
     target: ref('The card'),
-    title: optStr('New title.'),
+    title: optStr('New title (never empty).'),
     notes: optStr('Replaces the whole notes text; include what should stay.'),
     tags: optTags,
     priority: optEnum(FEATURE_PRIORITIES, 'Features only.'),
     status: optEnum(FEATURE_STATUSES, 'Features only.'),
     effort: optEnum(FEATURE_EFFORTS, 'Features only.'),
   }),
-  op('update_competitor', 'Edit an existing competitor. Null leaves a field as it is.', {
+  op('update_competitor', `Edit an existing competitor. ${KEEP_OR_EMPTY}`, {
     target: ref('The competitor'),
-    name: optStr('New name.'),
+    name: optStr('New name (never empty).'),
     url: optStr('Homepage.'),
     description: optStr('Replaces the description.'),
     pricing: optStr('Replaces the pricing.'),
     audience: optStr('Replaces the audience.'),
     notes: optStr('Replaces the whole notes text; include what should stay.'),
     tags: optTags,
+  }),
+  op('update_competitor_feature', `Edit a feature in a competitor's breakdown (listed under it with "·"). ${KEEP_OR_EMPTY}`, {
+    target: ref('Their feature'),
+    name: optStr('New name (never empty).'),
+    category: optStr('New category.'),
+    description: optStr('Replaces how they do it.'),
   }),
   op('link', 'A link between two items. "for" tags an item with a customer (to = the customer).', {
     from: ref('From'),
@@ -140,12 +153,24 @@ const OPS = [
     label: str('Its current text, exactly as listed under AREAS ON THE BOARD or NOTES ON THE BOARD.'),
     reason: str('Why it should go, in a few words; shown to the user.'),
   }),
-  op('set_matrix_cell', 'One cell of the matrix: how well a competitor covers one of OUR features.', {
+  op('set_matrix_cell', `One cell of the matrix: how well a competitor covers one of OUR features. ${KEEP_OR_EMPTY}`, {
     feature: ref('Our feature'),
     competitor: ref('The competitor'),
-    coverage: optEnum(COVERAGES, 'none, partial, full, or better than ours. Null leaves it.'),
+    coverage: optEnum([...COVERAGES, NOT_ASSESSED], 'none, partial, full, or better than ours; "not assessed" clears it.'),
+    their_feature: optStr(
+      "Their version: the ref or key of the competitor's own feature (from its breakdown) that matches ours. Empty string: none.",
+    ),
     notes: optStr('Replaces the cell notes.'),
   }),
+  op(
+    'update_project',
+    "Edit the workspace's own name or what the team is building (WORKSPACE and WHAT WE'RE BUILDING above), shown in the " +
+      "board's project block and in Settings. Null leaves a field as it is.",
+    {
+      name: optStr("The startup's or project's new name, a few words."),
+      description: optStr('Replaces what the team is building: one to three plain sentences, no Markdown.'),
+    },
+  ),
 ]
 
 export const PROPOSE_TOOL = {
@@ -200,9 +225,18 @@ const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefi
 export const refKey = (v: unknown) => s(v)?.replace(/^\[|\]$/g, '')
 const clip = (t: string, n = 70) => (t.length > n ? `${t.slice(0, n - 1)}…` : t)
 
+// The workspace's own name and description (D-120), as the project block shows them.
+export type Project = { name: string; description?: string }
+
 // `labels`: the texts of the board's labels now, so label changes can be checked (D-086). `edges`: its links now, so an
-// edit_link row can say what it changes (D-108).
-export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: string[] = [], edges: Edge[] = []): Proposal {
+// edit_link row can say what it changes (D-108). `project`: its name and description now, for update_project (D-120).
+export function parseProposal(
+  args: string,
+  refs: Map<string, ItemRef>,
+  labels: string[] = [],
+  edges: Edge[] = [],
+  project?: Project,
+): Proposal {
   let data: { summary?: unknown; changes?: unknown }
   try {
     data = JSON.parse(args)
@@ -212,13 +246,14 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: 
   const raws = (Array.isArray(data.changes) ? data.changes : []).slice(0, MAX_CHANGES) as Raw[]
 
   // New items first, so changes can refer to them in any order.
-  const fresh = new Map<string, { type: NodeType; name: string }>()
+  // `parent`: a new competitor feature's competitor, as the row gives it.
+  const fresh = new Map<string, { type: NodeType; name: string; parent?: unknown }>()
   for (const r of raws) {
     const key = s(r.key)
     if (!key) continue
     if (r.op === 'add_card') fresh.set(key, { type: r.type as NodeType, name: s(r.title) ?? 'Untitled' })
     if (r.op === 'add_competitor') fresh.set(key, { type: 'competitor', name: s(r.name) ?? 'Untitled' })
-    if (r.op === 'add_competitor_feature') fresh.set(key, { type: 'competitorFeature', name: s(r.name) ?? 'Untitled' })
+    if (r.op === 'add_competitor_feature') fresh.set(key, { type: 'competitorFeature', name: s(r.name) ?? 'Untitled', parent: r.competitor })
   }
   const resolve = (v: unknown): Resolved | undefined => {
     const k = refKey(v)
@@ -228,6 +263,17 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: 
     const e = refs.get(k)
     if (e) return { ref: { id: e.id, type: e.type }, name: e.name, type: e.type, isNew: false }
     return undefined
+  }
+  // The competitor a competitor feature belongs to, as an id or a key.
+  const parentOf = (v: unknown): string | undefined => {
+    const k = refKey(v)
+    if (!k) return undefined
+    const f = fresh.get(k)
+    if (f) {
+      const p = resolve(f.parent)
+      return p && idOfRef(p.ref)
+    }
+    return refs.get(k)?.parent
   }
   const needsOf = (...rs: (Resolved | undefined)[]) => rs.flatMap((r) => (r && 'key' in r.ref ? [r.ref.key] : []))
   const isBoardCard = (t: NodeType) => (CARD_TYPES as readonly string[]).includes(t)
@@ -279,22 +325,36 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: 
         }
       }
       case 'update_card':
-      case 'update_competitor': {
+      case 'update_competitor':
+      case 'update_competitor_feature': {
         const t = resolve(raw.target)
-        const want = raw.op === 'update_competitor' ? 'competitor' : 'card'
-        const fit = t && (want === 'competitor' ? t.type === 'competitor' : isBoardCard(t.type))
-        const edits = Object.entries(raw)
-          .filter(([k, v]) => !['op', 'target'].includes(k) && v !== null && v !== undefined)
-          .map(([k, v]) => (k === 'tags' ? `tags ${tagText(v) || 'none'}` : `${k} ${clip(String(v), 50)}`))
+        const want = raw.op === 'update_competitor' ? 'competitor' : raw.op === 'update_competitor_feature' ? 'competitor feature' : 'card'
+        const fit =
+          t && (want === 'competitor' ? t.type === 'competitor' : want === 'card' ? isBoardCard(t.type) : t.type === 'competitorFeature')
+        const given = Object.entries(raw).filter(([k, v]) => !['op', 'target'].includes(k) && v !== null && v !== undefined)
+        const edits = given.map(([k, v]) =>
+          k === 'tags' ? `tags ${tagText(v) || 'none'}` : emptied(v) ? `${k} emptied` : `${k} ${clip(String(v), 50)}`,
+        )
+        const blank = given.find(([k, v]) => (k === 'title' || k === 'name') && emptied(v))
         return {
           ...base,
           sign: '~',
-          kind: t?.type === 'competitor' ? 'competitor' : (t?.type ?? want),
-          tone: t && t.type !== 'competitorFeature' ? (t.type as BoardType) : null,
+          kind: t?.type === 'competitorFeature' ? 'their feature' : t?.type === 'competitor' ? 'competitor' : (t?.type ?? want),
+          tone: t ? (t.type === 'competitorFeature' ? 'competitor' : (t.type as BoardType)) : null,
           text: t?.name ?? '?',
           detail: [...edits, sourcesOf(raw)].filter(Boolean).join(' · ') || undefined,
           needs: needsOf(t),
-          problem: !t ? 'unknown item' : !fit ? `${t.name} isn't a ${want}` : edits.length === 0 ? 'nothing to change' : undefined,
+          problem: !t
+            ? 'unknown item'
+            : !fit
+              ? `${t.name} isn't a ${want}`
+              : t.isNew
+                ? 'added in this same proposal'
+                : blank
+                  ? `a ${blank[0]} can't be empty`
+                  : edits.length === 0
+                    ? 'nothing to change'
+                    : undefined,
         }
       }
       case 'link': {
@@ -368,23 +428,36 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: 
       case 'set_matrix_cell': {
         const f = resolve(raw.feature)
         const c = resolve(raw.competitor)
+        const theirs = emptied(raw.their_feature) ? undefined : resolve(raw.their_feature)
+        const given = typeof raw.their_feature === 'string'
         return {
           ...base,
           sign: '▦',
           kind: 'matrix',
           tone: null,
           text: `${f?.name ?? '?'} × ${c?.name ?? '?'}`,
-          detail: [s(raw.coverage), s(raw.notes) && clip(s(raw.notes)!)].filter(Boolean).join(' · ') || undefined,
-          needs: needsOf(f, c),
+          detail:
+            [
+              s(raw.coverage),
+              given && (theirs ? `their version ${theirs.name}` : emptied(raw.their_feature) ? 'their version emptied' : undefined),
+              emptied(raw.notes) ? 'notes emptied' : s(raw.notes) && clip(s(raw.notes)!),
+            ]
+              .filter(Boolean)
+              .join(' · ') || undefined,
+          needs: needsOf(f, c, theirs),
           problem: !f || !c
             ? 'unknown item'
             : f.type !== 'feature'
               ? `${f.name} isn't one of our features`
               : c.type !== 'competitor'
                 ? `${c.name} isn't a competitor`
-                : !s(raw.coverage) && !s(raw.notes)
-                  ? 'nothing to change'
-                  : undefined,
+                : given && !emptied(raw.their_feature) && !theirs
+                  ? 'unknown competitor feature'
+                  : theirs && (theirs.type !== 'competitorFeature' || parentOf(raw.their_feature) !== idOfRef(c.ref))
+                    ? `${theirs.name} isn't one of ${c.name}'s features`
+                    : !s(raw.coverage) && typeof raw.notes !== 'string' && !given
+                      ? 'nothing to change'
+                      : undefined,
         }
       }
       case 'arrange_area': {
@@ -434,6 +507,23 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: 
           removes: true,
           problem: !hasLabel(raw.label) ? 'no label with this text' : undefined,
         }
+      case 'update_project': {
+        const name = s(raw.name)?.slice(0, NAME_MAX)
+        const about = s(raw.description)?.slice(0, DESCRIPTION_MAX)
+        const newName = name && name !== project?.name.trim() ? name : undefined
+        const newAbout = about && about !== (project?.description ?? '').trim() ? about : undefined
+        return {
+          ...base,
+          sign: '~',
+          kind: 'project',
+          tone: null,
+          text: newName ?? project?.name ?? name ?? '?',
+          detail:
+            [newName && project && `was ${clip(project.name, 40)}`, newAbout && `building: ${clip(newAbout, 90)}`].filter(Boolean).join(' · ') ||
+            undefined,
+          problem: !newName && !newAbout ? 'nothing to change' : undefined,
+        }
+      }
       case 'delete_item': {
         const t = resolve(raw.target)
         return {
@@ -473,7 +563,7 @@ export function parseProposal(args: string, refs: Map<string, ItemRef>, labels: 
   }
   for (const c of changes) {
     if (c.raw.op === 'delete_item') continue
-    for (const v of [...['target', 'from', 'to', 'competitor', 'feature', 'near'].map((f) => c.raw[f]), ...itemsOf(c.raw)]) {
+    for (const v of [...ITEM_FIELDS.map((f) => c.raw[f]), ...itemsOf(c.raw)]) {
       const d = deleting.get(refKey(v) ?? '')
       if (d !== undefined && !c.clashes.includes(d)) c.clashes.push(d)
     }
@@ -488,10 +578,16 @@ function linkBetween<E extends Edge>(edges: E[], a: string, b: string): E | unde
 }
 const idOfRef = (r: ChangeRef) => ('id' in r ? r.id : r.key)
 
+// The fields of a row that name one item.
+const ITEM_FIELDS = ['target', 'from', 'to', 'competitor', 'feature', 'their_feature', 'near']
+// An edit's empty string: empty the field (D-122).
+const emptied = (v: unknown) => typeof v === 'string' && !v.trim()
+
 // An arrange_area row's cards.
 export const itemsOf = (raw: Raw): unknown[] => (Array.isArray(raw.items) ? raw.items : [])
-// Labels are named by their text: the same text, ignoring case and spaces at the ends.
-const sameLabel = (text: string, v: unknown) => text.trim().toLowerCase() === (s(v) ?? '').toLowerCase()
+// Labels are named by their text: the same text, ignoring case and spaces at the ends. Nothing names a label with no
+// text, like the project block (D-118), whose text is empty.
+const sameLabel = (text: string, v: unknown) => !!s(v) && text.trim().toLowerCase() === s(v)!.toLowerCase()
 
 // Where researched facts came from (D-076): the domains of every URL in the row's text fields.
 function sourcesOf(raw: Raw): string | undefined {
@@ -512,7 +608,7 @@ export function stillValid(change: Change, ws: WorkspaceCtx, refs: Map<string, I
   if (change.problem) return change.problem
   const exists = new Set<string>()
   for (const list of [ws.customers, ws.problems, ws.ideas, ws.features, ws.competitors, ws.competitorFeatures]) for (const n of list) exists.add(n.id)
-  for (const v of [...['target', 'from', 'to', 'competitor', 'feature', 'near'].map((k) => change.raw[k]), ...itemsOf(change.raw)]) {
+  for (const v of [...ITEM_FIELDS.map((k) => change.raw[k]), ...itemsOf(change.raw)]) {
     const r = refs.get(refKey(v) ?? '')
     if (r && !exists.has(r.id)) return `${r.name} was deleted`
   }
@@ -576,6 +672,8 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
     : null
   const cards = [...position.entries()].filter(([id]) => !moving.has(id)).map(([, p]) => p)
   if (layout) cards.push(...layout.cards.values())
+  // The project block (D-118) is far bigger than a card: it takes up the card spots that would overlap it.
+  for (const t of ws.labels.filter(isTitle)) cards.push(...coverWithCards(t, titleHalf()))
   const placed = new Map<string, { x: number; y: number }>()
   const ofType = (type: BoardType) => {
     const list: { x?: number; y?: number }[] = type === 'competitor' ? ws.competitors : ws[`${type}s` as 'ideas']
@@ -605,6 +703,8 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
   }
 
   const text = (v: unknown) => s(v)
+  // In an edit: null (not given) keeps a field, an empty string removes it (null in a write, D-122).
+  const edit = (v: unknown) => (emptied(v) ? null : s(v))
   const compact = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
   const tags = (v: unknown) => (Array.isArray(v) ? v.map((t) => String(t).replace(/^#/, '').trim()).filter(Boolean).slice(0, 30) : undefined)
 
@@ -661,18 +761,24 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         const target = refOf(r.target) as { id: string; type: NodeType }
         const fields =
           r.op === 'update_card'
-            ? compact({ title: text(r.title), body: text(r.notes), tags: tags(r.tags), priority: text(r.priority), status: text(r.status), effort: text(r.effort) })
+            ? compact({ title: text(r.title), body: edit(r.notes), tags: tags(r.tags), priority: text(r.priority), status: text(r.status), effort: text(r.effort) })
             : compact({
                 name: text(r.name),
-                url: text(r.url),
-                description: text(r.description),
-                pricing: text(r.pricing),
-                audience: text(r.audience),
-                notes: text(r.notes),
+                url: edit(r.url),
+                description: edit(r.description),
+                pricing: edit(r.pricing),
+                audience: edit(r.audience),
+                notes: edit(r.notes),
                 tags: tags(r.tags),
               })
         return { do: 'update', target, fields }
       }
+      case 'update_competitor_feature':
+        return {
+          do: 'update',
+          target: refOf(r.target) as { id: string; type: NodeType },
+          fields: compact({ name: text(r.name), category: edit(r.category), description: edit(r.description) }),
+        }
       case 'link':
         return { do: 'link', from: refOf(r.from), to: refOf(r.to), kind: s(r.kind) ?? 'relates', label: text(r.label) }
       case 'edit_link': {
@@ -704,6 +810,8 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
         return { do: 'label', id: ws.labels.find((l) => sameLabel(l.text, r.label))!.id, fields: { text: s(r.text)!.slice(0, 200) } }
       case 'delete_label':
         return { do: 'unlabel', id: ws.labels.find((l) => sameLabel(l.text, r.label))!.id }
+      case 'update_project':
+        return { do: 'project', fields: compact({ name: text(r.name)?.slice(0, NAME_MAX), description: text(r.description)?.slice(0, DESCRIPTION_MAX) }) }
       case 'unlink': {
         const a = (refOf(r.from) as { id: string }).id
         const b = (refOf(r.to) as { id: string }).id
@@ -715,7 +823,8 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
           do: 'cell',
           feature: refOf(r.feature),
           competitor: refOf(r.competitor),
-          fields: compact({ coverage: text(r.coverage), notes: text(r.notes) }),
+          fields: compact({ coverage: r.coverage === NOT_ASSESSED ? null : text(r.coverage), notes: edit(r.notes) }),
+          theirs: typeof r.their_feature !== 'string' ? undefined : emptied(r.their_feature) ? null : refOf(r.their_feature),
         }
     }
   })
@@ -736,6 +845,16 @@ export function toWrites(accepted: Change[], ws: WorkspaceCtx, refs: Map<string,
 
 // Below a card, between notes on the same card (board units).
 const NOTE_GAP = 0.32
+
+// Card centres a card's width and height apart across a rectangle (centre `at`, half size `half`): a card placed clear
+// of all of them is clear of the rectangle.
+function coverWithCards(at: { x: number; y: number }, [hw, hh]: [number, number]): { x: number; y: number }[] {
+  const spread = (c: number, h: number, step: number) => {
+    const n = Math.max(1, Math.ceil((2 * h - step) / step) + 1)
+    return h <= step / 2 ? [c] : Array.from({ length: n }, (_, i) => c - h + step / 2 + (i * (2 * h - step)) / (n - 1))
+  }
+  return spread(at.x, hw, CARD_W).flatMap((x) => spread(at.y, hh, CARD_H).map((y) => ({ x, y })))
+}
 
 // The proposal and what became of it, as plain text for the model's next turn.
 export function proposalForHistory(p: Proposal, state: ProposalState): string {

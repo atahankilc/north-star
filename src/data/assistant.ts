@@ -13,9 +13,11 @@ export type ChangeRef = { id: string; type: NodeType } | { key: string; type: No
 export type AssistantWrite =
   // `parent` fills a competitor feature's competitorId.
   | { do: 'create'; key: string; type: NodeType; fields: Record<string, unknown>; parent?: ChangeRef }
+  // In an update or a cell, a null field is removed (D-122).
   | { do: 'update'; target: { id: string; type: NodeType }; fields: Record<string, unknown> }
   | { do: 'link'; from: ChangeRef; to: ChangeRef; kind: EdgeKind; label?: string }
-  | { do: 'cell'; feature: ChangeRef; competitor: ChangeRef; fields: Record<string, unknown> }
+  // `theirs`: the competitor feature that matches ours (competitorFeatureId); null removes it, undefined keeps it.
+  | { do: 'cell'; feature: ChangeRef; competitor: ChangeRef; fields: Record<string, unknown>; theirs?: ChangeRef | null }
   // With everything that hangs off it, like a delete by hand (nodes.ts cascadeOf).
   | { do: 'delete'; target: { id: string; type: NodeType } }
   | { do: 'unlink'; edgeIds: string[] }
@@ -24,8 +26,14 @@ export type AssistantWrite =
   // Board labels (D-086): a new one (no id), or changes to one; and removing one.
   | { do: 'label'; id?: string; fields: Record<string, unknown> }
   | { do: 'unlabel'; id: string }
+  // The workspace's own name and description (D-120); undo puts back only those two (history.ts).
+  | { do: 'project'; fields: { name?: string; description?: string } }
 
 const BATCH_LIMIT = 450
+
+// A null field is one to remove.
+const removing = (fields: Record<string, unknown>) =>
+  Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v === null ? deleteField() : v]))
 
 const col = (wid: string, name: string) => collection(db(), 'workspaces', wid, name)
 
@@ -60,10 +68,15 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
       gone.push(doc(col(wid, 'labels'), w.id))
       continue
     }
+    if (w.do === 'project') {
+      const ref = doc(db(), 'workspaces', wid)
+      ops.push((b) => b.update(ref, w.fields))
+      existing.push(ref)
+      continue
+    }
     if (w.do === 'edge') {
       const ref = doc(col(wid, 'edges'), w.id)
-      const fields = Object.fromEntries(Object.entries(w.fields).map(([k, v]) => [k, v === null ? deleteField() : v]))
-      ops.push((b) => b.update(ref, fields))
+      ops.push((b) => b.update(ref, removing(w.fields)))
       existing.push(ref)
       continue
     }
@@ -86,7 +99,7 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
       fresh.push(ref)
     } else if (w.do === 'update') {
       const ref = doc(col(wid, COLLECTIONS[w.target.type]), w.target.id)
-      ops.push((b) => b.update(ref, { ...w.fields, updatedAt: now }))
+      ops.push((b) => b.update(ref, { ...removing(w.fields), updatedAt: now }))
       existing.push(ref)
     } else if (w.do === 'link') {
       const edge: Edge = { fromId: idOf(w.from), fromType: w.from.type, toId: idOf(w.to), toType: w.to.type, kind: w.kind }
@@ -98,7 +111,8 @@ export async function applyAssistantChanges(wid: string, writes: AssistantWrite[
       const featureId = idOf(w.feature)
       const competitorId = idOf(w.competitor)
       const ref = doc(col(wid, 'comparisons'), cellId(featureId, competitorId))
-      ops.push((b) => b.set(ref, { ...w.fields, featureId, competitorId, updatedAt: now }, { merge: true }))
+      const theirs = w.theirs === undefined ? {} : { competitorFeatureId: w.theirs && idOf(w.theirs) }
+      ops.push((b) => b.set(ref, { ...removing({ ...w.fields, ...theirs }), featureId, competitorId, updatedAt: now }, { merge: true }))
       // A cell between two new items can't exist yet; any other might.
       if ('key' in w.feature || 'key' in w.competitor) fresh.push(ref)
       else existing.push(ref)

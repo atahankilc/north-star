@@ -457,3 +457,9 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - The empty chat's two text lines are gone; with no messages the log hides (`.log:empty`), so the box is only the prompt.
   The `/` list's bottom margin is now `--space-3`, and `ModeMenu` measures it into its height (offsetHeight left it out, so
   the list sat right on `working on …`). Verified in headless Chrome on the emulators (empty box and `/` open).
+
+## Done (2026-10-18): the assistant edits the project and competitor features (D-120, D-122)
+- `update_project` (name/description, the project block), new cards kept clear of the block, an empty label name matches
+  nothing; workspace-doc undo restores only name/description, merged. `update_competitor_feature`, matrix `their_feature`
+  and `not assessed`, `""` empties fields. Verified with a node script (vite-node + jsdom in the scratchpad) on
+  parseProposal/toWrites/simulate and `npm run build`; not tried with a real key, in the browser or on the emulator's undo.

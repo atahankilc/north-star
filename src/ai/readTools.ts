@@ -82,9 +82,9 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
     if (out.length || into.length) lines.push('  links:')
     for (const e of out) lines.push(`  → ${e.kind} ${nameOf(e.toId)}${e.label ? ` (${e.label})` : ''}`)
     for (const e of into) lines.push(`  ← ${nameOf(e.fromId)} ${e.kind} this${e.label ? ` (${e.label})` : ''}`)
-    const cells = ws.comparisons.filter((c) => (c.featureId === it.id || c.competitorId === it.id) && (c.coverage || c.notes))
+    const cells = ws.comparisons.filter((c) => (c.featureId === it.id || c.competitorId === it.id) && (c.coverage || c.notes || c.competitorFeatureId))
     if (cells.length) lines.push('  matrix:')
-    for (const c of cells) lines.push(`  ${nameOf(c.featureId)} × ${nameOf(c.competitorId)}: ${c.coverage ?? 'not assessed'}${c.notes ? `; ${full(c.notes)}` : ''}`)
+    for (const c of cells) lines.push(`  ${nameOf(c.featureId)} × ${nameOf(c.competitorId)}: ${c.coverage ?? 'not assessed'}${c.competitorFeatureId ? `; their version: ${nameOf(c.competitorFeatureId)}` : ''}${c.notes ? `; ${full(c.notes)}` : ''}`)
     return lines.join('\n')
   })
   if (!blocks.length) return { text: 'No refs given.', names, missed: 1 }

@@ -4,6 +4,7 @@
 import type { WithId } from '../data/hooks'
 import type { BoardNode, Label, NodeType } from '../data/model'
 import type { ReportContent, ReportSummary } from '../data/model'
+import { isTitle } from '../views/canvas/titleBlock'
 import type { WorkspaceCtx } from '../views/workspace/context'
 import { reportFull } from './readTools'
 
@@ -50,10 +51,11 @@ function nearestCard(ws: WorkspaceCtx, x: number, y: number): string | undefined
 // `selection`: everything selected on the board (D-108), when it's more than the one card.
 type Where = { view: string; selectedId: string | null; selection?: string[] }
 
-export type ItemRef = { id: string; type: NodeType; name: string }
+// `parent`: a competitor feature's competitor (D-122), so a matrix cell's "their version" can be checked.
+export type ItemRef = { id: string; type: NodeType; name: string; parent?: string }
 
 // The first 6 characters of the item's id (longer where two would clash): stable across messages, cheap in tokens.
-function makeRefs(items: { id: string; type: NodeType; name: string }[]): { byRef: Map<string, ItemRef>; refOf: Map<string, string> } {
+function makeRefs(items: ItemRef[]): { byRef: Map<string, ItemRef>; refOf: Map<string, string> } {
   const byRef = new Map<string, ItemRef>()
   const refOf = new Map<string, string>()
   for (const it of items) {
@@ -90,7 +92,7 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
   }
   for (const f of ws.competitorFeatures) {
     names.set(f.id, `${names.get(f.competitorId) ?? '?'}: ${f.name || 'Untitled'}`)
-    all.push({ id: f.id, type: 'competitorFeature', name: names.get(f.id)! })
+    all.push({ id: f.id, type: 'competitorFeature', name: names.get(f.id)!, parent: f.competitorId })
   }
   const { byRef, refOf } = makeRefs(all)
   const r = (id: string) => `[${refOf.get(id)}] `
@@ -112,6 +114,8 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
   const lines: string[] = [
     `WORKSPACE "${ws.workspace.name}" (each item starts with its [ref])`,
     `WHAT WE'RE BUILDING: ${about || '(not written yet; infer it from the items below)'}`,
+    // The project block (D-118) shows these two on the board; update_project edits them (D-120).
+    `PROJECT BLOCK ON THE BOARD: ${ws.labels.some(isTitle) ? 'yes, showing the name and WHAT WE\'RE BUILDING' : 'no (added from the board\'s + menu)'}`,
   ]
 
   const section = (title: string, items: WithId<BoardNode>[], extra: (n: WithId<BoardNode>) => string = () => '') => {
@@ -150,10 +154,11 @@ export function workspaceBrief(ws: WorkspaceCtx, where: Where, reports: WithId<R
   lines.push('', `LINKS (${links.length})`)
   for (const e of links) lines.push(`- ${names.get(e.fromId)} —${e.kind}→ ${names.get(e.toId)}${e.label ? ` (${clip(e.label, 80)})` : ''}`)
 
-  const cells = ws.comparisons.filter((c) => (c.coverage || c.notes) && names.has(c.featureId) && names.has(c.competitorId))
+  const cells = ws.comparisons.filter((c) => (c.coverage || c.notes || c.competitorFeatureId) && names.has(c.featureId) && names.has(c.competitorId))
   lines.push('', `MATRIX: our feature × competitor (${cells.length} filled cells; coverage none | partial | full | better)`)
   for (const c of cells) {
-    lines.push(`- ${names.get(c.featureId)} × ${names.get(c.competitorId)}: ${c.coverage ?? 'not assessed'}${c.notes ? `; ${clip(c.notes, 200)}` : ''}`)
+    const theirs = c.competitorFeatureId && names.get(c.competitorFeatureId)
+    lines.push(`- ${names.get(c.featureId)} × ${names.get(c.competitorId)}: ${c.coverage ?? 'not assessed'}${theirs ? `; their version [${refOf.get(c.competitorFeatureId!)}]` : ''}${c.notes ? `; ${clip(c.notes, 200)}` : ''}`)
   }
 
   const areas = ws.labels.filter((l) => l.text.trim() && l.size !== 'note')

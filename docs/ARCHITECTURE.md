@@ -160,11 +160,15 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 - **Models** (D-077): one for chat and one for research (`[web]` on), picked in Settings → ai; both default to `gpt-6-luna`.
 - **Context:** each message sends a fresh plain-text brief of the workspace (`src/ai/context.ts`), built from the data the page
   already holds; every item carries a short `[ref]`. It opens with the workspace name and `WHAT WE'RE BUILDING` (the workspace
-  description, set in Settings → workspace) and is wrapped in `<workspace>…</workspace>` as data, not instructions. The prompt
+  description, set in Settings → workspace), then whether the board has the project block (D-120), and is wrapped in `<workspace>…</workspace>` as data, not instructions. The prompt
   says North Star is the app, never the startup (D-082).
 - **Changes** (D-074): one strict function tool, `propose_changes` (`src/ai/tools.ts`). The model proposes; the chat shows a
   checklist; only what the user applies is written, through `src/data/assistant.ts`, as one undo step. Deletes cascade like
-  a delete by hand (D-075).
+  a delete by hand (D-075). `update_project` (D-120) edits the workspace's name and description (the project block, D-118);
+  for the workspace doc `history.ts` snapshots only those two fields and puts them back merged, never roles or codes.
+  New cards are placed clear of the project block; a label row never names a label with no text.
+  Edits (D-122): `update_competitor_feature`; `set_matrix_cell` sets `their_feature` (`competitorFeatureId`) and clears
+  coverage with `not assessed`; in update rows and cells `""` empties a field (a `null` write → `deleteField()`).
 - **Agent loop** (D-084): an answer is up to 6 calls. After each one, the browser runs the function tools the model called
   (`propose_changes`, and `get_items` in `src/ai/readTools.ts`, which reads a few items in full) and sends the step's output
   items plus the `function_call_output`s back. Reasoning carries over as `reasoning.encrypted_content` (still `store: false`).

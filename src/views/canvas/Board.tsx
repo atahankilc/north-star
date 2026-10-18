@@ -488,7 +488,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus }: Props) 
 
       {labels.map((l) =>
         isTitle(l) ? (
-          <BoardTitle key={l.id} wid={wid} label={l} />
+          <BoardTitle key={l.id} wid={wid} label={l} mark={preview?.marks.get(l.id)} was={wasLine(preview?.before.get(l.id))} />
         ) : (
           <BoardLabel key={l.id} wid={wid} label={l} mark={preview?.marks.get(l.id)} was={wasLine(preview?.before.get(l.id))} lit={litIds.has(l.id)} />
         ),

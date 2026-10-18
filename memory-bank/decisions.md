@@ -125,6 +125,10 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Brief: plain text in `<workspace>` tags, data not instructions; North Star is the app, never the startup (D-082).
 - Agent loop: up to 6 steps, `get_items`, `get_report`, last step `tool_choice: none`; steps listed live with their times,
   folded into `▸ N steps · 4.7s` once answered (D-084, D-099, D-114).
+- `update_project` proposes the workspace's name/description (the project block); undo restores only those two fields,
+  merged; new cards placed clear of the block (D-120).
+- Edits: `update_competitor_feature`; matrix cells take `their_feature` and `not assessed`; in update rows and cells null
+  keeps a field, `""` empties it (never a title/name) (D-122).
 - Proposals (`propose_changes`): checklist, tick and apply as one batch + one undo step; deletes, unlinks, `arrange_area`,
   label rows, `edit_link`, `add_note` (D-074, D-075, D-086, D-108).
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).

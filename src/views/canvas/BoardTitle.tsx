@@ -42,6 +42,7 @@ import {
   type TitleField,
 } from './titleBlock'
 import { useWs } from '../workspace/context'
+import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
 import styles from './BoardTitle.module.css'
 
@@ -67,7 +68,10 @@ function starShape(r: number) {
 
 type Field = TitleField
 
-export function BoardTitle({ wid, label }: { wid: string; label: WithId<Label> }) {
+// `mark`, `was`: the assistant's preview (D-096, D-120), when a proposal renames the project or rewrites its description.
+type Props = { wid: string; label: WithId<Label>; mark?: Mark; was?: { label: string; value: string } }
+
+export function BoardTitle({ wid, label, mark, was }: Props) {
   const { workspace } = useWs()
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
@@ -211,7 +215,8 @@ export function BoardTitle({ wid, label }: { wid: string; label: WithId<Label> }
     if (field === 'description' && value.trim() !== description) void describeWorkspace(wid, value)
   }
 
-  const frame = selected ? colors.cyan : hovered ? colors.hover : colors.edge
+  const markColor = mark ? colors.diff[mark] : undefined
+  const frame = markColor ?? (selected ? colors.cyan : hovered ? colors.hover : colors.edge)
   const bx = TITLE_W / 2 + PAD
   const by = h / 2 + PAD
   const measure = (set: (v: number) => void, min: number) => (t: unknown) => {
@@ -318,6 +323,22 @@ export function BoardTitle({ wid, label }: { wid: string; label: WithId<Label> }
             onSync={measure(setDescH, DESC * DESC_LEADING)}
           >
             {description || 'What are you building? Double-click to write it.'}
+          </Text>
+        )}
+
+        {/* The preview's mark: the brackets in the change's colour, its sign and what it replaced under the block. */}
+        {markColor && mark && (
+          <Text
+            material={textMaterial}
+            font={fontUrls.mono}
+            fontSize={0.26}
+            maxWidth={TITLE_W}
+            color={markColor}
+            anchorX="left"
+            anchorY="top"
+            position={[left, -by - 0.2, 0]}
+          >
+            {`${MARK_SIGN[mark]} ${was ? `${was.label} ${was.value.length > 90 ? `${was.value.slice(0, 89)}…` : was.value}` : 'edited'}`}
           </Text>
         )}
       </group>

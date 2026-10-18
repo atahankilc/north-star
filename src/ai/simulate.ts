@@ -7,6 +7,7 @@ import { cellId } from '../data/comparisons'
 import type { ChangeRef } from '../data/assistant'
 import type { NodeType } from '../data/model'
 import type { WorkspaceCtx } from '../views/workspace/context'
+import { isTitle } from '../views/canvas/titleBlock'
 import type { Mark } from '../views/workspace/preview'
 import type { ItemRef } from './context'
 import { itemsOf, refKey, toWrites, type Change } from './tools'
@@ -37,6 +38,8 @@ const LIST: Record<NodeType, keyof WorkspaceCtx> = {
 }
 
 const POSITION = new Set(['x', 'y'])
+// A write's null removes a field (D-122): here it's left undefined.
+const kept = (fields: Record<string, unknown>) => Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v === null ? undefined : v]))
 
 export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string, ItemRef>): Simulation {
   const writes = toWrites(accepted, ws, refs)
@@ -73,6 +76,9 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
   const drop = (k: keyof WorkspaceCtx, gone: (d: Doc) => boolean) => lists.set(k, list(k).filter((d) => !gone(d)))
   // The ids each write touches, for its row's step.
   const touched: string[][] = []
+  // The workspace's own name and description (D-120): marked on the project block, if the board has one.
+  let workspace = ws.workspace
+  const titleBlock = ws.labels.find(isTitle)
 
   writes.forEach((w, n) => {
     const ids: string[] = []
@@ -89,7 +95,7 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
         break
       }
       case 'update':
-        if (patch(LIST[w.target.type], w.target.id, w.fields)) {
+        if (patch(LIST[w.target.type], w.target.id, kept(w.fields))) {
           mark(w.target.id, before.has(w.target.id) ? 'edited' : from.has(w.target.id) ? 'moved' : 'edited')
         }
         ids.push(w.target.id)
@@ -99,8 +105,7 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
         ids.push(idOf(w.from), idOf(w.to))
         break
       case 'edge': {
-        const fields = Object.fromEntries(Object.entries(w.fields).map(([k, v]) => [k, v === null ? undefined : v]))
-        if (patch('edges', w.id, fields)) mark(w.id, 'edited')
+        if (patch('edges', w.id, kept(w.fields))) mark(w.id, 'edited')
         const e = list('edges').find((d) => d.id === w.id)
         if (e) ids.push(e.fromId as string, e.toId as string)
         break
@@ -109,9 +114,10 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
         const featureId = idOf(w.feature)
         const competitorId = idOf(w.competitor)
         const id = cellId(featureId, competitorId)
-        if (patch('comparisons', id, w.fields)) mark(id, 'edited')
+        const fields = kept({ ...w.fields, ...(w.theirs === undefined ? {} : { competitorFeatureId: w.theirs && idOf(w.theirs) }) })
+        if (patch('comparisons', id, fields)) mark(id, 'edited')
         else {
-          list('comparisons').push({ ...w.fields, id, featureId, competitorId, updatedAt: now })
+          list('comparisons').push({ ...fields, id, featureId, competitorId, updatedAt: now })
           mark(id, 'new')
         }
         ids.push(id, featureId, competitorId)
@@ -148,6 +154,17 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
         mark(w.id, 'deleted')
         ids.push(w.id)
         break
+      case 'project': {
+        const old: Record<string, unknown> = workspace
+        const changed = Object.keys(w.fields).filter((f) => w.fields[f as 'name'] !== (old[f] ?? ''))
+        workspace = { ...workspace, ...w.fields }
+        if (titleBlock && changed.length) {
+          before.set(titleBlock.id, { ...Object.fromEntries(changed.map((f) => [f, old[f]])), ...before.get(titleBlock.id) })
+          mark(titleBlock.id, 'edited')
+          ids.push(titleBlock.id)
+        }
+        break
+      }
     }
   })
 
@@ -162,5 +179,5 @@ export function simulate(ws: WorkspaceCtx, accepted: Change[], refs: Map<string,
     }
     return { n: c.n, ids: [...new Set(ids)] }
   })
-  return { ws: { ...ws, ...Object.fromEntries(lists) }, marks, before, from, steps }
+  return { ws: { ...ws, ...Object.fromEntries(lists), workspace }, marks, before, from, steps }
 }
