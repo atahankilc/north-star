@@ -494,13 +494,7 @@ function Conversation({ source }: { source: KeySource }) {
         }}
       >
         {/* A terminal's log (D-094): your messages are `>` prompt lines, the answers sit under them. */}
-        {messages.length === 0 && (
-          <li className={styles.empty}>
-            {/* Just the invitation: the commands are a `/` away (D-095), so they aren't listed here. */}
-            <p className={styles.lead}>Ask about this workspace: what's missing, what to build next, how you compare.</p>
-            <p className={styles.fine}>Type / for commands. Open a card and the assistant works on it; the line above the prompt says which.</p>
-          </li>
-        )}
+        {/* Empty, the log is hidden (`:empty`): the prompt's placeholder and the scope line already say what to do. */}
         {messages.map((m) => (
           <li key={m.id} className={styles.message} data-role={m.role}>
             {m.role === 'user' && (
@@ -803,7 +797,8 @@ function ModeMenu({
   useLayoutEffect(() => {
     const el = inner.current
     if (!el) return
-    const measure = () => setHeight(el.offsetHeight)
+    // offsetHeight leaves out the margin, which is the gap between the list and the scope line under it.
+    const measure = () => setHeight(el.offsetHeight + parseFloat(getComputedStyle(el).marginBottom))
     measure()
     const watch = new ResizeObserver(measure)
     watch.observe(el)

@@ -452,3 +452,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - `for` edges drawn like any link (grey dashed, LINKS `relates · for` hides them); under a `for:` filter only the chosen
   customers' cards stay (`useVisibleItems`, so board, Flow and Table). Verified: `tsc -b` passes; not checked on screen by
   Claude, the user committed after their own look.
+
+## Done (2026-10-18): empty chat without the invitation; a gap above the `/` menu's scope line (D-095 tweak)
+- The empty chat's two text lines are gone; with no messages the log hides (`.log:empty`), so the box is only the prompt.
+  The `/` list's bottom margin is now `--space-3`, and `ModeMenu` measures it into its height (offsetHeight left it out, so
+  the list sat right on `working on …`). Verified in headless Chrome on the emulators (empty box and `/` open).

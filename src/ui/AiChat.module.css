@@ -233,10 +233,9 @@ html[data-motion='reduced'] .orb {
   overscroll-behavior: contain;
 }
 
-.empty {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+/* No messages yet: nothing to show above the prompt. */
+.log:empty {
+  display: none;
 }
 
 .starters {
@@ -368,7 +367,7 @@ html[data-motion='reduced'] .modesBox {
 .modes {
   display: flex;
   flex-direction: column;
-  margin: 0 0 var(--space-1);
+  margin: 0 0 var(--space-3);
   padding: 0 0 var(--space-2);
   border-bottom: 1px solid var(--line);
   list-style: none;

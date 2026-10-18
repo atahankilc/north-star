@@ -932,8 +932,8 @@ what you type; so the tall chat stops short of the top.
   `shaken`: `> <` and a jolt, then spiral eyes and a wobble) for 1 s, pulls itself together (`composed`: a quick head shake,
   a straight look) and walks back to the middle. Instant and centred under reduced motion; no sweep while resizing.
 - *Fixes (user, second round):* the orb went back to its corner on close only if nothing restarted its tracking mid-move;
-  it now carries on from its current offset. The empty box shows only the invitation and "Type / for commands" (the commands
-  aren't listed). The `/` menu eases open and shut by its height, so the box grows with it instead of jumping. While the box
+  it now carries on from its current offset. The empty box shows only the prompt (2026-10-18, user: the invitation and "Type / for
+  commands" lines repeated the placeholder and the scope line, so they went; the commands aren't listed). The `/` menu eases open and shut by its height, so the box grows with it instead of jumping. While the box
   is small, side panels end just above it (`html[data-ai-small]`, `--ai-small-h`), over the orb's spot, and ease to their new
   length (bottom, 450 ms), whether the panel or the chat opened first. The orb is knocked aside as when the chat is closed
   (cue `bumped`: `> <`, a jolt, a wary look at the panel) to the panel's left, hanging off the box's end if it must, and hops
