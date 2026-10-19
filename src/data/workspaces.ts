@@ -251,6 +251,9 @@ const WORKSPACE_COLLECTIONS = [
   ...(attachmentsAvailable ? ['attachments'] : []),
 ]
 const BATCH_LIMIT = 450
+// A report body's delete rule reads its summary (twice), and a batch's rules may read at most 20 documents, more and the
+// whole batch is refused: so reports go a few to a batch.
+const REPORTS_PER_BATCH = 6
 
 // Owners only. Children go first: their rules check membership on the workspace doc. Attachment files go before any
 // doc (storage.rules check membership the same way), so none are left behind.
@@ -267,15 +270,15 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
     getDocs(query(collection(db(), 'joinRequests'), where('workspaceId', '==', wid))),
     getDocs(collection(db(), 'workspaces', wid, 'members')),
   ])
-  // A report's body (D-098) goes before its summary, which its rule reads.
-  const reportRefs = reports.flatMap((r) => r.docs.map((d) => d.ref))
-  const bodies = reportRefs.map((r) => doc(r, 'content', 'body'))
-  // Once each: your own shared reports come back from both report queries.
-  const refs = [
-    ...new Map(
-      [...bodies, ...snaps.flatMap((s) => s.docs.map((d) => d.ref)), ...reportRefs].map((r) => [r.path, r] as const),
-    ).values(),
-  ]
+  // Once each: your own shared reports come back from both report queries. A report's body (D-098) goes before its
+  // summary, which its rule reads.
+  const reportRefs = [...new Map(reports.flatMap((r) => r.docs.map((d) => [d.ref.path, d.ref] as const))).values()]
+  for (let i = 0; i < reportRefs.length; i += REPORTS_PER_BATCH) {
+    const batch = writeBatch(db())
+    for (const ref of reportRefs.slice(i, i + REPORTS_PER_BATCH)) batch.delete(doc(ref, 'content', 'body')).delete(ref)
+    await batch.commit()
+  }
+  const refs = snaps.flatMap((s) => s.docs.map((d) => d.ref))
   for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
     const batch = writeBatch(db())
     for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)

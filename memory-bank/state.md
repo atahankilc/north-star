@@ -20,6 +20,10 @@ something is finished, add its entry to state-history.md and leave at most one l
   `edit_link` / `add_note` (D-108). Not tried in the app at all: `update_project` (D-120), D-122's edits, D-123's text and moves, D-125/D-126/D-129's layouts, D-131's frames.
 
 ## In progress
+- 2026-10-19 fix, pushed: deleting a workspace with ~10+ reports was refused (a batch's rules may read ≤ 20 docs;
+  each report body's delete reads its summary twice), so `deleteWorkspace` now takes reports 6 to a batch; rules test
+  added. Reports "out of order": the code sorts right; two live workspaces hold reports written with made-up `createdAt`
+  (2026-10-19 12:00:00.0xx), so reports made that morning sat below them. Flaky uploads: not reproduced.
 - Nothing uncommitted: D-124–D-131, autoGrow fields and the group drag fix pushed 2026-10-18 (see state-history.md).
 - D-132 (title block resize + animated fold with a bigger name) committed 2026-10-18 (see state-history.md).
 - Phase 6 (docs/specs/usefulness.md), from examining the user's BUBBLES workspace: slice 1, matrix criteria (D-133), built,

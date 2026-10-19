@@ -538,5 +538,27 @@ await allow('owner deletes children, invite code, then workspace', async () => {
   await b2.commit()
 })
 
+// Many reports at once. Deleting a body reads its summary twice, and a batch's rules may read at most 20 documents, so a
+// workspace delete takes reports a few to a batch (REPORTS_PER_BATCH in src/data/workspaces.ts). Writing them (import)
+// fits in one batch.
+{
+  const w = doc(collection(alice.fs, 'workspaces'))
+  await setDoc(w, { name: 'Many', ownerId: alice.uid, memberIds: [alice.uid], roles: { [alice.uid]: 'owner' }, inviteCode: 'MANYCODE', createdAt: Date.now() })
+  const rep = (id) => doc(alice.fs, 'workspaces', w.id, 'reports', id)
+  const ids = Array.from({ length: 25 }, (_, i) => `m${i}`)
+  const inBatches = async (n, write) => {
+    for (let i = 0; i < ids.length; i += n) {
+      const b = writeBatch(alice.fs)
+      for (const id of ids.slice(i, i + n)) write(b, id)
+      await b.commit()
+    }
+  }
+  const save = (b, id) => b.set(rep(id), summaryOf(alice)).set(doc(rep(id), 'content', 'body'), body)
+  const remove = (b, id) => b.delete(doc(rep(id), 'content', 'body')).delete(rep(id))
+  await allow('owner writes 25 reports in one batch (import)', () => inBatches(25, save))
+  await deny('one batch deletes 25 reports (over the 20 reads a batch may make)', () => inBatches(25, remove))
+  await allow('owner deletes 25 reports six to a batch (workspace delete)', () => inBatches(6, remove))
+}
+
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed ? 1 : 0)
