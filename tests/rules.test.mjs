@@ -497,8 +497,37 @@ await allow('viewer resolves a thread', () => updateDoc(thr(dave.fs, 't1'), { re
 await deny('resolving in someone else\'s name', () => updateDoc(thr(bob.fs, 't1'), { resolvedBy: alice.uid }))
 await deny('viewer deletes an editor\'s message', () => deleteDoc(msg(dave.fs, 't1', 'm2')))
 await deny('starter deletes a thread others answered', () => deleteDoc(thr(dave.fs, 't1')))
-await allow('editor deletes a message', () => deleteDoc(msg(bob.fs, 't1', 'm2')))
-await allow('editor deletes a thread', () => deleteDoc(thr(bob.fs, 't1')))
+// Only a message's writer deletes it (D-166); an owner takes others' messages only along with the whole thread.
+await deny('editor deletes someone else\'s message', () => deleteDoc(msg(bob.fs, 't1', 'm1')))
+await deny('owner deletes someone else\'s message on its own', () => deleteDoc(msg(alice.fs, 't1', 'm1')))
+await deny('editor deletes a thread others answered', () => deleteDoc(thr(bob.fs, 't1')))
+await allow('writer deletes their own message', () => {
+  const b = writeBatch(bob.fs)
+  b.delete(msg(bob.fs, 't1', 'm2'))
+  b.update(thr(bob.fs, 't1'), { count: 1, updatedAt: 5 })
+  return b.commit()
+})
+await allow('owner deletes a thread with its messages', () => {
+  const b = writeBatch(alice.fs)
+  b.delete(msg(alice.fs, 't1', 'm1'))
+  b.delete(thr(alice.fs, 't1'))
+  return b.commit()
+})
+// Mentions, who wrote last (D-166).
+await allow('a reply that mentions someone', async () => {
+  await start(bob, 't6')
+  const b = writeBatch(dave.fs)
+  b.set(msg(dave.fs, 't6', 'm2'), { uid: dave.uid, name: 'd', text: '@Bob look', mentions: [bob.uid], createdAt: 2 })
+  b.update(thr(dave.fs, 't6'), { count: 2, lastAt: 2, lastUid: dave.uid, lastName: 'd', lastText: '@Bob look', mentions: [bob.uid], updatedAt: 2 })
+  return b.commit()
+})
+await deny('saying someone else wrote last', () => updateDoc(thr(dave.fs, 't6'), { lastUid: bob.uid, lastAt: 3 }))
+// What you've read (D-166): yours alone.
+const reads = (fs, uid) => doc(fs, 'workspaces', wid, 'threadReads', uid)
+await allow('marking threads read', () => setDoc(reads(dave.fs, dave.uid), { seen: { t6: 2 }, updatedAt: 2 }, { merge: true }))
+await allow('reading what you have read', () => getDoc(reads(dave.fs, dave.uid)))
+await deny('reading what someone else has read', () => getDoc(reads(bob.fs, dave.uid)))
+await deny('writing someone else\'s reads', () => setDoc(reads(bob.fs, dave.uid), { seen: {}, updatedAt: 3 }))
 await allow('starter deletes their unanswered thread', async () => {
   await start(dave, 't5')
   await deleteDoc(msg(dave.fs, 't5', 'm1'))

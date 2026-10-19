@@ -27,8 +27,9 @@ import { useSnap } from './snap'
 import { useThreads } from '../../data/threads'
 import { findItem } from '../workspace/useEditKeys'
 import { linkStyle } from './linkKinds'
-import { openThread, toggleThreadPins, useThreadView } from './Threads'
-import { ago } from './stickyNote'
+import { myUid, openThread, toggleThreadPins, useThreadView } from './Threads'
+import { InboxButton, ThreadInbox } from './ThreadInbox'
+import { isOwnerOf } from '../../data/workspaces'
 import type { BoardThreads } from './Board'
 import type { Thread } from '../../data/model'
 import { isSticky } from './stickyNote'
@@ -309,9 +310,9 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     () => new Set([...every.map((n) => n.id), ...ws.labels.map((l) => l.id), ...edges.map((e) => e.id), ...competitorFeatures.map((f) => f.id)]),
     [every, ws.labels, edges, competitorFeatures],
   )
-  const boardThreads: BoardThreads = { list: threadList, exists: (id) => known.has(id), plane, titleOf, canEdit: !viewer }
-  const openThreads = threadList.filter((t) => !t.resolved).sort((a, b) => b.lastAt - a.lastAt)
-  const resolvedThreads = threadList.filter((t) => t.resolved).sort((a, b) => b.lastAt - a.lastAt)
+  const boardThreads: BoardThreads = { list: threadList, exists: (id) => known.has(id), plane, titleOf, isOwner: isOwnerOf(ws.workspace, myUid()) }
+  const pinsNewOnly = useThreadView((s) => s.newOnly)
+  const pinsResolved = useThreadView((s) => s.resolvedToo)
   // Opened from the list: the board goes to it, it opens beside its pin.
   const goToThread = (t: Thread & { id: string }) => {
     const target = t.on === 'card' ? all.find((n) => n.id === t.targetId) : t.on === 'label' ? labels.find((l) => l.id === t.targetId) : undefined
@@ -406,16 +407,14 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         focus={focusMode ? { summary: centre ? centre.title || 'Untitled' : 'none', items: focusItems } : undefined}
         goTo={focusMode ? undefined : places.map((l) => ({ key: l.id, label: isTitle(l) ? ws.workspace.name : l.text.trim(), onSelect: () => jump(l) }))}
         // Comment threads (D-159): the pins' switch and every thread, open ones first; viewers too. Last in the bar.
+        // What the comment pins show (D-159, D-166); every thread is in the threads panel, bottom left.
         comments={{
-          summary: openThreads.length ? String(openThreads.length) : 'none',
-          active: !pinsOn,
+          summary: !pinsOn ? 'off' : pinsNewOnly ? 'new' : 'on',
+          active: !pinsOn || pinsNewOnly || pinsResolved,
           items: [
             { key: 'pins', label: 'show pins', hint: 'c', checked: pinsOn, onSelect: toggleThreadPins },
-            ...(openThreads.length ? [{ key: 'open', heading: 'open' }] : []),
-            ...(threadList.length ? [] : [{ key: 'none', heading: 'none yet · right-click anything → comment' }]),
-            ...openThreads.map((t) => ({ key: t.id, label: `${titleOf(t).slice(0, 36)} · ${t.count}`, glyph: '…', hint: ago(t.lastAt), onSelect: () => goToThread(t) })),
-            ...(resolvedThreads.length ? [{ key: 'resolved', heading: 'resolved' }] : []),
-            ...resolvedThreads.map((t) => ({ key: t.id, label: `${titleOf(t).slice(0, 36)} · ${t.count}`, glyph: '✓', hint: ago(t.lastAt), onSelect: () => goToThread(t) })),
+            { key: 'new', label: 'only with something new', checked: pinsNewOnly, onSelect: () => useThreadView.setState((st) => ({ newOnly: !st.newOnly, show: true })) },
+            { key: 'resolved', label: 'resolved ones too', checked: pinsResolved, onSelect: () => useThreadView.setState((st) => ({ resolvedToo: !st.resolvedToo, show: true })) },
           ],
         }}
       />
@@ -449,6 +448,8 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
           />}
           {/* Cards already in the workspace, onto this plane (D-139). */}
           {!viewer && !focusMode && plane !== ALL && <ExistingCards wid={wid} plane={plane} all={every} here={all} />}
+          {/* Every conversation in the workspace (D-166). */}
+          {!focusMode && <InboxButton wid={wid} threads={threadList} />}
           {/* The whole board back in view, as when it opens (D-060). */}
           <button
             className={styles.fit}
@@ -534,6 +535,8 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
       )}
 
       <BoardMenu ws={pws} create={focusMode ? undefined : (type, at) => void create(type, at)} wrap={focusMode ? undefined : wrap} />
+
+      {!focusMode && <ThreadInbox wid={wid} threads={threadList} titleOf={titleOf} onGo={goToThread} />}
 
       <DetailPanel items={every} />
     </main>

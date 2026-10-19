@@ -453,7 +453,7 @@ service cloud.firestore {
       // (count, time) and being resolved or reopened; owners and editors delete any, a starter one nobody answered.
       match /threads/{tid} {
         function validThread(d) {
-          return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
+          return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
             && d.on in ['card', 'label', 'link', 'spot']
             && optText(d, 'targetId', 128) && (d.on == 'spot' || 'targetId' in d)
             && optText(d, 'planeId', 128)
@@ -461,7 +461,7 @@ service cloud.firestore {
             && isText(d.uid, 128) && isText(d.name, 200)
             && d.count is int && d.count >= 0 && d.count <= 100000
             && d.lastAt is number
-            && optText(d, 'lastUid', 128)
+            && optText(d, 'lastUid', 128) && optText(d, 'lastName', 200) && optText(d, 'lastText', 160)
             && (!('mentions' in d) || (d.mentions is list && d.mentions.size() <= 50))
             && optBool(d, 'resolved') && optText(d, 'resolvedBy', 128)
             && d.createdAt is number && d.updatedAt is number;
@@ -472,7 +472,7 @@ service cloud.firestore {
           && request.resource.data.count == 1
           && (!('lastUid' in request.resource.data) || request.resource.data.lastUid == request.auth.uid);
         allow update: if isMember(wid) && validThread(request.resource.data)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'lastAt', 'lastUid', 'mentions', 'resolved', 'resolvedBy', 'updatedAt'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'mentions', 'resolved', 'resolvedBy', 'updatedAt'])
           && (!('resolvedBy' in request.resource.data) || request.resource.data.resolvedBy == request.auth.uid
             || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['resolvedBy']))
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastUid']) || request.resource.data.lastUid == request.auth.uid);

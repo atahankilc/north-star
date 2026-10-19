@@ -1,64 +1,59 @@
 /* Comment threads on the board (D-159, D-165): a pin per thread, and the open thread beside it. */
 
-/* A pin (D-165): the same mark on every thread, a speech bubble in the app's plain colour with three dots in it, its
-   pointed corner (bottom-left) on the point it's pinned to. Cyan ring while open. */
+/* A pin (D-165, D-166): the same small framed mono chip on every thread, `“ 3`, its bottom-left corner on the point it's
+   pinned to, like a link's chip. Magenta when someone wrote since you last read it (`@` when you're mentioned), cyan
+   while open, dashed when what it was on is gone. */
 .pin {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 22px;
-  padding: 0;
-  border: 0;
-  border-radius: 11px 11px 11px 2px;
-  background: var(--fg-strong);
-  box-shadow: 0 0 0 2px var(--bg);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
   pointer-events: auto;
-  transform: translate(-2px, calc(-100% + 2px));
+  transform: translate(2px, calc(-100% - 2px));
+}
+
+.mark {
+  color: var(--fg-dim);
 }
 
 .pin:hover {
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--fg-dim);
+  border-color: var(--fg-dim);
+  color: var(--fg-strong);
+}
+
+.pin[data-new] {
+  border-color: var(--accent-magenta);
+  color: var(--fg-strong);
+}
+
+.pin[data-new] .mark {
+  color: var(--accent-magenta);
 }
 
 .pin[data-open] {
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  color: var(--fg-strong);
 }
 
-.dots {
-  display: flex;
-  gap: 3px;
+.pin[data-open] .mark {
+  color: var(--accent-cyan);
 }
 
-.dots i {
-  width: 3px;
-  height: 3px;
-  background: var(--bg);
+.pin[data-resolved] {
+  color: var(--fg-dim);
 }
 
-/* On something that was removed: kept where it was, hollow. */
 .pin[data-gone] {
-  background: var(--bg);
-  box-shadow: inset 0 0 0 1px var(--fg-dim);
-}
-
-.pin[data-gone] .dots i {
-  background: var(--fg-dim);
-}
-
-/* How many messages, once it has answers. */
-.pin small {
-  position: absolute;
-  top: -8px;
-  right: -10px;
-  padding: 0 3px;
-  border: 1px solid var(--line-hover);
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  line-height: 1.2;
+  border-style: dashed;
 }
 
 /* The open thread, as the assistant's chat window (D-081, D-165): a terminal log, mono, bracket actions, a `>` prompt. */
@@ -171,11 +166,11 @@
 }
 
 .name {
-  color: var(--tone);
+  color: var(--fg-strong);
 }
 
-.name::before {
-  content: '● ';
+.msg[data-mine] .name {
+  color: var(--accent-cyan);
 }
 
 .when {
@@ -293,4 +288,176 @@
 .send:disabled {
   color: var(--fg-faint);
   cursor: default;
+}
+
+/* `@` suggestions (D-166): the workspace's people over the prompt, as the dropdowns' rows. */
+.composer {
+  position: relative;
+}
+
+.suggest {
+  position: absolute;
+  right: -1px;
+  bottom: 100%;
+  left: -1px;
+  margin: 0;
+  padding: var(--space-1) 0;
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  list-style: none;
+}
+
+.suggest button {
+  display: flex;
+  gap: 1ch;
+  align-items: baseline;
+  width: 100%;
+  padding: 2px var(--space-4);
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.suggest button span {
+  overflow: hidden;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggest button[aria-selected='true'],
+.suggest button:hover {
+  border-left-color: var(--accent-cyan);
+  background: var(--wash-1);
+  color: var(--fg-strong);
+}
+
+/* The threads panel (D-166): bottom left over the board, above its toolbar, set as the chat window. */
+.inbox {
+  position: absolute;
+  left: var(--hud-x);
+  bottom: calc(var(--hud-y) + 48px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - 2 * var(--hud-x)));
+  max-height: min(62vh, 560px);
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.views {
+  display: flex;
+  flex: none;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.views .action[aria-pressed='true'] {
+  color: var(--fg-strong);
+}
+
+.views .action[data-lit] {
+  color: var(--accent-magenta);
+}
+
+.rows {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-2) 0;
+  overflow-y: auto;
+  list-style: none;
+  overscroll-behavior: contain;
+}
+
+.rows .lead {
+  padding: var(--space-2) var(--space-4);
+}
+
+/* One thread: what it's on and when, who wrote last and how it began, how many. The line lights up under the pointer. */
+.row {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-2) var(--space-4) var(--space-2) calc(var(--space-4) - 2px);
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover,
+.row:focus-visible {
+  border-left-color: var(--accent-cyan);
+  background: var(--wash-1);
+  outline: none;
+}
+
+.row[data-open] {
+  border-left-color: var(--accent-cyan);
+}
+
+.rowHead {
+  display: flex;
+  gap: 1ch;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.rowMark {
+  flex: none;
+  width: 1ch;
+  color: var(--fg-dim);
+}
+
+.row[data-new] .rowMark {
+  color: var(--accent-magenta);
+}
+
+.rowTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row[data-new] .rowTitle {
+  color: var(--fg-strong);
+}
+
+.rowText {
+  display: -webkit-box;
+  padding-left: 2ch;
+  overflow: hidden;
+  color: var(--fg);
+  font-family: var(--font-display);
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.rowText b {
+  color: var(--fg-strong);
+  font-weight: 500;
+}
+
+.rowMeta {
+  padding-left: 2ch;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
 }

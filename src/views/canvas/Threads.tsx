@@ -1,105 +1,131 @@
 // Comment threads on the board (D-159). A thread is pinned to something you can select on the board (a card, text, a
-// section, a sticky note, a link) or to a spot; its pin sits at the thing's top-right corner (a link's chip), in the
-// app's plain colour with a speech bubble's three dots and how many messages it has (D-165). Clicking a pin opens the thread
-// beside it: the messages, a reply field (Enter sends, shift+Enter a new line), resolve or reopen. Resolved threads
-// leave the board and stay in the filter bar's `comments` list (D-165). Anyone in the workspace comments, viewers too.
+// section, a sticky note, a link) or to a spot; its pin sits at the thing's top-right corner (a link's chip): a small
+// framed mono chip, `“ 3`, magenta when someone wrote in it since you last read it (D-166). Clicking a pin opens the
+// thread beside it, set like the assistant's chat: who wrote each message (full name) and when, the text, a `>` prompt
+// (Enter sends, shift+Enter a new line, `@` suggests the workspace's people), resolve or reopen. Only a message's writer
+// edits or deletes it. Resolved threads leave the board; every thread is in the threads panel (ThreadInbox.tsx).
+// Anyone in the workspace comments, viewers too.
 import { Html } from '@react-three/drei'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import { firebase } from '../../data/firebase'
-import { MESSAGE_MAX, type Thread, type ThreadMessage } from '../../data/model'
-import { presenceColor, usePresence } from '../../data/presence'
-import { deleteMessage, deleteThread, editMessage, reply, setResolved, startThread, useMessages, type NewThread } from '../../data/threads'
+import { MESSAGE_MAX, type Member, type Thread, type ThreadMessage } from '../../data/model'
+import {
+  deleteMessage,
+  deleteThread,
+  editMessage,
+  isNew,
+  markSeen,
+  reply,
+  setResolved,
+  startThread,
+  useMembers,
+  useMessages,
+  useReads,
+  type NewThread,
+} from '../../data/threads'
 import { useHistory } from '../../data/history'
-import { useThemeAccent } from '../../state/theme'
 import { ago } from './stickyNote'
 import styles from './Threads.module.css'
 
 type ThreadView = {
-  // Pins on the board (the footer's switch, `c`).
+  // Pins on the board (`c`), only threads with something new (D-166), resolved ones too.
   show: boolean
+  newOnly: boolean
+  resolvedToo: boolean
   // The thread open beside its pin, or one being started (no messages yet).
   openId: string | null
   draft: NewThread | null
+  // The threads panel (D-166), bottom left.
+  inbox: boolean
 }
 
-export const useThreadView = create<ThreadView>(() => ({ show: true, openId: null, draft: null }))
+export const useThreadView = create<ThreadView>(() => ({ show: true, newOnly: false, resolvedToo: false, openId: null, draft: null, inbox: false }))
 export const toggleThreadPins = () => useThreadView.setState((s) => ({ show: !s.show }))
-export const openThread = (id: string) => useThreadView.setState({ openId: id, draft: null, show: true })
+export const openThread = (id: string) => useThreadView.setState({ openId: id, draft: null })
 export const startComment = (draft: NewThread) => useThreadView.setState({ draft, openId: null, show: true })
 export const closeThread = () => useThreadView.setState({ openId: null, draft: null })
+export const toggleInbox = (on?: boolean) => useThreadView.setState((s) => ({ inbox: on ?? !s.inbox }))
 
-const myUid = () => firebase?.auth.currentUser?.uid ?? ''
-
-// A person's colour: as they're shown in the workspace right now (D-067), else their own from their uid.
-function useColorOf() {
-  const peers = usePresence((s) => s.peers)
-  const mine = usePresence((s) => s.myColor)
-  const tone = useThemeAccent()
-  return (uid: string) => tone(uid === myUid() && mine ? mine : (peers.find((p) => p.uid === uid)?.color ?? presenceColor(uid)))
-}
-
+export const myUid = () => firebase?.auth.currentUser?.uid ?? ''
 
 export type PinnedThread = { thread: WithId<Thread>; at: [number, number]; gone: boolean }
 
 type LayerProps = {
   wid: string
-  // Unresolved threads with where their pin goes (resolved ones only while open).
+  // Threads with where their pin goes.
   pins: PinnedThread[]
   // Where the open thread or the one being started is, and what it's on.
   openAt: [number, number] | null
   title: string
   thread: WithId<Thread> | null
-  // Owners and editors delete any thread or message.
-  canEdit: boolean
+  // Owners delete any thread (D-166).
+  isOwner: boolean
 }
 
 // Inside the board's canvas: the pins, and the open thread beside its pin.
-export function ThreadLayer({ wid, pins, openAt, title, thread, canEdit }: LayerProps) {
-  const show = useThreadView((s) => s.show)
-  const openId = useThreadView((s) => s.openId)
-  const draft = useThreadView((s) => s.draft)
+export function ThreadLayer({ wid, pins, openAt, title, thread, isOwner }: LayerProps) {
+  const { show, newOnly, resolvedToo, openId, draft } = useThreadView()
+  const me = myUid()
+  const seen = useReads(wid, me || null).data?.seen
+  const shown = pins.filter(({ thread: t }) => {
+    if (t.id === openId) return true
+    if (t.resolved && !resolvedToo) return false
+    return !newOnly || isNew(t, seen, t.id, me)
+  })
   return (
     <>
       {show &&
-        pins.map(({ thread: t, at, gone }) => (
-          <Html key={t.id} position={[at[0], at[1], 0.2]} zIndexRange={[12, 11]} style={{ pointerEvents: 'none' }}>
-            <button
-              className={styles.pin}
-              data-open={t.id === openId || undefined}
-              data-gone={gone || undefined}
-              data-viewer-ok
-              title={`${t.count} message${t.count === 1 ? '' : 's'}, started by ${t.name}${gone ? ' · on something removed' : ''}`}
-              aria-label={`Thread, ${t.count} messages`}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => (t.id === openId ? closeThread() : openThread(t.id))}
-            >
-              {/* The same mark on every thread (D-165): a speech bubble's three dots; who wrote what is inside. */}
-              <span className={styles.dots} aria-hidden>
-                <i />
-                <i />
-                <i />
-              </span>
-              {t.count > 1 && <small>{t.count}</small>}
-            </button>
-          </Html>
-        ))}
+        shown.map(({ thread: t, at, gone }) => {
+          const fresh = isNew(t, seen, t.id, me)
+          const mentioned = fresh && !!t.mentions?.includes(me)
+          return (
+            <Html key={t.id} position={[at[0], at[1], 0.2]} zIndexRange={[12, 11]} style={{ pointerEvents: 'none' }}>
+              <button
+                className={styles.pin}
+                data-open={t.id === openId || undefined}
+                data-new={fresh || undefined}
+                data-gone={gone || undefined}
+                data-resolved={t.resolved || undefined}
+                data-viewer-ok
+                title={`${t.count} message${t.count === 1 ? '' : 's'}${fresh ? ', new for you' : ''}${gone ? ' · on something removed' : ''}`}
+                aria-label={`Thread, ${t.count} messages${fresh ? ', new' : ''}`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => (t.id === openId ? closeThread() : openThread(t.id))}
+              >
+                <span className={styles.mark} aria-hidden>
+                  {mentioned ? '@' : t.resolved ? '✓' : '“'}
+                </span>
+                {t.count}
+              </button>
+            </Html>
+          )
+        })}
       {(thread || draft) && openAt && (
         <Html key={thread?.id ?? 'draft'} position={[openAt[0], openAt[1], 0.25]} zIndexRange={[19, 18]} style={{ pointerEvents: 'none' }}>
-          <ThreadPanel wid={wid} thread={thread} draft={draft} title={title} canEdit={canEdit} />
+          <ThreadPanel wid={wid} thread={thread} draft={draft} title={title} isOwner={isOwner} />
         </Html>
       )}
     </>
   )
 }
 
-function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thread: WithId<Thread> | null; draft: NewThread | null; title: string; canEdit: boolean }) {
+// `@` in a field (D-166): the word being typed after it, if the caret is right after it.
+const MENTION_AT = /(^|\s)@([\p{L}\p{N}._ -]{0,30})$/u
+const pickedIn = (text: string, picked: Map<string, string>) => [...picked].filter(([, name]) => text.includes(`@${name}`)).map(([uid]) => uid)
+
+function ThreadPanel({ wid, thread, draft, title, isOwner }: { wid: string; thread: WithId<Thread> | null; draft: NewThread | null; title: string; isOwner: boolean }) {
   const messages = useMessages(wid, thread?.id ?? null)
-  const colorOf = useColorOf()
+  const members = useMembers(wid).data
+  const reads = useReads(wid, myUid() || null).data
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
+  // People picked from `@` while typing: uid → name.
+  const picked = useRef(new Map<string, string>())
+  const [suggest, setSuggest] = useState<{ q: string; at: number } | null>(null)
+  const [hi, setHi] = useState(0)
   const panel = useRef<HTMLDivElement>(null)
   const field = useRef<HTMLTextAreaElement>(null)
   const list = useRef<HTMLOListElement>(null)
@@ -124,12 +150,23 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
   useEffect(() => {
     if (list.current) list.current.scrollTop = list.current.scrollHeight
   }, [messages.data.length])
-  // Escape closes it.
+  // Open is read: what's in it now counts as seen (D-166).
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeThread()
+    if (thread && (reads?.seen?.[thread.id] ?? 0) < thread.lastAt) void markSeen(wid, thread.id, thread.lastAt)
+  }, [wid, thread, reads])
+  // Escape closes it (or the suggestions first).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !suggest && closeThread()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [suggest])
+
+  const names = useMemo(() => members.map((m) => m.name).filter(Boolean), [members])
+  const matches = useMemo(() => {
+    if (!suggest) return []
+    const q = suggest.q.trim().toLowerCase()
+    return members.filter((m) => m.id !== me && (!q || m.name.toLowerCase().split(/\s+/).some((w) => w.startsWith(q)) || m.name.toLowerCase().startsWith(q))).slice(0, 6)
+  }, [suggest, members, me])
 
   const fail = (e: unknown) => useHistory.getState().say(`Couldn't save the comment: ${(e as Error).message}`)
   const send = async () => {
@@ -137,9 +174,12 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
     if (!body || busy) return
     setBusy(true)
     try {
-      if (thread) await reply(wid, thread.id, body)
-      else if (draft) openThread(await startThread(wid, draft, body))
+      const mentions = pickedIn(body, picked.current)
+      if (thread) await reply(wid, thread.id, body, mentions)
+      else if (draft) openThread(await startThread(wid, draft, body, mentions))
       setText('')
+      picked.current.clear()
+      if (field.current) field.current.style.height = ''
     } catch (e) {
       fail(e)
     } finally {
@@ -149,12 +189,40 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
   const saveEdit = () => {
     if (!thread || !editing) return
     const body = editing.text.trim()
-    if (body) editMessage(wid, thread.id, editing.id, body).catch(fail)
+    const old = messages.data.find((m) => m.id === editing.id)
+    // Mentions kept as long as their `@Name` is still there.
+    const kept = (old?.mentions ?? []).filter((uid) => {
+      const name = members.find((m) => m.id === uid)?.name
+      return name && body.includes(`@${name}`)
+    })
+    if (body) editMessage(wid, thread.id, editing.id, body, [...kept, ...pickedIn(body, picked.current)]).catch(fail)
     setEditing(null)
   }
 
+  // Typing: is the caret right after an `@word`?
+  const onType = (value: string, caret: number) => {
+    setText(value)
+    const m = MENTION_AT.exec(value.slice(0, caret))
+    setSuggest(m ? { q: m[2], at: caret - m[2].length - 1 } : null)
+    setHi(0)
+  }
+  const pick = (m: WithId<Member>) => {
+    if (!suggest) return
+    const caret = field.current?.selectionStart ?? text.length
+    const next = `${text.slice(0, suggest.at)}@${m.name} ${text.slice(caret)}`
+    picked.current.set(m.id, m.name)
+    setText(next)
+    setSuggest(null)
+    requestAnimationFrame(() => {
+      const at = suggest.at + m.name.length + 2
+      field.current?.focus()
+      field.current?.setSelectionRange(at, at)
+    })
+  }
+
   const resolved = !!thread?.resolved
-  const mayDeleteThread = !!thread && (canEdit || (thread.uid === me && thread.count <= 1))
+  // Owners, or whoever started it while nobody answered (D-166).
+  const mayDeleteThread = !!thread && (isOwner || (thread.uid === me && thread.count <= 1))
 
   return (
     <div
@@ -191,23 +259,22 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
         </span>
       </header>
       <ol ref={list} className={styles.log}>
-        {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too.</li>}
+        {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too. @ mentions someone.</li>}
         {thread && messages.isLoading && <li className={styles.lead}>Loading</li>}
         {messages.data.map((m: WithId<ThreadMessage>) => (
-          <li key={m.id} className={styles.msg} style={{ ['--tone' as string]: colorOf(m.uid) }}>
+          <li key={m.id} className={styles.msg} data-mine={m.uid === me || undefined}>
             <div className={styles.who}>
-              <span className={styles.name}>{m.uid === me ? 'you' : m.name.split(/\s+/)[0].toLowerCase()}</span>
+              <span className={styles.name}>{m.name}</span>
               <span className={styles.when}>
                 {ago(m.createdAt)}
                 {m.editedAt && ' · edited'}
               </span>
-              {(m.uid === me || canEdit) && editing?.id !== m.id && (
+              {/* Only its writer edits or deletes a message (D-166). */}
+              {m.uid === me && editing?.id !== m.id && (
                 <span className={styles.msgActions}>
-                  {m.uid === me && (
-                    <button className={styles.action} onClick={() => setEditing({ id: m.id, text: m.text })}>
-                      edit
-                    </button>
-                  )}
+                  <button className={styles.action} onClick={() => setEditing({ id: m.id, text: m.text })}>
+                    edit
+                  </button>
                   <button
                     className={styles.action}
                     data-tone="danger"
@@ -234,7 +301,7 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
                 }}
               />
             ) : (
-              <div className={styles.text}>{withMentions(m.text)}</div>
+              <div className={styles.text}>{withMentions(m.text, names)}</div>
             )}
           </li>
         ))}
@@ -247,6 +314,25 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
             void send()
           }}
         >
+          {/* `@` suggests the workspace's people (D-166). */}
+          {suggest && matches.length > 0 && (
+            <ul className={styles.suggest} role="listbox" aria-label="Mention someone">
+              {matches.map((m, i) => (
+                <li key={m.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={i === hi}
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={() => pick(m)}
+                  >
+                    @{m.name}
+                    {m.email && <span>{m.email}</span>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className={styles.promptLine}>
             <span className={styles.ps} aria-hidden>
               &gt;
@@ -257,15 +343,21 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
               value={text}
               rows={1}
               maxLength={MESSAGE_MAX}
-              placeholder={thread ? 'reply' : 'say something'}
+              placeholder={thread ? 'reply · @ mentions' : 'say something · @ mentions'}
               aria-label={thread ? 'Reply' : 'First message'}
               disabled={busy}
               onChange={(e) => {
-                setText(e.target.value)
+                onType(e.target.value, e.target.selectionStart)
                 e.target.style.height = '0px'
                 e.target.style.height = `${e.target.scrollHeight}px`
               }}
               onKeyDown={(e) => {
+                if (suggest && matches.length) {
+                  if (e.key === 'ArrowDown') return (e.preventDefault(), setHi((hi + 1) % matches.length))
+                  if (e.key === 'ArrowUp') return (e.preventDefault(), setHi((hi - 1 + matches.length) % matches.length))
+                  if (e.key === 'Enter' || e.key === 'Tab') return (e.preventDefault(), pick(matches[hi]))
+                  if (e.key === 'Escape') return (e.preventDefault(), setSuggest(null))
+                }
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault()
                   void send()
@@ -275,7 +367,7 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
             />
           </div>
           <div className={styles.bar}>
-            <span className={styles.footnote}>enter sends · shift+enter: new line</span>
+            <span className={styles.footnote}>enter sends · shift+enter: new line · @: mention</span>
             <button type="submit" className={styles.send} disabled={!text.trim() || busy}>
               send
             </button>
@@ -286,10 +378,12 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
   )
 }
 
-// `@name` stands out, as in a chat.
-function withMentions(text: string) {
-  return text.split(/(@[\p{L}\p{N}_.-]+)/u).map((part, i) =>
-    part.startsWith('@') ? (
+// `@Full Name` of someone in the workspace, or any `@word`, stands out (D-166).
+export function withMentions(text: string, names: string[]) {
+  const known = [...names].sort((a, b) => b.length - a.length).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const re = new RegExp(`(${known.map((n) => `@${n}`).concat('@[\\p{L}\\p{N}_.-]+').join('|')})`, 'u')
+  return text.split(re).map((part, i) =>
+    i % 2 === 1 ? (
       <span key={i} className={styles.at}>
         {part}
       </span>

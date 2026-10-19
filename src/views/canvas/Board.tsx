@@ -89,7 +89,8 @@ export type BoardThreads = {
   plane: string
   // What a thread is on, for its heading.
   titleOf: (t: Pick<Thread, 'on' | 'targetId'>) => string
-  canEdit: boolean
+  // Owners delete any thread (D-166).
+  isOwner: boolean
 }
 
 // Where each board's camera was left, so switching views and coming back doesn't lose your place.
@@ -691,7 +692,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
     return line ? selectedLinkAt(line) : null
   }
   const pins: PinnedThread[] = (threads?.list ?? []).flatMap((t) => {
-    if (t.resolved && t.id !== openThreadId) return []
+    // Which to show (resolved ones, only new ones) is the thread layer's choice (D-166).
     const gone = t.on !== 'spot' && !threads!.exists(t.targetId ?? '')
     const at = gone ? [t.x, t.y] as [number, number] : anchorOf(t)
     return at ? [{ thread: t, at, gone }] : []
@@ -804,7 +805,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
           openAt={openAt}
           thread={openThread}
           title={threads.titleOf(openThread ?? draftThread ?? ({ on: 'spot' } as NewThread))}
-          canEdit={threads.canEdit}
+          isOwner={threads.isOwner}
         />
       )}
 

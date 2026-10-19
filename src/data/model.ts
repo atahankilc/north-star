@@ -426,8 +426,11 @@ export type Thread = {
   name: string
   count: number
   lastAt: number
-  // Who wrote the last message (D-166), so a thread is only new to the others.
+  // Who wrote the last message and how it began (D-166), so a thread is only new to the others and the threads panel
+  // can show it without loading every thread's messages.
   lastUid?: string
+  lastName?: string
+  lastText?: string
   // Everyone mentioned in it (D-166), so it shows under their mentions.
   mentions?: string[]
   resolved?: boolean

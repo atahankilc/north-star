@@ -174,8 +174,10 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Comment threads (D-159): pinned to any card, text, section, sticky note, link or a spot (right-click → comment); any
   member, viewers too, as themselves; resolve/reopen; `c` hides pins; not undone or exported;
   the open thread looks like the assistant's chat box (bracket actions, terminal log, `>` prompt).
-- Comments list is `COMMENTS │ N ▾` at the end of the filter bar; every pin is the same white speech bubble with three dots
-  and a count, no person's initial or colour (D-165).
+- Comments (D-166): pins are framed chips `“ 3` (magenta = new for you, `@` = mentions you); the threads panel opens from
+  `THREADS │ N new` bottom left (all/new/mentions/resolved); the filter bar's `COMMENTS` only sets what pins show; full names,
+  no person colours; only a message's writer deletes it (owners only with the whole thread); `@` mentions members; read
+  marks per person in `threadReads/{uid}`.
 
 ## Settings
 - Modal from the gear / account chip; grouped menu: YOU (account, display) · WORKSPACE (general, people, export) ·

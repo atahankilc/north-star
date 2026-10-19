@@ -2447,3 +2447,37 @@ Cant we just put a logo there?"
   open; hollow when what it was on is gone. Who started it shows only in its tooltip and inside the thread.
 - *Verified* headless (on the parallel session's running emulators): two pins, the thread opened, the comments list open
   under the filter bar; `tsc`.
+
+### D-166 · 2026-10-20 · Accepted (changes D-159 and D-165)
+**Comments grow up: full names, only writers delete, a framed chip for a pin, a threads panel, mentions, no person
+colours.** The user: "lets put the full name to each message", "someone other than the message owner can delete their
+messages, we should not let this happen", "we can come up with a better design for thread indicator aligned with our
+design language", "Maybe a separate all communication tab would be great. People can see all of the threads, can redirect
+themselves, can see if there is something new… put this panel to the left bottom corner", "mentioning would be great",
+and on the colours: "is it random? If so maybe we do not need to color code" (they were presence colours: a hash of the
+uid, or join order while online; nothing a thread needs).
+- *Messages:* the writer's full name in `--fg-strong` (your own in cyan), when, the text; no person colours anywhere.
+- *Deleting:* only a message's writer edits or deletes it (rules: own, or an owner together with the whole thread in the
+  same batch, `!existsAfter(thread)`). A thread is deleted by an owner, or by its starter while nobody answered; editors
+  no longer delete others' words. `deleteThread` is one batch (≤ 450 messages); a workspace delete goes thread by thread.
+- *Pin:* a small framed mono chip like a link's chip, `“ 3`, its bottom-left corner at the spot; magenta when someone
+  else wrote since you last read it, `@` instead of `“` when it mentions you, cyan while open, `✓` for a resolved one
+  shown, dashed when what it was on is gone.
+- *Read marks:* `threadReads/{uid}` (`seen: {threadId: lastAt}`), yours alone (rules); opening a thread marks it read;
+  a thread is new when `lastAt` is past your mark and the last writer (`lastUid`, rules: always the writer) isn't you.
+- *Threads panel:* `THREADS │ 2 new` in the board's bottom-left toolbar (lit magenta while something's new) opens a panel
+  above it, set like the assistant's chat window: views `[all] [new] [mentions] [resolved]` with counts, `[mark all read]`,
+  `[×]`; a row per thread, newest first: mark (`●` new, `@` mentioned, `“`, `✓`), what it's on, when, who wrote last and
+  how it began (`lastName`, `lastText` ≤ 160 on the thread), how many and who started it. A row flies the board there and
+  opens the thread. The filter bar's `COMMENTS │ on ▾` now only says what the pins show: show pins (`c`), only with
+  something new, resolved ones too.
+- *Mentions:* `@` in the prompt suggests the workspace's people (the members list, ≤ 200; first name or full name
+  prefix), arrows + Enter/Tab pick, inserting `@Full Name`; the message keeps `mentions` (uids, ≤ 20) and the thread
+  gathers them (≤ 50). `@Full Name` of a member, or any `@word`, shows in cyan. No email or push: the panel's mentions
+  view and the `@` pin are how you find out.
+- *Data:* `Thread.lastUid/lastName/lastText/mentions`, `ThreadMessage.mentions`, `ThreadReads`; rules + 12 tests (344/344).
+  The parallel session's D-164 commit (be728b9) happened to include the first part of these rules and types, which were
+  already in the working tree; the rest is in this commit.
+- *Verified* headless (on the parallel session's emulators): pins `“ 1`, `@ 1` (magenta), `“ 3` (magenta → cyan when
+  opened), the panel with all 3 / new 2 / mentions 1, opening a thread from it marked it read (new 1), `@bo` suggested
+  "Bob Builder bob@example.com"; `tsc`.

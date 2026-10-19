@@ -14,6 +14,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { attachmentsAvailable, deleteAttachmentFiles } from './attachments'
+import { deleteThread } from './threads'
 import { db } from './firebase'
 import { useDoc, usePaged, useQuery } from './hooks'
 import type { AuthUser } from './auth'
@@ -278,10 +279,12 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
     for (const ref of reportRefs.slice(i, i + REPORTS_PER_BATCH)) batch.delete(doc(ref, 'content', 'body')).delete(ref)
     await batch.commit()
   }
-  // Comment threads (D-159) and their messages, messages first.
+  // Comment threads (D-159): each with its messages in one batch, since an owner may take others' messages only along
+  // with their thread (D-166); then everyone's read marks.
   const threads = await getDocs(collection(db(), 'workspaces', wid, 'threads'))
-  const messages = await Promise.all(threads.docs.map((t) => getDocs(collection(t.ref, 'messages'))))
-  const refs = [...messages.flatMap((m) => m.docs.map((d) => d.ref)), ...threads.docs.map((d) => d.ref), ...snaps.flatMap((s) => s.docs.map((d) => d.ref))]
+  for (const t of threads.docs) await deleteThread(wid, t.id)
+  const reads = await getDocs(collection(db(), 'workspaces', wid, 'threadReads'))
+  const refs = [...reads.docs.map((d) => d.ref), ...snaps.flatMap((s) => s.docs.map((d) => d.ref))]
   for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
     const batch = writeBatch(db())
     for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)
