@@ -178,7 +178,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   count (magenta = new for you, `@` = mentions you); the threads panel opens from a square icon button right of `+` with a
   count of new mentions (all/new/mentions/resolved); the filter bar's `COMMENTS` only sets what pins show; full names,
   no person colours; only a message's writer deletes it (owners only with the whole thread); `@` mentions members; read
-  marks per person in `threadReads/{uid}`.
+  marks per person in `threadReads/{uid}`. A thread opened from the panel switches the board to its plane (the open one if
+  what it's on shows there, else where it began, else All); rows on another plane say `on <plane> ↗` (D-168).
 
 ## Settings
 - Modal from the gear / account chip; grouped menu: YOU (account, display) · WORKSPACE (general, people, export) ·

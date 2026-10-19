@@ -237,13 +237,14 @@ function rowsFor(
   // A comment thread on what was clicked, or on the spot (D-159): anyone in the workspace, viewers too, but not in the
   // assistant's preview.
   const plane = usePlaneView.getState().plane
+  // It remembers the plane it was started on (D-168), so the threads panel can bring you back to it.
   const comment = (t: Omit<Parameters<typeof startComment>[0], 'at'>): Row[] =>
-    isPreviewing() ? [] : [{ key: 'comment', label: 'comment', glyph: '◔', hint: 'thread', run: () => startComment({ ...t, at }) }]
+    isPreviewing() ? [] : [{ key: 'comment', label: 'comment', glyph: '◔', hint: 'thread', run: () => startComment({ ...t, ...(plane !== ALL && { planeId: plane }), at }) }]
 
   if (target.kind === 'board') {
     const board: Row[] = [
       { key: 'board', heading: 'board' },
-      ...comment({ on: 'spot', ...(plane !== ALL && { planeId: plane }) }),
+      ...comment({ on: 'spot' }),
       { key: 'fit', label: 'fit all', hint: '0', run: () => useCanvas.getState().fitAll() },
     ]
     if (locked || !create) return board

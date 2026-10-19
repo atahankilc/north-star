@@ -2494,3 +2494,18 @@ also not working for us."
   something else is new.
 - *Pins:* the icon at 11 px and the count; `@` when it mentions you, `✓` resolved; colours as D-166.
 - *Verified* headless: the button with `1` beside `+`, pins with the icon (one new in magenta, one `@ 1`, one read).
+
+### D-168 · 2026-10-20 · Accepted (adds to D-159, D-166 and the planes, D-139)
+**A thread takes you to its plane.** The user: "eğer kullanıcı bir plane deyse ve başka bir planeden mesaj geldiyse mesaja
+tıklasa da gidemiyor. Bu farklı planeler olayını düşünmeliyiz" (on one plane, a thread from another plane couldn't be
+reached from the panel; the camera flew to where it would be on the open plane).
+- *Which plane a thread is seen on:* text, a section, a sticky note or a spot belong to one plane (the label's
+  `planeId`, the spot's). A card or a link: the open plane if the card (both ends, a competitor feature counting as its
+  competitor) shows there; else the plane the thread was started on, if it's there; else All, where every card is.
+- *Threads remember where they began:* `planeId` is now set for every new thread started off All (before, only spots).
+- *Going there:* from the threads panel a row on another plane switches the board to it (`?plane=`, remembered as with the
+  switcher), waits until that plane's cards and text are in place, then flies there and opens the thread beside its pin.
+- *Seeing it first:* with planes in the workspace, a row on another plane than the open one ends `· on Pricing ↗` (cyan).
+- The panel's rows now use the comment icon too (D-167) instead of `“`.
+- *Verified* headless: a plane "Pricing" with one card; from All a spot thread on Pricing switched to Pricing and opened;
+  on Pricing the other thread's row said `on All ↗`, and opening it switched back to All and opened it; `tsc`.

@@ -518,3 +518,8 @@
   background: var(--accent-magenta);
   box-shadow: 0 0 0 2px var(--bg);
 }
+
+/* A thread on another plane than the one open (D-168). */
+.rowPlane {
+  color: var(--accent-cyan);
+}

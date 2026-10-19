@@ -38,7 +38,7 @@ import { TITLE_W, estimateTitleHalf, isTitle, labelHalf } from './titleBlock'
 import { drawSection, fitSections, holdsPoint, isSection, rectOf, useSectionDraw, wrapRect, type Rect, type SectionRect } from './sections'
 import { copied } from '../../data/selection'
 import { ALL } from '../../data/planes'
-import { allSpot, useOpenPlane, usePlaneItems, usePlaneWs } from './planes'
+import { allSpot, planeIds, useOpenPlane, usePlaneItems, usePlaneWs } from './planes'
 import { ExistingCards, PlaneSwitcher } from './PlaneSwitcher'
 import { editLocked, useViewer } from '../workspace/viewerLock'
 import styles from './BoardView.module.css'
@@ -313,8 +313,27 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
   const boardThreads: BoardThreads = { list: threadList, exists: (id) => known.has(id), plane, titleOf, isOwner: isOwnerOf(ws.workspace, myUid()) }
   const pinsNewOnly = useThreadView((s) => s.newOnly)
   const pinsResolved = useThreadView((s) => s.resolvedToo)
-  // Opened from the list: the board goes to it, it opens beside its pin.
-  const goToThread = (t: Thread & { id: string }) => {
+  // The plane a thread is best seen on (D-168): this one if what it's on shows here; else the plane it was started on, if
+  // what it's on is there; else All, where every card is. Text, sections and spots belong to one plane.
+  const threadPlane = (t: Thread): string => {
+    if (t.on === 'spot') return t.planeId ?? ALL
+    if (t.on === 'label') return ws.labels.find((l) => l.id === t.targetId)?.planeId ?? ALL
+    const ownerOf = (id: string) => competitorFeatures.find((f) => f.id === id)?.competitorId ?? id
+    const edge = t.on === 'link' ? edges.find((e) => e.id === t.targetId) : undefined
+    const ids = t.on === 'card' ? [ownerOf(t.targetId ?? '')] : edge ? [ownerOf(edge.fromId), ownerOf(edge.toId)] : []
+    if (!ids.length) return plane
+    const on = (p: string) => {
+      const here = planeIds(ws, p)
+      return !here || ids.every((id) => here.has(id))
+    }
+    if (on(plane)) return plane
+    if (t.planeId && ws.planes.some((p) => p.id === t.planeId) && on(t.planeId)) return t.planeId
+    return ALL
+  }
+  const planeName = (id: string) => (id === ALL ? 'All' : (ws.planes.find((p) => p.id === id)?.name ?? 'All'))
+  // Opened from the list: the board switches to the thread's plane if it has to, goes to it, and it opens beside its pin.
+  const [going, setGoing] = useState<(Thread & { id: string }) | null>(null)
+  const flyToThread = (t: Thread & { id: string }) => {
     const target = t.on === 'card' ? all.find((n) => n.id === t.targetId) : t.on === 'label' ? labels.find((l) => l.id === t.targetId) : undefined
     const edge = t.on === 'link' ? edges.find((e) => e.id === t.targetId) : undefined
     const ends = edge ? [all.find((n) => n.id === edge.fromId), all.find((n) => n.id === edge.toId)].filter(Boolean) : []
@@ -322,6 +341,25 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     useCanvas.getState().flyTo(at)
     openThread(t.id)
   }
+  const goToThread = (t: Thread & { id: string }) => {
+    const to = threadPlane(t)
+    if (to === plane) return flyToThread(t)
+    setGoing(t)
+    useWsView.getState().setPlane(to)
+    setParams((p) => {
+      if (to === ALL) p.delete('plane')
+      else p.set('plane', to)
+      return p
+    })
+  }
+  // Once the board is on the thread's plane (its cards and text at their places there), go to it.
+  useEffect(() => {
+    if (!going || threadPlane(going) !== plane) return
+    const t = going
+    setGoing(null)
+    requestAnimationFrame(() => flyToThread(t))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [going, plane, all, labels])
 
   const create = async (type: NewThing, at: [number, number]) => {
     // A section is drawn on the board, not placed.
@@ -536,7 +574,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
 
       <BoardMenu ws={pws} create={focusMode ? undefined : (type, at) => void create(type, at)} wrap={focusMode ? undefined : wrap} />
 
-      {!focusMode && <ThreadInbox wid={wid} threads={threadList} titleOf={titleOf} onGo={goToThread} />}
+      {!focusMode && <ThreadInbox wid={wid} threads={threadList} titleOf={titleOf} onGo={goToThread} whereOf={(t) => (ws.planes.length ? planeName(threadPlane(t)) : null)} here={planeName(plane)} />}
 
       <DetailPanel items={every} />
     </main>

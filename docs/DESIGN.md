@@ -136,7 +136,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   of people over the prompt. No person colours. Pins stay one size at any zoom (DOM over the canvas). The threads panel:
   a square icon button right of `+` (the comment icon; a magenta count of new mentions in its corner, or a magenta dot
   while anything else is new) opens the same chat frame above it,
-  views as bracket actions, one row per thread (mark, what it's on, when, last writer + how it began, count); the
+  views as bracket actions, one row per thread (mark, what it's on, when, last writer + how it began, count, and `· on <plane> ↗` in cyan when it's on
+  another plane, D-168); the
   filter bar's `COMMENTS │ on ▾` sets what the pins show
 - Sections (D-130, D-157): a thin frame, no fill. The name sits in the frame's edge, the line breaking round it: along
   the top from near the left corner, or up the left edge ending near the top (read bottom to top). A small line before
