@@ -37,6 +37,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   overview (D-144), committed, rules deployed, pushed 2026-10-19. Phase 6 plan done.
 - Competitor regions (D-145): where a competitor operates, REGION filter (bar + matrix footer), assistant fields; committed 2026-10-19.
 - LINKS filter: `solves` / `part of` and `inspired by` / `depends on` split into separate groups (D-146), 2026-10-19.
+- Board grid (D-148): one `+` every 0.625 = the snap points, card corners land on marks, no perspective drift, cards 2.5
+  wide with no grey edge; committed 2026-10-19.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

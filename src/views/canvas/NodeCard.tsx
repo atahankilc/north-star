@@ -290,10 +290,6 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
         {/* Up to three plates peeking out behind: this competitor has features to fan out. */}
         {Array.from({ length: Math.min(3, stack) }, (_, i) => (
           <group key={i} position={[(i + 1) * 0.07, -(i + 1) * 0.07, -0.006 - i * 0.002]}>
-            <mesh position={[0, 0, -0.001]}>
-              <planeGeometry args={[W + 0.02, H + 0.02]} />
-              <meshBasicMaterial color={colors.hairline} toneMapped={false} />
-            </mesh>
             <mesh>
               <planeGeometry args={[W, H]} />
               <meshBasicMaterial color={colors.cardBehind} toneMapped={false} />
@@ -343,11 +339,13 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
             </mesh>
           </group>
         )}
-        {/* Edge: a hairline, or the highlight when hovered, selected, related or a link target. */}
-        <mesh position={[0, 0, -0.002]}>
-          <planeGeometry args={[W + (rim ? 0.05 : 0.02), H + (rim ? 0.05 : 0.02)]} />
-          <meshBasicMaterial color={rim ?? colors.hairline} toneMapped={false} />
-        </mesh>
+        {/* No edge of its own (D-148): only the highlight when hovered, selected, related or a link target. */}
+        {rim && (
+          <mesh position={[0, 0, -0.002]}>
+            <planeGeometry args={[W + 0.05, H + 0.05]} />
+            <meshBasicMaterial color={rim} toneMapped={false} />
+          </mesh>
+        )}
         <mesh>
           <planeGeometry args={[W, H]} />
           <meshBasicMaterial color={colors.card} toneMapped={false} />

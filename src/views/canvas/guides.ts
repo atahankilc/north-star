@@ -1,13 +1,13 @@
 // Alignment guides while dragging (D-117). A dragged card snaps to the edges and centres of other cards (text to their
-// centres) once it's within a few pixels of them, and a thin line shows what it lines up with. Each axis on its own:
-// where nothing is close, the grid (D-112) applies as before. On by default, switched beside the `+` (or `a`),
+// centres) once it's within a few pixels of them, and a thin line shows what it lines up with. Each axis on its own.
+// While snapping to the grid is on (D-112), the grid alone places it and the lines only show what it lines up with (D-148). On by default, switched beside the `+` (or `a`),
 // remembered in this browser; holding alt moves freely, as with the grid. In a group drag the piece you hold aligns.
 import type { Camera } from 'three'
 import { create } from 'zustand'
 import { useCanvas } from '../../state/canvasStore'
 import { CARD_H, CARD_W } from './cardLayout'
 import { groupIds, pieceOf, piecesOnBoard } from './groupDrag'
-import { snapPoint } from './snap'
+import { snapPoint, useSnap } from './snap'
 import { titleHalf, titleId } from './titleBlock'
 
 // How close (in screen pixels) an edge or centre has to come before it's pulled into line.
@@ -102,8 +102,8 @@ function linesOn(own: Box, others: Box[], axis: 0 | 1): Guide[] {
 // Where the piece `id`, dragged to `p`, lands: in line with others where one is close (guides on), on the grid on
 // the other axis (grid on), or exactly at `p` with alt held. Updates the guides drawn on the board.
 export function placeDragged(id: string, p: [number, number], free: boolean, perPixel: number): [number, number] {
-  const grid = snapPoint(p, free)
   const piece = pieceOf(id)
+  const grid = snapPoint(p, free, piece ? halfOf(piece.kind, piece.id) : [0, 0])
   if (free || !useGuides.getState().on || !piece) {
     clearGuides()
     return grid
@@ -116,9 +116,11 @@ export function placeDragged(id: string, p: [number, number], free: boolean, per
   for (const o of piecesOnBoard()) {
     if (!moving.has(o.id)) others.push({ c: [o.x, o.y], h: halfOf(o.kind, o.id) })
   }
-  const reach = PULL_PX * perPixel
-  const dx = pull(own, others, 0, reach)
-  const dy = pull(own, others, 1, reach)
+  // While snapping is on the grid decides (D-148): pulling to a card that isn't on it would put this one off the `+`
+  // marks. The lines still show what it lines up with.
+  const reach = useSnap.getState().on ? 0 : PULL_PX * perPixel
+  const dx = reach ? pull(own, others, 0, reach) : null
+  const dy = reach ? pull(own, others, 1, reach) : null
   const at: [number, number] = [dx === null ? grid[0] : p[0] + dx, dy === null ? grid[1] : p[1] + dy]
   const placed: Box = { c: at, h: own.h }
   // Also drawn when the grid alone put it in line with something.

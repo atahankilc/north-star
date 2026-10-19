@@ -5,7 +5,7 @@ import { placeMany, type Piece } from '../../data/selection'
 import { useCanvas } from '../../state/canvasStore'
 import { contentsOf, pieceOf } from './groupDrag'
 import { halfOf } from './guides'
-import { SNAP_STEP } from './snap'
+import { GRID_STEP } from './snap'
 
 export type Align = 'left' | 'centre' | 'right' | 'top' | 'middle' | 'bottom'
 
@@ -80,11 +80,11 @@ export function space(wid: string, axis: 0 | 1) {
   place(wid, `space out ${all.length} things`, list)
 }
 
-// One grid step (the snap step, D-112) per press; with shift, a whole unit of the `+` grid.
+// One grid step (from one `+` to the next, D-148) per press; with shift, four (a card's width).
 export function nudge(wid: string, dir: [number, number], big: boolean) {
   const all = boxes()
   if (!all.length) return
-  const step = big ? 1 : SNAP_STEP
+  const step = big ? GRID_STEP * 4 : GRID_STEP
   const list = all.map((b): [Box, [number, number]] => [b, [b.c[0] + dir[0] * step, b.c[1] + dir[1] * step]])
   const key = `nudge:${all.map((b) => b.id).sort().join(',')}`
   const placed = place(wid, `move ${all.length} thing${all.length === 1 ? '' : 's'}`, list, key)

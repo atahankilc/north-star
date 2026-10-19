@@ -46,7 +46,7 @@ import { LinkBar } from './LinkBar'
 import { linkStyle } from './linkKinds'
 import { CHIP_H, CHIP_W, FeatureChip } from './FeatureChip'
 import { boardPoint, NodeCard } from './NodeCard'
-import { SNAP_STEP, useSnap } from './snap'
+import { GRID_STEP } from './snap'
 import { BoardDetail, useDetail } from './detail'
 import { NODE_R, SMALL_NODE_R } from './FarNode'
 import { CursorReporter, FollowCamera, PeerCursors } from './PeerCursors'
@@ -920,60 +920,58 @@ function Snapshot({ nodes, labels }: { nodes: BoardItem[]; labels: WithId<Label>
   return null
 }
 
-// Faint "+" marks every unit: an ASCII-flavoured grid for spatial memory. Zoomed out they shrink to dots,
-// then fade away before the zoom-out limit, so the board never turns into a dense speckle (D-110).
-// While snapping is on (D-112), close up, faint dots between them show the points a dragged card lands on.
+// Faint "+" marks, an ASCII-flavoured grid for spatial memory, and the points a dragged card lands on: one mark every
+// GRID_STEP, so a snapped card has a mark on each corner (D-112, D-148). Zoomed out, every other mark fades once they
+// crowd, then they shrink to dots and fade away before the zoom-out limit, so the board never turns into a speckle (D-110).
+// The plane sits a little behind the cards, so each point is taken back to where the camera sees it on the cards'
+// plane: otherwise perspective shifts the marks off the cards' corners, more the further from the screen's centre.
 function DotGridMaterial() {
   const shade = usePalette().grid
-  const snap = useSnap((s) => s.on)
   const material = useRef<ShaderMaterial>(null)
-  const uniforms = useMemo(() => ({ uShade: { value: shade }, uDist: { value: 11 }, uSnap: { value: snap ? 1 : 0 } }), []) // eslint-disable-line react-hooks/exhaustive-deps
+  const uniforms = useMemo(() => ({ uShade: { value: shade }, uDist: { value: 11 } }), []) // eslint-disable-line react-hooks/exhaustive-deps
   // R3F copies the uniforms prop, so theme changes go through the material (D-028).
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => {
-    if (material.current) {
-      material.current.uniforms.uShade.value = shade
-      material.current.uniforms.uSnap.value = snap ? 1 : 0
-    }
+    if (material.current) material.current.uniforms.uShade.value = shade
     invalidate()
-  }, [shade, snap, invalidate])
+  }, [shade, invalidate])
   // The camera's distance decides the shape, so the grid is gone at the limit on any screen.
   useFrame(({ camera }) => {
     if (material.current) material.current.uniforms.uDist.value = camera.position.z
   })
+  const step = GRID_STEP.toFixed(4)
   return (
     <shaderMaterial
       ref={material}
       transparent
       depthWrite={false}
       vertexShader={/* glsl */ `
-        varying vec2 vWorld;
+        varying vec3 vPos;
         void main() {
-          vWorld = (modelMatrix * vec4(position, 1.0)).xy;
+          vPos = (modelMatrix * vec4(position, 1.0)).xyz;
           gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
         }
       `}
       uniforms={uniforms}
       fragmentShader={/* glsl */ `
-        varying vec2 vWorld;
+        varying vec3 vPos;
         uniform float uShade;
         uniform float uDist;
-        uniform float uSnap;
         void main() {
           // A full "+" up to 30 units away, a dot by 70, faded out between 80 and ${MAX_DISTANCE - 30} (limit ${MAX_DISTANCE}).
           float fade = 1.0 - smoothstep(80.0, ${(MAX_DISTANCE - 30).toFixed(1)}, uDist);
           if (fade <= 0.0) discard;
-          vec2 g = abs(fract(vWorld + 0.5) - 0.5);
-          float w = fwidth(vWorld.x) * 1.2;
+          // Where the camera's ray through this point meets the cards' plane (z = 0).
+          vec2 world = cameraPosition.xy + (vPos.xy - cameraPosition.xy) * cameraPosition.z / (cameraPosition.z - vPos.z);
+          vec2 g = abs(fract(world / ${step} + 0.5) - 0.5) * ${step};
+          float w = fwidth(world.x) * 1.2;
           float arm = mix(0.06, w, smoothstep(30.0, 70.0, uDist));
-          float plus = max(
-            step(g.x, w) * step(g.y, arm),
-            step(g.y, w) * step(g.x, arm)
-          );
-          // The snap points between the "+" marks: one-pixel dots, gone by 34 units away, where they'd crowd.
-          vec2 s = abs(fract(vWorld / ${SNAP_STEP.toFixed(4)} + 0.5) - 0.5) * ${SNAP_STEP.toFixed(4)};
-          float snapDot = uSnap * step(s.x, w * 1.5) * step(s.y, w * 1.5) * (1.0 - smoothstep(22.0, 34.0, uDist));
-          gl_FragColor = vec4(vec3(uShade), max(plus * 0.4, snapDot * 0.35) * fade);
+          float plus = max(step(g.x, w) * step(g.y, arm), step(g.y, w) * step(g.x, arm));
+          // Every other mark fades once the marks are under 16 px apart.
+          vec2 cell = floor(world / ${step} + 0.5);
+          float odd = max(mod(cell.x, 2.0), mod(cell.y, 2.0));
+          float crowd = 1.0 - odd * (1.0 - smoothstep(10.0, 16.0, ${step} / fwidth(world.x)));
+          gl_FragColor = vec4(vec3(uShade), plus * crowd * 0.4 * fade);
         }
       `}
     />

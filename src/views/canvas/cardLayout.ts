@@ -1,5 +1,6 @@
-// Card size in world units, the same for every type (D-055). Positions stored in Firestore are card centres.
-export const CARD_W = 2.4
+// Card size in world units, the same for every type (D-055). Positions stored in Firestore are card centres. 4 × 2
+// grid steps, so a card snapped to the grid has a `+` mark on every corner (D-148).
+export const CARD_W = 2.5
 // Type label, a title of up to two lines, tags and one meta line (no notes, D-057).
 export const CARD_H = 1.25
 

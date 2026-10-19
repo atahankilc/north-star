@@ -48,7 +48,7 @@ descriptions live in the side panel only (D-057).
   layout, the links among them and customer tags), ⌘D duplicates just below.
 - **Lining up** (D-124): the panel's `line up` rows align the selection's left edges, centres, right edges (top, middle,
   bottom; text by its centre, like the guides) or space three or more out evenly between the outermost two (equal gaps).
-  The arrow keys nudge whatever is selected, one or many, by the snap step (0.25), shift by a whole unit; a run of
+  The arrow keys nudge whatever is selected, one or many, by one grid step (0.625, from one `+` to the next, D-148), shift by four (a card's width); a run of
   nudges is one undo step. Each line-up is one undo step. Collaborators see the whole selection ringed, not just the last pick.
 - **Text sizes** (D-108, D-130): a selected text label gets a bar with H1 (heading, the default), H2, H3 and note (small
   mono), then B / I / AA (bold, italic, capitals: the real Geist faces, each switch drawn in its own style), a

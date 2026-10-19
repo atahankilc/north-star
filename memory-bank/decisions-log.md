@@ -1274,14 +1274,14 @@ on some cards and links vanished and others didn't. Cause: `near 0.1 / far 1000`
 **Dragging snaps to a small grid, switched on and off beside the `+`.** User: lining cards up in the same row or column by
 hand was too hard; keep the grid small so any shape is still possible; a button to turn snapping off for free design.
 - *Snap* (`src/views/canvas/snap.ts`): a dragged card or label lands with its centre on the nearest 0.25-unit point (a
-  quarter of the `+` grid). Every card is the same size (D-055), so centres on the grid put edges in line too. A group drag
+  quarter of the `+` grid). (Step and anchor changed by D-148: the `+` marks are the snap points, corners snap.) Every card is the same size (D-055), so centres on the grid put edges in line too. A group drag
   (D-108) snaps the piece you hold and moves the rest by the same step, keeping their layout. Holding alt while dragging
   moves freely for that drag. Positions only change when something is dragged; nothing already on the board moves.
 - *Switch:* a framed square beside the fit-all button (cyan while on, `aria-pressed`) and the `g` key; on by default,
   remembered in this browser (`north-star.board-snap`). Viewers don't get it (they move nothing). The hint line says
   `drag: move on the grid (alt: freely)` and `g: snap`.
-- *Grid:* while snapping is on, faint dots mark the quarter points between the `+` marks when close up (gone by 34 units
-  away, so they never crowd); off, the grid is as in D-110.
+- *Grid:* (replaced by D-148's grid) while snapping is on, faint dots marked the quarter points between the `+`
+  marks when close up.
 - Not done: alignment guides to other cards' edges (separate idea in state.md).
 - Verified headless on emulators (example workspace, dark, 1440): a drag lands on (−22.75, 1.25); alt+drag lands off the
   grid; button and `g` switch it and it's remembered; the quarter dots show close up.
@@ -2065,3 +2065,24 @@ solves links into two separate links", then "same for inspired by and depends on
 - Filters saved before (links version < 5) that hid `solves` / `draws` hide `part` / `depends` too, once; all show by default.
 - *Alternative:* colours of their own for the new groups; not asked for, kept (offered to the user).
 - *Verified:* `npm run build`.
+
+### D-148 · 2026-10-19 · Accepted (changes D-112's snap step and grid, D-117's pull, D-055's card width and edge)
+**The `+` marks are the snap points; a snapped card has a mark on each corner; cards lose their grey edge.** The user:
+"board grid position visualization is not working. Make the steps smaller also make sure "+" do match with where cards
+sit. Also we can remove the gray borders of the cards". Before, marks sat every unit, cards snapped their centres to 0.25,
+and the quarter-point dots were too faint to see, so a card never lined up with any mark.
+- *First try, rejected:* finer marks the closer the camera (⅛ → 1 unit) with snapping to the finest on show. The user:
+  "i didnt wanted you to add tons of + characters … left colored side of the cards never match with the grids … grid
+  points and the location of "+" characters do not match".
+- *Why they didn't match:* besides the step, the grid plane sits 0.1 behind the cards, so with the perspective camera the
+  marks drifted off the cards' corners, more toward the screen's edges. The shader now takes each point back to where
+  the camera's ray meets the cards' plane (z = 0).
+- *Grid* (`DotGridMaterial`, `GRID_STEP` in snap.ts): one `+` every 0.625; zoomed out, every other mark fades once
+  they're under 16 px apart; dots and fade by distance as in D-110. Shown whether snapping is on or not.
+- *Snap:* a box's top-left corner on a mark (`snapPoint(p, free, half)`). Cards 2.5 × 1.25 (was 2.4 wide) = 4 × 2
+  steps, so all four corners land on marks. Arrow keys nudge one step, shift four.
+- *Guides (D-117):* with snapping on they don't pull (older cards off the grid would pull a card off the marks); the
+  lines still show what lines up. With snapping off they pull as before.
+- *Edge:* no hairline round cards or the competitor plates behind them; the hover/selection/link rim stays.
+- *Verified* headless (example workspace, 1400 × 900 @2x): dragged cards land with corners on multiples of 0.625 and on
+  the drawn marks, also at the far right of the screen.
