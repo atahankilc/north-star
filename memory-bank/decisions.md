@@ -81,7 +81,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Competitor features stack behind it and fan out once the click is released (D-058).
 - Links: straight, arrowhead, kind written on a solid chip; colour by meaning in 4 groups (violet solves/part of, salmon
   competes/contradicts, sand inspired/depends, grey relates/for); hover/selection dims others; click a link → bar (kind,
-  label, reverse, remove); LINKS filter (D-059, D-108). Several links between two cards sit side by side, chips staggered (D-113).
+  label, reverse, remove); LINKS filter (D-059, D-108); `solves`, `part of`, `inspired by`, `depends on` are separate LINKS groups, the pairs keep one colour (D-146). Several links between two cards sit side by side, chips staggered (D-113).
 - `competes` lines are their own LINKS group, hidden by default, shown for the hovered or selected card; competitor cards say
   `vs N`; a link's own label shows on its chip only while it's hovered, selected or the selected card's (D-135).
 - A competitor in focus (hovered, selected) lights the links to its features as well (D-115).

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-19 (D-145 competitor regions)_
+_Last updated: 2026-10-19 (D-146 solves / part of split)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -36,6 +36,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   (no rules change). Step 4, plane filter in other views (D-143), committed. Planes spec done. Slice 8,
   overview (D-144), committed, rules deployed, pushed 2026-10-19. Phase 6 plan done.
 - Competitor regions (D-145): where a competitor operates, REGION filter (bar + matrix footer), assistant fields; committed 2026-10-19.
+- LINKS filter: `solves` / `part of` and `inspired by` / `depends on` split into separate groups (D-146), 2026-10-19.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

@@ -39,7 +39,8 @@ descriptions live in the side panel only (D-057).
   card says how many it competes with (`vs 8`) (D-135); the pattern tells
   kinds apart within a colour. Hovering a card (or selecting cards) dims every link that doesn't touch it.
   Click a link to select it: a bar under it changes its kind, gives it a label, turns it around, removes it (Delete too).
-  The `LINKS` filter hides groups of links and doubles as the colour key.
+  The `LINKS` filter hides groups of links and doubles as the colour key; `solves` / `part of` and `inspired by` /
+  `depends on` are separate groups there, each pair in one colour (D-146).
 - **Linking:** drag from the `○` handle on a hovered card's right edge, or shift+drag the card, onto another card.
 - **Selecting several** (D-108): shift+click adds or removes a card or text; alt+drag on empty board draws a box (shift
   keeps what was selected). Drag any of them to move all, one undo step. The panel shows what's selected, tags shared by all

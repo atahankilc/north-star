@@ -27,7 +27,7 @@ export const QUIET_LINKS = ['plain', 'for', 'competes']
 
 const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], regions: [], hiddenLinks: QUIET_LINKS, plane: 'all' }
 // Bumped when a new link group starts hidden, so filters saved before it hide it too.
-const LINKS_VERSION = 4
+const LINKS_VERSION = 5
 // Bumped when a new card type arrives, so filters saved before it show it (D-141).
 const TYPES_VERSION = 2
 
@@ -68,7 +68,10 @@ function read(wid: string): Filters {
     const saved = JSON.parse(raw) as Partial<Filters> & { linksV?: number; typesV?: number }
     // Packages (D-141) came after: a filter saved before them shows them once, then the choice is remembered.
     const types = saved.types && (saved.typesV ?? 1) < TYPES_VERSION ? [...saved.types, 'package' as const] : saved.types
-    const hiddenLinks = saved.hiddenLinks ?? DEFAULTS.hiddenLinks
+    let hiddenLinks = saved.hiddenLinks ?? DEFAULTS.hiddenLinks
+    // `part of` and `depends on` left the `solves` and `draws` groups (version 5): a filter that hid the old group hides them too.
+    for (const [from, to] of [['solves', 'part'], ['draws', 'depends']])
+      if ((saved.linksV ?? 1) < 5 && hiddenLinks.includes(from) && !hiddenLinks.includes(to)) hiddenLinks = [...hiddenLinks, to]
     return {
       types: (types ?? DEFAULTS.types).filter((t) => BOARD_TYPES.includes(t)),
       forIds: saved.forIds ?? [],

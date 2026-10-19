@@ -2055,3 +2055,13 @@ in; you should be able to say it's from America, Germany or Europe).
   REGION menu listed Global, Europe (Germany, Netherlands, UK), North America (US) with counts, and Germany kept Crewly,
   BigChain and the paper rota, hid ShiftGrid; in Crewly's panel `usa` offered `US` first and Enter added it. Node check of
   the matching (15 cases). Rules 293 pass (3 new). `tsc -b`.
+
+### D-146 · 2026-10-19 · Accepted
+**`solves` / `part of` and `inspired by` / `depends on` are separate LINKS groups.** The user: "split the part of and
+solves links into two separate links", then "same for inspired by and depends on".
+- `part-of` moved from the `solves` group to its own `part` group, `depends-on` from `draws` to its own `depends` group
+  (linkKinds.ts), each listed right after its old partner in the LINKS filter; same colours (`palette.link.part` = violet,
+  `palette.link.depends` = sand) and the same dashes, so the board looks the same.
+- Filters saved before (links version < 5) that hid `solves` / `draws` hide `part` / `depends` too, once; all show by default.
+- *Alternative:* colours of their own for the new groups; not asked for, kept (offered to the user).
+- *Verified:* `npm run build`.

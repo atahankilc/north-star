@@ -29,7 +29,7 @@ export type Palette = {
   // A proposal's preview (D-096): new, edited, moved, deleted.
   diff: { new: string; edited: string; moved: string; deleted: string }
   // Links by what they say (linkKinds.ts); `plain` is the old neutral line.
-  link: { solves: string; competes: string; clashes: string; draws: string; plain: string; for: string }
+  link: { solves: string; part: string; competes: string; clashes: string; draws: string; depends: string; plain: string; for: string }
   ember: string // welcome sunrise (D-072), WebGL only
   dawn: string
   night: string // the welcome's sky in light theme (D-072); dark never uses it
@@ -49,7 +49,7 @@ export const palettes: Record<Theme, Palette> = {
   dark: {
     ...colors,
     diff: { new: '#a6ff3d', edited: '#ff9f1c', moved: '#3d7bff', deleted: '#ff4545' },
-    link: { solves: '#a78bfa', competes: '#ff8f7a', clashes: '#ff8f7a', draws: '#c9b48a', plain: '#7a7a7a', for: '#7a7a7a' },
+    link: { solves: '#a78bfa', part: '#a78bfa', competes: '#ff8f7a', clashes: '#ff8f7a', draws: '#c9b48a', depends: '#c9b48a', plain: '#7a7a7a', for: '#7a7a7a' },
     ember: '#ff4a26',
     dawn: '#ff9a2e',
     night: '#000000',
@@ -74,7 +74,7 @@ export const palettes: Record<Theme, Palette> = {
     blue: '#2a5fe0',
     green: '#0f9a4b',
     diff: { new: '#4f9400', edited: '#c56a00', moved: '#2a5fe0', deleted: '#d42a2a' },
-    link: { solves: '#6d4fd6', competes: '#c4513a', clashes: '#c4513a', draws: '#8a7344', plain: '#7a7a7a', for: '#7a7a7a' },
+    link: { solves: '#6d4fd6', part: '#6d4fd6', competes: '#c4513a', clashes: '#c4513a', draws: '#8a7344', depends: '#8a7344', plain: '#7a7a7a', for: '#7a7a7a' },
     // Same as dark: the ASCII pass prints brightness as ink and darkens the hue itself, so darker values would barely show.
     ember: '#ff4a26',
     dawn: '#ff9a2e',

@@ -100,7 +100,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
 - Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a framed chip (solid `--bg`, 1px
   border in the link's colour) at the midpoint. Colour by meaning, from `--link-*` tokens kept apart from type, people and
-  diff colours: violet solves / part of, salmon competes / contradicts, sand inspired by / depends on, grey relates / for;
+  diff colours: violet solves / part of, salmon competes / contradicts, sand inspired by / depends on (each kind its own LINKS group, D-146), grey relates / for;
   line pattern tells kinds apart inside a group. Thicker on the selected card; links not touching the hovered or selected
   card go faint (a competitor's include the links to its features, D-115). A selected link fills its chip. No animation. Several links between the same two cards sit side by side,
   0.32 apart (closer if the end is too small), their chips moved along the lines so they don't overlap (D-113)
