@@ -1,5 +1,6 @@
 // A section on the board (D-130): a named frame round part of the board (sections.ts says what it holds). Its name sits
-// in a band across the top; grab the band or the frame's edge to drag it, and everything it holds comes along
+// in the frame's top edge, or up its left edge (D-157), the line breaking round it, in the section's colour as the line
+// is; grab the name or the frame's edge to drag it, and everything it holds comes along
 // (groupDrag.ts). The handle in its bottom-right corner resizes it, the top-left corner staying put and what's inside
 // staying where it is. Double-click the name to rename it. The empty middle belongs to the board: clicks and drags
 // there reach the cards inside or pan, as if the section weren't there. In the focus view (D-127) it's only drawn.
@@ -9,8 +10,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MathUtils, MeshBasicMaterial, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
-import { endLabelMove, endSectionResize, moveLabel, resizeSection, updateLabel } from '../../data/labels'
-import type { Label } from '../../data/model'
+import { endLabelMove, endSectionResize, moveLabel, resizeSection, updateLabel, type LabelEdit } from '../../data/labels'
+import { KICKER_MAX, LABEL_TEXT_MAX, type Label } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { usePalette, useThemeAccent } from '../../state/theme'
 import { BoardLine } from './BoardLine'
@@ -22,8 +23,9 @@ import { focusField } from './focusField'
 import { clearGuides, placeDragged, unitsPerPixel } from './guides'
 import { boardPoint } from './NodeCard'
 import { rightPress } from './rightClick'
-import { MIN_H, MIN_W, sectionBand, sectionNameSize, sizeOf, type SectionRect } from './sections'
-import { inputStyle, labelFace, labelTracking, shownText } from './textStyle'
+import { MIN_H, MIN_W, sectionInset, sectionNameSize, sizeOf, type SectionRect } from './sections'
+import { inputStyle, kickerParts, kickerSize, labelFace, labelTracking, shownText } from './textStyle'
+import { fontUrls } from '../../three/fonts'
 import { snapPoint } from './snap'
 import { editLocked } from '../workspace/viewerLock'
 import styles from './BoardLabel.module.css'
@@ -63,13 +65,13 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
   const [hovered, setHovered] = useState(false)
   // The frame while its corner is dragged, ahead of Firestore.
   const [resizing, setResizing] = useState<SectionRect | null>(null)
+  // The name's width as laid out, for the break in the line round it.
+  const [nameMeasured, setNameMeasured] = useState<number | null>(null)
 
   const [w, h] = resizing ? [resizing.w, resizing.h] : sizeOf(label)
   const [x, y] = resizing ? [resizing.x, resizing.y] : (live ?? [label.x, label.y])
   // Set like text (H1, H2, H3, bold, italic, caps), whatever the frame's size.
   const size = sectionNameSize(label)
-  const band = sectionBand(label)
-  const pad = size * 0.6
   const readable = useReadable(size)
   const colors = usePalette()
   const tone = useThemeAccent()
@@ -217,45 +219,57 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
       }
 
   const name = label.text.trim()
-  // One line in the band: cut to what fits (Geist is about half its size wide per character).
-  const room = Math.max(4, Math.floor((w - pad * 2) / (size * (label.caps || label.bold ? 0.66 : 0.55))))
-  const shown = shownText(label, name.length > room ? `${name.slice(0, room - 1)}…` : name)
-  const top = h / 2
   const left = -w / 2
-  const frame: [number, number, number][] = [
-    [left, top, 0],
-    [-left, top, 0],
-    [-left, -top, 0],
-    [left, -top, 0],
-    [left, top, 0],
-  ]
+  const top = h / 2
+  // The name sits in the frame's edge (D-157): along the top from near its left corner, or up the left edge ending
+  // near the top. The line breaks round it; a leading number from its small line goes before it in the accent.
+  const onLeft = label.side === 'left'
+  const inset = sectionInset(label)
+  const kicker = kickerParts(label.kicker)
+  const ks = Math.max(0.1, size * 0.42)
+  const kickText = kicker ? [kicker.num, kicker.rest].filter(Boolean).join(' ') : ''
+  const kickW = kickText ? kickText.length * ks * 0.6 * 1.12 + size * 0.45 : 0
+  const edge = onLeft ? h : w
+  // One line in the edge: cut to what fits (Geist is about half its size wide per character).
+  const room = Math.max(4, Math.floor((edge - inset * 2 - kickW) / (size * (label.caps || label.bold ? 0.66 : 0.55))))
+  const shown = shownText(label, name.length > room ? `${name.slice(0, room - 1)}…` : name)
+  const nameW = Math.min(edge - inset * 2, kickW + (nameMeasured ?? (shown || 'Section').length * size * 0.55))
+  const gap = size * 0.35
+  // The frame, open where the name is: from the name's far end round the corners back to its near end.
+  const frame: [number, number, number][] = onLeft
+    ? [
+        [left, top - inset - nameW - gap, 0],
+        [left, -top, 0],
+        [-left, -top, 0],
+        [-left, top, 0],
+        [left, top, 0],
+        [left, top - inset + gap, 0],
+      ]
+    : [
+        [left + inset + nameW + gap, top, 0],
+        [-left, top, 0],
+        [-left, -top, 0],
+        [left, -top, 0],
+        [left, top, 0],
+        [left + inset - gap, top, 0],
+      ]
+  // The name's place and turn: its start on the edge.
+  const nameAt: [number, number] = onLeft ? [left, top - inset - nameW] : [left + inset, top]
+  const nameTurn = onLeft ? Math.PI / 2 : 0
+  const grip = EDGE
 
   return (
     <group ref={group} position={[x, y, z]}>
       <group ref={content}>
-        {/* A faint wash over the area, a little stronger in the name's band. */}
-        <mesh position={[0, 0, -0.002]}>
-          <planeGeometry args={[w, h]} />
-          <meshBasicMaterial color={label.color ? accent : colors.fg} transparent opacity={0.025} depthWrite={false} toneMapped={false} />
-        </mesh>
-        <mesh position={[0, top - band / 2, -0.001]}>
-          <planeGeometry args={[w, band]} />
-          <meshBasicMaterial color={label.color ? accent : colors.fg} transparent opacity={selected || hovered ? 0.07 : 0.045} depthWrite={false} toneMapped={false} />
-        </mesh>
         <BoardLine points={frame} color={line} lineWidth={selected ? 1.6 : 1} toneMapped={false} />
-        {/* The band's lower edge, so the name reads as a header. */}
-        <BoardLine points={[[left, top - band, 0], [-left, top - band, 0]]} color={line} lineWidth={1} transparent opacity={0.5} toneMapped={false} />
 
-        {/* What can be grabbed: the band and the frame's other three edges. */}
-        <mesh position={[0, top - band / 2, 0]} {...grab}>
-          <planeGeometry args={[w, band]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-        </mesh>
+        {/* What can be grabbed: the name and the frame's four edges. */}
         {!fixed &&
           ([
-            [left + EDGE / 2, 0, EDGE, h],
-            [-left - EDGE / 2, 0, EDGE, h],
-            [0, -top + EDGE / 2, w, EDGE],
+            [left, 0, grip, h],
+            [-left, 0, grip, h],
+            [0, -top, w, grip],
+            [0, top, w, grip],
           ] as const).map(([ex, ey, ew, eh], i) => (
             <mesh key={i} position={[ex, ey, 0]} {...grab}>
               <planeGeometry args={[ew, eh]} />
@@ -263,21 +277,36 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
             </mesh>
           ))}
 
-        {!editing && (
-          <Text
-            visible={readable}
-            material={textMaterial}
-            font={labelFace({ ...label, size: undefined })}
-            fontSize={size}
-            letterSpacing={labelTracking({ ...label, size: undefined })}
-            color={name ? accent : colors.fgDim}
-            anchorX="left"
-            anchorY="middle"
-            position={[left + pad, top - band / 2, 0.001]}
-          >
-            {shown || 'Section'}
-          </Text>
-        )}
+        <group position={[nameAt[0], nameAt[1], 0.001]} rotation={[0, 0, nameTurn]}>
+          <mesh position={[nameW / 2, 0, 0]} {...grab}>
+            <planeGeometry args={[nameW + gap * 2, size * 1.3]} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+          </mesh>
+          {!editing && kickText && (
+            <Text visible={readable} material={textMaterial} font={fontUrls.mono} fontSize={ks} letterSpacing={0.1} color={label.color ? accent : colors.magenta} anchorX="left" anchorY="middle">
+              {kickText}
+            </Text>
+          )}
+          {!editing && (
+            <Text
+              visible={readable}
+              material={textMaterial}
+              font={labelFace({ ...label, size: undefined })}
+              fontSize={size}
+              letterSpacing={labelTracking({ ...label, size: undefined })}
+              color={name ? accent : colors.fgDim}
+              anchorX="left"
+              anchorY="middle"
+              position={[kickW, 0, 0]}
+              onSync={(t) => {
+                const b = (t as unknown as { textRenderInfo?: { blockBounds: number[] } }).textRenderInfo?.blockBounds
+                if (b) setNameMeasured(b[2] - b[0])
+              }}
+            >
+              {shown || 'Section'}
+            </Text>
+          )}
+        </group>
 
         {/* The resize handle: an L in the corner, shown while it's hovered or selected. */}
         {!fixed && (
@@ -316,20 +345,23 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
           </group>
         )}
       </group>
-      {editing && <NameInput wid={wid} label={label} size={size} at={[left + pad, top - band / 2]} onDone={() => setEditingLabel(null)} />}
+      {editing && <NameInput wid={wid} label={label} size={size} at={[left + inset, top]} onDone={() => setEditingLabel(null)} />}
       <CardReveal content={content} uniforms={cell} />
     </group>
   )
 }
 
-// Enter or clicking away saves, Escape cancels. A section may have no name; it stays either way.
+// Enter or clicking away saves, Escape cancels. A section may have no name; it stays either way. Its small line (a
+// number, D-157) has its own field over the name's (Tab between the two).
 function NameInput({ wid, label, size, at, onDone }: { wid: string; label: WithId<Label>; size: number; at: [number, number]; onDone: () => void }) {
   const [draft, setDraft] = useState(label.text)
+  const [kick, setKick] = useState(label.kicker ?? '')
   const input = useRef<HTMLInputElement>(null)
+  const wrap = useRef<HTMLDivElement>(null)
   const done = useRef(false)
   const camera = useThree((s) => s.camera)
   const view = useThree((s) => s.size)
-  const fontPx = useMemo(() => size / unitsPerPixel(camera, view.height), [camera, view, size])
+  const upp = useMemo(() => unitsPerPixel(camera, view.height), [camera, view])
 
   useEffect(() => focusField(() => input.current), [])
 
@@ -337,31 +369,54 @@ function NameInput({ wid, label, size, at, onDone }: { wid: string; label: WithI
     if (done.current) return
     done.current = true
     const next = draft.trim()
+    const nextKick = kick.trim()
+    const fields: LabelEdit = {}
+    if (next !== label.text) fields.text = next
+    if (nextKick !== (label.kicker ?? '')) fields.kicker = nextKick || undefined
     // A new section's first name undoes together with making it.
-    if (save && next !== label.text) void updateLabel(wid, label.id, { text: next }, !label.text.trim())
+    if (save && Object.keys(fields).length) void updateLabel(wid, label.id, fields, !label.text.trim())
     onDone()
+  }
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    e.stopPropagation()
+    if (e.key === 'Enter') finish(true)
+    if (e.key === 'Escape') finish(false)
   }
 
   return (
     <Html position={[at[0], at[1], 0]} zIndexRange={[20, 10]}>
-      <input
-        ref={input}
-        className={styles.input}
+      <div
+        ref={wrap}
+        className={styles.heading}
         data-section
-        style={{ ...inputStyle(label), fontSize: `${Math.max(12, fontPx)}px`, width: `${Math.max(6, draft.length * 0.62 + 0.6)}em` }}
-        value={draft}
-        maxLength={200}
-        placeholder="Section"
-        aria-label="Section name"
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => finish(true)}
-        onPointerDown={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          e.stopPropagation()
-          if (e.key === 'Enter') finish(true)
-          if (e.key === 'Escape') finish(false)
+        onBlur={(e) => {
+          if (!wrap.current?.contains(e.relatedTarget as Node)) finish(true)
         }}
-      />
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <input
+          className={styles.kicker}
+          style={{ fontSize: `${Math.max(10, kickerSize(size) / upp)}px` }}
+          value={kick}
+          maxLength={KICKER_MAX}
+          placeholder="01"
+          aria-label="Number before the name"
+          onChange={(e) => setKick(e.target.value)}
+          onKeyDown={onKeyDown}
+        />
+        <input
+          ref={input}
+          className={styles.input}
+          data-section
+          style={{ ...inputStyle(label), fontSize: `${Math.max(12, size / upp)}px`, width: `${Math.max(6, draft.length * 0.62 + 0.6)}em` }}
+          value={draft}
+          maxLength={LABEL_TEXT_MAX}
+          placeholder="Section"
+          aria-label="Section name"
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={onKeyDown}
+        />
+      </div>
     </Html>
   )
 }

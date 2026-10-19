@@ -105,12 +105,17 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   `take_off_plane`, `add_package`, `edit_package`; `/organize` may propose planes.
 - Plane filter (D-143): one remembered plane per workspace, the board's open one; Flow and Table (filter bar), Matrix and
   Priorities (footer) show only its cards; a matrix with none of its competitors shows them all.
+- Sections look (D-157): thin frame, no fill, the name set into the top edge or up the left one (`side`), the line
+  breaking round it, a number before it; a colour goes to the line and the name only.
 - Sections: a named frame (label `kind: 'section'`, w/h), drawn with a crosshair (press, drag, release; never placed),
   holding by position whatever is inside it (cards, text, smaller sections); drag the band or edge carries it all, corner
   resizes, delete leaves contents, never copied; name set like text (H1–H3, B/I/AA), not scaled; kept in the focus view
   round the chain's cards (D-130).
-- Labels: text on the board, sizes H1/H2/H3/note (heading/subheading/minor/note), bold/italic/caps, colour (D-130); jump list `go to` (headings and subheadings, not
+- Labels: text on the board, sizes H1/H2/H3/¶ (heading/subheading/minor/note), bold/italic/caps, colour (D-130); jump list `go to` (headings and subheadings, not
   notes) with 1–9 and a search field inside the dropdown (D-050, D-108, D-116).
+- Text look (D-156): headings left-aligned on their centre, optional small line over them (number in magenta), H1 rule
+  fading right; `¶` is a paragraph (≤ 4000, light Markdown, wraps at a width dragged on its right edge, canvas texture);
+  any text turns 90 / −90; hovered or selected, a dashed box.
 - Project title block: one per board from `+`, a `kind: 'title'` label showing the workspace's name + description (edited in
   place or from its right-click menu, same fields as Settings), star + `PROJECT`, rule, corner brackets (D-118).
   Its right edge drags its width (5–30, text rewraps, height follows); too far out to read the description it folds

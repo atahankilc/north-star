@@ -2237,3 +2237,44 @@ location... maybe like a snake, where we can shape it".
 - *Verified* headless on the emulators' example workspace: links straight; a selected link's hollow square dragged → a
   bend point saved, both pieces drawn; the point dragged → moved; double-clicked → gone; rules tests 296/296 on a
   separate emulator set; `npm run build`.
+
+### D-156 · 2026-10-20 · Accepted (changes D-050's and D-130's text; the note size becomes a paragraph)
+**Text on the board gets a new look, paragraphs, and quarter turns.** The user asked to turn text 90°, said the text
+and section designs didn't appeal, and "we do not allow people to write paragraphs but maybe we should". Shown a
+mockup (heading with a numbered small line and a fading rule, a paragraph box, turned text beside a column): "A looks
+absolutely gorgeous, go ahead".
+- *Headings (H1–H3):* still centred on x/y (nothing that places text moves); set left-aligned with an optional small
+  line (`kicker`, ≤ 60) over the text's left edge, Geist Mono capitals in `--fg-dim`, a leading number in magenta (or
+  the label's colour); an H1 gets a hairline rule under it fading out to the right (1.3 × its width). Tracking −0.03 on H1.
+  Selection and hover: a dashed box round it (cyan / grey) instead of the underline.
+- *Paragraphs:* the old `note` size is now a paragraph (stored value unchanged, no migration; shown `¶`): Geist 0.24,
+  leading 1.55, wraps at `w` (6.25 by default; an old note without `w` is as wide as its text), ≤ 4000 characters
+  (rules: `size == 'note'` or a sticky allows 4000, others 200). Light Markdown like the chat: `**bold**`, `*italic*`,
+  `- ` / `1. ` lists, `` `code` ``, `[text](url)` (shown underlined, not clickable). A hairline down its left side. The
+  selected one has a grip on its right edge: drag the width (grid steps unless alt), its top-left corner stays put; typing
+  more keeps the top-left too. Edited in a textarea over it: Enter is a new line, ⌘Enter or clicking away saves, Esc cancels.
+- *Why a canvas texture:* troika's SDF text has one face per block, so bold words inside a line can't be set. The
+  paragraph is laid out in board units with the DOM's Geist (measured once per text and width, `richText.ts`) and drawn
+  into a canvas at the zoom's pixels per unit in powers of two (≤ 4096 px), so it's redrawn only now and then and stays
+  sharp; it's in the PNG export since it's part of the scene.
+- *Turning:* `rotate` 90 (↺, reads up) or −90 (↻, reads down) on any text, from the text bar; pressed again it's level.
+  The box used for framing, selecting and the bar swaps its sides. Free angles were not offered (they'd break the grid).
+- *Data:* `Label.rotate`, `kicker`; rules + 6 tests; import keeps them. `Palette.fgStrong` added for bold words.
+- *Verified* headless on the emulators: heading with small line and rule, H2 turned 90 with a number, H2 turned −90,
+  paragraph with bold/list/link selected (grip, bar with `¶` and ↺ ↻), old one-line note, editor opens at the right size
+  with the caret at the end; rules tests 304/304; `tsc`.
+
+### D-157 · 2026-10-20 · Accepted (changes D-130's look)
+**Sections: the name is set into the frame's edge, along the top or up the left; colour goes to the line and the name
+only.** From the mockup's four looks the user picked the first: "lets use that for all the options. When colored, just
+color the line and the text. 90 degree rotation also would work with lines".
+- The frame is a thin line, no wash, no band. The name sits on the top edge starting near the left corner (inset 0.35 +
+  0.4 × its size), the line breaking round it; or with `side: 'left'` up the left edge, read bottom to top, ending near
+  the top corner. A small line before the name (`kicker`, the same field as text's), mono, a number in magenta.
+- Coloured: the line and the name in that colour. Hover greys the line, selection turns it cyan (thicker).
+- Grabbed by the name and the four edges (0.22 wide on the line); the empty middle still belongs to the board.
+  `sectionBand` is now 0.9 × the name's size (half the name hangs inside), so wrapped frames are a little shorter.
+- The text bar for a section has `⌐ top` / `⌊ left` instead of the turn buttons. The name's field has the small line
+  field over it.
+- *Data:* `Label.side` (`'left'` or absent); rules + 2 tests; import keeps it.
+- *Verified* headless: top and left names, coloured blue and magenta, numbers, selection bar; `tsc`.

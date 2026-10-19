@@ -20,6 +20,8 @@ export type Theme = 'dark' | 'light'
 export type Palette = {
   bg: string
   fg: string
+  // Bold words in a paragraph (D-156).
+  fgStrong: string
   fgDim: string
   magenta: string
   cyan: string
@@ -48,6 +50,7 @@ export type Palette = {
 export const palettes: Record<Theme, Palette> = {
   dark: {
     ...colors,
+    fgStrong: '#ffffff',
     diff: { new: '#a6ff3d', edited: '#ff9f1c', moved: '#3d7bff', deleted: '#ff4545' },
     link: { solves: '#a78bfa', part: '#6cb6ff', competes: '#ff9a52', clashes: '#ff5c86', draws: '#e3c77a', depends: '#9cc96a', plain: '#8a8a8a', for: '#d6d6d6' },
     ember: '#ff4a26',
@@ -67,6 +70,7 @@ export const palettes: Record<Theme, Palette> = {
   light: {
     bg: '#f5f5f5',
     fg: '#161616',
+    fgStrong: '#000000',
     fgDim: '#6b6b6b',
     magenta: '#db1a7a',
     cyan: '#0a979c',

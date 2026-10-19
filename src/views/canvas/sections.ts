@@ -38,8 +38,10 @@ export const holdsRect = (outer: Rect, inner: Rect) =>
 // The name is set like text on the board, H1 (the default), H2 or H3, whatever the section's size.
 export const SECTION_SIZES = ['heading', 'subheading', 'minor'] as const satisfies readonly LabelSize[]
 export const sectionNameSize = (l: Pick<Label, 'size'>) => labelSize({ size: l.size === 'note' ? 'minor' : l.size })
-// The band across the top that holds the name, and is where the section is grabbed.
-export const sectionBand = (l: Pick<Label, 'size'>) => sectionNameSize(l) * 1.9
+// The room under the top edge the name takes (D-157): it sits in the edge, half of it inside the frame.
+export const sectionBand = (l: Pick<Label, 'size'>) => sectionNameSize(l) * 0.9
+// How far in from the corner the name starts along its edge.
+export const sectionInset = (l: Pick<Label, 'size'>) => 0.35 + sectionNameSize(l) * 0.4
 
 // How many sections each section sits inside, so inner ones draw over outer ones.
 export function depths(sections: Pick<Label, 'x' | 'y' | 'w' | 'h'>[]): number[] {

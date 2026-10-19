@@ -279,6 +279,15 @@ await deny('a label of an unknown kind', () => addDoc(sub(bob.fs, 'labels'), { t
 await deny('text label with an unknown size', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', size: 'huge', x: 0, y: 4, createdAt: 1, updatedAt: 1 }))
 await deny('label without a position', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', createdAt: 1, updatedAt: 1 }))
 await deny('label with a numeric text', () => addDoc(sub(bob.fs, 'labels'), { text: 3, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+// Paragraphs, turned text, small lines (D-156); a section's name up its left edge (D-157).
+await allow('a long paragraph (D-156)', () => addDoc(sub(bob.fs, 'labels'), { text: 'x'.repeat(3000), size: 'note', w: 6.25, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('a heading as long as a paragraph', () => addDoc(sub(bob.fs, 'labels'), { text: 'x'.repeat(300), x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('a paragraph over 4000', () => addDoc(sub(bob.fs, 'labels'), { text: 'x'.repeat(4001), size: 'note', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await allow('text turned a quarter with a small line', () => addDoc(sub(bob.fs, 'labels'), { text: 'Early adopters', rotate: 90, kicker: '01 who', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('text turned 45', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', rotate: 45, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('a small line over 60', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', kicker: 'k'.repeat(61), x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await allow('a section named up its left edge (D-157)', () => addDoc(sub(bob.fs, 'labels'), { text: 'Ideas', kind: 'section', side: 'left', x: 0, y: 0, w: 10, h: 6, createdAt: 1, updatedAt: 1 }))
+await deny('a section named on its right edge', () => addDoc(sub(bob.fs, 'labels'), { text: 'Ideas', kind: 'section', side: 'right', x: 0, y: 0, w: 10, h: 6, createdAt: 1, updatedAt: 1 }))
 await deny('new group (retired)', () => addDoc(sub(bob.fs, 'groups'), { name: 'Pricing', x: 0, y: 0, w: 6, h: 4, createdAt: 1, updatedAt: 1 }))
 // Attachments (D-083): metadata in Firestore, the file in Storage.
 const attDoc = (fs, id) => doc(fs, 'workspaces', wid, 'attachments', id)

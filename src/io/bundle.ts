@@ -4,7 +4,7 @@
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, EVIDENCE_KINDS, LABEL_SIZES, MAX_BENDS, MAX_CRITERIA, REPORT_LIMITS, STANCES, VALIDATIONS, type Bend, type SavedReport } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, EVIDENCE_KINDS, KICKER_MAX, LABEL_SIZES, LABEL_TEXT_MAX, LABEL_TURNS, LONG_TEXT_MAX, MAX_BENDS, MAX_CRITERIA, REPORT_LIMITS, STANCES, VALIDATIONS, type Bend, type SavedReport } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -124,7 +124,7 @@ function str(v: unknown, max: number): string | undefined {
   return typeof v === 'string' ? v.slice(0, max) : undefined
 }
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined)
-const oneOf = <T extends string>(v: unknown, values: readonly T[]) => (values.includes(v as T) ? (v as T) : undefined)
+const oneOf = <T extends string | number>(v: unknown, values: readonly T[]) => (values.includes(v as T) ? (v as T) : undefined)
 const tags = (v: unknown) =>
   Array.isArray(v) ? v.filter((t): t is string => typeof t === 'string').slice(0, 30).map((t) => t.slice(0, 60)) : undefined
 
@@ -229,7 +229,6 @@ export function cleanCompetitor(d: Doc, now: number) {
 }
 
 export function cleanLabel(d: Doc, now: number) {
-  const text = str(d.text, 200)
   const x = num(d.x)
   const y = num(d.y)
   // The title block (D-118) has no text of its own: it shows the workspace's name and description.
@@ -238,18 +237,32 @@ export function cleanLabel(d: Doc, now: number) {
   const w = num(d.w)
   const h = num(d.h)
   const section = d.kind === 'section' && !!w && !!h && w > 0 && h > 0 && w <= 2000 && h <= 2000
+  const sticky = d.kind === 'sticky'
+  const size = oneOf(d.size, LABEL_SIZES)
+  // Paragraphs and sticky notes run longer (D-156, D-158).
+  const text = str(d.text, size === 'note' || sticky ? LONG_TEXT_MAX : LABEL_TEXT_MAX)
   if ((!text && !title && !section) || x === undefined || y === undefined) return null
+  const usableW = !!w && w > 0 && w <= 2000
   return {
     text: title ? '' : (text ?? ''),
     x,
     y,
-    ...compact({ color: str(d.color, 20), size: oneOf(d.size, LABEL_SIZES), kind: title ? 'title' : section ? 'section' : undefined }),
+    ...compact({
+      color: str(d.color, 20),
+      size,
+      kind: title ? 'title' : section ? 'section' : sticky ? 'sticky' : undefined,
+      rotate: oneOf(d.rotate, LABEL_TURNS),
+      kicker: str(d.kicker, KICKER_MAX),
+      side: section && d.side === 'left' ? 'left' : undefined,
+      author: sticky ? str(d.author, 200) : undefined,
+      uid: sticky ? str(d.uid, 128) : undefined,
+    }),
     ...(d.bold === true && { bold: true }),
     ...(d.italic === true && { italic: true }),
     ...(d.caps === true && { caps: true }),
     ...(section && { w, h }),
-    // The title block's width (D-132), when it was resized.
-    ...(title && w && w > 0 && w <= 2000 && { w }),
+    // The title block's width (D-132), a paragraph's or a sticky note's, when set.
+    ...((title || sticky || size === 'note') && usableW && { w }),
     ...times(d, now),
   }
 }

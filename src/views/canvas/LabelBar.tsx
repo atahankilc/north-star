@@ -1,5 +1,6 @@
-// The bar under a selected text label (D-108): its size (H1, H2, H3, note), how it's set (bold, italic, caps), its
-// colour, edit, remove. A section's (D-130) the same for its name, without note; removing it leaves what it holds.
+// The bar under a selected text label (D-108): its size (H1, H2, H3, paragraph), how it's set (bold, italic, caps),
+// turned a quarter either way (D-156), its colour, edit, remove. A section's (D-130) the same for its name, without
+// paragraph, and with where the name sits instead of turning (D-157); removing it leaves what it holds.
 // All undoable (labels.ts). Viewers and the assistant's preview get no bar. `at` is the label's bottom-left corner.
 import { Html } from '@react-three/drei'
 import type { WithId } from '../../data/hooks'
@@ -10,7 +11,7 @@ import { useThemeAccent } from '../../state/theme'
 import { accents } from '../../styles/tokens'
 import { removeLabel } from '../workspace/useEditKeys'
 import { isSection, SECTION_SIZES } from './sections'
-import { SIZE_NAMES } from './textStyle'
+import { SIZE_HINTS, SIZE_NAMES } from './textStyle'
 import styles from './FloatBar.module.css'
 
 // Each switch is shown in the style it sets.
@@ -18,6 +19,18 @@ const STYLES = [
   { key: 'bold', glyph: 'B', name: 'Bold', look: { fontWeight: 700 } },
   { key: 'italic', glyph: 'I', name: 'Italic', look: { fontStyle: 'italic' } },
   { key: 'caps', glyph: 'AA', name: 'Capitals', look: {} },
+] as const
+
+// A quarter turn either way (D-156): ↺ reads bottom to top, ↻ top to bottom.
+const TURNS = [
+  { turn: 90, glyph: '↺', name: 'Turn left: reads upwards' },
+  { turn: -90, glyph: '↻', name: 'Turn right: reads downwards' },
+] as const
+
+// Where a section's name sits (D-157): in the top edge, or up the left one.
+const SIDES = [
+  { key: 'top', glyph: '⌐ top', name: 'Name in the top edge' },
+  { key: 'left', glyph: '⌊ left', name: 'Name up the left edge' },
 ] as const
 
 export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>; at: [number, number] }) {
@@ -45,7 +58,7 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
             key={s}
             className={styles.button}
             aria-pressed={size === s}
-            title={s}
+            title={SIZE_HINTS[s]}
             // The default isn't stored, so old labels and new ones read the same.
             onClick={() => size !== s && void updateLabel(wid, label.id, { size: s === 'heading' ? undefined : s })}
           >
@@ -67,6 +80,32 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
             {st.glyph}
           </button>
         ))}
+        <span className={styles.rule} />
+        {section
+          ? SIDES.map((sd) => (
+              <button
+                key={sd.key}
+                className={styles.button}
+                aria-pressed={(label.side ?? 'top') === sd.key}
+                title={sd.name}
+                onClick={() => (label.side ?? 'top') !== sd.key && void updateLabel(wid, label.id, { side: sd.key === 'top' ? undefined : 'left' })}
+              >
+                {sd.glyph}
+              </button>
+            ))
+          : TURNS.map((t) => (
+              <button
+                key={t.turn}
+                className={styles.button}
+                aria-pressed={label.rotate === t.turn}
+                aria-label={t.name}
+                title={t.name}
+                // Pressed again, it's level again.
+                onClick={() => void updateLabel(wid, label.id, { rotate: label.rotate === t.turn ? undefined : t.turn })}
+              >
+                {t.glyph}
+              </button>
+            ))}
         <span className={styles.rule} />
         <span className={styles.dots}>
           <button

@@ -28,8 +28,61 @@
   letter-spacing: normal;
 }
 
-/* A section's name (D-130): from the band's left, centred on it. */
+/* A section's name (D-130, D-157): from where it starts in the edge, centred on the line. */
+.heading[data-section] {
+  transform: translateY(-50%);
+}
+
 .input[data-section] {
   text-align: left;
-  transform: translateY(-50%);
+  background: var(--bg);
+}
+
+/* A heading's two fields (D-156): the text, and its small line just over its left edge. Centred on the text alone. */
+.heading {
+  position: relative;
+}
+
+.kicker {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: 22ch;
+  margin-bottom: 4px;
+  padding: 0 0 1px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  outline: none;
+}
+
+.kicker:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.kicker::placeholder {
+  color: var(--placeholder);
+}
+
+/* A paragraph's field (D-156): its lines as typed, over where they're drawn. */
+.area {
+  display: block;
+  padding: 0;
+  border: 0;
+  outline: 1px dashed var(--accent-cyan);
+  outline-offset: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  resize: none;
+  overflow: hidden;
+  caret-color: var(--accent-magenta);
+}
+
+.area::placeholder {
+  color: var(--placeholder);
 }

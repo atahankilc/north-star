@@ -112,7 +112,17 @@ Values will be tuned against contrast checks (WCAG AA for text).
   cards' plane (no perspective shift). Zoomed in, a mark's arms reach 0.06 out; zoomed out they stop at 3 px and the stroke
   eases to 1 px, so a mark is always a thin `+`, never a dot (D-151). Under 18 px apart every other mark fades, then all but
   every fourth (a card's width); all fade out before the zoom limit.
-- Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
+- Text labels: display-face text straight on the board (D-050); editing swaps in a DOM field at the same spot. A heading
+  (H1–H3, D-156) is set on its centre, left-aligned, with an optional small line over its left edge (`02 ── WHO WE BEAT`:
+  Geist Mono capitals, `--fg-dim`, a leading number in magenta or the label's colour); an H1 also gets a hairline rule
+  under it fading out to the right. A paragraph (`¶`) is Geist at 0.24 wrapping at its width (6.25 until its right-edge
+  grip is dragged), light Markdown (bold in `fgStrong`, italic, bullets and numbers with dim markers, `code`, links
+  underlined cyan), a hairline down its left side. Any text turns a quarter either way (↺ reads up, ↻ down). Hovered or
+  selected, a dashed box goes round it (grey, cyan), no underline
+- Sections (D-130, D-157): a thin frame, no fill. The name sits in the frame's edge, the line breaking round it: along
+  the top from near the left corner, or up the left edge ending near the top (read bottom to top). A small line before
+  the name in mono (a number in magenta). A section's colour goes to its line and name, nothing else; hover greys the
+  line, selection turns it cyan
 - Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a small framed chip (solid `--bg`,
   thin border in the link's colour; mono text the size of a card's small text, D-154) at the midpoint; a bent link
   (D-155) runs through its bend points, its chip on the longest piece. One colour per kind, all solid lines (D-147), from `--link-*` tokens soft enough

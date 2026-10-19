@@ -135,12 +135,21 @@ service cloud.firestore {
       return !(key in d) || d[key] is bool;
     }
 
+    // A paragraph (size note) and a sticky note run longer than a heading (D-156, D-158).
+    function longText(d) {
+      return ('size' in d && d.size == 'note') || ('kind' in d && d.kind == 'sticky');
+    }
+
     function validLabel(d) {
-      return isText(d.text, 200)
+      return isText(d.text, longText(d) ? 4000 : 200)
         && optText(d, 'color', 20)
         && optIn(d, 'size', ['heading', 'subheading', 'minor', 'note'])
         && optBool(d, 'bold') && optBool(d, 'italic') && optBool(d, 'caps')
-        && optIn(d, 'kind', ['title', 'section'])
+        && optIn(d, 'kind', ['title', 'section', 'sticky'])
+        && optIn(d, 'rotate', [90, -90])
+        && optText(d, 'kicker', 60)
+        && optIn(d, 'side', ['left'])
+        && optText(d, 'uid', 128) && optText(d, 'author', 200)
         && optSize(d, 'w') && optSize(d, 'h')
         && (!('kind' in d) || d.kind != 'section' || ('w' in d && 'h' in d))
         && optText(d, 'planeId', 128)

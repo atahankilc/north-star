@@ -22,7 +22,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Workspace** | One startup idea space; the unit of sharing | name, description, members, roles (owners, editors, viewers; D-098) |
 | **Customer** | Who it's for, at any breadth; doubles as the segment (D-044) | title, notes, position, status (D-137) |
 | **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position, status (D-137) |
-| **Text label** | Text written on the board; names an area and is a place to jump to (D-050) | text, position |
+| **Text label** | Text written on the board: a heading that names an area and is a place to jump to (D-050), or a paragraph of light Markdown (D-156); either can turn a quarter | text, size, small line, turn, width, position |
 | **Idea** (post-it) | A thought, problem, insight or feature idea | title, body, color, tags, position (x,y,z), status, attachments |
 | **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label, bend points the user put on it (D-155) |
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, impact (D-138), linked ideas |

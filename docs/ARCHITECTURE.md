@@ -87,7 +87,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
   ideas/{id}            title, body, color, tags[], status, x, y
   features/{id}         title, body, color, tags[], x, y, priority, status, effort   (same card fields as ideas, D-037)
   competitors/{id}      name, url, description, pricing, audience, regions[] (D-145), notes, color, x, y
-  labels/{id}           text, color, size, kind?, x, y                            (text on the board, D-050; size heading|subheading|minor|note, bold/italic/caps true or absent; kind 'title': the project title block, D-118, + w once resized, D-132; kind 'section' + w, h: a frame, D-130)
+  labels/{id}           text, color, size, kind?, x, y                            (text on the board, D-050; size heading|subheading|minor|note, bold/italic/caps true or absent; kind 'title': the project title block, D-118, + w once resized, D-132; kind 'section' + w, h: a frame, D-130, side 'left' when its name runs up the left edge, D-157; size note = a paragraph ≤ 4000 + w, D-156; rotate 90|-90 and kicker ≤ 60 on any text or section, D-156)
   competitorFeatures/{id}  competitorId, name, description, category
   comparisons/{id}      featureId, competitorId, coverage?, notes, competitorFeatureId, criteria? {criterionId: met|part|no},
                         notRelevant?: true, confidence? documented|inferred|guess (D-136)

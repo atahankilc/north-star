@@ -149,13 +149,21 @@ export type Evidence = {
 
 // Text written on the board (D-050). Headings and subheadings are places you can jump to; notes aren't (D-116).
 // How big text on the board is (D-108): an area's heading (the default), a subheading, a minor heading (H3, D-130),
-// or a small note. A section's name takes the first three.
+// or a paragraph (`note`, D-156: wraps at `w`, light Markdown). A section's name takes the first three.
 export const LABEL_SIZES = ['heading', 'subheading', 'minor', 'note'] as const
 export type LabelSize = (typeof LABEL_SIZES)[number]
 // A label's kind: plain text (none), the project's title block (D-118), which shows the workspace's name and
-// description instead of its own text (one per board), or a section (D-130): a named frame round part of the board,
-// `w` × `h` centred on x/y, holding whatever lies inside it (cards, text, smaller sections).
-export type LabelKind = 'title' | 'section'
+// description instead of its own text (one per board), a section (D-130): a named frame round part of the board,
+// `w` × `h` centred on x/y, holding whatever lies inside it (cards, text, smaller sections), or a sticky note (D-158),
+// `w` wide, signed by who wrote it.
+export type LabelKind = 'title' | 'section' | 'sticky'
+// Turned a quarter (D-156): 90 reads bottom to top, -90 top to bottom.
+export const LABEL_TURNS = [90, -90] as const
+export type LabelTurn = (typeof LABEL_TURNS)[number]
+// How long text may be: a heading or a section's name, and a paragraph or a sticky note (D-156).
+export const LABEL_TEXT_MAX = 200
+export const LONG_TEXT_MAX = 4000
+export const KICKER_MAX = 60
 
 export type Label = {
   text: string
@@ -168,9 +176,19 @@ export type Label = {
   bold?: boolean
   italic?: boolean
   caps?: boolean
+  // Text and a section's name turned a quarter (D-156); missing = level.
+  rotate?: LabelTurn
+  // A heading's or a section's small line before it (D-156), `02 who we beat`: a leading number in the accent.
+  kicker?: string
+  // Where a section's name sits in its frame (D-157): the top edge (missing) or up the left edge.
+  side?: 'left'
+  // A sticky note's writer (D-158), as they were named when they wrote it.
+  uid?: string
+  author?: string
   x: number
   y: number
-  // A section's size (D-130); the title block's width when resized (D-132), its height following its text.
+  // A section's size (D-130); the title block's width when resized (D-132), its height following its text; a
+  // paragraph's or sticky note's width (D-156, D-158).
   w?: number
   h?: number
   createdAt: number

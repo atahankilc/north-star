@@ -21,7 +21,8 @@ export async function createLabel(wid: string, fields: Omit<Label, 'createdAt' |
 }
 
 // `undefined` clears a field. `first`: the text a new label is given, which undoes together with creating it.
-export function updateLabel(wid: string, id: string, fields: Partial<Pick<Label, 'text' | 'color' | 'size' | 'bold' | 'italic' | 'caps'>>, first = false) {
+export type LabelEdit = Partial<Pick<Label, 'text' | 'color' | 'size' | 'bold' | 'italic' | 'caps' | 'rotate' | 'kicker' | 'side' | 'w' | 'x' | 'y'>>
+export function updateLabel(wid: string, id: string, fields: LabelEdit, first = false) {
   const data: Record<string, unknown> = { updatedAt: Date.now() }
   for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v
   const ref = doc(labelsOf(wid), id)
@@ -70,4 +71,17 @@ export async function endTitleResize(wid: string, id: string, from: TitleSpan, t
   const ref = doc(labelsOf(wid), id)
   const before = await snapshotWith(ref, from)
   return tracked('resize project title', [ref], () => updateDoc(ref, { ...to, updatedAt: Date.now() }), { before })
+}
+
+// A paragraph's or sticky note's width (D-156, D-158) while its edge is dragged, its other edge staying put: centre
+// and width together (a turned one's centre moves up or down), streamed like a move.
+export type TextSpan = { x: number; y: number; w: number }
+export function resizeText(wid: string, id: string, s: TextSpan) {
+  return updateDoc(doc(labelsOf(wid), id), s)
+}
+
+export async function endTextResize(wid: string, id: string, from: TextSpan, to: TextSpan) {
+  const ref = doc(labelsOf(wid), id)
+  const before = await snapshotWith(ref, from)
+  return tracked('resize text', [ref], () => updateDoc(ref, { ...to, updatedAt: Date.now() }), { before })
 }

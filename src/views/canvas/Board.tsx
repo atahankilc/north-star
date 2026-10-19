@@ -28,7 +28,7 @@ import { useViewer } from '../workspace/viewerLock'
 import { isReducedMotion } from '../../state/motion'
 import { usePalette } from '../../state/theme'
 import { defaultKind, type BoardItem } from './boardKinds'
-import { BoardLabel, labelSize } from './BoardLabel'
+import { BoardLabel } from './BoardLabel'
 import { BoardSection } from './BoardSection'
 import { BoardTitle } from './BoardTitle'
 import { isTitle, labelHalf, titleHalf } from './titleBlock'
@@ -536,7 +536,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
               ? holdsRect([x0, y0, x1, y1], rectOf(l))
               : isTitle(l)
                 ? inside(l.x, l.y, ...titleHalf())
-                : inside(l.x, l.y, (l.text.length * labelSize(l) * 0.3) || 0.3, labelSize(l) / 2),
+                : inside(l.x, l.y, ...labelHalf(l)),
           )
           .map((l) => l.id),
       ]
@@ -640,12 +640,12 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
         <LabelBar
           wid={wid}
           label={selectedLabel}
-          // Roughly where the text starts and ends (Geist at its size), so the bar sits under it; a section's under its
+          // Under the text from its left edge (labelHalf, a turned one by its turned box); a section's under its
           // frame, where it covers nothing inside.
           at={
             isSection(selectedLabel)
               ? [rectOf(selectedLabel)[0], rectOf(selectedLabel)[1]]
-              : [selectedLabel.x - selectedLabel.text.length * labelSize(selectedLabel) * 0.3, selectedLabel.y - labelSize(selectedLabel) * 0.7]
+              : [selectedLabel.x - labelHalf(selectedLabel)[0], selectedLabel.y - labelHalf(selectedLabel)[1] - 0.15]
           }
         />
       )}
