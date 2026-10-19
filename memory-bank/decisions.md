@@ -111,8 +111,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   (animated): the name grows to fill the block, which shrinks only to what's left; the assistant keeps clear of it unfolded (D-132).
 - Grid: `+` turns to dots and fades by camera distance (D-110). Depth range follows the camera; text and card detail by
   on-screen pixel size (full / compact / far) (D-111).
-- Drags snap to the `+` marks, one every 0.625 (cards 2.5 × 1.25 = 4 × 2 steps): a box's top-left corner lands on a
-  mark, so a card's corners all sit on marks; marks drawn without perspective shift; with snapping on, guides only show
+- `+` marks every 0.625 (cards 2.5 × 1.25 = 4 × 2 marks); a box's top-left corner snaps to a mark or one of the four even
+  steps between two marks (0.125, not drawn; arrows nudge 0.125, shift 0.625) (D-149); on a mark a card's corners all sit on marks; marks drawn without perspective shift; with snapping on, guides only show
   lines (no pull); cards have no grey edge, only a hover/selection rim (D-148). Group drags keep their layout, alt =
   free; switch beside fit-all + `g`, on by default (D-112).
 - Alignment guides: a dragged card pulls to other cards' edges/centres within 6 px, magenta lines; own switch + `a`, on by

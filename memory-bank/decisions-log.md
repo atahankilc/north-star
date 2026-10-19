@@ -2096,3 +2096,12 @@ and the quarter-point dots were too faint to see, so a card never lined up with 
 - *Edge:* no hairline round cards or the competitor plates behind them; the hover/selection/link rim stays.
 - *Verified* headless (example workspace, 1400 × 900 @2x): dragged cards land with corners on multiples of 0.625 and on
   the drawn marks, also at the far right of the screen.
+
+### D-149 · 2026-10-19 · Accepted (refines D-148's snap step)
+**Drags snap to fifths of the step between `+` marks.** The user, after D-148: "now it fits exactly and it's great", but
+while a card moves one mark at a time, split that into 5 equal parts so cards can sit on the 4 steps between too, with
+no extra `+` marks for them.
+- `SNAP_STEP = GRID_STEP / 5` (0.125) in snap.ts; the marks stay every 0.625 and nothing new is drawn. A card's top-left
+  corner snaps to the 0.125 steps, so on a mark its corners are all on marks, as before.
+- Arrow keys nudge one 0.125 step, shift one mark (0.625). Guides still don't pull while snapping is on (D-148).
+- *Verified:* `npm run build`.

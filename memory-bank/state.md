@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-19 (D-147 a colour per link kind)_
+_Last updated: 2026-10-19 (D-149 snap to fifths between grid marks)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -37,8 +37,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   overview (D-144), committed, rules deployed, pushed 2026-10-19. Phase 6 plan done.
 - Competitor regions (D-145): where a competitor operates, REGION filter (bar + matrix footer), assistant fields; committed 2026-10-19.
 - LINKS filter: one group per kind (D-146), each with its own colour, solid lines (D-147), 2026-10-19.
-- Board grid (D-148): one `+` every 0.625 = the snap points, card corners land on marks, no perspective drift, cards 2.5
-  wide with no grey edge; committed 2026-10-19.
+- Board grid (D-148): one `+` every 0.625, card corners land on marks, no perspective drift, cards 2.5 wide with no grey
+  edge; drags snap to fifths between marks (D-149), 2026-10-19.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
