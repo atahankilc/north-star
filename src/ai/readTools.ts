@@ -85,7 +85,7 @@ export function readItems(args: string, ws: WorkspaceCtx, refs: Map<string, Item
       }
     }
     if (comp) {
-      lines.push(...field('url', comp.url), ...field('description', full(comp.description)), ...field('pricing', full(comp.pricing)))
+      lines.push(...field('url', comp.url), ...field('operates in', comp.regions?.join(', ')), ...field('description', full(comp.description)), ...field('pricing', full(comp.pricing)))
       lines.push(...field('audience', full(comp.audience)), ...field('notes', full(comp.notes)), ...field('tags', comp.tags?.join(', ')))
       const feats = ws.competitorFeatures.filter((x) => x.competitorId === comp.id)
       if (feats.length) lines.push(`  features (${feats.length}):`)

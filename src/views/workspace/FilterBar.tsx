@@ -1,4 +1,4 @@
-// `[ SHOW all ▾ ] [ FOR any ▾ ] [ TAG any ▾ ] [ GO TO ▾ ]` under the HUD (docs/specs/board.md §3, D-053, D-056).
+// `[ SHOW all ▾ ] [ FOR any ▾ ] [ TAG any ▾ ] [ REGION any ▾ ] [ GO TO ▾ ]` under the HUD (docs/specs/board.md §3, D-053, D-056).
 import { useMemo, type ReactNode } from 'react'
 import { BOARD_TYPES } from '../../data/model'
 import { QUIET_LINKS, useWsView } from '../../state/workspaceView'
@@ -7,6 +7,7 @@ import menuStyles from '../../ui/Menu.module.css'
 import { BOARD_KINDS, TYPE_ACCENT, useAllTags, useBoardItems } from '../canvas/boardKinds'
 import { LINK_GROUPS, LINK_TONE } from '../canvas/linkKinds'
 import { PlaneFilter } from '../canvas/PlaneSwitcher'
+import { RegionFilter } from '../competitors/RegionFilter'
 import { useWs } from './context'
 import styles from './Bars.module.css'
 
@@ -113,6 +114,7 @@ export function FilterBar({ goTo, links, focus, plane }: Props) {
         ariaLabel="Only items with these tags"
         empty="No tags yet: add some in a card's panel"
       />
+      <RegionFilter />
       {links && (
         <Menu
           label="links"

@@ -11,7 +11,7 @@ export function chatInstructions(brief: string, name: string, web: boolean): str
   const research = web
     ? `- Web search is on. Use it for facts about competitors, prices, features and the market rather than memory, and cite
   your sources inline as links. In a proposal, end a competitor's (or competitor feature's) notes or description with
-  "Sources: <url>, <url>" for what you looked up, and fill url and pricing only from what you found.`
+  "Sources: <url>, <url>" for what you looked up, and fill url, pricing and regions only from what you found.`
     : `- Web search is off: answer from what you know, say when facts may be out of date, and suggest turning on [web] in the
   chat for research about competitors, prices or the market.`
   return `You are the assistant built into North Star, an app where teams work out startup ideas. North Star is only the

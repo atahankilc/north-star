@@ -210,7 +210,7 @@ export function workspaceBrief(full: WorkspaceCtx, where: Where, reports: WithId
 
   lines.push('', `COMPETITORS (${ws.competitors.length})`)
   for (const c of ws.competitors) {
-    const facts = [c.url, c.pricing && `pricing: ${clip(c.pricing, 120)}`, c.audience && `audience: ${clip(c.audience, 120)}`].filter(Boolean)
+    const facts = [c.url, c.regions?.length && `operates in: ${c.regions.join(', ')}`, c.pricing && `pricing: ${clip(c.pricing, 120)}`, c.audience && `audience: ${clip(c.audience, 120)}`].filter(Boolean)
     const area = areaHere(c.id)
     lines.push(`- ${r(c.id)}${c.name || 'Untitled'}${tags(c.tags)}${forText(c.id)}${area}${facts.length ? ` (${facts.join('; ')})` : ''}`)
     if (c.description) lines.push(`  about: ${clip(c.description)}`)

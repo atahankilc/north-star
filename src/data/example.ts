@@ -8,7 +8,7 @@ import { createWorkspace } from './workspaces'
 
 type Card = { key: string; title: string; body?: string; tags?: string[] }
 type Feature = Card & { priority: 'P1' | 'P2' | 'P3'; status: 'idea' | 'planned' | 'building' | 'shipped'; effort: 'S' | 'M' | 'L' }
-type Competitor = { key: string; tags: string[]; name: string; url: string; pricing: string; audience: string; description: string; notes: string; features: [string, string, string][] }
+type Competitor = { key: string; tags: string[]; regions: string[]; name: string; url: string; pricing: string; audience: string; description: string; notes: string; features: [string, string, string][] }
 
 // Areas sit far apart, so the jump list has somewhere to go. Each column is one link in the chain (D-045).
 const COLUMN_X = { customer: -24, problem: -16, competitor: -8, idea: 0, feature: 8, package: 16 } as const
@@ -32,22 +32,22 @@ const problems: Card[] = [
 
 const competitors: Competitor[] = [
   {
-    key: 'shiftgrid', tags: ['direct'], name: 'ShiftGrid', url: 'shiftgrid.example', pricing: '$4 / user / month', audience: 'Mid-size restaurant groups',
+    key: 'shiftgrid', tags: ['direct'], regions: ['US', 'UK'], name: 'ShiftGrid', url: 'shiftgrid.example', pricing: '$4 / user / month', audience: 'Mid-size restaurant groups',
     description: 'Full scheduling suite with time clock and forecasting.', notes: 'Strong on reports, heavy to set up. Swaps always need a manager.',
     features: [['Drag-and-drop rota', 'scheduling', ''], ['Swap requests', 'scheduling', 'Every swap waits for a manager'], ['Time clock', 'payroll', ''], ['Labour cost forecast', 'reporting', 'Weekly, not live']],
   },
   {
-    key: 'crewly', tags: ['direct'], name: 'Crewly', url: 'crewly.example', pricing: '$29 / location / month', audience: 'Cafés and bars',
+    key: 'crewly', tags: ['direct'], regions: ['Germany', 'Netherlands'], name: 'Crewly', url: 'crewly.example', pricing: '$29 / location / month', audience: 'Cafés and bars',
     description: 'Simple rota app with team chat.', notes: 'Loved for its availability form. No cost tracking at all.',
     features: [['Rota templates', 'scheduling', ''], ['Team chat', 'communication', ''], ['Availability collection', 'scheduling', 'Staff mark free days each week']],
   },
   {
-    key: 'paper', tags: ['status-quo'], name: 'Paper rota + WhatsApp', url: '', pricing: 'Free', audience: 'Most small restaurants today',
+    key: 'paper', tags: ['status-quo'], regions: ['Global'], name: 'Paper rota + WhatsApp', url: '', pricing: 'Free', audience: 'Most small restaurants today',
     description: 'The status quo: a printed sheet in the kitchen and a photo of it in the group chat.', notes: 'Free and everyone already has it. The real competitor.',
     features: [['Group chat', 'communication', ''], ['Photo of the rota', 'scheduling', 'Out of date after the first change']],
   },
   {
-    key: 'bigchain', tags: ['enterprise'], name: 'BigChain HR', url: 'bigchainhr.example', pricing: 'Enterprise, on request', audience: 'Chains with 50+ sites',
+    key: 'bigchain', tags: ['enterprise'], regions: ['Europe', 'North America'], name: 'BigChain HR', url: 'bigchainhr.example', pricing: 'Enterprise, on request', audience: 'Chains with 50+ sites',
     description: 'HR suite with scheduling as one module.', notes: 'Overkill and too expensive for independents.',
     features: [['Payroll integration', 'payroll', ''], ['Compliance reports', 'reporting', ''], ['Labour cost forecast', 'reporting', 'Live, per site']],
   },
@@ -165,7 +165,7 @@ export async function createExampleWorkspace(uid: string): Promise<string> {
   place('problem', problems, ROW, card)
   place('idea', ideas, ROW, card)
   place('competitor', competitors, ROW, (c: Competitor, x, y) => ({
-    name: c.name, tags: c.tags, x, y, pricing: c.pricing, audience: c.audience, description: c.description, notes: c.notes, ...(c.url && { url: c.url }),
+    name: c.name, tags: c.tags, regions: c.regions, x, y, pricing: c.pricing, audience: c.audience, description: c.description, notes: c.notes, ...(c.url && { url: c.url }),
   }))
   // Roadmap and later each stack from the top.
   const rows = { roadmap: 0, later: 0 }

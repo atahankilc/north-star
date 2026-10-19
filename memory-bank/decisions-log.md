@@ -2026,3 +2026,32 @@ cards, planes split only where they're looked at. The user went with the recomme
   scored criteria): opening from the list landed on the overview; the blocks read as above; `ask the assistant: /validate`
   opened the chat with `/validate` typed in. Rules 285 pass (the 2 usage-log tests fail as before). `npm run build`.
   RTDB rule deployed 2026-10-19.
+
+### D-145 · 2026-10-19 · Accepted
+**Competitors say where they operate.** The user: "competitorların hangi regionda çalıştıklarını yazsak iyi olabilir…
+isteyen kişi competitor amerikadan ya da almanyadan ya da europedan diyebilmeli" (write which region a competitor works
+in; you should be able to say it's from America, Germany or Europe).
+- *Data:* `regions?: string[]` on a competitor (rules: a list, ≤ 20; bundle import keeps ≤ 20 of ≤ 60 chars). Where they
+  sell, not only where they're based: one field, so nobody has to choose between the two.
+- *Names* (`src/views/competitors/regions.ts`): free text, but a known list (Global, continents, EU / DACH / Nordics /
+  Benelux, ~40 countries) and aliases (`usa`, `america`, `amerika` → `US`; `almanya`, `deutschland` → `Germany`; `avrupa`
+  → `Europe`; `türkiye` → `Turkey`…) turn what's typed into one name, so the filter finds them all.
+- *Inside:* each known place lies in bigger ones (Germany → DACH, EU → Europe; Turkey → Europe and Middle East; all →
+  Global). A filter keeps a competitor when one of its regions and one chosen overlap either way: Europe keeps a German
+  one, Germany keeps a Europe-wide or Global one. A place not in the list only matches itself (and Global). No regions set
+  = left out while a region filter is on.
+- *Where it shows:* the panel (`regions` row under pricing/audience, the tag picker without `#`, suggestions = the
+  workspace's regions, then the list); the card's meta line starts with them (`US · UK +1   vs 2   4 features`).
+- *Filter:* `REGION │ any ▾` after TAG in the filter bar (board, flow, table) and in the matrix footer; only shown once a
+  competitor has a region (or the filter is on). It lists the regions in use under their continent (also offered), Global
+  first, with counts; narrows competitors only, other cards stay; remembered per workspace with the others; `reveal`
+  clears it. The matrix falls back to every competitor when none match, so its footer stays reachable.
+- *Assistant:* the brief and `get_items` say `operates in: …`; `add_competitor` / `update_competitor` take `regions`
+  (names cleaned the same way); with [web] it fills them only from what it found.
+- *Example:* Tablebook's competitors got regions (ShiftGrid US, UK; Crewly Germany, Netherlands; paper rota Global;
+  BigChain Europe, North America).
+- *Not done:* a regions column in Table; regions in the matrix column heads.
+- *Verified* in headless Chrome on the emulators: the example's cards read `Germany · Netherlands   vs 1 …`; the matrix
+  REGION menu listed Global, Europe (Germany, Netherlands, UK), North America (US) with counts, and Germany kept Crewly,
+  BigChain and the paper rota, hid ShiftGrid; in Crewly's panel `usa` offered `US` first and Enter added it. Node check of
+  the matching (15 cases). Rules 293 pass (3 new). `tsc -b`.

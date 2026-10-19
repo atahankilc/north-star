@@ -14,6 +14,8 @@ import { AutosaveField } from '../../ui/AutosaveField'
 import { Attachments } from '../workspace/Attachments'
 import { useWs } from '../workspace/context'
 import { TAG_HINT } from '../canvas/tags'
+import { TagInput } from '../../ui/TagInput'
+import { cleanRegion, useRegionSuggestions } from './regions'
 import { FocusButton } from '../canvas/focus'
 import { ItemTags } from '../workspace/ItemTags'
 import { LinkList } from '../workspace/LinkList'
@@ -33,8 +35,9 @@ export function CompetitorProfile({
   focusFeature?: string
   children?: ReactNode
 }) {
-  const { wid } = useWs()
+  const { wid, competitors } = useWs()
   const select = useCanvas((s) => s.select)
+  const regionSuggestions = useRegionSuggestions(competitors)
   const set = (fields: Partial<Competitor>) => void updateNode(wid, 'competitor', competitor.id, fields)
   const opt = (key: keyof Competitor) => (v: string) => set({ [key]: v.trim() ? v : undefined })
 
@@ -81,6 +84,19 @@ export function CompetitorProfile({
       <div className={styles.facts}>
         <Field label="pricing" value={competitor.pricing} onSave={opt('pricing')} placeholder="$20 / seat / month" />
         <Field label="audience" value={competitor.audience} onSave={opt('audience')} placeholder="Who they sell to" />
+      </div>
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>regions</span>
+        <TagInput
+          label="Regions"
+          prefix=""
+          placeholder="where they operate, e.g. US, Germany, Europe"
+          clean={cleanRegion}
+          value={competitor.regions ?? []}
+          suggestions={regionSuggestions}
+          onChange={(regions) => set({ regions: regions.length ? regions : undefined })}
+        />
+        <span className={styles.hint}>Where they sell. Filter competitors by region at the top and under the matrix.</span>
       </div>
       <Field label="description" value={competitor.description} onSave={opt('description')} placeholder="What they do" multiline />
       <Field label="notes" value={competitor.notes} onSave={opt('notes')} placeholder="Strengths, weaknesses, reviews" multiline />

@@ -42,7 +42,7 @@ export const MARK_VAR: Record<Mark, string> = { new: 'var(--diff-new)', edited: 
 
 // An edit's old value in a few words (D-096), for places with room for one line: the title if it changed, else the
 // first field that did.
-const FIELD_WORD: Record<string, string> = { body: 'notes', description: 'description', notes: 'notes', tags: 'tags', priority: 'priority', status: 'status', effort: 'effort', url: 'url', pricing: 'pricing', audience: 'audience', text: 'was' }
+const FIELD_WORD: Record<string, string> = { body: 'notes', description: 'description', notes: 'notes', tags: 'tags', priority: 'priority', status: 'status', effort: 'effort', url: 'url', pricing: 'pricing', audience: 'audience', regions: 'regions', text: 'was' }
 export function wasLine(before: Record<string, unknown> | undefined): { label: string; value: string } | undefined {
   if (!before) return undefined
   const key = ['title', 'name', 'text'].find((k) => k in before) ?? Object.keys(before)[0]

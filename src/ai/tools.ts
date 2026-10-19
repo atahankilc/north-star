@@ -38,6 +38,7 @@ import type { WorkspaceCtx } from '../views/workspace/context'
 import type { ItemRef } from './context'
 import { ALL } from '../data/planes'
 import { allSpot, allSpotsOf, layoutWs } from '../views/canvas/planes'
+import { cleanRegion } from '../views/competitors/regions'
 import { AREA_LAYOUTS, AREA_SIDES, arrangeAreas, type AreaLayout, type AreaPlan, type AreaSide } from './arrange'
 
 export const PROPOSE = 'propose_changes'
@@ -77,6 +78,12 @@ const newStyle = (r: Raw) => Object.fromEntries(STYLE.filter((k) => r[k] === tru
 const styleWords = (r: Raw) => STYLE.flatMap((k) => (r[k] === true ? [k] : r[k] === false ? [`no ${k}`] : []))
 const SIZE_HELP = 'heading (H1, an area), subheading (H2, a part of one), minor (H3, a part of a part), or note'
 const optTags = { type: ['array', 'null'], items: { type: 'string' }, description: 'Replaces the tags. Lowercase words, no #.' }
+// Where a competitor operates (D-145).
+const optRegions = {
+  type: ['array', 'null'],
+  items: { type: 'string' },
+  description: 'Replaces where it operates: countries or areas in English, e.g. "US", "Germany", "Europe", "Global". Only if known.',
+}
 const ref = (what: string) => str(`${what}: a ref from the workspace (without brackets) or the key of an item added in this same proposal.`)
 const CONFIDENCE = {
   type: ['string', 'null'],
@@ -115,6 +122,7 @@ const OPS = [
     description: optStr('What it is and does.'),
     pricing: optStr('Plans and prices, only if known.'),
     audience: optStr('Who it is for.'),
+    regions: optRegions,
     notes: optStr('Strengths, weaknesses, anything else.'),
     tags: optTags,
     near,
@@ -156,6 +164,7 @@ const OPS = [
     description: optStr('Replaces the description.'),
     pricing: optStr('Replaces the pricing.'),
     audience: optStr('Replaces the audience.'),
+    regions: optRegions,
     notes: optStr('Replaces the whole notes text; include what should stay.'),
     tags: optTags,
   }),
@@ -439,6 +448,9 @@ export type Proposal = { summary: string; changes: Change[]; plane?: string }
 type Resolved = { ref: ChangeRef; name: string; type: NodeType; isNew: boolean }
 
 const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+// A competitor's regions in the list's names (`USA` → `US`), each once (D-145).
+const regionsOf = (v: unknown) =>
+  Array.isArray(v) ? [...new Set(v.map((r) => cleanRegion(String(r))).filter(Boolean))].slice(0, 20) : undefined
 // Models sometimes copy a ref with its brackets.
 export const refKey = (v: unknown) => s(v)?.replace(/^\[|\]$/g, '')
 const clip = (t: string, n = 70) => (t.length > n ? `${t.slice(0, n - 1)}…` : t)
@@ -547,7 +559,7 @@ export function parseProposal(
           tone: 'competitor',
           text: s(raw.name) ?? 'Untitled',
           detail:
-            [s(raw.pricing) && clip(s(raw.pricing)!, 40), tagText(raw.tags), s(raw.description) && clip(s(raw.description)!), sourcesOf(raw)]
+            [regionsOf(raw.regions)?.join(', '), s(raw.pricing) && clip(s(raw.pricing)!, 40), tagText(raw.tags), s(raw.description) && clip(s(raw.description)!), sourcesOf(raw)]
               .filter(Boolean)
               .join(' · ') || undefined,
           needs: needsOf(resolve(raw.near)),
@@ -1423,6 +1435,7 @@ export function toWrites(accepted: Change[], full: WorkspaceCtx, refs: Map<strin
             description: text(r.description),
             pricing: text(r.pricing),
             audience: text(r.audience),
+            regions: regionsOf(r.regions),
             notes: text(r.notes),
             tags: tags(r.tags),
             ...at,
@@ -1458,6 +1471,7 @@ export function toWrites(accepted: Change[], full: WorkspaceCtx, refs: Map<strin
                 description: edit(r.description),
                 pricing: edit(r.pricing),
                 audience: edit(r.audience),
+                regions: regionsOf(r.regions),
                 notes: edit(r.notes),
                 tags: tags(r.tags),
               })

@@ -9,11 +9,15 @@ type Props = {
   // Every tag already used in the workspace, most used first.
   suggestions: string[]
   label: string
+  // Other lists of names use it too (a competitor's regions, D-145): no `#`, their own wording and cleaning.
+  prefix?: string
+  placeholder?: string
+  clean?: (s: string) => string
 }
 
-const clean = (s: string) => s.trim().replace(/^#+/, '').replace(/,/g, '').trim()
+const cleanTag = (s: string) => s.trim().replace(/^#+/, '').replace(/,/g, '').trim()
 
-export function TagInput({ value, onChange, suggestions, label }: Props) {
+export function TagInput({ value, onChange, suggestions, label, prefix = '#', placeholder = 'add a tag', clean = cleanTag }: Props) {
   const [draft, setDraft] = useState('')
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
@@ -41,14 +45,15 @@ export function TagInput({ value, onChange, suggestions, label }: Props) {
     <div className={styles.box} onClick={() => input.current?.focus()}>
       {value.map((t) => (
         <span key={t} className={styles.chip}>
-          #{t}
+          {prefix}
+          {t}
           <button
             className={styles.remove}
             onClick={(e) => {
               e.stopPropagation()
               remove(t)
             }}
-            aria-label={`Remove tag ${t}`}
+            aria-label={`Remove ${t}`}
           >
             ×
           </button>
@@ -59,7 +64,7 @@ export function TagInput({ value, onChange, suggestions, label }: Props) {
           ref={input}
           className={styles.input}
           value={draft}
-          placeholder={value.length ? 'add' : 'add a tag'}
+          placeholder={value.length ? 'add' : placeholder}
           aria-label={label}
           role="combobox"
           aria-expanded={open && options.length > 0}
@@ -102,7 +107,7 @@ export function TagInput({ value, onChange, suggestions, label }: Props) {
           }}
         />
         {open && options.length > 0 && (
-          <ul id={listId} className={styles.list} role="listbox" aria-label="Tags">
+          <ul id={listId} className={styles.list} role="listbox" aria-label={label}>
             {options.map((o, i) => (
               <li key={o.tag} role="option" aria-selected={i === active}>
                 <button
@@ -117,10 +122,11 @@ export function TagInput({ value, onChange, suggestions, label }: Props) {
                 >
                   {o.isNew ? (
                     <>
-                      <span className={styles.create}>create</span> #{o.tag}
+                      <span className={styles.create}>create</span> {prefix}
+                      {o.tag}
                     </>
                   ) : (
-                    `#${o.tag}`
+                    `${prefix}${o.tag}`
                   )}
                 </button>
               </li>

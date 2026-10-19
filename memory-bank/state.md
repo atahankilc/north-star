@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-19 (D-144 overview)_
+_Last updated: 2026-10-19 (D-145 competitor regions)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -31,6 +31,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   Step 2, packages (D-141), committed, rules deployed 2026-10-19. Step 3, the assistant on planes (D-142), committed
   (no rules change). Step 4, plane filter in other views (D-143), committed. Planes spec done. Slice 8,
   overview (D-144), committed, rules deployed, pushed 2026-10-19. Phase 6 plan done.
+- Competitor regions (D-145): where a competitor operates, REGION filter (bar + matrix footer), assistant fields; committed 2026-10-19.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

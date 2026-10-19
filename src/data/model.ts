@@ -201,6 +201,8 @@ export type Competitor = {
   name: string
   // Grouping within competitors, like every other card (D-056).
   tags?: string[]
+  // Where it operates (D-145): place names like `US`, `Germany`, `Europe` (src/views/competitors/regions.ts).
+  regions?: string[]
   url?: string
   description?: string
   pricing?: string

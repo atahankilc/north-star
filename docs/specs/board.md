@@ -18,7 +18,7 @@ a `TAG ▾` filter, and a tags column in Table.
 |---|---|---|
 | **Customer** | title (any breadth: "SMEs", "solo game devs"), notes, tags | green |
 | **Problem** | title, notes, tags | magenta |
-| **Competitor** | name, URL, pricing, audience, description, notes, tags; its features by category | yellow |
+| **Competitor** | name, URL, pricing, audience, regions (D-145), description, notes, tags; its features by category | yellow |
 | **Idea** | title, notes, tags | white |
 | **Feature** (ours) | title, notes, tags, priority, status, effort | cyan |
 | **Competitor feature** | name, description, category | no card: listed in its competitor's panel |
@@ -84,7 +84,7 @@ descriptions live in the side panel only (D-057).
 
 ```
 # north-star / workspaces / Tablebook   ┃BOARD┃ FLOW │ TABLE │ MATRIX                    [A Alice ⚙]
-[ SHOW all ▾ ] [ FOR any ▾ ] [ TAG any ▾ ] [ GO TO ▾ ]                       (go to: board only)
+[ SHOW all ▾ ] [ FOR any ▾ ] [ TAG any ▾ ] [ REGION any ▾ ] [ GO TO ▾ ]                       (go to: board only)
 
                        ( the current view: board, flow, table or matrix )
 

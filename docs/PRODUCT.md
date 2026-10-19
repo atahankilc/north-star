@@ -26,7 +26,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Idea** (post-it) | A thought, problem, insight or feature idea | title, body, color, tags, position (x,y,z), status, attachments |
 | **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label |
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, impact (D-138), linked ideas |
-| **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, notes |
+| **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, regions it operates in (D-145), notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor |
 | **Package** | A piece of the chain as one card: on its home plane its members sit in its frame; elsewhere it links and is rated like a feature (D-141) | name, notes, tags, members, home plane, impact, effort |
 | **Evidence** | What was learned about a customer, problem or idea: listed in its panel, counted on its card (D-137) | card, kind (`interview`/`quote`/`data`/`observation`/`link`), text, supports or contradicts, source, link, date |
@@ -42,7 +42,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    mini-map, and live collaborator cursors.
 2. **Features View.** A 3D board like the idea canvas, for our features (priority, status, effort).
    Each feature links back to its source ideas ("promote to feature") and forward to comparisons (D-037).
-3. **Competitors.** A list of competitors; each has a profile (URL, pricing, audience, notes) and its
+3. **Competitors.** A list of competitors; each has a profile (URL, pricing, audience, regions, notes) and its
    features grouped by category. Those features can be linked to our ideas and features (D-038).
 4. **Comparison Matrix.** A spreadsheet-style view: rows are our features, columns are competitors,
    and each cell holds coverage plus notes. Extra columns hold description, priority and status. A feature can list

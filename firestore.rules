@@ -119,6 +119,8 @@ service cloud.firestore {
         && optText(d, 'notes', 20000)
         && optText(d, 'color', 20)
         && (!('tags' in d) || (d.tags is list && d.tags.size() <= 30))
+        // Where it operates (D-145).
+        && (!('regions' in d) || (d.regions is list && d.regions.size() <= 20))
         && (!('x' in d) || d.x is number)
         && (!('y' in d) || d.y is number)
         && validDomainRefs(d);

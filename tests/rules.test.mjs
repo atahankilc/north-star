@@ -256,6 +256,9 @@ await allow('competitor placed on the board', () => updateDoc(compRef, { x: 2, y
 await deny('competitor with a text position', () => updateDoc(compRef, { x: 'left' }))
 await allow('competitor with tags (D-056)', () => updateDoc(compRef, { tags: ['direct', 'enterprise'] }))
 await deny('competitor with tags as a string', () => updateDoc(compRef, { tags: 'direct' }))
+await allow('competitor with regions (D-145)', () => updateDoc(compRef, { regions: ['US', 'Germany'] }))
+await deny('competitor with regions as a string', () => updateDoc(compRef, { regions: 'US' }))
+await deny('competitor with over 20 regions', () => updateDoc(compRef, { regions: Array.from({ length: 21 }, (_, i) => `r${i}`) }))
 await allow('edge tagging an idea for a customer', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'c', toType: 'customer', kind: 'for' }))
 await allow('edge from an idea to a problem', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'p', toType: 'problem', kind: 'solves' }))
 // Labels: text on the board (D-050). Groups are retired (D-049).

@@ -6,6 +6,7 @@ import { BOARD_TYPES, FOR, type BoardType, type Edge, type EdgeKind, type Eviden
 import { useWsView } from '../../state/workspaceView'
 import type { Palette } from '../../styles/tokens'
 import { planeIds, useViewPlane } from './planes'
+import { inRegions, regionText } from '../competitors/regions'
 import { useWs } from '../workspace/context'
 
 type Kind = {
@@ -68,6 +69,8 @@ export type BoardItem = {
   createdAt: number
   // Customers this item is `for` (D-044).
   forIds: string[]
+  // Competitors only: where they operate (D-145).
+  regions?: string[]
   // Bottom line of the card: who it's for, plus type-specific facts.
   meta: string
 }
@@ -150,7 +153,9 @@ export function useBoardItems(): BoardItem[] {
         y: c.y ?? 0,
         createdAt: c.createdAt,
         forIds: tags.get(c.id) ?? [],
-        meta: line(rivals.get(c.id)?.size ? `vs ${rivals.get(c.id)!.size}` : undefined, `${n} feature${n === 1 ? '' : 's'}`, labels(c.id), files(c.id)),
+        regions: c.regions,
+        // Where it operates comes first (D-145): `US · Germany +1   vs 3   4 features`.
+        meta: line(regionText(c.regions), rivals.get(c.id)?.size ? `vs ${rivals.get(c.id)!.size}` : undefined, `${n} feature${n === 1 ? '' : 's'}`, labels(c.id), files(c.id)),
       })
     }
     for (const f of features) {
@@ -179,6 +184,7 @@ export function useVisibleItems(items: BoardItem[], byPlane = true): BoardItem[]
   const types = useWsView((s) => s.types)
   const forIds = useWsView((s) => s.forIds)
   const tagFilter = useWsView((s) => s.tags)
+  const regionFilter = useWsView((s) => s.regions)
   const ws = useWs()
   const plane = useViewPlane(ws)
   const on = useMemo(() => (byPlane ? planeIds(ws, plane) : null), [byPlane, ws, plane])
@@ -189,9 +195,11 @@ export function useVisibleItems(items: BoardItem[], byPlane = true): BoardItem[]
           (!on || on.has(i.id)) &&
           types.includes(i.type) &&
           (forIds.length === 0 || (i.type === 'customer' ? forIds.includes(i.id) : i.forIds.some((f) => forIds.includes(f)))) &&
-          (tagFilter.length === 0 || i.tags.some((t) => tagFilter.includes(t))),
+          (tagFilter.length === 0 || i.tags.some((t) => tagFilter.includes(t))) &&
+          // The region filter narrows competitors only (D-145).
+          (i.type !== 'competitor' || inRegions(i.regions, regionFilter)),
       ),
-    [items, types, forIds, tagFilter, on],
+    [items, types, forIds, tagFilter, regionFilter, on],
   )
 }
 

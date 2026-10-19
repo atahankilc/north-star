@@ -215,6 +215,7 @@ export function cleanCompetitor(d: Doc, now: number) {
     name: str(d.name, 200) ?? '',
     ...compact({
       tags: tags(d.tags),
+      regions: tags(d.regions)?.slice(0, 20),
       url: str(d.url, 2000),
       description: str(d.description, 20000),
       pricing: str(d.pricing, 2000),

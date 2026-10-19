@@ -21,6 +21,9 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Chain order everywhere: customers → problems → competitors → ideas → features (D-045).
 - No domains; text labels name areas and are the places you jump to (D-048, D-050); sections frame and group them (D-130).
 - Tags group cards within a type: white `#chips`, TAG filter, Table column; competitors have tags too (D-056).
+- Competitors have regions where they operate (`US`, `Germany`, `Europe`, `Global`; known names + aliases, free text allowed),
+  first on the card's meta line; REGION filter (filter bar + matrix footer) narrows competitors only, a place counts inside
+  the bigger ones (Germany → Europe, Global everywhere); the assistant reads and writes them (D-145).
 - Built-in example workspace "Tablebook" with invented competitor names (D-052).
 
 ## Stack, hosting, backend
@@ -110,7 +113,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Drags snap centres to a 0.25 grid (group drags keep their layout, alt = free); switch beside fit-all + `g`, on by default (D-112).
 - Alignment guides: a dragged card pulls to other cards' edges/centres within 6 px, magenta lines; own switch + `a`, on by
   default. Right-click menu on cards, text, links, empty board (a right drag still pans) (D-117).
-- Filters SHOW / FOR / TAG / LINKS, remembered per workspace (D-053, D-056, D-108).
+- Filters SHOW / FOR / TAG / REGION / LINKS, remembered per workspace (D-053, D-056, D-108, D-145).
 
 ## Other views
 - Overview tab, first (D-144): the workspace read on one screen (next steps that prefill the assistant's mode, solid

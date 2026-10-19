@@ -1,4 +1,4 @@
-// What the current workspace shows: type, customer and tag filters.
+// What the current workspace shows: type, customer, tag and region filters.
 // Remembered per workspace in this browser (spec: docs/specs/board.md §3).
 import { create } from 'zustand'
 import { BOARD_TYPES, type BoardType } from '../data/model'
@@ -12,6 +12,8 @@ type Filters = {
   forIds: string[]
   // Tags for the `tag:` filter (D-056); empty = any tag.
   tags: string[]
+  // Regions for the `region:` filter (D-145): only competitors operating there; empty = anywhere.
+  regions: string[]
   // Link groups hidden on the board (D-108, linkKinds.ts); empty = every link shows. Customer tags and `relates` start hidden
   // (D-128), and competitors' `competes` lines (D-135).
   hiddenLinks: string[]
@@ -23,7 +25,7 @@ type Filters = {
 // Link groups hidden until shown (D-128, D-135).
 export const QUIET_LINKS = ['plain', 'for', 'competes']
 
-const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], hiddenLinks: QUIET_LINKS, plane: 'all' }
+const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], regions: [], hiddenLinks: QUIET_LINKS, plane: 'all' }
 // Bumped when a new link group starts hidden, so filters saved before it hide it too.
 const LINKS_VERSION = 4
 // Bumped when a new card type arrives, so filters saved before it show it (D-141).
@@ -37,6 +39,8 @@ type State = Filters & {
   clearFor: () => void
   toggleTag: (tag: string) => void
   clearTags: () => void
+  toggleRegion: (region: string) => void
+  clearRegions: () => void
   toggleLinks: (group: string) => void
   showAllLinks: () => void
   setPlane: (plane: string) => void
@@ -69,6 +73,7 @@ function read(wid: string): Filters {
       types: (types ?? DEFAULTS.types).filter((t) => BOARD_TYPES.includes(t)),
       forIds: saved.forIds ?? [],
       tags: saved.tags ?? [],
+      regions: saved.regions ?? [],
       hiddenLinks: hideNew(hiddenLinks, saved.linksV ?? 1),
       plane: typeof saved.plane === 'string' ? saved.plane : 'all',
     }
@@ -80,10 +85,10 @@ function read(wid: string): Filters {
 export const useWsView = create<State>((set, get) => {
   const save = (patch: Partial<Filters>) => {
     set(patch)
-    const { wid, types, forIds, tags, hiddenLinks, plane } = get()
+    const { wid, types, forIds, tags, regions, hiddenLinks, plane } = get()
     if (!wid) return
     try {
-      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, hiddenLinks, plane, linksV: LINKS_VERSION, typesV: TYPES_VERSION }))
+      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, regions, hiddenLinks, plane, linksV: LINKS_VERSION, typesV: TYPES_VERSION }))
     } catch {
       // Private mode or blocked storage: filters just won't be remembered.
     }
@@ -109,6 +114,11 @@ export const useWsView = create<State>((set, get) => {
       save({ tags: tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag] })
     },
     clearTags: () => save({ tags: [] }),
+    toggleRegion: (region) => {
+      const regions = get().regions
+      save({ regions: regions.includes(region) ? regions.filter((r) => r !== region) : [...regions, region] })
+    },
+    clearRegions: () => save({ regions: [] }),
     toggleLinks: (group) => {
       const hidden = get().hiddenLinks
       save({ hiddenLinks: hidden.includes(group) ? hidden.filter((g) => g !== group) : [...hidden, group] })
@@ -123,6 +133,7 @@ export const useWsView = create<State>((set, get) => {
         types: types.includes(item.type) ? types : BOARD_TYPES.filter((t) => t === item.type || types.includes(t)),
         forIds: [],
         tags: [],
+        regions: [],
       })
     },
   }

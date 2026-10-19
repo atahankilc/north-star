@@ -21,6 +21,9 @@ import { useMarkOf, useStage } from '../workspace/stage'
 import styles from './MatrixView.module.css'
 import { CriteriaEditor, CriterionScores, SCORE_TONE } from './Criteria'
 import { PlaneFilter } from '../canvas/PlaneSwitcher'
+import { RegionFilter } from '../competitors/RegionFilter'
+import { inRegions } from '../competitors/regions'
+import { useWsView } from '../../state/workspaceView'
 import { planeIds, useViewPlane } from '../canvas/planes'
 import { coverageOf, matrixCols, matrixRows, openCriteria, relevant, scoresOf, verdict } from './reading'
 
@@ -45,10 +48,14 @@ export function MatrixView() {
   const plane = useViewPlane(ws)
   const on = useMemo(() => planeIds(ws, plane), [ws, plane])
   const features = useMemo(() => (on ? ws.features.filter((f) => on.has(f.id)) : ws.features), [ws.features, on])
+  // And with a region filter (D-145), only the competitors operating there (all of them if none do, so the footer stays).
+  const regionFilter = useWsView((s) => s.regions)
   const competitors = useMemo(() => {
     const here = on ? ws.competitors.filter((c) => on.has(c.id)) : []
-    return here.length ? here : ws.competitors
-  }, [ws.competitors, on])
+    const shown = here.length ? here : ws.competitors
+    const there = shown.filter((c) => inRegions(c.regions, regionFilter))
+    return there.length ? there : shown
+  }, [ws.competitors, on, regionFilter])
   const marks = useStage((s) => s.preview?.marks) ?? NO_MARKS
   const [selected, setSelected] = useState<Pos | null>(null)
 
@@ -226,6 +233,7 @@ export function MatrixView() {
 
       <footer className={styles.legend}>
         <PlaneFilter up />
+        <RegionFilter up />
         {(['unset', ...COVERAGES] as const).map((k) => (
           <span key={k} style={k !== 'unset' ? { color: TONE[k] } : undefined}>
             {GLYPH[k]} <span className={styles.legendLabel}>{k === 'unset' ? 'not assessed' : k}</span>
