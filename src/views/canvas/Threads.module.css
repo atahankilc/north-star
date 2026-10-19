@@ -21,7 +21,8 @@
   transform: translate(2px, calc(-100% - 2px));
 }
 
-.mark {
+.mark,
+.pin .icon {
   color: var(--fg-dim);
 }
 
@@ -35,7 +36,8 @@
   color: var(--fg-strong);
 }
 
-.pin[data-new] .mark {
+.pin[data-new] .mark,
+.pin[data-new] .icon {
   color: var(--accent-magenta);
 }
 
@@ -44,7 +46,8 @@
   color: var(--fg-strong);
 }
 
-.pin[data-open] .mark {
+.pin[data-open] .mark,
+.pin[data-open] .icon {
   color: var(--accent-cyan);
 }
 
@@ -460,4 +463,58 @@
   padding-left: 2ch;
   color: var(--fg-faint);
   font-size: var(--text-xs);
+}
+
+/* The comment mark (D-167). */
+.icon {
+  display: block;
+  flex: none;
+}
+
+/* The threads button (D-167): square, framed, as the board's other toolbar buttons; a count or a dot in its corner. */
+.inboxButton {
+  composes: interactive from '../../ui/Frame.module.css';
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--fg-dim);
+  cursor: pointer;
+}
+
+.inboxButton:hover,
+.inboxButton[aria-pressed='true'] {
+  color: var(--fg-strong);
+}
+
+.inboxButton[aria-pressed='true'] {
+  border-color: var(--accent-cyan);
+}
+
+.badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  background: var(--accent-magenta);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+}
+
+.dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 7px;
+  height: 7px;
+  background: var(--accent-magenta);
+  box-shadow: 0 0 0 2px var(--bg);
 }

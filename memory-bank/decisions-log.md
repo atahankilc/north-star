@@ -2481,3 +2481,16 @@ uid, or join order while online; nothing a thread needs).
 - *Verified* headless (on the parallel session's emulators): pins `“ 1`, `@ 1` (magenta), `“ 3` (magenta → cyan when
   opened), the panel with all 3 / new 2 / mentions 1, opening a thread from it marked it read (new 1), `@bo` suggested
   "Bob Builder bob@example.com"; `tsc`.
+
+### D-167 · 2026-10-20 · Accepted (changes D-166's threads button and pin mark)
+**One comment icon; the threads button is a square icon button like `+`.** The user: "make the threads buttons something
+like '+' button with how many new mentions shown. We need to think about icon cuz right now the icon used on the board
+also not working for us."
+- *The icon:* a square speech bubble (square corners, its tail at the bottom left) with three square dots inside, on a
+  16 grid with a 1.5 stroke, like the toolbar's fit/snap/guides icons (`CommentIcon` in Threads.tsx). It replaced the `“`
+  mark and stays the one comment mark everywhere.
+- *Threads button:* 36 × 36 framed, right of `+`, the icon in `--fg-dim` (brighter on hover, cyan edge while the panel is
+  open); a magenta square in its corner with the number of new mentions (`9+` past nine), or a small magenta dot while
+  something else is new.
+- *Pins:* the icon at 11 px and the count; `@` when it mentions you, `✓` resolved; colours as D-166.
+- *Verified* headless: the button with `1` beside `+`, pins with the icon (one new in magenta, one `@ 1`, one read).

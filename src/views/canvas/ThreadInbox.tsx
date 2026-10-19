@@ -7,9 +7,8 @@ import { useEffect, useMemo, useState } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Thread } from '../../data/model'
 import { isNew, markSeen, useReads } from '../../data/threads'
-import menuStyles from '../../ui/Menu.module.css'
 import { ago } from './stickyNote'
-import { myUid, toggleInbox, useThreadView } from './Threads'
+import { CommentIcon, myUid, toggleInbox, useThreadView } from './Threads'
 import styles from './Threads.module.css'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
@@ -22,24 +21,25 @@ type Props = {
   onGo: (t: WithId<Thread>) => void
 }
 
-// The button in the board's bottom-left toolbar: `THREADS │ 2 new`, lit while something is new.
+// The button in the board's bottom-left toolbar (D-167): a square icon button like `+`, the comment mark in it; a
+// magenta count of new mentions in its corner, or a magenta dot while anything else is new.
 export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
   const open = useThreadView((s) => s.inbox)
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
-  const fresh = threads.filter((t) => !t.resolved && isNew(t, seen, t.id, me)).length
+  const fresh = threads.filter((t) => !t.resolved && isNew(t, seen, t.id, me))
+  const mentions = fresh.filter((t) => t.mentions?.includes(me)).length
   return (
     <button
-      className={menuStyles.trigger}
-      data-active={fresh > 0 || undefined}
-      aria-expanded={open}
-      aria-label={`Threads${fresh ? `, ${fresh} new` : ''}`}
+      className={styles.inboxButton}
+      aria-pressed={open}
+      aria-label={`Threads${mentions ? `, ${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `, ${fresh.length} new` : ''}`}
+      title={mentions ? `${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `${fresh.length} thread${fresh.length === 1 ? '' : 's'} with something new` : 'Threads'}
       data-viewer-ok
-      style={{ ['--accent' as string]: 'var(--accent-magenta)' }}
       onClick={() => toggleInbox()}
     >
-      <span className={menuStyles.label}>threads</span>
-      <span className={menuStyles.summary}>{fresh ? `${fresh} new` : threads.filter((t) => !t.resolved).length}</span>
+      <CommentIcon />
+      {mentions > 0 ? <span className={styles.badge}>{mentions > 9 ? '9+' : mentions}</span> : fresh.length > 0 && <span className={styles.dot} />}
     </button>
   )
 }

@@ -1,6 +1,7 @@
 // Comment threads on the board (D-159). A thread is pinned to something you can select on the board (a card, text, a
 // section, a sticky note, a link) or to a spot; its pin sits at the thing's top-right corner (a link's chip): a small
-// framed mono chip, `“ 3`, magenta when someone wrote in it since you last read it (D-166). Clicking a pin opens the
+// framed mono chip, the comment mark and a count (D-167), magenta when someone wrote in it since you last read it
+// (D-166). Clicking a pin opens the
 // thread beside it, set like the assistant's chat: who wrote each message (full name) and when, the text, a `>` prompt
 // (Enter sends, shift+Enter a new line, `@` suggests the workspace's people), resolve or reopen. Only a message's writer
 // edits or deletes it. Resolved threads leave the board; every thread is in the threads panel (ThreadInbox.tsx).
@@ -50,6 +51,19 @@ export const toggleInbox = (on?: boolean) => useThreadView.setState((s) => ({ in
 
 export const myUid = () => firebase?.auth.currentUser?.uid ?? ''
 
+// The comment mark (D-167), on the pins and the threads button: a square speech bubble, its tail at the bottom left,
+// three square dots inside, drawn like the toolbar's other icons (square corners, 1.5 stroke on a 16 grid).
+export function CommentIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden className={styles.icon}>
+      <path d="M1.75 2.25h12.5v9h-7.5l-3.5 3v-3h-1.5z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="miter" />
+      <rect x="4.25" y="6" width="1.75" height="1.75" fill="currentColor" />
+      <rect x="7.125" y="6" width="1.75" height="1.75" fill="currentColor" />
+      <rect x="10" y="6" width="1.75" height="1.75" fill="currentColor" />
+    </svg>
+  )
+}
+
 export type PinnedThread = { thread: WithId<Thread>; at: [number, number]; gone: boolean }
 
 type LayerProps = {
@@ -94,9 +108,17 @@ export function ThreadLayer({ wid, pins, openAt, title, thread, isOwner }: Layer
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => (t.id === openId ? closeThread() : openThread(t.id))}
               >
-                <span className={styles.mark} aria-hidden>
-                  {mentioned ? '@' : t.resolved ? '✓' : '“'}
-                </span>
+                {mentioned ? (
+                  <span className={styles.mark} aria-hidden>
+                    @
+                  </span>
+                ) : t.resolved ? (
+                  <span className={styles.mark} aria-hidden>
+                    ✓
+                  </span>
+                ) : (
+                  <CommentIcon size={11} />
+                )}
                 {t.count}
               </button>
             </Html>

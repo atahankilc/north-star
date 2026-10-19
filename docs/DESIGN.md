@@ -127,14 +127,15 @@ Values will be tuned against contrast checks (WCAG AA for text).
   A card's width (2.5) until its right-edge grip drags it, padding 0.09, exactly as tall as its text; it grows as you
   type, its top-left kept. Corner marks when hovered/selected (D-163)
 - Comment threads (D-159, D-166): a pin per thread, a small framed mono chip like a link's (`--bg`, 1px `--line-hover`),
-  `“ 3`, its bottom-left corner at the spot (a card's, text's or section's top-right corner, a link's chip, the spot
+  the comment icon (a square speech bubble with three square dots, D-167) and a count, its bottom-left corner at the spot (a card's, text's or section's top-right corner, a link's chip, the spot
   clicked); magenta border and mark when someone else wrote since you read it, `@` when it mentions you, cyan while open,
   dashed when what it was on is gone. The open thread looks like the assistant's chat window (D-081): a 340 px frame
   right of the pin (left when it would run off), header with what it's on in faint mono and `[resolve]` `[delete]`
   `[×]`, a terminal log (the writer's full name in `--fg-strong`, yours in cyan, `2d`, the text indented under it,
   `@Name` in cyan, `[edit]` `[delete]` on your own on hover), and the chat's `>` prompt with `[send]`; `@` opens a list
   of people over the prompt. No person colours. Pins stay one size at any zoom (DOM over the canvas). The threads panel:
-  `THREADS │ N new` in the bottom-left toolbar (magenta while something's new) opens the same chat frame above it,
+  a square icon button right of `+` (the comment icon; a magenta count of new mentions in its corner, or a magenta dot
+  while anything else is new) opens the same chat frame above it,
   views as bracket actions, one row per thread (mark, what it's on, when, last writer + how it began, count); the
   filter bar's `COMMENTS │ on ▾` sets what the pins show
 - Sections (D-130, D-157): a thin frame, no fill. The name sits in the frame's edge, the line breaking round it: along
