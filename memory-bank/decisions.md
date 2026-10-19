@@ -15,7 +15,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Item types: customer, problem, competitor (+ its features), idea, feature, all on one board (D-007, D-040, D-041, D-042).
 - Customers, problems and ideas have a status you set (hypothesis, testing, validated, invalidated) and evidence in their
   panel (kind, text, supports/contradicts, source, date, link); the card reads `testing +2 −1`, `!` when they disagree (D-137).
-- Customers are the segments: a `for` edge tags an item with a customer, a chip on the card and a grey dashed line; the
+- Customers are the segments: a `for` edge tags an item with a customer, a chip on the card and a line; the
   `for:` filter shows only the chosen customers' cards (D-044, D-119). The lines are their own LINKS group; it and
   `relates` are hidden by default (still shown for the selected card) (D-128).
 - Chain order everywhere: customers → problems → competitors → ideas → features (D-045).
@@ -79,9 +79,10 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Create only from the `+` menu (no double-click); cards don't lift or scale; dragged card sits under the pointer (D-053, D-061).
 - Opening frames everything; fit-all button and `0`; view kept between tabs (D-060).
 - Competitor features stack behind it and fan out once the click is released (D-058).
-- Links: straight, arrowhead, kind written on a solid chip; colour by meaning in 4 groups (violet solves/part of, salmon
-  competes/contradicts, sand inspired/depends, grey relates/for); hover/selection dims others; click a link → bar (kind,
-  label, reverse, remove); LINKS filter (D-059, D-108); `solves`, `part of`, `inspired by`, `depends on` are separate LINKS groups, the pairs keep one colour (D-146). Several links between two cards sit side by side, chips staggered (D-113).
+- Links: straight, arrowhead, kind written on a solid chip; hover/selection dims others; click a link → bar (kind, label,
+  reverse, remove); LINKS filter, one row per kind (D-059, D-108, D-146). Each kind its own clearly different colour, all
+  solid lines: violet solves, sky part of, orange competes, raspberry contradicts, gold inspired, moss depends, grey
+  relates, near-white for (D-147). Several links between two cards sit side by side, chips staggered (D-113).
 - `competes` lines are their own LINKS group, hidden by default, shown for the hovered or selected card; competitor cards say
   `vs N`; a link's own label shows on its chip only while it's hovered, selected or the selected card's (D-135).
 - A competitor in focus (hovered, selected) lights the links to its features as well (D-115).

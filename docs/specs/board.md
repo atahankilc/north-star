@@ -33,14 +33,12 @@ descriptions live in the side panel only (D-057).
   shift+dragging a card onto one links to it (`inspired by`). Links to them show while they're fanned out.
 - **Links** (D-059) run straight from edge to edge with an arrowhead, so they read as sentences ("idea → solves → problem").
   The kind is written on a chip at the midpoint; the link's own label follows it only while the link is hovered,
-  selected or the selected card's (D-135). Colour by meaning (D-108): violet
-  solves / part of, salmon competes / contradicts, sand inspired by / depends on, grey relates and customer tags (`for`, its own group); both hidden by default, still shown for the selected card (D-128). `competes` is its own LINKS group,
+  selected or the selected card's (D-135). Each kind has its own colour and a solid line (D-147):
+  violet solves, sky part of, orange competes, raspberry contradicts, gold inspired by, moss depends on, grey relates, near-white `for` (customer tags); `relates` and `for` hidden by default, still shown for the selected card (D-128). `competes` is its own LINKS group,
   hidden by default too: a competitor's lines show while it (or a card it competes with) is hovered or selected, and its
-  card says how many it competes with (`vs 8`) (D-135); the pattern tells
-  kinds apart within a colour. Hovering a card (or selecting cards) dims every link that doesn't touch it.
+  card says how many it competes with (`vs 8`) (D-135). Hovering a card (or selecting cards) dims every link that doesn't touch it.
   Click a link to select it: a bar under it changes its kind, gives it a label, turns it around, removes it (Delete too).
-  The `LINKS` filter hides groups of links and doubles as the colour key; `solves` / `part of` and `inspired by` /
-  `depends on` are separate groups there, each pair in one colour (D-146).
+  The `LINKS` filter hides groups of links and doubles as the colour key: one row per kind (D-146).
 - **Linking:** drag from the `○` handle on a hovered card's right edge, or shift+drag the card, onto another card.
 - **Selecting several** (D-108): shift+click adds or removes a card or text; alt+drag on empty board draws a box (shift
   keeps what was selected). Drag any of them to move all, one undo step. The panel shows what's selected, tags shared by all
@@ -55,7 +53,7 @@ descriptions live in the side panel only (D-057).
   colour, edit and remove.
 
 - **Customers are the segments** (D-044): tagging an item with a customer is a `for` link, drawn as a label chip on the card
-  and as a grey dashed line (D-119). The line is its own LINKS group, `for (customer tags)`, hidden by default; the chips stay (D-128). Selecting a customer highlights everything tagged for it.
+  and as a line (near-white, D-147) (D-119). The line is its own LINKS group, `for (customer tags)`, hidden by default; the chips stay (D-128). Selecting a customer highlights everything tagged for it.
 - Anything can link to anything. Typical links: idea → solves → problem; competitor → competes with → problem or idea;
   feature → inspired by → idea or a competitor's feature. Shift+drag picks a sensible link kind.
 - **Text labels** name areas of the board ("COMPETITORS", "PRICING IDEAS"). Headings and subheadings are places in the

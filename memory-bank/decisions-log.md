@@ -1185,9 +1185,8 @@ line height (Table's sort buttons), the Matrix's `┌` before "our features", an
 read; colour-code them (not with colours already used), give their label a solid background, select a link to change its type,
 more editing tools. Their picks: four colour groups by meaning, a floating bar at the link, and all four extras offered
 (hover focus + LINKS filter, multi-select, label styles, duplicate + an edge handle).
-- *Colours* (`src/views/canvas/linkKinds.ts`, `--link-*` tokens, `palette.link`): violet solves / part of, salmon competes /
-  contradicts, sand inspired by / depends on, grey relates / for. The type, people and diff colours fill most hues, so eight
-  distinct colours weren't possible; groups by meaning plus the existing patterns (solid / dashed / dotted) tell kinds apart.
+- *Colours* (`src/views/canvas/linkKinds.ts`, `--link-*` tokens, `palette.link`): four groups by meaning with line
+  patterns inside them, at the time. Superseded by D-146 (a LINKS group per kind) and D-147 (a colour per kind, no dashes).
   The selected card's links are thicker instead of cyan. One list of kinds for the board, the bar and the panel's link list.
 - *Chip:* the kind (and the link's own `label`, after a `·`) on a solid `--bg` plate with a border in the link's colour, text
   0.14 (was 0.09 on an invisible black plate). "relates" stays unwritten unless it has a label.
@@ -2060,11 +2059,22 @@ in; you should be able to say it's from America, Germany or Europe).
 **`solves` / `part of` and `inspired by` / `depends on` are separate LINKS groups.** The user: "split the part of and
 solves links into two separate links", then "same for inspired by and depends on".
 - `part-of` moved from the `solves` group to its own `part` group, `depends-on` from `draws` to its own `depends` group
-  (linkKinds.ts), each listed right after its old partner in the LINKS filter; same colours (`palette.link.part` = violet,
-  `palette.link.depends` = sand) and the same dashes, so the board looks the same.
+  (linkKinds.ts), each listed right after its old partner in the LINKS filter. They kept their partner's colour at
+  first; D-147 gave every kind its own.
 - Filters saved before (links version < 5) that hid `solves` / `draws` hide `part` / `depends` too, once; all show by default.
-- *Alternative:* colours of their own for the new groups; not asked for, kept (offered to the user).
 - *Verified:* `npm run build`.
+
+### D-147 · 2026-10-19 · Accepted (changes D-108's colours, D-119's dashed `for` line)
+**Every link kind has its own colour; no dashed link lines.** The user: "now give them different colors. I dont want no
+link to be same color. You can choose closely related colors. Also no dashed lines", then, after close shades
+(orchid beside violet, rose beside salmon…): "colors are tooo similar now".
+- Dark / light (`--link-*`, `palette.link`): solves violet `#a78bfa` / `#6d4fd6`, part of sky `#6cb6ff` / `#1f78c8`,
+  competes orange `#ff9a52` / `#c2600f`, contradicts raspberry `#ff5c86` / `#c41e4e`, inspired by gold `#e3c77a` /
+  `#94741c`, depends on moss `#9cc96a` / `#4c8a1c`, relates grey `#8a8a8a` / `#6e6e6e`, for near-white `#d6d6d6` /
+  near-black `#2e2e2e`. Soft and light so they don't read as the saturated type colours.
+- Link lines are solid: `dash` left `linkKinds.ts`, EdgeLine draws no dashes (the select box and frames keep theirs).
+- *Rejected:* close shades of one hue per pair (too alike to tell apart).
+- *Verified:* swatch page in headless Chrome, both themes, beside the type colours; `npm run build`.
 
 ### D-148 · 2026-10-19 · Accepted (changes D-112's snap step and grid, D-117's pull, D-055's card width and edge)
 **The `+` marks are the snap points; a snapped card has a mark on each corner; cards lose their grey edge.** The user:

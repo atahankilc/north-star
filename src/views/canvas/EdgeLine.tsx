@@ -136,9 +136,6 @@ export const EdgeLine = memo(function EdgeLine({ from, to, fromHalf, toHalf, chi
         ]}
         color={color}
         lineWidth={width}
-        dashed={Boolean(style.dash)}
-        dashSize={style.dash?.[0] ?? 1}
-        gapSize={style.dash?.[1] ?? 0}
         transparent
         opacity={opacity}
         toneMapped={false}

@@ -102,9 +102,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   cards' plane (no perspective shift). Zoomed out, every other mark fades once they're under 16 px apart.
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
 - Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a framed chip (solid `--bg`, 1px
-  border in the link's colour) at the midpoint. Colour by meaning, from `--link-*` tokens kept apart from type, people and
-  diff colours: violet solves / part of, salmon competes / contradicts, sand inspired by / depends on (each kind its own LINKS group, D-146), grey relates / for;
-  line pattern tells kinds apart inside a group. Thicker on the selected card; links not touching the hovered or selected
+  border in the link's colour) at the midpoint. One colour per kind, all solid lines (D-147), from `--link-*` tokens soft enough
+  to stay apart from type, people and diff colours: violet solves, sky part of, orange competes, raspberry contradicts, gold inspired by, moss depends on, grey relates, near-white `for` (near-black in light theme). Thicker on the selected card; links not touching the hovered or selected
   card go faint (a competitor's include the links to its features, D-115). A selected link fills its chip. No animation. Several links between the same two cards sit side by side,
   0.32 apart (closer if the end is too small), their chips moved along the lines so they don't overlap (D-113)
 - Floating bars (D-108, `FloatBar.module.css`): a selected link or text label gets a small solid bar under it (2px top edge

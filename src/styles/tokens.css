@@ -27,11 +27,16 @@
   --diff-edited: #ff9f1c;
   --diff-moved: #3d7bff;
   --diff-deleted: #ff4545;
-  /* Links on the board by what they say (linkKinds.ts): soft hues kept apart from the type, people and diff colours. */
+  /* Links on the board by what they say (linkKinds.ts, D-146): one clearly different hue per kind, soft so
+     they stay apart from the type, people and diff colours. `clashes` = contradicts, `draws` = inspired by. */
   --link-solves: #a78bfa;
-  --link-clashes: #ff8f7a;
-  --link-draws: #c9b48a;
+  --link-part: #6cb6ff;
+  --link-competes: #ff9a52;
+  --link-clashes: #ff5c86;
+  --link-draws: #e3c77a;
+  --link-depends: #9cc96a;
   --link-plain: #8a8a8a;
+  --link-for: #d6d6d6;
 
   /* The assistant orb's pomegranate easter egg (AiOrb.tsx): skin, its shaded side, its shine, its warm patches, the crown,
      and the open slice: seeds and the pale pith between them. */
@@ -120,9 +125,13 @@
   --diff-moved: #2a5fe0;
   --diff-deleted: #d42a2a;
   --link-solves: #6d4fd6;
-  --link-clashes: #c4513a;
-  --link-draws: #8a7344;
+  --link-part: #1f78c8;
+  --link-competes: #c2600f;
+  --link-clashes: #c41e4e;
+  --link-draws: #94741c;
+  --link-depends: #4c8a1c;
   --link-plain: #6e6e6e;
+  --link-for: #2e2e2e;
 
   --pom-skin: #c0142b;
   --pom-shade: #e3a0aa;
