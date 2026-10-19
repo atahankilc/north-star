@@ -102,7 +102,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Board grid (D-110, D-148): faint `+` marks every 0.625 units (cards are 4 × 2 steps). A dragged card's top-left corner
   snaps to a mark or to one of the four even steps between two marks (0.125, not drawn, D-149); on a mark, all four
   corners sit on marks. Drawn where the camera sees them on the
-  cards' plane (no perspective shift). Zoomed out, every other mark fades once they're under 16 px apart.
+  cards' plane (no perspective shift). Zoomed in, a mark's arms reach 0.06 out; zoomed out they stop at 3 px and the stroke
+  eases to 1 px, so a mark is always a thin `+`, never a dot (D-151). Under 18 px apart every other mark fades, then all but
+  every fourth (a card's width); all fade out before the zoom limit.
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
 - Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a framed chip (solid `--bg`, 1px
   border in the link's colour) at the midpoint. One colour per kind, all solid lines (D-147), from `--link-*` tokens soft enough

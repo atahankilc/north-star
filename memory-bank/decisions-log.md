@@ -1242,7 +1242,7 @@ sometimes draws the eye; zoomed far out the `+` marks shrank into an ugly speckl
 - *Backdrop:* 8% in a workspace (was 14%, `backdropDim.target` in Backdrop.tsx; the loading curtain follows it). Brightest
   glyphs measured at 94/255 on screen (were ~123).
 - *Grid* (`DotGridMaterial` in Board.tsx), by camera distance so it behaves the same on every screen size: a full `+` up to 30
-  units away, shrinking to a one-pixel dot by 70, fading out between 80 and 120 (the zoom-out limit is 150). A first pass
+  units away, shrinking to a one-pixel dot by 70 (now it stays a thin `+`, D-151), fading out between 80 and 120 (the zoom-out limit is 150). A first pass
   measured pixels between marks instead, which left a faint grid at the limit on taller screens.
 - Verified headless on emulators (example workspace, dark, 1728 × 1117): `+` at the opening zoom, no grid at the limit.
 
@@ -2133,3 +2133,14 @@ card's fill tinted. The user picked corner marks, then changed the drag twice.
 - Far out (stars, D-111) the ring stays. Competitor feature chips keep their own edge. Reduced motion jumps.
 - *Verified* headless on the emulators' example workspace: hover, press, drag (single and group), drop, a 3 px wobble
   click; `tsc`.
+
+### D-151 · 2026-10-19 · Accepted (changes D-110's "the `+` turns to dots")
+**Zoomed out, the grid's `+` stays a thin `+`.** The user: the `+` "takes too much space and looks like a fat dot when i
+zoom out enough"; asked to keep it lean. A first try made the mark the same 7 px on screen at every zoom; the user: the
+zoomed-in look was fine, keep it, and use the new look only zoomed out.
+- Zoomed in, unchanged: arms 0.06 board units out from the centre, stroke 2.4 device px.
+- Zoomed out, the arms stop shrinking at 3 CSS px and the stroke eases to 1 CSS px (needs the canvas's pixel ratio, `uDpr`);
+  edges smoothed over one device pixel. Before, the arms shrank to the stroke's width and hard pixel edges made a blob.
+- Thinning instead of dots: under 18 px apart every other mark fades, under 18 px at twice the step all but every fourth
+  (2.5, a card's width); all still fade out between 80 and 120 (D-110). Marks stay where they were, so snapping is unchanged.
+- *Verified* headless: the shader from Board.tsx on a test page, old and new at camera distances 9, 20, 40, 60, 90; `tsc`.

@@ -921,21 +921,26 @@ function Snapshot({ nodes, labels }: { nodes: BoardItem[]; labels: WithId<Label>
 }
 
 // Faint "+" marks, an ASCII-flavoured grid for spatial memory, and the points a dragged card lands on: one mark every
-// GRID_STEP, so a snapped card has a mark on each corner (D-112, D-148). Zoomed out, every other mark fades once they
-// crowd, then they shrink to dots and fade away before the zoom-out limit, so the board never turns into a speckle (D-110).
+// GRID_STEP, so a snapped card has a mark on each corner (D-112, D-148). Zoomed out, each mark stays a small, thin "+"
+// on screen instead of shrinking to a dot (D-151): every other mark fades once they crowd, then all but every fourth (a card's width),
+// and the rest fade away before the zoom-out limit, so the board never turns into a speckle (D-110).
 // The plane sits a little behind the cards, so each point is taken back to where the camera sees it on the cards'
 // plane: otherwise perspective shifts the marks off the cards' corners, more the further from the screen's centre.
 function DotGridMaterial() {
   const shade = usePalette().grid
   const material = useRef<ShaderMaterial>(null)
-  const uniforms = useMemo(() => ({ uShade: { value: shade }, uDist: { value: 11 } }), []) // eslint-disable-line react-hooks/exhaustive-deps
+  const dpr = useThree((s) => s.viewport.dpr)
+  const uniforms = useMemo(() => ({ uShade: { value: shade }, uDist: { value: 11 }, uDpr: { value: dpr } }), []) // eslint-disable-line react-hooks/exhaustive-deps
   // R3F copies the uniforms prop, so theme changes go through the material (D-028).
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => {
-    if (material.current) material.current.uniforms.uShade.value = shade
+    if (material.current) {
+      material.current.uniforms.uShade.value = shade
+      material.current.uniforms.uDpr.value = dpr
+    }
     invalidate()
-  }, [shade, invalidate])
-  // The camera's distance decides the shape, so the grid is gone at the limit on any screen.
+  }, [shade, dpr, invalidate])
+  // The camera's distance decides when the grid goes, so it is gone at the limit on any screen.
   useFrame(({ camera }) => {
     if (material.current) material.current.uniforms.uDist.value = camera.position.z
   })
@@ -957,20 +962,31 @@ function DotGridMaterial() {
         varying vec3 vPos;
         uniform float uShade;
         uniform float uDist;
+        uniform float uDpr;
         void main() {
-          // A full "+" up to 30 units away, a dot by 70, faded out between 80 and ${MAX_DISTANCE - 30} (limit ${MAX_DISTANCE}).
+          // Faded out between 80 and ${MAX_DISTANCE - 30} units away (limit ${MAX_DISTANCE}).
           float fade = 1.0 - smoothstep(80.0, ${(MAX_DISTANCE - 30).toFixed(1)}, uDist);
           if (fade <= 0.0) discard;
           // Where the camera's ray through this point meets the cards' plane (z = 0).
           vec2 world = cameraPosition.xy + (vPos.xy - cameraPosition.xy) * cameraPosition.z / (cameraPosition.z - vPos.z);
-          vec2 g = abs(fract(world / ${step} + 0.5) - 0.5) * ${step};
-          float w = fwidth(world.x) * 1.2;
-          float arm = mix(0.06, w, smoothstep(30.0, 70.0, uDist));
-          float plus = max(step(g.x, w) * step(g.y, arm), step(g.y, w) * step(g.x, arm));
-          // Every other mark fades once the marks are under 16 px apart.
+          // Everything below in CSS pixels, so the mark is the same size at any zoom and on any screen.
+          float css = fwidth(world.x) * uDpr;
+          vec2 d = abs(fract(world / ${step} + 0.5) - 0.5) * ${step} / css;
+          // Zoomed in, the arms reach 0.06 out on the board; zoomed out they stop shrinking at 3 px, so the mark stays a
+          // thin "+" instead of a blob. The stroke goes from 2.4 device pixels to 1 px as it gets there, edges smoothed over one.
+          float aa = 0.5 / uDpr;
+          float arm = max(0.06 / css, 3.0);
+          float bar = mix(0.5, 1.2 / uDpr, clamp((arm - 3.0) / 2.0, 0.0, 1.0));
+          vec2 thin = clamp((bar + aa - d) * uDpr, 0.0, 1.0);
+          vec2 len = clamp((arm + aa - d) * uDpr, 0.0, 1.0);
+          float plus = max(thin.y * len.x, thin.x * len.y);
+          // Under 18 px apart every other mark fades, under 18 px at twice the step all but every fourth.
+          float gap = ${step} / css;
           vec2 cell = floor(world / ${step} + 0.5);
-          float odd = max(mod(cell.x, 2.0), mod(cell.y, 2.0));
-          float crowd = 1.0 - odd * (1.0 - smoothstep(10.0, 16.0, ${step} / fwidth(world.x)));
+          float odd2 = max(mod(cell.x, 2.0), mod(cell.y, 2.0));
+          float odd4 = max(step(0.5, mod(cell.x, 4.0)), step(0.5, mod(cell.y, 4.0)));
+          float crowd = (1.0 - odd2 * (1.0 - smoothstep(12.0, 18.0, gap)))
+                      * (1.0 - odd4 * (1.0 - smoothstep(12.0, 18.0, gap * 2.0)));
           gl_FragColor = vec4(vec3(uShade), plus * crowd * 0.4 * fade);
         }
       `}
