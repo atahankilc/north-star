@@ -21,16 +21,30 @@ a `TAG ▾` filter, and a tags column in Table.
 | **Competitor** | name, URL, pricing, audience, regions (D-145), description, notes, tags; its features by category | yellow |
 | **Idea** | title, notes, tags | white |
 | **Feature** (ours) | title, notes, tags, priority, status, effort | cyan |
-| **Competitor feature** | name, description, category | no card: listed in its competitor's panel |
+| **Competitor feature** | name, description, category, availability (`free`/`paid`/`enterprise`/`beta`), source link; which of our features it matches (the matrix cell's their feature) (D-164) | no card: named beside its competitor, edited in its panel |
 | **Text label** (D-050) | text | large text on the board, no card |
 | **Project title** (D-118) | the workspace's name and description | one block per board, framed by corner brackets |
 
 Card layout, top to bottom: `TYPE` label · title (up to two lines) · `#tags` · who it's for and type facts. Notes and
 descriptions live in the side panel only (D-057).
 
-- **Competitor features** (D-058) wait behind their competitor as a stack (up to three plates peek out). Selecting the
-  competitor fans them out to the right as compressed cards; clicking one opens it unfolded in the competitor's panel, and
-  shift+dragging a card onto one links to it (`inspired by`). Links to them show while they're fanned out.
+- **Competitor features** (D-164) are names beside their competitor, right of the card (clear of its `›` handle): the
+  first three, then `+N more`. Hovering the competitor or its list, or selecting it (or one of its features), opens the
+  full list in a framed tray with a yellow top line: `FEATURES n`, a heading per category with its count, each row a
+  name, a cyan bar when it matches one of ours, and its availability on the right. Clicking the open competitor again
+  changes nothing; leaving it and its list (after 160 ms) or clicking elsewhere closes it; dragging it closes it until
+  it's dropped. Clicking a row opens it unfolded in the competitor's panel; shift+dragging a card onto a row links to it
+  (`inspired by`). Links to a feature end at its row while it shows, otherwise at the competitor.
+- **Parts** (D-164): a feature linked to another with `part of` is one of its parts (one parent each, the first link; a
+  loop is left out). The parent's facts line ends in `[−] 3 parts`; clicking it (or `fold parts` in the right-click
+  menu) folds its parts, and theirs, into it: each part card shrinks into a name row beside the parent, indented under
+  the part it belongs to, and the facts line reads `[+] 5 parts`. Clicking a row (or `[+]`) unfolds them: the cards grow
+  back out of their rows to their own places. A part folded on its own stays folded inside. Links to a folded part end at
+  its row; `part of` lines inside one fold aren't drawn. Folding is saved per plane, for everyone (`folded` on the
+  feature on All, on its placement elsewhere), and is undoable.
+- **Motion** (D-164): every row, heading and tray glides from where it is to where it should be, eased at both ends over
+  280 ms, so opening runs forward and closing runs it backwards, and a card folding into a row uses the same ease and
+  time. Reduced motion snaps. Zoomed out too far to read, a row's name is a grey bar, as a card's title is (D-153).
 - **Links** (D-059) run straight from edge to edge with an arrowhead, so they read as sentences ("idea → solves → problem").
   The kind is written on a chip at the midpoint; the link's own label follows it only while the link is hovered,
   selected or the selected card's (D-135). Each kind has its own colour and a solid line (D-147):

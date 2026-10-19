@@ -174,7 +174,7 @@ Was: per-type tabs (ideas, features, competitors, matrix). Now one board with al
 Was: a separate Features board and promoting an idea to a feature. Features are a type on the one board (D-040); the promote button is gone (D-057).
 
 ### D-038 · 2026-10-17 · Superseded by D-040, D-058
-Was: competitors as profile pages, not on a map. Competitors are cards on the board with their features stacked behind (D-058); the profile (fields + features by category) is their side panel (`CompetitorProfile.tsx`).
+Was: competitors as profile pages, not on a map. Competitors are cards on the board with their features named beside them (D-164); the profile (fields + features by category) is their side panel (`CompetitorProfile.tsx`).
 
 ### D-039 · 2026-10-17 · Superseded by D-048
 Was: domains organising a workspace. Removed (D-048).
@@ -266,14 +266,9 @@ In the side panel, `for` is a multi-select dropdown and tags use a picker (`src/
 workspace's existing tags, Enter or comma adds, Backspace removes the last); the same picker is in the competitor panel and the
 Table's tags cell. The idea panel's "To feature" button is gone.
 
-### D-058 · 2026-10-17 · Accepted
-**A competitor's features stack behind it on the board.** Up to three plates peek out behind a competitor card. Selecting the
-competitor (or one of its features) fans them out to the right as compressed cards (`FeatureChip.tsx`: name + category). Clicking
-one opens the competitor panel with that feature unfolded; shift+dragging a card onto one creates an `inspired-by` link. Links to
-competitor features are drawn only while fanned out.
-*Refined 2026-10-17 (user):* they fan out only once the click on the competitor is released; while it is held down or dragged
-they stay stacked behind it (they used to open and close during a drag).
-Links to a stacked feature are always drawn, pointing at the competitor card (one line per pair of cards; a direct link wins).
+### D-058 · 2026-10-17 · Superseded by D-164
+Was: a competitor's features stacked behind its card as plates and fanned out as chips while it was selected. Now they're
+names beside it, the full list while hovered or selected (D-164).
 
 ### D-059 · 2026-10-17 · Accepted
 **Links read as sentences.** Straight lines from card edge to card edge with an arrowhead at the target and the kind written at the
@@ -2397,6 +2392,48 @@ vertical strip on the right side of the components... since their height is not 
   tried for a moment and replaced at once (the height isn't adjustable, so a corner suggested the wrong thing).
 - *Verified* headless: three things selected (H3, paragraph, note), a paragraph alone with its strip, a note edited with
   its corners growing; `tsc`.
+
+### D-164 · 2026-10-20 · Accepted (supersedes D-058's stack and fan-out)
+**A competitor's features are names beside its card; a feature's parts fold into it as names; every open and close
+glides.** The user asked to rethink how a competitor's features show ("a better way to visualize it… still features
+close under a competitor"), to let features that are part of another "close under the parent feature", and said the
+fan-out animation was "half baked… even if i click to the same competitor, feature animation retriggers and i dont see
+any animations when i click somewhere else". After mocks on a local page (squares, spines, strip or names beside the
+card; for parts: a row, nested dots, a tree or names), the user picked **names for both**: "names for both of them!!!".
+They also asked that the competitor card keep its size and liked the framed tray with a side panel.
+- *Competitor features:* the first three names beside the card (right of the `›` handle), `+N more` under them; the full
+  list (a framed tray, yellow top line, `FEATURES n`, category headings with counts, a cyan bar when it matches one of
+  ours, availability on the right) while the competitor or its list is hovered, or it (or one of its features) is
+  selected. Leaving closes it after 160 ms; dragging the competitor closes it until it's dropped. Rows open the feature
+  in the panel and take link drops (`inspired by`); links end at a row while it shows. The plates behind the card and
+  the fanned chips (`FeatureChip.tsx`) are gone (`SideList.tsx`).
+- *New fields:* `availability` (`free | paid | enterprise | beta`) and `url` (source) on a competitor feature, edited in
+  its panel row with "matches our feature", which is the matrix cell's `competitorFeatureId` (no new field: setting it
+  names the feature on `our feature × its competitor` and lets go of any other cell that named it; one undo step).
+- *Parts:* `part of` between two features makes the first a part of the second (first link wins, loops left out). The
+  parent's facts line ends in `[−] 3 parts` / `[+] 5 parts` (the mono font has no ▾ ▸); clicking it or the right-click
+  `fold parts` folds them: each part card shrinks (to 0.1) into its name row beside the parent, indented by depth, and
+  hides; a row click unfolds, the cards growing back out of their rows. A part folded on its own stays folded inside.
+  Links to a folded part end at its row; `part of` lines inside one fold are left out. `folded` is stored where a card's
+  place is (the feature on All, its placement on another plane), so it's per plane and shared; undoable. Rules allow
+  `folded` (bool) on features and placements and `availability`/`url` on competitor features; bundle export/import
+  carries them.
+- *Motion:* rows, headings, the tray and a folding card glide from where they are, cubic ease-in-out, 280 ms; a target
+  that doesn't change starts nothing, so re-clicking replays nothing, and closing runs the opening backwards (the user's
+  earlier note that front-loaded eases read as no motion). Reduced motion snaps. Too small to read, a row's name is a
+  grey bar (D-153).
+- *Also fixed:* leaving a card through its `›` handle never cleared its hover (the handle stops the event the card's
+  own out would need), so a hover-opened list stayed open; the handle's out now clears the card's hover when the
+  pointer is off the card.
+- *Not done:* lines to a row jump to it while the row is still gliding (as lines already do while cards glide); the
+  assistant's `update_competitor_feature` doesn't write availability or source yet.
+- *Rejected in the mocks:* squares, spines or a strip beside the card; nested dots, a tree, or a frame round the parts;
+  a separate competitor page.
+- *Verified* on emulators (example workspace, dark, 1600 × 1000, headless): Crewly closed with three names, hovered open
+  with category headings, staying open on the list, closing off it; selected and clicked again with nothing replayed;
+  dragged (closed while carried, open again on drop); a 2-level fold (Payroll export in Rule-based swap approval, then
+  both in Availability collection) folding mid-frame and folded, links ending at the rows; unfolded by a row with the
+  inner fold kept; the panel's new fields. `tsc`; rules tests 335 passed, 0 failed.
 
 ### D-165 · 2026-10-20 · Accepted (changes D-159's pins and list)
 **Comments: the list moves into the filter bar; every pin is the same comment mark.** The user: "First put the bottom

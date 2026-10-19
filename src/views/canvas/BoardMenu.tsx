@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { focusPath } from '../../app/paths'
 import { reverseEdge, updateEdge } from '../../data/edges'
 import { FOR, MADE_TYPES } from '../../data/model'
+import { setFolded } from '../../data/nodes'
 import { copied } from '../../data/selection'
 import { useCanvas } from '../../state/canvasStore'
 import type { NewThing } from '../../state/workspaceView'
@@ -304,6 +305,10 @@ function rowsFor(
   // The card's chain in the focus view (D-127).
   const focus: Row[] = item && !many ? [{ key: 'focus', label: 'focus', glyph: '◎', run: () => focusOn(target.id) }] : []
   const talk = comment({ on: target.kind === 'card' ? 'card' : 'label', targetId: target.id })
+  // A feature with parts folds them into it, or unfolds them, on this plane (D-164).
+  const hasParts = item?.type === 'feature' && !many && ws.edges.some((e) => e.kind === 'part-of' && e.toId === target.id && e.fromType === 'feature')
+  const folded = plane === ALL ? !!ws.features.find((f) => f.id === target.id)?.folded : !!ws.placements.find((p) => p.planeId === plane && p.itemId === target.id)?.folded
+  const fold: Row[] = hasParts ? [{ key: 'fold', label: folded ? 'unfold parts' : 'fold parts', glyph: folded ? '▸' : '▾', run: () => void setFolded(ws.wid, target.id, !folded) }] : []
   if (locked) return [{ key: 'h', heading }, ...talk, zoom, ...focus]
   return [
     { key: 'h', heading },
@@ -327,6 +332,7 @@ function rowsFor(
         ]),
     zoom,
     ...focus,
+    ...fold,
     { key: 'r', rule: true },
     // On a plane other than All (D-139), ⌫ takes cards off it; delete still removes them everywhere.
     ...(offAll && cardIds.length

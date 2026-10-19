@@ -199,6 +199,9 @@ await allow('feature with priority, status, effort', () => addDoc(sub(bob.fs, 'f
 await allow('feature with an impact', () => addDoc(sub(bob.fs, 'features'), { ...card, impact: 'high' }))
 await deny('feature with an unknown impact', () => addDoc(sub(bob.fs, 'features'), { ...card, impact: 'huge' }))
 await deny('feature with an unknown status', () => addDoc(sub(bob.fs, 'features'), { ...card, status: 'someday' }))
+// Parts folded into a feature (D-164): on All the feature's, on a plane the placement's.
+await allow('feature with its parts folded', () => addDoc(sub(bob.fs, 'features'), { ...card, folded: true }))
+await deny('feature folded with a non-bool', () => addDoc(sub(bob.fs, 'features'), { ...card, folded: 'yes' }))
 // Planes and placements (D-139).
 await allow('a plane', () => addDoc(sub(bob.fs, 'planes'), { name: 'Competitors', order: 1, createdAt: 1, updatedAt: 1 }))
 await deny('a plane without a name', () => addDoc(sub(bob.fs, 'planes'), { name: '', order: 1, createdAt: 1, updatedAt: 1 }))
@@ -207,6 +210,8 @@ await allow('a card placed on a plane', () => place('p1_c1', { planeId: 'p1', it
 await deny('a placement with a free id', () => place('random', { planeId: 'p1', itemId: 'c1', itemType: 'competitor', x: 1, y: 2 }))
 await deny('a placement of a competitor feature', () => place('p1_f1', { planeId: 'p1', itemId: 'f1', itemType: 'competitorFeature', x: 1, y: 2 }))
 await deny('a placement without a position', () => place('p1_c2', { planeId: 'p1', itemId: 'c2', itemType: 'idea' }))
+await allow('a feature folded on a plane', () => place('p1_x1', { planeId: 'p1', itemId: 'x1', itemType: 'feature', x: 1, y: 2, folded: true }))
+await deny('a placement folded with a non-bool', () => place('p1_x2', { planeId: 'p1', itemId: 'x2', itemType: 'feature', x: 1, y: 2, folded: 1 }))
 await allow('text on a plane', () => addDoc(sub(bob.fs, 'labels'), { text: 'MVP', planeId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 // Packages (D-141).
 await allow('a package', () => addDoc(sub(bob.fs, 'packages'), { ...card, memberIds: ['a', 'b'], homePlaneId: 'p1', impact: 'high', effort: 'M' }))
@@ -232,6 +237,8 @@ const compRef = await addDoc(sub(alice.fs, 'competitors'), { name: 'Rival', url:
 await allow('competitor', () => getDoc(compRef))
 await deny('competitor without a name', () => addDoc(sub(bob.fs, 'competitors'), { url: 'x', createdAt: 1, updatedAt: 1 }))
 await allow('competitor feature', () => addDoc(sub(bob.fs, 'competitorFeatures'), { competitorId: compRef.id, name: 'SSO', category: 'auth', createdAt: 1, updatedAt: 1 }))
+await allow('competitor feature with availability and source', () => addDoc(sub(bob.fs, 'competitorFeatures'), { competitorId: compRef.id, name: 'SSO', availability: 'enterprise', url: 'https://rival.example/sso', createdAt: 1, updatedAt: 1 }))
+await deny('competitor feature with an unknown availability', () => addDoc(sub(bob.fs, 'competitorFeatures'), { competitorId: compRef.id, name: 'SSO', availability: 'cheap', createdAt: 1, updatedAt: 1 }))
 await deny('competitor feature without its competitor', () => addDoc(sub(bob.fs, 'competitorFeatures'), { name: 'SSO', createdAt: 1, updatedAt: 1 }))
 const cell = (id, data) => writeBatch(bob.fs).set(doc(sub(bob.fs, 'comparisons'), id), data).commit()
 await allow('matrix cell keyed by feature_competitor', () => cell(`f1_${compRef.id}`, { featureId: 'f1', competitorId: compRef.id, coverage: 'partial', updatedAt: 1 }))

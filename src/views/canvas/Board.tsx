@@ -27,7 +27,7 @@ import { wasLine } from '../workspace/preview'
 import { usePreviewFocus, useStage } from '../workspace/stage'
 import { useCanvas } from '../../state/canvasStore'
 import { useWsView } from '../../state/workspaceView'
-import { useViewer } from '../workspace/viewerLock'
+import { editLocked, useViewer } from '../workspace/viewerLock'
 import { isReducedMotion } from '../../state/motion'
 import { usePalette } from '../../state/theme'
 import { defaultKind, type BoardItem } from './boardKinds'
@@ -47,7 +47,8 @@ import { useGuides } from './guides'
 import { LabelBar } from './LabelBar'
 import { LinkBar } from './LinkBar'
 import { linkStyle } from './linkKinds'
-import { CHIP_H, CHIP_W, FeatureChip } from './FeatureChip'
+import { FeatureList, PartList, featureSpots, partSpots, type Part, type Pose } from './SideList'
+import { setFolded } from '../../data/nodes'
 import { boardPoint, NodeCard } from './NodeCard'
 import { GRID_STEP } from './snap'
 import { BoardDetail } from './detail'
@@ -60,8 +61,10 @@ type Props = {
   edges: WithId<Edge>[]
   // Text written on the board (D-050).
   labels: WithId<Label>[]
-  // Shown as a stack behind their competitor, fanned out while it's selected (D-058).
+  // Named beside their competitor, the full list while it's hovered or selected (D-164).
   competitorFeatures: WithId<CompetitorFeature>[]
+  // Our feature each competitor's feature matches (the matrix cell's `competitorFeatureId`), by its id (D-164).
+  matches?: Map<string, string>
   // Look here first instead of where this board was last left (e.g. a link jumped to a card).
   focus?: [number, number]
   // Where the camera is remembered between views: the workspace, or the focus view's card (D-127).
@@ -106,12 +109,12 @@ const CHROME_PX = 170
 type Flight = [number, number, number?]
 const MARGIN = 1.2
 
-// Feature chips fan out to the right of their competitor, top-aligned with it.
-function chipSpot(c: [number, number], i: number): [number, number] {
-  return [c[0] + CARD_W / 2 + 0.3 + CHIP_W / 2, c[1] + CARD_H / 2 - CHIP_H / 2 - i * (CHIP_H + 0.1)]
-}
 const CARD_HALF: [number, number] = [CARD_W / 2, CARD_H / 2]
-const CHIP_HALF: [number, number] = [CHIP_W / 2, CHIP_H / 2]
+// Lists beside cards (D-164) sit just over every card, under one being dragged.
+const LIST_Z = 0.046
+// How long the pointer may be off a competitor and its list before the list closes: long enough to cross the gap.
+const LEAVE_MS = 160
+const NO_MATCHES = new Map<string, string>()
 
 // Every card and label, with a margin: [x0, y0, x1, y1] in board units, or null on an empty board.
 function boardBounds(nodes: BoardItem[], labels: WithId<Label>[]): [number, number, number, number] | null {
@@ -235,7 +238,7 @@ function coveredRight(canvas: HTMLElement): number {
   return p.width && p.left < c.right && p.right > c.left ? Math.max(0, c.right - p.left) : 0
 }
 
-function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey, centreId, sectionsFixed = false, onDrawSection, frames = [], threads }: Props) {
+function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MATCHES, focus, cameraKey, centreId, sectionsFixed = false, onDrawSection, frames = [], threads }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
@@ -360,36 +363,121 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     return () => window.removeEventListener('pointerup', up)
   }, [controls, endLink])
 
-  // The competitor whose features are fanned out: the selected one, or the owner of a selected feature (D-058).
-  // While the competitor itself is held down or dragged they stay stacked behind it, and fan out once the click is released.
+  // A competitor's features, named beside it (D-164): the full list while it's selected (or one of its features is), or
+  // while the pointer is on it or its list; closed again while it's dragged. Clicking it again changes nothing.
   const theirs = useMemo(() => {
     const map = new Map<string, WithId<CompetitorFeature>[]>()
     for (const f of [...competitorFeatures].sort((a, b) => a.createdAt - b.createdAt)) map.set(f.competitorId, [...(map.get(f.competitorId) ?? []), f])
     return map
   }, [competitorFeatures])
   const pressing = useCanvas((s) => s.pressing)
+  const hoverId = useCanvas((s) => s.hoverId)
   const openId = useMemo(() => {
     if (!selectedId) return null
-    if (theirs.has(selectedId)) return selectedId === pressing ? null : selectedId
+    if (theirs.has(selectedId)) return selectedId
     return competitorFeatures.find((f) => f.id === selectedId)?.competitorId ?? null
-  }, [selectedId, pressing, theirs, competitorFeatures])
+  }, [selectedId, theirs, competitorFeatures])
+  const [hot, setHot] = useState<string | null>(null)
+  const overList = useRef<string | null>(null)
+  const leave = useRef(0)
+  const closeLater = (id: string) => {
+    window.clearTimeout(leave.current)
+    leave.current = window.setTimeout(() => {
+      if (overList.current !== id && useCanvas.getState().hoverId !== id) setHot((h) => (h === id ? null : h))
+    }, LEAVE_MS)
+  }
+  useEffect(() => {
+    if (hoverId && theirs.has(hoverId)) {
+      window.clearTimeout(leave.current)
+      setHot(hoverId)
+    } else if (hot && overList.current !== hot) closeLater(hot)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoverId, theirs])
+  useEffect(() => () => window.clearTimeout(leave.current), [])
+  const listHover = (id: string) => (on: boolean) => {
+    if (on) {
+      overList.current = id
+      window.clearTimeout(leave.current)
+      setHot(id)
+    } else {
+      if (overList.current === id) overList.current = null
+      closeLater(id)
+    }
+  }
+  const isOpen = (id: string) => (openId === id || hot === id) && !(pressing === id && dragging[id])
 
-  const positions = useMemo(() => {
+  // Parts (D-164): a feature linked to another with `part of` is one of its parts; folded, a feature's parts (and theirs)
+  // are names beside it. One parent each (the first link), and a link that would make a loop is left out.
+  const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
+  const family = useMemo(() => {
+    const parent = new Map<string, string>()
+    for (const e of edges) {
+      if (e.kind !== 'part-of' || e.fromId === e.toId || parent.has(e.fromId)) continue
+      if (byId.get(e.fromId)?.type === 'feature' && byId.get(e.toId)?.type === 'feature') parent.set(e.fromId, e.toId)
+    }
+    for (const id of [...parent.keys()]) {
+      const seen = new Set([id])
+      for (let p = parent.get(id); p; p = parent.get(p)) {
+        if (seen.has(p)) {
+          parent.delete(id)
+          break
+        }
+        seen.add(p)
+      }
+    }
+    const kids = new Map<string, string[]>()
+    for (const [c, p] of parent) kids.set(p, [...(kids.get(p) ?? []), c])
+    // Top to bottom, then left to right, as they sit on the board.
+    for (const list of kids.values()) list.sort((a, b) => byId.get(b)!.y - byId.get(a)!.y || byId.get(a)!.x - byId.get(b)!.x)
+    const tree = (id: string, depth = 1): Part[] => (kids.get(id) ?? []).flatMap((k) => [{ id: k, title: byId.get(k)!.title, depth }, ...tree(k, depth + 1)])
+    // The card a feature is folded into: the highest folded one above it, if any.
+    const topOf = (id: string) => {
+      let top: string | null = null
+      for (let p = parent.get(id); p; p = parent.get(p)) if (byId.get(p)?.folded) top = p
+      return top
+    }
+    const lists = [...kids.keys()].map((id) => ({ id, parts: tree(id) }))
+    const top = new Map<string, string>()
+    for (const n of nodes) {
+      const t = topOf(n.id)
+      if (t) top.set(n.id, t)
+    }
+    const info = new Map([...kids.keys()].map((id) => [id, { own: kids.get(id)!.length, all: tree(id).length, folded: !!byId.get(id)?.folded }]))
+    return { lists, top, info }
+  }, [edges, byId, nodes])
+
+  // Where everything is drawn, and how big what links end at is: cards, the names beside competitors (those shown), and
+  // folded parts' names beside the card they're folded into.
+  const { positions, halves } = useMemo(() => {
     const map = new Map<string, [number, number]>()
+    const halves = new Map<string, [number, number]>()
     for (const n of nodes) map.set(n.id, dragging[n.id] ?? [n.x, n.y])
-    const c = openId ? map.get(openId) : undefined
-    if (c) (theirs.get(openId!) ?? []).forEach((f, i) => map.set(f.id, chipSpot(c, i)))
-    return map
-  }, [nodes, dragging, openId, theirs])
-  const chips = new Set(openId ? (theirs.get(openId) ?? []).map((f) => f.id) : [])
+    const place = (at: [number, number], id: string, p: Pose) => {
+      if (p.o <= 0) return
+      map.set(id, [at[0] + p.x, at[1] + p.y])
+      halves.set(id, [p.w / 2, p.h / 2])
+    }
+    for (const [cid, list] of theirs) {
+      const at = map.get(cid)
+      if (!at) continue
+      const s = featureSpots(list, isOpen(cid))
+      for (const [id, p] of s) place(at, id, p)
+    }
+    for (const { id, parts } of family.lists) {
+      const at = map.get(id)
+      const s = partSpots(parts)
+      if (!at) continue
+      for (const p of parts) if (family.top.get(p.id) === id) place(at, p.id, s.get(p.id)!)
+    }
+    return { positions: map, halves }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, dragging, theirs, family, openId, hot, pressing])
 
   // Older cards sit lower; newer ones on top.
   const layers = useMemo(
     () => new Map([...nodes].sort((a, b) => a.createdAt - b.createdAt).map((c, n) => [c.id, n])),
     [nodes],
   )
-
-  const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
 
   const selected = selectedId ? byId.get(selectedId) : undefined
   // A selected customer lights up everything tagged for it (D-044).
@@ -429,13 +517,19 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
   const dropLatest = useRef(linkDrop)
   dropLatest.current = linkDrop
   const onLinkDrop = useMemo(() => (targetId: string) => dropLatest.current(targetId), [])
+  // Folds a feature's parts into it, or unfolds them (D-164); not while only looking.
+  const fold = (id: string) => {
+    if (!editLocked()) void setFolded(wid, id, !byId.get(id)?.folded)
+  }
+  const foldLatest = useRef(fold)
+  foldLatest.current = fold
+  const onFold = useMemo(() => (id: string) => foldLatest.current(id), [])
 
   // Links to a competitor's stacked features point at the competitor, so they show without fanning it out (D-058).
   // Several links between the same pair of cards (both ways, or through a competitor's features) are drawn side by
   // side: `slot` is a line's place in its pair, direct links first, and `of` how many the pair has.
   const hiddenLinks = useWsView((s) => s.hiddenLinks)
   // A competitor's hidden `competes` lines also show while its card (or the card they reach) is under the pointer (D-135).
-  const hoverId = useCanvas((s) => s.hoverId)
   const edgeId = useCanvas((s) => s.edgeId)
   const litEdge = useCanvas((s) => s.litEdge)
   const lines = useMemo(() => {
@@ -447,6 +541,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     for (const edge of [...edges].sort((x, y) => Number(viaStack(x)) - Number(viaStack(y)))) {
       const from = end(edge.fromId)
       const to = end(edge.toId)
+      // Inside one fold (D-164): a part and the card it's folded into, or two parts folded into the same one.
+      if ((family.top.get(edge.fromId) ?? edge.fromId) === (family.top.get(edge.toId) ?? edge.toId)) continue
       if (from === to || !positions.has(from) || !positions.has(to)) continue
       // What the link counts as touching for focus: its ends, where it's drawn, and the competitor whose feature it
       // reaches, so selecting a competitor lights links to its features too, fanned out or not.
@@ -465,7 +561,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     }
     for (const line of out) line.of = count.get(line.pair)!
     return out
-  }, [edges, positions, competitorFeatures, selectedId, hiddenLinks, hoverId, edgeId, litEdge])
+  }, [edges, positions, competitorFeatures, family, selectedId, hiddenLinks, hoverId, edgeId, litEdge])
 
   // Focus (D-108): with a card under the pointer, or cards selected, links that don't touch them go faint; with a link
   // selected, every other one does.
@@ -565,7 +661,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
   }, [box, nodes, labels, controls])
 
   const linkSource = linkFrom ? positions.get(linkFrom) : undefined
-  const halfOf = (id: string) => (chips.has(id) ? CHIP_HALF : CARD_HALF)
+  const halfOf = (id: string) => halves.get(id) ?? CARD_HALF
   const selectedLinkAt = (line: (typeof lines)[number]) => {
     const l = lineOf(line)
     return linkChipAt(linePoints(l.from, l.to, l.fromHalf, l.toHalf, l.bends), l.chipShift)
@@ -714,11 +810,22 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
 
       {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={CARD_HALF} toHalf={[0, 0]} active />}
 
-      {openId &&
-        positions.get(openId) &&
-        (theirs.get(openId) ?? []).map((f, i) => (
-          <FeatureChip key={f.id} feature={f} at={chipSpot(positions.get(openId)!, i)} from={positions.get(openId)!} onLinkDrop={onLinkDrop} />
-        ))}
+      {[...theirs].map(([cid, list]) => {
+        const at = positions.get(cid)
+        return at ? (
+          <group key={cid} position={[at[0], at[1], LIST_Z + (isOpen(cid) ? 0.002 : 0)]}>
+            <FeatureList features={list} open={isOpen(cid)} matches={matches} onHover={listHover(cid)} onLinkDrop={onLinkDrop} />
+          </group>
+        ) : null
+      })}
+      {family.lists.map(({ id, parts }) => {
+        const at = positions.get(id)
+        return at && !family.top.has(id) ? (
+          <group key={id} position={[at[0], at[1], LIST_Z]}>
+            <PartList parts={parts} shown={!!byId.get(id)?.folded} onUnfold={() => onFold(id)} onLinkDrop={onLinkDrop} />
+          </group>
+        ) : null
+      })}
 
       {nodes.map((node) => (
         <NodeCard
@@ -727,7 +834,9 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
           item={node}
           layer={layers.get(node.id) ?? 0}
           related={customerId !== null && node.forIds.includes(customerId)}
-          stack={node.type === 'competitor' && openId !== node.id ? (theirs.get(node.id)?.length ?? 0) : 0}
+          parts={family.info.get(node.id)}
+          onFold={onFold}
+          tuck={family.top.has(node.id) ? (positions.get(node.id) ?? null) : null}
           peers={peerSelection.get(node.id)}
           mark={preview?.marks.get(node.id)}
           was={wasLine(preview?.before.get(node.id))}

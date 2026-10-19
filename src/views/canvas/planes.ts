@@ -58,7 +58,7 @@ export function usePlaneItems(all: BoardItem[], ws: WorkspaceCtx, plane: string)
     return all.flatMap((i) => {
       if (!at) return [planes.has(i.id) ? { ...i, meta: meta(i) } : i]
       const p = at.get(i.id)
-      return p ? [{ ...i, x: p.x, y: p.y, meta: meta(i) }] : []
+      return p ? [{ ...i, x: p.x, y: p.y, folded: p.folded, meta: meta(i) }] : []
     })
   }, [all, ws.placements, ws.edges, ws.competitorFeatures, plane])
 }

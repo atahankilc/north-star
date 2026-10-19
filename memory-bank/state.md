@@ -50,6 +50,9 @@ something is finished, add its entry to state-history.md and leave at most one l
   paragraphs, quarter turns (D-156); section names in the frame's edge, top or left (D-157); sticky notes (D-158);
   comment threads on anything selectable or a spot, viewers too (D-159). Fixes after trying them (D-160). Not tried by the user yet; the assistant
   doesn't write paragraphs' width, turns, small lines or sticky notes.
+- Competitor features as names beside the card (full list on hover/select), availability + source + "matches ours",
+  parts folding into the parent as names, all gliding 280 ms (D-164). 2026-10-20, committed, not pushed;
+  rules deployed. Assistant doesn't write availability/source yet.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

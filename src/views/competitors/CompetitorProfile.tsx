@@ -3,14 +3,15 @@ import { AnimatePresence } from 'motion/react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { WithId } from '../../data/hooks'
-import type { Competitor, CompetitorFeature } from '../../data/model'
-import { createNode, deleteNode, updateNode } from '../../data/nodes'
+import { AVAILABILITIES, type Availability, type Competitor, type CompetitorFeature } from '../../data/model'
+import { createNode, deleteNode, setMatch, updateNode } from '../../data/nodes'
 import { useHistory } from '../../data/history'
 import { useCanvas } from '../../state/canvasStore'
 import { isReducedMotion } from '../../state/motion'
 import { Appear } from '../../ui/Appear'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { AutosaveField } from '../../ui/AutosaveField'
+import { Select } from '../../ui/Select'
 import { Attachments } from '../workspace/Attachments'
 import { useWs } from '../workspace/context'
 import { TAG_HINT } from '../canvas/tags'
@@ -241,9 +242,13 @@ function FeatureRow({
   onToggle: () => void
   listId: string
 }) {
-  const { wid, edges } = useWs()
+  const { wid, edges, features, comparisons } = useWs()
   const set = (fields: Partial<CompetitorFeature>) => void updateNode(wid, 'competitorFeature', feature.id, fields)
   const links = edges.filter((e) => e.fromId === feature.id || e.toId === feature.id).length
+  // The one of ours it matches (D-164): the matrix cell that names it as their feature.
+  const matchId = comparisons.find((c) => c.competitorId === feature.competitorId && c.competitorFeatureId === feature.id)?.featureId ?? ''
+  const match = features.find((f) => f.id === matchId)
+  const href = safeUrl(feature.url)
 
   return (
     <li id={`cf-${feature.id}`} className={styles.row} data-open={open}>
@@ -258,7 +263,11 @@ function FeatureRow({
           value={feature.name}
           onSave={(name) => set({ name: name.trim() })}
         />
-        {links > 0 && <span className={styles.linkCount}>{links} ↔</span>}
+        <span className={styles.rowMarks}>
+          {match && <span className={styles.match} title={`Matches our ${match.title || 'feature'}`}>▌ {match.title || 'Untitled'}</span>}
+          {feature.availability && <span className={styles.availability} data-v={feature.availability}>{feature.availability}</span>}
+          {links > 0 && <span className={styles.linkCount}>{links} ↔</span>}
+        </span>
         <AutosaveField
           className={styles.rowCategory}
           label="Category"
@@ -280,6 +289,45 @@ function FeatureRow({
               multiline
               rows={2}
             />
+            <div className={styles.featureFacts}>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>matches our feature</span>
+                <Select
+                  ariaLabel="Matches our feature"
+                  value={matchId}
+                  options={[{ value: '', label: 'none' }, ...features.map((f) => ({ value: f.id, label: f.title || 'Untitled' }))]}
+                  onChange={(id) => void setMatch(wid, feature.competitorId, feature.id, id || null, comparisons)}
+                />
+                <span className={styles.hint}>Fills that feature's matrix cell for this competitor.</span>
+              </div>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>availability</span>
+                <Select<Availability | ''>
+                  ariaLabel="Availability"
+                  value={feature.availability ?? ''}
+                  options={[{ value: '', label: 'not said' }, ...AVAILABILITIES.map((a) => ({ value: a, label: a }))]}
+                  onChange={(a) => set({ availability: a || undefined })}
+                />
+              </div>
+            </div>
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>source</span>
+              <div className={styles.urlRow}>
+                <AutosaveField
+                  className={styles.input}
+                  label="Source"
+                  placeholder="Where you saw it, https://"
+                  inputMode="url"
+                  value={feature.url ?? ''}
+                  onSave={(u) => set({ url: u.trim() || undefined })}
+                />
+                {href && (
+                  <a className={styles.visit} href={href} target="_blank" rel="noopener noreferrer">
+                    open ↗
+                  </a>
+                )}
+              </div>
+            </div>
             <LinkList nodeId={feature.id} nodeType="competitorFeature" hint="Link it to your ideas or features." />
             <div className={styles.rowFoot}>
               <AsciiButton

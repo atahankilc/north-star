@@ -85,10 +85,10 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
   customers/{id}        title, body, color, tags[], x, y                          (D-042, D-044)
   problems/{id}         title, body, color, tags[], x, y                          (D-041)
   ideas/{id}            title, body, color, tags[], status, x, y
-  features/{id}         title, body, color, tags[], x, y, priority, status, effort   (same card fields as ideas, D-037)
+  features/{id}         title, body, color, tags[], x, y, priority, status, effort, folded? (its parts folded into it on All, D-164)   (same card fields as ideas, D-037)
   competitors/{id}      name, url, description, pricing, audience, regions[] (D-145), notes, color, x, y
   labels/{id}           text, color, size, kind?, x, y                            (text on the board, D-050; size heading|subheading|minor|note, bold/italic/caps true or absent; kind 'title': the project title block, D-118, + w once resized, D-132; kind 'section' + w, h: a frame, D-130, side 'left' when its name runs up the left edge, D-157; size note = a paragraph ≤ 4000 + w, scale small|medium, missing = large (D-160, D-161), D-156; rotate 90|-90 and kicker ≤ 60 on any text or section, D-156; kind 'sticky' + uid, author, w, scale small|large (missing = medium): a sticky note ≤ 4000, D-158, D-162)
-  competitorFeatures/{id}  competitorId, name, description, category
+  competitorFeatures/{id}  competitorId, name, description, category, availability? (free|paid|enterprise|beta), url? (D-164)
   comparisons/{id}      featureId, competitorId, coverage?, notes, competitorFeatureId, criteria? {criterionId: met|part|no},
                         notRelevant?: true, confidence? documented|inferred|guess (D-136)
                         (id = featureId_competitorId; a feature's own `criteria: {id, text}[]`, ≤ 8, D-133)
@@ -97,7 +97,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         (comment threads, D-159: any member writes them as themselves, viewers too; not undone, copied or exported)
     messages/{id}       uid, name, text (≤ 2000), createdAt, editedAt?
   planes/{id}           name, order (D-139); All has no doc
-  placements/{id}       planeId, itemId, itemType, x, y (id = planeId_itemId; a card's place on a plane other than All)
+  placements/{id}       planeId, itemId, itemType, x, y, folded? (D-164) (id = planeId_itemId; a card's place on a plane other than All)
   packages/{id}         title, body?, tags?, x, y, memberIds (≤ 60), homePlaneId, impact?, effort? (D-141)
   evidence/{id}         nodeId, nodeType (customer|problem|idea), kind, text, stance (supports|contradicts), source?, url?,
                         date? (YYYY-MM-DD) (D-137); customers, problems and ideas carry validation? (hypothesis|testing|validated|invalidated)

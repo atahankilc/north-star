@@ -90,6 +90,12 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     [focusMode, pws.labels, nodes],
   )
   const features = useMemo(() => (chain ? focusFeatures(chain, competitorFeatures) : competitorFeatures), [chain, competitorFeatures])
+  // Which of our features each competitor's feature matches (D-164): the matrix cells that name it as their feature.
+  const matches = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const c of ws.comparisons) if (c.competitorFeatureId && !map.has(c.competitorFeatureId)) map.set(c.competitorFeatureId, c.featureId)
+    return map
+  }, [ws.comparisons])
   // Packages at home on this plane (D-141): a frame round their members, as they sit here.
   const frames = useMemo<Frame[]>(() => {
     if (plane === ALL) return []
@@ -384,6 +390,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         edges={edges}
         labels={labels}
         competitorFeatures={features}
+        matches={matches}
         focus={focus}
         cameraKey={focusMode ? `${wid}/focus/${onId ?? ''}` : plane !== ALL ? `${wid}/plane/${plane}` : undefined}
         centreId={centre?.id}

@@ -133,6 +133,27 @@ export async function endMove(wid: string, type: BoardType, id: string, from: [n
   return tracked(`move ${LABELS[type]}`, [ref], () => updateDoc(ref, { x: to[0], y: to[1] }), { before })
 }
 
+// A feature's parts folded into it, or out again, on the open plane (D-164): one undo step.
+export function setFolded(wid: string, id: string, folded: boolean) {
+  const ref = positionRef(wid, 'feature', id)
+  return tracked(folded ? 'fold parts' : 'unfold parts', [ref], () => updateDoc(ref, { folded: folded ? true : deleteField() }))
+}
+
+// Which of our features a competitor's feature matches (D-164): the matrix cell `feature × its competitor` names it as
+// their feature. A cell that named it for another of our features lets go of it. One undo step.
+export function setMatch(wid: string, competitorId: string, competitorFeatureId: string, featureId: string | null, cells: Comparison[]) {
+  const cellRef = (fid: string) => doc(col(wid, 'comparisons'), `${fid}_${competitorId}`)
+  const old = cells.filter((c) => c.competitorId === competitorId && c.competitorFeatureId === competitorFeatureId && c.featureId !== featureId)
+  const refs = [...old.map((c) => cellRef(c.featureId)), ...(featureId ? [cellRef(featureId)] : [])]
+  return tracked('match feature', refs, async () => {
+    const batch = writeBatch(db())
+    const now = Date.now()
+    for (const c of old) batch.set(cellRef(c.featureId), { featureId: c.featureId, competitorId, competitorFeatureId: deleteField(), updatedAt: now }, { merge: true })
+    if (featureId) batch.set(cellRef(featureId), { featureId, competitorId, competitorFeatureId, updatedAt: now }, { merge: true })
+    await batch.commit()
+  })
+}
+
 const BATCH_LIMIT = 450
 
 async function deleteAll(refs: DocumentReference[]): Promise<void> {

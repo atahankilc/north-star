@@ -228,6 +228,52 @@
   font-size: var(--text-xs);
 }
 
+/* What matches ours and how it's offered, beside its name (D-164). */
+.rowMarks {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.match {
+  max-width: 120px;
+  overflow: hidden;
+  color: var(--accent-cyan);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.availability {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--line);
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+}
+
+.availability[data-v='free'] {
+  color: var(--accent-green);
+}
+
+.availability[data-v='paid'] {
+  color: var(--accent-yellow);
+}
+
+.availability[data-v='enterprise'] {
+  color: var(--accent-blue);
+}
+
+.availability[data-v='beta'] {
+  color: var(--accent-magenta);
+}
+
+.featureFacts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
 .rowDetail {
   display: flex;
   flex-direction: column;

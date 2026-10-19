@@ -110,6 +110,8 @@ export type Placement = {
   itemType: BoardType
   x: number
   y: number
+  // Its parts folded into it on this plane (D-164); only `true` is stored.
+  folded?: boolean
 }
 
 // A piece of the chain made one card (D-139, D-141): a problem, the idea that solves it, its features. On its home plane
@@ -217,6 +219,9 @@ export type Feature = BoardNode & {
   effort?: (typeof FEATURE_EFFORTS)[number]
   impact?: (typeof FEATURE_IMPACTS)[number]
   criteria?: Criterion[]
+  // Its parts (features linked to it with `part of`) folded into it on All, shown as names beside it (D-164); only
+  // `true` is stored. On another plane it's the placement's.
+  folded?: boolean
 }
 
 // Competitors are named, not titled; on the board since D-040 (no position yet = placed on first view).
@@ -238,12 +243,20 @@ export type Competitor = {
   updatedAt: number
 }
 
-// Listed on its competitor's page, grouped by category (D-038).
+// How a competitor offers one of its features (D-164).
+export const AVAILABILITIES = ['free', 'paid', 'enterprise', 'beta'] as const
+export type Availability = (typeof AVAILABILITIES)[number]
+
+// Listed on its competitor's page, grouped by category (D-038); named beside its card on the board (D-164). Which of
+// our features it matches is the matrix cell's `competitorFeatureId`, not a field here.
 export type CompetitorFeature = {
   competitorId: string
   name: string
   description?: string
   category?: string
+  availability?: Availability
+  // Where it was seen.
+  url?: string
   createdAt: number
   updatedAt: number
 }
@@ -413,6 +426,10 @@ export type Thread = {
   name: string
   count: number
   lastAt: number
+  // Who wrote the last message (D-166), so a thread is only new to the others.
+  lastUid?: string
+  // Everyone mentioned in it (D-166), so it shows under their mentions.
+  mentions?: string[]
   resolved?: boolean
   resolvedBy?: string
   createdAt: number
@@ -423,6 +440,12 @@ export type ThreadMessage = {
   uid: string
   name: string
   text: string
+  // Who it mentions (D-166), as `@Full Name` in the text.
+  mentions?: string[]
   createdAt: number
   editedAt?: number
 }
+export const MENTIONS_MAX = 20
+
+// What you've read of the workspace's threads (D-166), yours only: each thread's `lastAt` when you last saw it.
+export type ThreadReads = { seen: Record<string, number>; updatedAt: number }

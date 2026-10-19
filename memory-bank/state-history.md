@@ -568,3 +568,16 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   `Threads.tsx` (pins + panel), footer list, right-click `comment`. Rules for labels' new fields and `threads/messages`.
 - Verified headless on fresh emulators (port 5181): screenshots of each; rules tests 326/326 against the running
   emulators; `npm run build`. Old firestore/database emulator processes from 2026-10-18 (no parent) were stopped.
+
+
+## Done (2026-10-20, D-164: competitor features as names, parts fold, motion)
+- Mocks on a local page first (scratchpad, port 5188): squares / spines / strip / names beside the competitor card;
+  for parts a row / nested dots / tree / names. The user picked names for both.
+- Built: `SideList.tsx` (rows, captions and tray that glide; `featureSpots`, `partSpots`), Board.tsx (open on hover or
+  select, closed while dragged; parts tree from `part of`, fold tops, rows as link ends), NodeCard.tsx (`[−] N parts`
+  button, folding into a row, no plates), `setFolded` / `setMatch` in data/nodes.ts, right-click `fold parts`, panel
+  fields (availability, source, matches our feature). `FeatureChip.tsx` deleted. Rules + tests for `folded`,
+  `availability`, `url`; bundle carries them. Fixed: leaving a card through its `›` handle kept its hover.
+- Verified headless on emulators (port 5190, example workspace + seeded `part of` links): screenshots of closed, hover,
+  open, closing, selected re-click, drag, a 2-level fold mid-frame and done, unfold by a row, the panel. `tsc`; rules
+  tests 335/335.

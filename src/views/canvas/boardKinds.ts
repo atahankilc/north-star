@@ -79,6 +79,8 @@ export type BoardItem = {
   proof?: { supports: number; contradicts: number; clash: boolean }
   // The card's facts line: who it's for, plus type-specific facts.
   meta: string
+  // Features only: its parts folded into it on the open plane (D-164).
+  folded?: boolean
 }
 
 // Each item → the customers it's tagged for.

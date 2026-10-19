@@ -44,8 +44,13 @@ type Props = {
   layer: number
   // Tagged with the selected customer (D-044).
   related: boolean
-  // A competitor's features, waiting behind it as a stack (D-058); 0 when fanned out or not a competitor.
-  stack?: number
+  // A feature with parts (features linked to it with `part of`, D-164): how many are its own, how many in all, and
+  // whether they're folded into it. Its facts line ends in `[−] 3 parts` / `[+] 5 parts`, which folds or unfolds them.
+  parts?: { own: number; all: number; folded: boolean }
+  onFold?: (id: string) => void
+  // Folded into another card's list (D-164): where its name row is. The card shrinks into it and is gone; taken away,
+  // it grows back out of it to its own place.
+  tuck?: [number, number] | null
   // Collaborators who have this card selected, in their colours (D-065, D-067).
   peers?: { name: string; color: string }[]
   // The assistant's preview (D-096): what a change does to it, an edit's old value in a few words, and whether its
@@ -144,10 +149,13 @@ const WAS_H = 0.24
 const CARRIED = 0.8
 // How far the pointer goes, in screen pixels, before a press on a card becomes a drag.
 const DRAG_PX = 5
+// Folding into a row and out of it (D-164): the same ease and time as the lists beside cards.
+const FOLD_MS = 280
+const foldEase = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2)
 
 // Memoised: hovering, dragging or selecting one card re-renders the board, and only the cards whose props changed
 // should follow.
-export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related, stack = 0, peers = [], mark, was, lit = false, centre = false, onLinkDrop }: Props) {
+export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related, parts, onFold, tuck = null, peers = [], mark, was, lit = false, centre = false, onLinkDrop }: Props) {
   const type = node.type
   const W = CARD_W
   const H = CARD_H
@@ -208,6 +216,12 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
   // The compact title cut short at a whole word, for the title it was cut from.
   const [short, setShort] = useState<{ of: string; text: string }>()
   const [wasStrikes, setWasStrikes] = useState<Strike[]>([])
+  // How far it's folded into its row (0: a card, 1: gone into the row), gliding between the two, and the row it went
+  // into, kept while it grows back out.
+  const fold = useRef({ k: tuck ? 1 : 0, from: tuck ? 1 : 0, to: tuck ? 1 : 0, t0: 0 })
+  const tuckedAt = useRef<[number, number] | null>(tuck)
+  if (tuck) tuckedAt.current = tuck
+  const tucked = !!tuck
 
   // The card stays flat and doesn't lift (D-061). Only a drag changes its size (D-150): it goes small round the point
   // the pointer holds, so it stays under the pointer, and follows the pointer freely while its corner marks show where
@@ -250,16 +264,34 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
       o.position.set(camera.position.x + (px - camera.position.x) * k, camera.position.y + (py - camera.position.y) * k, pz)
       o.scale.setScalar(ps * k)
     }
-    flat(g, at[0], at[1], z, s)
+    // Folding into a row and out again: eased at both ends, so the move is seen all the way (D-164).
+    const f = fold.current
+    const want = tucked ? 1 : 0
+    if (want !== f.to) {
+      f.from = f.k
+      f.to = want
+      f.t0 = performance.now()
+    }
+    if (f.k !== f.to) {
+      const p = isReducedMotion() ? 1 : Math.min(1, (performance.now() - f.t0) / FOLD_MS)
+      f.k = p >= 1 ? f.to : f.from + (f.to - f.from) * foldEase(p)
+      invalidate()
+    }
+    const row = tuckedAt.current ?? at
+    flat(g, at[0] + (row[0] - at[0]) * f.k, at[1] + (row[1] - at[1]) * f.k, z, s * (1 - 0.9 * f.k))
+    g.visible = f.k < 0.999
     // The corner marks: where it lands while dragged, otherwise with the card.
     const c = corners.current
     if (c) {
+      c.visible = f.k < 0.001
       if (carried) flat(c, x, y, 0.061, 1)
       else flat(c, at[0], at[1], z + 0.003, 1)
     }
   })
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    // Folded into a row, the row takes the pointer.
+    if (tucked) return
     // A right click opens the board's menu on it (D-117); a right drag pans.
     if (rightPress(e, { kind: 'card', id: node.id })) return
     if (e.button !== 0) return
@@ -368,7 +400,10 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
   const cells = proof ? proofWidth(proof) : 0
   // The facts line sits on the tag chips, or at the bottom without any. Mono text is 0.6 em a character.
   const factsY = node.tags.length ? bottom + 0.17 : bottom
-  const factsFit = Math.floor(inner / (SMALL * 0.6))
+  // Room for `▾ 3 parts` at its end, when it has parts.
+  const partsText = parts ? `[${parts.folded ? '+' : '−'}] ${parts.folded ? parts.all : parts.own} part${(parts.folded ? parts.all : parts.own) === 1 ? '' : 's'}` : ''
+  const partsW = partsText.length * SMALL * 0.6
+  const factsFit = Math.floor((inner - (parts ? partsW + 0.12 : 0)) / (SMALL * 0.6))
 
   return (
     <>
@@ -394,6 +429,7 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
         onClick={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
         onPointerOver={(e) => {
+          if (tucked) return
           e.stopPropagation()
           setHovered(true)
           setHover(node.id)
@@ -412,15 +448,6 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
         }}
       >
         <group ref={content}>
-          {/* Up to three plates peeking out behind: this competitor has features to fan out. */}
-          {Array.from({ length: Math.min(3, stack) }, (_, i) => (
-            <group key={i} position={[(i + 1) * 0.07, -(i + 1) * 0.07, -0.006 - i * 0.002]}>
-              <mesh>
-                <planeGeometry args={[W, H]} />
-                <meshBasicMaterial color={colors.cardBehind} toneMapped={false} />
-              </mesh>
-            </group>
-          ))}
           {/* Collaborators' selections: outermost first, each band a little further back. */}
           {peers.map((p, i) => {
             const out = 0.05 + (peers.length - i) * (RING + RING_GAP)
@@ -555,6 +582,27 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
               {truncate(node.meta, factsFit)}
             </Text>
           )}
+          {parts && full && (
+            <group position={[right, factsY, 0.002]}>
+              <mesh
+                position={[-partsW / 2, SMALL / 2, 0]}
+                onPointerDown={(e) => {
+                  if (e.button !== 0 || tucked) return
+                  e.stopPropagation()
+                  onFold?.(node.id)
+                }}
+                onPointerUp={(e) => !tucked && e.stopPropagation()}
+                onPointerOver={() => !tucked && (document.body.style.cursor = 'pointer')}
+                onPointerOut={() => (document.body.style.cursor = hovered ? 'grab' : '')}
+              >
+                <planeGeometry args={[partsW + 0.1, SMALL + 0.1]} />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
+              </mesh>
+              <Text raycast={() => null} material={textMaterial} font={fontUrls.mono} fontSize={SMALL} color={colors.link.part} anchorX="right" anchorY="bottom">
+                {partsText}
+              </Text>
+            </group>
+          )}
           {full && node.tags.length > 0 && <TagChips tags={node.tags} left={left} right={right} y={bottom} material={textMaterial} />}
           {/* The diff sign in the top-right corner: outlined, filled while lit. */}
           {mark && markColor && (
@@ -603,7 +651,7 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
             </group>
           )}
         </group>
-        {peers.length > 0 && (
+        {peers.length > 0 && !tucked && (
           // Who has it open, above its top-left corner (DOM, so the names stay crisp at any zoom).
           <Html position={[-W / 2 - (0.05 + peers.length * (RING + RING_GAP)) / 2, H / 2 + (0.05 + peers.length * (RING + RING_GAP)) / 2, 0]} zIndexRange={[1, 1]} pointerEvents="none">
             <div className={styles.peers}>
@@ -616,7 +664,7 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
           </Html>
         )}
         {/* Not while the card is dragged, nor far out (D-152). */}
-        {(hovered || isLinkSource) && !carried && !far && !editLocked() && (
+        {(hovered || isLinkSource) && !carried && !far && !tucked && !editLocked() && (
           <group position={[W / 2, 0, 0.004]}>
             <mesh
               position={[HANDLE_HIT[0] / 2 - 0.06, 0, 0]}
@@ -633,8 +681,14 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
               onPointerOut={(e) => {
                 overHandle.current = false
                 setHandleHot(false)
-                // Back to the card's cursor if it's still on the card, otherwise none.
-                document.body.style.cursor = e.intersections.some((h) => isWithin(h.object, group.current)) ? 'grab' : ''
+                // Back to the card's cursor if it's still on the card. Off it, the card is left too: its own out came
+                // while the pointer was on the handle, which stops the event, so nothing else would say so.
+                const onCard = e.intersections.some((h) => isWithin(h.object, group.current))
+                document.body.style.cursor = onCard ? 'grab' : ''
+                if (onCard) return
+                setHovered(false)
+                if (useCanvas.getState().hoverId === node.id) setHover(null)
+                if (mark) unlight()
               }}
             >
               <planeGeometry args={HANDLE_HIT} />

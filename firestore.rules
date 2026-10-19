@@ -107,7 +107,9 @@ service cloud.firestore {
         && optIn(d, 'effort', ['S', 'M', 'L'])
         && optIn(d, 'impact', ['low', 'medium', 'high'])
         // What it must do (D-133): a short list; the cells score against it.
-        && (!('criteria' in d) || (d.criteria is list && d.criteria.size() <= 8));
+        && (!('criteria' in d) || (d.criteria is list && d.criteria.size() <= 8))
+        // Its parts folded into it on All (D-164).
+        && optBool(d, 'folded');
     }
 
     function validCompetitor(d) {
@@ -179,14 +181,19 @@ service cloud.firestore {
         && isText(d.itemId, 128)
         && id == d.planeId + '_' + d.itemId
         && d.itemType in ['customer', 'problem', 'idea', 'feature', 'competitor', 'package']
-        && d.x is number && d.y is number;
+        && d.x is number && d.y is number
+        // Its parts folded into it on this plane (D-164).
+        && optBool(d, 'folded');
     }
 
     function validCompetitorFeature(d) {
       return isText(d.competitorId, 128)
         && isText(d.name, 200)
         && optText(d, 'description', 20000)
-        && optText(d, 'category', 100);
+        && optText(d, 'category', 100)
+        // How it's offered, and where it was seen (D-164).
+        && optIn(d, 'availability', ['free', 'paid', 'enterprise', 'beta'])
+        && optText(d, 'url', 2000);
     }
 
     // One matrix cell per (feature, competitor): the id is fixed by its two ends.
@@ -446,7 +453,7 @@ service cloud.firestore {
       // (count, time) and being resolved or reopened; owners and editors delete any, a starter one nobody answered.
       match /threads/{tid} {
         function validThread(d) {
-          return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
+          return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
             && d.on in ['card', 'label', 'link', 'spot']
             && optText(d, 'targetId', 128) && (d.on == 'spot' || 'targetId' in d)
             && optText(d, 'planeId', 128)
@@ -454,22 +461,28 @@ service cloud.firestore {
             && isText(d.uid, 128) && isText(d.name, 200)
             && d.count is int && d.count >= 0 && d.count <= 100000
             && d.lastAt is number
+            && optText(d, 'lastUid', 128)
+            && (!('mentions' in d) || (d.mentions is list && d.mentions.size() <= 50))
             && optBool(d, 'resolved') && optText(d, 'resolvedBy', 128)
             && d.createdAt is number && d.updatedAt is number;
         }
         allow read: if isMember(wid);
         allow create: if isMember(wid) && validThread(request.resource.data)
           && request.resource.data.uid == request.auth.uid
-          && request.resource.data.count == 1;
+          && request.resource.data.count == 1
+          && (!('lastUid' in request.resource.data) || request.resource.data.lastUid == request.auth.uid);
         allow update: if isMember(wid) && validThread(request.resource.data)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'lastAt', 'resolved', 'resolvedBy', 'updatedAt'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'lastAt', 'lastUid', 'mentions', 'resolved', 'resolvedBy', 'updatedAt'])
           && (!('resolvedBy' in request.resource.data) || request.resource.data.resolvedBy == request.auth.uid
-            || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['resolvedBy']));
-        allow delete: if canEdit(wid) || (isMember(wid) && resource.data.uid == request.auth.uid && resource.data.count <= 1);
+            || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['resolvedBy']))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastUid']) || request.resource.data.lastUid == request.auth.uid);
+        // Owners, or whoever started it while nobody has answered (D-166: editors no longer delete others' words).
+        allow delete: if isOwner(wid) || (isMember(wid) && resource.data.uid == request.auth.uid && resource.data.count <= 1);
 
         match /messages/{mid} {
           function validMessage(d) {
-            return d.keys().hasOnly(['uid', 'name', 'text', 'createdAt', 'editedAt'])
+            return d.keys().hasOnly(['uid', 'name', 'text', 'mentions', 'createdAt', 'editedAt'])
+              && (!('mentions' in d) || (d.mentions is list && d.mentions.size() <= 20))
               && isText(d.uid, 128) && isText(d.name, 200)
               && isText(d.text, 2000) && d.text.size() > 0
               && d.createdAt is number
@@ -481,9 +494,22 @@ service cloud.firestore {
             && existsAfter(/databases/$(database)/documents/workspaces/$(wid)/threads/$(tid));
           allow update: if isMember(wid) && resource.data.uid == request.auth.uid
             && validMessage(request.resource.data)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'editedAt']);
-          allow delete: if isMember(wid) && (resource.data.uid == request.auth.uid || canEdit(wid));
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'mentions', 'editedAt']);
+          // Only its writer takes a message back (D-166); an owner's goes only with its whole thread, in the same batch.
+          allow delete: if isMember(wid) && (resource.data.uid == request.auth.uid
+            || (isOwner(wid) && !existsAfter(/databases/$(database)/documents/workspaces/$(wid)/threads/$(tid))));
         }
+      }
+
+      // What each member has read of the threads (D-166): theirs alone to read and write; owners clear them with the
+      // workspace.
+      match /threadReads/{uid} {
+        allow read: if isMember(wid) && request.auth.uid == uid;
+        allow create, update: if isMember(wid) && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['seen', 'updatedAt'])
+          && request.resource.data.seen is map
+          && request.resource.data.updatedAt is number;
+        allow delete: if signedIn() && (request.auth.uid == uid || isOwner(wid));
       }
 
       // Workspace content: members read it, owners and editors change it (D-098); known collections only, with a sane shape.

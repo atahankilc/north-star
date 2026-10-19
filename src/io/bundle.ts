@@ -4,7 +4,7 @@
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, EVIDENCE_KINDS, KICKER_MAX, LABEL_SIZES, LABEL_TEXT_MAX, LABEL_TURNS, LONG_TEXT_MAX, MAX_BENDS, MAX_CRITERIA, REPORT_LIMITS, STANCES, VALIDATIONS, type Bend, type SavedReport } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, AVAILABILITIES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, EVIDENCE_KINDS, KICKER_MAX, LABEL_SIZES, LABEL_TEXT_MAX, LABEL_TURNS, LONG_TEXT_MAX, MAX_BENDS, MAX_CRITERIA, REPORT_LIMITS, STANCES, VALIDATIONS, type Bend, type SavedReport } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -165,7 +165,7 @@ export function cleanPlane(d: Doc, now: number) {
 export function cleanPlacement(d: Doc) {
   const x = num(d.x)
   const y = num(d.y)
-  return x === undefined || y === undefined ? null : { x, y }
+  return x === undefined || y === undefined ? null : { x, y, ...(d.folded === true && { folded: true }) }
 }
 
 // One piece of evidence (D-137), without its card: the importer adds where it now points.
@@ -189,6 +189,7 @@ export function cleanFeature(d: Doc, now: number) {
       effort: oneOf(d.effort, FEATURE_EFFORTS),
       impact: oneOf(d.impact, FEATURE_IMPACTS),
       criteria: criteria(d.criteria),
+      folded: d.folded === true ? true : undefined,
     }),
   }
 }
@@ -269,7 +270,11 @@ export function cleanLabel(d: Doc, now: number) {
 }
 
 export function cleanCompetitorFeature(d: Doc, now: number) {
-  return { name: str(d.name, 200) ?? '', ...compact({ description: str(d.description, 20000), category: str(d.category, 100) }), ...times(d, now) }
+  return {
+    name: str(d.name, 200) ?? '',
+    ...compact({ description: str(d.description, 20000), category: str(d.category, 100), availability: oneOf(d.availability, AVAILABILITIES), url: str(d.url, 2000) }),
+    ...times(d, now),
+  }
 }
 
 export function cleanComparison(d: Doc, now: number) {
