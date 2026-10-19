@@ -398,6 +398,19 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         links
         focus={focusMode ? { summary: centre ? centre.title || 'Untitled' : 'none', items: focusItems } : undefined}
         goTo={focusMode ? undefined : places.map((l) => ({ key: l.id, label: isTitle(l) ? ws.workspace.name : l.text.trim(), onSelect: () => jump(l) }))}
+        // Comment threads (D-159): the pins' switch and every thread, open ones first; viewers too. Last in the bar.
+        comments={{
+          summary: openThreads.length ? String(openThreads.length) : 'none',
+          active: !pinsOn,
+          items: [
+            { key: 'pins', label: 'show pins', hint: 'c', checked: pinsOn, onSelect: toggleThreadPins },
+            ...(openThreads.length ? [{ key: 'open', heading: 'open' }] : []),
+            ...(threadList.length ? [] : [{ key: 'none', heading: 'none yet · right-click anything → comment' }]),
+            ...openThreads.map((t) => ({ key: t.id, label: `${titleOf(t).slice(0, 36)} · ${t.count}`, glyph: '…', hint: ago(t.lastAt), onSelect: () => goToThread(t) })),
+            ...(resolvedThreads.length ? [{ key: 'resolved', heading: 'resolved' }] : []),
+            ...resolvedThreads.map((t) => ({ key: t.id, label: `${titleOf(t).slice(0, 36)} · ${t.count}`, glyph: '✓', hint: ago(t.lastAt), onSelect: () => goToThread(t) })),
+          ],
+        }}
       />
 
       {/* One create button for everything (D-053); viewers make nothing (D-098). */}
@@ -442,21 +455,6 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
               <rect x="5.5" y="5.5" width="5" height="5" fill="currentColor" />
             </svg>
           </button>
-          {/* Comment threads (D-159): the pins' switch and every thread, open ones first; viewers too. */}
-          <Menu
-            up
-            label="comments"
-            summary={openThreads.length ? String(openThreads.length) : undefined}
-            ariaLabel="Comment threads"
-            items={[
-              { key: 'pins', label: 'show pins', hint: 'c', checked: pinsOn, onSelect: toggleThreadPins },
-              ...(openThreads.length ? [{ key: 'open', heading: 'open' }] : []),
-              ...openThreads.map((t) => ({ key: t.id, label: `${titleOf(t).slice(0, 36)} · ${t.count}`, glyph: t.name.trim()[0]?.toUpperCase() ?? '?', hint: ago(t.lastAt), onSelect: () => goToThread(t) })),
-              ...(resolvedThreads.length ? [{ key: 'resolved', heading: 'resolved' }] : []),
-              ...resolvedThreads.map((t) => ({ key: t.id, label: `${titleOf(t).slice(0, 36)} · ${t.count}`, glyph: '✓', hint: ago(t.lastAt), onSelect: () => goToThread(t) })),
-            ]}
-            empty="No threads yet: right-click anything on the board → comment"
-          />
           {/* Snap to the grid while dragging (D-112); lit while on. Viewers move nothing, so they don't get it. */}
           {!viewer && (
             <button

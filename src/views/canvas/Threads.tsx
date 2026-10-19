@@ -1,8 +1,8 @@
 // Comment threads on the board (D-159). A thread is pinned to something you can select on the board (a card, text, a
 // section, a sticky note, a link) or to a spot; its pin sits at the thing's top-right corner (a link's chip), in the
-// colour of whoever started it, with their initial and how many messages it has. Clicking a pin opens the thread
+// app's plain colour with a speech bubble's three dots and how many messages it has (D-165). Clicking a pin opens the thread
 // beside it: the messages, a reply field (Enter sends, shift+Enter a new line), resolve or reopen. Resolved threads
-// leave the board and stay in the footer's list. Anyone in the workspace comments, viewers too.
+// leave the board and stay in the filter bar's `comments` list (D-165). Anyone in the workspace comments, viewers too.
 import { Html } from '@react-three/drei'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { create } from 'zustand'
@@ -40,7 +40,6 @@ function useColorOf() {
   return (uid: string) => tone(uid === myUid() && mine ? mine : (peers.find((p) => p.uid === uid)?.color ?? presenceColor(uid)))
 }
 
-const initial = (name: string) => (name.trim()[0] ?? '?').toUpperCase()
 
 export type PinnedThread = { thread: WithId<Thread>; at: [number, number]; gone: boolean }
 
@@ -61,7 +60,6 @@ export function ThreadLayer({ wid, pins, openAt, title, thread, canEdit }: Layer
   const show = useThreadView((s) => s.show)
   const openId = useThreadView((s) => s.openId)
   const draft = useThreadView((s) => s.draft)
-  const colorOf = useColorOf()
   return (
     <>
       {show &&
@@ -72,13 +70,17 @@ export function ThreadLayer({ wid, pins, openAt, title, thread, canEdit }: Layer
               data-open={t.id === openId || undefined}
               data-gone={gone || undefined}
               data-viewer-ok
-              style={{ ['--tone' as string]: colorOf(t.uid) }}
-              title={`${t.name}: ${t.count} message${t.count === 1 ? '' : 's'}${gone ? ' · on something removed' : ''}`}
-              aria-label={`Thread by ${t.name}, ${t.count} messages`}
+              title={`${t.count} message${t.count === 1 ? '' : 's'}, started by ${t.name}${gone ? ' · on something removed' : ''}`}
+              aria-label={`Thread, ${t.count} messages`}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => (t.id === openId ? closeThread() : openThread(t.id))}
             >
-              {initial(t.name)}
+              {/* The same mark on every thread (D-165): a speech bubble's three dots; who wrote what is inside. */}
+              <span className={styles.dots} aria-hidden>
+                <i />
+                <i />
+                <i />
+              </span>
               {t.count > 1 && <small>{t.count}</small>}
             </button>
           </Html>

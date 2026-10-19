@@ -1,4 +1,4 @@
-// `[ SHOW all ▾ ] [ FOR any ▾ ] [ TAG any ▾ ] [ REGION any ▾ ] [ GO TO ▾ ]` under the HUD (docs/specs/board.md §3, D-053, D-056).
+// `[ SHOW all ▾ ] [ FOR any ▾ ] [ TAG any ▾ ] [ REGION any ▾ ] [ GO TO ▾ ] [ COMMENTS 2 ▾ ]` under the HUD (docs/specs/board.md §3, D-053, D-056).
 import { useMemo, type ReactNode } from 'react'
 import { BOARD_TYPES } from '../../data/model'
 import { QUIET_LINKS, useWsView } from '../../state/workspaceView'
@@ -20,9 +20,11 @@ type Props = {
   focus?: { summary: string; items: MenuEntry[] }
   // The board's plane switcher (D-139), first in the bar.
   plane?: ReactNode
+  // The board's comment threads (D-159): the pins' switch and every thread, last in the bar.
+  comments?: { summary: string; active: boolean; items: MenuEntry[] }
 }
 
-export function FilterBar({ goTo, links, focus, plane }: Props) {
+export function FilterBar({ goTo, links, focus, plane, comments }: Props) {
   const { customers } = useWs()
   const { types, forIds, tags, hiddenLinks, toggleType, toggleFor, clearFor, toggleTag, clearTags, toggleLinks, showAllLinks } = useWsView()
   const allTags = useAllTags(useBoardItems())
@@ -137,6 +139,7 @@ export function FilterBar({ goTo, links, focus, plane }: Props) {
           empty="Write a heading on the board (+ → Text) to jump to it from here"
         />
       )}
+      {comments && <Menu label="comments" summary={comments.summary} active={comments.active} items={comments.items} ariaLabel="Comment threads" />}
     </div>
   )
 }

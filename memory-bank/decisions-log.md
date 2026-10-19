@@ -2397,3 +2397,16 @@ vertical strip on the right side of the components... since their height is not 
   tried for a moment and replaced at once (the height isn't adjustable, so a corner suggested the wrong thing).
 - *Verified* headless: three things selected (H3, paragraph, note), a paragraph alone with its strip, a note edited with
   its corners growing; `tsc`.
+
+### D-165 · 2026-10-20 · Accepted (changes D-159's pins and list)
+**Comments: the list moves into the filter bar; every pin is the same comment mark.** The user: "First put the bottom
+left dropdown to top right filter location. Second. Why we show the profile picture of the one who started the thread?
+Cant we just put a logo there?"
+- `COMMENTS │ N ▾` is the last item of the board's filter bar (after GO TO), framed like the filters, lit while the pins
+  are hidden; inside, `[x] show pins (c)`, open threads newest first, resolved ones (`…` / `✓`), or `none yet ·
+  right-click anything → comment`. The bottom toolbar no longer has it.
+- A pin is a speech bubble (24 × 22, rounded with its bottom-left corner pointed at the spot) in `--fg-strong` with three
+  small dots in `--bg`, the same for every thread; a framed count once it has answers; grey ring on hover, cyan while
+  open; hollow when what it was on is gone. Who started it shows only in its tooltip and inside the thread.
+- *Verified* headless (on the parallel session's running emulators): two pins, the thread opened, the comments list open
+  under the filter bar; `tsc`.
