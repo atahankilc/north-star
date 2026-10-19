@@ -11,7 +11,7 @@ import { useThemeAccent } from '../../state/theme'
 import { accents } from '../../styles/tokens'
 import { removeLabel } from '../workspace/useEditKeys'
 import { isSection, SECTION_SIZES } from './sections'
-import { STICKY_COLOR, isSticky } from './stickyNote'
+import { STICKY_COLOR, isSticky, stickySize } from './stickyNote'
 import { SIZE_HINTS, SIZE_NAMES, isParagraph, paraBox } from './textStyle'
 import { keepTopLeft } from './BoardLabel'
 import styles from './FloatBar.module.css'
@@ -42,10 +42,12 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
   const tone = useThemeAccent()
   const size = label.size ?? 'heading'
   const section = isSection(label)
-  // A sticky note (D-158): only its colour (yellow when none is set), edit and remove.
+  // A sticky note (D-158): its text size (D-162), its colour (yellow when none is set), edit and remove.
   const sticky = isSticky(label)
   // A paragraph stays a paragraph and a heading a heading (D-160): a heading picks H1–H3, a paragraph no size.
   const paragraph = isParagraph(label)
+  // Text sizes S/M/L (D-160, D-162): a paragraph's default is L, a sticky note's M.
+  const textDefault = sticky ? 'medium' : 'large'
   return (
     <Html
       position={[at[0], at[1], 0]}
@@ -62,25 +64,27 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
         onPointerDown={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}
       >
-        {paragraph &&
+        {(paragraph || sticky) &&
           PARAGRAPH_SCALES.map((sc) => (
             <button
               key={sc}
               className={styles.button}
-              aria-pressed={(label.scale ?? 'large') === sc}
+              aria-pressed={(label.scale ?? textDefault) === sc}
               title={`${sc[0].toUpperCase()}${sc.slice(1)} text`}
-              // Large is the default and isn't stored.
-              // Its top-left corner stays put as the text grows or shrinks.
+              // The default (a paragraph's large, a sticky note's medium) isn't stored; the top-left corner stays put
+              // as the text grows or shrinks.
               onClick={() => {
-                if ((label.scale ?? 'large') === sc) return
-                const scale = sc === 'large' ? undefined : sc
-                const [x, y] = keepTopLeft(label, paraBox(label), paraBox({ ...label, scale }))
+                if ((label.scale ?? textDefault) === sc) return
+                const scale = sc === textDefault ? undefined : sc
+                const sizeOf = sticky ? stickySize : paraBox
+                const [x, y] = keepTopLeft(label, sizeOf(label), sizeOf({ ...label, scale }))
                 void updateLabel(wid, label.id, { scale, x, y })
               }}
             >
               {sc[0].toUpperCase()}
             </button>
           ))}
+        {sticky && <span className={styles.rule} />}
         {!sticky && !paragraph && (section ? SECTION_SIZES : HEADING_SIZES).map((s) => (
           <button
             key={s}

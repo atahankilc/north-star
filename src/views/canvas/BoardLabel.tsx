@@ -27,7 +27,7 @@ import { focusField } from './focusField'
 import { clearGuides, placeDragged, unitsPerPixel } from './guides'
 import { snapPoint } from './snap'
 import { TextBlock } from './TextBlock'
-import { MAX_STICKY_W, MIN_STICKY_W, STICKY_BAR, STICKY_COLOR, STICKY_FOOT, STICKY_PAD, STICKY_TEXT, ago, isSticky, stickySetting, stickySize } from './stickyNote'
+import { MAX_STICKY_W, MIN_STICKY_W, STICKY_BAR, STICKY_COLOR, STICKY_HEAD, STICKY_PAD, STICKY_TEXT_TOP, ago, isSticky, stickySetting, stickySize, stickyText } from './stickyNote'
 import type { Setting } from './richText'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
@@ -35,7 +35,6 @@ import { markHover, unlight } from '../workspace/stage'
 import {
   MAX_PARA_W,
   MIN_PARA_W,
-  PARA_LEADING,
   inputStyle,
   isParagraph,
   kickerParts,
@@ -43,7 +42,6 @@ import {
   labelFace,
   labelSize,
   labelTracking,
-  layoutOf,
   paraBox,
   paraSetting,
   paraSize,
@@ -83,7 +81,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const { select, toggleSelect, setDragging, setEditingLabel } = useCanvas.getState()
   const sticky = isSticky(label)
   const paragraph = isParagraph(label)
-  const size = sticky ? STICKY_TEXT : paragraph ? paraSize(label) : labelSize(label)
+  const size = sticky ? stickyText(label) : paragraph ? paraSize(label) : labelSize(label)
   const [hovered, setHovered] = useState(false)
   // Text that would be under a few pixels on screen is left out rather than drawn as a smudge (D-111).
   const readable = useReadable(size)
@@ -91,9 +89,17 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const [measured, setMeasured] = useState<[number, number]>([2, size])
   // A paragraph's width while its edge is dragged, ahead of Firestore.
   const [span, setSpan] = useState<TextSpan | null>(null)
+  // A paragraph's or sticky note's text while it's typed, so its box grows with it (D-162).
+  const [typing, setTyping] = useState<string | null>(null)
 
   const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean; group: boolean } | null>(null)
-  const [x, y] = span ? [span.x, span.y] : (live ?? [label.x, label.y])
+  const typedFlow = typing === null ? null : isParagraph(label) ? PARAGRAPH : isSticky(label) ? STICKY : null
+  // While typing, its top-left corner stays put as it grows (D-162).
+  const [x, y] = span
+    ? [span.x, span.y]
+    : typedFlow
+      ? keepTopLeft(label, typedFlow.sizeOf(label), typedFlow.sizeOf({ ...label, text: typing! }))
+      : (live ?? [label.x, label.y])
   const colors = usePalette()
   const tone = useThemeAccent()
   const deleted = mark === 'deleted'
@@ -107,7 +113,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     const g = group.current
     if (!g) return
     // Also when carried along in a group drag (groupDrag.ts).
-    if (drag.current || live || span) g.position.set(x, y, 0.01)
+    if (drag.current || live || span || typing !== null) g.position.set(x, y, 0.01)
     else {
       g.position.x = MathUtils.damp(g.position.x, x, 12, dt)
       g.position.y = MathUtils.damp(g.position.y, y, 12, dt)
@@ -193,7 +199,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const ruleW = Math.max(tw, kickW) * 1.3
 
   // A paragraph or a sticky note: text that flows at a width.
-  const sized = span ? { ...label, w: span.w } : label
+  const sized = { ...label, ...(span && { w: span.w }), ...(typing !== null && { text: typing }) }
   const flow = paragraph ? PARAGRAPH : sticky ? STICKY : null
   const para = flow ? flow.sizeOf(sized) : null
   const box: Box = para
@@ -282,21 +288,23 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
 
           {sticky && para && (
             <>
+              {/* A shade quieter than a card. */}
               <mesh position={[0, 0, -0.002]}>
                 <planeGeometry args={[para[0], para[1]]} />
-                <meshBasicMaterial color={colors.card} toneMapped={false} />
+                <meshBasicMaterial color={colors.cardBehind} toneMapped={false} />
               </mesh>
               <mesh position={[0, para[1] / 2 - STICKY_BAR / 2, -0.001]}>
                 <planeGeometry args={[para[0], STICKY_BAR]} />
                 <meshBasicMaterial color={accent} toneMapped={false} />
               </mesh>
-              <StickyMark at={[para[0] / 2 - STICKY_PAD * 0.7, para[1] / 2 - STICKY_PAD * 0.8]} color={accent} />
+              <StickyMark at={[para[0] / 2 - STICKY_PAD, para[1] / 2 - STICKY_BAR - STICKY_PAD * 0.8 - STICKY_HEAD / 2]} color={accent} />
               {!editing && (
                 <group position={STICKY.textAt(para)}>
                   <TextBlock text={text || 'Write something…'} setting={stickySetting(sized)} ink={text ? { ...ink, text: colors.fg, strong: colors.fgStrong } : { ...ink, text: colors.fgDim }} />
                 </group>
               )}
-              <Text visible={readable} material={textMaterial} font={fontUrls.mono} fontSize={STICKY_FOOT} letterSpacing={0.08} color={colors.fgDim} anchorX="left" anchorY="bottom" position={[-para[0] / 2 + STICKY_PAD, -para[1] / 2 + STICKY_PAD * 0.8, 0]}>
+              {/* Who wrote it and when, small, along the top. */}
+              <Text material={textMaterial} font={fontUrls.mono} fontSize={STICKY_HEAD} letterSpacing={0.08} color={colors.fgDim} anchorX="left" anchorY="middle" position={[-para[0] / 2 + STICKY_PAD, para[1] / 2 - STICKY_BAR - STICKY_PAD * 0.8 - STICKY_HEAD / 2, 0]}>
                 {`${(label.author ?? 'someone').split(/\s+/)[0].toUpperCase()} · ${ago(label.createdAt)}`}
               </Text>
             </>
@@ -374,7 +382,18 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
       </group>
       {editing &&
         (flow && para ? (
-          <ParagraphInput wid={wid} label={label} flow={flow} at={flow.textAt(para)} onDone={() => setEditingLabel(null)} />
+          <ParagraphInput
+            wid={wid}
+            label={label}
+            flow={flow}
+            at={flow.textAt(para)}
+            onDraft={setTyping}
+            onDone={() => {
+              setEditingLabel(null)
+              // Held a moment, until the saved text is in, so the box doesn't jump back and forth.
+              setTimeout(() => setTyping(null), 300)
+            }}
+          />
         ) : (
           <LabelInput wid={wid} label={label} size={size} onDone={() => setEditingLabel(null)} />
         ))}
@@ -403,7 +422,7 @@ const PARAGRAPH: Flow = {
 const STICKY: Flow = {
   sizeOf: stickySize,
   setting: stickySetting,
-  textAt: ([w, h]) => [-w / 2 + STICKY_PAD, h / 2 - STICKY_PAD * 1.6, 0],
+  textAt: ([w, h]) => [-w / 2 + STICKY_PAD, h / 2 - STICKY_TEXT_TOP, 0],
   min: MIN_STICKY_W,
   max: MAX_STICKY_W,
   mono: true,
@@ -640,7 +659,22 @@ function LabelInput({ wid, label, size, onDone }: { wid: string; label: WithId<L
 
 // A paragraph's field (D-156): its lines as typed, Markdown and all. Enter is a new line; ⌘Enter or clicking away
 // saves, Escape cancels. Its top-left corner stays where it is however long the text gets.
-function ParagraphInput({ wid, label, flow, at, onDone }: { wid: string; label: WithId<Label>; flow: Flow; at: [number, number, number]; onDone: () => void }) {
+function ParagraphInput({
+  wid,
+  label,
+  flow,
+  at,
+  onDraft,
+  onDone,
+}: {
+  wid: string
+  label: WithId<Label>
+  flow: Flow
+  at: [number, number, number]
+  // What's typed so far, for the box round it.
+  onDraft: (text: string) => void
+  onDone: () => void
+}) {
   const [draft, setDraft] = useState(label.text)
   const area = useRef<HTMLTextAreaElement>(null)
   const done = useRef(false)
@@ -685,7 +719,11 @@ function ParagraphInput({ wid, label, flow, at, onDone }: { wid: string; label: 
   // Unturned, at its top-left corner.
   const r = turnRad(label)
   const corner: [number, number] = [at[0] * Math.cos(r) - at[1] * Math.sin(r), at[0] * Math.sin(r) + at[1] * Math.cos(r)]
-  const widthPx = Math.max(setting.width, layoutOf(label.text || 'Text', setting).width) / upp
+  // Exactly the drawn text's size, width and line height (D-162), so what's typed wraps as it will be drawn and the box
+  // round it grows with it. Under 11 px it's set at 11 and scaled down, which stays readable while typing.
+  const fontPx = setting.size / upp
+  const base = Math.max(11, fontPx)
+  const k = fontPx / base
   return (
     <Html position={[corner[0], corner[1], 0]} zIndexRange={[20, 10]}>
       <textarea
@@ -694,16 +732,21 @@ function ParagraphInput({ wid, label, flow, at, onDone }: { wid: string; label: 
         data-mono={flow.mono || undefined}
         style={{
           ...inputStyle(label),
-          fontSize: `${Math.max(11, setting.size / upp)}px`,
-          lineHeight: PARA_LEADING,
-          width: `${Math.max(160, widthPx)}px`,
+          fontSize: `${base}px`,
+          lineHeight: setting.leading,
+          width: `${setting.width / upp / k}px`,
+          transform: k < 1 ? `scale(${k})` : undefined,
+          transformOrigin: 'top left',
         }}
         rows={1}
         value={draft}
         maxLength={LONG_TEXT_MAX}
         placeholder={'Text: **bold**, *italic*, - bullets'}
         aria-label="Paragraph on the board"
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => {
+          setDraft(e.target.value)
+          onDraft(e.target.value)
+        }}
         onBlur={() => finish(true)}
         onPointerDown={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}

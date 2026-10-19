@@ -105,8 +105,9 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   `take_off_plane`, `add_package`, `edit_package`; `/organize` may propose planes.
 - Plane filter (D-143): one remembered plane per workspace, the board's open one; Flow and Table (filter bar), Matrix and
   Priorities (footer) show only its cards; a matrix with none of its competitors shows them all.
-- Sticky notes (D-158): a label `kind: 'sticky'`, dark paper, a colour bar on top (yellow default), mono text with light
-  Markdown, signed `NAME · 2d` (`uid`, `author`); from `+` or right-click; not a place; the brief lists them.
+- Sticky notes (D-158, D-162): a label `kind: 'sticky'`, quieter than a card (darker paper, thin colour bar, yellow default),
+  card width, as tall as its text, signed on a small top line (`uid`, `author`), mono text S/M/L under a card title; grows as
+  you type; from `+` or right-click; not a place; the brief lists them.
 - Sections look (D-157): thin frame, no fill, the name set into the top edge or up the left one (`side`), the line
   breaking round it, a number before it; a colour goes to the line and the name only.
 - Sections: a named frame (label `kind: 'section'`, w/h), drawn with a crosshair (press, drag, release; never placed),
@@ -118,7 +119,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Text look (D-156): headings left-aligned on their centre, optional small line over them (number in magenta), H1 rule
   fading right; `¶` is a paragraph (≤ 4000, light Markdown, wraps at a width dragged on its right edge, canvas texture);
   any text turns 90 / −90; hovered or selected, a dashed box.
-- Headings and paragraphs never turn into each other; paragraphs S/M/L 0.14/0.18/0.24, all under an H3, L the default (`scale`, D-161); headings and section names drawn at any
+- Headings and paragraphs never turn into each other; paragraphs S/M/L 0.13/0.165/0.2, L the default, all under an H3 (`scale`, D-161, D-162); headings and section names drawn at any
   zoom; text editors follow the zoom; section hover/selection = a card's corner marks, the line keeps its colour (D-160).
 - Project title block: one per board from `+`, a `kind: 'title'` label showing the workspace's name + description (edited in
   place or from its right-click menu, same fields as Settings), star + `PROJECT`, rule, corner brackets (D-118).

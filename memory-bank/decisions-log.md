@@ -2354,3 +2354,23 @@ maybe adding a smaller font and then shifting the size labels." L (0.34) was ove
   stored), M is the old S (0.18), S is new (0.14). Stored `scale` is now `small` or `medium`; an old stored `large` reads
   as L. Rules allow all three; import keeps `small` / `medium`.
 - *Verified* headless: H3 beside S/M/L paragraphs, L just under the H3; rules tests 329/329; `tsc`.
+
+### D-162 · 2026-10-20 · Accepted (changes D-158's look, D-161's paragraph sizes)
+**Sticky notes made quieter than cards, with text sizes; paragraphs and notes grow as you type.** The user: "sticky note
+height is not being updated correctly when i continuously write. Also size of the text should also be adjustable. And
+also there is too much padding and space is not being utilized perfectly… They should not take much more focus than the
+cards we have", and "for paragraph, make the L smaller than h3" (0.24 against 0.27 read as the same).
+- *Sticky notes:* a card's width (2.5; 1.25–10 by its edge), exactly as tall as the text (no minimum), padding 0.09, a
+  0.025 colour bar, paper in `cardBehind` (a shade darker than a card), the signature moved to a small top line
+  (`NAME · 2h`, 0.065 mono, checks on the right) so there's no empty foot. Text mono S 0.085 / M 0.105 (default) /
+  L 0.13, all under a card title (0.165), from S M L in its bar (`scale`, the same field as a paragraph's, its own
+  default); the top-left corner stays put.
+- *Growing while typing:* the box (paper, dashed box, paragraph hairline) follows the text as it's typed, its top-left
+  kept; it used the saved text until you clicked away. The edit field is the drawn text's exact size, width and line
+  height (it had an 11 px minimum and the paragraph's line height, so what you typed wrapped differently and spilled
+  out); under 11 px it's set at 11 and scaled down.
+- *Paragraph sizes:* S 0.13 / M 0.165 / L 0.2 (default), so L sits clearly under an H3. Existing paragraphs get a bit
+  smaller (they were 0.24).
+- *Verified* headless: H3 beside S/M/L paragraphs; four notes (S, M with bold and a list, L, empty) selected with S/M/L
+  in the bar; typing four lines into an empty note, the paper grew with each line and the text stayed inside it, zoomed
+  out and in; `tsc`.

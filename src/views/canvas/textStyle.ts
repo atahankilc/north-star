@@ -45,8 +45,8 @@ export const PARA_W = 6.25
 export const MIN_PARA_W = 1.5
 export const MAX_PARA_W = 40
 export const PARA_LEADING = 1.55
-// A paragraph's text size (D-160, D-161): S, M, L (the default, what every paragraph had before), all under an H3 (0.27).
-export const PARA_SIZES = { small: 0.14, medium: 0.18, large: 0.24 } as const
+// A paragraph's text size (D-160, D-161, D-162): S, M, L (the default), clearly under an H3 (0.27).
+export const PARA_SIZES = { small: 0.13, medium: 0.165, large: 0.2 } as const
 export const paraSize = (l: Pick<Label, 'scale'>) => PARA_SIZES[l.scale ?? 'large']
 export const paraWidth = (l: Pick<Label, 'w'>) => MathUtils.clamp(l.w ?? PARA_W, MIN_PARA_W, MAX_PARA_W)
 export const paraSetting = (l: Pick<Label, 'w' | 'size' | 'bold' | 'italic' | 'scale'>): Setting => ({
