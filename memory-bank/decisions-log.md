@@ -2043,7 +2043,7 @@ in; you should be able to say it's from America, Germany or Europe).
 - *Where it shows:* the panel (`regions` row under pricing/audience, the tag picker without `#`, suggestions = the
   workspace's regions, then the list); the card's meta line starts with them (`US · UK +1   vs 2   4 features`).
 - *Filter:* `REGION │ any ▾` after TAG in the filter bar (board, flow, table) and in the matrix footer; only shown once a
-  competitor has a region (or the filter is on). It lists the regions in use under their continent (also offered), Global
+  competitor has a region (or the filter is on); the matrix footer always shows it, with a hint when there are none yet. It lists the regions in use under their continent (also offered), Global
   first, with counts; narrows competitors only, other cards stay; remembered per workspace with the others; `reveal`
   clears it. The matrix falls back to every competitor when none match, so its footer stays reachable.
 - *Assistant:* the brief and `get_items` say `operates in: …`; `add_competitor` / `update_competitor` take `regions`

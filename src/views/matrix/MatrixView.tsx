@@ -233,7 +233,7 @@ export function MatrixView() {
 
       <footer className={styles.legend}>
         <PlaneFilter up />
-        <RegionFilter up />
+        <RegionFilter up always />
         {(['unset', ...COVERAGES] as const).map((k) => (
           <span key={k} style={k !== 'unset' ? { color: TONE[k] } : undefined}>
             {GLYPH[k]} <span className={styles.legendLabel}>{k === 'unset' ? 'not assessed' : k}</span>
