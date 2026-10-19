@@ -6,6 +6,7 @@ import { Menu, type MenuEntry } from '../../ui/Menu'
 import menuStyles from '../../ui/Menu.module.css'
 import { BOARD_KINDS, TYPE_ACCENT, useAllTags, useBoardItems } from '../canvas/boardKinds'
 import { LINK_GROUPS, LINK_TONE } from '../canvas/linkKinds'
+import { PlaneFilter } from '../canvas/PlaneSwitcher'
 import { useWs } from './context'
 import styles from './Bars.module.css'
 
@@ -74,7 +75,8 @@ export function FilterBar({ goTo, links, focus, plane }: Props) {
   return (
     // Hidden in the assistant's bare preview screen (D-087).
     <div className={styles.filters} data-preview-hide>
-      {plane}
+      {/* The board has its own switcher; the focus view is on All; the other views filter by plane (D-143). */}
+      {plane ?? (!focus && <PlaneFilter />)}
       {focus && (
         <Menu
           label="focus"

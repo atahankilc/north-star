@@ -6,6 +6,7 @@ import type { WithId } from '../../data/hooks'
 import { FEATURE_EFFORTS, FEATURE_IMPACTS, type Package } from '../../data/model'
 import { updateNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
+import { useWsView } from '../../state/workspaceView'
 import { Choice } from '../../ui/Choice'
 import { BOARD_KINDS, TYPE_ACCENT, type BoardItem } from '../canvas/boardKinds'
 import { packageConfidence } from '../priorities/reading'
@@ -56,7 +57,13 @@ export function PackageFields({ pkg, items }: { pkg: WithId<Package>; items: Boa
             {!members.length && <li className={styles.why}>Nothing left in it.</li>}
           </ul>
           {home && (
-            <button className={styles.small} onClick={() => navigate(`${workspacePath(ws.wid)}?plane=${home.id}`)}>
+            <button
+              className={styles.small}
+              onClick={() => {
+                useWsView.getState().setPlane(home.id)
+                navigate(`${workspacePath(ws.wid)}?plane=${home.id}`)
+              }}
+            >
               open its plane: {home.name}
             </button>
           )}

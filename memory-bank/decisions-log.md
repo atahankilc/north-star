@@ -1986,3 +1986,21 @@ cards, planes split only where they're looked at. The user went with the recomme
   the 4 competitors, a package of 3 cards with its own plane (impact high, M) and a link from it (7 placements, link
   written); then on the Competitors plane, an `arrange_area` and an `add_card` landed there (label `Direct` with the
   plane's id, the new idea placed there and on All's right column, All's positions untouched). `npm run build`.
+
+### D-143 · 2026-10-19 · Accepted (step 4 of D-139)
+**The other views follow the plane.** Flow, Table, Matrix and Priorities show only the cards on one plane.
+- *One choice per workspace:* `plane` joins the remembered filters (`useWsView`). The board opens on it when the URL has
+  no `?plane=`, and whatever the board opens (switcher, `[ ]`, a card's planes row, `open its plane`, following someone)
+  becomes it. So moving from the board on "MVP" to Table shows MVP's cards, and choosing All in Table opens the board on
+  All. A plane since deleted reads as All (`useViewPlane`).
+- *On a plane* = placed on it, or a package at home there (`planeIds`).
+- *Flow and Table:* `PLANE │ MVP ▾` first in their filter bar (the board keeps its switcher; the focus view, always on
+  All, has none), applied in `useVisibleItems` with the other filters.
+- *Matrix:* the plane's features as rows, its competitors as columns (all competitors if it has none); the filter in the
+  footer.
+- *Priorities:* the plane's features and packages, ranked among themselves (the P1–P3 thirds of the plane); the filter in
+  the footer.
+- *Not done:* the focus view on a plane (spec §6: when the whole chain is there); Reports have no cards to filter.
+- *Verified* in headless Chrome on the emulators (a plane "MVP" with 5 cards): Table and Flow showed only them, the
+  Matrix MVP's 2 features × ShiftGrid, Priorities its features; All from Table's filter brought every row back and the
+  board then opened on All. `npm run build`.

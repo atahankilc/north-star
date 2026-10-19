@@ -6,9 +6,11 @@ import { useHistory } from '../../data/history'
 import { BOARD_TYPES } from '../../data/model'
 import { ALL, createPlane, deletePlane, place, renamePlane } from '../../data/planes'
 import { useCanvas } from '../../state/canvasStore'
+import { useWsView } from '../../state/workspaceView'
 import { InlineEdit } from '../../ui/InlineEdit'
 import { Menu, type MenuEntry } from '../../ui/Menu'
-import type { WorkspaceCtx } from '../workspace/context'
+import { useWs, type WorkspaceCtx } from '../workspace/context'
+import { useViewPlane } from './planes'
 import { UNDO_HINT } from '../workspace/useEditKeys'
 import { BOARD_KINDS, TYPE_ACCENT, type BoardItem } from './boardKinds'
 import { findFreeSpot } from './cardLayout'
@@ -23,7 +25,8 @@ export function PlaneSwitcher({ ws, plane, cards, locked }: { ws: WorkspaceCtx; 
   for (const p of ws.placements) counts.set(p.planeId, (counts.get(p.planeId) ?? 0) + 1)
   const total = ws.customers.length + ws.problems.length + ws.ideas.length + ws.features.length + ws.competitors.length
 
-  const go = (id: string) =>
+  const go = (id: string) => {
+    useWsView.getState().setPlane(id)
     setParams(
       (p) => {
         if (id === ALL) p.delete('plane')
@@ -32,6 +35,7 @@ export function PlaneSwitcher({ ws, plane, cards, locked }: { ws: WorkspaceCtx; 
       },
       { replace: false },
     )
+  }
 
   const add = async () => {
     const order = Math.max(0, ...planes.map((p) => p.order)) + 1
@@ -115,6 +119,32 @@ export function ExistingCards({ wid, plane, all, here }: { wid: string; plane: s
       ariaLabel="Bring an existing card onto this plane"
       search="find a card"
       empty="Every card is on this plane already"
+    />
+  )
+}
+
+// The plane filter of Flow, Table, Matrix and Priorities (D-143): only the cards on one plane. The same choice as the
+// board's open plane, so moving between views keeps it.
+export function PlaneFilter({ up }: { up?: boolean }) {
+  const ws = useWs()
+  const plane = useViewPlane(ws)
+  if (!ws.planes.length) return null
+  const planes = [...ws.planes].sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
+  const counts = new Map<string, number>()
+  for (const p of ws.placements) counts.set(p.planeId, (counts.get(p.planeId) ?? 0) + 1)
+  const name = planes.find((p) => p.id === plane)?.name ?? 'All'
+  const set = (id: string) => useWsView.getState().setPlane(id)
+  return (
+    <Menu
+      up={up}
+      label="plane"
+      summary={name}
+      active={plane !== ALL}
+      ariaLabel="Only the cards on one plane"
+      items={[
+        { key: ALL, label: 'All', checked: plane === ALL, onSelect: () => set(ALL) },
+        ...planes.map((p) => ({ key: p.id, label: p.name, hint: `${counts.get(p.id) ?? 0}`, checked: plane === p.id, onSelect: () => set(p.id) })),
+      ]}
     />
   )
 }

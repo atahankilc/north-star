@@ -5,6 +5,7 @@ import { mismatch, tally } from '../../data/evidence'
 import { BOARD_TYPES, FOR, type BoardType, type Edge, type EdgeKind, type Evidence, type Validation } from '../../data/model'
 import { useWsView } from '../../state/workspaceView'
 import type { Palette } from '../../styles/tokens'
+import { planeIds, useViewPlane } from './planes'
 import { useWs } from '../workspace/context'
 
 type Kind = {
@@ -172,20 +173,25 @@ export function useBoardItems(): BoardItem[] {
   }, [customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments, evidence, packages])
 }
 
-// What the filters let through; under a `for:` filter only the chosen customers' cards stay (D-119).
-export function useVisibleItems(items: BoardItem[]): BoardItem[] {
+// What the filters let through; under a `for:` filter only the chosen customers' cards stay (D-119); with a plane
+// filter, only the cards on that plane (D-143; `byPlane` false for the focus view, which is always on All).
+export function useVisibleItems(items: BoardItem[], byPlane = true): BoardItem[] {
   const types = useWsView((s) => s.types)
   const forIds = useWsView((s) => s.forIds)
   const tagFilter = useWsView((s) => s.tags)
+  const ws = useWs()
+  const plane = useViewPlane(ws)
+  const on = useMemo(() => (byPlane ? planeIds(ws, plane) : null), [byPlane, ws, plane])
   return useMemo(
     () =>
       items.filter(
         (i) =>
+          (!on || on.has(i.id)) &&
           types.includes(i.type) &&
           (forIds.length === 0 || (i.type === 'customer' ? forIds.includes(i.id) : i.forIds.some((f) => forIds.includes(f)))) &&
           (tagFilter.length === 0 || i.tags.some((t) => tagFilter.includes(t))),
       ),
-    [items, types, forIds, tagFilter],
+    [items, types, forIds, tagFilter, on],
   )
 }
 

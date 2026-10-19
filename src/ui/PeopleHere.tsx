@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ALL } from '../data/planes'
 import { usePlaneView } from '../state/plane'
+import { useWsView } from '../state/workspaceView'
 import { workspacePath } from '../app/paths'
 import { usePresence, type Peer, type PresenceView } from '../data/presence'
 import { useThemeAccent } from '../state/theme'
@@ -35,7 +36,9 @@ export function PeopleHere({ wid, view }: Props) {
   useEffect(() => {
     if (!leader || leader.view !== 'board' || view !== 'board') return
     const theirs = leader.plane ?? ALL
-    if (theirs !== plane) navigate(theirs === ALL ? path('board') : `${path('board')}?plane=${theirs}`)
+    if (theirs === plane) return
+    useWsView.getState().setPlane(theirs)
+    navigate(theirs === ALL ? path('board') : `${path('board')}?plane=${theirs}`)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leader?.plane, leader?.view])
   // Switching view yourself stops following.

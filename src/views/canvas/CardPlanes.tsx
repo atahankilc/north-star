@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { workspacePath } from '../../app/paths'
 import { ALL, place } from '../../data/planes'
 import { usePlaneView } from '../../state/plane'
+import { useWsView } from '../../state/workspaceView'
 import { Menu } from '../../ui/Menu'
 import { useWs } from '../workspace/context'
 import { unplaceCards } from '../workspace/useEditKeys'
@@ -20,8 +21,10 @@ export function CardPlanes({ item }: { item: Pick<BoardItem, 'id' | 'type'> }) {
   if (!ws.planes.length) return null
   const planes = [...ws.planes].sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
   const on = new Set(ws.placements.filter((p) => p.itemId === item.id).map((p) => p.planeId))
-  const see = (planeId: string) =>
+  const see = (planeId: string) => {
+    useWsView.getState().setPlane(planeId)
     navigate(`${workspacePath(ws.wid)}?${planeId === ALL ? '' : `plane=${planeId}&`}item=${item.id}`)
+  }
   // Clear of the cards already there, near the middle of them.
   const placeOn = (planeId: string) => {
     const there = ws.placements.filter((p) => p.planeId === planeId)

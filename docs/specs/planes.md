@@ -1,6 +1,6 @@
 # Spec: planes and packages (Phase 6)
 
-Status: **steps 1–3 built (D-140–D-142)**; a plane filter in other views next. The user's idea (2026-10-19); the three open choices went with the
+Status: **built (D-140–D-143)**. Left: the focus view on a plane (§6). The user's idea (2026-10-19); the three open choices went with the
 recommendations (D-139). Replaces slice 7 (bets) and "later, board readability"
 in [usefulness.md](usefulness.md).
 

@@ -93,6 +93,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - The assistant on planes (D-142): a proposal lands on the plane open when it was made (moves → placements, new cards
   there + All's right column, text there); brief lists planes and packages; rows `add_plane`, `place_on_plane`,
   `take_off_plane`, `add_package`, `edit_package`; `/organize` may propose planes.
+- Plane filter (D-143): one remembered plane per workspace, the board's open one; Flow and Table (filter bar), Matrix and
+  Priorities (footer) show only its cards; a matrix with none of its competitors shows them all.
 - Sections: a named frame (label `kind: 'section'`, w/h), drawn with a crosshair (press, drag, release; never placed),
   holding by position whatever is inside it (cards, text, smaller sections); drag the band or edge carries it all, corner
   resizes, delete leaves contents, never copied; name set like text (H1–H3, B/I/AA), not scaled; kept in the focus view

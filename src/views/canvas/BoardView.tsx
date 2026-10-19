@@ -55,7 +55,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
   const pws = usePlaneWs(ws, plane)
   const every = useBoardItems()
   const all = usePlaneItems(every, ws, plane)
-  const visible = useVisibleItems(all)
+  const visible = useVisibleItems(all, !focusMode)
   const select = useCanvas((s) => s.select)
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
@@ -152,6 +152,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
     const n = all.find((c) => c.id === id)
     // A card that isn't on this plane opens on All.
     if (!n && plane !== ALL && every.some((c) => c.id === id)) {
+      useWsView.getState().setPlane(ALL)
       setParams((p) => {
         p.delete('plane')
         return p
@@ -246,6 +247,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
       if ((e.key === '[' || e.key === ']') && !mod && !e.altKey && !focusMode && ws.planes.length) {
         const order = [ALL, ...[...ws.planes].sort((a, b) => a.order - b.order || a.createdAt - b.createdAt).map((p) => p.id)]
         const next = order[(order.indexOf(plane) + (e.key === ']' ? 1 : order.length - 1)) % order.length]
+        useWsView.getState().setPlane(next)
         setParams((p) => {
           if (next === ALL) p.delete('plane')
           else p.set('plane', next)

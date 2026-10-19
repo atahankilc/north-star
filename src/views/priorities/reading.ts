@@ -77,12 +77,13 @@ export type Ranked = { feature: WithId<Feature>; pkg?: boolean; confidence: Conf
 
 // Every feature and package with its confidence and score, best first; the rated ones split into thirds as P1, P2, P3
 // (a suggestion beside the priority you set, never written).
-export function ranked(ws: Chain & Partial<Pick<WorkspaceCtx, 'packages'>>): Ranked[] {
-  const all = ws.features.map((feature) => {
+// `only`: just these (a plane's, D-143), ranked among themselves.
+export function ranked(ws: Chain & Partial<Pick<WorkspaceCtx, 'packages'>>, only: Set<string> | null = null): Ranked[] {
+  const all = ws.features.filter((f) => !only || only.has(f.id)).map((feature) => {
     const confidence = confidenceOf(feature, ws)
     return { feature, confidence, score: scoreOf(feature, confidence) } as Ranked
   })
-  for (const k of ws.packages ?? []) {
+  for (const k of (ws.packages ?? []).filter((x) => !only || only.has(x.id))) {
     const confidence = packageConfidence(k, ws)
     const feature = { ...k, memberIds: undefined } as unknown as WithId<Feature>
     all.push({ feature, pkg: true, confidence, score: scoreOf(feature, confidence) })

@@ -550,3 +550,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 ## Done (D-142 the assistant on planes, 2026-10-19)
 - Proposals land on their plane; brief lists planes and packages; five plane/package rows; `/organize` may propose planes.
   Verified in headless Chrome on the emulators with a fake OpenAI; `npm run build`. Not tried with a real model.
+
+## Done (D-143 plane filter in the other views, 2026-10-19)
+- One remembered plane per workspace; Flow, Table, Matrix, Priorities filter by it. Verified in headless Chrome on the
+  emulators; `npm run build`.

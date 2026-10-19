@@ -20,6 +20,8 @@ import { CellPeers, MarkOn, markHoverOf, markRing, PeersOn } from '../workspace/
 import { useMarkOf, useStage } from '../workspace/stage'
 import styles from './MatrixView.module.css'
 import { CriteriaEditor, CriterionScores, SCORE_TONE } from './Criteria'
+import { PlaneFilter } from '../canvas/PlaneSwitcher'
+import { planeIds, useViewPlane } from '../canvas/planes'
 import { coverageOf, matrixCols, matrixRows, openCriteria, relevant, scoresOf, verdict } from './reading'
 
 // Not assessed → none → partial → full → better → not assessed.
@@ -37,7 +39,16 @@ const next = (c: Coverage | undefined): Coverage | undefined =>
 type Pos = { row: number; col: number }
 
 export function MatrixView() {
-  const { wid, features, competitors, comparisons } = useWs()
+  const ws = useWs()
+  const { wid, comparisons } = ws
+  // With a plane filter (D-143): its features as rows, and its competitors as columns (all of them if it has none).
+  const plane = useViewPlane(ws)
+  const on = useMemo(() => planeIds(ws, plane), [ws, plane])
+  const features = useMemo(() => (on ? ws.features.filter((f) => on.has(f.id)) : ws.features), [ws.features, on])
+  const competitors = useMemo(() => {
+    const here = on ? ws.competitors.filter((c) => on.has(c.id)) : []
+    return here.length ? here : ws.competitors
+  }, [ws.competitors, on])
   const marks = useStage((s) => s.preview?.marks) ?? NO_MARKS
   const [selected, setSelected] = useState<Pos | null>(null)
 
@@ -214,6 +225,7 @@ export function MatrixView() {
       </Appear>
 
       <footer className={styles.legend}>
+        <PlaneFilter up />
         {(['unset', ...COVERAGES] as const).map((k) => (
           <span key={k} style={k !== 'unset' ? { color: TONE[k] } : undefined}>
             {GLYPH[k]} <span className={styles.legendLabel}>{k === 'unset' ? 'not assessed' : k}</span>

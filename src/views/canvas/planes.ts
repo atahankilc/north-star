@@ -6,18 +6,22 @@ import type { WithId } from '../../data/hooks'
 import { FOR, type Placement } from '../../data/model'
 import { ALL } from '../../data/planes'
 import { usePlaneView } from '../../state/plane'
+import { useWsView } from '../../state/workspaceView'
 import type { WorkspaceCtx } from '../workspace/context'
 import { CARD_W, findFreeSpot } from './cardLayout'
 import type { BoardItem } from './boardKinds'
 
-// `?plane=<id>`, if that plane exists; else All. The focus view (D-127) is always on All.
+// `?plane=<id>`, else the plane last open in this workspace (D-143), if it exists; else All. The focus view (D-127) is
+// always on All. Whatever opens is remembered, and the other views filter by it.
 export function useOpenPlane(ws: WorkspaceCtx, focusMode: boolean): string {
   const [params] = useSearchParams()
-  const asked = params.get('plane')
+  const stored = useWsView((s) => s.plane)
+  const asked = params.get('plane') ?? stored
   const plane = !focusMode && asked && ws.planes.some((p) => p.id === asked) ? asked : ALL
   useEffect(() => {
     usePlaneView.setState({ plane })
-  }, [plane])
+    if (!focusMode) useWsView.getState().setPlane(plane)
+  }, [plane, focusMode])
   // Leaving the board: moves and new things anywhere else go to All.
   useEffect(() => () => usePlaneView.setState({ plane: ALL }), [])
   return plane
@@ -122,3 +126,15 @@ export const allSpotsOf = (ws: WorkspaceCtx) =>
   [...ws.customers, ...ws.problems, ...ws.ideas, ...ws.features, ...ws.competitors, ...ws.packages].flatMap((d) =>
     d.x !== undefined && d.y !== undefined ? [{ x: d.x, y: d.y }] : [],
   )
+
+// The cards a plane shows (D-143): those placed on it and the packages at home there; null for All (every card).
+export function planeIds(ws: Pick<WorkspaceCtx, 'placements' | 'packages'>, plane: string): Set<string> | null {
+  if (plane === ALL) return null
+  return new Set([...ws.placements.filter((p) => p.planeId === plane).map((p) => p.itemId), ...ws.packages.filter((k) => k.homePlaneId === plane).map((k) => k.id)])
+}
+
+// The plane the views filter by (D-143): the remembered one if it still exists, else All.
+export function useViewPlane(ws: Pick<WorkspaceCtx, 'planes'>): string {
+  const plane = useWsView((s) => s.plane)
+  return ws.planes.some((p) => p.id === plane) ? plane : ALL
+}

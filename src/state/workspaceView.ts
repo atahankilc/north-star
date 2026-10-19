@@ -15,12 +15,15 @@ type Filters = {
   // Link groups hidden on the board (D-108, linkKinds.ts); empty = every link shows. Customer tags and `relates` start hidden
   // (D-128), and competitors' `competes` lines (D-135).
   hiddenLinks: string[]
+  // Flow, Table, Matrix and Priorities show only the cards on this plane (D-143); `all` = every card. The board sets it
+  // to the plane it has open.
+  plane: string
 }
 
 // Link groups hidden until shown (D-128, D-135).
 export const QUIET_LINKS = ['plain', 'for', 'competes']
 
-const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], hiddenLinks: QUIET_LINKS }
+const DEFAULTS: Filters = { types: [...BOARD_TYPES], forIds: [], tags: [], hiddenLinks: QUIET_LINKS, plane: 'all' }
 // Bumped when a new link group starts hidden, so filters saved before it hide it too.
 const LINKS_VERSION = 4
 // Bumped when a new card type arrives, so filters saved before it show it (D-141).
@@ -36,6 +39,7 @@ type State = Filters & {
   clearTags: () => void
   toggleLinks: (group: string) => void
   showAllLinks: () => void
+  setPlane: (plane: string) => void
   // Undo whatever filter hides this item, so a link can always land on it.
   reveal: (item: { type: BoardType }) => void
 }
@@ -66,6 +70,7 @@ function read(wid: string): Filters {
       forIds: saved.forIds ?? [],
       tags: saved.tags ?? [],
       hiddenLinks: hideNew(hiddenLinks, saved.linksV ?? 1),
+      plane: typeof saved.plane === 'string' ? saved.plane : 'all',
     }
   } catch {
     return DEFAULTS
@@ -75,10 +80,10 @@ function read(wid: string): Filters {
 export const useWsView = create<State>((set, get) => {
   const save = (patch: Partial<Filters>) => {
     set(patch)
-    const { wid, types, forIds, tags, hiddenLinks } = get()
+    const { wid, types, forIds, tags, hiddenLinks, plane } = get()
     if (!wid) return
     try {
-      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, hiddenLinks, linksV: LINKS_VERSION, typesV: TYPES_VERSION }))
+      localStorage.setItem(key(wid), JSON.stringify({ types, forIds, tags, hiddenLinks, plane, linksV: LINKS_VERSION, typesV: TYPES_VERSION }))
     } catch {
       // Private mode or blocked storage: filters just won't be remembered.
     }
@@ -109,6 +114,9 @@ export const useWsView = create<State>((set, get) => {
       save({ hiddenLinks: hidden.includes(group) ? hidden.filter((g) => g !== group) : [...hidden, group] })
     },
     showAllLinks: () => save({ hiddenLinks: [] }),
+    setPlane: (plane) => {
+      if (get().plane !== plane) save({ plane })
+    },
     reveal: (item) => {
       const { types } = get()
       save({

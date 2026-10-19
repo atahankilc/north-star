@@ -12,6 +12,8 @@ import { useBoardItems } from '../canvas/boardKinds'
 import { DetailPanel } from '../canvas/DetailPanel'
 import { useWs } from '../workspace/context'
 import styles from './PrioritiesView.module.css'
+import { PlaneFilter } from '../canvas/PlaneSwitcher'
+import { planeIds, useViewPlane } from '../canvas/planes'
 import { ranked, type Ranked } from './reading'
 import { Sure } from './Sure'
 
@@ -23,7 +25,9 @@ const EFFORT_WORD: Record<string, string> = { S: 'small', M: 'medium', L: 'large
 export function PrioritiesView() {
   const ws = useWs()
   const all = useBoardItems()
-  const list = useMemo(() => ranked(ws), [ws])
+  // With a plane filter (D-143): the features and packages on it.
+  const plane = useViewPlane(ws)
+  const list = useMemo(() => ranked(ws, planeIds(ws, plane)), [ws, plane])
   const rated = list.filter((r) => r.score !== null)
   const unrated = list.filter((r) => r.score === null)
 
@@ -86,6 +90,7 @@ export function PrioritiesView() {
       </div>
 
       <footer className={styles.legend}>
+        <PlaneFilter up />
         <span>
           <Sure level="high" /> <span className={styles.dim}>confidence: high</span>
         </span>
