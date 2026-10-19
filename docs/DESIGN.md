@@ -119,7 +119,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   grip is dragged), light Markdown (bold in `fgStrong`, italic, bullets and numbers with dim markers, `code`, links
   underlined cyan), a hairline down its left side. Any text turns a quarter either way (↺ reads up, ↻ down). Hovered or
   selected, a card's corner marks go round it (D-163), in its colour once selected; a paragraph's or sticky note's width
-  drags by a thin strip down its right side. A paragraph's text is S 0.13 / M 0.165 / L 0.2, the default, clearly under an H3 (D-161, D-162);
+  drags by a thin strip just inside its right edge. A paragraph's text is S 0.13 / M 0.165 / L 0.2, the default, clearly under an H3 (D-161, D-162);
   headings and paragraphs never switch into each other. Headings and section names are drawn at any zoom (D-160)
 - Sticky notes (D-158, D-162): quieter than a card: paper in `cardBehind`, a 0.025 bar of its colour along the top
   (yellow by default), a small top line `ATAHAN · 2h` in dim mono 0.065 with three little checks in the colour on the

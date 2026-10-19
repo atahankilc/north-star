@@ -2384,7 +2384,8 @@ vertical strip on the right side of the components... since their height is not 
   while pressed, just outside once selected, in the text's colour (white, the label's colour, a note's colour); round a
   note's paper edge, a little clear of text. Also shown while a paragraph or note is being edited (its field lost its
   dashed cyan outline), so the box visibly grows with what's typed.
-- *Width grip:* a thin strip (0.03 wide, 60% of the height) 0.1 right of the edge, shown on hover or selection in the
+- *Width grip:* a thin strip (0.014 wide, 60% of the height) just inside the right edge (0.025 in; the user: "put
+  the handle inside the card but to very very right… and make it thinner"), shown on hover or selection in the
   same colours; dragging anywhere on that side changes the width, the top-left corner stays put. An L in the corner was
   tried for a moment and replaced at once (the height isn't adjustable, so a corner suggested the wrong thing).
 - *Verified* headless: three things selected (H3, paragraph, note), a paragraph alone with its strip, a note edited with

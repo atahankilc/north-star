@@ -5,7 +5,7 @@
 // drags it) and reads light Markdown; a hairline runs down its left side. Either can be turned a quarter either way.
 // A sticky note (D-158) is a paragraph in mono on dark paper, a bar of its colour along the top, signed at its foot.
 // Hovered or selected, a card's corner marks go round it (D-150, D-163); a paragraph or sticky note has a thin strip
-// down its right side that drags its width.
+// down the inside of its right edge that drags its width.
 import { Html, Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -498,11 +498,12 @@ export function keepTopLeft(l: Pick<Label, 'x' | 'y' | 'rotate'>, from: [number,
   return [l.x + dir[0] * dw - up[0] * dh, l.y + dir[1] * dw - up[1] * dh]
 }
 
-// The grip down a paragraph's or sticky note's right side (D-163): a thin strip as tall as it, a little clear of its
+// The grip down a paragraph's or sticky note's right side (D-163): a thin strip inside it, right against its right
 // edge, shown while it's hovered or selected; drag it to set how wide the text runs, the top-left corner staying put
 // (the height follows the text).
-const GRIP_GAP = 0.1
-const GRIP_W = 0.03
+// How far in from the right edge the strip sits.
+const GRIP_INSET = 0.025
+const GRIP_W = 0.014
 const GRIP_HIT = 0.24
 function WidthHandle({
   wid,
@@ -541,7 +542,7 @@ function WidthHandle({
   }
 
   return (
-    <group position={[at[0] + GRIP_GAP + GRIP_W / 2, at[1], 0.004]}>
+    <group position={[at[0] - GRIP_INSET - GRIP_W / 2, at[1], 0.004]}>
       {shown && (
         <mesh>
           <planeGeometry args={[GRIP_W, Math.max(0.2, height * 0.6)]} />
