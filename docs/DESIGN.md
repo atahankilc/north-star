@@ -95,8 +95,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
 - Cards: flat, one shape for every type (D-055). A left border and a small uppercase label in the type's colour say what it is
-  (customer green, problem magenta, competitor yellow, idea white, feature cyan); no edge of their own; a rim shows on hover/selection (D-148).
-  Type colours are reserved for type: tags are white `#chips` (D-056). Cards never lift, tilt or scale (D-061).
+  (customer green, problem magenta, competitor yellow, idea white, feature cyan); no edge of their own (D-148). Hover and selection are four L-shaped corner marks (D-150): grey,
+  0.12 outside on hover; type colour, on the corners just inside the card while pressed; 0.06 outside once selected. A press becomes
+  a drag after 5 px; the dragged card shrinks to 0.8 round the point held, and its marks show the full-size corners of
+  where it lands. Type colours are reserved for type: tags are white `#chips` (D-056). Cards never lift or tilt (D-061).
 - Board grid (D-110, D-148): faint `+` marks every 0.625 units (cards are 4 × 2 steps). A dragged card's top-left corner
   snaps to a mark or to one of the four even steps between two marks (0.125, not drawn, D-149); on a mark, all four
   corners sit on marks. Drawn where the camera sees them on the

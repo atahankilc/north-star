@@ -285,7 +285,7 @@ Switching between views inside a workspace keeps your place. (The Matrix frame i
 
 ### D-061 · 2026-10-17 · Accepted
 **Calmer board.** No double-click to create (the `+` menu is the only way; double-click still edits a text label). Cards don't lift
-or scale on hover, selection or drag: the lift moved a dragged card toward the camera, so it looked bigger and dropped away from
+or scale on hover or selection, nor lift in a drag (since D-150 a dragged card goes small under the pointer): the lift moved a dragged card toward the camera, so it looked bigger and dropped away from
 the pointer. A dragged card now sits exactly under the pointer. In a workspace the backdrop is dimmer (8% since D-110; 28% before). Slowing it down was
 tried and reverted: the user felt it slowed the card animations too; speed stays as it was.
 
@@ -2093,7 +2093,8 @@ and the quarter-point dots were too faint to see, so a card never lined up with 
   steps, so all four corners land on marks. Arrow keys nudge one step, shift four.
 - *Guides (D-117):* with snapping on they don't pull (older cards off the grid would pull a card off the marks); the
   lines still show what lines up. With snapping off they pull as before.
-- *Edge:* no hairline round cards or the competitor plates behind them; the hover/selection/link rim stays.
+- *Edge:* no hairline round cards or the competitor plates behind them. The hover/selection/link rim became corner marks
+  (D-150); only a card tagged with the chosen customer keeps a cyan edge.
 - *Verified* headless (example workspace, 1400 × 900 @2x): dragged cards land with corners on multiples of 0.625 and on
   the drawn marks, also at the far right of the screen.
 
@@ -2105,3 +2106,30 @@ no extra `+` marks for them.
   corner snaps to the 0.125 steps, so on a mark its corners are all on marks, as before.
 - Arrow keys nudge one 0.125 step, shift one mark (0.625). Guides still don't pull while snapping is on (D-148).
 - *Verified:* `npm run build`.
+
+### D-150 · 2026-10-19 · Accepted (changes D-148's hover/selection rim, D-061's "no scale in a drag")
+**Corner marks instead of a rim; a dragged card goes small and its corners show where it lands.** The user didn't want the
+grey edge on hover that turned the card's colour when held, and asked for another way to show hover and holding. Shown
+side by side on a scratch preview first (port 5188), four ways: today's rim; corner marks; a wider left stripe; the
+card's fill tinted. The user picked corner marks, then changed the drag twice.
+- *Hover:* four L-shaped corners (`CardCorners.tsx`), grey (`hover` token), a little outside the card (0.12).
+- *Press:* they take the type colour and close in onto the card's corners, wholly inside it, their outside on its
+  edge (first centred on the edge, then wrapped outside; the user wanted them inside), longer arms; a drag's landing
+  corners sit the same way; *selected:* type colour, just
+  outside (0.06). Together this reads as a click. Link target: cyan.
+- *Drag:* first try put the corners outside even while dragging plus a dashed outline where it lands. The user: the
+  card looked bigger, so it was harder to place, and the outline wasn't clear. Second try shrank the card on hover
+  too; the user wanted hover and select as before. Now: only a drag shrinks the card to 0.8 (`CARRIED`), round the
+  point held so it stays under the pointer, following the pointer freely; the corners sit on the full-size corners of
+  where the grid or guides put it. On release it grows into them. Cards carried in a group drag a card started shrink
+  round their centres; a section drag doesn't shrink what it carries.
+- *Click vs drag:* the user found almost every click turned into a small drag. A press becomes a drag only after the
+  pointer goes 5 screen px (`DRAG_PX`); before that nothing moves or shrinks, and no move is written.
+- *A held card grew a little* (user: "kartlar tıklanınca neden büyüyo", also on a long press): a held card is lifted
+  0.06 toward the perspective camera to draw on top, so it looked bigger and slid off the pointer (the same reason as
+  D-061, just smaller). Every card and its corners are now drawn smaller and toward the camera's axis by as much as
+  they're lifted, so they look exactly as at z = 0; only the stacking is left. Measured: before, 1 px wider when held
+  (7 zoom steps in); after, identical.
+- Far out (stars, D-111) the ring stays. Competitor feature chips keep their own edge. Reduced motion jumps.
+- *Verified* headless on the emulators' example workspace: hover, press, drag (single and group), drop, a 3 px wobble
+  click; `tsc`.

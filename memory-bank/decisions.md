@@ -76,7 +76,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 ## Board
 - 2.5D: flat board, perspective camera that pans and zooms, no rotation; zoom 9–150 (D-018, D-050).
 - Flat cards, same rectangle for all; type = left border + label in the type colour; no notes on cards (D-055, D-057).
-- Create only from the `+` menu (no double-click); cards don't lift or scale; dragged card sits under the pointer (D-053, D-061).
+- Create only from the `+` menu (no double-click); cards don't lift, nor scale on hover/selection (D-053, D-061).
 - Opening frames everything; fit-all button and `0`; view kept between tabs (D-060).
 - Competitor features stack behind it and fan out once the click is released (D-058).
 - Links: straight, arrowhead, kind written on a solid chip; hover/selection dims others; click a link → bar (kind, label,
@@ -113,8 +113,11 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   on-screen pixel size (full / compact / far) (D-111).
 - `+` marks every 0.625 (cards 2.5 × 1.25 = 4 × 2 marks); a box's top-left corner snaps to a mark or one of the four even
   steps between two marks (0.125, not drawn; arrows nudge 0.125, shift 0.625) (D-149); on a mark a card's corners all sit on marks; marks drawn without perspective shift; with snapping on, guides only show
-  lines (no pull); cards have no grey edge, only a hover/selection rim (D-148). Group drags keep their layout, alt =
+  lines (no pull); cards have no grey edge (D-148). Group drags keep their layout, alt =
   free; switch beside fit-all + `g`, on by default (D-112).
+- Hover and selection are corner marks, no rim: grey a little out on hover, on the corners just inside the card in the type colour
+  when pressed, just outside once selected. A press turns into a drag after 5 px; a dragged card goes 0.8 round the
+  point held and follows the pointer, its corners on where it lands at full size (D-150).
 - Alignment guides: a dragged card pulls to other cards' edges/centres within 6 px, magenta lines; own switch + `a`, on by
   default. Right-click menu on cards, text, links, empty board (a right drag still pans) (D-117).
 - Filters SHOW / FOR / TAG / REGION / LINKS, remembered per workspace (D-053, D-056, D-108, D-145).
