@@ -554,3 +554,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 ## Done (D-143 plane filter in the other views, 2026-10-19)
 - One remembered plane per workspace; Flow, Table, Matrix, Priorities filter by it. Verified in headless Chrome on the
   emulators; `npm run build`.
+
+## Done (D-144 overview, 2026-10-19)
+- Overview tab first, opened from the workspaces list; deterministic reading; next steps prefill the assistant's mode.
+  Verified in headless Chrome on the emulators; rules test; `npm run build`.

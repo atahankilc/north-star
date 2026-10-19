@@ -49,9 +49,11 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    criteria (its must-haves); a cell then scores each one and shows which are met, and the row counts the criteria no
    competitor meets: the white space (D-133).
    Shows gaps (opportunities) and table stakes.
-5. **Priorities** (D-138). Our features on impact × effort, each with a confidence read from the status of the ideas,
+5. **Overview** (D-144). The workspace read on one screen: next steps, what's on solid ground and what's still a
+   guess, the riskiest bets, the white space, what looks off. Opening a workspace lands here.
+6. **Priorities** (D-138). Our features on impact × effort, each with a confidence read from the status of the ideas,
    problems and customers it rests on, and the order impact × confidence ÷ effort suggests beside the priority we set.
-6. **Detail Panel.** A side panel for any node: edit fields, see all links, attachments,
+7. **Detail Panel.** A side panel for any node: edit fields, see all links, attachments,
    and AI actions.
 6. **Reports.** Research reports, write-ups of assistant chats and uploaded `.md` files (D-091), saved per person and shared with the workspace by
    choice (D-090). One tab beside board, flow, table and matrix.

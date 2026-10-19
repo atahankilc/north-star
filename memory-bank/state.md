@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-19 (D-143 plane filter)_
+_Last updated: 2026-10-19 (D-144 overview)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -29,8 +29,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   Slice 5, status + evidence (D-137), committed, rules deployed 2026-10-19.
   Slice 6, priorities (D-138), committed, rules deployed 2026-10-19. Planes and packages (D-139, docs/specs/planes.md): step 1, planes (D-140), committed, rules deployed 2026-10-19.
   Step 2, packages (D-141), committed, rules deployed 2026-10-19. Step 3, the assistant on planes (D-142), committed
-  (no rules change). Step 4, plane filter in other views (D-143), committed. Planes spec done; next: slice 8
-  (overview page, usefulness.md), ask first.
+  (no rules change). Step 4, plane filter in other views (D-143), committed. Planes spec done. Slice 8,
+  overview (D-144), committed, rules deployed, pushed 2026-10-19. Phase 6 plan done.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

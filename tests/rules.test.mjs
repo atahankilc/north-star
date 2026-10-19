@@ -507,6 +507,7 @@ await deny('write someone else\'s presence', () => rtSet(presence(bob, alice.uid
 await deny('presence without required fields', () => rtSet(presence(bob, bob.uid), { x: 1 }))
 await deny('presence with an unknown field', () => rtSet(presence(bob, bob.uid), me('Bob', { secret: 1 })))
 await allow('presence on the reports tab (D-090)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'reports' })))
+await allow('presence on the overview (D-144)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'overview' })))
 await allow('presence on the priorities tab (D-138)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'priorities' })))
 await allow('presence on a plane (D-139)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'board', plane: 'p1' })))
 await deny('presence with a numeric plane', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'board', plane: 5 })))

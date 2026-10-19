@@ -113,6 +113,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Filters SHOW / FOR / TAG / LINKS, remembered per workspace (D-053, D-056, D-108).
 
 ## Other views
+- Overview tab, first (D-144): the workspace read on one screen (next steps that prefill the assistant's mode, solid
+  ground vs still a guess, riskiest bets, white space, worth a look); the workspaces list opens it.
 - Focus tab right of Board (`/focus?on=<id>`): the board with only the card's chain (customer → problem → idea → feature
   both ways, never turning back) + competitors linked to its problems/ideas/features, in place, magenta ring; sections holding chain cards stay, fitted round them (D-130); picker,
   `[◎ focus]` in panels, right-click; no creating; presence says board (D-127).

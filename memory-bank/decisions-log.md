@@ -2004,3 +2004,25 @@ cards, planes split only where they're looked at. The user went with the recomme
 - *Verified* in headless Chrome on the emulators (a plane "MVP" with 5 cards): Table and Flow showed only them, the
   Matrix MVP's 2 features × ShiftGrid, Priorities its features; All from Table's filter brought every row back and the
   board then opened on All. `npm run build`.
+
+### D-144 · 2026-10-19 · Accepted (slice 8 of Phase 6)
+**An overview tab: the workspace read on one screen.** usefulness.md slice 8: a one-screen "so what".
+- *Where:* `overview`, the first tab (`/workspaces/<id>/overview`, presence view `overview`, RTDB rule). Opening a
+  workspace from the workspaces list lands on it; a new, joined or imported one, and every `/workspaces/<id>` link, still
+  open the board.
+- *What* (`overview/reading.ts`, worked out from the data, no model): the name, what we're building and the counts; then
+  framed blocks:
+  - `next`: up to four steps, each with why and `ask the assistant: /mode` (it opens the chat with `/mode ` typed in, to
+    send yourself; `useChat.ask`, `prefill`) or a view to open. Steps: cards still a guess (`/validate`), interviews
+    (`/interview`), features without criteria (`/criteria`), features without impact (`/prioritize`), the first white space.
+  - `on solid ground` (validated / evidence for, without a mismatch) and `still a guess` (no status or hypothesis with no
+    evidence for, invalidated, or a status the evidence doesn't back; problems first).
+  - `riskiest bets`: high-impact or P1 features and packages whose confidence isn't high, with the guesses they rest on.
+  - `white space`: features' criteria no competitor meets (or how to get there).
+  - `worth a look`: most features P1 or effort L, a competitor competing with 6+ cards, problems with no idea, ideas
+    solving nothing, mostly-partial matrix cells without criteria, statuses the evidence doesn't back.
+- *Not done:* a written summary by the model (the reading is deterministic); the overview per plane.
+- *Verified* in headless Chrome on the emulators (example workspace with a few statuses, evidence, an impact and two
+  scored criteria): opening from the list landed on the overview; the blocks read as above; `ask the assistant: /validate`
+  opened the chat with `/validate` typed in. Rules 285 pass (the 2 usage-log tests fail as before). `npm run build`.
+  RTDB rule deployed 2026-10-19.

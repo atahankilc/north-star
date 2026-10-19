@@ -219,6 +219,9 @@ type ChatState = {
   reportOpen: string | null
   showReport: (id: string | null) => void
   setOpen: (open: boolean) => void
+  // Opens the chat with this typed in the prompt, for you to send (the overview's next steps, D-144); taken once.
+  prefill: string | null
+  ask: (text: string) => void
   // Switching workspace starts a new conversation.
   enter: (wid: string) => void
   send: (text: string, prepare: () => Prepared, shown?: string) => void
@@ -315,6 +318,8 @@ export const useChat = create<ChatState>((set, get) => ({
   reportOpen: null,
   showReport: (reportOpen) => set({ reportOpen }),
   setOpen: (open) => set({ open }),
+  prefill: null,
+  ask: (text) => set({ open: true, prefill: text }),
   enter: (wid) => {
     if (get().wid === wid) return
     get().stop()

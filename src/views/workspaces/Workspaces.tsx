@@ -69,7 +69,8 @@ export function Workspaces({ user }: { user: AuthUser }) {
                 <WorkspaceCard
                   workspace={w}
                   uid={user.id}
-                  onOpen={() => navigate(workspacePath(w.id))}
+                  // An existing workspace opens on its overview (D-144); a new one on the board.
+                  onOpen={() => navigate(workspacePath(w.id, 'overview'))}
                 />
               </Appear>
             ))}

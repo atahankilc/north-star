@@ -389,6 +389,14 @@ function Conversation({ source }: { source: KeySource }) {
   const stick = useRef(true)
 
   useEffect(() => input.current?.focus(), [])
+  // Something asked from elsewhere (D-144): typed in, for you to send.
+  const prefill = useChat((s) => s.prefill)
+  useEffect(() => {
+    if (prefill === null) return
+    setDraft(prefill)
+    useChat.setState({ prefill: null })
+    input.current?.focus()
+  }, [prefill])
 
   // Follow the answer as it streams in, unless you've scrolled up to read.
   useLayoutEffect(() => {

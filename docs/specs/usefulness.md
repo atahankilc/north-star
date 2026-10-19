@@ -1,6 +1,6 @@
 # Spec: from research to decisions (Phase 6)
 
-Status: **slices 1–6 built (D-133–D-138)**; the rest planned. Each slice gets its own D-number when it's built.
+Status: **slices 1–6 and 8 built (D-133–D-138, D-144)**; slice 7 became planes and packages (D-139–D-143). Each slice gets its own D-number when it's built.
 
 ## 1. Why
 
@@ -81,7 +81,7 @@ Each slice ships on its own, with its decision, docs and tests. Order is the rec
 ### Slice 7: bets (replaced by planes and packages, [planes.md](planes.md))
 - Group features into now / next / later or a named MVP slice, each with the riskiest assumption it depends on.
 
-### Slice 8: overview page
+### Slice 8: overview page (built, D-144)
 - A one-screen "so what" when a workspace opens: strongest and weakest-evidenced problems, the matrix's white space, the
   riskiest untested assumptions, next experiments, warnings ("11 features are P1", "a competitor linked to 6+ features").
 

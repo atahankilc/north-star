@@ -93,6 +93,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             { label: workspace.name },
           ]}
           views={[
+            // The workspace read on one screen (D-144); opening a workspace from the list lands here.
+            { label: 'overview', to: workspacePath(wid, 'overview') },
             { label: 'board', to: workspacePath(wid), end: true },
             // The selected card's chain (D-127), or the last one focused here.
             { label: 'focus', to: focusPath(wid, selectedId ?? lastFocus(wid)) },
@@ -120,7 +122,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 function viewOf(path: string, wid: string): PresenceView {
   const rest = path.slice(workspacePath(wid).length).replace(/^\//, '').split('/')[0]
   // The focus view is the board with most of it hidden (D-127): same places, so cursors and follow still line up.
-  return rest === 'flow' || rest === 'table' || rest === 'matrix' || rest === 'priorities' || rest === 'reports' ? rest : 'board'
+  return rest === 'flow' || rest === 'table' || rest === 'matrix' || rest === 'priorities' || rest === 'reports' || rest === 'overview' ? rest : 'board'
 }
 
 function EditKeys() {

@@ -1,0 +1,147 @@
+/* The overview (D-144): what we're building on top, then the reading in framed blocks. */
+
+.page {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  height: 100%;
+  padding: calc(var(--hud-h) + var(--space-4)) var(--hud-x) var(--hud-y);
+  overflow-y: auto;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: var(--measure);
+}
+
+.title {
+  composes: title from '../../ui/Page.module.css';
+}
+
+.about {
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  line-height: 1.5;
+}
+
+.counts {
+  margin: 0;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.frame {
+  composes: frame from '../../ui/Frame.module.css';
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.label {
+  composes: fieldLabel from '../../ui/Frame.module.css';
+  margin: var(--space-2) 0 0;
+  font-weight: 400;
+}
+
+.label:first-child {
+  margin-top: 0;
+}
+
+.list,
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.steps li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dashed var(--line);
+}
+
+.stepText {
+  color: var(--fg-strong);
+}
+
+/* A card, its type's colour as a mark before it. */
+.item {
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.item::before {
+  content: '▌';
+  margin-right: var(--space-1);
+  color: var(--tone);
+}
+
+.item:hover {
+  color: var(--fg-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-cyan);
+}
+
+.kind,
+.why {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.list .why {
+  display: block;
+  padding-left: calc(1ch + var(--space-1));
+}
+
+.open {
+  display: block;
+  padding-left: calc(1ch + var(--space-1));
+  color: var(--accent-green);
+  font-size: var(--text-xs);
+}
+
+.warn,
+.warnText {
+  color: var(--accent-yellow);
+}
+
+.warnText {
+  font-size: var(--text-xs);
+}
+
+.small {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
+.hint {
+  color: var(--fg-dim);
+}
+
+.hint a {
+  color: var(--accent-cyan);
+}
