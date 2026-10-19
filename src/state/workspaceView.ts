@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { BOARD_TYPES, type BoardType } from '../data/model'
 
 // What the + menu makes: a card, text (D-050), or a section (D-130).
-export type NewThing = BoardType | 'text' | 'section'
+export type NewThing = BoardType | 'text' | 'paragraph' | 'sticky' | 'section'
 
 type Filters = {
   types: BoardType[]

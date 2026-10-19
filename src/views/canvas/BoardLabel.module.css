@@ -86,3 +86,10 @@
 .area::placeholder {
   color: var(--placeholder);
 }
+
+/* A sticky note's field (D-158): mono, on its own paper. */
+.area[data-mono] {
+  font-family: var(--font-mono);
+  background: none;
+  outline: none;
+}

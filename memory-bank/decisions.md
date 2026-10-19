@@ -105,6 +105,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   `take_off_plane`, `add_package`, `edit_package`; `/organize` may propose planes.
 - Plane filter (D-143): one remembered plane per workspace, the board's open one; Flow and Table (filter bar), Matrix and
   Priorities (footer) show only its cards; a matrix with none of its competitors shows them all.
+- Sticky notes (D-158): a label `kind: 'sticky'`, dark paper, a colour bar on top (yellow default), mono text with light
+  Markdown, signed `NAME · 2d` (`uid`, `author`); from `+` or right-click; not a place; the brief lists them.
 - Sections look (D-157): thin frame, no fill, the name set into the top edge or up the left one (`side`), the line
   breaking round it, a number before it; a colour goes to the line and the name only.
 - Sections: a named frame (label `kind: 'section'`, w/h), drawn with a crosshair (press, drag, release; never placed),

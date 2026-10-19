@@ -27,6 +27,7 @@ import { EDGE_KINDS, LINK_TONE, linkStyle } from './linkKinds'
 import { snapPoint, useSnap } from './snap'
 import { editTitle, isTitle, labelHalf } from './titleBlock'
 import { isSection } from './sections'
+import { isSticky } from './stickyNote'
 import styles from './BoardMenu.module.css'
 
 const MOD = navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl+'
@@ -236,7 +237,9 @@ function rowsFor(
     return [
       { key: 'add', heading: 'add here' },
       ...MADE_TYPES.map((t): Row => ({ key: t, label: BOARD_KINDS[t].label, glyph: '▌', tone: TYPE_ACCENT[t], run: () => create(t, here) })),
-      { key: 'text', label: 'text', glyph: 'T', run: () => create('text', here) },
+      { key: 'text', label: 'heading', glyph: 'T', run: () => create('text', here) },
+      { key: 'paragraph', label: 'paragraph', glyph: '¶', run: () => create('paragraph', here) },
+      { key: 'sticky', label: 'sticky note', glyph: '▚', run: () => create('sticky', here) },
       { key: 'section', label: 'section', glyph: '⬚', run: () => create('section', here) },
       ...(copied() ? [{ key: 'paste', label: 'paste here', hint: `${MOD}V`, run: () => void pasteClip(ws, at) } as Row] : []),
       ...board,
@@ -277,7 +280,8 @@ function rowsFor(
   // The title block (D-118): edit its name or description; it isn't copied (one per board), and deleting takes it off the board only.
   const title = !many && !!label && isTitle(label)
   const section = !many && !!label && isSection(label)
-  const heading = many ? `${ids.length} selected` : title ? 'project title' : section ? 'section' : label ? 'text' : BOARD_KINDS[item!.type].label
+  const sticky = !many && !!label && isSticky(label)
+  const heading = many ? `${ids.length} selected` : title ? 'project title' : section ? 'section' : sticky ? 'sticky note' : label ? 'text' : BOARD_KINDS[item!.type].label
   const zoom: Row = { key: 'zoom', label: 'zoom to', run: () => zoomTo(ws, ids) }
   const plane = usePlaneView.getState().plane
   const offAll = plane !== ALL
@@ -293,7 +297,7 @@ function rowsFor(
           { key: 'about', label: 'edit description', run: () => editTitle('description') } as Row,
         ]
       : label && !many
-        ? [{ key: 'edit', label: section ? 'rename' : 'edit text', run: () => useCanvas.getState().setEditingLabel(label.id) } as Row]
+        ? [{ key: 'edit', label: section ? 'rename' : sticky ? 'edit note' : 'edit text', run: () => useCanvas.getState().setEditingLabel(label.id) } as Row]
         : []),
     // A frame round what's selected (D-130).
     ...(wrap ? [{ key: 'wrap', label: 'put in a section', glyph: '⬚', run: () => wrap(ids) } as Row] : []),

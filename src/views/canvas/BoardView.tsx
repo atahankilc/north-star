@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { focusPath } from '../../app/paths'
 import type { WithId } from '../../data/hooks'
-import { createLabel } from '../../data/labels'
+import { createLabel, createSticky } from '../../data/labels'
 import { BOARD_TYPES, MADE_TYPES, type Label } from '../../data/model'
 import { createBoardNode, moveNode } from '../../data/nodes'
 import { useCanvas } from '../../state/canvasStore'
@@ -24,6 +24,8 @@ import type { Frame } from './PackageFrame'
 import { DetailPanel } from './DetailPanel'
 import { useGuides } from './guides'
 import { useSnap } from './snap'
+import { isSticky } from './stickyNote'
+import { PARA_W } from './textStyle'
 import { TITLE_W, estimateTitleHalf, isTitle, labelHalf } from './titleBlock'
 import { drawSection, fitSections, holdsPoint, isSection, rectOf, useSectionDraw, wrapRect, type Rect, type SectionRect } from './sections'
 import { copied } from '../../data/selection'
@@ -199,7 +201,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
   const places = useMemo(
     () =>
       (focusMode ? [] : labels)
-        .filter((l) => isTitle(l) || (l.text.trim() && (isSection(l) || (l.size !== 'note' && l.size !== 'minor'))))
+        .filter((l) => isTitle(l) || (l.text.trim() && !isSticky(l) && (isSection(l) || (l.size !== 'note' && l.size !== 'minor'))))
         .sort((a, b) => topOf(b) - topOf(a) || a.x - b.x),
     [labels, focusMode],
   )
@@ -273,8 +275,8 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
   const create = async (type: NewThing, at: [number, number]) => {
     // A section is drawn on the board, not placed.
     if (type === 'section') return drawSection(true)
-    if (type === 'text') {
-      const id = await createLabel(wid, { text: '', x: at[0], y: at[1] })
+    if (type === 'text' || type === 'paragraph' || type === 'sticky') {
+      const id = await (type === 'sticky' ? createSticky(wid, at) : createLabel(wid, { text: '', x: at[0], y: at[1], ...(type === 'paragraph' && { size: 'note' as const, w: PARA_W }) }))
       select(id)
       useCanvas.getState().setEditingLabel(id)
       return
@@ -372,7 +374,9 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
                 onSelect: () => add(t),
               })),
               { key: 'board', heading: 'on the board' },
-              { key: 'text', label: 'text', glyph: 'T', hint: 'jump point', onSelect: () => add('text') },
+              { key: 'text', label: 'heading', glyph: 'T', hint: 'jump point', onSelect: () => add('text') },
+              { key: 'paragraph', label: 'paragraph', glyph: '¶', hint: 'wraps, **bold**', onSelect: () => add('paragraph') },
+              { key: 'sticky', label: 'sticky note', glyph: '▚', hint: 'signed', onSelect: () => add('sticky') },
               { key: 'section', label: 'section', glyph: '⬚', hint: 'drag to draw', onSelect: () => add('section') },
               // One title block, on All (D-118, D-139).
               ...(title || plane !== ALL ? [] : [{ key: 'title', label: 'project title', glyph: '✦', hint: 'name + about', onSelect: () => void addTitle() }]),

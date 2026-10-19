@@ -3,6 +3,7 @@
 // A heading (H1–H3) is set left-aligned on its centre, with an optional small line over it (`02 who we beat`, the
 // number in the accent) and, for an H1, a rule fading out to the right. A paragraph wraps at its width (its right edge
 // drags it) and reads light Markdown; a hairline runs down its left side. Either can be turned a quarter either way.
+// A sticky note (D-158) is a paragraph in mono on dark paper, a bar of its colour along the top, signed at its foot.
 // Hovered or selected, a dashed box goes round it.
 import { Html, Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
@@ -26,6 +27,8 @@ import { focusField } from './focusField'
 import { clearGuides, placeDragged, unitsPerPixel } from './guides'
 import { snapPoint } from './snap'
 import { TextBlock } from './TextBlock'
+import { MAX_STICKY_W, MIN_STICKY_W, STICKY_BAR, STICKY_COLOR, STICKY_FOOT, STICKY_PAD, STICKY_TEXT, ago, isSticky, stickySetting, stickySize } from './stickyNote'
+import type { Setting } from './richText'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
 import { markHover, unlight } from '../workspace/stage'
@@ -77,7 +80,8 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const editing = useCanvas((s) => s.editingLabel === label.id)
   const live = useCanvas((s) => s.dragging[label.id])
   const { select, toggleSelect, setDragging, setEditingLabel } = useCanvas.getState()
-  const size = labelSize(label)
+  const sticky = isSticky(label)
+  const size = sticky ? STICKY_TEXT : labelSize(label)
   const paragraph = isParagraph(label)
   const [hovered, setHovered] = useState(false)
   // Text that would be under a few pixels on screen is left out rather than drawn as a smudge (D-111).
@@ -92,7 +96,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const colors = usePalette()
   const tone = useThemeAccent()
   const deleted = mark === 'deleted'
-  const accent = deleted ? colors.fgDim : label.color ? tone(label.color) : colors.fg
+  const accent = deleted ? colors.fgDim : label.color ? tone(label.color) : sticky ? tone(STICKY_COLOR) : colors.fg
   const markColor = mark ? colors.diff[mark] : undefined
   const turn = turnRad(label)
 
@@ -174,7 +178,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
 
   // The heading's parts, laid out from its centre: the text centred there, the small line over its left edge, the rule
   // under it.
-  const kicker = paragraph ? null : kickerParts(label.kicker)
+  const kicker = paragraph || sticky ? null : kickerParts(label.kicker)
   const ks = kickerSize(size)
   const [tw, th] = measured
   const left = -tw / 2
@@ -183,13 +187,16 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const restAt = left + (kicker?.num ? numW + ks * 0.7 : 0)
   const restText = kicker ? (kicker.num && kicker.rest ? `── ${kicker.rest}` : kicker.rest) : ''
   const kickW = kicker ? restAt - left + restText.length * ks * MONO_ADVANCE * 1.14 : 0
-  const ruled = !paragraph && (label.size ?? 'heading') === 'heading'
+  const ruled = !paragraph && !sticky && (label.size ?? 'heading') === 'heading'
   const ruleY = -th / 2 - size * 0.22
   const ruleW = Math.max(tw, kickW) * 1.3
 
-  const para = paragraph ? paraBox(span ? { ...label, w: span.w } : label) : null
+  // A paragraph or a sticky note: text that flows at a width.
+  const sized = span ? { ...label, w: span.w } : label
+  const flow = paragraph ? PARAGRAPH : sticky ? STICKY : null
+  const para = flow ? flow.sizeOf(sized) : null
   const box: Box = para
-    ? [-para[0] / 2 - size * 0.6, -para[1] / 2, para[0] / 2, para[1] / 2]
+    ? [-para[0] / 2 - (paragraph ? size * 0.6 : 0), -para[1] / 2, para[0] / 2, para[1] / 2]
     : [Math.min(left, -tw / 2), ruled ? ruleY : -th / 2, Math.max(tw / 2, left + kickW), kicker ? kickY + ks / 2 : th / 2]
   const bw = box[2] - box[0]
   const bh = box[3] - box[1]
@@ -272,6 +279,28 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
             <BoardLine points={frame(PAD)} color={selected ? colors.cyan : colors.hover} lineWidth={1} dashed dashSize={0.1} gapSize={0.07} toneMapped={false} />
           )}
 
+          {sticky && para && (
+            <>
+              <mesh position={[0, 0, -0.002]}>
+                <planeGeometry args={[para[0], para[1]]} />
+                <meshBasicMaterial color={colors.card} toneMapped={false} />
+              </mesh>
+              <mesh position={[0, para[1] / 2 - STICKY_BAR / 2, -0.001]}>
+                <planeGeometry args={[para[0], STICKY_BAR]} />
+                <meshBasicMaterial color={accent} toneMapped={false} />
+              </mesh>
+              <StickyMark at={[para[0] / 2 - STICKY_PAD * 0.7, para[1] / 2 - STICKY_PAD * 0.8]} color={accent} />
+              {!editing && (
+                <group position={STICKY.textAt(para)}>
+                  <TextBlock text={text || 'Write something…'} setting={stickySetting(sized)} ink={text ? { ...ink, text: colors.fg, strong: colors.fgStrong } : { ...ink, text: colors.fgDim }} />
+                </group>
+              )}
+              <Text visible={readable} material={textMaterial} font={fontUrls.mono} fontSize={STICKY_FOOT} letterSpacing={0.08} color={colors.fgDim} anchorX="left" anchorY="bottom" position={[-para[0] / 2 + STICKY_PAD, -para[1] / 2 + STICKY_PAD * 0.8, 0]}>
+                {`${(label.author ?? 'someone').split(/\s+/)[0].toUpperCase()} · ${ago(label.createdAt)}`}
+              </Text>
+            </>
+          )}
+
           {paragraph && para && (
             <>
               {/* The hairline down its left side. */}
@@ -285,14 +314,14 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
                 toneMapped={false}
               />
               {!editing && (
-                <group position={[-para[0] / 2, para[1] / 2, 0]}>
-                  <TextBlock text={shown} setting={paraSetting(span ? { ...label, w: span.w } : label)} ink={text ? ink : { ...ink, text: colors.fgDim }} />
+                <group position={PARAGRAPH.textAt(para)}>
+                  <TextBlock text={shown} setting={paraSetting(sized)} ink={text ? ink : { ...ink, text: colors.fgDim }} />
                 </group>
               )}
             </>
           )}
 
-          {!paragraph && !editing && (
+          {!flow && !editing && (
             <>
               <Text
                 visible={readable}
@@ -329,11 +358,12 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
           )}
         </group>
 
-        {/* A paragraph's right edge, dragged: its width. */}
-        {paragraph && para && only && !editing && !mark && !editLocked() && (
+        {/* A paragraph's or sticky note's right edge, dragged: its width. */}
+        {flow && para && only && !editing && !mark && !editLocked() && (
           <WidthHandle
             wid={wid}
             label={label}
+            flow={flow}
             at={[para[0] / 2, 0]}
             color={colors.cyan}
             bg={colors.bg}
@@ -342,12 +372,58 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
         )}
       </group>
       {editing &&
-        (paragraph && para ? (
-          <ParagraphInput wid={wid} label={label} at={[-para[0] / 2, para[1] / 2]} onDone={() => setEditingLabel(null)} />
+        (flow && para ? (
+          <ParagraphInput wid={wid} label={label} flow={flow} at={flow.textAt(para)} onDone={() => setEditingLabel(null)} />
         ) : (
           <LabelInput wid={wid} label={label} size={size} onDone={() => setEditingLabel(null)} />
         ))}
       <CardReveal content={content} uniforms={cell} />
+    </group>
+  )
+}
+
+// Text that flows at a width (D-156, D-158): its size from its text and width, how it's set, where its text starts
+// (from the centre, level), and how narrow or wide its edge may drag it.
+type Flow = {
+  sizeOf: (l: Label) => [number, number]
+  setting: (l: Label) => Setting
+  textAt: (box: [number, number]) => [number, number, number]
+  min: number
+  max: number
+  mono?: boolean
+}
+const PARAGRAPH: Flow = {
+  sizeOf: paraBox,
+  setting: paraSetting,
+  textAt: ([w, h]) => [-w / 2, h / 2, 0],
+  min: MIN_PARA_W,
+  max: MAX_PARA_W,
+}
+const STICKY: Flow = {
+  sizeOf: stickySize,
+  setting: stickySetting,
+  textAt: ([w, h]) => [-w / 2 + STICKY_PAD, h / 2 - STICKY_PAD * 1.6, 0],
+  min: MIN_STICKY_W,
+  max: MAX_STICKY_W,
+  mono: true,
+}
+
+// A sticky note's corner mark: three little checks, like ▚▚▚, in its colour.
+function StickyMark({ at, color }: { at: [number, number]; color: string }) {
+  const c = 0.035
+  return (
+    <group position={[at[0], at[1], 0]}>
+      {[0, 1, 2].flatMap((i) =>
+        [
+          [-i * c * 2.6 - c / 2, c / 2],
+          [-i * c * 2.6 - c * 1.5, -c / 2],
+        ].map(([dx, dy], j) => (
+          <mesh key={`${i}${j}`} position={[dx, dy, 0]}>
+            <planeGeometry args={[c, c]} />
+            <meshBasicMaterial color={color} toneMapped={false} />
+          </mesh>
+        )),
+      )}
     </group>
   )
 }
@@ -393,6 +469,7 @@ export function keepTopLeft(l: Pick<Label, 'x' | 'y' | 'rotate'>, from: [number,
 function WidthHandle({
   wid,
   label,
+  flow,
   at,
   color,
   bg,
@@ -400,6 +477,7 @@ function WidthHandle({
 }: {
   wid: string
   label: WithId<Label>
+  flow: Flow
   at: [number, number]
   color: string
   bg: string
@@ -415,8 +493,8 @@ function WidthHandle({
     // How far along the text's own direction from its left edge.
     const along = (p[0] - d.left[0]) * Math.cos(r) + (p[1] - d.left[1]) * Math.sin(r)
     const snapped = free ? along : snapPoint([along, 0], false)[0]
-    const w = MathUtils.clamp(snapped, MIN_PARA_W, MAX_PARA_W)
-    const next = paraBox({ ...label, w })
+    const w = MathUtils.clamp(snapped, flow.min, flow.max)
+    const next = flow.sizeOf({ ...label, w })
     const [x, y] = keepTopLeft(label, d.box, next)
     return { x, y, w }
   }
@@ -428,7 +506,7 @@ function WidthHandle({
         if (e.button !== 0) return
         e.stopPropagation()
         if (controls) controls.enabled = false
-        const box = paraBox(label)
+        const box = flow.sizeOf(label)
         const left: [number, number] = [label.x - (Math.cos(r) * box[0]) / 2, label.y - (Math.sin(r) * box[0]) / 2]
         drag.current = { from: { x: label.x, y: label.y, w: box[0] }, box, left, lastWrite: 0, last: null }
         ;(e.target as Element).setPointerCapture(e.pointerId)
@@ -560,13 +638,13 @@ function LabelInput({ wid, label, size, onDone }: { wid: string; label: WithId<L
 
 // A paragraph's field (D-156): its lines as typed, Markdown and all. Enter is a new line; ⌘Enter or clicking away
 // saves, Escape cancels. Its top-left corner stays where it is however long the text gets.
-function ParagraphInput({ wid, label, at, onDone }: { wid: string; label: WithId<Label>; at: [number, number]; onDone: () => void }) {
+function ParagraphInput({ wid, label, flow, at, onDone }: { wid: string; label: WithId<Label>; flow: Flow; at: [number, number, number]; onDone: () => void }) {
   const [draft, setDraft] = useState(label.text)
   const area = useRef<HTMLTextAreaElement>(null)
   const done = useRef(false)
   const camera = useThree((s) => s.camera)
   const view = useThree((s) => s.size)
-  const setting = paraSetting(label)
+  const setting = flow.setting(label)
   const upp = unitsPerPixel(camera, view.height)
 
   // The caret at the end, nothing selected: it's usually added to.
@@ -593,8 +671,8 @@ function ParagraphInput({ wid, label, at, onDone }: { wid: string; label: WithId
     const next = draft.replace(/\s+$/, '')
     if (save && next.trim() && next !== label.text) {
       // Kept by its top-left corner: the centre moves by how much the box grew.
-      const from = paraBox(label)
-      const to = paraBox({ ...label, text: next })
+      const from = flow.sizeOf(label)
+      const to = flow.sizeOf({ ...label, text: next })
       const [x, y] = keepTopLeft(label, from, to)
       const moved = Math.abs(x - label.x) > 1e-4 || Math.abs(y - label.y) > 1e-4
       void updateLabel(wid, label.id, { text: next, ...(moved ? { x, y } : {}) }, !label.text.trim())
@@ -612,6 +690,7 @@ function ParagraphInput({ wid, label, at, onDone }: { wid: string; label: WithId
       <textarea
         ref={area}
         className={styles.area}
+        data-mono={flow.mono || undefined}
         style={{
           ...inputStyle(label),
           fontSize: `${Math.max(11, setting.size / upp)}px`,

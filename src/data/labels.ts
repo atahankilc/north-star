@@ -1,7 +1,7 @@
 // Text on the board (D-050): headings like "COMPETITORS" over an area, and the places the jump list flies to.
 // Undoable (history.ts) except the live position stream during a drag.
 import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc } from 'firebase/firestore'
-import { db } from './firebase'
+import { db, firebase } from './firebase'
 import { absent, snapshotWith, tracked } from './history'
 import type { Label } from './model'
 import { ALL, openPlane } from './planes'
@@ -18,6 +18,13 @@ export async function createLabel(wid: string, fields: Omit<Label, 'createdAt' |
     key: `label:${ref.id}:text`,
   })
   return ref.id
+}
+
+// A sticky note (D-158), signed by whoever writes it.
+export function createSticky(wid: string, at: [number, number]) {
+  const user = firebase?.auth.currentUser
+  const by = user ? { uid: user.uid, author: (user.displayName || user.email || 'someone').slice(0, 200) } : {}
+  return createLabel(wid, { text: '', kind: 'sticky', x: at[0], y: at[1], ...by })
 }
 
 // `undefined` clears a field. `first`: the text a new label is given, which undoes together with creating it.

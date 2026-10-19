@@ -4,6 +4,7 @@
 import type { WithId } from '../data/hooks'
 import type { BoardNode, Feature, Label, NodeType } from '../data/model'
 import type { ReportContent, ReportSummary } from '../data/model'
+import { isSticky } from '../views/canvas/stickyNote'
 import { colors } from '../styles/tokens'
 import { isTitle } from '../views/canvas/titleBlock'
 import { holdsRect, isSection, rectOf, sectionsAt } from '../views/canvas/sections'
@@ -41,7 +42,7 @@ function textAreaOf(labels: WithId<Label>[], x: number, y: number): string {
   let best: WithId<Label> | undefined
   let bestD = Infinity
   for (const l of labels) {
-    if (!l.text.trim() || l.size === 'note' || l.y < y || isSection(l)) continue
+    if (!l.text.trim() || l.size === 'note' || l.y < y || isSection(l) || isSticky(l)) continue
     const d = Math.hypot(l.x - x, l.y - y)
     if (d < bestD) {
       bestD = d
@@ -250,16 +251,17 @@ export function workspaceBrief(full: WorkspaceCtx, where: Where, reports: WithId
     const path = (l: Label) => [...sectionsAt(ws.labels, l.x, l.y).filter((o) => o !== l && holdsRect(rectOf(o), rectOf(l))), l].map((o) => clip(o.text, 60)).join(' › ') + look(l)
     lines.push('', `SECTIONS ON THE BOARD (named frames round areas, outer › inner; arrange_area with a section's exact name moves and refits it, edit_section renames, delete_section removes it; the label rows don't touch them): ${frames.map(path).join(' | ')}`)
   }
-  const areas = ws.labels.filter((l) => l.text.trim() && l.size !== 'note' && !isSection(l))
+  const areas = ws.labels.filter((l) => l.text.trim() && l.size !== 'note' && !isSection(l) && !isSticky(l))
 
   if (areas.length) lines.push('', `AREAS ON THE BOARD: ${areas.map((l) => `${clip(l.text, 60)}${look(l)}`).join(' | ')}`)
-  // Small notes written on the board (D-108), with the card each sits closest to.
-  const notes = ws.labels.filter((l) => l.text.trim() && l.size === 'note' && !isSection(l))
+  // Paragraphs written on the board (D-108, D-156) and sticky notes (D-158, with who wrote them), with the card each
+  // sits closest to.
+  const notes = ws.labels.filter((l) => l.text.trim() && (l.size === 'note' || isSticky(l)) && !isSection(l))
   if (notes.length) {
     lines.push('', `NOTES ON THE BOARD (${notes.length})`)
     for (const l of notes) {
       const near = nearestCard(placed, l.x, l.y)
-      lines.push(`- "${clip(l.text, 200)}"${look(l)}${near ? ` by [${refOf.get(near)}] ${names.get(near)}` : ''}${areaOf(ws.labels, l.x, l.y)}`)
+      lines.push(`- ${isSticky(l) ? `sticky note from ${l.author ?? 'someone'}: ` : ''}"${clip(l.text, 400)}"${look(l)}${near ? ` by [${refOf.get(near)}] ${names.get(near)}` : ''}${areaOf(ws.labels, l.x, l.y)}`)
     }
   }
 

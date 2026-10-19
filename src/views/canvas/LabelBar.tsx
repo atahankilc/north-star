@@ -11,6 +11,7 @@ import { useThemeAccent } from '../../state/theme'
 import { accents } from '../../styles/tokens'
 import { removeLabel } from '../workspace/useEditKeys'
 import { isSection, SECTION_SIZES } from './sections'
+import { STICKY_COLOR, isSticky } from './stickyNote'
 import { SIZE_HINTS, SIZE_NAMES } from './textStyle'
 import styles from './FloatBar.module.css'
 
@@ -37,6 +38,8 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
   const tone = useThemeAccent()
   const size = label.size ?? 'heading'
   const section = isSection(label)
+  // A sticky note (D-158): only its colour (yellow when none is set), edit and remove.
+  const sticky = isSticky(label)
   return (
     <Html
       position={[at[0], at[1], 0]}
@@ -53,7 +56,7 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
         onPointerDown={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}
       >
-        {(section ? SECTION_SIZES : LABEL_SIZES).map((s) => (
+        {!sticky && (section ? SECTION_SIZES : LABEL_SIZES).map((s) => (
           <button
             key={s}
             className={styles.button}
@@ -65,8 +68,8 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
             {SIZE_NAMES[s]}
           </button>
         ))}
-        <span className={styles.rule} />
-        {STYLES.map((st) => (
+        {!sticky && <span className={styles.rule} />}
+        {!sticky && STYLES.map((st) => (
           <button
             key={st.key}
             className={styles.button}
@@ -80,8 +83,8 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
             {st.glyph}
           </button>
         ))}
-        <span className={styles.rule} />
-        {section
+        {!sticky && <span className={styles.rule} />}
+        {sticky ? null : section
           ? SIDES.map((sd) => (
               <button
                 key={sd.key}
@@ -106,23 +109,24 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
                 {t.glyph}
               </button>
             ))}
-        <span className={styles.rule} />
+        {!sticky && <span className={styles.rule} />}
         <span className={styles.dots}>
-          <button
+          {!sticky && <button
             className={styles.dot}
             style={{ ['--tone' as string]: 'var(--fg)' }}
             aria-pressed={!label.color}
             aria-label="Plain"
             onClick={() => label.color && void updateLabel(wid, label.id, { color: undefined })}
-          />
+          />}
           {accents.map((c) => (
             <button
               key={c}
               className={styles.dot}
               style={{ ['--tone' as string]: tone(c) }}
-              aria-pressed={label.color === c}
+              aria-pressed={label.color === c || (sticky && !label.color && c === STICKY_COLOR)}
               aria-label={`Colour ${c}`}
-              onClick={() => label.color !== c && void updateLabel(wid, label.id, { color: c })}
+              // A sticky note's yellow is its default, not stored.
+              onClick={() => label.color !== c && void updateLabel(wid, label.id, { color: sticky && c === STICKY_COLOR ? undefined : c })}
             />
           ))}
         </span>

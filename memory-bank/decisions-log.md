@@ -2278,3 +2278,20 @@ color the line and the text. 90 degree rotation also would work with lines".
   field over it.
 - *Data:* `Label.side` (`'left'` or absent); rules + 2 tests; import keeps it.
 - *Verified* headless: top and left names, coloured blue and magenta, numbers, selection bar; `tsc`.
+
+### D-158 · 2026-10-20 · Accepted
+**Sticky notes on the board, in the dark ASCII look.** The user, offered sticky notes and comment threads as two
+different things and shown two sticky looks (bright paper, dark ASCII): "For C, ascii one looks better. Go ahead with that".
+- A label of `kind: 'sticky'`: dark paper in the card colour, a bar of its colour along the top (yellow, the default,
+  isn't stored; the bar's dots pick the others), three little checks in that colour in its corner, the text in Geist Mono
+  0.15 with the paragraph's light Markdown (D-156), and `FIRSTNAME · 2d` at the foot. 3.125 wide (its right edge drags
+  it, 1.875–12), as tall as its text, never under 1.875; centred on x/y, its top-left kept when the text grows.
+- Signed: `uid` and `author` (the writer's Google name) when made; not tied to the writer in the rules (undo restores
+  someone else's note, as with attachments). Copies keep the signature.
+- Made from `+` (`sticky note`, beside `heading` and `paragraph`) or the board's right-click; opens for typing; left empty, it's
+  deleted. Editors and owners only, like all text; viewers comment instead (D-159).
+- It's not a place (not in `go to`), not an area for the assistant; the brief lists it under the board's notes as
+  `sticky note from <name>`. Kept clear by the assistant's layouts like text.
+- *Data:* `Label.kind` `'sticky'`, `uid`, `author`; rules allow 4000 characters for it; 3 rules tests; import keeps it.
+- *Verified* headless: three notes (yellow default, magenta with bold and a list and a wider width, an empty cyan one with
+  the placeholder), selected bar with colour dots, edit, remove; rules tests 307/307; `tsc`.

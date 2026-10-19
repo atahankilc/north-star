@@ -119,6 +119,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   grip is dragged), light Markdown (bold in `fgStrong`, italic, bullets and numbers with dim markers, `code`, links
   underlined cyan), a hairline down its left side. Any text turns a quarter either way (↺ reads up, ↻ down). Hovered or
   selected, a dashed box goes round it (grey, cyan), no underline
+- Sticky notes (D-158): dark paper (`card` colour), a 0.05 bar of its colour along the top (yellow by default), three
+  small checks like `▚▚▚` in that colour in the top-right corner, its text in Geist Mono 0.15 (light Markdown, bold in
+  `fgStrong`), and at the foot `ATAHAN · 2d` in dim mono: who wrote it (first name) and how long ago. 3.125 wide by
+  default (its right-edge grip drags it), at least 1.875 tall, growing with its text. Dashed box when hovered/selected
 - Sections (D-130, D-157): a thin frame, no fill. The name sits in the frame's edge, the line breaking round it: along
   the top from near the left corner, or up the left edge ending near the top (read bottom to top). A small line before
   the name in mono (a number in magenta). A section's colour goes to its line and name, nothing else; hover greys the
