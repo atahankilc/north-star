@@ -28,6 +28,8 @@ import { snapPoint, useSnap } from './snap'
 import { editTitle, isTitle, labelHalf } from './titleBlock'
 import { isSection } from './sections'
 import { isSticky } from './stickyNote'
+import { startComment } from './Threads'
+import { isPreviewing } from '../workspace/preview'
 import styles from './BoardMenu.module.css'
 
 const MOD = navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl+'
@@ -225,10 +227,16 @@ function rowsFor(
 ): Row[] {
   const locked = editLocked()
   const { selection } = useCanvas.getState()
+  // A comment thread on what was clicked, or on the spot (D-159): anyone in the workspace, viewers too, but not in the
+  // assistant's preview.
+  const plane = usePlaneView.getState().plane
+  const comment = (t: Omit<Parameters<typeof startComment>[0], 'at'>): Row[] =>
+    isPreviewing() ? [] : [{ key: 'comment', label: 'comment', glyph: '◔', hint: 'thread', run: () => startComment({ ...t, at }) }]
 
   if (target.kind === 'board') {
     const board: Row[] = [
       { key: 'board', heading: 'board' },
+      ...comment({ on: 'spot', ...(plane !== ALL && { planeId: plane }) }),
       { key: 'fit', label: 'fit all', hint: '0', run: () => useCanvas.getState().fitAll() },
     ]
     if (locked || !create) return board
@@ -250,9 +258,11 @@ function rowsFor(
 
   if (target.kind === 'link') {
     const edge = ws.edges.find((e) => e.id === target.id)
-    if (!edge || locked) return []
+    if (!edge) return []
+    if (locked) return [{ key: 'kind', heading: 'link' }, ...comment({ on: 'link', targetId: edge.id })]
     return [
       { key: 'kind', heading: 'link' },
+      ...comment({ on: 'link', targetId: edge.id }),
       ...EDGE_KINDS.map((k): Row => ({
         key: k,
         label: linkStyle(k).label,
@@ -283,14 +293,15 @@ function rowsFor(
   const sticky = !many && !!label && isSticky(label)
   const heading = many ? `${ids.length} selected` : title ? 'project title' : section ? 'section' : sticky ? 'sticky note' : label ? 'text' : BOARD_KINDS[item!.type].label
   const zoom: Row = { key: 'zoom', label: 'zoom to', run: () => zoomTo(ws, ids) }
-  const plane = usePlaneView.getState().plane
   const offAll = plane !== ALL
   const cardIds = ids.filter((id) => findItem(ws, id))
   // The card's chain in the focus view (D-127).
   const focus: Row[] = item && !many ? [{ key: 'focus', label: 'focus', glyph: '◎', run: () => focusOn(target.id) }] : []
-  if (locked) return [{ key: 'h', heading }, zoom, ...focus]
+  const talk = comment({ on: target.kind === 'card' ? 'card' : 'label', targetId: target.id })
+  if (locked) return [{ key: 'h', heading }, ...talk, zoom, ...focus]
   return [
     { key: 'h', heading },
+    ...talk,
     ...(title
       ? [
           { key: 'edit', label: 'edit name', run: () => editTitle('name') } as Row,

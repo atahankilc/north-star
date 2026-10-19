@@ -18,7 +18,10 @@ import {
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
 import { createEdge, linked, updateEdge } from '../../data/edges'
-import { type CompetitorFeature, type Edge, type Label } from '../../data/model'
+import { type CompetitorFeature, type Edge, type Label, type Thread } from '../../data/model'
+import type { NewThread } from '../../data/threads'
+import { ThreadLayer, useThreadView, type PinnedThread } from './Threads'
+import { ALL } from '../../data/planes'
 import { selectionOf, usePresence } from '../../data/presence'
 import { wasLine } from '../workspace/preview'
 import { usePreviewFocus, useStage } from '../workspace/stage'
@@ -71,6 +74,19 @@ type Props = {
   onDrawSection?: (rect: SectionRect) => void
   // Packages whose home is this plane, framed round their members (D-141).
   frames?: Frame[]
+  // Comment threads (D-159): pinned to what's on this board, or to spots on this plane.
+  threads?: BoardThreads
+}
+
+export type BoardThreads = {
+  list: WithId<Thread>[]
+  // Whether what a thread is on still exists anywhere in the workspace (filtered out is not gone).
+  exists: (id: string) => boolean
+  // The open plane (D-139), for spot threads.
+  plane: string
+  // What a thread is on, for its heading.
+  titleOf: (t: Pick<Thread, 'on' | 'targetId'>) => string
+  canEdit: boolean
 }
 
 // Where each board's camera was left, so switching views and coming back doesn't lose your place.
@@ -219,7 +235,7 @@ function coveredRight(canvas: HTMLElement): number {
   return p.width && p.left < c.right && p.right > c.left ? Math.max(0, c.right - p.left) : 0
 }
 
-function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey, centreId, sectionsFixed = false, onDrawSection, frames = [] }: Props) {
+function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey, centreId, sectionsFixed = false, onDrawSection, frames = [], threads }: Props) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
@@ -555,6 +571,39 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     return linkChipAt(linePoints(l.from, l.to, l.fromHalf, l.toHalf, l.bends), l.chipShift)
   }
 
+  // Where a thread's pin goes (D-159): a card's or text's top-right corner, a section's, a link's chip, a spot; null
+  // when what it's on isn't shown here (filtered, on another plane, a hidden link).
+  const openThreadId = useThreadView((s) => s.openId)
+  const draftThread = useThreadView((s) => s.draft)
+  const anchorOf = (t: Pick<Thread, 'on' | 'targetId' | 'planeId' | 'x' | 'y'>): [number, number] | null => {
+    if (t.on === 'spot') return (t.planeId ?? ALL) === (threads?.plane ?? ALL) ? [t.x, t.y] : null
+    const id = t.targetId ?? ''
+    if (t.on === 'card') {
+      const p = positions.get(id)
+      if (!p) return null
+      const [hw, hh] = halfOf(id)
+      return [p[0] + hw, p[1] + hh]
+    }
+    if (t.on === 'label') {
+      const l = labels.find((o) => o.id === id)
+      if (!l) return null
+      const [x, y] = dragging[l.id] ?? [l.x, l.y]
+      const [hw, hh] = labelHalf(l)
+      return [x + hw, y + hh]
+    }
+    const line = lines.find((o) => o.edge.id === id)
+    return line ? selectedLinkAt(line) : null
+  }
+  const pins: PinnedThread[] = (threads?.list ?? []).flatMap((t) => {
+    if (t.resolved && t.id !== openThreadId) return []
+    const gone = t.on !== 'spot' && !threads!.exists(t.targetId ?? '')
+    const at = gone ? [t.x, t.y] as [number, number] : anchorOf(t)
+    return at ? [{ thread: t, at, gone }] : []
+  })
+  const openThread = openThreadId ? (threads?.list.find((t) => t.id === openThreadId) ?? null) : null
+  const openAt = openThread ? (pins.find((p) => p.thread.id === openThread.id)?.at ?? null) : draftThread ? anchorOf({ ...draftThread, x: draftThread.at[0], y: draftThread.at[1] }) : null
+
+
   return (
     <>
       <mesh
@@ -652,6 +701,16 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
       {box && <SelectBox from={box.from} to={box.to} color={palette.cyan} />}
       {onDrawSection && <SectionDrawer onDraw={onDrawSection} color={palette.magenta} />}
       <GuideLines color={palette.magenta} />
+      {threads && (
+        <ThreadLayer
+          wid={wid}
+          pins={pins}
+          openAt={openAt}
+          thread={openThread}
+          title={threads.titleOf(openThread ?? draftThread ?? ({ on: 'spot' } as NewThread))}
+          canEdit={threads.canEdit}
+        />
+      )}
 
       {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={CARD_HALF} toHalf={[0, 0]} active />}
 

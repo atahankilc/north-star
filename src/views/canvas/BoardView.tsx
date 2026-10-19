@@ -24,6 +24,13 @@ import type { Frame } from './PackageFrame'
 import { DetailPanel } from './DetailPanel'
 import { useGuides } from './guides'
 import { useSnap } from './snap'
+import { useThreads } from '../../data/threads'
+import { findItem } from '../workspace/useEditKeys'
+import { linkStyle } from './linkKinds'
+import { openThread, toggleThreadPins, useThreadView } from './Threads'
+import { ago } from './stickyNote'
+import type { BoardThreads } from './Board'
+import type { Thread } from '../../data/model'
 import { isSticky } from './stickyNote'
 import { PARA_W } from './textStyle'
 import { TITLE_W, estimateTitleHalf, isTitle, labelHalf } from './titleBlock'
@@ -257,6 +264,8 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         })
       }
       if (key === 'g' && !mod && !e.altKey && !editLocked()) useSnap.getState().toggle()
+      // c shows or hides the comment pins (D-159).
+      if (key === 'c' && !mod && !e.altKey) toggleThreadPins()
       // a switches the alignment guides (D-117).
       if (key === 'a' && !mod && !e.altKey && !editLocked()) useGuides.getState().toggle()
       if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -271,6 +280,41 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
   // Leaving the board puts the section crosshair away.
   useEffect(() => () => drawSection(false), [])
   const drawing = useSectionDraw((s) => s.on)
+
+  // Comment threads (D-159): loaded with the board, pinned where they're on.
+  const threadList = useThreads(wid).data
+  const pinsOn = useThreadView((s) => s.show)
+  const titleOf = (t: Pick<Thread, 'on' | 'targetId'>): string => {
+    const id = t.targetId ?? ''
+    if (t.on === 'spot') return 'a spot on the board'
+    if (t.on === 'card') return findItem(ws, id)?.title.trim() || ws.competitorFeatures.find((f) => f.id === id)?.name || 'a card'
+    if (t.on === 'label') {
+      const l = ws.labels.find((o) => o.id === id)
+      if (!l) return 'text'
+      if (isTitle(l)) return ws.workspace.name
+      return l.text.trim().split('\n')[0].slice(0, 60) || (isSection(l) ? 'a section' : isSticky(l) ? 'a sticky note' : 'text')
+    }
+    const e = edges.find((o) => o.id === id)
+    if (!e) return 'a link'
+    const name = (n: string) => findItem(ws, n)?.title.trim() || ws.competitorFeatures.find((f) => f.id === n)?.name || '?'
+    return `${linkStyle(e.kind).label}: ${name(e.fromId)} → ${name(e.toId)}`
+  }
+  const known = useMemo(
+    () => new Set([...every.map((n) => n.id), ...ws.labels.map((l) => l.id), ...edges.map((e) => e.id), ...competitorFeatures.map((f) => f.id)]),
+    [every, ws.labels, edges, competitorFeatures],
+  )
+  const boardThreads: BoardThreads = { list: threadList, exists: (id) => known.has(id), plane, titleOf, canEdit: !viewer }
+  const openThreads = threadList.filter((t) => !t.resolved).sort((a, b) => b.lastAt - a.lastAt)
+  const resolvedThreads = threadList.filter((t) => t.resolved).sort((a, b) => b.lastAt - a.lastAt)
+  // Opened from the list: the board goes to it, it opens beside its pin.
+  const goToThread = (t: Thread & { id: string }) => {
+    const target = t.on === 'card' ? all.find((n) => n.id === t.targetId) : t.on === 'label' ? labels.find((l) => l.id === t.targetId) : undefined
+    const edge = t.on === 'link' ? edges.find((e) => e.id === t.targetId) : undefined
+    const ends = edge ? [all.find((n) => n.id === edge.fromId), all.find((n) => n.id === edge.toId)].filter(Boolean) : []
+    const at: [number, number] = target ? [target.x, target.y] : ends.length === 2 ? [(ends[0]!.x + ends[1]!.x) / 2, (ends[0]!.y + ends[1]!.y) / 2] : [t.x, t.y]
+    useCanvas.getState().flyTo(at)
+    openThread(t.id)
+  }
 
   const create = async (type: NewThing, at: [number, number]) => {
     // A section is drawn on the board, not placed.
@@ -346,6 +390,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
         sectionsFixed={focusMode}
         onDrawSection={focusMode ? undefined : (rect) => void addSection(rect)}
         frames={frames}
+        threads={boardThreads}
       />
 
       <FilterBar
@@ -397,6 +442,21 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
               <rect x="5.5" y="5.5" width="5" height="5" fill="currentColor" />
             </svg>
           </button>
+          {/* Comment threads (D-159): the pins' switch and every thread, open ones first; viewers too. */}
+          <Menu
+            up
+            label="comments"
+            summary={openThreads.length ? String(openThreads.length) : undefined}
+            ariaLabel="Comment threads"
+            items={[
+              { key: 'pins', label: 'show pins', hint: 'c', checked: pinsOn, onSelect: toggleThreadPins },
+              ...(openThreads.length ? [{ key: 'open', heading: 'open' }] : []),
+              ...openThreads.map((t) => ({ key: t.id, label: `${titleOf(t).slice(0, 36)} · ${t.count}`, glyph: t.name.trim()[0]?.toUpperCase() ?? '?', hint: ago(t.lastAt), onSelect: () => goToThread(t) })),
+              ...(resolvedThreads.length ? [{ key: 'resolved', heading: 'resolved' }] : []),
+              ...resolvedThreads.map((t) => ({ key: t.id, label: `${titleOf(t).slice(0, 36)} · ${t.count}`, glyph: '✓', hint: ago(t.lastAt), onSelect: () => goToThread(t) })),
+            ]}
+            empty="No threads yet: right-click anything on the board → comment"
+          />
           {/* Snap to the grid while dragging (D-112); lit while on. Viewers move nothing, so they don't get it. */}
           {!viewer && (
             <button
@@ -436,7 +496,8 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
               {viewer ? 'viewing only · scroll: zoom' : `drag: move${snap ? ' on the grid (alt: freely)' : ''} · drag › or shift+drag: link · shift+click / alt+drag: select · scroll: zoom`}
               {' · 0: fit all'}
               {!focusMode && ws.planes.length > 0 && ' · [ ]: planes'}
-              {!viewer && ' · g: snap · a: guides · right-click: menu'}
+              {!viewer && ' · g: snap · a: guides'}
+              {' · right-click: menu'}
               {places.length > 0 && ' · 1–9: go to'}
             </>
           )}

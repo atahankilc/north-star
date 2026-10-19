@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-19 (D-154 link chips and labelling)_
+_Last updated: 2026-10-20 (D-156–D-159 text, sections, sticky notes, comment threads)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -45,8 +45,11 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Card layout: 0.06 padding, header with status + evidence cells, facts line, tag chips; `›` link handle (D-152), 2026-10-19.
 - Zoomed out: title alone in whole words (≤3 lines), far out bars instead of stars (D-153), 2026-10-19.
 - Links: smaller chips, a new link opens ready to label, panel rows with label/reverse and the new one marked (D-154);
-  bend points the user puts on a selected link (D-155; app-routed elbows tried and dropped). 2026-10-19, not committed;
-  rules need deploying.
+  bend points the user puts on a selected link (D-155; app-routed elbows tried and dropped). 2026-10-19, committed.
+- Text and notes (2026-10-20, committed, not pushed; main is ahead of origin): headings with a small line + fading rule,
+  paragraphs, quarter turns (D-156); section names in the frame's edge, top or left (D-157); sticky notes (D-158);
+  comment threads on anything selectable or a spot, viewers too (D-159). Not tried by the user yet; the assistant
+  doesn't write paragraphs' width, turns, small lines or sticky notes.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

@@ -163,6 +163,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Colours by join order (no clash up to 5), stored as dark hex, drawn with `themeAccent` (D-067, D-069).
 - Selections shown in every view: board rings, Flow rings, Table bars, Matrix cells (`PeerMarks.tsx`) (D-067, D-068).
 - No typing indicator (D-071).
+- Comment threads (D-159): pinned to any card, text, section, sticky note, link or a spot (right-click → comment); any
+  member, viewers too, as themselves; resolve/reopen; `comments N ▾` in the footer, `c` hides pins; not undone or exported.
 
 ## Settings
 - Modal from the gear / account chip; grouped menu: YOU (account, display) · WORKSPACE (general, people, export) ·

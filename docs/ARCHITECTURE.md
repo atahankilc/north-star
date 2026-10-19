@@ -93,6 +93,9 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         notRelevant?: true, confidence? documented|inferred|guess (D-136)
                         (id = featureId_competitorId; a feature's own `criteria: {id, text}[]`, ≤ 8, D-133)
   edges/{id}            fromId, fromType, toId, toType, kind, label, bends? [{x, y}] (D-155)
+  threads/{id}          on (card|label|link|spot), targetId?, planeId?, x, y, uid, name, count, lastAt, resolved?, resolvedBy?
+                        (comment threads, D-159: any member writes them as themselves, viewers too; not undone, copied or exported)
+    messages/{id}       uid, name, text (≤ 2000), createdAt, editedAt?
   planes/{id}           name, order (D-139); All has no doc
   placements/{id}       planeId, itemId, itemType, x, y (id = planeId_itemId; a card's place on a plane other than All)
   packages/{id}         title, body?, tags?, x, y, memberIds (≤ 60), homePlaneId, impact?, effort? (D-141)

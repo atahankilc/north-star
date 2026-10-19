@@ -440,6 +440,51 @@ service cloud.firestore {
         allow delete: if signedIn() && (request.auth.uid == uid || isOwner(wid));
       }
 
+      // Comment threads (D-159): any member starts one or answers, viewers too, always as themselves. Not content: no
+      // undo, so the shapes are checked here and the writer is tied to the message. A thread changes only by answers
+      // (count, time) and being resolved or reopened; owners and editors delete any, a starter one nobody answered.
+      match /threads/{tid} {
+        function validThread(d) {
+          return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
+            && d.on in ['card', 'label', 'link', 'spot']
+            && optText(d, 'targetId', 128) && (d.on == 'spot' || 'targetId' in d)
+            && optText(d, 'planeId', 128)
+            && d.x is number && d.y is number
+            && isText(d.uid, 128) && isText(d.name, 200)
+            && d.count is int && d.count >= 0 && d.count <= 100000
+            && d.lastAt is number
+            && optBool(d, 'resolved') && optText(d, 'resolvedBy', 128)
+            && d.createdAt is number && d.updatedAt is number;
+        }
+        allow read: if isMember(wid);
+        allow create: if isMember(wid) && validThread(request.resource.data)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.count == 1;
+        allow update: if isMember(wid) && validThread(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'lastAt', 'resolved', 'resolvedBy', 'updatedAt'])
+          && (!('resolvedBy' in request.resource.data) || request.resource.data.resolvedBy == request.auth.uid
+            || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['resolvedBy']));
+        allow delete: if canEdit(wid) || (isMember(wid) && resource.data.uid == request.auth.uid && resource.data.count <= 1);
+
+        match /messages/{mid} {
+          function validMessage(d) {
+            return d.keys().hasOnly(['uid', 'name', 'text', 'createdAt', 'editedAt'])
+              && isText(d.uid, 128) && isText(d.name, 200)
+              && isText(d.text, 2000) && d.text.size() > 0
+              && d.createdAt is number
+              && (!('editedAt' in d) || d.editedAt is number);
+          }
+          allow read: if isMember(wid);
+          allow create: if isMember(wid) && validMessage(request.resource.data)
+            && request.resource.data.uid == request.auth.uid
+            && existsAfter(/databases/$(database)/documents/workspaces/$(wid)/threads/$(tid));
+          allow update: if isMember(wid) && resource.data.uid == request.auth.uid
+            && validMessage(request.resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'editedAt']);
+          allow delete: if isMember(wid) && (resource.data.uid == request.auth.uid || canEdit(wid));
+        }
+      }
+
       // Workspace content: members read it, owners and editors change it (D-098); known collections only, with a sane shape.
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {

@@ -387,3 +387,37 @@ export type Presence = {
   y?: number
   ts: number
 }
+
+// A comment thread (D-159): a conversation pinned to something on the board (a card, text, a section, a sticky note,
+// a link) or to a spot on it. Any member may start one or answer, viewers too; it's not content, so it's not undone,
+// copied, exported or filtered. `x`/`y` is where it was pinned (a spot's place, or the thing's when the thread began),
+// used when the thing is gone. `count` and `lastAt` follow its messages.
+export const THREAD_TARGETS = ['card', 'label', 'link', 'spot'] as const
+export type ThreadTarget = (typeof THREAD_TARGETS)[number]
+export const MESSAGE_MAX = 2000
+
+export type Thread = {
+  on: ThreadTarget
+  // What it's on: the card's, label's or link's id (none for a spot).
+  targetId?: string
+  // The plane a spot thread was started on (D-139); missing = All.
+  planeId?: string
+  x: number
+  y: number
+  uid: string
+  name: string
+  count: number
+  lastAt: number
+  resolved?: boolean
+  resolvedBy?: string
+  createdAt: number
+  updatedAt: number
+}
+
+export type ThreadMessage = {
+  uid: string
+  name: string
+  text: string
+  createdAt: number
+  editedAt?: number
+}

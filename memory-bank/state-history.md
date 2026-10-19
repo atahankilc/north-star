@@ -558,3 +558,13 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 ## Done (D-144 overview, 2026-10-19)
 - Overview tab first, opened from the workspaces list; deterministic reading; next steps prefill the assistant's mode.
   Verified in headless Chrome on the emulators; rules test; `npm run build`.
+
+## Done (D-156–D-159 text, sections, sticky notes, comment threads, 2026-10-20)
+- Mockup shown first (a local HTML page: four text looks, four section looks, two sticky looks, threads); the user picked
+  A as shown, section look 1 for every section (top or left, colour on line and name), the dark ASCII sticky, and threads
+  on anything selectable.
+- Built: `richText.ts` + `TextBlock.tsx` (paragraphs as a canvas texture), `BoardLabel.tsx` (headings, paragraphs, sticky
+  notes, turns, width grip, editors), `BoardSection.tsx` (name in the edge), `stickyNote.ts`, `data/threads.ts`,
+  `Threads.tsx` (pins + panel), footer list, right-click `comment`. Rules for labels' new fields and `threads/messages`.
+- Verified headless on fresh emulators (port 5181): screenshots of each; rules tests 326/326 against the running
+  emulators; `npm run build`. Old firestore/database emulator processes from 2026-10-18 (no parent) were stopped.

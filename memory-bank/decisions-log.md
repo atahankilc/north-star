@@ -2295,3 +2295,29 @@ different things and shown two sticky looks (bright paper, dark ASCII): "For C, 
 - *Data:* `Label.kind` `'sticky'`, `uid`, `author`; rules allow 4000 characters for it; 3 rules tests; import keeps it.
 - *Verified* headless: three notes (yellow default, magenta with bold and a list and a wider width, an empty cyan one with
   the placeholder), selected bar with colour dots, edit, remove; rules tests 307/307; `tsc`.
+
+### D-159 · 2026-10-20 · Accepted
+**Comment threads pinned to anything selectable on the board, or to a spot.** Offered in the mockup (a pin on a card in
+the starter's colour, a thread beside it with resolve and a reply field); the user: "D also looks good. One thing i
+would say is notes should be addable everything that are selectable on the board".
+- *What a thread is on:* a card, text, a section, a sticky note, the project title (labels), a link, or a spot on the
+  board (on the plane it was started on). Right-click any of them → `comment` (the board's empty space → a spot thread
+  there). The pin sits at the thing's top-right corner (a link's chip), follows it when it moves, hides when the thing is
+  filtered out, on another plane or a hidden link; what was deleted keeps a hollow pin where it was.
+- *Who:* any member, viewers too (comments are how a viewer gives feedback), always as themselves: rules tie a thread's
+  and a message's `uid` to the writer, only the writer edits a message, owners/editors delete any message or thread, a
+  starter deletes their thread while nobody answered it. Anyone resolves or reopens. Not during the assistant's preview.
+- *Not content:* no undo (`tracked()` isn't used, so a viewer's read-only lock doesn't refuse them), not copied, not in
+  the export bundle, not filtered by SHOW/FOR/TAG. Loaded with the board (`useThreads`), messages only while a thread is
+  open (≤ 300). A workspace delete takes threads and messages first.
+- *UI:* pins are DOM over the canvas (constant size); the open thread is a panel beside its pin: header with what it's
+  on, `✓ resolve` / `reopen`, `×`; messages (avatar, first name, `2d`, `edited`, own: edit/delete on hover; owners and
+  editors: delete); reply field (Enter sends, shift+Enter new line, Esc closes); `delete thread`. Footer `comments N ▾`:
+  `[x] show pins` (`c`), open threads newest first, resolved ones; picking one flies there and opens it. `@name` is only
+  highlighted (no notifications, no member lookup).
+- *Data:* `threads/{id}` (on, targetId?, planeId?, x, y, uid, name, count, lastAt, resolved?, resolvedBy?) and
+  `threads/{id}/messages/{id}` (uid, name, text ≤ 2000, createdAt, editedAt?); a thread is written with its first message
+  in one batch, each answer bumps `count`/`lastAt`. Rules + 19 tests.
+- *Verified* headless on the emulators: pins on a card and a spot, a seeded 3-message thread opened from its pin, a reply
+  sent (count 4), right-click → comment on a heading started a new thread whose pin landed on the heading's corner;
+  rules tests 326/326; `tsc`.
