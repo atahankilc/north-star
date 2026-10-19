@@ -2321,6 +2321,13 @@ would say is notes should be addable everything that are selectable on the board
 - *Verified* headless on the emulators: pins on a card and a spot, a seeded 3-message thread opened from its pin, a reply
   sent (count 4), right-click → comment on a heading started a new thread whose pin landed on the heading's corner;
   rules tests 326/326; `tsc`.
+- *Restyled 2026-10-20 as the assistant's chat box* (the user: "comment or thread thing do not look that good. Please
+  make it look like chat box. Also buttons used there do not fit with our design language"): the panel is the chat
+  window's frame (1px `--line`, near-black, mono 13), the header shows what it's on faint with `[resolve]` / `[reopen]`,
+  `[delete]` and `[×]` as the chat's bracket actions; messages are a terminal log (`● name 2d` in the writer's colour,
+  `you` for yours, the text indented 2ch under it, `[edit]` `[delete]` on hover); the composer is the chat's prompt
+  (`>` in cyan, the rule above turns cyan while typing, `enter sends · shift+enter: new line`, `[send]`). No avatars,
+  no green link-style resolve, no underlined reply field. Verified headless with a seeded 4-message thread.
 
 ### D-160 · 2026-10-20 · Accepted (changes D-156, D-157, D-111 for text)
 **Fixes after the user tried D-156–D-159.** The user: "i dont like the way how section color change to blue when we

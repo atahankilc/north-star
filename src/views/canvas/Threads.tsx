@@ -100,7 +100,7 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
   const panel = useRef<HTMLDivElement>(null)
   const field = useRef<HTMLTextAreaElement>(null)
-  const list = useRef<HTMLDivElement>(null)
+  const list = useRef<HTMLOListElement>(null)
   const me = myUid()
 
   // Beside the pin; flipped to its left where it would run off the window.
@@ -166,35 +166,49 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
       onKeyDown={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.stopPropagation()}
     >
+      {/* As the assistant's chat (D-081): what it's on, faint; actions in brackets; [×]. */}
       <header className={styles.head}>
-        <span className={styles.title}>THREAD · {title}</span>
-        {thread && (
-          <button className={styles.resolve} data-on={resolved || undefined} onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>
-            {resolved ? 'reopen' : '✓ resolve'}
+        <span className={styles.title} title={title}>
+          {resolved ? '✓ ' : ''}
+          {title}
+        </span>
+        <span className={styles.actions}>
+          {thread && (
+            <button className={styles.action} onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>
+              {resolved ? 'reopen' : 'resolve'}
+            </button>
+          )}
+          {mayDeleteThread && (
+            <button className={styles.action} data-tone="danger" onClick={() => thread && deleteThread(wid, thread.id).then(closeThread, fail)}>
+              delete
+            </button>
+          )}
+          <button className={styles.close} aria-label="Close thread" onClick={closeThread}>
+            [×]
           </button>
-        )}
-        <button className={styles.close} aria-label="Close thread" onClick={closeThread}>
-          ×
-        </button>
+        </span>
       </header>
-      <div ref={list} className={styles.list}>
-        {!thread && <p className={styles.empty}>Start a thread: everyone in the workspace sees it.</p>}
-        {thread && messages.isLoading && <p className={styles.empty}>Loading</p>}
+      <ol ref={list} className={styles.log}>
+        {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too.</li>}
+        {thread && messages.isLoading && <li className={styles.lead}>Loading</li>}
         {messages.data.map((m: WithId<ThreadMessage>) => (
-          <div key={m.id} className={styles.msg} style={{ ['--tone' as string]: colorOf(m.uid) }}>
-            <span className={styles.avatar} aria-hidden>
-              {initial(m.name)}
-            </span>
+          <li key={m.id} className={styles.msg} style={{ ['--tone' as string]: colorOf(m.uid) }}>
             <div className={styles.who}>
-              <b>{m.name.split(/\s+/)[0]}</b>
-              {ago(m.createdAt)}
-              {m.editedAt && ' · edited'}
+              <span className={styles.name}>{m.uid === me ? 'you' : m.name.split(/\s+/)[0].toLowerCase()}</span>
+              <span className={styles.when}>
+                {ago(m.createdAt)}
+                {m.editedAt && ' · edited'}
+              </span>
               {(m.uid === me || canEdit) && editing?.id !== m.id && (
-                <span className={styles.acts}>
+                <span className={styles.msgActions}>
                   {m.uid === me && (
-                    <button onClick={() => setEditing({ id: m.id, text: m.text })}>edit</button>
+                    <button className={styles.action} onClick={() => setEditing({ id: m.id, text: m.text })}>
+                      edit
+                    </button>
                   )}
                   <button
+                    className={styles.action}
+                    data-tone="danger"
                     onClick={() => thread && deleteMessage(wid, thread.id, m.id, messages.data.length === 1).then(() => messages.data.length === 1 && closeThread(), fail)}
                   >
                     delete
@@ -220,41 +234,51 @@ function ThreadPanel({ wid, thread, draft, title, canEdit }: { wid: string; thre
             ) : (
               <div className={styles.text}>{withMentions(m.text)}</div>
             )}
-          </div>
+          </li>
         ))}
-      </div>
+      </ol>
       {!resolved && (
-        <div className={styles.reply}>
-          <textarea
-            ref={field}
-            value={text}
-            rows={1}
-            maxLength={MESSAGE_MAX}
-            placeholder={thread ? 'reply…' : 'say something…'}
-            aria-label={thread ? 'Reply' : 'First message'}
-            disabled={busy}
-            onChange={(e) => {
-              setText(e.target.value)
-              e.target.style.height = '0px'
-              e.target.style.height = `${e.target.scrollHeight}px`
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                void send()
-              }
-              if (e.key === 'Escape') closeThread()
-            }}
-          />
-          <kbd>↵</kbd>
-        </div>
-      )}
-      {mayDeleteThread && (
-        <footer className={styles.foot}>
-          <button data-tone="danger" onClick={() => thread && deleteThread(wid, thread.id).then(closeThread, fail)}>
-            delete thread
-          </button>
-        </footer>
+        <form
+          className={styles.composer}
+          onSubmit={(e) => {
+            e.preventDefault()
+            void send()
+          }}
+        >
+          <div className={styles.promptLine}>
+            <span className={styles.ps} aria-hidden>
+              &gt;
+            </span>
+            <textarea
+              ref={field}
+              className={styles.input}
+              value={text}
+              rows={1}
+              maxLength={MESSAGE_MAX}
+              placeholder={thread ? 'reply' : 'say something'}
+              aria-label={thread ? 'Reply' : 'First message'}
+              disabled={busy}
+              onChange={(e) => {
+                setText(e.target.value)
+                e.target.style.height = '0px'
+                e.target.style.height = `${e.target.scrollHeight}px`
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  void send()
+                }
+                if (e.key === 'Escape') closeThread()
+              }}
+            />
+          </div>
+          <div className={styles.bar}>
+            <span className={styles.footnote}>enter sends · shift+enter: new line</span>
+            <button type="submit" className={styles.send} disabled={!text.trim() || busy}>
+              send
+            </button>
+          </div>
+        </form>
       )}
     </div>
   )
