@@ -25,7 +25,12 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
   const size = label.size ?? 'heading'
   const section = isSection(label)
   return (
-    <Html position={[at[0], at[1], 0]} zIndexRange={[15, 15]}>
+    <Html
+      position={[at[0], at[1], 0]}
+      zIndexRange={[15, 15]}
+      // Its box stays where the bar would be unmoved (the bar is shifted under its anchor): only the bar takes the pointer.
+      style={{ pointerEvents: 'none' }}
+    >
       <div
         className={styles.bar}
         data-align="start"

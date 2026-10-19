@@ -273,7 +273,14 @@ export type Edge = {
   toType: NodeType
   kind: EdgeKind
   label?: string
+  // Bend points the user put on it (D-155), in order from `from` to `to`; absent, it's straight.
+  bends?: Bend[]
 }
+
+// A bend point, relative to the middle between the centres of the two cards a link joins: moved together, the cards keep
+// its shape; turned around, the same points in reverse order.
+export type Bend = { x: number; y: number }
+export const MAX_BENDS = 8
 
 // Images, SVGs and PDFs on an item (D-083). The same list is in firestore.rules and storage.rules.
 export const ATTACHMENT_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'] as const

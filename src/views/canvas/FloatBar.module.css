@@ -12,6 +12,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   white-space: nowrap;
+  pointer-events: auto;
   /* Under its anchor point, centred. */
   transform: translate(-50%, 18px);
 }

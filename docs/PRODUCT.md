@@ -24,7 +24,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position, status (D-137) |
 | **Text label** | Text written on the board; names an area and is a place to jump to (D-050) | text, position |
 | **Idea** (post-it) | A thought, problem, insight or feature idea | title, body, color, tags, position (x,y,z), status, attachments |
-| **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label |
+| **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label, bend points the user put on it (D-155) |
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, impact (D-138), linked ideas |
 | **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, regions it operates in (D-145), notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor |

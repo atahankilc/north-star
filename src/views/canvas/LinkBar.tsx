@@ -1,4 +1,5 @@
-// The bar under a selected link (D-108): change its kind, turn it around, give it a label of its own, or remove it.
+// The bar under a selected link (D-108): change its kind, turn it around, give it a label of its own, straighten it
+// when it's bent (D-155), or remove it.
 // Everything is undoable (edges.ts). Viewers and the assistant's preview get no bar. A link just drawn (or `label…` from
 // its menu) opens it with the cursor in the label field (D-154).
 import { Html } from '@react-three/drei'
@@ -52,7 +53,12 @@ export function LinkBar({ wid, edge, at }: { wid: string; edge: WithId<Edge>; at
   }
 
   return (
-    <Html position={[at[0], at[1], 0]} zIndexRange={[15, 15]}>
+    <Html
+      position={[at[0], at[1], 0]}
+      zIndexRange={[15, 15]}
+      // Its box stays where the bar would be unmoved (the bar is shifted under its anchor): only the bar takes the pointer.
+      style={{ pointerEvents: 'none' }}
+    >
       <div
         className={styles.bar}
         style={{ ['--tone' as string]: tone }}
@@ -98,6 +104,12 @@ export function LinkBar({ wid, edge, at }: { wid: string; edge: WithId<Edge>; at
         >
           ⇄ reverse
         </button>
+        {/* A bent link (D-155) can be made straight again. */}
+        {edge.bends && (
+          <button className={styles.button} title="Take out its bend points" onClick={() => void updateEdge(wid, edge.id, { bends: undefined })}>
+            ↺ straighten
+          </button>
+        )}
         <button className={styles.button} data-tone="danger" title="Delete or Backspace" onClick={() => removeLink(wid, edge.id)}>
           × remove
         </button>

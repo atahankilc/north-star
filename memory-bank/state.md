@@ -44,7 +44,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Grid `+` stays a thin `+` zoomed out, thinning to every 4th instead of turning to dots (D-151), 2026-10-19.
 - Card layout: 0.06 padding, header with status + evidence cells, facts line, tag chips; `›` link handle (D-152), 2026-10-19.
 - Zoomed out: title alone in whole words (≤3 lines), far out bars instead of stars (D-153), 2026-10-19.
-- Links: smaller chips, a new link opens ready to label, panel rows with label/reverse and the new one marked (D-154), 2026-10-19.
+- Links: smaller chips, a new link opens ready to label, panel rows with label/reverse and the new one marked (D-154);
+  bend points the user puts on a selected link (D-155; app-routed elbows tried and dropped). 2026-10-19, not committed;
+  rules need deploying.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

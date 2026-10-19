@@ -279,6 +279,7 @@ Links to a stacked feature are always drawn, pointing at the competitor card (on
 **Links read as sentences.** Straight lines from card edge to card edge with an arrowhead at the target and the kind written at the
 midpoint ("solves", "competes", "inspired by"…; "relates" stays unwritten unless it has a label). Line pattern by kind;
 no flowing animation. Colours by meaning, chips on solid plates and thicker lines for the selected card: D-108.
+_Since D-155 a line can be bent through points the user puts on it._
 
 ### D-060 · 2026-10-17 · Accepted
 **Opening a workspace frames everything** (all cards and labels, within zoom limits 9–150; room left for the HUD and toolbar).
@@ -2208,3 +2209,31 @@ to easily understand which link i just created and maybe add a label to it."
 - *Verified* headless on the emulators' example workspace: shift+drag → bar with the field focused, the typed label on
   the chip; `+ link` → marked row, field focused, line lit, then saved and unlit on Enter; menu `edit label` → field
   focused with the label; `tsc`.
+
+### D-155 · 2026-10-19 · Accepted (adds to D-059's straight lines)
+**Links stay straight; the user bends one by putting bend points on it. Nothing moves them by itself.** The user: "links
+directly go from a to b but it makes it harder to organize stuff. Sometimes two links can coexist at the same
+location... maybe like a snake, where we can shape it".
+- *Tried first, turned down:* right-angle elbows routed round the cards by the app, overlapping pieces moved into lanes,
+  chips placed off each other, a middle piece draggable (the user's pick from: elbows / curves / bends by hand; auto and
+  adjustable). The user: "böyle hiç iyi olmadı. Biz her linki her zaman göstermiyoruz ki. Şu anda linkler oynayıp
+  duruyo, linki istediğim gibi çizmek de imkansız." Lanes were worked out from the lines on screen, and lines show and
+  hide with hover and selection (D-128, D-135), so every line shifted when one came or went; and the app, not the user,
+  chose the shape. Removed entirely.
+- *Bend points:* on the selected link (only it, editable, not in a preview), each piece has a hollow square in its
+  middle (beside the chip when that's there); dragging a piece (5 px to start) puts a bend point there and moves it;
+  a bend point is a filled square, dragged to move, double-clicked to take out. Points land on the grid's fifths
+  (D-149) unless snapping is off or alt is held. `↺ straighten` in the bar, `straighten` in the menu take them all out.
+- *Stored* as `bends: [{x, y}]` on the link (≤ 8), relative to the middle between the two cards' centres: moving both
+  cards keeps the shape, moving one shifts the points by half; reversing the link just reverses the list. Undoable.
+- *Drawn:* from the card's edge to the first point, through the points, to the other card's edge; the arrow along the
+  last piece; the chip on the longest piece. A bent link isn't moved beside the others of its pair (D-113 still applies
+  to straight ones). Each line depends only on its own cards and points.
+- *Fixed on the way:* a line whose number of pieces changed kept drawing the old count (three keeps it), so the line
+  is rebuilt when it changes; the link bar's and text bar's invisible box (left where the bar would be unshifted) took
+  clicks to the right of the chip, now only the bar does.
+- *Data:* `Edge.bends` in model.ts, `bends` a list of ≤ 8 in firestore.rules, 3 rules tests; import keeps valid points.
+  Not deployed yet (`npm run deploy:rules`).
+- *Verified* headless on the emulators' example workspace: links straight; a selected link's hollow square dragged → a
+  bend point saved, both pieces drawn; the point dragged → moved; double-clicked → gone; rules tests 296/296 on a
+  separate emulator set; `npm run build`.

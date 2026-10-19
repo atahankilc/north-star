@@ -114,9 +114,12 @@ Values will be tuned against contrast checks (WCAG AA for text).
   every fourth (a card's width); all fade out before the zoom limit.
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
 - Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a small framed chip (solid `--bg`,
-  thin border in the link's colour; mono text the size of a card's small text, D-154) at the midpoint. One colour per kind, all solid lines (D-147), from `--link-*` tokens soft enough
+  thin border in the link's colour; mono text the size of a card's small text, D-154) at the midpoint; a bent link
+  (D-155) runs through its bend points, its chip on the longest piece. One colour per kind, all solid lines (D-147), from `--link-*` tokens soft enough
   to stay apart from type, people and diff colours: violet solves, sky part of, orange competes, raspberry contradicts, gold inspired by, moss depends on, grey relates, near-white `for` (near-black in light theme). Thicker on the selected card; links not touching the hovered or selected
-  card go faint (a competitor's include the links to its features, D-115). A selected link fills its chip. No animation. Several links between the same two cards sit side by side,
+  card go faint (a competitor's include the links to its features, D-115). A selected link fills its chip and shows a hollow square on each piece: drag a piece to put
+  a bend point there (a filled square: drag to move, double-click to take out; on the grid's fifths, alt free);
+  `straighten` takes them all out. No animation. Several straight links between the same two cards sit side by side,
   0.32 apart (closer if the end is too small), their chips moved along the lines so they don't overlap (D-113)
 - Floating bars (D-108, `FloatBar.module.css`): a selected link or text label gets a small solid bar under it (2px top edge
   in its colour) with its tools; the only tool UI drawn on the board itself

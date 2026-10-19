@@ -17,7 +17,7 @@ import {
 } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { WithId } from '../../data/hooks'
-import { createEdge, linked } from '../../data/edges'
+import { createEdge, linked, updateEdge } from '../../data/edges'
 import { type CompetitorFeature, type Edge, type Label } from '../../data/model'
 import { selectionOf, usePresence } from '../../data/presence'
 import { wasLine } from '../workspace/preview'
@@ -37,7 +37,7 @@ import { snapPoint } from './snap'
 import { CARD_H, CARD_W, glideDt } from './cardLayout'
 import { PackageFrame, type Frame } from './PackageFrame'
 import { BoardLine } from './BoardLine'
-import { EdgeLine } from './EdgeLine'
+import { EdgeLine, linePoints, linkChipAt } from './EdgeLine'
 import { rightPress, useBoardMenu } from './rightClick'
 import { setPieces } from './groupDrag'
 import { useGuides } from './guides'
@@ -461,6 +461,33 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
   const dimmed = (line: (typeof lines)[number]) =>
     edgeId ? line.edge.id !== edgeId : focusIds ? !line.touches.some((id) => focusIds.has(id)) : false
 
+  // A link's bend points (D-155) are kept relative to the middle between its cards' centres: on the board they're there
+  // plus that middle, and written back the other way.
+  const middleOf = (line: (typeof lines)[number]): [number, number] => {
+    const a = positions.get(line.from)!
+    const b = positions.get(line.to)!
+    return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+  }
+  const bendsOf = (line: (typeof lines)[number]): [number, number][] => {
+    const m = middleOf(line)
+    return (line.edge.bends ?? []).map((p) => [m[0] + p.x, m[1] + p.y])
+  }
+  const setBends = (line: (typeof lines)[number], points: [number, number][]) => {
+    const m = middleOf(line)
+    const round = (v: number) => Math.round(v * 1000) / 1000
+    void updateEdge(wid, line.edge.id, { bends: points.length ? points.map(([x, y]) => ({ x: round(x - m[0]), y: round(y - m[1]) })) : undefined })
+  }
+  // Where a line runs on the board: through its bend points, or straight and moved beside the others of its pair.
+  const lineOf = (line: (typeof lines)[number]) => {
+    const fromHalf = halfOf(line.from)
+    const toHalf = halfOf(line.to)
+    const bends = bendsOf(line)
+    const a = positions.get(line.from)!
+    const b = positions.get(line.to)!
+    const side = bends.length ? { from: a, to: b, chipShift: 0 } : sideBySide(line, a, b, Math.min(...fromHalf, ...toHalf))
+    return { ...side, fromHalf, toHalf, bends }
+  }
+
   // Where every card and label is, for dragging a selection together (groupDrag.ts); sections with their size, so
   // they carry what they hold (D-130).
   useEffect(() => {
@@ -524,8 +551,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
   const linkSource = linkFrom ? positions.get(linkFrom) : undefined
   const halfOf = (id: string) => (chips.has(id) ? CHIP_HALF : CARD_HALF)
   const selectedLinkAt = (line: (typeof lines)[number]) => {
-    const { from, to } = sideBySide(line, positions.get(line.from)!, positions.get(line.to)!, Math.min(...halfOf(line.from), ...halfOf(line.to)))
-    return midpoint(from, to)
+    const l = lineOf(line)
+    return linkChipAt(linePoints(l.from, l.to, l.fromHalf, l.toHalf, l.bends), l.chipShift)
   }
 
   return (
@@ -576,18 +603,17 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
       )}
 
       {lines.map((line) => {
-        const { edge, from, to, active } = line
-        const fromHalf = halfOf(from)
-        const toHalf = halfOf(to)
-        const { from: a, to: b, chipShift } = sideBySide(line, positions.get(from)!, positions.get(to)!, Math.min(...fromHalf, ...toHalf))
+        const { edge, active } = line
+        const l = lineOf(line)
         return (
           <EdgeLine
             key={edge.id}
-            from={a}
-            to={b}
-            fromHalf={fromHalf}
-            toHalf={toHalf}
-            chipShift={chipShift}
+            from={l.from}
+            to={l.to}
+            fromHalf={l.fromHalf}
+            toHalf={l.toHalf}
+            chipShift={l.chipShift}
+            bends={l.bends}
             kind={edge.kind}
             label={edge.label}
             active={active || edge.id === litEdge}
@@ -598,6 +624,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
             tint={edge.id.startsWith('preview-') ? palette.diff.new : preview?.marks.get(edge.id) === 'edited' ? palette.diff.edited : undefined}
             onSelect={preview ? undefined : () => useCanvas.getState().selectEdge(edge.id)}
             onRightPress={(e) => rightPress(e, { kind: 'link', id: edge.id })}
+            // Only the selected link bends (D-155), not one the side panel lights.
+            onBends={editable && edge.id === edgeId ? (points) => setBends(line, points) : undefined}
           />
         )
       })}
@@ -659,8 +687,6 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     </>
   )
 }
-
-const midpoint = (a: [number, number], b: [number, number]): [number, number] => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
 
 // Room between links drawn side by side: a chip's height and a little, so their chips don't overlap.
 const LINK_SPACING = 0.32

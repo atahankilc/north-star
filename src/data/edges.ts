@@ -19,12 +19,13 @@ export function createEdge(
   return ref.id
 }
 
-// `undefined` clears a field (a link's own label).
-export function updateEdge(wid: string, id: string, fields: Partial<Pick<Edge, 'kind' | 'label'>>) {
+// `undefined` clears a field (a link's own label, its bend points: straight again, D-155).
+export function updateEdge(wid: string, id: string, fields: Partial<Pick<Edge, 'kind' | 'label' | 'bends'>>) {
   const data: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v
   const ref = doc(edgesOf(wid), id)
-  return tracked('label' in fields ? 'link label' : 'link type', [ref], () => updateDoc(ref, data))
+  const what = 'bends' in fields ? 'link shape' : 'label' in fields ? 'link label' : 'link type'
+  return tracked(what, [ref], () => updateDoc(ref, data))
 }
 
 export function deleteEdge(wid: string, id: string) {
@@ -40,6 +41,13 @@ export function linked(edges: Edge[], a: string, b: string) {
 export function reverseEdge(wid: string, id: string, edge: Edge) {
   const ref = doc(edgesOf(wid), id)
   return tracked('reverse link', [ref], () =>
-    updateDoc(ref, { fromId: edge.toId, fromType: edge.toType, toId: edge.fromId, toType: edge.fromType }),
+    // Its bend points (D-155) the other way round: the same shape.
+    updateDoc(ref, {
+      fromId: edge.toId,
+      fromType: edge.toType,
+      toId: edge.fromId,
+      toType: edge.fromType,
+      ...(edge.bends ? { bends: [...edge.bends].reverse() } : {}),
+    }),
   )
 }

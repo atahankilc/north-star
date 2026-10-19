@@ -1,5 +1,5 @@
 // The board's right-click menu (D-117), at the pointer: on a card or text, what you can do with it (or with everything
-// selected, if it's one of several); on a link, its kind, label, reverse, remove; on the empty board, a new card or text right
+// selected, if it's one of several); on a link, its kind, label, reverse, straighten, remove; on the empty board, a new card or text right
 // there, paste there, and the board's switches. Viewers and the assistant's preview get only what changes nothing.
 // Arrow keys move, Escape or a click elsewhere closes, as in the dropdowns (Menu.tsx).
 import { AnimatePresence } from 'motion/react'
@@ -262,6 +262,8 @@ function rowsFor(
       { key: 'label', label: edge.label ? 'edit label' : 'add label', glyph: 'T', run: () => useCanvas.getState().selectEdge(edge.id, true) },
       // A customer tag always points item → customer (D-044).
       { key: 'reverse', label: 'reverse', glyph: '⇄', disabled: edge.kind === FOR, run: () => void reverseEdge(ws.wid, edge.id, edge) },
+      // A bent link straight again (D-155).
+      { key: 'straight', label: 'straighten', glyph: '↺', disabled: !edge.bends, run: () => void updateEdge(ws.wid, edge.id, { bends: undefined }) },
       { key: 'remove', label: 'remove', glyph: '×', hint: '⌫', danger: true, run: () => removeLink(ws.wid, edge.id) },
     ]
   }

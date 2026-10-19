@@ -4,7 +4,7 @@
 // (keys, usage) never do.
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import type { WorkspaceData } from '../data/workspaceData'
-import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, EVIDENCE_KINDS, LABEL_SIZES, MAX_CRITERIA, REPORT_LIMITS, STANCES, VALIDATIONS, type SavedReport } from '../data/model'
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, CONFIDENCES, COVERAGES, CRITERION_SCORES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, EVIDENCE_KINDS, LABEL_SIZES, MAX_BENDS, MAX_CRITERIA, REPORT_LIMITS, STANCES, VALIDATIONS, type Bend, type SavedReport } from '../data/model'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 1
@@ -315,7 +315,14 @@ export function cleanReport(d: Doc, now: number) {
 export function cleanEdge(d: Doc) {
   const kind = str(d.kind, 40)
   if (!kind) return null
-  return { kind, ...compact({ label: str(d.label, 200) }) }
+  return { kind, ...compact({ label: str(d.label, 200), bends: cleanBends(d.bends) }) }
+}
+
+// A link's bend points (D-155), or nothing: straight.
+function cleanBends(v: unknown): Bend[] | undefined {
+  if (!Array.isArray(v) || v.length === 0) return undefined
+  const bends = v.slice(0, MAX_BENDS).map((b) => ({ x: num((b as Doc)?.x), y: num((b as Doc)?.y) }))
+  return bends.every((b) => b.x !== undefined && b.y !== undefined) ? (bends as Bend[]) : undefined
 }
 
 // A file name safe on every system: "Example: Tablebook" → "example-tablebook".

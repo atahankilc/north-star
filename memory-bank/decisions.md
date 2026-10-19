@@ -81,7 +81,9 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Create only from the `+` menu (no double-click); cards don't lift, nor scale on hover/selection (D-053, D-061).
 - Opening frames everything; fit-all button and `0`; view kept between tabs (D-060).
 - Competitor features stack behind it and fan out once the click is released (D-058).
-- Links: straight, arrowhead, kind on a small framed chip (a card's small-text size, D-154); hover/selection dims others;
+- Links: straight; the selected link bends through points the user puts on it (drag a piece, drag a point, double-click
+  to take out, `straighten`), kept relative to its cards' middle; nothing moves them by itself (D-155). Arrowhead,
+  kind on a small framed chip (a card's small-text size, D-154); hover/selection dims others;
   click a link → bar (kind, label, reverse, remove); a link just drawn is selected with the cursor in its label; panel rows
   edit kind, label, reverse, remove, the one just added marked and lit on the board; menu `add label` (D-154); LINKS
   filter, one row per kind (D-059, D-108, D-146). Each kind its own clearly different colour, all
@@ -228,3 +230,4 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Comma CSV for the matrix (D-080). A copy button for the TSV (D-080).
 - Accordion-style dropdown look (D-093). An ASCII-glyph scroll bar component (D-105).
 - Reports as a centred column; `show more` paging; a report opening by itself (D-093, D-102, D-106).
+- Links routed by the app as right-angle elbows with lanes: lines shifted as others showed and hid, shape not the user's (D-155).
