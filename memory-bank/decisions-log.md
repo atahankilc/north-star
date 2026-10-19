@@ -2346,3 +2346,11 @@ or right on its own", "headings disappearing after a point… paragraphs stay at
   bar, editing a heading then zooming far out (field stays small), headings readable zoomed far out, right-click menu
   scrolled 71 px by the wheel and stayed open; rules tests 328/328; `tsc`. The width drag was fixed by reading, not
   dragged in the headless test.
+
+### D-161 · 2026-10-20 · Accepted (changes D-160's paragraph sizes)
+**Paragraph sizes stay under an H3: S 0.14, M 0.18, L 0.24.** The user: "paragraph L is bigger than h3. Please fix that.
+maybe adding a smaller font and then shifting the size labels." L (0.34) was over H3 (0.27).
+- The sizes shift down one: L is the old M (0.24, what every paragraph had before D-160) and is the default (not
+  stored), M is the old S (0.18), S is new (0.14). Stored `scale` is now `small` or `medium`; an old stored `large` reads
+  as L. Rules allow all three; import keeps `small` / `medium`.
+- *Verified* headless: H3 beside S/M/L paragraphs, L just under the H3; rules tests 329/329; `tsc`.

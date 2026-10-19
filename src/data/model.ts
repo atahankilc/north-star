@@ -164,9 +164,9 @@ export type LabelTurn = (typeof LABEL_TURNS)[number]
 export const LABEL_TEXT_MAX = 200
 export const LONG_TEXT_MAX = 4000
 export const KICKER_MAX = 60
-// A paragraph's text sizes (D-160); medium is the default and isn't stored.
+// A paragraph's text sizes (D-160, D-161); large is the default and isn't stored (an old stored `large` reads the same).
 export const PARAGRAPH_SCALES = ['small', 'medium', 'large'] as const
-export type ParagraphScale = 'small' | 'large'
+export type ParagraphScale = (typeof PARAGRAPH_SCALES)[number]
 
 export type Label = {
   text: string

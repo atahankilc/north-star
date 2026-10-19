@@ -254,7 +254,7 @@ export function cleanLabel(d: Doc, now: number) {
       rotate: oneOf(d.rotate, LABEL_TURNS),
       kicker: str(d.kicker, KICKER_MAX),
       side: section && d.side === 'left' ? 'left' : undefined,
-      scale: size === 'note' ? oneOf(d.scale, ['small', 'large'] as const) : undefined,
+      scale: size === 'note' ? oneOf(d.scale, ['small', 'medium'] as const) : undefined,
       author: sticky ? str(d.author, 200) : undefined,
       uid: sticky ? str(d.uid, 128) : undefined,
     }),

@@ -67,13 +67,13 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
             <button
               key={sc}
               className={styles.button}
-              aria-pressed={(label.scale ?? 'medium') === sc}
+              aria-pressed={(label.scale ?? 'large') === sc}
               title={`${sc[0].toUpperCase()}${sc.slice(1)} text`}
-              // Medium is the default and isn't stored.
+              // Large is the default and isn't stored.
               // Its top-left corner stays put as the text grows or shrinks.
               onClick={() => {
-                if ((label.scale ?? 'medium') === sc) return
-                const scale = sc === 'medium' ? undefined : sc
+                if ((label.scale ?? 'large') === sc) return
+                const scale = sc === 'large' ? undefined : sc
                 const [x, y] = keepTopLeft(label, paraBox(label), paraBox({ ...label, scale }))
                 void updateLabel(wid, label.id, { scale, x, y })
               }}

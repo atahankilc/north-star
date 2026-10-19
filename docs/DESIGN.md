@@ -115,10 +115,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Text labels: display-face text straight on the board (D-050); editing swaps in a DOM field at the same spot. A heading
   (H1–H3, D-156) is set on its centre, left-aligned, with an optional small line over its left edge (`02 ── WHO WE BEAT`:
   Geist Mono capitals, `--fg-dim`, a leading number in magenta or the label's colour); an H1 also gets a hairline rule
-  under it fading out to the right. A paragraph (`¶`) is Geist at 0.24 wrapping at its width (6.25 until its right-edge
+  under it fading out to the right. A paragraph (`¶`) is Geist at 0.24 (L; D-161) wrapping at its width (6.25 until its right-edge
   grip is dragged), light Markdown (bold in `fgStrong`, italic, bullets and numbers with dim markers, `code`, links
   underlined cyan), a hairline down its left side. Any text turns a quarter either way (↺ reads up, ↻ down). Hovered or
-  selected, a dashed box goes round it (grey, cyan), no underline. A paragraph's text is S 0.18 / M 0.24 / L 0.34 (D-160);
+  selected, a dashed box goes round it (grey, cyan), no underline. A paragraph's text is S 0.14 / M 0.18 / L 0.24, the default, all under an H3 (D-161);
   headings and paragraphs never switch into each other. Headings and section names are drawn at any zoom (D-160)
 - Sticky notes (D-158): dark paper (`card` colour), a 0.05 bar of its colour along the top (yellow by default), three
   small checks like `▚▚▚` in that colour in the top-right corner, its text in Geist Mono 0.15 (light Markdown, bold in

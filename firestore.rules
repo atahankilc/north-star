@@ -149,7 +149,7 @@ service cloud.firestore {
         && optIn(d, 'rotate', [90, -90])
         && optText(d, 'kicker', 60)
         && optIn(d, 'side', ['left'])
-        && optIn(d, 'scale', ['small', 'large'])
+        && optIn(d, 'scale', ['small', 'medium', 'large'])
         && optText(d, 'uid', 128) && optText(d, 'author', 200)
         && optSize(d, 'w') && optSize(d, 'h')
         && (!('kind' in d) || d.kind != 'section' || ('w' in d && 'h' in d))
