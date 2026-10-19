@@ -99,6 +99,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   0.12 outside on hover; type colour, on the corners just inside the card while pressed; 0.06 outside once selected. A press becomes
   a drag after 5 px; the dragged card shrinks to 0.8 round the point held, and its marks show the full-size corners of
   where it lands. Type colours are reserved for type: tags are white `#chips` (D-056). Cards never lift or tilt (D-061).
+  Inside (D-152): 0.06 padding; a header row (type label left; right, the status, regions, priority or rating, then
+  the evidence as cells: filled supports, outlined against, magenta when they disagree with the status), the title (up
+  to 3 lines), a dim mono facts line, and tags as framed chips. A hovered card shows a dim `›` just right of it to drag
+  a link from (cyan while linking); not while dragged, not on far-out stars.
 - Board grid (D-110, D-148): faint `+` marks every 0.625 units (cards are 4 × 2 steps). A dragged card's top-left corner
   snaps to a mark or to one of the four even steps between two marks (0.125, not drawn, D-149); on a mark, all four
   corners sit on marks. Drawn where the camera sees them on the

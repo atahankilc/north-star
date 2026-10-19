@@ -429,7 +429,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
           ) : (
             <>
               {focusMode && centre && `${nodes.length} of ${all.length} cards · `}
-              {viewer ? 'viewing only · scroll: zoom' : `drag: move${snap ? ' on the grid (alt: freely)' : ''} · drag ○ or shift+drag: link · shift+click / alt+drag: select · scroll: zoom`}
+              {viewer ? 'viewing only · scroll: zoom' : `drag: move${snap ? ' on the grid (alt: freely)' : ''} · drag › or shift+drag: link · shift+click / alt+drag: select · scroll: zoom`}
               {' · 0: fit all'}
               {!focusMode && ws.planes.length > 0 && ' · [ ]: planes'}
               {!viewer && ' · g: snap · a: guides · right-click: menu'}

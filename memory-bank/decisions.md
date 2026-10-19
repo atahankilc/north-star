@@ -76,6 +76,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 ## Board
 - 2.5D: flat board, perspective camera that pans and zooms, no rotation; zoom 9–150 (D-018, D-050).
 - Flat cards, same rectangle for all; type = left border + label in the type colour; no notes on cards (D-055, D-057).
+  Inside, 0.06 padding: header (type, then status/regions/priority with evidence cells), title ≤3 lines, a facts line,
+  tag chips (D-152).
 - Create only from the `+` menu (no double-click); cards don't lift, nor scale on hover/selection (D-053, D-061).
 - Opening frames everything; fit-all button and `0`; view kept between tabs (D-060).
 - Competitor features stack behind it and fan out once the click is released (D-058).
@@ -86,7 +88,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - `competes` lines are their own LINKS group, hidden by default, shown for the hovered or selected card; competitor cards say
   `vs N`; a link's own label shows on its chip only while it's hovered, selected or the selected card's (D-135).
 - A competitor in focus (hovered, selected) lights the links to its features as well (D-115).
-- Multi-select (shift+click, alt+drag box), group drag, "N selected" panel; ⌘C/⌘V/⌘D in-tab clipboard; `○` link handle (D-108).
+- Multi-select (shift+click, alt+drag box), group drag, "N selected" panel; ⌘C/⌘V/⌘D in-tab clipboard; `›` link handle right of a hovered card (D-108, D-152).
   The panel lines up (align 6 ways, space out ↔ ↕), arrows nudge 0.25 (shift 1), presence `more` sends the whole selection (D-124).
 - Planes (D-139, spec planes.md): one set of cards placed on many planes; All shows every card (today's board, no
   migration); per-plane placements, sections and text; links drawn when both ends are on the plane; packages are cards.

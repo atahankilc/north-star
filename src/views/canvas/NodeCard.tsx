@@ -20,6 +20,7 @@ import { FarNode } from './FarNode'
 import { rightPress } from './rightClick'
 import { endGroup, groupIds, moveGroup, startGroup } from './groupDrag'
 import { CardCorners, CORNER_THICK } from './CardCorners'
+import { ProofCells, proofWidth, TagChips } from './CardFacts'
 import { clearGuides, placeDragged, unitsPerPixel } from './guides'
 import { MARK_SIGN, type Mark } from '../workspace/preview'
 import { editLocked } from '../workspace/viewerLock'
@@ -93,10 +94,15 @@ const isWithin = (o: Object3D | null, root: Object3D | null) => {
 }
 
 const BADGE = 0.17
-// The link handle on a hovered card's right edge.
-const HANDLE = 0.1
-// What the pointer can grab around it: wider than it looks, it's small.
-const HANDLE_HIT = 0.2
+// The card's layout (D-152): everything this far in from its edges (and from the type stripe on the left); a header
+// row (type, status), the title, then the facts line and the tag chips.
+const PAD = 0.06
+const STRIPE = 0.06
+const SMALL = 0.072
+// The link handle (D-152): a `›` just right of a hovered card.
+const HANDLE = 0.3
+// What the pointer can grab round it: a band over the card's right edge, wider and taller than the `›`.
+const HANDLE_HIT: [number, number] = [0.32, 0.5]
 const WAS_H = 0.24
 // How small a card goes while it's dragged (D-150): its corner marks show where it lands, full size.
 const CARRIED = 0.8
@@ -143,6 +149,7 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
   // Shift held at the press: a link if the pointer leaves the card, a toggle of the selection if it doesn't.
   const shiftPress = useRef(false)
   const overHandle = useRef(false)
+  const [handleHot, setHandleHot] = useState(false)
 
   const [x, y] = live ?? [node.x, node.y]
   // Dragged by this tab's card drag (D-150): the one held, or carried along in a group drag that a card started. Not
@@ -310,10 +317,19 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
   const rim = related ? colors.cyan : null
   const pressed = pressing === node.id
   const title = node.title.trim()
-  const left = -W / 2 + 0.22
-  const inner = W - 0.22 - 0.16
-  const titleTop = full ? H / 2 - 0.27 : 0
-  const tags = node.tags.map((t) => `#${t}`).join('  ')
+  const left = -W / 2 + STRIPE + PAD
+  const right = W / 2 - PAD
+  const inner = right - left
+  const top = H / 2 - PAD
+  const bottom = -H / 2 + PAD
+  const titleTop = full ? top - 0.14 : 0
+  // The header ends left of the preview's diff sign, when there is one.
+  const headRight = mark ? right - BADGE - 0.05 : right
+  const proof = node.proof
+  const cells = proof ? proofWidth(proof) : 0
+  // The facts line sits on the tag chips, or at the bottom without any. Mono text is 0.6 em a character.
+  const factsY = node.tags.length ? bottom + 0.17 : bottom
+  const factsFit = Math.floor(inner / (SMALL * 0.6))
 
   return (
     <>
@@ -430,21 +446,38 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
             visible={full}
             material={textMaterial}
             font={fontUrls.mono}
-            fontSize={0.072}
+            fontSize={SMALL}
             letterSpacing={0.14}
             color={accent}
             anchorX="left"
             anchorY="top"
-            position={[left, H / 2 - 0.12, 0.002]}
+            position={[left, top, 0.002]}
           >
             {BOARD_KINDS[type].label.toUpperCase()}
           </Text>
+          {/* Status (or regions, priority, rating) right of the type, then the evidence as cells (D-152). */}
+          {node.head && (
+            <Text
+              visible={full}
+              material={textMaterial}
+              font={fontUrls.mono}
+              fontSize={SMALL}
+              color={proof?.clash ? colors.magenta : colors.fgDim}
+              anchorX="right"
+              anchorY="top"
+              position={[headRight - (cells ? cells + 0.05 : 0), top, 0.002]}
+            >
+              {truncate(node.head, 24)}
+            </Text>
+          )}
+          {proof && full && <ProofCells proof={proof} right={headRight} y={top - 0.032} />}
 
           <Text
             visible={!far}
             material={textMaterial}
             font={fontUrls.display}
-            fontSize={full ? 0.17 : COMPACT_TITLE}
+            fontSize={full ? 0.165 : COMPACT_TITLE}
+            lineHeight={1.12}
             color={title && !deleted ? colors.fg : colors.fgDim}
             onSync={(t: { textRenderInfo?: TextLayout }) => setTitleLayout(t.textRenderInfo)}
             anchorX="left"
@@ -453,44 +486,31 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
             maxWidth={inner}
             letterSpacing={-0.01}
           >
-            {truncate(title || 'Untitled', full ? 44 : 26)}
+            {truncate(title || 'Untitled', full ? 80 : 26)}
           </Text>
           {deleted && !far && (
             <group position={[left, titleTop, 0]}>
               <StrikeLines strikes={strikesOf(titleLayout)} color={colors.diff.deleted} />
             </group>
           )}
-          {tags && (
-            <Text
-              visible={full}
-              material={textMaterial}
-              font={fontUrls.mono}
-              fontSize={0.085}
-              color={colors.fg}
-              anchorX="left"
-              anchorY="bottom"
-              position={[left, -H / 2 + 0.12 + (node.meta ? 0.15 : 0), 0.002]}
-            >
-              {truncate(tags, 40)}
-            </Text>
-          )}
           {node.meta && (
             <Text
               visible={full}
               material={textMaterial}
               font={fontUrls.mono}
-              fontSize={0.08}
+              fontSize={SMALL}
               color={colors.fgDim}
               anchorX="left"
               anchorY="bottom"
-              position={[left, -H / 2 + 0.12, 0.002]}
+              position={[left, factsY, 0.002]}
             >
-              {truncate(node.meta, 42)}
+              {truncate(node.meta, factsFit)}
             </Text>
           )}
+          {full && node.tags.length > 0 && <TagChips tags={node.tags} left={left} right={right} y={bottom} material={textMaterial} />}
           {/* The diff sign in the top-right corner: outlined, filled while lit. */}
           {mark && markColor && (
-            <group position={[W / 2 - BADGE / 2 - 0.08, H / 2 - BADGE / 2 - 0.08, 0.002]}>
+            <group position={[W / 2 - BADGE / 2 - PAD, H / 2 - BADGE / 2 - PAD, 0.002]}>
               <mesh>
                 <planeGeometry args={[BADGE, BADGE]} />
                 <meshBasicMaterial color={markColor} toneMapped={false} />
@@ -547,24 +567,44 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
             </div>
           </Html>
         )}
-        {(hovered || isLinkSource) && !editLocked() && (
+        {/* Not while the card is dragged, nor on a star far out (D-152). */}
+        {(hovered || isLinkSource) && !carried && !far && !editLocked() && (
           <group position={[W / 2, 0, 0.004]}>
             <mesh
+              position={[HANDLE_HIT[0] / 2 - 0.06, 0, 0]}
               onPointerDown={onHandleDown}
-              // Not stopped: the card has to keep its hover, or the handle goes away under the pointer.
-              onPointerOver={() => (overHandle.current = true)}
-              onPointerOut={() => {
+              // Stopped, so a link ending under it doesn't take the pointer (and its cursor) away. The card keeps its
+              // hover: the handle is only there while the card is hovered, and it's part of the card.
+              onPointerOver={(e) => {
+                e.stopPropagation()
+                overHandle.current = true
+                setHandleHot(true)
+                document.body.style.cursor = 'crosshair'
+              }}
+              onPointerMove={(e) => e.stopPropagation()}
+              onPointerOut={(e) => {
                 overHandle.current = false
-                document.body.style.cursor = 'grab'
+                setHandleHot(false)
+                // Back to the card's cursor if it's still on the card, otherwise none.
+                document.body.style.cursor = e.intersections.some((h) => isWithin(h.object, group.current)) ? 'grab' : ''
               }}
             >
-              <circleGeometry args={[HANDLE_HIT, 20]} />
+              <planeGeometry args={HANDLE_HIT} />
               <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
             </mesh>
-            <mesh>
-              <circleGeometry args={[HANDLE, 20]} />
-              <meshBasicMaterial color={isLinkSource ? colors.cyan : colors.fg} toneMapped={false} />
-            </mesh>
+            {/* Dim while shown, bright with the pointer on it, cyan while a link is drawn from it. Never hit itself:
+                its glyph's outline made the hover flicker. */}
+            <Text
+              raycast={() => null}
+              font={fontUrls.mono}
+              fontSize={HANDLE}
+              color={isLinkSource ? colors.cyan : handleHot ? colors.fg : colors.fgDim}
+              anchorX="left"
+              anchorY="middle"
+              position={[0.02, 0.012, 0]}
+            >
+              ›
+            </Text>
           </group>
         )}
         {/* Coming back from a star, the card builds up again. */}

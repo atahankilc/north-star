@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-19 (D-151 lean grid marks zoomed out)_
+_Last updated: 2026-10-19 (D-152 card layout and `›` link handle)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -42,6 +42,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Card hover/selection as corner marks, dragged card shrinks to 0.8 with its corners on where it lands, 5 px drag
   threshold (D-150), 2026-10-19.
 - Grid `+` stays a thin `+` zoomed out, thinning to every 4th instead of turning to dots (D-151), 2026-10-19.
+- Card layout: 0.06 padding, header with status + evidence cells, facts line, tag chips; `›` link handle (D-152), 2026-10-19.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

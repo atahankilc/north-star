@@ -260,7 +260,8 @@ an editable tags column in Table (`#a #b` or `a, b`); competitors gained `tags` 
 a tag carries its meaning in its name and works the same in every view. The example workspace tags everything.
 
 ### D-057 · 2026-10-17 · Accepted
-**Small cards, compact panels.** Cards no longer show notes or descriptions (height 1.25: type label, title ≤2 lines, tags, meta).
+**Small cards, compact panels.** Cards no longer show notes or descriptions (height 1.25: type label, title ≤2 lines, tags, meta;
+laid out again in D-152).
 In the side panel, `for` is a multi-select dropdown and tags use a picker (`src/ui/TagInput.tsx`: chips with ×, type to filter the
 workspace's existing tags, Enter or comma adds, Backspace removes the last); the same picker is in the competitor panel and the
 Table's tags cell. The idea panel's "To feature" button is gone.
@@ -1208,8 +1209,9 @@ more editing tools. Their picks: four colour groups by meaning, a floating bar a
   competitor's features, the links among them and their customer tags; ⌘V pastes at the view's centre keeping the layout,
   ⌘D duplicates 0.6 down-right; new ids, one undo step, the copies end up selected. Not when text is selected on the page.
   Matrix cells and attachments aren't copied.
-- *Edge handle:* a hovered card shows a `○` on its right edge; dragging from it links like shift+drag. The handle doesn't stop
-  the card's hover events (doing so made the card think the pointer left and the handle vanished under it).
+- *Edge handle:* a hovered card shows a handle on its right edge (a `○`; a `›` since D-152); dragging from it links like
+  shift+drag. Since D-152 the handle stops its own over/move events (a link ending under it took the cursor), and the
+  card's hover holds because its out-check counts the handle as part of the card.
 - *Text sizes:* `labels.size`: `heading` (default, not stored) 0.6, `subheading` 0.36, `note` 0.2 in mono and dim. A selected
   label gets a bar (`LabelBar.tsx`) from its left edge: H1 / H2 / note, a colour (plain or the five accents, stored as the
   dark hex like presence colours and drawn with `themeAccent`), edit, remove. Notes stay in the jump list like any label (no longer: notes left it, D-116).
@@ -2144,3 +2146,26 @@ zoomed-in look was fine, keep it, and use the new look only zoomed out.
 - Thinning instead of dots: under 18 px apart every other mark fades, under 18 px at twice the step all but every fourth
   (2.5, a card's width); all still fade out between 80 and 120 (D-110). Marks stay where they were, so snapping is unchanged.
 - *Verified* headless: the shader from Board.tsx on a test page, old and new at camera distances 9, 20, 40, 60, 90; `tsc`.
+
+### D-152 · 2026-10-19 · Accepted (changes D-057's card contents, D-108's `○` handle, D-137's status text on the card)
+**Cards: less padding, a header with status and evidence cells, facts and tag chips; the link handle is a `›`.** The user:
+"padding is too much and most of the card is empty space. Also i want to put more details on the card. And also the line
+connection dot do not match with our design language". Size stays 4 × 2 marks (D-148). Shown side by side on a scratch
+preview (port 5188): today; tight with facts as text; tight with an evidence meter and tag chips; then padding 0.12 /
+0.08 / 0.06. The user picked the meter + chips layout at 0.06.
+- *Layout* (`NodeCard.tsx`, `CardFacts.tsx`): everything 0.06 in from the edges (and the type stripe). Header: type label
+  left; right, the `head` (a customer/problem/idea's status with `!` when the evidence disagrees, a competitor's regions,
+  a feature's priority, a package's rating), then the evidence as cells (filled = supports, outlined = against, up to 5
+  each, magenta with the `!`). Title 0.165, up to 3 lines (cut at 80 characters, was 44). The facts line (`meta`), then
+  tags as framed chips (`+N` when they don't fit); without tags the facts line sits at the bottom. The preview's diff
+  sign moves to the padding and the header ends left of it.
+- *Facts* (`useBoardItems`): customer `N tagged for them`; problem `N solve it · vs N` + its customers; idea
+  `solves N · N features` + customers; competitor `vs N · N features` + customers; feature its status, impact, effort +
+  customers; package what it holds. Files at the end; planes still put `on N planes` first (planes.ts).
+- *Link handle:* tried a square port, a `+`, four ports, a tab, an edge line, a small square, a `]`, triangles; then
+  characters the mono font has (`>`, `›`, `»`, `->`). The user picked `›`, a little closer to the card: dim, bright
+  under the pointer, cyan while linking. Not while the card is dragged, not on far-out stars. Its hit area is a band over
+  the right edge; the glyph itself is never hit (its outline made the hover flicker), and the handle stops its own
+  pointer events so a link ending under it can't take the cursor (the user saw it switch between arrow and hand).
+- *Verified* headless on the emulators' example workspace: the layout on every type, the handle on hover, gone in a
+  drag; the cursor across the card and handle reads grab → crosshair → none with no flicker; `tsc`.

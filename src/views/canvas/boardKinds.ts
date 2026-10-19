@@ -71,7 +71,13 @@ export type BoardItem = {
   forIds: string[]
   // Competitors only: where they operate (D-145).
   regions?: string[]
-  // Bottom line of the card: who it's for, plus type-specific facts.
+  // The card's header, right of its type (D-152): a status, a competitor's regions, a feature's priority, a package's
+  // rating.
+  head?: string
+  // Evidence on a customer, problem or idea (D-137), drawn as cells beside the head; `clash` when it and the status
+  // disagree.
+  proof?: { supports: number; contradicts: number; clash: boolean }
+  // The card's facts line: who it's for, plus type-specific facts.
   meta: string
 }
 
@@ -123,26 +129,43 @@ export function useBoardItems(): BoardItem[] {
       return n ? `${n} file${n === 1 ? '' : 's'}` : undefined
     }
 
-    // Status and its evidence (D-137): `testing +2 −1`, with `!` when the evidence doesn't back the status.
+    // Status and its evidence (D-137): the status in the head, `!` when the evidence doesn't back it, and the evidence as
+    // cells beside it (D-152).
     const learned = new Map<string, Evidence[]>()
     for (const e of evidence) learned.set(e.nodeId, [...(learned.get(e.nodeId) ?? []), e])
-    const proof = (n: { id: string; validation?: Validation }) => {
+    const status = (n: { id: string; validation?: Validation }) => {
       const list = learned.get(n.id) ?? []
       const t = tally(list)
-      const counts = list.length ? `+${t.supports} −${t.contradicts}` : ''
-      if (!n.validation) return counts || undefined
-      return `${n.validation}${mismatch(n.validation, list) ? ' !' : ''}${counts ? ` ${counts}` : ''}`
+      const clash = !!n.validation && !!mismatch(n.validation, list)
+      return {
+        head: n.validation ? `${n.validation}${clash ? ' !' : ''}` : undefined,
+        proof: list.length ? { supports: t.supports, contradicts: t.contradicts, clash } : undefined,
+      }
     }
+    // How many links of a kind leave or reach a card, and how many cards of a type it's linked to at all (D-152).
+    const count = (id: string, kind: string, dir: 'from' | 'to') => edges.filter((e) => e.kind === kind && (dir === 'from' ? e.fromId : e.toId) === id).length
+    const linkedTo = (id: string, other: BoardType) =>
+      edges.filter((e) => e.kind !== FOR && ((e.fromId === id && e.toType === other) || (e.toId === id && e.fromType === other))).length
+    const n = (k: number, one: string) => (k ? `${k} ${one}${k === 1 ? '' : 's'}` : undefined)
 
     const items: BoardItem[] = []
     for (const c of customers) {
       const tagged = edges.filter((e) => e.kind === FOR && e.toId === c.id).length
-      items.push({ ...c, type: 'customer', tags: c.tags ?? [], forIds: [], meta: line(proof(c), tagged ? `${tagged} tagged for them` : '', files(c.id)) })
+      items.push({ ...c, type: 'customer', tags: c.tags ?? [], forIds: [], ...status(c), meta: line(tagged ? `${tagged} tagged for them` : '', files(c.id)) })
     }
-    for (const p of problems) items.push({ ...p, type: 'problem', tags: p.tags ?? [], forIds: tags.get(p.id) ?? [], meta: line(proof(p), labels(p.id), files(p.id)) })
-    for (const i of ideas) items.push({ ...i, type: 'idea', tags: i.tags ?? [], forIds: tags.get(i.id) ?? [], meta: line(proof(i), labels(i.id), files(i.id)) })
+    for (const p of problems) {
+      const solved = count(p.id, 'solves', 'to')
+      const rivals = count(p.id, 'competes-with', 'to') + count(p.id, 'competes-with', 'from')
+      const facts = [solved ? `${solved} solve it` : undefined, rivals ? `vs ${rivals}` : undefined].filter(Boolean).join(' · ')
+      items.push({ ...p, type: 'problem', tags: p.tags ?? [], forIds: tags.get(p.id) ?? [], ...status(p), meta: line(facts, labels(p.id), files(p.id)) })
+    }
+    for (const i of ideas) {
+      const solves = count(i.id, 'solves', 'from')
+      const facts = [solves ? `solves ${solves}` : undefined, n(linkedTo(i.id, 'feature'), 'feature')].filter(Boolean).join(' · ')
+      items.push({ ...i, type: 'idea', tags: i.tags ?? [], forIds: tags.get(i.id) ?? [], ...status(i), meta: line(facts, labels(i.id), files(i.id)) })
+    }
     for (const c of competitors) {
-      const n = counts.get(c.id) ?? 0
+      const k = counts.get(c.id) ?? 0
       items.push({
         id: c.id,
         type: 'competitor',
@@ -154,13 +177,14 @@ export function useBoardItems(): BoardItem[] {
         createdAt: c.createdAt,
         forIds: tags.get(c.id) ?? [],
         regions: c.regions,
-        // Where it operates comes first (D-145): `US · Germany +1   vs 3   4 features`.
-        meta: line(regionText(c.regions), rivals.get(c.id)?.size ? `vs ${rivals.get(c.id)!.size}` : undefined, `${n} feature${n === 1 ? '' : 's'}`, labels(c.id), files(c.id)),
+        // Where it operates heads the card (D-145, D-152): `US · Germany +1`; then `vs 3 · 4 features`.
+        head: regionText(c.regions) || undefined,
+        meta: line([rivals.get(c.id)?.size ? `vs ${rivals.get(c.id)!.size}` : undefined, `${k} feature${k === 1 ? '' : 's'}`].filter(Boolean).join(' · '), labels(c.id), files(c.id)),
       })
     }
     for (const f of features) {
-      const fields = [f.priority, f.status, f.effort].filter(Boolean).join(' · ')
-      items.push({ ...f, type: 'feature', tags: f.tags ?? [], forIds: tags.get(f.id) ?? [], meta: line(fields, labels(f.id), files(f.id)) })
+      const fields = [f.status, f.impact && `impact ${f.impact}`, f.effort && `effort ${f.effort}`].filter(Boolean).join(' · ')
+      items.push({ ...f, type: 'feature', tags: f.tags ?? [], forIds: tags.get(f.id) ?? [], head: f.priority, meta: line(fields, labels(f.id), files(f.id)) })
     }
     // Packages (D-141): what they hold, by type (`1 problem · 1 idea · 3 features`), and their rating.
     const typeOf = new Map(items.map((i) => [i.id, i.type]))
@@ -172,7 +196,7 @@ export function useBoardItems(): BoardItem[] {
       }
       const holds = BOARD_TYPES.flatMap((t) => (held.get(t) ? [`${held.get(t)} ${held.get(t) === 1 ? BOARD_KINDS[t].label : BOARD_KINDS[t].plural}`] : [])).join(' · ')
       const rating = [k.impact && `impact ${k.impact}`, k.effort].filter(Boolean).join(' · ')
-      items.push({ ...k, type: 'package', tags: k.tags ?? [], forIds: [], meta: line(holds || 'empty', rating, files(k.id)) })
+      items.push({ ...k, type: 'package', tags: k.tags ?? [], forIds: [], head: rating || undefined, meta: line(holds || 'empty', files(k.id)) })
     }
     return items
   }, [customers, problems, ideas, competitors, features, competitorFeatures, edges, attachments, evidence, packages])
