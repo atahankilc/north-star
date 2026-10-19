@@ -6,6 +6,8 @@
   left: 0;
   z-index: 60;
   min-width: 200px;
+  /* A long menu scrolls (the dropdowns' height cap), without passing the scroll on to the page. */
+  overscroll-behavior: contain;
 }
 
 .heading {

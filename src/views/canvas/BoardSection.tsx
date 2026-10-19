@@ -15,9 +15,10 @@ import { KICKER_MAX, LABEL_TEXT_MAX, type Label } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { usePalette, useThemeAccent } from '../../state/theme'
 import { BoardLine } from './BoardLine'
+import { CardCorners, CORNER_THICK } from './CardCorners'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
-import { useReadable } from './detail'
+import { useDetail, useReadable } from './detail'
 import { endGroup, moveGroup, startGroup } from './groupDrag'
 import { focusField } from './focusField'
 import { clearGuides, placeDragged, unitsPerPixel } from './guides'
@@ -63,6 +64,8 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
   const live = useCanvas((s) => s.dragging[label.id])
   const { select, toggleSelect, setDragging, setEditingLabel } = useCanvas.getState()
   const [hovered, setHovered] = useState(false)
+  // Held down (a press, or a drag): its corners close in, as a card's do (D-150).
+  const [pressed, setPressed] = useState(false)
   // The frame while its corner is dragged, ahead of Firestore.
   const [resizing, setResizing] = useState<SectionRect | null>(null)
   // The name's width as laid out, for the break in the line round it.
@@ -76,7 +79,8 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
   const colors = usePalette()
   const tone = useThemeAccent()
   const accent = label.color ? tone(label.color) : colors.fg
-  const line = selected ? colors.cyan : hovered ? colors.hover : label.color ? accent : colors.edge
+  // The line keeps its colour; hover and selection show as corner marks, as on a card (D-150).
+  const line = label.color ? accent : colors.edge
   const z = Z + Math.min(depth, 8) * Z_STEP
 
   const drag = useRef<{ dx: number; dy: number; from: [number, number]; lastWrite: number; moved: boolean; group: boolean } | null>(null)
@@ -113,6 +117,7 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
     if (editLocked()) return
     const inGroup = startGroup(label.id)
     drag.current = { dx: p[0] - x, dy: p[1] - y, from: [label.x, label.y], lastWrite: 0, moved: false, group: inGroup }
+    setPressed(true)
     ;(e.target as Element).setPointerCapture(e.pointerId)
   }
 
@@ -141,6 +146,7 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
     if (d) {
       e.stopPropagation()
       drag.current = null
+      setPressed(false)
       ;(e.target as Element).releasePointerCapture(e.pointerId)
       clearGuides()
       if (d.group) {
@@ -261,7 +267,17 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
   return (
     <group ref={group} position={[x, y, z]}>
       <group ref={content}>
-        <BoardLine points={frame} color={line} lineWidth={selected ? 1.6 : 1} toneMapped={false} />
+        <BoardLine points={frame} color={line} lineWidth={1} toneMapped={false} />
+        {!fixed && (
+          <CardCorners
+            w={w}
+            h={h}
+            on={hovered || pressed || selected || !!resizing}
+            out={pressed ? -CORNER_THICK : selected ? 0.08 : 0.16}
+            len={pressed ? 0.5 : 0.4}
+            color={pressed || selected || resizing ? (label.color ? accent : colors.fg) : colors.hover}
+          />
+        )}
 
         {/* What can be grabbed: the name and the frame's four edges. */}
         {!fixed &&
@@ -288,8 +304,8 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
             </Text>
           )}
           {!editing && (
+            // The name is always drawn, however small, as a heading is.
             <Text
-              visible={readable}
               material={textMaterial}
               font={labelFace({ ...label, size: undefined })}
               fontSize={size}
@@ -318,7 +334,7 @@ export function BoardSection({ wid, label, depth, fixed = false }: Props) {
                   [-0.06, 0.06, 0],
                   [-0.06, HANDLE, 0],
                 ]}
-                color={selected ? colors.cyan : colors.hover}
+                color={selected ? (label.color ? accent : colors.fg) : colors.hover}
                 lineWidth={2}
                 toneMapped={false}
               />
@@ -359,9 +375,8 @@ function NameInput({ wid, label, size, at, onDone }: { wid: string; label: WithI
   const input = useRef<HTMLInputElement>(null)
   const wrap = useRef<HTMLDivElement>(null)
   const done = useRef(false)
-  const camera = useThree((s) => s.camera)
-  const view = useThree((s) => s.size)
-  const upp = useMemo(() => unitsPerPixel(camera, view.height), [camera, view])
+  // Follows the zoom while it's open (D-160).
+  const upp = 1 / useDetail((s) => s.ppu)
 
   useEffect(() => focusField(() => input.current), [])
 

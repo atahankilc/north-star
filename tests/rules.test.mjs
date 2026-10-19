@@ -288,6 +288,8 @@ await deny('text turned 45', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', ro
 await deny('a small line over 60', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', kicker: 'k'.repeat(61), x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a section named up its left edge (D-157)', () => addDoc(sub(bob.fs, 'labels'), { text: 'Ideas', kind: 'section', side: 'left', x: 0, y: 0, w: 10, h: 6, createdAt: 1, updatedAt: 1 }))
 await deny('a section named on its right edge', () => addDoc(sub(bob.fs, 'labels'), { text: 'Ideas', kind: 'section', side: 'right', x: 0, y: 0, w: 10, h: 6, createdAt: 1, updatedAt: 1 }))
+await allow('a large paragraph (D-160)', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', size: 'note', scale: 'large', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('a paragraph at a huge size', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', size: 'note', scale: 'huge', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 // Sticky notes (D-158): long text, signed.
 await allow('a sticky note, signed', () => addDoc(sub(bob.fs, 'labels'), { text: 'x'.repeat(2000), kind: 'sticky', uid: 'bob', author: 'Bob', w: 3.125, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await deny('a sticky note over 4000', () => addDoc(sub(bob.fs, 'labels'), { text: 'x'.repeat(4001), kind: 'sticky', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))

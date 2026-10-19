@@ -28,7 +28,7 @@ export function createSticky(wid: string, at: [number, number]) {
 }
 
 // `undefined` clears a field. `first`: the text a new label is given, which undoes together with creating it.
-export type LabelEdit = Partial<Pick<Label, 'text' | 'color' | 'size' | 'bold' | 'italic' | 'caps' | 'rotate' | 'kicker' | 'side' | 'w' | 'x' | 'y'>>
+export type LabelEdit = Partial<Pick<Label, 'text' | 'color' | 'size' | 'bold' | 'italic' | 'caps' | 'rotate' | 'kicker' | 'side' | 'scale' | 'w' | 'x' | 'y'>>
 export function updateLabel(wid: string, id: string, fields: LabelEdit, first = false) {
   const data: Record<string, unknown> = { updatedAt: Date.now() }
   for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v

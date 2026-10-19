@@ -118,7 +118,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   under it fading out to the right. A paragraph (`¶`) is Geist at 0.24 wrapping at its width (6.25 until its right-edge
   grip is dragged), light Markdown (bold in `fgStrong`, italic, bullets and numbers with dim markers, `code`, links
   underlined cyan), a hairline down its left side. Any text turns a quarter either way (↺ reads up, ↻ down). Hovered or
-  selected, a dashed box goes round it (grey, cyan), no underline
+  selected, a dashed box goes round it (grey, cyan), no underline. A paragraph's text is S 0.18 / M 0.24 / L 0.34 (D-160);
+  headings and paragraphs never switch into each other. Headings and section names are drawn at any zoom (D-160)
 - Sticky notes (D-158): dark paper (`card` colour), a 0.05 bar of its colour along the top (yellow by default), three
   small checks like `▚▚▚` in that colour in the top-right corner, its text in Geist Mono 0.15 (light Markdown, bold in
   `fgStrong`), and at the foot `ATAHAN · 2d` in dim mono: who wrote it (first name) and how long ago. 3.125 wide by
@@ -131,8 +132,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   field underlined cyan with `↵`. Pins stay one size at any zoom (DOM over the canvas). `comments N ▾` in the footer
 - Sections (D-130, D-157): a thin frame, no fill. The name sits in the frame's edge, the line breaking round it: along
   the top from near the left corner, or up the left edge ending near the top (read bottom to top). A small line before
-  the name in mono (a number in magenta). A section's colour goes to its line and name, nothing else; hover greys the
-  line, selection turns it cyan
+  the name in mono (a number in magenta). A section's colour goes to its line and name, nothing else; hover and selection
+  are a card's corner marks (D-150, D-160), the line keeps its colour
 - Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a small framed chip (solid `--bg`,
   thin border in the link's colour; mono text the size of a card's small text, D-154) at the midpoint; a bent link
   (D-155) runs through its bend points, its chip on the longest piece. One colour per kind, all solid lines (D-147), from `--link-*` tokens soft enough

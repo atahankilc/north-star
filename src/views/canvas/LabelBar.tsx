@@ -1,18 +1,19 @@
-// The bar under a selected text label (D-108): its size (H1, H2, H3, paragraph), how it's set (bold, italic, caps),
+// The bar under a selected text label (D-108): a heading's size (H1, H2, H3; a paragraph has none, D-160), how it's set (bold, italic, caps),
 // turned a quarter either way (D-156), its colour, edit, remove. A section's (D-130) the same for its name, without
 // paragraph, and with where the name sits instead of turning (D-157); removing it leaves what it holds.
 // All undoable (labels.ts). Viewers and the assistant's preview get no bar. `at` is the label's bottom-left corner.
 import { Html } from '@react-three/drei'
 import type { WithId } from '../../data/hooks'
 import { updateLabel } from '../../data/labels'
-import { LABEL_SIZES, type Label } from '../../data/model'
+import { PARAGRAPH_SCALES, type Label } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { useThemeAccent } from '../../state/theme'
 import { accents } from '../../styles/tokens'
 import { removeLabel } from '../workspace/useEditKeys'
 import { isSection, SECTION_SIZES } from './sections'
 import { STICKY_COLOR, isSticky } from './stickyNote'
-import { SIZE_HINTS, SIZE_NAMES } from './textStyle'
+import { SIZE_HINTS, SIZE_NAMES, isParagraph, paraBox } from './textStyle'
+import { keepTopLeft } from './BoardLabel'
 import styles from './FloatBar.module.css'
 
 // Each switch is shown in the style it sets.
@@ -21,6 +22,9 @@ const STYLES = [
   { key: 'italic', glyph: 'I', name: 'Italic', look: { fontStyle: 'italic' } },
   { key: 'caps', glyph: 'AA', name: 'Capitals', look: {} },
 ] as const
+
+// Headings' sizes; a paragraph (`note`) is made as one from + and stays one (D-160).
+const HEADING_SIZES = ['heading', 'subheading', 'minor'] as const
 
 // A quarter turn either way (D-156): ↺ reads bottom to top, ↻ top to bottom.
 const TURNS = [
@@ -40,6 +44,8 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
   const section = isSection(label)
   // A sticky note (D-158): only its colour (yellow when none is set), edit and remove.
   const sticky = isSticky(label)
+  // A paragraph stays a paragraph and a heading a heading (D-160): a heading picks H1–H3, a paragraph no size.
+  const paragraph = isParagraph(label)
   return (
     <Html
       position={[at[0], at[1], 0]}
@@ -56,7 +62,26 @@ export function LabelBar({ wid, label, at }: { wid: string; label: WithId<Label>
         onPointerDown={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}
       >
-        {!sticky && (section ? SECTION_SIZES : LABEL_SIZES).map((s) => (
+        {paragraph &&
+          PARAGRAPH_SCALES.map((sc) => (
+            <button
+              key={sc}
+              className={styles.button}
+              aria-pressed={(label.scale ?? 'medium') === sc}
+              title={`${sc[0].toUpperCase()}${sc.slice(1)} text`}
+              // Medium is the default and isn't stored.
+              // Its top-left corner stays put as the text grows or shrinks.
+              onClick={() => {
+                if ((label.scale ?? 'medium') === sc) return
+                const scale = sc === 'medium' ? undefined : sc
+                const [x, y] = keepTopLeft(label, paraBox(label), paraBox({ ...label, scale }))
+                void updateLabel(wid, label.id, { scale, x, y })
+              }}
+            >
+              {sc[0].toUpperCase()}
+            </button>
+          ))}
+        {!sticky && !paragraph && (section ? SECTION_SIZES : HEADING_SIZES).map((s) => (
           <button
             key={s}
             className={styles.button}

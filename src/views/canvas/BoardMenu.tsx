@@ -116,13 +116,17 @@ function MenuPanel({ x, y, rows, onClose }: { x: number; y: number; rows: Row[];
       if (!panel.current?.contains(e.target as Node)) onClose()
     }
     const shut = () => onClose()
+    // The wheel over the menu scrolls it; anywhere else it closes the menu (and the board zooms as usual).
+    const onWheel = (e: WheelEvent) => {
+      if (!panel.current?.contains(e.target as Node)) onClose()
+    }
     window.addEventListener('pointerdown', onDown, true)
-    window.addEventListener('wheel', shut, { passive: true })
+    window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('resize', shut)
     window.addEventListener('blur', shut)
     return () => {
       window.removeEventListener('pointerdown', onDown, true)
-      window.removeEventListener('wheel', shut)
+      window.removeEventListener('wheel', onWheel)
       window.removeEventListener('resize', shut)
       window.removeEventListener('blur', shut)
     }
@@ -150,6 +154,8 @@ function MenuPanel({ x, y, rows, onClose }: { x: number; y: number; rows: Row[];
       onKeyDown={onKeyDown}
       // A right click on the menu itself is just a click.
       onContextMenu={(e: React.MouseEvent) => e.preventDefault()}
+      // Scrolling the menu never reaches the board.
+      onWheel={(e: React.WheelEvent) => e.stopPropagation()}
     >
       {rows.map((row) =>
         'heading' in row ? (

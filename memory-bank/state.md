@@ -48,7 +48,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   bend points the user puts on a selected link (D-155; app-routed elbows tried and dropped). 2026-10-19, committed.
 - Text and notes (2026-10-20, committed, not pushed; main is ahead of origin): headings with a small line + fading rule,
   paragraphs, quarter turns (D-156); section names in the frame's edge, top or left (D-157); sticky notes (D-158);
-  comment threads on anything selectable or a spot, viewers too (D-159). Not tried by the user yet; the assistant
+  comment threads on anything selectable or a spot, viewers too (D-159). Fixes after trying them (D-160). Not tried by the user yet; the assistant
   doesn't write paragraphs' width, turns, small lines or sticky notes.
 
 ## Next steps

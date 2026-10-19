@@ -20,7 +20,7 @@ import { BoardLine } from './BoardLine'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
 import { rightPress } from './rightClick'
-import { useReadable } from './detail'
+import { useDetail, useReadable } from './detail'
 import { endGroup, moveGroup, startGroup } from './groupDrag'
 import { boardPoint } from './NodeCard'
 import { focusField } from './focusField'
@@ -46,6 +46,7 @@ import {
   layoutOf,
   paraBox,
   paraSetting,
+  paraSize,
   shownText,
   turnRad,
 } from './textStyle'
@@ -81,8 +82,8 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const live = useCanvas((s) => s.dragging[label.id])
   const { select, toggleSelect, setDragging, setEditingLabel } = useCanvas.getState()
   const sticky = isSticky(label)
-  const size = sticky ? STICKY_TEXT : labelSize(label)
   const paragraph = isParagraph(label)
+  const size = sticky ? STICKY_TEXT : paragraph ? paraSize(label) : labelSize(label)
   const [hovered, setHovered] = useState(false)
   // Text that would be under a few pixels on screen is left out rather than drawn as a smudge (D-111).
   const readable = useReadable(size)
@@ -323,8 +324,8 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
 
           {!flow && !editing && (
             <>
+              {/* Always drawn, however small, like a paragraph: headings are what you find your way by zoomed out. */}
               <Text
-                visible={readable}
                 material={textMaterial}
                 font={labelFace(label)}
                 fontSize={size}
@@ -495,7 +496,8 @@ function WidthHandle({
     const snapped = free ? along : snapPoint([along, 0], false)[0]
     const w = MathUtils.clamp(snapped, flow.min, flow.max)
     const next = flow.sizeOf({ ...label, w })
-    const [x, y] = keepTopLeft(label, d.box, next)
+    // From where it was when the drag began: the streamed writes move `label` meanwhile (D-160).
+    const [x, y] = keepTopLeft({ ...label, x: d.from.x, y: d.from.y }, d.box, next)
     return { x, y, w }
   }
 
@@ -574,9 +576,9 @@ function LabelInput({ wid, label, size, onDone }: { wid: string; label: WithId<L
   const wrap = useRef<HTMLDivElement>(null)
   const done = useRef(false)
   // How big `size` world units are on screen right now, so the input matches the text it replaces.
-  const camera = useThree((s) => s.camera)
-  const view = useThree((s) => s.size)
-  const fontPx = useMemo(() => size / unitsPerPixel(camera, view.height), [camera, view, size])
+  // Follows the zoom while it's open (D-160), so the field always matches the text it replaces.
+  const ppu = useDetail((s) => s.ppu)
+  const fontPx = size * ppu
 
   useEffect(() => focusField(() => input.current), [])
 
@@ -612,7 +614,7 @@ function LabelInput({ wid, label, size, onDone }: { wid: string; label: WithId<L
       >
         <input
           className={styles.kicker}
-          style={{ fontSize: `${Math.max(10, kickerSize(size) / unitsPerPixel(camera, view.height))}px` }}
+          style={{ fontSize: `${Math.max(10, kickerSize(size) * ppu)}px` }}
           value={kick}
           maxLength={KICKER_MAX}
           placeholder="01 small line"
@@ -642,10 +644,9 @@ function ParagraphInput({ wid, label, flow, at, onDone }: { wid: string; label: 
   const [draft, setDraft] = useState(label.text)
   const area = useRef<HTMLTextAreaElement>(null)
   const done = useRef(false)
-  const camera = useThree((s) => s.camera)
-  const view = useThree((s) => s.size)
   const setting = flow.setting(label)
-  const upp = unitsPerPixel(camera, view.height)
+  // Follows the zoom while it's open (D-160).
+  const upp = 1 / useDetail((s) => s.ppu)
 
   // The caret at the end, nothing selected: it's usually added to.
   useEffect(() => focusField(() => area.current, false), [])

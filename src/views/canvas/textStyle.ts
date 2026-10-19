@@ -45,10 +45,13 @@ export const PARA_W = 6.25
 export const MIN_PARA_W = 1.5
 export const MAX_PARA_W = 40
 export const PARA_LEADING = 1.55
+// A paragraph's text size (D-160): S, M (the default), L.
+export const PARA_SIZES = { small: 0.18, medium: 0.24, large: 0.34 } as const
+export const paraSize = (l: Pick<Label, 'scale'>) => PARA_SIZES[l.scale ?? 'medium']
 export const paraWidth = (l: Pick<Label, 'w'>) => MathUtils.clamp(l.w ?? PARA_W, MIN_PARA_W, MAX_PARA_W)
-export const paraSetting = (l: Pick<Label, 'w' | 'size' | 'bold' | 'italic'>): Setting => ({
+export const paraSetting = (l: Pick<Label, 'w' | 'size' | 'bold' | 'italic' | 'scale'>): Setting => ({
   face: 'display',
-  size: labelSize({ size: 'note' }),
+  size: paraSize(l),
   leading: PARA_LEADING,
   width: paraWidth(l),
   bold: l.bold,
@@ -71,7 +74,7 @@ export function layoutOf(text: string, s: Setting): Layout {
 
 // A paragraph's box: its set width, or as wide as its text when none is set (an old one-line note stays as it was);
 // the height of its lines.
-export function paraBox(l: Pick<Label, 'w' | 'size' | 'bold' | 'italic' | 'caps' | 'text'>): [number, number] {
+export function paraBox(l: Pick<Label, 'w' | 'size' | 'bold' | 'italic' | 'caps' | 'text' | 'scale'>): [number, number] {
   const s = paraSetting(l)
   const lay = layoutOf(shownText(l, l.text.trim() || 'Text'), s)
   return [l.w === undefined ? lay.width : s.width, lay.height]

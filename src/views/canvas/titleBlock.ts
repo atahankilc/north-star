@@ -68,7 +68,7 @@ export const isTitle = (l: Pick<Label, 'kind'>) => l.kind === 'title'
 
 // Half the width and height a label takes on the board, roughly (Geist at its size), or the title block's, or a
 // section's (D-130); a paragraph's as laid out (D-156); turned a quarter, its sides swap.
-export function labelHalf(l: Pick<Label, 'kind' | 'text' | 'size' | 'w' | 'h' | 'caps' | 'bold' | 'italic' | 'rotate' | 'kicker'>): [number, number] {
+export function labelHalf(l: Pick<Label, 'kind' | 'text' | 'size' | 'w' | 'h' | 'caps' | 'bold' | 'italic' | 'rotate' | 'kicker' | 'scale'>): [number, number] {
   if (isTitle(l)) return titleHalf()
   if (isSection(l)) {
     const [w, h] = sizeOf(l)

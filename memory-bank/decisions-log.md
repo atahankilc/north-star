@@ -2321,3 +2321,28 @@ would say is notes should be addable everything that are selectable on the board
 - *Verified* headless on the emulators: pins on a card and a spot, a seeded 3-message thread opened from its pin, a reply
   sent (count 4), right-click → comment on a heading started a new thread whose pin landed on the heading's corner;
   rules tests 326/326; `tsc`.
+
+### D-160 · 2026-10-20 · Accepted (changes D-156, D-157, D-111 for text)
+**Fixes after the user tried D-156–D-159.** The user: "i dont like the way how section color change to blue when we
+select them… like how card selection looks", "when i try to scroll any right click panel, it immediately closes and
+board zoom outs", "lets separate headings from paragraphs completely", "if i click to a heading or paragraph and then
+zoom out, the editing components gets bigger and bigger", "when i change the length of the paragraph… it moves to left
+or right on its own", "headings disappearing after a point… paragraphs stay at max zoom out but not headings", and
+"paragraph font sizes could be also adjustable… like 3 different values".
+- *Sections:* the line keeps its own colour; hover and selection are a card's corner marks (D-150): grey a little out on
+  hover, in the section's colour (or white) just inside while pressed, just outside once selected; the resize L the same.
+- *Right-click menu:* the wheel over it scrolls it (and never reaches the board); the wheel anywhere else closes it.
+- *Headings and paragraphs apart:* a heading's bar offers H1–H3, a paragraph's S/M/L; neither turns into the other. The
+  assistant's `edit_label` drops a size that would cross over.
+- *Editors follow the zoom:* the heading, paragraph, section-name and title fields size from the live pixels-per-unit
+  (`useDetail`) instead of the zoom when they opened.
+- *Width drag:* the paragraph's / sticky note's new centre is worked out from where it was when the drag began; it used
+  the position the streamed writes kept moving, so it crept sideways.
+- *Headings and section names always drawn* however far out (D-111's cut-off no longer applies to them); the small line
+  over a heading still hides when tiny. (These two edits came from a parallel session, north-star-19, committed here.)
+- *Paragraph sizes:* `scale` `small` 0.18 / medium 0.24 (default, not stored) / `large` 0.34, from S M L in its bar;
+  the top-left corner stays put. Rules + 2 tests; import keeps it.
+- *Verified* headless on the emulators: section selected (pink corners, pink line unchanged), S/M/L paragraphs and the
+  bar, editing a heading then zooming far out (field stays small), headings readable zoomed far out, right-click menu
+  scrolled 71 px by the wheel and stayed open; rules tests 328/328; `tsc`. The width drag was fixed by reading, not
+  dragged in the headless test.

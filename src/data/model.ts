@@ -164,6 +164,9 @@ export type LabelTurn = (typeof LABEL_TURNS)[number]
 export const LABEL_TEXT_MAX = 200
 export const LONG_TEXT_MAX = 4000
 export const KICKER_MAX = 60
+// A paragraph's text sizes (D-160); medium is the default and isn't stored.
+export const PARAGRAPH_SCALES = ['small', 'medium', 'large'] as const
+export type ParagraphScale = 'small' | 'large'
 
 export type Label = {
   text: string
@@ -180,6 +183,8 @@ export type Label = {
   rotate?: LabelTurn
   // A heading's or a section's small line before it (D-156), `02 who we beat`: a leading number in the accent.
   kicker?: string
+  // A paragraph's text size (D-160): small, medium (missing) or large.
+  scale?: ParagraphScale
   // Where a section's name sits in its frame (D-157): the top edge (missing) or up the left edge.
   side?: 'left'
   // A sticky note's writer (D-158), as they were named when they wrote it.

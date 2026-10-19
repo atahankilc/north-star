@@ -22,7 +22,7 @@ import { usePalette } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
-import { useReadable } from './detail'
+import { useDetail, useReadable } from './detail'
 import { endGroup, moveGroup, startGroup } from './groupDrag'
 import { clearGuides, placeDragged, unitsPerPixel } from './guides'
 import { boardPoint } from './NodeCard'
@@ -581,9 +581,8 @@ function TitleInput({ field, size, width, value, at, onDone }: { field: Field; s
   const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
   const done = useRef(false)
   // Pixels per board unit right now, so the field matches the text it replaces.
-  const camera = useThree((s) => s.camera)
-  const view = useThree((s) => s.size)
-  const ppu = useMemo(() => 1 / unitsPerPixel(camera, view.height), [camera, view])
+  // Follows the zoom while it's open (D-160).
+  const ppu = useDetail((s) => s.ppu)
 
   // The name is selected, to retype; the description gets the caret at its end, to add to it.
   useEffect(() => {

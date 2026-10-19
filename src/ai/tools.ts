@@ -1549,10 +1549,14 @@ export function toWrites(accepted: Change[], full: WorkspaceCtx, refs: Map<strin
       case 'rename_label':
       case 'edit_label': {
         const color = s(r.color) === 'default' ? null : LABEL_HEX[s(r.color) ?? '']
+        const old = textLabels(ws.labels).find((l) => sameLabel(l.text, r.label))!
+        // A heading stays a heading and a paragraph (note) a paragraph (D-160): a size that would cross over is dropped.
+        const size = text(r.size)
+        const keepsKind = size === undefined || size === null || (size === 'note') === (old.size === 'note')
         const w: AssistantWrite = {
           do: 'label',
-          id: textLabels(ws.labels).find((l) => sameLabel(l.text, r.label))!.id,
-          fields: compact({ text: text(r.text)?.slice(0, 200), size: text(r.size), color, ...styleFields(r) }),
+          id: old.id,
+          fields: compact({ text: text(r.text)?.slice(0, 200), size: keepsKind ? size : undefined, color, ...styleFields(r) }),
         }
         if (refKey(r.above)) texts.push({ w, above: r.above })
         return w

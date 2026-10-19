@@ -118,6 +118,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Text look (D-156): headings left-aligned on their centre, optional small line over them (number in magenta), H1 rule
   fading right; `¶` is a paragraph (≤ 4000, light Markdown, wraps at a width dragged on its right edge, canvas texture);
   any text turns 90 / −90; hovered or selected, a dashed box.
+- Headings and paragraphs never turn into each other; paragraphs S/M/L (`scale`); headings and section names drawn at any
+  zoom; text editors follow the zoom; section hover/selection = a card's corner marks, the line keeps its colour (D-160).
 - Project title block: one per board from `+`, a `kind: 'title'` label showing the workspace's name + description (edited in
   place or from its right-click menu, same fields as Settings), star + `PROJECT`, rule, corner brackets (D-118).
   Its right edge drags its width (5–30, text rewraps, height follows); too far out to read the description it folds
