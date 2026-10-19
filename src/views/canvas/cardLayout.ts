@@ -12,6 +12,13 @@ export function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text
 }
 
+// The text before `end`, ended at the last whole word, with `…` (a single word is cut short instead) (D-153).
+export function cutAtWord(text: string, end: number): string {
+  const head = text.slice(0, end).trimEnd()
+  const space = head.lastIndexOf(' ')
+  return `${(space > 0 ? head.slice(0, space) : head.slice(0, -1)).trimEnd()}…`
+}
+
 // Nearest spot to `near` where a new card doesn't overlap any existing one (spiral search).
 export function findFreeSpot(near: [number, number], cards: { x: number; y: number }[]): [number, number] {
   const gapX = CARD_W + 0.3

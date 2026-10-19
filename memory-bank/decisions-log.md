@@ -1259,11 +1259,8 @@ on some cards and links vanished and others didn't. Cause: `near 0.1 / far 1000`
   Text under 6 px is left out (`useReadable(size, minPx)`); short mono words (a card's type label, tags, meta; link chips)
   stay down to 4 px and 6.5 px, a selected link keeps its chip.
 - *Cards in three looks* (`CardDetail`, 10% hysteresis): `full` while the small text (≈0.075) is ≥ 4 px; `compact`: the
-  title alone, bigger and centred (0.28, 26 characters) down to 5 px; `far`: a star (`FarNode`): a ring in the type's colour
-  round a small core in `--fg`, an outer ring when hovered, selected or marked, built up cell by cell (D-034); coming back,
-  the card builds up again (`CardReveal` restarts on remount). Links end at the star's circle. A competitor's fanned
-  features (FeatureChip) follow the same levels: compact = the name alone in Geist 0.26 (13 characters), far = small yellow
-  stars (`SMALL_NODE_R`) in a column beside the competitor's star (`chipSpot(…, far)`). Notes and headings follow
+  title alone, bigger down to 5 px; `far`: no text. (What compact and far look like: D-153, which replaced the centred
+  26-character title and the stars.) A competitor's fanned features (FeatureChip) follow the same levels. Notes and headings follow
   `useReadable` (gone under 6 px).
   *Second pass (user):* the first thresholds (full only while the small text was ≥ 6 px) dropped most of a card's context
   at a normal working zoom; a band where the small text was gone left the title small at the top of an empty card; and
@@ -2164,8 +2161,27 @@ preview (port 5188): today; tight with facts as text; tight with an evidence met
   customers; package what it holds. Files at the end; planes still put `on N planes` first (planes.ts).
 - *Link handle:* tried a square port, a `+`, four ports, a tab, an edge line, a small square, a `]`, triangles; then
   characters the mono font has (`>`, `›`, `»`, `->`). The user picked `›`, a little closer to the card: dim, bright
-  under the pointer, cyan while linking. Not while the card is dragged, not on far-out stars. Its hit area is a band over
+  under the pointer, cyan while linking. Not while the card is dragged, not far out. Its hit area is a band over
   the right edge; the glyph itself is never hit (its outline made the hover flicker), and the handle stops its own
   pointer events so a link ending under it can't take the cursor (the user saw it switch between arrow and hand).
 - *Verified* headless on the emulators' example workspace: the layout on every type, the handle on hover, gone in a
   drag; the cursor across the card and handle reads grab → crosshair → none with no flicker; `tsc`.
+
+### D-153 · 2026-10-19 · Accepted (changes D-111's compact and far looks)
+**Zoomed out, the title in whole words at one size; far out, the card stays and its title's lines become bars.** The user,
+after D-152: "now time to refactor how the text looks from far". Today's compact title was cut at 26 characters, often
+mid-word (`shifts e…`) with room left, centred (so it jumped from the full card's top), and far out the card became a star.
+Shown side by side on a scratch preview (port 5190): today; A, a type/status line + title + big evidence cells; B, the
+title alone as big as each card fits; C, the title alone at one size; and far out, 1 the stars or 2 bars. The user picked
+C and 2.
+- *Compact* (`NodeCard.tsx`): the title alone in Geist 0.3 (`COMPACT_TITLE`, was 0.28), top-aligned where the full card's
+  header starts, at most 3 lines (`COMPACT_LINES`); past them it ends at the last whole word with `…` (`cutAtWord`,
+  cardLayout.ts, from troika's line layout on sync; a single long word breaks). The threshold moves with the size (5 px).
+- *Far:* the card is drawn as always (stripe, corners, rings, preview marks, the stack behind a competitor), the title
+  hidden and each of its compact lines a bar in `fgDim` as long as the line, 0.6 of the line's height (`TitleBars`). No
+  rebuild when crossing a level (the card no longer swaps for another shape). A fanned feature chip: the name cut at a
+  whole word (13 characters) when compact; far, one bar as long as that name.
+- *Removed:* `FarNode.tsx` (stars), `chipSpot`'s far column, the round link ends far out (links end at card edges at
+  every zoom; EdgeLine's circle branch is left for the session reworking links to drop).
+- *Verified* headless on the emulators' example workspace, dark and light, zooming from full to the limit: whole-word
+  titles in up to 3 lines, bars far out in both themes; `tsc`.

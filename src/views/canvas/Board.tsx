@@ -47,8 +47,7 @@ import { linkStyle } from './linkKinds'
 import { CHIP_H, CHIP_W, FeatureChip } from './FeatureChip'
 import { boardPoint, NodeCard } from './NodeCard'
 import { GRID_STEP } from './snap'
-import { BoardDetail, useDetail } from './detail'
-import { NODE_R, SMALL_NODE_R } from './FarNode'
+import { BoardDetail } from './detail'
 import { CursorReporter, FollowCamera, PeerCursors } from './PeerCursors'
 
 type Props = {
@@ -91,16 +90,12 @@ const CHROME_PX = 170
 type Flight = [number, number, number?]
 const MARGIN = 1.2
 
-// Feature chips fan out to the right of their competitor, top-aligned with it; far out, as small stars beside its star (D-111).
-function chipSpot(c: [number, number], i: number, far = false): [number, number] {
-  if (far) return [c[0] + NODE_R + 0.45 + SMALL_NODE_R, c[1] + NODE_R - SMALL_NODE_R - i * (SMALL_NODE_R * 2 + 0.15)]
+// Feature chips fan out to the right of their competitor, top-aligned with it.
+function chipSpot(c: [number, number], i: number): [number, number] {
   return [c[0] + CARD_W / 2 + 0.3 + CHIP_W / 2, c[1] + CARD_H / 2 - CHIP_H / 2 - i * (CHIP_H + 0.1)]
 }
 const CARD_HALF: [number, number] = [CARD_W / 2, CARD_H / 2]
 const CHIP_HALF: [number, number] = [CHIP_W / 2, CHIP_H / 2]
-// Far out a card is a star (D-111), and links end at its circle.
-const NODE_HALF: [number, number] = [NODE_R, NODE_R]
-const SMALL_NODE_HALF: [number, number] = [SMALL_NODE_R, SMALL_NODE_R]
 
 // Every card and label, with a margin: [x0, y0, x1, y1] in board units, or null on an empty board.
 function boardBounds(nodes: BoardItem[], labels: WithId<Label>[]): [number, number, number, number] | null {
@@ -363,14 +358,13 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     return competitorFeatures.find((f) => f.id === selectedId)?.competitorId ?? null
   }, [selectedId, pressing, theirs, competitorFeatures])
 
-  const far = useDetail((s) => s.card) === 'far'
   const positions = useMemo(() => {
     const map = new Map<string, [number, number]>()
     for (const n of nodes) map.set(n.id, dragging[n.id] ?? [n.x, n.y])
     const c = openId ? map.get(openId) : undefined
-    if (c) (theirs.get(openId!) ?? []).forEach((f, i) => map.set(f.id, chipSpot(c, i, far)))
+    if (c) (theirs.get(openId!) ?? []).forEach((f, i) => map.set(f.id, chipSpot(c, i)))
     return map
-  }, [nodes, dragging, openId, theirs, far])
+  }, [nodes, dragging, openId, theirs])
   const chips = new Set(openId ? (theirs.get(openId) ?? []).map((f) => f.id) : [])
 
   // Older cards sit lower; newer ones on top.
@@ -524,9 +518,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
   }, [box, nodes, labels, controls])
 
   const linkSource = linkFrom ? positions.get(linkFrom) : undefined
-  const cardHalf = far ? NODE_HALF : CARD_HALF
-  const chipHalf = far ? SMALL_NODE_HALF : CHIP_HALF
-  const halfOf = (id: string) => (chips.has(id) ? chipHalf : cardHalf)
+  const halfOf = (id: string) => (chips.has(id) ? CHIP_HALF : CARD_HALF)
   const selectedLinkAt = (line: (typeof lines)[number]) => {
     const { from, to } = sideBySide(line, positions.get(line.from)!, positions.get(line.to)!, Math.min(...halfOf(line.from), ...halfOf(line.to)))
     return midpoint(from, to)
@@ -628,12 +620,12 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
       {onDrawSection && <SectionDrawer onDraw={onDrawSection} color={palette.magenta} />}
       <GuideLines color={palette.magenta} />
 
-      {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={cardHalf} toHalf={[0, 0]} active />}
+      {linkSource && linkPointer && <EdgeLine from={linkSource} to={linkPointer} fromHalf={CARD_HALF} toHalf={[0, 0]} active />}
 
       {openId &&
         positions.get(openId) &&
         (theirs.get(openId) ?? []).map((f, i) => (
-          <FeatureChip key={f.id} feature={f} at={chipSpot(positions.get(openId)!, i, far)} from={positions.get(openId)!} onLinkDrop={onLinkDrop} />
+          <FeatureChip key={f.id} feature={f} at={chipSpot(positions.get(openId)!, i)} from={positions.get(openId)!} onLinkDrop={onLinkDrop} />
         ))}
 
       {nodes.map((node) => (

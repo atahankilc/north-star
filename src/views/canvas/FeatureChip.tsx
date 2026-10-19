@@ -9,9 +9,8 @@ import type { CompetitorFeature } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
 import { usePalette } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
-import { glideDt, truncate } from './cardLayout'
+import { cutAtWord, glideDt, truncate } from './cardLayout'
 import { useDetail, useReadable } from './detail'
-import { FarNode, SMALL_NODE_R } from './FarNode'
 
 export const CHIP_W = 2
 export const CHIP_H = 0.42
@@ -46,7 +45,10 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
     if (Math.abs(g.position.x - at[0]) > 1e-4 || Math.abs(g.position.y - at[1]) > 1e-4) invalidate()
   })
 
-  // Drawn like the cards at the same size on screen (D-111): name and category; the name alone, bigger; or a small star.
+  // Drawn like the cards at the same size on screen (D-111, D-153): name and category; the name alone, bigger, cut at a
+  // whole word; or the chip with a bar as long as that name.
+  const name = feature.name || 'Untitled'
+  const [nameWidth, setNameWidth] = useState(0)
   const detail = useDetail((s) => s.card)
   const full = detail === 'full'
   const far = detail === 'far'
@@ -83,8 +85,7 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
         document.body.style.cursor = ''
       }}
     >
-      {far && <FarNode color={colors.yellow} rim={selected || hovered ? edge : null} r={SMALL_NODE_R} />}
-      <group visible={!far}>
+      <group>
         <mesh position={[0, 0, -0.002]}>
           <planeGeometry args={[CHIP_W + 0.02, CHIP_H + 0.02]} />
           <meshBasicMaterial color={edge} toneMapped={false} />
@@ -98,6 +99,11 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
           <meshBasicMaterial color={colors.yellow} transparent opacity={0.6} toneMapped={false} />
         </mesh>
         <Text
+          visible={!far}
+          onSync={(t: { textRenderInfo?: { blockBounds?: number[] } }) => {
+            const b = t.textRenderInfo?.blockBounds
+            setNameWidth(b ? b[2] - b[0] : 0)
+          }}
           // Without its category the name gets the whole chip, as large as it fits (like a card's compact title).
           font={full ? fontUrls.mono : fontUrls.display}
           fontSize={full ? 0.1 : 0.26}
@@ -107,8 +113,14 @@ export function FeatureChip({ feature, at, from, onLinkDrop }: Props) {
           position={[-CHIP_W / 2 + 0.14, 0, 0.002]}
           maxWidth={full ? CHIP_W - 0.7 : undefined}
         >
-          {truncate(feature.name || 'Untitled', full ? 24 : 13)}
+          {full ? truncate(name, 24) : name.length > 13 ? cutAtWord(name, 12) : name}
         </Text>
+        {far && (
+          <mesh position={[-CHIP_W / 2 + 0.14 + nameWidth / 2, 0, 0.002]}>
+            <planeGeometry args={[Math.max(nameWidth, 0.16), 0.16]} />
+            <meshBasicMaterial color={colors.fgDim} toneMapped={false} />
+          </mesh>
+        )}
         {feature.category && (
           <Text
             visible={categoryReadable}

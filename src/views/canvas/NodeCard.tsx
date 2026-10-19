@@ -13,10 +13,9 @@ import { isReducedMotion } from '../../state/motion'
 import { usePalette, useThemeAccent } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { BOARD_KINDS, typeAccent, type BoardItem } from './boardKinds'
-import { CARD_H, CARD_W, glideDt, truncate } from './cardLayout'
+import { CARD_H, CARD_W, cutAtWord, glideDt, truncate } from './cardLayout'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { COMPACT_TITLE, useDetail } from './detail'
-import { FarNode } from './FarNode'
 import { rightPress } from './rightClick'
 import { endGroup, groupIds, moveGroup, startGroup } from './groupDrag'
 import { CardCorners, CORNER_THICK } from './CardCorners'
@@ -77,6 +76,43 @@ function strikesOf(info: TextLayout | undefined): Strike[] {
     } else lines.set(key, { x0: Math.min(c[i], c[i + 1]), x1: Math.max(c[i], c[i + 1]), y })
   }
   return [...lines.values()].filter((l) => l.x1 > l.x0)
+}
+
+// The lines of a text, from the same caret positions: where each starts in the text, and its extent.
+type TextLine = { start: number; x0: number; x1: number; bottom: number; top: number }
+function linesOf(info: TextLayout | undefined): TextLine[] {
+  const c = info?.caretPositions
+  if (!c) return []
+  const lines: TextLine[] = []
+  let key = NaN
+  for (let i = 0; i < c.length; i += 4) {
+    const k = Math.round(c[i + 2] * 1000)
+    if (k !== key) {
+      key = k
+      lines.push({ start: i / 4, x0: Infinity, x1: -Infinity, bottom: c[i + 2], top: c[i + 3] })
+    }
+    const l = lines[lines.length - 1]
+    l.x0 = Math.min(l.x0, c[i], c[i + 1])
+    l.x1 = Math.max(l.x1, c[i], c[i + 1])
+  }
+  return lines
+}
+
+// Zoomed out the title gets at most this many lines; past them it ends at a whole word, with `…` (D-153).
+const COMPACT_LINES = 3
+
+// Far out, each of the title's lines as a bar as long as the line (D-153): the card keeps its shape and its text's.
+function TitleBars({ lines, color }: { lines: TextLine[]; color: string }) {
+  return lines.slice(0, COMPACT_LINES).map((l, i) => {
+    const h = (l.top - l.bottom) * 0.6
+    const x1 = Math.max(l.x1, l.x0 + h)
+    return (
+      <mesh key={i} position={[(l.x0 + x1) / 2, (l.top + l.bottom) / 2, 0.002]}>
+        <planeGeometry args={[x1 - l.x0, h]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+    )
+  })
 }
 
 function StrikeLines({ strikes, color, z = 0.003 }: { strikes: Strike[]; color: string; z?: number }) {
@@ -161,13 +197,16 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
   // A deleted card stays on the preview, greyed out (D-096).
   const accent = deleted ? colors.fgDim : typeAccent(type, colors)
   const markColor = mark ? colors.diff[mark] : undefined
-  // How it's drawn depends on how big it is on screen (D-111): everything; the title alone, bigger and centred, once
-  // the small text can't be read; or, with no text readable at all, a star in its type's colour (FarNode).
+  // How it's drawn depends on how big it is on screen (D-111): everything; the title alone, bigger, once the small
+  // text can't be read; or, with no text readable at all, the title's lines as bars (D-153).
   const detail = useDetail((s) => s.card)
   const full = detail === 'full'
   const far = detail === 'far'
-  // troika reports a text's layout only when it changes, so the title's is kept for whenever the card gets deleted.
+  // troika reports a text's layout only when it changes, so the title's is kept: for when the card gets deleted, and
+  // for the bars far out (laid out as the compact title, which it stays while hidden).
   const [titleLayout, setTitleLayout] = useState<TextLayout>()
+  // The compact title cut short at a whole word, for the title it was cut from.
+  const [short, setShort] = useState<{ of: string; text: string }>()
   const [wasStrikes, setWasStrikes] = useState<Strike[]>([])
 
   // The card stays flat and doesn't lift (D-061). Only a drag changes its size (D-150): it goes small round the point
@@ -311,18 +350,18 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
     if (controls) controls.enabled = true
   }
 
-  // From far out a card is a star with a ring round it; up close hover and selection are corner marks (D-150), and
-  // only a card tagged with the chosen customer keeps an edge.
-  const farRim = isLinkTarget ? colors.cyan : selected ? accent : related ? colors.cyan : hovered ? colors.hover : null
+  // Hover and selection are corner marks (D-150); only a card tagged with the chosen customer keeps an edge.
   const rim = related ? colors.cyan : null
   const pressed = pressing === node.id
   const title = node.title.trim()
+  const whole = title || 'Untitled'
+  const compactTitle = short?.of === whole ? short.text : whole
   const left = -W / 2 + STRIPE + PAD
   const right = W / 2 - PAD
   const inner = right - left
   const top = H / 2 - PAD
   const bottom = -H / 2 + PAD
-  const titleTop = full ? top - 0.14 : 0
+  const titleTop = full ? top - 0.14 : top
   // The header ends left of the preview's diff sign, when there is one.
   const headRight = mark ? right - BADGE - 0.05 : right
   const proof = node.proof
@@ -334,7 +373,7 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
   return (
     <>
       {/* Hover, press, selection and where a drag lands (D-150): outside the card's group, which shrinks in a drag. */}
-      <group ref={corners} position={[x, y, 0]} visible={!far}>
+      <group ref={corners} position={[x, y, 0]}>
         <CardCorners
           w={W}
           h={H}
@@ -372,8 +411,7 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
           if (mark) unlight()
         }}
       >
-        {far && <FarNode color={accent} rim={farRim} mark={markColor} />}
-        <group ref={content} visible={!far}>
+        <group ref={content}>
           {/* Up to three plates peeking out behind: this competitor has features to fan out. */}
           {Array.from({ length: Math.min(3, stack) }, (_, i) => (
             <group key={i} position={[(i + 1) * 0.07, -(i + 1) * 0.07, -0.006 - i * 0.002]}>
@@ -479,18 +517,28 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
             fontSize={full ? 0.165 : COMPACT_TITLE}
             lineHeight={1.12}
             color={title && !deleted ? colors.fg : colors.fgDim}
-            onSync={(t: { textRenderInfo?: TextLayout }) => setTitleLayout(t.textRenderInfo)}
+            onSync={(t: { textRenderInfo?: TextLayout }) => {
+              setTitleLayout(t.textRenderInfo)
+              // Zoomed out: more than three lines, so it ends at the last whole word that fits (D-153).
+              const lines = full ? [] : linesOf(t.textRenderInfo)
+              if (lines.length > COMPACT_LINES) setShort({ of: whole, text: cutAtWord(compactTitle, lines[COMPACT_LINES].start) })
+            }}
             anchorX="left"
-            anchorY={full ? 'top' : 'middle'}
+            anchorY="top"
             position={[left, titleTop, 0.002]}
             maxWidth={inner}
+            overflowWrap="break-word"
             letterSpacing={-0.01}
           >
-            {truncate(title || 'Untitled', full ? 80 : 26)}
+            {full ? truncate(whole, 80) : compactTitle}
           </Text>
-          {deleted && !far && (
+          {(deleted || far) && (
             <group position={[left, titleTop, 0]}>
-              <StrikeLines strikes={strikesOf(titleLayout)} color={colors.diff.deleted} />
+              {far ? (
+                <TitleBars lines={linesOf(titleLayout)} color={colors.fgDim} />
+              ) : (
+                <StrikeLines strikes={strikesOf(titleLayout)} color={colors.diff.deleted} />
+              )}
             </group>
           )}
           {node.meta && (
@@ -567,7 +615,7 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
             </div>
           </Html>
         )}
-        {/* Not while the card is dragged, nor on a star far out (D-152). */}
+        {/* Not while the card is dragged, nor far out (D-152). */}
         {(hovered || isLinkSource) && !carried && !far && !editLocked() && (
           <group position={[W / 2, 0, 0.004]}>
             <mesh
@@ -607,8 +655,7 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
             </Text>
           </group>
         )}
-        {/* Coming back from a star, the card builds up again. */}
-        <CardReveal key={far ? 'far' : 'card'} content={content} uniforms={cell} />
+        <CardReveal content={content} uniforms={cell} />
       </group>
     </>
   )

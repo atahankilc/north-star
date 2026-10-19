@@ -113,7 +113,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   (animated): the name grows to fill the block, which shrinks only to what's left; the assistant keeps clear of it unfolded (D-132).
 - Grid: zoomed out a `+` stays a thin `+` (3 px arms, 1 px stroke, never a dot), every other then all but every fourth fade as
   they crowd, all gone before the zoom limit (D-110, D-151). Depth range follows the camera; text and card detail by
-  on-screen pixel size (full / compact / far) (D-111).
+  on-screen pixel size (full / compact / far) (D-111): compact = the title alone, Geist 0.3, top, ≤3 lines cut at a
+  whole word; far = the card stays, each title line a grey bar; no stars (D-153).
 - `+` marks every 0.625 (cards 2.5 × 1.25 = 4 × 2 marks); a box's top-left corner snaps to a mark or one of the four even
   steps between two marks (0.125, not drawn; arrows nudge 0.125, shift 0.625) (D-149); on a mark a card's corners all sit on marks; marks drawn without perspective shift; with snapping on, guides only show
   lines (no pull); cards have no grey edge (D-148). Group drags keep their layout, alt =

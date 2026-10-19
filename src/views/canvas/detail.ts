@@ -8,7 +8,8 @@ import { useEffect } from 'react'
 import type { PerspectiveCamera } from 'three'
 import { create } from 'zustand'
 
-// full: everything; compact: the title alone, bigger and centred; far: no text, a star in the type's colour (FarNode).
+// full: everything; compact: the title alone, bigger, at most three lines of whole words; far: the card stays, its
+// title's lines drawn as bars (D-153).
 export type CardDetail = 'full' | 'compact' | 'far'
 
 // Smallest text worth drawing, in CSS pixels.
@@ -17,7 +18,7 @@ export const MIN_TEXT_PX = 6
 export const SMALL_TEXT_PX = 4
 // The card's small text (type label, tags, meta) is about 0.075 units; the compact title COMPACT_TITLE.
 export const CARD_SMALL_TEXT = 0.075
-export const COMPACT_TITLE = 0.28
+export const COMPACT_TITLE = 0.3
 const FULL_AT = SMALL_TEXT_PX / CARD_SMALL_TEXT
 const COMPACT_AT = 5 / COMPACT_TITLE
 // Crossing back needs a little more room, so a camera resting on a threshold doesn't flip cards back and forth.

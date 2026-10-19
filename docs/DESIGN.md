@@ -102,7 +102,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   Inside (D-152): 0.06 padding; a header row (type label left; right, the status, regions, priority or rating, then
   the evidence as cells: filled supports, outlined against, magenta when they disagree with the status), the title (up
   to 3 lines), a dim mono facts line, and tags as framed chips. A hovered card shows a dim `›` just right of it to drag
-  a link from (cyan while linking); not while dragged, not on far-out stars.
+  a link from (cyan while linking); not while dragged, not far out.
+  Zoomed out (D-111, D-153): once the small text can't be read, the title alone in Geist 0.3, top-aligned, at most 3
+  lines ending at a whole word with `…`; once no text can be read, the card keeps its shape and each title line becomes
+  a `--fg-dim` bar as long as the line.
 - Board grid (D-110, D-148): faint `+` marks every 0.625 units (cards are 4 × 2 steps). A dragged card's top-left corner
   snaps to a mark or to one of the four even steps between two marks (0.125, not drawn, D-149); on a mark, all four
   corners sit on marks. Drawn where the camera sees them on the
