@@ -11,11 +11,58 @@
 
 .link {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto 1fr auto auto auto;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0 var(--space-2);
   padding: var(--space-1) 0;
   border-bottom: 1px dashed var(--line);
+}
+
+/* Lit like its line on the board while hovered; the one just added (D-154) gets a bar in its kind's colour. */
+.link:hover {
+  background: var(--wash-1);
+}
+
+.link[data-fresh='true'] {
+  background: var(--wash-2);
+  box-shadow: inset 2px 0 0 var(--tone);
+  animation: fresh 900ms ease-out;
+}
+
+@keyframes fresh {
+  from {
+    background: var(--wash-3);
+    box-shadow: inset 2px 0 0 var(--tone), inset 0 0 0 1px var(--tone);
+  }
+}
+
+.link[data-fresh='true'] .arrow {
+  padding-left: var(--space-2);
+}
+
+/* The link's own label, under where it goes, in small faint type. */
+.label {
+  grid-column: 2 / -1;
+  min-width: 0;
+  padding: 1px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  outline: none;
+}
+
+.label::placeholder {
+  color: var(--fg-faint);
+}
+
+.label:focus,
+.label:focus-visible {
+  outline: none;
+  border-bottom-color: var(--accent-cyan);
+  color: var(--fg-strong);
 }
 
 .arrow {
@@ -53,8 +100,13 @@
   cursor: pointer;
 }
 
-.unlink:hover {
+.unlink:hover:not(:disabled) {
   color: var(--accent-magenta);
+}
+
+.unlink:disabled {
+  color: var(--fg-faint);
+  cursor: default;
 }
 
 .section {

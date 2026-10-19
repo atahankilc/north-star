@@ -9,6 +9,10 @@ type CanvasState = {
   selection: string[]
   // A selected link, edited from the bar at its middle (D-108). Selecting anything else clears it, and the other way round.
   edgeId: string | null
+  // The selected link's bar opens with the cursor in its label field: a link just drawn, or `label…` from its menu.
+  labelling: boolean
+  // A link the side panel points at (a row hovered, one just added): drawn as if its card were selected.
+  litEdge: string | null
   // The card under the pointer: links that don't touch it dim (D-108).
   hoverId: string | null
   // Shift+drag from a card: source id and the pointer's world position.
@@ -38,7 +42,9 @@ type CanvasState = {
   toggleSelect: (id: string) => void
   // A box drawn round things (alt+drag); `add` keeps what was selected.
   selectMany: (ids: string[], add?: boolean) => void
-  selectEdge: (id: string | null) => void
+  selectEdge: (id: string | null, label?: boolean) => void
+  doneLabelling: () => void
+  setLitEdge: (id: string | null) => void
   setHover: (id: string | null) => void
   startLink: (id: string, at: Vec2) => void
   moveLink: (at: Vec2) => void
@@ -60,6 +66,8 @@ export const useCanvas = create<CanvasState>((set) => ({
   selectedId: null,
   selection: [],
   edgeId: null,
+  labelling: false,
+  litEdge: null,
   hoverId: null,
   linkFrom: null,
   linkPointer: null,
@@ -84,7 +92,10 @@ export const useCanvas = create<CanvasState>((set) => ({
       const selection = add ? [...new Set([...s.selection, ...ids])] : ids
       return { selection, selectedId: selection[selection.length - 1] ?? null, edgeId: null }
     }),
-  selectEdge: (id) => set(id ? { edgeId: id, selectedId: null, selection: [] } : { edgeId: null }),
+  selectEdge: (id, label = false) =>
+    set(id ? { edgeId: id, labelling: label, selectedId: null, selection: [] } : { edgeId: null, labelling: false }),
+  doneLabelling: () => set({ labelling: false }),
+  setLitEdge: (id) => set({ litEdge: id }),
   setHover: (id) => set({ hoverId: id }),
   startLink: (id, at) => set({ linkFrom: id, linkPointer: at }),
   moveLink: (at) => set({ linkPointer: at }),

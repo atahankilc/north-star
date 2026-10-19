@@ -396,15 +396,17 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     const from = fromId ? byId.get(fromId) : undefined
     // Onto one of a competitor's features: "inspired by" is the usual reason (D-058).
     const feature = competitorFeatures.find((f) => f.id === targetId)
+    // The new link is selected, its bar open with the cursor in the label field: change its kind or name it right away.
+    const made = (id: string) => useCanvas.getState().selectEdge(id, true)
     if (from && feature) {
-      if (!linked(edges, from.id, feature.id)) void createEdge(wid, { id: from.id, type: from.type }, { id: feature.id, type: 'competitorFeature' }, 'inspired-by')
+      if (!linked(edges, from.id, feature.id)) made(createEdge(wid, { id: from.id, type: from.type }, { id: feature.id, type: 'competitorFeature' }, 'inspired-by'))
       return
     }
     const to = byId.get(targetId)
     if (!from || !to || from.id === to.id || linked(edges, from.id, to.id)) return
     // A tag always points item → customer, whichever card you dragged from.
     const [a, b] = to.type !== 'customer' && from.type === 'customer' ? [to, from] : [from, to]
-    void createEdge(wid, { id: a.id, type: a.type }, { id: b.id, type: b.type }, defaultKind(a.type, b.type))
+    made(createEdge(wid, { id: a.id, type: a.type }, { id: b.id, type: b.type }, defaultKind(a.type, b.type)))
   }
 
   // One function for the board's whole life, so cards that didn't change skip re-rendering (NodeCard is memoised).
@@ -418,6 +420,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
   const hiddenLinks = useWsView((s) => s.hiddenLinks)
   // A competitor's hidden `competes` lines also show while its card (or the card they reach) is under the pointer (D-135).
   const hoverId = useCanvas((s) => s.hoverId)
+  const edgeId = useCanvas((s) => s.edgeId)
+  const litEdge = useCanvas((s) => s.litEdge)
   const lines = useMemo(() => {
     const owner = new Map(competitorFeatures.map((f) => [f.id, f.competitorId]))
     const end = (id: string) => (positions.has(id) ? id : (owner.get(id) ?? id))
@@ -431,11 +435,12 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
       // What the link counts as touching for focus: its ends, where it's drawn, and the competitor whose feature it
       // reaches, so selecting a competitor lights links to its features too, fanned out or not.
       const touches = [edge.fromId, edge.toId, from, to, owner.get(edge.fromId), owner.get(edge.toId)].filter((id): id is string => Boolean(id))
-      // Hidden by the LINKS filter (D-108), unless it's the selected card's or one the assistant's preview adds; a
-      // competes line also for the hovered card (D-135).
+      // Hidden by the LINKS filter (D-108), unless it's the selected card's, the selected link (one just drawn), the one
+      // the side panel points at, or one the assistant's preview adds; a competes line also for the hovered card (D-135).
       const active = touches.includes(selectedId ?? '')
       const group = linkStyle(edge.kind).group
-      const shown = active || edge.id.startsWith('preview-') || (group === 'competes' && touches.includes(hoverId ?? ''))
+      const shown =
+        active || edge.id === edgeId || edge.id === litEdge || edge.id.startsWith('preview-') || (group === 'competes' && touches.includes(hoverId ?? ''))
       if (hiddenLinks.includes(group) && !shown) continue
       const pair = from < to ? `${from}|${to}` : `${to}|${from}`
       const slot = count.get(pair) ?? 0
@@ -444,12 +449,11 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
     }
     for (const line of out) line.of = count.get(line.pair)!
     return out
-  }, [edges, positions, competitorFeatures, selectedId, hiddenLinks, hoverId])
+  }, [edges, positions, competitorFeatures, selectedId, hiddenLinks, hoverId, edgeId, litEdge])
 
   // Focus (D-108): with a card under the pointer, or cards selected, links that don't touch them go faint; with a link
   // selected, every other one does.
   const selection = useCanvas((s) => s.selection)
-  const edgeId = useCanvas((s) => s.edgeId)
   const focusIds = useMemo(() => {
     const ids = hoverId ? [hoverId] : selection.filter((id) => positions.has(id))
     return ids.length ? new Set(ids) : null
@@ -586,9 +590,10 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, focus, cameraKey
             chipShift={chipShift}
             kind={edge.kind}
             label={edge.label}
-            active={active}
-            dim={dimmed(line)}
-            selected={edge.id === edgeId}
+            active={active || edge.id === litEdge}
+            dim={dimmed(line) && edge.id !== litEdge}
+            // The side panel's link (just added, or its row hovered) looks selected, so it's easy to find.
+            selected={edge.id === edgeId || edge.id === litEdge}
             // The assistant's preview: links it adds in the new colour, links it edits (D-108) in the edited one.
             tint={edge.id.startsWith('preview-') ? palette.diff.new : preview?.marks.get(edge.id) === 'edited' ? palette.diff.edited : undefined}
             onSelect={preview ? undefined : () => useCanvas.getState().selectEdge(edge.id)}

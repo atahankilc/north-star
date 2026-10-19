@@ -1,14 +1,17 @@
 // A node's connections to anything in the workspace, plus a picker to add one (any type ↔ any type): `+ link` opens a
-// dropdown with a search box and the matches, like the tag picker's list (D-093).
+// dropdown with a search box and the matches, like the tag picker's list (D-093). Each row edits the link like its bar on
+// the board: kind, label, reverse, remove. A link just added is marked, lit on the board, its label field ready (D-154).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { createEdge, deleteEdge, linked, updateEdge } from '../../data/edges'
-import { FOR, type NodeType } from '../../data/model'
+import { createEdge, deleteEdge, linked, reverseEdge, updateEdge } from '../../data/edges'
+import type { WithId } from '../../data/hooks'
+import { FOR, type Edge, type NodeType } from '../../data/model'
+import { useCanvas } from '../../state/canvasStore'
 import { floatFrom, type Floating } from '../../ui/floating'
 import { Select } from '../../ui/Select'
 import { KindOption } from '../canvas/LinkBar'
-import { EDGE_KINDS } from '../canvas/linkKinds'
+import { EDGE_KINDS, LINK_TONE, linkStyle } from '../canvas/linkKinds'
 import { useWs } from './context'
 import { TYPE_LABELS, useNodeIndex } from './nodeIndex'
 import styles from './LinkList.module.css'
@@ -26,6 +29,10 @@ export function LinkList({ nodeId, nodeType, hint }: Props) {
   const index = useNodeIndex()
   const navigate = useNavigate()
   const [picking, setPicking] = useState(false)
+  // The link just added here, until its label field is left.
+  const [fresh, setFresh] = useState<string | null>(null)
+  // Nothing stays lit on the board once the panel goes.
+  useEffect(() => () => useCanvas.getState().setLitEdge(null), [])
   const head = useRef<HTMLDivElement>(null)
   const addButton = useRef<HTMLButtonElement>(null)
 
@@ -52,7 +59,11 @@ export function LinkList({ nodeId, nodeType, hint }: Props) {
           anchor={head}
           onPick={(id) => {
             const target = index.get(id)
-            if (target) void createEdge(wid, { id: nodeId, type: nodeType }, { id, type: target.type })
+            if (target) {
+              const made = createEdge(wid, { id: nodeId, type: nodeType }, { id, type: target.type })
+              setFresh(made)
+              useCanvas.getState().setLitEdge(made)
+            }
             setPicking(false)
           }}
           onClose={(refocus) => {
@@ -68,27 +79,125 @@ export function LinkList({ nodeId, nodeType, hint }: Props) {
       ) : (
         <ul className={styles.links}>
           {links.map(({ edge, other, outgoing }) => (
-            <li key={edge.id} className={styles.link}>
-              <span className={styles.arrow}>{outgoing ? '→' : '←'}</span>
-              <button className={styles.linkTitle} data-nav onClick={() => other && navigate(other.path)} title={other?.title}>
-                {other && other.type !== nodeType && <span className={styles.type}>{TYPE_LABELS[other.type]} · </span>}
-                {other?.title ?? 'Missing'}
-              </button>
-              <Select
-                className={styles.kind}
-                value={edge.kind}
-                options={EDGE_KINDS.map((k) => ({ value: k, label: <KindOption kind={k} /> }))}
-                onChange={(kind) => void updateEdge(wid, edge.id, { kind })}
-                ariaLabel="Link type"
-              />
-              <button className={styles.unlink} onClick={() => void deleteEdge(wid, edge.id)} aria-label="Remove link">
-                ×
-              </button>
-            </li>
+            <LinkRow
+              key={edge.id}
+              wid={wid}
+              edge={edge}
+              outgoing={outgoing}
+              title={other && other.type !== nodeType ? `${TYPE_LABELS[other.type]} · ` : ''}
+              name={other?.title ?? 'Missing'}
+              onOpen={() => other && navigate(other.path)}
+              fresh={edge.id === fresh}
+              onSettled={() => {
+                setFresh(null)
+                if (useCanvas.getState().litEdge === edge.id) useCanvas.getState().setLitEdge(null)
+              }}
+            />
           ))}
         </ul>
       )}
     </div>
+  )
+}
+
+// One link: where it goes, its kind, reverse, remove; under it, its own label. Hovering it lights its line on the board.
+function LinkRow({
+  wid,
+  edge,
+  outgoing,
+  title,
+  name,
+  onOpen,
+  fresh,
+  onSettled,
+}: {
+  wid: string
+  edge: WithId<Edge>
+  outgoing: boolean
+  title: string
+  name: string
+  onOpen: () => void
+  fresh: boolean
+  onSettled: () => void
+}) {
+  const [draft, setDraft] = useState(edge.label ?? '')
+  useEffect(() => setDraft(edge.label ?? ''), [edge.label])
+  const row = useRef<HTMLLIElement>(null)
+  const input = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (!fresh) return
+    row.current?.scrollIntoView({ block: 'nearest' })
+    input.current?.focus({ preventScroll: true })
+  }, [fresh])
+
+  const saveLabel = () => {
+    const next = draft.trim()
+    if (next !== (edge.label ?? '')) void updateEdge(wid, edge.id, { label: next || undefined })
+  }
+  const lit = (on: boolean) => {
+    if (fresh) return
+    const { litEdge, setLitEdge } = useCanvas.getState()
+    if (on) setLitEdge(edge.id)
+    else if (litEdge === edge.id) setLitEdge(null)
+  }
+
+  return (
+    <li
+      ref={row}
+      className={styles.link}
+      data-fresh={fresh}
+      style={{ ['--tone' as string]: LINK_TONE[linkStyle(edge.kind).group] }}
+      onMouseEnter={() => lit(true)}
+      onMouseLeave={() => lit(false)}
+    >
+      <span className={styles.arrow}>{outgoing ? '→' : '←'}</span>
+      <button className={styles.linkTitle} data-nav onClick={onOpen} title={name}>
+        {title && <span className={styles.type}>{title}</span>}
+        {name}
+      </button>
+      <Select
+        className={styles.kind}
+        value={edge.kind}
+        options={EDGE_KINDS.map((k) => ({ value: k, label: <KindOption kind={k} /> }))}
+        onChange={(kind) => void updateEdge(wid, edge.id, { kind })}
+        ariaLabel="Link type"
+      />
+      {/* A customer tag always points item → customer (D-044). */}
+      <button
+        className={styles.unlink}
+        disabled={edge.kind === FOR}
+        onClick={() => void reverseEdge(wid, edge.id, edge)}
+        title={edge.kind === FOR ? 'A customer tag always points at the customer' : 'Turn the arrow around'}
+        aria-label="Reverse link"
+      >
+        ⇄
+      </button>
+      <button className={styles.unlink} onClick={() => void deleteEdge(wid, edge.id)} aria-label="Remove link">
+        ×
+      </button>
+      <input
+        ref={input}
+        className={styles.label}
+        value={draft}
+        maxLength={200}
+        placeholder="label…"
+        aria-label="Link label"
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          saveLabel()
+          if (fresh) onSettled()
+        }}
+        onKeyDown={(e) => {
+          // Keys stay here: the board's shortcuts and the panel's Escape don't fire.
+          e.stopPropagation()
+          if (e.key === 'Enter') e.currentTarget.blur()
+          if (e.key === 'Escape') {
+            setDraft(edge.label ?? '')
+            requestAnimationFrame(() => (e.target as HTMLInputElement).blur())
+          }
+        }}
+      />
+    </li>
   )
 }
 

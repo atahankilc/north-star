@@ -6,15 +6,16 @@ import type { Edge, EdgeKind, NodeType } from './model'
 
 const edgesOf = (wid: string) => collection(db(), 'workspaces', wid, 'edges')
 
-export async function createEdge(
+// Returns the new link's id at once (the write goes on in the background), so the board can select it straight away.
+export function createEdge(
   wid: string,
   from: { id: string; type: NodeType },
   to: { id: string; type: NodeType },
   kind: EdgeKind = 'relates',
-) {
+): string {
   const edge: Edge = { fromId: from.id, fromType: from.type, toId: to.id, toType: to.type, kind }
   const ref = doc(edgesOf(wid))
-  await tracked(kind === 'for' ? 'tag' : 'link', [ref], () => setDoc(ref, edge), { before: absent([ref]) })
+  void tracked(kind === 'for' ? 'tag' : 'link', [ref], () => setDoc(ref, edge), { before: absent([ref]) })
   return ref.id
 }
 

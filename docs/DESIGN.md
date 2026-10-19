@@ -113,8 +113,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   eases to 1 px, so a mark is always a thin `+`, never a dot (D-151). Under 18 px apart every other mark fades, then all but
   every fourth (a card's width); all fade out before the zoom limit.
 - Text labels: large display-face text straight on the board (D-050); editing swaps in a DOM input at the same spot
-- Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a framed chip (solid `--bg`, 1px
-  border in the link's colour) at the midpoint. One colour per kind, all solid lines (D-147), from `--link-*` tokens soft enough
+- Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a small framed chip (solid `--bg`,
+  thin border in the link's colour; mono text the size of a card's small text, D-154) at the midpoint. One colour per kind, all solid lines (D-147), from `--link-*` tokens soft enough
   to stay apart from type, people and diff colours: violet solves, sky part of, orange competes, raspberry contradicts, gold inspired by, moss depends on, grey relates, near-white `for` (near-black in light theme). Thicker on the selected card; links not touching the hovered or selected
   card go faint (a competitor's include the links to its features, D-115). A selected link fills its chip. No animation. Several links between the same two cards sit side by side,
   0.32 apart (closer if the end is too small), their chips moved along the lines so they don't overlap (D-113)

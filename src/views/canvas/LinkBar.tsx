@@ -1,10 +1,12 @@
 // The bar under a selected link (D-108): change its kind, turn it around, give it a label of its own, or remove it.
-// Everything is undoable (edges.ts). Viewers and the assistant's preview get no bar.
+// Everything is undoable (edges.ts). Viewers and the assistant's preview get no bar. A link just drawn (or `label…` from
+// its menu) opens it with the cursor in the label field (D-154).
 import { Html } from '@react-three/drei'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { WithId } from '../../data/hooks'
 import { reverseEdge, updateEdge } from '../../data/edges'
 import { FOR, type Edge } from '../../data/model'
+import { useCanvas } from '../../state/canvasStore'
 import { Select } from '../../ui/Select'
 import { removeLink } from '../workspace/useEditKeys'
 import { EDGE_KINDS, LINK_TONE, linkStyle } from './linkKinds'
@@ -24,6 +26,23 @@ export function KindOption({ kind }: { kind: string }) {
 export function LinkBar({ wid, edge, at }: { wid: string; edge: WithId<Edge>; at: [number, number] }) {
   const [draft, setDraft] = useState(edge.label ?? '')
   useEffect(() => setDraft(edge.label ?? ''), [edge.label])
+  const input = useRef<HTMLInputElement>(null)
+  const labelling = useCanvas((s) => s.labelling)
+  useEffect(() => {
+    if (!labelling) return
+    // `<Html>` mounts the bar in a root of its own a frame or two later: wait for the field, for up to half a second.
+    let raf = 0
+    let tries = 30
+    const focus = () => {
+      if (input.current) {
+        input.current.focus({ preventScroll: true })
+        useCanvas.getState().doneLabelling()
+      } else if (tries-- > 0) raf = requestAnimationFrame(focus)
+      else useCanvas.getState().doneLabelling()
+    }
+    raf = requestAnimationFrame(focus)
+    return () => cancelAnimationFrame(raf)
+  }, [labelling, edge.id])
   const tone = LINK_TONE[linkStyle(edge.kind).group]
 
   const saveLabel = () => {
@@ -52,6 +71,7 @@ export function LinkBar({ wid, edge, at }: { wid: string; edge: WithId<Edge>; at
         />
         <span className={styles.rule} />
         <input
+          ref={input}
           className={styles.input}
           value={draft}
           maxLength={200}

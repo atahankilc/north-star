@@ -81,8 +81,10 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Create only from the `+` menu (no double-click); cards don't lift, nor scale on hover/selection (D-053, D-061).
 - Opening frames everything; fit-all button and `0`; view kept between tabs (D-060).
 - Competitor features stack behind it and fan out once the click is released (D-058).
-- Links: straight, arrowhead, kind written on a solid chip; hover/selection dims others; click a link → bar (kind, label,
-  reverse, remove); LINKS filter, one row per kind (D-059, D-108, D-146). Each kind its own clearly different colour, all
+- Links: straight, arrowhead, kind on a small framed chip (a card's small-text size, D-154); hover/selection dims others;
+  click a link → bar (kind, label, reverse, remove); a link just drawn is selected with the cursor in its label; panel rows
+  edit kind, label, reverse, remove, the one just added marked and lit on the board; menu `add label` (D-154); LINKS
+  filter, one row per kind (D-059, D-108, D-146). Each kind its own clearly different colour, all
   solid lines: violet solves, sky part of, orange competes, raspberry contradicts, gold inspired, moss depends, grey
   relates, near-white for (D-147). Several links between two cards sit side by side, chips staggered (D-113).
 - `competes` lines are their own LINKS group, hidden by default, shown for the hovered or selected card; competitor cards say

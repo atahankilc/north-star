@@ -2185,3 +2185,26 @@ C and 2.
   every zoom; EdgeLine's circle branch is left for the session reworking links to drop).
 - *Verified* headless on the emulators' example workspace, dark and light, zooming from full to the limit: whole-word
   titles in up to 3 lines, bars far out in both themes; `tsc`.
+
+### D-154 · 2026-10-19 · Accepted (changes D-108's chip size and side-panel link rows)
+**Link chips at a card's small-text size; a link just made opens ready to label; one link editor everywhere.** The user:
+"i dont like their design and how big their text are compared to card titles. Also when i create a link from another
+one, i automatically want to see the link settings under the link. If i am creating a link from side panel, i also want
+to easily understand which link i just created and maybe add a label to it."
+- *Ways a link is made* (listed for the user): the `›` handle drag, shift+drag, a drop on a fanned competitor feature
+  (`inspired by`), the panel's `+ link` (also the competitor profile), the `for` picker (tags), the assistant, copy/paste
+  and import. *Edited* in three places: the bar, the right-click menu, the panel's rows.
+- *Chip:* shown side by side on a scratch page (real screenshots, a temporary `?chips=` switch): today (text 0.14 vs the
+  title's 0.165), a the same box smaller, b no frame, c a dot until in focus. The user picked a: Geist Mono 0.085 (a
+  card's small text), chip 0.15 high, 0.008 border, drawn down to 4.5 px text. A selected `relates` link says `relates`.
+- *Drawn on the board* (drag, shift+drag, onto a feature): the new link is selected, its bar open with the cursor in
+  the label field (`selectEdge(id, true)`, `labelling` in canvasStore; LinkBar waits for drei's `<Html>` to mount the
+  field). `createEdge` returns the id at once, the write going on behind. The selected link always shows, even in a
+  LINKS group that's hidden (it vanished before, `for` and `relates` being hidden by default).
+- *Side panel:* every row: where it goes, kind, `⇄` reverse, `×`; under it the link's own label (faint `label…` when
+  empty). The link just added is marked (a bar in its kind's colour, a short flash), its label field focused, and drawn
+  on the board as if selected (`litEdge`) until the field is left; hovering a row lights its line too.
+- *Right-click a link:* `add label` / `edit label` opens the bar with the cursor in the field.
+- *Verified* headless on the emulators' example workspace: shift+drag → bar with the field focused, the typed label on
+  the chip; `+ link` → marked row, field focused, line lit, then saved and unlit on Enter; menu `edit label` → field
+  focused with the label; `tsc`.

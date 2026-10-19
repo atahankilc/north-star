@@ -18,24 +18,21 @@ type Vec2 = [number, number]
 
 const ARROW = 0.16
 const GAP = 0.05
-const FONT = 0.14
+// The same size as a card's small text (its type, facts, tags), well under its title: a chip names the link, it isn't
+// something to read first.
+const FONT = 0.085
 // Geist Mono's advance at FONT with the letter spacing below, per character.
 const CHAR_W = FONT * 0.6 + FONT * 0.04
-const CHIP_H = 0.25
-const BORDER = 0.018
+const CHIP_H = 0.15
+const BORDER = 0.008
 // Wide enough to hit a thin line comfortably.
 const HIT_W = 0.22
 
-// Where the line from `a` towards `b` leaves a w×h box (or a circle) centred on `a`.
+// Where the line from `a` towards `b` leaves a w×h box centred on `a`.
 function exit(a: Vec2, b: Vec2, half: Vec2): Vec2 {
   const dx = b[0] - a[0]
   const dy = b[1] - a[1]
   if (half[0] === 0 || (dx === 0 && dy === 0)) return a
-  // Equal halves: a round thing (a card seen from far out, FarNode), so stop at its circle.
-  if (half[0] === half[1]) {
-    const t = (half[0] + GAP) / Math.hypot(dx, dy)
-    return t >= 1 ? a : [a[0] + dx * t, a[1] + dy * t]
-  }
   const t = Math.min(dx ? (half[0] + GAP) / Math.abs(dx) : Infinity, dy ? (half[1] + GAP) / Math.abs(dy) : Infinity)
   return t >= 1 ? a : [a[0] + dx * t, a[1] + dy * t]
 }
@@ -77,9 +74,10 @@ export const EdgeLine = memo(function EdgeLine({ from, to, fromHalf, toHalf, chi
   const color = tint ?? colors.link[style.group]
   const opacity = dim && !selected && !hovered ? 0.22 : 1
   // The link's own label only when it has the focus (D-135): long labels on every chip pile up into unreadable text.
-  const text = chipText(kind, selected || active || hovered ? label : undefined)
-  // Too small to read (D-111; mono caps on a small chip need a little more than other text): the colour and pattern still say what kind it is; a selected link keeps its chip.
-  const readable = useReadable(FONT, 6.5)
+  // A selected `relates` link says so, unwritten otherwise.
+  const text = chipText(kind, selected || active || hovered ? label : undefined) || (selected ? style.label : '')
+  // Too small to read (D-111; small words like a card's facts, with a little more for the frame round them): the colour and pattern still say what kind it is; a selected link keeps its chip.
+  const readable = useReadable(FONT, 4.5)
 
   const { start, end, angle, mid, length } = useMemo(() => {
     const s = exit(from, to, fromHalf)
@@ -101,7 +99,7 @@ export const EdgeLine = memo(function EdgeLine({ from, to, fromHalf, toHalf, chi
   // The chip stays on the visible line, even between close cards.
   const room = Math.max(0, (length - CHIP_H) / 2 - ARROW)
   const shift = Math.max(-room, Math.min(room, chipShift))
-  const chipW = text.length * CHAR_W + 0.18
+  const chipW = text.length * CHAR_W + 0.08
   const handlers = onSelect && {
     onPointerDown: (e: ThreeEvent<PointerEvent>) => onRightPress?.(e),
     onClick: (e: ThreeEvent<MouseEvent>) => {
@@ -163,7 +161,7 @@ export const EdgeLine = memo(function EdgeLine({ from, to, fromHalf, toHalf, chi
             fillOpacity={opacity}
             anchorX="center"
             anchorY="middle"
-            position={[0, 0.004, 0.002]}
+            position={[0, 0.0025, 0.002]}
           >
             {text}
           </Text>
