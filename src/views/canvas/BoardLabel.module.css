@@ -68,13 +68,13 @@
   color: var(--placeholder);
 }
 
-/* A paragraph's field (D-156): its lines as typed, over where they're drawn. */
+/* A paragraph's field (D-156): its lines as typed, over where they're drawn; no outline, the corner marks frame it. */
 .area {
   display: block;
   padding: 0;
   border: 0;
-  outline: 1px dashed var(--accent-cyan);
-  outline-offset: 6px;
+  /* The board's corner marks show where it is (D-163). */
+  outline: none;
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-display);
@@ -91,5 +91,9 @@
 .area[data-mono] {
   font-family: var(--font-mono);
   background: none;
+  outline: none;
+}
+
+.area:focus-visible {
   outline: none;
 }

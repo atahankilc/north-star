@@ -4,7 +4,8 @@
 // number in the accent) and, for an H1, a rule fading out to the right. A paragraph wraps at its width (its right edge
 // drags it) and reads light Markdown; a hairline runs down its left side. Either can be turned a quarter either way.
 // A sticky note (D-158) is a paragraph in mono on dark paper, a bar of its colour along the top, signed at its foot.
-// Hovered or selected, a dashed box goes round it.
+// Hovered or selected, a card's corner marks go round it (D-150, D-163); a paragraph or sticky note has a thin strip
+// down its right side that drags its width.
 import { Html, Text } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -17,6 +18,7 @@ import { useCanvas } from '../../state/canvasStore'
 import { usePalette, useThemeAccent } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { BoardLine } from './BoardLine'
+import { CardCorners, CORNER_THICK } from './CardCorners'
 import { CardReveal, installCellReveal, makeCellUniforms } from './CardReveal'
 import { glideDt } from './cardLayout'
 import { rightPress } from './rightClick'
@@ -83,6 +85,8 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const paragraph = isParagraph(label)
   const size = sticky ? stickyText(label) : paragraph ? paraSize(label) : labelSize(label)
   const [hovered, setHovered] = useState(false)
+  // Held down (a press, or a drag): the corners close in, as a card's do.
+  const [pressed, setPressed] = useState(false)
   // Text that would be under a few pixels on screen is left out rather than drawn as a smudge (D-111).
   const readable = useReadable(size)
   // A heading's text, measured once it's laid out: [width, height].
@@ -138,6 +142,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     // The assistant's preview (D-087) can be looked at, not changed.
     if (editLocked()) return
     drag.current = { dx: p[0] - x, dy: p[1] - y, from: [label.x, label.y], lastWrite: 0, moved: false, group }
+    setPressed(true)
     ;(e.target as Element).setPointerCapture(e.pointerId)
   }
 
@@ -167,6 +172,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
     if (d) {
       e.stopPropagation()
       drag.current = null
+      setPressed(false)
       ;(e.target as Element).releasePointerCapture(e.pointerId)
       clearGuides()
       if (d.group) {
@@ -209,13 +215,8 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const bh = box[3] - box[1]
   const bc: [number, number] = [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2]
 
-  const frame = (pad: number): [number, number, number][] => [
-    [box[0] - pad, box[3] + pad, 0],
-    [box[2] + pad, box[3] + pad, 0],
-    [box[2] + pad, box[1] - pad, 0],
-    [box[0] - pad, box[1] - pad, 0],
-    [box[0] - pad, box[3] + pad, 0],
-  ]
+  // The colour its marks take once it's held or selected: its own, or the text's.
+  const markTone = label.color || sticky ? accent : colors.fg
 
   const ink = useMemo(
     () => ({
@@ -281,9 +282,19 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
               )}
             </>
           )}
-          {/* Hovered or selected: a dashed box round it, grey or cyan. */}
-          {(selected || hovered) && !editing && !mark && (
-            <BoardLine points={frame(PAD)} color={selected ? colors.cyan : colors.hover} lineWidth={1} dashed dashSize={0.1} gapSize={0.07} toneMapped={false} />
+          {/* Hovered or selected: a card's corner marks round it (D-150), on a sticky note's paper edge, a little clear of text. */}
+          {!mark && (
+            <group position={[bc[0], bc[1], 0.002]}>
+              <CardCorners
+                w={bw + (sticky ? 0 : PAD)}
+                h={bh + (sticky ? 0 : PAD)}
+                // Also while it's being edited: the box grows with what's typed.
+                on={editing || hovered || pressed || selected || !!span}
+                out={pressed ? -CORNER_THICK : selected || editing ? 0.06 : 0.12}
+                len={pressed ? 0.28 : 0.2}
+                color={pressed || selected || editing || span ? markTone : colors.hover}
+              />
+            </group>
           )}
 
           {sticky && para && (
@@ -367,15 +378,17 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
           )}
         </group>
 
-        {/* A paragraph's or sticky note's right edge, dragged: its width. */}
-        {flow && para && only && !editing && !mark && !editLocked() && (
+        {/* A paragraph's or sticky note's right side, dragged: its width (D-163). */}
+        {flow && para && !editing && !mark && !editLocked() && (
           <WidthHandle
             wid={wid}
             label={label}
             flow={flow}
             at={[para[0] / 2, 0]}
-            color={colors.cyan}
-            bg={colors.bg}
+            height={para[1]}
+            shown={hovered || only || !!span}
+            color={only || span ? markTone : colors.hover}
+            onHover={setHovered}
             onSpan={setSpan}
           />
         )}
@@ -485,28 +498,35 @@ export function keepTopLeft(l: Pick<Label, 'x' | 'y' | 'rotate'>, from: [number,
   return [l.x + dir[0] * dw - up[0] * dh, l.y + dir[1] * dw - up[1] * dh]
 }
 
-// The grip on a paragraph's right edge: drag it to set how wide the text runs, the left edge and top staying put.
+// The grip down a paragraph's or sticky note's right side (D-163): a thin strip as tall as it, a little clear of its
+// edge, shown while it's hovered or selected; drag it to set how wide the text runs, the top-left corner staying put
+// (the height follows the text).
+const GRIP_GAP = 0.1
+const GRIP_W = 0.03
+const GRIP_HIT = 0.24
 function WidthHandle({
   wid,
   label,
   flow,
   at,
+  height,
+  shown,
   color,
-  bg,
+  onHover,
   onSpan,
 }: {
   wid: string
   label: WithId<Label>
   flow: Flow
   at: [number, number]
+  height: number
+  shown: boolean
   color: string
-  bg: string
+  onHover: (on: boolean) => void
   onSpan: (s: TextSpan | null) => void
 }) {
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null
   const drag = useRef<{ from: TextSpan; box: [number, number]; left: [number, number]; lastWrite: number; last: TextSpan | null } | null>(null)
-  const H = 0.36
-  const W = 0.12
   const r = turnRad(label)
 
   const spanAt = (p: [number, number], free: boolean, d: NonNullable<typeof drag.current>): TextSpan => {
@@ -521,68 +541,62 @@ function WidthHandle({
   }
 
   return (
-    <mesh
-      position={[at[0] + W / 2, at[1], 0.002]}
-      onPointerDown={(e) => {
-        if (e.button !== 0) return
-        e.stopPropagation()
-        if (controls) controls.enabled = false
-        const box = flow.sizeOf(label)
-        const left: [number, number] = [label.x - (Math.cos(r) * box[0]) / 2, label.y - (Math.sin(r) * box[0]) / 2]
-        drag.current = { from: { x: label.x, y: label.y, w: box[0] }, box, left, lastWrite: 0, last: null }
-        ;(e.target as Element).setPointerCapture(e.pointerId)
-      }}
-      onPointerMove={(e) => {
-        const d = drag.current
-        const p = d && boardPoint(e)
-        if (!d || !p) return
-        const next = spanAt(p, e.altKey, d)
-        d.last = next
-        onSpan(next)
-        const now = performance.now()
-        if (now - d.lastWrite > WRITE_EVERY_MS) {
-          d.lastWrite = now
-          void resizeText(wid, label.id, next)
-        }
-      }}
-      onPointerUp={(e) => {
-        const d = drag.current
-        if (!d) return
-        e.stopPropagation()
-        drag.current = null
-        ;(e.target as Element).releasePointerCapture(e.pointerId)
-        if (controls) controls.enabled = true
-        if (d.last) void endTextResize(wid, label.id, d.from, d.last).then(() => onSpan(null), () => onSpan(null))
-        else onSpan(null)
-      }}
-      onClick={(e) => e.stopPropagation()}
-      onPointerOver={(e) => {
-        e.stopPropagation()
-        document.body.style.cursor = Math.abs(label.rotate ?? 0) === 90 ? 'ns-resize' : 'ew-resize'
-      }}
-      onPointerOut={() => (document.body.style.cursor = '')}
-    >
-      <planeGeometry args={[W * 2.5, H * 1.6]} />
-      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-      <group position={[0, 0, 0.001]}>
+    <group position={[at[0] + GRIP_GAP + GRIP_W / 2, at[1], 0.004]}>
+      {shown && (
         <mesh>
-          <planeGeometry args={[W, H]} />
-          <meshBasicMaterial color={bg} toneMapped={false} />
+          <planeGeometry args={[GRIP_W, Math.max(0.2, height * 0.6)]} />
+          <meshBasicMaterial color={color} toneMapped={false} />
         </mesh>
-        <BoardLine
-          points={[
-            [-W / 2, H / 2, 0.001],
-            [W / 2, H / 2, 0.001],
-            [W / 2, -H / 2, 0.001],
-            [-W / 2, -H / 2, 0.001],
-            [-W / 2, H / 2, 0.001],
-          ]}
-          color={color}
-          lineWidth={1}
-          toneMapped={false}
-        />
-      </group>
-    </mesh>
+      )}
+      <mesh
+        onPointerDown={(e) => {
+          if (e.button !== 0) return
+          e.stopPropagation()
+          if (controls) controls.enabled = false
+          const box = flow.sizeOf(label)
+          const left: [number, number] = [label.x - (Math.cos(r) * box[0]) / 2, label.y - (Math.sin(r) * box[0]) / 2]
+          drag.current = { from: { x: label.x, y: label.y, w: box[0] }, box, left, lastWrite: 0, last: null }
+          useCanvas.getState().select(label.id)
+          ;(e.target as Element).setPointerCapture(e.pointerId)
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current
+          const p = d && boardPoint(e)
+          if (!d || !p) return
+          const next = spanAt(p, e.altKey, d)
+          d.last = next
+          onSpan(next)
+          const now = performance.now()
+          if (now - d.lastWrite > WRITE_EVERY_MS) {
+            d.lastWrite = now
+            void resizeText(wid, label.id, next)
+          }
+        }}
+        onPointerUp={(e) => {
+          const d = drag.current
+          if (!d) return
+          e.stopPropagation()
+          drag.current = null
+          ;(e.target as Element).releasePointerCapture(e.pointerId)
+          if (controls) controls.enabled = true
+          if (d.last) void endTextResize(wid, label.id, d.from, d.last).then(() => onSpan(null), () => onSpan(null))
+          else onSpan(null)
+        }}
+        onClick={(e) => e.stopPropagation()}
+        onPointerOver={(e) => {
+          e.stopPropagation()
+          onHover(true)
+          document.body.style.cursor = Math.abs(label.rotate ?? 0) === 90 ? 'ns-resize' : 'ew-resize'
+        }}
+        onPointerOut={() => {
+          onHover(false)
+          document.body.style.cursor = ''
+        }}
+      >
+        <planeGeometry args={[GRIP_HIT, Math.max(0.3, height)]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+    </group>
   )
 }
 

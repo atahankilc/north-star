@@ -2374,3 +2374,18 @@ cards we have", and "for paragraph, make the L smaller than h3" (0.24 against 0.
 - *Verified* headless: H3 beside S/M/L paragraphs; four notes (S, M with bold and a list, L, empty) selected with S/M/L
   in the bar; typing four lines into an empty note, the paper grew with each line and the text stayed inside it, zoomed
   out and in; `tsc`.
+
+### D-163 · 2026-10-20 · Accepted (changes D-156's dashed box and width grip)
+**Text, paragraphs and sticky notes select like cards; a paragraph's or note's width drags by a strip down its right
+side.** The user: "lets make size adjustment handle like how it is implemented in section card. A thingy strip. Also
+instead of using blue stripped lines, use the selection design that we used in cards and sections", then "i meant just a
+vertical strip on the right side of the components... since their height is not adjustable".
+- *Selection:* a card's corner marks (D-150) instead of the dashed cyan box: grey and a little out on hover, just inside
+  while pressed, just outside once selected, in the text's colour (white, the label's colour, a note's colour); round a
+  note's paper edge, a little clear of text. Also shown while a paragraph or note is being edited (its field lost its
+  dashed cyan outline), so the box visibly grows with what's typed.
+- *Width grip:* a thin strip (0.03 wide, 60% of the height) 0.1 right of the edge, shown on hover or selection in the
+  same colours; dragging anywhere on that side changes the width, the top-left corner stays put. An L in the corner was
+  tried for a moment and replaced at once (the height isn't adjustable, so a corner suggested the wrong thing).
+- *Verified* headless: three things selected (H3, paragraph, note), a paragraph alone with its strip, a note edited with
+  its corners growing; `tsc`.

@@ -118,7 +118,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   notes) with 1–9 and a search field inside the dropdown (D-050, D-108, D-116).
 - Text look (D-156): headings left-aligned on their centre, optional small line over them (number in magenta), H1 rule
   fading right; `¶` is a paragraph (≤ 4000, light Markdown, wraps at a width dragged on its right edge, canvas texture);
-  any text turns 90 / −90; hovered or selected, a dashed box.
+  any text turns 90 / −90; hovered or selected, a card's corner marks; a paragraph's or note's width drags by a strip
+  down its right side (D-163).
 - Headings and paragraphs never turn into each other; paragraphs S/M/L 0.13/0.165/0.2, L the default, all under an H3 (`scale`, D-161, D-162); headings and section names drawn at any
   zoom; text editors follow the zoom; section hover/selection = a card's corner marks, the line keeps its colour (D-160).
 - Project title block: one per board from `+`, a `kind: 'title'` label showing the workspace's name + description (edited in
