@@ -1,0 +1,110 @@
+/* A plane's cards (D-187). The layer fills the plane (or the screen in focus) and clips them; on the canvas the pointer
+   goes through it to the canvas. */
+.layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.layer[data-live='true'] {
+  pointer-events: auto;
+}
+
+/* Plane px: the view puts its (0, 0) on screen and scales it. */
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+/* A card as on the board (D-152): flat, no grey edge, its type as the left edge and the label; 0.06 of its width round
+   the inside (12 px). */
+.card {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-3) var(--space-3) calc(var(--space-3) + 3px);
+  background: var(--bg-raised);
+  box-shadow: inset 3px 0 0 var(--type);
+  cursor: default;
+  user-select: none;
+}
+
+.layer[data-live='true'] .card {
+  cursor: grab;
+}
+
+.card[data-dragging='true'] {
+  cursor: grabbing;
+  opacity: 0.85;
+}
+
+.kind {
+  color: var(--type);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+/* The title: Geist, up to three lines. */
+.title {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  line-height: 1.25;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+
+.title[data-empty='true'] {
+  color: var(--placeholder);
+}
+
+.field {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  resize: none;
+  caret-color: var(--type);
+  user-select: text;
+}
+
+.field::placeholder {
+  color: var(--placeholder);
+}
+
+/* Corner marks (D-150): grey just outside on hover, in the type's colour once selected. */
+.mark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 0 solid var(--fg-dim);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mark[data-corner='nw'] { top: -4px; left: -4px; border-top-width: 1px; border-left-width: 1px; }
+.mark[data-corner='ne'] { top: -4px; right: -4px; border-top-width: 1px; border-right-width: 1px; }
+.mark[data-corner='se'] { bottom: -4px; right: -4px; border-bottom-width: 1px; border-right-width: 1px; }
+.mark[data-corner='sw'] { bottom: -4px; left: -4px; border-bottom-width: 1px; border-left-width: 1px; }
+
+.layer[data-live='true'] .card:hover .mark {
+  opacity: 1;
+}
+
+.card[data-selected='true'] .mark {
+  border-color: var(--type);
+  opacity: 1;
+}

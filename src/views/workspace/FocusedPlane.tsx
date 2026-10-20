@@ -26,8 +26,10 @@ const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2,
 
 type Props = {
   piece: WithId<Piece>
-  // Where the plane is on screen: its marks' grid comes from here, and the ink spreads from (and draws back into) it.
+  // Where the plane is on screen: the ink spreads from (and draws back into) it.
   at: ScreenRect
+  // Its own view as it sits on the canvas (its cards fitted in it, D-187): where focus starts and goes back to.
+  home: PlaneCam
   // Spread in from `at` (the console's `[focus]`); false = no way in to show (a reload, a link): it's just there.
   spread: boolean
   leaving: boolean
@@ -37,11 +39,9 @@ type Props = {
   children?: ReactNode
 }
 
-export function FocusedPlane({ piece, at, spread, leaving, lens, onArrived, onLeft, children }: Props) {
+export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived, onLeft, children }: Props) {
   const layer = useRef<HTMLDivElement>(null)
   const reduced = isReducedMotion()
-  // Where the plane's (0, 0) is on the canvas: inside its 1 px edge.
-  const home: PlaneCam = { ox: at.x + at.zoom, oy: at.y + at.zoom, zoom: at.zoom }
   const cam = useCanvasView((s) => s.planeCam) ?? home
   useLayoutEffect(() => {
     useCanvasView.setState({ planeCam: home, planeHome: home })
@@ -83,6 +83,8 @@ export function FocusedPlane({ piece, at, spread, leaving, lens, onArrived, onLe
     e.stopPropagation()
     const { planeCam: start, focusLeaving } = useCanvasView.getState()
     if ((e.button !== 0 && e.button !== 1) || !start || focusLeaving) return
+    // A press on the plane itself lets go of a card (D-187).
+    useCanvasView.setState({ cardSelected: null })
     stopGlide()
     const el = e.currentTarget
     const [sx, sy] = [e.clientX, e.clientY]

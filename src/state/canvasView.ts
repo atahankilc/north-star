@@ -24,13 +24,16 @@ type State = {
   // and drags move it while the plane is in focus; `planeHome` is where it was on the canvas, which it goes back to.
   planeCam: PlaneCam | null
   planeHome: PlaneCam | null
+  // Cards in the focused plane (D-187): the one selected, and the one whose title is being typed.
+  cardSelected: string | null
+  cardEditing: string | null
 }
 
 export type PlaneCam = { ox: number; oy: number; zoom: number }
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null }))
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({

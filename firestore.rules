@@ -84,6 +84,8 @@ service cloud.firestore {
         && (!('tags' in d) || (d.tags is list && d.tags.size() <= 30))
         && d.x is number && d.y is number
         && optIn(d, 'validation', ['hypothesis', 'testing', 'validated', 'invalidated'])
+        // The plane it's on (D-187); the old board's cards have none.
+        && optText(d, 'pieceId', 128)
         && validDomainRefs(d);
     }
 
@@ -125,6 +127,7 @@ service cloud.firestore {
         && (!('regions' in d) || (d.regions is list && d.regions.size() <= 20))
         && (!('x' in d) || d.x is number)
         && (!('y' in d) || d.y is number)
+        && optText(d, 'pieceId', 128)
         && validDomainRefs(d);
     }
 

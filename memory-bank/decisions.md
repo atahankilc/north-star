@@ -181,6 +181,12 @@ piece; check them with the user then.
   takes the drag); in focus they're the plane's own view (`planeCam`), which glides home as focus leaves. A plane always
   shows its contents centred and fitted to its box; fit (side nav icon under `+`, key `0`) frames all planes on the
   canvas (≤ 1, 96 px round), or in focus the plane's contents (empty for now: its starting view); arriving in focus fits.
+- Cards on planes (D-187): customer, problem, competitor, idea, feature in their old collections with `pieceId` (the
+  old board's cards, without it, aren't shown), x/y in plane px, 200 × 100 (8 × 4 marks), D-152's look (type edge and
+  label, Geist title ≤ 3 lines). Made from the side nav's `+` in focus (card types) at the view's middle, title typed at
+  once; in focus click selects (corner marks), drag moves (snapped, alt free), double-click retitles, Delete removes;
+  on the canvas they're a picture fitted in the plane, its marks following. Deleting a plane takes its cards.
+  No side panel on a card click until it's refactored (the user's call).
 - Planes snap to the canvas's 25 px grid (their `+` step) when moved, resized or added; alt = free; min 325 × 200 (D-182).
 - Deleting a plane (console `[delete]` or Delete in edit mode) asks first in the hazard confirm (`src/ui/HazardConfirm.tsx`,
   for anything that can't be taken lightly): the screen darkens, the box steps in, ASCII hazard tape `╱╱╱` wraps round it

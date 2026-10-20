@@ -2804,3 +2804,27 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless: a drag on a plane moved it (−100, −50) with the canvas; the wheel over it zoomed the canvas; fit
   centred it; in focus the wheel changed only the plane's marks (25 → 39 px) and the canvas didn't move, a drag panned
   them, `0` took them home; Esc left; the console reads `▸ focus edit`; build.
+
+### D-187 · 2026-10-21 · Accepted (first plane-specific items: cards)
+- *Decision:* cards come back, on planes. They stay in their collections (`customers`, `problems`, `competitors`, `ideas`,
+  `features`; a competitor's title is `name`) so links, the matrix and the panel can come back on them, and gain
+  `pieceId` (the plane they're on; rules: optional text ≤ 128 on validCard and validCompetitor) with x/y in that plane's
+  px, top-left. Cards from the old board have no `pieceId` and aren't shown. `src/data/cards.ts`: add (centred on a
+  point, snapped, moved right past any card it would cover), move, retitle (typing merges), delete, all undoable;
+  `src/data/grid.ts` holds GRID/snap. `deletePiece` takes the plane's cards in the same batch.
+- *Look:* every card 200 × 100 plane px (8 × 4 marks, so a snapped card has a mark on each corner), D-152's card: the
+  type as a 3 px left edge and an uppercase mono label in its colour (customer green, problem magenta, competitor yellow,
+  idea ink, feature cyan), the title in Geist up to three lines, a type-specific placeholder when empty, `--bg-raised`.
+  Corner marks (D-150): grey on hover, in the type's colour when selected.
+- *Where:* in focus the side nav's `+` lists the five card types; a new card lands at the middle of the plane's view
+  with its title field open (Enter keeps, Escape doesn't). In focus a click selects, a drag moves (5 px first, snapped,
+  alt free, held where dropped), a double-click retitles, Delete removes, Escape lets go then leaves focus; a press on the
+  plane lets go. On the canvas a plane shows its cards as a picture, all of them centred and fitted inside it (never past
+  1), its marks following them; the pointer goes through to the canvas (D-186). Fit in focus fits the cards, and so does
+  arriving; focus starts from, and goes back to, the plane's fitted view.
+- *User:* "plane'e plane specific item'ları geri getirmeye başlayalım. Card ekleme olayını getir bu tarafa".
+- *Not yet:* status/evidence, tags, links, competitor features, viewers' cursors in focus. The side panel a card click
+  opened stays out: the user will have it refactored before it comes back ("card'lara tıklanınca açılan side paneli daha
+  getirme buraya. Onu sonra refactor edip getireceğiz").
+- *Verified* headless: in focus `+` → problem/customer/feature, each typed; a drag moved a card (+50, +150); Delete then
+  ⌘Z; Escape back to the canvas shows the three fitted in the plane; still there after a reload. Rules 356/356, deployed 2026-10-21; build.

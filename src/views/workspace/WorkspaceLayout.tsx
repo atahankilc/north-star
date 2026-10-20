@@ -8,6 +8,8 @@ import { setReadOnly } from '../../data/history'
 import type { WithId } from '../../data/hooks'
 import type { JoinRequest, PieceKind } from '../../data/model'
 import { addPiece } from '../../data/pieces'
+import { addCard, cardBounds, CARD_TYPES, type CardType } from '../../data/cards'
+import { TYPE_ACCENT } from './PlaneCards'
 import { usePresenceSession } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
 import {
@@ -91,8 +93,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           settingsBadge={requests.data.length}
           side={
             <>
-              {editor && !focused && <AddToCanvas wid={wid} />}
-              <FitButton wid={wid} focused={Boolean(focused)} />
+              {editor && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
+              <FitButton wid={wid} plane={focused?.id ?? null} />
             </>
           }
         />
@@ -105,14 +107,15 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 
 // The side nav's fit (D-186), under the `+`; `0` does the same: everything on the canvas in view, or in focus the plane's
 // contents centred and fitted.
-function FitButton({ wid, focused }: { wid: string; focused: boolean }) {
-  const { pieces } = useWs()
+function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
+  const { pieces, cards } = useWs()
+  const focused = plane !== null
   return (
     <button
       className={styles.fit}
       aria-label={focused ? 'Fit the plane to the screen' : 'Fit everything on the canvas'}
       title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
-      onClick={() => (focused ? fitPlane(null) : fitCanvas(wid, pieces))}
+      onClick={() => (focused ? fitPlane(cardBounds(cards.filter((c) => c.pieceId === plane))) : fitCanvas(wid, pieces))}
     >
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
         <path d="M1 6V1h5M12 1h5v5M17 12v5h-5M6 17H1v-5" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -122,12 +125,20 @@ function FitButton({ wid, focused }: { wid: string; focused: boolean }) {
   )
 }
 
-// The side nav's `+` (D-176): a plane (D-180) at the middle of the screen, selected. Viewers make nothing (D-098).
-function AddToCanvas({ wid }: { wid: string }) {
-  const { pieces } = useWs()
+// The side nav's `+` (D-176): on the canvas a plane (D-180) at the middle of the screen, selected; in a focused plane a
+// card (D-187), at the middle of its view, its title ready to type. Viewers make nothing (D-098).
+function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
+  const { pieces, cards } = useWs()
   const add = async (kind: PieceKind) => {
     const id = await addPiece(wid, kind, canvasCenter(wid), pieces)
     useCanvasView.setState({ selected: id })
+  }
+  const addHere = async (type: CardType) => {
+    const { planeCam: c, size } = useCanvasView.getState()
+    if (!plane || !c) return
+    const at: [number, number] = [(size.w / 2 - c.ox) / c.zoom, (size.h / 2 - c.oy) / c.zoom]
+    const id = await addCard(wid, plane, type, at, cards.filter((x) => x.pieceId === plane))
+    useCanvasView.setState({ cardSelected: id, cardEditing: id })
   }
   return (
     <Menu
@@ -139,11 +150,18 @@ function AddToCanvas({ wid }: { wid: string }) {
           <path d="M10 2v16M2 10h16" stroke="currentColor" strokeWidth="1.5" />
         </svg>
       }
-      ariaLabel="Add to the canvas"
-      items={[
-        { key: 'canvas', heading: 'on the canvas' },
-        { key: 'plane', label: 'plane', glyph: '▦', onSelect: () => void add('plane') },
-      ]}
+      ariaLabel={plane ? 'Add to the plane' : 'Add to the canvas'}
+      items={
+        plane
+          ? [
+              { key: 'cards', heading: 'card' },
+              ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
+            ]
+          : [
+              { key: 'canvas', heading: 'on the canvas' },
+              { key: 'plane', label: 'plane', glyph: '▦', onSelect: () => void add('plane') },
+            ]
+      }
     />
   )
 }

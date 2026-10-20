@@ -226,6 +226,10 @@ await allow('a piece still called a board (before D-180)', () => addDoc(sub(bob.
 await deny('a canvas piece of an unknown kind', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'video' }))
 await deny('a canvas piece without a size', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, w: 0 }))
 await deny('a canvas piece without a place', () => addDoc(sub(bob.fs, 'pieces'), { kind: 'board', w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
+// Cards on a plane (D-187).
+await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await allow('a competitor on a plane', () => addDoc(sub(bob.fs, 'competitors'), { name: 'Crewly', pieceId: 'p1', x: 25, y: 50, createdAt: 1, updatedAt: 1 }))
+await deny('a card with a numeric plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 5, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a link from a package', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'k1', fromType: 'package', toId: 'p1', toType: 'problem', kind: 'solves' }))
 // Status and evidence (D-137).
 await allow('problem with a validation status', () => addDoc(sub(bob.fs, 'problems'), { ...card, validation: 'testing' }))
