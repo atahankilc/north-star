@@ -2509,3 +2509,16 @@ reached from the panel; the camera flew to where it would be on the open plane).
 - The panel's rows now use the comment icon too (D-167) instead of `“`.
 - *Verified* headless: a plane "Pricing" with one card; from All a spot thread on Pricing switched to Pricing and opened;
   on Pricing the other thread's row said `on All ↗`, and opening it switched back to All and opened it; `tsc`.
+
+### D-171 · 2026-10-20 · Accepted (changes D-159's hollow pin)
+**A thread whose card, text or link was deleted leaves the board but stays in the threads panel.** The user asked why
+such a thread hung on the board as a dashed pin, and agreed to: no pin; kept in the panel, marked; back on the board
+when the delete is undone.
+- Threads aren't deleted with what they're on, on purpose: deleting a card is undoable (⌘Z) and threads aren't part of
+  undo, and only a message's writer may delete it (D-166), so an editor's delete must not take others' words with it.
+- *Board:* no pin while what it's on doesn't exist; opened from the panel, it opens at where the thing was. A pin's
+  being there is worked out from the thing existing, so undoing the delete brings it back with nothing extra.
+- *Panel:* its title reads `a removed card` / `removed text` / `a removed link`, and its row ends `· what it was on was
+  deleted`; it can still be answered, resolved, or deleted by an owner.
+- *Verified* headless: a card's thread pin (1) gone after deleting the card with Delete (0), the panel row marked, ⌘Z
+  brought the pin back (1); `tsc`.

@@ -523,3 +523,8 @@
 .rowPlane {
   color: var(--accent-cyan);
 }
+
+/* A thread whose card, text or link was deleted (D-171): only in the panel, said so. */
+.rowGone {
+  color: var(--fg-dim);
+}

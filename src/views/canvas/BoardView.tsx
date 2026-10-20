@@ -294,15 +294,16 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
   const titleOf = (t: Pick<Thread, 'on' | 'targetId'>): string => {
     const id = t.targetId ?? ''
     if (t.on === 'spot') return 'a spot on the board'
-    if (t.on === 'card') return findItem(ws, id)?.title.trim() || ws.competitorFeatures.find((f) => f.id === id)?.name || 'a card'
+    // What it was on may have been deleted (D-171).
+    if (t.on === 'card') return findItem(ws, id)?.title.trim() || ws.competitorFeatures.find((f) => f.id === id)?.name || (known.has(id) ? 'a card' : 'a removed card')
     if (t.on === 'label') {
       const l = ws.labels.find((o) => o.id === id)
-      if (!l) return 'text'
+      if (!l) return 'removed text'
       if (isTitle(l)) return ws.workspace.name
       return l.text.trim().split('\n')[0].slice(0, 60) || (isSection(l) ? 'a section' : isSticky(l) ? 'a sticky note' : 'text')
     }
     const e = edges.find((o) => o.id === id)
-    if (!e) return 'a link'
+    if (!e) return 'a removed link'
     const name = (n: string) => findItem(ws, n)?.title.trim() || ws.competitorFeatures.find((f) => f.id === n)?.name || '?'
     return `${linkStyle(e.kind).label}: ${name(e.fromId)} → ${name(e.toId)}`
   }
@@ -574,7 +575,7 @@ export function BoardView({ focusMode = false }: { focusMode?: boolean }) {
 
       <BoardMenu ws={pws} create={focusMode ? undefined : (type, at) => void create(type, at)} wrap={focusMode ? undefined : wrap} />
 
-      {!focusMode && <ThreadInbox wid={wid} threads={threadList} titleOf={titleOf} onGo={goToThread} whereOf={(t) => (ws.planes.length ? planeName(threadPlane(t)) : null)} here={planeName(plane)} />}
+      {!focusMode && <ThreadInbox wid={wid} threads={threadList} titleOf={titleOf} onGo={goToThread} whereOf={(t) => (ws.planes.length ? planeName(threadPlane(t)) : null)} goneOf={(t) => t.on !== 'spot' && !known.has(t.targetId ?? '')} here={planeName(plane)} />}
 
       <DetailPanel items={every} />
     </main>

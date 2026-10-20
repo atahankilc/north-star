@@ -128,8 +128,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   type, its top-left kept. Corner marks when hovered/selected (D-163)
 - Comment threads (D-159, D-166): a pin per thread, a small framed mono chip like a link's (`--bg`, 1px `--line-hover`),
   the comment icon (a square speech bubble with three square dots, D-167) and a count, its bottom-left corner at the spot (a card's, text's or section's top-right corner, a link's chip, the spot
-  clicked); magenta border and mark when someone else wrote since you read it, `@` when it mentions you, cyan while open,
-  dashed when what it was on is gone. The open thread looks like the assistant's chat window (D-081): a 340 px frame
+  clicked); magenta border and mark when someone else wrote since you read it, `@` when it mentions you, cyan while open; no
+  pin when what it was on was deleted (it stays in the panel, D-171). The open thread looks like the assistant's chat window (D-081): a 340 px frame
   right of the pin (left when it would run off), header with what it's on in faint mono and `[resolve]` `[delete]`
   `[×]`, a terminal log (the writer's full name in `--fg-strong`, yours in cyan, `2d`, the text indented under it,
   `@Name` in cyan, `[edit]` `[delete]` on your own on hover), and the chat's `>` prompt with `[send]`; `@` opens a list

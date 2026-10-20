@@ -91,7 +91,9 @@ export function ThreadLayer({ wid, pins, openAt, title, thread, isOwner }: Layer
   return (
     <>
       {show &&
-        shown.map(({ thread: t, at, gone }) => {
+        shown
+          .filter(({ gone }) => !gone)
+          .map(({ thread: t, at, gone }) => {
           const fresh = isNew(t, seen, t.id, me)
           const mentioned = fresh && !!t.mentions?.includes(me)
           return (

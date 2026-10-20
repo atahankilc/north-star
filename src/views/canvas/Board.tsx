@@ -694,6 +694,9 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
   const pins: PinnedThread[] = (threads?.list ?? []).flatMap((t) => {
     // Which to show (resolved ones, only new ones) is the thread layer's choice (D-166).
     const gone = t.on !== 'spot' && !threads!.exists(t.targetId ?? '')
+    // What it was on was deleted (D-171): no pin on the board; it stays in the threads panel, and opened from there it
+    // shows where the thing was. Undoing the delete brings the pin back.
+    if (gone && t.id !== openThreadId) return []
     const at = gone ? [t.x, t.y] as [number, number] : anchorOf(t)
     return at ? [{ thread: t, at, gone }] : []
   })

@@ -23,6 +23,8 @@ type Props = {
   // The plane each thread is seen on, by name, when the workspace has planes; and the open one's (D-168).
   whereOf?: (t: WithId<Thread>) => string | null
   here?: string
+  // What it was on was deleted (D-171).
+  goneOf?: (t: WithId<Thread>) => boolean
 }
 
 // The button in the board's bottom-left toolbar (D-167): a square icon button like `+`, the comment mark in it; a
@@ -48,7 +50,7 @@ export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
   )
 }
 
-export function ThreadInbox({ wid, threads, titleOf, onGo, whereOf, here }: Props) {
+export function ThreadInbox({ wid, threads, titleOf, onGo, whereOf, here, goneOf }: Props) {
   const open = useThreadView((s) => s.inbox)
   const openId = useThreadView((s) => s.openId)
   const me = myUid()
@@ -135,6 +137,7 @@ export function ThreadInbox({ wid, threads, titleOf, onGo, whereOf, here }: Prop
               </span>
               <span className={styles.rowMeta}>
                 {t.count} message{t.count === 1 ? '' : 's'} · started by {t.name}
+                {goneOf?.(t) && <span className={styles.rowGone}> · what it was on was deleted</span>}
                 {/* Another plane than the open one: going there switches to it (D-168). */}
                 {(() => {
                   const where = whereOf?.(t)
