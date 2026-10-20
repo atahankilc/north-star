@@ -127,6 +127,49 @@
   color: var(--accent-magenta);
 }
 
+/* The side nav's `+` (D-178): unframed like the settings gear (Settings.module.css .trigger), the glyph in magenta;
+   open, it takes the tabs' magenta bar. */
+.icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-magenta);
+  font: inherit;
+  cursor: pointer;
+}
+
+.icon .label {
+  display: grid;
+  color: inherit;
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.icon:hover .label,
+.icon:focus-visible .label {
+  transform: scale(1.15);
+}
+
+.icon::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: -3px;
+  height: 2px;
+  background: var(--accent-magenta);
+  transform: scaleX(0);
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.icon[aria-expanded='true']::after {
+  transform: scaleX(1);
+}
+
 .panel {
   composes: frame from './Frame.module.css';
   position: absolute;

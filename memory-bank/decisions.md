@@ -62,7 +62,8 @@ piece; check them with the user then.
 - Hybrid rendering: WebGL scene, readable/editable text in the DOM; the ASCII effect never covers text (D-009, D-019).
 - One framed surface (`Frame.module.css`) for panels, cards, forms, chips (D-024). One HUD on every page with fixed margins (D-027).
 - The HUD becomes a left side nav piece by piece; first, you and settings stacked bottom left (rule, your square, gear),
-  `--space-3` from the edges, bottom-left tools kept `--corner-h` above (D-175).
+  `--space-3` from the edges, bottom-left tools kept `--corner-h` above (D-175). The side nav's tools sit at the middle of
+  the left edge; its `+` is an unframed icon like the gear, a drawn 20 px `+` in magenta, the tabs' bar under it when open (D-178).
 - Tokens only, no raw colours, sizes or tracking (`--text-*`, `--track-*`, `--measure`, `--fg-muted`, `--diff-*`, `--link-*`)
   (D-069, D-093, D-097). `src/ui/Page.module.css`, `fieldLabel`, `small` buttons shared (D-093).
 - Actions lowercase, uppercase only for labels (D-093). No native `<select>`: `src/ui/Select.tsx` (D-093).
@@ -158,9 +159,29 @@ piece; check them with the user then.
   piece by piece onto the canvas; old paths open the canvas; settings keep you + general + people (D-177).
 - No pages any more: a workspace is one canvas (`/workspaces/<id>`, D-174), backdrop at full strength, no grid, no view
   tabs, no assistant; the old pages become pieces placed on it. The board is at `/board`; other views by their paths for now.
-- Pieces (D-176): `pieces/{id}` (kind `board`, x/y/w/h in canvas px, name); side nav `+` (opens right) puts one at the
-  screen's middle, moved right past any it would cover; drag (5 px), Delete, Escape; pan by drag, wheel zooms round the
-  pointer (0.1–4). Each piece has its own background: a board's is solid `--bg` with `+` marks every 25 px (`--grid-mark`), no backdrop.
+- Pieces (D-176): `pieces/{id}` (x/y/w/h in canvas px, name); side nav `+` (D-178, opens right) puts one at the screen's
+  middle, moved right past any it would cover; pan by drag, wheel zooms round the pointer (0.1–4). Each piece has its own
+  background: a plane's is solid `--bg` with `+` marks every 25 px (`--grid-mark`), no backdrop.
+- The first piece is a **plane** (D-180): never "board" again, in the UI or the code (`kind: 'plane'`; old docs say
+  `board`, still allowed by the rules). A press on a plane is the plane's (the canvas doesn't pan); only in edit mode does
+  it move, resize (≥ 320 × 200) and take a name (the name is a field), and Delete removes it; edit stays on until
+  pressed off (D-180).
+- Plane look (D-179, D-181): terminal style (picked from four on a preview): name set into the top edge, the console a
+  command line outside under the bottom-right corner, `▸ zoom [−] 100% [+] [focus] [edit]` (no name; zoom drawn only);
+  the cards' corner marks, grey on hover; edit mode = a faint dashed cyan edge, long cyan corner marks that resize, short
+  bars at the edge middles, and the console a cyan status line `EDIT ▸ 960 × 600 · drag to move · corners to resize
+  [delete] [done]` (D-182).
+- Focus (D-184, D-185): `[focus]` makes a plane the view, `?focus=<id>` (back leaves, reload stays). Going in, the plane
+  spreads over the screen like ink, cell by cell on the 9 px grid, nearest first with a ragged edge (820 ms, eased both
+  ends); nothing zooms and its `+` marks never move (the layer carries them on the plane's grid at the canvas's zoom).
+  `[unfocus]` or Esc draws it back into the plane (700 ms). The plane's console goes the moment it starts; in focus the
+  console sits bottom left, right of the gear, once arrived: keep the right of the screen free. Breadcrumb ends with the
+  plane's name; no `+` in focus. Reduced motion: no transition. What's different inside: the user will say.
+- Planes snap to the canvas's 25 px grid (their `+` step) when moved, resized or added; alt = free; min 325 × 200 (D-182).
+- Deleting a plane (console `[delete]` or Delete in edit mode) asks first in the hazard confirm (`src/ui/HazardConfirm.tsx`,
+  for anything that can't be taken lightly): the screen darkens, the box steps in, ASCII hazard tape `╱╱╱` wraps round it
+  from the box out, runs once (~1.5 s) and stops; the text decodes; no fault code; cancel focused; ⌘Z brings it back;
+  leaving breaks apart cell by cell. Reduced motion: the tape is just there (D-182, D-183).
 - Overview (D-144, reached by its path since D-174): the workspace read on one screen (next steps that prefill the assistant's mode, solid
   ground vs still a guess, riskiest bets, white space, worth a look).
 - Focus tab right of Board (`/focus?on=<id>`): the board with only the card's chain (customer → problem → idea → feature
@@ -278,3 +299,7 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Links routed by the app as right-angle elbows with lanes: lines shifted as others showed and hid, shape not the user's (D-155).
 - Competitor features as squares, spines or a strip beside the card; parts as nested dots, a tree or a frame; a separate competitor page (D-164).
 - A real blur behind the open feature list (drew the board twice a frame and lagged) (D-173).
+- Melting drips (ASCII running down the screen and from under the box) in the delete confirm: too much (D-182).
+- A `!! FAULT 0x…` line on the confirm: not needed (D-183).
+- Focus that zooms: the plane scaling up with its marks, the canvas behind scaling and fading, warp streaks; the marks slid
+  about and it looked bad (D-185). Nothing on the right of the screen during or in focus (kept free for something else).

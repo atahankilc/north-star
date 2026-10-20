@@ -11,6 +11,12 @@
   cursor: grabbing;
 }
 
+/* Everything on the canvas, as one layer the focus transition runs past you and fades (D-184). */
+.lens {
+  position: absolute;
+  inset: 0;
+}
+
 /* The canvas plane: its origin goes to the middle of the screen plus the camera's offset, then scales. */
 .world {
   position: absolute;
@@ -19,13 +25,13 @@
   transform-origin: 0 0;
 }
 
-/* A board on the canvas: a framed box, its name set into the top edge like a section's (D-157). Everything on the canvas
-   has its own background; a board's is the page colour, solid (no backdrop through it), with only its `+` marks. */
+/* A plane on the canvas (D-180): a framed box, its name set into the top edge like a section's (D-157). Everything on the
+   canvas has its own background; a plane's is the page colour, solid (no backdrop through it), with only its `+` marks. */
 .piece {
   position: absolute;
   display: grid;
   place-items: center;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-hover);
   background: var(--bg);
   cursor: default;
   transition: border-color var(--dur-fast) var(--ease-out);
@@ -42,17 +48,91 @@
   pointer-events: none;
 }
 
-.piece:hover {
-  border-color: var(--line-hover);
-}
-
-.piece[data-selected='true'] {
-  border-color: var(--accent-magenta);
+/* Edit mode (D-180, D-181): a faint dashed cyan edge; the plane moves from anywhere on it, its corner marks and edge bars
+   resize it. */
+.piece[data-editing='true'] {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent-cyan) 55%, transparent);
+  cursor: move;
 }
 
 .piece[data-dragging='true'] {
   cursor: grabbing;
 }
+
+/* Corner marks (D-150's, on a plane, D-181): hidden at rest, grey just outside the corners on hover; in edit mode longer,
+   heavier and cyan, and they take the pointer to resize. */
+.mark {
+  position: absolute;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  border: 0 solid var(--fg-dim);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    width var(--dur-fast) var(--ease-out),
+    height var(--dur-fast) var(--ease-out);
+}
+
+.mark[data-handle='nw'] { top: -5px; left: -5px; border-top-width: 1px; border-left-width: 1px; }
+.mark[data-handle='ne'] { top: -5px; right: -5px; border-top-width: 1px; border-right-width: 1px; }
+.mark[data-handle='se'] { bottom: -5px; right: -5px; border-bottom-width: 1px; border-right-width: 1px; }
+.mark[data-handle='sw'] { bottom: -5px; left: -5px; border-bottom-width: 1px; border-left-width: 1px; }
+
+.piece:hover .mark {
+  opacity: 1;
+}
+
+.piece[data-editing='true'] .mark {
+  width: 22px;
+  height: 22px;
+  border-color: var(--accent-cyan);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.piece[data-editing='true'] .mark[data-handle='nw'] { border-top-width: 2px; border-left-width: 2px; cursor: nwse-resize; }
+.piece[data-editing='true'] .mark[data-handle='ne'] { border-top-width: 2px; border-right-width: 2px; cursor: nesw-resize; }
+.piece[data-editing='true'] .mark[data-handle='se'] { border-bottom-width: 2px; border-right-width: 2px; cursor: nwse-resize; }
+.piece[data-editing='true'] .mark[data-handle='sw'] { border-bottom-width: 2px; border-left-width: 2px; cursor: nesw-resize; }
+
+/* The edges' middles in edit mode: short cyan bars on the line, a little more to grab than they show. */
+.bar {
+  position: absolute;
+  z-index: 1;
+  background: var(--accent-cyan);
+  background-clip: content-box;
+}
+
+.bar[data-handle='n'],
+.bar[data-handle='s'] {
+  left: 50%;
+  width: 18px;
+  height: 2px;
+  margin-left: -9px;
+  padding: 4px 0;
+  box-sizing: content-box;
+  cursor: ns-resize;
+}
+
+.bar[data-handle='n'] { top: -5px; }
+.bar[data-handle='s'] { bottom: -5px; }
+
+.bar[data-handle='e'],
+.bar[data-handle='w'] {
+  top: 50%;
+  width: 2px;
+  height: 18px;
+  margin-top: -9px;
+  padding: 0 4px;
+  box-sizing: content-box;
+  cursor: ew-resize;
+}
+
+.bar[data-handle='e'] { right: -5px; }
+.bar[data-handle='w'] { left: -5px; }
 
 .name {
   position: absolute;
@@ -70,6 +150,129 @@
   text-transform: uppercase;
 }
 
-.piece[data-selected='true'] .name {
+.name[data-unnamed='true'] {
+  color: var(--fg-faint);
+}
+
+/* The name in edit mode (D-179, D-180): the same label, typed into; a faint underline, cyan while typing. */
+.piece .name.nameField {
+  box-sizing: content-box;
+  border: 0;
+  border-bottom: 1px solid var(--line-hover);
+  color: var(--fg-strong);
+  outline: none;
+  text-transform: none;
+  caret-color: var(--accent-cyan);
+  cursor: text;
+}
+
+.piece .name.nameField:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.nameField::placeholder {
+  color: var(--placeholder);
+}
+
+/* A plane's console (D-179, D-181): just outside the plane, under its bottom-right corner, always there; a terminal line
+   like the assistant's chat: the plane's name, a magenta `▸`, then bracketed actions. In edit mode a status line in cyan. */
+.console {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 5px var(--space-3);
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--space-4);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.console[data-editing='true'] {
+  border-color: var(--accent-cyan);
+}
+
+.prompt {
   color: var(--accent-magenta);
+}
+
+.mode {
+  color: var(--accent-cyan);
+  letter-spacing: var(--track-label);
+}
+
+.readout {
+  color: var(--fg);
+}
+
+.tool {
+  composes: small from '../../ui/AsciiButton.module.css';
+  padding: 0 2px;
+}
+
+.console[data-editing='true'] .tool {
+  color: var(--accent-cyan);
+}
+
+/* Delete (D-182), and it asks first. */
+.console .tool[data-tone='danger'] {
+  color: var(--accent-magenta);
+}
+
+.zoom {
+  color: var(--fg-dim);
+}
+
+/* What edit mode lets you do, quieter than the size. */
+.hint {
+  color: var(--fg-faint);
+}
+
+/* A plane in focus (D-184, D-185): the whole screen, solid, carrying the plane's `+` marks on its own grid (--mx, --my)
+   at the canvas's zoom (--mark), so they never move. The ink transition cuts it with a clip-path. */
+.focused {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: var(--bg);
+  cursor: default;
+}
+
+.focused::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--grid-mark);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx) var(--my) / var(--mark) var(--mark);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx) var(--my) / var(--mark) var(--mark);
+  pointer-events: none;
+}
+
+/* A plane's console while it's in focus or on its way (D-185): gone at once. */
+.consoleAway {
+  visibility: hidden;
+}
+
+/* The console of a plane in focus (D-185): bottom left, right of the side nav's foot and level with its gear, so the
+   right of the screen stays free; it comes in a few steps once the plane has arrived. */
+.focusConsole {
+  top: auto;
+  right: auto;
+  bottom: var(--space-3);
+  left: calc(var(--space-3) + 36px + var(--space-3));
+  animation: console-in 160ms steps(3) both;
+}
+
+@keyframes console-in {
+  from { opacity: 0; }
+}
+
+.focused[data-reduced='true'] .focusConsole {
+  animation: none;
 }

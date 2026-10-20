@@ -75,12 +75,12 @@ a.link:hover {
   text-overflow: ellipsis;
 }
 
-/* The top of the side nav (D-176), level with the corner below it. */
+/* The side nav's tools (D-176, D-178): middle of the left edge, level with the corner below it. */
 .side {
   position: fixed;
   left: var(--space-3);
-  top: var(--hud-h);
-  /* As wide as the create button, so the corner below lines up with it. */
+  top: 50%;
+  transform: translateY(-50%);
   width: 36px;
   display: flex;
   flex-direction: column;

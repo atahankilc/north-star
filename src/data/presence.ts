@@ -8,7 +8,8 @@ import { accents } from '../styles/tokens'
 import type { AuthUser } from './auth'
 import { firebase } from './firebase'
 
-export type PresenceView = 'canvas' | 'overview' | 'board' | 'flow' | 'table' | 'matrix' | 'priorities' | 'reports'
+// The canvas is the only view now (D-174, D-177); database.rules.json still accepts the old views' names.
+export type PresenceView = 'canvas'
 
 export type Presence = {
   name: string
@@ -198,7 +199,7 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
     const rtdb = firebase?.rtdb
     if (!rtdb || !uid) return
     const node = ref(rtdb, `presence/${wid}/${uid}`)
-    mine = { node, data: { name: name.slice(0, 80), color: presenceColor(uid), photo, view: 'board' }, since: null }
+    mine = { node, data: { name: name.slice(0, 80), color: presenceColor(uid), photo, view: 'canvas' }, since: null }
 
     // Whenever the connection (re)opens: re-arm the clean-up and write ourselves back.
     const offConnected = onValue(ref(rtdb, '.info/connected'), (snap) => {
@@ -278,6 +279,6 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
   }, [wid, uid, name, photo])
 
   useEffect(() => {
-    patch(view === 'board' ? { view } : { view, x: undefined, y: undefined })
+    patch({ view })
   }, [view, wid, uid])
 }

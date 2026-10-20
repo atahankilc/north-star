@@ -1,8 +1,8 @@
 // /workspaces/:wid: loads one workspace and its canvas (D-036, D-174). There are no pages: the old views are archived
 // (src/archive/, D-177) and come back as pieces on the canvas.
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { WORKSPACES } from '../../app/paths'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { WORKSPACES, workspacePath } from '../../app/paths'
 import { useAuth } from '../../data/auth'
 import { setReadOnly } from '../../data/history'
 import type { WithId } from '../../data/hooks'
@@ -72,17 +72,24 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   // Presence (D-065): who's here. The canvas is the only view (D-174).
   usePresenceSession(wid, user, 'canvas')
   useEditKeys(wid)
+  // A plane in focus (D-184) is the view: its name ends the breadcrumb, and the canvas's `+` goes away.
+  const focusId = useSearchParams()[0].get('focus')
+  const focused = focusId ? data.pieces.find((p) => p.id === focusId) : undefined
 
   return (
     <WorkspaceContext.Provider value={ctx}>
       <div className={styles.app} data-app>
         <Hud
-          crumbs={[{ label: 'workspaces', to: WORKSPACES }, { label: workspace.name }]}
+          crumbs={[
+            { label: 'workspaces', to: WORKSPACES },
+            focused ? { label: workspace.name, to: workspacePath(wid) } : { label: workspace.name },
+            ...(focused ? [{ label: focused.name || 'plane' }] : []),
+          ]}
           right={<PeopleHere />}
           settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={requests.data} />}
           settingsName={workspace.name}
           settingsBadge={requests.data.length}
-          side={editor ? <AddToCanvas wid={wid} /> : undefined}
+          side={editor && !focused ? <AddToCanvas wid={wid} /> : undefined}
         />
         {!isLoading && <CanvasView />}
         <Toast />
@@ -91,7 +98,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   )
 }
 
-// The side nav's `+` (D-176): a board at the middle of the screen, selected. Viewers make nothing (D-098).
+// The side nav's `+` (D-176): a plane (D-180) at the middle of the screen, selected. Viewers make nothing (D-098).
 function AddToCanvas({ wid }: { wid: string }) {
   const { pieces } = useWs()
   const add = async (kind: PieceKind) => {
@@ -100,13 +107,18 @@ function AddToCanvas({ wid }: { wid: string }) {
   }
   return (
     <Menu
-      primary
+      icon
       right
-      label="+"
+      label={
+        // Drawn, not a glyph: a font's `+` is small and sits off centre.
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
+          <path d="M10 2v16M2 10h16" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      }
       ariaLabel="Add to the canvas"
       items={[
         { key: 'canvas', heading: 'on the canvas' },
-        { key: 'board', label: 'board', glyph: '▦', onSelect: () => void add('board') },
+        { key: 'plane', label: 'plane', glyph: '▦', onSelect: () => void add('plane') },
       ]}
     />
   )

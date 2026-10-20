@@ -36,6 +36,8 @@ type Props = {
   alignEnd?: boolean
   // A filled, prominent trigger (the create button).
   primary?: boolean
+  // An unframed icon trigger like the settings gear, its glyph magenta (the side nav's `+`, D-178).
+  icon?: boolean
   // A filter that's narrowing what you see: the trigger stays lit.
   active?: boolean
   ariaLabel: string
@@ -46,7 +48,7 @@ type Props = {
 
 const text = (n: ReactNode): string => (typeof n === 'string' || typeof n === 'number' ? String(n) : '')
 
-export function Menu({ label, summary, items, up, right, alignEnd, primary, active, ariaLabel, empty, search }: Props) {
+export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, active, ariaLabel, empty, search }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const field = useRef<HTMLInputElement>(null)
@@ -98,7 +100,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, acti
     <div ref={root} className={styles.root} onKeyDown={open ? onKeyDown : undefined}>
       <button
         ref={trigger}
-        className={primary ? styles.primary : styles.trigger}
+        className={icon ? styles.icon : primary ? styles.primary : styles.trigger}
         aria-haspopup="menu"
         aria-expanded={open}
         data-active={active || undefined}
@@ -111,7 +113,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, acti
       >
         <span className={styles.label}>{label}</span>
         {summary !== undefined && <span className={styles.summary}>{summary}</span>}
-        {!primary && (
+        {!primary && !icon && (
           <span className={styles.caret} aria-hidden>
             ▾
           </span>

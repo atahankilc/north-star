@@ -3,7 +3,7 @@
 // workspaces, and firestore.rules still knows it.
 //
 //   workspaces/{workspaceId}                 Workspace
-//     pieces/{id}                            Piece (D-176): something on the canvas, a board for now
+//     pieces/{id}                            Piece (D-176): something on the canvas, a plane for now (D-180)
 //     members/{uid}                          Member (D-098): a member's name and email, for the people list
 //   inviteCodes/{code}                       InviteCode (D-012)
 //   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)
@@ -48,9 +48,10 @@ export type JoinRequest = {
   createdAt: number
 }
 
-// Something placed on the workspace's canvas (D-174, D-176): for now a board. World units are canvas pixels at zoom 1;
-// x/y is its top-left corner.
-export type PieceKind = 'board'
+// Something placed on the workspace's canvas (D-174, D-176): for now a plane (D-180; earlier called a board, and stored
+// as `kind: 'board'`, which still reads as a plane). World units are canvas pixels at zoom 1; x/y is its top-left corner.
+// Not the archived `planes` collection (D-139): that was the old board's own layouts.
+export type PieceKind = 'plane'
 export type Piece = {
   kind: PieceKind
   x: number

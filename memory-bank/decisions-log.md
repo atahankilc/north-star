@@ -2655,3 +2655,134 @@ categories shown like B, not in a card, and the features under them not indented
   şu anki çalışmamıza ekleriz feature'ları" — then chose "veri katmanı da arşive" and "build'e dahil olmasın".
 - *Verified* headless (emulators): sign in, create a workspace, add a board, `/board` opens the canvas, settings show
   you + workspace (general, people) only, no console errors; `tsc`, build (2.17 MB, was 2.9), `npm run test:rules` 352/352.
+
+### D-178 · 2026-10-20 · Accepted (changes D-176's `+` button)
+- *Decision:* the side nav's tools sit at the vertical middle of the left edge (`.side` in Hud.module.css, `top: 50%`),
+  `--space-3` from it, lined up with the you/settings corner. The `+` is no longer the filled magenta create button: it's
+  an unframed 30 px icon button like the settings gear, a drawn `+` (SVG, 20 px, 1.5 px stroke) in magenta, a little
+  bigger on hover, the tabs' magenta bar under it while its menu is open (Menu `icon` prop).
+- *User:* "board eklemeyi yaptığımız düğmeyi vertically ortala … normalde toollar ekranın sol ortasına gidecek … ayarlar icon
+  button'u gibi yapabiliriz, sadece icon'un kendisi pembe olur", then "daha büyük bir + kullan".
+- *Verified* headless: the `+` centred on the left edge at y = 450 of 900, its menu opening to the right with the bar under it; build.
+
+### D-179 · 2026-10-20 · Accepted (builds on D-176)
+- *Decision* (renaming changed by D-180: in edit mode only, the name always a field): boards have their own names: a double-click on the name in the top edge turns it into a field (as wide as
+  the text, cyan underline), Enter or a click elsewhere keeps it, Escape doesn't; empty takes the name away and it reads
+  `board` again (grey). `renamePiece` in pieces.ts, one undo step, ≤ 80 characters (the rule already allowed `name`).
+  A board's drag now listens on the window instead of capturing the pointer, so a press that doesn't move stays a click.
+- *Console:* every board has one, always open, just outside the board under its bottom-right corner, set like the bar a
+  selected text or link got (D-108): solid, mono, a heavier top edge, `[−] 100% [+] │ [⛶ full screen]`. The user asked
+  for the look only: the buttons do nothing yet.
+- *User:* "board'lar farklı isimlendirilebilir olmalı … board'un sağ alt köşesine … bir konsol, hep açık … zoom in, zoom out
+  ve full ekran düğmesi … şimdilik fonksiyon implemente etmene gerek yok", then "card'ın dışına sağ alta koy".
+- *Verified* headless: double-click, type, Enter: the name shows and is still there after a reload; the board still drags
+  (moved 50, 50); the console sits under the corner; `tsc`, build.
+
+### D-180 · 2026-10-20 · Accepted (changes D-176's moving and D-179's renaming)
+- *Decision:* the piece is called a **plane**, everywhere: the `+` menu, its label, its console, the code (`PieceKind =
+  'plane'`, `KIND_NAME`, `PlaneConsole`, undo labels). New pieces are stored `kind: 'plane'`; ones made before say
+  `board`, which the rules still allow (and undo can bring back) and the app shows as a plane. Not the archived `planes`
+  collection (D-139). Presence's view is just `canvas` now.
+- *Edit mode:* the console gets `✎ edit`. A press on a plane belongs to the plane, since its inside will be controlled
+  there: the canvas doesn't pan from it and nothing moves. With edit on (the button lit cyan, a dashed cyan edge, square
+  handles on the corners and edge middles) the plane is selected, drags from anywhere on it, resizes from the handles
+  (never under 320 × 200), and its name is a field (Enter or leaving it keeps it, Escape puts it back). Edit stays on
+  through clicks elsewhere: it's switched off only by pressing `edit` again. Delete removes a plane only while it's in
+  edit mode. Moves and resizes are one undo step each (`placePiece`). Viewers get no `edit`.
+- *User:* "board demeyelim, ismine de plane diyelim. Bütün kod tabanında da bu ismi kullan … console'a bir de edit düğmesi
+  ekle, buna bastığımızda kullanıcı plane'in adını değiştirebilsin ya da resize edebilsin ya da taşıyabilsin … edit moddan
+  çıkmak için edit'i kapatması gerek … mouse board'un üstüne gelince artık kullanıcı board'un içini kontrol etmeye başlayacak".
+- *Verified* headless: a drag without edit leaves it (0, 0) and Backspace doesn't delete it; with edit: moved (80, 40),
+  resized from the bottom-right (−200, −100) and the top-left (x/y +50/+30, size −50/−30), renamed, still in edit after a
+  click on empty canvas, edit off shows the name, ⌘Z undoes the rename. `npm run test:rules` 353/353; Firestore rules deployed.
+
+### D-181 · 2026-10-20 · Accepted (changes D-179's console and D-180's edit look)
+- *Decision:* chosen from four variants shown side by side on a local preview (A corner marks, B tab and dock, C terminal,
+  D quiet): the terminal look (C) with A's edit mode. At rest a plane has a thin `--line-hover` frame with its name set
+  into the top edge; its console, outside under the bottom-right corner, is a terminal line: the plane's name, a magenta
+  `▸`, `zoom [−] 100% [+] [full] [edit]` (zoom and full screen still only drawn). On hover the cards' corner marks
+  (D-150) show grey just outside the corners. In edit mode: a faint dashed cyan frame, the corner marks long (22 px),
+  2 px and cyan, and they are the resize handles; short cyan bars on the edge middles resize one side; the console turns
+  into a cyan status line `EDIT ▸ 710 × 470 · drag to move · corners to resize [done]` (the live size sits here rather than
+  under the left corner, where a narrow plane's console would cover it); `[done]` ends edit mode. No magenta selection
+  colour on planes any more: a plane is selected only while in edit mode.
+- *User:* "C - terminal görünümünü seviyorum ancak edit kesinlikle A gibi olmalı. Bu bizim card'larda uyguladığımız köşe
+  çizgileri baya güzel duruyor".
+- *Not taken yet* (suggested on the preview, waiting for the user): console and name at a fixed screen size; moves and
+  resizes snapping to the 25 px marks; `e` to toggle edit and arrows to nudge; `[× delete]` in the console.
+- *Verified* headless: hover marks, edit frame and status line screenshots; drag without edit (0, 0); in edit moved,
+  resized from both corners, renamed; `[done]` leaves edit; ⌘Z undoes the rename; build.
+
+### D-182 · 2026-10-21 · Accepted (changes D-181's console; adds delete, snapping)
+- *Console:* no plane name in it any more (it's on the plane): `▸ zoom [−] 100% [+] [full] [edit]`. In edit mode the
+  status line has `[delete]` (magenta) before `[done]`.
+- *Delete asks first, as a failing screen* (its look replaced by D-183's hazard tape; `MeltdownConfirm` is gone): a full-screen native <dialog>;
+  the screen flickers dark with scanlines; the box builds cell by cell (D-034's cells, 520 ms) but every cell not there
+  yet is a corrupt glyph in magenta/cyan/ink, with static over the screen for the first 240 ms; the box tears sideways
+  (steps, skew) with its title's colours split while it builds and in short bursts every 1.6–4.2 s; `!! FAULT 0xDE1E7E`
+  (the `!!` blinks), `delete "Pricing"?`, "The plane and everything on it goes. ⌘Z brings it back.", `[cancel]`
+  (focused) `[delete]`. Leaving, it breaks apart cell by cell (200 ms). Escape cancels. The Delete key in edit mode opens
+  it too. Reduced motion (the app's setting): no canvas, no flicker, blink or tearing. Its pointer events don't reach the
+  canvas through the portal.
+- *Tried and dropped:* the screen melting while it's open (ASCII drips from the top of the screen and magenta drips from
+  under the box). The user: "harika duruyor ama eriyormuş gibi yapmamız biraz overkill oldu … onun dışındaki her şey çok güzel".
+- *Snapping:* moves, resizes and new planes land on the canvas's 25 px grid (a plane's `+` step), so planes side by side
+  line up mark for mark; alt held = free. The minimum is 325 × 200, gaps between new planes 75.
+- *User:* "console içine adını yazmamıza gerek yok. Edit dediğimizde ayrıca silme de koyalım. Silmeye tıklayınca … kare kare
+  animasyon ile emin misiniz modal'ı … sanki bir şeyler ters gitmiş ve bozulmuş gibi … cyberpunk", "snap olayı da mantıklı".
+- *Verified* headless: frames at 40 ms (corrupt glyphs over the box) and 3.6 s; a move of (+37, +11) lands (+25, 0), a
+  resize gives 825 × 525; cancel keeps the plane, Delete opens the confirm, delete removes it, ⌘Z brings it back; build.
+
+### D-183 · 2026-10-21 · Accepted (changes D-182's delete confirm look)
+- *Decision:* the confirm's entrance is hazard tape (`src/ui/HazardConfirm.tsx`, replacing `MeltdownConfirm`), picked from
+  seven entrances on a local preview (today's corrupt cells, rain, CRT power-on, kernel panic, gathering glyphs, VHS
+  band, hazard tape). The screen darkens (200 ms); the box comes in four hard steps (260 ms, from 0.96); a band of ASCII
+  `╱` three cells wide wraps round it from the box outwards (380 ms, on the screen's 9 px cell grid), its stripes magenta
+  and faint grey, runs along for 1.5 s and stops, staying there; the title and lines decode out of glyphs (DecodeText,
+  500 ms). No `!! FAULT` line. Leaving: the box breaks apart cell by cell, tape and dark fade (200 ms). API: `title`,
+  `lines`, `confirm`, `onConfirm`, `onCancel`. Reduced motion: no steps, decode or running, the tape drawn still.
+- *User:* "F güzel. '!! FAULT …' falan yazmaya gerek yok. Onun dışında iyi duruyor".
+- *Not chosen* (kept for other moments if wanted): rain into the box, CRT power-on, kernel panic (hex dump + ASCII frame
+  traced + typed text), glyphs gathering into the box, VHS band.
+- *Verified* headless: frames at 120 ms, 300 ms, 2.4 s; cancel, Delete key, delete, ⌘Z; build.
+
+### D-184 · 2026-10-21 · Accepted (changes D-179's `full screen` into `focus`; its transition replaced by D-185)
+- *Decision:* the console's `full screen` is `focus`. It makes the plane the view, "as if passing from one plane into
+  another": the plane grows from its place on the canvas to the whole screen and becomes the main view, like the old
+  board page. In the address as `?focus=<id>` on the canvas's path: the back button leaves, a reload stays (no
+  transition then), a plane deleted while in focus drops it.
+- *Transition* (`src/views/workspace/FocusedPlane.tsx`): a layer with the plane's look animates (WAAPI, 900 ms,
+  cubic-bezier(0.65, 0, 0.35, 1)) from the plane's screen box to the canvas's whole box, its `+` marks from 25 × zoom px
+  to 25 px (a registered `--mark` length) and its edge to nothing; the canvas behind (a `.lens` wrapper round `.world`)
+  scales ×2.6 round the plane's middle, blurs 2 px and fades out, then is hidden; 220 ASCII streaks (`- \ | /` by their
+  direction, a `·` tail, mostly grey, some cyan and magenta) burst out from the middle, strongest halfway. Once there, the
+  layer is held by CSS (inset 0), so resizes are fine. Leaving: `[unfocus]` or Esc, the same backwards in 700 ms onto
+  where the plane is now, streaks falling back in. While in focus the canvas ignores the wheel, the breadcrumb ends with
+  the plane's name (the workspace's crumb links back), and the side nav's `+` is gone. Reduced motion: no transition.
+- *Inside:* empty for now, the plane's marks at 25 px and its console in the screen's bottom-right corner
+  (`▸ zoom [−] 100% [+] [unfocus]`). The user said there will be one difference from the old board page, to come.
+- *User:* "o button'u focus olarak adlandıralım … sanki başka bir evrene geçiş yapıyormuş gibi ya da bir düzlemden başka bir
+  düzleme geçiş yapıyormuş gibi plane'in giderek büyüyüp en sonunda bizim ana view'umuz haline gelmesini istiyorum …
+  board page'inde gibiymiş olalım … ancak bir farkımız olacak".
+- *Verified* headless: frames stepped at 200/450/700 ms (paused animations): the plane growing, the canvas fading behind,
+  streaks out of the middle; the address gets `?focus=`; a reload stays in focus; Esc leaves (a frame mid-way back shows
+  the plane shrinking with streaks); breadcrumb `… / Focus / plane`, no `+`; build.
+
+### D-185 · 2026-10-21 · Accepted (replaces D-184's transition)
+- *Why:* D-184's zooming transition "çok kötü duruyor": the plane scaled with its marks, the canvas behind scaled and
+  faded, and the `+` marks slid about. The user: "focus olmadan önceki halimizde gördüğümüz artılar olduğu gibi duracak.
+  Plane nerede olursa olsun, sağa sola, yukarı aşağı açılarak ekranı dolduracak. Sanki uzanıp beni yutuyormuş gibi …
+  console güzel olmuyor geçiş sırasında. Ekranın sağ tarafını başka bir şey için rezerve ediyorum".
+- *Picked* from six on a local preview, all with fixed marks (straight unfold; sides then up-down; gulp; ink; corners reach;
+  ASCII fronts): **ink** ("mürekkep süper olmuş").
+- *Decision:* a layer the size of the canvas, solid `--bg`, carries the plane's `+` marks on the plane's own grid at the
+  canvas's zoom (`--mx`, `--my`, `--mark` from the plane's screen box). Going in it's cut (clip-path of merged cell runs,
+  as in Appear) to the 9 px cells the ink has reached: a cell's moment is its distance from the plane's box over the
+  farthest corner's (× 0.82) plus `cellHash` (× 0.18), cells inside the plane at once; 820 ms, cubic in-out. Then the cut
+  goes, the canvas behind is hidden. Nothing zooms: the canvas stays put and is swallowed. Leaving runs it backwards in
+  700 ms onto where the plane is. The marks keep the canvas's zoom in focus (no jump). The plane's own console hides the
+  moment focus starts and comes back after; the focused console (`▸ zoom [−] 100% [+] [unfocus]`) appears in three steps
+  once arrived, bottom left right of the side nav's foot (level with the gear), and goes the moment it leaves.
+  Reduced motion: no ink, no steps. Streaks, lens scaling and the registered `--mark` property are gone.
+- *Verified* headless with time driven by hand: frames at 200/400/600/900 ms, the marks in the same columns and rows
+  before and mid-spread; the console bottom left once there; Esc draws it back and the address loses `?focus`; build.

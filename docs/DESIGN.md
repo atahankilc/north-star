@@ -170,6 +170,14 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - In a workspace, the views sit beside the breadcrumb as unframed tabs after a vertical rule (current view bright with a sliding magenta underline; D-066), and the right side holds one
   people here (D-169: squares only, no names, overlapping, name on hover, the first three then
   `+N`, which opens a framed list of everyone with their view; click follows).
+- The side nav's tools sit at the middle of the left edge (D-178): unframed icon buttons like the gear; the canvas's `+` is a
+  drawn 20 px `+` in magenta, its menu opening to the right.
+- A plane on the canvas (D-181): thin frame, name set into the top edge, the cards' corner marks grey on hover; its
+  console a terminal line outside under the bottom-right corner (`name ▸ zoom [−] 100% [+] [full] [edit]`). Edit mode: a
+  faint dashed cyan frame, long cyan corner marks that resize, short bars on the edge middles, the console a cyan status
+  line with the live size and `[done]`.
+- Focus (D-185): a plane spreads over the screen like ink, cell by cell, its `+` marks never moving; nothing zooms. In
+  focus its console sits bottom left beside the gear. Keep the right of the screen free.
 - You and settings sit in the bottom-left corner, `--space-3` from the edges (D-175), stacked like the foot of the side nav
   the HUD is becoming: a short horizontal rule, your square (initial, name on hover), the ⚙ icon button under it (cyan count in
   the corner when people wait to join). Whatever else sits bottom left (board toolbar, threads panel, page padding) stays

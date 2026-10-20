@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-20 (D-174 canvas instead of pages; D-175 you + settings bottom left; D-176 boards on the canvas)_
+_Last updated: 2026-10-21 (D-174–D-185: canvas, planes, edit mode, hazard confirm, focus)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -61,8 +61,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Backdrop cell = 9 device px (D-172): finer field on 2x screens, nothing changes moving between screens. 2026-10-20.
 - Competitor feature list opens on click only, category names in grey caps over un-indented rows, no tray, drawn over everything (D-173). 2026-10-20.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
-  left side nav piece by piece, you + settings bottom left first (D-175); boards placed on the canvas from the side nav's
-  `+` (D-176, `pieces`). All the old code archived in `src/archive/`, out of the build (D-177); features come back as pieces. Not pushed; RTDB + Firestore rules deployed 2026-10-20. Next: the board's cards
+  left side nav piece by piece, you + settings bottom left first (D-175); planes (D-180, first called boards) placed on the canvas from the side
+  nav's `+` (D-176, `pieces`), renamed/moved/resized in edit mode from their console (D-179, D-180); terminal look with corner marks (D-181);
+  delete asks with hazard tape, 25 px snapping (D-182, D-183); `focus` spreads a plane over the screen like ink (D-184, D-185). All the old code archived in `src/archive/`, out of the build (D-177); features come back as pieces. Not pushed; RTDB + Firestore rules deployed 2026-10-20. Next: the board's cards
   inside its piece (each board its own items: maybe a plane per board, D-139), then tables etc.; pieces in the export.
 
 ## Next steps

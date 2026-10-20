@@ -41,9 +41,11 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 >
 > **Next (D-174, D-176):** no more pages. A workspace opens on an infinite canvas (the moving backdrop, no grid marks, no
 > view tabs; drag to pan, wheel to zoom). What used to be pages become pieces placed on it, several of each: the side
-> nav's `+` puts a board at the middle of the screen (beside any it would cover); it drags, Delete removes it. Every
-> piece has its own background: a board's is solid page colour with only its `+` marks, no animation. Today a board is
-> still an empty box with `open the board ↗`; its own cards inside it, tables and the rest come next. Until then the views
+> nav's `+` puts a **plane** (D-180; first called a board) at the middle of the screen (beside any it would cover). Every
+> piece has its own background: a plane's is solid page colour with only its `+` marks, no animation. Under its
+> bottom-right corner a console stays open (zoom, full screen, edit); only in edit mode is a plane moved, resized,
+> renamed or deleted, since a press inside it belongs to what's in it. Today a plane is still empty; its cards, tables and
+> the rest come next. Until then the views
 > below open by their paths (`/board`, `/table`, …).
 >
 > Now one board with every item type, text labels to jump between, and Board / Flow / Table / Matrix views (D-040, D-050):

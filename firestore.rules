@@ -175,9 +175,10 @@ service cloud.firestore {
         && d.createdAt is number;
     }
 
-    // Something on the workspace's canvas (D-176): a board for now, a box in canvas pixels.
+    // Something on the workspace's canvas (D-176): a plane for now (D-180), a box in canvas pixels. `board` is the name it
+    // had before D-180, still on pieces made then (and brought back by undoing their changes).
     function validPiece(d) {
-      return d.kind in ['board']
+      return d.kind in ['plane', 'board']
         && d.x is number && d.y is number
         && d.w is number && d.w > 0 && d.w <= 100000
         && d.h is number && d.h > 0 && d.h <= 100000

@@ -1,15 +1,19 @@
-// /workspaces/:wid: the workspace's canvas (D-174, D-176). An infinite plane over the flowing backdrop, with no grid marks.
-// Boards are placed on it from the side nav's `+`, at the middle of the screen; tables and the rest come later. Drag empty
-// space to pan, the wheel zooms round the pointer. A board drags by itself (5 px before a press turns into a drag),
-// Delete takes the selected one away, Escape or a click on empty space lets go of it.
+// /workspaces/:wid: the workspace's canvas (D-174, D-176). An infinite space over the flowing backdrop, with no grid
+// marks. Planes are placed on it from the side nav's `+`, at the middle of the screen; tables and the rest come later.
+// Drag empty space to pan, the wheel zooms round the pointer. A plane's inside will be its own to control, so a plane is
+// moved, resized and renamed only in edit mode (D-180), switched on and off from its console; in edit mode it's
+// selected, and Delete takes it away. Escape or a click on empty space lets go of the selection.
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { deletePiece, movePiece } from '../../data/pieces'
+import { deletePiece, KIND_NAME, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { HazardConfirm } from '../../ui/HazardConfirm'
 import { canEditIn } from '../../data/workspaces'
-import { camOf, setCam, useCanvasView, type Cam } from '../../state/canvasView'
+import { camOf, setCam, setEditing, useCanvasView, type Cam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
+import { FocusedPlane } from './FocusedPlane'
 import styles from './CanvasView.module.css'
 
 const ZOOM_MIN = 0.1
@@ -34,7 +38,47 @@ export function CanvasView() {
   const cam = useCanvasView((s) => s.cams[wid]) ?? camOf(wid)
   const size = useCanvasView((s) => s.size)
   const selected = useCanvasView((s) => s.selected)
+  const editing = useCanvasView((s) => s.editing)
+  const confirmingId = useCanvasView((s) => s.confirming)
+  const confirming = pieces.find((p) => p.id === confirmingId) ?? null
   const root = useRef<HTMLDivElement>(null)
+  const lens = useRef<HTMLDivElement>(null)
+  // The plane in focus (D-184), in the address so back leaves it and a reload stays in it.
+  const [params, setParams] = useSearchParams()
+  const focusId = params.get('focus')
+  const focused = focusId ? (pieces.find((p) => p.id === focusId) ?? null) : null
+  const focusSpread = useCanvasView((s) => s.focusSpread)
+  const focusArrived = useCanvasView((s) => s.focusArrived)
+  const focusLeaving = useCanvasView((s) => s.focusLeaving)
+  const focusedRef = useRef(false)
+  focusedRef.current = Boolean(focused)
+  const unfocusRef = useRef(() => {})
+  // Where a plane is on screen now.
+  const screenRect = (p: Piece): ScreenRect => {
+    const c = camOf(wid)
+    const { w, h } = useCanvasView.getState().size
+    return { x: onPixel(w / 2 + c.x) + p.x * c.zoom, y: onPixel(h / 2 + c.y) + p.y * c.zoom, w: p.w * c.zoom, h: p.h * c.zoom, zoom: c.zoom }
+  }
+  const focus = (p: WithId<Piece>) => {
+    useCanvasView.setState({ focusSpread: true, focusArrived: false, focusLeaving: false, selected: null })
+    setParams({ focus: p.id })
+  }
+  const unfocus = () => {
+    if (!focused || useCanvasView.getState().focusLeaving) return
+    useCanvasView.setState({ focusLeaving: true })
+  }
+  unfocusRef.current = unfocus
+  const left = () => {
+    useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false })
+    setParams({}, { replace: true })
+  }
+  // Left by the back button, or a plane deleted (by someone else) while in focus: nothing to animate.
+  useEffect(() => {
+    if (!focusId) useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false })
+  }, [focusId])
+  useEffect(() => {
+    if (focusId && !focused && pieces.length > 0) setParams({}, { replace: true })
+  }, [focusId, focused, pieces.length, setParams])
 
   // The screen box, for the middle of the screen and zooming round the pointer.
   useEffect(() => {
@@ -51,6 +95,8 @@ export function CanvasView() {
     if (!el) return
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
+      // A plane in focus is the view: the canvas behind it stays where it was.
+      if (focusedRef.current) return
       const c = camOf(wid)
       const r = el.getBoundingClientRect()
       // The pointer from the screen's middle, which the camera is measured from.
@@ -71,18 +117,22 @@ export function CanvasView() {
     return () => el.removeEventListener('wheel', onWheel)
   }, [wid])
 
-  // Delete and Escape for the selected board, unless typing somewhere.
+  // Delete (in edit mode) and Escape for the selected plane, unless typing somewhere.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t?.closest('input, textarea, [contenteditable], dialog')) return
+      // In focus, Escape goes back to the canvas.
+      if (focusedRef.current) {
+        if (e.key === 'Escape') unfocusRef.current()
+        return
+      }
       const id = useCanvasView.getState().selected
       if (!id) return
       if (e.key === 'Escape') useCanvasView.setState({ selected: null })
-      if ((e.key === 'Delete' || e.key === 'Backspace') && editor) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && editor && useCanvasView.getState().editing.includes(id)) {
         e.preventDefault()
-        useCanvasView.setState({ selected: null })
-        void deletePiece(wid, id)
+        useCanvasView.setState({ confirming: id })
       }
     }
     window.addEventListener('keydown', onKey)
@@ -116,68 +166,263 @@ export function CanvasView() {
 
   return (
     <div ref={root} className={styles.canvas} onPointerDown={pan} aria-label="Canvas" role="application">
+      <div ref={lens} className={styles.lens}>
       <div
         className={styles.world}
         style={{ transform: `translate(${onPixel(size.w / 2 + cam.x)}px, ${onPixel(size.h / 2 + cam.y)}px) scale(${cam.zoom})` }}
       >
         {pieces.map((p) => (
-          <PieceBox key={p.id} piece={p} cam={cam} selected={p.id === selected} editor={editor} />
+          <PieceBox
+            key={p.id}
+            piece={p}
+            cam={cam}
+            selected={p.id === selected}
+            editing={editor && editing.includes(p.id)}
+            editor={editor}
+            onFocus={() => focus(p)}
+            focusing={p.id === focusId}
+          />
         ))}
       </div>
+      </div>
+      {focused && (
+        <FocusedPlane
+          key={focused.id}
+          piece={focused}
+          at={screenRect(focused)}
+          spread={focusSpread}
+          leaving={focusLeaving}
+          lens={lens}
+          onArrived={() => useCanvasView.setState({ focusArrived: true })}
+          onLeft={left}
+        >
+          {/* Once it's there, and gone the moment it leaves (D-185): bottom left, the right of the screen kept free. */}
+          {focusArrived && !focusLeaving && <PlaneConsole className={styles.focusConsole} size={null} focused onFocus={unfocus} />}
+        </FocusedPlane>
+      )}
+      {confirming && (
+        <HazardConfirm
+          title={`delete ${confirming.name ? `"${confirming.name}"` : 'this plane'}?`}
+          lines={['The plane and everything on it goes.', `${UNDO_HINT} brings it back.`]}
+          confirm="delete"
+          onCancel={() => useCanvasView.setState({ confirming: null })}
+          onConfirm={() => {
+            useCanvasView.setState({ confirming: null })
+            setEditing(confirming.id, false)
+            void deletePiece(wid, confirming.id)
+          }}
+        />
+      )}
     </div>
   )
 }
 
-type BoxProps = { piece: WithId<Piece>; cam: Cam; selected: boolean; editor: boolean }
+const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'Ctrl+Z'
 
-function PieceBox({ piece, cam, selected, editor }: BoxProps) {
+type BoxProps = { piece: WithId<Piece>; cam: Cam; selected: boolean; editing: boolean; editor: boolean; onFocus: () => void; focusing: boolean }
+
+// Resize handles (D-180, D-181): the corners are the cards' corner marks (D-150), grey on hover, long and cyan in edit
+// mode, where they resize; the edges' middles get short bars. Each moves the sides it names.
+const CORNERS = ['nw', 'ne', 'se', 'sw'] as const
+const EDGES = ['n', 'e', 's', 'w'] as const
+type Handle = (typeof CORNERS)[number] | (typeof EDGES)[number] | 'move'
+
+// The box a press on `handle` turns `from` into after the pointer moved (dx, dy) canvas px; never under PIECE_MIN.
+// Snapped (D-182): whatever edge moves lands on the 25 px grid; `free` (alt held) doesn't snap.
+function dragBox(from: Box, handle: Handle, dx: number, dy: number, free: boolean): Box {
+  const at = (v: number) => (free ? Math.round(v) : snap(v))
+  if (handle === 'move') return { ...from, x: at(from.x + dx), y: at(from.y + dy) }
+  let { x, y, w, h } = from
+  const right = from.x + from.w
+  const bottom = from.y + from.h
+  if (handle.includes('e')) w = Math.max(PIECE_MIN.w, at(right + dx) - from.x)
+  if (handle.includes('s')) h = Math.max(PIECE_MIN.h, at(bottom + dy) - from.y)
+  if (handle.includes('w')) {
+    x = Math.min(at(from.x + dx), right - PIECE_MIN.w)
+    w = right - x
+  }
+  if (handle.includes('n')) {
+    y = Math.min(at(from.y + dy), bottom - PIECE_MIN.h)
+    h = bottom - y
+  }
+  return { x, y, w, h }
+}
+
+const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
+
+function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing }: BoxProps) {
   const { wid } = useWs()
-  // Where a drag has it, held after the drop until the data gets there (else it would jump back for a moment).
-  const [held, setHeld] = useState<[number, number] | null>(null)
+  // Where a move or resize has it, held after the drop until the data gets there (else it would jump back for a moment).
+  const [held, setHeld] = useState<Box | null>(null)
   useEffect(() => {
-    if (held && piece.x === held[0] && piece.y === held[1]) setHeld(null)
-  }, [held, piece.x, piece.y])
-  const [x, y] = held ?? [piece.x, piece.y]
+    if (held && same(held, piece)) setHeld(null)
+  }, [held, piece])
+  const box = held ?? piece
 
-  const press = (e: ReactPointerEvent<HTMLDivElement>) => {
+  // A press inside a plane is the plane's (it will control what's in it), so the canvas never pans from it. In edit mode
+  // it selects the plane, and moving or one of the handles changes its box (5 px before a press turns into a drag).
+  const press = (handle: Handle) => (e: ReactPointerEvent<HTMLElement>) => {
     if (e.button !== 0) return
-    // The canvas would pan and let go of the selection.
     e.stopPropagation()
+    if (!editing) return
     useCanvasView.setState({ selected: piece.id })
-    if (!editor) return
-    const el = e.currentTarget
     const [sx, sy] = [e.clientX, e.clientY]
-    const from: [number, number] = [piece.x, piece.y]
-    let to: [number, number] | null = null
-    el.setPointerCapture(e.pointerId)
+    const from: Box = { x: piece.x, y: piece.y, w: piece.w, h: piece.h }
+    let to: Box | null = null
+    // On the window, not captured: a press that doesn't move stays a click.
     const move = (ev: PointerEvent) => {
       const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
       if (!to && Math.hypot(dx, dy) < DRAG_PX) return
-      to = [Math.round(from[0] + dx / cam.zoom), Math.round(from[1] + dy / cam.zoom)]
+      to = dragBox(from, handle, dx / cam.zoom, dy / cam.zoom, ev.altKey)
       setHeld(to)
     }
     const up = () => {
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
-      if (to && (to[0] !== from[0] || to[1] !== from[1])) void movePiece(wid, piece.id, from, to).catch(() => setHeld(null))
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      if (to && !same(to, from)) void placePiece(wid, piece.id, from, to).catch(() => setHeld(null))
       else setHeld(null)
     }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
   }
 
+  const kind = KIND_NAME.plane
   return (
     <div
       className={styles.piece}
       data-selected={selected || undefined}
+      data-editing={editing || undefined}
       data-dragging={held ? true : undefined}
-      style={{ left: x, top: y, width: piece.w, height: piece.h }}
-      onPointerDown={press}
+      style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
+      onPointerDown={press('move')}
     >
-      <span className={styles.name}>{piece.name || 'board'}</span>
-      {/* Empty for now: the board's cards come back inside it, piece by piece (D-177). */}
+      {editing ? (
+        <NameField value={piece.name ?? ''} placeholder={kind} onSave={(name) => name !== (piece.name ?? '') && void renamePiece(wid, piece.id, name)} />
+      ) : (
+        <span className={styles.name} data-unnamed={!piece.name || undefined}>
+          {piece.name || kind}
+        </span>
+      )}
+      {/* Empty for now: what goes in a plane comes back from the archive, piece by piece (D-177). */}
+      {CORNERS.map((h) => (
+        <span key={h} className={styles.mark} data-handle={h} onPointerDown={editing ? press(h) : undefined} aria-hidden />
+      ))}
+      {editing && EDGES.map((h) => <span key={h} className={styles.bar} data-handle={h} onPointerDown={press(h)} aria-hidden />)}
+      <PlaneConsole
+        // In focus, or on its way there or back (D-185), the plane's console isn't here.
+        className={focusing ? styles.consoleAway : undefined}
+        size={editing ? box : null}
+        onEdit={editor ? () => setEditing(piece.id, !editing) : undefined}
+        onDelete={() => useCanvasView.setState({ confirming: piece.id })}
+        onFocus={onFocus}
+      />
+    </div>
+  )
+}
+
+// The name in the top edge in edit mode (D-180): always a field, as wide as what's typed; Enter or leaving it keeps
+// it, Escape puts back what it was.
+function NameField({ value, placeholder, onSave }: { value: string; placeholder: string; onSave: (name: string) => void }) {
+  const [draft, setDraft] = useState(value)
+  const [focused, setFocused] = useState(false)
+  // Someone else renaming it shows here unless you're typing.
+  useEffect(() => {
+    if (!focused) setDraft(value)
+  }, [value, focused])
+  return (
+    <input
+      className={`${styles.name} ${styles.nameField}`}
+      aria-label="Plane name"
+      value={draft}
+      placeholder={placeholder}
+      maxLength={PIECE_NAME_MAX}
+      // As wide as what's typed, its letter spacing included, plus room for the caret.
+      style={{ width: `calc(${Math.max(draft.length, placeholder.length) + 1} * (1ch + var(--track-label)))` }}
+      onChange={(e) => setDraft(e.target.value)}
+      onPointerDown={(e) => e.stopPropagation()}
+      onFocus={() => setFocused(true)}
+      onBlur={() => {
+        setFocused(false)
+        onSave(draft.trim())
+      }}
+      onKeyDown={(e) => {
+        e.stopPropagation()
+        if (e.key === 'Enter') e.currentTarget.blur()
+        if (e.key === 'Escape') {
+          setDraft(value)
+          // Blurs after the draft is back, so nothing changes.
+          requestAnimationFrame(() => (document.activeElement as HTMLElement | null)?.blur())
+        }
+      }}
+    />
+  )
+}
+
+// A plane's console (D-179, D-180, D-181): always open, just outside the plane under its bottom-right corner, a terminal
+// line like the assistant's chat: `▸ zoom [−] 100% [+] [focus] [edit]` (no name: it's on the plane, D-182). Zoom is only
+// drawn for now; `focus` makes the plane the view (D-184), where the console sits in the screen's corner with `unfocus`.
+// In edit mode it turns into a status line with the plane's live size and what can be done, `[delete]` (confirmed first,
+// D-182) and `[done]`, which ends edit mode. Viewers never get to edit mode.
+type ConsoleProps = {
+  size: Box | null
+  focused?: boolean
+  onFocus: () => void
+  onEdit?: () => void
+  onDelete?: () => void
+  className?: string
+}
+
+function PlaneConsole({ size, focused, onFocus, onEdit, onDelete, className }: ConsoleProps) {
+  return (
+    <div
+      className={`${styles.console} ${className ?? ''}`}
+      role="toolbar"
+      aria-label="Plane"
+      data-editing={size ? true : undefined}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      {size ? (
+        <>
+          <span className={styles.mode}>EDIT</span>
+          <span className={styles.prompt}>▸</span>
+          <span className={styles.readout}>
+            {size.w} × {size.h}
+          </span>
+          <span className={styles.hint}>· drag to move · corners to resize</span>
+          {onDelete && (
+            <button className={styles.tool} data-tone="danger" title="delete the plane (Delete)" onClick={onDelete}>
+              delete
+            </button>
+          )}
+          {onEdit && (
+            <button className={styles.tool} aria-pressed title="stop moving, resizing and renaming" onClick={onEdit}>
+              done
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <span className={styles.prompt}>▸</span>
+          <span>zoom</span>
+          <button className={styles.tool} aria-label="Zoom out" title="zoom out">
+            −
+          </button>
+          <span className={styles.zoom}>100%</span>
+          <button className={styles.tool} aria-label="Zoom in" title="zoom in">
+            +
+          </button>
+          <button className={styles.tool} aria-pressed={focused} title={focused ? 'back to the canvas (Esc)' : 'make the plane the view'} onClick={onFocus}>
+            {focused ? 'unfocus' : 'focus'}
+          </button>
+          {onEdit && (
+            <button className={styles.tool} aria-pressed={false} title="move, resize or rename the plane" onClick={onEdit}>
+              edit
+            </button>
+          )}
+        </>
+      )}
     </div>
   )
 }

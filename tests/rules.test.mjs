@@ -218,10 +218,11 @@ await allow('a package', () => addDoc(sub(bob.fs, 'packages'), { ...card, member
 await deny('a package without its home plane', () => addDoc(sub(bob.fs, 'packages'), { ...card, memberIds: ['a'] }))
 await deny('a package with members that are not a list', () => addDoc(sub(bob.fs, 'packages'), { ...card, memberIds: 'a', homePlaneId: 'p1' }))
 await allow('a package placed on a plane', () => place('p1_k1', { planeId: 'p1', itemId: 'k1', itemType: 'package', x: 0, y: 0 }))
-// The canvas (D-176): boards placed on it.
-const piece = { kind: 'board', x: -480, y: -300, w: 960, h: 600, createdAt: 1, updatedAt: 1 }
-await allow('a board on the canvas', () => addDoc(sub(bob.fs, 'pieces'), piece))
-await allow('a named board on the canvas', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, name: 'Pricing' }))
+// The canvas (D-176): planes placed on it (D-180).
+const piece = { kind: 'plane', x: -480, y: -300, w: 960, h: 600, createdAt: 1, updatedAt: 1 }
+await allow('a plane on the canvas', () => addDoc(sub(bob.fs, 'pieces'), piece))
+await allow('a named plane on the canvas', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, name: 'Pricing' }))
+await allow('a piece still called a board (before D-180)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'board' }))
 await deny('a canvas piece of an unknown kind', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'video' }))
 await deny('a canvas piece without a size', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, w: 0 }))
 await deny('a canvas piece without a place', () => addDoc(sub(bob.fs, 'pieces'), { kind: 'board', w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
@@ -440,7 +441,7 @@ const role = (who, uid, r) => join(who, { [`roles.${uid}`]: r })
 await allow('owner makes a member a viewer', () => role(alice, dave.uid, 'viewer'))
 await allow('viewer reads ideas', () => getDocs(ideas(dave.fs)))
 await deny('viewer creates an idea', () => addDoc(ideas(dave.fs), { title: 'x', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
-await deny('viewer puts a board on the canvas (D-176)', () => addDoc(sub(dave.fs, 'pieces'), { kind: 'board', x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
+await deny('viewer puts a plane on the canvas (D-176)', () => addDoc(sub(dave.fs, 'pieces'), { kind: 'plane', x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 await allow('viewer reads the canvas', () => getDocs(sub(dave.fs, 'pieces')))
 await deny('viewer deletes an idea', async () => {
   const one = (await getDocs(ideas(dave.fs))).docs[0]
