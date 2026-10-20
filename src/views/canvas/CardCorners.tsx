@@ -22,9 +22,13 @@ type Props = {
   out: number
   len: number
   color: string
+  // Left out of pointer hits (a name row beside a card: only its plate takes the pointer).
+  noHit?: boolean
 }
 
-export function CardCorners({ w, h, on, out, len, color }: Props) {
+const skip = () => null
+
+export function CardCorners({ w, h, on, out, len, color, noHit = false }: Props) {
   const arms = useRef<Mesh[]>([])
   const material = useMemo(() => new MeshBasicMaterial({ transparent: true, opacity: 0, toneMapped: false, depthWrite: false }), [])
   const now = useRef({ out, len, opacity: 0, color: new Color(color) })
@@ -66,7 +70,7 @@ export function CardCorners({ w, h, on, out, len, color }: Props) {
   })
 
   return Array.from({ length: 8 }, (_, i) => (
-    <mesh key={i} ref={(m) => void (m && (arms.current[i] = m))} material={material}>
+    <mesh key={i} ref={(m) => void (m && (arms.current[i] = m))} material={material} raycast={noHit ? skip : undefined}>
       <planeGeometry args={[1, 1]} />
     </mesh>
   ))

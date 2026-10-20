@@ -2582,7 +2582,12 @@ categories shown like B, not in a card, and the features under them not indented
   other competitors' closed rows (0.046) and newer cards' text.
 - *Closed (same day):* the user asked for five names beside the card with `+N more`, and for the list not to reorder
   on opening ("when i click to competitor feature list re orders, lets just not do that"): closed shows the first five
-  in the open list's order (by category, oldest first within one), so opening only adds category names and rows.
+  in the open list's order (by category, oldest first within one), so opening only adds category names and rows. Then
+  "make it 4 instead of 5" and "the gap between different categories is too much": four names; between one category's
+  last row and the next one's first, 0.21 (was 0.32), its name nearer its own rows.
+- *Rows like cards:* "no need for grey border… in line with our new card designs", and the same for folded parts' rows:
+  every row (competitor features and folded parts) is card paper with a solid accent strip and no edge; hovered, grey
+  corner marks a little out; selected, accent corner marks close in (`CardCorners`, kept out of pointer hits).
 - *Verified* headless (emulators, Tablebook): hovering a competitor leaves it closed; selecting opens it with category
   names over un-indented rows; with ShiftGrid dragged onto Crewly, the open list's meshes draw after Crewly's closed
   rows (logged draw order) and its names show over them; `tsc`.

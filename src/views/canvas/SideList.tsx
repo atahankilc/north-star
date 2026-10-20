@@ -1,4 +1,4 @@
-// Names beside a card (D-164). A competitor's features: the first five by name (in the open list's order) with
+// Names beside a card (D-164). A competitor's features: the first four by name (in the open list's order) with
 // `+N more` under them; selected, the full list by category, each category's name in small grey capitals over its
 // rows (no tray round them), with what matches ours and how it's offered. A feature's parts folded into it: their
 // names, indented under the part they belong to.
@@ -15,6 +15,7 @@ import { useCanvas } from '../../state/canvasStore'
 import { isReducedMotion } from '../../state/motion'
 import { usePalette } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
+import { CardCorners } from './CardCorners'
 import { CARD_H, CARD_W, truncate } from './cardLayout'
 import { SMALL_TEXT_PX, useDetail, useReadable } from './detail'
 
@@ -26,8 +27,8 @@ const ROW_W = 1.9
 // Open, rows are wider, room for how a feature is offered.
 const OPEN_W = 2.58
 // Above an open list's category: its name, then the first row.
-const CAT_H = 0.2
-const CAT_GAP = 0.08
+const CAT_H = 0.15
+const CAT_GAP = 0.02
 // An open list (and one still closing) lifts over every card, a dragged one too, and the other lists; still under the
 // board's own overlays (select box, guides) at 0.08 above the board.
 const OPEN_LIFT = 0.024
@@ -36,7 +37,7 @@ const TEXT = 0.095
 const COMPACT_TEXT = 0.16
 const SMALL = 0.066
 // Shown while closed.
-const FIRST = 5
+const FIRST = 4
 const PART_STEP = 0.26
 const INDENT = 0.2
 const DUR = 280
@@ -105,7 +106,7 @@ type RowProps = {
   // Where it comes from when it first shows; where it should be, if not given.
   start?: Pose
   name: string
-  // The strip on its left and its edge when selected.
+  // The strip on its left and its corner marks when selected.
   accent: string
   // Matches one of ours (a competitor's feature): a cyan mark before the name.
   match?: boolean
@@ -121,7 +122,6 @@ type RowProps = {
 const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selected, onPress, onLinkDrop }: RowProps) {
   const group = useRef<Group>(null)
   const plate = useRef<Mesh>(null)
-  const edge = useRef<Mesh>(null)
   const strip = useRef<Mesh>(null)
   const label = useRef<Mesh & { fillOpacity: number }>(null)
   const tagText = useRef<Mesh & { fillOpacity: number }>(null)
@@ -141,12 +141,11 @@ const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selec
     g.position.set(p.x, p.y, 0)
     g.visible = p.o > 0.01
     plate.current?.scale.set(p.w, p.h, 1)
-    edge.current?.scale.set(p.w + 0.02, p.h + 0.02, 1)
     if (strip.current) {
       strip.current.scale.set(1, p.h, 1)
       strip.current.position.x = -p.w / 2 + 0.02
     }
-    for (const m of [plate, edge, strip]) if (m.current) (m.current.material as MeshBasicMaterial).opacity = p.o * (m === strip ? 0.7 : 1)
+    for (const m of [plate, strip]) if (m.current) (m.current.material as MeshBasicMaterial).opacity = p.o
     if (label.current) {
       label.current.position.x = -p.w / 2 + 0.1 + (match ? 0.08 : 0)
       label.current.fillOpacity = p.o
@@ -165,7 +164,6 @@ const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selec
     }
   }, start)
 
-  const edgeColor = selected ? colors.yellow : linking && hovered ? colors.cyan : hovered ? colors.hover : colors.hairline
   // Mono is 0.6 em a character: as much of the name as fits beside the tag.
   const fit = Math.max(6, Math.floor((pose.w - 0.3 - (tag && pose.a > 0.5 ? 0.6 : 0)) / (text * 0.6)))
   // Too small to read, the name is a grey bar as long as it, as a card's title is far out (D-153).
@@ -201,13 +199,19 @@ const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selec
         document.body.style.cursor = ''
       }}
     >
-      <mesh ref={edge} position={[0, 0, -0.002]} raycast={noHit}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial color={edgeColor} transparent toneMapped={false} depthWrite={false} />
-      </mesh>
+      {/* As a card is (D-148, D-150): no edge round it, its accent down the left, corner marks when hovered or selected. */}
+      <CardCorners
+        w={pose.w}
+        h={pose.h}
+        on={hovered || !!selected}
+        out={selected ? 0.03 : 0.06}
+        len={0.08}
+        color={linking && hovered ? colors.cyan : selected ? accent : colors.hover}
+        noHit
+      />
       <mesh ref={plate}>
         <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial color={colors.chip} transparent toneMapped={false} depthWrite={false} />
+        <meshBasicMaterial color={colors.card} transparent toneMapped={false} depthWrite={false} />
       </mesh>
       <mesh ref={strip} position={[0, 0, 0.001]} raycast={noHit}>
         <planeGeometry args={[0.04, 1]} />

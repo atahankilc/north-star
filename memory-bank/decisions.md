@@ -81,8 +81,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   tag chips (D-152).
 - Create only from the `+` menu (no double-click); cards don't lift, nor scale on hover/selection (D-053, D-061).
 - Opening frames everything; fit-all button and `0`; view kept between tabs (D-060).
-- A competitor's features are names beside its card (first five, `+N more`, in the open list's order); selected (never on hover), the full list:
-  each category's name in grey caps over its rows, no tray, not indented, a cyan bar when it matches ours and its
+- A competitor's features are names beside its card (first four, `+N more`, in the open list's order); selected (never on hover), the full list:
+  each category's name in grey caps over its rows, no tray, not indented, rows drawn like cards (no edge, corner marks), a cyan bar when it matches ours and its
   availability; open or closing, it sits over every card and list; rows open it in the panel and take links (D-164, D-173). Competitor features have availability and a source; "matches our feature" is the matrix cell's their feature (D-164).
 - Parts (D-164): `part of` between features; `[−] 3 parts` folds them (and theirs) into the parent as indented names, per
   plane, shared; a row unfolds them; links to a folded part end at its row; a folded card carries its parts when dragged, nudged or lined up. Rows, tray and folding cards glide 280 ms, eased both ends.
