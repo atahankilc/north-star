@@ -29,11 +29,12 @@ Card layout, top to bottom: `TYPE` label · title (up to two lines) · `#tags` �
 descriptions live in the side panel only (D-057).
 
 - **Competitor features** (D-164) are names beside their competitor, right of the card (clear of its `›` handle): the
-  first three, then `+N more`. Hovering the competitor or its list, or selecting it (or one of its features), opens the
-  full list in a framed tray with a yellow top line: `FEATURES n`, a heading per category with its count, each row a
-  name, a cyan bar when it matches one of ours, and its availability on the right. Clicking the open competitor again
-  changes nothing; leaving it and its list (after 160 ms) or clicking elsewhere closes it; dragging it closes it until
-  it's dropped. Clicking a row opens it unfolded in the competitor's panel; shift+dragging a card onto a row links to it
+  first three, then `+N more`. Selecting it (or one of its features) opens the full list; hovering never does (D-173).
+  Open, there's no tray or heading round it: each category's name and count in small grey capitals (`BOOKING  3`), its
+  rows under it at the same left edge (not indented), each row a name, a cyan bar when it matches one of ours, and its
+  availability on the right. An open list, and one still closing, sits over every card (a dragged one too) and every
+  other list. Clicking the open competitor again changes nothing; clicking elsewhere closes it; dragging it closes it
+  until it's dropped. Clicking a row opens it unfolded in the competitor's panel; shift+dragging a card onto a row links to it
   (`inspired by`). Links to a feature end at its row while it shows, otherwise at the competitor.
 - **Parts** (D-164): a feature linked to another with `part of` is one of its parts (one parent each, the first link; a
   loop is left out). The parent's facts line ends in `[−] 3 parts`; clicking it (or `fold parts` in the right-click
@@ -42,7 +43,7 @@ descriptions live in the side panel only (D-057).
   back out of their rows to their own places. A part folded on its own stays folded inside. Links to a folded part end at
   its row; `part of` lines inside one fold aren't drawn. Folding is saved per plane, for everyone (`folded` on the
   feature on All, on its placement elsewhere), and is undoable.
-- **Motion** (D-164): every row, heading and tray glides from where it is to where it should be, eased at both ends over
+- **Motion** (D-164): every row and category name glides from where it is to where it should be, eased at both ends over
   280 ms, so opening runs forward and closing runs it backwards, and a card folding into a row uses the same ease and
   time. Reduced motion snaps. Zoomed out too far to read, a row's name is a grey bar, as a card's title is (D-153).
 - **Links** (D-059) run straight from edge to edge with an arrowhead, so they read as sentences ("idea → solves → problem").

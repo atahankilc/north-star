@@ -57,6 +57,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Board speed with many competitors (2026-10-20, committed): hidden feature rows / folded-part rows are no longer mounted
   (they mount to open and unmount after closing), lists memoised, row decorations skip raycasts. Hover stalls 918 → 102 ms.
 - Backdrop cell = 9 device px (D-172): finer field on 2x screens, nothing changes moving between screens. 2026-10-20.
+- Competitor feature list opens on click only, category names in grey caps over un-indented rows, no tray, drawn over everything (D-173). 2026-10-20.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

@@ -111,10 +111,8 @@ type Flight = [number, number, number?]
 const MARGIN = 1.2
 
 const CARD_HALF: [number, number] = [CARD_W / 2, CARD_H / 2]
-// Lists beside cards (D-164) sit just over every card, under one being dragged.
+// Lists beside cards (D-164) sit just over every card, under one being dragged; an open one over that too (SideList).
 const LIST_Z = 0.046
-// How long the pointer may be off a competitor and its list before the list closes: long enough to cross the gap.
-const LEAVE_MS = 160
 const NO_MATCHES = new Map<string, string>()
 
 // Every card and label, with a margin: [x0, y0, x1, y1] in board units, or null on an empty board.
@@ -364,8 +362,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
     return () => window.removeEventListener('pointerup', up)
   }, [controls, endLink])
 
-  // A competitor's features, named beside it (D-164): the full list while it's selected (or one of its features is), or
-  // while the pointer is on it or its list; closed again while it's dragged. Clicking it again changes nothing.
+  // A competitor's features, named beside it (D-164): the full list while it's selected (or one of its features is),
+  // never on hover; closed again while it's dragged. Clicking it again changes nothing.
   const theirs = useMemo(() => {
     const map = new Map<string, WithId<CompetitorFeature>[]>()
     for (const f of [...competitorFeatures].sort((a, b) => a.createdAt - b.createdAt)) map.set(f.competitorId, [...(map.get(f.competitorId) ?? []), f])
@@ -378,43 +376,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
     if (theirs.has(selectedId)) return selectedId
     return competitorFeatures.find((f) => f.id === selectedId)?.competitorId ?? null
   }, [selectedId, theirs, competitorFeatures])
-  const [hot, setHot] = useState<string | null>(null)
-  const overList = useRef<string | null>(null)
-  const leave = useRef(0)
-  const closeLater = (id: string) => {
-    window.clearTimeout(leave.current)
-    leave.current = window.setTimeout(() => {
-      if (overList.current !== id && useCanvas.getState().hoverId !== id) setHot((h) => (h === id ? null : h))
-    }, LEAVE_MS)
-  }
-  useEffect(() => {
-    if (hoverId && theirs.has(hoverId)) {
-      window.clearTimeout(leave.current)
-      setHot(hoverId)
-    } else if (hot && overList.current !== hot) closeLater(hot)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoverId, theirs])
-  useEffect(() => () => window.clearTimeout(leave.current), [])
-  const listHover = (id: string) => (on: boolean) => {
-    if (on) {
-      overList.current = id
-      window.clearTimeout(leave.current)
-      setHot(id)
-    } else {
-      if (overList.current === id) overList.current = null
-      closeLater(id)
-    }
-  }
-  // One function per competitor for the board's whole life, so its memoised list skips re-rendering on every hover.
-  const listHoverLatest = useRef(listHover)
-  listHoverLatest.current = listHover
-  const listHovers = useMemo(() => new Map<string, (on: boolean) => void>(), [])
-  const hoverOfList = (id: string) => {
-    let f = listHovers.get(id)
-    if (!f) listHovers.set(id, (f = (on: boolean) => listHoverLatest.current(id)(on)))
-    return f
-  }
-  const isOpen = (id: string) => (openId === id || hot === id) && !(pressing === id && dragging[id])
+  const isOpen = (id: string) => openId === id && !(pressing === id && dragging[id])
 
   // Parts (D-164): a feature linked to another with `part of` is one of its parts; folded, a feature's parts (and theirs)
   // are names beside it. One parent each (the first link), and a link that would make a loop is left out.
@@ -481,7 +443,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
     }
     return { positions: map, halves }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, dragging, theirs, family, openId, hot, pressing])
+  }, [nodes, dragging, theirs, family, openId, pressing])
 
   // Older cards sit lower; newer ones on top.
   const layers = useMemo(
@@ -833,8 +795,8 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
       {[...theirs].map(([cid, list]) => {
         const at = positions.get(cid)
         return at ? (
-          <group key={cid} position={[at[0], at[1], LIST_Z + (isOpen(cid) ? 0.002 : 0)]}>
-            <FeatureList features={list} open={isOpen(cid)} matches={matches} onHover={hoverOfList(cid)} onLinkDrop={onLinkDrop} />
+          <group key={cid} position={[at[0], at[1], LIST_Z]}>
+            <FeatureList features={list} open={isOpen(cid)} matches={matches} onLinkDrop={onLinkDrop} />
           </group>
         ) : null
       })}

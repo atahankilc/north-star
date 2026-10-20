@@ -2402,9 +2402,9 @@ any animations when i click somewhere else". After mocks on a local page (square
 card; for parts: a row, nested dots, a tree or names), the user picked **names for both**: "names for both of them!!!".
 They also asked that the competitor card keep its size and liked the framed tray with a side panel.
 - *Competitor features:* the first three names beside the card (right of the `›` handle), `+N more` under them; the full
-  list (a framed tray, yellow top line, `FEATURES n`, category headings with counts, a cyan bar when it matches one of
-  ours, availability on the right) while the competitor or its list is hovered, or it (or one of its features) is
-  selected. Leaving closes it after 160 ms; dragging the competitor closes it until it's dropped. Rows open the feature
+  list (category names with counts, a cyan bar when it matches one of ours, availability on the right) while it (or one
+  of its features) is selected; the tray and opening on hover were dropped by D-173. Dragging the competitor closes it
+  until it's dropped. Rows open the feature
   in the panel and take link drops (`inspired by`); links end at a row while it shows. The plates behind the card and
   the fanned chips (`FeatureChip.tsx`) are gone (`SideList.tsx`).
 - *New fields:* `availability` (`free | paid | enterprise | beta`) and `url` (source) on a competitor feature, edited in
@@ -2565,3 +2565,21 @@ laptop and saw the glyphs get small and the field turn much finer, and wanted it
   barely showed.
 - *Verified* headless at deviceScaleFactor 1 and 2, dark, light and light without the night sky (as signed-in pages show
   it): stars scattered, north star the same size on both, the intro clearly readable on paper; `tsc`.
+
+### D-173 · 2026-10-20 · Accepted (changes D-164's open list)
+**A competitor's full feature list opens only on click, shows as plain category names over rows, and sits over
+everything.** The user: the list opening on hover should open "only after clicking"; the open list "sometimes stays
+under other things"; and the tray was "too complex… show the areas and lists directly; no panel behind them, they can
+look like a feature with subfeatures". From a local mock of three options (A: areas as rows with features indented
+under them; B: plain text, grey caps area names, `├ └`; C: area row with hanging names) they picked "like A, but the
+categories shown like B, not in a card, and the features under them not indented".
+- *Open on click:* selecting the competitor or one of its features opens it; hover no longer does (the 160 ms
+  leave timer and the list's own hover are gone, `Board.tsx`).
+- *Look:* no tray, no `FEATURES n`; each category's name and count in small grey caps (`BOOKING  3`, 0.066, tracking
+  0.14) over its rows; rows 2.58 wide at the same left edge as the name, availability on the right (`SideList.tsx`).
+- *Order:* the open list, and one still closing, lifts 0.024 above the lists' 0.046 (to 0.07): over every card (a
+  dragged one is 0.06) and the other lists, under the board's overlays at 0.08. Before, the tray sat at 0.044, under
+  other competitors' closed rows (0.046) and newer cards' text.
+- *Verified* headless (emulators, Tablebook): hovering a competitor leaves it closed; selecting opens it with category
+  names over un-indented rows; with ShiftGrid dragged onto Crewly, the open list's meshes draw after Crewly's closed
+  rows (logged draw order) and its names show over them; `tsc`.

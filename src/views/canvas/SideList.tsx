@@ -1,6 +1,7 @@
-// Names beside a card (D-164). A competitor's features: the first three by name with `+N more` under them; hovered or
-// selected, the full list in a framed tray, by category, with what matches ours and how it's offered. A feature's parts
-// folded into it: their names, indented under the part they belong to.
+// Names beside a card (D-164). A competitor's features: the first three by name with `+N more` under them; selected,
+// the full list by category, each category's name in small grey capitals over its rows (no tray round them), with what
+// matches ours and how it's offered. A feature's parts folded into it: their names, indented under the part they
+// belong to.
 // Every row glides from where it is to where it should be (eased at both ends, ~280 ms), so opening runs forward,
 // closing runs it backwards, and asking for what's already shown moves nothing. Poses are relative to the card's
 // centre, so a dragged card carries its list with it exactly.
@@ -15,15 +16,24 @@ import { isReducedMotion } from '../../state/motion'
 import { usePalette } from '../../state/theme'
 import { fontUrls } from '../../three/fonts'
 import { CARD_H, CARD_W, truncate } from './cardLayout'
-import { SMALL_TEXT_PX, useReadable } from './detail'
+import { SMALL_TEXT_PX, useDetail, useReadable } from './detail'
 
-// Clear of the card's `›` link handle, which sits just right of it.
-const GAP = 0.36
+// Just clear of the card's `›` link handle, which sits just right of it (its glyph ends ~0.15 out).
+const GAP = 0.18
 export const ROW_H = 0.24
 const STEP = 0.28
 const ROW_W = 1.9
-const TRAY_W = 2.7
+// Open, rows are wider, room for how a feature is offered.
+const OPEN_W = 2.58
+// Above an open list's category: its name, then the first row.
+const CAT_H = 0.2
+const CAT_GAP = 0.08
+// An open list (and one still closing) lifts over every card, a dragged one too, and the other lists; still under the
+// board's own overlays (select box, guides) at 0.08 above the board.
+const OPEN_LIFT = 0.024
 const TEXT = 0.095
+// A name while the cards show only their bigger title (compact, D-153): as big as the row allows.
+const COMPACT_TEXT = 0.16
 const SMALL = 0.066
 // Shown while closed.
 const FIRST = 3
@@ -105,11 +115,10 @@ type RowProps = {
   onPress: (id: string) => void
   // A link drawn from a card and let go here.
   onLinkDrop?: (id: string) => void
-  onHover?: (on: boolean) => void
 }
 
 // One name: a slim plate with a strip in the accent, the name in mono.
-const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selected, onPress, onLinkDrop, onHover }: RowProps) {
+const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selected, onPress, onLinkDrop }: RowProps) {
   const group = useRef<Group>(null)
   const plate = useRef<Mesh>(null)
   const edge = useRef<Mesh>(null)
@@ -121,7 +130,10 @@ const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selec
   const [hovered, setHovered] = useState(false)
   const linking = useCanvas((s) => s.linkFrom !== null)
   const colors = usePalette()
-  const readable = useReadable(TEXT)
+  // Named as long as the cards' titles are (D-164): bigger with theirs, a bar only once they're bars too.
+  const detail = useDetail((s) => s.card)
+  const readable = detail !== 'far'
+  const text = detail === 'full' ? TEXT : COMPACT_TEXT
 
   useGlide(pose, (p) => {
     const g = group.current
@@ -155,7 +167,7 @@ const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selec
 
   const edgeColor = selected ? colors.yellow : linking && hovered ? colors.cyan : hovered ? colors.hover : colors.hairline
   // Mono is 0.6 em a character: as much of the name as fits beside the tag.
-  const fit = Math.max(6, Math.floor((pose.w - 0.3 - (tag && pose.a > 0.5 ? 0.6 : 0)) / (TEXT * 0.6)))
+  const fit = Math.max(6, Math.floor((pose.w - 0.3 - (tag && pose.a > 0.5 ? 0.6 : 0)) / (text * 0.6)))
   // Too small to read, the name is a grey bar as long as it, as a card's title is far out (D-153).
   const barW = Math.min(Math.max(1, (name || 'Untitled').length) * TEXT * 0.6, pose.w - 0.2)
   return (
@@ -181,13 +193,11 @@ const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selec
         if (!group.current?.visible) return
         e.stopPropagation()
         setHovered(true)
-        onHover?.(true)
         document.body.style.cursor = 'pointer'
       }}
       onPointerOut={() => {
         if (!hovered) return
         setHovered(false)
-        onHover?.(false)
         document.body.style.cursor = ''
       }}
     >
@@ -215,7 +225,7 @@ const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selec
           <meshBasicMaterial color={colors.fgDim} transparent toneMapped={false} depthWrite={false} />
         </mesh>
       )}
-      <Text ref={label} raycast={noHit} visible={readable} font={fontUrls.mono} fontSize={TEXT} color={colors.fg} anchorX="left" anchorY="middle" position={[0, 0.004, 0.002]}>
+      <Text ref={label} raycast={noHit} visible={readable} font={fontUrls.mono} fontSize={text} color={colors.fg} anchorX="left" anchorY="middle" position={[0, 0.004, 0.002]}>
         {truncate(name || 'Untitled', fit)}
       </Text>
       {tag && (
@@ -236,12 +246,11 @@ const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selec
   a.tag?.color === b.tag?.color &&
   a.onPress === b.onPress &&
   a.onLinkDrop === b.onLinkDrop &&
-  a.onHover === b.onHover &&
   samePose(a.pose, b.pose) &&
   samePose(a.start, b.start),
 )
 
-// Small text that glides with the list: a category's name and count, `+N more`, the tray's heading.
+// Small text that glides with the list: a category's name and count, `+N more`.
 function Caption({ pose, start, children, color, size = SMALL, spacing = 0.12, right }: { pose: Pose; start?: Pose; children: ReactNode; color: string; size?: number; spacing?: number; right?: ReactNode }) {
   const group = useRef<Group>(null)
   const left = useRef<Mesh & { fillOpacity: number }>(null)
@@ -277,57 +286,6 @@ function Caption({ pose, start, children, color, size = SMALL, spacing = 0.12, r
   )
 }
 
-// The open list's frame: a dark plate with a line in the accent along its top.
-function Tray({ pose, start, accent, onHover }: { pose: Pose; start?: Pose; accent: string; onHover: (on: boolean) => void }) {
-  const group = useRef<Group>(null)
-  const plate = useRef<Mesh>(null)
-  const edge = useRef<Mesh>(null)
-  const top = useRef<Mesh>(null)
-  const colors = usePalette()
-  useGlide(pose, (p) => {
-    const g = group.current
-    if (!g) return
-    g.position.set(p.x, p.y, -0.004)
-    g.visible = p.o > 0.01
-    plate.current?.scale.set(p.w, p.h, 1)
-    edge.current?.scale.set(p.w + 0.02, p.h + 0.02, 1)
-    if (top.current) {
-      top.current.scale.set(p.w + 0.02, 1, 1)
-      top.current.position.y = p.h / 2
-    }
-    for (const m of [plate, edge, top]) if (m.current) (m.current.material as MeshBasicMaterial).opacity = p.o
-  }, start)
-  return (
-    <group
-      ref={group}
-      // Between rows the pointer is on the tray, and the list stays open.
-      onPointerOver={(e) => {
-        if (!group.current?.visible) return
-        e.stopPropagation()
-        onHover(true)
-      }}
-      onPointerOut={() => onHover(false)}
-      onPointerDown={(e) => {
-        if (group.current?.visible) e.stopPropagation()
-      }}
-      onClick={(e) => group.current?.visible && e.stopPropagation()}
-    >
-      <mesh ref={edge} position={[0, 0, -0.001]} raycast={noHit}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial color={colors.hairline} transparent toneMapped={false} depthWrite={false} />
-      </mesh>
-      <mesh ref={plate}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial color={colors.cardBehind} transparent toneMapped={false} depthWrite={false} />
-      </mesh>
-      <mesh ref={top} position={[0, 0, 0.001]} raycast={noHit}>
-        <planeGeometry args={[1, 0.03]} />
-        <meshBasicMaterial color={accent} transparent toneMapped={false} depthWrite={false} />
-      </mesh>
-    </group>
-  )
-}
-
 const pose = (x: number, y: number, w: number, h: number, o = 1, a = 0): Pose => ({ x, y, w, h, o, a })
 // The left edge of what's beside a card, from its centre.
 const X0 = CARD_W / 2 + GAP
@@ -348,14 +306,14 @@ export function byCategory(features: WithId<CompetitorFeature>[]): [string, With
 export function featureSpots(features: WithId<CompetitorFeature>[], open: boolean): Map<string, Pose> {
   const spots = new Map<string, Pose>()
   if (open) {
-    let y = TOP - 0.3
+    let y = TOP
     for (const [, items] of byCategory(features)) {
-      y -= 0.2
+      y -= CAT_H
       for (const f of items) {
-        spots.set(f.id, pose(X0 + TRAY_W / 2, y, TRAY_W - 0.12, ROW_H, 1, 1))
+        spots.set(f.id, pose(X0 + OPEN_W / 2, y - ROW_H / 2, OPEN_W, ROW_H, 1, 1))
         y -= STEP
       }
-      y -= 0.06
+      y -= CAT_GAP
     }
   } else {
     features.forEach((f, i) => {
@@ -371,14 +329,13 @@ type FeatureListProps = {
   open: boolean
   // Our feature each one matches, by its id (the matrix cell's `competitorFeatureId`).
   matches: Map<string, string>
-  onHover: (on: boolean) => void
   onLinkDrop: (targetId: string) => void
 }
 
 // A competitor's features beside its card; the group is placed at the card's centre by the board. Closed, only the
-// first few rows (and `+N more`) are mounted; the rest, the tray and the headings mount as it opens, gliding out of
-// where the closed list is, and unmount once closing has carried them back there.
-export const FeatureList = memo(function FeatureList({ features, open, matches, onHover, onLinkDrop }: FeatureListProps) {
+// first few rows (and `+N more`) are mounted; the rest and the category names mount as it opens, gliding out of where
+// the closed list is, and unmount once closing has carried them back there.
+export const FeatureList = memo(function FeatureList({ features, open, matches, onLinkDrop }: FeatureListProps) {
   const colors = usePalette()
   const selectedId = useCanvas((s) => s.selectedId)
   const full = useLinger(open)
@@ -387,39 +344,26 @@ export const FeatureList = memo(function FeatureList({ features, open, matches, 
   const groups = byCategory(features)
   const tags: Record<string, string> = { free: colors.green, paid: colors.yellow, enterprise: colors.blue, beta: colors.magenta }
 
-  // The tray round the open list, and each category's heading over its rows.
-  let bottom = TOP
-  for (const p of spots.values()) if (p.o > 0) bottom = Math.min(bottom, p.y - p.h / 2)
-  const trayH = TOP - bottom + 0.08
-  const trayShut = pose(X0 + ROW_W / 2, TOP - 0.5, ROW_W, 1, 0)
-  const headShut = pose(X0 + ROW_W / 2, TOP - 0.14, ROW_W - 0.2, 0.1, 0)
   const more = features.length - FIRST
 
   return (
-    <group>
-      {full && (
-        <>
-          <Tray pose={open ? pose(X0 + TRAY_W / 2, TOP - trayH / 2, TRAY_W, trayH) : trayShut} start={trayShut} accent={colors.yellow} onHover={onHover} />
-          <Caption pose={open ? pose(X0 + TRAY_W / 2, TOP - 0.14, TRAY_W - 0.2, 0.1) : headShut} start={headShut} color={colors.yellow} right={String(features.length)}>
-            FEATURES
-          </Caption>
-          {groups.map(([category, items]) => {
-            const shut = pose(X0 + ROW_W / 2, closed.get(items[0].id)!.y, ROW_W - 0.2, 0.1, 0)
-            return (
-              <Caption
-                key={category}
-                pose={open ? pose(X0 + TRAY_W / 2, spots.get(items[0].id)!.y + 0.2, TRAY_W - 0.2, 0.1) : shut}
-                start={shut}
-                color={colors.fgDim}
-                size={0.062}
-                right={String(items.length)}
-              >
-                {category.toUpperCase()}
-              </Caption>
-            )
-          })}
-        </>
-      )}
+    <group position={[0, 0, full ? OPEN_LIFT : 0]}>
+      {full &&
+        groups.map(([category, items]) => {
+          // Each category's name, in the gap over its first row; out of and back into where that row sits closed.
+          const shut = pose(X0 + ROW_W / 2, closed.get(items[0].id)!.y, ROW_W, 0.1, 0)
+          return (
+            <Caption
+              key={category}
+              pose={open ? pose(X0 + OPEN_W / 2, spots.get(items[0].id)!.y + ROW_H / 2 + CAT_H / 2 - 0.01, OPEN_W, 0.1) : shut}
+              start={shut}
+              color={colors.fgDim}
+              spacing={0.14}
+            >
+              {`${category.toUpperCase()}  ${items.length}`}
+            </Caption>
+          )
+        })}
       {features.map((f, i) =>
         full || i < FIRST ? (
           <Row
@@ -434,7 +378,6 @@ export const FeatureList = memo(function FeatureList({ features, open, matches, 
             selected={selectedId === f.id}
             onPress={selectFeature}
             onLinkDrop={onLinkDrop}
-            onHover={onHover}
           />
         ) : null,
       )}
