@@ -29,7 +29,8 @@ Card layout, top to bottom: `TYPE` label · title (up to two lines) · `#tags` �
 descriptions live in the side panel only (D-057).
 
 - **Competitor features** (D-164) are names beside their competitor, right of the card (clear of its `›` handle): the
-  first three, then `+N more`. Selecting it (or one of its features) opens the full list; hovering never does (D-173).
+  first five, then `+N more`, in the same order as the open list, so opening only adds rows (D-173). Selecting it (or
+  one of its features) opens the full list; hovering never does (D-173).
   Open, there's no tray or heading round it: each category's name and count in small grey capitals (`BOOKING  3`), its
   rows under it at the same left edge (not indented), each row a name, a cyan bar when it matches one of ours, and its
   availability on the right. An open list, and one still closing, sits over every card (a dragged one too) and every

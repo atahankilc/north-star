@@ -2580,6 +2580,9 @@ categories shown like B, not in a card, and the features under them not indented
 - *Order:* the open list, and one still closing, lifts 0.024 above the lists' 0.046 (to 0.07): over every card (a
   dragged one is 0.06) and the other lists, under the board's overlays at 0.08. Before, the tray sat at 0.044, under
   other competitors' closed rows (0.046) and newer cards' text.
+- *Closed (same day):* the user asked for five names beside the card with `+N more`, and for the list not to reorder
+  on opening ("when i click to competitor feature list re orders, lets just not do that"): closed shows the first five
+  in the open list's order (by category, oldest first within one), so opening only adds category names and rows.
 - *Verified* headless (emulators, Tablebook): hovering a competitor leaves it closed; selecting opens it with category
   names over un-indented rows; with ShiftGrid dragged onto Crewly, the open list's meshes draw after Crewly's closed
   rows (logged draw order) and its names show over them; `tsc`.

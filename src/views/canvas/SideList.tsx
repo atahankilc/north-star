@@ -1,7 +1,7 @@
-// Names beside a card (D-164). A competitor's features: the first three by name with `+N more` under them; selected,
-// the full list by category, each category's name in small grey capitals over its rows (no tray round them), with what
-// matches ours and how it's offered. A feature's parts folded into it: their names, indented under the part they
-// belong to.
+// Names beside a card (D-164). A competitor's features: the first five by name (in the open list's order) with
+// `+N more` under them; selected, the full list by category, each category's name in small grey capitals over its
+// rows (no tray round them), with what matches ours and how it's offered. A feature's parts folded into it: their
+// names, indented under the part they belong to.
 // Every row glides from where it is to where it should be (eased at both ends, ~280 ms), so opening runs forward,
 // closing runs it backwards, and asking for what's already shown moves nothing. Poses are relative to the card's
 // centre, so a dragged card carries its list with it exactly.
@@ -36,7 +36,7 @@ const TEXT = 0.095
 const COMPACT_TEXT = 0.16
 const SMALL = 0.066
 // Shown while closed.
-const FIRST = 3
+const FIRST = 5
 const PART_STEP = 0.26
 const INDENT = 0.2
 const DUR = 280
@@ -301,6 +301,10 @@ export function byCategory(features: WithId<CompetitorFeature>[]): [string, With
   return [...map.entries()].sort(([a], [b]) => (a === UNCATEGORIZED ? 1 : b === UNCATEGORIZED ? -1 : a.localeCompare(b)))
 }
 
+// The order rows show in, closed and open alike, so opening only adds to the list and moves none of its rows up or
+// down past another.
+const inOrder = (features: WithId<CompetitorFeature>[]) => byCategory(features).flatMap(([, items]) => items)
+
 // Where each of a competitor's features sits, from its card's centre, closed or open: for the rows here and for where
 // links to them end. Closed, only the first few have a place; the rest are behind `+N more`.
 export function featureSpots(features: WithId<CompetitorFeature>[], open: boolean): Map<string, Pose> {
@@ -316,7 +320,7 @@ export function featureSpots(features: WithId<CompetitorFeature>[], open: boolea
       y -= CAT_GAP
     }
   } else {
-    features.forEach((f, i) => {
+    inOrder(features).forEach((f, i) => {
       const at = Math.min(i, FIRST)
       spots.set(f.id, pose(X0 + ROW_W / 2, TOP - ROW_H / 2 - at * STEP, ROW_W, ROW_H, i < FIRST ? 1 : 0))
     })
@@ -364,7 +368,7 @@ export const FeatureList = memo(function FeatureList({ features, open, matches, 
             </Caption>
           )
         })}
-      {features.map((f, i) =>
+      {inOrder(features).map((f, i) =>
         full || i < FIRST ? (
           <Row
             key={f.id}
