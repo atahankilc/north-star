@@ -85,7 +85,7 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
   tray by category, with a cyan bar when it matches ours and its availability; rows open it in the panel and take links
   (D-164). Competitor features have availability and a source; "matches our feature" is the matrix cell's their feature (D-164).
 - Parts (D-164): `part of` between features; `[−] 3 parts` folds them (and theirs) into the parent as indented names, per
-  plane, shared; a row unfolds them; links to a folded part end at its row. Rows, tray and folding cards glide 280 ms, eased both ends.
+  plane, shared; a row unfolds them; links to a folded part end at its row; a folded card carries its parts when dragged, nudged or lined up. Rows, tray and folding cards glide 280 ms, eased both ends.
 - Links: straight; the selected link bends through points the user puts on it (drag a piece, drag a point, double-click
   to take out, `straighten`), kept relative to its cards' middle; nothing moves them by itself (D-155). Arrowhead,
   kind on a small framed chip (a card's small-text size, D-154); hover/selection dims others;

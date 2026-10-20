@@ -14,6 +14,12 @@ export function setPieces(next: Map<string, Where>) {
   pieces = next
 }
 export const pieceOf = (id: string) => pieces.get(id)
+
+// The parts folded into each card (D-164): they go wherever it goes. The board keeps this current.
+let folded = new Map<string, string[]>()
+export function setFoldedParts(next: Map<string, string[]>) {
+  folded = next
+}
 export const piecesOnBoard = () => pieces.values()
 
 const WRITE_EVERY_MS = 120
@@ -22,14 +28,15 @@ let group: { from: Where[]; lastWrite: number; moved: boolean } | null = null
 const frameOf = (p: Where): Rect => [p.x - p.half![0], p.y - p.half![1], p.x + p.half![0], p.y + p.half![1]]
 
 // What a section holds (D-130): every piece whose centre is inside its frame, and every section wholly inside it (and
-// so what those hold). Nothing for anything else.
+// so what those hold). A card's folded parts (D-164), and those of the cards a section holds. Nothing for anything else.
 export function contentsOf(id: string): string[] {
   const s = pieces.get(id)
-  if (!s?.section || !s.half) return []
+  if (!s?.section || !s.half) return folded.get(id) ?? []
   const r = frameOf(s)
-  return [...pieces.values()]
+  const held = [...pieces.values()]
     .filter((p) => p.id !== id && (p.section && p.half ? holdsRect(r, frameOf(p)) : holdsPoint(r, p.x, p.y)))
     .map((p) => p.id)
+  return [...new Set([...held, ...held.flatMap((h) => folded.get(h) ?? [])])]
 }
 
 // These pieces and what the sections among them hold.

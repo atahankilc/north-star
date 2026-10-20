@@ -307,9 +307,11 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
       if (!editLocked()) startLink(node.id, p)
       return
     }
-    // A press on one of several selected cards keeps the selection, so they can be dragged together.
+    // A press on one of several selected cards keeps the selection, so they can be dragged together. A card alone with
+    // folded parts (D-164) drags as a group too, and is selected like any card alone.
     const group = !editLocked() && startGroup(node.id)
-    if (!group) select(node.id)
+    const { selection } = useCanvas.getState()
+    if (!group || !(selection.length > 1 && selection.includes(node.id))) select(node.id)
     if (editLocked()) return
     drag.current = { dx: p[0] - x, dy: p[1] - y, from: [node.x, node.y], lastWrite: 0, moved: false, group, press: [e.clientX, e.clientY] }
     ;(e.target as Element).setPointerCapture(e.pointerId)

@@ -42,7 +42,7 @@ import { PackageFrame, type Frame } from './PackageFrame'
 import { BoardLine } from './BoardLine'
 import { EdgeLine, linePoints, linkChipAt } from './EdgeLine'
 import { rightPress, useBoardMenu } from './rightClick'
-import { setPieces } from './groupDrag'
+import { setFoldedParts, setPieces } from './groupDrag'
 import { useGuides } from './guides'
 import { LabelBar } from './LabelBar'
 import { LinkBar } from './LinkBar'
@@ -621,6 +621,13 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
     }
     setPieces(map)
   }, [nodes, labels])
+
+  // A folded card's parts move with it (D-164).
+  useEffect(() => {
+    const map = new Map<string, string[]>()
+    for (const [part, top] of family.top) map.set(top, [...(map.get(top) ?? []), part])
+    setFoldedParts(map)
+  }, [family])
 
   // How deep each section sits in others, so inner ones draw over outer ones.
   const sectionDepth = useMemo(() => {
