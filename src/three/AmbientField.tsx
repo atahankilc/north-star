@@ -154,13 +154,13 @@ void main() {
   vec2 p = (vUv - 0.5) * uAspect;
   vec3 col = flow(p);
 
-  // Keep the HUD band (top) and headline band (bottom) calm.
-  float calm = smoothstep(0.0, 0.3, vUv.y) * smoothstep(1.0, 0.86, vUv.y);
+  // Keep the top band calm. The field runs all the way down: the landing's headline has its own scrim.
+  float calm = smoothstep(1.0, 0.86, vUv.y);
   col *= calm;
 
   if (uIntro < INTRO) {
     // The night sky melts slowly into the flow, which has been running underneath all along. The dawn starts at the
-    // very bottom edge, so it skips the bottom calm band (the headline keeps its own scrim).
+    // very bottom edge (the headline keeps its own scrim).
     float cell = abs(dFdy(p.y)) * uFine;
     vec3 sky = welcome(p, vUv.y, uIntro, cell) * calm + dawn(p, vUv.y, uIntro) * smoothstep(1.0, 0.86, vUv.y);
     col = mix(sky, col, smoothstep(6.2, 9.8, uIntro));
