@@ -17,8 +17,10 @@ if (import.meta.env.DEV) {
 
 export const BACKDROP_CAMERA = { position: [0, 0, 6] as [number, number, number], fov: 45 }
 
+// A cell is 9 device pixels, not 9 CSS pixels: on a 2x screen the glyphs come out half as big and the field twice as
+// fine, the look the user wants. It also stays the same when the window moves to a screen with another pixel ratio.
 export function cellSize() {
-  return Math.round(9 * Math.min(window.devicePixelRatio, 2))
+  return 9
 }
 
 type SceneProps = {

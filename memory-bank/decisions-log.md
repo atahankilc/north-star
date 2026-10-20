@@ -2547,3 +2547,21 @@ when the delete is undone.
   deleted`; it can still be answered, resolved, or deleted by an owner.
 - *Verified* headless: a card's thread pin (1) gone after deleting the card with Delete (0), the panel row marked, ⌘Z
   brought the pin back (1); `tsc`.
+
+### D-172 · 2026-10-20 · Accepted (changes D-063's cell size)
+**The backdrop's ASCII cell is 9 device pixels, not 9 CSS pixels.** The user moved the app from a 1x monitor to their 2x
+laptop and saw the glyphs get small and the field turn much finer, and wanted it like that all the time.
+- *Why it happened:* `cellSize()` was `9 × devicePixelRatio`, read once when the page opened. Opened at 1x (9 px cells)
+  and moved to 2x, the cells stayed 9 device px = 4.5 CSS px; the other way they became 18 CSS px (~200 across a wide
+  screen).
+- Now a fixed 9 device px: a 2x screen gets 4.5 CSS px cells (4 × the cells, the look the user liked), a 1x screen is
+  as before, and moving between screens changes nothing.
+- The DOM/card reveal grid stays 9 CSS px (`CELL_PX`): one backdrop cell at 1x, 2 × 2 at 2x, so its lines still fall on
+  the backdrop's grid.
+- *Follow-ups the fine grid needed:* the welcome's stars lined up in rows (the sine hash loses precision on big cell
+  ids), so stars and the dawn's dither use a hash without sine (`cellHash`); the north star is sized per 9 CSS px
+  (`uFine` = pixel ratio, 1–2), so it doesn't shrink; stars start brighter (0.3) and 1.6× on paper; light theme ink is
+  near-black (was grey 0.08) and thin glyph edges count for more (`pow(…, 0.75)`), since on paper the intro and flow
+  barely showed.
+- *Verified* headless at deviceScaleFactor 1 and 2, dark, light and light without the night sky (as signed-in pages show
+  it): stars scattered, north star the same size on both, the intro clearly readable on paper; `tsc`.

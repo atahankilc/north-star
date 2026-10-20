@@ -34,6 +34,7 @@ uniform vec3 uEmber;        // welcome: red-orange of the sky above the horizon
 uniform vec3 uDawn;         // welcome: warmer orange right at the horizon
 uniform float uLight;       // light theme (D-069): the ASCII pass prints brightness as ink
 uniform float uIntro;       // seconds into the welcome; INTRO or more = plain flow
+uniform float uFine;        // cells per 9 CSS px: 2 on a 2x screen (D-172), so the north star keeps its size on screen
 
 const float PI = 3.14159265;
 const float LIFE = 9.0;        // seconds between births; each generation lives two of these
@@ -45,6 +46,13 @@ float noise(vec2 p) {
   vec2 u = f * f * (3.0 - 2.0 * f);
   return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x),
              mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+// Per-cell randomness for whole-number cell ids (stars, dither). The sine hash above loses precision on big ids, so on a
+// fine grid (D-172) its values lined up in rows; this one has no sine and stays random at any size.
+float cellHash(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
 }
 const mat2 ROT = mat2(0.8, -0.6, 0.6, 0.8);
 float fbm(vec2 p) {
@@ -105,7 +113,7 @@ vec3 dawn(vec2 p, float y, float t) {
   float d = length(vec2((p.x - sun.x) * 0.2, y));           // squashed: it spreads sideways more than it climbs
   float streaks = 0.7 + 0.3 * fbm(vec2(p.x * 1.3 + t * 0.03, y * 20.0));
   float glow = exp(-d / (0.04 + 0.1 * rise)) * rise * streaks;
-  glow *= 0.7 + 0.6 * hash(floor(gl_FragCoord.xy) + 91.0);   // per-cell dither, so the faint edge frays instead of cutting off
+  glow *= 0.7 + 0.6 * cellHash(floor(gl_FragCoord.xy) + 91.0);   // per-cell dither, so the faint edge frays instead of cutting off
   vec3 hue = mix(uEmber, uDawn, exp(-d / 0.06));
   hue = mix(hue, vec3(1.0, 0.82, 0.42), exp(-d / 0.022));
   return hue * min(glow * (uLight > 0.5 ? 2.2 : 1.5), 1.0); // printed on paper it needs more ink to read as strongly
@@ -116,12 +124,13 @@ vec3 welcome(vec2 p, float y, float t, float cell) {
 
   // Stars fill the sky slowly, few at first and then faster; each goes out at its own moment near the end.
   // The glow near the horizon washes the faint ones out.
-  float h = hash(id), hOn = hash(id + 17.0), hOff = hash(id + 41.0), hLum = hash(id + 73.0);
+  float h = cellHash(id), hOn = cellHash(id + 17.0), hOff = cellHash(id + 41.0), hLum = cellHash(id + 73.0);
   float on = smoothstep(0.0, 0.35, t - (0.2 + 4.2 * pow(hOn, 0.75)));
   float off = 1.0 - smoothstep(0.0, 0.5, t - (5.4 + hOff * 2.6));
   float twinkle = 0.72 + 0.28 * sin(t * (1.5 + hOff * 3.0) + hOn * 40.0);
   float sky = smoothstep(0.08, 0.3, y);
-  float stars = step(0.966, h) * (0.2 + 0.75 * hLum * hLum * hLum) * on * off * twinkle * sky;
+  // On a fine grid a star is one small glyph, so they start brighter; printed on paper they need more ink still.
+  float stars = step(0.966, h) * (0.3 + 0.7 * hLum * hLum * hLum) * on * off * twinkle * sky * (uLight > 0.5 ? 1.6 : 1.0);
 
   vec3 col = vec3(stars);
 
@@ -152,7 +161,7 @@ void main() {
   if (uIntro < INTRO) {
     // The night sky melts slowly into the flow, which has been running underneath all along. The dawn starts at the
     // very bottom edge, so it skips the bottom calm band (the headline keeps its own scrim).
-    float cell = abs(dFdy(p.y));
+    float cell = abs(dFdy(p.y)) * uFine;
     vec3 sky = welcome(p, vUv.y, uIntro, cell) * calm + dawn(p, vUv.y, uIntro) * smoothstep(1.0, 0.86, vUv.y);
     col = mix(sky, col, smoothstep(6.2, 9.8, uIntro));
   }
@@ -164,6 +173,7 @@ void main() {
 // Rendered at one texel per ASCII cell (D-063); `uvScale` maps those texels back to screen UVs.
 export function AmbientField({ uvScale }: { uvScale: Vector2 }) {
   const size = useThree((s) => s.size)
+  const dpr = useThree((s) => s.viewport.dpr)
   const material = useRef<ShaderMaterial>(null)
   const theme = useTheme((s) => s.theme)
 
@@ -179,6 +189,7 @@ export function AmbientField({ uvScale }: { uvScale: Vector2 }) {
       uDawn: { value: new Color() },
       uLight: { value: 0 },
       uIntro: { value: 0 },
+      uFine: { value: 1 },
     }),
     [],
   )
@@ -201,6 +212,7 @@ export function AmbientField({ uvScale }: { uvScale: Vector2 }) {
     u.uDawn.value.copy(accents[4])
     u.uUvScale.value.copy(uvScale)
     u.uAspect.value.set(size.width / size.height, 1)
+    u.uFine.value = Math.min(Math.max(dpr, 1), 2)
   })
 
   return (

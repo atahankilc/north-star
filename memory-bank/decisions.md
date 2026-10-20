@@ -70,7 +70,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Loading = the flowing backdrop itself, then a cell-by-cell rebuild; nothing in the backdrop may depend on per-canvas state (D-025).
 - Backdrop flows by itself (no pointer), lives in generations every ~9 s (D-026, D-028). Welcome intro: stars + sunrise +
   north star, 10 s; light theme landing gets a night sky with tone sweeps (D-072).
-- Backdrop 30 fps on demand, one texel per cell, low-power; board renders on demand (D-063). Dimmed to 8% in workspaces (D-110).
+- Backdrop 30 fps on demand, one texel per cell, low-power; board renders on demand (D-063). A cell is 9 device px, so a 2x
+  screen gets half-size glyphs and a finer field, the same on every screen move; stars by a sine-free hash, light ink near-black (D-172). Dimmed to 8% in workspaces (D-110).
 - Motion setting `full | reduced | system` (default full); everything reads `useMotion().reduced` (D-030, D-063). Background on/off (D-063).
 
 ## Board

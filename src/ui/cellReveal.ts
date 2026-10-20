@@ -3,7 +3,8 @@
 // moment. The same math runs in CSS (Appear) and in GLSL (3D cards), and both use the backdrop's
 // screen grid, so pieces line up with the ASCII field behind them.
 
-// Grid cell in CSS px; matches the backdrop's ASCII cell (cellSize() / devicePixelRatio).
+// Grid cell in CSS px. The backdrop's cell is 9 device px (cellSize()), so this is one of its cells on a 1x screen and
+// 2 × 2 of them on a 2x one: the lines still fall on the backdrop's grid.
 export const CELL_PX = 9
 
 // Progress runs a little past 1 so the last cells are surely in.
