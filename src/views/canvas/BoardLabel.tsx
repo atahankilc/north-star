@@ -80,7 +80,7 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
   const only = useCanvas((s) => s.selection.length === 1 && s.selection[0] === label.id)
   const editing = useCanvas((s) => s.editingLabel === label.id)
   const live = useCanvas((s) => s.dragging[label.id])
-  const { select, toggleSelect, setDragging, setEditingLabel } = useCanvas.getState()
+  const { select, toggleSelect, setDragging, land, setEditingLabel } = useCanvas.getState()
   const sticky = isSticky(label)
   const paragraph = isParagraph(label)
   const size = sticky ? stickyText(label) : paragraph ? paraSize(label) : labelSize(label)
@@ -179,8 +179,11 @@ export function BoardLabel({ wid, label, mark, was, lit = false }: Props) {
         if (!endGroup(wid)) select(label.id)
       } else {
         const final = useCanvas.getState().dragging[label.id]
-        if (d.moved && final) void endLabelMove(wid, label.id, d.from, final)
-        setDragging(label.id, null)
+        // Held where it was dropped until its data gets there too (canvasStore `land`).
+        if (d.moved && final) {
+          void endLabelMove(wid, label.id, d.from, final)
+          land([[label.id, final]])
+        } else setDragging(label.id, null)
       }
     }
     if (controls) controls.enabled = true

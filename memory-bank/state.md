@@ -56,6 +56,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - People here as overlapping squares + `+N` list; live cursors smoothed on the receiving side (D-169); following opens what they open (D-170). 2026-10-20.
 - Board speed with many competitors (2026-10-20, committed): hidden feature rows / folded-part rows are no longer mounted
   (they mount to open and unmount after closing), lists memoised, row decorations skip raycasts. Hover stalls 918 → 102 ms.
+- Drops land at once (2026-10-20, committed): a dropped piece is held where let go until its data gets there (`land` in
+  canvasStore), no glide; before, the drag's streamed writes came back from the IndexedDB cache one by one and the card replayed them.
 - Backdrop cell = 9 device px (D-172): finer field on 2x screens, nothing changes moving between screens. 2026-10-20.
 - Competitor feature list opens on click only, category names in grey caps over un-indented rows, no tray, drawn over everything (D-173). 2026-10-20.
 

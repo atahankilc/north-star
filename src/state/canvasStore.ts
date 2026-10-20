@@ -3,6 +3,23 @@ import { create } from 'zustand'
 
 type Vec2 = [number, number]
 
+// Dropped pieces waiting for their data to reach where they were let go. Each streamed write of a drag comes back
+// from Firestore's cache in turn, a little late: let go of a piece at once and it ran back through them all, the drag
+// replayed (2026-10-20). Held where dropped instead, for at most HOLD_MS if the data never gets there (a refused write).
+const holding = new Map<string, Vec2>()
+const HOLD_MS = 5000
+const sameAt = (a: Vec2 | undefined, b: Vec2) => !!a && Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9
+
+function letGo(ids: string[]) {
+  if (!ids.length) return
+  for (const id of ids) holding.delete(id)
+  useCanvas.setState((s) => {
+    const dragging = { ...s.dragging }
+    for (const id of ids) delete dragging[id]
+    return { dragging }
+  })
+}
+
 type CanvasState = {
   selectedId: string | null
   // Everything selected (D-108): cards and text labels; `selectedId` is the last one picked. One item = the usual panel.
@@ -52,6 +69,10 @@ type CanvasState = {
   setDragging: (id: string, at: Vec2 | null) => void
   // Several at once (a selection being dragged): one update, so the board re-renders once per pointer move, not once per card.
   setDraggingMany: (places: [string, Vec2 | null][]) => void
+  // Dropped: the pieces stay exactly where they were let go until their data says so too (`landed`).
+  land: (places: [string, Vec2][]) => void
+  // The board's data changed: pieces now at the place they were dropped stop being held there.
+  landed: (at: (id: string) => Vec2 | undefined) => void
   setPressing: (id: string | null) => void
   setViewCenter: (fn: () => Vec2) => void
   setFocusOn: (fn: (at: Vec2) => void) => void
@@ -102,6 +123,7 @@ export const useCanvas = create<CanvasState>((set) => ({
   endLink: () => set({ linkFrom: null, linkPointer: null }),
   setDragging: (id, at) =>
     set((s) => {
+      holding.delete(id)
       const dragging = { ...s.dragging }
       if (at) dragging[id] = at
       else delete dragging[id]
@@ -111,11 +133,20 @@ export const useCanvas = create<CanvasState>((set) => ({
     set((s) => {
       const dragging = { ...s.dragging }
       for (const [id, at] of places) {
+        holding.delete(id)
         if (at) dragging[id] = at
         else delete dragging[id]
       }
       return { dragging }
     }),
+  land: (places) => {
+    if (!places.length) return
+    for (const [id, at] of places) holding.set(id, at)
+    set((s) => ({ dragging: { ...s.dragging, ...Object.fromEntries(places) } }))
+    // Unless a later drag or drop has the piece by then.
+    setTimeout(() => letGo(places.filter(([id, at]) => holding.get(id) === at).map(([id]) => id)), HOLD_MS)
+  },
+  landed: (at) => letGo([...holding].filter(([id, to]) => sameAt(at(id), to)).map(([id]) => id)),
   setPressing: (id) => set({ pressing: id }),
   setViewCenter: (fn) => set({ viewCenter: fn }),
   setFocusOn: (fn) => set({ focusOn: fn }),

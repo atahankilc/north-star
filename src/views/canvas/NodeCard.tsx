@@ -163,9 +163,6 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
   const content = useRef<Group>(null)
   const corners = useRef<Group>(null)
   const scale = useRef(1)
-  // Just dropped after a drag: it glides from under the pointer to where it landed, even while a group drag's last
-  // write keeps it in `dragging`.
-  const settle = useRef(false)
   // Where the card is drawn on the board, before it's lifted for stacking (see `flat` below).
   const shown = useRef<[number, number]>([node.x, node.y])
   // Cell-by-cell entrance (D-034): shared by all of this card's materials. Text gets its own base
@@ -185,7 +182,7 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
   const isLinkSource = useCanvas((s) => s.linkFrom === node.id)
   const isLinkTarget = useCanvas((s) => s.linkFrom !== null && s.linkFrom !== node.id) && hovered
   const pressing = useCanvas((s) => s.pressing)
-  const { select, toggleSelect, startLink, endLink, setDragging, setPressing, setHover } = useCanvas.getState()
+  const { select, toggleSelect, startLink, endLink, setDragging, land, setPressing, setHover } = useCanvas.getState()
 
   // `group`: the card is one of several selected, and they all move with it (groupDrag.ts). `press`: where on screen it
   // was pressed. `raw`: where the pointer would put it, before the grid or the guides place it.
@@ -247,14 +244,14 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
       z = 0.06
     }
     // Carried along in a group drag (groupDrag.ts): exactly where the drag puts it too, no glide trailing the pointer.
-    else if (live && !settle.current) {
+    // Held where it was dropped too (canvasStore `land`).
+    else if (live) {
       at[0] = x
       at[1] = y
     } else {
       at[0] = MathUtils.damp(at[0], x, 12, dt)
       at[1] = MathUtils.damp(at[1], y, 12, dt)
       if (Math.abs(at[0] - x) > 1e-4 || Math.abs(at[1] - y) > 1e-4) invalidate()
-      else settle.current = false
     }
     // Stacking lifts a card toward the camera, which is perspective: drawn as it is, a held card grew a little and
     // slid off the pointer. Each piece is drawn smaller and toward the camera's axis by as much as it's lifted, so it
@@ -358,7 +355,8 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
     if (d) {
       e.stopPropagation()
       drag.current = null
-      settle.current = d.moved
+      // Dropped, it's at once where it landed and full size, no glide (2026-10-20).
+      if (d.moved) scale.current = 1
       ;(e.target as Element).releasePointerCapture(e.pointerId)
       clearGuides()
       if (d.group) {
@@ -367,8 +365,11 @@ export const NodeCard = memo(function NodeCard({ wid, item: node, layer, related
       } else {
         const final = useCanvas.getState().dragging[node.id]
         // One undo step for the whole drag.
-        if (d.moved && final) void endMove(wid, type, node.id, d.from, final)
-        setDragging(node.id, null)
+        // Held where it was dropped until its data gets there too (canvasStore `land`).
+        if (d.moved && final) {
+          void endMove(wid, type, node.id, d.from, final)
+          land([[node.id, final]])
+        } else setDragging(node.id, null)
       }
     } else if (useCanvas.getState().linkFrom && !isLinkSource) {
       e.stopPropagation()

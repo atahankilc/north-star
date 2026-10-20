@@ -72,21 +72,18 @@ export function moveGroup(wid: string, delta: [number, number]) {
 // Ends the drag; true if anything moved.
 export function endGroup(wid: string): boolean {
   if (!group) return false
-  const { dragging, setDraggingMany } = useCanvas.getState()
+  const { dragging, setDraggingMany, land } = useCanvas.getState()
   const moved = group.moved
   const moves = group.from.flatMap((p) => {
     const to = dragging[p.id]
     return to ? [{ kind: p.kind, id: p.id, from: [p.x, p.y] as [number, number], to }] : []
   })
-  const ids = group.from.map((p) => p.id)
-  // The pieces stay where they were dropped until the final write is in: let go at once and they glided back to the
-  // last streamed place (up to 120 ms old) and then on again. Left alone if a new drag has taken them since.
-  const release = () => {
-    const now = useCanvas.getState().dragging
-    setDraggingMany(ids.flatMap((id) => (now[id] && now[id] === dragging[id] ? [[id, null] as [string, null]] : [])))
-  }
-  if (moved && moves.length) void endMoveMany(wid, moves).then(release, release)
-  else release()
+  // The pieces stay where they were dropped until their data is there too (canvasStore `land`): let go at once and
+  // they ran back through the places streamed during the drag.
+  if (moved && moves.length) {
+    void endMoveMany(wid, moves).catch(() => {})
+    land(moves.map((m) => [m.id, m.to]))
+  } else setDraggingMany(group.from.map((p) => [p.id, null]))
   clearGuides()
   group = null
   return moved

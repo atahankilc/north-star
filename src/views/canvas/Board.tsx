@@ -42,7 +42,7 @@ import { PackageFrame, type Frame } from './PackageFrame'
 import { BoardLine } from './BoardLine'
 import { EdgeLine, linePoints, linkChipAt } from './EdgeLine'
 import { rightPress, useBoardMenu } from './rightClick'
-import { setFoldedParts, setPieces } from './groupDrag'
+import { pieceOf, setFoldedParts, setPieces } from './groupDrag'
 import { useGuides } from './guides'
 import { LabelBar } from './LabelBar'
 import { LinkBar } from './LinkBar'
@@ -590,6 +590,14 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
     for (const [part, top] of family.top) map.set(top, [...(map.get(top) ?? []), part])
     setFoldedParts(map)
   }, [family])
+
+  // Pieces held where they were dropped let go once their data has caught up (canvasStore `land`).
+  useEffect(() => {
+    useCanvas.getState().landed((id) => {
+      const p = pieceOf(id)
+      return p && [p.x, p.y]
+    })
+  }, [nodes, labels, dragging])
 
   // How deep each section sits in others, so inner ones draw over outer ones.
   const sectionDepth = useMemo(() => {
