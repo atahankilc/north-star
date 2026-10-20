@@ -2597,3 +2597,61 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators, Tablebook): hovering a competitor leaves it closed; selecting opens it with category
   names over un-indented rows; with ShiftGrid dragged onto Crewly, the open list's meshes draw after Crewly's closed
   rows (logged draw order) and its names show over them; `tsc`.
+
+### D-174 · 2026-10-20 · Accepted (changes D-144's landing on the overview)
+- *Decision:* opening a workspace shows its canvas at `/workspaces/<id>`: an empty page with only the flowing backdrop,
+  not dimmed, no `+` grid marks, no view tabs, no assistant chat. The board moved to `/workspaces/<id>/board`
+  (`workspacePath(wid)` still means the board; `canvasPath(wid)` is the canvas); the other views keep their paths and
+  open from links. Old links `?item=` / `?plane=` on the bare path go on to the board. Presence has a `canvas` view
+  (database.rules.json, rules test).
+- *Where it's going:* the user: "workspace'e girince sonsuz bir canvas üzerinde bomboş başlamak. Canvasın üzerine board
+  koyabilicem … table koyabilicem başka bir noktasına … birden fazla board". So the canvas will hold boards (each with its
+  own cards), tables and more, several of each. This step is only the empty canvas.
+- *Verified* headless (emulators, Tablebook): the workspace opens on the bare backdrop with breadcrumb and you/settings
+  only; `/board` shows the board as before; `npm run test:rules` 345/345; build. RTDB rules deployed 2026-10-20.
+
+### D-175 · 2026-10-20 · Accepted (changes D-054's account chip and gear in the top right)
+- *Decision:* the HUD moves to a left side nav, piece by piece. First, you and settings: bottom left, `--space-3` from the
+  edges, stacked: a short horizontal rule, your square (initial only, name on hover), the gear under it. Token
+  `--corner-h` is the room it takes; the board's bottom-left toolbar, the threads panel and the pages' bottom padding sit above it.
+- *User:* "bütün hud'ı yavaş yavaş sola taşıycaz … ayarlar ve logged in user'ı sol alta", "side nav bar gibi olcak …
+  dikey yerleştir", then "padding'i azalt, ayarlar ile profil resminin yerini değiştir, profil resminin üstüne yatay separator".
+- *Verified* headless: canvas and board screenshots, the board toolbar clear above the corner; build.
+
+### D-176 · 2026-10-20 · Accepted (builds on D-174)
+- *Decision:* pages go away; what they were become pieces placed on the workspace canvas. First piece: a board. The side
+  nav's `+` (top left under the breadcrumb, the create button's magenta, its menu opening to the right) has `board`,
+  which adds one at the middle of the screen, 960 × 600 canvas px, moved right past any piece it would cover, and selects
+  it. A piece drags (a press turns into a drag after 5 px, held where dropped until its data comes back, one undo step),
+  Delete/Backspace removes it, Escape or a click on empty canvas lets go. The canvas pans by dragging empty space and the
+  wheel zooms round the pointer, 0.1–4; the camera is kept per workspace for the tab's life (`state/canvasView.ts`).
+  Data: `pieces/{id}` `{ kind: 'board', x, y, w, h, name?, createdAt, updatedAt }` (`src/data/pieces.ts`, rules
+  `validPiece`, in `deleteWorkspace`'s list); viewers read, can't add. Not in the export bundle yet.
+- *Look:* the user: "ana canvasımın üstüne koyduğum her şeyin kendi bir bg'si olacak. Board için … animasyon oynamayacak,
+  simsiyah bir arkaplan, sadece `+` gözüküyor olacak". So a board is solid `--bg` with a thin border, `+` marks every 25 px
+  (3 px arms, 1 px stroke, new token `--grid-mark`, the board grid's grey), its name set into the top edge; magenta edge
+  and name when selected. Inside, for now, only `open the board ↗` to the board page: the board's own cards inside it are next.
+- *User:* "sayfa kavramı kalmadı. Sayfalar … canvasımızın üstüne eklediğimiz componentler gibi … side navigation'da bir
+  artı butonu ver, burada board koy. Ben board'a tıkladığımda bulunduğum konuma kart ekler gibi board ekleyeyim".
+- *Verified* headless (emulators, Tablebook): `+` → board adds one in the middle; a drag moves it; pan, wheel zoom; a
+  second lands beside the first; both still there after a reload. `npm run test:rules` 352/352; build.
+  Firestore rules deployed 2026-10-20.
+
+### D-177 · 2026-10-20 · Accepted (archives D-040–D-173's views for now)
+- *Decision:* on branch `refactor/north-star-1.5`, everything from before the canvas goes to `src/archive/` (paths mirror
+  `src/`, moved with `git mv`; `tsconfig.json` excludes it, nothing live imports it; README there): every view
+  (board, focus, flow, table, matrix, priorities, overview, reports, competitors), the assistant (`src/ai`, the chat, orb,
+  proposals, keys and usage pages), export/import (`src/io`, the example workspace, the import strip), and the data layer
+  behind them (cards, links, matrix, labels, planes, packages, evidence, threads, attachments, reports, selection;
+  canvasStore, plane and workspaceView state). Files that stayed live but were cut down keep their full earlier version
+  in the archive too.
+- *Live:* landing, workspaces list (create, join by code, invites; no example or import), settings (account, display,
+  workspace general and people), presence (squares and the `+N` list; following is archived until the canvas has
+  cursors), undo/redo keys, viewers read-only, the canvas with its pieces (D-174–D-176). `model.ts` holds only the live
+  shapes; `workspaceData.ts` loads only `pieces`. Every old path under a workspace opens its canvas. Rules and their tests are
+  unchanged: the old data is still in older workspaces, and `deleteWorkspace` still removes all of it (thread and
+  attachment-file cleanup inlined there).
+- *User:* "parça parça doğru ilerlemek istiyorum … önceki bütün implementation'ları bir archive içine koy, parça parça
+  şu anki çalışmamıza ekleriz feature'ları" — then chose "veri katmanı da arşive" and "build'e dahil olmasın".
+- *Verified* headless (emulators): sign in, create a workspace, add a board, `/board` opens the canvas, settings show
+  you + workspace (general, people) only, no console errors; `tsc`, build (2.17 MB, was 2.9), `npm run test:rules` 352/352.

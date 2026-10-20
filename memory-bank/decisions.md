@@ -7,6 +7,11 @@ user said, how it was verified) are in [decisions-log.md](decisions-log.md): rea
 New decision: append the full `### D-xxx` entry to the log, then add or edit its line here (edit the line it replaces,
 don't stack a second one). Spec detail belongs in `/docs`, not here.
 
+**Archived (D-177):** branch `refactor/north-star-1.5` keeps only landing, workspaces, settings (you, general, people),
+presence squares and the canvas live. Everything under Board, Other views, Assistant and Export/import below, and most of
+Data layer, describes code now in `src/archive/` (out of the build). Those lines stand for when a feature comes back as a
+piece; check them with the user then.
+
 ---
 
 ## Product
@@ -56,6 +61,8 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - 3D ASCII, mostly black and white with vivid accents (D-004). Fonts: Geist for titles and long reading, Geist Mono for the rest, self-hosted (D-013, D-093).
 - Hybrid rendering: WebGL scene, readable/editable text in the DOM; the ASCII effect never covers text (D-009, D-019).
 - One framed surface (`Frame.module.css`) for panels, cards, forms, chips (D-024). One HUD on every page with fixed margins (D-027).
+- The HUD becomes a left side nav piece by piece; first, you and settings stacked bottom left (rule, your square, gear),
+  `--space-3` from the edges, bottom-left tools kept `--corner-h` above (D-175).
 - Tokens only, no raw colours, sizes or tracking (`--text-*`, `--track-*`, `--measure`, `--fg-muted`, `--diff-*`, `--link-*`)
   (D-069, D-093, D-097). `src/ui/Page.module.css`, `fieldLabel`, `small` buttons shared (D-093).
 - Actions lowercase, uppercase only for labels (D-093). No native `<select>`: `src/ui/Select.tsx` (D-093).
@@ -147,8 +154,15 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 - Filters SHOW / FOR / TAG / REGION / LINKS, remembered per workspace (D-053, D-056, D-108, D-145).
 
 ## Other views
-- Overview tab, first (D-144): the workspace read on one screen (next steps that prefill the assistant's mode, solid
-  ground vs still a guess, riskiest bets, white space, worth a look); the workspaces list opens it.
+- The old implementation is in `src/archive/` (paths mirror `src/`, out of the build, README there); features come back
+  piece by piece onto the canvas; old paths open the canvas; settings keep you + general + people (D-177).
+- No pages any more: a workspace is one canvas (`/workspaces/<id>`, D-174), backdrop at full strength, no grid, no view
+  tabs, no assistant; the old pages become pieces placed on it. The board is at `/board`; other views by their paths for now.
+- Pieces (D-176): `pieces/{id}` (kind `board`, x/y/w/h in canvas px, name); side nav `+` (opens right) puts one at the
+  screen's middle, moved right past any it would cover; drag (5 px), Delete, Escape; pan by drag, wheel zooms round the
+  pointer (0.1–4). Each piece has its own background: a board's is solid `--bg` with `+` marks every 25 px (`--grid-mark`), no backdrop.
+- Overview (D-144, reached by its path since D-174): the workspace read on one screen (next steps that prefill the assistant's mode, solid
+  ground vs still a guess, riskiest bets, white space, worth a look).
 - Focus tab right of Board (`/focus?on=<id>`): the board with only the card's chain (customer → problem → idea → feature
   both ways, never turning back) + competitors linked to its problems/ideas/features, in place, magenta ring; sections holding chain cards stay, fitted round them (D-130); picker,
   `[◎ focus]` in panels, right-click; no creating; presence says board (D-127).

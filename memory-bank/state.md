@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-20 (D-169 people stack, smooth cursors; D-170 following opens their panel)_
+_Last updated: 2026-10-20 (D-174 canvas instead of pages; D-175 you + settings bottom left; D-176 boards on the canvas)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -60,6 +60,10 @@ something is finished, add its entry to state-history.md and leave at most one l
   canvasStore), no glide; before, the drag's streamed writes came back from the IndexedDB cache one by one and the card replayed them.
 - Backdrop cell = 9 device px (D-172): finer field on 2x screens, nothing changes moving between screens. 2026-10-20.
 - Competitor feature list opens on click only, category names in grey caps over un-indented rows, no tray, drawn over everything (D-173). 2026-10-20.
+- Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
+  left side nav piece by piece, you + settings bottom left first (D-175); boards placed on the canvas from the side nav's
+  `+` (D-176, `pieces`). All the old code archived in `src/archive/`, out of the build (D-177); features come back as pieces. Not pushed; RTDB + Firestore rules deployed 2026-10-20. Next: the board's cards
+  inside its piece (each board its own items: maybe a plane per board, D-139), then tables etc.; pieces in the export.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
@@ -96,7 +100,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The user runs their own dev server on :5173. Use another port (e.g. 5179) and stop your servers when done.
 - Several Claude sessions work on this repo at once. Check `git status` and file times before editing shared files
   (memory-bank, NodeCard.tsx…), and don't commit another session's hunks.
-- Test data: click Alice, then "Create example" (emulators). Seed script: sign in to the auth emulator as `test-alice` with the
+- Test data: click Alice, then create a workspace (the example is archived, D-177). Seed script: sign in to the auth emulator as `test-alice` with the
   firebase client in node, write a workspace + items, open `/workspaces/<wid>` after clicking Alice.
 - Dev hooks: `window.__boardItems`, `__sceneTime`, `__backdrop`, `__curtain`, `__sweep`, `__canvas`, `__advance`,
   `__orbAntic`, `__orbFace`, `__orbReact`, `__orbPom`.

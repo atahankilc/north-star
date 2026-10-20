@@ -1,5 +1,9 @@
 # North Star: Architecture
 
+> **D-177:** on `refactor/north-star-1.5` most of what this file describes (board, views, assistant, export, their
+> data layer) is archived in `src/archive/`, out of the build; live today: auth, workspaces, members, presence, settings
+> and the canvas's `pieces`. It comes back piece by piece.
+
 Status: **accepted** unless marked. Items marked ⏳ wait on a decision in
 [../memory-bank/open-questions.md](../memory-bank/open-questions.md).
 Accepted decisions are logged in [../memory-bank/decisions.md](../memory-bank/decisions.md).

@@ -218,6 +218,13 @@ await allow('a package', () => addDoc(sub(bob.fs, 'packages'), { ...card, member
 await deny('a package without its home plane', () => addDoc(sub(bob.fs, 'packages'), { ...card, memberIds: ['a'] }))
 await deny('a package with members that are not a list', () => addDoc(sub(bob.fs, 'packages'), { ...card, memberIds: 'a', homePlaneId: 'p1' }))
 await allow('a package placed on a plane', () => place('p1_k1', { planeId: 'p1', itemId: 'k1', itemType: 'package', x: 0, y: 0 }))
+// The canvas (D-176): boards placed on it.
+const piece = { kind: 'board', x: -480, y: -300, w: 960, h: 600, createdAt: 1, updatedAt: 1 }
+await allow('a board on the canvas', () => addDoc(sub(bob.fs, 'pieces'), piece))
+await allow('a named board on the canvas', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, name: 'Pricing' }))
+await deny('a canvas piece of an unknown kind', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'video' }))
+await deny('a canvas piece without a size', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, w: 0 }))
+await deny('a canvas piece without a place', () => addDoc(sub(bob.fs, 'pieces'), { kind: 'board', w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 await allow('a link from a package', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'k1', fromType: 'package', toId: 'p1', toType: 'problem', kind: 'solves' }))
 // Status and evidence (D-137).
 await allow('problem with a validation status', () => addDoc(sub(bob.fs, 'problems'), { ...card, validation: 'testing' }))
@@ -433,6 +440,8 @@ const role = (who, uid, r) => join(who, { [`roles.${uid}`]: r })
 await allow('owner makes a member a viewer', () => role(alice, dave.uid, 'viewer'))
 await allow('viewer reads ideas', () => getDocs(ideas(dave.fs)))
 await deny('viewer creates an idea', () => addDoc(ideas(dave.fs), { title: 'x', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('viewer puts a board on the canvas (D-176)', () => addDoc(sub(dave.fs, 'pieces'), { kind: 'board', x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
+await allow('viewer reads the canvas', () => getDocs(sub(dave.fs, 'pieces')))
 await deny('viewer deletes an idea', async () => {
   const one = (await getDocs(ideas(dave.fs))).docs[0]
   await deleteDoc(doc(dave.fs, one.ref.path))
@@ -609,7 +618,8 @@ await allow('presence on the overview (D-144)', () => rtSet(presence(bob, bob.ui
 await allow('presence on the priorities tab (D-138)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'priorities' })))
 await allow('presence on a plane (D-139)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'board', plane: 'p1' })))
 await deny('presence with a numeric plane', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'board', plane: 5 })))
-await deny('presence with an unknown view', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'canvas' })))
+await allow('presence on the canvas (D-174)', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'canvas' })))
+await deny('presence with an unknown view', () => rtSet(presence(bob, bob.uid), me('Bob', { view: 'kanban' })))
 await deny('presence with a non-hex colour', () => rtSet(presence(bob, bob.uid), me('Bob', { color: 'red' })))
 await deny('presence with the retired typing fields (D-071)', () => rtSet(presence(bob, bob.uid), me('Bob', { edit: 'abc', field: 'title' })))
 await deny('presence with a text join time', () => rtSet(presence(bob, bob.uid), me('Bob', { since: 'now' })))

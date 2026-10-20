@@ -30,6 +30,8 @@ type Props = {
   items: MenuEntry[]
   // Open above the trigger (for the bottom toolbar).
   up?: boolean
+  // Open to the right of the trigger, its top level with it (the side nav, D-176).
+  right?: boolean
   // Right-align the panel with the trigger.
   alignEnd?: boolean
   // A filled, prominent trigger (the create button).
@@ -44,7 +46,7 @@ type Props = {
 
 const text = (n: ReactNode): string => (typeof n === 'string' || typeof n === 'number' ? String(n) : '')
 
-export function Menu({ label, summary, items, up, alignEnd, primary, active, ariaLabel, empty, search }: Props) {
+export function Menu({ label, summary, items, up, right, alignEnd, primary, active, ariaLabel, empty, search }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const field = useRef<HTMLInputElement>(null)
@@ -117,7 +119,7 @@ export function Menu({ label, summary, items, up, alignEnd, primary, active, ari
       </button>
       <AnimatePresence>
         {open && (
-          <Appear key="menu" className={styles.panel} data-up={up} data-end={alignEnd}>
+          <Appear key="menu" className={styles.panel} data-up={up} data-right={right} data-end={alignEnd}>
             {search && items.length > 0 && (
               <input
                 ref={field}

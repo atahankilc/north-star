@@ -7,7 +7,7 @@
   flex-direction: column;
   height: 100%;
   /* Room for the filter row (Bars.module.css) or the toolbar above. */
-  padding: calc(var(--hud-h) + 48px) var(--hud-x) var(--hud-y);
+  padding: calc(var(--hud-h) + 48px) var(--hud-x) calc(var(--hud-y) + var(--corner-h));
 }
 
 /* A view without filters puts its own controls where the filter row sits, at the same height. */

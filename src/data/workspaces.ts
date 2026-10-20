@@ -10,12 +10,12 @@ import {
   query,
   setDoc,
   updateDoc,
+  limit,
   where,
   writeBatch,
 } from 'firebase/firestore'
-import { attachmentsAvailable, deleteAttachmentFiles } from './attachments'
-import { deleteThread } from './threads'
-import { db } from './firebase'
+import { deleteObject, listAll, ref as storageRef, type StorageReference } from 'firebase/storage'
+import { db, firebase, useEmulators } from './firebase'
 import { useDoc, usePaged, useQuery } from './hooks'
 import type { AuthUser } from './auth'
 import type { InviteCode, JoinRequest, Member, Role, Workspace } from './model'
@@ -245,10 +245,37 @@ export function describeWorkspace(wid: string, description: string) {
   return updateDoc(doc(db(), 'workspaces', wid), { description: description.trim().slice(0, DESCRIPTION_MAX) })
 }
 
-// Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
+// Attachment files (D-083) exist only where Storage is on: the emulators until Blaze. The rest of attachments.ts is
+// archived (D-177); deleting a workspace still takes its files.
+const attachmentsAvailable = useEmulators
+
+async function listFiles(dir: StorageReference): Promise<StorageReference[]> {
+  const res = await listAll(dir)
+  const nested = await Promise.all(res.prefixes.map(listFiles))
+  return [...res.items, ...nested.flat()]
+}
+
+async function deleteAttachmentFiles(wid: string) {
+  if (!attachmentsAvailable || !firebase) return
+  const files = await listFiles(storageRef(firebase.storage, `workspaces/${wid}/attachments`))
+  await Promise.all(files.map((f) => deleteObject(f)))
+}
+
+// A comment thread (D-159) with its messages in one batch: an owner may take others' messages only along with it (D-166).
+async function deleteThread(wid: string, tid: string) {
+  const thread = doc(db(), 'workspaces', wid, 'threads', tid)
+  const msgs = await getDocs(query(collection(thread, 'messages'), limit(450)))
+  const batch = writeBatch(db())
+  for (const d of msgs.docs) batch.delete(d.ref)
+  batch.delete(thread)
+  await batch.commit()
+}
+
+// Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes. The archived views' data (D-177) is
+// still in older workspaces, so it all goes too.
 // `domains` and `groups` are retired (D-048, D-049) but older workspaces may still hold some.
 const WORKSPACE_COLLECTIONS = [
-  'labels', 'domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'evidence', 'planes', 'placements', 'packages',
+  'labels', 'domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'evidence', 'planes', 'placements', 'packages', 'pieces',
   ...(attachmentsAvailable ? ['attachments'] : []),
 ]
 const BATCH_LIMIT = 450

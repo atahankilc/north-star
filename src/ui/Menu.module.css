@@ -144,6 +144,11 @@
   bottom: calc(100% + var(--space-2));
 }
 
+.panel[data-right='true'] {
+  top: 0;
+  left: calc(100% + var(--space-2));
+}
+
 .panel[data-end='true'] {
   left: auto;
   right: 0;

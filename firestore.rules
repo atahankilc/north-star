@@ -175,6 +175,17 @@ service cloud.firestore {
         && d.createdAt is number;
     }
 
+    // Something on the workspace's canvas (D-176): a board for now, a box in canvas pixels.
+    function validPiece(d) {
+      return d.kind in ['board']
+        && d.x is number && d.y is number
+        && d.w is number && d.w > 0 && d.w <= 100000
+        && d.h is number && d.h > 0 && d.h <= 100000
+        && optText(d, 'name', 80)
+        && d.createdAt is number
+        && d.updatedAt is number;
+    }
+
     // A card's place on a plane (D-139): the id is fixed by the two.
     function validPlacement(id, d) {
       return isText(d.planeId, 128)
@@ -252,7 +263,8 @@ service cloud.firestore {
         || (collection == 'evidence' && validEvidence(d))
         || (collection == 'packages' && validPackage(d))
         || (collection == 'planes' && validPlane(d))
-        || (collection == 'placements' && validPlacement(id, d));
+        || (collection == 'placements' && validPlacement(id, d))
+        || (collection == 'pieces' && validPiece(d));
     }
 
     match /workspaces/{wid} {
@@ -517,7 +529,7 @@ service cloud.firestore {
       match /{collection}/{docId} {
         // `domains` and `groups` are retired (D-048, D-049): still readable and deletable so old workspaces can be cleaned up.
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'evidence', 'planes', 'placements', 'packages', 'domains', 'groups'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'evidence', 'planes', 'placements', 'packages', 'pieces', 'domains', 'groups'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();

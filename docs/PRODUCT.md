@@ -37,6 +37,15 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 
 ## 4. Views
 
+> **D-177:** the views below are archived (`src/archive/`) and come back one by one as canvas pieces.
+>
+> **Next (D-174, D-176):** no more pages. A workspace opens on an infinite canvas (the moving backdrop, no grid marks, no
+> view tabs; drag to pan, wheel to zoom). What used to be pages become pieces placed on it, several of each: the side
+> nav's `+` puts a board at the middle of the screen (beside any it would cover); it drags, Delete removes it. Every
+> piece has its own background: a board's is solid page colour with only its `+` marks, no animation. Today a board is
+> still an empty box with `open the board ↗`; its own cards inside it, tables and the rest come next. Until then the views
+> below open by their paths (`/board`, `/table`, …).
+>
 > Now one board with every item type, text labels to jump between, and Board / Flow / Table / Matrix views (D-040, D-050):
 > see [specs/board.md](specs/board.md). Items 1–3 below describe the earlier per-type pages. A built-in example workspace shows it all (D-052).
 
@@ -52,7 +61,8 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    competitor meets: the white space (D-133).
    Shows gaps (opportunities) and table stakes.
 5. **Overview** (D-144). The workspace read on one screen: next steps, what's on solid ground and what's still a
-   guess, the riskiest bets, the white space, what looks off. Opening a workspace lands here.
+   guess, the riskiest bets, the white space, what looks off. Reached by its path; opening a workspace now lands on
+   the canvas (D-174).
 6. **Priorities** (D-138). Our features on impact × effort, each with a confidence read from the status of the ideas,
    problems and customers it rests on, and the order impact × confidence ÷ effort suggests beside the priority we set.
 7. **Detail Panel.** A side panel for any node: edit fields, see all links, attachments,

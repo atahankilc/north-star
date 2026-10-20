@@ -8,6 +8,8 @@
   --fg-muted: #9a9a9a; /* readable help text (settings hints) */
   --fg-faint: #4d4d4d;
   --placeholder: #3d3d3d;
+  /* The board's `+` marks (palettes.grid in tokens.ts), also drawn on a board placed on the canvas (D-176). */
+  --grid-mark: #4d4d4d;
 
   /* One surface for every framed element: panels, cards, forms, chips. */
   --surface: rgba(11, 11, 11, 0.86);
@@ -89,6 +91,8 @@
   --hud-x: var(--space-6);
   --hud-y: var(--space-4);
   --hud-h: 56px;
+  /* Height the bottom-left corner takes (you + settings stacked, D-175) and a gap. Things there sit above it. */
+  --corner-h: calc(61px + 3 * var(--space-2) + var(--space-3));
   /* Column headers of the table-like views (TableHead.module.css). */
   --head-h: 40px;
 
@@ -108,6 +112,7 @@
   --fg-muted: #555555;
   --fg-faint: #8c8c8c;
   --placeholder: #b0b0b0;
+  --grid-mark: #b8b8b8;
 
   --surface: rgba(255, 255, 255, 0.86);
   --line-hover: #b5b5b5;

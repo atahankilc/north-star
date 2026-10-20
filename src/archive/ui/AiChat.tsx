@@ -23,7 +23,7 @@ import type { KeySource } from '../data/ai'
 import { firebase } from '../data/firebase'
 import { useRecentReports, useReport, useReportSummary } from '../data/reports'
 import type { NodeType } from '../data/model'
-import { reportPath, workspacePath } from '../app/paths'
+import { canvasPath, reportPath, workspacePath } from '../app/paths'
 import { useCanvas } from '../state/canvasStore'
 import { isReducedMotion, useMotion } from '../state/motion'
 import { useWs } from '../views/workspace/context'
@@ -443,7 +443,7 @@ function Conversation({ source }: { source: KeySource }) {
     const brief = workspaceBrief(ws, { view, selectedId, selection, plane: usePlaneView.getState().plane }, recentReports, openReport)
     return { instructions: chatInstructions(brief.text, ws.workspace.name, web), refs: brief.refs, reports: brief.reports, source, ws, models: modelIds(models!) }
   }
-  const currentView = () => path.slice(workspacePath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
+  const currentView = () => path.slice(canvasPath(ws.wid).length).replace(/^\//, '').split('/')[0] || 'board'
 
   const ask = (text: string) => {
     if (!text.trim() || busy) return
@@ -899,7 +899,7 @@ function PreviewBar() {
       <nav className={stageBoxStyles.part} aria-label="Preview views">
         <span className={styles.previewViews}>
           {(['board', 'flow', 'table', 'matrix'] as const).map((v) => (
-            <NavLink key={v} to={workspacePath(wid, v === 'board' ? undefined : v)} end={v === 'board'}>
+            <NavLink key={v} to={workspacePath(wid, v)}>
               {v}
             </NavLink>
           ))}

@@ -163,14 +163,17 @@ Values will be tuned against contrast checks (WCAG AA for text).
   link or text, their floating bar waits
 
 ### HUD (D-027, D-053, D-054)
-- Fixed top bar, same on every page: breadcrumb left (`# north-star / workspaces / <name>`), actions right.
+- Fixed top bar, same on every page: breadcrumb left (`# north-star / workspaces / <name>`), actions right. It moves to a
+  left side nav piece by piece (D-175 first).
 - Screen-edge margins come only from `--hud-x` / `--hud-y` (toolbar, panels and status line too).
 
 - In a workspace, the views sit beside the breadcrumb as unframed tabs after a vertical rule (current view bright with a sliding magenta underline; D-066), and the right side holds one
   people here (D-169: squares only, no names, overlapping, name on hover, the first three then
-  `+N`, which opens a framed list of everyone with their view; click follows), then the
-  account chip (avatar initial + name; just the initial below 640 px) and, beside it, a framed ⚙ icon button (cyan count in the
-  corner when people wait to join). The chip opens settings on the account page, the gear on the last page used. It opens the settings
+  `+N`, which opens a framed list of everyone with their view; click follows).
+- You and settings sit in the bottom-left corner, `--space-3` from the edges (D-175), stacked like the foot of the side nav
+  the HUD is becoming: a short horizontal rule, your square (initial, name on hover), the ⚙ icon button under it (cyan count in
+  the corner when people wait to join). Whatever else sits bottom left (board toolbar, threads panel, page padding) stays
+  `--corner-h` above it. The square opens settings on the account page, the gear on the last page used. It opens the settings
   modal (D-064, D-097): a side menu on the left in three groups, `YOU` (account, display), `WORKSPACE <name>` (general, people,
   export; only inside a workspace) and `ASSISTANT` (keys, usage); the current page gets a cyan left bar. The page on the right
   has a title, a one-line description, and framed sections (label set into the top edge, rows split by hairlines, an optional

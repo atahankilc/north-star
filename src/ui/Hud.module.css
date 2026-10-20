@@ -75,6 +75,40 @@ a.link:hover {
   text-overflow: ellipsis;
 }
 
+/* The top of the side nav (D-176), level with the corner below it. */
+.side {
+  position: fixed;
+  left: var(--space-3);
+  top: var(--hud-h);
+  /* As wide as the create button, so the corner below lines up with it. */
+  width: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Bottom left (D-175), stacked like the foot of a side nav (the HUD becomes one), close to the edge: a rule, your
+   square, the gear. */
+.corner {
+  position: fixed;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  width: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg-dim);
+}
+
+.corner::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--line);
+}
+
 .right {
   display: flex;
   align-items: center;

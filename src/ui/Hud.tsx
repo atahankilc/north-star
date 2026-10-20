@@ -1,4 +1,5 @@
-// The top bar on every page: breadcrumb and view menu bar on the left, page actions and settings on the right.
+// The top bar on every page: breadcrumb and view menu bar on the left, page actions on the right; you and settings in
+// the bottom-left corner (D-175). The HUD moves to the left piece by piece.
 // Same position and margins everywhere (--hud-x / --hud-y), so nothing shifts between pages.
 import { motion } from 'motion/react'
 import { Fragment, type ReactNode } from 'react'
@@ -26,9 +27,11 @@ type Props = {
   settingsName?: string
   // Something in settings wants attention, e.g. people asking to join (D-062).
   settingsBadge?: number
+  // The top of the side nav, under the breadcrumb (D-176): the canvas's `+`.
+  side?: ReactNode
 }
 
-export function Hud({ crumbs = [], views, right, settings, settingsName, settingsBadge }: Props) {
+export function Hud({ crumbs = [], views, right, settings, settingsName, settingsBadge, side }: Props) {
   const atRoot = crumbs.length === 0
   const { user } = useAuth()
   const reduced = useMotion((s) => s.reduced)
@@ -90,9 +93,15 @@ export function Hud({ crumbs = [], views, right, settings, settingsName, setting
       )}
       <div className={styles.right} data-glide>
         {right}
-        {/* Settings (motion, theme, background) only once signed in; the landing has no controls. */}
-        {user && <SettingsButton workspace={settings} workspaceName={settingsName} badge={settingsBadge} />}
       </div>
+      {side && <div className={styles.side}>{side}</div>}
+      {/* You and settings (motion, theme, background) in the bottom-left corner (D-175), only once signed in; the
+          landing has no controls. */}
+      {user && (
+        <div className={styles.corner}>
+          <SettingsButton workspace={settings} workspaceName={settingsName} badge={settingsBadge} />
+        </div>
+      )}
     </header>
   )
 }

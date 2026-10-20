@@ -4,9 +4,6 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { workspacePath } from '../../app/paths'
 import type { AuthUser } from '../../data/auth'
-import { createExampleWorkspace } from '../../data/example'
-import { importWorkspace } from '../../data/importWorkspace'
-import { readBundle } from '../../io/bundle'
 import type { WithId } from '../../data/hooks'
 import type { JoinRequest, Workspace } from '../../data/model'
 import {
@@ -53,8 +50,6 @@ export function Workspaces({ user }: { user: AuthUser }) {
         <div className={styles.forms}>
           <CreateForm uid={user.id} onCreated={(id) => navigate(workspacePath(id))} />
           <JoinForm user={user} onJoined={(id) => navigate(workspacePath(id))} />
-          <ExampleStrip uid={user.id} onCreated={(id) => navigate(workspacePath(id))} />
-          <ImportStrip uid={user.id} onCreated={(id) => navigate(workspacePath(id))} />
         </div>
 
         <Pending user={user} onJoined={(id) => navigate(workspacePath(id))} />
@@ -69,8 +64,8 @@ export function Workspaces({ user }: { user: AuthUser }) {
                 <WorkspaceCard
                   workspace={w}
                   uid={user.id}
-                  // An existing workspace opens on its overview (D-144); a new one on the board.
-                  onOpen={() => navigate(workspacePath(w.id, 'overview'))}
+                  // Every workspace opens on its canvas (D-174).
+                  onOpen={() => navigate(workspacePath(w.id))}
                 />
               </Appear>
             ))}
@@ -270,91 +265,6 @@ function CreateForm({ uid, onCreated }: { uid: string; onCreated: (id: string) =
   )
 }
 
-// D-052: a filled-in workspace to explore every view with.
-function ExampleStrip({ uid, onCreated }: { uid: string; onCreated: (id: string) => void }) {
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const create = async () => {
-    setBusy(true)
-    setError(null)
-    try {
-      onCreated(await createExampleWorkspace(uid))
-    } catch (err) {
-      setError((err as Error).message)
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Appear className={styles.example}>
-      <span className={styles.label}>example</span>
-      <p className={styles.exampleText}>
-        A made-up startup with every view filled in: customers, problems, competitors, ideas, a roadmap and the matrix.
-      </p>
-      <AsciiButton accent="green" onClick={create} disabled={busy}>
-        {busy ? 'creating' : 'create example'}
-      </AsciiButton>
-      {error && <p className={styles.error}>! {error}</p>}
-    </Appear>
-  )
-}
-
-// D-080: an exported .zip becomes a new workspace you own.
-function ImportStrip({ uid, onCreated }: { uid: string; onCreated: (id: string) => void }) {
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  // Imported, but its attachments had to stay behind (D-083): say so before going there.
-  const [leftOut, setLeftOut] = useState<{ id: string; files: number } | null>(null)
-  const input = useRef<HTMLInputElement>(null)
-
-  const load = async (file: File | undefined) => {
-    if (!file) return
-    setBusy(true)
-    setError(null)
-    setLeftOut(null)
-    try {
-      const bundle = await readBundle(file)
-      const result = await importWorkspace(bundle, uid)
-      if (result.filesLeftOut) {
-        setLeftOut({ id: result.workspaceId, files: result.filesLeftOut })
-        setBusy(false)
-      } else onCreated(result.workspaceId)
-    } catch (err) {
-      setError((err as Error).message)
-      setBusy(false)
-    } finally {
-      if (input.current) input.current.value = ''
-    }
-  }
-
-  return (
-    <Appear className={styles.example}>
-      <span className={styles.label}>import</span>
-      <p className={styles.exampleText}>
-        A workspace exported from North Star (.zip, in settings → workspace) becomes a new workspace you own.
-      </p>
-      <input ref={input} type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => void load(e.target.files?.[0])} />
-      <AsciiButton accent="cyan" onClick={() => input.current?.click()} disabled={busy}>
-        {busy ? 'importing' : 'choose file'}
-      </AsciiButton>
-      {leftOut && (
-        <>
-          <p className={styles.exampleText}>
-            Imported. Its {leftOut.files} {leftOut.files === 1 ? 'attachment was' : 'attachments were'} left out: files can't be
-            stored here yet.
-          </p>
-          <AsciiButton accent="green" onClick={() => onCreated(leftOut.id)}>
-            open workspace
-          </AsciiButton>
-        </>
-      )}
-      {error && <p className={styles.error}>! {error}</p>}
-    </Appear>
-  )
-}
-
-// D-062: the code only asks; the owner lets you in from their settings.
 function JoinForm({ user, onJoined }: { user: AuthUser; onJoined: (id: string) => void }) {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)

@@ -2,24 +2,17 @@
 // link still boots the app.
 import { MotionConfig } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from '../data/auth'
 import { useHoldCurtain } from '../state/curtain'
 import { useDisplay } from '../state/display'
 import { useMotion } from '../state/motion'
 import { Backdrop } from '../three/Backdrop'
 import { Curtain } from '../ui/Curtain'
-import { BoardView } from '../views/canvas/BoardView'
-import { FlowView } from '../views/flow/FlowView'
 import { Landing } from '../views/landing/Landing'
-import { MatrixView } from '../views/matrix/MatrixView'
-import { PrioritiesView } from '../views/priorities/PrioritiesView'
-import { OverviewView } from '../views/overview/OverviewView'
-import { ReportsView } from '../views/reports/ReportsView'
-import { TableView } from '../views/table/TableView'
 import { WorkspaceLayout } from '../views/workspace/WorkspaceLayout'
 import { Workspaces } from '../views/workspaces/Workspaces'
-import { upgradeLegacyUrl, WORKSPACES } from './paths'
+import { upgradeLegacyUrl, WORKSPACES, workspacePath } from './paths'
 
 upgradeLegacyUrl()
 
@@ -37,8 +30,6 @@ export function App() {
 
 function Shell() {
   const { isLoading, user, error } = useAuth()
-  const { pathname } = useLocation()
-  const onBoard = Boolean(user) && pathname.startsWith(`${WORKSPACES}/`)
   // Signing out goes back to the landing at `/`. Opening a link while signed out shows the landing at `/` too, and
   // signing in then continues to that link; a link left over from signing out is not remembered.
   const wasSignedIn = useRef(false)
@@ -54,25 +45,17 @@ function Shell() {
 
   return (
     <>
-      {/* The ambient field steps back on the board so cards stay legible. */}
-      {field && <Backdrop dim={onBoard} />}
+      {/* The canvas shows the field at full strength (D-174); its pieces carry their own backgrounds (D-176). */}
+      {field && <Backdrop />}
       {!isLoading && (
         <Routes>
           {user ? (
             <>
               <Route path={WORKSPACES} element={<Workspaces user={user} />} />
-              <Route path={`${WORKSPACES}/:wid`} element={<WorkspaceLayout />}>
-                <Route index element={<BoardView />} />
-                <Route path="focus" element={<BoardView focusMode />} />
-                <Route path="flow" element={<FlowView />} />
-                <Route path="table" element={<TableView />} />
-                <Route path="matrix" element={<MatrixView />} />
-                <Route path="priorities" element={<PrioritiesView />} />
-                <Route path="overview" element={<OverviewView />} />
-                <Route path="reports" element={<ReportsView />} />
-                {/* Old per-type pages (D-036) now live on the board (D-040). */}
-                <Route path="*" element={<Navigate to=".." replace />} />
-              </Route>
+              <Route path={`${WORKSPACES}/:wid`} element={<WorkspaceLayout />} />
+              {/* No pages any more (D-174, D-177): the old views are archived (src/archive/) and come back as pieces on the
+                  canvas. Their old paths open the canvas. */}
+              <Route path={`${WORKSPACES}/:wid/*`} element={<ToCanvas />} />
               <Route path="/" element={<AfterSignIn />} />
               <Route path="*" element={<Navigate to={WORKSPACES} replace />} />
             </>
@@ -87,6 +70,11 @@ function Shell() {
       <Curtain field={field} />
     </>
   )
+}
+
+function ToCanvas() {
+  const { wid = '' } = useParams()
+  return <Navigate to={workspacePath(wid)} replace />
 }
 
 type Continue = { next?: string }

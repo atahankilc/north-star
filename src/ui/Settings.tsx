@@ -1,6 +1,6 @@
-// Settings (D-054, D-064, D-097): your account chip and an icon button sit side by side in the HUD; either opens a modal with a
-// grouped side menu on the left and the chosen page on the right: you (account, display), the current workspace (general,
-// people, export) and the assistant (keys, usage; D-073, D-077, D-079).
+// Settings (D-054, D-064, D-097): your square and the gear, bottom left (D-175); either opens a modal with a grouped side
+// menu on the left and the chosen page on the right: you (account, display) and the current workspace (general, people).
+// The assistant's pages (keys, usage) and export are archived (D-177).
 // A native <dialog>: focus stays inside, Escape and the backdrop close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../data/auth'
@@ -8,8 +8,6 @@ import { usePresence } from '../data/presence'
 import { useDisplay, type BackgroundPref } from '../state/display'
 import { useMotion, type MotionPref } from '../state/motion'
 import { themeAccent, useTheme, type ThemePref } from '../state/theme'
-import { AiKeysPage } from './AiSettings'
-import { AiUsagePage } from './AiUsage'
 import { AsciiButton } from './AsciiButton'
 import { Choice } from './Choice'
 import styles from './Settings.module.css'
@@ -19,22 +17,19 @@ const BACKGROUND: readonly BackgroundPref[] = ['on', 'off']
 const THEME: readonly ThemePref[] = ['dark', 'light', 'system']
 
 // The workspace's own pages; WorkspaceLayout renders each (D-097).
-export type WorkspacePage = 'general' | 'people' | 'export'
-type Page = 'account' | 'display' | WorkspacePage | 'ai-keys' | 'ai-usage'
-type Group = 'you' | 'workspace' | 'assistant'
+export type WorkspacePage = 'general' | 'people'
+type Page = 'account' | 'display' | WorkspacePage
+type Group = 'you' | 'workspace'
 
-// The menu, in three groups (D-097): you, this workspace, the assistant.
+// The menu, in groups (D-097): you, this workspace.
 const PAGES: { id: Page; label: string; title: string; about: string; group: Group }[] = [
   { id: 'account', label: 'account', title: 'Account', about: 'Who you are signed in as.', group: 'you' },
   { id: 'display', label: 'display', title: 'Display', about: 'How North Star looks and moves in this browser.', group: 'you' },
   { id: 'general', label: 'general', title: 'Workspace', about: 'Its name and what the team is building.', group: 'workspace' },
   { id: 'people', label: 'people', title: 'People', about: 'Who is in this workspace and how others get in.', group: 'workspace' },
-  { id: 'export', label: 'export', title: 'Export', about: 'Take the workspace with you as files.', group: 'workspace' },
-  { id: 'ai-keys', label: 'keys', title: 'Assistant keys', about: 'The OpenAI key the assistant uses, and its models.', group: 'assistant' },
-  { id: 'ai-usage', label: 'usage', title: 'Assistant usage', about: 'What the assistant used here this month.', group: 'assistant' },
 ]
 
-const WORKSPACE_PAGES: readonly Page[] = ['general', 'people', 'export']
+const WORKSPACE_PAGES: readonly Page[] = ['general', 'people']
 
 type Props = {
   // The current workspace's pages, if there is one.
@@ -73,12 +68,11 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
 
   return (
     <>
-      <button className={styles.account} onClick={() => show('account')} aria-haspopup="dialog" aria-label={`Account: ${who}`}>
+      <button className={styles.account} onClick={() => show('account')} aria-haspopup="dialog" aria-label={`Account: ${who}`} title={who}>
         {/* In a workspace, your square is in the colour the others see you in (D-067). */}
         <span className={styles.chipAvatar} style={myColor ? { background: themeAccent(myColor, theme) } : undefined} aria-hidden>
           {who.trim()[0]?.toUpperCase()}
         </span>
-        <span className={styles.chipName}>{who}</span>
       </button>
       <button className={styles.trigger} data-open={open || undefined} onClick={() => show()} aria-haspopup="dialog" aria-label={`Settings${badge > 0 ? `, ${badge} waiting` : ''}`}>
         <span className={styles.gear} aria-hidden>
@@ -101,7 +95,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
         {open && (
           <div className={styles.inner}>
             <nav className={styles.nav} aria-label="Settings">
-              {(['you', 'workspace', 'assistant'] as const).map((g) => {
+              {(['you', 'workspace'] as const).map((g) => {
                 const items = pages.filter((p) => p.group === g)
                 if (items.length === 0) return null
                 return (
@@ -160,10 +154,6 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
               )}
 
               {workspace && WORKSPACE_PAGES.includes(current.id) && workspace(current.id as WorkspacePage)}
-
-              {current.id === 'ai-keys' && <AiKeysPage />}
-
-              {current.id === 'ai-usage' && <AiUsagePage />}
             </div>
 
             <button className={styles.close} onClick={() => setOpen(false)} aria-label="Close settings">

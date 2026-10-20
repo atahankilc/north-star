@@ -8,7 +8,8 @@
 .tools {
   position: absolute;
   left: var(--hud-x);
-  bottom: var(--hud-y);
+  /* Above you and settings (D-175). */
+  bottom: calc(var(--hud-y) + var(--corner-h));
   z-index: 2;
   display: flex;
   align-items: center;
