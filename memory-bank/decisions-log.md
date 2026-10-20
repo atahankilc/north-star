@@ -2591,7 +2591,9 @@ categories shown like B, not in a card, and the features under them not indented
 - *Blur behind:* "the features may overlap with other things. Lets just blur the background of feature list": behind an
   open list, a plate shows the board under it blurred (each frame it shows, the board without the list is drawn into a
   quarter-size picture, sampled 7 × 7 round each pixel, 14 css px) and 35% toward the page colour; no edge, no fill of
-  its own; it fades and shrinks with the list (`ListBlur` in SideList.tsx). One extra board render per frame while open.
+  its own; it fades and shrinks with the list. The user: "it laggsss so much with that effect", since it drew the whole
+  board twice a frame. Replaced the same day by a soft shade: one plate in the page colour, 90% in the middle, fading
+  out over its last 0.12 (`ListShade` in SideList.tsx), no extra render. Don't bring back a real blur on the board.
 - *Verified* headless (emulators, Tablebook): hovering a competitor leaves it closed; selecting opens it with category
   names over un-indented rows; with ShiftGrid dragged onto Crewly, the open list's meshes draw after Crewly's closed
   rows (logged draw order) and its names show over them; `tsc`.
