@@ -1,8 +1,9 @@
 // /workspaces/:wid: the workspace's canvas (D-174, D-176). An infinite space over the flowing backdrop, with no grid
 // marks. Planes are placed on it from the side nav's `+`, at the middle of the screen; tables and the rest come later.
-// Drag empty space to pan, the wheel zooms round the pointer. A plane's inside will be its own to control, so a plane is
-// moved, resized and renamed only in edit mode (D-180), switched on and off from its console; in edit mode it's
-// selected, and Delete takes it away. Escape or a click on empty space lets go of the selection.
+// Drag to pan, the wheel zooms round the pointer: always the canvas, over a plane too (D-186), until a plane is in focus,
+// when they're the plane's (FocusedPlane). A plane is moved, resized and renamed only in edit mode (D-180), switched on
+// and off from its console; in edit mode it takes the drag, it's selected, and Delete takes it away. Escape or a click on
+// empty space lets go of the selection. `0` (or the side nav's fit) frames everything, or in focus the plane's contents.
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
@@ -11,7 +12,7 @@ import type { Piece } from '../../data/model'
 import { deletePiece, KIND_NAME, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import { canEditIn } from '../../data/workspaces'
-import { camOf, setCam, setEditing, useCanvasView, type Cam, type ScreenRect } from '../../state/canvasView'
+import { camOf, fitCanvas, fitPlane, setCam, setEditing, useCanvasView, type Cam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
 import styles from './CanvasView.module.css'
@@ -53,6 +54,8 @@ export function CanvasView() {
   const focusedRef = useRef(false)
   focusedRef.current = Boolean(focused)
   const unfocusRef = useRef(() => {})
+  const piecesRef = useRef(pieces)
+  piecesRef.current = pieces
   // Where a plane is on screen now.
   const screenRect = (p: Piece): ScreenRect => {
     const c = camOf(wid)
@@ -122,6 +125,12 @@ export function CanvasView() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t?.closest('input, textarea, [contenteditable], dialog')) return
+      // Fit (D-186): the canvas's planes, or in focus the plane's contents.
+      if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (focusedRef.current) fitPlane(null)
+        else fitCanvas(wid, piecesRef.current)
+        return
+      }
       // In focus, Escape goes back to the canvas.
       if (focusedRef.current) {
         if (e.key === 'Escape') unfocusRef.current()
@@ -193,7 +202,11 @@ export function CanvasView() {
           spread={focusSpread}
           leaving={focusLeaving}
           lens={lens}
-          onArrived={() => useCanvasView.setState({ focusArrived: true })}
+          // Once there, its contents centred and fitted to the screen (D-186); a plane holds nothing yet.
+          onArrived={() => {
+            useCanvasView.setState({ focusArrived: true })
+            fitPlane(null)
+          }}
           onLeft={left}
         >
           {/* Once it's there, and gone the moment it leaves (D-185): bottom left, the right of the screen kept free. */}
@@ -259,12 +272,11 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing }: 
   }, [held, piece])
   const box = held ?? piece
 
-  // A press inside a plane is the plane's (it will control what's in it), so the canvas never pans from it. In edit mode
-  // it selects the plane, and moving or one of the handles changes its box (5 px before a press turns into a drag).
+  // Out of edit mode a press on a plane is the canvas's: it pans (D-186). In edit mode it selects the plane, and moving or
+  // one of the handles changes its box (5 px before a press turns into a drag).
   const press = (handle: Handle) => (e: ReactPointerEvent<HTMLElement>) => {
-    if (e.button !== 0) return
+    if (e.button !== 0 || !editing) return
     e.stopPropagation()
-    if (!editing) return
     useCanvasView.setState({ selected: piece.id })
     const [sx, sy] = [e.clientX, e.clientY]
     const from: Box = { x: piece.x, y: piece.y, w: piece.w, h: piece.h }
@@ -361,8 +373,8 @@ function NameField({ value, placeholder, onSave }: { value: string; placeholder:
 }
 
 // A plane's console (D-179, D-180, D-181): always open, just outside the plane under its bottom-right corner, a terminal
-// line like the assistant's chat: `▸ zoom [−] 100% [+] [focus] [edit]` (no name: it's on the plane, D-182). Zoom is only
-// drawn for now; `focus` makes the plane the view (D-184), where the console sits in the screen's corner with `unfocus`.
+// line like the assistant's chat: `▸ [focus] [edit]` (no name: it's on the plane, D-182; no zoom: the wheel does it,
+// D-186). `focus` makes the plane the view (D-184), where the console sits bottom left with `unfocus`.
 // In edit mode it turns into a status line with the plane's live size and what can be done, `[delete]` (confirmed first,
 // D-182) and `[done]`, which ends edit mode. Viewers never get to edit mode.
 type ConsoleProps = {
@@ -405,14 +417,6 @@ function PlaneConsole({ size, focused, onFocus, onEdit, onDelete, className }: C
       ) : (
         <>
           <span className={styles.prompt}>▸</span>
-          <span>zoom</span>
-          <button className={styles.tool} aria-label="Zoom out" title="zoom out">
-            −
-          </button>
-          <span className={styles.zoom}>100%</span>
-          <button className={styles.tool} aria-label="Zoom in" title="zoom in">
-            +
-          </button>
           <button className={styles.tool} aria-pressed={focused} title={focused ? 'back to the canvas (Esc)' : 'make the plane the view'} onClick={onFocus}>
             {focused ? 'unfocus' : 'focus'}
           </button>

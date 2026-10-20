@@ -167,7 +167,7 @@ piece; check them with the user then.
   it move, resize (≥ 320 × 200) and take a name (the name is a field), and Delete removes it; edit stays on until
   pressed off (D-180).
 - Plane look (D-179, D-181): terminal style (picked from four on a preview): name set into the top edge, the console a
-  command line outside under the bottom-right corner, `▸ zoom [−] 100% [+] [focus] [edit]` (no name; zoom drawn only);
+  command line outside under the bottom-right corner, `▸ [focus] [edit]` (no name, no zoom: D-186);
   the cards' corner marks, grey on hover; edit mode = a faint dashed cyan edge, long cyan corner marks that resize, short
   bars at the edge middles, and the console a cyan status line `EDIT ▸ 960 × 600 · drag to move · corners to resize
   [delete] [done]` (D-182).
@@ -177,6 +177,10 @@ piece; check them with the user then.
   `[unfocus]` or Esc draws it back into the plane (700 ms). The plane's console goes the moment it starts; in focus the
   console sits bottom left, right of the gear, once arrived: keep the right of the screen free. Breadcrumb ends with the
   plane's name; no `+` in focus. Reduced motion: no transition. What's different inside: the user will say.
+- Pan and zoom (D-186): out of focus, drags and the wheel are always the canvas's, over a plane too (only edit mode
+  takes the drag); in focus they're the plane's own view (`planeCam`), which glides home as focus leaves. A plane always
+  shows its contents centred and fitted to its box; fit (side nav icon under `+`, key `0`) frames all planes on the
+  canvas (≤ 1, 96 px round), or in focus the plane's contents (empty for now: its starting view); arriving in focus fits.
 - Planes snap to the canvas's 25 px grid (their `+` step) when moved, resized or added; alt = free; min 325 × 200 (D-182).
 - Deleting a plane (console `[delete]` or Delete in edit mode) asks first in the hazard confirm (`src/ui/HazardConfirm.tsx`,
   for anything that can't be taken lightly): the screen darkens, the box steps in, ASCII hazard tape `╱╱╱` wraps round it

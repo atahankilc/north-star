@@ -33,7 +33,8 @@
   place-items: center;
   border: 1px solid var(--line-hover);
   background: var(--bg);
-  cursor: default;
+  /* Out of edit mode it pans the canvas like empty space (D-186). */
+  cursor: inherit;
   transition: border-color var(--dur-fast) var(--ease-out);
 }
 
@@ -225,10 +226,6 @@
   color: var(--accent-magenta);
 }
 
-.zoom {
-  color: var(--fg-dim);
-}
-
 /* What edit mode lets you do, quieter than the size. */
 .hint {
   color: var(--fg-faint);
@@ -241,6 +238,15 @@
   inset: 0;
   z-index: 4;
   background: var(--bg);
+  /* Its own view pans (D-186). */
+  cursor: grab;
+}
+
+.focused[data-panning='true'] {
+  cursor: grabbing;
+}
+
+.focused .console {
   cursor: default;
 }
 

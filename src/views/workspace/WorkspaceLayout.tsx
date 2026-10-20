@@ -20,7 +20,7 @@ import {
   useJoinRequests,
   useWorkspace,
 } from '../../data/workspaces'
-import { canvasCenter, useCanvasView } from '../../state/canvasView'
+import { canvasCenter, fitCanvas, fitPlane, useCanvasView } from '../../state/canvasView'
 import { useHoldCurtain } from '../../state/curtain'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { DecodeText } from '../../ui/DecodeText'
@@ -89,12 +89,36 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={requests.data} />}
           settingsName={workspace.name}
           settingsBadge={requests.data.length}
-          side={editor && !focused ? <AddToCanvas wid={wid} /> : undefined}
+          side={
+            <>
+              {editor && !focused && <AddToCanvas wid={wid} />}
+              <FitButton wid={wid} focused={Boolean(focused)} />
+            </>
+          }
         />
         {!isLoading && <CanvasView />}
         <Toast />
       </div>
     </WorkspaceContext.Provider>
+  )
+}
+
+// The side nav's fit (D-186), under the `+`; `0` does the same: everything on the canvas in view, or in focus the plane's
+// contents centred and fitted.
+function FitButton({ wid, focused }: { wid: string; focused: boolean }) {
+  const { pieces } = useWs()
+  return (
+    <button
+      className={styles.fit}
+      aria-label={focused ? 'Fit the plane to the screen' : 'Fit everything on the canvas'}
+      title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
+      onClick={() => (focused ? fitPlane(null) : fitCanvas(wid, pieces))}
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+        <path d="M1 6V1h5M12 1h5v5M17 12v5h-5M6 17H1v-5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="6" y="6" width="6" height="6" fill="none" stroke="currentColor" strokeWidth="1" />
+      </svg>
+    </button>
   )
 }
 

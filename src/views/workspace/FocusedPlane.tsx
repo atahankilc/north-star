@@ -3,12 +3,13 @@
 // grid (D-034's cells), nearest the plane first with a ragged edge, until it has swallowed the screen. Nothing zooms and
 // its `+` marks never move: the layer carries them on the plane's own grid at the canvas's zoom, and only its cut grows.
 // Coming back (`[unfocus]`, Escape) the ink draws back into wherever the plane is now. Reduced motion: it's just there,
-// or just gone.
-import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
+// or just gone. In focus the wheel and drags are the plane's (D-186): they move its own view (`planeCam`), and going back
+// it glides home to how it sat on the canvas while the ink draws in.
+import { useEffect, useLayoutEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { GRID } from '../../data/pieces'
-import type { ScreenRect } from '../../state/canvasView'
+import { glide, stopGlide, useCanvasView, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { CELL_PX, cellHash } from '../../ui/cellReveal'
 import styles from './CanvasView.module.css'
@@ -17,6 +18,9 @@ const IN_MS = 820
 const OUT_MS = 700
 // How much the cells' order is left to chance: the rest is their distance from the plane.
 const RAGGED = 0.18
+
+const ZOOM_MIN = 0.1
+const ZOOM_MAX = 4
 
 const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 
@@ -36,6 +40,65 @@ type Props = {
 export function FocusedPlane({ piece, at, spread, leaving, lens, onArrived, onLeft, children }: Props) {
   const layer = useRef<HTMLDivElement>(null)
   const reduced = isReducedMotion()
+  // Where the plane's (0, 0) is on the canvas: inside its 1 px edge.
+  const home: PlaneCam = { ox: at.x + at.zoom, oy: at.y + at.zoom, zoom: at.zoom }
+  const cam = useCanvasView((s) => s.planeCam) ?? home
+  useLayoutEffect(() => {
+    useCanvasView.setState({ planeCam: home, planeHome: home })
+    return () => {
+      stopGlide()
+      useCanvasView.setState({ planeCam: null, planeHome: null })
+    }
+    // On mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  // The canvas under it can move (a resize re-centres it): home follows.
+  useEffect(() => {
+    useCanvasView.setState({ planeHome: home })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [home.ox, home.oy, home.zoom])
+
+  // The wheel zooms the plane's own view round the pointer; a listener of our own, since React's are passive.
+  useEffect(() => {
+    const el = layer.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const { planeCam: c, focusLeaving } = useCanvasView.getState()
+      if (!c || focusLeaving) return
+      stopGlide()
+      const r = el.getBoundingClientRect()
+      const px = e.clientX - r.left
+      const py = e.clientY - r.top
+      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, c.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))))
+      const k = zoom / c.zoom
+      useCanvasView.setState({ planeCam: { zoom, ox: px - (px - c.ox) * k, oy: py - (py - c.oy) * k } })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
+
+  // A drag anywhere on it (not its console) pans the plane's own view.
+  const pan = (e: ReactPointerEvent<HTMLDivElement>) => {
+    e.stopPropagation()
+    const { planeCam: start, focusLeaving } = useCanvasView.getState()
+    if ((e.button !== 0 && e.button !== 1) || !start || focusLeaving) return
+    stopGlide()
+    const el = e.currentTarget
+    const [sx, sy] = [e.clientX, e.clientY]
+    el.setPointerCapture(e.pointerId)
+    el.dataset.panning = 'true'
+    const move = (ev: PointerEvent) => useCanvasView.setState({ planeCam: { ...start, ox: start.ox + ev.clientX - sx, oy: start.oy + ev.clientY - sy } })
+    const up = () => {
+      delete el.dataset.panning
+      el.removeEventListener('pointermove', move)
+      el.removeEventListener('pointerup', up)
+      el.removeEventListener('pointercancel', up)
+    }
+    el.addEventListener('pointermove', move)
+    el.addEventListener('pointerup', up)
+    el.addEventListener('pointercancel', up)
+  }
 
   // Going in. The canvas behind is hidden once the plane is the view, and shows again as it goes.
   useLayoutEffect(() => {
@@ -66,16 +129,19 @@ export function FocusedPlane({ piece, at, spread, leaving, lens, onArrived, onLe
     if (!leaving) return
     if (!l || !el || reduced) return onLeft()
     l.style.visibility = ''
+    // Its own view goes home while the ink draws back, so its marks end where the plane's are.
+    const { planeCam: c } = useCanvasView.getState()
+    if (c) glide(c, home, OUT_MS * 0.8, (v) => useCanvasView.setState({ planeCam: v }))
     return ink(el, at, 'out', OUT_MS, onLeft)
     // When it starts leaving.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaving])
 
-  // The plane's own marks, wherever it is: its grid starts inside its 1 px edge and runs every GRID × zoom.
-  const step = GRID * at.zoom
-  const marks = { '--mark': `${step}px`, '--mx': `${at.x + at.zoom - step / 2}px`, '--my': `${at.y + at.zoom - step / 2}px` } as CSSProperties
+  // The plane's own marks on its own view: every GRID plane px, from its (0, 0).
+  const step = GRID * cam.zoom
+  const marks = { '--mark': `${step}px`, '--mx': `${cam.ox - step / 2}px`, '--my': `${cam.oy - step / 2}px` } as CSSProperties
   return (
-    <div ref={layer} className={styles.focused} style={marks} data-reduced={reduced || undefined} onPointerDown={(e) => e.stopPropagation()} aria-label={piece.name || 'plane'}>
+    <div ref={layer} className={styles.focused} style={marks} data-reduced={reduced || undefined} onPointerDown={pan} aria-label={piece.name || 'plane'}>
       {children}
     </div>
   )

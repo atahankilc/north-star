@@ -2786,3 +2786,21 @@ categories shown like B, not in a card, and the features under them not indented
   Reduced motion: no ink, no steps. Streaks, lens scaling and the registered `--mark` property are gone.
 - *Verified* headless with time driven by hand: frames at 200/400/600/900 ms, the marks in the same columns and rows
   before and mid-spread; the console bottom left once there; Esc draws it back and the address loses `?focus`; build.
+
+### D-186 · 2026-10-21 · Accepted (changes D-180's "a press on a plane is the plane's" and D-181's console)
+- *Decision:* out of focus, panning and zooming are always the canvas's: a press on a plane (out of edit mode) pans the
+  canvas like empty space, and the wheel over it zooms the canvas. In focus they pass to the plane: its own view
+  (`planeCam` in canvasView.ts: where its (0, 0) is on screen and its zoom, 0.1–4) zooms round the pointer and pans by
+  drag, its `+` marks following; leaving focus it glides home (to how it sat on the canvas) while the ink draws back.
+- *Fit:* the old board's fit-all (D-060) comes back as an icon button in the side nav under the `+` (frame corners round a
+  square), and the `0` key: on the canvas it glides the camera to frame every plane (zoom ≤ 1, 96 px round, 420 ms eased
+  both ends); in focus it fits the plane's contents to the screen, and arriving in focus does the same. A plane always
+  shows what's in it centred and fitted to its own box. Planes hold nothing yet, so fitting a plane means its starting view.
+- *Console:* no zoom any more: `▸ [focus] [edit]`, in focus `▸ [unfocus]`.
+- *User:* "ben focus yapmadığım sürece zoom ve drag yaparken hep ana ekran üzerinde yapıyorum. Focus atınca focus attığım
+  component'e geçiyor bu özellikler … zoom olayını console'dan çıkaralım … component'ler her zaman içinde ne varsa onları
+  sığdırmaya çalışsın … önceden ortalama tuşumuz vardı ya board'da, o hem focus olmadığı durumda olsun hem de focus sonrası
+  yine content ortalansın".
+- *Verified* headless: a drag on a plane moved it (−100, −50) with the canvas; the wheel over it zoomed the canvas; fit
+  centred it; in focus the wheel changed only the plane's marks (25 → 39 px) and the canvas didn't move, a drag panned
+  them, `0` took them home; Esc left; the console reads `▸ focus edit`; build.

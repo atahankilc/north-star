@@ -127,3 +127,22 @@
 :global([data-viewer] button[data-viewer-locked]:not([data-edit])) {
   display: none;
 }
+
+/* The side nav's fit (D-186): an unframed icon button like the gear. */
+.fit {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.fit:hover,
+.fit:focus-visible {
+  color: var(--fg-strong);
+}
