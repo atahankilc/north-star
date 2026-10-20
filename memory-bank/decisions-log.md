@@ -2588,6 +2588,10 @@ categories shown like B, not in a card, and the features under them not indented
 - *Rows like cards:* "no need for grey border… in line with our new card designs", and the same for folded parts' rows:
   every row (competitor features and folded parts) is card paper with a solid accent strip and no edge; hovered, grey
   corner marks a little out; selected, accent corner marks close in (`CardCorners`, kept out of pointer hits).
+- *Blur behind:* "the features may overlap with other things. Lets just blur the background of feature list": behind an
+  open list, a plate shows the board under it blurred (each frame it shows, the board without the list is drawn into a
+  quarter-size picture, sampled 7 × 7 round each pixel, 14 css px) and 35% toward the page colour; no edge, no fill of
+  its own; it fades and shrinks with the list (`ListBlur` in SideList.tsx). One extra board render per frame while open.
 - *Verified* headless (emulators, Tablebook): hovering a competitor leaves it closed; selecting opens it with category
   names over un-indented rows; with ShiftGrid dragged onto Crewly, the open list's meshes draw after Crewly's closed
   rows (logged draw order) and its names show over them; `tsc`.

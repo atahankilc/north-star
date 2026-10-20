@@ -34,8 +34,9 @@ descriptions live in the side panel only (D-057).
   Open, there's no tray or heading round it: each category's name and count in small grey capitals (`BOOKING  3`), its
   rows under it at the same left edge (not indented), each row a name on card paper with the type colour down its left
   and no edge round it, corner marks when hovered or selected as a card has (folded parts' rows too), a cyan bar when
-  it matches one of ours, and its availability on the right. An open list, and one still closing, sits over every card (a dragged one too) and every
-  other list. Clicking the open competitor again changes nothing; clicking elsewhere closes it; dragging it closes it
+  it matches one of ours, and its availability on the right. An open list, and one still closing, sits over every card
+  (a dragged one too) and every other list, with what's under it blurred and dimmed toward the page colour (no edge, no
+  fill of its own), fading and shrinking with the list. Clicking the open competitor again changes nothing; clicking elsewhere closes it; dragging it closes it
   until it's dropped. Clicking a row opens it unfolded in the competitor's panel; shift+dragging a card onto a row links to it
   (`inspired by`). Links to a feature end at its row while it shows, otherwise at the competitor.
 - **Parts** (D-164): a feature linked to another with `part of` is one of its parts (one parent each, the first link; a
