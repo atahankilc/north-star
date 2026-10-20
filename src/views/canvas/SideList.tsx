@@ -6,7 +6,7 @@
 // centre, so a dragged card carries its list with it exactly.
 import { Text } from '@react-three/drei'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
-import { useRef, useState, type ReactNode } from 'react'
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Group, Mesh, MeshBasicMaterial } from 'three'
 import type { WithId } from '../../data/hooks'
 import type { CompetitorFeature } from '../../data/model'
@@ -31,6 +31,10 @@ const PART_STEP = 0.26
 const INDENT = 0.2
 const DUR = 280
 const UNCATEGORIZED = 'uncategorized'
+
+// Decorations inside a row or the tray: the pointer only needs their plate, and every piece R3F tests costs time on
+// every pointer move.
+const noHit = () => null
 
 const ease = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2)
 
@@ -68,7 +72,25 @@ function useGlide(target: Pose, apply: (p: Pose) => void, start: Pose = target) 
   })
 }
 
+// True while `on`, and for a glide's length after it turns off, so what closes is drawn until it's gone and then
+// unmounted: a board with many competitors keeps only the rows that show.
+function useLinger(on: boolean) {
+  const [held, setHeld] = useState(on)
+  useEffect(() => {
+    if (on) {
+      setHeld(true)
+      return
+    }
+    const t = window.setTimeout(() => setHeld(false), isReducedMotion() ? 0 : DUR + 80)
+    return () => window.clearTimeout(t)
+  }, [on])
+  return on || held
+}
+
+const samePose = (a?: Pose, b?: Pose) => a === b || (!!a && !!b && KEYS.every((k) => a[k] === b[k]))
+
 type RowProps = {
+  id: string
   pose: Pose
   // Where it comes from when it first shows; where it should be, if not given.
   start?: Pose
@@ -80,14 +102,14 @@ type RowProps = {
   // Right-aligned, only in the open list: how it's offered.
   tag?: { text: string; color: string }
   selected?: boolean
-  onPress: () => void
+  onPress: (id: string) => void
   // A link drawn from a card and let go here.
-  onLinkDrop?: () => void
+  onLinkDrop?: (id: string) => void
   onHover?: (on: boolean) => void
 }
 
 // One name: a slim plate with a strip in the accent, the name in mono.
-function Row({ pose, start, name, accent, match, tag, selected, onPress, onLinkDrop, onHover }: RowProps) {
+const Row = memo(function Row({ id, pose, start, name, accent, match, tag, selected, onPress, onLinkDrop, onHover }: RowProps) {
   const group = useRef<Group>(null)
   const plate = useRef<Mesh>(null)
   const edge = useRef<Mesh>(null)
@@ -144,12 +166,12 @@ function Row({ pose, start, name, accent, match, tag, selected, onPress, onLinkD
         if (e.button === 2) e.stopPropagation()
         if (e.button !== 0 || !group.current?.visible) return
         e.stopPropagation()
-        if (!useCanvas.getState().linkFrom) onPress()
+        if (!useCanvas.getState().linkFrom) onPress(id)
       }}
       onPointerUp={(e) => {
         if (!useCanvas.getState().linkFrom || !onLinkDrop || !group.current?.visible) return
         e.stopPropagation()
-        onLinkDrop()
+        onLinkDrop(id)
         useCanvas.getState().endLink()
       }}
       // Hidden, it lets everything through to what's under it (R3F hits invisible objects too).
@@ -169,7 +191,7 @@ function Row({ pose, start, name, accent, match, tag, selected, onPress, onLinkD
         document.body.style.cursor = ''
       }}
     >
-      <mesh ref={edge} position={[0, 0, -0.002]}>
+      <mesh ref={edge} position={[0, 0, -0.002]} raycast={noHit}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial color={edgeColor} transparent toneMapped={false} depthWrite={false} />
       </mesh>
@@ -177,36 +199,50 @@ function Row({ pose, start, name, accent, match, tag, selected, onPress, onLinkD
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial color={colors.chip} transparent toneMapped={false} depthWrite={false} />
       </mesh>
-      <mesh ref={strip} position={[0, 0, 0.001]}>
+      <mesh ref={strip} position={[0, 0, 0.001]} raycast={noHit}>
         <planeGeometry args={[0.04, 1]} />
         <meshBasicMaterial color={accent} transparent toneMapped={false} depthWrite={false} />
       </mesh>
       {match && (
-        <mesh ref={mark} position={[0, 0, 0.002]}>
+        <mesh ref={mark} position={[0, 0, 0.002]} raycast={noHit}>
           <planeGeometry args={[0.035, TEXT * 1.1]} />
           <meshBasicMaterial color={colors.cyan} transparent toneMapped={false} depthWrite={false} />
         </mesh>
       )}
       {!readable && (
-        <mesh ref={bar} position={[0, 0, 0.002]}>
+        <mesh ref={bar} position={[0, 0, 0.002]} raycast={noHit}>
           <planeGeometry args={[barW, ROW_H * 0.36]} />
           <meshBasicMaterial color={colors.fgDim} transparent toneMapped={false} depthWrite={false} />
         </mesh>
       )}
-      <Text ref={label} visible={readable} font={fontUrls.mono} fontSize={TEXT} color={colors.fg} anchorX="left" anchorY="middle" position={[0, 0.004, 0.002]}>
+      <Text ref={label} raycast={noHit} visible={readable} font={fontUrls.mono} fontSize={TEXT} color={colors.fg} anchorX="left" anchorY="middle" position={[0, 0.004, 0.002]}>
         {truncate(name || 'Untitled', fit)}
       </Text>
       {tag && (
-        <Text ref={tagText} visible={readable} font={fontUrls.mono} fontSize={SMALL} letterSpacing={0.06} color={tag.color} anchorX="right" anchorY="middle" position={[0, 0.004, 0.002]}>
+        <Text ref={tagText} raycast={noHit} visible={readable} font={fontUrls.mono} fontSize={SMALL} letterSpacing={0.06} color={tag.color} anchorX="right" anchorY="middle" position={[0, 0.004, 0.002]}>
           {tag.text}
         </Text>
       )}
     </group>
   )
-}
+},
+(a, b) =>
+  a.id === b.id &&
+  a.name === b.name &&
+  a.accent === b.accent &&
+  a.match === b.match &&
+  a.selected === b.selected &&
+  a.tag?.text === b.tag?.text &&
+  a.tag?.color === b.tag?.color &&
+  a.onPress === b.onPress &&
+  a.onLinkDrop === b.onLinkDrop &&
+  a.onHover === b.onHover &&
+  samePose(a.pose, b.pose) &&
+  samePose(a.start, b.start),
+)
 
 // Small text that glides with the list: a category's name and count, `+N more`, the tray's heading.
-function Caption({ pose, children, color, size = SMALL, spacing = 0.12, right }: { pose: Pose; children: ReactNode; color: string; size?: number; spacing?: number; right?: ReactNode }) {
+function Caption({ pose, start, children, color, size = SMALL, spacing = 0.12, right }: { pose: Pose; start?: Pose; children: ReactNode; color: string; size?: number; spacing?: number; right?: ReactNode }) {
   const group = useRef<Group>(null)
   const left = useRef<Mesh & { fillOpacity: number }>(null)
   const end = useRef<Mesh & { fillOpacity: number }>(null)
@@ -226,7 +262,7 @@ function Caption({ pose, children, color, size = SMALL, spacing = 0.12, right }:
       end.current.position.x = p.w / 2
       end.current.fillOpacity = p.o
     }
-  })
+  }, start)
   return (
     <group ref={group} raycast={() => null}>
       <Text ref={left} raycast={() => null} visible={readable} font={fontUrls.mono} fontSize={size} letterSpacing={spacing} color={color} anchorX="left" anchorY="middle">
@@ -242,7 +278,7 @@ function Caption({ pose, children, color, size = SMALL, spacing = 0.12, right }:
 }
 
 // The open list's frame: a dark plate with a line in the accent along its top.
-function Tray({ pose, accent, onHover }: { pose: Pose; accent: string; onHover: (on: boolean) => void }) {
+function Tray({ pose, start, accent, onHover }: { pose: Pose; start?: Pose; accent: string; onHover: (on: boolean) => void }) {
   const group = useRef<Group>(null)
   const plate = useRef<Mesh>(null)
   const edge = useRef<Mesh>(null)
@@ -260,7 +296,7 @@ function Tray({ pose, accent, onHover }: { pose: Pose; accent: string; onHover: 
       top.current.position.y = p.h / 2
     }
     for (const m of [plate, edge, top]) if (m.current) (m.current.material as MeshBasicMaterial).opacity = p.o
-  })
+  }, start)
   return (
     <group
       ref={group}
@@ -276,7 +312,7 @@ function Tray({ pose, accent, onHover }: { pose: Pose; accent: string; onHover: 
       }}
       onClick={(e) => group.current?.visible && e.stopPropagation()}
     >
-      <mesh ref={edge} position={[0, 0, -0.001]}>
+      <mesh ref={edge} position={[0, 0, -0.001]} raycast={noHit}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial color={colors.hairline} transparent toneMapped={false} depthWrite={false} />
       </mesh>
@@ -284,7 +320,7 @@ function Tray({ pose, accent, onHover }: { pose: Pose; accent: string; onHover: 
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial color={colors.cardBehind} transparent toneMapped={false} depthWrite={false} />
       </mesh>
-      <mesh ref={top} position={[0, 0, 0.001]}>
+      <mesh ref={top} position={[0, 0, 0.001]} raycast={noHit}>
         <planeGeometry args={[1, 0.03]} />
         <meshBasicMaterial color={accent} transparent toneMapped={false} depthWrite={false} />
       </mesh>
@@ -339,11 +375,15 @@ type FeatureListProps = {
   onLinkDrop: (targetId: string) => void
 }
 
-// A competitor's features beside its card; the group is placed at the card's centre by the board.
-export function FeatureList({ features, open, matches, onHover, onLinkDrop }: FeatureListProps) {
+// A competitor's features beside its card; the group is placed at the card's centre by the board. Closed, only the
+// first few rows (and `+N more`) are mounted; the rest, the tray and the headings mount as it opens, gliding out of
+// where the closed list is, and unmount once closing has carried them back there.
+export const FeatureList = memo(function FeatureList({ features, open, matches, onHover, onLinkDrop }: FeatureListProps) {
   const colors = usePalette()
   const selectedId = useCanvas((s) => s.selectedId)
-  const spots = featureSpots(features, open)
+  const full = useLinger(open)
+  const closed = featureSpots(features, false)
+  const spots = open ? featureSpots(features, true) : closed
   const groups = byCategory(features)
   const tags: Record<string, string> = { free: colors.green, paid: colors.yellow, enterprise: colors.blue, beta: colors.magenta }
 
@@ -351,43 +391,53 @@ export function FeatureList({ features, open, matches, onHover, onLinkDrop }: Fe
   let bottom = TOP
   for (const p of spots.values()) if (p.o > 0) bottom = Math.min(bottom, p.y - p.h / 2)
   const trayH = TOP - bottom + 0.08
-  const tray = open ? pose(X0 + TRAY_W / 2, TOP - trayH / 2, TRAY_W, trayH) : pose(X0 + ROW_W / 2, TOP - 0.5, ROW_W, 1, 0)
+  const trayShut = pose(X0 + ROW_W / 2, TOP - 0.5, ROW_W, 1, 0)
+  const headShut = pose(X0 + ROW_W / 2, TOP - 0.14, ROW_W - 0.2, 0.1, 0)
   const more = features.length - FIRST
 
   return (
     <group>
-      <Tray pose={tray} accent={colors.yellow} onHover={onHover} />
-      <Caption pose={open ? pose(X0 + TRAY_W / 2, TOP - 0.14, TRAY_W - 0.2, 0.1) : pose(X0 + ROW_W / 2, TOP - 0.14, ROW_W - 0.2, 0.1, 0)} color={colors.yellow} right={String(features.length)}>
-        FEATURES
-      </Caption>
-      {groups.map(([category, items]) => {
-        const first = spots.get(items[0].id)!
-        return (
-          <Caption
-            key={category}
-            pose={open ? pose(X0 + TRAY_W / 2, first.y + 0.2, TRAY_W - 0.2, 0.1) : pose(X0 + ROW_W / 2, first.y, ROW_W - 0.2, 0.1, 0)}
-            color={colors.fgDim}
-            size={0.062}
-            right={String(items.length)}
-          >
-            {category.toUpperCase()}
+      {full && (
+        <>
+          <Tray pose={open ? pose(X0 + TRAY_W / 2, TOP - trayH / 2, TRAY_W, trayH) : trayShut} start={trayShut} accent={colors.yellow} onHover={onHover} />
+          <Caption pose={open ? pose(X0 + TRAY_W / 2, TOP - 0.14, TRAY_W - 0.2, 0.1) : headShut} start={headShut} color={colors.yellow} right={String(features.length)}>
+            FEATURES
           </Caption>
-        )
-      })}
-      {features.map((f) => (
-        <Row
-          key={f.id}
-          pose={spots.get(f.id)!}
-          name={f.name}
-          accent={colors.yellow}
-          match={matches.has(f.id)}
-          tag={f.availability ? { text: f.availability, color: tags[f.availability] } : undefined}
-          selected={selectedId === f.id}
-          onPress={() => useCanvas.getState().select(f.id)}
-          onLinkDrop={() => onLinkDrop(f.id)}
-          onHover={onHover}
-        />
-      ))}
+          {groups.map(([category, items]) => {
+            const shut = pose(X0 + ROW_W / 2, closed.get(items[0].id)!.y, ROW_W - 0.2, 0.1, 0)
+            return (
+              <Caption
+                key={category}
+                pose={open ? pose(X0 + TRAY_W / 2, spots.get(items[0].id)!.y + 0.2, TRAY_W - 0.2, 0.1) : shut}
+                start={shut}
+                color={colors.fgDim}
+                size={0.062}
+                right={String(items.length)}
+              >
+                {category.toUpperCase()}
+              </Caption>
+            )
+          })}
+        </>
+      )}
+      {features.map((f, i) =>
+        full || i < FIRST ? (
+          <Row
+            key={f.id}
+            id={f.id}
+            pose={spots.get(f.id)!}
+            start={closed.get(f.id)}
+            name={f.name}
+            accent={colors.yellow}
+            match={matches.has(f.id)}
+            tag={f.availability ? { text: f.availability, color: tags[f.availability] } : undefined}
+            selected={selectedId === f.id}
+            onPress={selectFeature}
+            onLinkDrop={onLinkDrop}
+            onHover={onHover}
+          />
+        ) : null,
+      )}
       {more > 0 && (
         <Caption pose={pose(X0 + ROW_W / 2, TOP - FIRST * STEP - 0.12, ROW_W - 0.2, 0.1, open ? 0 : 1)} color={colors.fgDim} spacing={0.04}>
           {`+${more} more`}
@@ -395,7 +445,9 @@ export function FeatureList({ features, open, matches, onHover, onLinkDrop }: Fe
       )}
     </group>
   )
-}
+})
+
+const selectFeature = (id: string) => useCanvas.getState().select(id)
 
 // A folded feature's parts, in order, with how deep each sits under it (1: its own part).
 export type Part = { id: string; title: string; depth: number }
@@ -410,11 +462,15 @@ export function partSpots(parts: Part[]): Map<string, Pose> {
   )
 }
 
-// The parts folded into a feature, beside it, fading in as the cards arrive and out as they leave (`shown`). Clicking
-// one unfolds them all.
-export function PartList({ parts, shown, onUnfold, onLinkDrop }: { parts: Part[]; shown: boolean; onUnfold: () => void; onLinkDrop: (targetId: string) => void }) {
+// The parts folded into a feature (`id`), beside it, fading in as the cards arrive and out as they leave (`shown`);
+// mounted only while they show. Clicking one unfolds them all.
+type PartListProps = { id: string; parts: Part[]; shown: boolean; onFold: (id: string) => void; onLinkDrop: (targetId: string) => void }
+export const PartList = memo(function PartList({ id, parts, shown, onFold, onLinkDrop }: PartListProps) {
   const colors = usePalette()
+  const mounted = useLinger(shown)
+  if (!mounted) return null
   const spots = partSpots(parts)
+  const unfold = () => onFold(id)
   return (
     <group>
       {parts.map((p) => {
@@ -422,15 +478,16 @@ export function PartList({ parts, shown, onUnfold, onLinkDrop }: { parts: Part[]
         return (
           <Row
             key={p.id}
+            id={p.id}
             pose={{ ...at, o: shown ? 1 : 0 }}
             start={{ ...at, o: 0 }}
             name={p.title}
             accent={colors.link.part}
-            onPress={onUnfold}
-            onLinkDrop={() => onLinkDrop(p.id)}
+            onPress={unfold}
+            onLinkDrop={onLinkDrop}
           />
         )
       })}
     </group>
   )
-}
+})

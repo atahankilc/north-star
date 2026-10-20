@@ -54,6 +54,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   parts folding into the parent as names, all gliding 280 ms (D-164). 2026-10-20, committed, not pushed;
   rules deployed. Assistant doesn't write availability/source yet.
 - People here as overlapping squares + `+N` list; live cursors smoothed on the receiving side (D-169); following opens what they open (D-170). 2026-10-20.
+- Board speed with many competitors (2026-10-20, committed): hidden feature rows / folded-part rows are no longer mounted
+  (they mount to open and unmount after closing), lists memoised, row decorations skip raycasts. Hover stalls 918 → 102 ms.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

@@ -405,6 +405,15 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
       closeLater(id)
     }
   }
+  // One function per competitor for the board's whole life, so its memoised list skips re-rendering on every hover.
+  const listHoverLatest = useRef(listHover)
+  listHoverLatest.current = listHover
+  const listHovers = useMemo(() => new Map<string, (on: boolean) => void>(), [])
+  const hoverOfList = (id: string) => {
+    let f = listHovers.get(id)
+    if (!f) listHovers.set(id, (f = (on: boolean) => listHoverLatest.current(id)(on)))
+    return f
+  }
   const isOpen = (id: string) => (openId === id || hot === id) && !(pressing === id && dragging[id])
 
   // Parts (D-164): a feature linked to another with `part of` is one of its parts; folded, a feature's parts (and theirs)
@@ -818,7 +827,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
         const at = positions.get(cid)
         return at ? (
           <group key={cid} position={[at[0], at[1], LIST_Z + (isOpen(cid) ? 0.002 : 0)]}>
-            <FeatureList features={list} open={isOpen(cid)} matches={matches} onHover={listHover(cid)} onLinkDrop={onLinkDrop} />
+            <FeatureList features={list} open={isOpen(cid)} matches={matches} onHover={hoverOfList(cid)} onLinkDrop={onLinkDrop} />
           </group>
         ) : null
       })}
@@ -826,7 +835,7 @@ function Scene({ wid, nodes, edges, labels, competitorFeatures, matches = NO_MAT
         const at = positions.get(id)
         return at && !family.top.has(id) ? (
           <group key={id} position={[at[0], at[1], LIST_Z]}>
-            <PartList parts={parts} shown={!!byId.get(id)?.folded} onUnfold={() => onFold(id)} onLinkDrop={onLinkDrop} />
+            <PartList id={id} parts={parts} shown={!!byId.get(id)?.folded} onFold={onFold} onLinkDrop={onLinkDrop} />
           </group>
         ) : null
       })}
