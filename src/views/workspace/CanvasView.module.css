@@ -64,6 +64,8 @@
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  /* A whole, even height, so the -50% lift lands on a whole pixel. */
+  line-height: var(--space-4);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
 }

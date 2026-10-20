@@ -15,6 +15,17 @@ import styles from './CanvasView.module.css'
 const ZOOM_MIN = 0.1
 const ZOOM_MAX = 4
 const DRAG_PX = 5
+// The catch round 100%: a wheel zoom within 3% of it stays at exactly 1, where the canvas is drawn at its own pixels.
+const ZOOM_CATCH = 0.03
+// The wheel's own zoom per workspace, which the catch holds the camera at 1 against.
+const wheelZoom = new Map<string, number>()
+
+// The canvas moves by whole device pixels: a pan or a zoom leaves the camera between pixels, and drawn there every edge
+// and letter is smeared over two of them.
+const onPixel = (v: number) => {
+  const dpr = window.devicePixelRatio || 1
+  return Math.round(v * dpr) / dpr
+}
 
 export function CanvasView() {
   const { wid, workspace, pieces } = useWs()
@@ -45,7 +56,14 @@ export function CanvasView() {
       // The pointer from the screen's middle, which the camera is measured from.
       const px = e.clientX - r.left - r.width / 2
       const py = e.clientY - r.top - r.height / 2
-      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, c.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))))
+      // The wheel moves a zoom of its own; inside the catch the camera stays at exactly 1. Anything else that set the
+      // camera's zoom starts the wheel from there.
+      const prev = wheelZoom.get(wid)
+      const from = prev !== undefined && (c.zoom === 1 ? Math.abs(prev - 1) < ZOOM_CATCH : prev === c.zoom) ? prev : c.zoom
+      const raw = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, from * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))))
+      wheelZoom.set(wid, raw)
+      const zoom = Math.abs(raw - 1) < ZOOM_CATCH ? 1 : raw
+      if (zoom === c.zoom) return
       const k = zoom / c.zoom
       setCam(wid, { zoom, x: px - (px - c.x) * k, y: py - (py - c.y) * k })
     }
@@ -100,7 +118,7 @@ export function CanvasView() {
     <div ref={root} className={styles.canvas} onPointerDown={pan} aria-label="Canvas" role="application">
       <div
         className={styles.world}
-        style={{ transform: `translate(${size.w / 2 + cam.x}px, ${size.h / 2 + cam.y}px) scale(${cam.zoom})` }}
+        style={{ transform: `translate(${onPixel(size.w / 2 + cam.x)}px, ${onPixel(size.h / 2 + cam.y)}px) scale(${cam.zoom})` }}
       >
         {pieces.map((p) => (
           <PieceBox key={p.id} piece={p} cam={cam} selected={p.id === selected} editor={editor} />
