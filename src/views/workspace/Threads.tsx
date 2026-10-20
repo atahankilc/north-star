@@ -1,12 +1,10 @@
-// Comment threads on the board (D-159). A thread is pinned to something you can select on the board (a card, text, a
-// section, a sticky note, a link) or to a spot; its pin sits at the thing's top-right corner (a link's chip): a small
-// framed mono chip, the comment mark and a count (D-167), magenta when someone wrote in it since you last read it
-// (D-166). Clicking a pin opens the
-// thread beside it, set like the assistant's chat: who wrote each message (full name) and when, the text, a `>` prompt
-// (Enter sends, shift+Enter a new line, `@` suggests the workspace's people), resolve or reopen. Only a message's writer
-// edits or deletes it. Resolved threads leave the board; every thread is in the threads panel (ThreadInbox.tsx).
-// Anyone in the workspace comments, viewers too.
-import { Html } from '@react-three/drei'
+// Comment threads (D-159, D-165–D-171; on the canvas and in planes, D-192). A thread is pinned to a card, a piece of
+// text, or a spot, in a space (the canvas or a plane); its pin sits at the thing's top-right corner: a small framed mono
+// chip at the screen's own size, the comment mark and a count (D-167), magenta when someone wrote in it since you last
+// read it, `@` when they mentioned you (D-166). Clicking a pin opens the thread beside it, set like the assistant's chat:
+// who wrote each message (full name) and when, the text, a `>` prompt (Enter sends, shift+Enter a new line, `@`
+// suggests the workspace's people), resolve or reopen. Only a message's writer edits or deletes it. Resolved threads
+// leave the canvas; every thread is in the threads panel (ThreadInbox.tsx). Anyone in the workspace comments, viewers too.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
@@ -27,18 +25,18 @@ import {
   type NewThread,
 } from '../../data/threads'
 import { useHistory } from '../../data/history'
-import { ago } from './stickyNote'
+import { ago } from '../../ui/ago'
 import styles from './Threads.module.css'
 
 type ThreadView = {
-  // Pins on the board (`c`), only threads with something new (D-166), resolved ones too.
+  // Pins shown (`c`); only threads with something new (D-166); resolved ones too.
   show: boolean
   newOnly: boolean
   resolvedToo: boolean
   // The thread open beside its pin, or one being started (no messages yet).
   openId: string | null
   draft: NewThread | null
-  // The threads panel (D-166), bottom left.
+  // The threads panel (D-166), on the left beside the side nav.
   inbox: boolean
 }
 
@@ -64,50 +62,33 @@ export function CommentIcon({ size = 16 }: { size?: number }) {
   )
 }
 
+// A thread with where its pin goes, in its space's px; `gone` when what it was on was deleted (no pin then, D-171).
 export type PinnedThread = { thread: WithId<Thread>; at: [number, number]; gone: boolean }
 
-type LayerProps = {
-  wid: string
-  // Threads with where their pin goes.
-  pins: PinnedThread[]
-  // Where the open thread or the one being started is, and what it's on.
-  openAt: [number, number] | null
-  title: string
-  thread: WithId<Thread> | null
-  // Owners delete any thread (D-166).
-  isOwner: boolean
-}
-
-// Inside the board's canvas: the pins, and the open thread beside its pin.
-export function ThreadLayer({ wid, pins, openAt, title, thread, isOwner }: LayerProps) {
-  const { show, newOnly, resolvedToo, openId, draft } = useThreadView()
+// A space's pins, inside its world (so they sit on what they're on), each scaled back to the screen's size.
+export function ThreadPins({ wid, pins, zoom }: { wid: string; pins: PinnedThread[]; zoom: number }) {
+  const { show, newOnly, resolvedToo, openId } = useThreadView()
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
-  const shown = pins.filter(({ thread: t }) => {
-    if (t.id === openId) return true
-    if (t.resolved && !resolvedToo) return false
-    return !newOnly || isNew(t, seen, t.id, me)
-  })
+  if (!show) return null
   return (
     <>
-      {show &&
-        shown
-          .filter(({ gone }) => !gone)
-          .map(({ thread: t, at, gone }) => {
+      {pins
+        .filter(({ thread: t, gone }) => !gone && (t.id === openId || ((!t.resolved || resolvedToo) && (!newOnly || isNew(t, seen, t.id, me)))))
+        .map(({ thread: t, at }) => {
           const fresh = isNew(t, seen, t.id, me)
           const mentioned = fresh && !!t.mentions?.includes(me)
           return (
-            <Html key={t.id} position={[at[0], at[1], 0.2]} zIndexRange={[12, 11]} style={{ pointerEvents: 'none' }}>
+            <div key={t.id} className={styles.pinAt} style={{ left: at[0], top: at[1], transform: `scale(${1 / zoom})` }}>
               <button
                 className={styles.pin}
                 data-open={t.id === openId || undefined}
                 data-new={fresh || undefined}
-                data-gone={gone || undefined}
                 data-resolved={t.resolved || undefined}
-                data-viewer-ok
-                title={`${t.count} message${t.count === 1 ? '' : 's'}${fresh ? ', new for you' : ''}${gone ? ' · on something removed' : ''}`}
+                title={`${t.count} message${t.count === 1 ? '' : 's'}${fresh ? ', new for you' : ''}`}
                 aria-label={`Thread, ${t.count} messages${fresh ? ', new' : ''}`}
                 onPointerDown={(e) => e.stopPropagation()}
+                onContextMenu={(e) => e.stopPropagation()}
                 onClick={() => (t.id === openId ? closeThread() : openThread(t.id))}
               >
                 {mentioned ? (
@@ -123,15 +104,31 @@ export function ThreadLayer({ wid, pins, openAt, title, thread, isOwner }: Layer
                 )}
                 {t.count}
               </button>
-            </Html>
+            </div>
           )
         })}
-      {(thread || draft) && openAt && (
-        <Html key={thread?.id ?? 'draft'} position={[openAt[0], openAt[1], 0.25]} zIndexRange={[19, 18]} style={{ pointerEvents: 'none' }}>
-          <ThreadPanel wid={wid} thread={thread} draft={draft} title={title} isOwner={isOwner} />
-        </Html>
-      )}
     </>
+  )
+}
+
+type OpenProps = {
+  wid: string
+  // Where the open thread (or the one being started) is on screen, px from the canvas's corner; null = not here.
+  at: [number, number] | null
+  title: string
+  thread: WithId<Thread> | null
+  // Owners delete any thread (D-166).
+  isOwner: boolean
+}
+
+// The open thread, at its pin on screen.
+export function OpenThread({ wid, at, title, thread, isOwner }: OpenProps) {
+  const draft = useThreadView((s) => s.draft)
+  if ((!thread && !draft) || !at) return null
+  return (
+    <div className={styles.openAt} style={{ left: at[0], top: at[1] }}>
+      <ThreadPanel key={thread?.id ?? 'draft'} wid={wid} thread={thread} draft={draft} title={title} isOwner={isOwner} />
+    </div>
   )
 }
 
@@ -161,7 +158,7 @@ function ThreadPanel({ wid, thread, draft, title, isOwner }: { wid: string; thre
     if (!el) return
     el.dataset.flip = el.getBoundingClientRect().right > window.innerWidth - 8 ? 'left' : ''
   })
-  // The reply field takes the keys as it opens (drei attaches it a moment after it renders).
+  // The reply field takes the keys as it opens.
   useEffect(() => {
     let frames = 10
     const go = () => {

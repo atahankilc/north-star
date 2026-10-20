@@ -6,13 +6,15 @@ import { CARD_COLLECTION, toCards, type Card } from './cards'
 import type { WithId } from './hooks'
 import { useWorkspaceCollection } from './hooks'
 import type { Label } from './labels'
-import type { Piece } from './model'
+import type { Piece, Thread } from './model'
 
 export type WorkspaceData = {
   pieces: WithId<Piece>[]
   cards: Card[]
   // Only the ones with a space (`pieceId`): the old board's labels aren't shown.
   labels: Label[]
+  // Comment threads with a space (`planeId`, D-192): the old board's aren't shown.
+  threads: WithId<Thread>[]
 }
 
 type CardDoc = { pieceId?: string; title?: string; name?: string; x?: number; y?: number }
@@ -26,6 +28,8 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const features = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.feature)
   const labelDocs = useWorkspaceCollection<Omit<Label, 'id'>>(wid, 'labels')
   const labels = useMemo(() => labelDocs.data.filter((l) => l.pieceId) as Label[], [labelDocs.data])
+  const threadDocs = useWorkspaceCollection<Thread>(wid, 'threads')
+  const threads = useMemo(() => threadDocs.data.filter((t) => t.planeId), [threadDocs.data])
   const cards = useMemo(
     () => [
       ...toCards('customer', customers.data),
@@ -38,7 +42,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   )
   const all = [pieces, customers, problems, competitors, ideas, features, labelDocs]
   return {
-    data: { pieces: pieces.data, cards, labels },
+    data: { pieces: pieces.data, cards, labels, threads },
     isLoading: all.some((l) => l.isLoading),
     error: all.find((l) => l.error)?.error ?? null,
   }

@@ -6,6 +6,8 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { CARD, cardRef, moveCard, retitleCard, TITLE_MAX, type Card, type CardType } from '../../data/cards'
 import type { Label } from '../../data/labels'
 import { TextItems } from './TextItems'
+import { PeerRing } from './collab'
+import { ThreadPins, type PinnedThread } from './Threads'
 import { snap } from '../../data/grid'
 import type { PlaneCam } from '../../state/canvasView'
 import { useCanvasView } from '../../state/canvasView'
@@ -31,10 +33,10 @@ const PLACEHOLDER: Record<CardType, string> = {
   feature: 'What does it do?',
 }
 
-type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; editor: boolean }
+type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; editor: boolean; pins?: PinnedThread[] }
 
 // A plane's contents: its sections under its cards, its text over them (D-188).
-export function PlaneCards({ cards, labels, view, live, editor }: Props) {
+export function PlaneCards({ cards, labels, view, live, editor, pins }: Props) {
   const { wid } = useWs()
   const carry = cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
   return (
@@ -45,6 +47,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
           <CardBox key={c.id} card={c} zoom={view.zoom} live={live} editor={editor} />
         ))}
         <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
+        {live && pins && <ThreadPins wid={wid} pins={pins} zoom={view.zoom} />}
       </div>
     </div>
   )
@@ -95,6 +98,7 @@ function CardBox({ card, zoom, live, editor }: { card: Card; zoom: number; live:
       style={{ left: x, top: y, width: CARD.w, height: CARD.h, ['--type' as string]: TYPE_ACCENT[card.type] }}
       data-selected={selected || undefined}
       data-dragging={held ? true : undefined}
+      data-target={`card:${card.id}`}
       onPointerDown={press}
       onDoubleClick={live && editor ? () => useCanvasView.setState({ cardEditing: card.id, cardSelected: card.id }) : undefined}
     >
@@ -110,6 +114,7 @@ function CardBox({ card, zoom, live, editor }: { card: Card; zoom: number; live:
       <i className={styles.mark} data-corner="ne" aria-hidden />
       <i className={styles.mark} data-corner="se" aria-hidden />
       <i className={styles.mark} data-corner="sw" aria-hidden />
+      {live && <PeerRing id={card.id} space={card.pieceId} />}
     </div>
   )
 }

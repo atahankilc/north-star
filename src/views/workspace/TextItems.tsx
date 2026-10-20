@@ -33,6 +33,7 @@ import { useCanvasView } from '../../state/canvasView'
 import { LightMarkdown } from '../../ui/LightMarkdown'
 import { useWs } from './context'
 import styles from './TextItems.module.css'
+import { PeerRing } from './collab'
 
 const DRAG_PX = 5
 
@@ -172,6 +173,7 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
     fontStyle: l.italic ? 'italic' : undefined,
   }
   const common = {
+    'data-target': `label:${l.id}`,
     'data-selected': selected || undefined,
     'data-live': live || undefined,
     'data-caps': l.caps || undefined,
@@ -182,6 +184,7 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
       <i className={styles.mark} data-corner="ne" aria-hidden />
       <i className={styles.mark} data-corner="se" aria-hidden />
       <i className={styles.mark} data-corner="sw" aria-hidden />
+      {live && <PeerRing id={l.id} space={l.pieceId} />}
     </>
   )
   const bar = selected && editor && kind !== 'title' ? <LabelBar l={l} zoom={zoom} /> : null

@@ -80,3 +80,50 @@ export type Presence = {
   y?: number
   ts: number
 }
+
+// A comment thread (D-159): a conversation pinned to something on the board (a card, text, a section, a sticky note,
+// a link) or to a spot on it. Any member may start one or answer, viewers too; it's not content, so it's not undone,
+// copied, exported or filtered. `x`/`y` is where it was pinned (a spot's place, or the thing's when the thread began),
+// used when the thing is gone. `count` and `lastAt` follow its messages.
+export const THREAD_TARGETS = ['card', 'label', 'link', 'spot'] as const
+export type ThreadTarget = (typeof THREAD_TARGETS)[number]
+export const MESSAGE_MAX = 2000
+
+export type Thread = {
+  on: ThreadTarget
+  // What it's on: the card's, label's or link's id (none for a spot).
+  targetId?: string
+  // The space it's in (D-192): `canvas` or a plane's id. Threads from the old board have none and aren't shown.
+  planeId?: string
+  x: number
+  y: number
+  uid: string
+  name: string
+  count: number
+  lastAt: number
+  // Who wrote the last message and how it began (D-166), so a thread is only new to the others and the threads panel
+  // can show it without loading every thread's messages.
+  lastUid?: string
+  lastName?: string
+  lastText?: string
+  // Everyone mentioned in it (D-166), so it shows under their mentions.
+  mentions?: string[]
+  resolved?: boolean
+  resolvedBy?: string
+  createdAt: number
+  updatedAt: number
+}
+
+export type ThreadMessage = {
+  uid: string
+  name: string
+  text: string
+  // Who it mentions (D-166), as `@Full Name` in the text.
+  mentions?: string[]
+  createdAt: number
+  editedAt?: number
+}
+export const MENTIONS_MAX = 20
+
+// What you've read of the workspace's threads (D-166), yours only: each thread's `lastAt` when you last saw it.
+export type ThreadReads = { seen: Record<string, number>; updatedAt: number }

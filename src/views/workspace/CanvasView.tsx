@@ -15,6 +15,13 @@ import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
+import { closeThread, OpenThread, openThread, startComment, ThreadPins, toggleThreadPins, useThreadView, type PinnedThread } from './Threads'
+import { ThreadInbox } from './ThreadInbox'
+import { CARD } from '../../data/cards'
+import { glide } from '../../state/canvasView'
+import { isOwnerOf } from '../../data/workspaces'
+import type { Thread } from '../../data/model'
+import { Follow, PeerCursors, PeerRing, stopFollowing, useCursorReport, usePresenceReport } from './collab'
 import { DrawSection } from './DrawSection'
 import { labelBox, TextItems } from './TextItems'
 import { spaceBounds } from './spaceBounds'
@@ -41,7 +48,7 @@ const onPixel = (v: number) => {
 }
 
 export function CanvasView() {
-  const { wid, workspace, pieces, cards, labels } = useWs()
+  const { wid, workspace, pieces, cards, labels, threads } = useWs()
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
   const cam = useCanvasView((s) => s.cams[wid]) ?? camOf(wid)
@@ -93,6 +100,94 @@ export function CanvasView() {
     const c = useCanvasView.getState().planeCam!
     return [(cx - r.left - c.ox) / c.zoom, (cy - r.top - c.oy) / c.zoom]
   }
+  // Working together (D-191): the space you're in, your pointer in it, and everyone else's.
+  const space = focusId ?? CANVAS
+  usePresenceReport(space)
+  useCursorReport(root, (cx, cy) => (focusId ? (useCanvasView.getState().planeCam && useCanvasView.getState().focusArrived ? planeToSpace(cx, cy) : null) : canvasToSpace(cx, cy)))
+  const toScreen = (x: number, y: number): [number, number] | null => {
+    if (focusId) {
+      const c = useCanvasView.getState().planeCam
+      return c && useCanvasView.getState().focusArrived ? [c.ox + x * c.zoom, c.oy + y * c.zoom] : null
+    }
+    const c = camOf(wid)
+    const { w, h } = useCanvasView.getState().size
+    return [onPixel(w / 2 + c.x) + x * c.zoom, onPixel(h / 2 + c.y) + y * c.zoom]
+  }
+  // Following someone into a plane, or back out (D-191).
+  const focusTo = (planeId: string | null) => {
+    if (planeId === null) return unfocus()
+    const p = pieces.find((x) => x.id === planeId)
+    if (!p) return
+    // From another plane straight to theirs: no ink (it would spread from a plane that isn't on screen).
+    if (focusId) {
+      useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, labelSelected: null })
+      setParams({ focus: planeId })
+    } else focus(p)
+  }
+
+  // Comment threads (D-192): where each one's pin is, in its space's px; what it's on, in words.
+  const pinOf = (t: Pick<Thread, 'on' | 'targetId' | 'x' | 'y'>): { at: [number, number]; gone: boolean } => {
+    if (t.on === 'card') {
+      const c = cards.find((x) => x.id === t.targetId)
+      return c ? { at: [c.x + CARD.w, c.y], gone: false } : { at: [t.x, t.y], gone: true }
+    }
+    if (t.on === 'label') {
+      const l = labels.find((x) => x.id === t.targetId)
+      if (!l) return { at: [t.x, t.y], gone: true }
+      const b = labelBox(l)
+      return { at: [b.x + b.w, b.y], gone: false }
+    }
+    return { at: [t.x, t.y], gone: false }
+  }
+  const pinsIn = (sp: string): PinnedThread[] => threads.filter((t) => t.planeId === sp).map((t) => ({ thread: t, ...pinOf(t) }))
+  const spaceName = (sp: string) => (sp === CANVAS ? 'the canvas' : pieces.find((p) => p.id === sp)?.name || 'a plane')
+  const titleOf = (t: Pick<Thread, 'on' | 'targetId' | 'planeId'>) => {
+    if (t.on === 'card') {
+      const c = cards.find((x) => x.id === t.targetId)
+      return c ? `${c.type} ${c.title ? `"${c.title}"` : ''}`.trim() : 'a deleted card'
+    }
+    if (t.on === 'label') {
+      const l = labels.find((x) => x.id === t.targetId)
+      return l ? `${l.kind ?? (l.size === 'note' ? 'paragraph' : 'heading')} ${l.text ? `"${l.text.slice(0, 40)}"` : ''}`.trim() : 'deleted text'
+    }
+    return `a spot on ${spaceName(t.planeId ?? CANVAS)}`
+  }
+  // Right-click: a comment on what's under the pointer, or on that spot.
+  const comment = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('input, textarea, [role=dialog], [aria-label=Threads]')) return
+    e.preventDefault()
+    const at = focusId ? (useCanvasView.getState().focusArrived ? planeToSpace(e.clientX, e.clientY) : null) : canvasToSpace(e.clientX, e.clientY)
+    if (!at) return
+    const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-target]')?.dataset.target
+    const [on, targetId] = hit ? (hit.split(':') as ['card' | 'label', string]) : ['spot' as const, undefined]
+    const draft = { on, targetId, planeId: space, at: [Math.round(at[0]), Math.round(at[1])] as [number, number] }
+    startComment({ ...draft, at: targetId ? pinOf({ on, targetId, x: draft.at[0], y: draft.at[1] }).at : draft.at })
+  }
+  // From the threads panel: to its space, the pin in the middle, open.
+  const goTo = (t: WithId<Thread>) => {
+    const sp = t.planeId ?? CANVAS
+    openThread(t.id)
+    if (sp !== space) return focusTo(sp === CANVAS ? null : sp)
+    const [x, y] = pinOf(t).at
+    const { size, planeCam } = useCanvasView.getState()
+    if (focusId && planeCam) glide(planeCam, { ...planeCam, ox: size.w / 2 - x * planeCam.zoom, oy: size.h / 2 - y * planeCam.zoom }, 420, (c) => useCanvasView.setState({ planeCam: c }))
+    else if (!focusId) {
+      const c = camOf(wid)
+      glide(c, { ...c, x: -x * c.zoom, y: -y * c.zoom }, 420, (v) => setCam(wid, v))
+    }
+  }
+  const openId = useThreadView((s) => s.openId)
+  const draft = useThreadView((s) => s.draft)
+  const openThreadDoc = threads.find((t) => t.id === openId) ?? null
+  const openTarget = openThreadDoc ?? draft
+  // A thread left open on a thread that's gone (deleted by someone) closes.
+  useEffect(() => {
+    if (openId && !openThreadDoc) closeThread()
+  }, [openId, openThreadDoc])
+  // The open thread follows its pin as the view moves.
+  useCanvasView((s) => s.planeCam)
+  const openPin = openThreadDoc ?? (draft && { on: draft.on, targetId: draft.targetId, x: draft.at[0], y: draft.at[1] })
+  const openAt = openTarget && openPin && (openTarget.planeId ?? CANVAS) === space ? toScreen(...pinOf(openPin).at) : null
   // Where a plane is on screen now.
   const screenRect = (p: Piece): ScreenRect => {
     const c = camOf(wid)
@@ -137,6 +232,7 @@ export function CanvasView() {
       e.preventDefault()
       // A plane in focus is the view: the canvas behind it stays where it was.
       if (focusedRef.current) return
+      stopFollowing()
       const c = camOf(wid)
       const r = el.getBoundingClientRect()
       // The pointer from the screen's middle, which the camera is measured from.
@@ -162,6 +258,10 @@ export function CanvasView() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t?.closest('input, textarea, [contenteditable], dialog')) return
+      // An open thread or the threads panel hears Escape first (D-192); `c` shows or hides the pins.
+      const tv = useThreadView.getState()
+      if (e.key === 'Escape' && (tv.openId || tv.draft || tv.inbox)) return
+      if (e.key === 'c' && !e.metaKey && !e.ctrlKey && !e.altKey) return toggleThreadPins()
       // Fit (D-186): the canvas's planes, or in focus the plane's contents.
       if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         fitRef.current()
@@ -214,6 +314,7 @@ export function CanvasView() {
   const pan = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 && e.button !== 1) return
     useCanvasView.setState({ selected: null, labelSelected: null })
+    stopFollowing()
     const start = camOf(wid)
     const [sx, sy] = [e.clientX, e.clientY]
     const el = e.currentTarget
@@ -232,7 +333,7 @@ export function CanvasView() {
   }
 
   return (
-    <div ref={root} className={styles.canvas} onPointerDown={pan} aria-label="Canvas" role="application">
+    <div ref={root} className={styles.canvas} onPointerDown={pan} onContextMenu={comment} aria-label="Canvas" role="application">
       <div ref={lens} className={styles.lens}>
       <div
         className={styles.world}
@@ -255,6 +356,7 @@ export function CanvasView() {
         {/* The canvas's own sections over its planes (no fill, so they hide nothing), its text over them (D-188). */}
         <TextItems labels={canvasLabels} layer="frames" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
         <TextItems labels={canvasLabels} layer="text" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
+        <ThreadPins wid={wid} pins={pinsIn(CANVAS)} zoom={cam.zoom} />
       </div>
       </div>
       {focused && (
@@ -273,7 +375,7 @@ export function CanvasView() {
           }}
           onLeft={left}
         >
-          <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
+          <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} pins={pinsIn(focused.id)} />
           {drawing === focused.id && <DrawSection space={focused.id} toSpace={planeToSpace} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {focusArrived && !focusLeaving && (
@@ -284,6 +386,10 @@ export function CanvasView() {
         </FocusedPlane>
       )}
       {drawing === CANVAS && !focused && <DrawSection space={CANVAS} toSpace={canvasToSpace} />}
+      <PeerCursors space={space} toScreen={toScreen} />
+      <OpenThread wid={wid} at={openAt} title={openTarget ? titleOf(openTarget) : ''} thread={openThreadDoc} isOwner={isOwnerOf(workspace, user?.id)} />
+      <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={goTo} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} />
+      <Follow focusId={focusId} focusTo={focusTo} />
       {confirming && (
         <HazardConfirm
           title={`delete ${confirming.name ? `"${confirming.name}"` : 'this plane'}?`}
@@ -321,9 +427,9 @@ function homeOf(piece: Box, at: ScreenRect, cards: Card[], labels: Label[]): Pla
 }
 
 // The focused plane's cards, live, on its own view.
-function FocusedCards({ cards, labels, editor }: { cards: Card[]; labels: Label[]; editor: boolean }) {
+function FocusedCards({ cards, labels, editor, pins }: { cards: Card[]; labels: Label[]; editor: boolean; pins: PinnedThread[] }) {
   const view = useCanvasView((s) => s.planeCam)
-  return view ? <PlaneCards cards={cards} labels={labels} view={view} live editor={editor} /> : null
+  return view ? <PlaneCards cards={cards} labels={labels} view={view} live editor={editor} pins={pins} /> : null
 }
 
 // Resize handles (D-180, D-181): the corners are the cards' corner marks (D-150), grey on hover, long and cyan in edit
@@ -414,6 +520,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
           {piece.name || kind}
         </span>
       )}
+      <PeerRing id={piece.id} space={CANVAS} />
       {/* Its cards, a picture here: the pointer goes through to the canvas (D-186, D-187). */}
       <PlaneCards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       {CORNERS.map((h) => (

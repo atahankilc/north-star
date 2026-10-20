@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Thread } from '../../data/model'
 import { isNew, markSeen, useReads } from '../../data/threads'
-import { ago } from './stickyNote'
+import { ago } from '../../ui/ago'
 import { CommentIcon, myUid, toggleInbox, useThreadView } from './Threads'
 import styles from './Threads.module.css'
 
@@ -114,7 +114,7 @@ export function ThreadInbox({ wid, threads, titleOf, onGo, whereOf, here, goneOf
         {rows.length === 0 && (
           <li className={styles.lead}>
             {view === 'all'
-              ? 'No open threads. Right-click anything on the board → comment.'
+              ? 'No open threads. Right-click anything (or a spot) → comment.'
               : view === 'new'
                 ? 'Nothing new: you have read everything.'
                 : view === 'mentions'

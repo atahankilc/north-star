@@ -1,4 +1,4 @@
-// Comment threads on the board (D-159): `threads/{id}`, each with its `messages/{id}`. Any member writes them, viewers
+// Comment threads (D-159; on the canvas and in planes, D-192: `planeId` is the space, `canvas` or a plane's id): `threads/{id}`, each with its `messages/{id}`. Any member writes them, viewers
 // too, as themselves; they aren't board content, so nothing here goes through `tracked()` (no undo, no read-only
 // refusal for viewers). A thread and its first message are written together; each reply bumps the thread's count and
 // says who wrote last. Mentions (D-166) are member ids on the message and, gathered, on the thread. What you've read is
@@ -32,7 +32,7 @@ export const useReads = (wid: string, uid: string | null) => useDoc<ThreadReads>
 export const useMembers = (wid: string, on = true) =>
   useQuery<Member>(on ? query(collection(db(), 'workspaces', wid, 'members'), orderBy('name'), limit(200)) : null, `${wid}/members/all`)
 
-export type NewThread = { on: ThreadTarget; targetId?: string; planeId?: string; at: [number, number] }
+export type NewThread = { on: ThreadTarget; targetId?: string; planeId: string; at: [number, number] }
 
 const cap = (ids: string[]) => [...new Set(ids)].slice(0, MENTIONS_MAX)
 
@@ -45,7 +45,7 @@ export async function startThread(wid: string, t: NewThread, text: string, menti
   const thread: Thread = {
     on: t.on,
     ...(t.targetId && { targetId: t.targetId }),
-    ...(t.planeId && { planeId: t.planeId }),
+    planeId: t.planeId,
     x: t.at[0],
     y: t.at[1],
     ...who,

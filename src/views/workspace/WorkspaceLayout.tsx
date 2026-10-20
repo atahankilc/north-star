@@ -14,6 +14,7 @@ import { snap } from '../../data/grid'
 import { labelBox, useAuthor } from './TextItems'
 import { spaceBounds } from './spaceBounds'
 import { TYPE_ACCENT } from './PlaneCards'
+import { InboxButton } from './ThreadInbox'
 import { usePresenceSession } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
 import {
@@ -99,6 +100,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             <>
               {editor && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
               <FitButton wid={wid} plane={focused?.id ?? null} />
+              <InboxButton wid={wid} threads={data.threads} />
             </>
           }
         />

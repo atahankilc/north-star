@@ -10,6 +10,7 @@ import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { GRID } from '../../data/pieces'
 import { glide, stopGlide, useCanvasView, type PlaneCam, type ScreenRect } from '../../state/canvasView'
+import { stopFollowing } from './collab'
 import { isReducedMotion } from '../../state/motion'
 import { CELL_PX, cellHash } from '../../ui/cellReveal'
 import styles from './CanvasView.module.css'
@@ -67,6 +68,7 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
       const { planeCam: c, focusLeaving } = useCanvasView.getState()
       if (!c || focusLeaving) return
       stopGlide()
+      stopFollowing()
       const r = el.getBoundingClientRect()
       const px = e.clientX - r.left
       const py = e.clientY - r.top
@@ -86,6 +88,7 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     // A press on the plane itself lets go of a card (D-187).
     useCanvasView.setState({ cardSelected: null, labelSelected: null })
     stopGlide()
+    stopFollowing()
     const el = e.currentTarget
     const [sx, sy] = [e.clientX, e.clientY]
     el.setPointerCapture(e.pointerId)

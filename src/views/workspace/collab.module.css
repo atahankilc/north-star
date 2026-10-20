@@ -1,0 +1,63 @@
+/* Live cursors (D-065, D-169, D-191): over everything in the space, never taking the pointer. */
+.cursors {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.arrow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  fill: var(--peer);
+  stroke: var(--bg);
+  stroke-width: 1;
+}
+
+/* A tag in their colour, like a selected ASCII cell. */
+.name,
+.ringName {
+  padding: 1px var(--space-1);
+  background: var(--peer);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.name {
+  position: absolute;
+  top: 14px;
+  left: 12px;
+}
+
+/* What someone else has selected (D-067, D-068): a frame in their colour just outside, their name over its corner; a
+   second person's sits a little further out. */
+.ring {
+  position: absolute;
+  inset: calc(-4px - var(--i) * 4px);
+  border: 1px solid var(--peer);
+  pointer-events: none;
+}
+
+.ringName {
+  position: absolute;
+  bottom: 100%;
+  left: -1px;
+}

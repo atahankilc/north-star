@@ -2895,3 +2895,48 @@ categories shown like B, not in a card, and the features under them not indented
   eklenebilir … ya da direkt text component'inin arkasındaki animasyonun parlaklığı düşürülsün".
 - *Verified* headless: the title cropped while typing and after, the same apart from the selection marks and the width
   handle; the canvas with text over the moving backdrop; a focused plane's `+` lists no project title; build.
+
+### D-191 · 2026-10-21 · Accepted (collaboration on the canvas, part one: cursors, total follow, selection marks)
+- *Decision:* presence (RTDB, unchanged rules) now says which space you're in: `plane` = the plane in focus, absent =
+  the canvas; `x`/`y` = your pointer in that space's px (re-sent when the view moves under a still pointer, cleared
+  when it leaves or while the ink runs); `sel` = your selected card, text or plane. `src/views/workspace/collab.tsx`.
+- *Cursors:* everyone else's in your space, an arrow and a name tag in their colour, drawn on a curve a little in the
+  past (D-169's `cursorAt`), placed on screen by the canvas's camera or the focused plane's own view.
+- *Total follow* (the user: "since we also added focus, people following someone should also experience this. I want
+  total follow!"): a click on someone's square in the HUD (or a row of the `+N` list) follows them; the tooltip says
+  where they are (on the canvas / in <plane>). You go into the plane they focus (the ink from where it is on your
+  canvas; from another plane straight across) and back out when they leave; their cursor is kept in the middle of your
+  screen at your own zoom, eased; their selection becomes yours (no panel). Your own pan or zoom (canvas or plane),
+  Escape (heard first), or a second click stops it. While following: the page framed in their colour and a tag
+  `following <name> · <where> esc to stop` at the top middle (the bottom middle is the focus dock's, the right is kept free).
+- *Selection marks* (D-067, D-068): what someone in your space has selected gets a 1 px frame in their colour just
+  outside, their name over its corner; a second person's sits 4 px further out. On cards, text and planes.
+- *Verified* headless with Alice and Bob in separate browser contexts (Bob joined through the invite code): Bob saw
+  Alice's cursor at her point (400, 350) with her name and a frame on the plane she'd selected; following, the tag read
+  `following Alice · on the canvas`; Alice's focus took Bob into the plane (address `?focus=`), her cursor in his middle;
+  her Escape took him back out; his Escape stopped following; build.
+- *Next:* comment threads (D-159, D-165–D-171) on the canvas and in planes.
+
+### D-192 · 2026-10-21 · Accepted (collaboration, part two: comment threads on the canvas and in planes)
+- *Decision:* D-159 and D-165–D-171's threads come back, workspace-wide. `src/data/threads.ts` returns from the archive
+  as it was (same collections and rules: `threads/{id}` + `messages`, `threadReads/{uid}`); a thread's `planeId` is now
+  its space, `canvas` or a plane's id, and is always written; threads without one (the old board's) aren't shown.
+  `Threads.tsx`, `Threads.module.css`, `ThreadInbox.tsx` come back too (moved to src/views/workspace/); only the pin
+  layer was rewritten (it was drei <Html>).
+- *Pins:* inside each space's world (so they sit on what they're on), scaled back to the screen's size: at a card's
+  top-right corner, a text item's (its box), or the spot; the comment mark and a count, magenta when new for you, `@`
+  when it mentions you, ✓ resolved. A plane's pins show only in focus. A thread on something deleted has no pin and
+  stays in the panel marked so (D-171). `c` shows or hides them.
+- *Starting one:* right-click a card, a text item or a spot, on the canvas or in a focused plane (anyone, viewers too).
+  The thread opens beside its pin on screen (a screen overlay that follows the pin as the view moves; flips left near the
+  window's edge), as before: messages with names and times, a `>` prompt, `@` suggesting the workspace's people,
+  resolve/reopen, a writer edits or deletes their own message, owners delete a thread.
+- *The threads panel:* the side nav's comment icon under fit (unframed like the others; a magenta count of new
+  mentions, or a dot while anything is new) opens it at the top left, right of the side nav (the right of the screen
+  stays free). all · new · mentions · resolved; a row takes you to its space (into the plane, or back out, as following
+  does), puts its pin in the middle and opens it; rows in another space say `on <space> ↗`. Escape closes an open thread
+  or the panel before the canvas hears it.
+- *Verified* headless with Alice and Bob: Alice right-clicked a heading, `@Bo` suggested Bob, she sent; Bob's pin read
+  `@1` (new) and his side nav button "1 new mention"; Bob opened it from the panel and replied; Alice's spot comment in a
+  focused plane showed in Bob's panel as `a spot on a plane … on a plane ↗`, and the row took him into the plane with it
+  open; `c` hid the pins; build.

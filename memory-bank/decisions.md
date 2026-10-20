@@ -224,7 +224,11 @@ piece; check them with the user then.
 ## Collaboration
 - Real-time collaboration with presence and live cursors is in scope (D-005).
 - Presence in RTDB `presence/{wid}/{uid}`, readable by any signed-in user, own node writable; whole-node writes (D-016, D-065).
-- Live cursors on the board in world units; follow someone (view + cursor, Esc stops) (D-065, D-067). Sent ~16 times a
+- Live cursors on the board in world units; follow someone (view + cursor, Esc stops) (D-065, D-067). On the canvas
+  (D-191): presence `plane` = the plane in focus (none = canvas), cursor in that space's px; you see cursors of people in
+  your space; following is total: into the plane they focus and out (with the ink), their cursor kept in your middle,
+  their selection yours; a frame in their colour + `following … · esc to stop` at the top middle. Selection marks: a
+  frame in the peer's colour with their name round the card, text or plane they've selected. Sent ~16 times a
   second, no more; smoothed only where watched: drawn 120 ms behind on a curve through what arrived (D-169).
 - Following someone also takes their selection, so their side panel opens for you (not in matrix or reports); your
   own click holds until they pick something else (D-170).
@@ -233,6 +237,9 @@ piece; check them with the user then.
 - Colours by join order (no clash up to 5), stored as dark hex, drawn with `themeAccent` (D-067, D-069).
 - Selections shown in every view: board rings, Flow rings, Table bars, Matrix cells (`PeerMarks.tsx`) (D-067, D-068).
 - No typing indicator (D-071).
+- Comment threads on the canvas and in planes (D-192): `planeId` = the space (`canvas` or a plane's id; the old board's,
+  without one, aren't shown); pins on cards, text or a spot, at screen size; right-click starts one; the threads panel
+  opens from the side nav's comment icon (under fit) to the left of the screen; a row takes you to its space and opens it.
 - Comment threads (D-159): pinned to any card, text, section, sticky note, link or a spot (right-click → comment); any
   member, viewers too, as themselves; resolve/reopen; `c` hides pins; not undone or exported;
   the open thread looks like the assistant's chat box (bracket actions, terminal log, `>` prompt).

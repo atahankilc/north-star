@@ -199,7 +199,8 @@
   font-size: var(--text-xs);
 }
 
-/* While following: the whole page framed in their colour, with a tag at the bottom that stops it. */
+/* While following: the whole page framed in their colour, with a tag at the top middle that stops it (the bottom middle
+   is the focus dock's, the right is kept free; D-191). */
 .following {
   position: fixed;
   inset: 0;
@@ -210,7 +211,7 @@
 
 .followTag {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 50%;
   padding: 2px var(--space-2);
   border: 0;

@@ -3,6 +3,30 @@
 /* A pin (D-165, D-166): the same small framed mono chip on every thread, `“ 3`, its bottom-left corner on the point it's
    pinned to, like a link's chip. Magenta when someone wrote since you last read it (`@` when you're mentioned), cyan
    while open, dashed when what it was on is gone. */
+/* A pin's place in its space (D-192): a point, scaled back to the screen's size round itself; the pin sits up and right
+   of it. */
+.pinAt {
+  position: absolute;
+  z-index: 3;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+
+.pinAt > .pin {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+}
+
+/* The open thread's place on screen. */
+.openAt {
+  position: absolute;
+  z-index: 9;
+  width: 0;
+  height: 0;
+}
+
 .pin {
   display: inline-flex;
   align-items: center;
@@ -341,11 +365,13 @@
 }
 
 /* The threads panel (D-166): bottom left over the board, above its toolbar, set as the chat window. */
+/* The threads panel (D-166, D-192): on the left, right of the side nav, under the breadcrumb; the right of the screen
+   stays free. */
 .inbox {
   position: absolute;
-  left: var(--hud-x);
-  bottom: calc(var(--hud-y) + var(--corner-h) + 48px);
-  z-index: 5;
+  top: var(--hud-h);
+  left: calc(var(--space-3) + 36px + var(--space-3));
+  z-index: 8;
   display: flex;
   flex-direction: column;
   width: min(380px, calc(100vw - 2 * var(--hud-x)));
@@ -472,14 +498,17 @@
 }
 
 /* The threads button (D-167): square, framed, as the board's other toolbar buttons; a count or a dot in its corner. */
+/* In the side nav (D-192): an unframed icon button like the fit and the gear. */
 .inboxButton {
-  composes: interactive from '../../ui/Frame.module.css';
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--fg-dim);
   cursor: pointer;
 }
@@ -490,7 +519,7 @@
 }
 
 .inboxButton[aria-pressed='true'] {
-  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .badge {
