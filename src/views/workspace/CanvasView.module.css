@@ -177,17 +177,20 @@
   color: var(--placeholder);
 }
 
-/* A plane's console (D-179, D-181): just outside the plane, under its bottom-right corner, always there; a terminal line
-   like the assistant's chat: the plane's name, a magenta `▸`, then bracketed actions. In edit mode a status line in cyan. */
+/* A plane's console (D-179, D-181, D-189): a tab inside the plane's bottom-right corner, standing on its bottom edge (no
+   bottom border), magenta marks on its top corners, like the focus dock; always there, over the plane's cards.
+   Bracketed actions, nothing before them. In edit mode a status line in cyan. */
 .console {
   position: absolute;
-  top: calc(100% + var(--space-2));
-  right: 0;
+  z-index: 2;
+  right: var(--space-4);
+  bottom: 0;
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
-  padding: 5px var(--space-3);
+  padding: 5px 10px 6px;
   border: 1px solid var(--line-hover);
+  border-bottom: 0;
   background: var(--bg);
   color: var(--fg-dim);
   font-family: var(--font-mono);
@@ -197,12 +200,31 @@
   cursor: default;
 }
 
-.console[data-editing='true'] {
-  border-color: var(--accent-cyan);
+.console::before,
+.console::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  width: 6px;
+  height: 6px;
+  border-top: 1px solid var(--accent-magenta);
+  pointer-events: none;
 }
 
-.prompt {
-  color: var(--accent-magenta);
+.console::before {
+  left: -1px;
+  border-left: 1px solid var(--accent-magenta);
+}
+
+.console::after {
+  right: -1px;
+  border-right: 1px solid var(--accent-magenta);
+}
+
+.console[data-editing='true'],
+.console[data-editing='true']::before,
+.console[data-editing='true']::after {
+  border-color: var(--accent-cyan);
 }
 
 .mode {
@@ -228,11 +250,6 @@
   color: var(--accent-magenta);
 }
 
-/* What edit mode lets you do, quieter than the size. */
-.hint {
-  color: var(--fg-faint);
-}
-
 /* A plane in focus (D-184, D-185): the whole screen, solid, carrying the plane's `+` marks on its own grid (--mx, --my)
    at the canvas's zoom (--mark), so they never move. The ink transition cuts it with a clip-path. */
 .focused {
@@ -248,10 +265,6 @@
   cursor: grabbing;
 }
 
-.focused .console {
-  cursor: default;
-}
-
 .focused::before {
   content: '';
   position: absolute;
@@ -265,22 +278,4 @@
 /* A plane's console while it's in focus or on its way (D-185): gone at once. */
 .consoleAway {
   visibility: hidden;
-}
-
-/* The console of a plane in focus (D-185): bottom left, right of the side nav's foot and level with its gear, so the
-   right of the screen stays free; it comes in a few steps once the plane has arrived. */
-.focusConsole {
-  top: auto;
-  right: auto;
-  bottom: var(--space-3);
-  left: calc(var(--space-3) + 36px + var(--space-3));
-  animation: console-in 160ms steps(3) both;
-}
-
-@keyframes console-in {
-  from { opacity: 0; }
-}
-
-.focused[data-reduced='true'] .focusConsole {
-  animation: none;
 }

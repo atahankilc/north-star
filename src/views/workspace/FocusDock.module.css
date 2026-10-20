@@ -1,0 +1,80 @@
+/* The focus dock (D-189): a tab on the bottom edge of the screen, in the middle; no bottom border, magenta corner marks
+   on its top corners. It rises in a few steps once the plane has arrived. */
+.dock {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 7px var(--space-4) 9px;
+  border: 1px solid var(--line-hover);
+  border-bottom: 0;
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--space-4);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  cursor: default;
+  animation: dock-in 160ms steps(3) both;
+}
+
+.dock::before,
+.dock::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  width: var(--space-2);
+  height: var(--space-2);
+  border-top: 1px solid var(--accent-magenta);
+  pointer-events: none;
+}
+
+.dock::before {
+  left: -1px;
+  border-left: 1px solid var(--accent-magenta);
+}
+
+.dock::after {
+  right: -1px;
+  border-right: 1px solid var(--accent-magenta);
+}
+
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+
+.dock[data-reduced='true'] {
+  animation: none;
+}
+
+.action {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.tool {
+  composes: small from '../../ui/AsciiButton.module.css';
+  padding: 0 2px;
+}
+
+.tool[data-main='true'] {
+  color: var(--fg);
+}
+
+.tool[data-main='true']:hover,
+.tool[data-main='true']:focus-visible {
+  color: var(--fg-strong);
+}
+
+/* Its key, quieter than the action. */
+.key {
+  color: var(--fg-faint);
+}

@@ -16,6 +16,7 @@ import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView,
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
 import { PlaneCards } from './PlaneCards'
+import { DockAction, FocusDock } from './FocusDock'
 import { cardBounds, deleteCard, type Card } from '../../data/cards'
 import { GRID } from '../../data/grid'
 import styles from './CanvasView.module.css'
@@ -229,8 +230,12 @@ export function CanvasView() {
           onLeft={left}
         >
           <FocusedCards cards={focusedCards} editor={editor} />
-          {/* Once it's there, and gone the moment it leaves (D-185): bottom left, the right of the screen kept free. */}
-          {focusArrived && !focusLeaving && <PlaneConsole className={styles.focusConsole} size={null} focused onFocus={unfocus} />}
+          {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
+          {focusArrived && !focusLeaving && (
+            <FocusDock>
+              <DockAction label="unfocus" keyHint="esc" title="back to the canvas (Esc)" main onClick={unfocus} />
+            </FocusDock>
+          )}
         </FocusedPlane>
       )}
       {confirming && (
@@ -417,21 +422,20 @@ function NameField({ value, placeholder, onSave }: { value: string; placeholder:
   )
 }
 
-// A plane's console (D-179, D-180, D-181): always open, just outside the plane under its bottom-right corner, a terminal
-// line like the assistant's chat: `▸ [focus] [edit]` (no name: it's on the plane, D-182; no zoom: the wheel does it,
-// D-186). `focus` makes the plane the view (D-184), where the console sits bottom left with `unfocus`.
+// A plane's console (D-179, D-180, D-181, D-189): always open, a tab inside the plane's bottom-right corner, its
+// actions bracketed: `[focus] [edit]` (no name: it's on the plane, D-182; no zoom: the wheel does it,
+// D-186). `focus` makes the plane the view (D-184); in focus `unfocus` is on the focus dock (D-189).
 // In edit mode it turns into a status line with the plane's live size and what can be done, `[delete]` (confirmed first,
 // D-182) and `[done]`, which ends edit mode. Viewers never get to edit mode.
 type ConsoleProps = {
   size: Box | null
-  focused?: boolean
   onFocus: () => void
   onEdit?: () => void
   onDelete?: () => void
   className?: string
 }
 
-function PlaneConsole({ size, focused, onFocus, onEdit, onDelete, className }: ConsoleProps) {
+function PlaneConsole({ size, onFocus, onEdit, onDelete, className }: ConsoleProps) {
   return (
     <div
       className={`${styles.console} ${className ?? ''}`}
@@ -443,11 +447,9 @@ function PlaneConsole({ size, focused, onFocus, onEdit, onDelete, className }: C
       {size ? (
         <>
           <span className={styles.mode}>EDIT</span>
-          <span className={styles.prompt}>▸</span>
           <span className={styles.readout}>
             {size.w} × {size.h}
           </span>
-          <span className={styles.hint}>· drag to move · corners to resize</span>
           {onDelete && (
             <button className={styles.tool} data-tone="danger" title="delete the plane (Delete)" onClick={onDelete}>
               delete
@@ -461,9 +463,8 @@ function PlaneConsole({ size, focused, onFocus, onEdit, onDelete, className }: C
         </>
       ) : (
         <>
-          <span className={styles.prompt}>▸</span>
-          <button className={styles.tool} aria-pressed={focused} title={focused ? 'back to the canvas (Esc)' : 'make the plane the view'} onClick={onFocus}>
-            {focused ? 'unfocus' : 'focus'}
+          <button className={styles.tool} aria-pressed={false} title="make the plane the view" onClick={onFocus}>
+            focus
           </button>
           {onEdit && (
             <button className={styles.tool} aria-pressed={false} title="move, resize or rename the plane" onClick={onEdit}>
