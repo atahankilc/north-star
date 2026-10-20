@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-20 (D-156–D-159 text, sections, sticky notes, comment threads)_
+_Last updated: 2026-10-20 (D-169 people stack, smooth cursors; D-170 following opens their panel)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -53,6 +53,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Competitor features as names beside the card (full list on hover/select), availability + source + "matches ours",
   parts folding into the parent as names, all gliding 280 ms (D-164). 2026-10-20, committed, not pushed;
   rules deployed. Assistant doesn't write availability/source yet.
+- People here as overlapping squares + `+N` list; live cursors smoothed on the receiving side (D-169); following opens what they open (D-170). 2026-10-20.
 
 ## Next steps
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**

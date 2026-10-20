@@ -2510,6 +2510,31 @@ reached from the panel; the camera flew to where it would be on the open plane).
 - *Verified* headless: a plane "Pricing" with one card; from All a spot thread on Pricing switched to Pricing and opened;
   on Pricing the other thread's row said `on All ↗`, and opening it switched back to All and opened it; `tsc`.
 
+### D-169 · 2026-10-20 · Accepted (adds to D-065, D-067)
+**People here as a stack; smooth live cursors.**
+**What:** HUD people: only squares, never names (the user: "direkt herkesi isimsiz göster"), overlapping (−4 px, edged in
+the page colour), the name and view in a tag under the square on hover; past four, the first three plus `+N`, which opens
+a framed list of everyone (square, name, view; click follows). Whoever you follow stays among the squares. Live cursors:
+still written at most every 60 ms (~16 Hz); the receiver keeps each position with its arrival time and draws the cursor
+120 ms (two writes) in the past on a Catmull-Rom curve through them; after a still spell the move starts from the resting
+point; bunched arrivals are spaced out again. Cursor positions live outside zustand (`cursorAt`, `onCursorMove` in
+`presence.ts`); the peer list publishes only when something other than a cursor's position changed.
+**Why:** the user: names for every person don't fit past two people; cursors moved in jerks, not smooth like Miro. They
+asked not to send 30–60 positions a second, only to make it smoother for the one watching.
+**Verified:** two headless Chromes on the emulators (Alice moves in a circle, Bob records her cursor each frame): before,
+99 of ~140 moving frames stood still and the speed varied 1.67 (sd/mean); after, none stood still, 0.17. People chips
+checked with 1, 3 and 7 injected peers (hover tag, `+4` list).
+**Alternatives:** sending more often (rejected by the user); damping toward the last point (what it was: steps then stops).
+
+### D-170 · 2026-10-20 · Accepted (adds to D-067)
+**Following someone opens what they open.** The user: "izlediğim kişi sağ panel açıcak bir hareket yapınca, benim de sağ
+panelim açılsın istiyorum". While following, each change of their selection (presence `sel` + `more`) becomes yours once
+you're on their view, so the side panel (one item, or "N selected") opens and closes with theirs. Done in `PeopleHere`
+only, nothing new written. Not in the matrix (a cell there is its own selection) or reports (the open report is in the
+address). A click of your own holds until they pick something else; it doesn't stop following.
+**Verified:** two headless Chromes on the emulators, Bob following Alice: Alice picks a card → Bob's panel shows it; three
+→ "Selection"; none → Bob's panel closes.
+
 ### D-171 · 2026-10-20 · Accepted (changes D-159's hollow pin)
 **A thread whose card, text or link was deleted leaves the board but stays in the threads panel.** The user asked why
 such a thread hung on the board as a dashed pin, and agreed to: no pin; kept in the panel, marked; back on the board

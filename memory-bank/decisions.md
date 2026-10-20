@@ -167,7 +167,12 @@ don't stack a second one). Spec detail belongs in `/docs`, not here.
 ## Collaboration
 - Real-time collaboration with presence and live cursors is in scope (D-005).
 - Presence in RTDB `presence/{wid}/{uid}`, readable by any signed-in user, own node writable; whole-node writes (D-016, D-065).
-- Live cursors on the board in world units; people chips in the HUD; follow someone (view + cursor, Esc stops) (D-065, D-067).
+- Live cursors on the board in world units; follow someone (view + cursor, Esc stops) (D-065, D-067). Sent ~16 times a
+  second, no more; smoothed only where watched: drawn 120 ms behind on a curve through what arrived (D-169).
+- Following someone also takes their selection, so their side panel opens for you (not in matrix or reports); your
+  own click holds until they pick something else (D-170).
+- People here in the HUD: squares only, never names, overlapping, name on hover, `+N` past four
+  opens a list of everyone (D-169).
 - Colours by join order (no clash up to 5), stored as dark hex, drawn with `themeAccent` (D-067, D-069).
 - Selections shown in every view: board rings, Flow rings, Table bars, Matrix cells (`PeerMarks.tsx`) (D-067, D-068).
 - No typing indicator (D-071).

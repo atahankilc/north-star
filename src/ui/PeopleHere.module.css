@@ -1,3 +1,7 @@
+.root {
+  position: relative;
+}
+
 .people {
   display: flex;
   align-items: center;
@@ -58,14 +62,139 @@
   object-fit: cover;
 }
 
-.name {
+/* Squares only, overlapping, each edged in the page colour so they read apart. */
+.stack {
+  gap: 0;
+}
+
+.stack li + li {
+  margin-left: -4px;
+}
+
+.stack .person {
+  position: relative;
+  max-width: none;
+  padding: 0;
+  border: 0;
+}
+
+.stack .swatch {
+  outline: 2px solid var(--bg);
+}
+
+.stack .person:hover,
+.stack .person:focus-visible {
+  z-index: 1;
+}
+
+.stack .person:hover .swatch,
+.stack .person:focus-visible .swatch,
+.stack .person[aria-pressed='true'] .swatch {
+  outline-color: var(--peer);
+}
+
+.stack .person[aria-pressed='true'] {
+  z-index: 1;
+  background: none;
+}
+
+/* The name, under the square while it's hovered. */
+.tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  padding: 2px var(--space-2);
+  background: var(--peer);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.person:hover .tip,
+.person:focus-visible .tip {
+  opacity: 1;
+}
+
+.where {
+  opacity: 0.7;
+}
+
+.more {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  margin-left: var(--space-1);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--fg-faint);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.more:hover,
+.more:focus-visible,
+.more[aria-expanded='true'] {
+  outline: none;
+  border-color: var(--fg);
+  color: var(--fg-strong);
+}
+
+/* Everyone here: a framed list under the squares, right-aligned with them. */
+.list {
+  composes: frame from './Frame.module.css';
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  width: 260px;
+  max-height: min(50vh, 320px);
+  margin: 0;
+  padding: var(--space-1) 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--peer);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover,
+.row:focus-visible,
+.row[aria-pressed='true'] {
+  outline: none;
+  background: var(--wash-3);
+}
+
+.rowName {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.more {
+.row .where {
   color: var(--fg-dim);
   font-size: var(--text-xs);
 }
@@ -96,14 +225,4 @@
 
 .stop {
   opacity: 0.6;
-}
-
-@media (max-width: 640px) {
-  .name {
-    display: none;
-  }
-
-  .person {
-    padding: 0;
-  }
 }

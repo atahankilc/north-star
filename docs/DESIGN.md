@@ -167,6 +167,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Screen-edge margins come only from `--hud-x` / `--hud-y` (toolbar, panels and status line too).
 
 - In a workspace, the views sit beside the breadcrumb as unframed tabs after a vertical rule (current view bright with a sliding magenta underline; D-066), and the right side holds one
+  people here (D-169: squares only, no names, overlapping, name on hover, the first three then
+  `+N`, which opens a framed list of everyone with their view; click follows), then the
   account chip (avatar initial + name; just the initial below 640 px) and, beside it, a framed ⚙ icon button (cyan count in the
   corner when people wait to join). The chip opens settings on the account page, the gear on the last page used. It opens the settings
   modal (D-064, D-097): a side menu on the left in three groups, `YOU` (account, display), `WORKSPACE <name>` (general, people,
@@ -244,6 +246,6 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
 
 - Camera flies between views (Canvas → Features → Competitor map) with eased paths
 - Cards spring in on create and dissolve into glyphs on delete
-- Collaborator cursors are interpolated (no trail: tried and removed, D-067)
+- Collaborator cursors are drawn 120 ms behind on a curve through what was sent, so they glide like the sender's (D-169; no trail: tried and removed, D-067)
 - Hover: subtle parallax and glyph shimmer
 - Durations of roughly 200–600 ms, spring-based where possible

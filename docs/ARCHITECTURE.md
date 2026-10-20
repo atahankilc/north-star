@@ -142,10 +142,12 @@ RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, more?, sin
   The conflict model is **last-write-wins per field**, which is enough for post-it fields.
   Simultaneous typing in the same field: last write wins, no lock or warning (D-071, answers Q-006).
 - **Ephemeral data** (cursors, selection, "is typing", viewport): Realtime Database at
-  `presence/{wid}/{uid}`, removed automatically with `onDisconnect()`. Throttled to about 15–20 Hz and
-  interpolated on the receiving side for smooth motion. Each tab writes its whole node, so a second tab survives
+  `presence/{wid}/{uid}`, removed automatically with `onDisconnect()`. Throttled to ~16 Hz (one write per 60 ms) and
+  smoothed only on the receiving side (D-169): each position is kept with the time it arrived, and the cursor is drawn
+  120 ms in the past on a curve (Catmull-Rom) through them, bunched arrivals spread out again; cursor positions stay out of
+  React state, so a moving pointer re-renders nothing but the canvas. Each tab writes its whole node, so a second tab survives
   the first one's disconnect (D-065). Cursors are board world coordinates; other views report only which view you're on. `sel` is the selected item
-  (or a matrix cell, `<featureId>_<competitorId>`), shown in every view (D-068); `more` is the rest of a selection of
+  (or a matrix cell, `<featureId>_<competitorId>`), shown in every view (D-068), and taken as your own while you follow them (D-170); `more` is the rest of a selection of
   several on the board, ids joined by spaces, ≤2048 characters (D-124). RTDB writes are free (billed by bandwidth),
   and Spark allows 100 simultaneous connections.
 - RTDB rules can't read Firestore membership, so any signed-in user who knows a workspace ID could
