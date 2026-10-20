@@ -6,9 +6,9 @@
 // closing runs it backwards, and asking for what's already shown moves nothing. Poses are relative to the card's
 // centre, so a dragged card carries its list with it exactly.
 import { Text } from '@react-three/drei'
-import { useFrame, type ThreeEvent } from '@react-three/fiber'
-import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
-import type { Group, Mesh, MeshBasicMaterial } from 'three'
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { Color, ShaderMaterial, Vector2, WebGLRenderTarget, type Group, type Mesh, type MeshBasicMaterial } from 'three'
 import type { WithId } from '../../data/hooks'
 import type { CompetitorFeature } from '../../data/model'
 import { useCanvas } from '../../state/canvasStore'
@@ -290,6 +290,90 @@ function Caption({ pose, start, children, color, size = SMALL, spacing = 0.12, r
   )
 }
 
+// Behind an open list: what's under it, blurred, so names never fight with the cards and lines they cover. No edge, no
+// fill of its own. Each frame it shows, the board is drawn without the list (`hide`) into a quarter-size picture, and
+// the plate samples that picture round each of its pixels; it fades and shrinks with the list.
+const BLUR_PX = 14
+const blurVertex = `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`
+const blurFragment = `
+uniform sampler2D map;
+uniform vec2 res;
+uniform float radius;
+uniform vec3 tint;
+uniform float opacity;
+void main() {
+  vec2 uv = gl_FragCoord.xy / res;
+  vec2 step = radius / res / 3.0;
+  vec4 sum = vec4(0.0);
+  float total = 0.0;
+  for (int x = -3; x <= 3; x++)
+    for (int y = -3; y <= 3; y++) {
+      float w = exp(-float(x * x + y * y) / 8.0);
+      sum += texture2D(map, uv + vec2(float(x), float(y)) * step) * w;
+      total += w;
+    }
+  vec4 b = sum / total;
+  // Empty board shows as the page; then a little of the page over all of it, so the names read first.
+  vec3 c = mix(tint, b.rgb, clamp(b.a, 0.0, 1.0));
+  gl_FragColor = vec4(mix(c, tint, 0.35), opacity);
+  #include <colorspace_fragment>
+}`
+
+function ListBlur({ pose, start, hide }: { pose: Pose; start?: Pose; hide: RefObject<Group | null> }) {
+  const mesh = useRef<Mesh>(null)
+  const colors = usePalette()
+  const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
+  const camera = useThree((s) => s.camera)
+  const target = useMemo(() => new WebGLRenderTarget(1, 1), [])
+  const size = useMemo(() => new Vector2(), [])
+  const material = useMemo(
+    () =>
+      new ShaderMaterial({
+        uniforms: { map: { value: target.texture }, res: { value: new Vector2(1, 1) }, radius: { value: BLUR_PX }, tint: { value: new Color() }, opacity: { value: 0 } },
+        vertexShader: blurVertex,
+        fragmentShader: blurFragment,
+        transparent: true,
+        depthWrite: false,
+      }),
+    [target],
+  )
+  useEffect(() => () => (target.dispose(), material.dispose()), [target, material])
+  material.uniforms.tint.value.set(colors.bg)
+
+  useGlide(pose, (p) => {
+    const m = mesh.current
+    if (!m) return
+    m.position.set(p.x, p.y, -0.004)
+    m.scale.set(p.w, p.h, 1)
+    m.visible = p.o > 0.01
+    material.uniforms.opacity.value = p.o
+  }, start)
+
+  useFrame(() => {
+    const m = mesh.current
+    if (!m?.visible) return
+    gl.getDrawingBufferSize(size)
+    target.setSize(Math.max(1, Math.ceil(size.x / 4)), Math.max(1, Math.ceil(size.y / 4)))
+    material.uniforms.res.value.copy(size)
+    material.uniforms.radius.value = BLUR_PX * gl.getPixelRatio()
+    const list = hide.current
+    if (list) list.visible = false
+    const before = gl.getRenderTarget()
+    gl.setRenderTarget(target)
+    gl.clear()
+    gl.render(scene, camera)
+    gl.setRenderTarget(before)
+    if (list) list.visible = true
+  })
+
+  return (
+    <mesh ref={mesh} material={material} raycast={noHit}>
+      <planeGeometry args={[1, 1]} />
+    </mesh>
+  )
+}
+
 const pose = (x: number, y: number, w: number, h: number, o = 1, a = 0): Pose => ({ x, y, w, h, o, a })
 // The left edge of what's beside a card, from its centre.
 const X0 = CARD_W / 2 + GAP
@@ -353,9 +437,19 @@ export const FeatureList = memo(function FeatureList({ features, open, matches, 
   const tags: Record<string, string> = { free: colors.green, paid: colors.yellow, enterprise: colors.blue, beta: colors.magenta }
 
   const more = features.length - FIRST
+  const lift = useRef<Group>(null)
+
+  // The blur round the open list, a little past its names and rows; closed, the closed rows' box, faded out.
+  const PAD = 0.07
+  let bottom = TOP
+  for (const p of spots.values()) if (p.o > 0) bottom = Math.min(bottom, p.y - p.h / 2)
+  const shown = Math.min(FIRST, features.length)
+  const blurShut = pose(X0 + ROW_W / 2, TOP - (shown * STEP) / 2, ROW_W, shown * STEP, 0)
+  const blurOpen = pose(X0 + OPEN_W / 2, (TOP + PAD + bottom - PAD) / 2, OPEN_W + 2 * PAD, TOP - bottom + 2 * PAD)
 
   return (
-    <group position={[0, 0, full ? OPEN_LIFT : 0]}>
+    <group ref={lift} position={[0, 0, full ? OPEN_LIFT : 0]}>
+      {full && <ListBlur pose={open ? blurOpen : blurShut} start={blurShut} hide={lift} />}
       {full &&
         groups.map(([category, items]) => {
           // Each category's name, in the gap over its first row; out of and back into where that row sits closed.
