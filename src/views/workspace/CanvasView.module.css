@@ -5,6 +5,8 @@
   overflow: hidden;
   cursor: grab;
   touch-action: none;
+  /* Drags here move things; they never select text (fields being typed in still do). */
+  user-select: none;
 }
 
 .canvas[data-panning='true'] {
@@ -279,3 +281,4 @@
 .consoleAway {
   visibility: hidden;
 }
+

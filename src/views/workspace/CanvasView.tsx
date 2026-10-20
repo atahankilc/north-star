@@ -9,15 +9,19 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { deletePiece, KIND_NAME, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { deletePiece, pieceRef, KIND_NAME, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
+import { DrawSection } from './DrawSection'
+import { labelBox, TextItems } from './TextItems'
+import { spaceBounds } from './spaceBounds'
+import { CANVAS, deleteLabel, type Label } from '../../data/labels'
 import { PlaneCards } from './PlaneCards'
 import { DockAction, FocusDock } from './FocusDock'
-import { cardBounds, deleteCard, type Card } from '../../data/cards'
+import { deleteCard, type Card } from '../../data/cards'
 import { GRID } from '../../data/grid'
 import styles from './CanvasView.module.css'
 
@@ -37,7 +41,7 @@ const onPixel = (v: number) => {
 }
 
 export function CanvasView() {
-  const { wid, workspace, pieces, cards } = useWs()
+  const { wid, workspace, pieces, cards, labels } = useWs()
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
   const cam = useCanvasView((s) => s.cams[wid]) ?? camOf(wid)
@@ -61,9 +65,34 @@ export function CanvasView() {
   const piecesRef = useRef(pieces)
   piecesRef.current = pieces
   const cardsOf = (id: string) => cards.filter((c) => c.pieceId === id)
+  const labelsOf = (id: string) => labels.filter((l) => l.pieceId === id)
+  const canvasLabels = labelsOf(CANVAS)
   const focusedCards = focused ? cardsOf(focused.id) : []
+  const focusedLabels = focused ? labelsOf(focused.id) : []
+  // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
+  const fitRef = useRef(() => {})
+  fitRef.current = () => {
+    if (focused) fitPlane(spaceBounds(focusedCards, focusedLabels))
+    else fitCanvas(wid, [...pieces, ...canvasLabels.map(labelBox)])
+  }
+  const allLabelsRef = useRef(labels)
+  allLabelsRef.current = labels
   const focusedCardsRef = useRef(focusedCards)
   focusedCardsRef.current = focusedCards
+  const drawing = useCanvasView((s) => s.drawing)
+  // What a canvas section carries besides text: the planes inside it.
+  const pieceCarry = pieces.map((p) => ({ id: p.id, ref: pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h }))
+  // A point on screen (client px) in a space's px: the canvas's, or the focused plane's own view.
+  const canvasToSpace = (cx: number, cy: number): [number, number] => {
+    const r = root.current!.getBoundingClientRect()
+    const c = camOf(wid)
+    return [(cx - r.left - onPixel(r.width / 2 + c.x)) / c.zoom, (cy - r.top - onPixel(r.height / 2 + c.y)) / c.zoom]
+  }
+  const planeToSpace = (cx: number, cy: number): [number, number] => {
+    const r = root.current!.getBoundingClientRect()
+    const c = useCanvasView.getState().planeCam!
+    return [(cx - r.left - c.ox) / c.zoom, (cy - r.top - c.oy) / c.zoom]
+  }
   // Where a plane is on screen now.
   const screenRect = (p: Piece): ScreenRect => {
     const c = camOf(wid)
@@ -135,9 +164,20 @@ export function CanvasView() {
       if (t?.closest('input, textarea, [contenteditable], dialog')) return
       // Fit (D-186): the canvas's planes, or in focus the plane's contents.
       if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        if (focusedRef.current) fitPlane(cardBounds(focusedCardsRef.current))
-        else fitCanvas(wid, piecesRef.current)
+        fitRef.current()
         return
+      }
+      // Text anywhere (D-188): Delete takes the selected one away, Escape lets go of it (or stops drawing a section).
+      const { labelSelected, drawing } = useCanvasView.getState()
+      if (drawing && e.key === 'Escape') return useCanvasView.setState({ drawing: null })
+      const label = allLabelsRef.current.find((l) => l.id === labelSelected)
+      if (label) {
+        if (e.key === 'Escape') return useCanvasView.setState({ labelSelected: null })
+        if ((e.key === 'Delete' || e.key === 'Backspace') && editor) {
+          e.preventDefault()
+          useCanvasView.setState({ labelSelected: null })
+          return void deleteLabel(wid, label)
+        }
       }
       // In focus: Delete takes the selected card away (D-187); Escape lets go of it, or goes back to the canvas.
       if (focusedRef.current) {
@@ -173,7 +213,7 @@ export function CanvasView() {
 
   const pan = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 && e.button !== 1) return
-    useCanvasView.setState({ selected: null })
+    useCanvasView.setState({ selected: null, labelSelected: null })
     const start = camOf(wid)
     const [sx, sy] = [e.clientX, e.clientY]
     const el = e.currentTarget
@@ -209,8 +249,12 @@ export function CanvasView() {
             onFocus={() => focus(p)}
             focusing={p.id === focusId}
             cards={cardsOf(p.id)}
+            labels={labelsOf(p.id)}
           />
         ))}
+        {/* The canvas's own sections over its planes (no fill, so they hide nothing), its text over them (D-188). */}
+        <TextItems labels={canvasLabels} layer="frames" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
+        <TextItems labels={canvasLabels} layer="text" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
       </div>
       </div>
       {focused && (
@@ -218,18 +262,19 @@ export function CanvasView() {
           key={focused.id}
           piece={focused}
           at={screenRect(focused)}
-          home={homeOf(focused, screenRect(focused), focusedCards)}
+          home={homeOf(focused, screenRect(focused), focusedCards, focusedLabels)}
           spread={focusSpread}
           leaving={focusLeaving}
           lens={lens}
           // Once there, its cards centred and fitted to the screen (D-186, D-187).
           onArrived={() => {
             useCanvasView.setState({ focusArrived: true })
-            fitPlane(cardBounds(focusedCardsRef.current))
+            fitRef.current()
           }}
           onLeft={left}
         >
-          <FocusedCards cards={focusedCards} editor={editor} />
+          <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
+          {drawing === focused.id && <DrawSection space={focused.id} toSpace={planeToSpace} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {focusArrived && !focusLeaving && (
             <FocusDock>
@@ -238,6 +283,7 @@ export function CanvasView() {
           )}
         </FocusedPlane>
       )}
+      {drawing === CANVAS && !focused && <DrawSection space={CANVAS} toSpace={canvasToSpace} />}
       {confirming && (
         <HazardConfirm
           title={`delete ${confirming.name ? `"${confirming.name}"` : 'this plane'}?`}
@@ -247,7 +293,7 @@ export function CanvasView() {
           onConfirm={() => {
             useCanvasView.setState({ confirming: null })
             setEditing(confirming.id, false)
-            void deletePiece(wid, confirming.id, cards)
+            void deletePiece(wid, confirming.id, cards, labels)
           }}
         />
       )}
@@ -257,27 +303,27 @@ export function CanvasView() {
 
 const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'Ctrl+Z'
 
-type BoxProps = { piece: WithId<Piece>; cam: Cam; selected: boolean; editing: boolean; editor: boolean; onFocus: () => void; focusing: boolean; cards: Card[] }
+type BoxProps = { piece: WithId<Piece>; cam: Cam; selected: boolean; editing: boolean; editor: boolean; onFocus: () => void; focusing: boolean; cards: Card[]; labels: Label[] }
 
 // What a plane shows of its cards on the canvas (D-187): all of them, centred and fitted inside its box, never past 1;
 // none = its own (0, 0) at its corner. Plane px inside its 1 px edge.
-function innerView(box: Box, cards: Card[]): PlaneCam {
-  const b = cardBounds(cards)
+function innerView(box: Box, cards: Card[], labels: Label[]): PlaneCam {
+  const b = spaceBounds(cards, labels)
   if (!b) return { ox: 0, oy: 0, zoom: 1 }
   const { zoom, cx, cy } = fitInto(b, box.w - 2, box.h - 2, GRID)
   return { ox: (box.w - 2) / 2 - cx * zoom, oy: (box.h - 2) / 2 - cy * zoom, zoom }
 }
 
 // That view on the screen, where focus starts from and goes back to.
-function homeOf(piece: Box, at: ScreenRect, cards: Card[]): PlaneCam {
-  const v = innerView(piece, cards)
+function homeOf(piece: Box, at: ScreenRect, cards: Card[], labels: Label[]): PlaneCam {
+  const v = innerView(piece, cards, labels)
   return { ox: at.x + at.zoom * (1 + v.ox), oy: at.y + at.zoom * (1 + v.oy), zoom: at.zoom * v.zoom }
 }
 
 // The focused plane's cards, live, on its own view.
-function FocusedCards({ cards, editor }: { cards: Card[]; editor: boolean }) {
+function FocusedCards({ cards, labels, editor }: { cards: Card[]; labels: Label[]; editor: boolean }) {
   const view = useCanvasView((s) => s.planeCam)
-  return view ? <PlaneCards cards={cards} view={view} live editor={editor} /> : null
+  return view ? <PlaneCards cards={cards} labels={labels} view={view} live editor={editor} /> : null
 }
 
 // Resize handles (D-180, D-181): the corners are the cards' corner marks (D-150), grey on hover, long and cyan in edit
@@ -309,7 +355,7 @@ function dragBox(from: Box, handle: Handle, dx: number, dy: number, free: boolea
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
 
-function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, cards }: BoxProps) {
+function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, cards, labels }: BoxProps) {
   const { wid } = useWs()
   // Where a move or resize has it, held after the drop until the data gets there (else it would jump back for a moment).
   const [held, setHeld] = useState<Box | null>(null)
@@ -317,6 +363,8 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
     if (held && same(held, piece)) setHeld(null)
   }, [held, piece])
   const box = held ?? piece
+  // Carried by a section being dragged (D-188).
+  const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(piece.id) ? s.dragShift : null))
 
   // Out of edit mode a press on a plane is the canvas's: it pans (D-186). In edit mode it selects the plane, and moving or
   // one of the handles changes its box (5 px before a press turns into a drag).
@@ -348,7 +396,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
 
   const kind = KIND_NAME.plane
   // Its cards fitted inside it, and its marks with them (D-187).
-  const inner = innerView(box, cards)
+  const inner = innerView(box, cards, labels)
   const step = GRID * inner.zoom
   return (
     <div
@@ -356,7 +404,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       data-selected={selected || undefined}
       data-editing={editing || undefined}
       data-dragging={held ? true : undefined}
-      style={{ left: box.x, top: box.y, width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px` }}
+      style={{ left: box.x + (shift?.dx ?? 0), top: box.y + (shift?.dy ?? 0), width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px` }}
       onPointerDown={press('move')}
     >
       {editing ? (
@@ -367,7 +415,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
         </span>
       )}
       {/* Its cards, a picture here: the pointer goes through to the canvas (D-186, D-187). */}
-      <PlaneCards cards={cards} view={inner} live={false} editor={editor} />
+      <PlaneCards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       {CORNERS.map((h) => (
         <span key={h} className={styles.mark} data-handle={h} onPointerDown={editing ? press(h) : undefined} aria-hidden />
       ))}

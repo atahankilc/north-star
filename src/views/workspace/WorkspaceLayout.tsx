@@ -8,7 +8,11 @@ import { setReadOnly } from '../../data/history'
 import type { WithId } from '../../data/hooks'
 import type { JoinRequest, PieceKind } from '../../data/model'
 import { addPiece } from '../../data/pieces'
-import { addCard, cardBounds, CARD_TYPES, type CardType } from '../../data/cards'
+import { addCard, CARD_TYPES, type CardType } from '../../data/cards'
+import { addLabel, CANVAS, PARA_W, STICKY_W, TITLE_W } from '../../data/labels'
+import { snap } from '../../data/grid'
+import { labelBox, useAuthor } from './TextItems'
+import { spaceBounds } from './spaceBounds'
 import { TYPE_ACCENT } from './PlaneCards'
 import { usePresenceSession } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
@@ -108,14 +112,18 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 // The side nav's fit (D-186), under the `+`; `0` does the same: everything on the canvas in view, or in focus the plane's
 // contents centred and fitted.
 function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
-  const { pieces, cards } = useWs()
+  const { pieces, cards, labels } = useWs()
   const focused = plane !== null
   return (
     <button
       className={styles.fit}
       aria-label={focused ? 'Fit the plane to the screen' : 'Fit everything on the canvas'}
       title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
-      onClick={() => (focused ? fitPlane(cardBounds(cards.filter((c) => c.pieceId === plane))) : fitCanvas(wid, pieces))}
+      onClick={() =>
+        focused
+          ? fitPlane(spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
+          : fitCanvas(wid, [...pieces, ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
+      }
     >
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
         <path d="M1 6V1h5M12 1h5v5M17 12v5h-5M6 17H1v-5" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -126,9 +134,44 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
 }
 
 // The side nav's `+` (D-176): on the canvas a plane (D-180) at the middle of the screen, selected; in a focused plane a
-// card (D-187), at the middle of its view, its title ready to type. Viewers make nothing (D-098).
+// card (D-187), at the middle of its view, its title ready to type. In both, text (D-188): a heading, a paragraph or a
+// sticky note in the middle, typed at once; a section drawn with the crosshair; the project title (on the canvas, one).
+// Viewers make nothing (D-098).
 function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
-  const { pieces, cards } = useWs()
+  const { pieces, cards, labels } = useWs()
+  const me = useAuthor()
+  const hasTitle = labels.some((l) => l.kind === 'title')
+  // The middle of the screen in the open space's px.
+  const middle = (): [number, number] | null => {
+    const { planeCam: c, size } = useCanvasView.getState()
+    if (!plane) return canvasCenter(wid)
+    return c ? [(size.w / 2 - c.ox) / c.zoom, (size.h / 2 - c.oy) / c.zoom] : null
+  }
+  const addText = async (what: 'heading' | 'paragraph' | 'sticky' | 'title') => {
+    const at = middle()
+    if (!at) return
+    const space = plane ?? CANVAS
+    const fields =
+      what === 'heading'
+        ? { size: 'heading' as const, w: undefined, dx: 150, dy: 30 }
+        : what === 'paragraph'
+          ? { size: 'note' as const, w: PARA_W.initial, dx: PARA_W.initial / 2, dy: 40 }
+          : what === 'sticky'
+            ? { kind: 'sticky' as const, w: STICKY_W.initial, color: 'yellow' as const, ...me, dx: STICKY_W.initial / 2, dy: 50 }
+            : { kind: 'title' as const, w: TITLE_W.initial, dx: TITLE_W.initial / 2, dy: 80 }
+    const { dx, dy, ...rest } = fields
+    const id = await addLabel(wid, { pieceId: space, text: '', ...rest, x: snap(at[0] - dx), y: snap(at[1] - dy) })
+    useCanvasView.setState({ labelSelected: id, labelEditing: id, cardSelected: null, selected: null })
+  }
+  const text = [
+    { key: 'text', heading: 'text' },
+    { key: 'heading', label: 'heading', glyph: 'T', onSelect: () => void addText('heading') },
+    { key: 'paragraph', label: 'paragraph', glyph: '¶', onSelect: () => void addText('paragraph') },
+    { key: 'sticky', label: 'sticky note', glyph: '▤', tone: 'var(--accent-yellow)', onSelect: () => void addText('sticky') },
+    { key: 'section', label: 'section', glyph: '⬚', hint: 'draw', onSelect: () => useCanvasView.setState({ drawing: plane ?? CANVAS }) },
+    // The project title goes on the canvas only, once (D-190).
+    ...(hasTitle || plane ? [] : [{ key: 'title', label: 'project title', glyph: '✦', onSelect: () => void addText('title') }]),
+  ]
   const add = async (kind: PieceKind) => {
     const id = await addPiece(wid, kind, canvasCenter(wid), pieces)
     useCanvasView.setState({ selected: id })
@@ -156,10 +199,12 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
           ? [
               { key: 'cards', heading: 'card' },
               ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
+              ...text,
             ]
           : [
               { key: 'canvas', heading: 'on the canvas' },
               { key: 'plane', label: 'plane', glyph: '▦', onSelect: () => void add('plane') },
+              ...text,
             ]
       }
     />

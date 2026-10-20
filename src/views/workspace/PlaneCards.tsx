@@ -3,7 +3,9 @@
 // a click selects (the cards' corner marks, D-150), a drag moves (5 px first, snapped to the grid, alt = free, held where
 // dropped until the data's back), a double-click types the title, which a new card starts with.
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { CARD, moveCard, retitleCard, TITLE_MAX, type Card, type CardType } from '../../data/cards'
+import { CARD, cardRef, moveCard, retitleCard, TITLE_MAX, type Card, type CardType } from '../../data/cards'
+import type { Label } from '../../data/labels'
+import { TextItems } from './TextItems'
 import { snap } from '../../data/grid'
 import type { PlaneCam } from '../../state/canvasView'
 import { useCanvasView } from '../../state/canvasView'
@@ -29,15 +31,20 @@ const PLACEHOLDER: Record<CardType, string> = {
   feature: 'What does it do?',
 }
 
-type Props = { cards: Card[]; view: PlaneCam; live: boolean; editor: boolean }
+type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; editor: boolean }
 
-export function PlaneCards({ cards, view, live, editor }: Props) {
+// A plane's contents: its sections under its cards, its text over them (D-188).
+export function PlaneCards({ cards, labels, view, live, editor }: Props) {
+  const { wid } = useWs()
+  const carry = cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
   return (
     <div className={styles.layer} data-live={live || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
+        <TextItems labels={labels} layer="frames" live={live} editor={editor} zoom={view.zoom} carry={carry} />
         {cards.map((c) => (
           <CardBox key={c.id} card={c} zoom={view.zoom} live={live} editor={editor} />
         ))}
+        <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
       </div>
     </div>
   )
@@ -51,13 +58,15 @@ function CardBox({ card, zoom, live, editor }: { card: Card; zoom: number; live:
   useEffect(() => {
     if (held && held[0] === card.x && held[1] === card.y) setHeld(null)
   }, [held, card.x, card.y])
-  const [x, y] = held ?? [card.x, card.y]
+  // Carried by a section being dragged (D-188).
+  const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(card.id) ? s.dragShift : null))
+  const [x, y] = held ?? [card.x + (shift?.dx ?? 0), card.y + (shift?.dy ?? 0)]
 
   const press = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!live || e.button !== 0) return
     // The plane would pan.
     e.stopPropagation()
-    useCanvasView.setState({ cardSelected: card.id })
+    useCanvasView.setState({ cardSelected: card.id, labelSelected: null })
     if (!editor || typing) return
     const [sx, sy] = [e.clientX, e.clientY]
     let to: [number, number] | null = null

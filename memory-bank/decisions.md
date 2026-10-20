@@ -66,6 +66,7 @@ piece; check them with the user then.
   the left edge; its `+` is an unframed icon like the gear, a drawn 20 px `+` in magenta, the tabs' bar under it when open (D-178).
 - Tokens only, no raw colours, sizes or tracking (`--text-*`, `--track-*`, `--measure`, `--fg-muted`, `--diff-*`, `--link-*`)
   (D-069, D-093, D-097). `src/ui/Page.module.css`, `fieldLabel`, `small` buttons shared (D-093).
+- No magenta `▸` before a row of actions (consoles, bars); `▸`/`▾` only to open or fold something (D-189).
 - Actions lowercase, uppercase only for labels (D-093). No native `<select>`: `src/ui/Select.tsx` (D-093).
 - One column header for Flow/Table/Matrix/Reports (`TableHead.module.css`, 40 px) (D-107). One thin square scroll bar (D-105).
 - Views as plain tabs with a sliding magenta bar; filters framed as `LABEL │ value ▾`, lit cyan when narrowing; dropdowns 30 px (D-066).
@@ -167,15 +168,15 @@ piece; check them with the user then.
   it move, resize (≥ 320 × 200) and take a name (the name is a field), and Delete removes it; edit stays on until
   pressed off (D-180).
 - Plane look (D-179, D-181): terminal style (picked from four on a preview): name set into the top edge, the console a
-  command line outside under the bottom-right corner, `▸ [focus] [edit]` (no name, no zoom: D-186);
+  tab inside the bottom-right corner on the bottom edge, magenta marks on its top corners (D-189), `[focus] [edit]`, no `▸` before them (no name, no zoom: D-186);
   the cards' corner marks, grey on hover; edit mode = a faint dashed cyan edge, long cyan corner marks that resize, short
-  bars at the edge middles, and the console a cyan status line `EDIT ▸ 960 × 600 · drag to move · corners to resize
-  [delete] [done]` (D-182).
+  bars at the edge middles, and the console a cyan status line `EDIT 960 × 600 [delete] [done]` (D-182, D-189).
 - Focus (D-184, D-185): `[focus]` makes a plane the view, `?focus=<id>` (back leaves, reload stays). Going in, the plane
   spreads over the screen like ink, cell by cell on the 9 px grid, nearest first with a ragged edge (820 ms, eased both
   ends); nothing zooms and its `+` marks never move (the layer carries them on the plane's grid at the canvas's zoom).
-  `[unfocus]` or Esc draws it back into the plane (700 ms). The plane's console goes the moment it starts; in focus the
-  console sits bottom left, right of the gear, once arrived: keep the right of the screen free. Breadcrumb ends with the
+  `[unfocus]` or Esc draws it back into the plane (700 ms). The plane's console goes the moment it starts; in focus, once
+  arrived, the focus dock: a tab on the screen's bottom edge, in the middle, `[unfocus] esc` last, other actions before
+  it, no plane name (the breadcrumb has it) (D-189). Keep the right of the screen free. Breadcrumb ends with the
   plane's name; no `+` in focus. Reduced motion: no transition. What's different inside: the user will say.
 - Pan and zoom (D-186): out of focus, drags and the wheel are always the canvas's, over a plane too (only edit mode
   takes the drag); in focus they're the plane's own view (`planeCam`), which glides home as focus leaves. A plane always
@@ -187,6 +188,16 @@ piece; check them with the user then.
   once; in focus click selects (corner marks), drag moves (snapped, alt free), double-click retitles, Delete removes;
   on the canvas they're a picture fitted in the plane, its marks following. Deleting a plane takes its cards.
   No side panel on a card click until it's refactored (the user's call).
+- Text anywhere (D-188): headings H1–H3 (48/29/22 px, H1 with a rule fading right), paragraphs (light Markdown, S/M/L,
+  width from the right edge), sticky notes (signed, colour bar, yellow default), sections (frame drawn with a crosshair,
+  `01 NAME` in the top edge, carries what's fully inside it, corner resizes) and the project title (workspace name and
+  description, one per workspace). `labels` docs with `pieceId` (`canvas` or a plane's id), x/y top-left in that space's
+  px; the old board's labels (none) aren't shown. From the side nav's `+` in both spaces; live on the canvas, in a plane
+  only in focus; click, drag (snapped), double-click types, Delete; a bar under the selected one (sizes, B/I/AA, colours,
+  delete) at screen size. Canvas sections sit over planes (no fill). A plane's delete takes its text.
+- Text reads the same typed or not (D-190): fields keep the item's face, size and layout (no frame, same placeholder);
+  a soft feathered shade of the page sits behind headings, paragraphs and the title so the backdrop dims under them.
+  The project title goes on the canvas only (not in a plane's `+`).
 - Planes snap to the canvas's 25 px grid (their `+` step) when moved, resized or added; alt = free; min 325 × 200 (D-182).
 - Deleting a plane (console `[delete]` or Delete in edit mode) asks first in the hazard confirm (`src/ui/HazardConfirm.tsx`,
   for anything that can't be taken lightly): the screen darkens, the box steps in, ASCII hazard tape `╱╱╱` wraps round it

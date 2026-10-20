@@ -84,7 +84,7 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     const { planeCam: start, focusLeaving } = useCanvasView.getState()
     if ((e.button !== 0 && e.button !== 1) || !start || focusLeaving) return
     // A press on the plane itself lets go of a card (D-187).
-    useCanvasView.setState({ cardSelected: null })
+    useCanvasView.setState({ cardSelected: null, labelSelected: null })
     stopGlide()
     const el = e.currentTarget
     const [sx, sy] = [e.clientX, e.clientY]

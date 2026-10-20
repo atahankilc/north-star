@@ -1,12 +1,14 @@
 // The workspace's canvas (D-174, D-176): what's placed on it. A plane for now (D-180); tables and more later.
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { cardRef, type Card } from './cards'
+import { labelRef, type Label } from './labels'
 import { db } from './firebase'
 import { GRID, snap } from './grid'
 import { absent, snapshotWith, tracked } from './history'
 import type { Piece, PieceKind } from './model'
 
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'pieces')
+export const pieceRef = (wid: string, id: string) => doc(col(wid), id)
 
 // A new plane's size in canvas pixels at zoom 1.
 export const PIECE_SIZE: Record<PieceKind, { w: number; h: number }> = {
@@ -55,9 +57,13 @@ export function renamePiece(wid: string, id: string, name: string) {
   return tracked('rename a plane', [ref], () => updateDoc(ref, { name: value || deleteField(), updatedAt: Date.now() }), { key: `piece-name:${id}` })
 }
 
-// The plane and its cards (D-187), as one undo step.
-export function deletePiece(wid: string, id: string, cards: Card[]) {
-  const refs = [doc(col(wid), id), ...cards.filter((c) => c.pieceId === id).map((c) => cardRef(wid, c.type, c.id))]
+// The plane, its cards (D-187) and its text (D-188), as one undo step.
+export function deletePiece(wid: string, id: string, cards: Card[], labels: Label[]) {
+  const refs = [
+    doc(col(wid), id),
+    ...cards.filter((c) => c.pieceId === id).map((c) => cardRef(wid, c.type, c.id)),
+    ...labels.filter((l) => l.pieceId === id).map((l) => labelRef(wid, l.id)),
+  ]
   return tracked('delete a plane', refs, async () => {
     const batch = writeBatch(db())
     refs.forEach((r) => batch.delete(r))

@@ -132,8 +132,9 @@ service cloud.firestore {
     }
 
     // Text on the board, and a place to jump to (D-050). A section (D-130) is a frame with a name: x/y its centre, w/h its size.
+    // In the old board's units up to 2000; since D-188 in space px, which run larger.
     function optSize(d, key) {
-      return !(key in d) || (d[key] is number && d[key] > 0 && d[key] <= 2000);
+      return !(key in d) || (d[key] is number && d[key] > 0 && d[key] <= 100000);
     }
 
     function optBool(d, key) {
@@ -159,6 +160,8 @@ service cloud.firestore {
         && optSize(d, 'w') && optSize(d, 'h')
         && (!('kind' in d) || d.kind != 'section' || ('w' in d && 'h' in d))
         && optText(d, 'planeId', 128)
+        // The space it's written in (D-188): `canvas`, or a plane's id; the old board's labels have none.
+        && optText(d, 'pieceId', 128)
         && d.x is number && d.y is number;
     }
 

@@ -230,6 +230,11 @@ await deny('a canvas piece without a place', () => addDoc(sub(bob.fs, 'pieces'),
 await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a competitor on a plane', () => addDoc(sub(bob.fs, 'competitors'), { name: 'Crewly', pieceId: 'p1', x: 25, y: 50, createdAt: 1, updatedAt: 1 }))
 await deny('a card with a numeric plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 5, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+// Text anywhere in the workspace (D-188).
+await allow('a heading on the canvas', () => addDoc(sub(bob.fs, 'labels'), { text: 'Plan', pieceId: 'canvas', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await allow('a big section on the canvas', () => addDoc(sub(bob.fs, 'labels'), { text: 'Q1', kind: 'section', pieceId: 'canvas', x: 0, y: 0, w: 4800, h: 3000, createdAt: 1, updatedAt: 1 }))
+await allow('a sticky note on a plane', () => addDoc(sub(bob.fs, 'labels'), { text: 'ask Bob', kind: 'sticky', pieceId: 'p1', uid: bob.uid, author: 'Bob', x: 0, y: 0, w: 200, createdAt: 1, updatedAt: 1 }))
+await deny('text with a numeric space', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', pieceId: 3, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a link from a package', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'k1', fromType: 'package', toId: 'p1', toType: 'problem', kind: 'solves' }))
 // Status and evidence (D-137).
 await allow('problem with a validation status', () => addDoc(sub(bob.fs, 'problems'), { ...card, validation: 'testing' }))

@@ -2828,3 +2828,70 @@ categories shown like B, not in a card, and the features under them not indented
   getirme buraya. Onu sonra refactor edip getireceğiz").
 - *Verified* headless: in focus `+` → problem/customer/feature, each typed; a drag moved a card (+50, +150); Delete then
   ⌘Z; Escape back to the canvas shows the three fitted in the plane; still there after a reload. Rules 356/356, deployed 2026-10-21; build.
+
+### D-188 · 2026-10-21 · Accepted (text anywhere: headings, paragraphs, sticky notes, sections, project title)
+- *Decision:* the old board's text (D-050, D-130, D-156–D-158, D-118) comes back, not bound to a component: each item
+  sits on the canvas (`pieceId: 'canvas'`, the constant CANVAS) or on a plane (its id), at x/y = top-left in that
+  space's px. Same `labels` collection and field names (size heading/subheading/minor/note, kind sticky/section/title,
+  scale, w/h, bold/italic/caps, color, uid/author) so the rules barely change: `pieceId` optional text, and w/h may
+  reach 100000 (they were ≤ 2000 board units). Old labels have no `pieceId` and aren't shown. `src/data/labels.ts`
+  (add, update with typing merged, delete, moveMany as one undo step); a plane's delete takes its text too.
+- *Look* (board units × 80 = px): H1 48, H2 29, H3 22 px Geist, left-aligned, an H1's rule fading right; paragraphs light
+  Markdown (`src/ui/LightMarkdown.tsx`), S/M/L 11/13/16 px, 500 px wide until its right edge is dragged; sticky notes
+  darker paper, a 2 px colour bar (yellow default), `AUTHOR · DATE` head, mono S/M/L; sections a thin frame (its colour
+  mixed with the line), `01 NAME` (number in magenta) set into the top edge; the project title a ✦ PROJECT kicker, the
+  workspace's name 40 px, a rule, what it's building, corner brackets, width from its right edge. Corner marks on hover
+  and selection. Colours: ink, magenta, cyan, yellow, green, blue.
+- *Use:* the side nav's `+` has a `text` group in both spaces: heading, paragraph, sticky note (typed at once, at the
+  middle of the screen), section (a crosshair: press, drag, release, then its name), project title (one per workspace;
+  edits the workspace's name and description in place). On the canvas they're always live; on a plane only in focus
+  (out of focus they're part of its picture, fitted with its cards). Click selects, a drag moves (5 px, snapped, alt
+  free), a section carries what's fully inside it (text, planes on the canvas, cards on a plane) as one undo step,
+  double-click types (Enter, or ⌘Enter in a paragraph/note; Escape puts it back; an empty heading/paragraph goes),
+  Delete removes, Escape lets go. A bar under the selected one, at screen size: H1/H2/H3 or S/M/L, B I AA, colours,
+  delete. Canvas sections draw over planes (no fill) so they're never hidden. Fit and a plane's fitted picture include text.
+  The canvas never selects text while dragging (`user-select: none`).
+- *Not yet* (the old board had them): kickers over headings, quarter turns, a section's name up its left edge, text
+  sizes for section names, the title folding when zoomed out, the jump list `go to`.
+- *User:* "let's bring things not only about board … threads, notes, headings, paragraph, section and project title. These
+  can be also added to plane but these stuff is not bounded by a component but they should be working workspace wide";
+  text first, then live cursors, follow ("total follow", into focus too), comment threads, selection marks.
+- *Verified* headless: on the canvas a heading, a paragraph with bold and bullets, a sticky note, the project title; a
+  section drawn round the heading and dragged by its edge carried it (+96, +49); H2 from the bar; a sticky note in a
+  focused plane; all still there after a reload. Rules 360/360, deployed 2026-10-21; build.
+
+### D-189 · 2026-10-21 · Accepted (changes D-181's console place and D-185's console in focus)
+- *Decision:* in focus, `unfocus` moves from the bottom left to the **focus dock**: a tab standing on the screen's
+  bottom edge, in the middle (no bottom border, magenta marks on its top corners), `[unfocus] esc`. It's the place for
+  whatever else can be done in focus later: more actions go in before `unfocus`. No plane name in it: the breadcrumb has
+  it. `src/views/workspace/FocusDock.tsx` (`FocusDock`, `DockAction`). It rises in 3 steps once the plane has arrived;
+  reduced motion: just there.
+- The plane's console takes the same look, smaller, **inside** the plane's bottom-right corner (16 px in), standing on
+  its bottom edge, over its cards; cyan in edit mode. Edit mode's `· drag to move · corners to resize` hint is dropped
+  (it doesn't fit a small plane).
+- The magenta `▸` before the console's actions is gone, in edit mode too (`EDIT 960 × 600 [delete] [done]`): it meant
+  nothing to the user ("Amacını anlamış değilim").
+  Then gone everywhere ("bunların hepsini kaldıralım"): the text bar (D-188's) lost it too. No magenta `▸` before a row
+  of actions anywhere. A `▸`/`▾` that opens or folds something (archived chat steps, parts, report sections) is a
+  different thing and stays when those come back.
+- *Alternatives (previewed on a local page):* dock: a framed line in the middle (A), the plane's bottom edge drawn
+  across the screen with the actions set into it (C), key caps with no frame (D). Console: set into the bottom edge like
+  the name (2), a box flush in the corner (3).
+- *User:* "focustan çıkmak için olan düğme … sayfanın altında çıkmasını istiyorum ve farklı bir dizayn"; picked B "but do
+  not need to add the name of the plane … it is already showed in breadcrumbs"; console: "put it to right bottom corner,
+  inside of the component", picked 1.
+- *Verified* on the emulators, headless: a plane focused shows the dock at the bottom middle; on the canvas the console
+  in the corner, and in edit mode cyan with size, delete, done. Typecheck.
+
+### D-190 · 2026-10-21 · Accepted (changes D-188's title and typing look)
+- *Decision:* the project title is the canvas's only: a plane's `+` doesn't offer it. Typing doesn't change how text
+  looks: the title's fields keep its type (`.field` had taken the block's own font and lost the 40 px name), keep its
+  rule between name and description, and grow with what's written; every field shows the same placeholder an empty item
+  shows and no focus frame (the caret is the only sign). A soft shade of the page (78 % `--bg`, blurred 12 px, 10 × 16
+  px past the edges, under the text) sits behind headings, paragraphs and the title, so the moving backdrop dims under
+  them and they read; sticky notes have their own paper.
+- *User:* "Project title'ın plane'e eklenmesini istemiyorum … ilk konduğundaki edit modu görüntüsü ile edit modundan
+  çıkıldıktan sonraki görüntüsü farklı … edit modundayken bile component'in görüntüsü normal görüntüsü gibi olsun … bir bg
+  eklenebilir … ya da direkt text component'inin arkasındaki animasyonun parlaklığı düşürülsün".
+- *Verified* headless: the title cropped while typing and after, the same apart from the selection marks and the width
+  handle; the canvas with text over the moving backdrop; a focused plane's `+` lists no project title; build.

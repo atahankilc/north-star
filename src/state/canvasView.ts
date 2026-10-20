@@ -27,13 +27,19 @@ type State = {
   // Cards in the focused plane (D-187): the one selected, and the one whose title is being typed.
   cardSelected: string | null
   cardEditing: string | null
+  // Text anywhere (D-188): the one selected, the one being typed, and a section being drawn in a space.
+  labelSelected: string | null
+  labelEditing: string | null
+  drawing: string | null
+  // Things moving together while a section is dragged (D-188): their ids and how far, until the drop is written.
+  dragShift: { ids: string[]; dx: number; dy: number } | null
 }
 
 export type PlaneCam = { ox: number; oy: number; zoom: number }
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null }))
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({
