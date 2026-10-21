@@ -32,7 +32,7 @@ import { PlaneCards } from './PlaneCards'
 import { DockAction, FocusDock } from './FocusDock'
 import { deleteCard, type Card } from '../../data/cards'
 import { GRID } from '../../data/grid'
-import { goToPlace, placesIn, useGoTo, type Place } from './goTo'
+import { goToPlace, placesIn, shownPlaces, useGoTo, type Place } from './goTo'
 import styles from './CanvasView.module.css'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
@@ -89,8 +89,8 @@ export function CanvasView() {
     else fitCanvas(wid, [...pieces, ...canvasLabels.map(labelBox)])
   }
   // Go to (D-196): 1–9 for the first nine places in the space you're in; the side nav's list asks through `useGoTo`.
-  const placesRef = useRef(() => placesIn(focusId ?? CANVAS, pieces, labels, workspace.name))
-  placesRef.current = () => placesIn(focusId ?? CANVAS, pieces, labels, workspace.name)
+  const placesRef = useRef(() => [] as Place[])
+  placesRef.current = () => shownPlaces(placesIn(focusId ?? CANVAS, pieces, labels, workspace.name), useGoTo.getState().open)
   // A place in the space you're in glides there; one in a plane, from outside it, waits for the plane to come into focus.
   const goPlaceRef = useRef((_: Place) => {})
   goPlaceRef.current = (place: Place) => {

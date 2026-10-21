@@ -15,8 +15,14 @@ import { labelBox } from './TextItems'
 // `space`: where it is, the canvas or a plane's id; `inside`: a plane's, listed under it on the canvas.
 export type Place = { id: string; space: string; label: string; glyph: string; box: Bounds; whole: boolean; inside?: boolean }
 
-// A place picked in the side nav, for the canvas to go to; and one waiting for its plane to come into focus.
-export const useGoTo = create<{ asked: Place | null; pending: Place | null }>(() => ({ asked: null, pending: null }))
+// A place picked in the side nav, for the canvas to go to; one waiting for its plane to come into focus; and the planes
+// whose places are shown under them in the list (D-200: folded until opened, for the tab's life).
+export const useGoTo = create<{ asked: Place | null; pending: Place | null; open: string[] }>(() => ({ asked: null, pending: null, open: [] }))
+
+export const toggleOpen = (plane: string) => useGoTo.setState((s) => ({ open: s.open.includes(plane) ? s.open.filter((x) => x !== plane) : [...s.open, plane] }))
+
+// What the list shows, which 1–9 count through: a plane's places only while it's open.
+export const shownPlaces = (places: Place[], open: string[]) => places.filter((p) => !p.inside || open.includes(p.space))
 
 // Where a heading's top lands, as a share of the screen's height.
 const HEADING_TOP = 0.28

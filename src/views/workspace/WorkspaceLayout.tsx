@@ -15,7 +15,7 @@ import { labelBox, useAuthor } from './TextItems'
 import { spaceBounds } from './spaceBounds'
 import { TYPE_ACCENT } from './PlaneCards'
 import { InboxButton } from './ThreadInbox'
-import { placesIn, useGoTo } from './goTo'
+import { placesIn, shownPlaces, toggleOpen, useGoTo } from './goTo'
 import { usePresenceSession } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
 import {
@@ -142,19 +142,29 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
   )
 }
 
-// The side nav's go-to (D-196), under fit: the places in the space you're in (on the canvas, each plane's own under it),
-// with a search field; 1–9 go to the first nine. The canvas does the going.
+// The side nav's go-to (D-196), under fit: the places in the space you're in (on the canvas, each plane's own under it,
+// folded until its `▸ N` opens them, D-200), with a search field that finds folded ones too; 1–9 go to the first nine
+// shown. The canvas does the going.
 function GoToButton({ plane }: { plane: string | null }) {
   const { pieces, labels, workspace } = useWs()
+  const open = useGoTo((s) => s.open)
   const places = placesIn(plane ?? CANVAS, pieces, labels, workspace.name)
-  const go = places.map((p, i) => ({
-    key: p.id,
-    label: p.label,
-    glyph: p.glyph,
-    hint: i < 9 ? `${i + 1}` : undefined,
-    indent: p.inside,
-    onSelect: () => useGoTo.setState({ asked: p }),
-  }))
+  const shown = shownPlaces(places, open)
+  const inside = (id: string) => places.filter((p) => p.inside && p.space === id).length
+  const go = places.map((p) => {
+    const i = shown.indexOf(p)
+    const n = p.inside ? 0 : inside(p.id)
+    return {
+      key: p.id,
+      label: p.label,
+      glyph: p.glyph,
+      hint: i >= 0 && i < 9 ? `${i + 1}` : undefined,
+      indent: p.inside,
+      folded: i < 0,
+      fold: n ? { open: open.includes(p.id), count: n, onToggle: () => toggleOpen(p.id) } : undefined,
+      onSelect: () => useGoTo.setState({ asked: p }),
+    }
+  })
   return (
     <Menu
       icon

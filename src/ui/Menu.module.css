@@ -295,6 +295,19 @@
   font-size: var(--text-xs);
 }
 
+/* `▸ 2`: what an item holds folded under it (go to's planes, D-200). Its own click target. */
+.fold {
+  margin-left: auto;
+  padding: 0 var(--space-1);
+  color: var(--fg-dim);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.fold:hover {
+  color: var(--accent-cyan);
+}
+
 .empty {
   margin: 0;
   padding: var(--space-2) var(--space-3);

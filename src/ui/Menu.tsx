@@ -21,6 +21,10 @@ export type MenuEntry =
       glyph?: string
       // Set in under the item before it (go to's places inside a plane, D-196).
       indent?: boolean
+      // What it holds folded under it: `▸ N` on its right opens it (so does → on the item, ← shuts it), `▾ N` shuts it.
+      fold?: { open: boolean; count: number; onToggle: () => void }
+      // Folded away under the item before it: shown only while searching (D-200).
+      folded?: boolean
     }
   | { key: string; heading: string }
 
@@ -62,7 +66,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
   const id = useId()
 
   const q = query.trim().toLowerCase()
-  const shown = search && q ? items.filter((item) => !('heading' in item) && text(item.label).toLowerCase().includes(q)) : items
+  const shown = search && q ? items.filter((item) => !('heading' in item) && text(item.label).toLowerCase().includes(q)) : items.filter((item) => !('folded' in item && item.folded))
 
   const close = (refocus = true) => {
     setOpen(false)
@@ -96,7 +100,10 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
     else if (e.key === 'Enter' && inField) (e.preventDefault(), all[0]?.click())
     else if (e.key === 'Home' && !inField) (e.preventDefault(), go(0))
     else if (e.key === 'End' && !inField) (e.preventDefault(), go(all.length - 1))
-    else if (e.key === 'Escape') (e.preventDefault(), close())
+    else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !inField) {
+      const item = shown.find((x) => x.key === (document.activeElement as HTMLElement | null)?.dataset.key)
+      if (item && 'fold' in item && item.fold && item.fold.open === (e.key === 'ArrowLeft')) (e.preventDefault(), item.fold.onToggle())
+    } else if (e.key === 'Escape') (e.preventDefault(), close())
     else if (e.key === 'Tab') close(false)
   }
 
@@ -156,6 +163,8 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
                     role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
                     aria-checked={item.checked}
                     data-indent={item.indent || undefined}
+                    data-key={item.key}
+                    aria-expanded={item.fold?.open}
                     tabIndex={-1}
                     style={item.tone ? { ['--tone' as string]: item.tone } : undefined}
                     onClick={() => {
@@ -174,6 +183,20 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
                       </span>
                     )}
                     <span className={styles.itemLabel}>{item.label}</span>
+                    {item.fold && !q && (
+                      // Inside the item's button: its click opens or shuts the fold and doesn't pick the item.
+                      <span
+                        className={styles.fold}
+                        aria-hidden
+                        title={item.fold.open ? 'hide what is inside (←)' : 'show what is inside (→)'}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          item.fold!.onToggle()
+                        }}
+                      >
+                        {item.fold.open ? '▾' : '▸'} {item.fold.count}
+                      </span>
+                    )}
                     {item.hint && <span className={styles.hint}>{item.hint}</span>}
                   </button>
                 ),
