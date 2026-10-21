@@ -75,6 +75,26 @@ a.link:hover {
   text-overflow: ellipsis;
 }
 
+/* Behind the side nav: the page's colour down the left edge, solid under the icons, fading out to the right, so what
+   moves on the canvas or in the backdrop doesn't hide them. Takes no clicks. */
+.hud > .shade {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  /* Under everything else in the bar, the breadcrumb too (the bar is its own layer, so this stays over the canvas). */
+  z-index: -1;
+  width: 160px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--bg) 96%, transparent) 0,
+    color-mix(in srgb, var(--bg) 90%, transparent) 60px,
+    color-mix(in srgb, var(--bg) 45%, transparent) 110px,
+    transparent
+  );
+  pointer-events: none;
+}
+
 /* The side nav's tools (D-176, D-178): middle of the left edge, level with the corner below it. */
 .side {
   position: fixed;

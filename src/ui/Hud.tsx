@@ -96,6 +96,8 @@ export function Hud({ crumbs = [], views, right, settings, settingsName, setting
       <div className={styles.right} data-glide>
         {right}
       </div>
+      {/* A shade of the page down the left edge, so the side nav's icons read over the canvas and the backdrop. */}
+      {(side || user) && <div className={styles.shade} aria-hidden />}
       {side && <div className={styles.side}>{side}</div>}
       {/* You and settings (motion, theme, background) in the bottom-left corner (D-175), only once signed in; the
           landing has no controls. */}
