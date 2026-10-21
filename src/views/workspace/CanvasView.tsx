@@ -15,7 +15,7 @@ import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
-import { closeThread, CommentIcon, myUid, OpenThread, openThread, startComment, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
+import { closeThread, CommentIcon, myUid, OpenThread, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu, type MenuItem } from './ContextMenu'
 import { isNew, useReads } from '../../data/threads'
 import { ThreadInbox } from './ThreadInbox'
@@ -414,7 +414,7 @@ export function CanvasView() {
       <PeerCursors space={space} toScreen={toScreen} />
       <OpenThread wid={wid} at={openAt} title={openTarget ? titleOf(openTarget) : ''} thread={openThreadDoc} isOwner={isOwnerOf(workspace, user?.id)} />
       {menu && <ContextMenu at={menu.at} items={menu.items} onClose={closeMenu} />}
-      <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={goTo} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => pieces.find((p) => p.id === id)?.name || 'plane'} />
+      <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={goTo} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {confirming && (
         <HazardConfirm
@@ -527,11 +527,13 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
   }
 
   const kind = KIND_NAME.plane
-  // Its conversations (D-193): on it, and on what's in it.
+  // Conversations (D-193, D-195): the one on the plane itself has its own chip under its corner, like any component's;
+  // the ones on what's inside it are counted in its console, apart.
   const { threads } = useWs()
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
-  const mine = threads.filter((t) => !t.resolved && (t.planeId === piece.id || (t.on === 'plane' && t.targetId === piece.id)))
+  const own = threadOn(threads, piece.id)
+  const mine = threads.filter((t) => !t.resolved && t.planeId === piece.id)
   const freshOnes = mine.filter((t) => isNew(t, seen, t.id, me))
   const comments = {
     count: mine.length,
@@ -561,6 +563,8 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
         </span>
       )}
       <PeerRing id={piece.id} space={CANVAS} />
+      {/* A comment on the plane itself (D-195), not on what's in it. */}
+      <ThreadChip wid={wid} thread={own} zoom={cam.zoom} />
       {/* Its cards, a picture here: the pointer goes through to the canvas (D-186, D-187). */}
       <PlaneCards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       {CORNERS.map((h) => (
@@ -665,11 +669,11 @@ function PlaneConsole({ comments, size, onFocus, onEdit, onDelete, className }: 
             <button
               className={styles.tool}
               data-new={comments.fresh || undefined}
-              title={`${comments.count} conversation${comments.count === 1 ? '' : 's'} on and in this plane${comments.fresh ? ', something new' : ''}`}
-              aria-label={`Comments, ${comments.count}`}
+              title={`${comments.count} conversation${comments.count === 1 ? '' : 's'} inside this plane${comments.fresh ? ', something new' : ''}`}
+              aria-label={`Comments inside, ${comments.count}`}
               onClick={comments.onOpen}
             >
-              {comments.mentioned ? '@' : <CommentIcon size={11} />} {comments.count}
+              {comments.mentioned ? '@' : <CommentIcon size={11} />} {comments.count} inside
             </button>
           )}
           <button className={styles.tool} aria-pressed={false} title="make the plane the view" onClick={onFocus}>

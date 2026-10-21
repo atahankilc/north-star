@@ -245,8 +245,10 @@ piece; check them with the user then.
 - No typing indicator (D-071).
 - Comments on components only (D-193): right-click a plane, card or text → a menu (only `comment` now; nothing on empty
   space); one open conversation per component (commenting again opens it); its chip under the component's bottom-right
-  corner like a plane's console (mark + count, magenta new, `@` mention), at screen size; a plane's console shows the
-  conversations on and in it without focus and opens the threads panel on them. Bottom-left corner, top to bottom:
+  corner like a plane's console (mark + count, magenta new, `@` mention), at screen size. A comment on a plane and the
+  comments inside it are kept apart (D-195): the plane's own has its chip under its corner; its console says `[💬 N
+  inside]` (only what's inside) and opens the threads panel on them. The panel always says what it shows: `whole
+  workspace`, or `inside "<plane>"` in cyan with `[whole workspace]` back. Bottom-left corner, top to bottom:
   people here (squares, a column, follow on click), threads button, a rule, your square, the gear; the threads panel
   sticks to the bottom left beside them. Cursors sent 10×/s, drawn 200 ms behind; following glides only when their cursor
   leaves the middle (±22 %), eased by time; zooming doesn't stop following.

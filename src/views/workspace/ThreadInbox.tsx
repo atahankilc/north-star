@@ -54,9 +54,10 @@ export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
 
 export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, goneOf, scopeName }: Props) {
   const open = useThreadView((s) => s.inbox)
-  // Only a plane's (on it, or in it) when its console opened the panel (D-193).
+  // Only what's inside a plane when its console opened the panel (D-193, D-195); the plane's own conversation isn't
+  // inside it, it's on the canvas.
   const scope = useThreadView((s) => s.scope)
-  const threads = useMemo(() => (scope ? all.filter((t) => t.planeId === scope || (t.on === 'plane' && t.targetId === scope)) : all), [all, scope])
+  const threads = useMemo(() => (scope ? all.filter((t) => t.planeId === scope) : all), [all, scope])
   const openId = useThreadView((s) => s.openId)
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
@@ -95,13 +96,8 @@ export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, g
       onKeyDown={(e) => e.stopPropagation()}
     >
       <header className={styles.head}>
-        <span className={styles.title}>threads{scope && scopeName ? ` · ${scopeName(scope)}` : ''}</span>
+        <span className={styles.title}>threads</span>
         <span className={styles.actions}>
-          {scope && (
-            <button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
-              all
-            </button>
-          )}
           {counts.new > 0 && (
             <button className={styles.action} onClick={markAll}>
               mark all read
@@ -112,6 +108,21 @@ export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, g
           </button>
         </span>
       </header>
+      {/* What you're looking at, always said (D-195): the whole workspace, or what's inside one plane. */}
+      <div className={styles.scope} data-scoped={scope ? true : undefined}>
+        {scope ? (
+          <>
+            <span>
+              inside <b>{scopeName?.(scope) ?? 'a plane'}</b>
+            </span>
+            <button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
+              whole workspace
+            </button>
+          </>
+        ) : (
+          <span>whole workspace</span>
+        )}
+      </div>
       <nav className={styles.views} aria-label="Which threads">
         {(['all', 'new', 'mentions', 'resolved'] as const).map((v) => (
           <button key={v} className={styles.action} aria-pressed={view === v} data-lit={(v === 'new' && counts.new > 0) || undefined} onClick={() => setView(v)}>

@@ -3006,3 +3006,16 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): all of the above drawn on the canvas at 0.6 and 1.2; a section renamed and renumbered
   by typing (`04 MONEY` / `Who pays now`, saved); the fold sampled frame by frame: name 92 → 117 px over ~300 ms, the
   block never taller than when it started. Typecheck. No rules change (`kicker`, `rotate`, `side` were already allowed).
+
+### D-195 · 2026-10-21 · Accepted (changes D-193's plane console count and the panel's scope)
+- *Decision:* a comment on a plane and the comments inside it are different things, kept apart. The plane's own
+  conversation (`on: 'plane'`) gets a chip under the plane's bottom-right corner like any component's, and opens there.
+  The plane's console counts only what's inside it (`planeId` = the plane), labelled `[💬 N inside]`, and opens the
+  threads panel on just those; the plane's own conversation is on the canvas, not inside, so it isn't in that list.
+- *The threads panel says what it's showing,* always, on a row under its header: `WHOLE WORKSPACE`, or (cyan) `INSIDE
+  "<plane>"` with `[whole workspace]` to go back. The corner button opens the whole workspace.
+- *User:* "plane'in içinde comment olması ile plane'e comment yapılması farklı şeyler … bunun ayrımını iyi yapalım … thread
+  panelinde şu an bütün workspace'inkine mi bakıyorum yoksa bir plane'inkine mi bakıyorum çok belli olmuyor".
+- *Verified* headless: a comment on a plane showed its chip `💬 1` under the corner and left the console without a
+  count; a comment on a card inside then made the console `💬 1 inside`; that opened the panel `INSIDE "plane"` with
+  only the card's thread; `[whole workspace]` showed both under `WHOLE WORKSPACE`; build.

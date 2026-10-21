@@ -284,7 +284,7 @@
 
 
 /* A plane's comments in its console (D-193): the mark and the count on one line, magenta while something is new. */
-.tool[aria-label^='Comments'] {
+.tool[aria-label^='Comments inside'] {
   display: inline-flex;
   align-items: center;
   gap: 4px;
