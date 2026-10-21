@@ -15,7 +15,7 @@ import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
-import { closeThread, CommentIcon, myUid, OpenThread, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
+import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu, type MenuItem } from './ContextMenu'
 import { isNew, useReads } from '../../data/threads'
 import { ThreadInbox } from './ThreadInbox'
@@ -227,18 +227,11 @@ export function CanvasView() {
     }
   }
   const openId = useThreadView((s) => s.openId)
-  const draft = useThreadView((s) => s.draft)
-  const inboxOpen = useThreadView((s) => s.inbox)
   const openThreadDoc = threads.find((t) => t.id === openId) ?? null
-  const openTarget = openThreadDoc ?? draft
   // A thread left open on a thread that's gone (deleted by someone) closes.
   useEffect(() => {
     if (openId && !openThreadDoc) closeThread()
   }, [openId, openThreadDoc])
-  // The open thread follows its pin as the view moves.
-  useCanvasView((s) => s.planeCam)
-  const openPin = openThreadDoc ?? (draft && { on: draft.on, targetId: draft.targetId, x: draft.at[0], y: draft.at[1] })
-  const openAt = openTarget && openPin && (openTarget.planeId ?? CANVAS) === space ? toScreen(...pinOf(openPin).at) : null
   // Where a plane is on screen now.
   const screenRect = (p: Piece): ScreenRect => {
     const c = camOf(wid)
@@ -462,8 +455,6 @@ export function CanvasView() {
       )}
       {drawing === CANVAS && !focused && <DrawSection space={CANVAS} toSpace={canvasToSpace} />}
       <PeerCursors space={space} toScreen={toScreen} />
-      {/* Beside its chip while the threads panel is shut; in the panel's right half while it's open (D-197). */}
-      {!inboxOpen && <OpenThread wid={wid} at={openAt} title={openTarget ? titleOf(openTarget) : ''} thread={openThreadDoc} isOwner={isOwnerOf(workspace, user?.id)} />}
       {menu && <ContextMenu at={menu.at} items={menu.items} onClose={closeMenu} />}
       <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
       <Follow focusId={focusId} focusTo={focusTo} />

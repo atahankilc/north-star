@@ -1,11 +1,12 @@
 // Comment threads (D-159, D-165–D-171; on the canvas and in planes, D-192; on components only, D-193). A thread is on a
 // plane, a card or a piece of text, started from its right-click menu; its chip sits under the component's bottom-right
 // corner like a plane's console, at the screen's own size: the comment mark and a count (D-167), magenta when someone
-// wrote in it since you last read it, `@` when they mentioned you (D-166). Clicking it opens the thread beside it, set like the assistant's chat:
+// wrote in it since you last read it, `@` when they mentioned you (D-166). Clicking it opens the thread in the threads
+// panel at the bottom left (nothing opens on the canvas itself, D-199), set like the assistant's chat:
 // who wrote each message (full name) and when, the text, a `>` prompt (Enter sends, shift+Enter a new line, `@`
 // suggests the workspace's people), resolve or reopen. Only a message's writer edits or deletes it. Resolved threads
 // leave the canvas; every thread is in the threads panel (ThreadInbox.tsx). Anyone in the workspace comments, viewers too.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import { firebase } from '../../data/firebase'
@@ -33,10 +34,12 @@ type ThreadView = {
   show: boolean
   newOnly: boolean
   resolvedToo: boolean
-  // The thread open beside its pin, or one being started (no messages yet).
+  // The open thread, or one being started (no messages yet).
   openId: string | null
   draft: NewThread | null
-  // The threads panel (D-166), bottom left (D-193); `scope`: only a plane's (on it, or in it), from its console.
+  // The threads panel's list (D-166), bottom left (D-193); `scope`: only a plane's (on it, or in it), from its console.
+  // The panel has two halves that work apart (D-199): the list and the open thread. Either opens the other; closing the
+  // list closes both, closing the thread leaves the list open.
   inbox: boolean
   scope: string | null
 }
@@ -46,7 +49,11 @@ export const toggleThreadPins = () => useThreadView.setState((s) => ({ show: !s.
 export const openThread = (id: string) => useThreadView.setState({ openId: id, draft: null })
 export const startComment = (draft: NewThread) => useThreadView.setState({ draft, openId: null, show: true })
 export const closeThread = () => useThreadView.setState({ openId: null, draft: null })
-export const toggleInbox = (on?: boolean, scope: string | null = null) => useThreadView.setState((s) => ({ inbox: on ?? !s.inbox, scope }))
+export const toggleInbox = (on?: boolean, scope: string | null = null) =>
+  useThreadView.setState((s) => {
+    const inbox = on ?? !s.inbox
+    return inbox ? { inbox, scope } : { inbox, scope, openId: null, draft: null }
+  })
 
 export const myUid = () => firebase?.auth.currentUser?.uid ?? ''
 
@@ -69,7 +76,7 @@ export const threadOn = (threads: WithId<Thread>[], id: string) =>
 
 // A component's comments (D-193): under its bottom-right corner, set like a plane's console, at the screen's size: the
 // comment mark and how many messages, magenta when someone wrote since you last read it, `@` when they mentioned you.
-// A click opens the thread beside it. `c` hides them.
+// A click opens its thread in the threads panel (D-199). `c` hides them.
 export function ThreadChip({ wid, thread, zoom }: { wid: string; thread: WithId<Thread> | null; zoom: number }) {
   const show = useThreadView((s) => s.show)
   const openId = useThreadView((s) => s.openId)
@@ -97,27 +104,6 @@ export function ThreadChip({ wid, thread, zoom }: { wid: string; thread: WithId<
   )
 }
 
-type OpenProps = {
-  wid: string
-  // Where the open thread (or the one being started) is on screen, px from the canvas's corner; null = not here.
-  at: [number, number] | null
-  title: string
-  thread: WithId<Thread> | null
-  // Owners delete any thread (D-166).
-  isOwner: boolean
-}
-
-// The open thread, at its pin on screen.
-export function OpenThread({ wid, at, title, thread, isOwner }: OpenProps) {
-  const draft = useThreadView((s) => s.draft)
-  if ((!thread && !draft) || !at) return null
-  return (
-    <div className={styles.openAt} style={{ left: at[0], top: at[1] }}>
-      <ThreadPanel key={thread?.id ?? 'draft'} wid={wid} thread={thread} draft={draft} title={title} isOwner={isOwner} />
-    </div>
-  )
-}
-
 // `@` in a field (D-166): the word being typed after it, if the caret is right after it.
 const MENTION_AT = /(^|\s)@([\p{L}\p{N}._ -]{0,30})$/u
 const pickedIn = (text: string, picked: Map<string, string>) => [...picked].filter(([, name]) => text.includes(`@${name}`)).map(([uid]) => uid)
@@ -128,14 +114,14 @@ type PanelProps = {
   draft: NewThread | null
   title: string
   isOwner: boolean
-  // In the threads panel's right half (D-197) rather than beside its chip: no frame of its own, its full height, and
-  // `↗` in its header shows it where it is (into its plane if need be).
-  docked?: boolean
+  // In the threads panel (D-197, D-199): where it is, and the target in its header that shows it there (into its plane
+  // if need be); `onList` opens the list beside it while only the thread is open.
   where?: string
   onShow?: () => void
+  onList?: () => void
 }
 
-export function ThreadPanel({ wid, thread, draft, title, isOwner, docked, where, onShow }: PanelProps) {
+export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow, onList }: PanelProps) {
   const messages = useMessages(wid, thread?.id ?? null)
   const members = useMembers(wid).data
   const reads = useReads(wid, myUid() || null).data
@@ -146,17 +132,10 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, docked, where,
   const picked = useRef(new Map<string, string>())
   const [suggest, setSuggest] = useState<{ q: string; at: number } | null>(null)
   const [hi, setHi] = useState(0)
-  const panel = useRef<HTMLDivElement>(null)
   const field = useRef<HTMLTextAreaElement>(null)
   const list = useRef<HTMLOListElement>(null)
   const me = myUid()
 
-  // Beside the pin; flipped to its left where it would run off the window.
-  useLayoutEffect(() => {
-    const el = panel.current
-    if (!el || docked) return
-    el.dataset.flip = el.getBoundingClientRect().right > window.innerWidth - 8 ? 'left' : ''
-  })
   // The reply field takes the keys as it opens.
   useEffect(() => {
     let frames = 10
@@ -176,7 +155,12 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, docked, where,
   }, [wid, thread, reads])
   // Escape closes it (or the suggestions first).
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !suggest && closeThread()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || suggest || e.defaultPrevented) return
+      // Only the thread: the list, if open, stays (D-199).
+      e.preventDefault()
+      closeThread()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [suggest])
@@ -246,8 +230,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, docked, where,
 
   return (
     <div
-      ref={panel}
-      className={docked ? `${styles.panel} ${styles.docked}` : styles.panel}
+      className={styles.panel}
       role="dialog"
       aria-label={`Thread on ${title}`}
       data-viewer-ok
@@ -256,12 +239,28 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, docked, where,
       onKeyDown={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.stopPropagation()}
     >
-      {/* As the assistant's chat (D-081): what it's on, faint; actions in brackets; [×]. */}
+      {/* As the assistant's chat (D-081): what it's on and where, faint; a target that goes there (D-199); actions in
+          brackets; [×]. With the list shut, `all threads` opens it beside. */}
       <header className={styles.head}>
-        <span className={styles.title} title={title}>
+        {onList && (
+          <button className={styles.action} onClick={onList}>
+            all threads
+          </button>
+        )}
+        <span className={styles.title} title={where ? `${title} · on ${where}` : title}>
           {resolved ? '✓ ' : ''}
           {title}
+          {where && <span className={styles.titleWhere}> · on {where}</span>}
         </span>
+        {onShow && (
+          <button className={styles.goThere} title={`go there${where ? ` (on ${where})` : ''}`} aria-label="Go there" onClick={onShow}>
+            <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
+              <circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+              <path d="M8 0v3M8 13v3M0 8h3M13 8h3" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </button>
+        )}
         <span className={styles.actions}>
           {thread && (
             <button className={styles.action} onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>
@@ -278,20 +277,6 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, docked, where,
           </button>
         </span>
       </header>
-      {/* Where it is, and a plain way there (D-197): a target, `go there`, in cyan, on its own row. */}
-      {onShow && (
-        <div className={styles.whereRow}>
-          <span className={styles.whereText}>{where ? `on ${where}` : ''}</span>
-          <button className={styles.goThere} title="take me to it" onClick={onShow}>
-            <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
-              <circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-              <circle cx="8" cy="8" r="1.5" fill="currentColor" />
-              <path d="M8 0v3M8 13v3M0 8h3M13 8h3" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-            go there
-          </button>
-        </div>
-      )}
       <ol ref={list} className={styles.log}>
         {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too. @ mentions someone.</li>}
         {thread && messages.isLoading && <li className={styles.lead}>Loading</li>}

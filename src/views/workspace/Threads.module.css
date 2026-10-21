@@ -59,32 +59,15 @@
   color: var(--accent-cyan);
 }
 
-/* The open thread's place on screen; over the HUD's left shade, like the threads panel. */
-.openAt {
-  position: absolute;
-  z-index: 12;
-  width: 0;
-  height: 0;
-}
-
-/* The open thread, as the assistant's chat window (D-081, D-165): a terminal log, mono, bracket actions, a `>` prompt. */
+/* The open thread, as the assistant's chat window (D-081, D-165): a terminal log, mono, bracket actions, a `>` prompt.
+   Always in the threads panel's thread half (D-199), all its height. */
 .panel {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  width: 340px;
-  max-height: 420px;
-  border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
-  color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
+  min-width: 0;
+  min-height: 0;
   pointer-events: auto;
-  /* Right of its chip, its top a little above it. */
-  transform: translate(34px, -30px);
-}
-
-.panel[data-flip='left'] {
-  transform: translate(calc(-100% - 12px), -30px);
 }
 
 .head {
@@ -96,7 +79,7 @@
   border-bottom: 1px solid var(--line);
 }
 
-/* What it's on, faint, as the chat's model name. */
+/* What it's on (and where), faint, as the chat's model name. */
 .title {
   flex: 1;
   min-width: 0;
@@ -348,18 +331,20 @@
   color: var(--fg-strong);
 }
 
-/* The threads panel (D-166, D-193, D-197): one wide tab on the bottom edge, right of the corner's buttons (it never covers
-   them), flush with the edge like the focus dock: no bottom border, magenta marks on its top corners. The list on the
-   left, the conversation picked in it on the right. The right of the screen stays free. */
+/* The threads panel (D-166, D-193, D-197, D-199): one wide tab on the bottom edge, right of the corner's buttons (it
+   never covers them), flush with the edge like the focus dock: no bottom border, magenta marks on its top corners. Two
+   halves that open apart: the list on the left, the open thread on the right; the tab is as wide as what's open. It, and
+   each half on its own, builds up cell by cell and breaks apart (ThreadInbox.tsx, runCells). */
 .inbox {
+  --gutter: calc(var(--space-3) + 36px + var(--space-3));
+  --list-w: min(340px, calc(100vw - 2 * var(--gutter)));
+  --convo-w: min(500px, calc(100vw - 2 * var(--gutter)));
   position: absolute;
   bottom: 0;
-  left: calc(var(--space-3) + 36px + var(--space-3));
+  left: var(--gutter);
   /* Over the HUD (10), so its shade down the left edge doesn't dim it; it never covers the HUD's buttons. */
   z-index: 11;
   display: flex;
-  /* Just the list until a conversation is picked; then the conversation beside it. */
-  width: min(340px, calc(100% - 2 * (var(--space-3) + 36px + var(--space-3))));
   height: min(62vh, calc(100% - var(--hud-h)));
   border: 1px solid var(--line-hover);
   border-bottom: 0;
@@ -369,11 +354,21 @@
   font-size: var(--text-sm);
 }
 
+.inbox[data-list] {
+  --convo-w: min(500px, calc(100vw - 2 * var(--gutter) - var(--list-w)));
+}
+
+/* Breaking apart: nothing in it takes a click any more. */
+.inbox[data-leaving] {
+  pointer-events: none;
+}
+
 .inbox::before,
 .inbox::after {
   content: '';
   position: absolute;
   top: -1px;
+  z-index: 2;
   width: var(--space-2);
   height: var(--space-2);
   border-top: 1px solid var(--accent-magenta);
@@ -390,22 +385,43 @@
   border-right: 1px solid var(--accent-magenta);
 }
 
-.inbox[data-convo] {
-  width: min(840px, calc(100% - 2 * (var(--space-3) + 36px + var(--space-3))));
+/* Each half is its contents' width while open, nothing while shut. */
+.listSide,
+.convoSide {
+  display: flex;
+  flex: none;
+  width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.listSide {
+.inbox[data-list] .listSide {
+  width: var(--list-w);
+}
+
+.inbox[data-convo] .convoSide {
+  width: var(--convo-w);
+}
+
+/* The line between the halves, only while both are there. */
+.inbox[data-list][data-convo] .convoSide {
+  box-shadow: inset 1px 0 var(--line);
+}
+
+.listInner,
+.convoInner {
   display: flex;
-  flex: 1;
+  flex: none;
   flex-direction: column;
-  min-width: 0;
   min-height: 0;
 }
 
-.inbox[data-convo] .listSide {
-  flex: none;
-  width: min(340px, 45%);
-  border-right: 1px solid var(--line);
+.listInner {
+  width: var(--list-w);
+}
+
+.convoInner {
+  width: var(--convo-w);
 }
 
 /* The top edge, to drag the height: a strip over the border, the row-resize cursor. */
@@ -419,56 +435,24 @@
   cursor: ns-resize;
 }
 
-.convoSide {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
+/* Where the thread is, after what it's on. */
+.titleWhere {
+  color: var(--fg-faint);
 }
 
-/* The open thread in the panel's right half: no frame or offset of its own, all its height. */
-.panel.docked {
-  flex: 1;
-  width: auto;
-  max-height: none;
-  min-height: 0;
-  border: 0;
-  background: none;
-  transform: none;
-}
-
-/* Where the open thread is and a plain way there (D-197): its own row under the header, the place faint, then a
-   framed cyan `⌖ go there`. */
-.whereRow {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--line);
-  font-size: var(--text-xs);
-}
-
-.whereText {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--fg-dim);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+/* Go there (D-199): a target in the thread's header, an icon alone, cyan. */
 .goThere {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 6px;
-  padding: 3px var(--space-2);
+  justify-content: center;
+  align-self: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
   border: 1px solid color-mix(in srgb, var(--accent-cyan) 60%, transparent);
   background: none;
   color: var(--accent-cyan);
-  font: inherit;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
@@ -479,7 +463,6 @@
   background: var(--accent-cyan);
   color: var(--on-accent);
 }
-
 
 .views {
   display: flex;
