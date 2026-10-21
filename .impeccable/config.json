@@ -20,6 +20,24 @@
         ],
         "createdAt": "2026-10-18T23:15:47.345Z",
         "reason": "project design system D-055: every card's type is its coloured left border; the feature chip mirrors the board's feature card"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/views/workspace/TextItems.module.css"
+        ],
+        "createdAt": "2026-10-21T00:04:57.382Z",
+        "reason": "Claude: these are the project title's 3 px corner L-brackets (viewfinder corners, D-118/D-194 restored from the archived board), not a one-sided accent border"
+      },
+      {
+        "rule": "layout-transition",
+        "value": "*",
+        "files": [
+          "src/views/workspace/TextItems.module.css"
+        ],
+        "createdAt": "2026-10-21T00:05:13.125Z",
+        "reason": "Claude: the title's name has to re-wrap as it grows when folding (D-132/D-194), so font-size/padding must animate; one element, 320 ms, measured smooth; the star now moves by transform"
       }
     ]
   }

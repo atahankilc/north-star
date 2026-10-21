@@ -1,16 +1,29 @@
 // Text anywhere in the workspace (D-188), drawn in its space's px (the canvas's world, or a plane's view). Headings
-// (H1–H3, an H1 with a rule fading right), paragraphs (light Markdown at a width), sticky notes (signed, a colour bar),
-// sections (a frame holding what's inside it, its number and name set into its top edge) and the project title (the
-// workspace's name and what it's building). Live, a click selects (corner marks), a drag moves (5 px first, snapped,
-// alt = free; a section carries what's inside it), a double-click types, a right edge sets a width, a section's corner
-// its size; a small bar under the selected one sets it. Frames are drawn under everything else, text over it.
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+// (H1–H3, an H1 with a rule fading right, a small line over it), paragraphs (light Markdown at a width, a hairline down
+// the left), either turned a quarter; sticky notes (signed, a colour bar); sections (a frame holding what's inside it,
+// its number and name set into its top or left edge, the line breaking round them) and the project title (the
+// workspace's name and what it's building, folding round the name when too far out to read). Live, a click selects
+// (corner marks, closing in while pressed), a drag moves (5 px first, snapped, alt = free; a section carries what's
+// inside it), a double-click types, a right edge sets a width, a section's corner its size; a small bar under the
+// selected one sets it. Frames are drawn under everything else, text over it.
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react'
 import type { DocumentReference } from 'firebase/firestore'
 import { useAuth } from '../../data/auth'
 import { snap } from '../../data/grid'
 import {
   deleteLabel,
   HEADING_PX,
+  KICKER_MAX,
   kindOf,
   LABEL_COLORS,
   labelRef,
@@ -30,13 +43,17 @@ import {
 } from '../../data/labels'
 import { DESCRIPTION_MAX, describeWorkspace, renameWorkspace } from '../../data/workspaces'
 import { useCanvasView } from '../../state/canvasView'
+import { useMotion } from '../../state/motion'
 import { LightMarkdown } from '../../ui/LightMarkdown'
 import { useWs } from './context'
 import styles from './TextItems.module.css'
 import { PeerRing } from './collab'
 import { ThreadChip, threadOn } from './Threads'
+import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 
 const DRAG_PX = 5
+// Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
+const MIN_TEXT_PX = 6
 
 // Something else in the space a section can carry: a plane on the canvas, a card on a plane.
 export type Carried = { id: string; ref: DocumentReference; x: number; y: number; w: number; h: number }
@@ -50,16 +67,39 @@ export const COLOR_VAR: Record<LabelColor, string> = {
   blue: 'var(--accent-blue)',
 }
 
-// Roughly where it sits, for what a section holds and what fit frames.
+type HeadingSize = Exclude<LabelSize, 'note'>
+// A heading's or a section name's size (a section never says `note`; if it did, H3).
+const headingSize = (l: Label): HeadingSize => (l.size === 'note' ? 'minor' : (l.size ?? 'heading'))
+// A heading's small line, a section's number: its size from the text it goes with.
+const kickPx = (px: number) => Math.max(8, px * 0.3)
+const secKickPx = (px: number) => Math.max(8, px * 0.42)
+// Caps read better a little apart; big text a little tighter.
+const tracking = (l: Label, size: HeadingSize) => (l.caps ? '0.04em' : size === 'heading' ? '-0.03em' : '-0.02em')
+
+// The small line over a heading or before a section's name (D-156): a leading number stands out, the rest is set small
+// in mono capitals. `02 who we beat` → `02`, `WHO WE BEAT`.
+function kickerParts(kicker: string | undefined): { num: string; rest: string } | null {
+  const k = kicker?.trim()
+  if (!k) return null
+  const m = /^(\d{1,4})(?:[\s.·:—–-]+(.*))?$/.exec(k)
+  return m ? { num: m[1], rest: (m[2] ?? '').toUpperCase() } : { num: '', rest: k.toUpperCase() }
+}
+
+// Roughly where it sits, for what a section holds and what fit frames. A turned one's sides swap.
 export function labelBox(l: Label) {
   const k = kindOf(l)
   const lines = Math.max(1, l.text.split('\n').length)
   if (k === 'section') return { x: l.x, y: l.y, w: l.w ?? 400, h: l.h ?? 300 }
-  if (k === 'paragraph') return { x: l.x, y: l.y, w: l.w ?? PARA_W.initial, h: lines * PARA_PX[l.scale ?? 'large'] * 1.55 + 8 }
   if (k === 'sticky') return { x: l.x, y: l.y, w: l.w ?? STICKY_W.initial, h: 48 + lines * STICKY_PX[l.scale ?? 'medium'] * 1.45 }
-  if (k === 'title') return { x: l.x, y: l.y, w: l.w ?? TITLE_W.initial, h: 160 }
-  const px = HEADING_PX[(l.size as Exclude<LabelSize, 'note'>) ?? 'heading'] ?? 48
-  return { x: l.x, y: l.y, w: Math.max(4, l.text.length) * px * 0.55, h: px * 1.3 }
+  if (k === 'title') return { x: l.x, y: l.y, w: l.w ?? TITLE_W.initial, h: 340 }
+  let w: number
+  let h: number
+  if (k === 'paragraph') [w, h] = [l.w ?? PARA_W.initial, lines * PARA_PX[l.scale ?? 'large'] * 1.55 + 8]
+  else {
+    const px = HEADING_PX[headingSize(l)]
+    ;[w, h] = [Math.max(4, l.text.length) * px * 0.55, px * 1.3 + (l.kicker ? kickPx(px) * 1.6 : 0)]
+  }
+  return l.rotate ? { x: l.x, y: l.y, w: h, h: w } : { x: l.x, y: l.y, w, h }
 }
 
 const inside = (b: { x: number; y: number; w: number; h: number }, s: { x: number; y: number; w: number; h: number }) =>
@@ -69,7 +109,7 @@ type Props = { labels: Label[]; layer: 'frames' | 'text'; live: boolean; editor:
 
 export function TextItems({ labels, layer, live, editor, zoom, carry }: Props) {
   const shown = labels.filter((l) => (kindOf(l) === 'section') === (layer === 'frames'))
-  // Sections are numbered in the order they were made, per space.
+  // Sections are numbered in the order they were made, per space, until someone types their own number.
   const order = labels.filter((l) => kindOf(l) === 'section').sort((a, b) => a.createdAt - b.createdAt).map((l) => l.id)
   return (
     <>
@@ -88,13 +128,32 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
   const selected = useCanvasView((s) => live && s.labelSelected === l.id)
   const typing = useCanvasView((s) => live && editor && s.labelEditing === l.id)
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(l.id) ? s.dragShift : null))
-  // A new size, held until the data's back.
-  const [held, setHeld] = useState<{ w?: number; h?: number } | null>(null)
+  // Held down (a press, or a drag): its corner marks close in, as a card's do (D-150).
+  const [pressed, setPressed] = useState(false)
+  // A new size (and a turned one's top, as it grows upwards), held until the data's back.
+  const [held, setHeld] = useState<{ w?: number; h?: number; y?: number } | null>(null)
   useEffect(() => {
-    if (held && (held.w === undefined || held.w === l.w) && (held.h === undefined || held.h === l.h)) setHeld(null)
-  }, [held, l.w, l.h])
+    if (held && (held.w === undefined || held.w === l.w) && (held.h === undefined || held.h === l.h) && (held.y === undefined || held.y === l.y)) setHeld(null)
+  }, [held, l.w, l.h, l.y])
   const w = held?.w ?? l.w
   const h = held?.h ?? l.h
+  const y = held?.y ?? l.y
+
+  // A turned heading or paragraph (D-156): its text laid out level, then turned; the box it takes is that measured,
+  // sides swapped, with its top-left at x/y.
+  const turn = kind === 'heading' || kind === 'paragraph' ? l.rotate : undefined
+  const body = useRef<HTMLDivElement>(null)
+  const [laid, setLaid] = useState<[number, number] | null>(null)
+  useLayoutEffect(() => {
+    const el = body.current
+    if (!turn || !el) return
+    const measure = () => setLaid([el.offsetWidth, el.offsetHeight])
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [turn])
+  const turnedBox = turn && laid ? { width: laid[1], height: laid[0] } : undefined
 
   const select = () => useCanvasView.setState({ labelSelected: l.id, cardSelected: null, selected: null })
 
@@ -104,6 +163,7 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
     e.stopPropagation()
     select()
     if (!editor || typing) return
+    setPressed(true)
     const [sx, sy] = [e.clientX, e.clientY]
     const box = { ...labelBox(l), w: w ?? labelBox(l).w, h: h ?? labelBox(l).h }
     // What a section holds, by where it is now.
@@ -124,6 +184,7 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
+      setPressed(false)
       if (d && (d[0] || d[1])) {
         const [dx, dy] = d
         await moveMany(
@@ -138,19 +199,25 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
     window.addEventListener('pointercancel', up)
   }
 
-  // A width from the right edge, a section's size from its corner: snapped, alt = free, one undo step.
+  // A width from the right edge (along the text: a turned one's top or bottom), a section's size from its corner:
+  // snapped, alt = free, one undo step. A paragraph reading upwards keeps its start (the bottom) where it is.
   const resize = (which: 'w' | 'wh') => (e: ReactPointerEvent<HTMLElement>) => {
     if (!live || !editor || e.button !== 0) return
     e.stopPropagation()
     const [sx, sy] = [e.clientX, e.clientY]
-    const box = labelBox(l)
-    const [w0, h0] = [w ?? box.w, h ?? box.h]
+    const w0 = w ?? { paragraph: PARA_W.initial, sticky: STICKY_W.initial, title: TITLE_W.initial, section: 400, heading: 0 }[kind]
+    const h0 = h ?? labelBox(l).h
     const lim = kind === 'paragraph' ? PARA_W : kind === 'sticky' ? STICKY_W : kind === 'title' ? TITLE_W : { min: SECTION_MIN.w, max: 100000 }
-    let to: { w?: number; h?: number } | null = null
+    let to: { w?: number; h?: number; y?: number } | null = null
     const move = (ev: PointerEvent) => {
       const at = (v: number) => (ev.altKey ? Math.round(v) : snap(v))
-      const nw = Math.min(lim.max, Math.max(lim.min, at(l.x + w0 + (ev.clientX - sx) / zoom) - l.x))
-      to = which === 'w' ? { w: nw } : { w: nw, h: Math.max(SECTION_MIN.h, at(l.y + h0 + (ev.clientY - sy) / zoom) - l.y) }
+      const [dx, dy] = [(ev.clientX - sx) / zoom, (ev.clientY - sy) / zoom]
+      const edge = turn === 90 ? l.y + w0 - at(l.y + dy) : turn === -90 ? at(l.y + w0 + dy) - l.y : at(l.x + w0 + dx) - l.x
+      const nw = Math.min(lim.max, Math.max(lim.min, edge))
+      to =
+        which === 'w'
+          ? { w: nw, ...(turn === 90 && { y: l.y + w0 - nw }) }
+          : { w: nw, h: Math.max(SECTION_MIN.h, at(l.y + h0 + dy) - l.y) }
       setHeld(to)
     }
     const up = () => {
@@ -168,7 +235,7 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
   const color = COLOR_VAR[l.color ?? (kind === 'sticky' ? 'yellow' : 'ink')]
   const style: CSSProperties = {
     left: l.x + (shift?.dx ?? 0),
-    top: l.y + (shift?.dy ?? 0),
+    top: y + (shift?.dy ?? 0),
     ['--tone' as string]: color,
     fontWeight: l.bold ? 700 : undefined,
     fontStyle: l.italic ? 'italic' : undefined,
@@ -176,8 +243,10 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
   const common = {
     'data-target': `label:${l.id}`,
     'data-selected': selected || undefined,
+    'data-pressed': pressed || undefined,
     'data-live': live || undefined,
     'data-caps': l.caps || undefined,
+    'data-colored': !!l.color || undefined,
   }
   const marks = (
     <>
@@ -192,26 +261,54 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
   const bar = selected && editor && kind !== 'title' ? <LabelBar l={l} zoom={zoom} /> : null
 
   if (kind === 'section') {
-    const name = (
-      <span className={styles.secName} onPointerDown={press} onDoubleClick={edit}>
-        <span className={styles.secNum}>{String(n).padStart(2, '0')}</span>
-        {typing ? <Field l={l} single /> : <span data-empty={!l.text || undefined}>{l.text || 'section'}</span>}
-      </span>
-    )
+    // Its name is set like a heading (D-130, D-157), whatever the frame's size, into the top edge or up the left one,
+    // the line breaking round it; the number before it is the section's own, or the order it was made in.
+    const size = headingSize(l)
+    const px = HEADING_PX[size]
+    const inset = 28 + px * 0.4
+    const gap = px * 0.35
+    const kick = kickerParts(l.kicker)
+    const num = l.kicker === undefined ? String(n).padStart(2, '0') : kick ? [kick.num, kick.rest].filter(Boolean).join(' ') : ''
+    const onLeft = l.side === 'left'
     return (
-      <div className={styles.section} style={{ ...style, width: w, height: h, fontWeight: undefined, fontStyle: undefined }} {...common}>
+      <div className={styles.section} data-side={onLeft ? 'left' : 'top'} style={{ ...style, width: w, height: h, fontWeight: undefined, fontStyle: undefined }} {...common}>
         {(['n', 'e', 's', 'w'] as const).map((side) => (
           <span key={side} className={styles.band} data-side={side} onPointerDown={press} onDoubleClick={edit} />
         ))}
-        {name}
-        {selected && editor && <span className={styles.corner} onPointerDown={resize('wh')} aria-hidden />}
+        <div className={styles.secEdge} style={onLeft ? { width: h } : undefined}>
+          <span className={styles.secLine} style={{ flex: `0 0 ${Math.max(0, inset - gap)}px` }} />
+          <span
+            className={styles.secName}
+            style={{ padding: `0 ${gap}px`, fontSize: px, fontWeight: l.bold ? 700 : undefined, fontStyle: l.italic ? 'italic' : undefined, letterSpacing: tracking(l, size) }}
+            onPointerDown={press}
+            onDoubleClick={edit}
+          >
+            {typing ? (
+              <NamedFields l={l} kick={num} kickSize={secKickPx(px)} row />
+            ) : (
+              <>
+                {num && (
+                  <span className={styles.secNum} style={{ fontSize: secKickPx(px), marginRight: px * 0.3 }}>
+                    {num}
+                  </span>
+                )}
+                <span className={styles.secText} data-empty={!l.text || undefined}>
+                  {l.text || 'Section'}
+                </span>
+              </>
+            )}
+          </span>
+          <span className={styles.secLine} style={{ flex: '1 1 0' }} />
+        </div>
+        {live && editor && <span className={styles.corner} onPointerDown={resize('wh')} aria-hidden />}
         {marks}
         {bar}
       </div>
     )
   }
 
-  if (kind === 'title') return <TitleBlock l={l} style={style} common={common} press={press} edit={edit} typing={typing} w={w ?? TITLE_W.initial} marks={marks} resize={selected && editor ? resize('w') : undefined} />
+  if (kind === 'title')
+    return <TitleBlock l={l} style={style} common={common} press={press} edit={edit} typing={typing} editor={editor} zoom={zoom} w={w ?? TITLE_W.initial} marks={marks} resize={selected && editor ? resize('w') : undefined} />
 
   if (kind === 'sticky') {
     const date = new Date(l.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
@@ -229,77 +326,199 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
   }
 
   if (kind === 'paragraph') {
+    const pw = w ?? PARA_W.initial
     return (
-      <div className={styles.para} style={{ ...style, width: w ?? PARA_W.initial, fontSize: PARA_PX[l.scale ?? 'large'] }} {...common} onPointerDown={press} onDoubleClick={edit}>
-        {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} /> : <span className={styles.empty}>a paragraph</span>}
-        {selected && editor && <span className={styles.edge} onPointerDown={resize('w')} aria-hidden />}
+      <div className={styles.para} style={{ ...style, fontSize: PARA_PX[l.scale ?? 'large'], ...(turn ? turnedBox : { width: pw }) }} {...common} onPointerDown={press} onDoubleClick={edit}>
+        <div ref={body} className={styles.body} data-turn={turn} style={{ width: pw }}>
+          {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} /> : <span className={styles.empty}>a paragraph</span>}
+          {selected && editor && <span className={styles.edge} onPointerDown={resize('w')} aria-hidden />}
+        </div>
         {marks}
         {bar}
       </div>
     )
   }
 
-  const size = (l.size as Exclude<LabelSize, 'note'>) ?? 'heading'
+  const size = headingSize(l)
+  const px = HEADING_PX[size]
+  const kick = kickerParts(l.kicker)
   return (
-    <div className={styles.heading} data-size={size} style={{ ...style, fontSize: HEADING_PX[size] }} {...common} onPointerDown={press} onDoubleClick={edit}>
-      {typing ? <Field l={l} single /> : <span data-empty={!l.text || undefined}>{l.text || 'heading'}</span>}
-      {size === 'heading' && <span className={styles.rule} aria-hidden />}
+    <div className={styles.heading} data-size={size} style={{ ...style, fontSize: px, letterSpacing: tracking(l, size), ...turnedBox }} {...common} onPointerDown={press} onDoubleClick={edit}>
+      <div ref={body} className={styles.body} data-turn={turn}>
+        {typing ? (
+          <NamedFields l={l} kick={l.kicker ?? ''} kickSize={kickPx(px)} />
+        ) : (
+          <>
+            {kick && <Kicker kick={kick} size={kickPx(px)} hidden={kickPx(px) * zoom < MIN_TEXT_PX} />}
+            <span className={styles.headText} data-empty={!l.text || undefined}>
+              {l.text || 'heading'}
+            </span>
+          </>
+        )}
+        {size === 'heading' && <span className={styles.rule} style={{ height: Math.max(1, px * 0.028) }} aria-hidden />}
+      </div>
       {marks}
       {bar}
     </div>
   )
 }
 
-// Typing into it: Enter (a heading's, a section's name; ⌘Enter in a paragraph or note) or leaving keeps it, Escape puts
-// it back. A heading or paragraph left empty goes away.
-function Field({ l, single }: { l: Label; single?: boolean }) {
+// A heading's small line (D-156): its number in the accent (or the heading's colour), the rest small mono capitals.
+function Kicker({ kick, size, hidden }: { kick: { num: string; rest: string }; size: number; hidden: boolean }) {
+  return (
+    <span className={styles.kicker} style={{ fontSize: size, visibility: hidden ? 'hidden' : undefined }}>
+      {kick.num && <span className={styles.kickNum}>{kick.num}</span>}
+      {kick.rest && <span className={styles.kickRest}>{kick.num ? `── ${kick.rest}` : kick.rest}</span>}
+    </span>
+  )
+}
+
+// Typing a heading with its small line over it, or a section's name with its number before it (`row`); Tab moves
+// between the two. Enter or leaving both keeps them, Escape puts them back. A heading left empty goes away; a section
+// may have no name. A section's number cleared stays cleared (`''`); left as it was, it keeps counting.
+function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickSize: number; row?: boolean }) {
+  const { wid } = useWs()
+  const [text, setText] = useState(l.text)
+  const [k, setK] = useState(kick)
+  const root = useRef<HTMLSpanElement>(null)
+  const main = useRef<HTMLInputElement>(null)
+  const done = useRef(false)
+  useEffect(() => {
+    main.current?.focus()
+    main.current?.select()
+  }, [])
+  const finish = (keep: boolean) => {
+    if (done.current) return
+    done.current = true
+    useCanvasView.setState({ labelEditing: null })
+    const heading = kindOf(l) === 'heading'
+    const t = (keep ? text : l.text).trim()
+    if (!t && heading) return void deleteLabel(wid, l)
+    if (!keep) return
+    const kk = k.trim()
+    const nextKick = row ? (kk === kick.trim() ? l.kicker : kk) : kk || undefined
+    const patch: Partial<Label> = {}
+    if (t !== l.text) patch.text = t
+    if (nextKick !== l.kicker) patch.kicker = nextKick
+    if (Object.keys(patch).length) void updateLabel(wid, l, patch, 'text')
+  }
+  const onKeyDown = (e: ReactKeyboardEvent) => {
+    e.stopPropagation()
+    if (e.key === 'Enter') (e.preventDefault(), finish(true))
+    if (e.key === 'Escape') finish(false)
+  }
+  return (
+    <span
+      ref={root}
+      className={styles.fields}
+      data-row={row || undefined}
+      onPointerDown={(e) => e.stopPropagation()}
+      onBlur={(e) => {
+        if (!root.current?.contains(e.relatedTarget as Node)) finish(true)
+      }}
+    >
+      <input
+        className={`${styles.field} ${styles.kickField}`}
+        style={{ fontSize: kickSize, ...(row ? { marginRight: kickSize * 0.7 } : {}) }}
+        value={k}
+        maxLength={KICKER_MAX}
+        placeholder={row ? '01' : '01 small line'}
+        size={Math.max(k.length, row ? 2 : 13) + 1}
+        aria-label={row ? 'Number before the name' : 'Small line over the heading'}
+        onChange={(e) => setK(e.target.value)}
+        onKeyDown={onKeyDown}
+      />
+      <input
+        ref={main}
+        className={styles.field}
+        value={text}
+        maxLength={textMax(l)}
+        placeholder={row ? 'Section' : 'heading'}
+        size={Math.max(text.length, 6) + 1}
+        aria-label={row ? 'Section name' : 'heading text'}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={onKeyDown}
+      />
+    </span>
+  )
+}
+
+// Typing into a paragraph or a sticky note: ⌘Enter or leaving keeps it, Escape puts it back. A paragraph left empty
+// goes away.
+function Field({ l }: { l: Label }) {
   const { wid } = useWs()
   const [draft, setDraft] = useState(l.text)
-  const ref = useRef<HTMLTextAreaElement & HTMLInputElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null)
   const done = useRef(false)
   useEffect(() => {
     ref.current?.focus()
     ref.current?.select()
   }, [])
-  // A text area as tall as what's in it.
+  // As tall as what's in it.
   useEffect(() => {
     const el = ref.current
-    if (el && !single) {
+    if (el) {
       el.style.height = '0px'
       el.style.height = `${el.scrollHeight}px`
     }
-  }, [draft, single])
+  }, [draft])
   const finish = (keep: boolean) => {
     if (done.current) return
     done.current = true
     useCanvasView.setState({ labelEditing: null })
     const text = (keep ? draft : l.text).trim()
-    const kind = kindOf(l)
-    if (!text && (kind === 'heading' || kind === 'paragraph')) return void deleteLabel(wid, l)
+    if (!text && kindOf(l) === 'paragraph') return void deleteLabel(wid, l)
     if (text !== l.text) void updateLabel(wid, l, { text }, 'text')
   }
-  const props = {
-    ref,
-    className: styles.field,
-    value: draft,
-    maxLength: textMax(l),
-    // What an empty one shows, so typing into it looks the same.
-    placeholder: { heading: 'heading', paragraph: 'a paragraph', sticky: 'a note', section: 'section', title: '' }[kindOf(l)],
-    'aria-label': `${kindOf(l)} text`,
-    onChange: (e: { target: { value: string } }) => setDraft(e.target.value),
-    onPointerDown: (e: ReactPointerEvent) => e.stopPropagation(),
-    onBlur: () => finish(true),
-    onKeyDown: (e: ReactKeyboardEvent) => {
-      e.stopPropagation()
-      if (e.key === 'Enter' && (single || e.metaKey || e.ctrlKey)) (e.preventDefault(), finish(true))
-      if (e.key === 'Escape') finish(false)
-    },
-  }
-  return single ? <input {...props} size={Math.max(draft.length, 6) + 1} /> : <textarea {...props} rows={1} />
+  return (
+    <textarea
+      ref={ref}
+      className={styles.field}
+      rows={1}
+      value={draft}
+      maxLength={textMax(l)}
+      // What an empty one shows, so typing into it looks the same.
+      placeholder={kindOf(l) === 'sticky' ? 'a note' : 'Text: **bold**, *italic*, - bullets'}
+      aria-label={`${kindOf(l)} text`}
+      onChange={(e) => setDraft(e.target.value)}
+      onPointerDown={(e) => e.stopPropagation()}
+      onBlur={() => finish(true)}
+      onKeyDown={(e) => {
+        e.stopPropagation()
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) (e.preventDefault(), finish(true))
+        if (e.key === 'Escape') finish(false)
+      }}
+    />
+  )
 }
 
-// The project title (D-118): the workspace's name and what it's building, edited in place (the same fields as
-// Settings), a star and PROJECT over them, a rule, corner brackets; its right edge sets its width.
+// The fonts' own metrics, once they're in, for laying out the title.
+function useFontsReady() {
+  const [ready, setReady] = useState(() => document.fonts.status === 'loaded')
+  useEffect(() => {
+    let on = true
+    void document.fonts.ready.then(() => on && setReady(true))
+    return () => {
+      on = false
+    }
+  }, [])
+  return ready
+}
+
+// The app's mark: a four-pointed star.
+function Star({ style }: { style: CSSProperties }) {
+  return (
+    <svg className={styles.star} style={style} viewBox="-1 -1 2 2" aria-hidden>
+      <path d="M0 -1 L0.2 -0.2 L1 0 L0.2 0.2 L0 1 L-0.2 0.2 L-1 0 L-0.2 -0.2 Z" />
+    </svg>
+  )
+}
+
+// The project title (D-118, D-132): the workspace's name and what it's building, edited in place (the same fields as
+// Settings); the north star and PROJECT over them, a rule (a magenta lead, then a hairline), corner brackets that are
+// its hover and selection marks; its right edge sets its width. Too far out to read the description it folds (320 ms,
+// eased both ends): the caption, rule and description go, the star moves beside the name, and the name grows into the
+// room they leave, as big as fits without breaking a word.
 type TitleProps = {
   l: Label
   style: CSSProperties
@@ -307,29 +526,71 @@ type TitleProps = {
   press: (e: ReactPointerEvent<HTMLElement>) => void
   edit?: () => void
   typing: boolean
+  editor: boolean
+  zoom: number
   w: number
   marks: ReactNode
   resize?: (e: ReactPointerEvent<HTMLElement>) => void
 }
 
-function TitleBlock({ l, style, common, press, edit, typing, w, marks, resize }: TitleProps) {
+function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, marks, resize }: TitleProps) {
   const { wid, workspace } = useWs()
+  const reduced = useMotion((s) => s.reduced)
+  const fonts = useFontsReady()
+  const description = workspace.description ?? ''
+  // Editors see where to write it; viewers see nothing until someone has.
+  const about = description || (editor ? ABOUT_HINT : null)
+  const lay = useMemo(() => titleLayout(workspace.name, about, w), [workspace.name, about, w, fonts])
+  const folded = T.desc * zoom < FOLD_BELOW_PX && !typing
+  const r = folded ? foldStar(lay.fold) : T.star
+  // The star's centre: in the caption, or beside the name's first line.
+  const [cx, cy] = folded ? [r, (lay.fold * T.nameLead) / 2] : [T.star, T.caption / 2]
   return (
-    <div className={styles.title} style={{ ...style, width: w }} {...common} onPointerDown={press} onDoubleClick={edit} data-id={l.id}>
-      <span className={styles.titleKick}>✦ PROJECT</span>
+    <div
+      className={styles.title}
+      style={{ ...style, width: w, padding: T.pad, fontWeight: undefined, fontStyle: undefined }}
+      {...common}
+      data-folded={folded || undefined}
+      data-reduced={reduced || undefined}
+      onPointerDown={press}
+      onDoubleClick={edit}
+      data-id={l.id}
+    >
+      {/* Drawn at the caption's size and moved by transform only, so the fold animates without layout. */}
+      <Star style={{ transform: `translate(${T.pad + cx - r}px, ${T.pad + cy - r}px) scale(${r / T.star})` }} />
+      <div className={styles.fold}>
+        <div>
+          <span className={styles.titleKick} style={{ fontSize: T.caption, lineHeight: `${T.caption}px`, paddingLeft: T.star * 2 + 13 }}>
+            PROJECT
+          </span>
+          <i className={styles.spacer} style={{ height: T.gap }} />
+        </div>
+      </div>
       {typing ? (
-        <TitleFields wid={wid} name={workspace.name} description={workspace.description ?? ''} />
+        <TitleFields wid={wid} name={workspace.name} description={description} />
       ) : (
         <>
-          <h2 className={styles.titleName}>{workspace.name}</h2>
-          <span className={styles.titleRule} aria-hidden />
-          <p className={styles.titleAbout} data-empty={!workspace.description || undefined}>
-            {workspace.description || "what we're building"}
-          </p>
+          <h2 className={styles.titleName} style={{ fontSize: folded ? lay.fold : T.name, paddingLeft: folded ? foldIndent(lay.fold) : 0 }}>
+            {workspace.name}
+          </h2>
+          <div className={styles.fold}>
+            <div>
+              <i className={styles.spacer} style={{ height: T.gap }} />
+              <span className={styles.titleRule} style={{ height: T.rule }} aria-hidden />
+              {about !== null && (
+                <>
+                  <i className={styles.spacer} style={{ height: T.gap }} />
+                  <p className={styles.titleAbout} data-empty={!description || undefined} style={{ width: `${DESC_SHARE * 100}%` }}>
+                    {about}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
         </>
       )}
       {(['nw', 'ne', 'se', 'sw'] as const).map((c) => (
-        <i key={c} className={styles.bracket} data-corner={c} aria-hidden />
+        <i key={c} className={styles.bracket} data-corner={c} style={{ width: T.arm, height: T.arm }} aria-hidden />
       ))}
       {resize && <span className={styles.edge} onPointerDown={resize} aria-hidden />}
       {marks}
@@ -372,16 +633,19 @@ function TitleFields({ wid, name, description }: { wid: string; name: string; de
       }}
     >
       {/* Laid out as it reads (name, rule, what it's building), so typing doesn't change how it looks. */}
-      <input className={`${styles.field} ${styles.titleName}`} aria-label="Workspace name" value={n} maxLength={80} onChange={(e) => setN(e.target.value)} />
-      <span className={styles.titleRule} aria-hidden />
+      <input className={`${styles.field} ${styles.titleName}`} style={{ fontSize: T.name }} aria-label="Workspace name" value={n} maxLength={80} onChange={(e) => setN(e.target.value)} />
+      <i className={styles.spacer} style={{ height: T.gap }} />
+      <span className={styles.titleRule} style={{ height: T.rule }} aria-hidden />
+      <i className={styles.spacer} style={{ height: T.gap }} />
       <textarea
         ref={about}
         className={`${styles.field} ${styles.titleAbout}`}
+        style={{ width: `${DESC_SHARE * 100}%` }}
         aria-label="What we're building"
         rows={1}
         value={d}
         maxLength={DESCRIPTION_MAX}
-        placeholder="what we're building"
+        placeholder={ABOUT_HINT}
         onChange={(e) => setD(e.target.value)}
       />
     </div>
@@ -389,42 +653,72 @@ function TitleFields({ wid, name, description }: { wid: string; name: string; de
 }
 
 const SCALES: [TextScale, string][] = [['small', 'S'], ['medium', 'M'], ['large', 'L']]
-const SIZES: [Exclude<LabelSize, 'note'>, string][] = [['heading', 'H1'], ['subheading', 'H2'], ['minor', 'H3']]
+const SIZES: [HeadingSize, string][] = [['heading', 'H1'], ['subheading', 'H2'], ['minor', 'H3']]
+// A quarter turn either way (D-156): ↺ reads upwards, ↻ downwards; pressed again, it's level again.
+const TURNS: [90 | -90, string, string][] = [
+  [90, '↺', 'turn left: reads upwards'],
+  [-90, '↻', 'turn right: reads downwards'],
+]
+// Where a section's name sits (D-157): in the top edge, or up the left one.
+const SIDES: ['top' | 'left', string, string][] = [
+  ['top', '⌐ top', 'name in the top edge'],
+  ['left', '⌊ left', 'name up the left edge'],
+]
 
-// Under the selected one, at the screen's own size: how it's set (a terminal line, like a plane's console).
+// Under the selected one, at the screen's own size: how it's set (a terminal line, like a plane's console). A heading
+// or section name: H1–H3, B/I/AA; a paragraph or sticky note: S/M/L; a paragraph B/I/AA too. Headings and paragraphs
+// turn; a section's name goes in the top or left edge. Then its colour, edit (rename) and delete.
 function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
   const { wid } = useWs()
   const kind = kindOf(l)
   const set = (patch: Parameters<typeof updateLabel>[2]) => void updateLabel(wid, l, patch)
   const scale = l.scale ?? (kind === 'sticky' ? 'medium' : 'large')
+  const named = kind === 'heading' || kind === 'section'
+  const sizes = named ? SIZES : kind === 'paragraph' || kind === 'sticky' ? SCALES : []
   return (
     <div className={styles.bar} style={{ transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-      {kind === 'heading' &&
-        SIZES.map(([s, name]) => (
-          <button key={s} className={styles.tool} aria-pressed={(l.size ?? 'heading') === s} onClick={() => set({ size: s })}>
-            {name}
+      {sizes.map(([s, name]) => (
+        <button
+          key={s}
+          className={styles.tool}
+          aria-pressed={named ? headingSize(l) === s : scale === s}
+          onClick={() => set(named ? { size: s as HeadingSize } : { scale: s as TextScale })}
+        >
+          {name}
+        </button>
+      ))}
+      {kind !== 'sticky' && (
+        <>
+          <span className={styles.rule2} />
+          <button className={styles.tool} aria-pressed={!!l.bold} title="bold" style={{ fontWeight: 700 }} onClick={() => set({ bold: l.bold ? undefined : true })}>
+            B
           </button>
-        ))}
-      {(kind === 'paragraph' || kind === 'sticky') &&
-        SCALES.map(([s, name]) => (
-          <button key={s} className={styles.tool} aria-pressed={scale === s} onClick={() => set({ scale: s })}>
-            {name}
+          <button className={styles.tool} aria-pressed={!!l.italic} title="italic" style={{ fontStyle: 'italic' }} onClick={() => set({ italic: l.italic ? undefined : true })}>
+            I
           </button>
-        ))}
+          <button className={styles.tool} aria-pressed={!!l.caps} title="capitals" onClick={() => set({ caps: l.caps ? undefined : true })}>
+            AA
+          </button>
+        </>
+      )}
       {(kind === 'heading' || kind === 'paragraph') && (
         <>
           <span className={styles.rule2} />
-          <button className={styles.tool} aria-pressed={!!l.bold} style={{ fontWeight: 700 }} onClick={() => set({ bold: l.bold ? undefined : true })}>
-            B
-          </button>
-          <button className={styles.tool} aria-pressed={!!l.italic} style={{ fontStyle: 'italic' }} onClick={() => set({ italic: l.italic ? undefined : true })}>
-            I
-          </button>
-          {kind === 'heading' && (
-            <button className={styles.tool} aria-pressed={!!l.caps} onClick={() => set({ caps: l.caps ? undefined : true })}>
-              AA
+          {TURNS.map(([t, glyph, name]) => (
+            <button key={t} className={styles.tool} aria-pressed={l.rotate === t} aria-label={name} title={name} onClick={() => set({ rotate: l.rotate === t ? undefined : t })}>
+              {glyph}
             </button>
-          )}
+          ))}
+        </>
+      )}
+      {kind === 'section' && (
+        <>
+          <span className={styles.rule2} />
+          {SIDES.map(([s, glyph, name]) => (
+            <button key={s} className={styles.tool} aria-pressed={(l.side ?? 'top') === s} title={name} onClick={() => set({ side: s === 'left' ? 'left' : undefined })}>
+              {glyph}
+            </button>
+          ))}
         </>
       )}
       <span className={styles.rule2} />
@@ -440,7 +734,10 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
         />
       ))}
       <span className={styles.rule2} />
-      <button className={styles.tool} data-tone="danger" title="delete (Delete)" onClick={() => void deleteLabel(wid, l)}>
+      <button className={styles.tool} title="or double-click it" onClick={() => useCanvasView.setState({ labelEditing: l.id })}>
+        {kind === 'section' ? 'rename' : 'edit'}
+      </button>
+      <button className={styles.tool} data-tone="danger" title={kind === 'section' ? 'delete (Delete); what it holds stays' : 'delete (Delete)'} onClick={() => void deleteLabel(wid, l)}>
         delete
       </button>
     </div>

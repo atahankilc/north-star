@@ -190,11 +190,17 @@ piece; check them with the user then.
   No side panel on a card click until it's refactored (the user's call).
 - Text anywhere (D-188): headings H1–H3 (48/29/22 px, H1 with a rule fading right), paragraphs (light Markdown, S/M/L,
   width from the right edge), sticky notes (signed, colour bar, yellow default), sections (frame drawn with a crosshair,
-  `01 NAME` in the top edge, carries what's fully inside it, corner resizes) and the project title (workspace name and
+  number + name in an edge, carries what's fully inside it, corner resizes) and the project title (workspace name and
   description, one per workspace). `labels` docs with `pieceId` (`canvas` or a plane's id), x/y top-left in that space's
   px; the old board's labels (none) aren't shown. From the side nav's `+` in both spaces; live on the canvas, in a plane
   only in focus; click, drag (snapped), double-click types, Delete; a bar under the selected one (sizes, B/I/AA, colours,
   delete) at screen size. Canvas sections sit over planes (no fill). A plane's delete takes its text.
+- Text as the old board set it (D-194): a section's name is a heading (H1–H3, B/I/AA) in the top edge or up the left one,
+  the line breaking round it, `…` when too long, its number its own `kicker` (else the order made, `''` = none); headings
+  carry a small line (`02 ── WHO WE BEAT`); headings and paragraphs turn ±90 (top-left kept); paragraphs a left hairline;
+  corner marks close in while pressed and take the item's colour (a section's 32 px, an L grip). Project title at the old
+  sizes (name 92 px, 26 px description, star + PROJECT, magenta-lead rule, 48 px brackets as its marks, 800 wide) and
+  folding round the name when the description is under 6 screen px (320 ms, `titleLayout.ts`).
 - Text reads the same typed or not (D-190): fields keep the item's face, size and layout (no frame, same placeholder);
   a soft feathered shade of the page sits behind headings, paragraphs and the title so the backdrop dims under them.
   The project title goes on the canvas only (not in a plane's `+`).

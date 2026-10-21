@@ -66,7 +66,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   nav's `+` (D-176, `pieces`), renamed/moved/resized in edit mode from their console (D-179, D-180); terminal look with corner marks (D-181);
   delete asks with hazard tape, 25 px snapping (D-182, D-183); `focus` spreads a plane over the screen like ink (D-184, D-185).
   Cards on planes (D-187); text anywhere, canvas or plane (D-188, D-190); cursors, total follow, selection marks (D-191);
-  comment threads (D-192). Next (asked): the old card animations back (arrive, press/select marks, drag at 0.8). All the old code archived in `src/archive/`, out of the build (D-177); features come back as pieces. Not pushed; RTDB + Firestore rules deployed 2026-10-20. Next: the board's cards
+  comment threads (D-192); text's old look back: section names, kickers, turns, the title's sizes and fold (D-194;
+  what else was lost is in D-194's *Not yet*). Next (asked): the old card animations back (arrive, press/select marks, drag at 0.8). All the old code archived in `src/archive/`, out of the build (D-177); features come back as pieces. Not pushed; RTDB + Firestore rules deployed 2026-10-20. Next: the board's cards
   inside its piece (each board its own items: maybe a plane per board, D-139), then tables etc.; pieces in the export.
 
 ## Next steps

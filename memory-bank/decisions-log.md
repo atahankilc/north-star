@@ -2851,8 +2851,8 @@ categories shown like B, not in a card, and the features under them not indented
   Delete removes, Escape lets go. A bar under the selected one, at screen size: H1/H2/H3 or S/M/L, B I AA, colours,
   delete. Canvas sections draw over planes (no fill) so they're never hidden. Fit and a plane's fitted picture include text.
   The canvas never selects text while dragging (`user-select: none`).
-- *Not yet* (the old board had them): kickers over headings, quarter turns, a section's name up its left edge, text
-  sizes for section names, the title folding when zoomed out, the jump list `go to`.
+- *Not yet* (the old board had them): the jump list `go to`. Kickers over headings, quarter turns, a section's name up
+  its left edge, section name sizes and the title folding came back in D-194, which also changed the look above.
 - *User:* "let's bring things not only about board … threads, notes, headings, paragraph, section and project title. These
   can be also added to plane but these stuff is not bounded by a component but they should be working workspace wide";
   text first, then live cursors, follow ("total follow", into focus too), comment threads, selection marks.
@@ -2972,3 +2972,37 @@ categories shown like B, not in a card, and the features under them not indented
   comment on a plane and on a card inside it, the plane's console then read `💬 2`; Bob's threads button at the bottom
   left, the panel at x = 60 stuck to the bottom; the console's button opened it scoped to the plane (2 rows); following:
   a small move left Bob's view still, a far one glided it (368 → 100 px over 1.5 s), Bob's wheel zoom kept following.
+
+### D-194 · 2026-10-21 · Accepted (changes D-188's section, title and heading look)
+- *Decision:* what D-188 left behind of the old board's text comes back, set as the old board drew it (board units × 80 = px).
+  - *Sections* (D-130, D-157, D-160): the name is set like a heading (Geist, H1 48 / H2 29 / H3 22 px, B/I/AA), in the
+    top edge or up the left one (`side: 'left'`, reading upwards), the line breaking round it (a short lead, the name,
+    the rest of the line); cut with `…` when too long for its edge. The number before it is the section's `kicker`
+    (mono, magenta, typed in its own field before the name, Tab between); a section without one still shows the order
+    it was made in, and a cleared number (`''`) stays cleared. Hover and selection are a card's corner marks, bigger
+    (32 px), the line keeping its colour; the resize grip is an L in the corner, shown on hover and selection. Its bar:
+    H1–H3, B I AA, `⌐ top` / `⌊ left`, colours, rename, delete.
+  - *Headings* (D-156): the small line over it (`kicker`, ≤ 60: `02 who we beat` → `02 ── WHO WE BEAT`, the number in
+    magenta or the heading's colour, the rest small grey mono caps, 0.3 of the heading's size, hidden under 6 screen px),
+    typed in a field over the heading's; an H1's rule 130 % of the text, grey (or its colour), as thick as the size asks.
+  - *Turns* (D-156): a heading or paragraph turns a quarter from its bar (`↺` reads upwards, `↻` downwards, again =
+    level). It's laid out level, turned round its top-left, and its box (sides swapped) keeps x/y as its top-left; a turned
+    paragraph's width drags along the text (one reading upwards keeps its start, the bottom, in place).
+  - *Paragraphs*: a hairline down the left (its colour when it has one); B I AA; the field's hint shows the Markdown.
+  - *Project title* (D-118, D-132): the old sizes: the name 92 px (tracking −0.045em), what it's building 26 px at 86 %
+    of the width, `PROJECT` 18 px grey with a drawn magenta four-pointed star, a rule of a 96 px magenta lead then a
+    hairline, 44 px inside 48 px corner brackets (3 px; they are its hover and selection marks, cyan when selected);
+    800 px wide by default (500–2400). Too far out to read the description (26 px under 6 screen px) it folds in 320 ms
+    eased both ends: the caption, rule and description shrink away and fade early, the star moves beside the name's
+    first line, the name grows into the room, as big as fits the unfolded height without breaking a word
+    (`src/views/workspace/titleLayout.ts`). Reduced motion: no transition.
+  - *All*: corner marks close in onto the corners, longer, while pressed, and take the item's colour once selected
+    (were always cyan); the bar has `edit` (or `rename`).
+- *Why:* the user found D-188's section, title and paragraph "not looking like they used to" and asked for a list of what
+  was lost, then to start with three: section name size + selection look, the title's sizes + fold, kickers + turns.
+- *Not yet* (on the list given to the user): right-click menu entries for text, shift-click / group drag, alignment
+  guides, the cell-by-cell entrance, remote moves gliding, the sticky note's ▚▚▚ mark and `NAME · 5m` head, the paragraph
+  width strip's old look, the title's separate name/description editing, the jump list `go to`.
+- *Verified* headless (emulators): all of the above drawn on the canvas at 0.6 and 1.2; a section renamed and renumbered
+  by typing (`04 MONEY` / `Who pays now`, saved); the fold sampled frame by frame: name 92 → 117 px over ~300 ms, the
+  block never taller than when it started. Typecheck. No rules change (`kicker`, `rotate`, `side` were already allowed).
