@@ -118,11 +118,17 @@
   background: linear-gradient(to right, var(--tone), transparent);
 }
 
-/* Paragraphs (D-156): light Markdown at their width, a hairline down the left (its colour when it has one). */
+/* Paragraphs (D-156): light Markdown at their width, a hairline down the left edge (its colour when it has one). */
 .para {
   color: color-mix(in srgb, var(--tone) 82%, var(--bg));
   font-family: var(--font-display);
   line-height: 1.55;
+}
+
+/* The hairline is its left edge, so it sits on the grid's marks like every other edge; the text keeps clear of it. */
+.para .body {
+  box-sizing: border-box;
+  padding-left: 0.6em;
 }
 
 .para .body::after {
@@ -130,7 +136,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -0.6em;
+  left: 0;
   width: 1px;
   background: var(--line-hover);
   pointer-events: none;
@@ -160,11 +166,11 @@
   text-transform: uppercase;
 }
 
-/* Sections (D-130, D-157): a thin frame, no fill, in its colour (mixed with the line when it has none); the line keeps
-   its colour selected (D-160). The name and number sit in the top edge, or up the left one, the line breaking round
+/* Sections (D-130, D-157): a thin frame, no fill, in its colour (the canvas's edge grey when it has none); the line
+   keeps its colour selected (D-160). The name and number sit in the top edge, or up the left one, the line breaking round
    them. Only the edge bands, the name and the corner take the pointer, so what's inside stays reachable. */
 .section {
-  --line-tone: color-mix(in srgb, var(--tone) 55%, var(--line));
+  --line-tone: var(--edge);
   border: 1px solid var(--line-tone);
   pointer-events: none;
 }
@@ -191,10 +197,11 @@
   pointer-events: none;
 }
 
-.band[data-side='n'] { top: -5px; left: 0; right: 0; height: 9px; cursor: grab; }
-.band[data-side='s'] { bottom: -5px; left: 0; right: 0; height: 9px; cursor: grab; }
-.band[data-side='e'] { top: 0; bottom: 0; right: -5px; width: 9px; cursor: grab; }
-.band[data-side='w'] { top: 0; bottom: 0; left: -5px; width: 9px; cursor: grab; }
+/* As wide as the old board's grab edge (0.22 units), centred on the line. */
+.band[data-side='n'] { top: -9px; left: 0; right: 0; height: 18px; cursor: grab; }
+.band[data-side='s'] { bottom: -9px; left: 0; right: 0; height: 18px; cursor: grab; }
+.band[data-side='e'] { top: 0; bottom: 0; right: -9px; width: 18px; cursor: grab; }
+.band[data-side='w'] { top: 0; bottom: 0; left: -9px; width: 18px; cursor: grab; }
 
 /* The edge with the name in it: a short lead, the name, then the rest of the line. Up the left edge it's the same row
    turned to read upwards from the bottom-left corner, the lead at the top. */
@@ -226,7 +233,8 @@
 .secName {
   display: flex;
   flex: 0 1 auto;
-  align-items: baseline;
+  /* The number centred on the name, as the old board set both on the line's middle. */
+  align-items: center;
   min-width: 0;
   color: var(--tone);
   font-family: var(--font-display);
@@ -449,7 +457,7 @@
 
 .fields[data-row='true'] {
   flex-direction: row;
-  align-items: baseline;
+  align-items: center;
 }
 
 .fields .field {
@@ -514,11 +522,15 @@
   cursor: ns-resize;
 }
 
-/* Corner marks (D-150): grey a little out on hover; in its colour just outside once selected; on its corners, longer,
-   while pressed. A section's are bigger. */
+/* Corner marks (D-150, the old board's CardCorners): grey a little out on hover; in its colour just outside once
+   selected; on its corners, longer, while pressed. Text's sit a little clear of it (`--pad`); a sticky note's on its
+   paper's edge; a section's are bigger. */
 .mark {
   --len: 16px;
   --out: 10px;
+  --pad: 7px;
+  --thick: 2.4px;
+  --at: calc(-1 * (var(--out) + var(--pad)));
   position: absolute;
   width: var(--len);
   height: var(--len);
@@ -527,13 +539,18 @@
   pointer-events: none;
 }
 
-.mark[data-corner='nw'] { top: calc(-1 * var(--out)); left: calc(-1 * var(--out)); border-top-width: 1px; border-left-width: 1px; }
-.mark[data-corner='ne'] { top: calc(-1 * var(--out)); right: calc(-1 * var(--out)); border-top-width: 1px; border-right-width: 1px; }
-.mark[data-corner='se'] { bottom: calc(-1 * var(--out)); right: calc(-1 * var(--out)); border-bottom-width: 1px; border-right-width: 1px; }
-.mark[data-corner='sw'] { bottom: calc(-1 * var(--out)); left: calc(-1 * var(--out)); border-bottom-width: 1px; border-left-width: 1px; }
+.mark[data-corner='nw'] { top: var(--at); left: var(--at); border-top-width: var(--thick); border-left-width: var(--thick); }
+.mark[data-corner='ne'] { top: var(--at); right: var(--at); border-top-width: var(--thick); border-right-width: var(--thick); }
+.mark[data-corner='se'] { bottom: var(--at); right: var(--at); border-bottom-width: var(--thick); border-right-width: var(--thick); }
+.mark[data-corner='sw'] { bottom: var(--at); left: var(--at); border-bottom-width: var(--thick); border-left-width: var(--thick); }
 
 [data-live='true']:hover > .mark {
   opacity: 1;
+}
+
+/* The selected one over everything else in its space, so its bar is never under another's text or comment chip. */
+:is(.heading, .para, .sticky, .title, .section)[data-selected='true'] {
+  z-index: 20;
 }
 
 [data-selected='true'] > .mark {
@@ -544,14 +561,13 @@
 
 [data-pressed='true'] > .mark {
   --len: 22px;
-  --out: -1px;
+  --out: -2.4px;
   border-color: var(--tone);
   opacity: 1;
 }
 
-/* A sticky note's on its paper's edge. */
-.sticky > .mark {
-  --out: 6px;
+:is(.sticky, .section) > .mark {
+  --pad: 0px;
 }
 
 .section > .mark {
@@ -565,15 +581,17 @@
 
 .section[data-pressed='true'] > .mark {
   --len: 40px;
-  --out: -1px;
+  --out: -2.4px;
 }
 
-/* The bar under the selected one: at the screen's size (scaled back from the zoom), a terminal line. */
+/* The bar under the selected one: at the screen's size (scaled back from the zoom), a terminal line; over its own
+   comment chip, and taking the pointer even inside a section (whose frame lets clicks through). */
 .bar {
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
-  z-index: 2;
+  z-index: 4;
+  pointer-events: auto;
   display: flex;
   align-items: center;
   gap: var(--space-1);

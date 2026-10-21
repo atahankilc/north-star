@@ -59,7 +59,7 @@ const MIN_TEXT_PX = 6
 export type Carried = { id: string; ref: DocumentReference; x: number; y: number; w: number; h: number }
 
 export const COLOR_VAR: Record<LabelColor, string> = {
-  ink: 'var(--fg-strong)',
+  ink: 'var(--fg)',
   magenta: 'var(--accent-magenta)',
   cyan: 'var(--accent-cyan)',
   yellow: 'var(--accent-yellow)',
@@ -109,20 +109,18 @@ type Props = { labels: Label[]; layer: 'frames' | 'text'; live: boolean; editor:
 
 export function TextItems({ labels, layer, live, editor, zoom, carry }: Props) {
   const shown = labels.filter((l) => (kindOf(l) === 'section') === (layer === 'frames'))
-  // Sections are numbered in the order they were made, per space, until someone types their own number.
-  const order = labels.filter((l) => kindOf(l) === 'section').sort((a, b) => a.createdAt - b.createdAt).map((l) => l.id)
   return (
     <>
       {shown.map((l) => (
-        <LabelItem key={l.id} l={l} n={order.indexOf(l.id) + 1} live={live} editor={editor} zoom={zoom} labels={labels} carry={carry} />
+        <LabelItem key={l.id} l={l} live={live} editor={editor} zoom={zoom} labels={labels} carry={carry} />
       ))}
     </>
   )
 }
 
-type ItemProps = { l: Label; n: number; live: boolean; editor: boolean; zoom: number; labels: Label[]; carry: Carried[] }
+type ItemProps = { l: Label; live: boolean; editor: boolean; zoom: number; labels: Label[]; carry: Carried[] }
 
-function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
+function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const { wid, threads } = useWs()
   const kind = kindOf(l)
   const selected = useCanvasView((s) => live && s.labelSelected === l.id)
@@ -262,13 +260,13 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
 
   if (kind === 'section') {
     // Its name is set like a heading (D-130, D-157), whatever the frame's size, into the top edge or up the left one,
-    // the line breaking round it; the number before it is the section's own, or the order it was made in.
+    // the line breaking round it; a number (its small line) before it only when someone typed one.
     const size = headingSize(l)
     const px = HEADING_PX[size]
     const inset = 28 + px * 0.4
     const gap = px * 0.35
     const kick = kickerParts(l.kicker)
-    const num = l.kicker === undefined ? String(n).padStart(2, '0') : kick ? [kick.num, kick.rest].filter(Boolean).join(' ') : ''
+    const num = kick ? [kick.num, kick.rest].filter(Boolean).join(' ') : ''
     const onLeft = l.side === 'left'
     return (
       <div className={styles.section} data-side={onLeft ? 'left' : 'top'} style={{ ...style, width: w, height: h, fontWeight: undefined, fontStyle: undefined }} {...common}>
@@ -284,7 +282,7 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
             onDoubleClick={edit}
           >
             {typing ? (
-              <NamedFields l={l} kick={num} kickSize={secKickPx(px)} row />
+              <NamedFields l={l} kick={l.kicker ?? ''} kickSize={secKickPx(px)} row />
             ) : (
               <>
                 {num && (
@@ -375,7 +373,7 @@ function Kicker({ kick, size, hidden }: { kick: { num: string; rest: string }; s
 
 // Typing a heading with its small line over it, or a section's name with its number before it (`row`); Tab moves
 // between the two. Enter or leaving both keeps them, Escape puts them back. A heading left empty goes away; a section
-// may have no name. A section's number cleared stays cleared (`''`); left as it was, it keeps counting.
+// may have no name.
 function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickSize: number; row?: boolean }) {
   const { wid } = useWs()
   const [text, setText] = useState(l.text)
@@ -396,7 +394,7 @@ function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickS
     if (!t && heading) return void deleteLabel(wid, l)
     if (!keep) return
     const kk = k.trim()
-    const nextKick = row ? (kk === kick.trim() ? l.kicker : kk) : kk || undefined
+    const nextKick = kk || undefined
     const patch: Partial<Label> = {}
     if (t !== l.text) patch.text = t
     if (nextKick !== l.kicker) patch.kicker = nextKick

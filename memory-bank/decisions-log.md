@@ -2978,17 +2978,22 @@ categories shown like B, not in a card, and the features under them not indented
   - *Sections* (D-130, D-157, D-160): the name is set like a heading (Geist, H1 48 / H2 29 / H3 22 px, B/I/AA), in the
     top edge or up the left one (`side: 'left'`, reading upwards), the line breaking round it (a short lead, the name,
     the rest of the line); cut with `…` when too long for its edge. The number before it is the section's `kicker`
-    (mono, magenta, typed in its own field before the name, Tab between); a section without one still shows the order
-    it was made in, and a cleared number (`''`) stays cleared. Hover and selection are a card's corner marks, bigger
-    (32 px), the line keeping its colour; the resize grip is an L in the corner, shown on hover and selection. Its bar:
-    H1–H3, B I AA, `⌐ top` / `⌊ left`, colours, rename, delete.
+    (mono, magenta, typed in its own field before the name, Tab between); none unless someone types one (D-188's
+    automatic `01` dropped: the old board never numbered by itself). Name in `--fg` (not white), the line in the old
+    board's edge grey (`--edge`, #6a6a6a; #8a8a8a light) or its colour. Hover and selection are a card's corner marks,
+    bigger (32 px, 2.4 px thick, 13 px out on hover, 6 px selected, on the corners and 40 px long while pressed), the
+    line keeping its colour; the resize grip is an L in the corner, shown on hover and selection; the grab bands along
+    the line are 18 px (the old 0.22 units). Its bar: H1–H3, B I AA, `⌐ top` / `⌊ left`, colours, rename, delete.
+    The number is centred on the name (both on the line's middle, as the old board set them). Checked against the old
+    board itself (the pre-archive commit run beside the new one, the same sections in both).
   - *Headings* (D-156): the small line over it (`kicker`, ≤ 60: `02 who we beat` → `02 ── WHO WE BEAT`, the number in
     magenta or the heading's colour, the rest small grey mono caps, 0.3 of the heading's size, hidden under 6 screen px),
     typed in a field over the heading's; an H1's rule 130 % of the text, grey (or its colour), as thick as the size asks.
   - *Turns* (D-156): a heading or paragraph turns a quarter from its bar (`↺` reads upwards, `↻` downwards, again =
     level). It's laid out level, turned round its top-left, and its box (sides swapped) keeps x/y as its top-left; a turned
     paragraph's width drags along the text (one reading upwards keeps its start, the bottom, in place).
-  - *Paragraphs*: a hairline down the left (its colour when it has one); B I AA; the field's hint shows the Markdown.
+  - *Paragraphs*: a hairline down the left edge (its colour when it has one), the box's own edge so it sits on the
+    grid's marks when snapped, the text 0.6em in from it; B I AA; the field's hint shows the Markdown.
   - *Project title* (D-118, D-132): the old sizes: the name 92 px (tracking −0.045em), what it's building 26 px at 86 %
     of the width, `PROJECT` 18 px grey with a drawn magenta four-pointed star, a rule of a 96 px magenta lead then a
     hairline, 44 px inside 48 px corner brackets (3 px; they are its hover and selection marks, cyan when selected);
@@ -2996,8 +3001,11 @@ categories shown like B, not in a card, and the features under them not indented
     eased both ends: the caption, rule and description shrink away and fade early, the star moves beside the name's
     first line, the name grows into the room, as big as fits the unfolded height without breaking a word
     (`src/views/workspace/titleLayout.ts`). Reduced motion: no transition.
-  - *All*: corner marks close in onto the corners, longer, while pressed, and take the item's colour once selected
-    (were always cyan); the bar has `edit` (or `rename`).
+  - *All*: corner marks 2.4 px thick, a little clear of text (7 px; a sticky note's on its paper), close in onto the
+    corners, longer, while pressed, and take the item's colour once selected (were always cyan); plain text is `--fg`
+    as on the old board (ink was white); the bar has `edit` (or `rename`). The selected one is lifted over everything
+    else in its space and its bar takes the pointer (a section's frame lets clicks through, so its bar didn't), over
+    any comment chip.
 - *Why:* the user found D-188's section, title and paragraph "not looking like they used to" and asked for a list of what
   was lost, then to start with three: section name size + selection look, the title's sizes + fold, kickers + turns.
 - *Not yet* (on the list given to the user): right-click menu entries for text, shift-click / group drag, alignment

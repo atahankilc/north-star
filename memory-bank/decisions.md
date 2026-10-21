@@ -196,7 +196,7 @@ piece; check them with the user then.
   only in focus; click, drag (snapped), double-click types, Delete; a bar under the selected one (sizes, B/I/AA, colours,
   delete) at screen size. Canvas sections sit over planes (no fill). A plane's delete takes its text.
 - Text as the old board set it (D-194): a section's name is a heading (H1–H3, B/I/AA) in the top edge or up the left one,
-  the line breaking round it, `…` when too long, its number its own `kicker` (else the order made, `''` = none); headings
+  the line breaking round it, `…` when too long, `--fg` on an `--edge` grey line, a number only when typed (`kicker`); headings
   carry a small line (`02 ── WHO WE BEAT`); headings and paragraphs turn ±90 (top-left kept); paragraphs a left hairline;
   corner marks close in while pressed and take the item's colour (a section's 32 px, an L grip). Project title at the old
   sizes (name 92 px, 26 px description, star + PROJECT, magenta-lead rule, 48 px brackets as its marks, 800 wide) and
