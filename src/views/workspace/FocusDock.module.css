@@ -74,6 +74,25 @@
   color: var(--fg-strong);
 }
 
+/* What it's the dock of (a pane's, D-211): caps, a long name cut with `…`, then `|`. */
+.name {
+  max-width: 44ch;
+  overflow: hidden;
+  color: var(--fg);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+}
+
+.sep {
+  color: var(--fg-faint);
+}
+
+/* A switch that's on: what's open beside the plane (D-211). */
+.tool[aria-pressed='true'] {
+  color: var(--accent-cyan);
+}
+
 /* Its key, quieter than the action. */
 .key {
   color: var(--fg-faint);

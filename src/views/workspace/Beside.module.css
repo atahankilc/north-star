@@ -1,0 +1,81 @@
+/* What's opened beside a plane in its focus (D-211): panes on the right of the screen, each its own area on solid
+   page colour (no `+` marks: they're not planes), split from the plane by a line that drags. */
+.pane {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  border-left: 1px solid var(--line-hover);
+  background: var(--bg);
+  cursor: grab;
+  animation: pane-in 200ms steps(4) both;
+}
+
+
+.pane[data-panning='true'] {
+  cursor: grabbing;
+}
+
+@keyframes pane-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.kind {
+  color: var(--fg-dim);
+}
+
+/* The line between the plane and the panes: 9 px to grab, a 1 px rule drawn, cyan while hovered or dragged. */
+.divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 9px;
+  margin-left: -4px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  background: var(--line-hover);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.divider:hover::after,
+.divider:active::after {
+  background: var(--accent-cyan);
+}
+
+/* The line between two stacked panes (D-211): the same, across. */
+.rowDivider {
+  position: absolute;
+  right: 0;
+  z-index: 3;
+  height: 9px;
+  margin-top: -4px;
+  cursor: row-resize;
+  touch-action: none;
+}
+
+.rowDivider::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4px;
+  height: 1px;
+  background: var(--line-hover);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.rowDivider:hover::after,
+.rowDivider:active::after {
+  background: var(--accent-cyan);
+}

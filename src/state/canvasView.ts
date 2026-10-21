@@ -46,13 +46,44 @@ type State = {
   stickHint: { plane: string; box: { x: number; y: number; w: number; h: number } } | null
   // Pieces stuck to a plane being moved or resized (D-210): where each is meanwhile.
   following: Record<string, { x: number; y: number; w: number; h: number }>
+  // In a plane's focus, how many pieces are open beside it (D-211) and how much of the screen's width the plane keeps.
+  beside: number
+  split: number
 }
 
 export type PlaneCam = { ox: number; oy: number; zoom: number }
 
+// The plane's share of the screen with something open beside it (D-211), kept in this browser (read as the store is
+// made, so no module constants here).
+export const SPLIT_MIN = 0.25
+export const SPLIT_MAX = 0.75
+function savedSplit() {
+  try {
+    const v = Number(localStorage.getItem('north-star:split'))
+    return v >= SPLIT_MIN && v <= SPLIT_MAX ? v : 0.5
+  } catch {
+    return 0.5
+  }
+}
+export function setSplit(v: number) {
+  const split = Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, v))
+  useCanvasView.setState({ split })
+  try {
+    localStorage.setItem('north-star:split', String(split))
+  } catch {
+    // Not kept: fine.
+  }
+}
+
+// The focused plane's own part of the screen: all of it, or its half with something open beside it (D-211).
+export function planeArea() {
+  const { size, beside, split } = useCanvasView.getState()
+  return { w: beside ? Math.round(size.w * split) : size.w, h: size.h }
+}
+
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, stickHint: null, following: {} }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, stickHint: null, following: {}, beside: 0, split: savedSplit() }))
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({
@@ -119,9 +150,11 @@ export function fitCanvas(wid: string, pieces: Bounds[], instant = false) {
 // The focused plane's contents in view (D-186): what's in it, centred and fitted to the screen. A plane holds nothing
 // yet, so this takes it back to where it was on the canvas. `instant`: no glide (arriving without the ink, a reload).
 export function fitPlane(content: Bounds | null, instant = false) {
-  const { planeCam, planeHome, size } = useCanvasView.getState()
+  const { planeCam, planeHome } = useCanvasView.getState()
   if (!planeCam || !planeHome) return
   let to = planeHome
+  // Its own half when something is open beside it (D-211).
+  const size = planeArea()
   if (content) {
     const { zoom, cx, cy } = fitInto(content, size.w, size.h, 96)
     to = { ox: size.w / 2 - cx * zoom, oy: size.h / 2 - cy * zoom, zoom }

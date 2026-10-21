@@ -40,6 +40,16 @@
   background: var(--wash-1);
 }
 
+/* The card selected on the plane beside it (D-211). */
+.band[data-lit='true'] {
+  background: var(--wash-cyan);
+  box-shadow: inset 0 -1px 0 var(--accent-cyan);
+}
+
+.name[data-pick='true'] {
+  cursor: pointer;
+}
+
 .headRule {
   background: var(--line-hover);
   pointer-events: none;

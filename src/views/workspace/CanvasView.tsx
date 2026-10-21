@@ -38,6 +38,7 @@ import { matrixBounds, MatrixView, useMatrixUi } from './Matrix'
 import { MatrixSetupPanel } from './MatrixSetup'
 import { tableBounds, TableView, useTableUi } from './Table'
 import { TableSetupPanel } from './TableSetup'
+import { Beside, type EscNext } from './Beside'
 import styles from './CanvasView.module.css'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
@@ -90,8 +91,31 @@ export function CanvasView() {
   const focusedLabels = focused ? labelsOf(focused.id) : []
   const focusedMatrix = focused && kindOfPiece(focused) === 'matrix'
   const focusedTable = focused && kindOfPiece(focused) === 'table'
+  // What's stuck to the focused plane (D-210), and what of it is open beside it (D-211), in the address (`beside`).
+  const stuckHere = focused && !isBare(focused) ? pieces.filter((p) => p.stuckTo === focused.id && isBare(p)) : []
+  const besideIds = (params.get('beside') ?? '').split(',').filter(Boolean)
+  const besideOpen = besideIds.flatMap((id) => stuckHere.filter((p) => p.id === id))
+  const besideRef = useRef(besideOpen)
+  besideRef.current = besideOpen
+  const split = useCanvasView((s) => s.split)
+  const setBeside = (ids: string[]) => focusId && setParams(ids.length ? { focus: focusId, beside: ids.join(',') } : { focus: focusId })
+  const toggleBeside = (id: string) => setBeside(besideIds.includes(id) ? besideIds.filter((x) => x !== id) : [...besideIds, id])
+  const setBesideRef = useRef(setBeside)
+  setBesideRef.current = setBeside
   const matrixSetup = useMatrixUi((s) => s.setup)
   const tableSetup = useTableUi((s) => s.setup)
+  // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus. The
+  // dock whose action that is shows `esc` on it; the key handler below goes in the same order.
+  const matrixPane = besideOpen.find((p) => kindOfPiece(p) === 'matrix')?.id ?? null
+  const escNext: EscNext =
+    matrixSetup && focused && (focusedMatrix || matrixPane)
+      ? { what: 'setup', id: focusedMatrix ? focused.id : matrixPane! }
+      : tableSetup
+        ? { what: 'setup', id: tableSetup }
+        : besideOpen.length
+          ? { what: 'close', id: besideOpen[besideOpen.length - 1].id }
+          : 'unfocus'
+  const escOn = (what: 'setup' | 'close') => (escNext !== 'unfocus' && escNext.what === what && escNext.id === focused?.id ? 'esc' : undefined)
   // What's in a piece, in its own px: a plane's cards and text, a matrix's table (D-204) or a table's (D-209).
   const contentOf = (p: WithId<Piece>) => {
     const kind = kindOfPiece(p)
@@ -295,6 +319,13 @@ export function CanvasView() {
     if (focusId && !focused && pieces.length > 0) setParams({}, { replace: true })
   }, [focusId, focused, pieces.length, setParams])
 
+  // The plane's part of the screen follows what's open beside it (D-211); its contents fit there again.
+  const besideCount = besideOpen.length
+  useEffect(() => {
+    useCanvasView.setState({ beside: besideCount })
+    if (focusId && useCanvasView.getState().focusArrived) fitRef.current()
+  }, [besideCount, focusId])
+
   // Once in focus: on to the place go to picked (D-196), or its contents fitted to the screen (D-186, D-187); at once
   // when it came without the ink.
   const arriveRef = useRef(false)
@@ -403,10 +434,13 @@ export function CanvasView() {
         const { cardSelected } = useCanvasView.getState()
         const card = focusedCardsRef.current.find((c) => c.id === cardSelected)
         if (e.key === 'Escape') {
-          // A card, or a matrix's cell (D-204), lets go first; then the setup closes; then focus goes.
+          // A card, or a matrix's cell (D-204), lets go first; then as `escNext` says (its dock shows `esc`): the setup
+          // closes, then what's beside, then focus goes.
           if (cardSelected) useCanvasView.setState({ cardSelected: null })
           else if (useMatrixUi.getState().setup) useMatrixUi.setState({ setup: false })
-          else if (useTableUi.getState().setup) useTableUi.setState({ setup: false })
+          else if (useTableUi.getState().setup) useTableUi.setState({ setup: null })
+          // Then what's open beside the plane closes, the last opened first (D-211).
+          else if (besideRef.current.length) setBesideRef.current(besideRef.current.slice(0, -1).map((p) => p.id))
           else unfocusRef.current()
         }
         if ((e.key === 'Delete' || e.key === 'Backspace') && card && editor) {
@@ -530,18 +564,32 @@ export function CanvasView() {
             <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
           )}
           {drawing === focused.id && <DrawSection space={focused.id} toSpace={planeToSpace} />}
+          {focusArrived && !focusLeaving && (
+            <Beside plane={focused} open={besideOpen} editor={editor} esc={escNext} matrixSetupPane={matrixPane} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
+          )}
           {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
-          {focusedTable && editor && tableSetup && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
+          {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {focusArrived && !focusLeaving && (
-            <FocusDock>
+            <FocusDock center={besideOpen.length ? (size.w * split) / 2 : undefined}>
+              {/* What's stuck to the plane (D-210): each opens beside it, or closes (D-211). */}
+              {stuckHere.map((p) => (
+                <DockAction
+                  key={p.id}
+                  label={`⇆ ${KIND_NAME[kindOfPiece(p)]}${p.name ? ` · ${p.name}` : ''}`}
+                  pressed={besideIds.includes(p.id)}
+                  title={besideIds.includes(p.id) ? 'close it beside the plane' : 'open it beside the plane'}
+                  onClick={() => toggleBeside(p.id)}
+                />
+              ))}
               {focusedMatrix && editor && (
-                <DockAction label="setup" title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
+                <DockAction label="setup" pressed={!!matrixSetup} keyHint={escOn('setup')} title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
               )}
               {focusedTable && editor && (
-                <DockAction label="setup" title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: !s.setup }))} />
+                <DockAction label="setup" pressed={tableSetup === focused.id} keyHint={escOn('setup')} title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
               )}
-              <DockAction label="unfocus" keyHint="esc" title="back to the canvas (Esc)" main onClick={unfocus} />
+              {/* Always here; `esc` only when Escape does it next (with something open beside, that closes first, D-211). */}
+              <DockAction label="unfocus" keyHint={escNext === 'unfocus' ? 'esc' : undefined} title="back to the canvas" main onClick={unfocus} />
             </FocusDock>
           )}
         </FocusedPlane>

@@ -3348,3 +3348,86 @@ categories shown like B, not in a card, and the features under them not indented
   carried the table and the `⇆`; the table dragged away let go (7 rows), ⌘Z stuck it back (5); no console errors;
   typecheck.
 
+### D-211 · 2026-10-22 · Accepted (D-209's *Next*, second half; narrows D-185's "keep the right of the screen free")
+- *Decision:* in a plane's focus, the focus dock lists what's stuck to it (D-210), one switch each before `[unfocus]`:
+  `[⇆ table · name]`, `[⇆ matrix · name]`, cyan while open. A switch opens that piece **beside** the plane: the screen
+  splits, the plane keeps the left part, what's open takes the right, stacked top to bottom when there are more. What's
+  open is in the address (`?focus=<plane>&beside=<id>,<id>`), so a reload keeps it; leaving focus closes it all.
+  - *Each part its own area:* the plane's fit and its dock are in its part (the dock sits at the middle of the plane's
+    part); each pane has its own view (the wheel zooms round the pointer, a drag on empty space pans, fitted on opening
+    and when its box changes), its own dock, and its setup opens inside it. Things a part opens on its right open at the
+    right of that part (a card's panel later).
+  - *One dock, configured:* a pane's dock is the focus dock itself (no new component), at the bottom middle of the pane,
+    named first and set off by `|`: `TABLE · every card | [setup] [close]` (a long name up to 44 characters, then `…`).
+    The plane's dock keeps `[unfocus]` and its `⇆` switches (cyan for what's open); while something is open beside it,
+    `[unfocus]` just has no `esc` (Escape closes what's beside first).
+  - *`esc` where it acts:* the `esc` hint shows on the one action Escape does next, in whichever dock it is: an open
+    setup's `[setup]`, else the last opened pane's `[close]`, else the plane's `[unfocus]`. The key goes in the same
+    order (a selection is let go of first, with no hint).
+  - *The lines:* the one between the plane and the panes drags (25–75 % of the width, kept in this browser); the ones
+    between stacked panes drag their heights (each ≥ 15 % of the screen; even again when what's open changes).
+  - *Looking across:* a card selected on the plane lights its row in a table beside it (cyan wash); a click on a card's
+    row name selects that card and the plane's view glides to put it in the middle of the plane's part.
+  - *Escape:* lets go of a cell or card, then closes a setup, then closes what's beside, the last opened first, then
+    leaves focus (shown by the `esc` hint above).
+- *Not yet:* not-stuck pieces opened beside (the user: "buna sonradan geliriz"); a matrix's rows and columns looking
+  across like a table's; a card's side panel (it'll open at the right of the plane's part); presence (following doesn't
+  open panes).
+- *User:* "B gibi olsun ama birbirine bağlı olan componentler var ise ben focus yapınca bunları yan yana açabiliyim …
+  Bu controlü de console a koyarız"; "focus sırasında sol ve sağdaki componentler kendi alanını yönetebilir … matrix
+  cell ine tıklanınca sağ da açılan şey matrix selinin focus alanının sağında açılır"; "tamam çalıştı, commit at ve 3.
+  adıma geç"; then: "console neden view ın ortasında açılmıyor … her view ın kendi consolu buna adapte olabilmeli. Plane
+  consolundan unfocus butonu gitmeli, açık olan side view mavi ile gösterilmeye devam etsin. Esc ile hangisi kapancak
+  ise ona gelsin esc shortcut gösterimi … yeni componentler yazmaya gerek yok, sadece bu console componentini configure
+  edilebilir kılmak yeterli … ismin daha uzun bir gösterimine izin verilebilir bir de "|" ile console tuşları ve isim
+  birbirinden ayrılabilir"; and, when `[unfocus]` was taken away with panes open: "ana viewdan neden unfocus u aldın?
+  sadece esc gösterimini çıkar dedim zira esc önce sideviewları kapatıyordu".
+- *Verified:* headless Chrome on emulators: a plane in focus with a table and a matrix stuck to it; the dock listed
+  both; opening the table split the screen (plane refitted to its half), then the matrix stacked under it; picking
+  "Mobil bildirim" in the table selected the card and glided the plane to it, the row lit; the line dragged to 64 %;
+  a reload kept both open; Escape closed the pane, then left focus; then the docks: each pane's named dock at its
+  bottom middle; the table's setup opened in its pane with `esc` on its `[setup]`, then
+  each Escape moved `esc` to the matrix pane's `[close]`, the table pane's `[close]`, the plane's `[unfocus]`; the line
+  between two stacked panes dragged 200 px down (heights 651 / 250); no console errors; typecheck.
+
+### D-212 · 2026-10-22 · Accepted (changes D-204's look and setup; D-206's focus and D-208's window stand)
+- *Decision:* the matrix's table, "cards crossed" (picked from four looks on a local preview: a quiet grid, a plotter
+  on the canvas's `+` marks, a terminal printout, cards crossed):
+  - *Heads:* a card's row or column head is drawn as a plane's card (raised paper, its type's colour down the left, the
+    title in Geist), no type name on it (the colour says it); a typed name is mono over a dashed rule. Lit while its
+    row or column is under the pointer or selected; `×` in its top-right corner on hover.
+  - *Cells:* a scale's step is a 14 px square filled from the left to the step (first an outline, last full) in the
+    step's colour, or its glyph when the setup says `glyphs` (`marks`); empty is a faint outline; doesn't apply a short
+    rule; numbers and words as before. A note folds the top-right corner, how sure (`~` `?`) sits in the top-left: neither
+    moves what's in the middle. Hover washes the row and column and shows grey corner marks; selected, cyan corner
+    marks just outside (D-150's), not `[ ]`.
+  - *Adding:* each axis ends in a dashed card (`+ competitor`, `+ row`): click, type a name, Enter adds it and the field
+    stays for the next; cards that match what's typed are listed under it to pick instead; Escape or leaving closes it.
+    No separate `+` buttons, no empty column for them.
+  - *Totals* (were `reading`): on or off; where: in the heads (under a column's name, at a row head's end), at the ends
+    (a `total` column after the cells, a row under them) or both; as: squares (one per cell in its step's colour,
+    outlines for unset; past 10 in a head or 14 at an end, the line), a number (`3/5`) or a line of the steps' shares.
+    Numbers show their average, words how many are written. Setup fields `totalsAt` (head|end|both, head when unset),
+    `totalsAs` (squares|number|bar, squares when unset), `marks`.
+  - The selected cell's bar stays on the screen (it ran off the right edge).
+- *Setup (S2, picked on the preview):* `+ → matrix…` opens a wizard over the screen (page dimmed): four steps as tabs,
+  start from (the templates, or my own), rows, columns, cells, any in any order; a preview beside it shows the first
+  rows and columns as they'll come and how many; `make the matrix` puts it at the canvas's middle, named
+  `<rows> × <columns>`, selected; nothing is written before. After, `[setup]` opens a tabbed panel over the bottom middle
+  of its space (the screen, or a pane beside a plane, D-211): rows (with their count) · columns · cells · options,
+  `start over from ▾` (a template; replaces rows, columns and cells; ⌘Z) and `done`. Rows / columns: all cards of a
+  type (framed choices with counts, again for none), on which plane, `N hidden · show`, added by hand (cards and names
+  as chips with `×`, `+ a card`, a field for a name), what one is called. Cells: a mark / a number / a few words (framed
+  choices with a sample), the scale's presets and steps, show as squares or glyphs, the unit. Options: allow "doesn't
+  apply", mark guesses, totals (where, as what), each with a line saying what it does. `useMatrixUi.setup` is `false` or
+  a tab (`true` = rows); helpers `openMatrixSetup`, `closeMatrixSetup`, `toggleMatrixSetup`.
+- *User:* "F süper duruyo. Column headerları için zaten renkler gosteriliyor bir de ne olduklarını yazmamıza gerek yok.
+  Yenı row ve column ekleme de cok guzel duruyor. Cellerin içi güzel duruyo. Sadece "?" yada diğer belirteçler cellerin
+  kenarında dursun yada cellin main contentinin ortalamasını bozmasın. Bir de … totalleri … hem headerda hem satır ve
+  sutunların en sonunda gosterılebılır sekilde ayarlayalım, bir de hem tek tek kareler ile gösterim olabilsin hem de
+  direkt sayı olsun, yada … bir çizgi içinde dağılımların görünümü (D deki gibi) … setup panelinde seçebilmeli
+  kullanıcı"; S2 for the setup. Before that, on the first round: "+ row/column buttonları oyle yerlestırılmıs, tablonun
+  sonunda neden extradan bır column var … üstüne çok düşünülmediğini belli eden detaylar var".
+- *Alternatives:* the quiet grid (A2), the plotter (D), the terminal printout (E); setup in place on the table (S1) or
+  as lists (S3). Not taken.
+

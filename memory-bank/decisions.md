@@ -176,7 +176,8 @@ piece; check them with the user then.
   ends); nothing zooms and its `+` marks never move (the layer carries them on the plane's grid at the canvas's zoom).
   `[unfocus]` or Esc draws it back into the plane (700 ms). The plane's console goes the moment it starts; in focus, once
   arrived, the focus dock: a tab on the screen's bottom edge, in the middle, `[unfocus] esc` last, other actions before
-  it, no plane name (the breadcrumb has it) (D-189). Keep the right of the screen free. Breadcrumb ends with the
+  it, no plane name (the breadcrumb has it) (D-189). Keep the right of the screen free, except for what's opened beside
+  the plane (D-211). Breadcrumb ends with the
   plane's name; no `+` in focus. Reduced motion: no transition. What's different inside: the user will say.
 - Pan and zoom (D-186): out of focus, drags and the wheel are always the canvas's, over a plane too (only edit mode
   takes the drag); in focus they're the plane's own view (`planeCam`), which glides home as focus leaves. A plane always
@@ -196,10 +197,15 @@ piece; check them with the user then.
 - Card motion on planes as D-150 (D-203): arriving cards build cell by cell, corner marks grey out on hover, in the
   type colour just outside selected and on the corners pressed; a drag goes 0.8 under the pointer, marks where it lands.
   No side panel on a card click until it's refactored (the user's call).
-- Matrix (D-204, D-206, D-208): a canvas piece from `+` (templates: features × competitors, problems × customers, ideas × criteria,
-  blank). Rows and columns: every card of a type (any plane or one) + typed names + single cards; `×` hides a type's card
-  or drops a typed one. Cells one kind per matrix: a scale of editable steps, a number (unit) or text; a note; options
-  not relevant (—), how sure (~ ?), reading. On the canvas a window: a plane's edge, fill, name in the top edge and
+- Matrix (D-204, D-206, D-208, D-212): a canvas piece made in a wizard from `+ → matrix…` (start from a template
+  or my own, rows, columns, cells, a preview; D-212). Rows and columns: every card of a type (any plane or one) + typed
+  names + single cards; `×` hides a type's card or drops a typed one. Cells one kind per matrix: a scale of editable
+  steps, a number (unit) or text; a note; options doesn't apply (—), guesses (~ ?), totals (in the heads, at the ends or
+  both; squares, a number or a line). Looks like cards crossed (D-212): heads drawn as plane cards (type colour, no type
+  name), typed names mono over a dashed rule, a scale's cell a square filled to its step (or its glyph), corner marks
+  for hover and selection, a note's fold and `~ ?` in the cell's corners; each axis ends in a dashed card to type a name
+  or pick a card. `[setup]` opens a tabbed panel (rows · columns · cells · options, start over from) at the bottom of
+  its space. On the canvas a window: a plane's edge, fill, name in the top edge and
   console, moved and resized in edit mode, no `+` marks, its table at its own size from the top-left, cut by the edge
   (D-208); focus glides the table to the middle while the page builds cell by cell behind it, no ink (D-206). Live in focus (click, again steps, 1–9, arrows, Backspace, `-`, Enter;
   a bar under the cell); `[setup]` in the focus dock. Setup on the piece, cells in `cells/{matrixId}_{row}_{col}`.
@@ -207,10 +213,15 @@ piece; check them with the user then.
   like the matrix's (D-208, D-206's focus). Rows: a rule list (plane, type, status, tag, title; is / is not; any of the
   values; none required) + cards and names by hand; `×` hides or drops. Columns: the name first, then the cards' fields
   (read-only) and its own (scale, number + unit, text, check); a head's click sorts. Live in focus like the matrix;
-  `[setup]` in the dock. Next: in a plane's focus, what's stuck to it opens beside it, each half its own area.
+  `[setup]` in the dock.
 - Sticking (D-210): a matrix or table moved (edit mode) within 48 screen px of a plane's edge snaps one grid step out
   from it, the edge lit cyan, and is bound (`stuckTo`; alt = free): a table gets `where plane is … · auto` (changed by
   hand it's yours), a matrix's typed axes the plane; a plane moved or resized carries it; `⇆` in the gap; pulled away it lets go.
+- Beside (D-211): in a plane's focus the dock has `[⇆ kind · name]` for each piece stuck to it; on, it opens on the right
+  (the screen split, more stacked), in the address (`beside=`); each part its own area (own view, fit, setup, dock); a
+  pane's dock is the focus dock, named `TABLE · name | [setup] [close]`; `[unfocus]` always there; `esc` shows only
+  on what Escape does next (a setup, the last pane's close, unfocus); the line drags (25–75 %, per browser), so do the lines between stacked panes; a card
+  selected lights its table row, a row picked glides the plane to its card.
 - Go to (D-196): a grey compass in the side nav under fit (search inside), no keys (D-201); on the canvas its planes (each
   with its own headings and sections on a line under it, folded until its framed `[▸ N inside]` opens them, D-200, D-201), project title, H1/H2 headings and named sections, in a focused plane its
   headings and sections, in reading order; glides there (planes, sections, title framed whole; a heading at 100 % near
@@ -381,4 +392,5 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Melting drips (ASCII running down the screen and from under the box) in the delete confirm: too much (D-182).
 - A `!! FAULT 0x…` line on the confirm: not needed (D-183).
 - Focus that zooms: the plane scaling up with its marks, the canvas behind scaling and fading, warp streaks; the marks slid
-  about and it looked bad (D-185). Nothing on the right of the screen during or in focus (kept free for something else).
+  about and it looked bad (D-185). Nothing on the right of the screen during or in focus (kept free for something else),
+  except what's stuck to the plane, opened beside it (D-211).

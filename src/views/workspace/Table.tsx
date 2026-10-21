@@ -35,8 +35,8 @@ export function tableBounds(piece: Pick<Piece, 'table'>, cards: Card[]): Bounds 
   return { x: 0, y: 0, w, h: T.head + Math.max(rowsOf(setup.rows, cards, !setup.manual).length, 1) * T.row + T.add }
 }
 
-// The focus dock's `[setup]` opens the panel; a typed row being named.
-export const useTableUi = create<{ setup: boolean; naming: string | null }>(() => ({ setup: false, naming: null }))
+// The table whose setup is open (from the focus dock's or its pane's `[setup]`, D-211); a typed row being named.
+export const useTableUi = create<{ setup: string | null; naming: string | null }>(() => ({ setup: null, naming: null }))
 
 // The selected cell rides on the canvas's card selection (D-187), so Escape and leaving focus let go of it as of a card.
 const CELL = 'tcell|'
@@ -81,9 +81,10 @@ function useFieldText() {
   }, [pieces, evidence])
 }
 
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean }
+// `onCard`: a card's row name clicked, beside its plane (D-211): the plane goes to the card.
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCard?: (card: Card) => void }
 
-export function TableView({ piece, view, live, editor }: Props) {
+export function TableView({ piece, view, live, editor, onCard }: Props) {
   const { wid, cards, cells } = useWs()
   const setup = tableOf(piece)
   const fieldText = useFieldText()
@@ -126,6 +127,8 @@ export function TableView({ piece, view, live, editor }: Props) {
   }, [cols])
   const width = T.name + cols.reduce((s, c) => s + widthOf(c), 0)
   const sel = parseSel(useCanvasView((s) => (live ? s.cardSelected : null)))
+  // A card selected on the plane beside it (D-211): its row lit.
+  const lit = useCanvasView((s) => (live && onCard ? s.cardSelected : null))
   const ri = sel ? rows.findIndex((r) => r.key === sel[0]) : -1
   const ci = sel ? cols.findIndex((c) => c.id === sel[1]) : -1
   const selected = ri >= 0 && ci >= 0 ? { r: ri, c: ci } : null
@@ -157,7 +160,7 @@ export function TableView({ piece, view, live, editor }: Props) {
   // Leaving focus closes the setup.
   useEffect(() => {
     if (!live) return
-    return () => useTableUi.setState({ setup: false, naming: null })
+    return () => useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : s.setup, naming: null }))
   }, [live])
 
   const keysRef = useRef<(e: KeyboardEvent) => void>(() => {})
@@ -215,7 +218,7 @@ export function TableView({ piece, view, live, editor }: Props) {
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <div className={styles.table} style={{ width: width + (live && editor ? T.add : 0), height: bottom + T.add }} role="grid" aria-label={piece.name || 'table'}>
           {rows.map((r, i) => (
-            <div key={r.key} className={styles.band} data-selected={selected?.r === i || undefined} style={box(0, T.head + i * T.row, width, T.row)} />
+            <div key={r.key} className={styles.band} data-selected={selected?.r === i || undefined} data-lit={lit === r.key || undefined} style={box(0, T.head + i * T.row, width, T.row)} />
           ))}
           <div className={styles.headRule} style={box(0, T.head - 1, width, 1)} />
 
@@ -254,6 +257,7 @@ export function TableView({ piece, view, live, editor }: Props) {
                 else if (r.item) void renameRow(wid, piece.id, setup, r.item.id, name)
               }}
               onRemove={() => void removeRow(wid, piece.id, setup, r, mine)}
+              onPick={onCard && r.card ? () => onCard(r.card!) : undefined}
             />
           ))}
 
@@ -297,7 +301,7 @@ export function TableView({ piece, view, live, editor }: Props) {
 
           {live && editor && (
             <>
-              <button className={styles.add} data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: true })}>
+              <button className={styles.add} data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id })}>
                 +
               </button>
               <button
@@ -332,15 +336,16 @@ type NameProps = {
   onPress?: (e: ReactPointerEvent) => void
   onRename: (name: string) => void
   onRemove: () => void
+  onPick?: () => void
 }
 
 // A row's name: a card's live title by its type's colour, or a typed name. A double-click changes it.
-function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemove }: NameProps) {
+function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemove, onPick }: NameProps) {
   const [editing, setEditing] = useState(false)
   const open = (editing || naming) && live && editor
   const tone = row.card ? TYPE_ACCENT[row.card.type] : undefined
   return (
-    <div className={styles.name} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }} data-card={row.card ? true : undefined} title={row.name || undefined} onPointerDown={onPress} onDoubleClick={live && editor ? () => setEditing(true) : undefined}>
+    <div className={styles.name} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }} data-card={row.card ? true : undefined} title={row.name || undefined} data-pick={onPick ? true : undefined} onPointerDown={onPress} onClick={live && !open ? onPick : undefined} onDoubleClick={live && editor ? () => setEditing(true) : undefined}>
       {open ? (
         <input
           className={styles.nameField}

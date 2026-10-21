@@ -44,7 +44,7 @@ const ADD = '+'
 export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
   const { wid, cards, cells } = useWs()
   const setup = tableOf(piece)
-  const close = () => useTableUi.setState({ setup: false })
+  const close = () => useTableUi.setState({ setup: null })
   const rows = setup.rows
   const hidden = rows.hide?.length ?? 0
   const used = new Set(setup.cols.map((c) => c.field).filter(Boolean))
