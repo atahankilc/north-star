@@ -3002,6 +3002,13 @@ categories shown like B, not in a card, and the features under them not indented
     eased both ends: the caption, rule and description shrink away and fade early, the star moves beside the name's
     first line, the name grows into the room, as big as fits the unfolded height without breaking a word
     (`src/views/workspace/titleLayout.ts`). Reduced motion: no transition.
+  - *Sticky notes* (D-158, D-162): the old sizes (units × 80): text S/M/L 6.8 / 8.4 / 10.4 px (under a card title),
+    padding 7.2, a 2 px bar, the signed line 5.2 px mono `ATAHAN · 2m` (first name in capitals, `ago`), three little
+    checks (▚▚▚, 2.8 px squares) in its colour on the right; paper `--card-behind` (#0e0e0e; #e9e9e9 light); bullets `•`
+    (also in paragraphs: `LightMarkdown`'s `mark`); no plain colour in its bar (yellow is its default).
+  - *Width strip* (D-163), paragraphs and sticky notes: a 1.2 px strip 4 px inside the right edge, 60 % of the height,
+    shown only while hovered (grey; its colour if selected) or dragged, never just for being selected (the user's
+    call); the pointer takes a 19 px band round it.
   - *All*: corner marks 2.4 px thick, a little clear of text (7 px; a sticky note's on its paper), close in onto the
     corners, longer, while pressed, and take the item's colour once selected (were always cyan); plain text is `--fg`
     as on the old board (ink was white); the bar has `edit` (or `rename`). The selected one is lifted over everything
@@ -3010,8 +3017,8 @@ categories shown like B, not in a card, and the features under them not indented
 - *Why:* the user found D-188's section, title and paragraph "not looking like they used to" and asked for a list of what
   was lost, then to start with three: section name size + selection look, the title's sizes + fold, kickers + turns.
 - *Not yet* (on the list given to the user): right-click menu entries for text, shift-click / group drag, alignment
-  guides, the cell-by-cell entrance, remote moves gliding, the sticky note's ▚▚▚ mark and `NAME · 5m` head, the paragraph
-  width strip's old look, the title's separate name/description editing, the jump list `go to`.
+  guides, the cell-by-cell entrance, remote moves gliding, the title's separate name/description editing; headings and
+  paragraphs not yet compared with the old board side by side. (`go to` came back in D-196.)
 - *Verified* headless (emulators): all of the above drawn on the canvas at 0.6 and 1.2; a section renamed and renumbered
   by typing (`04 MONEY` / `Who pays now`, saved); the fold sampled frame by frame: name 92 → 117 px over ~300 ms, the
   block never taller than when it started. Typecheck. No rules change (`kicker`, `rotate`, `side` were already allowed).
@@ -3059,7 +3066,8 @@ categories shown like B, not in a card, and the features under them not indented
   `ThreadPanel docked`: no frame or offset, all its height), or one being started, or "Pick a conversation…". A row
   opens it on the right, it doesn't jump the view; `↗` in its header (with where it is) takes you there, into its plane
   if need be, the panel staying open. While the panel is open, a component's chip and right-click → comment open the
-  conversation there; while it's shut, beside the component as before. With no conversation picked the tab is only the
+  conversation there; while it's shut, beside the component as before (changed by D-199: never on the canvas, the
+  thread opens alone in the panel). With no conversation picked the tab is only the
   list (340 px); picking one widens it to hold both (840 px). Its top edge drags its height (≥ 220 px, up to the
   breadcrumb), kept in this browser (`localStorage`, a viewer's convenience). Where the open conversation is gets its
   own row under its header: the place faint (`on the canvas`, `on Pricing`) and a framed cyan `⌖ go there` (a target
@@ -3084,3 +3092,57 @@ categories shown like B, not in a card, and the features under them not indented
 - *Why:* the user: "bir panele iki kez tıklanırsa paneli focusa al".
 - *Verified:* headless Chrome on the emulators: double-click on empty canvas and on a plane in edit mode stayed on the
   canvas; on a plane out of edit mode the ink spread and the address took `?focus=`.
+
+### D-199 · 2026-10-21 · Accepted (changes D-197's threads panel)
+- *Decision:* no conversation opens on the canvas any more: the popover beside a component (`OpenThread`) is gone, and
+  every thread opens in the threads panel at the bottom left. The panel has two halves that work apart: the list and
+  the thread. A component's chip or right-click → comment opens only the thread (a 500 px tab); `[all threads]` at the
+  start of its header opens the list beside it (340 px, on the left, the thread pushed right); a row in the list opens
+  the thread beside it. Closing the list (its ×, Esc with no thread open, or the threads button) closes both; closing
+  the thread (its ×, Esc) leaves the list open. Motion: our own cell-by-cell build-up and break-apart (D-034,
+  D-035, `runCells`), no new kind: the tab builds as it opens (320 ms) and breaks apart as it shuts (0.6 of that), what
+  was in it kept still while it goes; a half opening beside the other builds on its own (a thread again when another is
+  picked) and breaks apart as it closes; the widths just change. A first try slid the tab up from the edge and the
+  halves' widths open: the user turned it down ("bizim kareli animasyonu kullan, yeni animasyon türetme"). Reduced
+  motion: none of it. Go there moved
+  from its own row under the header into the header: a cyan framed target icon alone (22 px), after the title, which
+  now reads `heading "Pricing" · on the canvas` (the place faint). Esc: the thread's handler takes the key
+  (`preventDefault`), so the list's never closes with it, whichever listened first.
+- *User:* "canvas üstünde thread componentlerini sil, zaten bir panel yapıp koyduk sol alta boşuna mı? … liste kapanırsa
+  ikisi de kapanır, thread kapanırsa liste açık kalmaya devam edebilir", "go there butonunu üst sectiona taşı ve sadece
+  icon button kullan", animations for the panel and for a thread opening and closing.
+- *Verified* headless (Alice, 1440 × 900): right-click → comment rose a 502 px tab (top 900 → 887 → 793 → 588 → 390 →
+  344 at 60 ms steps; with the cells: clip-path runs 7 → 583 → 864 → 503 → whole), list 0; `[all threads]` added
+  the list (tab 502 → 842) building in cells; the thread's × broke it apart, the list kept; a row built it back; chips
+  on the canvas (text, plane) and in a focused plane (text, card) each opened their thread alone; Esc closed only the thread; the list's × broke the whole tab apart, widths unchanged
+  as it went, gone by 240 ms; a chip opened the thread alone; go there kept the panel; the threads button with a thread
+  open added the list, pressed again sank both; no console errors; build.
+
+### D-200 · 2026-10-21 · Accepted (changes D-196's list on the canvas)
+- *Decision:* in go to on the canvas, a plane's own headings and sections start folded under it. The plane's row says
+  `▸ N` on its right (N = places inside); a click there opens them (`▾ N` shuts them) without going anywhere, a click
+  on the rest of the row still goes to the plane; → on the row opens, ← shuts. What's open is kept for the tab's life
+  (`useGoTo.open`). Searching finds folded places too. 1–9 count through what the list shows, so the numbers always
+  match. `Menu` takes `fold` (the `▸ N` toggle) and `folded` (shown only while searching) on an item.
+- *Why:* the user: "go to da sub alanlar collapsed gelsin, tıklanırsa gözüksün".
+- *Verified:* headless Chrome on the emulators: the list opens with the plane's places hidden (`▸ 2`), the toggle shows
+  them and renumbers, ← and → shut and open, searching `inside` lists both while folded.
+
+### D-201 · 2026-10-21 · Accepted (changes D-196's keys, D-200's fold look)
+- *Decision:* go to has no keys any more: 1–9 do nothing and the list shows no numbers (only the side nav's compass and
+  its search). A plane's fold is a framed button on its row, `[▸ 2 inside]`, the caret a size up; open it reads
+  `[▾ 2 inside]` in cyan (frame and text) and the plane's name goes bright; the places inside hang off a thin
+  `--edge` line down from the plane's glyph.
+- *Why:* the user: "tuş ile hızlı gitmeyi kapat. Collapse olayını da biraz daha belirgin yap ki anlaşılsın".
+- *Verified:* headless Chrome on the emulators: `3` on the canvas does nothing; folded and open lists look as above.
+
+### D-202 · 2026-10-21 · Accepted (adds to D-186's fit)
+- *Decision:* opening a workspace the first time in a tab frames everything on its canvas at once (no glide), as fit
+  does (planes and canvas text, ≤ 100 %, 96 px round). Only then: the camera is kept per workspace for the tab's life
+  (D-176), so going into a plane and back, or leaving the workspace and coming back, finds the view where it was left.
+  A reload is a first open. Before this the camera started at the canvas's origin at 100 %, so a canvas whose things
+  sat away from (0, 0) opened onto empty space. `fitCanvas(…, instant)`.
+- *Why:* the user asked why the screen isn't centred on first open, then: "sadece ilk kez açılırken yap bunu, yoksa
+  planeler arası gidip gelmede önceki konumu koruması iyi".
+- *Verified:* headless Chrome on the emulators: a reload framed the title, planes, headings and section; panned, into a
+  plane and back out, the camera was exactly where it was panned to.

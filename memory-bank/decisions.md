@@ -180,7 +180,7 @@ piece; check them with the user then.
   plane's name; no `+` in focus. Reduced motion: no transition. What's different inside: the user will say.
 - Pan and zoom (D-186): out of focus, drags and the wheel are always the canvas's, over a plane too (only edit mode
   takes the drag); in focus they're the plane's own view (`planeCam`), which glides home as focus leaves. A plane always
-  shows its contents centred and fitted to its box; fit (side nav icon under `+`, key `0`) frames all planes on the
+  shows its contents centred and fitted to its box; fit (side nav icon under `+`, key `0`; and at once on a workspace's first open in a tab, D-202) frames all planes on the
   canvas (≤ 1, 96 px round), or in focus the plane's contents (empty for now: its starting view); arriving in focus fits.
 - Cards on planes (D-187): customer, problem, competitor, idea, feature in their old collections with `pieceId` (the
   old board's cards, without it, aren't shown), x/y in plane px, 200 × 100 (8 × 4 marks), D-152's look (type edge and
@@ -188,8 +188,8 @@ piece; check them with the user then.
   once; in focus click selects (corner marks), drag moves (snapped, alt free), double-click retitles, Delete removes;
   on the canvas they're a picture fitted in the plane, its marks following. Deleting a plane takes its cards.
   No side panel on a card click until it's refactored (the user's call).
-- Go to (D-196): a grey compass in the side nav under fit (search inside) and 1–9; on the canvas its planes (each with its
-  own headings and sections set in under it), project title, H1/H2 headings and named sections, in a focused plane its
+- Go to (D-196): a grey compass in the side nav under fit (search inside), no keys (D-201); on the canvas its planes (each
+  with its own headings and sections on a line under it, folded until its framed `[▸ N inside]` opens them, D-200, D-201), project title, H1/H2 headings and named sections, in a focused plane its
   headings and sections, in reading order; glides there (planes, sections, title framed whole; a heading at 100 % near
   the top); a place in a plane focuses the plane first, then glides.
 - Text anywhere (D-188): headings H1–H3 (48/29/22 px, H1 with a rule fading right), paragraphs (light Markdown, S/M/L,
@@ -203,8 +203,10 @@ piece; check them with the user then.
   the line breaking round it, `…` when too long, `--fg` on an `--edge` grey line, a number only when typed (`kicker`); headings
   carry a small line (`02 ── WHO WE BEAT`); headings and paragraphs turn ±90 (top-left kept); paragraphs a left hairline;
   corner marks close in while pressed and take the item's colour (a section's 32 px, an L grip). Project title at the old
-  sizes (name 92 px, 26 px description, star + PROJECT, magenta-lead rule, 48 px brackets as its marks, 800 wide) and
-  folding round the name when the description is under 6 screen px (320 ms, `titleLayout.ts`).
+  sizes (name 92 px, 26 px description at 72 %, star + PROJECT, magenta-lead rule, 48 px edge-grey brackets as its marks, 800 wide) and
+  folding round the name when the description is under 6 screen px (320 ms, `titleLayout.ts`). Sticky notes at the old
+  sizes (text 6.8/8.4/10.4 px, `ATAHAN · 2m`, ▚▚▚ in its colour, `--card-behind` paper, `•` bullets); paragraphs and
+  sticky notes widen by a thin strip just inside the right edge, shown only while hovered or dragged.
 - Text reads the same typed or not (D-190): fields keep the item's face, size and layout (no frame, same placeholder);
   a soft feathered shade of the page sits behind headings, paragraphs and the title so the backdrop dims under them.
   The project title goes on the canvas only (not in a plane's `+`).
@@ -253,9 +255,12 @@ piece; check them with the user then.
   comments inside it are kept apart (D-195): the plane's own has its chip under its corner; its console says `[💬 N
   inside]` (only what's inside) and opens the threads panel on them. The panel always says what it shows: `whole
   workspace`, or `inside "<plane>"` in cyan with `[whole workspace]` back. The panel is one wide tab flush with the bottom edge,
-  right of the corner's buttons (D-197): the list left, the picked conversation right (`↗` shows it where it is); while
-  it's open, chips and new comments open there instead of beside the component. Only the list until a conversation is
-  picked; its top edge sets its height (kept per browser). Bottom-left corner, top to bottom:
+  right of the corner's buttons (D-197): the list left, the picked conversation right; its top edge sets its height
+  (kept per browser). Nothing opens on the canvas itself: list and thread are two halves that open apart (D-199); a chip
+  or right-click → comment opens only the thread, `[all threads]` in it opens the list beside; closing the list closes
+  both, closing the thread (×, Esc) leaves the list. The tab, and each half on its own, builds cell by cell as it opens and
+  breaks apart as it closes (D-034's cells, no other motion). Go there: a cyan target
+  icon alone in the thread's header, after `what · on where`. Bottom-left corner, top to bottom:
   people here (squares, a column, follow on click), threads button, a rule, your square, the gear; the threads panel
   sticks to the bottom left beside them. Cursors sent 10×/s, drawn 200 ms behind; following glides only when their cursor
   leaves the middle (±22 %), eased by time; zooming doesn't stop following.
@@ -341,6 +346,7 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Intro: galaxy, nebula, Milky Way, shooting stars, Little Dipper lines, aurora; fades/fronts for the night sky (D-072).
 - Orb: glossy anime eyes, eyes with pupils, pink blush on hover, kaomoji faces, glyph-cell faces; pomegranate as a "red
   queen with a crown"; `/nar` in the chat (D-078, D-092).
+- The threads panel sliding up from the edge, its halves sliding their width; a new kind of motion (D-199): cells only.
 - Chat window sliding in from the right (D-081). Saving whole chats (reports instead) (D-090).
 - OpenAI deep-research models (need stored answers) (D-088). MCP for tools (no server) (D-074).
 - Comma CSV for the matrix (D-080). A copy button for the TSV (D-080).
