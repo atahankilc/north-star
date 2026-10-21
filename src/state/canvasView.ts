@@ -31,6 +31,14 @@ type State = {
   labelSelected: string | null
   labelEditing: string | null
   drawing: string | null
+  // Links on the focused plane (D-207): the one selected, the card hovered (its links light up), a link being drawn
+  // from a card's `›` (its end follows the pointer, in plane px) and whether the selected link's label takes the cursor.
+  linkSelected: string | null
+  cardHovered: string | null
+  linking: { from: string; to: [number, number]; over: string | null } | null
+  linkLabelling: boolean
+  // Cards being dragged (or held where dropped until their data's back), so their links follow.
+  cardsLive: Record<string, [number, number]>
   // Things moving together while a section is dragged (D-188): their ids and how far, until the drop is written.
   dragShift: { ids: string[]; dx: number; dy: number } | null
 }
@@ -39,7 +47,7 @@ export type PlaneCam = { ox: number; oy: number; zoom: number }
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linking: null, linkLabelling: false, cardsLive: {} }))
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({

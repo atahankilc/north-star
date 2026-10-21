@@ -7,7 +7,8 @@
 // it lands at full size, and grows into them when let go.
 // Inside (D-152, D-205): the type and, right of it, a status, regions or priority with the evidence as cells; the title;
 // the facts line; tags as chips. Smaller on screen (D-153): the title alone, bigger, in whole words; far out its lines
-// as bars.
+// as bars. Links (D-207): a hovered card shows a `›` just right of it; dragged onto another card it draws a link there,
+// selected with its label ready to type.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, cardRef, moveCard, retitleCard, TITLE_MAX, type Card, type CardType } from '../../data/cards'
 import type { Label } from '../../data/labels'
@@ -22,6 +23,8 @@ import type { PlaneCam } from '../../state/canvasView'
 import { useCanvasView } from '../../state/canvasView'
 import { useWs } from './context'
 import { factsOf, type Facts, type Proof } from './cardFacts'
+import { createEdge, defaultKind } from '../../data/edges'
+import { drawLinks, ghostOf, LinkChips, LinkLines } from './PlaneLinks'
 import styles from './PlaneCards.module.css'
 
 const DRAG_PX = 5
@@ -67,8 +70,17 @@ type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; ed
 
 // A plane's contents: its sections under its cards, its text over them (D-188).
 export function PlaneCards({ cards, labels, view, live, editor }: Props) {
-  const { wid, evidence, competitorFeatures } = useWs()
-  const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures }), [cards, evidence, competitorFeatures])
+  const { wid, evidence, competitorFeatures, edges } = useWs()
+  const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }), [cards, evidence, competitorFeatures, edges])
+  // Links follow cards being dragged, and carried by a section.
+  const cardsLive = useCanvasView((s) => (live ? s.cardsLive : NO_LIVE))
+  const shift = useCanvasView((s) => (live ? s.dragShift : null))
+  const links = useMemo(
+    () => drawLinks(cards, edges, (c) => cardsLive[c.id] ?? (shift?.ids.includes(c.id) ? [c.x + shift.dx, c.y + shift.dy] : [c.x, c.y])),
+    [cards, edges, cardsLive, shift],
+  )
+  const linking = useCanvasView((s) => (live ? s.linking : null))
+  const ghost = linking && !linking.over ? ghostOf(cards, linking) : null
   // On the canvas the plane's picture is scaled again by the canvas's zoom.
   const canvasZoom = useCanvasView((s) => s.cams[wid]?.zoom ?? 1)
   const was = useRef<Detail>('full')
@@ -82,21 +94,25 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     <div className={styles.layer} data-live={live || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <TextItems labels={labels} layer="frames" live={live} editor={editor} zoom={view.zoom} carry={carry} />
+        <LinkLines links={links} live={live} zoom={view.zoom} ghost={ghost} />
         {cards.map((c) => (
           <CardBox key={c.id} card={c} facts={facts.get(c.id)} detail={detail} zoom={view.zoom} live={live} editor={editor} arrive={!(live && first.has(c.id))} />
         ))}
+        <LinkChips links={links} live={live} editor={editor} zoom={view.zoom} />
         <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
       </div>
     </div>
   )
 }
 
+const NO_LIVE: Record<string, [number, number]> = {}
+
 type Drag = { free: [number, number]; at: [number, number] }
 
 type BoxProps = { card: Card; facts?: Facts; detail: Detail; zoom: number; live: boolean; editor: boolean; arrive: boolean }
 
 function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) {
-  const { wid, threads } = useWs()
+  const { wid, threads, cards, edges } = useWs()
   const face = useRef<HTMLDivElement>(null)
   const revealed = useRevealed()
   useLayoutEffect(() => {
@@ -121,12 +137,24 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
   // Carried by a section being dragged (D-188).
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(card.id) ? s.dragShift : null))
   const [x, y] = held ?? [card.x + (shift?.dx ?? 0), card.y + (shift?.dy ?? 0)]
+  useEffect(() => {
+    if (!held) return
+    useCanvasView.setState((s) => ({ cardsLive: { ...s.cardsLive, [card.id]: held } }))
+    return () =>
+      useCanvasView.setState((s) => {
+        const { [card.id]: _, ...rest } = s.cardsLive
+        return { cardsLive: rest }
+      })
+  }, [held, card.id])
+  const hovered = useCanvasView((s) => live && s.cardHovered === card.id)
+  const target = useCanvasView((s) => live && s.linking?.over === card.id)
+  const linkingFrom = useCanvasView((s) => live && s.linking?.from === card.id)
 
   const press = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!live || e.button !== 0) return
     // The plane would pan.
     e.stopPropagation()
-    useCanvasView.setState({ cardSelected: card.id, labelSelected: null })
+    useCanvasView.setState({ cardSelected: card.id, labelSelected: null, linkSelected: null })
     if (typing) return
     setPressed(true)
     const [sx, sy] = [e.clientX, e.clientY]
@@ -157,6 +185,38 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
     window.addEventListener('pointercancel', up)
   }
 
+  // The `›` (D-152, D-207): pressed and dragged onto another card, a link from this one to it.
+  const startLink = (e: ReactPointerEvent<HTMLSpanElement>) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    e.preventDefault()
+    const box = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect()
+    const toPlane = (ev: { clientX: number; clientY: number }): [number, number] => [card.x + (ev.clientX - box.left) / zoom, card.y + (ev.clientY - box.top) / zoom]
+    const overAt = (ev: { clientX: number; clientY: number }) => {
+      const hit = document.elementFromPoint(ev.clientX, ev.clientY)?.closest<HTMLElement>('[data-target^="card:"]')?.dataset.target?.slice(5)
+      return hit && hit !== card.id ? hit : null
+    }
+    useCanvasView.setState({ linking: { from: card.id, to: toPlane(e), over: null }, linkSelected: null })
+    const move = (ev: PointerEvent) => useCanvasView.setState({ linking: { from: card.id, to: toPlane(ev), over: overAt(ev) } })
+    const up = (ev: PointerEvent) => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      const over = ev.type === 'pointerup' ? overAt(ev) : null
+      useCanvasView.setState({ linking: null })
+      const other = over && cards.find((c) => c.id === over)
+      if (!other) return
+      // One link between two cards from the handle: an existing one is selected instead.
+      const was = edges.find((x) => (x.fromId === card.id && x.toId === other.id) || (x.fromId === other.id && x.toId === card.id))
+      if (was) return useCanvasView.setState({ linkSelected: was.id, cardSelected: null, labelSelected: null })
+      const id = createEdge(wid, card, other, defaultKind(card.type, other.type))
+      useCanvasView.setState({ linkSelected: id, linkLabelling: true, cardSelected: null, labelSelected: null })
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
+
   // The face, small, under the pointer: from where it lands (the box) to where it is, shrunk round the point held.
   const carried = drag ? { translate: `${drag.free[0] - x}px ${drag.free[1] - y}px`, scale: `${CARRIED}`, transformOrigin: `${drag.at[0]}px ${drag.at[1]}px` } : undefined
 
@@ -167,8 +227,11 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
       data-selected={selected || undefined}
       data-pressed={pressed || !!drag || undefined}
       data-dragging={drag ? true : undefined}
+      data-link-target={target || undefined}
       data-target={`card:${card.id}`}
       onPointerDown={press}
+      onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
+      onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
       onDoubleClick={live && editor ? () => useCanvasView.setState({ cardEditing: card.id, cardSelected: card.id }) : undefined}
     >
       <div ref={face} className={styles.card} style={carried} data-detail={typing ? 'full' : detail}>
@@ -189,6 +252,11 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
       <i className={styles.mark} data-corner="ne" aria-hidden />
       <i className={styles.mark} data-corner="se" aria-hidden />
       <i className={styles.mark} data-corner="sw" aria-hidden />
+      {live && editor && !drag && !typing && (hovered || linkingFrom) && (
+        <span className={styles.handle} data-linking={linkingFrom || undefined} onPointerDown={startLink} aria-label="Drag to another card to link">
+          <span aria-hidden>›</span>
+        </span>
+      )}
       {live && <PeerRing id={card.id} space={card.pieceId} />}
       {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
     </div>

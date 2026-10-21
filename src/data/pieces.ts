@@ -1,6 +1,7 @@
 // The workspace's canvas (D-174, D-176): what's placed on it. Planes (D-180) and matrices (D-204); more later.
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { cardRef, type Card } from './cards'
+import { edgeRef, edgesOn, type Edge } from './edges'
 import { labelRef, type Label } from './labels'
 import { cellKey, cellRef, emptySetup, type Cell, type MatrixSetup } from './matrix'
 import { db } from './firebase'
@@ -65,10 +66,13 @@ export function renamePiece(wid: string, id: string, name: string, kind: PieceKi
 }
 
 // The plane, its cards (D-187) and its text (D-188), or the matrix and its cells (D-204), as one undo step.
-export function deletePiece(wid: string, id: string, cards: Card[], labels: Label[], cells: Cell[] = [], kind: PieceKind = 'plane') {
+export function deletePiece(wid: string, id: string, cards: Card[], labels: Label[], cells: Cell[] = [], kind: PieceKind = 'plane', edges: Edge[] = []) {
+  const on = cards.filter((c) => c.pieceId === id)
   const refs = [
     doc(col(wid), id),
-    ...cards.filter((c) => c.pieceId === id).map((c) => cardRef(wid, c.type, c.id)),
+    ...on.map((c) => cardRef(wid, c.type, c.id)),
+    // Its cards' links (D-207).
+    ...edgesOn(edges, new Set(on.map((c) => c.id))).map((e) => edgeRef(wid, e.id)),
     ...labels.filter((l) => l.pieceId === id).map((l) => labelRef(wid, l.id)),
     ...cells.filter((c) => c.matrixId === id).map((c) => cellRef(wid, cellKey(c.matrixId, c.row, c.col))),
   ]

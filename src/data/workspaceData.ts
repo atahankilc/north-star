@@ -7,6 +7,7 @@ import type { WithId } from './hooks'
 import { useWorkspaceCollection } from './hooks'
 import type { Label } from './labels'
 import type { Cell } from './matrix'
+import type { Edge } from './edges'
 import type { Piece, Thread } from './model'
 
 export type WorkspaceData = {
@@ -21,6 +22,8 @@ export type WorkspaceData = {
   // What was learned about a card (D-137) and a competitor's features (D-164): counted on the cards (D-205).
   evidence: WithId<{ nodeId: string; stance: 'supports' | 'contradicts' }>[]
   competitorFeatures: WithId<{ competitorId: string }>[]
+  // Links between cards (D-207).
+  edges: Edge[]
 }
 
 type CardDoc = { pieceId?: string; title?: string; name?: string; x?: number; y?: number } & CardFields
@@ -37,6 +40,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const cells = useWorkspaceCollection<Cell>(wid, 'cells')
   const evidence = useWorkspaceCollection<{ nodeId: string; stance: 'supports' | 'contradicts' }>(wid, 'evidence')
   const competitorFeatures = useWorkspaceCollection<{ competitorId: string }>(wid, 'competitorFeatures')
+  const edges = useWorkspaceCollection<Omit<Edge, 'id'>>(wid, 'edges')
   const threadDocs = useWorkspaceCollection<Thread>(wid, 'threads')
   const threads = useMemo(() => threadDocs.data.filter((t) => t.planeId), [threadDocs.data])
   const cards = useMemo(
@@ -51,7 +55,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   )
   const all = [pieces, customers, problems, competitors, ideas, features, labelDocs, cells]
   return {
-    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data },
+    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, edges: edges.data },
     isLoading: all.some((l) => l.isLoading),
     error: all.find((l) => l.error)?.error ?? null,
   }

@@ -3238,6 +3238,34 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified:* headless Chrome on emulators: canvas look, edit mode (move, name), focus in mid-way and arrived, leaving
   mid-way and back, a reload in focus; no console errors; typecheck.
 
+### D-207 · 2026-10-22 · Accepted (brings D-059/D-108/D-113/D-147/D-154's links back, on planes)
+- *Decision:* links come back on planes, in the old `edges` collection (no rules change); a link has no plane, a plane
+  draws the ones whose two cards are both on it (in focus and in its picture on the canvas). Drawn as on the old
+  board: a straight line from card edge to card edge (4 px clear of each), an arrowhead (12.8 plane px), its kind's own
+  colour (D-147's `--link-*`), 1.5 px wide, 2.2 when its card is hovered or selected, 3 when selected, the rest at 0.22
+  while something is in focus; a framed chip at its middle with its kind (8 px mono, a card's small text, drawn while
+  that is 4.5 px or more on screen), its own label instead while it's in focus (D-135), filled when selected. Several
+  links between two cards sit side by side, 25.6 px apart (within 80 % of a card's height), chips moved along steep
+  lines so they don't sit on each other (D-113). Lines follow cards being dragged and carried by a section.
+- *Making one:* a hovered card shows `›` just right of it (dim, bright under the pointer, cyan while linking; a band
+  over the card's right edge takes the pointer); dragged onto another card (its corner marks cyan) it makes a link of
+  the old default kind (customer → `for`, idea → problem `solves`, competitor → problem/idea `competes`, feature → idea
+  `inspired by`, else `relates`), selected with the cursor in its label (D-154). Onto a card it's already linked to, that
+  link is selected instead.
+- *Editing:* a click on a line or chip selects it; a bar under its chip at screen size: kind (Select with colour
+  swatches), label, `⇄ reverse` (not for `for`), `× remove`; Delete removes, Escape lets go. Deleting a card or a plane
+  takes its links in the same undo step.
+- *Facts line* (D-205) now counts from links: `N tagged for them`, `N solve it · vs N`, `solves N · N features`,
+  `vs N` (distinct rivals), and a card's customers as `[Name]`.
+- *Not yet:* bend points (D-155, a link keeps any it has), the LINKS filter and D-128/D-135's hidden-by-default groups
+  (`for`, `relates`, `competes`: all shown until the filter is back, or a link drawn as `relates` would vanish), the
+  right-click menu, shift+drag, links to competitor features.
+- *User:* "evet, bağlantılarla devam et".
+- *Verified* headless (emulators): `›` drag idea → problem made `solves` with the label field focused, typed label on
+  the chip; two links on a vertical pair side by side with chips apart; a selected competitor lights its links and dims
+  the rest; deleting it removed its 2 links, ⌘Z brought all 3 back; the plane's picture on the canvas draws them; no
+  console errors; build.
+
 ### D-208 · 2026-10-22 · Accepted (changes D-206's canvas look; D-206's focus stands)
 - *Decision:* a matrix is a **window** on the canvas, not a bare table and not a plane. It has a plane's edge and solid
   fill, its name in the top edge at the left, its console inside the bottom-right corner, and its own `w`/`h` again:

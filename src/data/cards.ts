@@ -1,10 +1,11 @@
 // Cards on a plane (D-187): customers, problems, competitors, ideas and features, each in its own collection as before
 // (D-037, D-040), now belonging to one plane (`pieceId`) at x/y in that plane's px (its top-left corner). Cards from the
 // old board (no `pieceId`) stay where they are and aren't shown. A competitor keeps its title as `name`.
-import { collection, deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore'
+import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from './firebase'
 import { absent, snapshotWith, tracked } from './history'
 import { GRID, snap } from './grid'
+import { edgeRef, edgesOn, type Edge } from './edges'
 
 export const CARD_TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
 export type CardType = (typeof CARD_TYPES)[number]
@@ -75,9 +76,14 @@ export function retitleCard(wid: string, card: Card, title: string) {
   })
 }
 
-export function deleteCard(wid: string, card: Card) {
-  const r = ref(wid, card.type, card.id)
-  return tracked(`delete ${one(card.type)}`, [r], () => deleteDoc(r))
+// With its links (D-207): one undo step brings them all back.
+export function deleteCard(wid: string, card: Card, edges: Edge[] = []) {
+  const refs = [ref(wid, card.type, card.id), ...edgesOn(edges, new Set([card.id])).map((e) => edgeRef(wid, e.id))]
+  return tracked(`delete ${one(card.type)}`, refs, () => {
+    const batch = writeBatch(db())
+    refs.forEach((r) => batch.delete(r))
+    return batch.commit()
+  })
 }
 
 // Docs from any of the five collections, as cards; the old board's (no `pieceId`) are left out.

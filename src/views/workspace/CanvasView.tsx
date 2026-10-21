@@ -31,6 +31,7 @@ import { CANVAS, deleteLabel, type Label } from '../../data/labels'
 import { PlaneCards } from './PlaneCards'
 import { DockAction, FocusDock } from './FocusDock'
 import { deleteCard, type Card } from '../../data/cards'
+import { deleteEdge } from '../../data/edges'
 import { GRID } from '../../data/grid'
 import { goToPlace, useGoTo, type Place } from './goTo'
 import { matrixBounds, MatrixView, useMatrixUi } from './Matrix'
@@ -56,7 +57,7 @@ const onPixel = (v: number) => {
 }
 
 export function CanvasView() {
-  const { wid, workspace, pieces, cards, labels, threads, cells } = useWs()
+  const { wid, workspace, pieces, cards, labels, threads, cells, edges } = useWs()
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
   const cam = useCanvasView((s) => s.cams[wid]) ?? camOf(wid)
@@ -117,6 +118,8 @@ export function CanvasView() {
   }, [asked])
   const allLabelsRef = useRef(labels)
   allLabelsRef.current = labels
+  const edgesRef = useRef(edges)
+  edgesRef.current = edges
   const focusedCardsRef = useRef(focusedCards)
   focusedCardsRef.current = focusedCards
   const drawing = useCanvasView((s) => s.drawing)
@@ -261,12 +264,12 @@ export function CanvasView() {
   }
   unfocusRef.current = unfocus
   const left = () => {
-    useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null })
+    useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null, linkSelected: null, linking: null })
     setParams({}, { replace: true })
   }
   // Left by the back button, or a plane deleted (by someone else) while in focus: nothing to animate.
   useEffect(() => {
-    if (!focusId) useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null })
+    if (!focusId) useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null, linkSelected: null, linking: null })
   }, [focusId])
   useEffect(() => {
     if (focusId && !focused && pieces.length > 0) setParams({}, { replace: true })
@@ -367,6 +370,16 @@ export function CanvasView() {
       }
       // In focus: Delete takes the selected card away (D-187); Escape lets go of it, or goes back to the canvas.
       if (focusedRef.current) {
+        // A selected link (D-207): Escape lets go of it, Delete removes it.
+        const { linkSelected } = useCanvasView.getState()
+        if (linkSelected) {
+          if (e.key === 'Escape') return useCanvasView.setState({ linkSelected: null })
+          if ((e.key === 'Delete' || e.key === 'Backspace') && editor) {
+            e.preventDefault()
+            useCanvasView.setState({ linkSelected: null })
+            return void deleteEdge(wid, linkSelected)
+          }
+        }
         const { cardSelected } = useCanvasView.getState()
         const card = focusedCardsRef.current.find((c) => c.id === cardSelected)
         if (e.key === 'Escape') {
@@ -378,7 +391,7 @@ export function CanvasView() {
         if ((e.key === 'Delete' || e.key === 'Backspace') && card && editor) {
           e.preventDefault()
           useCanvasView.setState({ cardSelected: null })
-          void deleteCard(wid, card)
+          void deleteCard(wid, card, edgesRef.current)
         }
         return
       }
@@ -509,7 +522,7 @@ export function CanvasView() {
           onConfirm={() => {
             useCanvasView.setState({ confirming: null })
             setEditing(confirming.id, false)
-            void deletePiece(wid, confirming.id, cards, labels, cells, kindOfPiece(confirming))
+            void deletePiece(wid, confirming.id, cards, labels, cells, kindOfPiece(confirming), edges)
           }}
         />
       )}

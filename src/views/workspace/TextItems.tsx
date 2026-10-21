@@ -156,7 +156,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   }, [turn])
   const turnedBox = turn && laid ? { width: laid[1], height: laid[0] } : undefined
 
-  const select = () => useCanvasView.setState({ labelSelected: l.id, cardSelected: null, selected: null })
+  const select = () => useCanvasView.setState({ labelSelected: l.id, cardSelected: null, selected: null, linkSelected: null })
 
   // Press and drag: moves it (a section with what's inside it), one undo step.
   const press = (e: ReactPointerEvent<HTMLElement>) => {

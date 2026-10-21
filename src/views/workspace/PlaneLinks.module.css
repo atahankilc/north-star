@@ -1,0 +1,138 @@
+/* Links on a plane (D-207), in its px: the lines under the cards, the chips and the bar over them. */
+.lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Line widths are screen px at any zoom, as on the old board. */
+.line {
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
+}
+
+.arrow {
+  fill: currentColor;
+}
+
+/* What the pointer takes: a wide band along the line, unseen. */
+.hit {
+  stroke: transparent;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* A link being drawn from a card's `›`. */
+.ghost {
+  stroke: var(--accent-cyan);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* A chip's place: the middle of its line. */
+.at {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 5;
+}
+
+/* A small framed chip at a card's small-text size (D-154): its kind's colour round it and in it; filled when selected. */
+.chip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0 3px;
+  border: 0.64px solid var(--tone);
+  background: var(--bg);
+  color: var(--tone);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  line-height: 12px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.chip[data-live='true'] {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.chip[data-selected='true'] {
+  background: var(--tone);
+  color: var(--bg);
+}
+
+/* The selected link's bar, at the screen's size under its chip. */
+.barAt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 4px var(--space-2) 4px var(--space-3);
+  border: 1px solid var(--line-hover);
+  border-top: 2px solid var(--tone);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  transform: translate(-50%, 18px);
+}
+
+.rule {
+  align-self: stretch;
+  width: 1px;
+  background: var(--line);
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: var(--space-2);
+  vertical-align: middle;
+  background: var(--tone);
+}
+
+.kind {
+  color: var(--tone, var(--fg));
+}
+
+.input {
+  width: 16ch;
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  outline: none;
+}
+
+.input:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+.button {
+  composes: small from '../../ui/AsciiButton.module.css';
+}

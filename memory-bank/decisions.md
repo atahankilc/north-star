@@ -189,6 +189,9 @@ piece; check them with the user then.
   on the canvas they're a picture fitted in the plane, its marks following. Deleting a plane takes its cards.
 - Card inside on planes as D-152/D-153 (D-205): status/regions/priority + evidence cells, title, facts (link counts 0
   until links), tag chips; by size on screen the title alone in whole words, then bars. Only shown until the panel.
+- Links on planes (D-207): old `edges`, drawn when both cards are on the plane; straight, arrowhead, kind colours, chip
+  (own label in focus), side by side; made from a hovered card's `›` (default kind, label ready), bar: kind, label,
+  reverse, remove; deleting a card or plane takes its links. Bends, LINKS filter, hidden groups: not yet.
 - Card motion on planes as D-150 (D-203): arriving cards build cell by cell, corner marks grey out on hover, in the
   type colour just outside selected and on the corners pressed; a drag goes 0.8 under the pointer, marks where it lands.
   No side panel on a card click until it's refactored (the user's call).
