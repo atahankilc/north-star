@@ -3270,7 +3270,7 @@ categories shown like B, not in a card, and the features under them not indented
   the rest; deleting it removed its 2 links, ⌘Z brought all 3 back; the plane's picture on the canvas draws them; no
   console errors; build.
 
-### D-208 · 2026-10-22 · Accepted (changes D-206's canvas look; D-206's focus stands)
+### D-208 · 2026-10-22 · Accepted (changes D-206's canvas look; D-206's focus stands; a matrix's table is fitted whole in the window since D-214)
 - *Decision:* a matrix is a **window** on the canvas, not a bare table and not a plane. It has a plane's edge and solid
   fill, its name in the top edge at the left, its console inside the bottom-right corner, and its own `w`/`h` again:
   in edit mode it moves, resizes from the corner grips and edge bars (≥ 325 × 200, snapped) and takes a name, as a
@@ -3434,4 +3434,39 @@ categories shown like B, not in a card, and the features under them not indented
   headless Chrome on emulators: the focused matrix (card heads, squares, `?` / `~` and the note's fold in the corners,
   hover and selected corner marks), a typed column added from the dashed card, the setup's four tabs, totals at both
   ends as a line, the wizard's steps and preview; no console errors; typecheck and build.
+
+### D-213 · 2026-10-22 · Accepted (adds to D-209)
+- *Decision:* a table can be **paged**. Its dock (in its own focus and in its pane beside a plane, D-211) holds the
+  page controls before `[setup]`: `‹ 2 / 5 ›` and how many rows a page (`all N`, `10 / 25 / 50 / 100 a page`, a Select).
+  The page size is the table's own (`table.pageSize`, shared, one undo step; changing it goes back to page 1); which
+  page you're on is yours (this tab). The table draws only that page (sorting runs over all the rows first), fit frames
+  the page, and the canvas's picture shows the page you're on. Viewers see the size but can't change it.
+- *User (through north-star-5e):* "pagination ekleyelim ve bu pagination console da dursun, kullanıcı isterse seçebilsin
+  kaç itemda bir paginate olacağını (aslında bu normal tablolar için daha mantıklı. O yüzden matrix yerine bu
+  paginationı oraya getirebiliriz)".
+- *Not yet:* arrows stepping from a page's last row onto the next page; a page's controls on the canvas console.
+- *Verified:* headless Chrome on emulators: a focused table of 17 rows, `all 17` → `10 a page`: `‹ 1 / 2 ›` and 10 rows;
+  `›` → `2 / 2` and 7 rows; no console errors; typecheck. No rules change (validTable takes extra fields).
+
+### D-214 · 2026-10-22 · Accepted (changes D-208's matrix window and D-212's adding; adds sticky heads)
+- *Decision:*
+  - *On the canvas* a matrix's window shows the whole table fitted in it (never past 1, 12 px round), as a plane shows
+    its cards; a table still sits at zoom 1 from the top-left, cut by its edge (D-208). Focus glides from that fitted view.
+  - *Sticky heads in focus:* panned or zoomed so the column heads would leave the screen, they stay 64 px from its top
+    (under the breadcrumb's bar), and the row heads 160 px from its left (clear of the side nav's shade); the cells move
+    under them on the page's paper; the corner stays over both; they never go past the last row or column. Drags and
+    the wheel still move the cells' view as before.
+  - *A row or column added* from its dashed card: the view glides (420 ms) to bring it to the middle, a row up or down,
+    a column across (on the focus's own view; a pane beside a plane keeps its view).
+  - *The add field:* no frame, no cyan box: typed as it will read, mono, on a dashed line, a magenta caret, `enter adds
+    it` under it; a column's field is wider than its card (220 px) while typing.
+  - *Typed column heads* start at the top like a card's, the totals at the bottom.
+- *User:* "yeni row yada column eklenince vertical yada horizontal olarak orayı ortalama efekti ekleyelim"; "input box
+  çok kötü duruyor. Mavi kutu içinde mavi input box ve çok dar bi alan. Bu input alanını border ile göstermeyelim";
+  "columlarda card adları en üstten başlarken normal free text olanlar kutunun altında duruyor"; "matrix componentinin
+  unfocuslu hali bütün matrixi sığdurmaya çalışmalı"; "belli bir noktadan sonra headerlar fixlensin ve sadece drag
+  lemek celleri kaydırsın … sticky header gibi". (Their pagination ask went to the table, D-213.)
+- *Verified:* headless Chrome on emulators: the canvas window fitting the whole matrix; a typed row and column added,
+  each glided to the middle; the add field's look; zoomed in and panned right, the row heads held at 160 px with the
+  cells passing under; no console errors; typecheck.
 

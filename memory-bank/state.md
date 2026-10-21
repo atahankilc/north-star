@@ -63,8 +63,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   (D-205, shown only, nothing sets it yet). Step 3, links (D-207). Next proposed:
   bends, multi-select, guides, right-click, competitor features, filters. Fixed 2026-10-21:
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
-- Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed.
-- Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), 2026-10-22, rules deployed.
+- Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214).
+- Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), 2026-10-22, rules deployed.
 - Focus dock on the bottom edge + plane console inside its bottom-right corner, no `▸` (D-189), committed 2026-10-21.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
   left side nav piece by piece, you + settings bottom left first (D-175); planes (D-180, first called boards) placed on the canvas from the side

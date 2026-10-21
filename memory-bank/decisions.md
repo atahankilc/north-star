@@ -197,7 +197,7 @@ piece; check them with the user then.
 - Card motion on planes as D-150 (D-203): arriving cards build cell by cell, corner marks grey out on hover, in the
   type colour just outside selected and on the corners pressed; a drag goes 0.8 under the pointer, marks where it lands.
   No side panel on a card click until it's refactored (the user's call).
-- Matrix (D-204, D-206, D-208, D-212): a canvas piece made in a wizard from `+ → matrix…` (start from a template
+- Matrix (D-204, D-206, D-208, D-212, D-214): a canvas piece made in a wizard from `+ → matrix…` (start from a template
   or my own, rows, columns, cells, a preview; D-212). Rows and columns: every card of a type (any plane or one) + typed
   names + single cards; `×` hides a type's card or drops a typed one. Cells one kind per matrix: a scale of editable
   steps, a number (unit) or text; a note; options doesn't apply (—), guesses (~ ?), totals (in the heads, at the ends or
@@ -205,15 +205,15 @@ piece; check them with the user then.
   name), typed names mono over a dashed rule, a scale's cell a square filled to its step (or its glyph), corner marks
   for hover and selection, a note's fold and `~ ?` in the cell's corners; each axis ends in a dashed card to type a name
   or pick a card. `[setup]` opens a tabbed panel (rows · columns · cells · options, start over from) at the bottom of
-  its space. On the canvas a window: a plane's edge, fill, name in the top edge and
-  console, moved and resized in edit mode, no `+` marks, its table at its own size from the top-left, cut by the edge
-  (D-208); focus glides the table to the middle while the page builds cell by cell behind it, no ink (D-206). Live in focus (click, again steps, 1–9, arrows, Backspace, `-`, Enter;
+  its space. On the canvas the window fits the whole table; in focus the heads stick to the screen's top and left
+  when panned past, a row or column just added glides to the middle, the add field is unframed (D-214). On the canvas a window: a plane's edge, fill, name in the top edge and
+  console, moved and resized in edit mode, no `+` marks (D-208), the whole table fitted in it (D-214); focus glides the table to the middle while the page builds cell by cell behind it, no ink (D-206). Live in focus (click, again steps, 1–9, arrows, Backspace, `-`, Enter;
   a bar under the cell); `[setup]` in the focus dock. Setup on the piece, cells in `cells/{matrixId}_{row}_{col}`.
 - Table (D-209), the first lens: a canvas piece from `+` (templates every card, features, competitors, blank), a window
   like the matrix's (D-208, D-206's focus). Rows: a rule list (plane, type, status, tag, title; is / is not; any of the
   values; none required) + cards and names by hand; `×` hides or drops. Columns: the name first, then the cards' fields
   (read-only) and its own (scale, number + unit, text, check); a head's click sorts. Live in focus like the matrix;
-  `[setup]` in the dock.
+  `[setup]` in the dock. Paged (D-213): `‹ 2 / 5 ›` + rows a page (all, 10/25/50/100; shared) in its dock, the page yours.
 - Sticking (D-210): a matrix or table moved (edit mode) within 48 screen px of a plane's edge snaps one grid step out
   from it, the edge lit cyan, and is bound (`stuckTo`; alt = free): a table gets `where plane is … · auto` (changed by
   hand it's yours), a matrix's typed axes the plane; a plane moved or resized carries it; `⇆` in the gap; pulled away it lets go.
