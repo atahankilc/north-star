@@ -348,25 +348,138 @@
   color: var(--fg-strong);
 }
 
-/* The threads panel (D-166): bottom left over the board, above its toolbar, set as the chat window. */
-/* The threads panel (D-166, D-193): stuck to the bottom left, right of the corner's buttons (it never covers them); the
-   right of the screen stays free. */
+/* The threads panel (D-166, D-193, D-197): one wide tab on the bottom edge, right of the corner's buttons (it never covers
+   them), flush with the edge like the focus dock: no bottom border, magenta marks on its top corners. The list on the
+   left, the conversation picked in it on the right. The right of the screen stays free. */
 .inbox {
   position: absolute;
-  bottom: var(--space-3);
+  bottom: 0;
   left: calc(var(--space-3) + 36px + var(--space-3));
   /* Over the HUD (10), so its shade down the left edge doesn't dim it; it never covers the HUD's buttons. */
   z-index: 11;
   display: flex;
-  flex-direction: column;
-  width: min(380px, calc(100vw - 2 * var(--hud-x)));
-  max-height: min(70vh, calc(100% - var(--hud-h) - var(--space-3)));
-  border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  /* Just the list until a conversation is picked; then the conversation beside it. */
+  width: min(340px, calc(100% - 2 * (var(--space-3) + 36px + var(--space-3))));
+  height: min(62vh, calc(100% - var(--hud-h)));
+  border: 1px solid var(--line-hover);
+  border-bottom: 0;
+  background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
 }
+
+.inbox::before,
+.inbox::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  width: var(--space-2);
+  height: var(--space-2);
+  border-top: 1px solid var(--accent-magenta);
+  pointer-events: none;
+}
+
+.inbox::before {
+  left: -1px;
+  border-left: 1px solid var(--accent-magenta);
+}
+
+.inbox::after {
+  right: -1px;
+  border-right: 1px solid var(--accent-magenta);
+}
+
+.inbox[data-convo] {
+  width: min(840px, calc(100% - 2 * (var(--space-3) + 36px + var(--space-3))));
+}
+
+.listSide {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.inbox[data-convo] .listSide {
+  flex: none;
+  width: min(340px, 45%);
+  border-right: 1px solid var(--line);
+}
+
+/* The top edge, to drag the height: a strip over the border, the row-resize cursor. */
+.grip {
+  position: absolute;
+  top: -4px;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.convoSide {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The open thread in the panel's right half: no frame or offset of its own, all its height. */
+.panel.docked {
+  flex: 1;
+  width: auto;
+  max-height: none;
+  min-height: 0;
+  border: 0;
+  background: none;
+  transform: none;
+}
+
+/* Where the open thread is and a plain way there (D-197): its own row under the header, the place faint, then a
+   framed cyan `⌖ go there`. */
+.whereRow {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-xs);
+}
+
+.whereText {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goThere {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 3px var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--accent-cyan) 60%, transparent);
+  background: none;
+  color: var(--accent-cyan);
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.goThere:hover,
+.goThere:focus-visible {
+  outline: none;
+  background: var(--accent-cyan);
+  color: var(--on-accent);
+}
+
 
 .views {
   display: flex;

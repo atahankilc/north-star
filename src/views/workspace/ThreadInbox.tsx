@@ -9,10 +9,15 @@ import type { WithId } from '../../data/hooks'
 import type { Thread } from '../../data/model'
 import { isNew, markSeen, useReads } from '../../data/threads'
 import { ago } from '../../ui/ago'
-import { CommentIcon, myUid, toggleInbox, useThreadView } from './Threads'
+import { CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './Threads'
 import styles from './Threads.module.css'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
+
+// The panel's height, dragged from its top edge (D-197): kept per browser; never under MIN_H, never over the breadcrumb.
+const HEIGHT_KEY = 'north-star.threads-height'
+const MIN_H = 220
+const HEAD_ROOM = 64
 
 type Props = {
   wid: string
@@ -27,6 +32,9 @@ type Props = {
   goneOf?: (t: WithId<Thread>) => boolean
   // A scope's name (D-193): the plane whose console opened the panel.
   scopeName?: (id: string) => string
+  // The right half (D-197): owners delete any thread; `↗` shows a thread where it is.
+  isOwner: boolean
+  onShow: (t: WithId<Thread>) => void
 }
 
 // The button in the bottom-left corner, just above your square (D-193): the comment mark; a magenta count of new
@@ -52,16 +60,26 @@ export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
   )
 }
 
-export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, goneOf, scopeName }: Props) {
+export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, goneOf, scopeName, isOwner, onShow }: Props) {
   const open = useThreadView((s) => s.inbox)
   // Only what's inside a plane when its console opened the panel (D-193, D-195); the plane's own conversation isn't
   // inside it, it's on the canvas.
   const scope = useThreadView((s) => s.scope)
   const threads = useMemo(() => (scope ? all.filter((t) => t.planeId === scope) : all), [all, scope])
   const openId = useThreadView((s) => s.openId)
+  const draft = useThreadView((s) => s.draft)
+  const current = all.find((t) => t.id === openId) ?? null
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
   const [view, setView] = useState<View>('all')
+  const [height, setHeight] = useState<number | null>(() => {
+    try {
+      const v = Number(localStorage.getItem(HEIGHT_KEY))
+      return v >= MIN_H ? v : null
+    } catch {
+      return null
+    }
+  })
 
   // Escape closes it, unless a thread is open (that closes first).
   useEffect(() => {
@@ -86,15 +104,43 @@ export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, g
   const markAll = () => sorted.filter(fresh).forEach((t) => void markSeen(wid, t.id, t.lastAt))
 
   if (!open) return null
+  // Dragging the top edge: taller up, shorter down; between MIN_H and the space under the breadcrumb.
+  const resize = (e: React.PointerEvent<HTMLElement>) => {
+    e.preventDefault()
+    const box = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect()
+    const room = (e.currentTarget.closest('[data-app]') as HTMLElement | null)?.clientHeight ?? window.innerHeight
+    const [sy, h0] = [e.clientY, box.height]
+    let h = h0
+    const move = (ev: PointerEvent) => {
+      h = Math.round(Math.min(room - HEAD_ROOM, Math.max(MIN_H, h0 + sy - ev.clientY)))
+      setHeight(h)
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      try {
+        localStorage.setItem(HEIGHT_KEY, String(h))
+      } catch {
+        // No storage (a private window): it's only for this time.
+      }
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
   return (
     <section
       className={styles.inbox}
       aria-label="Threads"
+      data-convo={current || draft ? true : undefined}
+      style={height ? { height } : undefined}
       data-viewer-ok
       onPointerDown={(e) => e.stopPropagation()}
       onWheel={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
     >
+      {/* Its top edge sets its height (D-197), kept in this browser. */}
+      <span className={styles.grip} onPointerDown={resize} aria-hidden />
+      <div className={styles.listSide}>
       <header className={styles.head}>
         <span className={styles.title}>threads</span>
         <span className={styles.actions}>
@@ -135,7 +181,7 @@ export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, g
         {rows.length === 0 && (
           <li className={styles.lead}>
             {view === 'all'
-              ? 'No open threads. Right-click anything (or a spot) → comment.'
+              ? 'No open threads. Right-click anything → comment.'
               : view === 'new'
                 ? 'Nothing new: you have read everything.'
                 : view === 'mentions'
@@ -169,6 +215,23 @@ export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, g
           </li>
         ))}
       </ol>
+      </div>
+      {/* The conversation picked on the left, or one being started (D-197); with none, the tab is just the list. */}
+      {(current || draft) && (
+      <div className={styles.convoSide}>
+          <ThreadPanel
+            key={current?.id ?? 'draft'}
+            wid={wid}
+            thread={current}
+            draft={current ? null : draft}
+            title={current ? titleOf(current) : draft ? titleOf(draft) : ''}
+            isOwner={isOwner}
+            docked
+            where={current ? whereOf?.(current) ?? undefined : undefined}
+            onShow={current ? () => onShow(current) : undefined}
+          />
+      </div>
+      )}
     </section>
   )
 }

@@ -64,6 +64,7 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     const el = layer.current
     if (!el) return
     const onWheel = (e: WheelEvent) => {
+      if ((e.target as HTMLElement).closest('section[aria-label=Threads], [role=dialog], [role=menu]')) return
       e.preventDefault()
       const { planeCam: c, focusLeaving } = useCanvasView.getState()
       if (!c || focusLeaving) return

@@ -2996,7 +2996,8 @@ categories shown like B, not in a card, and the features under them not indented
     grid's marks when snapped, the text 0.6em in from it; B I AA; the field's hint shows the Markdown.
   - *Project title* (D-118, D-132): the old sizes: the name 92 px (tracking −0.045em), what it's building 26 px at 86 %
     of the width, `PROJECT` 18 px grey with a drawn magenta four-pointed star, a rule of a 96 px magenta lead then a
-    hairline, 44 px inside 48 px corner brackets (3 px; they are its hover and selection marks, cyan when selected);
+    hairline, 44 px inside 48 px corner brackets (3 px, the canvas's `--edge` grey, cyan when selected or held; they
+    are its marks); the description at 72 % of `--fg` (the old fill opacity); the right edge drags with nothing drawn;
     800 px wide by default (500–2400). Too far out to read the description (26 px under 6 screen px) it folds in 320 ms
     eased both ends: the caption, rule and description shrink away and fade early, the star moves beside the name's
     first line, the name grows into the room, as big as fits the unfolded height without breaking a word
@@ -3027,3 +3028,49 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless: a comment on a plane showed its chip `💬 1` under the corner and left the console without a
   count; a comment on a card inside then made the console `💬 1 inside`; that opened the panel `INSIDE "plane"` with
   only the card's thread; `[whole workspace]` showed both under `WHOLE WORKSPACE`; build.
+
+### D-196 · 2026-10-21 · Accepted (brings back D-050/D-116's go to for every space)
+- *Decision:* go to is back, for the canvas and for a plane in focus. On the canvas: its planes (by name), each followed
+  (set in) by the headings and sections inside it, the project title (under the workspace's name), its headings (H1, H2)
+  and named sections; in a focused plane: its own headings and sections. A place inside a plane, picked on the canvas,
+  takes the plane into focus (the ink, D-185), and on arriving the view glides to it instead of fitting. Paragraphs, sticky notes, H3s and unnamed sections aren't places (as D-116). One list in reading order (top
+  to bottom, then left to right), each row marked by kind (`▦` plane, `✦` title, `⬚` section, `↳` heading). Opened from
+  a grey go-to icon (`↳` drawn) in the side nav under fit, with a search field (`find a place`, Enter takes the first);
+  1–9 go to the first nine, as before. The icon is a compass (a circle, its needle north, the north half filled); the
+  first one (a drawn `↳`) wasn't clear to the user. The view glides there (420 ms, as fit): a plane, section or the title framed
+  whole (≤ 100 %, 96 px round); a heading at 100 %, centred, its top at 28 % of the screen so what's under it shows.
+  Going somewhere stops following. Code: `src/views/workspace/goTo.ts` (`placesIn`, `goToPlace`), `GoToButton` in
+  WorkspaceLayout, which asks the canvas through `useGoTo`; the keys and the going in CanvasView; `Menu` takes `quiet`
+  (an icon trigger in grey like fit) and `indent` on an item.
+- *Why:* the user: "go to özelliğini geri getircez ama her şey için … workshopda isek plane isimlerine, title cardına
+  yada header/sectionlara … aynısı plane için de geçerli".
+- *Not yet:* cards as places.
+- *Verified:* headless Chrome on the emulators: canvas list (title, heading, two planes, section, no H3), search +
+  Enter framed the section, `2` landed the heading; in focus the plane's section and heading, `2` landed it at 100 %.
+  From the canvas, `5` (a heading in a plane) focused the plane and landed on it; searching `inside sec` + Enter framed
+  a section inside the plane.
+
+### D-197 · 2026-10-21 · Accepted (changes D-193's threads panel)
+- *Decision:* the threads panel is design D of four shown on a local preview (A a tall tab from the bottom edge, B a
+  drawer grown out of the side nav, C a one-line terminal log, D list + conversation in one tab). One wide tab (≤ 840
+  px) on the bottom edge, right of the bottom-left corner's buttons and never over them, flush with the edge like the
+  focus dock and a plane's console: no bottom border, magenta marks on its top corners. Left (≤ 340 px): the header,
+  the scope row (D-195), the views, the rows. Right: the conversation picked there (the same thread view as before,
+  `ThreadPanel docked`: no frame or offset, all its height), or one being started, or "Pick a conversation…". A row
+  opens it on the right, it doesn't jump the view; `↗` in its header (with where it is) takes you there, into its plane
+  if need be, the panel staying open. While the panel is open, a component's chip and right-click → comment open the
+  conversation there; while it's shut, beside the component as before. With no conversation picked the tab is only the
+  list (340 px); picking one widens it to hold both (840 px). Its top edge drags its height (≥ 220 px, up to the
+  breadcrumb), kept in this browser (`localStorage`, a viewer's convenience). Where the open conversation is gets its
+  own row under its header: the place faint (`on the canvas`, `on Pricing`) and a framed cyan `⌖ go there` (a target
+  icon) instead of a bare `↗`, which didn't say you could go. Fixes found trying it: the canvas's wheel no longer
+  cancels scrolling over the threads panel, an open thread or a menu (`SCROLLS_ITSELF`), so the conversation and the
+  list scroll; the reply field is `readOnly`, not `disabled`, while a message sends, so it keeps the focus and messages
+  can be written back to back (before, everything typed after the first was lost).
+- *User:* "açılacak olan paneller hangi kenara yakın ise ora ile bağlantı kursun, sıfıra sıfır olsun (unfocus gibi) …
+  console gibi gözüksün", then "D güzel, onu yapalım".
+- *Verified* headless with Alice and Bob: the panel at x = 60, 0 px from the bottom, 840 × 558; empty right half until a
+  row was picked, then the conversation there and no popover on the canvas; Bob's reply sent from it; `↗` kept the panel
+  open; then: 340 px wide with no conversation, 840 with one; its top edge dragged up 150 px → 708 px tall, still that
+  after a reload; 15 messages sent back to back, the wheel scrolled the conversation (410 → 110 px) and left the canvas
+  still; build.

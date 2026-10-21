@@ -34,6 +34,9 @@ import { deleteCard, type Card } from '../../data/cards'
 import { GRID } from '../../data/grid'
 import styles from './CanvasView.module.css'
 
+// What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
+export const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu]'
+
 const ZOOM_MIN = 0.1
 const ZOOM_MAX = 4
 const DRAG_PX = 5
@@ -193,7 +196,6 @@ export function CanvasView() {
   const goTo = (t: WithId<Thread>) => {
     const sp = t.planeId ?? CANVAS
     openThread(t.id)
-    toggleInbox(false)
     if (sp !== space) return focusTo(sp === CANVAS ? null : sp)
     const [x, y] = pinOf(t).at
     const { size, planeCam } = useCanvasView.getState()
@@ -205,6 +207,7 @@ export function CanvasView() {
   }
   const openId = useThreadView((s) => s.openId)
   const draft = useThreadView((s) => s.draft)
+  const inboxOpen = useThreadView((s) => s.inbox)
   const openThreadDoc = threads.find((t) => t.id === openId) ?? null
   const openTarget = openThreadDoc ?? draft
   // A thread left open on a thread that's gone (deleted by someone) closes.
@@ -256,6 +259,8 @@ export function CanvasView() {
     const el = root.current
     if (!el) return
     const onWheel = (e: WheelEvent) => {
+      // Over the threads panel, an open thread or a menu, the wheel scrolls them (D-197).
+      if ((e.target as HTMLElement).closest(SCROLLS_ITSELF)) return
       e.preventDefault()
       // A plane in focus is the view: the canvas behind it stays where it was.
       if (focusedRef.current) return
@@ -412,9 +417,10 @@ export function CanvasView() {
       )}
       {drawing === CANVAS && !focused && <DrawSection space={CANVAS} toSpace={canvasToSpace} />}
       <PeerCursors space={space} toScreen={toScreen} />
-      <OpenThread wid={wid} at={openAt} title={openTarget ? titleOf(openTarget) : ''} thread={openThreadDoc} isOwner={isOwnerOf(workspace, user?.id)} />
+      {/* Beside its chip while the threads panel is shut; in the panel's right half while it's open (D-197). */}
+      {!inboxOpen && <OpenThread wid={wid} at={openAt} title={openTarget ? titleOf(openTarget) : ''} thread={openThreadDoc} isOwner={isOwnerOf(workspace, user?.id)} />}
       {menu && <ContextMenu at={menu.at} items={menu.items} onClose={closeMenu} />}
-      <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={goTo} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
+      <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {confirming && (
         <HazardConfirm

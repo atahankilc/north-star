@@ -60,6 +60,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   canvasStore), no glide; before, the drag's streamed writes came back from the IndexedDB cache one by one and the card replayed them.
 - Backdrop cell = 9 device px (D-172): finer field on 2x screens, nothing changes moving between screens. 2026-10-20.
 - Competitor feature list opens on click only, category names in grey caps over un-indented rows, no tray, drawn over everything (D-173). 2026-10-20.
+- Go to back for every space (D-196): compass in the side nav under fit + 1–9; canvas (planes' insides too) and focused plane. 2026-10-21, not committed.
 - Focus dock on the bottom edge + plane console inside its bottom-right corner, no `▸` (D-189), committed 2026-10-21.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
   left side nav piece by piece, you + settings bottom left first (D-175); planes (D-180, first called boards) placed on the canvas from the side

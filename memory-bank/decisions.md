@@ -188,6 +188,10 @@ piece; check them with the user then.
   once; in focus click selects (corner marks), drag moves (snapped, alt free), double-click retitles, Delete removes;
   on the canvas they're a picture fitted in the plane, its marks following. Deleting a plane takes its cards.
   No side panel on a card click until it's refactored (the user's call).
+- Go to (D-196): a grey compass in the side nav under fit (search inside) and 1–9; on the canvas its planes (each with its
+  own headings and sections set in under it), project title, H1/H2 headings and named sections, in a focused plane its
+  headings and sections, in reading order; glides there (planes, sections, title framed whole; a heading at 100 % near
+  the top); a place in a plane focuses the plane first, then glides.
 - Text anywhere (D-188): headings H1–H3 (48/29/22 px, H1 with a rule fading right), paragraphs (light Markdown, S/M/L,
   width from the right edge), sticky notes (signed, colour bar, yellow default), sections (frame drawn with a crosshair,
   number + name in an edge, carries what's fully inside it, corner resizes) and the project title (workspace name and
@@ -248,7 +252,10 @@ piece; check them with the user then.
   corner like a plane's console (mark + count, magenta new, `@` mention), at screen size. A comment on a plane and the
   comments inside it are kept apart (D-195): the plane's own has its chip under its corner; its console says `[💬 N
   inside]` (only what's inside) and opens the threads panel on them. The panel always says what it shows: `whole
-  workspace`, or `inside "<plane>"` in cyan with `[whole workspace]` back. Bottom-left corner, top to bottom:
+  workspace`, or `inside "<plane>"` in cyan with `[whole workspace]` back. The panel is one wide tab flush with the bottom edge,
+  right of the corner's buttons (D-197): the list left, the picked conversation right (`↗` shows it where it is); while
+  it's open, chips and new comments open there instead of beside the component. Only the list until a conversation is
+  picked; its top edge sets its height (kept per browser). Bottom-left corner, top to bottom:
   people here (squares, a column, follow on click), threads button, a rule, your square, the gear; the threads panel
   sticks to the bottom left beside them. Cursors sent 10×/s, drawn 200 ms behind; following glides only when their cursor
   leaves the middle (±22 %), eased by time; zooming doesn't stop following.

@@ -122,7 +122,20 @@ export function OpenThread({ wid, at, title, thread, isOwner }: OpenProps) {
 const MENTION_AT = /(^|\s)@([\p{L}\p{N}._ -]{0,30})$/u
 const pickedIn = (text: string, picked: Map<string, string>) => [...picked].filter(([, name]) => text.includes(`@${name}`)).map(([uid]) => uid)
 
-function ThreadPanel({ wid, thread, draft, title, isOwner }: { wid: string; thread: WithId<Thread> | null; draft: NewThread | null; title: string; isOwner: boolean }) {
+type PanelProps = {
+  wid: string
+  thread: WithId<Thread> | null
+  draft: NewThread | null
+  title: string
+  isOwner: boolean
+  // In the threads panel's right half (D-197) rather than beside its chip: no frame of its own, its full height, and
+  // `↗` in its header shows it where it is (into its plane if need be).
+  docked?: boolean
+  where?: string
+  onShow?: () => void
+}
+
+export function ThreadPanel({ wid, thread, draft, title, isOwner, docked, where, onShow }: PanelProps) {
   const messages = useMessages(wid, thread?.id ?? null)
   const members = useMembers(wid).data
   const reads = useReads(wid, myUid() || null).data
@@ -141,7 +154,7 @@ function ThreadPanel({ wid, thread, draft, title, isOwner }: { wid: string; thre
   // Beside the pin; flipped to its left where it would run off the window.
   useLayoutEffect(() => {
     const el = panel.current
-    if (!el) return
+    if (!el || docked) return
     el.dataset.flip = el.getBoundingClientRect().right > window.innerWidth - 8 ? 'left' : ''
   })
   // The reply field takes the keys as it opens.
@@ -234,7 +247,7 @@ function ThreadPanel({ wid, thread, draft, title, isOwner }: { wid: string; thre
   return (
     <div
       ref={panel}
-      className={styles.panel}
+      className={docked ? `${styles.panel} ${styles.docked}` : styles.panel}
       role="dialog"
       aria-label={`Thread on ${title}`}
       data-viewer-ok
@@ -265,6 +278,20 @@ function ThreadPanel({ wid, thread, draft, title, isOwner }: { wid: string; thre
           </button>
         </span>
       </header>
+      {/* Where it is, and a plain way there (D-197): a target, `go there`, in cyan, on its own row. */}
+      {onShow && (
+        <div className={styles.whereRow}>
+          <span className={styles.whereText}>{where ? `on ${where}` : ''}</span>
+          <button className={styles.goThere} title="take me to it" onClick={onShow}>
+            <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
+              <circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+              <path d="M8 0v3M8 13v3M0 8h3M13 8h3" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            go there
+          </button>
+        </div>
+      )}
       <ol ref={list} className={styles.log}>
         {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too. @ mentions someone.</li>}
         {thread && messages.isLoading && <li className={styles.lead}>Loading</li>}
@@ -352,7 +379,8 @@ function ThreadPanel({ wid, thread, draft, title, isOwner }: { wid: string; thre
               maxLength={MESSAGE_MAX}
               placeholder={thread ? 'reply · @ mentions' : 'say something · @ mentions'}
               aria-label={thread ? 'Reply' : 'First message'}
-              disabled={busy}
+              // Not `disabled`: that drops the focus, and the next message typed goes nowhere.
+              readOnly={busy}
               onChange={(e) => {
                 onType(e.target.value, e.target.selectionStart)
                 e.target.style.height = '0px'
