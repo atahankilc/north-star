@@ -32,6 +32,7 @@ import { PlaneCards } from './PlaneCards'
 import { DockAction, FocusDock } from './FocusDock'
 import { deleteCard, type Card } from '../../data/cards'
 import { GRID } from '../../data/grid'
+import { goToPlace, placesIn, useGoTo, type Place } from './goTo'
 import styles from './CanvasView.module.css'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
@@ -87,6 +88,28 @@ export function CanvasView() {
     if (focused) fitPlane(spaceBounds(focusedCards, focusedLabels))
     else fitCanvas(wid, [...pieces, ...canvasLabels.map(labelBox)])
   }
+  // Go to (D-196): 1–9 for the first nine places in the space you're in; the side nav's list asks through `useGoTo`.
+  const placesRef = useRef(() => placesIn(focusId ?? CANVAS, pieces, labels, workspace.name))
+  placesRef.current = () => placesIn(focusId ?? CANVAS, pieces, labels, workspace.name)
+  // A place in the space you're in glides there; one in a plane, from outside it, waits for the plane to come into focus.
+  const goPlaceRef = useRef((_: Place) => {})
+  goPlaceRef.current = (place: Place) => {
+    stopFollowing()
+    const here = focusId ?? CANVAS
+    if (place.space === here) {
+      if (focusId && !useCanvasView.getState().focusArrived) return
+      return goToPlace(wid, place, Boolean(focusId))
+    }
+    if (place.space === CANVAS) return
+    useGoTo.setState({ pending: place })
+    focusTo(place.space)
+  }
+  const asked = useGoTo((s) => s.asked)
+  useEffect(() => {
+    if (!asked) return
+    useGoTo.setState({ asked: null })
+    goPlaceRef.current(asked)
+  }, [asked])
   const allLabelsRef = useRef(labels)
   allLabelsRef.current = labels
   const focusedCardsRef = useRef(focusedCards)
@@ -298,6 +321,11 @@ export function CanvasView() {
         fitRef.current()
         return
       }
+      if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const place = placesRef.current()[Number(e.key) - 1]
+        if (place) goPlaceRef.current(place)
+        return
+      }
       // Text anywhere (D-188): Delete takes the selected one away, Escape lets go of it (or stops drawing a section).
       const { labelSelected, drawing } = useCanvasView.getState()
       if (drawing && e.key === 'Escape') return useCanvasView.setState({ drawing: null })
@@ -398,10 +426,13 @@ export function CanvasView() {
           spread={focusSpread}
           leaving={focusLeaving}
           lens={lens}
-          // Once there, its cards centred and fitted to the screen (D-186, D-187).
+          // Once there, its cards centred and fitted to the screen (D-186, D-187), or on to the place go to picked (D-196).
           onArrived={() => {
             useCanvasView.setState({ focusArrived: true })
-            fitRef.current()
+            const { pending } = useGoTo.getState()
+            useGoTo.setState({ pending: null })
+            if (pending?.space === focused.id) goToPlace(wid, pending, true)
+            else fitRef.current()
           }}
           onLeft={left}
         >

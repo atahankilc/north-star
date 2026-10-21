@@ -170,6 +170,18 @@
   transform: scaleX(1);
 }
 
+/* Grey like the side nav's fit (go to, D-196), lit while hovered or open. */
+.icon[data-quiet] {
+  color: var(--fg-dim);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.icon[data-quiet]:hover,
+.icon[data-quiet]:focus-visible,
+.icon[data-quiet][aria-expanded='true'] {
+  color: var(--fg-strong);
+}
+
 .panel {
   composes: frame from './Frame.module.css';
   position: absolute;
@@ -241,6 +253,10 @@
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.item[data-indent] {
+  padding-left: calc(var(--space-3) + 1.2em + var(--space-2));
 }
 
 .item:hover,

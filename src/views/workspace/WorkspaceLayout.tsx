@@ -15,6 +15,7 @@ import { labelBox, useAuthor } from './TextItems'
 import { spaceBounds } from './spaceBounds'
 import { TYPE_ACCENT } from './PlaneCards'
 import { InboxButton } from './ThreadInbox'
+import { placesIn, useGoTo } from './goTo'
 import { usePresenceSession } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
 import {
@@ -106,6 +107,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             <>
               {editor && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
               <FitButton wid={wid} plane={focused?.id ?? null} />
+              <GoToButton plane={focused?.id ?? null} />
             </>
           }
         />
@@ -137,6 +139,40 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
         <rect x="6" y="6" width="6" height="6" fill="none" stroke="currentColor" strokeWidth="1" />
       </svg>
     </button>
+  )
+}
+
+// The side nav's go-to (D-196), under fit: the places in the space you're in (on the canvas, each plane's own under it),
+// with a search field; 1–9 go to the first nine. The canvas does the going.
+function GoToButton({ plane }: { plane: string | null }) {
+  const { pieces, labels, workspace } = useWs()
+  const places = placesIn(plane ?? CANVAS, pieces, labels, workspace.name)
+  const go = places.map((p, i) => ({
+    key: p.id,
+    label: p.label,
+    glyph: p.glyph,
+    hint: i < 9 ? `${i + 1}` : undefined,
+    indent: p.inside,
+    onSelect: () => useGoTo.setState({ asked: p }),
+  }))
+  return (
+    <Menu
+      icon
+      quiet
+      right
+      label={
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+          {/* A compass, its needle to the north. */}
+          <circle cx="9" cy="9" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M9 3.5 11 9H7z" fill="currentColor" />
+          <path d="M7 9h4l-2 5.5z" fill="none" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+        </svg>
+      }
+      ariaLabel={plane ? 'Go to a place in the plane' : 'Go to a place on the canvas'}
+      search="find a place"
+      empty={plane ? 'Write a heading or draw a named section (+) to go to it from here' : 'Planes, the project title, headings and named sections show here'}
+      items={go.length ? [{ key: 'head', heading: plane ? 'go to · in the plane' : 'go to · on the canvas' }, ...go] : []}
+    />
   )
 }
 

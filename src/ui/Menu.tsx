@@ -19,6 +19,8 @@ export type MenuEntry =
       hint?: string
       // Shown before the label (an action's mark).
       glyph?: string
+      // Set in under the item before it (go to's places inside a plane, D-196).
+      indent?: boolean
     }
   | { key: string; heading: string }
 
@@ -38,6 +40,8 @@ type Props = {
   primary?: boolean
   // An unframed icon trigger like the settings gear, its glyph magenta (the side nav's `+`, D-178).
   icon?: boolean
+  // That icon grey like the side nav's fit, not magenta (go to, D-196).
+  quiet?: boolean
   // A filter that's narrowing what you see: the trigger stays lit.
   active?: boolean
   ariaLabel: string
@@ -48,7 +52,7 @@ type Props = {
 
 const text = (n: ReactNode): string => (typeof n === 'string' || typeof n === 'number' ? String(n) : '')
 
-export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, active, ariaLabel, empty, search }: Props) {
+export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, active, ariaLabel, empty, search }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const field = useRef<HTMLInputElement>(null)
@@ -104,6 +108,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
         aria-haspopup="menu"
         aria-expanded={open}
         data-active={active || undefined}
+        data-quiet={quiet || undefined}
         aria-controls={open ? id : undefined}
         aria-label={ariaLabel}
         onClick={() => (open ? close(false) : setOpen(true))}
@@ -150,6 +155,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
                     className={styles.item}
                     role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
                     aria-checked={item.checked}
+                    data-indent={item.indent || undefined}
                     tabIndex={-1}
                     style={item.tone ? { ['--tone' as string]: item.tone } : undefined}
                     onClick={() => {
