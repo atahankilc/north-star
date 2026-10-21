@@ -1,27 +1,35 @@
-// A matrix's setup (D-204), from the focus dock's `[setup]`: a framed panel over the bottom middle of the screen, above
-// the dock (the right of the screen stays free). Start from a template; each axis takes every card of a type (on any plane
-// or one), named rows added by hand and single cards; the cells are a scale (its steps edited here: glyph, name, colour),
-// a number (with a unit) or a text; `not relevant`, how sure and the reading are switched on and off. Every change is one
-// undo step; typing in a field merges into one.
-import type { ReactNode } from 'react'
+// A matrix's setup (D-212): a tabbed panel over the bottom middle of its space (the screen in focus, a pane beside a
+// plane, D-211), above the dock: rows · columns · cells · options, and `start over from ▾` (a template; ⌘Z brings back
+// what it replaced). The same editors make a new matrix in the wizard (MatrixWizard.tsx), on a draft instead of the
+// piece. An axis takes every card of a type (on any plane or one) and what's added by hand: cards and typed names. The
+// cells are a mark from a scale (its steps edited here: glyph, name, colour; shown as squares or as their glyphs), a
+// number (with a unit) or a few words. Options: `doesn't apply`, guesses marked, the totals (where, and as what).
+// Every change is one undo step; typing in a field merges into one.
+import { useState, type ReactNode } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { CARD_TYPES, type CardType } from '../../data/cards'
+import { CARD_TYPES } from '../../data/cards'
 import { kindOfPiece } from '../../data/pieces'
 import {
-  addNamed,
   CELL_KINDS,
+  entriesOf,
   GLYPH_MAX,
   LABEL_MAX,
   MAX_STEPS,
+  NAME_MAX,
   newId,
+  removeEntry,
   SCALES,
   setPart,
   setSetup,
   TEMPLATES,
   TONE_VAR,
   TONES,
+  TOTALS_AS,
+  TOTALS_AT,
   type Axis,
+  type AxisItem,
+  type CellKind,
   type MatrixSetup,
   type Step,
 } from '../../data/matrix'
@@ -29,175 +37,352 @@ import { Menu, type MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { useWs } from './context'
-import { addCard, setupOf, useMatrixUi } from './Matrix'
+import { closeMatrixSetup, openMatrixSetup, setupOf, setupTab, SETUP_TABS, StepSquare, useMatrixUi, type SetupTab } from './Matrix'
 import { TYPE_ACCENT } from './PlaneCards'
 import styles from './Matrix.module.css'
 
-const NONE = 'none'
 const ANY = 'any'
+const TAB_NAME: Record<SetupTab, string> = { rows: 'rows', cols: 'columns', cells: 'cells', options: 'options' }
+
+// One part of a setup changed: on the piece (one undo step each), or on the wizard's draft.
+export type SetPart = <K extends keyof MatrixSetup>(part: K, value: MatrixSetup[K] | undefined, key?: string) => void
 
 export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
-  const { wid } = useWs()
+  const { wid, cards, cells } = useWs()
   const setup = setupOf(piece)
-  const part = <K extends keyof MatrixSetup>(k: K, v: MatrixSetup[K] | undefined, key?: string) => void setPart(wid, piece.id, k, v, key)
-  const close = () => useMatrixUi.setState({ setup: false })
+  const tab = setupTab(useMatrixUi((s) => s.setup)) ?? 'rows'
+  const part: SetPart = (k, v, key) => void setPart(wid, piece.id, k, v, key)
+  const count = { rows: entriesOf(setup.rows, cards).length, cols: entriesOf(setup.cols, cards).length }
+  // Taking a typed entry out takes its cells too, as its `×` on the table does.
+  const removeItem = (which: 'rows' | 'cols', item: AxisItem) =>
+    void removeEntry(wid, piece.id, setup, which, { key: item.cardId ?? item.id, name: item.name ?? '', item, auto: false }, cells)
+  const restart: MenuEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setSetup(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
   return (
-    <section className={styles.setup} aria-label="Set up the matrix" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
+    <section className={styles.setup} aria-label="Set up the matrix" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), closeMatrixSetup())}>
       <header className={styles.setupHead}>
-        <span className={styles.setupTitle}>set up</span>
-        <button className={styles.tool} title="close (Esc)" onClick={close}>
-          done
-        </button>
+        <nav className={styles.tabs} role="tablist" aria-label="Setup">
+          {SETUP_TABS.map((t) => (
+            <button key={t} role="tab" aria-selected={t === tab} className={styles.tab} onClick={() => openMatrixSetup(t)}>
+              {TAB_NAME[t]}
+              {(t === 'rows' || t === 'cols') && <span className={styles.tabCount}>{count[t]}</span>}
+            </button>
+          ))}
+        </nav>
+        <span className={styles.setupEnd}>
+          <Menu label="start over from" up quiet ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows, columns and cells' }, ...restart]} />
+          <button className={styles.tool} title="close (Esc)" onClick={closeMatrixSetup}>
+            done
+          </button>
+        </span>
       </header>
-
-      <Row label="start from">
-        {TEMPLATES.map((t) => (
-          <button key={t.key} className={styles.tool} title={`${t.hint}; replaces the rows, columns and cells' kind (⌘Z brings them back)`} onClick={() => void setSetup(wid, piece.id, t.setup(), piece.name ? undefined : t.name)}>
-            {t.name}
-          </button>
-        ))}
-      </Row>
-
-      <AxisRow label="rows" which="rows" piece={piece} axis={setup.rows} />
-      <AxisRow label="columns" which="cols" piece={piece} axis={setup.cols} />
-
-      <Row label="cells">
-        {CELL_KINDS.map((k) => (
-          <button key={k} className={styles.tool} aria-pressed={setup.cell === k} onClick={() => part('cell', k)}>
-            {k}
-          </button>
-        ))}
-      </Row>
-      {setup.cell === 'scale' && <StepsEditor steps={setup.steps} onChange={(steps, key) => part('steps', steps, key)} />}
-      {setup.cell === 'number' && (
-        <Row label="unit">
-          <AutosaveField className={styles.field} label="unit" placeholder="€, h, %…" maxLength={20} value={setup.unit ?? ''} onSave={(u) => part('unit', u.trim() || undefined, 'unit')} />
-        </Row>
-      )}
-
-      <Row label="also">
-        <Toggle on={!!setup.notRelevant} label="— not relevant" title="a cell can say they aren't comparable at all: left out of the readings" onChange={(v) => part('notRelevant', v || undefined)} />
-        <Toggle on={!!setup.confidence} label="how sure ~ ?" title="a cell can say how sure it is: documented, ~ inferred, ? a guess" onChange={(v) => part('confidence', v || undefined)} />
-        <Toggle on={!!setup.reading} label="reading" title="each row and column summed up at its end" onChange={(v) => part('reading', v || undefined)} />
-      </Row>
+      <div className={styles.setupBody} role="tabpanel">
+        {(tab === 'rows' || tab === 'cols') && (
+          <AxisEditor key={tab} which={tab} axis={setup[tab]} onChange={(a, key) => part(tab, a, key)} onRemoveItem={(item) => removeItem(tab, item)} />
+        )}
+        {tab === 'cells' && <CellsEditor setup={setup} onChange={part} />}
+        {tab === 'options' && <OptionsEditor setup={setup} onChange={part} />}
+      </div>
     </section>
   )
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+export function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <div className={styles.setupRow}>
-      <span className={styles.setupLabel}>{label}</span>
+      <span className={styles.setupLabel} title={hint}>
+        {label}
+      </span>
       <div className={styles.setupValue}>{children}</div>
     </div>
   )
 }
 
-function Toggle({ on, label, title, onChange }: { on: boolean; label: string; title: string; onChange: (v: boolean) => void }) {
+function Toggle({ on, label, hint, onChange }: { on: boolean; label: string; hint: string; onChange: (v: boolean) => void }) {
   return (
-    <button className={styles.check} aria-pressed={on} title={title} onClick={() => onChange(!on)}>
-      <span className={styles.box}>{on ? '[x]' : '[ ]'}</span> {label}
+    <button className={styles.check} aria-pressed={on} onClick={() => onChange(!on)}>
+      <span className={styles.box}>{on ? '[x]' : '[ ]'}</span>
+      <span>
+        {label}
+        <small className={styles.checkHint}>{hint}</small>
+      </span>
     </button>
   )
 }
 
-// An axis: every card of a type (on one plane or any), then what's added by hand: a name, or one card.
-function AxisRow({ label, which, piece, axis }: { label: string; which: 'rows' | 'cols'; piece: WithId<Piece>; axis: Axis }) {
-  const { wid, cards, pieces } = useWs()
-  const setup = setupOf(piece)
-  const set = (a: Axis) => void setPart(wid, piece.id, which, a)
-  const planes = pieces.filter((p) => kindOfPiece(p) === 'plane')
-  const hidden = axis.hide?.length ?? 0
-  const picks: MenuEntry[] = CARD_TYPES.flatMap((t) => {
-    const of = cards.filter((c) => c.type === t)
-    if (!of.length) return []
-    return [
-      { key: `h-${t}`, heading: `${t}s` },
-      ...of.map((c) => ({ key: c.id, label: c.title || `untitled ${t}`, glyph: '▌', tone: TYPE_ACCENT[t], onSelect: () => addCard(wid, piece, which, c) })),
-    ]
-  })
+// Pick one of a few: framed choices, the picked one cyan.
+function Choices<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: ReactNode; hint?: string }[]; onChange: (v: T) => void }) {
   return (
-    <Row label={label}>
-      <span className={styles.inline}>
-        every
-        <Select<CardType | typeof NONE>
-          ariaLabel={`${label}: every card of a type`}
-          className={styles.select}
-          value={axis.type ?? NONE}
-          options={[{ value: NONE, label: 'nothing' }, ...CARD_TYPES.map((t) => ({ value: t, label: t }))]}
-          onChange={(v) => set({ ...axis, type: v === NONE ? undefined : v, hide: undefined })}
-        />
-      </span>
-      {axis.type && planes.length > 0 && (
-        <span className={styles.inline}>
-          on
-          <Select
-            ariaLabel={`${label}: on which plane`}
-            className={styles.select}
-            value={axis.plane ?? ANY}
-            options={[{ value: ANY, label: 'any plane' }, ...planes.map((p) => ({ value: p.id, label: p.name || 'unnamed plane' }))]}
-            onChange={(v) => set({ ...axis, plane: v === ANY ? undefined : v })}
-          />
-        </span>
-      )}
-      {hidden > 0 && (
-        <button className={styles.tool} title="bring back the cards taken out" onClick={() => set({ ...axis, hide: undefined })}>
-          {hidden} taken out
+    <span className={styles.choices}>
+      {options.map((o) => (
+        <button key={o.value} className={styles.choice} aria-pressed={o.value === value} title={o.hint} onClick={() => onChange(o.value)}>
+          {o.label}
         </button>
-      )}
-      <button className={styles.tool} onClick={() => void addNamed(wid, piece.id, setup, which).then((id) => useMatrixUi.setState({ naming: id }))}>
-        + name
-      </button>
-      {picks.length > 0 && <Menu label="+ card" up search="find a card" ariaLabel={`Add a card to the ${label}`} items={picks} />}
-    </Row>
+      ))}
+    </span>
   )
 }
 
-// The scale's steps, low to high: a glyph, a name, a colour (click to change), taken out by `×`. Presets replace them.
-function StepsEditor({ steps, onChange }: { steps: Step[]; onChange: (steps: Step[], key?: string) => void }) {
-  const edit = (i: number, s: Partial<Step>, key?: string) => onChange(steps.map((x, j) => (j === i ? { ...x, ...s } : x)), key)
+type AxisProps = {
+  which: 'rows' | 'cols'
+  axis: Axis
+  onChange: (a: Axis, key?: string) => void
+  // On a piece, a typed entry goes with its cells; on a draft it's just dropped.
+  onRemoveItem?: (item: AxisItem) => void
+}
+
+// An axis: every card of one type (on any plane or one), then what's added by hand, cards and typed names; and what one
+// of them is called in the corner.
+export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
+  const { cards, pieces } = useWs()
+  const [name, setName] = useState('')
+  const planes = pieces.filter((p) => kindOfPiece(p) === 'plane')
+  const hidden = axis.hide?.length ?? 0
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  const on = new Set([...entriesOf(axis, cards).map((e) => e.key)])
+  const ofType = (t: string) => cards.filter((c) => c.type === t && (!axis.plane || c.pieceId === axis.plane)).length
+  const picks: MenuEntry[] = CARD_TYPES.flatMap((t) => {
+    const of = cards.filter((c) => c.type === t && !on.has(c.id))
+    if (!of.length) return []
+    return [
+      { key: `h-${t}`, heading: `${t}s` },
+      ...of.map((c) => ({ key: c.id, label: c.title || `untitled ${t}`, glyph: '▌', tone: TYPE_ACCENT[t], onSelect: () => onChange({ ...axis, items: [...axis.items, { id: newId(), cardType: c.type, cardId: c.id }] }) })),
+    ]
+  })
+  const addName = () => {
+    const n = name.trim().slice(0, NAME_MAX)
+    if (!n) return
+    onChange({ ...axis, items: [...axis.items, { id: newId(), name: n }] })
+    setName('')
+  }
+  const drop = (item: AxisItem) => (onRemoveItem ? onRemoveItem(item) : onChange({ ...axis, items: axis.items.filter((i) => i !== item) }))
   return (
     <>
-      <Row label="scale">
-        {SCALES.map((sc) => (
-          <button key={sc.key} className={styles.tool} title="replace the steps" onClick={() => onChange(sc.steps)}>
-            {sc.name}
-          </button>
-        ))}
-      </Row>
-      <ol className={styles.steps}>
-        {steps.map((s, i) => (
-          <li key={s.id} className={styles.step}>
-            <span className={styles.stepKey}>{i + 1}</span>
-            <AutosaveField className={styles.glyphField} label={`step ${i + 1} glyph`} maxLength={GLYPH_MAX} value={s.glyph} onSave={(g) => g.trim() && edit(i, { glyph: g.trim() }, `glyph:${s.id}`)} />
-            <AutosaveField className={styles.field} label={`step ${i + 1} name`} maxLength={LABEL_MAX} value={s.label} onSave={(l) => l.trim() && edit(i, { label: l.trim() }, `label:${s.id}`)} />
+      <Row label="all cards of" hint="they join and leave by themselves as cards are made or deleted">
+        <span className={styles.choices}>
+          {CARD_TYPES.map((t) => (
             <button
-              className={styles.tone}
-              style={{ ['--tone' as string]: TONE_VAR[s.tone] }}
-              title={`colour: ${s.tone} (click for the next)`}
-              aria-label={`Step ${i + 1} colour, ${s.tone}`}
-              onClick={() => edit(i, { tone: TONES[(TONES.indexOf(s.tone) + 1) % TONES.length] })}
+              key={t}
+              className={styles.choice}
+              aria-pressed={axis.type === t}
+              style={{ ['--type' as string]: TYPE_ACCENT[t] }}
+              title={axis.type === t ? 'click again for none' : `every ${t}`}
+              onClick={() => onChange({ ...axis, type: axis.type === t ? undefined : t, hide: undefined })}
             >
-              ■
+              <span className={styles.typeTick} aria-hidden />
+              {t}s <span className={styles.tabCount}>{ofType(t)}</span>
             </button>
-            {steps.length > 1 && (
-              <button className={styles.remove} data-shown title="take the step out (cells set to it read as empty)" aria-label={`Take step ${i + 1} out`} onClick={() => onChange(steps.filter((x) => x !== s))}>
+          ))}
+        </span>
+      </Row>
+      {axis.type && (
+        <Row label="on">
+          <Select
+            ariaLabel={`${which}: on which plane`}
+            className={styles.select}
+            value={axis.plane ?? ANY}
+            options={[{ value: ANY, label: 'any plane' }, ...planes.map((p) => ({ value: p.id, label: p.name || 'unnamed plane' }))]}
+            onChange={(v) => onChange({ ...axis, plane: v === ANY ? undefined : v })}
+          />
+          {hidden > 0 && (
+            <button className={styles.tool} title="bring back the cards taken out" onClick={() => onChange({ ...axis, hide: undefined })}>
+              {hidden} hidden · show
+            </button>
+          )}
+        </Row>
+      )}
+      <Row label="added by hand" hint="single cards of any type, or names that aren't cards (criteria, questions…)">
+        {axis.items.map((item) => {
+          const c = item.cardId ? byId.get(item.cardId) : undefined
+          if (item.cardId && !c) return null
+          return (
+            <span key={item.id} className={styles.item} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined}>
+              {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
+              <button className={styles.remove} data-shown aria-label="Take it out" onClick={() => drop(item)}>
                 ×
               </button>
-            )}
-          </li>
-        ))}
-      </ol>
-      {steps.length < MAX_STEPS && (
-        <div className={styles.setupRow}>
-          <span className={styles.setupLabel} />
-          <div className={styles.setupValue}>
-            <button className={styles.tool} onClick={() => onChange([...steps, { id: newId(), glyph: '◆', label: 'new step', tone: 'fg' }])}>
-              + step
+            </span>
+          )
+        })}
+        {picks.length > 0 && <Menu label="+ a card" up search="find a card" ariaLabel={`Add a card to the ${which === 'rows' ? 'rows' : 'columns'}`} items={picks} />}
+        <input
+          className={styles.field}
+          value={name}
+          maxLength={NAME_MAX}
+          placeholder="+ type a name, enter"
+          aria-label="Add a name"
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            e.stopPropagation()
+            if (e.key === 'Enter') addName()
+          }}
+        />
+      </Row>
+      <Row label="called" hint="what one of them is, in the table's corner">
+        <AutosaveField className={styles.field} label="called" placeholder={axis.type ? `${axis.type}s` : 'names'} maxLength={40} value={axis.noun ?? ''} onSave={(n) => n.trim() !== (axis.noun ?? '') && onChange({ ...axis, noun: n.trim() || undefined }, 'noun')} />
+      </Row>
+    </>
+  )
+}
+
+const KIND: Record<CellKind, { label: ReactNode; hint: string }> = {
+  scale: { label: 'a mark', hint: 'from a scale: none → full, yes / no, 1 – 5, or your own' },
+  number: { label: 'a number', hint: 'a price, hours, a score; the totals give the average' },
+  text: { label: 'a few words', hint: 'up to 200 characters; the totals count what is written' },
+}
+
+// What goes in a cell: a mark from a scale (its steps), a number (its unit) or a few words.
+export function CellsEditor({ setup, onChange }: { setup: MatrixSetup; onChange: SetPart }) {
+  return (
+    <>
+      <Row label="a cell holds">
+        <span className={styles.kinds}>
+          {CELL_KINDS.map((k) => (
+            <button key={k} className={styles.kind} aria-pressed={setup.cell === k} onClick={() => onChange('cell', k)}>
+              <span className={styles.kindSample} aria-hidden>
+                {k === 'scale' ? setup.steps.slice(-3).map((s) => <StepSquare key={s.id} steps={setup.steps} step={s} />) : k === 'number' ? `42${setup.unit ?? ''}` : 'beta only'}
+              </span>
+              {KIND[k].label}
+              <small>{KIND[k].hint}</small>
             </button>
-          </div>
-        </div>
+          ))}
+        </span>
+      </Row>
+      {setup.cell === 'scale' && (
+        <>
+          <Row label="start from">
+            {SCALES.map((sc) => (
+              <button key={sc.key} className={styles.tool} title="replace the steps" onClick={() => onChange('steps', sc.steps)}>
+                {sc.name}
+              </button>
+            ))}
+          </Row>
+          <StepsEditor steps={setup.steps} marks={!!setup.marks} onChange={(steps, key) => onChange('steps', steps, key)} />
+          <Row label="show as" hint="squares filled to the step, or the steps' own glyphs">
+            <Choices
+              value={setup.marks ? 'marks' : 'squares'}
+              options={[
+                { value: 'squares', label: 'squares' },
+                { value: 'marks', label: 'glyphs' },
+              ]}
+              onChange={(v) => onChange('marks', v === 'marks' || undefined)}
+            />
+          </Row>
+        </>
+      )}
+      {setup.cell === 'number' && (
+        <Row label="unit">
+          <AutosaveField className={styles.field} label="unit" placeholder="€, h, %…" maxLength={20} value={setup.unit ?? ''} onSave={(u) => onChange('unit', u.trim() || undefined, 'unit')} />
+        </Row>
       )}
     </>
+  )
+}
+
+// The scale's steps, low to high: the key that sets it, how it shows, a glyph, a name, a colour (click for the next),
+// taken out by `×`.
+function StepsEditor({ steps, marks, onChange }: { steps: Step[]; marks: boolean; onChange: (steps: Step[], key?: string) => void }) {
+  const edit = (i: number, s: Partial<Step>, key?: string) => onChange(steps.map((x, j) => (j === i ? { ...x, ...s } : x)), key)
+  return (
+    <ol className={styles.steps}>
+      {steps.map((s, i) => (
+        <li key={s.id} className={styles.step}>
+          <span className={styles.stepKey}>{i + 1}</span>
+          <span className={styles.stepLook} style={{ ['--tone' as string]: TONE_VAR[s.tone] }}>
+            {marks ? s.glyph : <StepSquare steps={steps} step={s} />}
+          </span>
+          <AutosaveField className={styles.glyphField} label={`step ${i + 1} glyph`} maxLength={GLYPH_MAX} value={s.glyph} onSave={(g) => g.trim() && edit(i, { glyph: g.trim() }, `glyph:${s.id}`)} />
+          <AutosaveField className={styles.field} label={`step ${i + 1} name`} maxLength={LABEL_MAX} value={s.label} onSave={(l) => l.trim() && edit(i, { label: l.trim() }, `label:${s.id}`)} />
+          <button
+            className={styles.tone}
+            style={{ ['--tone' as string]: TONE_VAR[s.tone] }}
+            title={`colour: ${s.tone} (click for the next)`}
+            aria-label={`Step ${i + 1} colour, ${s.tone}`}
+            onClick={() => edit(i, { tone: TONES[(TONES.indexOf(s.tone) + 1) % TONES.length] })}
+          >
+            ■
+          </button>
+          {steps.length > 1 && (
+            <button className={styles.remove} data-shown title="take the step out (cells set to it read as empty)" aria-label={`Take step ${i + 1} out`} onClick={() => onChange(steps.filter((x) => x !== s))}>
+              ×
+            </button>
+          )}
+        </li>
+      ))}
+      {steps.length < MAX_STEPS && (
+        <li className={styles.step}>
+          <span className={styles.stepKey} />
+          <button className={styles.tool} onClick={() => onChange([...steps, { id: newId(), glyph: '◆', label: 'new step', tone: 'fg' }])}>
+            + step
+          </button>
+        </li>
+      )}
+    </ol>
+  )
+}
+
+const AT_NAME: Record<(typeof TOTALS_AT)[number], string> = { head: 'in the heads', end: 'at the ends', both: 'both' }
+const AS_NAME: Record<(typeof TOTALS_AS)[number], string> = { squares: 'squares', number: 'a number', bar: 'a line' }
+
+// `doesn't apply`, guesses marked, and the totals: whether, where and as what.
+export function OptionsEditor({ setup, onChange }: { setup: MatrixSetup; onChange: SetPart }) {
+  return (
+    <>
+      <Row label="cells">
+        <Toggle on={!!setup.notRelevant} label={'allow "doesn\'t apply" (—)'} hint="the two can't be compared; left out of the totals. Key -" onChange={(v) => onChange('notRelevant', v || undefined)} />
+        <Toggle on={!!setup.confidence} label="mark guesses" hint="~ inferred, ? a guess, in the cell's corner; documented has no mark" onChange={(v) => onChange('confidence', v || undefined)} />
+      </Row>
+      <Row label="totals">
+        <Toggle on={!!setup.reading} label="show totals" hint="each row and column summed up" onChange={(v) => onChange('reading', v || undefined)} />
+      </Row>
+      {setup.reading && (
+        <>
+          <Row label="where">
+            <Choices value={setup.totalsAt ?? 'head'} options={TOTALS_AT.map((v) => ({ value: v, label: AT_NAME[v] }))} onChange={(v) => onChange('totalsAt', v === 'head' ? undefined : v)} />
+          </Row>
+          <Row label="as" hint={setup.cell === 'scale' ? undefined : 'numbers show their average, words how many are written'}>
+            {setup.cell === 'scale' ? (
+              <Choices
+                value={setup.totalsAs ?? 'squares'}
+                options={TOTALS_AS.map((v) => ({
+                  value: v,
+                  label: (
+                    <>
+                      <TotalsSample as={v} steps={setup.steps} /> {AS_NAME[v]}
+                    </>
+                  ),
+                }))}
+                onChange={(v) => onChange('totalsAs', v === 'squares' ? undefined : v)}
+              />
+            ) : (
+              <span className={styles.checkHint}>{setup.cell === 'number' ? 'the average' : 'how many are written'}</span>
+            )}
+          </Row>
+        </>
+      )}
+    </>
+  )
+}
+
+// How each look of the totals reads, small, in the choice.
+function TotalsSample({ as, steps }: { as: (typeof TOTALS_AS)[number]; steps: Step[] }) {
+  const tones = steps.slice(-3).map((s) => TONE_VAR[s.tone])
+  if (as === 'number') return <span className={styles.sampleNum}>3/5</span>
+  if (as === 'bar')
+    return (
+      <span className={styles.sampleBar} aria-hidden>
+        {tones.map((t, i) => (
+          <span key={i} style={{ background: t, flexGrow: i + 1 }} />
+        ))}
+        <span style={{ flexGrow: 2 }} />
+      </span>
+    )
+  return (
+    <span className={styles.sampleSquares} aria-hidden>
+      {tones.map((t, i) => (
+        <i key={i} style={{ background: t }} />
+      ))}
+      <i data-empty />
+      <i data-empty />
+    </span>
   )
 }

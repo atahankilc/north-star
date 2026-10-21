@@ -231,6 +231,10 @@ const setup = { rows: axis('feature'), cols: { items: [{ id: 'a1', name: 'price'
 await allow('a matrix on the canvas (D-204)', () => setDoc(doc(sub(bob.fs, 'pieces'), 'm1'), { ...piece, kind: 'matrix', matrix: setup }))
 await deny('a plane with a matrix setup', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, matrix: setup }))
 await deny('a matrix with an unknown cell kind', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'matrix', matrix: { ...setup, cell: 'colour' } }))
+await allow('a matrix with totals at both ends as a line, cells as marks (D-212)', () =>
+  setDoc(doc(sub(bob.fs, 'pieces'), 'm2'), { ...piece, kind: 'matrix', matrix: { ...setup, totalsAt: 'both', totalsAs: 'bar', marks: true } }))
+await deny('a matrix with totals somewhere unknown', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'matrix', matrix: { ...setup, totalsAt: 'side' } }))
+await deny('a matrix with totals as a pie', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'matrix', matrix: { ...setup, totalsAs: 'pie' } }))
 await deny('a matrix axis of an unknown type', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'matrix', matrix: { ...setup, rows: axis('video') } }))
 await allow('a matrix cell', () => setDoc(doc(sub(bob.fs, 'cells'), 'm1_f1_a1'), { matrixId: 'm1', row: 'f1', col: 'a1', value: 'no', updatedAt: 1 }))
 await allow('a matrix cell with a number, a note, not relevant and a confidence', () =>

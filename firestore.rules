@@ -215,7 +215,10 @@ service cloud.firestore {
         && m.cell in ['scale', 'number', 'text']
         && m.steps is list && m.steps.size() <= 9
         && optText(m, 'unit', 20)
-        && optBool(m, 'notRelevant') && optBool(m, 'confidence') && optBool(m, 'reading');
+        && optBool(m, 'notRelevant') && optBool(m, 'confidence') && optBool(m, 'reading')
+        // The totals' place and look, a scale's cells as marks (D-212).
+        && optIn(m, 'totalsAt', ['head', 'end', 'both']) && optIn(m, 'totalsAs', ['squares', 'number', 'bar'])
+        && optBool(m, 'marks');
     }
 
     // Where a lens's rows come from (D-209, src/data/source.ts): rules, cards taken out, entries added by hand.

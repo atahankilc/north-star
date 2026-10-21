@@ -5,7 +5,7 @@
 // themselves, and entries added by hand, each a card or just a typed name. A card's row reads its live title.
 // The cells hold one kind of value for the whole matrix: a scale of named steps (○ ◐ ● ★, ✓ ✕, 1–5…, editable), a
 // number or a short text; each cell may also carry a note, and, when the matrix allows them, `not relevant` (—, left out
-// of the readings) and how sure it is (~ inferred, ? a guess). The reading column and row sum up each row and column.
+// of the readings) and how sure it is (~ inferred, ? a guess). The totals sum up each row and column (D-212).
 //
 // The setup lives on the piece (`matrix`); the cells in `cells/{matrixId}_{row}_{col}`, so a cell can't be made twice.
 // A row or column is keyed by its card's id, or by its typed entry's own id.
@@ -56,8 +56,19 @@ export type MatrixSetup = {
   unit?: string
   notRelevant?: boolean
   confidence?: boolean
+  // The totals (D-212): each row and column summed up, in its head, at its end or both (the head when unset); as
+  // squares, a number or a line of the steps' shares (squares when unset).
   reading?: boolean
+  totalsAt?: TotalsAt
+  totalsAs?: TotalsAs
+  // A scale's cells as their steps' glyphs instead of squares filled to the step (D-212).
+  marks?: boolean
 }
+
+export const TOTALS_AT = ['head', 'end', 'both'] as const
+export type TotalsAt = (typeof TOTALS_AT)[number]
+export const TOTALS_AS = ['squares', 'number', 'bar'] as const
+export type TotalsAs = (typeof TOTALS_AS)[number]
 
 export const CONFIDENCES = ['documented', 'inferred', 'guess'] as const
 export type Confidence = (typeof CONFIDENCES)[number]
@@ -164,6 +175,8 @@ export function entriesOf(a: Axis, cards: Card[]): Entry[] {
 
 // What one row or column is called in the corner: `features`, `criteria`.
 export const nounOf = (a: Axis) => a.noun || (a.type ? `${a.type}s` : 'names')
+// One of them, on the `+` at the axis's end: `feature`, else `row` / `column`.
+export const oneOf = (a: Axis, which: 'rows' | 'cols') => a.type ?? (which === 'rows' ? 'row' : 'column')
 
 export const cellKey = (matrixId: string, row: string, col: string) => `${matrixId}_${row}_${col}`
 const cellsCol = (wid: string) => collection(db(), 'workspaces', wid, 'cells')

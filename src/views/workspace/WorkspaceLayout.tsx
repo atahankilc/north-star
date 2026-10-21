@@ -8,8 +8,9 @@ import { setReadOnly } from '../../data/history'
 import type { WithId } from '../../data/hooks'
 import type { JoinRequest, PieceKind } from '../../data/model'
 import { addPiece, isBare, KIND_NAME, kindOfPiece } from '../../data/pieces'
-import { TEMPLATES, type MatrixSetup } from '../../data/matrix'
-import { matrixBounds } from './Matrix'
+import type { MatrixSetup } from '../../data/matrix'
+import { matrixBounds, useMatrixUi } from './Matrix'
+import { MatrixWizard } from './MatrixWizard'
 import { tableBounds } from './Table'
 import { TEMPLATES as TABLE_TEMPLATES, type TableSetup } from '../../data/table'
 import { addCard, CARD_TYPES, type CardType } from '../../data/cards'
@@ -242,36 +243,39 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     useCanvasView.setState({ cardSelected: id, cardEditing: id })
   }
   return (
-    <Menu
-      icon
-      right
-      label={
-        // Drawn, not a glyph: a font's `+` is small and sits off centre.
-        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
-          <path d="M10 2v16M2 10h16" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-      }
-      ariaLabel={plane ? 'Add to the plane' : 'Add to the canvas'}
-      items={
-        plane
-          ? [
-              { key: 'cards', heading: 'card' },
-              ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
-              ...text,
-            ]
-          : [
-              { key: 'canvas', heading: 'on the canvas' },
-              { key: 'plane', label: 'plane', glyph: '▦', onSelect: () => void add('plane') },
-              // A matrix (D-204), from one of its templates; its setup changes all of it after.
-              { key: 'matrix', heading: 'matrix' },
-              ...TEMPLATES.map((t) => ({ key: `matrix-${t.key}`, label: t.name, glyph: '⊞', onSelect: () => void add('matrix', t) })),
-              // A table (D-209): rows from rules, columns of the cards' fields and its own.
-              { key: 'table', heading: 'table' },
-              ...TABLE_TEMPLATES.map((t) => ({ key: `table-${t.key}`, label: t.name, glyph: '☰', onSelect: () => void add('table', t) })),
-              ...text,
-            ]
-      }
-    />
+    <>
+      <Menu
+        icon
+        right
+        label={
+          // Drawn, not a glyph: a font's `+` is small and sits off centre.
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
+            <path d="M10 2v16M2 10h16" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        }
+        ariaLabel={plane ? 'Add to the plane' : 'Add to the canvas'}
+        items={
+          plane
+            ? [
+                { key: 'cards', heading: 'card' },
+                ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
+                ...text,
+              ]
+            : [
+                { key: 'canvas', heading: 'on the canvas' },
+                { key: 'plane', label: 'plane', glyph: '▦', onSelect: () => void add('plane') },
+                // A matrix (D-204), made in its wizard (D-212); its setup changes all of it after.
+                { key: 'matrix', label: 'matrix…', glyph: '⊞', hint: 'two lists crossed', onSelect: () => useMatrixUi.setState({ wizard: true }) },
+                // A table (D-209): rows from rules, columns of the cards' fields and its own.
+                { key: 'table', heading: 'table' },
+                ...TABLE_TEMPLATES.map((t) => ({ key: `table-${t.key}`, label: t.name, glyph: '☰', onSelect: () => void add('table', t) })),
+                ...text,
+              ]
+        }
+      />
+      {/* A new matrix's wizard (D-212), opened from the item above. */}
+      <MatrixWizard />
+    </>
   )
 }
 
