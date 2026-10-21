@@ -361,7 +361,8 @@
 
 .titleAbout {
   margin: 0;
-  color: var(--fg);
+  /* Written, it reads a step quieter than the name (the old board drew it at 72 %). */
+  color: color-mix(in srgb, var(--fg) 72%, transparent);
   font-family: var(--font-display);
   font-size: 26px;
   line-height: 1.4;
@@ -395,10 +396,10 @@
   transition: none;
 }
 
-/* Corner brackets, like a viewfinder: its hover and selection marks. Grey, lit on hover, cyan when selected. */
+/* Corner brackets, like a viewfinder: its hover and selection marks. The canvas's edge grey, cyan when selected. */
 .bracket {
   position: absolute;
-  border: 0 solid var(--line-hover);
+  border: 0 solid var(--edge);
   pointer-events: none;
 }
 
@@ -406,10 +407,6 @@
 .bracket[data-corner='ne'] { top: 0; right: 0; border-top-width: 3px; border-right-width: 3px; }
 .bracket[data-corner='se'] { bottom: 0; right: 0; border-bottom-width: 3px; border-right-width: 3px; }
 .bracket[data-corner='sw'] { bottom: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
-
-.title[data-live='true']:hover > .bracket {
-  border-color: var(--fg-dim);
-}
 
 .title:is([data-selected='true'], [data-pressed='true']) > .bracket {
   border-color: var(--accent-cyan);
@@ -515,6 +512,11 @@
   height: 18px;
   margin-top: -9px;
   background: var(--accent-cyan);
+}
+
+/* The title's right edge drags its width with nothing drawn on it, as on the old board. */
+.title > .edge::after {
+  display: none;
 }
 
 /* Turned, the edge runs across. */
