@@ -3430,4 +3430,8 @@ categories shown like B, not in a card, and the features under them not indented
   sonunda neden extradan bır column var … üstüne çok düşünülmediğini belli eden detaylar var".
 - *Alternatives:* the quiet grid (A2), the plotter (D), the terminal printout (E); setup in place on the table (S1) or
   as lists (S3). Not taken.
+- *Verified:* rules tests 382 passed (new: totals where / as, marks; unknown values refused); Firestore rules deployed;
+  headless Chrome on emulators: the focused matrix (card heads, squares, `?` / `~` and the note's fold in the corners,
+  hover and selected corner marks), a typed column added from the dashed card, the setup's four tabs, totals at both
+  ends as a line, the wizard's steps and preview; no console errors; typecheck and build.
 
