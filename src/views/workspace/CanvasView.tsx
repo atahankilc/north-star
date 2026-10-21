@@ -275,6 +275,14 @@ export function CanvasView() {
     return () => ro.disconnect()
   }, [])
 
+  // Opening a workspace, the first time in this tab, frames everything on its canvas at once (D-202), as fit does;
+  // coming back finds the canvas where it was left.
+  useEffect(() => {
+    if (size.w === 0 || useCanvasView.getState().cams[wid]) return
+    fitCanvas(wid, [...pieces, ...canvasLabels.map(labelBox)], true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wid, size.w])
+
   // Wheel zoom round the pointer; a listener of our own, since React's wheel handlers are passive.
   useEffect(() => {
     const el = root.current

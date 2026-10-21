@@ -86,8 +86,8 @@ export function fitInto(b: Bounds, w: number, h: number, pad: number) {
   return { zoom, cx: b.x + b.w / 2, cy: b.y + b.h / 2 }
 }
 
-// Everything on the canvas in view (D-186), or its origin at zoom 1 when there's nothing.
-export function fitCanvas(wid: string, pieces: Bounds[]) {
+// Everything on the canvas in view (D-186), or its origin at zoom 1 when there's nothing. `instant`: no glide (opening, D-202).
+export function fitCanvas(wid: string, pieces: Bounds[], instant = false) {
   const { size } = useCanvasView.getState()
   let to: Cam = { x: 0, y: 0, zoom: 1 }
   if (pieces.length) {
@@ -99,7 +99,8 @@ export function fitCanvas(wid: string, pieces: Bounds[]) {
     const { zoom, cx, cy } = fitInto({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, size.w, size.h, 96)
     to = { x: -cx * zoom, y: -cy * zoom, zoom }
   }
-  glide(camOf(wid), to, 420, (c) => setCam(wid, c))
+  if (instant) setCam(wid, to)
+  else glide(camOf(wid), to, 420, (c) => setCam(wid, c))
 }
 
 // The focused plane's contents in view (D-186): what's in it, centred and fitted to the screen. A plane holds nothing
