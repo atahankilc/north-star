@@ -3074,3 +3074,13 @@ categories shown like B, not in a card, and the features under them not indented
   open; then: 340 px wide with no conversation, 840 with one; its top edge dragged up 150 px → 708 px tall, still that
   after a reload; 15 messages sent back to back, the wheel scrolled the conversation (410 → 110 px) and left the canvas
   still; build.
+
+### D-198 · 2026-10-21 · Accepted (adds to D-184's ways into focus)
+- *Decision:* a double-click on a plane on the canvas takes it into focus, the same as its console's `[focus]` (the
+  ink, D-185). Not in edit mode (there a press moves and resizes it), not through canvas text over it, a comment chip,
+  a button or the name field; a double-click on empty canvas does nothing. It stops following, as any going does. The
+  plane is found by the point under the pointer (`elementFromPoint`), since the pan's pointer capture sends the click
+  to the canvas.
+- *Why:* the user: "bir panele iki kez tıklanırsa paneli focusa al".
+- *Verified:* headless Chrome on the emulators: double-click on empty canvas and on a plane in edit mode stayed on the
+  canvas; on a plane out of edit mode the ink spread and the address took `?focus=`.

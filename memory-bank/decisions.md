@@ -171,7 +171,7 @@ piece; check them with the user then.
   tab inside the bottom-right corner on the bottom edge, magenta marks on its top corners (D-189), `[focus] [edit]`, no `▸` before them (no name, no zoom: D-186);
   the cards' corner marks, grey on hover; edit mode = a faint dashed cyan edge, long cyan corner marks that resize, short
   bars at the edge middles, and the console a cyan status line `EDIT 960 × 600 [delete] [done]` (D-182, D-189).
-- Focus (D-184, D-185): `[focus]` makes a plane the view, `?focus=<id>` (back leaves, reload stays). Going in, the plane
+- Focus (D-184, D-185): `[focus]` (or a double-click on the plane, not in edit mode, D-198) makes a plane the view, `?focus=<id>` (back leaves, reload stays). Going in, the plane
   spreads over the screen like ink, cell by cell on the 9 px grid, nearest first with a ragged edge (820 ms, eased both
   ends); nothing zooms and its `+` marks never move (the layer carries them on the plane's grid at the canvas's zoom).
   `[unfocus]` or Esc draws it back into the plane (700 ms). The plane's console goes the moment it starts; in focus, once

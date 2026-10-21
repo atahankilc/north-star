@@ -370,6 +370,19 @@ export function CanvasView() {
     if (selected && !pieces.some((p) => p.id === selected)) useCanvasView.setState({ selected: null })
   }, [selected, pieces])
 
+  // A double-click on a plane takes it into focus, as its console's `[focus]` does (D-198). Not in edit mode, and not
+  // through text, a chip or a button on it. Found by the point: the pan's pointer capture sends the click to the canvas.
+  const doubleClick = (e: React.MouseEvent) => {
+    if (focusedRef.current) return
+    const hit = document.elementFromPoint(e.clientX, e.clientY)
+    if (!hit || hit.closest('button, input, textarea, a')) return
+    const id = hit.closest<HTMLElement>('[data-target]')?.dataset.target?.match(/^plane:(.+)$/)?.[1]
+    const p = id && pieces.find((x) => x.id === id)
+    if (!p || useCanvasView.getState().editing.includes(p.id)) return
+    stopFollowing()
+    focus(p)
+  }
+
   const pan = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 && e.button !== 1) return
     useCanvasView.setState({ selected: null, labelSelected: null })
@@ -392,7 +405,7 @@ export function CanvasView() {
   }
 
   return (
-    <div ref={root} className={styles.canvas} onPointerDown={pan} onContextMenu={rightClick} aria-label="Canvas" role="application">
+    <div ref={root} className={styles.canvas} onPointerDown={pan} onDoubleClick={doubleClick} onContextMenu={rightClick} aria-label="Canvas" role="application">
       <div ref={lens} className={styles.lens}>
       <div
         className={styles.world}
