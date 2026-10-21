@@ -3150,3 +3150,18 @@ categories shown like B, not in a card, and the features under them not indented
   planeler arası gidip gelmede önceki konumu koruması iyi".
 - *Verified:* headless Chrome on the emulators: a reload framed the title, planes, headings and section; panned, into a
   plane and back out, the camera was exactly where it was panned to.
+
+### D-203 · 2026-10-21 · Accepted (brings D-150's card motion back, on planes; first step of the plane's old board back)
+- *Decision:* a plane's cards move as the old board's did (D-150), in the DOM: a card that arrives while you look (made
+  by you or anyone) builds up cell by cell (D-034's `runCells`, 320 ms); on the canvas a plane's cards build with the
+  page; in focus the ones already there are just there. Corner marks at the old sizes (80 px a unit): 17.6 px arms
+  2.4 px thick; hover grey 9.6 px out; selected the type colour 4.8 px out; pressed (or dragged) on the corners inside
+  the card, 25.6 px, the type colour; they glide between (160 ms). A drag (after 5 px) shrinks the card to 0.8 round
+  the point held, following the pointer freely, the marks on where it lands (snapped) at full size; let go, it grows
+  into them. No fade while dragged (the 0.85 before was new, the old board had none).
+- *Code:* `PlaneCards.tsx` splits a card into its box (place, marks, chips) and its face (`.card`, the part that shrinks).
+- *User:* "plane i eski gücüne kazandıralım. Yavaş yavaş plane ile ilgili olan her şeyi reintroduce edelim".
+- *Verified* headless: hover, press, drag (small card + landing marks), drop (selected), a card added in focus building
+  up; no console errors; build.
+- *Seen, not from this:* reloading with `?focus=` showed an empty black screen (no marks, no cards) headless, on the
+  committed card code too.

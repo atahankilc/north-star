@@ -187,6 +187,8 @@ piece; check them with the user then.
   label, Geist title ≤ 3 lines). Made from the side nav's `+` in focus (card types) at the view's middle, title typed at
   once; in focus click selects (corner marks), drag moves (snapped, alt free), double-click retitles, Delete removes;
   on the canvas they're a picture fitted in the plane, its marks following. Deleting a plane takes its cards.
+- Card motion on planes as D-150 (D-203): arriving cards build cell by cell, corner marks grey out on hover, in the
+  type colour just outside selected and on the corners pressed; a drag goes 0.8 under the pointer, marks where it lands.
   No side panel on a card click until it's refactored (the user's call).
 - Go to (D-196): a grey compass in the side nav under fit (search inside), no keys (D-201); on the canvas its planes (each
   with its own headings and sections on a line under it, folded until its framed `[▸ N inside]` opens them, D-200, D-201), project title, H1/H2 headings and named sections, in a focused plane its

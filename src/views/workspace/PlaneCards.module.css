@@ -19,29 +19,42 @@
   transform-origin: 0 0;
 }
 
+/* A card's place: where it is, or where it lands while dragged; its corner marks go by it. */
+.box {
+  position: absolute;
+  cursor: default;
+  user-select: none;
+}
+
+.layer[data-live='true'] .box {
+  cursor: grab;
+}
+
+.box[data-dragging='true'] {
+  z-index: 10;
+  cursor: grabbing;
+}
+
 /* A card as on the board (D-152): flat, no grey edge, its type as the left edge and the label; 0.06 of its width round
-   the inside (12 px). */
+   the inside (12 px). Dragged, it goes small under the pointer (`scale`, `translate` set inline); let go, it grows into
+   its marks. */
 .card {
   position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-3) var(--space-3) var(--space-3) calc(var(--space-3) + 3px);
   background: var(--bg-raised);
   box-shadow: inset 3px 0 0 var(--type);
-  cursor: default;
-  user-select: none;
+  transition:
+    scale 160ms var(--ease-out),
+    translate 160ms var(--ease-out);
 }
 
-.layer[data-live='true'] .card {
-  cursor: grab;
+.box[data-dragging='true'] .card {
+  transition: scale 160ms var(--ease-out);
 }
-
-.card[data-dragging='true'] {
-  cursor: grabbing;
-  opacity: 0.85;
-}
-
 .kind {
   color: var(--type);
   font-family: var(--font-mono);
@@ -85,26 +98,42 @@
   color: var(--placeholder);
 }
 
-/* Corner marks (D-150): grey just outside on hover, in the type's colour once selected. */
+/* Corner marks (D-150, the old board's CardCorners at 80 px a unit): grey a little out on hover; in the type's colour
+   just outside once selected; pressed or dragged, on its corners, inside it, longer. They glide between. */
 .mark {
+  --len: 17.6px;
+  --out: 9.6px;
+  --thick: 2.4px;
+  --at: calc(-1 * (var(--out) + var(--thick)));
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: var(--len);
+  height: var(--len);
   border: 0 solid var(--fg-dim);
   opacity: 0;
   pointer-events: none;
+  transition-property: top, right, bottom, left, width, height, border-color, opacity;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-out);
 }
 
-.mark[data-corner='nw'] { top: -4px; left: -4px; border-top-width: 1px; border-left-width: 1px; }
-.mark[data-corner='ne'] { top: -4px; right: -4px; border-top-width: 1px; border-right-width: 1px; }
-.mark[data-corner='se'] { bottom: -4px; right: -4px; border-bottom-width: 1px; border-right-width: 1px; }
-.mark[data-corner='sw'] { bottom: -4px; left: -4px; border-bottom-width: 1px; border-left-width: 1px; }
+.mark[data-corner='nw'] { top: var(--at); left: var(--at); border-top-width: var(--thick); border-left-width: var(--thick); }
+.mark[data-corner='ne'] { top: var(--at); right: var(--at); border-top-width: var(--thick); border-right-width: var(--thick); }
+.mark[data-corner='se'] { bottom: var(--at); right: var(--at); border-bottom-width: var(--thick); border-right-width: var(--thick); }
+.mark[data-corner='sw'] { bottom: var(--at); left: var(--at); border-bottom-width: var(--thick); border-left-width: var(--thick); }
 
-.layer[data-live='true'] .card:hover .mark {
+.layer[data-live='true'] .box:hover > .mark {
   opacity: 1;
 }
 
-.card[data-selected='true'] .mark {
+.box[data-selected='true'] > .mark {
+  --out: 4.8px;
+  border-color: var(--type);
+  opacity: 1;
+}
+
+.box[data-pressed='true'] > .mark {
+  --len: 25.6px;
+  --out: calc(-1 * var(--thick));
   border-color: var(--type);
   opacity: 1;
 }

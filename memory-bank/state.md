@@ -62,6 +62,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Competitor feature list opens on click only, category names in grey caps over un-indented rows, no tray, drawn over everything (D-173). 2026-10-20.
 - Go to back for every space (D-196): compass in the side nav under fit, no keys (D-201), planes' places folded (D-200); canvas (planes' insides too) and focused plane. 2026-10-21, not committed.
 - Threads panel as list + thread halves, nothing on the canvas, cell-by-cell build/break for the tab and each half, go there an icon in the header (D-199). 2026-10-21, committed.
+- Plane back to the old board's power, step by step (asked 2026-10-21): step 1, card motion (D-203), committed. Seen:
+  reloading with `?focus=` shows a black screen headless (not from D-203).
 - Focus dock on the bottom edge + plane console inside its bottom-right corner, no `▸` (D-189), committed 2026-10-21.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
   left side nav piece by piece, you + settings bottom left first (D-175); planes (D-180, first called boards) placed on the canvas from the side
@@ -69,7 +71,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   delete asks with hazard tape, 25 px snapping (D-182, D-183); `focus` spreads a plane over the screen like ink (D-184, D-185).
   Cards on planes (D-187); text anywhere, canvas or plane (D-188, D-190); cursors, total follow, selection marks (D-191);
   comment threads (D-192); text's old look back: section names, kickers, turns, the title's sizes and fold (D-194;
-  what else was lost is in D-194's *Not yet*). Next (asked): the old card animations back (arrive, press/select marks, drag at 0.8). All the old code archived in `src/archive/`, out of the build (D-177); features come back as pieces. Not pushed; RTDB + Firestore rules deployed 2026-10-20. Next: the board's cards
+  what else was lost is in D-194's *Not yet*). All the old code archived in `src/archive/`, out of the build (D-177); features come back as pieces. Not pushed; RTDB + Firestore rules deployed 2026-10-20. Next: the board's cards
   inside its piece (each board its own items: maybe a plane per board, D-139), then tables etc.; pieces in the export.
 
 ## Next steps

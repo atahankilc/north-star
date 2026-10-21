@@ -2,19 +2,27 @@
 // they're a picture, fitted in the plane, and the pointer passes through to the canvas (D-186); in focus they're live:
 // a click selects (the cards' corner marks, D-150), a drag moves (5 px first, snapped to the grid, alt = free, held where
 // dropped until the data's back), a double-click types the title, which a new card starts with.
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+// As on the old board (D-150): a card added while you look builds up cell by cell; pressed, its corner marks close in
+// on its corners in its colour; dragged, it goes 0.8 round the point held and follows the pointer, its marks on where
+// it lands at full size, and grows into them when let go.
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, cardRef, moveCard, retitleCard, TITLE_MAX, type Card, type CardType } from '../../data/cards'
 import type { Label } from '../../data/labels'
 import { TextItems } from './TextItems'
 import { PeerRing } from './collab'
 import { ThreadChip, threadOn } from './Threads'
 import { snap } from '../../data/grid'
+import { useRevealed } from '../../state/curtain'
+import { isReducedMotion } from '../../state/motion'
+import { runCells } from '../../ui/Appear'
 import type { PlaneCam } from '../../state/canvasView'
 import { useCanvasView } from '../../state/canvasView'
 import { useWs } from './context'
 import styles from './PlaneCards.module.css'
 
 const DRAG_PX = 5
+// A dragged card's size (the old board's CARRIED).
+const CARRIED = 0.8
 
 // Type = the left edge and the label in its colour (D-055, D-057).
 export const TYPE_ACCENT: Record<CardType, string> = {
@@ -39,12 +47,15 @@ type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; ed
 export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   const { wid } = useWs()
   const carry = cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
+  // The cards there when this opened are just there in focus (the plane's own picture was already showing them); on the
+  // canvas they build up with the page. Any card after that builds up as it arrives.
+  const [first] = useState(() => new Set(cards.map((c) => c.id)))
   return (
     <div className={styles.layer} data-live={live || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <TextItems labels={labels} layer="frames" live={live} editor={editor} zoom={view.zoom} carry={carry} />
         {cards.map((c) => (
-          <CardBox key={c.id} card={c} zoom={view.zoom} live={live} editor={editor} />
+          <CardBox key={c.id} card={c} zoom={view.zoom} live={live} editor={editor} arrive={!(live && first.has(c.id))} />
         ))}
         <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
       </div>
@@ -52,8 +63,25 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   )
 }
 
-function CardBox({ card, zoom, live, editor }: { card: Card; zoom: number; live: boolean; editor: boolean }) {
+type Drag = { free: [number, number]; at: [number, number] }
+
+function CardBox({ card, zoom, live, editor, arrive }: { card: Card; zoom: number; live: boolean; editor: boolean; arrive: boolean }) {
   const { wid, threads } = useWs()
+  const face = useRef<HTMLDivElement>(null)
+  const revealed = useRevealed()
+  useLayoutEffect(() => {
+    if (arrive && face.current && !isReducedMotion()) face.current.style.clipPath = 'polygon(0 0, 0 0, 0 0)'
+    // On mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEffect(() => {
+    if (!arrive || !revealed || !face.current) return
+    return runCells(face.current, 'enter', 0, 320)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealed])
+  const [pressed, setPressed] = useState(false)
+  // While dragged: where the card is under the pointer (free) and the point held in it, both in plane px.
+  const [drag, setDrag] = useState<Drag | null>(null)
   const selected = useCanvasView((s) => live && s.cardSelected === card.id)
   const typing = useCanvasView((s) => live && editor && s.cardEditing === card.id)
   const [held, setHeld] = useState<[number, number] | null>(null)
@@ -69,20 +97,28 @@ function CardBox({ card, zoom, live, editor }: { card: Card; zoom: number; live:
     // The plane would pan.
     e.stopPropagation()
     useCanvasView.setState({ cardSelected: card.id, labelSelected: null })
-    if (!editor || typing) return
+    if (typing) return
+    setPressed(true)
     const [sx, sy] = [e.clientX, e.clientY]
+    const rect = e.currentTarget.getBoundingClientRect()
+    const at: [number, number] = [(sx - rect.left) / zoom, (sy - rect.top) / zoom]
     let to: [number, number] | null = null
     const move = (ev: PointerEvent) => {
+      if (!editor) return
       const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
       if (!to && Math.hypot(dx, dy) < DRAG_PX) return
-      const at = (v: number) => (ev.altKey ? Math.round(v) : snap(v))
-      to = [at(card.x + dx / zoom), at(card.y + dy / zoom)]
+      const free: [number, number] = [card.x + dx / zoom, card.y + dy / zoom]
+      const place = (v: number) => (ev.altKey ? Math.round(v) : snap(v))
+      to = [place(free[0]), place(free[1])]
       setHeld(to)
+      setDrag({ free, at })
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
+      setPressed(false)
+      setDrag(null)
       if (to && (to[0] !== card.x || to[1] !== card.y)) void moveCard(wid, card, to).catch(() => setHeld(null))
       else setHeld(null)
     }
@@ -91,24 +127,30 @@ function CardBox({ card, zoom, live, editor }: { card: Card; zoom: number; live:
     window.addEventListener('pointercancel', up)
   }
 
+  // The face, small, under the pointer: from where it lands (the box) to where it is, shrunk round the point held.
+  const carried = drag ? { translate: `${drag.free[0] - x}px ${drag.free[1] - y}px`, scale: `${CARRIED}`, transformOrigin: `${drag.at[0]}px ${drag.at[1]}px` } : undefined
+
   return (
     <div
-      className={styles.card}
+      className={styles.box}
       style={{ left: x, top: y, width: CARD.w, height: CARD.h, ['--type' as string]: TYPE_ACCENT[card.type] }}
       data-selected={selected || undefined}
-      data-dragging={held ? true : undefined}
+      data-pressed={pressed || !!drag || undefined}
+      data-dragging={drag ? true : undefined}
       data-target={`card:${card.id}`}
       onPointerDown={press}
       onDoubleClick={live && editor ? () => useCanvasView.setState({ cardEditing: card.id, cardSelected: card.id }) : undefined}
     >
-      <span className={styles.kind}>{card.type}</span>
-      {typing ? (
-        <TitleField card={card} />
-      ) : (
-        <p className={styles.title} data-empty={!card.title || undefined}>
-          {card.title || PLACEHOLDER[card.type]}
-        </p>
-      )}
+      <div ref={face} className={styles.card} style={carried}>
+        <span className={styles.kind}>{card.type}</span>
+        {typing ? (
+          <TitleField card={card} />
+        ) : (
+          <p className={styles.title} data-empty={!card.title || undefined}>
+            {card.title || PLACEHOLDER[card.type]}
+          </p>
+        )}
+      </div>
       <i className={styles.mark} data-corner="nw" aria-hidden />
       <i className={styles.mark} data-corner="ne" aria-hidden />
       <i className={styles.mark} data-corner="se" aria-hidden />
