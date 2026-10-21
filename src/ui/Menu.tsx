@@ -21,7 +21,8 @@ export type MenuEntry =
       glyph?: string
       // Set in under the item before it (go to's places inside a plane, D-196).
       indent?: boolean
-      // What it holds folded under it: `▸ N` on its right opens it (so does → on the item, ← shuts it), `▾ N` shuts it.
+      // What it holds folded under it: `[▸ N inside]` on its right opens it (so does → on the item, ← shuts it), `[▾ …]`
+      // shuts it (D-201).
       fold?: { open: boolean; count: number; onToggle: () => void }
       // Folded away under the item before it: shown only while searching (D-200).
       folded?: boolean
@@ -164,6 +165,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
                     aria-checked={item.checked}
                     data-indent={item.indent || undefined}
                     data-key={item.key}
+                    data-open={item.fold?.open || undefined}
                     aria-expanded={item.fold?.open}
                     tabIndex={-1}
                     style={item.tone ? { ['--tone' as string]: item.tone } : undefined}
@@ -194,7 +196,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
                           item.fold!.onToggle()
                         }}
                       >
-                        {item.fold.open ? '▾' : '▸'} {item.fold.count}
+                        <span className={styles.foldCaret}>{item.fold.open ? '▾' : '▸'}</span> {item.fold.count} inside
                       </span>
                     )}
                     {item.hint && <span className={styles.hint}>{item.hint}</span>}

@@ -256,7 +256,23 @@
 }
 
 .item[data-indent] {
+  position: relative;
   padding-left: calc(var(--space-3) + 1.2em + var(--space-2));
+}
+
+/* A plane's places hang off a line down from its glyph (D-201), so what's inside reads as inside. */
+.item[data-indent]::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--space-3) + 0.45em);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--edge);
+}
+
+.item[data-open] {
+  color: var(--fg-strong);
 }
 
 .item:hover,
@@ -295,16 +311,28 @@
   font-size: var(--text-xs);
 }
 
-/* `▸ 2`: what an item holds folded under it (go to's planes, D-200). Its own click target. */
+/* `[▸ 2 inside]`: what an item holds folded under it (go to's planes, D-200, D-201), framed so it reads as its own
+   button; cyan while open or hovered. */
 .fold {
-  margin-left: auto;
-  padding: 0 var(--space-1);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4ch;
+  margin-left: var(--space-2);
+  padding: 1px var(--space-2);
+  border: 1px solid var(--edge);
   color: var(--fg-dim);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 
-.fold:hover {
+.foldCaret {
+  font-size: var(--text-sm);
+}
+
+.fold:hover,
+.item[data-open] .fold {
+  border-color: var(--accent-cyan);
   color: var(--accent-cyan);
 }
 

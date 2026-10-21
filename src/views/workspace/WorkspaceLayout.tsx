@@ -143,8 +143,8 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
 }
 
 // The side nav's go-to (D-196), under fit: the places in the space you're in (on the canvas, each plane's own under it,
-// folded until its `▸ N` opens them, D-200), with a search field that finds folded ones too; 1–9 go to the first nine
-// shown. The canvas does the going.
+// folded until its `▸ N inside` opens them, D-200, D-201), with a search field that finds folded ones too. No keys
+// (D-201). The canvas does the going.
 function GoToButton({ plane }: { plane: string | null }) {
   const { pieces, labels, workspace } = useWs()
   const open = useGoTo((s) => s.open)
@@ -152,15 +152,13 @@ function GoToButton({ plane }: { plane: string | null }) {
   const shown = shownPlaces(places, open)
   const inside = (id: string) => places.filter((p) => p.inside && p.space === id).length
   const go = places.map((p) => {
-    const i = shown.indexOf(p)
     const n = p.inside ? 0 : inside(p.id)
     return {
       key: p.id,
       label: p.label,
       glyph: p.glyph,
-      hint: i >= 0 && i < 9 ? `${i + 1}` : undefined,
       indent: p.inside,
-      folded: i < 0,
+      folded: !shown.includes(p),
       fold: n ? { open: open.includes(p.id), count: n, onToggle: () => toggleOpen(p.id) } : undefined,
       onSelect: () => useGoTo.setState({ asked: p }),
     }

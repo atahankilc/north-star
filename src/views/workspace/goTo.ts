@@ -1,8 +1,8 @@
 // Go to (D-196, the board's jump list D-050 back for every space): the places in the space you're in, in reading order
 // (top to bottom, then left to right). On the canvas its planes, each followed by the headings and sections inside it,
 // the project title, its headings (H1, H2) and named sections; in a focused plane its own headings and sections.
-// Paragraphs, sticky notes and H3s aren't places (D-116). Picked from the side nav's go-to (search inside) or with 1–9:
-// the view glides there; a place inside a plane, from the canvas, first takes the plane into focus (the ink), then glides.
+// Paragraphs, sticky notes and H3s aren't places (D-116). Picked from the side nav's go-to (search inside; no keys,
+// D-201): the view glides there; a place inside a plane, from the canvas, first takes the plane into focus (the ink), then glides.
 // A plane, a section or the title is framed whole (never past 100%); a heading lands near the top at 100%, so what's
 // under it is in sight.
 import type { WithId } from '../../data/hooks'
@@ -21,7 +21,7 @@ export const useGoTo = create<{ asked: Place | null; pending: Place | null; open
 
 export const toggleOpen = (plane: string) => useGoTo.setState((s) => ({ open: s.open.includes(plane) ? s.open.filter((x) => x !== plane) : [...s.open, plane] }))
 
-// What the list shows, which 1–9 count through: a plane's places only while it's open.
+// What the list shows: a plane's places only while it's open.
 export const shownPlaces = (places: Place[], open: string[]) => places.filter((p) => !p.inside || open.includes(p.space))
 
 // Where a heading's top lands, as a share of the screen's height.
