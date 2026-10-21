@@ -13,6 +13,8 @@ export type Rule = {
   not?: boolean
   // Any of these; for `title`, the words it holds (the first value).
   values: string[]
+  // Set by itself (D-210): the plane the table is stuck to. Changing it makes it yours; letting go takes it away.
+  auto?: boolean
 }
 
 // Added by hand, after the rules' cards: one card, or a typed name.

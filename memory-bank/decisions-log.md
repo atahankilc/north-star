@@ -3325,3 +3325,26 @@ categories shown like B, not in a card, and the features under them not indented
   canvas, focus on one, a number typed into `cost`, sorted by it, the setup with a type rule and the columns; no
   console errors; typecheck.
 
+### D-210 · 2026-10-22 · Accepted (D-209's *Next*, first half: lenses stick to planes)
+- *Decision:* a matrix or a table (not a plane) moved in edit mode within 48 screen px of a plane's edge **sticks**
+  there: the plane's edge lights cyan while it's near, the piece snaps one grid step (25 px) out from that edge (its top
+  or left lines up with the plane's when that's near too), and on the drop it's bound to the plane (`stuckTo`). Alt
+  held: free, no sticking. Pulled away and dropped elsewhere, it lets go.
+  - *What it shows:* a table gets a rule of its own, first in its list, `where plane is <the plane> · auto` (cyan);
+    changing that rule by hand makes it yours (no longer `auto`, kept when it lets go); letting go takes the `auto`
+    rule away. A matrix's typed axes take the plane (only where they had none, or the one sticking gave them; a plane
+    picked by hand stays) and lose it on letting go.
+  - *Moving together:* a plane moved or resized carries what's stuck to it (kept on the same edge, moved along it
+    with the plane), live while dragging and in the same undo step. A `⇆` chip in cyan, at screen size, sits in the
+    gap between them. A plane deleted leaves its pieces where they are (`stuckTo` kept, so ⌘Z binds them again).
+- *Data:* `pieces/{id}.stuckTo` (a plane's id; matrices and tables only, rules allow it); a table's rule may carry
+  `auto: true`.
+- *Next:* D-209's second half: in the plane's focus the dock lists what's stuck to it; each opens beside the plane,
+  the screen split, each half its own area.
+- *User:* "tamam çalıştı, commit at ve 2. adıma geç" (step 2 of the three: stick to a plane's edge, bound, moved with it).
+- *Verified:* rules tests 379 passed (new: a table stuck to a plane, a plane stuck to a plane denied); Firestore rules
+  deployed; headless Chrome on emulators: a table dragged near a plane's right edge lit it and snapped, its rows went
+  from 7 (every plane) to that plane's 5, the setup showed `where plane is … · auto`; the plane dragged 150 px down
+  carried the table and the `⇆`; the table dragged away let go (7 rows), ⌘Z stuck it back (5); no console errors;
+  typecheck.
+

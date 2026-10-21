@@ -156,6 +156,26 @@
   content: none;
 }
 
+/* A matrix or table about to stick to this plane (D-210): its edge in cyan. */
+.piece[data-stick='true'] {
+  border-color: var(--accent-cyan);
+}
+
+/* What's stuck to a plane (D-210): a small `⇆` in the gap between them, framed in cyan. */
+.seam {
+  position: absolute;
+  z-index: 2;
+  padding: 0 3px;
+  border: 1px solid var(--accent-cyan);
+  background: var(--bg);
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 14px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .piece[data-away='true'] {
   visibility: hidden;
 }

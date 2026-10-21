@@ -42,13 +42,17 @@ type State = {
   cardsLive: Record<string, [number, number]>
   // Things moving together while a section is dragged (D-188): their ids and how far, until the drop is written.
   dragShift: { ids: string[]; dx: number; dy: number } | null
+  // A matrix or table being moved near a plane's edge (D-210): the plane, lit, and where it would stick.
+  stickHint: { plane: string; box: { x: number; y: number; w: number; h: number } } | null
+  // Pieces stuck to a plane being moved or resized (D-210): where each is meanwhile.
+  following: Record<string, { x: number; y: number; w: number; h: number }>
 }
 
 export type PlaneCam = { ox: number; oy: number; zoom: number }
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {} }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, stickHint: null, following: {} }))
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({

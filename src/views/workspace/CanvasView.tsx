@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { deletePiece, pieceRef, KIND_NAME, isBare, kindOfPiece, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { deletePiece, followTo, pieceRef, KIND_NAME, isBare, kindOfPiece, placeLens, sideOf, stickTarget, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
@@ -97,6 +97,8 @@ export function CanvasView() {
     const kind = kindOfPiece(p)
     return kind === 'matrix' ? matrixBounds(p, cards) : kind === 'table' ? tableBounds(p, cards) : spaceBounds(cardsOf(p.id), labelsOf(p.id))
   }
+  // The planes as boxes, for sticking (D-210).
+  const planesBox = pieces.filter((p) => !isBare(p)).map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h }))
   // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
   const fitRef = useRef((_instant?: boolean) => {})
   fitRef.current = (instant = false) => {
@@ -485,8 +487,15 @@ export function CanvasView() {
             cards={cardsOf(p.id)}
             labels={labelsOf(p.id)}
             content={contentOf(p)}
+            planes={isBare(p) ? planesBox.filter((x) => x.id !== p.id) : []}
+            followers={isBare(p) ? [] : pieces.filter((f) => f.stuckTo === p.id && isBare(f))}
           />
         ))}
+        {/* What's stuck to a plane (D-210): a small `⇆` in the gap between them. */}
+        {pieces.map((p) => {
+          const plane = p.stuckTo && isBare(p) ? planesBox.find((x) => x.id === p.stuckTo) : undefined
+          return plane ? <Seam key={`seam-${p.id}`} piece={p} plane={plane} zoom={cam.zoom} /> : null
+        })}
         {/* The canvas's own sections over its planes (no fill, so they hide nothing), its text over them (D-188). */}
         <TextItems labels={canvasLabels} layer="frames" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
         <TextItems labels={canvasLabels} layer="text" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
@@ -561,7 +570,41 @@ export function CanvasView() {
 
 const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'Ctrl+Z'
 
-type BoxProps = { piece: WithId<Piece>; cam: Cam; selected: boolean; editing: boolean; editor: boolean; onFocus: () => void; focusing: boolean; cards: Card[]; labels: Label[]; content: Bounds | null }
+type BoxProps = {
+  piece: WithId<Piece>
+  cam: Cam
+  selected: boolean
+  editing: boolean
+  editor: boolean
+  onFocus: () => void
+  focusing: boolean
+  cards: Card[]
+  labels: Label[]
+  content: Bounds | null
+  // A matrix or a table: the planes it can stick to (D-210).
+  planes: (Box & { id: string })[]
+  // A plane: what's stuck to it, moved with it.
+  followers: WithId<Piece>[]
+}
+
+// The `⇆` between a plane and what's stuck to it (D-210), in the middle of the gap.
+// At screen size, whatever the zoom, like a thread's chip.
+function Seam({ piece, plane: at, zoom }: { piece: WithId<Piece>; plane: Box & { id: string }; zoom: number }) {
+  const box = useCanvasView((s) => s.following[piece.id]) ?? piece
+  const plane = useCanvasView((s) => s.following[at.id]) ?? at
+  const side = sideOf(box, plane)
+  const mid = (a0: number, a1: number, b0: number, b1: number) => (Math.max(a0, b0) + Math.min(a1, b1)) / 2
+  const [x, y] =
+    side === 'right' ? [(plane.x + plane.w + box.x) / 2, mid(box.y, box.y + box.h, plane.y, plane.y + plane.h)]
+    : side === 'left' ? [(box.x + box.w + plane.x) / 2, mid(box.y, box.y + box.h, plane.y, plane.y + plane.h)]
+    : side === 'bottom' ? [mid(box.x, box.x + box.w, plane.x, plane.x + plane.w), (plane.y + plane.h + box.y) / 2]
+    : [mid(box.x, box.x + box.w, plane.x, plane.x + plane.w), (box.y + box.h + plane.y) / 2]
+  return (
+    <span className={styles.seam} style={{ left: x, top: y, transform: `translate(-50%, -50%) scale(${1 / zoom})` }} title={`stuck to its plane: moves with it, shows its cards`} aria-hidden>
+      ⇆
+    </span>
+  )
+}
 
 // What a piece shows of what's in it on the canvas (D-187): a plane's cards and text centred and fitted inside its box,
 // never past 1; nothing = its own (0, 0) at its corner. Its px inside its 1 px edge. A matrix is a window: its table at
@@ -625,7 +668,7 @@ function dragBox(from: Box, handle: Handle, dx: number, dy: number, free: boolea
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
 
-function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, cards, labels, content }: BoxProps) {
+function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers }: BoxProps) {
   const { wid } = useWs()
   const kind = kindOfPiece(piece)
   // Where a move or resize has it, held after the drop until the data gets there (else it would jump back for a moment).
@@ -633,7 +676,11 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
   useEffect(() => {
     if (held && same(held, piece)) setHeld(null)
   }, [held, piece])
-  const box = held ?? piece
+  // Moved along with the plane it's stuck to (D-210), while that's dragged.
+  const following = useCanvasView((s) => s.following[piece.id])
+  const box = held ?? following ?? piece
+  // A matrix or table about to stick here (D-210): the plane's edge lights.
+  const stickHere = useCanvasView((s) => s.stickHint?.plane === piece.id)
   // Carried by a section being dragged (D-188).
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(piece.id) ? s.dragShift : null))
 
@@ -646,19 +693,41 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
     const [sx, sy] = [e.clientX, e.clientY]
     const from: Box = { x: piece.x, y: piece.y, w: piece.w, h: piece.h }
     let to: Box | null = null
+    // A matrix or table moved near a plane's edge sticks there (D-210); a plane carries what's stuck to it.
+    const lens = isBare(piece) && handle === 'move'
+    let stick: string | null = piece.stuckTo && planes.some((p) => p.id === piece.stuckTo) ? piece.stuckTo : null
+    const carried = followers.map((f) => ({ id: f.id, from: { x: f.x, y: f.y, w: f.w, h: f.h }, side: sideOf(f, from) }))
+    const followed = (b: Box) => carried.map((f) => ({ id: f.id, from: f.from, to: followTo(f.from, f.side, from, b) }))
     // On the window, not captured: a press that doesn't move stays a click.
     const move = (ev: PointerEvent) => {
       const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
       if (!to && Math.hypot(dx, dy) < DRAG_PX) return
       to = dragBox(from, handle, dx / cam.zoom, dy / cam.zoom, ev.altKey)
+      if (lens) {
+        // Within 48 screen px of an edge; alt held: free, no sticking.
+        const t = ev.altKey ? null : stickTarget(to, planes, 48 / cam.zoom)
+        stick = t?.plane ?? null
+        if (t) to = t.box
+        useCanvasView.setState({ stickHint: t ? { plane: t.plane, box: t.box } : null })
+      }
       setHeld(to)
+      // The plane too, so the `⇆` between them follows.
+      if (carried.length) useCanvasView.setState({ following: { ...Object.fromEntries(followed(to).map((f) => [f.id, f.to])), [piece.id]: to } })
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
-      if (to && !same(to, from)) void placePiece(wid, piece.id, from, to, kind).catch(() => setHeld(null))
-      else setHeld(null)
+      useCanvasView.setState({ stickHint: null })
+      // The followers stay where they were carried until their data's back.
+      const done = () => useCanvasView.setState({ following: {} })
+      if (to && !same(to, from)) {
+        const write = lens ? placeLens(wid, piece, from, to, stick) : placePiece(wid, piece.id, from, to, kind, followed(to))
+        void write.then(done, () => (setHeld(null), done()))
+      } else {
+        setHeld(null)
+        done()
+      }
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -689,6 +758,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       data-selected={selected || undefined}
       data-editing={editing || undefined}
       data-dragging={held ? true : undefined}
+      data-stick={stickHere || undefined}
       // What the right-click menu comments on (D-193).
       data-target={`plane:${piece.id}`}
       data-kind={kind}

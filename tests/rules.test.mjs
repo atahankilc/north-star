@@ -242,6 +242,8 @@ await allow('a table on the canvas (D-209)', () => setDoc(doc(sub(bob.fs, 'piece
 await deny('a plane with a table setup', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, table }))
 await deny('a table without its rows', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'table', table: { cols: [] } }))
 await deny('a table with rules that are not a list', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'table', table: { ...table, rows: { rules: 'all', items: [] } } }))
+await allow('a table stuck to a plane (D-210)', () => setDoc(doc(sub(bob.fs, 'pieces'), 't2'), { ...piece, kind: 'table', table, stuckTo: 'p1' }))
+await deny('a plane stuck to a plane', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, stuckTo: 'p1' }))
 await allow('a table cell', () => setDoc(doc(sub(bob.fs, 'cells'), 't1_f1_c2'), { matrixId: 't1', row: 'f1', col: 'c2', value: 1200, updatedAt: 1 }))
 // Cards on a plane (D-187).
 await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))

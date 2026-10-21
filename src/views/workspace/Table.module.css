@@ -434,3 +434,8 @@
 .dim {
   color: var(--fg-faint);
 }
+
+/* A rule set by sticking to a plane (D-210). */
+.auto {
+  color: var(--accent-cyan);
+}

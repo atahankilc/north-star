@@ -61,11 +61,109 @@ export async function addPiece(wid: string, kind: PieceKind, at: [number, number
 }
 
 // The end of a move or a resize (D-180): one undo step from the box it started as.
-export async function placePiece(wid: string, id: string, from: Box, to: Box, kind: PieceKind = 'plane') {
+// A plane's move or resize carries what's stuck to it (D-210), `followers` with where each goes: the same undo step.
+export async function placePiece(wid: string, id: string, from: Box, to: Box, kind: PieceKind = 'plane', followers: { id: string; from: Box; to: Box }[] = []) {
   const ref = doc(col(wid), id)
-  const before = await snapshotWith(ref, { ...from })
+  const refs = [ref, ...followers.map((f) => doc(col(wid), f.id))]
+  const before = (await Promise.all([snapshotWith(ref, { ...from }), ...followers.map((f, i) => snapshotWith(refs[i + 1], { ...f.from }))])).flat()
   const what = from.w === to.w && from.h === to.h ? 'move' : 'resize'
-  return tracked(`${what} a ${KIND_NAME[kind]}`, [ref], () => updateDoc(ref, { ...to, updatedAt: Date.now() }), { before })
+  return tracked(
+    `${what} a ${KIND_NAME[kind]}`,
+    refs,
+    () => {
+      const batch = writeBatch(db())
+      const now = Date.now()
+      batch.update(ref, { ...to, updatedAt: now })
+      followers.forEach((f, i) => batch.update(refs[i + 1], { ...f.to, updatedAt: now }))
+      return batch.commit()
+    },
+    { before },
+  )
+}
+
+// ---- Sticking (D-210): a matrix or a table dropped near a plane's edge sits one grid step out from it and is bound to
+// it: it moves with the plane, and what it shows is that plane's cards (a rule set by itself, `auto`, still changeable).
+// Pulled away, it lets go and its own rule goes.
+
+export type Side = 'left' | 'right' | 'top' | 'bottom'
+export const STICK_GAP = GRID
+
+// The plane whose edge `box` is within `reach` of (canvas px), and where it would sit there; its top (or left) edge
+// lines up with the plane's when that's near too.
+export function stickTarget(box: Box, planes: (Box & { id: string })[], reach: number): { plane: string; box: Box; side: Side } | null {
+  let best: { plane: string; box: Box; side: Side; d: number } | null = null
+  const near = (a: number, b: number) => Math.abs(a - b) < reach
+  for (const p of planes) {
+    const alongY = box.y < p.y + p.h && p.y < box.y + box.h
+    const alongX = box.x < p.x + p.w && p.x < box.x + box.w
+    const y = near(box.y, p.y) ? p.y : box.y
+    const x = near(box.x, p.x) ? p.x : box.x
+    const options: { side: Side; d: number; at: [number, number] }[] = []
+    if (alongY) {
+      options.push({ side: 'right', d: Math.abs(box.x - (p.x + p.w + STICK_GAP)), at: [p.x + p.w + STICK_GAP, y] })
+      options.push({ side: 'left', d: Math.abs(box.x + box.w - (p.x - STICK_GAP)), at: [p.x - STICK_GAP - box.w, y] })
+    }
+    if (alongX) {
+      options.push({ side: 'bottom', d: Math.abs(box.y - (p.y + p.h + STICK_GAP)), at: [x, p.y + p.h + STICK_GAP] })
+      options.push({ side: 'top', d: Math.abs(box.y + box.h - (p.y - STICK_GAP)), at: [x, p.y - STICK_GAP - box.h] })
+    }
+    for (const o of options)
+      if (o.d < reach && (!best || o.d < best.d)) best = { plane: p.id, side: o.side, d: o.d, box: { ...box, x: o.at[0], y: o.at[1] } }
+  }
+  return best && { plane: best.plane, box: best.box, side: best.side }
+}
+
+// Which side of `plane` a stuck piece sits on.
+export function sideOf(box: Box, plane: Box): Side {
+  const gaps: [Side, number][] = [
+    ['right', box.x - (plane.x + plane.w)],
+    ['left', plane.x - (box.x + box.w)],
+    ['bottom', box.y - (plane.y + plane.h)],
+    ['top', plane.y - (box.y + box.h)],
+  ]
+  return gaps.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
+}
+
+// Where a piece stuck on `side` goes when its plane becomes `to`: kept on that edge, its place along it moved with the
+// plane's matching corner.
+export function followTo(box: Box, side: Side, from: Box, to: Box): Box {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  if (side === 'right') return { ...box, x: to.x + to.w + STICK_GAP, y: box.y + dy }
+  if (side === 'left') return { ...box, x: to.x - STICK_GAP - box.w, y: box.y + dy }
+  if (side === 'bottom') return { ...box, x: box.x + dx, y: to.y + to.h + STICK_GAP }
+  return { ...box, x: box.x + dx, y: to.y - STICK_GAP - box.h }
+}
+
+// What a piece shows, bound to a plane or let go: a table's own plane rule (first), a matrix's typed axes' plane.
+function boundTo(piece: Piece, plane: string | null): Record<string, unknown> {
+  const was = piece.stuckTo ?? null
+  if (piece.kind === 'table' && piece.table) {
+    const rules = piece.table.rows.rules.filter((r) => !r.auto)
+    return { 'table.rows.rules': plane ? [{ field: 'plane', values: [plane], auto: true }, ...rules] : rules }
+  }
+  if (piece.kind === 'matrix' && piece.matrix) {
+    const out: Record<string, unknown> = {}
+    for (const which of ['rows', 'cols'] as const) {
+      const a = piece.matrix[which]
+      if (!a.type) continue
+      // Only a plane it had from being stuck, or none: one picked by hand stays.
+      if (plane && (!a.plane || a.plane === was)) out[`matrix.${which}.plane`] = plane
+      if (!plane && was && a.plane === was) out[`matrix.${which}.plane`] = deleteField()
+    }
+    return out
+  }
+  return {}
+}
+
+// The end of a matrix's or table's move: stuck to a plane, or let go; one undo step.
+export async function placeLens(wid: string, piece: Piece & { id: string }, from: Box, to: Box, stuck: string | null) {
+  const ref = doc(col(wid), piece.id)
+  const before = await snapshotWith(ref, { ...from })
+  const kind = kindOfPiece(piece)
+  const change = stuck === (piece.stuckTo ?? null) ? {} : { stuckTo: stuck ?? deleteField(), ...boundTo(piece, stuck) }
+  const what = stuck && stuck !== piece.stuckTo ? 'stick' : !stuck && piece.stuckTo ? 'unstick' : 'move'
+  return tracked(`${what} a ${KIND_NAME[kind]}`, [ref], () => updateDoc(ref, { ...to, ...change, updatedAt: Date.now() }), { before })
 }
 
 // Its name (D-179); empty takes it away, so it shows its kind again. Typing merges into one undo step.

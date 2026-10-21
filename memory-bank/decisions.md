@@ -207,7 +207,10 @@ piece; check them with the user then.
   like the matrix's (D-208, D-206's focus). Rows: a rule list (plane, type, status, tag, title; is / is not; any of the
   values; none required) + cards and names by hand; `×` hides or drops. Columns: the name first, then the cards' fields
   (read-only) and its own (scale, number + unit, text, check); a head's click sorts. Live in focus like the matrix;
-  `[setup]` in the dock. Next: lenses stick to a plane's edge and bind to it; in focus they open beside it, each half its own area.
+  `[setup]` in the dock. Next: in a plane's focus, what's stuck to it opens beside it, each half its own area.
+- Sticking (D-210): a matrix or table moved (edit mode) within 48 screen px of a plane's edge snaps one grid step out
+  from it, the edge lit cyan, and is bound (`stuckTo`; alt = free): a table gets `where plane is … · auto` (changed by
+  hand it's yours), a matrix's typed axes the plane; a plane moved or resized carries it; `⇆` in the gap; pulled away it lets go.
 - Go to (D-196): a grey compass in the side nav under fit (search inside), no keys (D-201); on the canvas its planes (each
   with its own headings and sections on a line under it, folded until its framed `[▸ N inside]` opens them, D-200, D-201), project title, H1/H2 headings and named sections, in a focused plane its
   headings and sections, in reading order; glides there (planes, sections, title framed whole; a heading at 100 % near

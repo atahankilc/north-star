@@ -57,8 +57,11 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
       ...of.map((c) => ({ key: c.id, label: c.title || `untitled ${t}`, glyph: '▌', tone: TYPE_ACCENT[t], onSelect: () => void addCardRow(wid, piece.id, setup, c) })),
     ]
   })
-  const setRule = (i: number, r: Rule | null, key?: string) =>
-    void setRows(wid, piece.id, { ...rows, rules: r ? rows.rules.map((x, j) => (j === i ? r : x)) : rows.rules.filter((_, j) => j !== i) }, key)
+  // A rule changed by hand is yours, even the one sticking set (D-210).
+  const setRule = (i: number, r: Rule | null, key?: string) => {
+    const own = r && (({ auto: _, ...rest }) => rest)(r)
+    void setRows(wid, piece.id, { ...rows, rules: own ? rows.rules.map((x, j) => (j === i ? own : x)) : rows.rules.filter((_, j) => j !== i) }, key)
+  }
   const addRule = (field: RuleField) => void setRows(wid, piece.id, { ...rows, rules: [...rows.rules, { field, values: [] }] })
   const col = (c: Column, change: Partial<Column>, key?: string) => void editColumn(wid, piece.id, setup, c.id, change, key)
 
@@ -227,6 +230,11 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
         ))
       ) : (
         <span className={styles.dim}>{rule.field === 'tag' ? 'no tags yet' : 'nothing to pick yet'}</span>
+      )}
+      {rule.auto && (
+        <span className={styles.auto} title="set by itself: the plane it's stuck to. Change it and it's yours">
+          · auto
+        </span>
       )}
       <button className={styles.remove} style={{ opacity: 1 }} title="take the rule out" aria-label="Take the rule out" onClick={onRemove}>
         ×

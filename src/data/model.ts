@@ -67,6 +67,8 @@ export type Piece = {
   name?: string
   matrix?: MatrixSetup
   table?: TableSetup
+  // A matrix or a table stuck to a plane's edge (D-210): moved with it, showing its cards.
+  stuckTo?: string
   createdAt: number
   updatedAt: number
 }

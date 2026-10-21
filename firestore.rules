@@ -193,6 +193,8 @@ service cloud.firestore {
         && (!('matrix' in d) || (d.kind == 'matrix' && validMatrix(d.matrix)))
         // A table's setup (D-209), on tables only.
         && (!('table' in d) || (d.kind == 'table' && validTable(d.table)))
+        // Stuck to a plane's edge (D-210): a matrix or a table.
+        && (!('stuckTo' in d) || (d.kind in ['matrix', 'table'] && isText(d.stuckTo, 128)))
         && d.createdAt is number
         && d.updatedAt is number;
     }
