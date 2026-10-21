@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-21 (D-174–D-185: canvas, planes, edit mode, hazard confirm, focus)_
+_Last updated: 2026-10-22 (D-174–D-185: canvas, planes, edit mode, hazard confirm, focus)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -62,7 +62,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Plane back to the old board's power, step by step (asked 2026-10-21): step 1, card motion (D-203); step 2, card inside
   (D-205, shown only, nothing sets it yet). Next proposed: links. Fixed 2026-10-21:
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
-- Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed.
+- Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A bare table on the canvas, its own focus (D-206), 2026-10-22.
 - Focus dock on the bottom edge + plane console inside its bottom-right corner, no `▸` (D-189), committed 2026-10-21.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
   left side nav piece by piece, you + settings bottom left first (D-175); planes (D-180, first called boards) placed on the canvas from the side

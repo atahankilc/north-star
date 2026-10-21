@@ -148,6 +148,37 @@
 .bar[data-handle='e'] { right: -5px; }
 .bar[data-handle='w'] { left: -5px; }
 
+/* A matrix (D-204) is just its table on the canvas: no edge, no fill, no marks; its name over it and its console under
+   its right end (its comment chip keeps the bottom-right corner). In focus its copy there glides out, so this one hides. */
+.piece[data-kind='matrix'] {
+  border: 0;
+  background: none;
+}
+
+.piece[data-kind='matrix']::before {
+  content: none;
+}
+
+.piece[data-away='true'] {
+  visibility: hidden;
+}
+
+.piece[data-kind='matrix'] .name {
+  top: auto;
+  bottom: 100%;
+  left: 0;
+  padding: 0 0 var(--space-1);
+  transform: none;
+  background: none;
+}
+
+.piece[data-kind='matrix'] .console {
+  right: 0;
+  bottom: 100%;
+  margin-bottom: var(--space-1);
+  border-bottom: 1px solid var(--line-hover);
+}
+
 .name {
   position: absolute;
   /* Over the plane's cards (D-187). */
@@ -291,6 +322,21 @@
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx) var(--my) / var(--mark) var(--mark);
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx) var(--my) / var(--mark) var(--mark);
   pointer-events: none;
+}
+
+/* A matrix in focus: no marks and nothing of its own behind; its page (`.page`) is what the cells build, under the table. */
+.focused[data-bare='true'] {
+  background: none;
+}
+
+.focused[data-bare='true']::before {
+  content: none;
+}
+
+.page {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
 }
 
 /* A plane's console while it's in focus or on its way (D-185): gone at once. */

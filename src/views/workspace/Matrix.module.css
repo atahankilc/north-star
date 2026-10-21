@@ -18,7 +18,7 @@
   transform-origin: 0 0;
 }
 
-/* Solid under its cells, so the piece's `+` marks show only round it. */
+/* Solid under its cells: on the canvas it's the whole piece, so the backdrop stays out from under its text. */
 .table {
   position: relative;
   background: var(--bg);
@@ -63,6 +63,13 @@
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
+}
+
+.corner > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .readFoot {

@@ -3182,7 +3182,7 @@ categories shown like B, not in a card, and the features under them not indented
     a note. Options: `not relevant` (—, left out of the readings), how sure (`~` inferred, `?` guess), the reading
     (each row and column summed up: a scale's steps as a bar in their colours + `set/of`, numbers' average, texts
     written). A value of another kind is kept when the kind changes, so changing back finds it.
-  - *Use:* on the canvas a picture fitted in its box, like a plane's cards. In focus (the ink, D-184) it's live: click
+  - *Use:* (its canvas look and way into focus changed by D-206) on the canvas a picture fitted in its box, like a plane's cards. In focus (the ink, D-184) it's live: click
     selects a cell (cyan `[ ]`), again steps a scale on; arrows move; 1–9 set a step; Backspace clears; `-` not
     relevant; Enter or a double-click types a number or text. Under the selected cell, at screen size, its bar (steps,
     not relevant, how sure, note). The focus dock gets `[setup]`: a framed panel over the bottom middle (templates,
@@ -3221,3 +3221,19 @@ categories shown like B, not in a card, and the features under them not indented
   and `competitorFeatures` (`cardFacts.ts`). New token `--chip`.
 - *Verified* headless (emulators, 2x): six cards with statuses, evidence, regions, priority, tags, an empty one, at
   zoom 1.6, 0.45 and 0.15; no console errors; build.
+
+### D-206 · 2026-10-22 · Accepted (changes D-204's look on the canvas and its way into focus)
+- *Decision:* a matrix isn't a plane. On the canvas it's just its table at its own size: no edge, no fill, no `+`
+  marks; the piece's box is the table's (worked out from its rows and columns, whatever `w`/`h` its doc holds), so
+  fit, a canvas section carrying it and its comment chip use the table's size. Its name sits in the table's corner
+  (what it crosses while unnamed), its console `[focus] [edit]` over its top-right end. Edit mode only moves it and
+  names it (the name field over it), no grips: there's nothing to resize. `[focus]` still makes it the whole screen,
+  but without the ink and marks: the table stays whole and glides (420 ms, fitPlane's fit) from where it sits to the
+  middle of the screen while a solid page builds behind it cell by cell in random order (D-034's cells); leaving runs
+  it back (the table home, the cells breaking). The canvas's copy hides meanwhile. Reduced motion: just there.
+- *User:* "neden matrixler plane gibi arka planda +ları var? Bu direkt konan bir tablo olsun. Focus diyince de tam
+  ekrana geçsin ama bunun için illa plane gibi mi olması lazım?"
+- *Alternatives:* the plane's ink kept for the matrix (it's the plane's motion); a zoom of the canvas into the table
+  (D-185 turned zooming down for planes). Not taken.
+- *Verified:* headless Chrome on emulators: canvas look, edit mode (move, name), focus in mid-way and arrived, leaving
+  mid-way and back, a reload in focus; no console errors; typecheck.

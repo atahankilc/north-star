@@ -5,6 +5,8 @@
 // Coming back (`[unfocus]`, Escape) the ink draws back into wherever the plane is now. Reduced motion: it's just there,
 // or just gone. In focus the wheel and drags are the plane's (D-186): they move its own view (`planeCam`), and going back
 // it glides home to how it sat on the canvas while the ink draws in.
+// A matrix (`bare`) isn't a plane: no marks, no ink. Its table stays whole and glides from where it sits to the middle of
+// the screen while the page fills in behind it cell by cell in random order (D-034's cells), and back the same way.
 import { useEffect, useLayoutEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -17,6 +19,8 @@ import styles from './CanvasView.module.css'
 
 const IN_MS = 820
 const OUT_MS = 700
+// A matrix's way in and out: the table's glide (fitPlane's) and its page's cells together.
+const BARE_MS = 420
 // How much the cells' order is left to chance: the rest is their distance from the plane.
 const RAGGED = 0.18
 
@@ -37,11 +41,17 @@ type Props = {
   lens: RefObject<HTMLDivElement | null>
   onArrived: () => void
   onLeft: () => void
+  // A matrix: no marks, the page built cell by cell behind its table instead of the ink.
+  bare?: boolean
+  // When going in starts (with the ink): a matrix's table starts gliding to the middle.
+  onSpread?: () => void
   children?: ReactNode
 }
 
-export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived, onLeft, children }: Props) {
+export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived, onLeft, bare = false, onSpread, children }: Props) {
   const layer = useRef<HTMLDivElement>(null)
+  // What the ink cuts: the layer itself, or a matrix's page behind its table.
+  const page = useRef<HTMLDivElement>(null)
   const reduced = isReducedMotion()
   const cam = useCanvasView((s) => s.planeCam) ?? home
   useLayoutEffect(() => {
@@ -108,14 +118,15 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
   // Going in. The canvas behind is hidden once the plane is the view, and shows again as it goes.
   useLayoutEffect(() => {
     const l = lens.current
-    const el = layer.current
+    const el = bare ? page.current : layer.current
     if (!l || !el) return
     if (!spread || reduced) {
       l.style.visibility = 'hidden'
       onArrived()
       return () => void (l.style.visibility = '')
     }
-    const stop = ink(el, at, 'in', IN_MS, () => {
+    onSpread?.()
+    const stop = ink(el, at, 'in', bare ? BARE_MS : IN_MS, bare ? 1 : RAGGED, () => {
       l.style.visibility = 'hidden'
       onArrived()
     })
@@ -130,14 +141,14 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
   // Coming back.
   useEffect(() => {
     const l = lens.current
-    const el = layer.current
+    const el = bare ? page.current : layer.current
     if (!leaving) return
     if (!l || !el || reduced) return onLeft()
     l.style.visibility = ''
     // Its own view goes home while the ink draws back, so its marks end where the plane's are.
     const { planeCam: c } = useCanvasView.getState()
-    if (c) glide(c, home, OUT_MS * 0.8, (v) => useCanvasView.setState({ planeCam: v }))
-    return ink(el, at, 'out', OUT_MS, onLeft)
+    if (c) glide(c, home, bare ? BARE_MS : OUT_MS * 0.8, (v) => useCanvasView.setState({ planeCam: v }))
+    return ink(el, at, 'out', bare ? BARE_MS : OUT_MS, bare ? 1 : RAGGED, onLeft)
     // When it starts leaving.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaving])
@@ -146,15 +157,16 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
   const step = GRID * cam.zoom
   const marks = { '--mark': `${step}px`, '--mx': `${cam.ox - step / 2}px`, '--my': `${cam.oy - step / 2}px` } as CSSProperties
   return (
-    <div ref={layer} className={styles.focused} style={marks} data-reduced={reduced || undefined} onPointerDown={pan} aria-label={piece.name || 'plane'}>
+    <div ref={layer} className={styles.focused} style={bare ? undefined : marks} data-bare={bare || undefined} data-reduced={reduced || undefined} onPointerDown={pan} aria-label={piece.name || 'plane'}>
+      {bare && <div ref={page} className={styles.page} aria-hidden />}
       {children}
     </div>
   )
 }
 
 // The ink: the layer cut to the cells it has reached. A cell's moment is its distance from the plane (0 inside it), plus
-// a little chance; going out runs it backwards. Cells sit on the layer's own 9 px grid.
-function ink(el: HTMLElement, at: ScreenRect, way: 'in' | 'out', ms: number, done: () => void) {
+// a little chance (`ragged`, 1 = chance alone); going out runs it backwards. Cells sit on the layer's own 9 px grid.
+function ink(el: HTMLElement, at: ScreenRect, way: 'in' | 'out', ms: number, ragged: number, done: () => void) {
   const w = el.clientWidth
   const h = el.clientHeight
   const cols = Math.ceil(w / CELL_PX)
@@ -169,7 +181,7 @@ function ink(el: HTMLElement, at: ScreenRect, way: 'in' | 'out', ms: number, don
       const cy = y * CELL_PX + CELL_PX / 2
       const dx = Math.max(l - cx, 0, cx - r)
       const dy = Math.max(t - cy, 0, cy - b)
-      when[y * cols + x] = dx === 0 && dy === 0 ? -1 : (Math.hypot(dx, dy) / far) * (1 - RAGGED) + cellHash(x, y) * RAGGED
+      when[y * cols + x] = dx === 0 && dy === 0 ? -1 : (Math.hypot(dx, dy) / far) * (1 - ragged) + cellHash(x, y) * ragged
     }
   const cut = (k: number) => {
     let path = ''

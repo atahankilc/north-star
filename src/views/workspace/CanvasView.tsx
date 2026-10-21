@@ -71,6 +71,7 @@ export function CanvasView() {
   const [params, setParams] = useSearchParams()
   const focusId = params.get('focus')
   const focused = focusId ? (pieces.find((p) => p.id === focusId) ?? null) : null
+  const focusedBare = Boolean(focused && kindOfPiece(focused) === 'matrix')
   const focusSpread = useCanvasView((s) => s.focusSpread)
   const focusArrived = useCanvasView((s) => s.focusArrived)
   const focusLeaving = useCanvasView((s) => s.focusLeaving)
@@ -88,11 +89,13 @@ export function CanvasView() {
   const matrixSetup = useMatrixUi((s) => s.setup)
   // What's in a piece, in its own px: a plane's cards and text, or a matrix's table (D-204).
   const contentOf = (p: WithId<Piece>) => (kindOfPiece(p) === 'matrix' ? matrixBounds(p, cards) : spaceBounds(cardsOf(p.id), labelsOf(p.id)))
+  // A matrix is just its table on the canvas: its box is the table's, whatever size its doc says.
+  const sized = pieces.map((p) => (kindOfPiece(p) === 'matrix' ? { ...p, ...sizeOf(matrixBounds(p, cards)) } : p))
   // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
   const fitRef = useRef((_instant?: boolean) => {})
   fitRef.current = (instant = false) => {
     if (focused) fitPlane(contentOf(focused), instant)
-    else fitCanvas(wid, [...pieces, ...canvasLabels.map(labelBox)])
+    else fitCanvas(wid, [...sized, ...canvasLabels.map(labelBox)])
   }
   // Go to (D-196): the side nav's list asks through `useGoTo`; no keys (D-201).
   // A place in the space you're in glides there; one in a plane, from outside it, waits for the plane to come into focus.
@@ -120,7 +123,7 @@ export function CanvasView() {
   focusedCardsRef.current = focusedCards
   const drawing = useCanvasView((s) => s.drawing)
   // What a canvas section carries besides text: the planes inside it.
-  const pieceCarry = pieces.map((p) => ({ id: p.id, ref: pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h }))
+  const pieceCarry = sized.map((p) => ({ id: p.id, ref: pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h }))
   // A point on screen (client px) in a space's px: the canvas's, or the focused plane's own view.
   const canvasToSpace = (cx: number, cy: number): [number, number] => {
     const r = root.current!.getBoundingClientRect()
@@ -171,7 +174,7 @@ export function CanvasView() {
       return { at: [b.x + b.w, b.y + b.h], gone: false }
     }
     if (t.on === 'plane') {
-      const p = pieces.find((x) => x.id === t.targetId)
+      const p = sized.find((x) => x.id === t.targetId)
       return p ? { at: [p.x + p.w, p.y + p.h], gone: false } : { at: [t.x, t.y], gone: true }
     }
     return { at: [t.x, t.y], gone: false }
@@ -439,7 +442,7 @@ export function CanvasView() {
         className={styles.world}
         style={{ transform: `translate(${onPixel(size.w / 2 + cam.x)}px, ${onPixel(size.h / 2 + cam.y)}px) scale(${cam.zoom})` }}
       >
-        {pieces.map((p) => (
+        {sized.map((p) => (
           <PieceBox
             key={p.id}
             piece={p}
@@ -463,8 +466,11 @@ export function CanvasView() {
         <FocusedPlane
           key={focused.id}
           piece={focused}
-          at={screenRect(focused)}
-          home={homeOf(focused, screenRect(focused), contentOf(focused))}
+          at={screenRect(sized.find((p) => p.id === focused.id) ?? focused)}
+          home={homeOf(focused, screenRect(sized.find((p) => p.id === focused.id) ?? focused), contentOf(focused))}
+          bare={focusedBare}
+          // A matrix's table glides from where it sits to the middle of the screen while the page fills in behind it.
+          onSpread={focusedBare ? () => fitRef.current() : undefined}
           spread={focusSpread}
           leaving={focusLeaving}
           lens={lens}
@@ -517,18 +523,22 @@ const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'C
 
 type BoxProps = { piece: WithId<Piece>; cam: Cam; selected: boolean; editing: boolean; editor: boolean; onFocus: () => void; focusing: boolean; cards: Card[]; labels: Label[]; content: Bounds | null }
 
-// What a piece shows of what's in it on the canvas (D-187): a plane's cards and text, or a matrix's table (D-204), centred
-// and fitted inside its box, never past 1; nothing = its own (0, 0) at its corner. Its px inside its 1 px edge.
-function innerView(box: Box, b: Bounds | null): PlaneCam {
-  if (!b) return { ox: 0, oy: 0, zoom: 1 }
+const sizeOf = (b: Bounds) => ({ w: b.w, h: b.h })
+
+// What a piece shows of what's in it on the canvas (D-187): a plane's cards and text centred and fitted inside its box,
+// never past 1; nothing = its own (0, 0) at its corner. Its px inside its 1 px edge. A matrix is its table as it is.
+function innerView(box: Box, b: Bounds | null, bare = false): PlaneCam {
+  if (!b || bare) return { ox: 0, oy: 0, zoom: 1 }
   const { zoom, cx, cy } = fitInto(b, box.w - 2, box.h - 2, GRID)
   return { ox: (box.w - 2) / 2 - cx * zoom, oy: (box.h - 2) / 2 - cy * zoom, zoom }
 }
 
 // That view on the screen, where focus starts from and goes back to.
-function homeOf(piece: Box, at: ScreenRect, content: Bounds | null): PlaneCam {
-  const v = innerView(piece, content)
-  return { ox: at.x + at.zoom * (1 + v.ox), oy: at.y + at.zoom * (1 + v.oy), zoom: at.zoom * v.zoom }
+function homeOf(piece: Piece, at: ScreenRect, content: Bounds | null): PlaneCam {
+  const bare = kindOfPiece(piece) === 'matrix'
+  const v = innerView(piece, content, bare)
+  const edge = bare ? 0 : 1
+  return { ox: at.x + at.zoom * (edge + v.ox), oy: at.y + at.zoom * (edge + v.oy), zoom: at.zoom * v.zoom }
 }
 
 // The focused matrix, live, on its own view (D-204).
@@ -627,7 +637,8 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
     onOpen: () => toggleInbox(true, piece.id),
   }
   // Its cards fitted inside it, and its marks with them (D-187).
-  const inner = innerView(box, content)
+  const bare = kind === 'matrix'
+  const inner = innerView(box, content, bare)
   const step = GRID * inner.zoom
   return (
     <div
@@ -637,12 +648,16 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       data-dragging={held ? true : undefined}
       // What the right-click menu comments on (D-193).
       data-target={`plane:${piece.id}`}
+      data-kind={kind}
+      // A matrix in focus is its focused copy's: the one here would show under it as it glides.
+      data-away={bare && focusing ? true : undefined}
       style={{ left: box.x + (shift?.dx ?? 0), top: box.y + (shift?.dy ?? 0), width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px` }}
       onPointerDown={press('move')}
     >
       {editing ? (
         <NameField value={piece.name ?? ''} placeholder={KIND_NAME[kind]} onSave={(name) => name !== (piece.name ?? '') && void renamePiece(wid, piece.id, name, kind)} />
-      ) : (
+      ) : bare ? null : (
+        // A matrix's name is in its table's corner.
         <span className={styles.name} data-unnamed={!piece.name || undefined}>
           {piece.name || KIND_NAME[kind]}
         </span>
@@ -652,14 +667,16 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       <ThreadChip wid={wid} thread={own} zoom={cam.zoom} />
       {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). */}
       {kind === 'matrix' ? <MatrixView piece={piece} view={inner} live={false} editor={editor} /> : <PlaneCards cards={cards} labels={labels} view={inner} live={false} editor={editor} />}
-      {CORNERS.map((h) => (
-        <span key={h} className={styles.mark} data-handle={h} onPointerDown={editing ? press(h) : undefined} aria-hidden />
+      {/* A matrix is as big as its table: nothing to resize, so in edit mode no grips. */}
+      {!(bare && editing) && CORNERS.map((h) => (
+        <span key={h} className={styles.mark} data-handle={h} onPointerDown={editing && !bare ? press(h) : undefined} aria-hidden />
       ))}
-      {editing && EDGES.map((h) => <span key={h} className={styles.bar} data-handle={h} onPointerDown={press(h)} aria-hidden />)}
+      {editing && !bare && EDGES.map((h) => <span key={h} className={styles.bar} data-handle={h} onPointerDown={press(h)} aria-hidden />)}
       <PlaneConsole
         // In focus, or on its way there or back (D-185), the plane's console isn't here.
         className={focusing ? styles.consoleAway : undefined}
         size={editing ? box : null}
+        noun={KIND_NAME[kind]}
         onEdit={editor ? () => setEditing(piece.id, !editing) : undefined}
         onDelete={() => useCanvasView.setState({ confirming: piece.id })}
         onFocus={onFocus}
@@ -716,18 +733,20 @@ type ConsoleProps = {
   // Its comments (D-193): on the plane and inside it, seen without going in; opens the threads panel on them.
   comments?: { count: number; fresh: boolean; mentioned: boolean; onOpen: () => void }
   size: Box | null
+  // What it is, in its tips: a plane, a matrix.
+  noun?: string
   onFocus: () => void
   onEdit?: () => void
   onDelete?: () => void
   className?: string
 }
 
-function PlaneConsole({ comments, size, onFocus, onEdit, onDelete, className }: ConsoleProps) {
+function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, className }: ConsoleProps) {
   return (
     <div
       className={`${styles.console} ${className ?? ''}`}
       role="toolbar"
-      aria-label="Plane"
+      aria-label={noun}
       data-editing={size ? true : undefined}
       onPointerDown={(e) => e.stopPropagation()}
     >
@@ -738,7 +757,7 @@ function PlaneConsole({ comments, size, onFocus, onEdit, onDelete, className }: 
             {size.w} × {size.h}
           </span>
           {onDelete && (
-            <button className={styles.tool} data-tone="danger" title="delete the plane (Delete)" onClick={onDelete}>
+            <button className={styles.tool} data-tone="danger" title={`delete the ${noun} (Delete)`} onClick={onDelete}>
               delete
             </button>
           )}
@@ -754,18 +773,18 @@ function PlaneConsole({ comments, size, onFocus, onEdit, onDelete, className }: 
             <button
               className={styles.tool}
               data-new={comments.fresh || undefined}
-              title={`${comments.count} conversation${comments.count === 1 ? '' : 's'} inside this plane${comments.fresh ? ', something new' : ''}`}
+              title={`${comments.count} conversation${comments.count === 1 ? '' : 's'} inside this ${noun}${comments.fresh ? ', something new' : ''}`}
               aria-label={`Comments inside, ${comments.count}`}
               onClick={comments.onOpen}
             >
               {comments.mentioned ? '@' : <CommentIcon size={11} />} {comments.count} inside
             </button>
           )}
-          <button className={styles.tool} aria-pressed={false} title="make the plane the view" onClick={onFocus}>
+          <button className={styles.tool} aria-pressed={false} title={`make the ${noun} the view`} onClick={onFocus}>
             focus
           </button>
           {onEdit && (
-            <button className={styles.tool} aria-pressed={false} title="move, resize or rename the plane" onClick={onEdit}>
+            <button className={styles.tool} aria-pressed={false} title={noun === 'plane' ? 'move, resize or rename the plane' : `move or rename the ${noun}`} onClick={onEdit}>
               edit
             </button>
           )}

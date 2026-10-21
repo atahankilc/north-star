@@ -1,6 +1,6 @@
-// A matrix on the canvas (D-204): two lists crossed, a cell where they meet. Drawn in its own px through a view, like a
-// plane's cards (D-187): on the canvas a picture fitted in its box (the pointer goes through to the canvas, D-186); in
-// focus live. There a click selects a cell (and again steps a scale on, as the old matrix did), arrows move, 1–9 set a
+// A matrix on the canvas (D-204): two lists crossed, a cell where they meet. Drawn in its own px through a view: on the
+// canvas it's just the table, at its own size, no frame or marks (the pointer goes through to the canvas, D-186); in
+// focus, live, gliding to the middle of the screen while the page fills in behind it (FocusedPlane's `bare`). There a click selects a cell (and again steps a scale on, as the old matrix did), arrows move, 1–9 set a
 // step, Backspace clears, `-` leaves it out (when the matrix allows it), Enter or a double-click types a number or a text.
 // Under the selected cell, at screen size, its bar: the steps, `not relevant`, how sure, a note. Rows and columns are
 // set up from the focus dock's `[setup]` (MatrixSetupPanel); a typed one is renamed by a double-click, any one taken out
@@ -165,10 +165,17 @@ export function MatrixView({ piece, view, live, editor }: Props) {
           ))}
           <div className={styles.headRule} style={box(0, M.top - 1, L.addX, 1)} />
 
+          {/* Its name, or what it crosses while it has none. */}
           <div className={styles.corner} style={box(0, 0, M.head, M.top)}>
-            <span>{nounOf(setup.rows)}</span>
-            <span className={styles.cross}>×</span>
-            <span>{nounOf(setup.cols)}</span>
+            {piece.name ? (
+              <span>{piece.name}</span>
+            ) : (
+              <>
+                <span>{nounOf(setup.rows)}</span>
+                <span className={styles.cross}>×</span>
+                <span>{nounOf(setup.cols)}</span>
+              </>
+            )}
           </div>
 
           {cols.map((c, i) => (

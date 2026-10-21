@@ -192,10 +192,12 @@ piece; check them with the user then.
 - Card motion on planes as D-150 (D-203): arriving cards build cell by cell, corner marks grey out on hover, in the
   type colour just outside selected and on the corners pressed; a drag goes 0.8 under the pointer, marks where it lands.
   No side panel on a card click until it's refactored (the user's call).
-- Matrix (D-204): a canvas piece from `+` (templates: features × competitors, problems × customers, ideas × criteria,
+- Matrix (D-204, D-206): a canvas piece from `+` (templates: features × competitors, problems × customers, ideas × criteria,
   blank). Rows and columns: every card of a type (any plane or one) + typed names + single cards; `×` hides a type's card
   or drops a typed one. Cells one kind per matrix: a scale of editable steps, a number (unit) or text; a note; options
-  not relevant (—), how sure (~ ?), reading. Live in focus (click, again steps, 1–9, arrows, Backspace, `-`, Enter;
+  not relevant (—), how sure (~ ?), reading. On the canvas just its table, its own size, no frame or marks, name in its
+  corner, console over its top-right, moved (not resized) in edit mode; focus glides the table to the middle while the page
+  builds cell by cell behind it, no ink (D-206). Live in focus (click, again steps, 1–9, arrows, Backspace, `-`, Enter;
   a bar under the cell); `[setup]` in the focus dock. Setup on the piece, cells in `cells/{matrixId}_{row}_{col}`.
 - Go to (D-196): a grey compass in the side nav under fit (search inside), no keys (D-201); on the canvas its planes (each
   with its own headings and sections on a line under it, folded until its framed `[▸ N inside]` opens them, D-200, D-201), project title, H1/H2 headings and named sections, in a focused plane its
