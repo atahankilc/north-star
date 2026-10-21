@@ -657,15 +657,19 @@ function Seam({ piece, plane: at, zoom }: { piece: WithId<Piece>; plane: Box & {
 // What a piece shows of what's in it on the canvas (D-187): a plane's cards and text centred and fitted inside its box,
 // never past 1; nothing = its own (0, 0) at its corner. Its px inside its 1 px edge. A matrix is a window: its table at
 // its own size from the top-left, cut by the window's edge (D-208).
-function innerView(box: Box, b: Bounds | null, bare = false): PlaneCam {
+function innerView(box: Box, b: Bounds | null, bare = false, pad = GRID): PlaneCam {
   if (!b || bare) return { ox: 0, oy: 0, zoom: 1 }
-  const { zoom, cx, cy } = fitInto(b, box.w - 2, box.h - 2, GRID)
+  const { zoom, cx, cy } = fitInto(b, box.w - 2, box.h - 2, pad)
   return { ox: (box.w - 2) / 2 - cx * zoom, oy: (box.h - 2) / 2 - cy * zoom, zoom }
 }
 
+// How a piece shows what's in it: a table at its own size from the top-left, cut by its edge (D-208); a matrix fitted
+// whole in its window, a little room round it (D-214); a plane's cards fitted.
+const asShown = (p: Piece): [boolean, number] => (kindOfPiece(p) === 'matrix' ? [false, 12] : [isBare(p), GRID])
+
 // That view on the screen, where focus starts from and goes back to.
 function homeOf(piece: Piece, at: ScreenRect, content: Bounds | null): PlaneCam {
-  const v = innerView(piece, content, isBare(piece))
+  const v = innerView(piece, content, ...asShown(piece))
   return { ox: at.x + at.zoom * (1 + v.ox), oy: at.y + at.zoom * (1 + v.oy), zoom: at.zoom * v.zoom }
 }
 
@@ -798,7 +802,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
   }
   // Its cards fitted inside it, and its marks with them (D-187).
   const bare = isBare(piece)
-  const inner = innerView(box, content, bare)
+  const inner = innerView(box, content, ...asShown(piece))
   const step = GRID * inner.zoom
   return (
     <div

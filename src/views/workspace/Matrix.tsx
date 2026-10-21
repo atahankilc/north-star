@@ -41,7 +41,7 @@ import {
   type Reading,
   type Step,
 } from '../../data/matrix'
-import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
+import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { useWs } from './context'
 import { TYPE_ACCENT } from './PlaneCards'
@@ -50,6 +50,11 @@ import styles from './Matrix.module.css'
 // The matrix's parts in its own px: the row heads' column, a cell, the column heads' row, a row, the gap between them,
 // the end totals' column and row.
 export const M = { head: 220, cell: 104, top: 72, row: 44, gap: 6, end: 120, endRow: 36 }
+
+// In focus the heads stick (D-214): panned or zoomed so they'd leave the screen, the column heads stay this far from its
+// top (under the breadcrumb's bar) and the row heads this far from its left (clear of the side nav's shade, 160 px,
+// Hud.module.css), the cells moving under them.
+const STICK = { top: 64, left: 160 }
 
 const NO_SETUP = emptySetup()
 export const setupOf = (p: Pick<Piece, 'matrix'>): MatrixSetup => p.matrix ?? NO_SETUP
@@ -113,6 +118,8 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   const [typing, setTyping] = useState<string | null>(null)
   const naming = useMatrixUi((s) => s.naming)
   const layer = useRef<HTMLDivElement>(null)
+  // A row or column just added from its dashed card: the view glides to bring it to the middle (D-214).
+  const centre = useRef<'rows' | 'cols' | null>(null)
 
   const write = (row: string, col: string, fields: Parameters<typeof setCell>[4]) => void setCell(wid, piece.id, row, col, fields)
   const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(rows[r].key, cols[c].key), labelSelected: null })
@@ -122,6 +129,22 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   useEffect(() => {
     if (sel && !selected) useCanvasView.setState({ cardSelected: null })
   }, [sel, selected])
+  // The one just added, brought to the middle: a row up or down, a column across. Only on the focus's own view (a pane
+  // beside a plane has its own).
+  useEffect(() => {
+    const which = centre.current
+    const el = layer.current
+    const { planeCam } = useCanvasView.getState()
+    if (!which || !el || !live || planeCam !== view) return
+    centre.current = null
+    const to =
+      which === 'rows'
+        ? { ...view, oy: el.clientHeight / 2 - (L.rowY(rows.length - 1) + M.row / 2) * view.zoom }
+        : { ...view, ox: el.clientWidth / 2 - (L.colX(cols.length - 1) + M.cell / 2) * view.zoom }
+    glide(view, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
+    // When one comes in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows.length, cols.length])
   // Leaving focus closes the setup.
   useEffect(() => {
     if (!live) return
@@ -175,30 +198,15 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   const box = (x: number, y: number, w: number, h: number): CSSProperties => ({ left: x, top: y, width: w, height: h })
   const selBox = selected ? { x: L.colX(selected.c), y: L.rowY(selected.r) } : null
   const heads = headTotals(setup)
+  // How far the heads are held in from where they'd be, in the matrix's px; never past its last row or column.
+  const dy = live ? Math.min(Math.max(0, (STICK.top - view.oy) / view.zoom), Math.max(0, L.addY - M.top)) : 0
+  const dx = live ? Math.min(Math.max(0, (STICK.left - view.ox) / view.zoom), Math.max(0, L.addX - M.head)) : 0
+  const added = (which: 'rows' | 'cols') => (centre.current = which)
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <div className={styles.table} style={{ width: L.w, height: L.h }} role="grid" aria-label={piece.name || 'matrix'} onPointerLeave={() => setHot(null)}>
-          <div className={styles.corner} style={box(0, 0, M.head, M.top)}>
-            <span>{nounOf(setup.rows)}</span>
-            <span className={styles.cross}>×</span>
-            <span>{nounOf(setup.cols)}</span>
-          </div>
-
-          {cols.map((c, i) => (
-            <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} hot={hot?.c === i || selected?.c === i} live={live} editor={editor} naming={naming === c.item?.id}
-              onRename={(name) => void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name)} onRemove={() => remove('cols', c)} onPress={own}>
-              {heads && <Totals setup={setup} reading={readingOf(setup, colCells(c))} />}
-            </Head>
-          ))}
-          {rows.map((r, i) => (
-            <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} hot={hot?.r === i || selected?.r === i} live={live} editor={editor} naming={naming === r.item?.id}
-              onRename={(name) => void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name)} onRemove={() => remove('rows', r)} onPress={own}>
-              {heads && <Totals setup={setup} reading={readingOf(setup, rowCells(r))} />}
-            </Head>
-          ))}
-
           {rows.map((r, ri) =>
             cols.map((c, ci) => {
               const cell = at(r.key, c.key)
@@ -240,17 +248,11 @@ export function MatrixView({ piece, view, live, editor }: Props) {
           {/* The totals at the ends: a column after the cells, a row under them. */}
           {L.ends && (
             <>
-              <div className={styles.endHead} style={box(L.endX, 0, M.end, M.top)}>
-                total
-              </div>
               {rows.map((r, i) => (
                 <div key={r.key} className={styles.endCell} style={box(L.endX, L.rowY(i), M.end, M.row)}>
                   <Totals setup={setup} reading={readingOf(setup, rowCells(r))} wide />
                 </div>
               ))}
-              <div className={styles.endHead} data-row style={box(0, L.endY, M.head, M.endRow)}>
-                total
-              </div>
               {cols.map((c, i) => (
                 <div key={c.key} className={styles.endCell} data-row style={box(L.colX(i), L.endY, M.cell, M.endRow)}>
                   <Totals setup={setup} reading={readingOf(setup, colCells(c))} />
@@ -259,12 +261,47 @@ export function MatrixView({ piece, view, live, editor }: Props) {
             </>
           )}
 
-          {live && editor && (
-            <>
-              <AddEntry which="cols" label={oneOf(setup.cols, 'cols')} style={box(L.addX, 0, M.cell, M.top)} piece={piece} setup={setup} shown={shown} onPress={own} />
-              <AddEntry which="rows" label={oneOf(setup.rows, 'rows')} style={box(0, L.addY, M.head, M.row)} piece={piece} setup={setup} shown={shown} onPress={own} />
-            </>
-          )}
+          {/* The row heads, and what closes their column, held in from the left when panned past (D-214). */}
+          <div className={styles.stick} data-stuck={dx > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateX(${dx}px)` }}>
+            {/* Paper under them out to the screen's edge, so the cells pass under. */}
+            {dx > 0 && <div className={styles.band} style={box(-STICK.left / view.zoom, -STICK.top / view.zoom, STICK.left / view.zoom + M.head + M.gap, L.h + STICK.top / view.zoom)} />}
+            {rows.map((r, i) => (
+              <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} hot={hot?.r === i || selected?.r === i} live={live} editor={editor} naming={naming === r.item?.id}
+                onRename={(name) => void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name)} onRemove={() => remove('rows', r)} onPress={own}>
+                {heads && <Totals setup={setup} reading={readingOf(setup, rowCells(r))} />}
+              </Head>
+            ))}
+            {L.ends && (
+              <div className={styles.endHead} data-row style={box(0, L.endY, M.head, M.endRow)}>
+                total
+              </div>
+            )}
+            {live && editor && <AddEntry which="rows" label={oneOf(setup.rows, 'rows')} style={box(0, L.addY, M.head, M.row)} piece={piece} setup={setup} shown={shown} onPress={own} onAdded={added} />}
+          </div>
+          {/* The column heads, held in from the top. */}
+          <div className={styles.stick} data-stuck={dy > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateY(${dy}px)` }}>
+            {dy > 0 && <div className={styles.band} style={box(-STICK.left / view.zoom, -STICK.top / view.zoom, L.w + STICK.left / view.zoom, STICK.top / view.zoom + M.top + M.gap)} />}
+            {cols.map((c, i) => (
+              <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} hot={hot?.c === i || selected?.c === i} live={live} editor={editor} naming={naming === c.item?.id}
+                onRename={(name) => void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name)} onRemove={() => remove('cols', c)} onPress={own}>
+                {heads && <Totals setup={setup} reading={readingOf(setup, colCells(c))} />}
+              </Head>
+            ))}
+            {L.ends && (
+              <div className={styles.endHead} style={box(L.endX, 0, M.end, M.top)}>
+                total
+              </div>
+            )}
+            {live && editor && <AddEntry which="cols" label={oneOf(setup.cols, 'cols')} style={box(L.addX, 0, M.cell, M.top)} piece={piece} setup={setup} shown={shown} onPress={own} onAdded={added} />}
+          </div>
+          {/* The corner, held in both ways, over both. */}
+          <div className={styles.stick} style={{ width: L.w, height: L.h, transform: `translate(${dx}px, ${dy}px)` }}>
+            <div className={styles.corner} data-stuck={dx > 0 || dy > 0 || undefined} style={box(0, 0, M.head, M.top)}>
+              <span>{nounOf(setup.rows)}</span>
+              <span className={styles.cross}>×</span>
+              <span>{nounOf(setup.cols)}</span>
+            </div>
+          </div>
           {!rows.length && !cols.length && !(live && editor) && (
             <p className={styles.empty} style={box(0, M.top, L.w, M.row * 2)}>
               Nothing to cross yet
@@ -417,11 +454,12 @@ type AddProps = {
   setup: MatrixSetup
   shown: string[]
   onPress?: (e: ReactPointerEvent) => void
+  onAdded?: (which: 'rows' | 'cols') => void
 }
 
 // The dashed card that closes an axis (D-212): click, type a name and Enter (the field stays for the next), or pick one
 // of the cards that match; Escape or leaving it closes it.
-function AddEntry({ which, label, style, piece, setup, shown, onPress }: AddProps) {
+function AddEntry({ which, label, style, piece, setup, shown, onPress, onAdded }: AddProps) {
   const { wid, cards } = useWs()
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
@@ -459,7 +497,11 @@ function AddEntry({ which, label, style, piece, setup, shown, onPress }: AddProp
         onKeyDown={(e) => {
           e.stopPropagation()
           if (e.key === 'Escape') return setOpen(false)
-          if (e.key === 'Enter' && q.trim()) void addNamed(wid, piece.id, setup, which, q.trim()).then(done)
+          if (e.key === 'Enter' && q.trim()) {
+            // Before the write: the local copy shows it before the promise settles.
+            onAdded?.(which)
+            void addNamed(wid, piece.id, setup, which, q.trim()).then(done)
+          }
         }}
         onBlur={(e) => {
           // Not when picking a card from the list under it.
@@ -470,7 +512,7 @@ function AddEntry({ which, label, style, piece, setup, shown, onPress }: AddProp
       {matches.length > 0 && (
         <div className={styles.picks} role="listbox" aria-label="Cards that match">
           {matches.map((c) => (
-            <button key={c.id} role="option" aria-selected={false} className={styles.pick} style={{ ['--type' as string]: TYPE_ACCENT[c.type] }} onClick={() => void addCardEntry(wid, piece.id, setup, which, c).then(done)}>
+            <button key={c.id} role="option" aria-selected={false} className={styles.pick} style={{ ['--type' as string]: TYPE_ACCENT[c.type] }} onClick={() => (onAdded?.(which), void addCardEntry(wid, piece.id, setup, which, c).then(done))}>
               <span className={styles.pickName}>{c.title || `untitled ${c.type}`}</span>
               <span className={styles.pickType}>{c.type}</span>
             </button>

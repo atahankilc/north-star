@@ -24,8 +24,29 @@
   font-size: var(--text-sm);
 }
 
-.table > * {
+.table > *,
+.stick > * {
   position: absolute;
+}
+
+/* The heads' layers (D-214): the size of the table, held in by a transform while panned past in focus; only their
+   heads take the pointer. The band is the page's paper under them out to the screen's edge, so cells pass under. */
+.stick {
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.layer[data-live='true'] .stick > * {
+  pointer-events: auto;
+}
+
+.band {
+  background: var(--bg);
+}
+
+.corner[data-stuck] {
+  background: var(--bg);
 }
 
 /* `features × competitors`, faint caps in the corner. */
@@ -84,11 +105,6 @@
   color: var(--fg-muted);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-}
-
-.colHead:not([data-card]) {
-  justify-content: flex-end;
-  gap: var(--space-1);
 }
 
 .rowHead[data-hot='true'] .name,
@@ -429,22 +445,34 @@
   align-items: stretch;
   justify-content: center;
   gap: var(--space-1);
-  border-color: var(--accent-cyan);
-  border-style: solid;
+  border: 0;
   background: var(--bg);
-  cursor: default;
+  cursor: text;
 }
 
+/* A column's is wider than its card while typing, so a name fits. */
+.add[data-open][data-which='cols'] {
+  width: auto !important;
+  min-width: 220px;
+}
+
+/* Typed as it will read: a typed name's mono, no frame; a caret, and the line the name will stand on. */
 .addField {
   width: 100%;
   min-width: 0;
-  padding: 0;
+  padding: 0 0 var(--space-1);
   border: 0;
+  border-bottom: 1px dashed var(--line-hover);
   outline: none;
   background: none;
   color: var(--fg-strong);
   font: inherit;
   font-size: var(--text-sm);
+  caret-color: var(--accent-magenta);
+}
+
+.addField:focus-visible {
+  outline: none;
 }
 
 .addField::placeholder {
