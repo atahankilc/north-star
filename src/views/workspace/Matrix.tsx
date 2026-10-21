@@ -1,5 +1,5 @@
 // A matrix on the canvas (D-204): two lists crossed, a cell where they meet. Drawn in its own px through a view: on the
-// canvas it's just the table, at its own size, no frame or marks (the pointer goes through to the canvas, D-186); in
+// canvas a window (D-208), its table at its own size from the top-left, cut by the edge (the pointer goes through to the canvas, D-186); in
 // focus, live, gliding to the middle of the screen while the page fills in behind it (FocusedPlane's `bare`). There a click selects a cell (and again steps a scale on, as the old matrix did), arrows move, 1–9 set a
 // step, Backspace clears, `-` leaves it out (when the matrix allows it), Enter or a double-click types a number or a text.
 // Under the selected cell, at screen size, its bar: the steps, `not relevant`, how sure, a note. Rows and columns are
@@ -165,17 +165,10 @@ export function MatrixView({ piece, view, live, editor }: Props) {
           ))}
           <div className={styles.headRule} style={box(0, M.top - 1, L.addX, 1)} />
 
-          {/* Its name, or what it crosses while it has none. */}
           <div className={styles.corner} style={box(0, 0, M.head, M.top)}>
-            {piece.name ? (
-              <span>{piece.name}</span>
-            ) : (
-              <>
-                <span>{nounOf(setup.rows)}</span>
-                <span className={styles.cross}>×</span>
-                <span>{nounOf(setup.cols)}</span>
-              </>
-            )}
+            <span>{nounOf(setup.rows)}</span>
+            <span className={styles.cross}>×</span>
+            <span>{nounOf(setup.cols)}</span>
           </div>
 
           {cols.map((c, i) => (

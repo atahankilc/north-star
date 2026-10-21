@@ -148,35 +148,14 @@
 .bar[data-handle='e'] { right: -5px; }
 .bar[data-handle='w'] { left: -5px; }
 
-/* A matrix (D-204) is just its table on the canvas: no edge, no fill, no marks; its name over it and its console under
-   its right end (its comment chip keeps the bottom-right corner). In focus its copy there glides out, so this one hides. */
-.piece[data-kind='matrix'] {
-  border: 0;
-  background: none;
-}
-
+/* A matrix (D-204, D-208) is a window: a plane's edge, fill, name and console, but no `+` marks; its table sits at
+   its own size from the top-left, cut by the edge. In focus its copy there glides out, so this one hides. */
 .piece[data-kind='matrix']::before {
   content: none;
 }
 
 .piece[data-away='true'] {
   visibility: hidden;
-}
-
-.piece[data-kind='matrix'] .name {
-  top: auto;
-  bottom: 100%;
-  left: 0;
-  padding: 0 0 var(--space-1);
-  transform: none;
-  background: none;
-}
-
-.piece[data-kind='matrix'] .console {
-  right: 0;
-  bottom: 100%;
-  margin-bottom: var(--space-1);
-  border-bottom: 1px solid var(--line-hover);
 }
 
 .name {

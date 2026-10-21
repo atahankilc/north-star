@@ -3222,7 +3222,7 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators, 2x): six cards with statuses, evidence, regions, priority, tags, an empty one, at
   zoom 1.6, 0.45 and 0.15; no console errors; build.
 
-### D-206 · 2026-10-22 · Accepted (changes D-204's look on the canvas and its way into focus)
+### D-206 · 2026-10-22 · Accepted (changes D-204's look on the canvas and its way into focus; its canvas look changed again by D-208, the focus stands)
 - *Decision:* a matrix isn't a plane. On the canvas it's just its table at its own size: no edge, no fill, no `+`
   marks; the piece's box is the table's (worked out from its rows and columns, whatever `w`/`h` its doc holds), so
   fit, a canvas section carrying it and its comment chip use the table's size. Its name sits in the table's corner
@@ -3237,3 +3237,18 @@ categories shown like B, not in a card, and the features under them not indented
   (D-185 turned zooming down for planes). Not taken.
 - *Verified:* headless Chrome on emulators: canvas look, edit mode (move, name), focus in mid-way and arrived, leaving
   mid-way and back, a reload in focus; no console errors; typecheck.
+
+### D-208 · 2026-10-22 · Accepted (changes D-206's canvas look; D-206's focus stands)
+- *Decision:* a matrix is a **window** on the canvas, not a bare table and not a plane. It has a plane's edge and solid
+  fill, its name in the top edge at the left, its console inside the bottom-right corner, and its own `w`/`h` again:
+  in edit mode it moves, resizes from the corner grips and edge bars (≥ 325 × 200, snapped) and takes a name, as a
+  plane does. No `+` marks: there's no canvas inside it. Its table sits at its own size (zoom 1) from the window's
+  top-left, cut by the edge when the window is smaller; nothing scrolls on the canvas. The table's corner says what it
+  crosses again (the name is on the edge). Focus is still D-206's: the table glides to the middle of the screen while
+  the page builds cell by cell behind it.
+- *User:* "şimdi de alanı belli olmuyo, şuna bir çerçeve verip sol üste adını yazar mısın? Boyutu da edit edilebilir
+  olmalı. Sadece plane gibi bir canvas gerekmiyor matrix için, o normal resize edilebilir bir pencere gibi çalışcak"
+- *Alternatives:* the table fitted (scaled) into the window like a plane's cards; scrolling inside the window on the
+  canvas (the canvas takes the wheel there, D-186). Not taken.
+- *Verified:* headless Chrome on emulators: the window on the canvas, a corner resize to 375 × 225 (table cut at the
+  edge), focus mid-way and arrived, back; no console errors; typecheck.
