@@ -64,6 +64,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Threads panel as list + thread halves, nothing on the canvas, cell-by-cell build/break for the tab and each half, go there an icon in the header (D-199). 2026-10-21, committed.
 - Plane back to the old board's power, step by step (asked 2026-10-21): step 1, card motion (D-203), committed. Seen:
   reloading with `?focus=` shows a black screen headless (not from D-203).
+- Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, not committed; rules not deployed.
 - Focus dock on the bottom edge + plane console inside its bottom-right corner, no `▸` (D-189), committed 2026-10-21.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
   left side nav piece by piece, you + settings bottom left first (D-175); planes (D-180, first called boards) placed on the canvas from the side

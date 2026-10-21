@@ -1,0 +1,275 @@
+// A matrix (D-204): a piece on the canvas (`kind: 'matrix'`) that crosses two lists and fills the cells between them.
+// Generic on purpose: the old features × competitors matrix (D-133, D-136) is one setup of it, not the only one.
+//
+// Each axis (rows, columns) is a list: every card of one type (on any plane, or one plane's), new ones joining by
+// themselves, and entries added by hand, each a card or just a typed name. A card's row reads its live title.
+// The cells hold one kind of value for the whole matrix: a scale of named steps (○ ◐ ● ★, ✓ ✕, 1–5…, editable), a
+// number or a short text; each cell may also carry a note, and, when the matrix allows them, `not relevant` (—, left out
+// of the readings) and how sure it is (~ inferred, ? a guess). The reading column and row sum up each row and column.
+//
+// The setup lives on the piece (`matrix`); the cells in `cells/{matrixId}_{row}_{col}`, so a cell can't be made twice.
+// A row or column is keyed by its card's id, or by its typed entry's own id.
+import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+import { CARD_TYPES, type Card, type CardType } from './cards'
+import { db } from './firebase'
+import { tracked } from './history'
+import { pieceRef } from './pieces'
+
+export type AxisItem = { id: string; name?: string; cardType?: CardType; cardId?: string }
+
+export type Axis = {
+  // Every card of this type joins by itself; `plane`: only those on that plane.
+  type?: CardType
+  plane?: string
+  // Cards of `type` taken out.
+  hide?: string[]
+  // Added by hand, after the type's cards.
+  items: AxisItem[]
+  // What one of them is, said in the corner (`features`, `criteria`); the type's name when unset.
+  noun?: string
+}
+
+export const TONES = ['dim', 'fg', 'cyan', 'yellow', 'magenta', 'green', 'blue'] as const
+export type Tone = (typeof TONES)[number]
+export const TONE_VAR: Record<Tone, string> = {
+  dim: 'var(--fg-dim)',
+  fg: 'var(--fg)',
+  cyan: 'var(--accent-cyan)',
+  yellow: 'var(--accent-yellow)',
+  magenta: 'var(--accent-magenta)',
+  green: 'var(--accent-green)',
+  blue: 'var(--accent-blue)',
+}
+
+// Low to high: the order keys 1–9 pick them in and the readings stack them in.
+export type Step = { id: string; glyph: string; label: string; tone: Tone }
+
+export const CELL_KINDS = ['scale', 'number', 'text'] as const
+export type CellKind = (typeof CELL_KINDS)[number]
+
+export type MatrixSetup = {
+  rows: Axis
+  cols: Axis
+  cell: CellKind
+  // The scale's steps (kept when the cells turn to numbers or text, so turning back finds them).
+  steps: Step[]
+  unit?: string
+  notRelevant?: boolean
+  confidence?: boolean
+  reading?: boolean
+}
+
+export const CONFIDENCES = ['documented', 'inferred', 'guess'] as const
+export type Confidence = (typeof CONFIDENCES)[number]
+// `documented` needs no mark (D-136).
+export const CONFIDENCE_MARK: Record<Confidence, string> = { documented: '', inferred: '~', guess: '?' }
+
+export type Cell = {
+  matrixId: string
+  row: string
+  col: string
+  // A step's id, a number or a text, as the matrix's cells say. A value of another kind (the kind changed) is kept but
+  // not shown, so turning back finds it.
+  value?: string | number
+  notes?: string
+  notRelevant?: boolean
+  confidence?: Confidence
+  updatedAt: number
+}
+
+// firestore.rules' validMatrix and validCell allow these.
+export const MAX_ENTRIES = 200
+export const MAX_STEPS = 9
+export const NAME_MAX = 200
+export const TEXT_MAX = 200
+export const NOTES_MAX = 20000
+export const GLYPH_MAX = 4
+export const LABEL_MAX = 40
+
+export const newId = () => Math.random().toString(36).slice(2, 8)
+
+const step = (glyph: string, label: string, tone: Tone): Step => ({ id: label.toLowerCase().replace(/[^a-z0-9]+/g, '-'), glyph, label, tone })
+
+// Scales to start from; every step can be renamed, recoloured, added or taken out after.
+export const SCALES: { key: string; name: string; steps: Step[] }[] = [
+  { key: 'coverage', name: 'coverage', steps: [step('○', 'none', 'dim'), step('◐', 'partial', 'yellow'), step('●', 'full', 'cyan'), step('★', 'better', 'magenta')] },
+  { key: 'yes-no', name: 'yes / no', steps: [step('✕', 'no', 'dim'), step('✓', 'yes', 'green')] },
+  { key: 'level', name: 'low → high', steps: [step('▁', 'low', 'dim'), step('▄', 'medium', 'yellow'), step('█', 'high', 'magenta')] },
+  {
+    key: 'five',
+    name: '1 – 5',
+    steps: [step('1', 'one', 'dim'), step('2', 'two', 'dim'), step('3', 'three', 'yellow'), step('4', 'four', 'cyan'), step('5', 'five', 'magenta')],
+  },
+]
+
+const axis = (type?: CardType, noun?: string, names: string[] = []): Axis => ({
+  ...(type ? { type } : {}),
+  ...(noun ? { noun } : {}),
+  items: names.map((name) => ({ id: newId(), name })),
+})
+
+// Setups to start from (D-204). The first is the old matrix (D-133, D-136); the last a blank table of names.
+export const TEMPLATES: { key: string; name: string; hint: string; setup: () => MatrixSetup }[] = [
+  {
+    key: 'compare',
+    name: 'features × competitors',
+    hint: 'how well each competitor covers each feature',
+    setup: () => ({ rows: axis('feature'), cols: axis('competitor'), cell: 'scale', steps: SCALES[0].steps, notRelevant: true, confidence: true, reading: true }),
+  },
+  {
+    key: 'pain',
+    name: 'problems × customers',
+    hint: 'how much each problem hurts each customer',
+    setup: () => ({ rows: axis('problem'), cols: axis('customer'), cell: 'scale', steps: SCALES[2].steps, notRelevant: true, reading: true }),
+  },
+  {
+    key: 'score',
+    name: 'ideas × criteria',
+    hint: 'each idea scored 1–5 on what matters',
+    setup: () => ({ rows: axis('idea'), cols: axis(undefined, 'criteria', ['impact', 'effort', 'confidence']), cell: 'scale', steps: SCALES[3].steps, reading: true }),
+  },
+  {
+    key: 'blank',
+    name: 'blank',
+    hint: 'rows and columns you name',
+    setup: () => ({ rows: axis(undefined, 'rows', ['row 1', 'row 2']), cols: axis(undefined, 'columns', ['column 1', 'column 2']), cell: 'scale', steps: SCALES[1].steps, reading: true }),
+  },
+]
+
+export const emptySetup = (): MatrixSetup => TEMPLATES[TEMPLATES.length - 1].setup()
+
+// One row or column as shown: its key (the card's id or the entry's), its name, and the card or entry behind it.
+export type Entry = { key: string; name: string; card?: Card; item?: AxisItem; auto: boolean }
+
+const byTitle = (a: Card, b: Card) => (a.title ? (b.title ? a.title.localeCompare(b.title) : -1) : b.title ? 1 : 0)
+
+// The axis's rows: the type's cards by title (unnamed last), then what was added by hand. A card added by hand that the
+// type already brings is shown once; a card that's gone is left out (its cells stay, and come back with ⌘Z).
+export function entriesOf(a: Axis, cards: Card[]): Entry[] {
+  const hidden = new Set(a.hide ?? [])
+  const auto = a.type ? cards.filter((c) => c.type === a.type && (!a.plane || c.pieceId === a.plane) && !hidden.has(c.id)).sort(byTitle) : []
+  const seen = new Set(auto.map((c) => c.id))
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  const out: Entry[] = auto.map((c) => ({ key: c.id, name: c.title, card: c, auto: true }))
+  for (const item of a.items) {
+    if (item.cardId) {
+      const c = byId.get(item.cardId)
+      if (!c || seen.has(c.id)) continue
+      seen.add(c.id)
+      out.push({ key: c.id, name: c.title, card: c, item, auto: false })
+    } else out.push({ key: item.id, name: item.name ?? '', item, auto: false })
+  }
+  return out
+}
+
+// What one row or column is called in the corner: `features`, `criteria`.
+export const nounOf = (a: Axis) => a.noun || (a.type ? `${a.type}s` : 'names')
+
+export const cellKey = (matrixId: string, row: string, col: string) => `${matrixId}_${row}_${col}`
+const cellsCol = (wid: string) => collection(db(), 'workspaces', wid, 'cells')
+export const cellRef = (wid: string, id: string) => doc(cellsCol(wid), id)
+
+// What a cell shows, as its matrix's cells say: a step, a number, a text, or nothing.
+export function readCell(setup: MatrixSetup, cell: Cell | undefined): { step?: Step; number?: number; text?: string } {
+  const v = cell?.value
+  if (v === undefined) return {}
+  if (setup.cell === 'scale') return typeof v === 'string' ? { step: setup.steps.find((s) => s.id === v) } : {}
+  if (setup.cell === 'number') return typeof v === 'number' ? { number: v } : {}
+  return typeof v === 'string' && v ? { text: v } : {}
+}
+
+export const relevant = (cell: Cell | undefined) => !cell?.notRelevant
+
+// A row's or a column's cells read together, the ones left out (—) aside: how many of each step, the numbers' average, or
+// how many are written.
+export type Reading = { counts: number[]; filled: number; of: number; avg?: number }
+export function readingOf(setup: MatrixSetup, cells: (Cell | undefined)[]): Reading {
+  const counted = setup.notRelevant ? cells.filter(relevant) : cells
+  const counts = setup.steps.map(() => 0)
+  const numbers: number[] = []
+  let filled = 0
+  for (const c of counted) {
+    const r = readCell(setup, c)
+    if (r.step) counts[setup.steps.indexOf(r.step)]++
+    if (r.number !== undefined) numbers.push(r.number)
+    if (r.step || r.number !== undefined || r.text) filled++
+  }
+  return { counts, filled, of: counted.length, avg: numbers.length ? numbers.reduce((a, b) => a + b, 0) / numbers.length : undefined }
+}
+
+// ---- Writes. Each is one undo step; typing in a field merges into one.
+
+// The whole setup at once (a template).
+export function setSetup(wid: string, id: string, setup: MatrixSetup, name?: string) {
+  const ref = pieceRef(wid, id)
+  return tracked('set up a matrix', [ref], () => updateDoc(ref, { matrix: clean(setup), ...(name ? { name } : {}), updatedAt: Date.now() }))
+}
+
+// One part of the setup: an axis, the cells' kind, the steps, an option.
+export function setPart<K extends keyof MatrixSetup>(wid: string, id: string, part: K, value: MatrixSetup[K] | undefined, key?: string) {
+  const ref = pieceRef(wid, id)
+  return tracked(
+    'change a matrix',
+    [ref],
+    () => updateDoc(ref, { [`matrix.${part}`]: value === undefined ? deleteField() : clean(value), updatedAt: Date.now() }),
+    key ? { key: `matrix:${id}:${key}` } : {},
+  )
+}
+
+// A row or column taken out: an entry added by hand goes with its cells; a card the type brings is hidden (its cells kept,
+// so bringing it back finds them).
+export function removeEntry(wid: string, id: string, setup: MatrixSetup, which: 'rows' | 'cols', entry: Entry, cells: Cell[]) {
+  const a = setup[which]
+  const next: Axis = entry.auto
+    ? { ...a, hide: [...(a.hide ?? []), entry.key] }
+    : { ...a, items: a.items.filter((i) => i !== entry.item) }
+  const gone = entry.auto ? [] : cells.filter((c) => c.matrixId === id && (which === 'rows' ? c.row : c.col) === entry.key)
+  const ref = pieceRef(wid, id)
+  const refs = [ref, ...gone.map((c) => cellRef(wid, cellKey(c.matrixId, c.row, c.col)))]
+  return tracked(`take out a ${which === 'rows' ? 'row' : 'column'}`, refs, () => {
+    const batch = writeBatch(db())
+    batch.update(ref, { [`matrix.${which}`]: clean(next), updatedAt: Date.now() })
+    for (const r of refs.slice(1)) batch.delete(r)
+    return batch.commit()
+  })
+}
+
+// A typed row or column at the end; its id, to type its name in.
+export async function addNamed(wid: string, id: string, setup: MatrixSetup, which: 'rows' | 'cols', name = '') {
+  const item: AxisItem = { id: newId(), name }
+  await setPart(wid, id, which, { ...setup[which], items: [...setup[which].items, item] })
+  return item.id
+}
+
+export function addCardEntry(wid: string, id: string, setup: MatrixSetup, which: 'rows' | 'cols', card: Card) {
+  const a = setup[which]
+  // A hidden card of the axis's type comes back instead.
+  if (a.type === card.type && a.hide?.includes(card.id)) return setPart(wid, id, which, { ...a, hide: a.hide.filter((h) => h !== card.id) })
+  return setPart(wid, id, which, { ...a, items: [...a.items, { id: newId(), cardType: card.type, cardId: card.id }] })
+}
+
+export function renameEntry(wid: string, id: string, setup: MatrixSetup, which: 'rows' | 'cols', itemId: string, name: string) {
+  const a = setup[which]
+  const items = a.items.map((i) => (i.id === itemId ? { ...i, name: name.slice(0, NAME_MAX) } : i))
+  return setPart(wid, id, which, { ...a, items }, `name:${itemId}`)
+}
+
+// Creates the cell on first edit; `undefined` clears a field.
+export function setCell(wid: string, matrixId: string, row: string, col: string, fields: Partial<Pick<Cell, 'value' | 'notes' | 'notRelevant' | 'confidence'>>) {
+  const data: Record<string, unknown> = { matrixId, row, col, updatedAt: Date.now() }
+  for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v
+  const ref = cellRef(wid, cellKey(matrixId, row, col))
+  const keys = Object.keys(fields).sort().join(',')
+  const typing = 'notes' in fields || typeof fields.value === 'string' || typeof fields.value === 'number'
+  return tracked('matrix cell', [ref], () => setDoc(ref, data, { merge: true }), {
+    // A cell's first write puts back nothing on undo.
+    ...(typing ? { key: `cell:${ref.id}:${keys}` } : {}),
+  })
+}
+
+// Firestore takes no `undefined`: fields left unset are dropped.
+function clean<T>(v: T): T {
+  return JSON.parse(JSON.stringify(v)) as T
+}
+
+export const isCardType = (t: string): t is CardType => (CARD_TYPES as readonly string[]).includes(t)

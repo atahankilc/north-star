@@ -226,6 +226,17 @@ await allow('a piece still called a board (before D-180)', () => addDoc(sub(bob.
 await deny('a canvas piece of an unknown kind', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'video' }))
 await deny('a canvas piece without a size', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, w: 0 }))
 await deny('a canvas piece without a place', () => addDoc(sub(bob.fs, 'pieces'), { kind: 'board', w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
+const axis = (type) => ({ ...(type ? { type } : {}), items: [] })
+const setup = { rows: axis('feature'), cols: { items: [{ id: 'a1', name: 'price' }] }, cell: 'scale', steps: [{ id: 'no', glyph: '✕', label: 'no', tone: 'dim' }], reading: true }
+await allow('a matrix on the canvas (D-204)', () => setDoc(doc(sub(bob.fs, 'pieces'), 'm1'), { ...piece, kind: 'matrix', matrix: setup }))
+await deny('a plane with a matrix setup', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, matrix: setup }))
+await deny('a matrix with an unknown cell kind', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'matrix', matrix: { ...setup, cell: 'colour' } }))
+await deny('a matrix axis of an unknown type', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'matrix', matrix: { ...setup, rows: axis('video') } }))
+await allow('a matrix cell', () => setDoc(doc(sub(bob.fs, 'cells'), 'm1_f1_a1'), { matrixId: 'm1', row: 'f1', col: 'a1', value: 'no', updatedAt: 1 }))
+await allow('a matrix cell with a number, a note, not relevant and a confidence', () =>
+  setDoc(doc(sub(bob.fs, 'cells'), 'm1_f2_a1'), { matrixId: 'm1', row: 'f2', col: 'a1', value: 4.5, notes: 'seen on their site', notRelevant: true, confidence: 'guess', updatedAt: 1 }))
+await deny('a matrix cell under another id', () => setDoc(doc(sub(bob.fs, 'cells'), 'm1_f1'), { matrixId: 'm1', row: 'f1', col: 'a1', updatedAt: 1 }))
+await deny('a matrix cell with a list for a value', () => setDoc(doc(sub(bob.fs, 'cells'), 'm1_f3_a1'), { matrixId: 'm1', row: 'f3', col: 'a1', value: ['x'], updatedAt: 1 }))
 // Cards on a plane (D-187).
 await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a competitor on a plane', () => addDoc(sub(bob.fs, 'competitors'), { name: 'Crewly', pieceId: 'p1', x: 25, y: 50, createdAt: 1, updatedAt: 1 }))
@@ -452,6 +463,8 @@ await allow('viewer reads ideas', () => getDocs(ideas(dave.fs)))
 await deny('viewer creates an idea', () => addDoc(ideas(dave.fs), { title: 'x', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await deny('viewer puts a plane on the canvas (D-176)', () => addDoc(sub(dave.fs, 'pieces'), { kind: 'plane', x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 await allow('viewer reads the canvas', () => getDocs(sub(dave.fs, 'pieces')))
+await deny('viewer fills a matrix cell (D-204)', () => setDoc(doc(sub(dave.fs, 'cells'), 'm1_f9_a1'), { matrixId: 'm1', row: 'f9', col: 'a1', value: 'no', updatedAt: 1 }))
+await allow('viewer reads the matrices\' cells', () => getDocs(sub(dave.fs, 'cells')))
 await deny('viewer deletes an idea', async () => {
   const one = (await getDocs(ideas(dave.fs))).docs[0]
   await deleteDoc(doc(dave.fs, one.ref.path))

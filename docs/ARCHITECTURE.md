@@ -108,6 +108,11 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
   packages/{id}         title, body?, tags?, x, y, memberIds (≤ 60), homePlaneId, impact?, effort? (D-141)
   evidence/{id}         nodeId, nodeType (customer|problem|idea), kind, text, stance (supports|contradicts), source?, url?,
                         date? (YYYY-MM-DD) (D-137); customers, problems and ideas carry validation? (hypothesis|testing|validated|invalidated)
+  pieces/{id}           kind (plane|matrix; old `board` = plane), x, y, w, h, name?, matrix? (D-176, D-180, D-204)
+                        matrix = {rows, cols, cell (scale|number|text), steps[{id, glyph, label, tone}], unit?, notRelevant?,
+                        confidence?, reading?}; an axis = {type?, plane?, hide?[], items[{id, name? | cardType, cardId}], noun?}
+  cells/{id}            matrixId, row, col, value? (step id | number | text ≤ 200), notes?, notRelevant?, confidence?
+                        (id = matrixId_row_col; a row or column is its card's id or its typed entry's id, D-204)
 inviteCodes/{code}      workspaceId, createdBy
 joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)
 

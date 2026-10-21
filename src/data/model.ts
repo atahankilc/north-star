@@ -3,13 +3,16 @@
 // workspaces, and firestore.rules still knows it.
 //
 //   workspaces/{workspaceId}                 Workspace
-//     pieces/{id}                            Piece (D-176): something on the canvas, a plane for now (D-180)
+//     pieces/{id}                            Piece (D-176): something on the canvas, a plane (D-180) or a matrix (D-204)
+//     cells/{matrixId}_{row}_{col}           Cell (D-204): one of a matrix's cells (src/data/matrix.ts)
 //     members/{uid}                          Member (D-098): a member's name and email, for the people list
 //   inviteCodes/{code}                       InviteCode (D-012)
 //   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)
 //
 // Realtime Database (ephemeral):
 //   presence/{workspaceId}/{uid}             Presence (D-016)
+
+import type { MatrixSetup } from './matrix'
 
 // D-098: any number of owners (never none), editors, and viewers who read but don't change the workspace.
 export type Role = 'owner' | 'editor' | 'viewer'
@@ -48,10 +51,11 @@ export type JoinRequest = {
   createdAt: number
 }
 
-// Something placed on the workspace's canvas (D-174, D-176): for now a plane (D-180; earlier called a board, and stored
+// Something placed on the workspace's canvas (D-174, D-176): a plane (D-180; earlier called a board, and stored
 // as `kind: 'board'`, which still reads as a plane). World units are canvas pixels at zoom 1; x/y is its top-left corner.
 // Not the archived `planes` collection (D-139): that was the old board's own layouts.
-export type PieceKind = 'plane'
+// A matrix (D-204): two lists crossed, its cells filled; its setup on the piece, its cells in `cells`.
+export type PieceKind = 'plane' | 'matrix'
 export type Piece = {
   kind: PieceKind
   x: number
@@ -59,6 +63,7 @@ export type Piece = {
   w: number
   h: number
   name?: string
+  matrix?: MatrixSetup
   createdAt: number
   updatedAt: number
 }

@@ -62,6 +62,10 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    criteria (its must-haves); a cell then scores each one and shows which are met, and the row counts the criteria no
    competitor meets: the white space (D-133).
    Shows gaps (opportunities) and table stakes.
+   **Now (D-204):** a generic matrix, a piece on the canvas: rows and columns are every card of a type, typed names or
+   single cards; cells a scale of your own steps, a number or a text, with notes, `not relevant` and how sure; a reading
+   for each row and column. Features × competitors is one of its templates; problems × customers, ideas × criteria and a
+   blank one are the others.
 5. **Overview** (D-144). The workspace read on one screen: next steps, what's on solid ground and what's still a
    guess, the riskiest bets, the white space, what looks off. Reached by its path; opening a workspace now lands on
    the canvas (D-174).

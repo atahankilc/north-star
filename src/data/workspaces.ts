@@ -275,7 +275,7 @@ async function deleteThread(wid: string, tid: string) {
 // still in older workspaces, so it all goes too.
 // `domains` and `groups` are retired (D-048, D-049) but older workspaces may still hold some.
 const WORKSPACE_COLLECTIONS = [
-  'labels', 'domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'evidence', 'planes', 'placements', 'packages', 'pieces',
+  'labels', 'domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'evidence', 'planes', 'placements', 'packages', 'pieces', 'cells',
   ...(attachmentsAvailable ? ['attachments'] : []),
 ]
 const BATCH_LIMIT = 450

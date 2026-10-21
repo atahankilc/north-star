@@ -7,7 +7,9 @@ import { useAuth } from '../../data/auth'
 import { setReadOnly } from '../../data/history'
 import type { WithId } from '../../data/hooks'
 import type { JoinRequest, PieceKind } from '../../data/model'
-import { addPiece } from '../../data/pieces'
+import { addPiece, KIND_NAME, kindOfPiece } from '../../data/pieces'
+import { TEMPLATES } from '../../data/matrix'
+import { matrixBounds } from './Matrix'
 import { addCard, CARD_TYPES, type CardType } from '../../data/cards'
 import { addLabel, CANVAS, PARA_W, STICKY_W, TITLE_W } from '../../data/labels'
 import { snap } from '../../data/grid'
@@ -91,7 +93,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           crumbs={[
             { label: 'workspaces', to: WORKSPACES },
             focused ? { label: workspace.name, to: workspacePath(wid) } : { label: workspace.name },
-            ...(focused ? [{ label: focused.name || 'plane' }] : []),
+            ...(focused ? [{ label: focused.name || KIND_NAME[kindOfPiece(focused)] }] : []),
           ]}
           settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={requests.data} />}
           settingsName={workspace.name}
@@ -105,7 +107,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           }
           side={
             <>
-              {editor && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
+              {/* A matrix in focus takes its rows and columns from its setup (D-204), not from `+`. */}
+              {editor && !(focused && kindOfPiece(focused) === 'matrix') && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
               <FitButton wid={wid} plane={focused?.id ?? null} />
               <GoToButton plane={focused?.id ?? null} />
             </>
@@ -123,6 +126,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
   const { pieces, cards, labels } = useWs()
   const focused = plane !== null
+  const matrix = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'matrix')
   return (
     <button
       className={styles.fit}
@@ -130,7 +134,7 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
       title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
       onClick={() =>
         focused
-          ? fitPlane(spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
+          ? fitPlane(matrix ? matrixBounds(matrix, cards) : spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
           : fitCanvas(wid, [...pieces, ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
       }
     >
@@ -223,8 +227,8 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     // The project title goes on the canvas only, once (D-190).
     ...(hasTitle || plane ? [] : [{ key: 'title', label: 'project title', glyph: '✦', onSelect: () => void addText('title') }]),
   ]
-  const add = async (kind: PieceKind) => {
-    const id = await addPiece(wid, kind, canvasCenter(wid), pieces)
+  const add = async (kind: PieceKind, template?: (typeof TEMPLATES)[number]) => {
+    const id = await addPiece(wid, kind, canvasCenter(wid), pieces, template?.setup(), template?.name)
     useCanvasView.setState({ selected: id })
   }
   const addHere = async (type: CardType) => {
@@ -255,6 +259,9 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
           : [
               { key: 'canvas', heading: 'on the canvas' },
               { key: 'plane', label: 'plane', glyph: '▦', onSelect: () => void add('plane') },
+              // A matrix (D-204), from one of its templates; its setup changes all of it after.
+              { key: 'matrix', heading: 'matrix' },
+              ...TEMPLATES.map((t) => ({ key: `matrix-${t.key}`, label: t.name, glyph: '⊞', onSelect: () => void add('matrix', t) })),
               ...text,
             ]
       }

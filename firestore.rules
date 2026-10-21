@@ -184,12 +184,44 @@ service cloud.firestore {
     // Something on the workspace's canvas (D-176): a plane for now (D-180), a box in canvas pixels. `board` is the name it
     // had before D-180, still on pieces made then (and brought back by undoing their changes).
     function validPiece(d) {
-      return d.kind in ['plane', 'board']
+      return d.kind in ['plane', 'board', 'matrix']
         && d.x is number && d.y is number
         && d.w is number && d.w > 0 && d.w <= 100000
         && d.h is number && d.h > 0 && d.h <= 100000
         && optText(d, 'name', 80)
+        // A matrix's setup (D-204), on matrices only.
+        && (!('matrix' in d) || (d.kind == 'matrix' && validMatrix(d.matrix)))
         && d.createdAt is number
+        && d.updatedAt is number;
+    }
+
+    // Two lists crossed (D-204): each axis a card type's cards and entries added by hand (src/data/matrix.ts).
+    function validAxis(a) {
+      return a is map
+        && a.items is list && a.items.size() <= 200
+        && optIn(a, 'type', ['customer', 'problem', 'competitor', 'idea', 'feature'])
+        && optText(a, 'plane', 128)
+        && optText(a, 'noun', 40)
+        && (!('hide' in a) || (a.hide is list && a.hide.size() <= 200));
+    }
+
+    function validMatrix(m) {
+      return m is map
+        && validAxis(m.rows) && validAxis(m.cols)
+        && m.cell in ['scale', 'number', 'text']
+        && m.steps is list && m.steps.size() <= 9
+        && optText(m, 'unit', 20)
+        && optBool(m, 'notRelevant') && optBool(m, 'confidence') && optBool(m, 'reading');
+    }
+
+    // One of a matrix's cells (D-204): the id is fixed by the matrix, its row and its column.
+    function validCell(id, d) {
+      return isText(d.matrixId, 128) && isText(d.row, 128) && isText(d.col, 128)
+        && id == d.matrixId + '_' + d.row + '_' + d.col
+        && (!('value' in d) || d.value is number || isText(d.value, 200))
+        && optText(d, 'notes', 20000)
+        && optBool(d, 'notRelevant')
+        && optIn(d, 'confidence', ['documented', 'inferred', 'guess'])
         && d.updatedAt is number;
     }
 
@@ -271,7 +303,8 @@ service cloud.firestore {
         || (collection == 'packages' && validPackage(d))
         || (collection == 'planes' && validPlane(d))
         || (collection == 'placements' && validPlacement(id, d))
-        || (collection == 'pieces' && validPiece(d));
+        || (collection == 'pieces' && validPiece(d))
+        || (collection == 'cells' && validCell(id, d));
     }
 
     match /workspaces/{wid} {
@@ -537,7 +570,7 @@ service cloud.firestore {
       match /{collection}/{docId} {
         // `domains` and `groups` are retired (D-048, D-049): still readable and deletable so old workspaces can be cleaned up.
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'evidence', 'planes', 'placements', 'packages', 'pieces', 'domains', 'groups'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'evidence', 'planes', 'placements', 'packages', 'pieces', 'cells', 'domains', 'groups'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();

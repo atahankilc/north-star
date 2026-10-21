@@ -3165,3 +3165,38 @@ categories shown like B, not in a card, and the features under them not indented
   up; no console errors; build.
 - *Seen, not from this:* reloading with `?focus=` showed an empty black screen (no marks, no cards) headless, on the
   committed card code too.
+
+### D-204 · 2026-10-21 · Accepted (brings the matrix back as a generic canvas piece; D-133/D-136's matrix becomes one setup of it)
+- *Decision:* a **matrix** is a piece on the canvas (`kind: 'matrix'`), made from the side nav's `+` under `matrix`,
+  from a template: features × competitors (the old matrix: coverage ○◐●★, not relevant, how sure, reading),
+  problems × customers (low → high), ideas × criteria (1–5, criteria typed), blank (named rows and columns, yes / no).
+  Generic, so it serves any comparison:
+  - *Rows and columns* (each an axis): every card of one type (on any plane, or one plane's), joining by themselves,
+    sorted by title; then entries added by hand, each a typed name or one card. A card's row shows its live title and
+    its type's colour. `×` takes one out: a typed one goes with its cells, a type's card is hidden (cells kept;
+    `[N taken out]` brings them back).
+  - *Cells:* one kind for the whole matrix: a **scale** of steps (glyph, name, colour; presets coverage, yes / no,
+    low → high, 1–5; ≤ 9 steps, edited in the setup), a **number** (with a unit) or a short **text**. Any cell can have
+    a note. Options: `not relevant` (—, left out of the readings), how sure (`~` inferred, `?` guess), the reading
+    (each row and column summed up: a scale's steps as a bar in their colours + `set/of`, numbers' average, texts
+    written). A value of another kind is kept when the kind changes, so changing back finds it.
+  - *Use:* on the canvas a picture fitted in its box, like a plane's cards. In focus (the ink, D-184) it's live: click
+    selects a cell (cyan `[ ]`), again steps a scale on; arrows move; 1–9 set a step; Backspace clears; `-` not
+    relevant; Enter or a double-click types a number or text. Under the selected cell, at screen size, its bar (steps,
+    not relevant, how sure, note). The focus dock gets `[setup]`: a framed panel over the bottom middle (templates,
+    rows, columns, cells, options). Escape lets go of the cell, then closes the setup, then leaves focus. No `+` in a
+    matrix's focus. Fit frames the table.
+- *Data:* the setup on the piece (`matrix: {rows, cols, cell, steps, unit?, notRelevant?, confidence?, reading?}`, each
+  axis `{type?, plane?, hide?, items[{id, name? | cardType + cardId}], noun?}`); cells in `cells/{matrixId}_{row}_{col}`
+  (`value` a step id, number or text ≤ 200; `notes`, `notRelevant`, `confidence`), so a cell can't be made twice.
+  Deleting the matrix takes its cells (one undo step); a workspace delete takes `cells`. Rules `validMatrix` / `validCell`.
+  The old `comparisons` stay as they were (archived).
+- *Not yet:* a feature's criteria scored per cell (D-133), the `gap / table stakes` verdict and white space, presence
+  marks on cells, reordering rows and columns, the matrix in the export, the assistant writing it.
+- *User:* "Bu matric tablosunu olabildiğince generic yap ki, başka türlü de kullanılabilsin"; picked mixed rows (cards or
+  names), one cell kind per matrix, the old matrix's extras made generic, a piece of its own on the canvas.
+- *Alternatives:* rows only from cards, or only typed; one scale for all; a cell kind per column (more a spreadsheet);
+  inside a plane. Not taken.
+- *Verified:* rules tests 372 passed (new: matrix piece, cells, viewer); headless Chrome on emulators: the canvas
+  picture, focus, cell bar, keys 1–9 / arrows, number typing, a typed row, a column taken out and brought back, the card
+  picker, a new matrix from `+`, Escape order; no console errors; typecheck.
