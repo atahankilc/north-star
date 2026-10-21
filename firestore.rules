@@ -184,13 +184,15 @@ service cloud.firestore {
     // Something on the workspace's canvas (D-176): a plane for now (D-180), a box in canvas pixels. `board` is the name it
     // had before D-180, still on pieces made then (and brought back by undoing their changes).
     function validPiece(d) {
-      return d.kind in ['plane', 'board', 'matrix']
+      return d.kind in ['plane', 'board', 'matrix', 'table']
         && d.x is number && d.y is number
         && d.w is number && d.w > 0 && d.w <= 100000
         && d.h is number && d.h > 0 && d.h <= 100000
         && optText(d, 'name', 80)
         // A matrix's setup (D-204), on matrices only.
         && (!('matrix' in d) || (d.kind == 'matrix' && validMatrix(d.matrix)))
+        // A table's setup (D-209), on tables only.
+        && (!('table' in d) || (d.kind == 'table' && validTable(d.table)))
         && d.createdAt is number
         && d.updatedAt is number;
     }
@@ -214,7 +216,24 @@ service cloud.firestore {
         && optBool(m, 'notRelevant') && optBool(m, 'confidence') && optBool(m, 'reading');
     }
 
-    // One of a matrix's cells (D-204): the id is fixed by the matrix, its row and its column.
+    // Where a lens's rows come from (D-209, src/data/source.ts): rules, cards taken out, entries added by hand.
+    function validSource(s) {
+      return s is map
+        && s.rules is list && s.rules.size() <= 12
+        && s.items is list && s.items.size() <= 200
+        && (!('hide' in s) || (s.hide is list && s.hide.size() <= 200));
+    }
+
+    // A table (D-209, src/data/table.ts): its rows' source, its columns, how it's sorted.
+    function validTable(t) {
+      return t is map
+        && validSource(t.rows)
+        && t.cols is list && t.cols.size() <= 30
+        && optBool(t, 'manual')
+        && (!('sort' in t) || (t.sort is map && isText(t.sort.col, 128)));
+    }
+
+    // One of a matrix's (D-204) or a table's (D-209) cells: the id is fixed by the matrix, its row and its column.
     function validCell(id, d) {
       return isText(d.matrixId, 128) && isText(d.row, 128) && isText(d.col, 128)
         && id == d.matrixId + '_' + d.row + '_' + d.col

@@ -149,8 +149,10 @@
 .bar[data-handle='w'] { left: -5px; }
 
 /* A matrix (D-204, D-208) is a window: a plane's edge, fill, name and console, but no `+` marks; its table sits at
-   its own size from the top-left, cut by the edge. In focus its copy there glides out, so this one hides. */
-.piece[data-kind='matrix']::before {
+   its own size from the top-left, cut by the edge. In focus its copy there glides out, so this one hides. A table
+   (D-209) is the same kind of window. */
+.piece[data-kind='matrix']::before,
+.piece[data-kind='table']::before {
   content: none;
 }
 

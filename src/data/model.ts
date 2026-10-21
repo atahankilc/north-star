@@ -4,7 +4,7 @@
 //
 //   workspaces/{workspaceId}                 Workspace
 //     pieces/{id}                            Piece (D-176): something on the canvas, a plane (D-180) or a matrix (D-204)
-//     cells/{matrixId}_{row}_{col}           Cell (D-204): one of a matrix's cells (src/data/matrix.ts)
+//     cells/{matrixId}_{row}_{col}           Cell (D-204): one of a matrix's or a table's (D-209) cells (src/data/matrix.ts)
 //     members/{uid}                          Member (D-098): a member's name and email, for the people list
 //   inviteCodes/{code}                       InviteCode (D-012)
 //   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)
@@ -13,6 +13,7 @@
 //   presence/{workspaceId}/{uid}             Presence (D-016)
 
 import type { MatrixSetup } from './matrix'
+import type { TableSetup } from './table'
 
 // D-098: any number of owners (never none), editors, and viewers who read but don't change the workspace.
 export type Role = 'owner' | 'editor' | 'viewer'
@@ -55,7 +56,8 @@ export type JoinRequest = {
 // as `kind: 'board'`, which still reads as a plane). World units are canvas pixels at zoom 1; x/y is its top-left corner.
 // Not the archived `planes` collection (D-139): that was the old board's own layouts.
 // A matrix (D-204): two lists crossed, its cells filled; its setup on the piece, its cells in `cells`.
-export type PieceKind = 'plane' | 'matrix'
+// A table (D-209): rows from rules, columns of the cards' fields and its own; its own columns' values in `cells`.
+export type PieceKind = 'plane' | 'matrix' | 'table'
 export type Piece = {
   kind: PieceKind
   x: number
@@ -64,6 +66,7 @@ export type Piece = {
   h: number
   name?: string
   matrix?: MatrixSetup
+  table?: TableSetup
   createdAt: number
   updatedAt: number
 }

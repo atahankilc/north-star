@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { deletePiece, pieceRef, KIND_NAME, kindOfPiece, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { deletePiece, pieceRef, KIND_NAME, isBare, kindOfPiece, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
@@ -36,6 +36,8 @@ import { GRID } from '../../data/grid'
 import { goToPlace, useGoTo, type Place } from './goTo'
 import { matrixBounds, MatrixView, useMatrixUi } from './Matrix'
 import { MatrixSetupPanel } from './MatrixSetup'
+import { tableBounds, TableView, useTableUi } from './Table'
+import { TableSetupPanel } from './TableSetup'
 import styles from './CanvasView.module.css'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
@@ -72,7 +74,7 @@ export function CanvasView() {
   const [params, setParams] = useSearchParams()
   const focusId = params.get('focus')
   const focused = focusId ? (pieces.find((p) => p.id === focusId) ?? null) : null
-  const focusedBare = Boolean(focused && kindOfPiece(focused) === 'matrix')
+  const focusedBare = Boolean(focused && isBare(focused))
   const focusSpread = useCanvasView((s) => s.focusSpread)
   const focusArrived = useCanvasView((s) => s.focusArrived)
   const focusLeaving = useCanvasView((s) => s.focusLeaving)
@@ -87,9 +89,14 @@ export function CanvasView() {
   const focusedCards = focused ? cardsOf(focused.id) : []
   const focusedLabels = focused ? labelsOf(focused.id) : []
   const focusedMatrix = focused && kindOfPiece(focused) === 'matrix'
+  const focusedTable = focused && kindOfPiece(focused) === 'table'
   const matrixSetup = useMatrixUi((s) => s.setup)
-  // What's in a piece, in its own px: a plane's cards and text, or a matrix's table (D-204).
-  const contentOf = (p: WithId<Piece>) => (kindOfPiece(p) === 'matrix' ? matrixBounds(p, cards) : spaceBounds(cardsOf(p.id), labelsOf(p.id)))
+  const tableSetup = useTableUi((s) => s.setup)
+  // What's in a piece, in its own px: a plane's cards and text, a matrix's table (D-204) or a table's (D-209).
+  const contentOf = (p: WithId<Piece>) => {
+    const kind = kindOfPiece(p)
+    return kind === 'matrix' ? matrixBounds(p, cards) : kind === 'table' ? tableBounds(p, cards) : spaceBounds(cardsOf(p.id), labelsOf(p.id))
+  }
   // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
   const fitRef = useRef((_instant?: boolean) => {})
   fitRef.current = (instant = false) => {
@@ -397,6 +404,7 @@ export function CanvasView() {
           // A card, or a matrix's cell (D-204), lets go first; then the setup closes; then focus goes.
           if (cardSelected) useCanvasView.setState({ cardSelected: null })
           else if (useMatrixUi.getState().setup) useMatrixUi.setState({ setup: false })
+          else if (useTableUi.getState().setup) useTableUi.setState({ setup: false })
           else unfocusRef.current()
         }
         if ((e.key === 'Delete' || e.key === 'Backspace') && card && editor) {
@@ -505,14 +513,24 @@ export function CanvasView() {
           }}
           onLeft={left}
         >
-          {focusedMatrix ? <FocusedMatrix piece={focused} editor={editor} /> : <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />}
+          {focusedMatrix ? (
+            <FocusedMatrix piece={focused} editor={editor} />
+          ) : focusedTable ? (
+            <FocusedTable piece={focused} editor={editor} />
+          ) : (
+            <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
+          )}
           {drawing === focused.id && <DrawSection space={focused.id} toSpace={planeToSpace} />}
           {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
+          {focusedTable && editor && tableSetup && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {focusArrived && !focusLeaving && (
             <FocusDock>
               {focusedMatrix && editor && (
                 <DockAction label="setup" title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
+              )}
+              {focusedTable && editor && (
+                <DockAction label="setup" title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: !s.setup }))} />
               )}
               <DockAction label="unfocus" keyHint="esc" title="back to the canvas (Esc)" main onClick={unfocus} />
             </FocusDock>
@@ -527,7 +545,7 @@ export function CanvasView() {
       {confirming && (
         <HazardConfirm
           title={`delete ${confirming.name ? `"${confirming.name}"` : `this ${KIND_NAME[kindOfPiece(confirming)]}`}?`}
-          lines={[kindOfPiece(confirming) === 'matrix' ? 'The matrix and its cells go; the cards in it stay.' : 'The plane and everything on it goes.', `${UNDO_HINT} brings it back.`]}
+          lines={[isBare(confirming) ? `The ${KIND_NAME[kindOfPiece(confirming)]} and its cells go; the cards in it stay.` : 'The plane and everything on it goes.', `${UNDO_HINT} brings it back.`]}
           confirm="delete"
           onCancel={() => useCanvasView.setState({ confirming: null })}
           onConfirm={() => {
@@ -556,7 +574,7 @@ function innerView(box: Box, b: Bounds | null, bare = false): PlaneCam {
 
 // That view on the screen, where focus starts from and goes back to.
 function homeOf(piece: Piece, at: ScreenRect, content: Bounds | null): PlaneCam {
-  const v = innerView(piece, content, kindOfPiece(piece) === 'matrix')
+  const v = innerView(piece, content, isBare(piece))
   return { ox: at.x + at.zoom * (1 + v.ox), oy: at.y + at.zoom * (1 + v.oy), zoom: at.zoom * v.zoom }
 }
 
@@ -564,6 +582,12 @@ function homeOf(piece: Piece, at: ScreenRect, content: Bounds | null): PlaneCam 
 function FocusedMatrix({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const view = useCanvasView((s) => s.planeCam)
   return view ? <MatrixView piece={piece} view={view} live editor={editor} /> : null
+}
+
+// The focused table, live, on its own view (D-209).
+function FocusedTable({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const view = useCanvasView((s) => s.planeCam)
+  return view ? <TableView piece={piece} view={view} live editor={editor} /> : null
 }
 
 // The focused plane's cards, live, on its own view.
@@ -656,7 +680,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
     onOpen: () => toggleInbox(true, piece.id),
   }
   // Its cards fitted inside it, and its marks with them (D-187).
-  const bare = kind === 'matrix'
+  const bare = isBare(piece)
   const inner = innerView(box, content, bare)
   const step = GRID * inner.zoom
   return (
@@ -684,7 +708,13 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       {/* A comment on the plane itself (D-195), not on what's in it. */}
       <ThreadChip wid={wid} thread={own} zoom={cam.zoom} />
       {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). */}
-      {kind === 'matrix' ? <MatrixView piece={piece} view={inner} live={false} editor={editor} /> : <PlaneCards cards={cards} labels={labels} view={inner} live={false} editor={editor} />}
+      {kind === 'matrix' ? (
+        <MatrixView piece={piece} view={inner} live={false} editor={editor} />
+      ) : kind === 'table' ? (
+        <TableView piece={piece} view={inner} live={false} editor={editor} />
+      ) : (
+        <PlaneCards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
+      )}
       {CORNERS.map((h) => (
         <span key={h} className={styles.mark} data-handle={h} onPointerDown={editing ? press(h) : undefined} aria-hidden />
       ))}

@@ -1,0 +1,436 @@
+/* A table (D-209). The layer fills its piece (or the screen in focus) and clips it; on the canvas the pointer goes
+   through it to the canvas. Its parts are placed in its own px (Table.tsx's T). */
+.layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.layer[data-live='true'] {
+  pointer-events: auto;
+}
+
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+/* Solid under its cells, so the backdrop stays out from under its text. */
+.table {
+  position: relative;
+  background: var(--bg);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.table > * {
+  position: absolute;
+}
+
+/* A dashed rule under each row; the selected cell's row washed. */
+.band {
+  border-bottom: 1px dashed var(--line);
+  pointer-events: none;
+}
+
+.band[data-selected='true'] {
+  background: var(--wash-1);
+}
+
+.headRule {
+  background: var(--line-hover);
+  pointer-events: none;
+}
+
+/* A column's head: faint caps at its bottom; its own columns a little brighter. A click sorts by it. */
+.head {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  padding: 0 var(--space-3) var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-align: left;
+  text-transform: uppercase;
+  outline: none;
+  cursor: default;
+}
+
+.head[data-own='true'] {
+  color: var(--fg-muted);
+}
+
+.layer[data-live='true'] .head {
+  cursor: pointer;
+}
+
+.layer[data-live='true'] .head:hover,
+.head:focus-visible {
+  color: var(--fg-strong);
+}
+
+.headName {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.arrow {
+  color: var(--accent-cyan);
+}
+
+/* A row's name: Geist, one line; a card's carries its type's colour on its left edge. */
+.name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  color: var(--fg-strong);
+}
+
+.name[data-card='true'] {
+  box-shadow: inset 2px 0 0 var(--type);
+}
+
+.nameText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.nameText[data-unnamed='true'] {
+  color: var(--fg-faint);
+}
+
+.nameField {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--accent-cyan);
+  outline: none;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-family: var(--font-display);
+}
+
+/* `×` to take a row out: shown while hovered. */
+.remove {
+  flex-shrink: 0;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.name:hover .remove,
+.remove:focus-visible {
+  opacity: 1;
+}
+
+.remove:hover {
+  color: var(--accent-magenta);
+}
+
+/* A cell: a card's field left-aligned in grey (its type in its colour); its own values centred, in their step's colour. */
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--tone, var(--fg));
+  font: inherit;
+  font-size: var(--text-md);
+  outline: none;
+  cursor: default;
+}
+
+.cell[data-field] {
+  justify-content: flex-start;
+  color: var(--tone, var(--fg-muted));
+  font-size: var(--text-xs);
+}
+
+.cell[data-field='type'] {
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.cell[data-kind='text'] {
+  justify-content: flex-start;
+}
+
+.layer[data-live='true'] .cell {
+  cursor: pointer;
+}
+
+.layer[data-live='true'] .cell:hover {
+  background: var(--wash-2);
+}
+
+/* Selected: `[ ● ]` brackets in cyan, as the matrix's. */
+.cell[data-selected='true']::before,
+.cell[data-selected='true']::after {
+  position: absolute;
+  top: 50%;
+  color: var(--accent-cyan);
+  font-size: var(--text-sm);
+  transform: translateY(-50%);
+}
+
+.cell[data-selected='true']::before {
+  content: '[';
+  left: 2px;
+}
+
+.cell[data-selected='true']::after {
+  content: ']';
+  right: 2px;
+}
+
+.cell:focus-visible {
+  background: var(--wash-3);
+}
+
+.glyph {
+  line-height: 1;
+}
+
+.unset {
+  color: var(--fg-faint);
+}
+
+.number {
+  color: var(--fg-strong);
+  font-size: var(--text-sm);
+}
+
+.unit {
+  margin-left: 2px;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.text {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cell[data-kind='text'] .text {
+  color: var(--fg);
+}
+
+.cellField {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--accent-cyan);
+  outline: none;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+/* `+` for a column at the end of the heads, `+ row` under the rows. */
+.add {
+  composes: small from '../../ui/AsciiButton.module.css';
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 var(--space-3);
+  color: var(--fg-faint);
+}
+
+.add[data-col] {
+  justify-content: center;
+  padding: 0;
+}
+
+.add:hover {
+  color: var(--accent-magenta);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 var(--space-3);
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+/* The setup (D-209): framed, over the bottom middle of the screen, just above the focus dock, like the matrix's. Its
+   body scrolls when there are many rules and columns; its pickers open outside it. */
+.setup {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--space-8) + var(--space-2));
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(720px, calc(100% - 2 * var(--space-4)));
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  transform: translateX(-50%);
+  cursor: default;
+}
+
+.setupHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.setupTitle {
+  flex: 1;
+  color: var(--fg);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.setupBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: min(56vh, 520px);
+  overflow-y: auto;
+}
+
+.setupRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.setupLabel {
+  flex-shrink: 0;
+  width: 84px;
+  color: var(--fg-dim);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.setupValue {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  min-width: 0;
+}
+
+/* A rule or a column: one line, indented under its label. */
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  padding-left: calc(84px + var(--space-3));
+}
+
+.word {
+  color: var(--fg-faint);
+}
+
+.tool {
+  composes: small from '../../ui/AsciiButton.module.css';
+  padding: 0 2px;
+}
+
+.tool[aria-pressed='true'] {
+  color: var(--tone, var(--accent-cyan));
+}
+
+/* A value a rule can take: framed, bright when picked, dashed and faint when not. */
+.pick {
+  padding: 0 var(--space-1);
+  border: 1px dashed var(--line-hover);
+  background: none;
+  color: var(--fg-faint);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pick[aria-pressed='true'] {
+  border-style: solid;
+  border-color: var(--fg-dim);
+  color: var(--tone, var(--fg));
+}
+
+.select {
+  color: var(--fg);
+}
+
+.check {
+  composes: small from '../../ui/AsciiButton.module.css';
+  padding: 0;
+}
+
+.check[aria-pressed='true'] {
+  color: var(--fg);
+}
+
+.box {
+  color: var(--accent-cyan);
+}
+
+.check[aria-pressed='false'] .box {
+  color: var(--fg-faint);
+}
+
+.field {
+  width: 16ch;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  outline: none;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+}
+
+.field:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.colName {
+  width: 18ch;
+  color: var(--fg);
+}
+
+.dim {
+  color: var(--fg-faint);
+}

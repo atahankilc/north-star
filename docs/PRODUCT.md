@@ -68,6 +68,10 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    blank one are the others.
    On the canvas it's a window you move and resize, its table inside, no `+` marks (D-208); focus brings the table to
    the middle of the whole screen (D-206).
+   **Table (D-209):** the first *lens*, a window like the matrix's: rows are the cards that meet its rules (plane,
+   type, status, tag, words in the title; is or is not; none required) plus cards and names added by hand; columns
+   are the cards' own fields and columns of its own (a scale, a number, a text, a check), sorted by any. Next, a lens
+   sticks to a plane and opens beside it in focus (D-209's *Next*).
 5. **Overview** (D-144). The workspace read on one screen: next steps, what's on solid ground and what's still a
    guess, the riskiest bets, the white space, what looks off. Reached by its path; opening a workspace now lands on
    the canvas (D-174).

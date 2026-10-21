@@ -3284,3 +3284,44 @@ categories shown like B, not in a card, and the features under them not indented
   canvas (the canvas takes the wheel there, D-186). Not taken.
 - *Verified:* headless Chrome on emulators: the window on the canvas, a corner resize to 375 × 225 (table cut at the
   edge), focus mid-way and arrived, back; no console errors; typecheck.
+
+### D-209 · 2026-10-22 · Accepted (the first lens: a table piece; rows by rules, a source matrices can take on later)
+- *Decision:* a **table** is a piece on the canvas (`kind: 'table'`), made from the side nav's `+` under `table` from a
+  template (every card · features · competitors · blank). Generic, a lens on the cards:
+  - *Rows:* from a **rule list** (`src/data/source.ts`): each rule a field (`plane`, `type`, `status`, `tag`, `title`),
+    `is` / `is not` (`has` / `lacks` for title words) and the values it takes (any of them); every rule must hold; none
+    is required (no rules = every card on every plane; a rule with nothing picked doesn't narrow yet). Then cards and
+    typed names added by hand. `[ ] cards that meet the rules` off = only what's added by hand (a list of names).
+    Ordered by the chain (D-045), then title. `×` on a row hides a rules' card (`N taken out` brings them back) or drops a
+    typed one with its cells.
+  - *Columns:* first always the row's name (a card's live title, double-click retitles it; or the typed name). Then the
+    cards' own fields, read-only as D-205 shows them (type, plane, status, tags, regions, priority, impact, effort,
+    evidence `+2 −1`), and columns of its own, each with its own kind: a scale (presets from the matrix's), a number
+    with a unit, a short text, a check. Moved ‹ ›, renamed, taken out (with their values). A head's click sorts by it:
+    up, down, off (shared; empty ones last).
+  - *Look and use:* a window like the matrix (D-208): a plane's edge, fill, name in the top edge, console, moved and
+    resized in edit mode, no `+` marks, its table at zoom 1 from the top-left, cut by the edge; focus as D-206 (the
+    table glides to the middle while the page builds cell by cell). Live in focus: click selects a cell (cyan `[ ]`),
+    again steps a scale on or flips a check; arrows move; 1–9 set a step; Backspace clears; Enter or a double-click
+    types a number or text; space flips a check. `[setup]` in the focus dock: templates, the rules, `+ card`, `+ name`,
+    the columns, `+ column`, `+ card's field`.
+- *Data:* the setup on the piece (`table: {rows: {rules[{field, not?, values[]}], hide?, items[]}, manual?, cols[{id,
+  field? | name, kind, steps?, unit?}], sort?: {col, desc?}}`); own columns' values in `cells/{tableId}_{row}_{col}` like
+  a matrix's (`matrixId` holds the table's id). Deleting the table takes its cells. Rules `validSource`, `validTable`.
+- *Next (the user's direction, not built):* a lens sticks to a plane's edge (dropped near it, the edge lights cyan) and
+  is then bound to it: its plane rule set to that plane by itself (`oto`, still changeable), moved with the plane; pulled
+  away it lets go. In the plane's focus the dock lists what's stuck to it; each opens **beside** the plane, the screen
+  split, and each half manages its own area (a card's panel opens at the right of the plane's half, a matrix cell's at
+  the right of the matrix's half). Selections look across (a card selected lights its row). Not bound: later. The
+  matrix's axes move onto the same rule list (tell north-star-5e's matrix work first).
+- *User:* chose Table first, rules ("Kurallar (filtre listesi)") over several types + planes; looked at A (inside the
+  plane) and B (stuck beside it) on a preview: "B gibi olsun ama birbirine bağlı olan componentler var ise ben focus
+  yapınca bunları yan yana açabiliyim … Bu controlü de console a koyarız"; "focus sırasında sol ve sağdaki componentler
+  kendi alanını yönetebilir".
+- *Alternatives:* a lens inside a plane like a card (A); one type + one plane per axis (the matrix's today); a filter
+  language. Not taken.
+- *Verified:* rules tests 377 passed (new: a table piece, a plane with a table setup, a table without rows, rules not
+  a list, a table cell); headless Chrome on emulators: two tables (every card, features) beside two planes on the
+  canvas, focus on one, a number typed into `cost`, sorted by it, the setup with a type rule and the columns; no
+  console errors; typecheck.
+

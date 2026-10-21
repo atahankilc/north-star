@@ -203,6 +203,11 @@ piece; check them with the user then.
   console, moved and resized in edit mode, no `+` marks, its table at its own size from the top-left, cut by the edge
   (D-208); focus glides the table to the middle while the page builds cell by cell behind it, no ink (D-206). Live in focus (click, again steps, 1–9, arrows, Backspace, `-`, Enter;
   a bar under the cell); `[setup]` in the focus dock. Setup on the piece, cells in `cells/{matrixId}_{row}_{col}`.
+- Table (D-209), the first lens: a canvas piece from `+` (templates every card, features, competitors, blank), a window
+  like the matrix's (D-208, D-206's focus). Rows: a rule list (plane, type, status, tag, title; is / is not; any of the
+  values; none required) + cards and names by hand; `×` hides or drops. Columns: the name first, then the cards' fields
+  (read-only) and its own (scale, number + unit, text, check); a head's click sorts. Live in focus like the matrix;
+  `[setup]` in the dock. Next: lenses stick to a plane's edge and bind to it; in focus they open beside it, each half its own area.
 - Go to (D-196): a grey compass in the side nav under fit (search inside), no keys (D-201); on the canvas its planes (each
   with its own headings and sections on a line under it, folded until its framed `[▸ N inside]` opens them, D-200, D-201), project title, H1/H2 headings and named sections, in a focused plane its
   headings and sections, in reading order; glides there (planes, sections, title framed whole; a heading at 100 % near

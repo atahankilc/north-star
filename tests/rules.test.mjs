@@ -237,6 +237,12 @@ await allow('a matrix cell with a number, a note, not relevant and a confidence'
   setDoc(doc(sub(bob.fs, 'cells'), 'm1_f2_a1'), { matrixId: 'm1', row: 'f2', col: 'a1', value: 4.5, notes: 'seen on their site', notRelevant: true, confidence: 'guess', updatedAt: 1 }))
 await deny('a matrix cell under another id', () => setDoc(doc(sub(bob.fs, 'cells'), 'm1_f1'), { matrixId: 'm1', row: 'f1', col: 'a1', updatedAt: 1 }))
 await deny('a matrix cell with a list for a value', () => setDoc(doc(sub(bob.fs, 'cells'), 'm1_f3_a1'), { matrixId: 'm1', row: 'f3', col: 'a1', value: ['x'], updatedAt: 1 }))
+const table = { rows: { rules: [{ field: 'type', values: ['feature'] }], items: [] }, cols: [{ id: 'c1', field: 'status' }, { id: 'c2', name: 'cost', kind: 'number' }], sort: { col: 'c2' } }
+await allow('a table on the canvas (D-209)', () => setDoc(doc(sub(bob.fs, 'pieces'), 't1'), { ...piece, kind: 'table', table }))
+await deny('a plane with a table setup', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, table }))
+await deny('a table without its rows', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'table', table: { cols: [] } }))
+await deny('a table with rules that are not a list', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'table', table: { ...table, rows: { rules: 'all', items: [] } } }))
+await allow('a table cell', () => setDoc(doc(sub(bob.fs, 'cells'), 't1_f1_c2'), { matrixId: 't1', row: 'f1', col: 'c2', value: 1200, updatedAt: 1 }))
 // Cards on a plane (D-187).
 await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a competitor on a plane', () => addDoc(sub(bob.fs, 'competitors'), { name: 'Crewly', pieceId: 'p1', x: 25, y: 50, createdAt: 1, updatedAt: 1 }))

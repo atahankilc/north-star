@@ -7,9 +7,11 @@ import { useAuth } from '../../data/auth'
 import { setReadOnly } from '../../data/history'
 import type { WithId } from '../../data/hooks'
 import type { JoinRequest, PieceKind } from '../../data/model'
-import { addPiece, KIND_NAME, kindOfPiece } from '../../data/pieces'
-import { TEMPLATES } from '../../data/matrix'
+import { addPiece, isBare, KIND_NAME, kindOfPiece } from '../../data/pieces'
+import { TEMPLATES, type MatrixSetup } from '../../data/matrix'
 import { matrixBounds } from './Matrix'
+import { tableBounds } from './Table'
+import { TEMPLATES as TABLE_TEMPLATES, type TableSetup } from '../../data/table'
 import { addCard, CARD_TYPES, type CardType } from '../../data/cards'
 import { addLabel, CANVAS, PARA_W, STICKY_W, TITLE_W } from '../../data/labels'
 import { snap } from '../../data/grid'
@@ -107,8 +109,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           }
           side={
             <>
-              {/* A matrix in focus takes its rows and columns from its setup (D-204), not from `+`. */}
-              {editor && !(focused && kindOfPiece(focused) === 'matrix') && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
+              {/* A matrix or a table in focus takes its rows and columns from its setup (D-204, D-209), not from `+`. */}
+              {editor && !(focused && isBare(focused)) && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
               <FitButton wid={wid} plane={focused?.id ?? null} />
               <GoToButton plane={focused?.id ?? null} />
             </>
@@ -127,6 +129,7 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
   const { pieces, cards, labels } = useWs()
   const focused = plane !== null
   const matrix = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'matrix')
+  const table = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'table')
   return (
     <button
       className={styles.fit}
@@ -134,7 +137,7 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
       title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
       onClick={() =>
         focused
-          ? fitPlane(matrix ? matrixBounds(matrix, cards) : spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
+          ? fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
           : fitCanvas(wid, [...pieces, ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
       }
     >
@@ -227,7 +230,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     // The project title goes on the canvas only, once (D-190).
     ...(hasTitle || plane ? [] : [{ key: 'title', label: 'project title', glyph: '✦', onSelect: () => void addText('title') }]),
   ]
-  const add = async (kind: PieceKind, template?: (typeof TEMPLATES)[number]) => {
+  const add = async (kind: PieceKind, template?: { name: string; setup: () => MatrixSetup | TableSetup }) => {
     const id = await addPiece(wid, kind, canvasCenter(wid), pieces, template?.setup(), template?.name)
     useCanvasView.setState({ selected: id })
   }
@@ -262,6 +265,9 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
               // A matrix (D-204), from one of its templates; its setup changes all of it after.
               { key: 'matrix', heading: 'matrix' },
               ...TEMPLATES.map((t) => ({ key: `matrix-${t.key}`, label: t.name, glyph: '⊞', onSelect: () => void add('matrix', t) })),
+              // A table (D-209): rows from rules, columns of the cards' fields and its own.
+              { key: 'table', heading: 'table' },
+              ...TABLE_TEMPLATES.map((t) => ({ key: `table-${t.key}`, label: t.name, glyph: '☰', onSelect: () => void add('table', t) })),
               ...text,
             ]
       }
