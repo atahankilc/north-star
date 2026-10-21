@@ -3008,7 +3008,11 @@ categories shown like B, not in a card, and the features under them not indented
     (also in paragraphs: `LightMarkdown`'s `mark`); no plain colour in its bar (yellow is its default).
   - *Width strip* (D-163), paragraphs and sticky notes: a 1.2 px strip 4 px inside the right edge, 60 % of the height,
     shown only while hovered (grey; its colour if selected) or dragged, never just for being selected (the user's
-    call); the pointer takes a 19 px band round it.
+    call); the pointer takes a 19 px band round it. The project title has it too (the user asked).
+  - *Planes in edit mode* (changes D-182's corners): each corner is a section's resize grip, an L just inside it (29 px
+    arms, 2 px, 5 px in, a 34 px grab square), in cyan; the edge middles keep their short bars; the edit console
+    stands 40 px from the right so the bottom-right grip is clear (the user: "the only one that still looks different");
+    the faint dashed cyan edge is gone, the plane keeps its own edge in edit mode (the user asked).
   - *All*: corner marks 2.4 px thick, a little clear of text (7 px; a sticky note's on its paper), close in onto the
     corners, longer, while pressed, and take the item's colour once selected (were always cyan); plain text is `--fg`
     as on the old board (ink was white); the bar has `edit` (or `rename`). The selected one is lifted over everything

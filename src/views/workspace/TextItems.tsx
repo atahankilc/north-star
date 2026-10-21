@@ -44,6 +44,7 @@ import {
 import { DESCRIPTION_MAX, describeWorkspace, renameWorkspace } from '../../data/workspaces'
 import { useCanvasView } from '../../state/canvasView'
 import { useMotion } from '../../state/motion'
+import { ago } from '../../ui/ago'
 import { LightMarkdown } from '../../ui/LightMarkdown'
 import { useWs } from './context'
 import styles from './TextItems.module.css'
@@ -52,6 +53,8 @@ import { ThreadChip, threadOn } from './Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 
 const DRAG_PX = 5
+// Down from a sticky note's top to its text: the bar, a gap, the signed line (the old board's units × 80).
+const STICKY_TEXT_TOP = 17.64
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
 const MIN_TEXT_PX = 6
 
@@ -90,7 +93,7 @@ export function labelBox(l: Label) {
   const k = kindOf(l)
   const lines = Math.max(1, l.text.split('\n').length)
   if (k === 'section') return { x: l.x, y: l.y, w: l.w ?? 400, h: l.h ?? 300 }
-  if (k === 'sticky') return { x: l.x, y: l.y, w: l.w ?? STICKY_W.initial, h: 48 + lines * STICKY_PX[l.scale ?? 'medium'] * 1.45 }
+  if (k === 'sticky') return { x: l.x, y: l.y, w: l.w ?? STICKY_W.initial, h: STICKY_TEXT_TOP + lines * STICKY_PX[l.scale ?? 'medium'] * 1.45 + 7.2 }
   if (k === 'title') return { x: l.x, y: l.y, w: l.w ?? TITLE_W.initial, h: 340 }
   let w: number
   let h: number
@@ -245,6 +248,8 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     'data-live': live || undefined,
     'data-caps': l.caps || undefined,
     'data-colored': !!l.color || undefined,
+    // A width being dragged: its strip in its colour.
+    'data-resizing': !!held || undefined,
   }
   const marks = (
     <>
@@ -306,17 +311,21 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   }
 
   if (kind === 'title')
-    return <TitleBlock l={l} style={style} common={common} press={press} edit={edit} typing={typing} editor={editor} zoom={zoom} w={w ?? TITLE_W.initial} marks={marks} resize={selected && editor ? resize('w') : undefined} />
+    return <TitleBlock l={l} style={style} common={common} press={press} edit={edit} typing={typing} editor={editor} zoom={zoom} w={w ?? TITLE_W.initial} marks={marks} resize={live && editor ? resize('w') : undefined} />
 
   if (kind === 'sticky') {
-    const date = new Date(l.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+    // Signed along its top (D-158): the writer's first name and how long ago, three little checks in its colour.
+    const who = (l.author ?? 'someone').split(/\s+/)[0].toUpperCase()
     return (
       <div className={styles.sticky} style={{ ...style, width: w ?? STICKY_W.initial, fontSize: STICKY_PX[l.scale ?? 'medium'] }} {...common} onPointerDown={press} onDoubleClick={edit}>
         <span className={styles.stickyHead}>
-          {l.author ?? 'someone'} · {date}
+          <span>
+            {who} · {ago(l.createdAt)}
+          </span>
+          <Checks />
         </span>
-        {typing ? <Field l={l} /> : <div className={styles.stickyText}>{l.text ? <LightMarkdown text={l.text} /> : <span className={styles.empty}>a note</span>}</div>}
-        {selected && editor && <span className={styles.edge} onPointerDown={resize('w')} aria-hidden />}
+        {typing ? <Field l={l} /> : <div className={styles.stickyText}>{l.text ? <LightMarkdown text={l.text} mark="•" /> : <span className={styles.empty}>a note</span>}</div>}
+        {live && editor && <span className={styles.edge} onPointerDown={resize('w')} aria-hidden />}
         {marks}
         {bar}
       </div>
@@ -328,8 +337,8 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     return (
       <div className={styles.para} style={{ ...style, fontSize: PARA_PX[l.scale ?? 'large'], ...(turn ? turnedBox : { width: pw }) }} {...common} onPointerDown={press} onDoubleClick={edit}>
         <div ref={body} className={styles.body} data-turn={turn} style={{ width: pw }}>
-          {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} /> : <span className={styles.empty}>a paragraph</span>}
-          {selected && editor && <span className={styles.edge} onPointerDown={resize('w')} aria-hidden />}
+          {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} mark="•" /> : <span className={styles.empty}>a paragraph</span>}
+          {live && editor && <span className={styles.edge} onPointerDown={resize('w')} aria-hidden />}
         </div>
         {marks}
         {bar}
@@ -358,6 +367,21 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
       {marks}
       {bar}
     </div>
+  )
+}
+
+// A sticky note's mark: three little checks, like ▚▚▚, in its colour (each two squares corner to corner).
+function Checks() {
+  const c = 2.8
+  return (
+    <svg className={styles.checks} viewBox={`${-c * 7.2} ${-c} ${c * 7.2} ${c * 2}`} width={c * 7.2} height={c * 2} aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <g key={i}>
+          <rect x={-i * c * 2.6 - c} y={-c} width={c} height={c} />
+          <rect x={-i * c * 2.6 - c * 2} y={0} width={c} height={c} />
+        </g>
+      ))}
+    </svg>
   )
 }
 
@@ -720,7 +744,7 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
         </>
       )}
       <span className={styles.rule2} />
-      {LABEL_COLORS.map((c) => (
+      {LABEL_COLORS.filter((c) => kind !== 'sticky' || c !== 'ink').map((c) => (
         <button
           key={c}
           className={styles.dot}

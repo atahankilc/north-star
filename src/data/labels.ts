@@ -51,7 +51,8 @@ export const kindOf = (l: Pick<Label, 'kind' | 'size'>): TextKind =>
 // Sizes in space px (the old board's units × 80, a card being 200 wide).
 export const HEADING_PX: Record<Exclude<LabelSize, 'note'>, number> = { heading: 48, subheading: 29, minor: 22 }
 export const PARA_PX: Record<TextScale, number> = { small: 11, medium: 13, large: 16 }
-export const STICKY_PX: Record<TextScale, number> = { small: 11, medium: 13, large: 15 }
+// A sticky note's text, under a card title's 13 (the old board's 0.085 / 0.105 / 0.13 units).
+export const STICKY_PX: Record<TextScale, number> = { small: 6.8, medium: 8.4, large: 10.4 }
 export const PARA_W = { initial: 500, min: 120, max: 3200 }
 export const STICKY_W = { initial: 200, min: 100, max: 800 }
 export const TITLE_W = { initial: 800, min: 500, max: 2400 }

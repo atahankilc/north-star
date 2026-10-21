@@ -23,14 +23,15 @@ function inline(line: string): ReactNode[] {
   return out
 }
 
-export function LightMarkdown({ text }: { text: string }) {
+// `mark`: what a bullet line hangs in the margin (text on the canvas uses the old board's `•`).
+export function LightMarkdown({ text, mark = '–' }: { text: string; mark?: string }) {
   return (
     <div className={styles.md}>
       {text.split('\n').map((raw, i) => {
         const line = raw.trimEnd()
         if (!line.trim()) return <div key={i} className={styles.gap} />
         const bullet = /^\s*[-*•]\s+(.*)$/.exec(line)
-        if (bullet) return <p key={i} className={styles.item} data-mark="–">{inline(bullet[1])}</p>
+        if (bullet) return <p key={i} className={styles.item} data-mark={mark}>{inline(bullet[1])}</p>
         const num = /^\s*(\d{1,3})[.)]\s+(.*)$/.exec(line)
         if (num) return <p key={i} className={styles.item} data-mark={`${num[1]}.`}>{inline(num[2])}</p>
         return <Fragment key={i}><p className={styles.p}>{inline(line)}</p></Fragment>

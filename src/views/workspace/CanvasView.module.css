@@ -51,11 +51,9 @@
   pointer-events: none;
 }
 
-/* Edit mode (D-180, D-181): a faint dashed cyan edge; the plane moves from anywhere on it, its corner marks and edge bars
-   resize it. */
+/* Edit mode (D-180, D-181): the plane's own edge as always (no dashed line, D-194); it moves from anywhere on it, its
+   corner grips and edge bars resize it. */
 .piece[data-editing='true'] {
-  border-style: dashed;
-  border-color: color-mix(in srgb, var(--accent-cyan) 55%, transparent);
   cursor: move;
 }
 
@@ -63,8 +61,8 @@
   cursor: grabbing;
 }
 
-/* Corner marks (D-150's, on a plane, D-181): hidden at rest, grey just outside the corners on hover; in edit mode longer,
-   heavier and cyan, and they take the pointer to resize. */
+/* Corner marks (D-150's, on a plane, D-181): hidden at rest, grey just outside the corners on hover. In edit mode each
+   corner is a section's resize grip (D-194): an L just inside it, 2 px, in cyan, taking the pointer to resize. */
 .mark {
   position: absolute;
   z-index: 1;
@@ -89,17 +87,30 @@
 }
 
 .piece[data-editing='true'] .mark {
-  width: 22px;
-  height: 22px;
-  border-color: var(--accent-cyan);
+  width: 34px;
+  height: 34px;
+  border-width: 0;
   opacity: 1;
   pointer-events: auto;
 }
 
-.piece[data-editing='true'] .mark[data-handle='nw'] { border-top-width: 2px; border-left-width: 2px; cursor: nwse-resize; }
-.piece[data-editing='true'] .mark[data-handle='ne'] { border-top-width: 2px; border-right-width: 2px; cursor: nesw-resize; }
-.piece[data-editing='true'] .mark[data-handle='se'] { border-bottom-width: 2px; border-right-width: 2px; cursor: nwse-resize; }
-.piece[data-editing='true'] .mark[data-handle='sw'] { border-bottom-width: 2px; border-left-width: 2px; cursor: nesw-resize; }
+.piece[data-editing='true'] .mark::after {
+  content: '';
+  position: absolute;
+  width: 29px;
+  height: 29px;
+  border: 0 solid var(--accent-cyan);
+}
+
+.piece[data-editing='true'] .mark[data-handle='nw'] { top: 0; left: 0; cursor: nwse-resize; }
+.piece[data-editing='true'] .mark[data-handle='ne'] { top: 0; right: 0; cursor: nesw-resize; }
+.piece[data-editing='true'] .mark[data-handle='se'] { bottom: 0; right: 0; cursor: nwse-resize; }
+.piece[data-editing='true'] .mark[data-handle='sw'] { bottom: 0; left: 0; cursor: nesw-resize; }
+
+.piece[data-editing='true'] .mark[data-handle='nw']::after { top: 5px; left: 5px; border-top-width: 2px; border-left-width: 2px; }
+.piece[data-editing='true'] .mark[data-handle='ne']::after { top: 5px; right: 5px; border-top-width: 2px; border-right-width: 2px; }
+.piece[data-editing='true'] .mark[data-handle='se']::after { bottom: 5px; right: 5px; border-bottom-width: 2px; border-right-width: 2px; }
+.piece[data-editing='true'] .mark[data-handle='sw']::after { bottom: 5px; left: 5px; border-bottom-width: 2px; border-left-width: 2px; }
 
 /* The edges' middles in edit mode: short cyan bars on the line, a little more to grab than they show. */
 .bar {
@@ -227,6 +238,11 @@
 .console[data-editing='true']::before,
 .console[data-editing='true']::after {
   border-color: var(--accent-cyan);
+}
+
+/* In edit mode the bottom-right corner is a resize grip (34 px, D-194): the console steps clear of it. */
+.console[data-editing='true'] {
+  right: 40px;
 }
 
 .mode {

@@ -169,7 +169,7 @@ piece; check them with the user then.
   pressed off (D-180).
 - Plane look (D-179, D-181): terminal style (picked from four on a preview): name set into the top edge, the console a
   tab inside the bottom-right corner on the bottom edge, magenta marks on its top corners (D-189), `[focus] [edit]`, no `▸` before them (no name, no zoom: D-186);
-  the cards' corner marks, grey on hover; edit mode = a faint dashed cyan edge, long cyan corner marks that resize, short
+  the cards' corner marks, grey on hover; edit mode = the plane's own edge (no dashed line), cyan L grips just inside the corners that resize (a section's, D-194), short
   bars at the edge middles, and the console a cyan status line `EDIT 960 × 600 [delete] [done]` (D-182, D-189).
 - Focus (D-184, D-185): `[focus]` (or a double-click on the plane, not in edit mode, D-198) makes a plane the view, `?focus=<id>` (back leaves, reload stays). Going in, the plane
   spreads over the screen like ink, cell by cell on the 9 px grid, nearest first with a ragged edge (820 ms, eased both
