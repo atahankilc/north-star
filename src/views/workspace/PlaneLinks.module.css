@@ -64,6 +64,18 @@
   cursor: pointer;
 }
 
+.chip[data-hidden='true'] {
+  visibility: hidden;
+}
+
+/* Its conversation's chip (D-193), under the link's chip's bottom-right corner, shown even when the chip is too small. */
+.thread {
+  position: absolute;
+  inset: 0;
+  visibility: visible;
+  opacity: 1;
+}
+
 .chip[data-selected='true'] {
   background: var(--tone);
   color: var(--bg);

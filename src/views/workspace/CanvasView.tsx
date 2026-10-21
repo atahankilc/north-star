@@ -178,6 +178,12 @@ export function CanvasView() {
       const p = pieces.find((x) => x.id === t.targetId)
       return p ? { at: [p.x + p.w, p.y + p.h], gone: false } : { at: [t.x, t.y], gone: true }
     }
+    // A link (D-207): the middle between its cards' centres.
+    if (t.on === 'link') {
+      const e = edges.find((x) => x.id === t.targetId)
+      const [a, b] = [cards.find((c) => c.id === e?.fromId), cards.find((c) => c.id === e?.toId)]
+      return a && b ? { at: [(a.x + b.x + CARD.w) / 2, (a.y + b.y + CARD.h) / 2], gone: false } : { at: [t.x, t.y], gone: true }
+    }
     return { at: [t.x, t.y], gone: false }
   }
   const spaceName = (sp: string) => {
@@ -197,9 +203,14 @@ export function CanvasView() {
       const p = pieces.find((x) => x.id === t.targetId)
       return `${p ? KIND_NAME[kindOfPiece(p)] : 'plane'} ${p?.name ? `"${p.name}"` : ''}`.trim()
     }
+    if (t.on === 'link') {
+      const e = edges.find((x) => x.id === t.targetId)
+      const name = (id?: string) => cards.find((c) => c.id === id)?.title || 'untitled'
+      return e ? `link "${name(e.fromId)}" → "${name(e.toId)}"` : 'a deleted link'
+    }
     return `a spot on ${spaceName(t.planeId ?? CANVAS)}`
   }
-  // Right-click (D-193): a menu on a plane, a card or a piece of text; only `comment` for now. Elsewhere, nothing.
+  // Right-click (D-193): a menu on a plane, a card, a piece of text or a link (D-207); only `comment` for now. Elsewhere, nothing.
   const [menu, setMenu] = useState<{ at: [number, number]; items: MenuItem[] } | null>(null)
   const closeMenu = useCallback(() => setMenu(null), [])
   const rightClick = (e: React.MouseEvent) => {
@@ -208,7 +219,7 @@ export function CanvasView() {
     if (focusId && !useCanvasView.getState().focusArrived) return
     const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-target]')?.dataset.target
     if (!hit) return setMenu(null)
-    const [on, targetId] = hit.split(':') as ['card' | 'label' | 'plane', string]
+    const [on, targetId] = hit.split(':') as ['card' | 'label' | 'plane' | 'link', string]
     // A plane on the canvas is in the canvas; a card or text, in the space it's written in.
     const where = on === 'plane' ? CANVAS : space
     const r = root.current!.getBoundingClientRect()

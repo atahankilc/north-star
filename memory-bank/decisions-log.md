@@ -3260,6 +3260,10 @@ categories shown like B, not in a card, and the features under them not indented
 - *Not yet:* bend points (D-155, a link keeps any it has), the LINKS filter and D-128/D-135's hidden-by-default groups
   (`for`, `relates`, `competes`: all shown until the filter is back, or a link drawn as `relates` would vanish), the
   right-click menu, shift+drag, links to competitor features.
+- *Then* (the user: "sağ tıka comment ekle. Bir de label ı hover ederken görebiliyim"): a hovered link shows its own
+  label on its chip, lights up (2.2 px) and the rest dim; right-click a line or chip → `comment` (D-193), a thread
+  `on: 'link'`, its chip under the link's chip (shown even when the chip is too small), its title `link "A" → "B"`,
+  pinned at the middle of the cards' centres for go there. Bends, filters and links to competitor features: later.
 - *User:* "evet, bağlantılarla devam et".
 - *Verified* headless (emulators): `›` drag idea → problem made `solves` with the label field focused, typed label on
   the chip; two links on a vertical pair side by side with chips apart; a selected competitor lights its links and dims

@@ -35,6 +35,7 @@ type State = {
   // from a card's `›` (its end follows the pointer, in plane px) and whether the selected link's label takes the cursor.
   linkSelected: string | null
   cardHovered: string | null
+  linkHovered: string | null
   linking: { from: string; to: [number, number]; over: string | null } | null
   linkLabelling: boolean
   // Cards being dragged (or held where dropped until their data's back), so their links follow.
@@ -47,7 +48,7 @@ export type PlaneCam = { ox: number; oy: number; zoom: number }
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linking: null, linkLabelling: false, cardsLive: {} }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {} }))
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({

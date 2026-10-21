@@ -1,14 +1,16 @@
 // Links on a plane (D-207), as on the old board (D-059, D-108, D-113, D-147, D-154): a straight line from card edge to
 // card edge with an arrowhead, in its kind's colour, and a small framed chip at its middle saying its kind (its own label
 // while it's hovered, selected or the selected card's). Several links between two cards sit side by side. In focus a
-// click selects one (a bar under its chip: kind, label, reverse, remove); a hovered or selected card lights its links
-// and the rest dim. A link is drawn from a card's `›` onto another card (PlaneCards). Bend points (D-155) not yet.
+// click selects one (a bar under its chip: kind, label, reverse, remove); a hovered link, or a hovered or selected card,
+// lights its links (a hovered link shows its own label) and the rest dim. Right-click → comment (D-193): its
+// conversation's chip under the link's chip. A link is drawn from a card's `›` onto another card (PlaneCards). Bend points (D-155) not yet.
 import { useEffect, useRef, useState } from 'react'
 import { CARD, type Card } from '../../data/cards'
 import { deleteEdge, FOR, reverseEdge, updateEdge, type Edge } from '../../data/edges'
 import { useCanvasView } from '../../state/canvasView'
 import { Select } from '../../ui/Select'
 import { useWs } from './context'
+import { ThreadChip, threadOn } from './Threads'
 import styles from './PlaneLinks.module.css'
 
 type LinkGroup = 'solves' | 'part' | 'competes' | 'clashes' | 'draws' | 'depends' | 'plain' | 'for'
@@ -101,15 +103,20 @@ type State = { selected: boolean; active: boolean; dim: boolean }
 
 function useLinkState(live: boolean) {
   const sel = useCanvasView((s) => (live ? s.linkSelected : null))
+  const over = useCanvasView((s) => (live ? s.linkHovered : null))
   const card = useCanvasView((s) => (live ? (s.linking?.from ?? s.cardHovered ?? s.cardSelected) : null))
   return (e: Edge): State => {
     const selected = e.id === sel
-    const active = !!card && (e.fromId === card || e.toId === card)
-    return { selected, active, dim: (!!sel || !!card) && !selected && !active }
+    const active = e.id === over || (!!card && (e.fromId === card || e.toId === card))
+    return { selected, active, dim: (!!sel || !!card || !!over) && !selected && !active }
   }
 }
 
 const select = (id: string) => useCanvasView.setState({ linkSelected: id, cardSelected: null, labelSelected: null, selected: null })
+const hover = (id: string) => ({
+  onPointerEnter: () => useCanvasView.setState({ linkHovered: id }),
+  onPointerLeave: () => useCanvasView.getState().linkHovered === id && useCanvasView.setState({ linkHovered: null }),
+})
 
 // The lines, under the cards.
 export function LinkLines({ links, live, zoom, ghost }: { links: Drawn[]; live: boolean; zoom: number; ghost: { a: V; b: V } | null }) {
@@ -136,6 +143,8 @@ export function LinkLines({ links, live, zoom, ghost }: { links: Drawn[]; live: 
                 x2={b[0]}
                 y2={b[1]}
                 className={styles.hit}
+                data-target={`link:${edge.id}`}
+                {...hover(edge.id)}
                 strokeWidth={Math.max(12, 12 / zoom)}
                 onPointerDown={(ev) => {
                   if (ev.button !== 0) return
@@ -154,13 +163,15 @@ export function LinkLines({ links, live, zoom, ghost }: { links: Drawn[]; live: 
 
 // The chips and the selected link's bar, over the cards.
 export function LinkChips({ links, live, editor, zoom }: { links: Drawn[]; live: boolean; editor: boolean; zoom: number }) {
+  const { wid, threads } = useWs()
   const state = useLinkState(live)
   const readable = CHIP_TEXT * zoom >= CHIP_MIN_PX
   return (
     <>
       {links.map(({ edge, mid }) => {
         const s = state(edge)
-        if (!readable && !s.selected) return null
+        const thread = live ? threadOn(threads, edge.id) : null
+        if (!readable && !s.selected && !thread) return null
         // Its own label only while it's in focus (D-135); otherwise its kind.
         const text = (s.selected || s.active) && edge.label ? edge.label : kindOf(edge.kind).label
         return (
@@ -169,6 +180,9 @@ export function LinkChips({ links, live, editor, zoom }: { links: Drawn[]; live:
               className={styles.chip}
               data-selected={s.selected || undefined}
               data-live={live || undefined}
+              data-hidden={(!readable && !s.selected) || undefined}
+              data-target={live ? `link:${edge.id}` : undefined}
+              {...(live ? hover(edge.id) : {})}
               style={{ opacity: s.dim ? 0.22 : 1 }}
               onPointerDown={(ev) => {
                 if (!live || ev.button !== 0) return
@@ -177,6 +191,11 @@ export function LinkChips({ links, live, editor, zoom }: { links: Drawn[]; live:
               }}
             >
               {text}
+              {thread && (
+                <span className={styles.thread}>
+                  <ThreadChip wid={wid} thread={thread} zoom={zoom} />
+                </span>
+              )}
             </span>
             {s.selected && editor && <LinkBar edge={edge} zoom={zoom} />}
           </div>
