@@ -104,8 +104,8 @@ export function fitCanvas(wid: string, pieces: Bounds[], instant = false) {
 }
 
 // The focused plane's contents in view (D-186): what's in it, centred and fitted to the screen. A plane holds nothing
-// yet, so this takes it back to where it was on the canvas.
-export function fitPlane(content: Bounds | null) {
+// yet, so this takes it back to where it was on the canvas. `instant`: no glide (arriving without the ink, a reload).
+export function fitPlane(content: Bounds | null, instant = false) {
   const { planeCam, planeHome, size } = useCanvasView.getState()
   if (!planeCam || !planeHome) return
   let to = planeHome
@@ -113,5 +113,8 @@ export function fitPlane(content: Bounds | null) {
     const { zoom, cx, cy } = fitInto(content, size.w, size.h, 96)
     to = { ox: size.w / 2 - cx * zoom, oy: size.h / 2 - cy * zoom, zoom }
   }
-  glide(planeCam, to, 420, (c) => useCanvasView.setState({ planeCam: c }))
+  if (instant) {
+    stopGlide()
+    useCanvasView.setState({ planeCam: to })
+  } else glide(planeCam, to, 420, (c) => useCanvasView.setState({ planeCam: c }))
 }

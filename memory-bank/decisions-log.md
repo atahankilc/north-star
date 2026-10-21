@@ -3163,8 +3163,10 @@ categories shown like B, not in a card, and the features under them not indented
 - *User:* "plane i eski gücüne kazandıralım. Yavaş yavaş plane ile ilgili olan her şeyi reintroduce edelim".
 - *Verified* headless: hover, press, drag (small card + landing marks), drop (selected), a card added in focus building
   up; no console errors; build.
-- *Seen, not from this:* reloading with `?focus=` showed an empty black screen (no marks, no cards) headless, on the
-  committed card code too.
+- *Seen, not from this:* reloading with `?focus=` showed an empty black screen (no marks, no cards), on the committed
+  card code too; the user had seen it as well. Cause: with no ink, arriving ran the fit in the same frame the focus
+  mounted, before the screen size was measured (0 × 0), so the plane's view went to zoom 0.1 at (0, 0). Fixed: arriving
+  waits for the size, and without the ink it fits at once (no glide from a wrong start).
 
 ### D-204 · 2026-10-21 · Accepted (brings the matrix back as a generic canvas piece; D-133/D-136's matrix becomes one setup of it)
 - *Decision:* a **matrix** is a piece on the canvas (`kind: 'matrix'`), made from the side nav's `+` under `matrix`,

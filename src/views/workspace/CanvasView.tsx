@@ -89,9 +89,9 @@ export function CanvasView() {
   // What's in a piece, in its own px: a plane's cards and text, or a matrix's table (D-204).
   const contentOf = (p: WithId<Piece>) => (kindOfPiece(p) === 'matrix' ? matrixBounds(p, cards) : spaceBounds(cardsOf(p.id), labelsOf(p.id)))
   // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
-  const fitRef = useRef(() => {})
-  fitRef.current = () => {
-    if (focused) fitPlane(contentOf(focused))
+  const fitRef = useRef((_instant?: boolean) => {})
+  fitRef.current = (instant = false) => {
+    if (focused) fitPlane(contentOf(focused), instant)
     else fitCanvas(wid, [...pieces, ...canvasLabels.map(labelBox)])
   }
   // Go to (D-196): the side nav's list asks through `useGoTo`; no keys (D-201).
@@ -270,6 +270,26 @@ export function CanvasView() {
   useEffect(() => {
     if (focusId && !focused && pieces.length > 0) setParams({}, { replace: true })
   }, [focusId, focused, pieces.length, setParams])
+
+  // Once in focus: on to the place go to picked (D-196), or its contents fitted to the screen (D-186, D-187); at once
+  // when it came without the ink.
+  const arriveRef = useRef(false)
+  const arrive = () => {
+    if (!focused) return
+    const { pending } = useGoTo.getState()
+    useGoTo.setState({ pending: null })
+    const instant = !useCanvasView.getState().focusSpread
+    if (instant) useCanvasView.setState((s) => ({ planeCam: s.planeHome }))
+    if (pending?.space === focused.id) goToPlace(wid, pending, true)
+    else fitRef.current(instant)
+  }
+  const arriveLate = useRef(arrive)
+  arriveLate.current = arrive
+  useEffect(() => {
+    if (size.w === 0 || !arriveRef.current) return
+    arriveRef.current = false
+    arriveLate.current()
+  }, [size.w])
 
   // The screen box, for the middle of the screen and zooming round the pointer.
   useEffect(() => {
@@ -451,10 +471,9 @@ export function CanvasView() {
           // Once there, its cards centred and fitted to the screen (D-186, D-187), or on to the place go to picked (D-196).
           onArrived={() => {
             useCanvasView.setState({ focusArrived: true })
-            const { pending } = useGoTo.getState()
-            useGoTo.setState({ pending: null })
-            if (pending?.space === focused.id) goToPlace(wid, pending, true)
-            else fitRef.current()
+            // Without the ink (a reload, a link) this can come before the screen is measured: it waits for that.
+            if (useCanvasView.getState().size.w === 0) arriveRef.current = true
+            else arrive()
           }}
           onLeft={left}
         >
