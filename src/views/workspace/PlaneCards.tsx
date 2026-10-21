@@ -5,7 +5,10 @@
 // As on the old board (D-150): a card added while you look builds up cell by cell; pressed, its corner marks close in
 // on its corners in its colour; dragged, it goes 0.8 round the point held and follows the pointer, its marks on where
 // it lands at full size, and grows into them when let go.
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+// Inside (D-152, D-205): the type and, right of it, a status, regions or priority with the evidence as cells; the title;
+// the facts line; tags as chips. Smaller on screen (D-153): the title alone, bigger, in whole words; far out its lines
+// as bars.
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, cardRef, moveCard, retitleCard, TITLE_MAX, type Card, type CardType } from '../../data/cards'
 import type { Label } from '../../data/labels'
 import { TextItems } from './TextItems'
@@ -18,9 +21,28 @@ import { runCells } from '../../ui/Appear'
 import type { PlaneCam } from '../../state/canvasView'
 import { useCanvasView } from '../../state/canvasView'
 import { useWs } from './context'
+import { factsOf, type Facts, type Proof } from './cardFacts'
 import styles from './PlaneCards.module.css'
 
 const DRAG_PX = 5
+// How a card is drawn by how big it is on screen (D-111, D-153): everything while its small text (8 px) is 4 px or more;
+// the title alone (24 px) while that's 5 px or more; then bars. Going back up takes 10 % more, so a view resting on a
+// line doesn't flip them.
+export type Detail = 'full' | 'compact' | 'far'
+const FULL_AT = 4 / 8
+const COMPACT_AT = 5 / 24
+const HYSTERESIS = 1.1
+const RANK: Record<Detail, number> = { far: 0, compact: 1, full: 2 }
+function detailAt(scale: number, was: Detail): Detail {
+  const up = (at: number, d: Detail) => (RANK[was] < RANK[d] ? at * HYSTERESIS : at)
+  if (scale >= up(FULL_AT, 'full')) return 'full'
+  if (scale >= up(COMPACT_AT, 'compact')) return 'compact'
+  return 'far'
+}
+// Evidence cells, up to this many each way (D-152).
+const MOST = 5
+// The full title: up to 80 characters, three lines (two with tags under it).
+const TITLE_SHOWN = 80
 // A dragged card's size (the old board's CARRIED).
 const CARRIED = 0.8
 
@@ -45,7 +67,13 @@ type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; ed
 
 // A plane's contents: its sections under its cards, its text over them (D-188).
 export function PlaneCards({ cards, labels, view, live, editor }: Props) {
-  const { wid } = useWs()
+  const { wid, evidence, competitorFeatures } = useWs()
+  const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures }), [cards, evidence, competitorFeatures])
+  // On the canvas the plane's picture is scaled again by the canvas's zoom.
+  const canvasZoom = useCanvasView((s) => s.cams[wid]?.zoom ?? 1)
+  const was = useRef<Detail>('full')
+  const detail = detailAt(view.zoom * (live ? 1 : canvasZoom), was.current)
+  was.current = detail
   const carry = cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
   // The cards there when this opened are just there in focus (the plane's own picture was already showing them); on the
   // canvas they build up with the page. Any card after that builds up as it arrives.
@@ -55,7 +83,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <TextItems labels={labels} layer="frames" live={live} editor={editor} zoom={view.zoom} carry={carry} />
         {cards.map((c) => (
-          <CardBox key={c.id} card={c} zoom={view.zoom} live={live} editor={editor} arrive={!(live && first.has(c.id))} />
+          <CardBox key={c.id} card={c} facts={facts.get(c.id)} detail={detail} zoom={view.zoom} live={live} editor={editor} arrive={!(live && first.has(c.id))} />
         ))}
         <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
       </div>
@@ -65,7 +93,9 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
 
 type Drag = { free: [number, number]; at: [number, number] }
 
-function CardBox({ card, zoom, live, editor, arrive }: { card: Card; zoom: number; live: boolean; editor: boolean; arrive: boolean }) {
+type BoxProps = { card: Card; facts?: Facts; detail: Detail; zoom: number; live: boolean; editor: boolean; arrive: boolean }
+
+function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) {
   const { wid, threads } = useWs()
   const face = useRef<HTMLDivElement>(null)
   const revealed = useRevealed()
@@ -141,14 +171,18 @@ function CardBox({ card, zoom, live, editor, arrive }: { card: Card; zoom: numbe
       onPointerDown={press}
       onDoubleClick={live && editor ? () => useCanvasView.setState({ cardEditing: card.id, cardSelected: card.id }) : undefined}
     >
-      <div ref={face} className={styles.card} style={carried}>
-        <span className={styles.kind}>{card.type}</span>
+      <div ref={face} className={styles.card} style={carried} data-detail={typing ? 'full' : detail}>
         {typing ? (
-          <TitleField card={card} />
+          <>
+            <span className={styles.head}>
+              <span className={styles.kind}>{card.type}</span>
+            </span>
+            <TitleField card={card} />
+          </>
+        ) : detail === 'full' ? (
+          <FullCard card={card} facts={facts} />
         ) : (
-          <p className={styles.title} data-empty={!card.title || undefined}>
-            {card.title || PLACEHOLDER[card.type]}
-          </p>
+          <CompactTitle text={card.title || PLACEHOLDER[card.type]} empty={!card.title} bars={detail === 'far'} />
         )}
       </div>
       <i className={styles.mark} data-corner="nw" aria-hidden />
@@ -158,6 +192,115 @@ function CardBox({ card, zoom, live, editor, arrive }: { card: Card; zoom: numbe
       {live && <PeerRing id={card.id} space={card.pieceId} />}
       {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
     </div>
+  )
+}
+
+function FullCard({ card, facts }: { card: Card; facts?: Facts }) {
+  const tags = card.tags ?? []
+  const title = card.title.length > TITLE_SHOWN ? `${card.title.slice(0, TITLE_SHOWN - 1).trimEnd()}…` : card.title
+  const head = facts?.head && facts.head.length > 24 ? `${facts.head.slice(0, 23)}…` : facts?.head
+  return (
+    <>
+      <span className={styles.head}>
+        <span className={styles.kind}>{card.type}</span>
+        {head && (
+          <span className={styles.status} data-clash={facts?.clash || undefined}>
+            {head}
+          </span>
+        )}
+        {facts?.proof && <ProofCells proof={facts.proof} />}
+      </span>
+      <p className={styles.title} data-empty={!card.title || undefined} data-lines={tags.length ? 2 : 3}>
+        {title || PLACEHOLDER[card.type]}
+      </p>
+      {facts?.meta && <span className={styles.facts}>{facts.meta}</span>}
+      {tags.length > 0 && <TagChips tags={tags} />}
+    </>
+  )
+}
+
+// Evidence as cells: filled for each piece that supports it, outlined for each against; magenta when the evidence and
+// the status disagree.
+function ProofCells({ proof }: { proof: Proof }) {
+  const cells = [...Array<boolean>(Math.min(MOST, proof.supports)).fill(true), ...Array<boolean>(Math.min(MOST, proof.contradicts)).fill(false)]
+  return (
+    <span className={styles.proof} data-clash={proof.clash || undefined} aria-label={`${proof.supports} for, ${proof.contradicts} against`}>
+      {cells.map((filled, i) => (
+        <i key={i} data-filled={filled || undefined} />
+      ))}
+    </span>
+  )
+}
+
+// Tags as framed chips in a row; what doesn't fit becomes `+N`. Mono is 0.6 em a character.
+const CHIP_TEXT = 7.5
+const CHIP_PAD = 4
+const CHIP_GAP = 5
+const CHIP_ROOM = CARD.w - 2 * 7 - 4
+const chipWidth = (text: string) => text.length * CHIP_TEXT * 0.6 + CHIP_PAD * 2
+function TagChips({ tags }: { tags: string[] }) {
+  const shown: string[] = []
+  let x = 0
+  for (let i = 0; i < tags.length; i++) {
+    const text = `#${tags[i]}`
+    // Room for the `+N` chip unless this is the last tag.
+    const need = chipWidth(text) + (i < tags.length - 1 ? CHIP_GAP + chipWidth(`+${tags.length - i - 1}`) : 0)
+    if (x + need > CHIP_ROOM) {
+      shown.push(`+${tags.length - i}`)
+      break
+    }
+    shown.push(text)
+    x += chipWidth(text) + CHIP_GAP
+  }
+  return (
+    <span className={styles.tags}>
+      {shown.map((t) => (
+        <span key={t} className={styles.chip}>
+          {t}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+// Zoomed out (D-153): the title alone at one size, at most three lines, ending at the last whole word that fits with
+// `…`; far out, each line a bar as long as the line.
+function CompactTitle({ text, empty, bars }: { text: string; empty: boolean; bars: boolean }) {
+  const el = useRef<HTMLParagraphElement>(null)
+  const [cut, setCut] = useState<{ of: string; text: string } | null>(null)
+  useLayoutEffect(() => {
+    const p = el.current
+    if (!p) return
+    const fits = () => p.scrollHeight <= p.clientHeight + 1
+    const words = text.split(/\s+/)
+    const span = p.firstElementChild as HTMLElement
+    span.textContent = text
+    if (fits()) return setCut(null)
+    // The most whole words that fit with the `…`; a single long word is cut short instead.
+    let lo = 0
+    let hi = words.length - 1
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2)
+      span.textContent = `${words.slice(0, mid).join(' ')}…`
+      if (fits()) lo = mid
+      else hi = mid - 1
+    }
+    let shown = lo > 0 ? `${words.slice(0, lo).join(' ')}…` : text
+    if (lo === 0)
+      for (let n = text.length - 1; n > 0; n--) {
+        span.textContent = `${text.slice(0, n)}…`
+        if (fits()) {
+          shown = span.textContent
+          break
+        }
+      }
+    span.textContent = shown
+    setCut({ of: text, text: shown })
+  }, [text])
+  return (
+    <p ref={el} className={styles.compact} data-empty={empty || undefined} data-bars={bars || undefined}>
+      <span>{cut?.of === text ? cut.text : text}</span>
+    </p>
   )
 }
 

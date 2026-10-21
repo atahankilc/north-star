@@ -581,3 +581,8 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - Verified headless on emulators (port 5190, example workspace + seeded `part of` links): screenshots of closed, hover,
   open, closing, selected re-click, drag, a 2-level fold mid-frame and done, unfold by a row, the panel. `tsc`; rules
   tests 335/335.
+
+## Done (moved out of state.md 2026-10-22)
+- Drops land at once (2026-10-20, committed): a dropped piece is held where let go until its data gets there (`land` in
+  canvasStore), no glide; before, the drag's streamed writes came back from the IndexedDB cache one by one and the card replayed them.
+- Backdrop cell = 9 device px (D-172): finer field on 2x screens, nothing changes moving between screens. 2026-10-20.

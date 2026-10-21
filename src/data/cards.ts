@@ -23,7 +23,21 @@ export const CARD = { w: 8 * GRID, h: 4 * GRID }
 // firestore.rules' validCard and validCompetitor allow 200.
 export const TITLE_MAX = 200
 
-export type Card = { id: string; type: CardType; pieceId: string; title: string; x: number; y: number }
+// What the card shows besides its title (D-152, D-205): set from the side panel, which isn't back yet, so for now only
+// read. A customer, problem or idea has a status (D-137); a competitor its regions (D-145); a feature its priority,
+// status, impact and effort (D-138); all of them tags (D-056).
+export type Validation = 'hypothesis' | 'testing' | 'validated' | 'invalidated'
+export type CardFields = {
+  tags?: string[]
+  validation?: Validation
+  regions?: string[]
+  priority?: string
+  status?: string
+  impact?: string
+  effort?: string
+}
+
+export type Card = { id: string; type: CardType; pieceId: string; title: string; x: number; y: number } & CardFields
 
 const ref = (wid: string, type: CardType, id?: string) =>
   id ? doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]), id) : doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]))
@@ -67,9 +81,27 @@ export function deleteCard(wid: string, card: Card) {
 }
 
 // Docs from any of the five collections, as cards; the old board's (no `pieceId`) are left out.
-export function toCards(type: CardType, docs: { id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number }[]): Card[] {
+export function toCards(type: CardType, docs: ({ id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number } & CardFields)[]): Card[] {
   return docs.flatMap((d) =>
-    d.pieceId ? [{ id: d.id, type, pieceId: d.pieceId, title: (type === 'competitor' ? d.name : d.title) ?? '', x: d.x ?? 0, y: d.y ?? 0 }] : [],
+    d.pieceId
+      ? [
+          {
+            id: d.id,
+            type,
+            pieceId: d.pieceId,
+            title: (type === 'competitor' ? d.name : d.title) ?? '',
+            x: d.x ?? 0,
+            y: d.y ?? 0,
+            tags: d.tags,
+            validation: d.validation,
+            regions: d.regions,
+            priority: d.priority,
+            status: d.status,
+            impact: d.impact,
+            effort: d.effort,
+          },
+        ]
+      : [],
   )
 }
 

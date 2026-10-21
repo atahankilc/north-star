@@ -3202,3 +3202,22 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified:* rules tests 372 passed (new: matrix piece, cells, viewer); headless Chrome on emulators: the canvas
   picture, focus, cell bar, keys 1–9 / arrows, number typing, a typed row, a column taken out and brought back, the card
   picker, a new matrix from `+`, Escape order; no console errors; typecheck.
+
+### D-205 · 2026-10-22 · Accepted (brings D-152's card inside and D-153's zoomed-out looks back, on planes)
+- *Decision:* a plane's card shows what the old board's did: the type label; right of it a customer's, problem's or
+  idea's status (`validated !` in magenta when the evidence doesn't back it, also with none), a competitor's regions
+  (`US · Germany +1`), a feature's priority; the evidence as cells (filled = supports, outlined = against, up to 5
+  each, magenta on a clash); the title (≤ 80 characters, 3 lines, 2 above tags); the facts line; tags as framed chips,
+  `+N` when they don't fit. Facts: customer `0 tagged for them`, problem `0 solve it · vs 0`, idea `solves 0 · 0
+  features`, competitor `vs 0 · N features` (its competitor features counted), feature its status · impact · effort.
+- *Only shown:* nothing on a plane sets these yet; the side panel will (the user: "Şimdilik sadece göster"). The counts
+  that come from links read 0 until links are back (the user: "Şimdi 0 olarak göster").
+- *Sizes* (in plane px; the card is 200 × 100, and the old 80 px a unit would make 6 px text at zoom 1): small text 8 px
+  mono, title 14 px Geist (line 1.12), 7 px inside, a 4 px type edge, cells 6 px, chips 7.5 px text.
+- *Zoomed out* (D-153), by the size on screen (in focus the plane's zoom, on the canvas times the canvas's): full while
+  the 8 px text is ≥ 4 px; then the title alone at 24 px, top-aligned, ≤ 3 lines ending at a whole word with `…`;
+  below 5 px for that, each line a grey bar 0.6 its height. 10 % more to go back up.
+- *Data:* cards read tags, validation, regions, priority, status, impact, effort; the workspace also loads `evidence`
+  and `competitorFeatures` (`cardFacts.ts`). New token `--chip`.
+- *Verified* headless (emulators, 2x): six cards with statuses, evidence, regions, priority, tags, an empty one, at
+  zoom 1.6, 0.45 and 0.15; no console errors; build.

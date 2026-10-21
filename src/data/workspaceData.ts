@@ -2,7 +2,7 @@
 // cards on its planes (D-187), the text written anywhere (D-188) and the matrices' cells (D-204). What the old views loaded is in src/archive/data/workspaceData.ts and comes back as each
 // piece does (D-177).
 import { useMemo } from 'react'
-import { CARD_COLLECTION, toCards, type Card } from './cards'
+import { CARD_COLLECTION, toCards, type Card, type CardFields } from './cards'
 import type { WithId } from './hooks'
 import { useWorkspaceCollection } from './hooks'
 import type { Label } from './labels'
@@ -18,9 +18,12 @@ export type WorkspaceData = {
   threads: WithId<Thread>[]
   // Every matrix's cells (D-204).
   cells: Cell[]
+  // What was learned about a card (D-137) and a competitor's features (D-164): counted on the cards (D-205).
+  evidence: WithId<{ nodeId: string; stance: 'supports' | 'contradicts' }>[]
+  competitorFeatures: WithId<{ competitorId: string }>[]
 }
 
-type CardDoc = { pieceId?: string; title?: string; name?: string; x?: number; y?: number }
+type CardDoc = { pieceId?: string; title?: string; name?: string; x?: number; y?: number } & CardFields
 
 export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading: boolean; error: Error | null } {
   const pieces = useWorkspaceCollection<Piece>(wid, 'pieces')
@@ -32,6 +35,8 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const labelDocs = useWorkspaceCollection<Omit<Label, 'id'>>(wid, 'labels')
   const labels = useMemo(() => labelDocs.data.filter((l) => l.pieceId) as Label[], [labelDocs.data])
   const cells = useWorkspaceCollection<Cell>(wid, 'cells')
+  const evidence = useWorkspaceCollection<{ nodeId: string; stance: 'supports' | 'contradicts' }>(wid, 'evidence')
+  const competitorFeatures = useWorkspaceCollection<{ competitorId: string }>(wid, 'competitorFeatures')
   const threadDocs = useWorkspaceCollection<Thread>(wid, 'threads')
   const threads = useMemo(() => threadDocs.data.filter((t) => t.planeId), [threadDocs.data])
   const cards = useMemo(
@@ -46,7 +51,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   )
   const all = [pieces, customers, problems, competitors, ideas, features, labelDocs, cells]
   return {
-    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data },
+    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data },
     isLoading: all.some((l) => l.isLoading),
     error: all.find((l) => l.error)?.error ?? null,
   }
