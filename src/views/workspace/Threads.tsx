@@ -1,7 +1,7 @@
-// Comment threads (D-159, D-165–D-171; on the canvas and in planes, D-192). A thread is pinned to a card, a piece of
-// text, or a spot, in a space (the canvas or a plane); its pin sits at the thing's top-right corner: a small framed mono
-// chip at the screen's own size, the comment mark and a count (D-167), magenta when someone wrote in it since you last
-// read it, `@` when they mentioned you (D-166). Clicking a pin opens the thread beside it, set like the assistant's chat:
+// Comment threads (D-159, D-165–D-171; on the canvas and in planes, D-192; on components only, D-193). A thread is on a
+// plane, a card or a piece of text, started from its right-click menu; its chip sits under the component's bottom-right
+// corner like a plane's console, at the screen's own size: the comment mark and a count (D-167), magenta when someone
+// wrote in it since you last read it, `@` when they mentioned you (D-166). Clicking it opens the thread beside it, set like the assistant's chat:
 // who wrote each message (full name) and when, the text, a `>` prompt (Enter sends, shift+Enter a new line, `@`
 // suggests the workspace's people), resolve or reopen. Only a message's writer edits or deletes it. Resolved threads
 // leave the canvas; every thread is in the threads panel (ThreadInbox.tsx). Anyone in the workspace comments, viewers too.
@@ -36,16 +36,17 @@ type ThreadView = {
   // The thread open beside its pin, or one being started (no messages yet).
   openId: string | null
   draft: NewThread | null
-  // The threads panel (D-166), on the left beside the side nav.
+  // The threads panel (D-166), bottom left (D-193); `scope`: only a plane's (on it, or in it), from its console.
   inbox: boolean
+  scope: string | null
 }
 
-export const useThreadView = create<ThreadView>(() => ({ show: true, newOnly: false, resolvedToo: false, openId: null, draft: null, inbox: false }))
+export const useThreadView = create<ThreadView>(() => ({ show: true, newOnly: false, resolvedToo: false, openId: null, draft: null, inbox: false, scope: null }))
 export const toggleThreadPins = () => useThreadView.setState((s) => ({ show: !s.show }))
 export const openThread = (id: string) => useThreadView.setState({ openId: id, draft: null })
 export const startComment = (draft: NewThread) => useThreadView.setState({ draft, openId: null, show: true })
 export const closeThread = () => useThreadView.setState({ openId: null, draft: null })
-export const toggleInbox = (on?: boolean) => useThreadView.setState((s) => ({ inbox: on ?? !s.inbox }))
+export const toggleInbox = (on?: boolean, scope: string | null = null) => useThreadView.setState((s) => ({ inbox: on ?? !s.inbox, scope }))
 
 export const myUid = () => firebase?.auth.currentUser?.uid ?? ''
 
@@ -62,52 +63,37 @@ export function CommentIcon({ size = 16 }: { size?: number }) {
   )
 }
 
-// A thread with where its pin goes, in its space's px; `gone` when what it was on was deleted (no pin then, D-171).
-export type PinnedThread = { thread: WithId<Thread>; at: [number, number]; gone: boolean }
+// The conversation on a component (D-193): its newest unresolved thread. One at a time: commenting again opens it.
+export const threadOn = (threads: WithId<Thread>[], id: string) =>
+  threads.filter((t) => t.targetId === id && !t.resolved).sort((a, b) => b.lastAt - a.lastAt)[0] ?? null
 
-// A space's pins, inside its world (so they sit on what they're on), each scaled back to the screen's size.
-export function ThreadPins({ wid, pins, zoom }: { wid: string; pins: PinnedThread[]; zoom: number }) {
-  const { show, newOnly, resolvedToo, openId } = useThreadView()
+// A component's comments (D-193): under its bottom-right corner, set like a plane's console, at the screen's size: the
+// comment mark and how many messages, magenta when someone wrote since you last read it, `@` when they mentioned you.
+// A click opens the thread beside it. `c` hides them.
+export function ThreadChip({ wid, thread, zoom }: { wid: string; thread: WithId<Thread> | null; zoom: number }) {
+  const show = useThreadView((s) => s.show)
+  const openId = useThreadView((s) => s.openId)
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
-  if (!show) return null
+  if (!thread || !show) return null
+  const fresh = isNew(thread, seen, thread.id, me)
+  const mentioned = fresh && !!thread.mentions?.includes(me)
   return (
-    <>
-      {pins
-        .filter(({ thread: t, gone }) => !gone && (t.id === openId || ((!t.resolved || resolvedToo) && (!newOnly || isNew(t, seen, t.id, me)))))
-        .map(({ thread: t, at }) => {
-          const fresh = isNew(t, seen, t.id, me)
-          const mentioned = fresh && !!t.mentions?.includes(me)
-          return (
-            <div key={t.id} className={styles.pinAt} style={{ left: at[0], top: at[1], transform: `scale(${1 / zoom})` }}>
-              <button
-                className={styles.pin}
-                data-open={t.id === openId || undefined}
-                data-new={fresh || undefined}
-                data-resolved={t.resolved || undefined}
-                title={`${t.count} message${t.count === 1 ? '' : 's'}${fresh ? ', new for you' : ''}`}
-                aria-label={`Thread, ${t.count} messages${fresh ? ', new' : ''}`}
-                onPointerDown={(e) => e.stopPropagation()}
-                onContextMenu={(e) => e.stopPropagation()}
-                onClick={() => (t.id === openId ? closeThread() : openThread(t.id))}
-              >
-                {mentioned ? (
-                  <span className={styles.mark} aria-hidden>
-                    @
-                  </span>
-                ) : t.resolved ? (
-                  <span className={styles.mark} aria-hidden>
-                    ✓
-                  </span>
-                ) : (
-                  <CommentIcon size={11} />
-                )}
-                {t.count}
-              </button>
-            </div>
-          )
-        })}
-    </>
+    <span className={styles.chipAt} style={{ transform: `scale(${1 / zoom})` }}>
+      <button
+        className={styles.chip}
+        data-open={thread.id === openId || undefined}
+        data-new={fresh || undefined}
+        title={`${thread.count} message${thread.count === 1 ? '' : 's'}${fresh ? ', new for you' : ''}`}
+        aria-label={`Comments, ${thread.count}${fresh ? ', new' : ''}`}
+        onPointerDown={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+        onClick={() => (thread.id === openId ? closeThread() : openThread(thread.id))}
+      >
+        {mentioned ? <span className={styles.mark}>@</span> : <CommentIcon size={11} />}
+        {thread.count}
+      </button>
+    </span>
   )
 }
 

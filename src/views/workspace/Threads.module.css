@@ -1,22 +1,62 @@
-/* Comment threads on the board (D-159, D-165): a pin per thread, and the open thread beside it. */
+/* Comment threads (D-159, D-165, D-193): a chip on each component with a conversation, and the open thread beside it. */
 
-/* A pin (D-165, D-166): the same small framed mono chip on every thread, `“ 3`, its bottom-left corner on the point it's
-   pinned to, like a link's chip. Magenta when someone wrote since you last read it (`@` when you're mentioned), cyan
-   while open, dashed when what it was on is gone. */
-/* A pin's place in its space (D-192): a point, scaled back to the screen's size round itself; the pin sits up and right
-   of it. */
-.pinAt {
+/* A component's comments (D-193): just outside its bottom-right corner, scaled back to the screen's size round that
+   corner; set like a plane's console (a framed mono tab). */
+.chipAt {
   position: absolute;
+  top: 100%;
+  right: 0;
   z-index: 3;
   width: 0;
   height: 0;
-  transform-origin: 0 0;
+  transform-origin: 100% 0;
 }
 
-.pinAt > .pin {
+.chip {
   position: absolute;
-  bottom: 2px;
-  left: 2px;
+  pointer-events: auto;
+  top: 6px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px var(--space-2);
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--fg-dim);
+  color: var(--fg-strong);
+}
+
+.chip[data-new] {
+  border-color: var(--accent-magenta);
+  color: var(--fg-strong);
+}
+
+.chip[data-new] .mark,
+.chip[data-new] .icon {
+  color: var(--accent-magenta);
+}
+
+.chip[data-open] {
+  border-color: var(--accent-cyan);
+  color: var(--fg-strong);
+}
+
+.chip[data-open] .icon {
+  color: var(--accent-cyan);
 }
 
 /* The open thread's place on screen. */
@@ -25,62 +65,6 @@
   z-index: 9;
   width: 0;
   height: 0;
-}
-
-.pin {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 18px;
-  padding: 0 5px;
-  border: 1px solid var(--line-hover);
-  background: var(--bg);
-  color: var(--fg-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-  pointer-events: auto;
-  transform: translate(2px, calc(-100% - 2px));
-}
-
-.mark,
-.pin .icon {
-  color: var(--fg-dim);
-}
-
-.pin:hover {
-  border-color: var(--fg-dim);
-  color: var(--fg-strong);
-}
-
-.pin[data-new] {
-  border-color: var(--accent-magenta);
-  color: var(--fg-strong);
-}
-
-.pin[data-new] .mark,
-.pin[data-new] .icon {
-  color: var(--accent-magenta);
-}
-
-.pin[data-open] {
-  border-color: var(--accent-cyan);
-  color: var(--fg-strong);
-}
-
-.pin[data-open] .mark,
-.pin[data-open] .icon {
-  color: var(--accent-cyan);
-}
-
-.pin[data-resolved] {
-  color: var(--fg-dim);
-}
-
-.pin[data-gone] {
-  border-style: dashed;
 }
 
 /* The open thread, as the assistant's chat window (D-081, D-165): a terminal log, mono, bracket actions, a `>` prompt. */
@@ -95,7 +79,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   pointer-events: auto;
-  /* Right of the pin, its top a little above the pinned point. */
+  /* Right of its chip, its top a little above it. */
   transform: translate(34px, -30px);
 }
 
@@ -365,17 +349,17 @@
 }
 
 /* The threads panel (D-166): bottom left over the board, above its toolbar, set as the chat window. */
-/* The threads panel (D-166, D-192): on the left, right of the side nav, under the breadcrumb; the right of the screen
-   stays free. */
+/* The threads panel (D-166, D-193): stuck to the bottom left, right of the corner's buttons (it never covers them); the
+   right of the screen stays free. */
 .inbox {
   position: absolute;
-  top: var(--hud-h);
+  bottom: var(--space-3);
   left: calc(var(--space-3) + 36px + var(--space-3));
   z-index: 8;
   display: flex;
   flex-direction: column;
   width: min(380px, calc(100vw - 2 * var(--hud-x)));
-  max-height: min(62vh, 560px);
+  max-height: min(70vh, calc(100% - var(--hud-h) - var(--space-3)));
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg) 94%, transparent);
   color: var(--fg);

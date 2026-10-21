@@ -85,7 +85,8 @@ export type Presence = {
 // a link) or to a spot on it. Any member may start one or answer, viewers too; it's not content, so it's not undone,
 // copied, exported or filtered. `x`/`y` is where it was pinned (a spot's place, or the thing's when the thread began),
 // used when the thing is gone. `count` and `lastAt` follow its messages.
-export const THREAD_TARGETS = ['card', 'label', 'link', 'spot'] as const
+// `plane` (D-193): a plane on the canvas. New threads go on components only; `spot` is the old board's.
+export const THREAD_TARGETS = ['card', 'label', 'link', 'spot', 'plane'] as const
 export type ThreadTarget = (typeof THREAD_TARGETS)[number]
 export const MESSAGE_MAX = 2000
 

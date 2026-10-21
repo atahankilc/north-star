@@ -29,9 +29,11 @@ type Props = {
   settingsBadge?: number
   // The top of the side nav, under the breadcrumb (D-176): the canvas's `+`.
   side?: ReactNode
+  // In the bottom-left corner, just above your square (D-193): the threads button.
+  corner?: ReactNode
 }
 
-export function Hud({ crumbs = [], views, right, settings, settingsName, settingsBadge, side }: Props) {
+export function Hud({ crumbs = [], views, right, settings, settingsName, settingsBadge, side, corner }: Props) {
   const atRoot = crumbs.length === 0
   const { user } = useAuth()
   const reduced = useMotion((s) => s.reduced)
@@ -99,6 +101,9 @@ export function Hud({ crumbs = [], views, right, settings, settingsName, setting
           landing has no controls. */}
       {user && (
         <div className={styles.corner}>
+          {corner}
+          {/* The rule just above your square (D-175): what's above it is others' and the workspace's. */}
+          <span className={styles.rule} aria-hidden />
           <SettingsButton workspace={settings} workspaceName={settingsName} badge={settingsBadge} />
         </div>
       )}

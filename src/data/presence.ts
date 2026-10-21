@@ -33,8 +33,9 @@ export type Presence = {
 
 export type Peer = Presence & { uid: string }
 
-// ~16 writes a second at most while the pointer moves (ARCHITECTURE §6); the smoothing is all on the side that watches.
-const WRITE_EVERY_MS = 60
+// 10 writes a second at most while the pointer moves (D-193; was ~16): the watching side draws a smooth curve through
+// them, a little in the past, so fewer points still move evenly.
+const WRITE_EVERY_MS = 100
 // A heartbeat keeps `ts` fresh; anyone silent for longer than STALE_MS is hidden (a crashed tab whose
 // onDisconnect hasn't fired yet).
 const HEARTBEAT_MS = 20_000

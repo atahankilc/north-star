@@ -2,8 +2,10 @@
   position: relative;
 }
 
+/* In the bottom-left corner, above the threads button (D-193): a column. */
 .people {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: var(--space-2);
   margin: 0;
@@ -68,7 +70,7 @@
 }
 
 .stack li + li {
-  margin-left: -4px;
+  margin-top: -4px;
 }
 
 .stack .person {
@@ -98,11 +100,12 @@
   background: none;
 }
 
-/* The name, under the square while it's hovered. */
+/* The name, right of the square while it's hovered. */
 .tip {
   position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
   padding: 2px var(--space-2);
   background: var(--peer);
   color: var(--on-accent);
@@ -128,7 +131,7 @@
   place-items: center;
   min-width: 24px;
   height: 24px;
-  margin-left: var(--space-1);
+  margin-top: var(--space-1);
   padding: 0 var(--space-1);
   border: 1px solid var(--fg-faint);
   background: var(--bg);
@@ -149,12 +152,12 @@
   color: var(--fg-strong);
 }
 
-/* Everyone here: a framed list under the squares, right-aligned with them. */
+/* Everyone here: a framed list right of the squares, its foot level with theirs. */
 .list {
   composes: frame from './Frame.module.css';
   position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
+  bottom: 0;
+  left: calc(100% + 8px);
   z-index: 60;
   width: 260px;
   max-height: min(50vh, 320px);

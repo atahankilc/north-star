@@ -237,6 +237,13 @@ piece; check them with the user then.
 - Colours by join order (no clash up to 5), stored as dark hex, drawn with `themeAccent` (D-067, D-069).
 - Selections shown in every view: board rings, Flow rings, Table bars, Matrix cells (`PeerMarks.tsx`) (D-067, D-068).
 - No typing indicator (D-071).
+- Comments on components only (D-193): right-click a plane, card or text → a menu (only `comment` now; nothing on empty
+  space); one open conversation per component (commenting again opens it); its chip under the component's bottom-right
+  corner like a plane's console (mark + count, magenta new, `@` mention), at screen size; a plane's console shows the
+  conversations on and in it without focus and opens the threads panel on them. Bottom-left corner, top to bottom:
+  people here (squares, a column, follow on click), threads button, a rule, your square, the gear; the threads panel
+  sticks to the bottom left beside them. Cursors sent 10×/s, drawn 200 ms behind; following glides only when their cursor
+  leaves the middle (±22 %), eased by time; zooming doesn't stop following.
 - Comment threads on the canvas and in planes (D-192): `planeId` = the space (`canvas` or a plane's id; the old board's,
   without one, aren't shown); pins on cards, text or a spot, at screen size; right-click starts one; the threads panel
   opens from the side nav's comment icon (under fit) to the left of the screen; a row takes you to its space and opens it.

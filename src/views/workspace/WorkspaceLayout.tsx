@@ -92,15 +92,20 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             focused ? { label: workspace.name, to: workspacePath(wid) } : { label: workspace.name },
             ...(focused ? [{ label: focused.name || 'plane' }] : []),
           ]}
-          right={<PeopleHere />}
           settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={requests.data} />}
           settingsName={workspace.name}
           settingsBadge={requests.data.length}
+          corner={
+            <>
+              {/* Who's here, then the threads, just above your square (D-193). */}
+              <PeopleHere />
+              <InboxButton wid={wid} threads={data.threads} />
+            </>
+          }
           side={
             <>
               {editor && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
               <FitButton wid={wid} plane={focused?.id ?? null} />
-              <InboxButton wid={wid} threads={data.threads} />
             </>
           }
         />

@@ -1,4 +1,4 @@
-// Who else is in this workspace right now (D-065, D-067, D-169): a square per person, in the colour their cursor, rings
+// Who else is in this workspace right now (D-065, D-067, D-169; bottom left above the threads button, D-193): a square per person, in the colour their cursor, rings
 // and tags use, no names; the squares overlap, the name and where they are show on hover, and past MAX a `+N` opens the
 // list of everyone. A click follows them, totally (D-191, collab.tsx): their space, their cursor, their selection; a
 // second click, Escape, or a pan or zoom of your own stops it. While following, the page is framed in their colour.

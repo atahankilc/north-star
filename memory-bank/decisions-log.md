@@ -2940,3 +2940,35 @@ categories shown like B, not in a card, and the features under them not indented
   `@1` (new) and his side nav button "1 new mention"; Bob opened it from the panel and replied; Alice's spot comment in a
   focused plane showed in Bob's panel as `a spot on a plane … on a plane ↗`, and the row took him into the plane with it
   open; `c` hid the pins; build.
+
+### D-193 · 2026-10-21 · Accepted (changes D-192's pins and panel place, D-191's follow feel, D-175's corner)
+- *Right-click menu:* on a plane (on the canvas), a card or a piece of text (`data-target` on each), a framed mono list at
+  the pointer (`ContextMenu.tsx`), only `comment` for now; empty space gets nothing (no browser menu either). Closes on a
+  click outside, Escape or the wheel.
+- *Comments on components only:* no new spot threads (old ones still list). One open conversation per component:
+  `comment` opens its newest unresolved thread, or starts one. Threads can be on a plane now (`on: 'plane'`, rules
+  updated and tested 362/362). A component's comments show as a chip under its bottom-right corner, set like a plane's
+  console (a framed mono tab: the comment mark and its message count; magenta when new, `@` when it mentions you), at
+  screen size; it opens the thread beside it. Cards' and text's chips show where they're live (the canvas, a focused
+  plane).
+- *A plane's console* shows `[💬 N]`, the conversations on it and in it, without going in (magenta when something's
+  new, `@` for a mention); it opens the threads panel scoped to that plane (`threads · <plane>`, `[all]` lifts it).
+- *Bottom-left corner:* top to bottom: the people here (moved from the top right; a column of overlapping squares,
+  names to the right on hover, the `+N` list opening to the right, a click follows), the threads button, a rule, your
+  square, the gear. The rule stays just above your square, as asked in D-175. The threads panel sticks to the bottom left,
+  right of these buttons, never over them.
+- *Smoother following:* cursors go out 10 times a second (was ~16) and are drawn 200 ms behind on a curve. While you
+  follow, the view doesn't move as long as their cursor is within ±22 % of your screen's middle; when it leaves, the
+  view glides (eased by time, 0.45 s) until it's centred, like following in Figma. Zooming (the wheel) no longer stops
+  following; your own drag, Escape or a click on their square still does.
+- *User:* "her şeye right click paneli ekleyelim … sadece comment … plane içinde yorumlar varsa … focus olmamış halinde
+  de görmek istiyorum … console'u kullanabiliriz … threads paneli … sol alta, profil resminin üstüne … component üzerine
+  comment yapılınca … sağ alt tarafında (console ile aynı görünümde) bir mesaj iconu … component üzeri dışında thread
+  başlatamayalım", "workspace'te olan insanların ikonu da sağ üstten sol alta … thread ikonunun üstüne", "mouse takip
+  edilirken çok ani … figmadaki gibi … saniyede 15 kez göndermemize gerek yok", "zoom out ya da zoom in yapabileyim, bunu
+  yapmak beni takipten çıkarmasın". Also: "user kendi seçtiğinde kendi ismini görüyor": not reproduced (presence leaves
+  you out; Alice saw no frame on her own selection, Bob saw hers); a guard now skips your own uid in the selection marks.
+- *Verified* headless with Alice and Bob: no menu on empty space; `comment` on a heading, its chip under its corner; a
+  comment on a plane and on a card inside it, the plane's console then read `💬 2`; Bob's threads button at the bottom
+  left, the panel at x = 60 stuck to the bottom; the console's button opened it scoped to the plane (2 rows); following:
+  a small move left Bob's view still, a far one glided it (368 → 100 px over 1.5 s), Bob's wheel zoom kept following.

@@ -102,8 +102,7 @@ a.link:hover {
   color: var(--fg-dim);
 }
 
-.corner::before {
-  content: '';
+.rule {
   width: 20px;
   height: 1px;
   background: var(--line);

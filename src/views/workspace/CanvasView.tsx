@@ -4,7 +4,7 @@
 // when they're the plane's (FocusedPlane). A plane is moved, resized and renamed only in edit mode (D-180), switched on
 // and off from its console; in edit mode it takes the drag, it's selected, and Delete takes it away. Escape or a click on
 // empty space lets go of the selection. `0` (or the side nav's fit) frames everything, or in focus the plane's contents.
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
@@ -15,7 +15,9 @@ import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
-import { closeThread, OpenThread, openThread, startComment, ThreadPins, toggleThreadPins, useThreadView, type PinnedThread } from './Threads'
+import { closeThread, CommentIcon, myUid, OpenThread, openThread, startComment, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
+import { ContextMenu, type MenuItem } from './ContextMenu'
+import { isNew, useReads } from '../../data/threads'
 import { ThreadInbox } from './ThreadInbox'
 import { CARD } from '../../data/cards'
 import { glide } from '../../state/canvasView'
@@ -125,21 +127,25 @@ export function CanvasView() {
     } else focus(p)
   }
 
-  // Comment threads (D-192): where each one's pin is, in its space's px; what it's on, in words.
+  // Comment threads (D-192, D-193): where each one's chip is (a component's bottom-right corner), in its space's px;
+  // what it's on, in words.
   const pinOf = (t: Pick<Thread, 'on' | 'targetId' | 'x' | 'y'>): { at: [number, number]; gone: boolean } => {
     if (t.on === 'card') {
       const c = cards.find((x) => x.id === t.targetId)
-      return c ? { at: [c.x + CARD.w, c.y], gone: false } : { at: [t.x, t.y], gone: true }
+      return c ? { at: [c.x + CARD.w, c.y + CARD.h], gone: false } : { at: [t.x, t.y], gone: true }
     }
     if (t.on === 'label') {
       const l = labels.find((x) => x.id === t.targetId)
       if (!l) return { at: [t.x, t.y], gone: true }
       const b = labelBox(l)
-      return { at: [b.x + b.w, b.y], gone: false }
+      return { at: [b.x + b.w, b.y + b.h], gone: false }
+    }
+    if (t.on === 'plane') {
+      const p = pieces.find((x) => x.id === t.targetId)
+      return p ? { at: [p.x + p.w, p.y + p.h], gone: false } : { at: [t.x, t.y], gone: true }
     }
     return { at: [t.x, t.y], gone: false }
   }
-  const pinsIn = (sp: string): PinnedThread[] => threads.filter((t) => t.planeId === sp).map((t) => ({ thread: t, ...pinOf(t) }))
   const spaceName = (sp: string) => (sp === CANVAS ? 'the canvas' : pieces.find((p) => p.id === sp)?.name || 'a plane')
   const titleOf = (t: Pick<Thread, 'on' | 'targetId' | 'planeId'>) => {
     if (t.on === 'card') {
@@ -150,23 +156,44 @@ export function CanvasView() {
       const l = labels.find((x) => x.id === t.targetId)
       return l ? `${l.kind ?? (l.size === 'note' ? 'paragraph' : 'heading')} ${l.text ? `"${l.text.slice(0, 40)}"` : ''}`.trim() : 'deleted text'
     }
+    if (t.on === 'plane') return `plane ${pieces.find((p) => p.id === t.targetId)?.name ? `"${pieces.find((p) => p.id === t.targetId)!.name}"` : ''}`.trim()
     return `a spot on ${spaceName(t.planeId ?? CANVAS)}`
   }
-  // Right-click: a comment on what's under the pointer, or on that spot.
-  const comment = (e: React.MouseEvent) => {
+  // Right-click (D-193): a menu on a plane, a card or a piece of text; only `comment` for now. Elsewhere, nothing.
+  const [menu, setMenu] = useState<{ at: [number, number]; items: MenuItem[] } | null>(null)
+  const closeMenu = useCallback(() => setMenu(null), [])
+  const rightClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('input, textarea, [role=dialog], [aria-label=Threads]')) return
     e.preventDefault()
-    const at = focusId ? (useCanvasView.getState().focusArrived ? planeToSpace(e.clientX, e.clientY) : null) : canvasToSpace(e.clientX, e.clientY)
-    if (!at) return
+    if (focusId && !useCanvasView.getState().focusArrived) return
     const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-target]')?.dataset.target
-    const [on, targetId] = hit ? (hit.split(':') as ['card' | 'label', string]) : ['spot' as const, undefined]
-    const draft = { on, targetId, planeId: space, at: [Math.round(at[0]), Math.round(at[1])] as [number, number] }
-    startComment({ ...draft, at: targetId ? pinOf({ on, targetId, x: draft.at[0], y: draft.at[1] }).at : draft.at })
+    if (!hit) return setMenu(null)
+    const [on, targetId] = hit.split(':') as ['card' | 'label' | 'plane', string]
+    // A plane on the canvas is in the canvas; a card or text, in the space it's written in.
+    const where = on === 'plane' ? CANVAS : space
+    const r = root.current!.getBoundingClientRect()
+    setMenu({
+      at: [e.clientX - r.left, e.clientY - r.top],
+      items: [
+        {
+          label: 'comment',
+          hint: threadOn(threads, targetId) ? 'open' : undefined,
+          // Its conversation if it has one; a new one otherwise.
+          onSelect: () => {
+            const open = threadOn(threads, targetId)
+            if (open) return openThread(open.id)
+            const { at } = pinOf({ on, targetId, x: 0, y: 0 })
+            startComment({ on, targetId, planeId: where, at: [Math.round(at[0]), Math.round(at[1])] })
+          },
+        },
+      ],
+    })
   }
   // From the threads panel: to its space, the pin in the middle, open.
   const goTo = (t: WithId<Thread>) => {
     const sp = t.planeId ?? CANVAS
     openThread(t.id)
+    toggleInbox(false)
     if (sp !== space) return focusTo(sp === CANVAS ? null : sp)
     const [x, y] = pinOf(t).at
     const { size, planeCam } = useCanvasView.getState()
@@ -232,7 +259,6 @@ export function CanvasView() {
       e.preventDefault()
       // A plane in focus is the view: the canvas behind it stays where it was.
       if (focusedRef.current) return
-      stopFollowing()
       const c = camOf(wid)
       const r = el.getBoundingClientRect()
       // The pointer from the screen's middle, which the camera is measured from.
@@ -333,7 +359,7 @@ export function CanvasView() {
   }
 
   return (
-    <div ref={root} className={styles.canvas} onPointerDown={pan} onContextMenu={comment} aria-label="Canvas" role="application">
+    <div ref={root} className={styles.canvas} onPointerDown={pan} onContextMenu={rightClick} aria-label="Canvas" role="application">
       <div ref={lens} className={styles.lens}>
       <div
         className={styles.world}
@@ -356,7 +382,6 @@ export function CanvasView() {
         {/* The canvas's own sections over its planes (no fill, so they hide nothing), its text over them (D-188). */}
         <TextItems labels={canvasLabels} layer="frames" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
         <TextItems labels={canvasLabels} layer="text" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
-        <ThreadPins wid={wid} pins={pinsIn(CANVAS)} zoom={cam.zoom} />
       </div>
       </div>
       {focused && (
@@ -375,7 +400,7 @@ export function CanvasView() {
           }}
           onLeft={left}
         >
-          <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} pins={pinsIn(focused.id)} />
+          <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
           {drawing === focused.id && <DrawSection space={focused.id} toSpace={planeToSpace} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {focusArrived && !focusLeaving && (
@@ -388,7 +413,8 @@ export function CanvasView() {
       {drawing === CANVAS && !focused && <DrawSection space={CANVAS} toSpace={canvasToSpace} />}
       <PeerCursors space={space} toScreen={toScreen} />
       <OpenThread wid={wid} at={openAt} title={openTarget ? titleOf(openTarget) : ''} thread={openThreadDoc} isOwner={isOwnerOf(workspace, user?.id)} />
-      <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={goTo} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} />
+      {menu && <ContextMenu at={menu.at} items={menu.items} onClose={closeMenu} />}
+      <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={goTo} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => pieces.find((p) => p.id === id)?.name || 'plane'} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {confirming && (
         <HazardConfirm
@@ -427,9 +453,9 @@ function homeOf(piece: Box, at: ScreenRect, cards: Card[], labels: Label[]): Pla
 }
 
 // The focused plane's cards, live, on its own view.
-function FocusedCards({ cards, labels, editor, pins }: { cards: Card[]; labels: Label[]; editor: boolean; pins: PinnedThread[] }) {
+function FocusedCards({ cards, labels, editor }: { cards: Card[]; labels: Label[]; editor: boolean }) {
   const view = useCanvasView((s) => s.planeCam)
-  return view ? <PlaneCards cards={cards} labels={labels} view={view} live editor={editor} pins={pins} /> : null
+  return view ? <PlaneCards cards={cards} labels={labels} view={view} live editor={editor} /> : null
 }
 
 // Resize handles (D-180, D-181): the corners are the cards' corner marks (D-150), grey on hover, long and cyan in edit
@@ -501,6 +527,18 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
   }
 
   const kind = KIND_NAME.plane
+  // Its conversations (D-193): on it, and on what's in it.
+  const { threads } = useWs()
+  const me = myUid()
+  const seen = useReads(wid, me || null).data?.seen
+  const mine = threads.filter((t) => !t.resolved && (t.planeId === piece.id || (t.on === 'plane' && t.targetId === piece.id)))
+  const freshOnes = mine.filter((t) => isNew(t, seen, t.id, me))
+  const comments = {
+    count: mine.length,
+    fresh: freshOnes.length > 0,
+    mentioned: freshOnes.some((t) => t.mentions?.includes(me)),
+    onOpen: () => toggleInbox(true, piece.id),
+  }
   // Its cards fitted inside it, and its marks with them (D-187).
   const inner = innerView(box, cards, labels)
   const step = GRID * inner.zoom
@@ -510,6 +548,8 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       data-selected={selected || undefined}
       data-editing={editing || undefined}
       data-dragging={held ? true : undefined}
+      // What the right-click menu comments on (D-193).
+      data-target={`plane:${piece.id}`}
       style={{ left: box.x + (shift?.dx ?? 0), top: box.y + (shift?.dy ?? 0), width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px` }}
       onPointerDown={press('move')}
     >
@@ -534,6 +574,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
         onEdit={editor ? () => setEditing(piece.id, !editing) : undefined}
         onDelete={() => useCanvasView.setState({ confirming: piece.id })}
         onFocus={onFocus}
+        comments={comments}
       />
     </div>
   )
@@ -583,6 +624,8 @@ function NameField({ value, placeholder, onSave }: { value: string; placeholder:
 // In edit mode it turns into a status line with the plane's live size and what can be done, `[delete]` (confirmed first,
 // D-182) and `[done]`, which ends edit mode. Viewers never get to edit mode.
 type ConsoleProps = {
+  // Its comments (D-193): on the plane and inside it, seen without going in; opens the threads panel on them.
+  comments?: { count: number; fresh: boolean; mentioned: boolean; onOpen: () => void }
   size: Box | null
   onFocus: () => void
   onEdit?: () => void
@@ -590,7 +633,7 @@ type ConsoleProps = {
   className?: string
 }
 
-function PlaneConsole({ size, onFocus, onEdit, onDelete, className }: ConsoleProps) {
+function PlaneConsole({ comments, size, onFocus, onEdit, onDelete, className }: ConsoleProps) {
   return (
     <div
       className={`${styles.console} ${className ?? ''}`}
@@ -618,6 +661,17 @@ function PlaneConsole({ size, onFocus, onEdit, onDelete, className }: ConsolePro
         </>
       ) : (
         <>
+          {comments && comments.count > 0 && (
+            <button
+              className={styles.tool}
+              data-new={comments.fresh || undefined}
+              title={`${comments.count} conversation${comments.count === 1 ? '' : 's'} on and in this plane${comments.fresh ? ', something new' : ''}`}
+              aria-label={`Comments, ${comments.count}`}
+              onClick={comments.onOpen}
+            >
+              {comments.mentioned ? '@' : <CommentIcon size={11} />} {comments.count}
+            </button>
+          )}
           <button className={styles.tool} aria-pressed={false} title="make the plane the view" onClick={onFocus}>
             focus
           </button>

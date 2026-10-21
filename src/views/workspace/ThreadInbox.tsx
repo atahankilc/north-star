@@ -25,10 +25,12 @@ type Props = {
   here?: string
   // What it was on was deleted (D-171).
   goneOf?: (t: WithId<Thread>) => boolean
+  // A scope's name (D-193): the plane whose console opened the panel.
+  scopeName?: (id: string) => string
 }
 
-// The button in the board's bottom-left toolbar (D-167): a square icon button like `+`, the comment mark in it; a
-// magenta count of new mentions in its corner, or a magenta dot while anything else is new.
+// The button in the bottom-left corner, just above your square (D-193): the comment mark; a magenta count of new
+// mentions in its corner, or a magenta dot while anything else is new.
 export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
   const open = useThreadView((s) => s.inbox)
   const me = myUid()
@@ -50,8 +52,11 @@ export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
   )
 }
 
-export function ThreadInbox({ wid, threads, titleOf, onGo, whereOf, here, goneOf }: Props) {
+export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, goneOf, scopeName }: Props) {
   const open = useThreadView((s) => s.inbox)
+  // Only a plane's (on it, or in it) when its console opened the panel (D-193).
+  const scope = useThreadView((s) => s.scope)
+  const threads = useMemo(() => (scope ? all.filter((t) => t.planeId === scope || (t.on === 'plane' && t.targetId === scope)) : all), [all, scope])
   const openId = useThreadView((s) => s.openId)
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
@@ -90,8 +95,13 @@ export function ThreadInbox({ wid, threads, titleOf, onGo, whereOf, here, goneOf
       onKeyDown={(e) => e.stopPropagation()}
     >
       <header className={styles.head}>
-        <span className={styles.title}>threads</span>
+        <span className={styles.title}>threads{scope && scopeName ? ` · ${scopeName(scope)}` : ''}</span>
         <span className={styles.actions}>
+          {scope && (
+            <button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
+              all
+            </button>
+          )}
           {counts.new > 0 && (
             <button className={styles.action} onClick={markAll}>
               mark all read

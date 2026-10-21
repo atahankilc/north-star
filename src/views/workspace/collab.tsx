@@ -2,14 +2,15 @@
 // plane in focus, none = the canvas), where your pointer is in that space's px, and what you have selected. Others in
 // the same space see your cursor (smoothed, a little in the past, D-169) and a frame in your colour round what you've
 // selected. Following someone is total: you go where they go, into the plane they focus and back out (with the ink),
-// their cursor stays in the middle of your screen at your own zoom, and what they select is selected for you; your own
-// pan or zoom, Escape, or a click on their square stops it.
+// their cursor stays in view at your own zoom, gliding back to the middle when it leaves it, and what they select is
+// selected for you; your own pan, Escape, or a click on their square stops it (zooming doesn't, D-193).
 import { useEffect, useRef, type RefObject } from 'react'
 import { cursorAt, hasSelected, onCursorMove, setCursor, setPresencePlane, setPresenceSelection, usePresence, type Peer } from '../../data/presence'
 import { camOf, setCam, useCanvasView } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useThemeAccent } from '../../state/theme'
 import { CANVAS } from '../../data/labels'
+import { firebase } from '../../data/firebase'
 import { useWs } from './context'
 import styles from './collab.module.css'
 
@@ -147,36 +148,47 @@ export function Follow({ focusId, focusTo }: FollowProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sel])
 
-  // Their cursor in the middle of your screen, at your zoom, eased.
+  // Their cursor kept in view, at your zoom (D-193): while it's in the middle of your screen nothing moves; once it
+  // leaves that middle, the view glides (eased by time, not by frame) until it's centred again, like following in Figma.
   const uid = leader && (leader.plane ?? null) === focusId && (!focusId || arrived) ? leader.uid : null
   const { wid } = useWs()
   useEffect(() => {
     if (!uid) return
     let raf = 0
-    const frame = () => {
+    let last = performance.now()
+    // Gliding back to centre: starts when the cursor leaves the middle, stops once it's there.
+    let chasing = true
+    const frame = (now: number) => {
       raf = 0
+      const dt = Math.min(0.1, (now - last) / 1000)
+      last = now
       const c = cursorAt(uid)
       if (!c) return
       const { size, planeCam } = useCanvasView.getState()
-      const k = isReducedMotion() ? 1 : 0.12
-      let still = true
-      if (focusId && planeCam) {
-        const ox = size.w / 2 - c.x * planeCam.zoom
-        const oy = size.h / 2 - c.y * planeCam.zoom
-        const next = { ...planeCam, ox: planeCam.ox + (ox - planeCam.ox) * k, oy: planeCam.oy + (oy - planeCam.oy) * k }
-        still = Math.hypot(ox - next.ox, oy - next.oy) < 0.5
-        useCanvasView.setState({ planeCam: still ? { ...planeCam, ox, oy } : next })
-      } else if (!focusId) {
-        const cam = camOf(wid)
-        const x = -c.x * cam.zoom
-        const y = -c.y * cam.zoom
-        const next = { ...cam, x: cam.x + (x - cam.x) * k, y: cam.y + (y - cam.y) * k }
-        still = Math.hypot(x - next.x, y - next.y) < 0.5
-        setCam(wid, still ? { ...cam, x, y } : next)
+      // Where their cursor is on screen, from the middle.
+      const cam = focusId ? planeCam : camOf(wid)
+      if (!cam) return
+      const zoom = cam.zoom
+      const sx = focusId && planeCam ? planeCam.ox + c.x * zoom - size.w / 2 : (cam as { x: number }).x + c.x * zoom
+      const sy = focusId && planeCam ? planeCam.oy + c.y * zoom - size.h / 2 : (cam as { y: number }).y + c.y * zoom
+      if (Math.abs(sx) > size.w * MIDDLE || Math.abs(sy) > size.h * MIDDLE) chasing = true
+      if (chasing && Math.hypot(sx, sy) < 2) chasing = false
+      if (chasing) {
+        // Exponential ease by time: the same feel at any frame rate.
+        const k = isReducedMotion() ? 1 : 1 - Math.exp(-dt / EASE_S)
+        if (focusId && planeCam) useCanvasView.setState({ planeCam: { ...planeCam, ox: planeCam.ox - sx * k, oy: planeCam.oy - sy * k } })
+        else {
+          const cc = camOf(wid)
+          setCam(wid, { ...cc, x: cc.x - sx * k, y: cc.y - sy * k })
+        }
       }
-      if (c.moving || !still) raf = requestAnimationFrame(frame)
+      if (c.moving || chasing) raf = requestAnimationFrame(frame)
     }
-    const kick = () => void (raf ||= requestAnimationFrame(frame))
+    const kick = () => {
+      if (raf) return
+      last = performance.now()
+      raf = requestAnimationFrame(frame)
+    }
     kick()
     const off = onCursorMove(kick)
     return () => {
@@ -188,14 +200,21 @@ export function Follow({ focusId, focusTo }: FollowProps) {
   return null
 }
 
-// Your own pan or zoom stops following.
+// The middle of your screen their cursor may roam in without the view moving: ±22 % of its width and height from the
+// centre. And how long the glide back takes to cover most of the way (s).
+const MIDDLE = 0.22
+const EASE_S = 0.45
+
+// Your own pan stops following (a zoom doesn't, D-193).
 export const stopFollowing = () => usePresence.getState().following && usePresence.getState().follow(null)
 
 // Who else, in this space, has `id` selected: a frame in their colour round it, with their name (D-067, D-068).
 export function PeerRing({ id, space }: { id: string; space: string }) {
   const peers = usePresence((s) => s.peers)
   const tone = useThemeAccent()
-  const on = peers.filter((p) => spaceOf(p) === space && hasSelected(p, id))
+  // Never yourself (presence leaves you out; this makes sure, other tabs of yours included).
+  const me = firebase?.auth.currentUser?.uid
+  const on = peers.filter((p) => p.uid !== me && spaceOf(p) === space && hasSelected(p, id))
   if (!on.length) return null
   return (
     <>

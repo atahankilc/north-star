@@ -34,6 +34,7 @@ import { LightMarkdown } from '../../ui/LightMarkdown'
 import { useWs } from './context'
 import styles from './TextItems.module.css'
 import { PeerRing } from './collab'
+import { ThreadChip, threadOn } from './Threads'
 
 const DRAG_PX = 5
 
@@ -82,7 +83,7 @@ export function TextItems({ labels, layer, live, editor, zoom, carry }: Props) {
 type ItemProps = { l: Label; n: number; live: boolean; editor: boolean; zoom: number; labels: Label[]; carry: Carried[] }
 
 function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
-  const { wid } = useWs()
+  const { wid, threads } = useWs()
   const kind = kindOf(l)
   const selected = useCanvasView((s) => live && s.labelSelected === l.id)
   const typing = useCanvasView((s) => live && editor && s.labelEditing === l.id)
@@ -185,6 +186,7 @@ function LabelItem({ l, n, live, editor, zoom, labels, carry }: ItemProps) {
       <i className={styles.mark} data-corner="se" aria-hidden />
       <i className={styles.mark} data-corner="sw" aria-hidden />
       {live && <PeerRing id={l.id} space={l.pieceId} />}
+      {live && <ThreadChip wid={wid} thread={threadOn(threads, l.id)} zoom={zoom} />}
     </>
   )
   const bar = selected && editor && kind !== 'title' ? <LabelBar l={l} zoom={zoom} /> : null

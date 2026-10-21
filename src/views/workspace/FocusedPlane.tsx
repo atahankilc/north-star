@@ -68,7 +68,6 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
       const { planeCam: c, focusLeaving } = useCanvasView.getState()
       if (!c || focusLeaving) return
       stopGlide()
-      stopFollowing()
       const r = el.getBoundingClientRect()
       const px = e.clientX - r.left
       const py = e.clientY - r.top

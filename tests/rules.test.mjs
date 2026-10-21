@@ -497,6 +497,8 @@ const start = (who, id, extra) => {
 }
 await allow('viewer starts a thread', () => start(dave, 't1'))
 await allow('editor starts a thread on a spot', () => start(bob, 't2', { on: 'spot', targetId: undefined }))
+await allow('a thread on a plane (D-193)', () => start(bob, 't2p', { on: 'plane', targetId: 'p1', planeId: 'canvas' }))
+await deny('a thread on a plane without its id', () => start(bob, 't2q', { on: 'plane', targetId: undefined }))
 await deny('a thread for someone else', () => setDoc(thr(bob.fs, 't3'), threadOf(dave)))
 await deny('a thread on a card without its id', () => setDoc(thr(bob.fs, 't4'), { ...threadOf(bob), targetId: undefined }))
 await deny('a non-member reads threads', () => getDocs(collection(carol.fs, 'workspaces', wid, 'threads')))

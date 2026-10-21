@@ -473,7 +473,8 @@ service cloud.firestore {
       match /threads/{tid} {
         function validThread(d) {
           return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
-            && d.on in ['card', 'label', 'link', 'spot']
+            // 'plane' (D-193): a comment on a plane on the canvas.
+            && d.on in ['card', 'label', 'link', 'spot', 'plane']
             && optText(d, 'targetId', 128) && (d.on == 'spot' || 'targetId' in d)
             && optText(d, 'planeId', 128)
             && d.x is number && d.y is number
