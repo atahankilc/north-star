@@ -1,10 +1,11 @@
 // The right panel (D-219): one look for every panel that opens on the right, whatever fills it. A terminal column flush
-// with the right edge of the space it belongs to, from under the HUD's bar to the bottom: a piece's own view in focus (its part of the screen when
+// with the right edge of the space it belongs to, the screen's full height, over the HUD's bar (in a portal): a piece's own view in focus (its part of the screen when
 // something is open beside it), or the screen's right edge for what's on the canvas itself. A thin line on its left
 // with magenta marks at its corners (a plane console's), the kind in its colour and `[×] esc` along the top, the title
 // under it, then sections under rules that carry a number and a name (`01 STATUS ────`), actions at the foot. It
 // builds up cell by cell as it opens and breaks apart as it closes (D-034): wrap it in <AnimatePresence>.
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { Appear } from './Appear'
 import styles from './SidePanel.module.css'
 
@@ -17,7 +18,7 @@ type Props = {
   onClose: () => void
   // `[verb]` actions at its foot.
   actions?: ReactNode
-  // From the right edge of what it sits in (a piece's part of the screen).
+  // From the screen's right edge: the part of the screen right of the space it belongs to (what's open beside a plane).
   right?: number
   children?: ReactNode
 }
@@ -26,7 +27,7 @@ type Props = {
 export const SIDE_PANEL_W = 400
 
 export function SidePanel({ kind, tone, title, label, onClose, actions, right = 0, children }: Props) {
-  return (
+  return createPortal(
     <Appear
       as="aside"
       className={styles.panel}
@@ -46,7 +47,8 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
       <div className={styles.title}>{title}</div>
       <div className={styles.body}>{children}</div>
       {actions && <footer className={styles.foot}>{actions}</footer>}
-    </Appear>
+    </Appear>,
+    document.body,
   )
 }
 

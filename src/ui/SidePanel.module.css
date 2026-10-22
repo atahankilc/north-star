@@ -1,10 +1,10 @@
-/* The right panel (D-219): a terminal column flush with the right edge of its space, from under the HUD's bar (whose
-   shade would dim its top line) to the bottom. */
+/* The right panel (D-219): a terminal column flush with the right edge of its space, the screen's full height, over the
+   HUD's bar (whose shade would dim its top line; nothing of the bar's sits on the right). */
 .panel {
-  position: absolute;
-  top: var(--hud-h);
+  position: fixed;
+  top: 0;
   bottom: 0;
-  z-index: 6;
+  z-index: 11;
   display: flex;
   flex-direction: column;
   width: min(400px, 100%);

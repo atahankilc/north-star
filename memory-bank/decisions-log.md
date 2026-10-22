@@ -3572,8 +3572,9 @@ categories shown like B, not in a card, and the features under them not indented
 - *Decision:* one right panel for everything that opens on the right, whatever fills it (`src/ui/SidePanel.tsx`:
   `SidePanel`, `PanelSection`, `PanelAction`). Picked from four on a scratch preview (port 5196; A terminal column, B the
   card opened as a floating sheet, C a tab hanging from the top edge, D a terminal log with a `>` prompt): A.
-- *Look:* a column flush with the right edge of its space, 400 px (narrower if the space is), from under the HUD's bar
-  (`--hud-h`; the bar's shade dimmed its top line) to the bottom, `--bg`, a `--line-hover` line on its left with 7 px
+- *Look:* a column flush with the right edge of its space, 400 px (narrower if the space is), the screen's full height
+  (the user: "side panel neden en tepeye kadar uzanmıyor?"; it's in a portal over the HUD's bar, whose shade had dimmed
+  its top line, and nothing of the bar's sits on the right), `--bg`, a `--line-hover` line on its left with 7 px
   magenta marks on its two left corners (a plane console's, the focus dock's). Along the top the kind in uppercase in
   its colour and `[×] esc`; the title in Geist 22 px under it and a rule; then sections under rules that carry a number
   and a name (`01 STATUS ────`), the body scrolling; `[verb]` actions at the foot over a rule. It builds up cell by cell
