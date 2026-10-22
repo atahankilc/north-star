@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom'
 import { rowsOf } from '../../data/source'
 import { colName, TEMPLATES, type TableSetup } from '../../data/table'
 import { addPiece } from '../../data/pieces'
-import { canvasCenter, useCanvasView } from '../../state/canvasView'
+import { canvasCenter, setEditing } from '../../state/canvasView'
 import { useWs } from './context'
 import { useFieldText, useTableUi } from './Table'
 import { ColumnsEditor, RowsEditor, type SetTable } from './TableSetup'
@@ -55,7 +55,8 @@ function Wizard() {
     close()
     const name = TEMPLATES.find((t) => t.key === template)?.name ?? 'table'
     const id = await addPiece(wid, 'table', canvasCenter(wid), pieces, draft, name)
-    useCanvasView.setState({ selected: id })
+    // Where you're looking, in edit mode, to be moved where you want it.
+    setEditing(id, true)
   }
 
   return (

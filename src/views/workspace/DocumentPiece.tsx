@@ -13,7 +13,7 @@ import type { Piece } from '../../data/model'
 import { downloadDocument, shareDocument, useDocBody } from '../../data/documents'
 import { placeDocument, pieceRef } from '../../data/pieces'
 import { useAuth } from '../../data/auth'
-import { glide, stopGlide, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
+import { canvasCenter, glide, stopGlide, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useWs } from './context'
 import { DocContent, KindMark } from './DocContent'
@@ -412,9 +412,11 @@ type PlaceProps = {
   zoom: number
   others: (Bounds & { id: string })[]
   members: { total: number; editors: number; viewers: number }
+  // Placed: the canvas shows it, in edit mode, to be moved where you want it.
+  onPlaced: (pieceId: string) => void
 }
 
-export function DocPlace({ toScreen, zoom, others, members }: PlaceProps) {
+export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlaceProps) {
   const { wid, documents } = useWs()
   const placing = useDocUi((s) => s.placing)
   const d = placing ? (documents.find((x) => x.id === placing.docId) ?? null) : null
@@ -423,10 +425,10 @@ export function DocPlace({ toScreen, zoom, others, members }: PlaceProps) {
   const cancel = () => useDocUi.setState({ placing: null })
   const place = () => {
     if (!placing || !d) return cancel()
-    const near = placing.near ? others.find((o) => o.id === placing.near) : undefined
-    const at: [number, number] = placing.at ?? (near ? [near.x + near.w + 300, near.y + 250] : [0, 0])
+    // Where it was let go, or (a click on place) where you're looking on the canvas: the nearest clear spot there.
+    const at: [number, number] = placing.at ?? canvasCenter(wid)
     cancel()
-    void placeDocument(wid, d, at, others, !d.shared)
+    void placeDocument(wid, d, at, others, !d.shared).then(onPlaced)
   }
   const placeRef = useRef(place)
   placeRef.current = place

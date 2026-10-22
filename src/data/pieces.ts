@@ -53,14 +53,33 @@ export type Box = Pick<Piece, 'x' | 'y' | 'w' | 'h'>
 const GAP = 3 * GRID
 const overlaps = (a: Box, b: Box) => a.x < b.x + b.w + GAP && b.x < a.x + a.w + GAP && a.y < b.y + b.h + GAP && b.y < a.y + a.h + GAP
 
-// A piece centred on `at` (canvas pixels), or the nearest place right of it clear of the others: one undo step.
+// Where a new piece goes (asked 2026-10-22: "direkt baktığım yere koysun … edit modda başlasın"): where it was asked
+// for (the middle of the screen), or the nearest clear place round it within about its own size, so it's still in
+// view; with none clear there, on top of what's there (it starts in edit mode, to be moved). Steps of the grid, nearest
+// first.
+function nearClear(box: Box, others: Box[]): Pick<Box, 'x' | 'y'> {
+  const free = (b: Box) => !others.some((o) => overlaps(b, o))
+  if (free(box)) return { x: box.x, y: box.y }
+  const step = 4 * GRID
+  const reach = Math.ceil(Math.max(box.w, box.h) / step)
+  const tries: [number, number][] = []
+  for (let i = -reach; i <= reach; i++) for (let j = -reach; j <= reach; j++) if (i || j) tries.push([i * step, j * step])
+  tries.sort((a, b) => Math.hypot(...a) - Math.hypot(...b))
+  for (const [dx, dy] of tries) {
+    const b = { ...box, x: box.x + dx, y: box.y + dy }
+    if (free(b)) return { x: b.x, y: b.y }
+  }
+  return { x: box.x, y: box.y }
+}
+
+// A piece centred on `at` (canvas pixels), or the nearest clear place round it (nearClear): one undo step.
 // A matrix starts blank (D-204), a table with every card (D-209), or from the setup given.
 // A document piece (D-232) shows `docId`, sized as `size` when given (an image's shape).
 export async function addPiece(wid: string, kind: PieceKind, at: [number, number], others: Box[], setup?: MatrixSetup | TableSetup, name?: string, docId?: string, size?: { w: number; h: number }) {
   const ref = doc(col(wid))
   const { w, h } = size ?? PIECE_SIZE[kind]
   const box = { x: snap(at[0] - w / 2), y: snap(at[1] - h / 2), w, h }
-  for (let hit = others.find((o) => overlaps(box, o)); hit; hit = others.find((o) => overlaps(box, o))) box.x = hit.x + hit.w + GAP
+  Object.assign(box, nearClear(box, others))
   const now = Date.now()
   const extra =
     kind === 'matrix'
@@ -203,14 +222,14 @@ export function openPiece(wid: string, piece: Piece & { id: string }, open: bool
   return tracked(`${open ? 'open' : 'close'} a ${KIND_NAME[kind]}`, [ref], () => updateDoc(ref, { open: open || deleteField(), updatedAt: Date.now() }))
 }
 
-// A document on its own on the canvas (D-232), centred on `at` or right of whatever it would cover; shared in the same
+// A document on its own on the canvas (D-232), centred on `at` or the nearest clear place round it (nearClear); shared in the same
 // step when it isn't yet (asked first: everyone sees the canvas). An image takes its own shape. One undo step.
 export async function placeDocument(wid: string, d: Pick<Doc, 'shared' | 'kind' | 'width' | 'height'> & { id: string }, at: [number, number], others: Box[], share: boolean) {
   const ref = doc(col(wid))
   const base = PIECE_SIZE.document
   const size = d.kind === 'image' && d.width && d.height ? { w: base.w, h: snap(Math.max(PIECE_MIN.h, Math.min(1200, (base.w * d.height) / d.width))) } : base
   const box = { x: snap(at[0] - size.w / 2), y: snap(at[1] - size.h / 2), ...size }
-  for (let hit = others.find((o) => overlaps(box, o)); hit; hit = others.find((o) => overlaps(box, o))) box.x = hit.x + hit.w + GAP
+  Object.assign(box, nearClear(box, others))
   const now = Date.now()
   const shared = docRef(wid, d.id)
   await tracked(share ? 'share and place a document' : 'place a document', share ? [ref, shared] : [ref], () => {

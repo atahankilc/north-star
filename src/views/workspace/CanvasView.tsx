@@ -403,6 +403,13 @@ export function CanvasView() {
   const deletingId = useDocUi((s) => s.deleting)
   const deletingDoc = documents.find((d) => d.id === deletingId) ?? null
 
+  // A document just put on the canvas (D-232): in edit mode where you're looking, to be moved; from a focus, back to the
+  // canvas to see it.
+  const placedDoc = (id: string) => {
+    if (focusedRef.current) unfocusRef.current()
+    setEditing(id, true)
+  }
+
   // Dragged out of a list (D-232): placed where it's let go, asked first when it's private.
   const dropped = useDocUi((s) => s.dropped)
   const dragging = useDocUi((s) => s.drag)
@@ -842,7 +849,7 @@ export function CanvasView() {
       {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
       {/* A document being dragged out of its list, and the question before a private one goes on the canvas (D-232). */}
       {dragging && <DragGhost doc={documents.find((d) => d.id === dragging.docId)} at={dragging} root={root} />}
-      <DocPlace toScreen={focusId ? null : toScreen} zoom={cam.zoom} others={shown.map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h }))} members={membersOf(workspace.roles)} />
+      <DocPlace toScreen={focusId ? null : toScreen} zoom={cam.zoom} others={shown.map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h }))} members={membersOf(workspace.roles)} onPlaced={placedDoc} />
       {deletingDoc && (
         <HazardConfirm
           title={`delete "${deletingDoc.title.length > 40 ? `${deletingDoc.title.slice(0, 39)}…` : deletingDoc.title}"?`}

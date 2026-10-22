@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { entriesOf, nounOf, TEMPLATES, TONE_VAR, type MatrixSetup } from '../../data/matrix'
 import { addPiece } from '../../data/pieces'
-import { canvasCenter, useCanvasView } from '../../state/canvasView'
+import { canvasCenter, setEditing } from '../../state/canvasView'
 import { useWs } from './context'
 import { StepSquare, useMatrixUi } from './Matrix'
 import { AxisEditor, CellsEditor, type SetPart } from './MatrixSetup'
@@ -49,7 +49,8 @@ function Wizard() {
   const make = async () => {
     close()
     const id = await addPiece(wid, 'matrix', canvasCenter(wid), pieces, draft, `${nounOf(draft.rows)} × ${nounOf(draft.cols)}`)
-    useCanvasView.setState({ selected: id })
+    // Where you're looking, in edit mode, to be moved where you want it.
+    setEditing(id, true)
   }
 
   // The preview's cells: the scale's steps in turn, a number, or a word.

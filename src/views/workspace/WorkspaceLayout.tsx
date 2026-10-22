@@ -38,7 +38,7 @@ import {
   useJoinRequests,
   useWorkspace,
 } from '../../data/workspaces'
-import { canvasCenter, fitCanvas, fitPlane, useCanvasView, type PlaneCam } from '../../state/canvasView'
+import { canvasCenter, fitCanvas, fitPlane, setEditing, useCanvasView, type PlaneCam } from '../../state/canvasView'
 import { useHoldCurtain } from '../../state/curtain'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { DecodeText } from '../../ui/DecodeText'
@@ -255,7 +255,8 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
   ]
   const add = async (kind: PieceKind, template?: { name: string; setup: () => MatrixSetup | TableSetup }) => {
     const id = await addPiece(wid, kind, canvasCenter(wid), shownPieces(pieces, cards), template?.setup(), template?.name)
-    useCanvasView.setState({ selected: id })
+    // Where you're looking, in edit mode, to be moved where you want it.
+    setEditing(id, true)
   }
   const addHere = async (type: CardType) => {
     const { planeCam: c, size } = useCanvasView.getState()
