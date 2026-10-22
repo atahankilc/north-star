@@ -3897,7 +3897,12 @@ categories shown like B, not in a card, and the features under them not indented
   opens right on top of the dock in the console's look (its edge, magenta marks on its top corners, sitting on the dock's
   top edge), pressed again or Escape it closes. The user picked one menu over five ("tek bir dropdown olsun ancak oraya
   basmak consolun üstünde filtre alanını açsın … direkt consolun üstüne açılsın").
-- *Rows* (`[x]` kept, `[ ]` left out): SHOW the five card types; FOR the plane's customers (keeps the chosen ones and
+- *Then* (the user: the archived filter bar's look, "her filtrenin kendi dropdownu var ve sıralanmış şekilde … direkt
+  consolun üstüne"): the strip on the dock holds the old filter bar (D-053, D-066), one framed `LABEL value ▾` after
+  another, each its own menu (D-222's, opening upwards), lit cyan while it narrows: SHOW with a swatch per type, FOR
+  `any` / a name / a count, TAG with how many cards carry each, REGION, LINKS with a swatch per kind, then `[reset]`.
+  Escape closes an open menu first, then the strip.
+- *What they do* (checked = kept): SHOW the five card types; FOR the plane's customers (keeps the chosen ones and
   what's tagged `for` them); TAG the plane's tags (keeps cards with one of them); REGION where its competitors are
   (narrows competitors only, a place counting inside the bigger ones: D-145's rules, now `src/data/regions.ts`); LINKS
   each kind in its colour; `[reset]`.

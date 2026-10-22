@@ -6,11 +6,12 @@
   left: 50%;
   z-index: 1;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
   width: max-content;
-  max-width: min(640px, calc(100vw - 2 * var(--space-6)));
-  padding: 10px var(--space-4) 8px;
+  max-width: calc(100vw - 2 * var(--space-6));
+  padding: 7px var(--space-3) 8px;
   border: 1px solid var(--line-hover);
   background: var(--bg);
   color: var(--fg-dim);
@@ -42,88 +43,7 @@
   border-right: 1px solid var(--accent-magenta);
 }
 
-.head {
-  display: flex;
-  align-items: baseline;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--line);
-  color: var(--fg-dim);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
-
 .reset {
   composes: small from '../../ui/AsciiButton.module.css';
-  margin-left: auto;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 64px 1fr;
-  gap: 10px;
-  align-items: baseline;
-}
-
-.name {
-  color: var(--fg-dim);
-  font-size: 10px;
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
-
-.pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 10px;
-}
-
-/* `[x] problem` off as `[ ] problem`: lit while it's kept (shown). */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-faint);
-  font: inherit;
-  cursor: pointer;
-}
-
-.pill::before {
-  content: '[ ]';
-  color: var(--fg-faint);
-}
-
-.pill[aria-pressed='true'] {
-  color: var(--fg-strong);
-}
-
-.pill[aria-pressed='true']::before {
-  content: '[x]';
-  color: var(--accent-cyan);
-}
-
-.pill:hover {
-  color: var(--fg);
-}
-
-.swatch {
-  width: 10px;
-  height: 3px;
-  background: var(--tone);
-}
-
-.pill[aria-pressed='false'] .swatch {
-  opacity: 0.35;
-}
-
-.none {
-  color: var(--fg-faint);
-}
-
-.foot {
-  margin: 2px 0 0;
-  color: var(--fg-faint);
-  font-size: 10px;
+  margin-left: var(--space-1);
 }
