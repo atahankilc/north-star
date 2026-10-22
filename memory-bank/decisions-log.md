@@ -3964,3 +3964,16 @@ categories shown like B, not in a card, and the features under them not indented
   Europe-wide or Global competitor, drops a US one, leaves other cards). What the user sees isn't known yet: asked.
 - *Verified* headless (emulators): a table stuck to a plane gave `[linked · 1]`; its strip's `⇆ table` opened it beside
   the plane; with the filter open too the two stacked and fit in the plane's half; no console errors; build.
+
+### D-237 · 2026-10-22 · Accepted (the right-click menu inside a focused plane; adds to D-193's `comment`, brings back D-117's)
+- *Decision:* right-clicking in a focused plane offers what can be done with what's under the pointer, `comment` second:
+  a card `open` (its panel), `fold / unfold N parts` (when it has parts), `copy`, `duplicate`, `delete`; text `edit`,
+  `copy`, `duplicate`, `delete`; a link `add / edit its label`, `turn it round` (not `for`), its kind as a checked list
+  in each kind's colour, `remove`; something in a selection of several, only `N selected` with `copy them`,
+  `duplicate them`, `delete N` (no comment). On the plane itself: `paste … here` (when something's copied, its top-left at
+  the pointer), then a card of each type and a heading, paragraph or sticky note right there (a card's title or the
+  text ready to type). Changes are editors'; anyone gets `open`, `copy` and `comment`. Each item has the `+` menu's
+  letter where it has one. The user: "sağ tık menüsüne geçelim".
+- *Code:* `planeMenu.ts` builds the items (`planeCtx`, `planeItems`); CanvasView's right-click adds them.
+- *Verified* headless (emulators): on the plane, `problem` made a card at the pointer with its title typed; on a card,
+  `duplicate` made a copy; on a link's chip, `contradicts` changed its kind; no console errors; build.

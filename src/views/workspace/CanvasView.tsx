@@ -18,6 +18,7 @@ import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView,
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
 import { ViewMenu } from './ViewMenu'
+import { planeCtx, planeItems } from './planeMenu'
 import { PlaneDockExtras } from './FilterDock'
 import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu } from './ContextMenu'
@@ -330,7 +331,13 @@ export function CanvasView() {
     e.preventDefault()
     if (focusId && !useCanvasView.getState().focusArrived) return
     const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-target]')?.dataset.target
-    if (!hit) return setMenu(null)
+    // Inside a focused plane (D-237): what can be done with what's under the pointer, or added where it is.
+    const inPlane = focused && !isBare(focused) ? planeCtx(wid, focused.id, editor, { cards, labels, edges }, { uid: user?.id, author: user?.name || user?.email || 'someone' }, planeToSpace(e.clientX, e.clientY)) : null
+    if (!hit) {
+      const items = inPlane ? planeItems(null, null, inPlane) : []
+      const r0 = root.current!.getBoundingClientRect()
+      return setMenu(items.length ? { at: [e.clientX - r0.left, e.clientY - r0.top], what: 'plane', items } : null)
+    }
     const [on, targetId] = hit.split(':') as ['card' | 'label' | 'plane' | 'link' | 'doc', string]
     // A document in a list (D-232): its own menu, no comment (threads go on what's on the canvas).
     if (on === 'doc') {
@@ -352,10 +359,14 @@ export function CanvasView() {
           : piece
             ? KIND_NAME[kindOfPiece(piece)]
             : 'link'
+    const own = inPlane && on !== 'plane' ? planeItems(on, targetId, inPlane) : []
+    // Several selected: only what's done to all of them, no comment.
+    if (own[0] && 'heading' in own[0]) return setMenu({ at: [e.clientX - r.left, e.clientY - r.top], what: 'selection', items: own })
     setMenu({
       at: [e.clientX - r.left, e.clientY - r.top],
       what,
       items: [
+        ...own.slice(0, 1),
         {
           key: 'comment',
           label: 'comment',
@@ -370,6 +381,7 @@ export function CanvasView() {
             startComment({ on, targetId, planeId: where, at: [Math.round(at[0]), Math.round(at[1])] })
           },
         },
+        ...own.slice(1),
       ],
     })
   }
