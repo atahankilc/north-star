@@ -3800,3 +3800,19 @@ categories shown like B, not in a card, and the features under them not indented
   screen size; a table cell selected; edit → `[open]` (now `[frame]`) closed it back to its 400 × 250 window and reopened; a drag moved
   it 175, 100 with w/h still 400 × 250; `[setup]` opened the panel, Escape closed it; focus and back; rules tests 385
   passed (3 new), Firestore rules deployed; tsc.
+
+### D-229 · 2026-10-22 · Accepted (D-227's selection takes in everything on the plane; no jump after letting go)
+- *Decision:* the selection on a focused plane holds cards and text alike (headings, paragraphs, sticky notes,
+  sections): shift+click and the alt box pick text too, and a press on any selected thing drags them all (each 0.8
+  round its middle while carried, by the same snapped step, alt free; parts folded into a card come along); the arrows,
+  Delete, ⌘C / ⌘V / ⌘D and the panel's line up / space out (by each thing's own box) take text with the cards, all one
+  undo step each. `N selected` counts text by kind (`1 paragraph · 1 heading`); its tags only touch the cards. A text's
+  own bar shows only while it's selected alone. The user: "planedeki her şeyin birlikte taşınabilir olmasını istiyorum".
+- *No jump:* after a drag of several, or a section's, each thing stays where it was let go (`landing`) until its own
+  data comes back, then lets go of it; before, the carry was dropped as the write finished, so things showed their old
+  place for a moment before the new one arrived (the user: "taşımadan sonra kartlar saniyelik bir yerlere sıçrıyor").
+- *Code:* `selection.ts` holds the shared drag (`startGroupDrag`), what's on the open plane (`onPlane`), `land` /
+  `landed`; `moveMany` (labels.ts) writes cards and text in one batch; `deleteCards` and `copyCards` take text too.
+- *Verified* headless (emulators): an alt box over two cards, a heading and a paragraph selected four; dragged from the
+  heading, all moved +100, +100 and the paragraph read the same place at 0, 30, 80, 150, 300, 600 and 1200 ms after
+  letting go; the text bars hidden with several selected; no console errors; build.

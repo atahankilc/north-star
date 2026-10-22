@@ -42,8 +42,12 @@ type State = {
   cardsLive: Record<string, [number, number]>
   // A competitor's feature to open in its panel (D-221), from its small card inside the competitor (D-225).
   cfOpen: string | null
-  // Cards selected together on the focused plane (D-227): two or more, `cardSelected` then null.
+  // Things selected together on the focused plane (D-227, D-229): cards and text, two or more; `cardSelected` and
+  // `labelSelected` then null.
   cardMulti: string[]
+  // Where things were let go after a drag of several (or a section's), held there until their data's back, so nothing
+  // jumps back for a moment (D-229).
+  landing: Record<string, [number, number]>
   // Things moving together while a section is dragged (D-188): their ids and how far, until the drop is written.
   // `shrink`: cards carried by a selection's drag go 0.8 round their middles (D-150, D-227); a section's don't.
   dragShift: { ids: string[]; dx: number; dy: number; shrink?: boolean } | null
@@ -90,7 +94,7 @@ export function planeArea() {
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({

@@ -22,6 +22,7 @@ import { useAuth } from '../../data/auth'
 import { snap } from '../../data/grid'
 import {
   deleteLabel,
+  CANVAS,
   HEADING_PX,
   KICKER_MAX,
   kindOf,
@@ -43,6 +44,7 @@ import {
 } from '../../data/labels'
 import { DESCRIPTION_MAX, describeWorkspace, renameWorkspace } from '../../data/workspaces'
 import { useCanvasView } from '../../state/canvasView'
+import { land, landed, startGroupDrag, toggleSelected } from './selection'
 import { useMotion } from '../../state/motion'
 import { ago } from '../../ui/ago'
 import { LightMarkdown } from '../../ui/LightMarkdown'
@@ -126,7 +128,7 @@ type ItemProps = { l: Label; live: boolean; editor: boolean; zoom: number; label
 function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const { wid, threads } = useWs()
   const kind = kindOf(l)
-  const selected = useCanvasView((s) => live && s.labelSelected === l.id)
+  const selected = useCanvasView((s) => live && (s.labelSelected === l.id || s.cardMulti.includes(l.id)))
   const typing = useCanvasView((s) => live && editor && s.labelEditing === l.id)
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(l.id) ? s.dragShift : null))
   // Held down (a press, or a drag): its corner marks close in, as a card's do (D-150).
@@ -162,6 +164,13 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const press = (e: ReactPointerEvent<HTMLElement>) => {
     if (!live || e.button !== 0) return
     e.stopPropagation()
+    // In a plane (D-229): shift puts it in or out of the selection; pressed while selected with others, they all move.
+    if (l.pieceId !== CANVAS && e.shiftKey && !typing) return toggleSelected(l.id)
+    if (l.pieceId !== CANVAS && useCanvasView.getState().cardMulti.includes(l.id)) {
+      if (!editor) return
+      setPressed(true)
+      return startGroupDrag(e, zoom, l, () => setPressed(false))
+    }
     select()
     if (!editor || typing) return
     setPressed(true)
@@ -188,12 +197,13 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
       setPressed(false)
       if (d && (d[0] || d[1])) {
         const [dx, dy] = d
+        // Each stays where it was let go until its data's back (D-229): no jump back for a moment.
+        land(held.map((x) => ({ id: x.id, to: [x.x + dx, x.y + dy] })))
         await moveMany(
           kind === 'section' && held.length > 1 ? 'move a section and what is in it' : `move ${kind === 'title' ? 'the title' : `a ${kind}`}`,
           held.map((x) => ({ ref: x.ref, from: { x: x.x, y: x.y }, to: { x: x.x + dx, y: x.y + dy } })),
-        ).catch(() => {})
-      }
-      useCanvasView.setState({ dragShift: null })
+        ).catch(() => held.forEach((x) => landed(x.id)))
+      } else useCanvasView.setState({ dragShift: null })
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -234,9 +244,15 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
 
   const edit = live && editor ? () => useCanvasView.setState({ labelEditing: l.id, labelSelected: l.id }) : undefined
   const color = COLOR_VAR[l.color ?? (kind === 'sticky' ? 'yellow' : 'ink')]
+  const landing = useCanvasView((s) => s.landing[l.id])
+  useEffect(() => {
+    if (landing && landing[0] === l.x && landing[1] === l.y) landed(l.id)
+  }, [landing, l.x, l.y, l.id])
+  // Carried with a selection (D-229): 0.8 round its middle, as cards are.
   const style: CSSProperties = {
-    left: l.x + (shift?.dx ?? 0),
-    top: y + (shift?.dy ?? 0),
+    left: landing ? landing[0] : l.x + (shift?.dx ?? 0),
+    top: landing ? landing[1] : y + (shift?.dy ?? 0),
+    ...(shift?.shrink && { scale: '0.8', transformOrigin: '50% 50%' }),
     ['--tone' as string]: color,
     fontWeight: l.bold ? 700 : undefined,
     fontStyle: l.italic ? 'italic' : undefined,
@@ -261,7 +277,9 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
       {live && <ThreadChip wid={wid} thread={threadOn(threads, l.id)} zoom={zoom} />}
     </>
   )
-  const bar = selected && editor && kind !== 'title' ? <LabelBar l={l} zoom={zoom} /> : null
+  // Its own bar only while it's selected alone; with others, the right panel's `N selected` is theirs (D-229).
+  const alone = useCanvasView((s) => s.labelSelected === l.id)
+  const bar = selected && alone && editor && kind !== 'title' ? <LabelBar l={l} zoom={zoom} /> : null
 
   if (kind === 'section') {
     // Its name is set like a heading (D-130, D-157), whatever the frame's size, into the top edge or up the left one,

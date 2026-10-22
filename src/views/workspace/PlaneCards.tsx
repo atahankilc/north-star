@@ -14,11 +14,12 @@
 // The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, cardRef, copyCards, deleteCards, moveCard, moveCards, updateCard, type Card, type CardType } from '../../data/cards'
-import { clipboard, selectedIds, setSelection, toggleSelected } from './selection'
+import { clipboard, landed, onPlane, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
+import { labelRef, moveMany } from '../../data/labels'
 import type { CompetitorFeature } from '../../data/competitorFeatures'
 import { byCategory, foldedHeight, foldsOf, openHeight, partRowBox, type Box } from './cardInside'
 import type { Label } from '../../data/labels'
-import { TextItems } from './TextItems'
+import { labelBox, TextItems } from './TextItems'
 import { PeerRing } from './collab'
 import { ThreadChip, threadOn } from './Threads'
 import { CardPanel } from './CardPanel'
@@ -102,7 +103,8 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   was.current = detail
   // Where each card is drawn, and how tall: a folded feature holds its parts, a hovered competitor its features (only
   // while cards show everything); a folded part is its row in the feature that holds it.
-  const at = (c: Card): [number, number] => cardsLive[c.id] ?? (shift?.ids.includes(c.id) ? [c.x + shift.dx, c.y + shift.dy] : [c.x, c.y])
+  const landing = useCanvasView((s) => (live ? s.landing : NO_LIVE))
+  const at = (c: Card): [number, number] => cardsLive[c.id] ?? landing[c.id] ?? (shift?.ids.includes(c.id) ? [c.x + shift.dx, c.y + shift.dy] : [c.x, c.y])
   const heightOf = (c: Card) => {
     if (detail !== 'full') return CARD.h
     const rows = folds.rows.get(c.id)
@@ -128,22 +130,19 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   // The cards there when this opened are just there in focus (the plane's own picture was already showing them); on the
   // canvas they build up with the page. Any card after that builds up as it arrives.
   const [first] = useState(() => new Set(cards.map((c) => c.id)))
-  // A selection's drag: the cards in it (and the parts folded into them) follow the one held; dropped, they all move in
-  // one undo step and land where they were let go.
-  const groupMove = (held: string, d: [number, number], done: boolean) => {
-    const ids = useCanvasView.getState().cardMulti
+  // The selection (D-227, D-229) moves as one: what's on this plane, cards and text, and what a folded card carries.
+  onPlane.labels = new Set(labels.map((l) => l.id))
+  onPlane.items = (ids) => {
     const all = new Set(ids)
     for (const id of ids) for (const r of folds.rows.get(id) ?? []) all.add(r.card.id)
-    if (!done) return void useCanvasView.setState({ dragShift: { ids: [...all].filter((x) => x !== held), dx: d[0], dy: d[1], shrink: true } })
-    if (!d[0] && !d[1]) return void useCanvasView.setState({ dragShift: null })
-    // The others stay where they were carried until the data's back.
-    useCanvasView.setState({ dragShift: { ids: [...all].filter((x) => x !== held), dx: d[0], dy: d[1] } })
-    const list = cards.filter((c) => all.has(c.id))
-    return moveCards(wid, list.map((c) => ({ card: c, to: [c.x + d[0], c.y + d[1]] as [number, number] }))).finally(() => useCanvasView.setState({ dragShift: null }))
+    return [
+      ...cards.filter((c) => all.has(c.id)).map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y })),
+      ...labels.filter((l) => all.has(l.id)).map((l) => ({ id: l.id, ref: labelRef(wid, l.id), x: l.x, y: l.y })),
+    ]
   }
-  usePlaneKeys(live, editor, cards, edges, folds.rows)
+  usePlaneKeys(live, editor, cards, labels, edges)
   const [box, setBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
-  // Alt+drag on the plane draws a box: the cards it touches are selected (with shift, added).
+  // Alt+drag on the plane draws a box: the cards and text it touches are selected (with shift, added).
   const boxSelect = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!live || !e.altKey || e.button !== 0) return
     e.stopPropagation()
@@ -165,12 +164,9 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
       setBox(null)
       const [l, t, rr, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
       if (rr - l < 3 && b - t < 3) return
-      const hit = cards.filter((c) => {
-        if (folds.hidden.has(c.id)) return false
-        const q = boxOf(c)
-        return q.x < rr && q.x + q.w > l && q.y < b && q.y + q.h > t
-      })
-      setSelection([...new Set([...keep, ...hit.map((c) => c.id)])])
+      const touches = (q: { x: number; y: number; w: number; h: number }) => q.x < rr && q.x + q.w > l && q.y < b && q.y + q.h > t
+      const hit = [...cards.filter((c) => !folds.hidden.has(c.id) && touches(boxOf(c))).map((c) => c.id), ...labels.filter((x) => touches(labelBox(x))).map((x) => x.id)]
+      setSelection([...new Set([...keep, ...hit])])
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -199,7 +195,6 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
             features={c.type === 'competitor' ? featuresOf.get(c.id) : undefined}
             matched={matched}
             open={c.type === 'competitor' && openIds.has(c.id) && detail === 'full'}
-            onGroup={live && editor ? (d, done) => groupMove(c.id, d, done) : undefined}
           />
         ))}
         <LinkChips links={links} live={live} editor={editor} zoom={view.zoom} />
@@ -211,69 +206,67 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
         )}
         <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
       </div>
-      {live && <CardPanel cards={cards} editor={editor} />}
+      {live && <CardPanel cards={cards} labels={labels} editor={editor} />}
     </div>
   )
 }
 
 const NO_LIVE: Record<string, [number, number]> = {}
 
-// Keys for the selection on a focused plane (D-227), heard before the canvas's own (capture): Escape lets go of
+// Keys for the selection on a focused plane (D-227, D-229), heard before the canvas's own (capture): Escape lets go of
 // several, Delete takes them all away, the arrows nudge a grid step (shift: four), ⌘C / ⌘V / ⌘D copy, paste and
-// duplicate within this tab (pasted a step further each time, with the links between them, selected).
-function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], edges: import('../../data/edges').Edge[], rows: Map<string, { card: Card; depth: number }[]>) {
+// duplicate within this tab (pasted a step further each time, with the links between the cards, selected).
+function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Label[], edges: import('../../data/edges').Edge[]) {
   const { wid } = useWs()
-  const now = useRef({ cards, edges, rows, editor })
-  now.current = { cards, edges, rows, editor }
+  const now = useRef({ cards, labels, edges, editor })
+  now.current = { cards, labels, edges, editor }
   useEffect(() => {
     if (!live) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t?.closest('input, textarea, [contenteditable], [role=dialog], [role=menu], [role=listbox]')) return
-      const { cards, edges, rows, editor } = now.current
+      const { cards, labels, edges, editor } = now.current
       const { cardMulti } = useCanvasView.getState()
       const ids = selectedIds()
       const picked = cards.filter((c) => ids.includes(c.id))
+      const texts = labels.filter((l) => ids.includes(l.id))
       const stop = () => (e.preventDefault(), e.stopImmediatePropagation())
       const mod = e.metaKey || e.ctrlKey
+      const plane = new URLSearchParams(location.search).get('focus')
+      const paste = () => {
+        if (!plane || (!clipboard.cards.length && !clipboard.labels.length)) return
+        stop()
+        clipboard.pasted++
+        const by = clipboard.pasted * 2 * GRID
+        setSelection(copyCards(wid, plane, clipboard.cards, clipboard.edges, [by, by], clipboard.labels))
+      }
       if (e.key === 'Escape' && cardMulti.length) return (stop(), setSelection([]))
       if ((e.key === 'Delete' || e.key === 'Backspace') && cardMulti.length && editor) {
         stop()
         setSelection([])
-        return void deleteCards(wid, picked, edges)
+        return void deleteCards(wid, picked, edges, texts)
       }
       const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key] as [number, number] | undefined
-      if (step && picked.length && editor && !mod) {
+      if (step && ids.length && editor && !mod) {
         stop()
         const by = (e.shiftKey ? 4 : 1) * GRID
-        const moving = [...picked, ...picked.flatMap((c) => (rows.get(c.id) ?? []).map((r) => r.card))]
-        return void moveCards(wid, moving.map((c) => ({ card: c, to: [c.x + step[0] * by, c.y + step[1] * by] as [number, number] })))
+        const items = onPlane.items(ids)
+        return void moveMany(
+          `nudge ${items.length > 1 ? `${items.length} things` : 'it'}`,
+          items.map((i) => ({ ref: i.ref, from: { x: i.x, y: i.y }, to: { x: i.x + step[0] * by, y: i.y + step[1] * by } })),
+        )
       }
-      if (!mod || !picked.length) {
-        if (mod && e.key.toLowerCase() === 'v' && clipboard.cards.length && editor) {
-          stop()
-          clipboard.pasted++
-          const pieceId = cards[0]?.pieceId ?? useCanvasView.getState().cardMulti[0]
-          const plane = new URLSearchParams(location.search).get('focus') ?? pieceId
-          if (plane) setSelection(copyCards(wid, plane, clipboard.cards, clipboard.edges, [clipboard.pasted * 2 * GRID, clipboard.pasted * 2 * GRID]))
-        }
-        return
-      }
+      if (!mod) return
       const key = e.key.toLowerCase()
+      if (key === 'v' && editor) return paste()
+      if (!picked.length && !texts.length) return
       if (key === 'c') {
         stop()
-        clipboard.cards = picked
-        clipboard.edges = edges
-        clipboard.pasted = 0
+        Object.assign(clipboard, { cards: picked, labels: texts, edges, pasted: 0 })
       }
-      if (key === 'd' && editor) {
+      if (key === 'd' && editor && plane) {
         stop()
-        setSelection(copyCards(wid, picked[0].pieceId, picked, edges, [2 * GRID, 2 * GRID]))
-      }
-      if (key === 'v' && clipboard.cards.length && editor) {
-        stop()
-        clipboard.pasted++
-        setSelection(copyCards(wid, picked[0].pieceId, clipboard.cards, clipboard.edges, [clipboard.pasted * 2 * GRID, clipboard.pasted * 2 * GRID]))
+        setSelection(copyCards(wid, plane, picked, edges, [2 * GRID, 2 * GRID], texts))
       }
     }
     window.addEventListener('keydown', onKey, true)
@@ -302,11 +295,9 @@ type BoxProps = {
   features?: CompetitorFeature[]
   matched: Set<string>
   open: boolean
-  // A selection's drag (D-227): the others follow by `d` while it lasts; `done` writes it (one undo step).
-  onGroup?: (d: [number, number], done: boolean) => Promise<unknown> | void
 }
 
-function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open, onGroup }: BoxProps) {
+function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open }: BoxProps) {
   const { wid, threads, cards, edges } = useWs()
   const face = useRef<HTMLDivElement>(null)
   const revealed = useRevealed()
@@ -330,7 +321,12 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, par
   }, [held, card.x, card.y])
   // Carried by a section being dragged (D-188).
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(card.id) ? s.dragShift : null))
-  const [x, y] = held ?? [card.x + (shift?.dx ?? 0), card.y + (shift?.dy ?? 0)]
+  // Let go with others (or by a section): held where it was let go until its data's back (D-229).
+  const landing = useCanvasView((s) => s.landing[card.id])
+  useEffect(() => {
+    if (landing && landing[0] === card.x && landing[1] === card.y) landed(card.id)
+  }, [landing, card.x, card.y, card.id])
+  const [x, y] = held ?? landing ?? [card.x + (shift?.dx ?? 0), card.y + (shift?.dy ?? 0)]
   useEffect(() => {
     if (!held) return
     useCanvasView.setState((s) => ({ cardsLive: { ...s.cardsLive, [card.id]: held } }))
@@ -350,9 +346,13 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, par
     e.stopPropagation()
     // Shift: in or out of the selection, no drag (D-227).
     if (e.shiftKey) return toggleSelected(card.id)
-    // Pressed inside a selection, the whole of it moves; otherwise this card alone is picked.
-    const group = useCanvasView.getState().cardMulti.includes(card.id)
-    if (!group) setSelection([card.id])
+    // Pressed inside a selection, the whole of it moves (D-229); otherwise this card alone is picked.
+    if (useCanvasView.getState().cardMulti.includes(card.id)) {
+      if (!editor) return
+      setPressed(true)
+      return startGroupDrag(e, zoom, card, () => setPressed(false))
+    }
+    setSelection([card.id])
     setPressed(true)
     const [sx, sy] = [e.clientX, e.clientY]
     const rect = e.currentTarget.getBoundingClientRect()
@@ -367,7 +367,6 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, par
       to = [place(free[0]), place(free[1])]
       setHeld(to)
       setDrag({ free, at })
-      if (group) onGroup?.([to[0] - card.x, to[1] - card.y], false)
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
@@ -376,11 +375,6 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, par
       setPressed(false)
       setDrag(null)
       const [dx, dy] = to ? [to[0] - card.x, to[1] - card.y] : [0, 0]
-      if (group) {
-        if (to && (dx || dy)) void onGroup?.([dx, dy], true)?.finally(() => setHeld(null))
-        else (onGroup?.([0, 0], true), setHeld(null))
-        return
-      }
       // A folded feature carries its parts (D-164).
       if (to && (dx || dy))
         void (carries.length ? moveCards(wid, [{ card, to }, ...carries.map((c) => ({ card: c, to: [c.x + dx, c.y + dy] as [number, number] }))]) : moveCard(wid, card, to)).catch(() => setHeld(null))

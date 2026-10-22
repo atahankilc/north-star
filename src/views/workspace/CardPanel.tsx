@@ -7,10 +7,10 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   addCard,
   CARD,
+  cardRef,
   copyCards,
   deleteCard,
   deleteCards,
-  moveCards,
   updateCards,
   FEATURE_EFFORTS,
   FEATURE_IMPACTS,
@@ -30,6 +30,8 @@ import { glide, useCanvasView } from '../../state/canvasView'
 import { useAutoGrow } from '../../ui/autoGrow'
 import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../ui/SidePanel'
 import { factsOf } from './cardFacts'
+import { labelBox } from './TextItems'
+import { kindOf, labelRef, moveMany, type Label } from '../../data/labels'
 import { clipboard, setSelection } from './selection'
 import { GRID, snap } from '../../data/grid'
 import { useWs } from './context'
@@ -101,12 +103,15 @@ export function useCommit(value: string, save: (v: string) => void) {
   }
 }
 
-export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean }) {
+export function CardPanel({ cards, labels = [], editor }: { cards: Card[]; labels?: Label[]; editor: boolean }) {
   const ws = useWs()
   const { wid, threads, edges } = ws
   const id = useCanvasView((s) => s.cardSelected)
   const multi = useCanvasView((s) => s.cardMulti)
   const many = cards.filter((c) => multi.includes(c.id))
+  const texts = labels.filter((l) => multi.includes(l.id))
+  const count = many.length + texts.length
+  const plane = new URLSearchParams(location.search).get('focus')
   const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
   const card = cards.find((c) => c.id === id)
   const close = () => useCanvasView.setState({ cardSelected: null })
@@ -124,19 +129,19 @@ export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean })
   }, [card?.id, right])
   return (
     <AnimatePresence>
-      {many.length > 1 && (
+      {count > 1 && (
         <SidePanel
           key="card"
           kind="selection"
           tone="var(--accent-cyan)"
-          label={`${many.length} cards selected`}
-          title={`${many.length} selected`}
+          label={`${count} selected`}
+          title={`${count} selected`}
           right={right}
           onClose={() => setSelection([])}
           actions={
             <>
-              <PanelAction label="copy" title="⌘C" onClick={() => ((clipboard.cards = many), (clipboard.edges = edges), (clipboard.pasted = 0))} />
-              {editor && <PanelAction label="duplicate" title="⌘D" onClick={() => setSelection(copyCards(wid, many[0].pieceId, many, edges, [2 * GRID, 2 * GRID]))} />}
+              <PanelAction label="copy" title="⌘C" onClick={() => Object.assign(clipboard, { cards: many, labels: texts, edges, pasted: 0 })} />
+              {editor && plane && <PanelAction label="duplicate" title="⌘D" onClick={() => setSelection(copyCards(wid, plane, many, edges, [2 * GRID, 2 * GRID], texts))} />}
               {editor && (
                 <PanelAction
                   label="delete"
@@ -144,17 +149,17 @@ export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean })
                   title="Delete or Backspace"
                   onClick={() => {
                     setSelection([])
-                    void deleteCards(wid, many, edges)
+                    void deleteCards(wid, many, edges, texts)
                   }}
                 />
               )}
             </>
           }
         >
-          <ManyInside cards={many} editor={editor} />
+          <ManyInside cards={many} texts={texts} editor={editor} />
         </SidePanel>
       )}
-      {card && many.length < 2 && (
+      {card && count < 2 && (
         <SidePanel
           // One panel while cards change under it: it builds only when it opens.
           key="card"
@@ -197,35 +202,44 @@ export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean })
 
 // Several cards selected (D-227, the old board's "N selected", D-124): what they are, lining them up (six ways), spacing
 // them out evenly (three or more), the tags they all have (adding or taking one away does it on all of them).
-function ManyInside({ cards, editor }: { cards: Card[]; editor: boolean }) {
+function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; editor: boolean }) {
   const { wid } = useWs()
-  const kinds = (['customer', 'problem', 'competitor', 'idea', 'feature'] as CardType[])
-    .map((t) => [t, cards.filter((c) => c.type === t).length] as const)
+  const textKinds = texts.reduce((m, x) => m.set(kindOf(x), (m.get(kindOf(x)) ?? 0) + 1), new Map<string, number>())
+  const kinds = [
+    ...(['customer', 'problem', 'competitor', 'idea', 'feature'] as CardType[]).map((t) => [t, cards.filter((c) => c.type === t).length] as const),
+    ...[...textKinds].map(([k, n]) => [k, n] as const),
+  ]
     .filter(([, n]) => n)
     .map(([t, n]) => `${n} ${t}${n > 1 ? 's' : ''}`)
     .join(' · ')
-  const moveTo = (to: (c: Card) => [number, number]) => {
-    const moves = cards.map((c) => ({ card: c, to: to(c).map(snap) as [number, number] })).filter((m) => m.to[0] !== m.card.x || m.to[1] !== m.card.y)
-    if (moves.length) void moveCards(wid, moves)
+  // Everything selected with its box: cards their size, text as it's laid out (D-229).
+  const items = [
+    ...cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h })),
+    ...texts.map((x) => ({ id: x.id, ref: labelRef(wid, x.id), ...labelBox(x) })),
+  ]
+  type Item = (typeof items)[number]
+  const moveTo = (to: (c: Item) => [number, number]) => {
+    const moves = items.map((c) => ({ c, to: to(c).map(snap) as [number, number] })).filter((m) => m.to[0] !== m.c.x || m.to[1] !== m.c.y)
+    if (moves.length) void moveMany(`line up ${items.length} things`, moves.map((m) => ({ ref: m.c.ref, from: { x: m.c.x, y: m.c.y }, to: { x: m.to[0], y: m.to[1] } })))
   }
-  const [l, t] = [Math.min(...cards.map((c) => c.x)), Math.min(...cards.map((c) => c.y))]
-  const [r, b] = [Math.max(...cards.map((c) => c.x + CARD.w)), Math.max(...cards.map((c) => c.y + CARD.h))]
-  const ALIGN: [string, (c: Card) => [number, number]][] = [
+  const [l, t] = [Math.min(...items.map((c) => c.x)), Math.min(...items.map((c) => c.y))]
+  const [r, b] = [Math.max(...items.map((c) => c.x + c.w)), Math.max(...items.map((c) => c.y + c.h))]
+  const ALIGN: [string, (c: Item) => [number, number]][] = [
     ['left', (c) => [l, c.y]],
-    ['centre', (c) => [(l + r) / 2 - CARD.w / 2, c.y]],
-    ['right', (c) => [r - CARD.w, c.y]],
+    ['centre', (c) => [(l + r) / 2 - c.w / 2, c.y]],
+    ['right', (c) => [r - c.w, c.y]],
     ['top', (c) => [c.x, t]],
-    ['middle', (c) => [c.x, (t + b) / 2 - CARD.h / 2]],
-    ['bottom', (c) => [c.x, b - CARD.h]],
+    ['middle', (c) => [c.x, (t + b) / 2 - c.h / 2]],
+    ['bottom', (c) => [c.x, b - c.h]],
   ]
   // Evenly from the first to the last, in their order along that way.
   const spread = (axis: 0 | 1) => {
-    const sorted = [...cards].sort((p, q) => (axis ? p.y - q.y : p.x - q.x))
+    const sorted = [...items].sort((p, q) => (axis ? p.y - q.y : p.x - q.x))
     const [a, z] = axis ? [sorted[0].y, sorted[sorted.length - 1].y] : [sorted[0].x, sorted[sorted.length - 1].x]
     const at = new Map(sorted.map((c, i) => [c.id, a + ((z - a) * i) / (sorted.length - 1)]))
     moveTo((c) => (axis ? [c.x, at.get(c.id)!] : [at.get(c.id)!, c.y]))
   }
-  const all = cards[0].tags?.filter((tag) => cards.every((c) => c.tags?.includes(tag))) ?? []
+  const all = cards[0]?.tags?.filter((tag) => cards.every((c) => c.tags?.includes(tag))) ?? []
   const [adding, setAdding] = useState<string | null>(null)
   const retag = (tag: string, on: boolean) =>
     void updateCards(
@@ -250,15 +264,21 @@ function ManyInside({ cards, editor }: { cards: Card[]; editor: boolean }) {
       </PanelSection>
       <PanelSection n={2} name="space out">
         <div className={styles.pills}>
-          <button className={styles.pill} disabled={!editor || cards.length < 3} onClick={() => spread(0)}>
+          <button className={styles.pill} disabled={!editor || items.length < 3} onClick={() => spread(0)}>
             ↔ across
           </button>
-          <button className={styles.pill} disabled={!editor || cards.length < 3} onClick={() => spread(1)}>
+          <button className={styles.pill} disabled={!editor || items.length < 3} onClick={() => spread(1)}>
             ↕ down
           </button>
         </div>
       </PanelSection>
-      <PanelSection n={3} name="tags" count={all.length ? 'on all of them' : undefined} add={editor ? { label: 'tag', onClick: () => setAdding('') } : undefined} empty={!all.length && adding === null}>
+      <PanelSection
+        n={3}
+        name="tags"
+        count={all.length ? `on all ${cards.length} cards` : undefined}
+        add={editor && cards.length ? { label: 'tag', onClick: () => setAdding('') } : undefined}
+        empty={!all.length && adding === null}
+      >
         <div className={styles.tags}>
           {all.map((tag) => (
             <span key={tag} className={styles.chip}>
