@@ -186,7 +186,8 @@ piece; check them with the user then.
 - Cards on planes (D-187): customer, problem, competitor, idea, feature in their old collections with `pieceId` (the
   old board's cards, without it, aren't shown), x/y in plane px, 200 × 100 (8 × 4 marks), D-152's look (type edge and
   label, Geist title ≤ 3 lines). Made from the side nav's `+` in focus (card types) at the view's middle, title typed at
-  once; in focus click selects (corner marks), drag moves (snapped, alt free), double-click retitles, Delete removes;
+  once; in focus click selects (corner marks), drag moves (snapped, alt free), Delete removes; the title is typed in
+  its panel, never on the card (D-221);
   on the canvas they're a picture fitted in the plane, its marks following. Deleting a plane takes its cards.
 - Card inside on planes as D-152/D-153 (D-205): status/regions/priority + evidence cells, title, facts (link counts 0
   until links), tag chips; by size on screen the title alone in whole words, then bars. Only shown until the panel.

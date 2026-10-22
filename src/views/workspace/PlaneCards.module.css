@@ -190,22 +190,6 @@
   box-decoration-break: clone;
 }
 
-.field {
-  display: block;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  outline: none;
-  resize: none;
-  caret-color: var(--type);
-  user-select: text;
-}
-
-.field::placeholder {
-  color: var(--placeholder);
-}
-
 /* Corner marks (D-150, the old board's CardCorners at 80 px a unit): grey a little out on hover; in the type's colour
    just outside once selected; pressed or dragged, on its corners, inside it, longer. They glide between. */
 .mark {

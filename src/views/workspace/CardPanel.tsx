@@ -67,7 +67,33 @@ export const KIND_LABEL: Record<string, string> = {
   [FOR]: 'for',
 }
 
-const NO_SAVE_MS = 400
+// A field's text kept apart from what's stored until it's committed (Enter or leaving it, D-221): a change from
+// elsewhere shows unless it's being typed in; leaving the panel with something typed keeps it.
+export function useCommit(value: string, save: (v: string) => void) {
+  const [draft, setDraft] = useState(value)
+  const dirty = useRef(false)
+  const latest = useRef({ draft, save, value })
+  latest.current = { draft, save, value }
+  useEffect(() => {
+    if (!dirty.current) setDraft(value)
+  }, [value])
+  useEffect(
+    () => () => {
+      const { draft: d, save: s, value: v } = latest.current
+      if (dirty.current && d !== v) s(d)
+    },
+    [],
+  )
+  return {
+    draft,
+    setDraft: (v: string) => ((dirty.current = true), setDraft(v)),
+    commit: () => {
+      if (dirty.current && draft !== value) save(draft)
+      dirty.current = false
+    },
+    revert: () => ((dirty.current = false), setDraft(value)),
+  }
+}
 
 export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean }) {
   const ws = useWs()
@@ -250,10 +276,17 @@ function PlanSection({ n, card, editor }: P) {
   )
 }
 
-// The title, typed in place: Enter or leaving keeps it, Escape puts it back.
+// The title, typed in place: Enter or leaving keeps it, Escape puts it back. The card itself isn't typed on any more
+// (the user, once the panel came): a new card opens its panel with this field ready (`cardEditing`).
 function Title({ card, editor }: { card: Card; editor: boolean }) {
   const { wid } = useWs()
   const [typing, setTyping] = useState(false)
+  const fresh = useCanvasView((s) => s.cardEditing === card.id)
+  useEffect(() => {
+    if (!fresh) return
+    setTyping(true)
+    useCanvasView.setState({ cardEditing: null })
+  }, [fresh])
   const [draft, setDraft] = useState(card.title)
   const field = useRef<HTMLTextAreaElement>(null)
   useAutoGrow(field, draft)
@@ -603,20 +636,12 @@ function TagsSection({ n, card, editor }: P) {
   )
 }
 
-// Notes: Geist, as long as they are, saved as you type (merged into one undo step).
+// Notes: Geist, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
 function NotesSection({ n, card, editor }: P) {
   const { wid } = useWs()
-  const [draft, setDraft] = useState(card.notes ?? '')
   const field = useRef<HTMLTextAreaElement>(null)
-  const timer = useRef(0)
+  const { draft, setDraft, commit } = useCommit(card.notes ?? '', (v) => void updateCard(wid, card, { notes: v.trim() ? v : undefined }, 'notes of'))
   useAutoGrow(field, draft)
-  useEffect(() => {
-    if (document.activeElement !== field.current) setDraft(card.notes ?? '')
-  }, [card.notes])
-  const save = (v: string) => {
-    window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => void updateCard(wid, card, { notes: v.trim() ? v : undefined }, 'notes of'), NO_SAVE_MS)
-  }
   return (
     <PanelSection n={n} name="notes">
       <textarea
@@ -628,8 +653,12 @@ function NotesSection({ n, card, editor }: P) {
         placeholder={NOTES_HINT[card.type]}
         maxLength={20000}
         aria-label="Notes"
-        onChange={(e) => (setDraft(e.target.value), save(e.target.value))}
-        onKeyDown={(e) => e.stopPropagation()}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.key === 'Escape') e.currentTarget.blur()
+        }}
       />
     </PanelSection>
   )

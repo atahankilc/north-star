@@ -1,7 +1,7 @@
 // A plane's cards (D-187), drawn in the plane's own px through a view (where its (0, 0) is and its zoom). On the canvas
 // they're a picture, fitted in the plane, and the pointer passes through to the canvas (D-186); in focus they're live:
 // a click selects (the cards' corner marks, D-150), a drag moves (5 px first, snapped to the grid, alt = free, held where
-// dropped until the data's back), a double-click types the title, which a new card starts with.
+// dropped until the data's back). Its title is typed in its panel (D-221), never on the card.
 // As on the old board (D-150): a card added while you look builds up cell by cell; pressed, its corner marks close in
 // on its corners in its colour; dragged, it goes 0.8 round the point held and follows the pointer, its marks on where
 // it lands at full size, and grows into them when let go.
@@ -11,7 +11,7 @@
 // selected with its label ready to type. The selected card's right panel (D-219) opens at the right of the plane's part
 // of the screen; what fills it comes next.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { CARD, cardRef, moveCard, retitleCard, TITLE_MAX, type Card, type CardType } from '../../data/cards'
+import { CARD, cardRef, moveCard, type Card, type CardType } from '../../data/cards'
 import type { Label } from '../../data/labels'
 import { TextItems } from './TextItems'
 import { PeerRing } from './collab'
@@ -132,7 +132,6 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
   // While dragged: where the card is under the pointer (free) and the point held in it, both in plane px.
   const [drag, setDrag] = useState<Drag | null>(null)
   const selected = useCanvasView((s) => live && s.cardSelected === card.id)
-  const typing = useCanvasView((s) => live && editor && s.cardEditing === card.id)
   const [held, setHeld] = useState<[number, number] | null>(null)
   useEffect(() => {
     if (held && held[0] === card.x && held[1] === card.y) setHeld(null)
@@ -158,7 +157,6 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
     // The plane would pan.
     e.stopPropagation()
     useCanvasView.setState({ cardSelected: card.id, labelSelected: null, linkSelected: null })
-    if (typing) return
     setPressed(true)
     const [sx, sy] = [e.clientX, e.clientY]
     const rect = e.currentTarget.getBoundingClientRect()
@@ -235,17 +233,9 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
       onPointerDown={press}
       onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
       onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
-      onDoubleClick={live && editor ? () => useCanvasView.setState({ cardEditing: card.id, cardSelected: card.id }) : undefined}
     >
-      <div ref={face} className={styles.card} style={carried} data-detail={typing ? 'full' : detail}>
-        {typing ? (
-          <>
-            <span className={styles.head}>
-              <span className={styles.kind}>{card.type}</span>
-            </span>
-            <TitleField card={card} />
-          </>
-        ) : detail === 'full' ? (
+      <div ref={face} className={styles.card} style={carried} data-detail={detail}>
+        {detail === 'full' ? (
           <FullCard card={card} facts={facts} />
         ) : (
           <CompactTitle text={card.title || PLACEHOLDER[card.type]} empty={!card.title} bars={detail === 'far'} />
@@ -255,7 +245,7 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
       <i className={styles.mark} data-corner="ne" aria-hidden />
       <i className={styles.mark} data-corner="se" aria-hidden />
       <i className={styles.mark} data-corner="sw" aria-hidden />
-      {live && editor && !drag && !typing && (hovered || linkingFrom) && (
+      {live && editor && !drag && (hovered || linkingFrom) && (
         <span className={styles.handle} data-linking={linkingFrom || undefined} onPointerDown={startLink} aria-label="Drag to another card to link">
           <span aria-hidden>›</span>
         </span>
@@ -372,43 +362,5 @@ function CompactTitle({ text, empty, bars }: { text: string; empty: boolean; bar
     <p ref={el} className={styles.compact} data-empty={empty || undefined} data-bars={bars || undefined}>
       <span>{cut?.of === text ? cut.text : text}</span>
     </p>
-  )
-}
-
-// The title being typed: Enter or leaving keeps it, Escape puts it back. Typing merges into one undo step.
-function TitleField({ card }: { card: Card }) {
-  const { wid } = useWs()
-  const [draft, setDraft] = useState(card.title)
-  const field = useRef<HTMLTextAreaElement>(null)
-  const done = useRef(false)
-  useEffect(() => {
-    field.current?.focus()
-    field.current?.select()
-  }, [])
-  const finish = (keep: boolean) => {
-    if (done.current) return
-    done.current = true
-    const title = draft.trim()
-    if (keep && title !== card.title) void retitleCard(wid, card, title)
-    useCanvasView.setState({ cardEditing: null })
-  }
-  return (
-    <textarea
-      ref={field}
-      className={`${styles.title} ${styles.field}`}
-      aria-label={`${card.type} title`}
-      value={draft}
-      placeholder={PLACEHOLDER[card.type]}
-      maxLength={TITLE_MAX}
-      rows={3}
-      onChange={(e) => setDraft(e.target.value)}
-      onPointerDown={(e) => e.stopPropagation()}
-      onBlur={() => finish(true)}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), finish(true))
-        if (e.key === 'Escape') finish(false)
-      }}
-    />
   )
 }

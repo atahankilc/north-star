@@ -1,7 +1,7 @@
 // The card panel's sections that belong to one type (D-221): a competitor's profile and its features (the basic cards
 // inside it, by category, a row opening in place), a feature's parent, parts (a tree of `part of`), must-haves, what it
 // rests on (and how sure that makes it) and the features of theirs that match it.
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { updateCard, type Card } from '../../data/cards'
 import {
   addCompetitorFeature,
@@ -16,24 +16,20 @@ import { mismatch } from '../../data/evidence'
 import { useAutoGrow } from '../../ui/autoGrow'
 import { PanelSection } from '../../ui/SidePanel'
 import { Select } from '../../ui/Select'
-import { CardPicker, goToCard, KIND_LABEL, PLACEHOLDER, Pills, type P } from './CardPanel'
+import { CardPicker, goToCard, KIND_LABEL, PLACEHOLDER, Pills, useCommit, type P } from './CardPanel'
 import { createEdge } from '../../data/edges'
 import { useWs } from './context'
 import { linkTone } from './PlaneLinks'
 import styles from './CardPanel.module.css'
 
 const MAX_CRITERIA = 8
-const SAVE_MS = 400
 
-// A text field shown as its value; typing saves (merged into one undo step), Escape or Enter leaves it.
+// A text field shown as its value. What's typed is kept only on Enter or on leaving the field (the user: not while
+// still typing); Escape puts it back; shift+Enter is a new line where it may have several. Leaving the panel keeps it.
 function Field({ value, placeholder, editor, multiline, onSave, link }: { value?: string; placeholder: string; editor: boolean; multiline?: boolean; onSave: (v: string) => void; link?: boolean }) {
-  const [draft, setDraft] = useState(value ?? '')
   const ref = useRef<HTMLTextAreaElement>(null)
-  const timer = useRef(0)
+  const { draft, setDraft, commit, revert } = useCommit(value ?? '', (v) => onSave(v.trim()))
   useAutoGrow(ref, draft)
-  useEffect(() => {
-    if (document.activeElement !== ref.current) setDraft(value ?? '')
-  }, [value])
   if (!editor)
     return link && value ? (
       <a className={styles.url} href={/^https?:/.test(value) ? value : `https://${value}`} target="_blank" rel="noreferrer">
@@ -53,15 +49,12 @@ function Field({ value, placeholder, editor, multiline, onSave, link }: { value?
       value={draft}
       placeholder={placeholder}
       maxLength={2000}
-      onChange={(e) => {
-        const v = multiline ? e.target.value : e.target.value.replace(/\n/g, '')
-        setDraft(v)
-        window.clearTimeout(timer.current)
-        timer.current = window.setTimeout(() => onSave(v.trim()), SAVE_MS)
-      }}
+      onChange={(e) => setDraft(multiline ? e.target.value : e.target.value.replace(/\n/g, ''))}
+      onBlur={commit}
       onKeyDown={(e) => {
         e.stopPropagation()
-        if ((e.key === 'Enter' && !multiline) || e.key === 'Escape') (e.preventDefault(), e.currentTarget.blur())
+        if (e.key === 'Enter' && !(multiline && e.shiftKey)) (e.preventDefault(), e.currentTarget.blur())
+        if (e.key === 'Escape') (e.preventDefault(), revert(), requestAnimationFrame(() => ref.current?.blur()))
       }}
     />
   )

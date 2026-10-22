@@ -3635,6 +3635,11 @@ categories shown like B, not in a card, and the features under them not indented
   from what was typed (placed under this one); a plain `+ link` opens the new link's bar with its label ready (D-154);
   tags and regions as chips (`×` on hover; Enter adds); notes (`body`, a competitor's `notes`) save as you type. One
   undo step each, typing merged. Viewers read only.
+- *Then* (the user): text fields don't save while typing ("daha yazmayı bitirmemiş olabilirim"): Enter or leaving the
+  field keeps it, Escape puts it back, shift+Enter a new line where it may have several; notes keep on leaving (Enter is
+  a new line); leaving the panel with something typed keeps it (`useCommit`). And the card is no longer typed on
+  ("Cardın üstüne tıklayıp isim değiştirme olayını kaldıralım"): no double-click title on the card; a new card opens
+  its panel with the title field ready (`cardEditing`).
 - *Left out:* files (attachments, not live until Blaze), `on N planes`, packages; `[unfold onto the plane]` waits for
   folding parts on planes (D-164).
 - *Verified* headless (emulators): a problem filled end to end (status, evidence, a customer, a new idea that solves
