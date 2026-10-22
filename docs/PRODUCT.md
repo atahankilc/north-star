@@ -73,7 +73,8 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    in the heads, at the ends or both, as squares, a number or a line (D-212).
    **Table (D-209):** the first *lens*, a window like the matrix's: rows are the cards that meet its rules (plane,
    type, status, tag, words in the title; is or is not; none required) plus cards and names added by hand; columns
-   are the cards' own fields and columns of its own (a scale, a number, a text, a check), sorted by any. A matrix or a
+   are the cards' own fields and columns of its own (a scale, a number, a text, a check), sorted by any. Made, like the
+   matrix, in a short wizard from `+ → table…`, and set up in the same tabbed panel (D-218). A matrix or a
    table moved to a plane's edge sticks there: it moves with the plane and shows that plane's cards (D-210). In the
    plane's focus the dock opens what's stuck to it beside the plane, the screen split, each part its own area (D-211).
    A link shows quietly: faint `· ›` in the gap, or a thin line under everything when apart; the piece's console names

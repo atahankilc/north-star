@@ -40,7 +40,17 @@ export function tableBounds(piece: Pick<Piece, 'table'>, cards: Card[]): Bounds 
 
 // The table whose setup is open (from the focus dock's or its pane's `[setup]`, D-211); a typed row being named; the page
 // each table is on here (D-213: yours, not shared).
-export const useTableUi = create<{ setup: string | null; naming: string | null; pages: Record<string, number> }>(() => ({ setup: null, naming: null, pages: {} }))
+export const useTableUi = create<{ setup: string | null; tab: TableTab; naming: string | null; pages: Record<string, number>; wizard: boolean }>(() => ({
+  setup: null,
+  tab: 'rows',
+  naming: null,
+  pages: {},
+  wizard: false,
+}))
+
+// The setup's tabs (D-218), as the matrix's (D-212); the wizard makes a new table.
+export const TABLE_TABS = ['rows', 'cols', 'view'] as const
+export type TableTab = (typeof TABLE_TABS)[number]
 
 // Its pages (D-213): how many, and the one this table is on, kept in range.
 export function pagesOf(setup: TableSetup, count: number, page: number | undefined) {
@@ -58,7 +68,7 @@ const parseSel = (s: string | null) => (s?.startsWith(CELL) ? (s.slice(CELL.leng
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
 // What a row reads in a column, as text: for a card's field, and for sorting.
-function useFieldText() {
+export function useFieldText() {
   const { pieces, evidence } = useWs()
   return useMemo(() => {
     const planeName = new Map(pieces.filter((p) => kindOfPiece(p) === 'plane').map((p) => [p.id, p.name || 'unnamed plane']))
@@ -317,7 +327,7 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
 
           {live && editor && (
             <>
-              <button className={styles.add} data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id })}>
+              <button className={styles.add} data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id, tab: 'cols' })}>
                 +
               </button>
               <button

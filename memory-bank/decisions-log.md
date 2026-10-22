@@ -3543,3 +3543,27 @@ categories shown like B, not in a card, and the features under them not indented
   view 400 × 150 px and kept the selection; the row heads held at 56 px, the shade gone; no console errors; typecheck. In a pane
   (north-star-67): a click on a table's cell selected it, a drag from it panned the pane 100 × 80 px.
 
+### D-218 · 2026-10-22 · Accepted (changes D-209's making and setup, after D-212's matrix)
+- *Decision:* a table is made and set up as a matrix is (D-212), with the same parts and look:
+  - *Making:* the canvas's `+` has one `table…` (no list of templates), as it has one `matrix…`. It opens a wizard in the
+    middle of the screen: 1 start from (every card, features, competitors, blank, or my own), 2 which rows, 3 which
+    columns, any step at any time; a preview beside it (the first rows and columns, how many); `make the table` puts it
+    at the canvas's middle, selected, named after the template (or `table`). Escape or a click outside leaves; nothing
+    is written until it's made.
+  - *Setup:* a tabbed panel over the bottom middle of its space (focus, or its pane beside a plane), above the dock:
+    `rows · columns · view` with counts, `start over from ▾`, `done`. Rows: `[x] the cards that meet these rules`, one
+    line a rule (`where type is …` as framed choices, `is / is not`, `· auto` when linking set it), `+ plane + status
+    + tag + title` to add a rule, and what's added by hand as pills with one field that finds a card or takes a name.
+    Columns: the card's fields as on/off choices, `its own` as four kinds to add (a mark, a number, a few words, a
+    check), then the columns in order (‹ ›, name, kind, unit or steps, ×). View: rows a page (all, 10, 25, 50, 100) and
+    the order (a column, up or down). The table's `+` column head opens the setup on columns.
+  - Shared with the matrix: `Row`, `Toggle`, `Choices`, `AddPill` (MatrixSetup.tsx) and its panel and wizard classes
+    (Matrix.module.css); north-star-5e keeps those names.
+- *User:* "ana canvas da … çok fazla table itemi var onu sadece 1 table diye belirleyelim. Matrix de aynı şekilde";
+  "matrix oluşturmaya bakarken, ilk başta soruyor nasıl bir matrix istersin diye. Table da aynı şekilde olsun. Hatta
+  tablo setup ekranını da değiştir eğer ordan ilham alıcağın bişeyler var ise".
+- *Verified:* headless Chrome on emulators: `+` listed `plane | matrix… | table… | …`; the wizard opened, `features`
+  picked, the rows step showed `where type is feature`, the columns step the fields on (status, priority, impact,
+  effort) and `cost`; `make the table` placed it; in its focus the setup's three tabs, `view` → `10` paged it
+  (`‹ 1 / 1 › 10 a page` in the dock); no console errors; typecheck.
+

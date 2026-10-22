@@ -97,7 +97,7 @@ export function Row({ label, hint, children }: { label: string; hint?: string; c
   )
 }
 
-function Toggle({ on, label, hint, onChange }: { on: boolean; label: string; hint: string; onChange: (v: boolean) => void }) {
+export function Toggle({ on, label, hint, onChange }: { on: boolean; label: string; hint: string; onChange: (v: boolean) => void }) {
   return (
     <button className={styles.check} aria-pressed={on} onClick={() => onChange(!on)}>
       <span className={styles.box}>{on ? '[x]' : '[ ]'}</span>
@@ -110,7 +110,7 @@ function Toggle({ on, label, hint, onChange }: { on: boolean; label: string; hin
 }
 
 // Pick one of a few: framed choices, the picked one cyan.
-function Choices<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: ReactNode; hint?: string }[]; onChange: (v: T) => void }) {
+export function Choices<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: ReactNode; hint?: string }[]; onChange: (v: T) => void }) {
   return (
     <span className={styles.choices}>
       {options.map((o) => (
@@ -208,7 +208,7 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
 // One field to add by hand (D-216), shaped like the pills it adds: type and it lists the cards that match (the axis's
 // type first) under `+ "…" as a name`; arrows move, Enter or a click takes the lit one, Escape lets go. Focused empty,
 // the axis's type's cards not on it yet are offered. The list opens upward: the setup sits at the screen's bottom.
-function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<string>; prefer?: CardType; onCard: (c: Card) => void; onName: (n: string) => void }) {
+export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<string>; prefer?: CardType; onCard: (c: Card) => void; onName: (n: string) => void }) {
   const { cards } = useWs()
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)

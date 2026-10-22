@@ -11,8 +11,9 @@ import { addPiece, isBare, KIND_NAME, kindOfPiece } from '../../data/pieces'
 import type { MatrixSetup } from '../../data/matrix'
 import { matrixBounds, useMatrixUi } from './Matrix'
 import { MatrixWizard } from './MatrixWizard'
-import { tableBounds } from './Table'
-import { TEMPLATES as TABLE_TEMPLATES, type TableSetup } from '../../data/table'
+import { TableWizard } from './TableWizard'
+import { tableBounds, useTableUi } from './Table'
+import type { TableSetup } from '../../data/table'
 import { addCard, CARD_TYPES, type CardType } from '../../data/cards'
 import { addLabel, CANVAS, PARA_W, STICKY_W, TITLE_W } from '../../data/labels'
 import { snap } from '../../data/grid'
@@ -266,15 +267,16 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
                 { key: 'plane', label: 'plane', glyph: '▦', onSelect: () => void add('plane') },
                 // A matrix (D-204), made in its wizard (D-212); its setup changes all of it after.
                 { key: 'matrix', label: 'matrix…', glyph: '⊞', hint: 'two lists crossed', onSelect: () => useMatrixUi.setState({ wizard: true }) },
-                // A table (D-209): rows from rules, columns of the cards' fields and its own.
-                { key: 'table', heading: 'table' },
-                ...TABLE_TEMPLATES.map((t) => ({ key: `table-${t.key}`, label: t.name, glyph: '☰', onSelect: () => void add('table', t) })),
+                // A table (D-209), made in its wizard (D-218), as a matrix is.
+                { key: 'table', label: 'table…', glyph: '☰', hint: 'rows by rules, any columns', onSelect: () => useTableUi.setState({ wizard: true }) },
                 ...text,
               ]
         }
       />
       {/* A new matrix's wizard (D-212), opened from the item above. */}
       <MatrixWizard />
+      {/* A new table's wizard (D-218). */}
+      <TableWizard />
     </>
   )
 }

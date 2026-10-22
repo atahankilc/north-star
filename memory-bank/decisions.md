@@ -215,7 +215,8 @@ piece; check them with the user then.
   like the matrix's (D-208, D-206's focus). Rows: a rule list (plane, type, status, tag, title; is / is not; any of the
   values; none required) + cards and names by hand; `×` hides or drops. Columns: the name first, then the cards' fields
   (read-only) and its own (scale, number + unit, text, check); a head's click sorts. Live in focus like the matrix;
-  `[setup]` in the dock. Paged (D-213): `‹ 2 / 5 ›` + rows a page (all, 10/25/50/100; shared) in its dock, the page yours.
+  `[setup]` in the dock. Made in a wizard from `+ → table…` and set up in a tabbed panel (rows · columns · view), as
+  the matrix (D-218). Paged (D-213): `‹ 2 / 5 ›` + rows a page (all, 10/25/50/100; shared) in its dock, the page yours.
 - Sticking (D-210, D-215): a matrix or table moved (edit mode) within 48 screen px of a plane's edge snaps one grid step
   out from it, the edge lit cyan, and is linked (`stuckTo`; alt = free): a table gets `where plane is … · auto` (changed
   by hand it's yours), a matrix's typed axes the plane. Links show quietly, grey, cyan on hover, no motion (D-215): the
