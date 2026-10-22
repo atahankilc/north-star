@@ -14,7 +14,9 @@
 // The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, cardRef, copyCards, deleteCards, moveCard, moveCards, updateCard, type Card, type CardType } from '../../data/cards'
-import { clipboard, landed, onPlane, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
+import { clipboard, landed, onPlane, othersThan, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
+import { clearGuides, guide, showGuides, toggleGuides, toggleSnap, useGuides } from './guides'
+import { useHistory } from '../../data/history'
 import { labelRef, moveMany } from '../../data/labels'
 import type { CompetitorFeature } from '../../data/competitorFeatures'
 import { byCategory, foldedHeight, foldsOf, openHeight, partRowBox, type Box } from './cardInside'
@@ -131,8 +133,9 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   // canvas they build up with the page. Any card after that builds up as it arrives.
   const [first] = useState(() => new Set(cards.map((c) => c.id)))
   // The selection (D-227, D-229) moves as one: what's on this plane, cards and text, and what a folded card carries.
-  onPlane.labels = new Set(labels.map((l) => l.id))
-  onPlane.items = (ids) => {
+  // Only the plane in focus says what's on it; the pictures on the canvas don't.
+  if (live) onPlane.labels = new Set(labels.map((l) => l.id))
+  if (live) onPlane.items = (ids) => {
     const all = new Set(ids)
     for (const id of ids) for (const r of folds.rows.get(id) ?? []) all.add(r.card.id)
     return [
@@ -140,6 +143,10 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
       ...labels.filter((l) => all.has(l.id)).map((l) => ({ id: l.id, ref: labelRef(wid, l.id), x: l.x, y: l.y })),
     ]
   }
+  if (live) onPlane.boxes = () => [
+    ...cards.filter((c) => !folds.hidden.has(c.id)).map((c) => ({ id: c.id, box: boxOf(c) })),
+    ...labels.map((l) => ({ id: l.id, box: labelBox(l) })),
+  ]
   usePlaneKeys(live, editor, cards, labels, edges)
   const [box, setBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
   // Alt+drag on the plane draws a box: the cards and text it touches are selected (with shift, added).
@@ -205,6 +212,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
           />
         )}
         <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
+        {live && <GuideLines zoom={view.zoom} />}
       </div>
       {live && <CardPanel cards={cards} labels={labels} editor={editor} />}
     </div>
@@ -212,6 +220,26 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
 }
 
 const NO_LIVE: Record<string, [number, number]> = {}
+
+// The guides while something is dragged (D-231): thin magenta lines at the screen's 1 px, over everything.
+function GuideLines({ zoom }: { zoom: number }) {
+  const shown = useGuides((s) => s.shown)
+  return (
+    <>
+      {shown.map((g, i) => (
+        <i
+          key={i}
+          className={styles.guide}
+          style={
+            g.axis === 'x'
+              ? { left: g.at - 0.5 / zoom, top: g.from, width: 1 / zoom, height: g.to - g.from }
+              : { top: g.at - 0.5 / zoom, left: g.from, height: 1 / zoom, width: g.to - g.from }
+          }
+        />
+      ))}
+    </>
+  )
+}
 
 // Keys for the selection on a focused plane (D-227, D-229), heard before the canvas's own (capture): Escape lets go of
 // several, Delete takes them all away, the arrows nudge a grid step (shift: four), ⌘C / ⌘V / ⌘D copy, paste and
@@ -241,6 +269,12 @@ function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Lab
         setSelection(copyCards(wid, plane, clipboard.cards, clipboard.edges, [by, by], clipboard.labels))
       }
       if (e.key === 'Escape' && cardMulti.length) return (stop(), setSelection([]))
+      // Snapping and guides, on and off (D-231).
+      if (!mod && !e.altKey && (e.key === 'g' || e.key === 'a')) {
+        stop()
+        const on = e.key === 'g' ? toggleSnap() : toggleGuides()
+        return useHistory.getState().say(`${e.key === 'g' ? 'snapping to the grid' : 'alignment guides'} ${on ? 'on' : 'off'}`)
+      }
       if ((e.key === 'Delete' || e.key === 'Backspace') && cardMulti.length && editor) {
         stop()
         setSelection([])
@@ -363,8 +397,13 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, par
       const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
       if (!to && Math.hypot(dx, dy) < DRAG_PX) return
       const free: [number, number] = [card.x + dx / zoom, card.y + dy / zoom]
-      const place = (v: number) => (ev.altKey ? Math.round(v) : snap(v))
+      const loose = ev.altKey || !useGuides.getState().snap
+      const place = (v: number) => (loose ? Math.round(v) : snap(v))
       to = [place(free[0]), place(free[1])]
+      // Lined up with the rest of the plane (D-231): pulled onto a line when loose, only shown on the grid.
+      const g = guide({ x: to[0], y: to[1], w: CARD.w, h }, othersThan(new Set([card.id, ...carries.map((c) => c.id)])), zoom, loose)
+      to = [to[0] + g.dx, to[1] + g.dy]
+      showGuides(g.lines)
       setHeld(to)
       setDrag({ free, at })
     }
@@ -374,6 +413,7 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, par
       window.removeEventListener('pointercancel', up)
       setPressed(false)
       setDrag(null)
+      clearGuides()
       const [dx, dy] = to ? [to[0] - card.x, to[1] - card.y] : [0, 0]
       // A folded feature carries its parts (D-164).
       if (to && (dx || dy))

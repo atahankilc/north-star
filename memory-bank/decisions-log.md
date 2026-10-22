@@ -3829,3 +3829,18 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators, Alice and Bob in two browser contexts, Bob invited and accepted): Alice selected two
   cards and a heading, Bob saw Alice's frame and name round all three and not round the fourth; with a card's panel
   open a pan kept it open and a click on the plane closed it; no console errors; build.
+
+### D-231 · 2026-10-22 · Accepted (brings D-112/D-117/D-148's alignment guides and snapping switch back, on planes)
+- *Decision:* while something is dragged on a focused plane (a card, text, or a selection of several as one box), a
+  thin magenta line (1 screen px, a little past both ends) wherever its left, middle or right, or top, middle or
+  bottom, lines up with another card's or text's on the plane. With snapping on (the default) positions keep to the 25 px
+  grid and the lines only show what already lines up; with it off (`g`) or alt held, what's dragged is pulled onto the
+  nearest line within 6 screen px on each axis. `a` turns the guides off and on, `g` the snapping; each says so in the
+  toast and is kept in this browser (`north-star:snap`, `north-star:guides`). Canvas text has none yet.
+- *Also fixed:* only the plane in focus fills `onPlane` (what's on it, for the selection and the guides); the plane
+  pictures on the canvas had been writing over it as they drew.
+- *Not yet:* a visible switch for the two (keys and toasts only for now, the old board had them beside fit-all).
+- *User:* "hizalama çizgilerine geçelim".
+- *Verified* headless (emulators): with snapping on, a card dragged level with another showed a guide along their tops;
+  `g` said "snapping to the grid off", then a card let go 2 px off another's left landed on it (x −100 like the other);
+  no console errors; build.

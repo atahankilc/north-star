@@ -44,7 +44,8 @@ import {
 } from '../../data/labels'
 import { DESCRIPTION_MAX, describeWorkspace, renameWorkspace } from '../../data/workspaces'
 import { useCanvasView } from '../../state/canvasView'
-import { land, landed, startGroupDrag, toggleSelected } from './selection'
+import { land, landed, othersThan, startGroupDrag, toggleSelected } from './selection'
+import { clearGuides, guide, showGuides, useGuides } from './guides'
 import { useMotion } from '../../state/motion'
 import { ago } from '../../ui/ago'
 import { LightMarkdown } from '../../ui/LightMarkdown'
@@ -186,7 +187,15 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     const move = (ev: PointerEvent) => {
       const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
       if (!d && Math.hypot(dx, dy) < DRAG_PX) return
-      const to = ev.altKey ? [Math.round(l.x + dx / zoom), Math.round(l.y + dy / zoom)] : [snap(l.x + dx / zoom), snap(l.y + dy / zoom)]
+      const loose = ev.altKey || !useGuides.getState().snap
+      const to = loose ? [Math.round(l.x + dx / zoom), Math.round(l.y + dy / zoom)] : [snap(l.x + dx / zoom), snap(l.y + dy / zoom)]
+      // In a plane, lined up with the rest of it (D-231).
+      if (l.pieceId !== CANVAS) {
+        const g = guide({ ...box, x: to[0], y: to[1] }, othersThan(new Set(held.map((x) => x.id))), zoom, loose)
+        to[0] += g.dx
+        to[1] += g.dy
+        showGuides(g.lines)
+      }
       d = [to[0] - l.x, to[1] - l.y]
       useCanvasView.setState({ dragShift: { ids: held.map((x) => x.id), dx: d[0], dy: d[1] } })
     }
@@ -195,6 +204,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
       setPressed(false)
+      clearGuides()
       if (d && (d[0] || d[1])) {
         const [dx, dy] = d
         // Each stays where it was let go until its data's back (D-229): no jump back for a moment.

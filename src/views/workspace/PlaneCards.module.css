@@ -458,3 +458,11 @@
   background: color-mix(in srgb, var(--accent-cyan) 6%, transparent);
   pointer-events: none;
 }
+
+/* An alignment guide (D-231). */
+.guide {
+  position: absolute;
+  z-index: 40;
+  background: var(--accent-magenta);
+  pointer-events: none;
+}
