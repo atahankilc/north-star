@@ -317,6 +317,9 @@ piece; check them with the user then.
 - Finder (D-236): ⌘F or the side nav's compass: one prompt in the middle; empty, go to's places (planes' folded); typed, it
   glides out to matches grouped by space (`here` folds other spaces, Tab `everywhere`) and a real preview of where you'll land,
   lit, zoomable (kept per space); a click previews, a double-click or Enter goes (into a piece's focus); nothing lit there.
+- A card's head in a matrix (row or column) or a table (row name) opens its D-221 panel on one click, in the lens's focus,
+  beside a plane or open on the canvas; the head stays lit. Open, it stays on a cell picked next whose row or column (only
+  one) is a card, on that card; a cell crossing two cards or none, Escape, a press elsewhere close it (D-247).
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

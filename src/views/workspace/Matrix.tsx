@@ -169,6 +169,9 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
 
   const write = (row: string, col: string, fields: Parameters<typeof setCell>[4]) => void setCell(wid, piece.id, row, col, fields)
   const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(piece.id, rows[r].key, cols[c].key), labelSelected: null })
+  // A card's head clicked: the card selected, its panel open as on its plane (LensCardPanel).
+  const picked = useCanvasView((s) => (live ? s.cardSelected : null))
+  const pick = (card: Card) => useCanvasView.setState({ cardSelected: card.id, labelSelected: null })
   const stepTo = (row: string, col: string, i: number | undefined) => write(row, col, { value: i === undefined ? undefined : setup.steps[i]?.id })
 
   // A selected cell whose row or column went (taken out, or its card deleted) lets go.
@@ -333,24 +336,24 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const rowHeads = useMemo(
     () =>
       rows.map((r, i) => (
-        <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} at={i} hot={hotStore} lit={selected?.r === i} live={live} editor={editor} naming={naming === r.item?.id}
-          onRename={(name) => void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name)} onRemove={() => remove('rows', r)} onPress={own}>
+        <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} at={i} hot={hotStore} lit={selected?.r === i || (!!r.card && picked === r.card.id)} live={live} editor={editor} naming={naming === r.item?.id}
+          onRename={(name) => void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name)} onRemove={() => remove('rows', r)} onPress={own} onPick={live && r.card ? () => pick(r.card!) : undefined}>
           {heads && <Totals setup={setup} reading={readingOf(setup, rowCells(r))} />}
         </Head>
       )),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, cols, byKey, mine, setup, sr, live, editor, naming, piece.id, wid, hotStore],
+    [rows, cols, byKey, mine, setup, sr, picked, live, editor, naming, piece.id, wid, hotStore],
   )
   const colHeads = useMemo(
     () =>
       cols.map((c, i) => (
-        <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} at={i} hot={hotStore} lit={selected?.c === i} live={live} editor={editor} naming={naming === c.item?.id}
-          onRename={(name) => void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name)} onRemove={() => remove('cols', c)} onPress={own}>
+        <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} at={i} hot={hotStore} lit={selected?.c === i || (!!c.card && picked === c.card.id)} live={live} editor={editor} naming={naming === c.item?.id}
+          onRename={(name) => void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name)} onRemove={() => remove('cols', c)} onPress={own} onPick={live && c.card ? () => pick(c.card!) : undefined}>
           {heads && <Totals setup={setup} reading={readingOf(setup, colCells(c))} />}
         </Head>
       )),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, cols, byKey, mine, setup, sc, live, editor, naming, piece.id, wid, hotStore],
+    [rows, cols, byKey, mine, setup, sc, picked, live, editor, naming, piece.id, wid, hotStore],
   )
 
   const selBox = selected ? { x: L.colX(selected.c), y: L.rowY(selected.r) } : null
@@ -456,12 +459,14 @@ type HeadProps = {
   onRename: (name: string) => void
   onRemove: () => void
   onPress?: (e: ReactPointerEvent) => void
+  // A card's head: a click opens its panel (not through its `×`, nor while it's being named).
+  onPick?: () => void
   children?: ReactNode
 }
 
 // A row's or a column's head: a card's (its title, its type's colour down the left, as on a plane), or a typed name in
 // mono over a dashed rule (a double-click renames it). Its totals under the name (a column's) or at its end (a row's).
-function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, naming, onRename, onRemove, onPress, children }: HeadProps) {
+function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, naming, onRename, onRemove, onPress, onPick, children }: HeadProps) {
   const hot = hotStore((s) => !!s.at && (which === 'rows' ? s.at.r : s.at.c) === at) || lit
   const [editing, setEditing] = useState(false)
   const typed = !entry.card
@@ -477,7 +482,9 @@ function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, namin
       data-long={(entry.name?.length ?? 0) > (which === 'rows' ? 40 : 30) || undefined}
       data-hot={hot || undefined}
       title={entry.name || undefined}
+      data-pick={onPick ? true : undefined}
       onPointerDown={onPress}
+      onClick={onPick && !open ? (e) => !(e.target as HTMLElement).closest('button') && onPick() : undefined}
       onDoubleClick={live && editor && typed ? () => setEditing(true) : undefined}
     >
       {open ? (

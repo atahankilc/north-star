@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-22 (D-246: export/import)_
+_Last updated: 2026-10-22 (D-247: a card's head in a matrix/table opens its panel)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -55,6 +55,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   Step 5, inside cards (D-225, D-226); step 6, multi-select (D-227, D-229, D-230); step 7, guides (D-231); step 8, filters (D-233, D-235). Next: right-click. Fixed 2026-10-21:
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
 - Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
+- A card's head in a matrix or table opens its right panel on one click; a cell keeps it on its one card (D-247), 2026-10-22, committed.
 - Piece names readable at any zoom, edit as a cyan field with `>` and a count (D-223), 2026-10-22, committed.
 - Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), links shown and made from a dropdown (D-215), 2026-10-22, rules deployed. Follows adds, column widths (D-224). Open on the canvas (D-228), committed, rules deployed 2026-10-22. Canvas speed: pieces' contents memoised (pan no longer draws them again; keep their props stable), matrix cells memoised with hover in its own store; in focus a matrix's cells and heads and a table's rows are made only when they change, not per frame; only what's on screen is drawn (`visible.ts`), and a matrix too small to read is squares on one canvas (`CellDots`).
 - Documents (D-232, docs/specs/documents.md): .md/images/PDFs/old reports (moved once) in `documents/`, private until shared;

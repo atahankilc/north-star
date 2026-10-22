@@ -4205,3 +4205,25 @@ lot and i want our new export/import to work perfectly with our current features
   sizes recounted. A v1 file through a .zip: old cards stay without a space, the report a shared document under its
   author's name with its card mapped, the dangling link and the attachment counted. A non-export refused. The export
   button downloaded the .zip; both screens checked. `npm run build`.
+
+### D-247 · 2026-10-22 · Accepted (adds to D-204, D-209, D-221)
+**A card's head in a matrix or table opens its panel with one click, as on its plane.** User: "table ve matrixlerde eğer
+plane deki cardları kullanıyosak tek tık bana sağ paneli açsın aynı plane de oldugu gibi".
+- *What:* a click on a card's row or column head (a matrix) or a card's row name (a table) selects the card
+  (`cardSelected` = its id) and its D-221 panel opens, wherever the lens is live: its own focus, beside a plane (D-211; the
+  plane still glides to it when it's there), open on the canvas (D-228). Not through the head's `×`, nor while a typed
+  name is being edited. The head (a matrix's) or row band (a table's) stays lit while it's the card selected. Typed
+  names (no card) do nothing on a click. Escape or a press elsewhere lets go, as before.
+- *Then a cell* (user, the same day: "eğer row yada column başka bir card ile paylaşılmıyosa side panel açık kalmaya
+  devam etsin"): with the panel open, a cell picked whose row or column, only one of them, is a card keeps it open on that
+  card (a table's rows are its only cards, so going down a table's rows the panel follows them; a matrix of ideas ×
+  typed criteria the same). A cell crossing two cards (features × competitors) or none closes it. Closed, a cell doesn't
+  open it again, only a head does; its `[×]` there closes the panel and leaves the cell selected.
+- *How:* `LensCardPanel` (CardPanel.tsx) shows CardPanel with every card when the selected card isn't on the plane in
+  focus (that plane's own panel shows those); kept mounted so the panel breaks apart as it closes; rendered inside a
+  focused piece and, out of focus, at the canvas's root. CardPanel glides the view clear of the card only on the card's own
+  plane (in a lens's focus the view is the lens's).
+- *Verified* on the emulators in headless Chrome: a features × competitors matrix and an every-card table in their focus;
+  a head's click opens the feature's / competitor's panel; Escape closes it (focus stays). Then: table row 0's head, its
+  cell (panel stays), row 1's cell (panel goes to its card), `[×]` (cell still selected), a cell (stays closed); matrix
+  head then a feature × competitor cell (closes). `tsc -b`.

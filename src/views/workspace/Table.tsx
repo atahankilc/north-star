@@ -200,8 +200,11 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   const xs = ws.reduce<number[]>((out, _, i) => [...out, i ? out[i - 1] + ws[i - 1] : nameW], [])
   const width = nameW + ws.reduce((s, w) => s + w, 0)
   const sel = parseSel(piece.id, useCanvasView((s) => (live ? s.cardSelected : null)))
-  // A card selected on the plane beside it (D-211): its row lit.
-  const lit = useCanvasView((s) => (live && onCard ? s.cardSelected : null))
+  // A card selected (on the plane beside it, D-211, or from its row): its row lit.
+  const lit = useCanvasView((s) => (live ? s.cardSelected : null))
+  // A card's row name clicked: beside its plane the plane goes to it; either way the card's selected, its panel open as
+  // on its plane (LensCardPanel).
+  const pick = onCard ?? ((card: Card) => useCanvasView.setState({ cardSelected: card.id, labelSelected: null }))
   const ri = sel ? rows.findIndex((r) => r.key === sel[0]) : -1
   const ci = sel ? cols.findIndex((c) => c.id === sel[1]) : -1
   const selected = ri >= 0 && ci >= 0 ? { r: ri, c: ci } : null
@@ -378,7 +381,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
               else if (r.item) void renameRow(wid, piece.id, setup, r.item.id, name)
             }}
             onRemove={() => void removeRow(wid, piece.id, setup, r, mine)}
-            onPick={onCard && r.card ? () => onCard(r.card!) : undefined}
+            onPick={r.card ? () => pick(r.card!) : undefined}
           />
         ))}
 
@@ -545,7 +548,7 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
   const open = (editing || naming) && live && editor
   const tone = row.card ? TYPE_ACCENT[row.card.type] : undefined
   return (
-    <div className={styles.name} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }} data-find-box data-card={row.card ? true : undefined} title={row.name || undefined} data-pick={onPick ? true : undefined} onPointerDown={onPress} onClick={live && !open ? onPick : undefined} onDoubleClick={live && editor ? () => setEditing(true) : undefined}>
+    <div className={styles.name} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }} data-find-box data-card={row.card ? true : undefined} title={row.name || undefined} data-pick={onPick ? true : undefined} onPointerDown={onPress} onClick={live && !open && onPick ? (e) => !(e.target as HTMLElement).closest('button') && onPick() : undefined} onDoubleClick={live && editor ? () => setEditing(true) : undefined}>
       {open ? (
         <input
           className={styles.nameField}

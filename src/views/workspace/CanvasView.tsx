@@ -35,6 +35,7 @@ import { labelBox, TextItems } from './TextItems'
 import { spaceBounds } from './spaceBounds'
 import { CANVAS, deleteLabel, type Label } from '../../data/labels'
 import { PlaneCards } from './PlaneCards'
+import { LensCardPanel } from './CardPanel'
 import { DockAction, FocusDock } from './FocusDock'
 import { deleteCard, type Card } from '../../data/cards'
 import { deleteEdge } from '../../data/edges'
@@ -846,6 +847,8 @@ export function CanvasView() {
           )}
           {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
+          {/* A card picked from a matrix's or a table's head, in its focus or beside the plane: its panel. */}
+          {focusArrived && !focusLeaving && <LensCardPanel space={focused.id} editor={editor} />}
           {focusedDocuments && focusArrived && !focusLeaving && <DocReaders list={focused} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {/* With the list put away its dock goes too; unfocus is in the bar top-left (DocReaders). */}
@@ -893,6 +896,8 @@ export function CanvasView() {
       {drawing === CANVAS && !focused && <DrawSection space={CANVAS} toSpace={canvasToSpace} />}
       {/* The setup of a matrix or table open on the canvas (D-228), from its console, at the bottom of the screen. */}
       {!focused && editor && canvasSetup && <CanvasSetup piece={canvasSetup} />}
+      {/* And from one open on the canvas (D-228). */}
+      {!focused && <LensCardPanel space={null} editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />
       {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
       {/* A document being dragged out of its list, and the question before a private one goes on the canvas (D-232). */}

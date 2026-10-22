@@ -93,6 +93,11 @@
   box-shadow: inset 3px 0 0 var(--type);
 }
 
+.rowHead[data-pick='true'],
+.colHead[data-pick='true'] {
+  cursor: pointer;
+}
+
 .rowHead {
   align-items: center;
   padding: 0 var(--space-3) 0 var(--space-3);

@@ -107,10 +107,14 @@ export function useCommit(value: string, save: (v: string) => void) {
   }
 }
 
-export function CardPanel({ cards, labels = [], editor }: { cards: Card[]; labels?: Label[]; editor: boolean }) {
+// `selected`: this card's rather than the selection's (a matrix's or a table's cell, LensCardPanel), `onClose` then
+// closing only the panel.
+type PanelProps = { cards: Card[]; labels?: Label[]; editor: boolean; selected?: string | null; onClose?: () => void }
+export function CardPanel({ cards, labels = [], editor, selected, onClose }: PanelProps) {
   const ws = useWs()
   const { wid, threads, edges } = ws
-  const id = useCanvasView((s) => s.cardSelected)
+  const picked = useCanvasView((s) => s.cardSelected)
+  const id = selected === undefined ? picked : selected
   const multi = useCanvasView((s) => s.cardMulti)
   const many = cards.filter((c) => multi.includes(c.id))
   const texts = labels.filter((l) => multi.includes(l.id))
@@ -118,10 +122,11 @@ export function CardPanel({ cards, labels = [], editor }: { cards: Card[]; label
   const plane = new URLSearchParams(location.search).get('focus')
   const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
   const card = cards.find((c) => c.id === id)
-  const close = () => useCanvasView.setState({ cardSelected: null })
-  // A card the panel would cover glides left, clear of it (48 px).
+  const close = onClose ?? (() => useCanvasView.setState({ cardSelected: null }))
+  // A card the panel would cover glides left, clear of it (48 px). Only on its own plane in focus: picked from a matrix's
+  // or a table's head, the view is the lens's.
   useEffect(() => {
-    if (!card) return
+    if (!card || card.pieceId !== plane) return
     const { planeCam: c, size } = useCanvasView.getState()
     if (!c) return
     const area = size.w - right
@@ -202,6 +207,35 @@ export function CardPanel({ cards, labels = [], editor }: { cards: Card[]; label
       )}
     </AnimatePresence>
   )
+}
+
+// A card picked from a matrix's or a table's head (its row, its column): its panel as on its plane, wherever the lens is
+// live (its own focus, beside a plane, open on the canvas). A card on the plane in focus has that plane's own panel.
+// Open, it stays open on a cell picked next whose row or column, only one of them, is a card: that card's (a table's rows
+// are its only cards), so moving down a table's rows follows them. A cell crossing two cards, or none, closes it; closed,
+// a cell doesn't open it again (a head does). Its `[×]` there closes only the panel, the cell stays selected.
+const NONE: Card[] = []
+const CELL_SEL = /^t?cell\|[^|]+\|([^|]+)\|([^|]+)$/
+export function LensCardPanel({ space, editor }: { space: string | null; editor: boolean }) {
+  const { cards } = useWs()
+  const sel = useCanvasView((s) => (s.cardMulti.length ? null : s.cardSelected))
+  // The card whose panel is open, as the selection moved on to cells.
+  const open = useRef<string | null>(null)
+  const [, redraw] = useState(0)
+  let shown: string | null = null
+  const card = sel ? cards.find((x) => x.id === sel) : undefined
+  if (card) {
+    open.current = card.id
+    if (card.pieceId !== space) shown = card.id
+  } else {
+    const m = sel?.match(CELL_SEL)
+    const ends = m ? [m[1], m[2]].filter((k) => cards.some((x) => x.id === k)) : []
+    open.current = open.current && ends.length === 1 ? ends[0] : null
+    shown = open.current
+  }
+  const close = card ? undefined : () => ((open.current = null), redraw((n) => n + 1))
+  // Kept there with nothing to show, so the panel breaks apart as it closes.
+  return <CardPanel cards={shown ? cards : NONE} editor={editor} selected={shown} onClose={close} />
 }
 
 // Several cards selected (D-227, the old board's "N selected", D-124): what they are, lining them up (six ways), spacing
