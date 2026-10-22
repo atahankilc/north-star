@@ -49,6 +49,12 @@ unframed).
   drags and the list refits at once. The document scrolls like a page, links work, "on this page" lists its sections
   (the one being read lit, a click scrolls there; a row on top when the part is narrow), its dock
   `DOCUMENT | [share] [place ↗] [download] [−] 100% [+] [close] esc` (ctrl+wheel zooms too, 50–200 %).
+- `[⧉ side by side]` (the list's dock) makes a click open a document next to the ones open (up to four, equal columns,
+  a narrow one's dock as marks), right-click `open next to the others` too. `[hide list]` puts the list away: the
+  documents take the screen, `[≡ list] [unfocus] esc` top-left; Escape then goes straight to the canvas. Each
+  document's dock has `[delete]` (its author, an owner a shared one; asks first).
+- From an unframed list on the canvas, a click opens the document on the whole screen with the list put away.
+- Switching table and shelf (or kinds, a page) fits the list again. The table has no empty column at its end.
 - The shelf is only as wide as its sheets (up to five a row). Framed, nothing on the list takes a click; the `⇱`
   grips show only once it's unframed.
   Right-click a row: open beside, place on the canvas, share / unshare, download .md, delete (hazard confirm; takes

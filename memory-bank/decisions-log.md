@@ -3885,6 +3885,13 @@ categories shown like B, not in a card, and the features under them not indented
   text, ctrl+wheel too) and in a document's own focus (its view round the middle), which now arrives at 100 % with its
   top near the top. The user: "Split viewa geçince liste solda tam alan kaplayıp sol üste sabitlensin … Documentlara
   zoom etme eklememiz lazım. Yine default olarak 100% ile gelsin".
+- *Then:* the table has no empty grips' column at its end (grips only unframed) nor a margin under it; switching table
+  and shelf (or kinds, a page) fits it again. Documents beside the list: `[delete]` in each one's dock (its author, an
+  owner a shared one; asks first); `[hide list]` in the list's dock puts the list away (the documents take the screen
+  right of the side nav, `[≡ list] [unfocus] esc` top-left bring it back or leave); `[⧉ side by side]` in the list's
+  dock makes a click open a document next to the ones open (up to four, equal columns; a narrow one's dock is marks, its
+  words in the tips), right-click `open next to the others` too. From an unframed list on the canvas a click opens the
+  document on the whole screen, the list put away; with the list put away Escape goes straight to the canvas.
 - *Verified:* rules 419 pass (34 new: private reads, lists by shared/uid, author-only share/rename, owner deletes a
   shared one and restores it, moving a shared report as its author's, body size, file paths under its own id, the two
   piece kinds); headless on the emulators: two .md uploaded into a new list (◐ private), shelf and table switch, a row

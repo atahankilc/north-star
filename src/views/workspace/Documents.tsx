@@ -24,7 +24,9 @@ import styles from './Documents.module.css'
 export const D = { head: 40, row: 54, pad: 16, sheet: { w: 140, h: 186, gap: 16, cols: 5 } }
 const COL_W: Record<DocCol | 'grip', number> = { kind: 70, title: 370, by: 130, size: 90, added: 96, grip: 36 }
 const COLS: DocCol[] = ['kind', 'title', 'by', 'size', 'added']
-const TABLE_W = COLS.reduce((s, c) => s + COL_W[c], 0) + COL_W.grip
+// The grips' column only where they show (unframed on the canvas, D-234): elsewhere no empty column at its end.
+const tableW = (grips: boolean) => COLS.reduce((s, c) => s + COL_W[c], 0) + (grips ? COL_W.grip : 0)
+const TABLE_W = tableW(false)
 // A shelf only as wide as its sheets need: up to five a row.
 const shelfCols = (n: number) => Math.max(1, Math.min(D.sheet.cols, n))
 const shelfW = (n: number) => 2 * D.pad + shelfCols(n) * D.sheet.w + (shelfCols(n) - 1) * D.sheet.gap
@@ -33,29 +35,49 @@ const PAGE_SIZES = [10, 20, 50]
 const NO_SETUP = emptyDocuments()
 export const documentsOf = (p: Pick<Piece, 'documents'>): DocumentsSetup => p.documents ?? NO_SETUP
 
-// What's going on with documents here, not shared: the page each list is on, the document open beside a list in its
+// What's going on with documents here, not shared: the page each list is on, the documents open beside a list in its
 // focus, one being dragged out of a list, one waiting to be placed (asked to share first), one about to be deleted.
 export const useDocUi = create<{
   pages: Record<string, number>
-  reader: string | null
-  // Where the line between the list and the document open beside it is (screen px), dragged; null = right of the list
-  // at its own size.
+  // Open beside the list in its focus, left to right (several side by side, D-232).
+  readers: string[]
+  // A click on a document opens it next to the ones open, rather than in their place.
+  sideBySide: boolean
+  // The list put away while documents are open: they take the whole screen, Escape goes straight back to the canvas.
+  listHidden: boolean
+  // Where the line between the list and the documents is (screen px), dragged; null = right of the list at its size.
   readerAt: number | null
-  // The document's zoom beside the list, kept in this tab.
-  readerZoom: number
+  // Each open document's zoom, kept in this tab.
+  readerZooms: Record<string, number>
   drag: { docId: string; x: number; y: number } | null
   dropped: { docId: string; x: number; y: number } | null
   // Put on the canvas once it's shared: at `at` (canvas px), or beside `near` (a piece) when asked from a focus.
   placing: { docId: string; at?: [number, number]; near?: string } | null
   deleting: string | null
   uploads: { name: string; state: 'sending' | 'done' | 'refused'; why?: string }[]
-}>(() => ({ pages: {}, reader: null, readerAt: null, readerZoom: 1, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
+}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
+
+// At most this many side by side.
+export const READERS_MAX = 4
+// A document opened from the list: in place of what's open, or (side by side) next to it, or closed when it's open.
+export function openDoc(id: string, alongside = useDocUi.getState().sideBySide) {
+  useDocUi.setState((s) => {
+    if (!alongside) return { readers: [id] }
+    if (s.readers.includes(id)) return { readers: s.readers.filter((x) => x !== id) }
+    return { readers: [...s.readers, id].slice(-READERS_MAX) }
+  })
+}
+export const closeDoc = (id: string) => useDocUi.setState((s) => ({ readers: s.readers.filter((x) => x !== id) }))
+export const closeDocs = () => useDocUi.setState({ readers: [], listHidden: false })
 
 // With a document open beside it (D-232), the list sits pinned to the top-left of its part, fitted to its width
 // (never over 100 %), so it's never under the document or off the screen; the document takes what's left.
 export const PIN = { left: 72, top: 64, right: 24 }
 const READER_MIN = 420
-export function readerLeft(content: Bounds, screenW: number, at: number | null) {
+// The list put away, the documents start right of the side nav.
+const SIDE_NAV = 56
+export function readerLeft(content: Bounds, screenW: number, at: number | null, hidden = false) {
+  if (hidden) return SIDE_NAV
   const natural = PIN.left + content.w + PIN.right
   const want = at ?? natural
   return Math.round(Math.max(PIN.left + 160, Math.min(want, screenW - READER_MIN)))
@@ -95,7 +117,7 @@ export function documentsBounds(piece: Pick<Piece, 'documents'>, count: number):
     const rows = Math.ceil(n / D.sheet.cols)
     return { x: 0, y: 0, w: shelfW(n), h: 2 * D.pad + rows * D.sheet.h + (rows - 1) * D.sheet.gap }
   }
-  return { x: 0, y: 0, w: TABLE_W, h: D.head + n * D.row + D.pad }
+  return { x: 0, y: 0, w: TABLE_W, h: D.head + n * D.row }
 }
 
 type Props = {
@@ -118,11 +140,17 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
   const all = useMemo(() => listed(documents, setup, me), [documents, setup, me])
   const page = pagesOf(setup, all.length, useDocUi((s) => s.pages[piece.id]))
   const shown = all.slice(page.from, page.to)
-  const reader = useDocUi((s) => s.reader)
+  const readers = useDocUi((s) => s.readers)
+  // From the canvas (unframed) the document opens on the whole screen, the list put away (its button brings it back);
+  // in focus, beside the list.
   const open = (d: WithId<Doc>) => {
-    onOpen?.()
-    useDocUi.setState({ reader: d.id })
+    if (onOpen) {
+      onOpen()
+      return useDocUi.setState({ readers: [d.id], listHidden: true })
+    }
+    openDoc(d.id)
   }
+  const grips = editor && onCanvas
   // Open on the canvas, how big it came out: its box there (shownBox.ts).
   const world = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -161,7 +189,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                 key={d.id}
                 className={styles.sheet}
                 style={{ height: D.sheet.h }}
-                data-lit={reader === d.id || undefined}
+                data-lit={readers.includes(d.id) || undefined}
                 data-target={live ? `doc:${d.id}` : undefined}
                 // A press here is the row's until it moves (the focus's pan would take the click, D-217).
                 data-cell={live || undefined}
@@ -184,7 +212,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
             ))}
           </div>
         ) : (
-          <div className={styles.table} style={{ width: TABLE_W }}>
+          <div className={styles.table} style={{ width: tableW(grips) }}>
             <div className={styles.headRow} style={{ height: D.head }}>
               {COLS.map((c) => (
                 <Head key={c} col={c} setup={setup} live={live && editor} piece={piece} />
@@ -195,7 +223,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                 key={d.id}
                 className={styles.row}
                 style={{ height: D.row }}
-                data-lit={reader === d.id || undefined}
+                data-lit={readers.includes(d.id) || undefined}
                 data-target={live ? `doc:${d.id}` : undefined}
                 data-cell={live || undefined}
                 onClick={live ? () => open(d) : undefined}
@@ -221,9 +249,11 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                 <span className={styles.cell} style={{ width: COL_W.added }}>
                   {ago(d.createdAt)}
                 </span>
-                <span className={styles.cell} style={{ width: COL_W.grip }}>
-                  {grip(d)}
-                </span>
+                {grips && (
+                  <span className={styles.cell} style={{ width: COL_W.grip }}>
+                    {grip(d)}
+                  </span>
+                )}
               </div>
             ))}
           </div>

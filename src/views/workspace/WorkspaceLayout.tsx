@@ -139,7 +139,7 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
   const matrix = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'matrix')
   const table = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'table')
   const docs = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'documents')
-  const reader = useDocUi((s) => !!s.reader)
+  const reader = useDocUi((s) => s.readers.length > 0 && !s.listHidden)
   const docsBounds = (p: NonNullable<typeof docs>) => documentsBounds(p, listed(documents, documentsOf(p), user?.id).length)
   const setPlaneCam = (to: PlaneCam) => useCanvasView.setState({ planeCam: to })
   const one = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'document')

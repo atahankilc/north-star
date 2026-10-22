@@ -17,7 +17,7 @@ import { glide, stopGlide, useCanvasView, type Bounds, type PlaneCam, type Scree
 import { isReducedMotion } from '../../state/motion'
 import { useWs } from './context'
 import { DocContent, KindMark } from './DocContent'
-import { documentsBounds, documentsOf, listed, readerLeft, useDocUi } from './Documents'
+import { closeDoc, documentsBounds, documentsOf, listed, readerLeft, useDocUi } from './Documents'
 import { DockAction, FocusDock } from './FocusDock'
 import { useOpenSize } from './shownBox'
 import styles from './DocumentPiece.module.css'
@@ -41,13 +41,13 @@ const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2]
 const stepZoom = (z: number, dir: 1 | -1) => (dir > 0 ? (ZOOMS.find((s) => s > z + 0.001) ?? ZOOMS[ZOOMS.length - 1]) : ([...ZOOMS].reverse().find((s) => s < z - 0.001) ?? ZOOMS[0]))
 
 // `[−] 100% [+]`: a click on the number goes back to 100 %. On a document's own focus it zooms its view round the
-// middle of the screen; beside the list (`reader`), the page's text.
-export function DocZoom({ reader = false }: { reader?: boolean }) {
+// middle of the screen; beside the list (`reader`: that document's id), the page's text.
+export function DocZoom({ reader }: { reader?: string }) {
   const z = useCanvasView((s) => (reader ? 1 : (s.planeCam?.zoom ?? 1)))
-  const rz = useDocUi((s) => s.readerZoom)
+  const rz = useDocUi((s) => (reader ? (s.readerZooms[reader] ?? 1) : 1))
   const zoom = reader ? rz : z
   const set = (to: number) => {
-    if (reader) return useDocUi.setState({ readerZoom: to })
+    if (reader) return setReaderZoom(reader, to)
     const { planeCam: c, size } = useCanvasView.getState()
     if (!c) return
     const [px, py] = [size.w / 2, size.h / 2]
@@ -205,45 +205,24 @@ function Outline({ pieceId, content, ready }: { pieceId: string; content: React.
 // screen, which splits as for what's beside a plane (D-211): the list keeps the left, the document reads on the right,
 // scrolling as a page does; the line between drags.
 
-export function DocReader({ list }: { list: WithId<Piece> }) {
-  const { wid, documents, workspace } = useWs()
+export function DocReaders({ list, onUnfocus }: { list: WithId<Piece>; onUnfocus: () => void }) {
+  const { documents } = useWs()
   const { user } = useAuth()
-  const id = useDocUi((s) => s.reader)
-  const d = documents.find((x) => x.id === id) ?? null
-  const body = useDocBody(wid, d)
+  const ids = useDocUi((s) => s.readers)
+  const hidden = useDocUi((s) => s.listHidden)
   const size = useCanvasView((s) => s.size)
-  // Right of the list, pinned top-left at its own size (or fitted to where the line was dragged).
+  // Right of the list, pinned top-left at its own size (or fitted to where the line was dragged); the whole screen
+  // (right of the side nav) with the list put away.
   const at = useDocUi((s) => s.readerAt)
   const count = listed(documents, documentsOf(list), user?.id).length
-  const left = readerLeft(documentsBounds(list, count), size.w, at)
-  const zoom = useDocUi((s) => s.readerZoom)
-  const el = useRef<HTMLDivElement>(null)
-  const editor = !!user && ['owner', 'editor'].includes(workspace.roles[user.id] ?? '')
-
-  // Gone (deleted, unshared) closes it.
+  const left = readerLeft(documentsBounds(list, count), size.w, at, hidden)
+  const open = ids.filter((id) => documents.some((d) => d.id === id))
+  // Gone (deleted, unshared) closes.
   useEffect(() => {
-    if (id && !d) useDocUi.setState({ reader: null })
-  }, [id, d])
-  // The wheel scrolls it as a page, kept from the list's view; ctrl (or a pinch) zooms its text.
-  useEffect(() => {
-    const node = el.current
-    if (!node) return
-    const onWheel = (e: WheelEvent) => {
-      e.stopPropagation()
-      if (!e.ctrlKey) return
-      e.preventDefault()
-      const z = useDocUi.getState().readerZoom
-      useDocUi.setState({ readerZoom: Math.min(2, Math.max(0.5, Math.round(z * Math.exp(-e.deltaY * 0.01) * 100) / 100)) })
-    }
-    node.addEventListener('wheel', onWheel, { passive: false })
-    return () => node.removeEventListener('wheel', onWheel)
-  }, [d])
-  // A new document starts at its top.
-  useEffect(() => {
-    el.current?.scrollTo({ top: 0 })
-  }, [id])
-  if (!d) return null
-  const mine = d.uid === user?.id
+    if (open.length !== ids.length) useDocUi.setState({ readers: open })
+  }, [open.length, ids.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!open.length) return null
+  const w = (size.w - left) / open.length
 
   const drag = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
@@ -263,31 +242,83 @@ export function DocReader({ list }: { list: WithId<Piece> }) {
 
   return (
     <>
-      <div className={`${beside.pane} ${styles.reader}`} style={{ left, top: 0, width: size.w - left, height: size.h }} onPointerDown={(e) => e.stopPropagation()} aria-label={`${d.title}, beside the list`}>
-        <div ref={el} className={styles.readerScroll} data-scrolls>
-          <div className={styles.readerBody}>
-            <div className={styles.readerColumn} style={{ zoom }}>
-              <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links />
-            </div>
-            <PageOutline scroller={el} at={`${d.id}:${body.data ? 1 : 0}:${zoom}`} />
-          </div>
+      {open.map((id, i) => (
+        <DocPane key={id} id={id} list={list} box={{ x: Math.round(left + i * w), y: 0, w: Math.round(w), h: size.h }} last={i === open.length - 1} first={i === 0} />
+      ))}
+      {!hidden && <div className={beside.divider} style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="List and documents" />}
+      {/* The list put away (D-232): its button top-left brings it back; unfocus is here too, its dock being gone. */}
+      {hidden && (
+        <div className={styles.listBar} onPointerDown={(e) => e.stopPropagation()}>
+          <button className={styles.listButton} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })}>
+            ≡ list
+          </button>
+          <button className={styles.listButton} title="back to the canvas (Escape)" onClick={onUnfocus}>
+            unfocus <span className={styles.listKey}>esc</span>
+          </button>
         </div>
-        <FocusDock
-          label="document beside"
-          // Its title is on the page already: the dock only says what it is, so it fits a narrow part.
-          name={<span className={beside.kind}>document</span>}
-        >
-          {mine && <DockAction label={d.shared ? 'unshare' : 'share'} title={d.shared ? 'only you see it again' : 'everyone in the workspace sees it'} onClick={() => void shareDocument(wid, d.id, !d.shared)} />}
-          {editor && <DockAction label="place ↗" title="put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
-          <DockAction label="download" title="save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
-          <DocZoom reader />
-          <DockAction label="close" main keyHint="esc" title="close it" onClick={() => useDocUi.setState({ reader: null })} />
-        </FocusDock>
-      </div>
-      <div className={beside.divider} style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="List and document" />
+      )}
     </>
   )
 }
+
+// One document open beside the list: a page that scrolls, its sections, its own zoom and dock.
+// A narrow one (side by side) says each action with a mark, its words in the tip.
+const NARROW = 560
+
+function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piece>; box: Bounds; last: boolean; first: boolean }) {
+  const { wid, documents, workspace } = useWs()
+  const { user } = useAuth()
+  const d = documents.find((x) => x.id === id)!
+  const body = useDocBody(wid, d)
+  const zoom = useDocUi((s) => s.readerZooms[id] ?? 1)
+  const hidden = useDocUi((s) => s.listHidden)
+  const el = useRef<HTMLDivElement>(null)
+  const editor = !!user && ['owner', 'editor'].includes(workspace.roles[user.id] ?? '')
+  const mine = d.uid === user?.id
+  const mayDelete = mine || (d.shared && workspace.roles[user?.id ?? ''] === 'owner')
+  const narrow = box.w < NARROW
+
+  // The wheel scrolls it as a page, kept from the list's view; ctrl (or a pinch) zooms its text.
+  useEffect(() => {
+    const node = el.current
+    if (!node) return
+    const onWheel = (e: WheelEvent) => {
+      e.stopPropagation()
+      if (!e.ctrlKey) return
+      e.preventDefault()
+      const z = useDocUi.getState().readerZooms[id] ?? 1
+      setReaderZoom(id, Math.round(z * Math.exp(-e.deltaY * 0.01) * 100) / 100)
+    }
+    node.addEventListener('wheel', onWheel, { passive: false })
+    return () => node.removeEventListener('wheel', onWheel)
+  }, [id])
+
+  return (
+    <div className={`${beside.pane} ${styles.reader}`} style={{ left: box.x, top: 0, width: box.w, height: box.h }} onPointerDown={(e) => e.stopPropagation()} aria-label={`${d.title}, beside the list`}>
+      {/* The first one leaves room on top for the list's bar when the list is put away. */}
+      <div ref={el} className={styles.readerScroll} data-scrolls data-under-bar={(hidden && first) || undefined}>
+        <div className={styles.readerBody}>
+          <div className={styles.readerColumn} style={{ zoom }}>
+            <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links />
+          </div>
+          <PageOutline scroller={el} at={`${d.id}:${body.data ? 1 : 0}:${zoom}`} />
+        </div>
+      </div>
+      {/* Its title is on the page already: the dock only says what it is, so it fits a narrow part. */}
+      <FocusDock label="document beside" name={narrow ? undefined : <span className={beside.kind}>document</span>}>
+        {mine && <DockAction label={narrow ? '◐' : d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => void shareDocument(wid, d.id, !d.shared)} />}
+        {editor && <DockAction label={narrow ? '↗' : 'place ↗'} title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
+        <DockAction label={narrow ? '↓' : 'download'} title="download: save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
+        {mayDelete && <DockAction label={narrow ? '⌫' : 'delete'} title="delete the document (asks first)" onClick={() => useDocUi.setState({ deleting: d.id })} />}
+        <DocZoom reader={id} />
+        {/* With the list put away Escape goes straight to the canvas: no `esc` on a close then. */}
+        <DockAction label={narrow ? '×' : 'close'} main keyHint={last && !hidden && !narrow ? 'esc' : undefined} title="close it" onClick={() => closeDoc(id)} />
+      </FocusDock>
+    </div>
+  )
+}
+
+const setReaderZoom = (id: string, z: number) => useDocUi.setState((s) => ({ readerZooms: { ...s.readerZooms, [id]: Math.min(2, Math.max(0.5, z)) } }))
 
 // "On this page" beside a document open by the list (as the old reports reader had, D-102): its sections, the one you're
 // reading lit as you scroll, a click scrolls there. Found in the page itself (headings, a report's questions and blocks).
@@ -299,7 +330,8 @@ function PageOutline({ scroller, at }: { scroller: React.RefObject<HTMLDivElemen
     if (!box) return
     const found = [...box.querySelectorAll<HTMLElement>('[data-heading]')]
       .filter((h) => h.dataset.heading !== 'title' && /^H[1-3]$/.test(h.tagName))
-      .map((h) => ({ text: (h.textContent ?? '').trim(), level: Number(h.tagName[1]), el: h }))
+      // A report's question carries its number in a span of its own: `01 How…`, not `01How…`.
+      .map((h) => ({ text: (h.textContent ?? '').trim().replace(/^(\d{2})(?=\S)/, '$1 '), level: Number(h.tagName[1]), el: h }))
     setParts(found.slice(0, 60))
     const spy = () => {
       const top = box.getBoundingClientRect().top + 96
