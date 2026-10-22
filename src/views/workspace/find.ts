@@ -160,90 +160,30 @@ export function watch(root: Element, again: () => void) {
 // ---- What a table, matrix or list holds, each text with the box it's drawn in (its own px) and its page.
 export type FindItem = { key: string; text: string; box: Bounds; page?: number }
 
-// A table's, matrix's or list's matches lit once you've gone to one in it: every match among `items` (they draw only
-// what's on the screen, so it paints again as rows come into sight), the picked one solid, its box when it's not text.
-export function useFoundIn(scope: string, items: FindItem[] | null, layer: RefObject<HTMLElement | null>) {
-  const on = useFind((s) => !s.open && s.target?.kind === 'lens' && s.target.space === scope)
-  const target = useFind((s) => (on ? s.target : null))
-  const re = useMatcher()
-  useEffect(() => {
-    const root = layer.current
-    if (!on || !root || !(re instanceof RegExp) || !items) return
-    const keys = new Set(items.filter((it) => it.text && matchesIn(it.text, re, 1).length).map((it) => it.key))
-    const again = () => {
-      unmark(root)
-      const all: Range[] = []
-      let now: Range[] = []
-      for (const el of root.querySelectorAll<HTMLElement>('[data-find]')) {
-        const key = el.dataset.find!
-        if (!keys.has(key)) continue
-        const rs = rangesIn(el, re)
-        all.push(...rs)
-        const isAt = target?.key === key
-        if (isAt && rs[target.k]) now = [rs[target.k]]
-        // Not text here (or not this one): the box it's in is lit instead.
-        else if (!rs.length || isAt) (el.closest('[data-find-box]') ?? el).setAttribute(FOUND, isAt ? 'at' : '')
-      }
-      paint(all, now)
-    }
-    again()
-    const stop = watch(root, again)
-    return () => {
-      stop()
-      unmark(root)
-      unpaint()
-    }
-  }, [on, re, items, target, layer])
-}
-
-// A document's page (in its focus, or open beside its list) once you've gone to a match in it: every match lit, the
-// picked one solid and brought into view once it's `ready` (arrived), by `reveal` (its place on the screen).
-export function useFoundOnPage(scope: string, root: RefObject<HTMLElement | null>, ready: boolean, reveal: (r: DOMRect) => void) {
+// A document's page (in its focus, or open beside its list) once you've gone to a match in it: the picked one brought
+// into view once it's `ready` (arrived) and its text is in, by `reveal` (its place on the screen); then let go. Only the
+// preview lights matches; the page itself is left as it is.
+export function useLandOnPage(scope: string, root: RefObject<HTMLElement | null>, ready: boolean, reveal: (r: DOMRect) => void) {
   const on = useFind((s) => !s.open && s.target?.kind === 'page' && s.target.space === scope)
-  const k = useFind((s) => (on ? (s.target?.k ?? 0) : 0))
-  const asked = useFind((s) => s.asked)
   const re = useMatcher()
   const revealRef = useRef(reveal)
   revealRef.current = reveal
   useEffect(() => {
     const el = root.current
-    if (!on || !el || !(re instanceof RegExp)) return
-    // Brought into view once, when it's there (its text may load after).
-    let shown = false
-    const again = () => {
-      const r = paintIn(el, re, { k })
-      if (r && ready && !shown) {
-        shown = true
-        revealRef.current(r.getBoundingClientRect())
-      }
+    if (!on || !ready || !el || !(re instanceof RegExp)) return
+    const look = () => {
+      const k = useFind.getState().target?.k ?? 0
+      const rs = rangesIn(el, re)
+      const r = rs[Math.min(k, rs.length - 1)]
+      if (!r) return false
+      revealRef.current(r.getBoundingClientRect())
+      clearFound()
+      return true
     }
-    again()
-    const stop = watch(el, again)
-    return () => {
-      stop()
-      unpaint()
-    }
-  }, [on, re, root, k, asked, ready])
-}
-
-// The canvas's or a plane's text and cards once you've gone to a match there: every match in `root` lit, the picked
-// one's (`data-target` = key) solid.
-export function useFoundInSpace(space: string, root: RefObject<HTMLElement | null>) {
-  const target = useFind((s) => (!s.open && s.target?.kind === 'space' && s.target.space === space ? s.target : null))
-  const re = useMatcher()
-  useEffect(() => {
-    const el = root.current
-    if (!target || !el || !(re instanceof RegExp)) return
-    // The last one: in a focus the plane's own comes after the canvas's picture of it (hidden behind).
-    const again = () => paintIn(el, re, { el: [...el.querySelectorAll(`[data-target="${target.key}"]`)].pop() ?? null, k: target.k })
-    again()
-    const stop = watch(el, again)
-    return () => {
-      stop()
-      unmark(el)
-      unpaint()
-    }
-  }, [target, re, root])
+    if (look()) return
+    // Its text may come in after.
+    return watch(el, () => void look())
+  }, [on, re, root, ready])
 }
 
 // ---- Where a match lands on the screen: the piece fitted as its focus does (D-186, 96 px round), then, when the

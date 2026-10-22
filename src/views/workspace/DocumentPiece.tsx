@@ -21,7 +21,7 @@ import { closeDoc, documentsBounds, documentsOf, listed, readerLeft, useDocUi } 
 import { DockAction, FocusDock } from './FocusDock'
 import { isOpen, useOpenSize } from './shownBox'
 import { useStill } from './still'
-import { docScope, docScrolledTo, scrollTo, useFoundOnPage } from './find'
+import { docScope, docScrolledTo, scrollTo, useLandOnPage } from './find'
 import styles from './DocumentPiece.module.css'
 import beside from './Beside.module.css'
 
@@ -101,9 +101,9 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
   const clip = useRef<HTMLDivElement>(null)
   const [cut, setCut] = useState(false)
   const width = docWidth(piece.w)
-  // Find in its text (D-236), in focus: a match out of sight scrolls the view to it.
+  // The finder's pick in its text (D-236), in focus: a match out of sight scrolls the view to it.
   const arrived = useCanvasView((s) => s.focusArrived)
-  useFoundOnPage(live && !onCanvas ? piece.id : '', content, arrived, (r) => {
+  useLandOnPage(live && !onCanvas ? piece.id : '', content, arrived, (r) => {
     const c = useCanvasView.getState().planeCam
     const box = layer.current?.getBoundingClientRect()
     if (!c || !box) return
@@ -345,9 +345,9 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
   const zoom = useDocUi((s) => s.readerZooms[id] ?? 1)
   const hidden = useDocUi((s) => s.listHidden)
   const el = useRef<HTMLDivElement>(null)
-  // Find in it (D-236): its page scrolls to each match.
+  // The finder's pick in it (D-236): its page scrolls to the match.
   const column = useRef<HTMLDivElement>(null)
-  useFoundOnPage(docScope(id), column, true, (r) => scrollTo(el.current, r))
+  useLandOnPage(docScope(id), column, true, (r) => scrollTo(el.current, r))
   const editor = !!user && ['owner', 'editor'].includes(workspace.roles[user.id] ?? '')
   const mine = d.uid === user?.id
   const mayDelete = mine || (d.shared && workspace.roles[user?.id ?? ''] === 'owner')

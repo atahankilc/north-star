@@ -18,7 +18,7 @@ import { Select } from '../../ui/Select'
 import { useWs } from './context'
 import { useSeen, within } from './visible'
 import { TYPE_ACCENT } from './PlaneCards'
-import { useFind, useFoundIn, type FindItem } from './find'
+import type { FindItem } from './find'
 import styles from './Table.module.css'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
@@ -208,11 +208,6 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   const [typing, setTyping] = useState<string | null>(null)
   const naming = useTableUi((s) => s.naming)
   const layer = useRef<HTMLDivElement>(null)
-
-  // Find (D-236): every head, row name and cell, on every page, in reading order; a match on another page turns to it.
-  const finding = useFind((s) => !s.open && s.target?.kind === 'lens' && s.target.space === piece.id) && live && !onCanvas
-  const findItems = useMemo(() => (finding ? tableFindItems(piece, cards, cells, fieldText) : null), [finding, piece, cards, cells, fieldText])
-  useFoundIn(live && !onCanvas ? piece.id : '', findItems, layer)
 
   const write = (row: string, col: string, value: Cell['value']) => void setCell(wid, piece.id, row, col, { value })
   const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(piece.id, rows[r].key, cols[c].id), labelSelected: null })

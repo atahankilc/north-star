@@ -18,7 +18,7 @@ import { ago } from '../../ui/ago'
 import { useWs } from './context'
 import { KindMark, lengthOf } from './DocContent'
 import { useOpenSize } from './shownBox'
-import { useFind, useFoundIn, type FindItem } from './find'
+import type { FindItem } from './find'
 import styles from './Documents.module.css'
 
 // Its parts in its own px: the table's head and rows, the shelf's sheets.
@@ -200,11 +200,6 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
     ro.observe(el)
     return () => ro.disconnect()
   }, [onCanvas, piece.id])
-  // Find (D-236): each document's title, first words and who added it, on every page, in the list's order.
-  const layer = useRef<HTMLDivElement>(null)
-  const finding = useFind((s) => !s.open && s.target?.kind === 'lens' && s.target.space === piece.id) && live && !onCanvas
-  const findItems = useMemo(() => (finding ? documentsFindItems(piece, documents, me, live) : null), [finding, piece, documents, me, live])
-  useFoundIn(live && !onCanvas ? piece.id : '', findItems, layer)
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }
   // A row's or sheet's grip drags it out onto the canvas (editors only): the canvas places it where it's let go.
   const grip = (d: WithId<Doc>) =>
@@ -216,7 +211,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
     ) : null
 
   return (
-    <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
+    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div ref={world} className={styles.world} style={style}>
         {all.length === 0 ? (
           <div className={styles.empty} style={{ width: TABLE_W }}>

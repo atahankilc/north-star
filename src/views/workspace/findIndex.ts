@@ -5,6 +5,7 @@ import type { WithId } from '../../data/hooks'
 import type { Piece, Workspace } from '../../data/model'
 import { CARD, type Card } from '../../data/cards'
 import type { Cell } from '../../data/matrix'
+import type { Bounds } from '../../state/canvasView'
 import type { Doc, DocBody } from '../../data/documents'
 import { CANVAS, kindOf, type Label } from '../../data/labels'
 import { kindOfPiece, KIND_NAME } from '../../data/pieces'
@@ -24,7 +25,8 @@ export type Dest =
   | { kind: 'doc'; piece: WithId<Piece>; target: FindTarget }
   | { kind: 'reader'; list: WithId<Piece>; doc: WithId<Doc>; target: FindTarget }
 
-export type Row = { id: string; glyph: string; text: string; hint: string; dest: Dest; tone?: string; inside?: boolean }
+// `fold`: a plane's own places folded under it in go to (D-200), opened or not; `indent`: one of them.
+export type Row = { id: string; glyph: string; text: string; hint: string; dest: Dest; tone?: string; inside?: boolean; fold?: { open: boolean; count: number; plane: string }; indent?: boolean }
 export type Group = { space: string; title: string; glyph: string; rows: Row[]; count: number }
 
 type Data = {
@@ -38,6 +40,8 @@ type Data = {
   me?: string
   fieldText: FieldText
   room: { w: number; h: number }
+  // What a table, matrix or list holds, built once while its data stays the same (not on every key typed).
+  held: Map<string, { items: FindItem[]; content: Bounds }>
 }
 
 const readingOrder = (a: { x: number; y: number }, b: { x: number; y: number }) => a.y - b.y || a.x - b.x
@@ -96,7 +100,7 @@ function pageRows(id: string, text: string, re: RegExp, dest: (k: number) => Des
 
 // Every space's matches, in reading order; the one you're in (`here`) first.
 export function findGroups(data: Data, re: RegExp, here: string): Group[] {
-  const { pieces, cards, labels, cells, documents, bodies, workspace, me, fieldText, room } = data
+  const { pieces, cards, labels, cells, documents, bodies, workspace, me, fieldText, room, held } = data
   const groups: Group[] = []
   const textRows = (space: string): Row[] =>
     labels
@@ -133,9 +137,15 @@ export function findGroups(data: Data, re: RegExp, here: string): Group[] {
         ...textRows(p.id),
       ]
     } else if (kind === 'table' || kind === 'matrix' || kind === 'documents') {
-      const items: FindItem[] =
-        kind === 'table' ? tableFindItems(p, cards, cells, fieldText) : kind === 'matrix' ? matrixFindItems(p, cards, cells) : documentsFindItems(p, documents, me, true)
-      const content = kind === 'table' ? tableBounds(p, cards) : kind === 'matrix' ? matrixBounds(p, cards) : documentsBounds(p, listed(documents, documentsOf(p), me).length)
+      let built = held.get(p.id)
+      if (!built) {
+        built = {
+          items: kind === 'table' ? tableFindItems(p, cards, cells, fieldText) : kind === 'matrix' ? matrixFindItems(p, cards, cells) : documentsFindItems(p, documents, me, true),
+          content: kind === 'table' ? tableBounds(p, cards) : kind === 'matrix' ? matrixBounds(p, cards) : documentsBounds(p, listed(documents, documentsOf(p), me).length),
+        }
+        held.set(p.id, built)
+      }
+      const { items, content } = built
       rows = items.flatMap((it): Row[] => {
         if (!it.text || !matchesIn(it.text, re, 1).length) return []
         // A matrix's cells land clear of its heads, which stay on the screen when panned past.

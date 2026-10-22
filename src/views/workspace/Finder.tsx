@@ -3,7 +3,7 @@
 // in the middle; typed into, it opens out to its matches, grouped by where they are, and the preview of the one picked
 // (what the screen shows once you're there), gliding as it grows so it stays in the middle. ↓ with nothing typed lists
 // the places (go to, D-196). ↑ ↓ pick, Enter goes, Tab is here / everywhere, alt C W X the switches, Escape closes.
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
@@ -15,10 +15,10 @@ import { KIND_NAME, kindOfPiece } from '../../data/pieces'
 import { useCanvasView } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useWs } from './context'
-import { closeFinder, findGo, matchesIn, openFinder, setQuery, toggleOpt, toggleScope, useFind, useMatcher, type FindOpts } from './find'
+import { closeFinder, findGo, matcherOf, matchesIn, openFinder, setQuery, toggleOpt, toggleScope, useFind, useMatcher, type FindOpts } from './find'
 import { findGroups, folded, type Dest, type Group, type Row } from './findIndex'
 import { FindPreview } from './FindPreview'
-import { placesIn } from './goTo'
+import { placesIn, shownPlaces, toggleOpen, useGoTo } from './goTo'
 import { shownPieces } from './shownBox'
 import { useFieldText, useTableUi } from './Table'
 import { useDocUi } from './Documents'
@@ -36,6 +36,7 @@ const W = { empty: 600, full: 1040 }
 const LINE = 47
 const FOOT = 31
 const LIST_MAX = 0.3
+const GO_MAX = 0.6
 const EDGE = 16
 
 export function Finder() {
@@ -70,36 +71,66 @@ function Panel() {
   const re = useMatcher()
   const size = useCanvasView((s) => s.size)
   const fieldText = useFieldText()
-  const bodies = useBodies()
+  // Documents' text comes in one by one: looked through again once they're in, not on each.
+  const bodies = useDeferredValue(useBodies())
+  // What's typed is looked for once typing pauses (a workspace's every page and cell takes a moment), the field
+  // answering every key meanwhile; `searching…` shows until then.
+  const [settled, setSettled] = useState(query)
+  useEffect(() => {
+    if (!query) return setSettled('')
+    const t = setTimeout(() => setSettled(query), SETTLE_MS)
+    return () => clearTimeout(t)
+  }, [query])
+  // Looked through behind the field (React draws what's typed first, then this).
+  const looking = useDeferredValue(settled)
+  const found = useMemo(() => matcherOf(looking, opts), [looking, opts])
+  const searching = !!query && (settled !== query || looking !== settled)
   const field = useRef<HTMLInputElement>(null)
   const summoned = useFinderUi((s) => s.summoned)
-  // With nothing typed, ↓ lists the places (go to).
-  const [browsing, setBrowsing] = useState(false)
+  // With nothing typed it's go to (D-196): the places, a plane's own folded under it until opened (D-200).
+  const unfolded = useGoTo((s) => s.open)
+  const going = !query && !looking
   const [sel, setSel] = useState(0)
+  // The preview's zoom, kept for each space while the finder's open: the next match in the same one keeps it.
+  const [zooms, setZooms] = useState<Record<string, number>>({})
 
   useEffect(() => {
     field.current?.focus()
     field.current?.select()
   }, [summoned])
 
+  // What the tables, matrices and lists hold, kept until their data changes.
+  const held = useMemo(() => new Map(), [ws.pieces, ws.cards, ws.cells, ws.documents, fieldText, user?.id])
   const groups: Group[] = useMemo(() => {
-    if (!query) {
-      if (!browsing) return []
+    if (going) {
       const places = placesIn(here, shownPieces(ws.pieces, ws.cards), ws.labels, ws.workspace.name)
       if (!places.length) return []
+      const inside = (id: string) => places.filter((p) => p.inside && p.space === id).length
       return [
         {
           space: 'places',
           title: here === CANVAS ? 'go to · on the canvas' : 'go to · in the plane',
           glyph: '⌖',
           count: places.length,
-          rows: places.map((p): Row => ({ id: p.id, glyph: p.glyph, text: p.label, hint: p.inside ? 'inside' : '', dest: { kind: 'place', place: p, target: { kind: 'space', space: p.space, k: 0 } }, inside: false })),
+          rows: shownPlaces(places, unfolded).map((p): Row => {
+            const n = p.inside ? 0 : inside(p.id)
+            return {
+              id: `${p.space}:${p.id}`,
+              glyph: p.glyph,
+              text: p.label,
+              hint: '',
+              indent: p.inside,
+              fold: n ? { open: unfolded.includes(p.id), count: n, plane: p.id } : undefined,
+              dest: { kind: 'place', place: p, target: { kind: 'space', space: p.space, k: 0 } },
+            }
+          }),
         },
       ]
     }
-    if (!(re instanceof RegExp)) return []
+    if (!(found instanceof RegExp)) return []
+    const re = found
     const all = findGroups(
-      { pieces: ws.pieces, cards: ws.cards, labels: ws.labels, cells: ws.cells, documents: ws.documents, bodies, workspace: ws.workspace, me: user?.id, fieldText, room: size },
+      { pieces: ws.pieces, cards: ws.cards, labels: ws.labels, cells: ws.cells, documents: ws.documents, bodies, workspace: ws.workspace, me: user?.id, fieldText, room: size, held },
       re,
       here,
     )
@@ -122,13 +153,32 @@ function Panel() {
         ]
       : []
     return [...places, ...(scope === 'here' ? folded(all, here) : all)]
-  }, [query, browsing, re, scope, here, ws, bodies, user?.id, fieldText, size])
+  }, [going, unfolded, found, scope, here, ws.pieces, ws.cards, ws.labels, ws.cells, ws.documents, ws.workspace, bodies, user?.id, fieldText, size, held])
 
-  const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
+  // Only so many rows are drawn (typing more narrows them); each group still says how many it has.
   const total = groups.reduce((s, g) => s + (g.space === 'places' ? 0 : g.count), 0)
+  const [shownGroups, more] = useMemo(() => {
+    let left = ROWS_MAX
+    const out = groups.map((g) => {
+      const rows = g.rows.slice(0, Math.max(0, left))
+      left -= rows.length
+      return { ...g, rows }
+    })
+    const all = groups.reduce((s, g) => s + g.rows.length, 0)
+    return [out.filter((g) => g.rows.length), all - Math.min(all, ROWS_MAX)]
+  }, [groups])
+  const rows = useMemo(() => shownGroups.flatMap((g) => g.rows), [shownGroups])
   const at = Math.min(sel, Math.max(0, rows.length - 1))
   const picked = rows[at] ?? null
-  useEffect(() => setSel(0), [query, scope, opts, browsing])
+  useEffect(() => setSel(0), [looking, scope, opts])
+  // The preview follows the pick once it rests (arrows held run through without drawing each one).
+  const [previewed, setPreviewed] = useState<Row | null>(picked)
+  useEffect(() => {
+    const t = setTimeout(() => setPreviewed(picked), previewed ? PREVIEW_MS : 0)
+    return () => clearTimeout(t)
+    // When the pick changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked?.id, groups])
 
   const go = (row: Row | null) => {
     if (!row) return
@@ -158,14 +208,20 @@ function Panel() {
     const ro = new ResizeObserver(() => setListH(el.offsetHeight))
     ro.observe(el)
     return () => ro.disconnect()
-  }, [rows.length > 0])
+  }, [rows.length > 0, going])
   const vw = typeof window === 'undefined' ? 1440 : window.innerWidth
   const vh = typeof window === 'undefined' ? 900 : window.innerHeight
-  const full = rows.length > 0 || (!!query && !rows.length)
+  // Going to a place (nothing typed): narrow, its list only, no preview. Finding: wide, the list and the preview.
+  const full = !!query
   const width = Math.min(full ? W.full : W.empty, vw - 2 * EDGE)
-  const shownList = rows.length ? Math.min(listH, Math.round(vh * LIST_MAX)) : query ? 52 : 0
-  const previewH = rows.length ? Math.max(160, Math.min(Math.round((width * size.h) / Math.max(1, size.w)), vh - 2 * EDGE - LINE - FOOT - shownList - 2)) : 0
+  const shownList = rows.length ? Math.min(listH, Math.round(vh * (going ? GO_MAX : LIST_MAX))) : query || going ? 52 : 0
+  const previewH = !going && rows.length ? Math.max(160, Math.min(Math.round((width * size.h) / Math.max(1, size.w)), vh - 2 * EDGE - LINE - FOOT - shownList - 2)) : 0
   const height = LINE + shownList + (previewH ? previewH + 1 : 0) + FOOT
+
+  // The preview's zoom for the previewed match's space.
+  const space = previewed ? spaceOf(previewed.dest) : ''
+  const zoom = zooms[space] ?? 1
+  const setZoom = useCallback((z: number) => setZooms((all) => ({ ...all, [space]: Math.round(Math.min(ZOOM.max, Math.max(ZOOM.min, z)) * 100) / 100 })), [space])
 
   // The picked row kept in sight in the list.
   useEffect(() => {
@@ -179,7 +235,6 @@ function Panel() {
     }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
-      if (!query && !browsing && e.key === 'ArrowDown') return setBrowsing(true)
       const n = rows.length
       if (n) setSel((at + (e.key === 'ArrowDown' ? 1 : -1) + n) % n)
       return
@@ -187,6 +242,11 @@ function Panel() {
     if (e.key === 'Enter') {
       e.preventDefault()
       return go(picked)
+    }
+    // A plane's own places: → opens them under it, ← folds them.
+    if (going && picked?.fold && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && picked.fold.open !== (e.key === 'ArrowRight')) {
+      e.preventDefault()
+      return toggleOpen(picked.fold.plane)
     }
     if (e.key === 'Tab') {
       e.preventDefault()
@@ -199,7 +259,72 @@ function Panel() {
     }
   }
 
-  let i = 0
+  // The rows, drawn again only when they or the pick change, not on every key typed.
+  const acts = useRef({ go, pick: (_: number) => {}, fold: (_: string) => {} })
+  acts.current = {
+    go,
+    pick: (n: number) => (setSel(n), field.current?.focus()),
+    fold: (plane: string) => (toggleOpen(plane), field.current?.focus()),
+  }
+  const listed = useMemo(() => {
+    let i = 0
+    return (
+      <div>
+        {shownGroups.map((g) => (
+          <Fragment key={g.space}>
+            <div className={styles.group}>
+              <span>
+                <span className={styles.hash}>#</span> {g.title}
+              </span>
+              <span className={styles.count}>{g.count}</span>
+            </div>
+            {g.rows.map((r) => {
+              const me = i++
+              return (
+                <div
+                  key={r.id}
+                  className={styles.row}
+                  role="option"
+                  aria-selected={me === at}
+                  data-picked={me === at || undefined}
+                  data-inside={r.inside || undefined}
+                  data-indent={r.indent || undefined}
+                  // Going to a place: a click goes. Finding: a click shows it in the preview, a second goes (the
+                  // pointer passing over shows nothing, so reaching for the preview doesn't run through them all).
+                  onClick={() => (going ? acts.current.go(r) : acts.current.pick(me))}
+                  onDoubleClick={going ? undefined : () => acts.current.go(r)}
+                >
+                  <span className={styles.caret} aria-hidden>
+                    ›
+                  </span>
+                  <span className={styles.glyph} style={r.tone ? { color: TYPE_ACCENT[r.tone as keyof typeof TYPE_ACCENT] } : undefined}>
+                    {r.glyph}
+                  </span>
+                  <span className={styles.text}>{r.inside || !(found instanceof RegExp) ? r.text : marked(r.text, found)}</span>
+                  {r.hint && <span className={styles.hint}>{r.hint}</span>}
+                  {r.fold && (
+                    <button
+                      className={styles.fold}
+                      aria-expanded={r.fold.open}
+                      title={r.fold.open ? 'fold its places (←)' : 'show its places (→)'}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleOpen(r.fold!.plane)
+                        field.current?.focus()
+                      }}
+                    >
+                      {r.fold.open ? '▾' : '▸'} {r.fold.count} inside
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </Fragment>
+        ))}
+      </div>
+    )
+  }, [shownGroups, at, found, going])
+
   return (
     <>
       <div className={styles.shade} onPointerDown={closeFinder} aria-hidden />
@@ -227,7 +352,6 @@ function Panel() {
             data-bad={re === 'bad' || undefined}
             onChange={(e) => {
               setQuery(e.target.value)
-              if (!e.target.value) setBrowsing(false)
             }}
             onKeyDown={keys}
           />
@@ -249,42 +373,11 @@ function Panel() {
 
         <div ref={list} className={styles.list} style={{ height: shownList }} role="listbox" aria-label="Matches">
           {rows.length ? (
-            <div>
-              {groups.map((g) => (
-                <Fragment key={g.space}>
-                  <div className={styles.group}>
-                    <span>
-                      <span className={styles.hash}>#</span> {g.title}
-                    </span>
-                    <span className={styles.count}>{g.count}</span>
-                  </div>
-                  {g.rows.map((r) => {
-                    const me = i++
-                    return (
-                      <div
-                        key={r.id}
-                        className={styles.row}
-                        role="option"
-                        aria-selected={me === at}
-                        data-picked={me === at || undefined}
-                        data-inside={r.inside || undefined}
-                        onPointerMove={() => me !== at && setSel(me)}
-                        onClick={() => go(r)}
-                      >
-                        <span className={styles.caret} aria-hidden>
-                          ›
-                        </span>
-                        <span className={styles.glyph} style={r.tone ? { color: TYPE_ACCENT[r.tone as keyof typeof TYPE_ACCENT] } : undefined}>
-                          {r.glyph}
-                        </span>
-                        <span className={styles.text}>{r.inside || !(re instanceof RegExp) ? r.text : marked(r.text, re)}</span>
-                        <span className={styles.hint}>{r.hint}</span>
-                      </div>
-                    )
-                  })}
-                </Fragment>
-              ))}
-            </div>
+            listed
+          ) : searching ? (
+            <p className={styles.none}>searching…</p>
+          ) : going ? (
+            <p className={styles.none}>{here === CANVAS ? 'Planes, the project title, headings and named sections show here' : 'Write a heading or draw a named section (+) to go to it from here'}</p>
           ) : query ? (
             <p className={styles.none}>{re === 'bad' ? 'not a regular expression' : scope === 'here' ? 'nothing matches here' : 'nothing matches'}</p>
           ) : null}
@@ -292,31 +385,40 @@ function Panel() {
 
         {previewH > 0 && (
           <div className={styles.preview} style={{ height: previewH }}>
-            <PreviewHead dest={picked?.dest ?? null} />
-            <FindPreview dest={picked?.dest ?? null} re={re instanceof RegExp ? re : null} box={{ w: width - 2 - 24, h: previewH - 24 - 12 }} />
+            <PreviewHead dest={previewed?.dest ?? null} zoom={zoom} onZoom={setZoom} drawing={previewed?.id !== picked?.id} />
+            <FindPreview dest={previewed?.dest ?? null} re={found instanceof RegExp ? found : null} w={width - 2 - 24} h={previewH - 24 - 12} zoom={zoom} onZoom={setZoom} />
           </div>
         )}
 
         <div className={styles.foot} style={{ height: FOOT }}>
           <span>
-            <b>↑↓</b> pick · <b>enter</b> go there · <b>⇥</b> here / everywhere · <b>esc</b>
-            {!query && !browsing && (
+            {going ? (
               <>
-                {' '}
-                · <b>↓</b> places
+                <b>↑↓</b> pick · <b>enter</b> go there · <b>→ ←</b> a plane's places · type to find · <b>esc</b>
+              </>
+            ) : (
+              <>
+                <b>↑↓</b> or a click: preview · <b>enter</b> or a double-click: go there · <b>⇥</b> here / everywhere · <b>esc</b>
               </>
             )}
           </span>
-          <span>{query && re instanceof RegExp ? `${total} ${total === 1 ? 'match' : 'matches'} · ${scope}` : ''}</span>
+          <span>{searching ? 'searching…' : query && found instanceof RegExp ? `${total} ${total === 1 ? 'match' : 'matches'}${more > 0 ? ` (${rows.length} shown: type more)` : ''} · ${scope}` : ''}</span>
         </div>
       </div>
-      {query && <FindBodies />}
+      {looking && <FindBodies />}
     </>
   )
 }
 
-// Over the preview: where it goes.
-function PreviewHead({ dest }: { dest: Dest | null }) {
+const ZOOM = { min: 1, max: 6, step: 1.5 }
+// How long typing pauses before it's looked for; how long a pick rests before the preview draws it; rows drawn at most.
+const SETTLE_MS = 160
+const PREVIEW_MS = 90
+const ROWS_MAX = 150
+const spaceOf = (d: Dest) => (d.kind === 'place' ? d.place.space : d.target.space)
+
+// Over the preview: where it goes, and its zoom (`[−] 100% [+]`; a click on the number puts it back).
+function PreviewHead({ dest, zoom, onZoom, drawing }: { dest: Dest | null; zoom: number; onZoom: (z: number) => void; drawing: boolean }) {
   const { documents } = useWs()
   if (!dest) return <div className={styles.previewHead} />
   const where =
@@ -331,8 +433,21 @@ function PreviewHead({ dest }: { dest: Dest | null }) {
           : `${dest.piece.name || KIND_NAME[kindOfPiece(dest.piece)]} · ${KIND_NAME[kindOfPiece(dest.piece)]}`
   return (
     <div className={styles.previewHead}>
-      <span>preview</span>
+      <span>
+        preview{drawing && <span className={styles.drawing}> · drawing…</span>}
+      </span>
       <span className={styles.previewWhere}>{where}</span>
+      <span className={styles.zoom} role="group" aria-label="Preview zoom">
+        <button className={styles.tool} disabled={zoom <= ZOOM.min} title="zoom out (wheel)" aria-label="Zoom out" onClick={() => onZoom(zoom / ZOOM.step)}>
+          −
+        </button>
+        <button className={styles.zoomAt} title="back to 100 %" onClick={() => onZoom(1)}>
+          {Math.round(zoom * 100)}%
+        </button>
+        <button className={styles.tool} disabled={zoom >= ZOOM.max} title="zoom in (wheel)" aria-label="Zoom in" onClick={() => onZoom(zoom * ZOOM.step)}>
+          +
+        </button>
+      </span>
     </div>
   )
 }

@@ -186,6 +186,11 @@
   cursor: pointer;
 }
 
+/* Under the pointer, a lighter wash; picked (a click, the arrows), the stronger one. */
+.row:hover {
+  background: var(--wash-1);
+}
+
 .row[data-picked='true'] {
   background: var(--wash-2);
 }
@@ -268,6 +273,9 @@
 }
 
 .previewWhere {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
   overflow: hidden;
   color: var(--fg-faint);
   letter-spacing: normal;
@@ -291,4 +299,61 @@
 .foot b {
   color: var(--fg-muted);
   font-weight: 400;
+}
+
+/* The preview's zoom: `[−] 140% [+]`, the number back to 100 %. */
+.zoom {
+  display: inline-flex;
+  flex: none;
+  align-items: baseline;
+  gap: var(--space-1);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.zoomAt {
+  min-width: 5ch;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  cursor: pointer;
+}
+
+.zoomAt:hover {
+  color: var(--fg-strong);
+}
+
+.tool:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+/* Go to (nothing typed): a plane's own places under it, in; its `▸ N inside` opens them (D-200). */
+.row[data-indent='true'] {
+  padding-left: calc(var(--space-3) + 3ch);
+}
+
+.fold {
+  flex: none;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--line-hover);
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.fold:hover,
+.fold[aria-expanded='true'] {
+  color: var(--accent-cyan);
+}
+
+.drawing {
+  color: var(--fg-faint);
+  letter-spacing: normal;
+  text-transform: none;
 }

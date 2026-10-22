@@ -21,6 +21,11 @@
   pointer-events: none;
 }
 
+.lens {
+  position: absolute;
+  inset: 0;
+}
+
 .plane,
 .canvas {
   position: absolute;

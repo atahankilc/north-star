@@ -47,7 +47,7 @@ import { useWs } from './context'
 import { useSeen, within } from './visible'
 import { useTheme } from '../../state/theme'
 import { TYPE_ACCENT } from './PlaneCards'
-import { useFind, useFoundIn, type FindItem } from './find'
+import type { FindItem } from './find'
 import { useStill } from './still'
 import styles from './Matrix.module.css'
 
@@ -166,10 +166,6 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   // A row or column just added from its dashed card: the view glides to bring it to the middle (D-214).
   const centre = useRef<'rows' | 'cols' | null>(null)
 
-  // Find (D-236): the column heads, then each row's head and its cells, a cell by what it shows and then its note.
-  const finding = useFind((s) => !s.open && s.target?.kind === 'lens' && s.target.space === piece.id) && live && !onCanvas
-  const findItems = useMemo(() => (finding ? matrixFindItems(piece, cards, cells) : null), [finding, piece, cards, cells])
-  useFoundIn(live && !onCanvas ? piece.id : '', findItems, layer)
 
   const write = (row: string, col: string, fields: Parameters<typeof setCell>[4]) => void setCell(wid, piece.id, row, col, fields)
   const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(piece.id, rows[r].key, cols[c].key), labelSelected: null })

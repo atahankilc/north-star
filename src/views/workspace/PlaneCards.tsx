@@ -239,7 +239,8 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
             zoom={view.zoom}
             live={live}
             editor={editor}
-            arrive={!(live && first.has(c.id))}
+            // Not in the finder's preview (D-236): it's drawn as it'll be, already there.
+            arrive={!still && !(live && first.has(c.id))}
             h={heightOf(c)}
             tuck={folds.hidden.has(c.id) ? boxOf(c) : null}
             parts={folds.count.get(c.id) ?? 0}
