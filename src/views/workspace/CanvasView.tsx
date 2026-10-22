@@ -17,6 +17,7 @@ import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
+import { GridMenu } from './GridMenu'
 import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu } from './ContextMenu'
 import { isNew, useReads } from '../../data/threads'
@@ -652,6 +653,8 @@ export function CanvasView() {
               {focusedTable && editor && (
                 <DockAction label="setup" pressed={tableSetup === focused.id} keyHint={escOn('setup')} title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
               )}
+              {/* A plane's snapping and guides (D-231, D-232). */}
+              {!focusedMatrix && !focusedTable && editor && <GridMenu />}
               {/* Always here; `esc` only when Escape does it next (with something open beside, that closes first, D-211). */}
               <DockAction label="unfocus" keyHint={escNext === 'unfocus' ? 'esc' : undefined} title="back to the canvas" main onClick={unfocus} />
             </FocusDock>

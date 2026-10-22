@@ -3839,7 +3839,9 @@ categories shown like B, not in a card, and the features under them not indented
   toast and is kept in this browser (`north-star:snap`, `north-star:guides`). Canvas text has none yet.
 - *Also fixed:* only the plane in focus fills `onPlane` (what's on it, for the selection and the guides); the plane
   pictures on the canvas had been writing over it as they drew.
-- *Not yet:* a visible switch for the two (keys and toasts only for now, the old board had them beside fit-all).
+- *Then* (the user: "iki ayar için bir menü şart … Console'a koy ama menüyü kullan"): the focus dock (a plane's console
+  in focus) has `[grid ▾]` before `[unfocus]` (editors, planes only), opening the shared menu (D-222) with two checkboxes,
+  `snap to the grid` (g) and `alignment guides` (a), toggled in place (`GridMenu.tsx`).
 - *User:* "hizalama çizgilerine geçelim".
 - *Verified* headless (emulators): with snapping on, a card dragged level with another showed a guide along their tops;
   `g` said "snapping to the grid off", then a card let go 2 px off another's left landed on it (x −100 like the other);
