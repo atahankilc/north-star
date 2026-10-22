@@ -49,6 +49,7 @@ import { isOpen, OPEN_FOOT, OPEN_PAD, shownPieces, useOpenSize } from './shownBo
 import { deleteDocument, downloadDocument, moveReports, shareDocument, type Doc } from '../../data/documents'
 import { closeDocs, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
 import { DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, DocZoom, membersOf, piecesOfDoc } from './DocumentPiece'
+import { clearFound, useFind, useFoundInSpace } from './find'
 import styles from './CanvasView.module.css'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
@@ -224,6 +225,37 @@ export function CanvasView() {
     focusTo(place.space)
   }
   const asked = useGoTo((s) => s.asked)
+  // The finder's pick in a piece (D-236): into its focus first (arriving lands it, above); already there, at once.
+  const foundAsked = useFind((s) => s.asked)
+  // A place on the canvas picked from inside a focus: there once focus has gone.
+  const foundOnCanvas = useRef<Place | null>(null)
+  useEffect(() => {
+    const t = useFind.getState().target
+    if (t?.place) {
+      if (t.place.space !== CANVAS || !focusId) return goPlaceRef.current(t.place)
+      foundOnCanvas.current = t.place
+      return unfocusRef.current()
+    }
+    if (!t?.focus) return
+    stopFollowing()
+    if (focusId !== t.focus) return focusTo(t.focus)
+    if (useCanvasView.getState().focusArrived && t.view) setPlaneView(t.view, false)
+    // When a pick asks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [foundAsked])
+  // Leaving where it was lit lets go of it.
+  useEffect(() => {
+    const t = useFind.getState().target
+    if (t?.focus && t.focus !== focusId) clearFound()
+    if (!focusId && foundOnCanvas.current) {
+      goToPlace(wid, foundOnCanvas.current, false)
+      foundOnCanvas.current = null
+    }
+    // When focus changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId])
+  // What it lit on the canvas, or in the plane in focus: its text and cards.
+  useFoundInSpace(focusId ?? CANVAS, root)
   useEffect(() => {
     if (!asked) return
     useGoTo.setState({ asked: null })
@@ -518,7 +550,10 @@ export function CanvasView() {
     useGoTo.setState({ pending: null })
     const instant = !useCanvasView.getState().focusSpread
     if (instant) useCanvasView.setState((s) => ({ planeCam: s.planeHome }))
+    // Where the finder's pick lands (D-236), as its preview showed.
+    const found = useFind.getState().target
     if (pending?.space === focused.id) goToPlace(wid, pending, true)
+    else if (found?.view && found.focus === focused.id) setPlaneView(found.view, instant)
     else fitRef.current(instant)
   }
   const arriveLate = useRef(arrive)
@@ -584,6 +619,8 @@ export function CanvasView() {
       // An open thread or the threads panel hears Escape first (D-192); `c` shows or hides the pins.
       const tv = useThreadView.getState()
       if (e.key === 'Escape' && (tv.openId || tv.draft || tv.inbox)) return
+      // Then what the finder lit (D-236).
+      if (e.key === 'Escape' && useFind.getState().target) return clearFound()
       if (e.key === 'c' && !e.metaKey && !e.ctrlKey && !e.altKey) return toggleThreadPins()
       // Fit (D-186): the canvas's planes, or in focus the plane's contents.
       if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -727,6 +764,8 @@ export function CanvasView() {
       <div ref={lens} className={styles.lens}>
       <div
         className={styles.world}
+        // The finder's preview copies it (D-236).
+        data-canvas-world
         style={{ transform: `translate(${onPixel(size.w / 2 + cam.x)}px, ${onPixel(size.h / 2 + cam.y)}px) scale(${cam.zoom})` }}
       >
         {/* What's linked to a plane (D-210, D-215): touching, ASCII in the gap; apart, a thin line. Under the pieces, so a

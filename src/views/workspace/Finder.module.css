@@ -1,0 +1,294 @@
+/* The finder (D-236): the menus' prompt (D-222) in the middle of the screen, over a scrim. Its width and height are
+   set as numbers and glide (eased both ends, so the change is seen), and it's centred by its middle, so growing keeps
+   it in the middle. Magenta marks on its top corners, as the dock's. */
+.shade {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--scrim);
+  animation: shade-in 160ms steps(3) both;
+}
+
+.finder {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  transform: translate(-50%, -50%);
+  transition:
+    width 320ms cubic-bezier(0.65, 0, 0.35, 1),
+    height 320ms cubic-bezier(0.65, 0, 0.35, 1);
+  animation: finder-in 160ms steps(3) both;
+}
+
+.finder[data-reduced='true'],
+.finder[data-reduced='true'] ~ .shade {
+  transition: none;
+  animation: none;
+}
+
+.finder::before,
+.finder::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  z-index: 1;
+  width: var(--space-2);
+  height: var(--space-2);
+  border-top: 1px solid var(--accent-magenta);
+  pointer-events: none;
+}
+
+.finder::before {
+  left: -1px;
+  border-left: 1px solid var(--accent-magenta);
+}
+
+.finder::after {
+  right: -1px;
+  border-right: 1px solid var(--accent-magenta);
+}
+
+@keyframes finder-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes shade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The `>` line. */
+.line {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--line);
+  cursor: text;
+}
+
+.sign {
+  color: var(--accent-magenta);
+  font-size: var(--text-sm);
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-size: var(--text-sm);
+  caret-color: var(--accent-magenta);
+}
+
+.field::placeholder {
+  color: var(--fg-faint);
+}
+
+.field:focus {
+  outline: none;
+}
+
+.field[data-bad='true'] {
+  color: var(--accent-magenta);
+}
+
+/* here | everywhere: one switch of two, the one on filled cyan. */
+.scope {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--line-hover);
+}
+
+.seg {
+  padding: 2px var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.seg:hover {
+  color: var(--fg-strong);
+}
+
+.seg[aria-pressed='true'] {
+  background: var(--accent-cyan);
+  color: var(--on-accent);
+}
+
+.switches {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-1);
+}
+
+.tool {
+  composes: small from '../../ui/AsciiButton.module.css';
+  padding: 0 2px;
+}
+
+.tool[aria-pressed='true'] {
+  color: var(--accent-cyan);
+}
+
+/* The matches, grouped. */
+.list {
+  flex: none;
+  overflow-y: auto;
+}
+
+.list > div {
+  padding: var(--space-1) 0;
+}
+
+.group {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3) 2px;
+  color: var(--fg-dim);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.hash {
+  color: var(--accent-magenta);
+}
+
+.count {
+  color: var(--fg-faint);
+  letter-spacing: normal;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 3px var(--space-3);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.row[data-picked='true'] {
+  background: var(--wash-2);
+}
+
+.caret {
+  width: 1ch;
+  color: transparent;
+}
+
+.row[data-picked='true'] .caret {
+  color: var(--accent-magenta);
+}
+
+.glyph {
+  width: 2ch;
+  color: var(--fg-dim);
+  text-align: center;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.row[data-picked='true'] .text {
+  color: var(--fg-strong);
+}
+
+.row[data-inside='true'] .text {
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.hint {
+  flex: none;
+  max-width: 34ch;
+  overflow: hidden;
+  color: var(--fg-faint);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hit {
+  background: color-mix(in srgb, var(--accent-yellow) 32%, transparent);
+  color: var(--fg-strong);
+}
+
+.none {
+  margin: 0;
+  padding: var(--space-4) var(--space-3);
+  color: var(--fg-faint);
+}
+
+/* The preview: what the screen shows once you're there, small. */
+.preview {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.previewHead {
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  gap: var(--space-3);
+  height: 24px;
+  padding: 0 var(--space-3);
+  align-items: center;
+  color: var(--fg-dim);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.previewWhere {
+  overflow: hidden;
+  color: var(--fg-faint);
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.foot {
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.foot b {
+  color: var(--fg-muted);
+  font-weight: 400;
+}

@@ -58,7 +58,7 @@ export const DocContent = memo(function DocContent({ d, body, loading = false, m
   const by = d.uid === me ? 'you' : d.name
   return (
     <article className={styles.doc}>
-      <p className={styles.eyebrow}>
+      <p className={styles.eyebrow} data-find-skip>
         <KindMark kind={d.kind} />
         <span>
           {by} · {ago(d.createdAt)} · {lengthWords(d)}

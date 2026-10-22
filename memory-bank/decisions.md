@@ -261,7 +261,7 @@ piece; check them with the user then.
   pane's dock is the focus dock, named `TABLE · name | [setup] [close]`; `[unfocus]` always there; `esc` shows only
   on what Escape does next (a setup, the last pane's close, unfocus); the line drags (25–75 %, per browser), so do the lines between stacked panes; a card
   selected lights its table row, a row picked glides the plane to its card.
-- Go to (D-196): a grey compass in the side nav under fit (search inside), no keys (D-201); on the canvas its planes (each
+- Go to (D-196): the side nav's grey compass under fit, now the finder's (D-236: ⌘F too; with nothing typed ↓ lists the places); on the canvas its planes (each
   with its own headings and sections on a line under it, folded until its framed `[▸ N inside]` opens them, D-200, D-201), project title, H1/H2 headings and named sections, in a focused plane its
   headings and sections, in reading order; glides there (planes, sections, title framed whole; a heading at 100 % near
   the top); a place in a plane focuses the plane first, then glides.
@@ -314,6 +314,9 @@ piece; check them with the user then.
   beside the list: the list pinned top-left at its size, the document the rest, "on this page", zoom 50–200 %; several
   side by side, `[hide list]`, `[delete]`; from the canvas a click opens it full screen. Escape: closes the document;
   list put away → a framed list back, an unframed one to the canvas. Rows carry their actions as marks (rename …) (D-232).
+- Finder (D-236): ⌘F or the side nav's compass: one prompt in the middle (go to too); empty, just its line; typed, it glides
+  out to matches grouped by space (`here` folds other spaces, Tab `everywhere`) and a real preview of where you'll land; Enter goes
+  (into a piece's focus when it's in one), matches lit there until Escape.
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

@@ -613,6 +613,9 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   emulators (upload, both views, drag out + ask + place, reader, a seeded report moved and read, focus scroll + outline);
   build.
 
+## Done (2026-10-19, moved from state.md 2026-10-22): grid marks
+- Grid `+` stays a thin `+` zoomed out, thinning to every 4th instead of turning to dots (D-151), 2026-10-19.
+
 ## Done (2026-10-22): packages on planes (D-239)
 - `package these` from a selection; unfolded a blue frame with a band (drags its members, opens its panel), folded a card
   holding them as rows; panel with rating, holds, confidence. Verified headless (make, drag, fold, drag folded, unfold,

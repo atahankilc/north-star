@@ -34,6 +34,7 @@ import { runCells } from '../../ui/Appear'
 import type { PlaneCam } from '../../state/canvasView'
 import { useCanvasView } from '../../state/canvasView'
 import { useWs } from './context'
+import { useStill } from './still'
 import { factsOf, type Facts, type Proof } from './cardFacts'
 import { createEdge, defaultKind } from '../../data/edges'
 import { drawLinks, ghostOf, LinkChips, LinkLines } from './PlaneLinks'
@@ -105,7 +106,9 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   // On the canvas the plane's picture is scaled again by the canvas's zoom.
   // Read as the level itself, so a wheel zoom re-renders the cards only when the level changes.
   const was = useRef<Detail>('full')
-  const detail = useCanvasView((s) => detailAt(view.zoom * (live ? 1 : (s.cams[wid]?.zoom ?? 1)), was.current))
+  // Drawn still in the finder's preview (D-236), its detail is read as in focus.
+  const still = useStill()
+  const detail = useCanvasView((s) => detailAt(view.zoom * (live || still ? 1 : (s.cams[wid]?.zoom ?? 1)), was.current))
   was.current = detail
   // Where each card is drawn, and how tall: a folded feature holds its parts, a hovered competitor its features (only
   // while cards show everything); a folded part is its row in the feature that holds it.

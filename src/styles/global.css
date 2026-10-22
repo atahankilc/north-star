@@ -84,3 +84,25 @@ html[data-motion='reduced'] *::after {
     scrollbar-color: var(--fg-faint) transparent;
   }
 }
+
+/* Find (D-236): every match lit yellow, the current one solid; a match that isn't text on the page (a scale's step, a
+   note) lights the box it's in. */
+::highlight(find) {
+  background-color: color-mix(in srgb, var(--accent-yellow) 32%, transparent);
+  color: var(--fg-strong);
+}
+
+::highlight(find-at) {
+  background-color: var(--accent-yellow);
+  color: var(--bg);
+}
+
+[data-found] {
+  outline: 1px dashed color-mix(in srgb, var(--accent-yellow) 70%, transparent);
+  outline-offset: -3px;
+}
+
+[data-found='at'] {
+  outline: 2px solid var(--accent-yellow);
+  outline-offset: -2px;
+}

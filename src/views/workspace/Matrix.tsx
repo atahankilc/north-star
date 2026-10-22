@@ -47,6 +47,8 @@ import { useWs } from './context'
 import { useSeen, within } from './visible'
 import { useTheme } from '../../state/theme'
 import { TYPE_ACCENT } from './PlaneCards'
+import { useFind, useFoundIn, type FindItem } from './find'
+import { useStill } from './still'
 import styles from './Matrix.module.css'
 
 // The matrix's parts in its own px: the row heads' column, a cell, the column heads' row, a row, the gap between them,
@@ -86,6 +88,28 @@ export function matrixBounds(piece: Pick<Piece, 'matrix'>, cards: Card[]): Bound
   return { x: 0, y: 0, w, h }
 }
 
+// What find looks through in a matrix (D-236): the column heads, then each row's head and its cells, a cell by what it
+// shows and then its note; each with its box in the matrix's px.
+export function matrixFindItems(piece: WithId<Piece>, cards: Card[], cells: Cell[]): FindItem[] {
+  const setup = setupOf(piece)
+  const rows = entriesOf(setup.rows, cards)
+  const cols = entriesOf(setup.cols, cards)
+  const byKey = new Map(cells.filter((c) => c.matrixId === piece.id).map((c) => [`${c.row}|${c.col}`, c]))
+  const L = layout(setup, rows.length, cols.length)
+  const out: FindItem[] = cols.map((c, i) => ({ key: `cols|${c.key}`, text: c.name, box: { x: L.colX(i), y: 0, w: M.cell, h: M.top } }))
+  rows.forEach((r, ri) => {
+    const y = L.rowY(ri)
+    out.push({ key: `rows|${r.key}`, text: r.name, box: { x: 0, y, w: M.head, h: M.row } })
+    cols.forEach((c, ci) => {
+      const cell = byKey.get(`${r.key}|${c.key}`)
+      const read = setup.notRelevant && !relevant(cell) ? {} : readCell(setup, cell)
+      const shown = read.step?.label ?? (read.number !== undefined ? fmt(read.number) : read.text) ?? ''
+      out.push({ key: selKey(piece.id, r.key, c.key), text: [shown, cell?.notes].filter(Boolean).join('\n'), box: { x: L.colX(ci), y, w: M.cell, h: M.row } })
+    })
+  })
+  return out
+}
+
 // The setup (D-212): closed (`false`), or open on one of its tabs (`true` is the first); `canvas`: the matrix it's for when
 // it's opened from one open on the canvas (D-228), not in focus. The wizard makes a new matrix.
 export const SETUP_TABS = ['rows', 'cols', 'cells', 'options'] as const
@@ -109,6 +133,7 @@ type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: bool
 
 export function MatrixView({ piece, view, live, editor, onCanvas = false }: Props) {
   const { wid, cards, cells } = useWs()
+  const still = useStill()
   const setup = setupOf(piece)
   const rows = useMemo(() => entriesOf(setup.rows, cards), [setup.rows, cards])
   const cols = useMemo(() => entriesOf(setup.cols, cards), [setup.cols, cards])
@@ -140,6 +165,11 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   }, [live])
   // A row or column just added from its dashed card: the view glides to bring it to the middle (D-214).
   const centre = useRef<'rows' | 'cols' | null>(null)
+
+  // Find (D-236): the column heads, then each row's head and its cells, a cell by what it shows and then its note.
+  const finding = useFind((s) => !s.open && s.target?.kind === 'lens' && s.target.space === piece.id) && live && !onCanvas
+  const findItems = useMemo(() => (finding ? matrixFindItems(piece, cards, cells) : null), [finding, piece, cards, cells])
+  useFoundIn(live && !onCanvas ? piece.id : '', findItems, layer)
 
   const write = (row: string, col: string, fields: Parameters<typeof setCell>[4]) => void setCell(wid, piece.id, row, col, fields)
   const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(piece.id, rows[r].key, cols[c].key), labelSelected: null })
@@ -249,7 +279,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   // Too small on the screen to read a cell (zoomed out, a big one fitted): every cell a square on one canvas instead.
   const far = useCanvasView((s) => {
     const z = s.cams[wid]?.zoom ?? 1
-    return M.cell * (onCanvas ? z : live ? view.zoom : view.zoom * z) < FAR_PX
+    return M.cell * (onCanvas ? z : live || still ? view.zoom : view.zoom * z) < FAR_PX
   })
   const [r0, r1] = within(seen.y0, seen.y1, M.top + M.gap, M.row + M.gap, M.row, rows.length)
   const [c0, c1] = within(seen.x0, seen.x1, M.head + M.gap, M.cell + M.gap, M.cell, cols.length)
@@ -332,7 +362,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const fitted = fitInto({ x: 0, y: 0, w: L.w, h: L.h }, room.w, room.h, FIT_PAD)
   const stickTop = Math.min(STICK.top, Math.max(0, room.h / 2 - (L.h / 2) * fitted.zoom))
   const stickLeft = Math.min(STICK.left, Math.max(0, room.w / 2 - (L.w / 2) * fitted.zoom))
-  const stick = live && !onCanvas
+  const stick = (live || still) && !onCanvas
   const dy = stick ? Math.min(Math.max(0, (stickTop - view.oy) / view.zoom), Math.max(0, L.addY - M.top)) : 0
   const dx = stick ? Math.min(Math.max(0, (stickLeft - view.ox) / view.zoom), Math.max(0, L.addX - M.head)) : 0
   const added = (which: 'rows' | 'cols') => (centre.current = which)
@@ -446,6 +476,7 @@ function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, namin
       className={which === 'rows' ? styles.rowHead : styles.colHead}
       style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }}
       data-card={entry.card ? true : undefined}
+      data-find-box
       // A long one set smaller, so more of it fits (D-216).
       data-long={(entry.name?.length ?? 0) > (which === 'rows' ? 40 : 30) || undefined}
       data-hot={hot || undefined}
@@ -476,7 +507,7 @@ function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, namin
           }}
         />
       ) : (
-        <span className={styles.name} data-unnamed={!entry.name || undefined}>
+        <span className={styles.name} data-unnamed={!entry.name || undefined} data-find={`${which}|${entry.key}`}>
           {entry.name || (entry.card ? `untitled ${entry.card.type}` : 'name')}
         </span>
       )}
@@ -769,6 +800,8 @@ const CellBox = memo(function CellBox({ id, r, c, x, y, setup, cell, label, sele
       className={styles.cell}
       style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
       data-cell={id}
+      data-find={id}
+      data-find-box
       data-selected={selected || undefined}
       data-hot={hot || undefined}
       tabIndex={live ? 0 : -1}

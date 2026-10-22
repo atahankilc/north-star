@@ -60,8 +60,8 @@ export function placesIn(space: string, pieces: WithId<Piece>[], labels: Label[]
     .flatMap((p) => (ids.has(p.id) ? [p, ...textIn(p.id, labels, workspaceName).map((q) => ({ ...q, inside: true }))] : [p]))
 }
 
-// The zoom, and which point of the space goes where on screen.
-function aim(place: Place) {
+// The zoom, and which point of the space goes where on screen (the finder's preview shows the same, D-236).
+export function aim(place: Place) {
   const { size } = useCanvasView.getState()
   const b = place.box
   const { zoom, cx, cy } = fitInto(b, size.w, size.h, PAD)

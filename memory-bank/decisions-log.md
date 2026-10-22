@@ -3140,6 +3140,7 @@ categories shown like B, not in a card, and the features under them not indented
 - *Why:* the user: "tuş ile hızlı gitmeyi kapat. Collapse olayını da biraz daha belirgin yap ki anlaşılsın".
 - *Verified:* headless Chrome on the emulators: `3` on the canvas does nothing; folded and open lists look as above.
 
+- *Later:* D-236 makes go to part of the finder, which ⌘F opens (the compass too); its places list on ↓ with nothing typed.
 ### D-202 · 2026-10-21 · Accepted (adds to D-186's fit)
 - *Decision:* opening a workspace the first time in a tab frames everything on its canvas at once (no glide), as fit
   does (planes and canvas text, ≤ 100 %, 96 px round). Only then: the camera is kept per workspace for the tab's life
@@ -3971,6 +3972,49 @@ categories shown like B, not in a card, and the features under them not indented
   Europe-wide or Global competitor, drops a US one, leaves other cards). What the user sees isn't known yet: asked.
 - *Verified* headless (emulators): a table stuck to a plane gave `[linked · 1]`; its strip's `⇆ table` opened it beside
   the plane; with the filter open too the two stacked and fit in the plane's half; no console errors; build.
+
+### D-236 · 2026-10-22 · Accepted (one finder for the workspace; it is go to too, replacing D-196's menu)
+- *Decision:* ⌘F (ctrl F) anywhere in a workspace, or the side nav's compass under fit, opens the finder: a prompt in the
+  middle of the screen (the menus' look, D-222) over the scrim. Opened empty it is only its `>` line, in the middle;
+  typed into, it grows (width and height glide 320 ms, eased both ends) to its matches and a preview, staying centred.
+  The browser's own ⌘F is never used in a workspace. The user first asked for find inside tables, matrices and
+  documents "webstormdaki find gibi" (built as a bar on each piece's top edge plus dock and side nav buttons); then:
+  "findın böyle hem nav barda hem de console olmasını beğenmedim … iki türlü de en üste açılıyor … finder ile de bir
+  bağlantısı yok"; shown three options on a local preview, picked A (the finder in the middle with a preview under its
+  list): "preview gerçek preview olmalı. Yani gittiğimde göreceğim şey … boş açılırken ortaya açılsın, içine bişey
+  yazınca animasyon ile kendini yine ortalasın sonuçları ile birlikte".
+- *What it finds:* every space's text, in reading order, grouped `# name · kind` with a count: the canvas's text (all
+  kinds, the project title by the workspace's name and description); each plane's card titles and text; each table's
+  heads, row names and cells (a card's fields as shown, its own cells' step label, number, text), every page; each
+  matrix's heads and cells (what a cell shows, then its note); each documents list's titles, first words and who
+  added it; each document's page text (its title, then its Markdown or report, read while something's typed, up to 60).
+  A document no piece shows on its own is found beside the first documents list. Pieces by name come first as
+  `# places`. With nothing typed, ↓ lists go to's places (D-196, D-200's planes' places included, unfolded).
+- *here / everywhere* (Tab): here is the space you're in, each other space folded to one row (`N inside`, Enter goes
+  to its first match); everywhere opens them all. Match case, whole words, regular expression: `Aa W .*` (alt C W X).
+- *Preview:* what the screen shows once you're there, drawn small by the same pieces at the same view: a table, matrix
+  or list as its focus draws it, at the view it lands on (fitted as focus fits, then glided to the match when it's off
+  the screen or too small, clear of the breadcrumb, dock, side nav and a matrix's held heads; its page turned); a
+  plane's cards and text with its `+` marks at go to's camera; a document at its focus's 100 % scrolled so the match is
+  40 % down; a document beside its list with the list pinned on the left; on the canvas, a copy of the canvas as it is
+  under go to's camera. Drawn still (`Still`, nothing live; detail read as in focus). Every match lit, the picked one
+  solid.
+- *Going:* Enter or a click. A place glides as go to does (into its plane first when it's in one; out of a focus first
+  when it's on the canvas); a match in a table, matrix, list or document goes into that piece's focus (the list's, with
+  the document open beside it) and lands where the preview showed. Unframed pieces (D-228, D-234) go into focus too.
+  There every match stays lit (yellow wash), the picked one solid (a scale's square or a note's cell: a frame), until
+  Escape (first, before what Escape does in focus) or leaving that focus.
+- *Removed:* the find bar on pieces' top edges, `[find]` in docks, the side nav's lens, go to's own menu (the compass
+  opens the finder).
+- *How:* `find.ts` (matching, painting with the CSS highlight API so nothing is drawn again, where a match lands),
+  `findIndex.ts` (the groups, from data: `tableFindItems`, `matrixFindItems`, `documentsFindItems`), `Finder.tsx`,
+  `FindPreview.tsx`, `still.ts`; `data-find` / `data-find-box` on what a table, matrix or list draws; CanvasView's world
+  `data-canvas-world`; a document's line of who and when `data-find-skip`.
+- *Verified* headless (emulators): empty it opens in the middle (601 × 79), typed it grows over ~300 ms to 1040 × 867
+  with its middle held at 450 px; a table row's preview matched the focus it went to (page and position), lit there;
+  a matrix cell found by its step's label previewed and landed the same, its cell framed; a report's match previewed
+  and landed scrolled the same, the match solid; a plane card previewed with its marks and landed lit; ↓ with nothing
+  typed listed the canvas's places, the preview the canvas copy; tsc.
 
 ### D-237 · 2026-10-22 · Accepted (the right-click menu inside a focused plane; adds to D-193's `comment`, brings back D-117's)
 - *Decision:* right-clicking in a focused plane offers what can be done with what's under the pointer, `comment` second:

@@ -39,7 +39,6 @@ something is finished, add its entry to state-history.md and leave at most one l
 - LINKS filter: one group per kind (D-146), each with its own colour, solid lines (D-147), 2026-10-19.
 - Board grid (D-148): one `+` every 0.625, card corners land on marks, no perspective drift, cards 2.5 wide with no grey
   edge; drags snap to fifths between marks (D-149), 2026-10-19.
-- Grid `+` stays a thin `+` zoomed out, thinning to every 4th instead of turning to dots (D-151), 2026-10-19.
 - Zoomed out: title alone in whole words (≤3 lines), far out bars instead of stars (D-153), 2026-10-19.
 - Links: smaller chips, a new link opens ready to label, panel rows with label/reverse and the new one marked (D-154);
   bend points the user puts on a selected link (D-155; app-routed elbows tried and dropped). 2026-10-19, committed.
@@ -63,6 +62,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), links shown and made from a dropdown (D-215), 2026-10-22, rules deployed. Follows adds, column widths (D-224). Open on the canvas (D-228), committed, rules deployed 2026-10-22. Canvas speed: pieces' contents memoised (pan no longer draws them again; keep their props stable), matrix cells memoised with hover in its own store; in focus a matrix's cells and heads and a table's rows are made only when they change, not per frame; only what's on screen is drawn (`visible.ts`), and a matrix too small to read is squares on one canvas (`CellDots`).
 - Documents (D-232, docs/specs/documents.md): .md/images/PDFs/old reports (moved once) in `documents/`, private until shared;
   a list piece (table or shelf) and one on its own (asks first), both unframe (D-234). .md only until Blaze; next: files, writing.
+- Finder (D-236): ⌘F / compass, one finder in the middle with a real preview; replaces the find bar and go to's menu. 2026-10-22, committed.
 - Packages on planes (D-239): from a selection, a frame + band unfolded, a card holding them folded. 2026-10-22, committed.
 - Menus as a prompt (D-222): `+`, go to, start over from, right-click and every Select; `>` line, letters; one click outside closes. 2026-10-22, committed.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a

@@ -20,6 +20,8 @@ import { DocContent, KindMark } from './DocContent'
 import { closeDoc, documentsBounds, documentsOf, listed, readerLeft, useDocUi } from './Documents'
 import { DockAction, FocusDock } from './FocusDock'
 import { isOpen, useOpenSize } from './shownBox'
+import { useStill } from './still'
+import { docScope, docScrolledTo, scrollTo, useFoundOnPage } from './find'
 import styles from './DocumentPiece.module.css'
 import beside from './Beside.module.css'
 
@@ -90,7 +92,8 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
   const { wid, documents } = useWs()
   const { user } = useAuth()
   const d = documents.find((x) => x.id === piece.docId) ?? null
-  const level = useCanvasView((s) => (onCanvas ? 'full' : levelAt((live ? (s.planeCam?.zoom ?? 1) : (s.cams[wid]?.zoom ?? 1)) * view.zoom)))
+  const still = useStill()
+  const level = useCanvasView((s) => (onCanvas || still ? 'full' : levelAt((live ? (s.planeCam?.zoom ?? 1) : (s.cams[wid]?.zoom ?? 1)) * view.zoom)))
   const body = useDocBody(wid, d, level === 'full')
   const layer = useRef<HTMLDivElement>(null)
   const content = useRef<HTMLDivElement>(null)
@@ -98,6 +101,18 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
   const clip = useRef<HTMLDivElement>(null)
   const [cut, setCut] = useState(false)
   const width = docWidth(piece.w)
+  // Find in its text (D-236), in focus: a match out of sight scrolls the view to it.
+  const arrived = useCanvasView((s) => s.focusArrived)
+  useFoundOnPage(live && !onCanvas ? piece.id : '', content, arrived, (r) => {
+    const c = useCanvasView.getState().planeCam
+    const box = layer.current?.getBoundingClientRect()
+    if (!c || !box) return
+    const oy = docScrolledTo(c.oy, r.top - box.top, r.bottom - box.top, box.height)
+    if (oy === c.oy) return
+    stopGlide()
+    if (isReducedMotion()) useCanvasView.setState({ planeCam: { ...c, oy } })
+    else glide(c, { ...c, oy }, 320, (v) => useCanvasView.setState({ planeCam: v }))
+  })
 
   // Its height, for fit and the scroll's ends.
   useLayoutEffect(() => {
@@ -328,6 +343,9 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
   const zoom = useDocUi((s) => s.readerZooms[id] ?? 1)
   const hidden = useDocUi((s) => s.listHidden)
   const el = useRef<HTMLDivElement>(null)
+  // Find in it (D-236): its page scrolls to each match.
+  const column = useRef<HTMLDivElement>(null)
+  useFoundOnPage(docScope(id), column, true, (r) => scrollTo(el.current, r))
   const editor = !!user && ['owner', 'editor'].includes(workspace.roles[user.id] ?? '')
   const mine = d.uid === user?.id
   const mayDelete = mine || (d.shared && workspace.roles[user?.id ?? ''] === 'owner')
@@ -354,7 +372,7 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
     <div className={`${beside.pane} ${styles.reader}`} data-alone={(hidden && first) || undefined} style={{ left: box.x, top: 0, width: box.w, height: box.h }} onPointerDown={(e) => e.stopPropagation()} aria-label={`${d.title}, beside the list`}>
       <div ref={el} className={styles.readerScroll} data-scrolls>
         <div className={styles.readerBody}>
-          <div className={styles.readerColumn} style={{ zoom }}>
+          <div ref={column} className={styles.readerColumn} style={{ zoom }}>
             <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links />
           </div>
           <PageOutline scroller={el} at={`${d.id}:${body.data ? 1 : 0}:${zoom}`} />

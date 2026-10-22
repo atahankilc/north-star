@@ -18,6 +18,7 @@ import { Select } from '../../ui/Select'
 import { useWs } from './context'
 import { useSeen, within } from './visible'
 import { TYPE_ACCENT } from './PlaneCards'
+import { useFind, useFoundIn, type FindItem } from './find'
 import styles from './Table.module.css'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
@@ -85,7 +86,8 @@ const parseSel = (piece: string, s: string | null) => (s?.startsWith(`${CELL}${p
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
 // What a row reads in a column, as text: for a card's field, and for sorting.
-export function useFieldText() {
+export type FieldText = (row: Row, field: NonNullable<Column['field']>) => string
+export function useFieldText(): FieldText {
   const { pieces, evidence } = useWs()
   return useMemo(() => {
     const planeName = new Map(pieces.filter((p) => kindOfPiece(p) === 'plane').map((p) => [p.id, p.name || 'unnamed plane']))
@@ -120,12 +122,62 @@ export function useFieldText() {
   }, [pieces, evidence])
 }
 
+// A table's rows, in its source's order or sorted by a column (empty ones last, whichever way).
+export function tableRows(setup: TableSetup, cards: Card[], fieldText: FieldText, byKey: Map<string, Cell>): Row[] {
+  const out = rowsOf(setup.rows, cards, !setup.manual)
+  const s = setup.sort
+  const col = s && (s.col === NAME_COL ? NAME_COL : setup.cols.find((c) => c.id === s.col))
+  if (!s || !col) return out
+  const key = (r: Row): string | number => {
+    if (col === NAME_COL) return r.name.toLowerCase()
+    if (col.field) return fieldText(r, col.field).toLowerCase()
+    const v = readOwn(col, byKey.get(`${r.key}|${col.id}`))
+    if (v.step) return (col.steps ?? DEFAULT_STEPS).indexOf(v.step)
+    if (v.number !== undefined) return v.number
+    if (v.checked) return 1
+    return v.text?.toLowerCase() ?? ''
+  }
+  const empty = (k: string | number) => k === ''
+  // Empty ones last, whichever way.
+  return [...out].sort((a, b) => {
+    const [x, y] = [key(a), key(b)]
+    if (empty(x) !== empty(y)) return empty(x) ? 1 : -1
+    const d = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))
+    return s.desc ? -d : d
+  })
+}
+
+// What find looks through in a table (D-236): its heads, then each row's name and cells, on every page, in reading
+// order, each with its box in the table's px and its page.
+export function tableFindItems(piece: WithId<Piece>, cards: Card[], cells: Cell[], fieldText: FieldText): FindItem[] {
+  const setup = tableOf(piece)
+  const byKey = new Map(cells.filter((c) => c.matrixId === piece.id).map((c) => [`${c.row}|${c.col}`, c]))
+  const cols = setup.cols
+  const nameW = nameWidth(setup)
+  const ws = cols.map(widthOf)
+  const xs = ws.reduce<number[]>((out, _, i) => [...out, i ? out[i - 1] + ws[i - 1] : nameW], [])
+  const out: FindItem[] = cols.map((c, i) => ({ key: `h|${c.id}`, text: colName(c), box: { x: xs[i], y: 0, w: ws[i], h: T.head } }))
+  const size = setup.pageSize
+  tableRows(setup, cards, fieldText, byKey).forEach((r, i) => {
+    const page = size ? Math.floor(i / size) : undefined
+    const y = T.head + (i - (page ?? 0) * (size ?? 0)) * T.row
+    out.push({ key: `n|${r.key}`, text: r.name, box: { x: 0, y, w: nameW, h: T.row }, page })
+    cols.forEach((c, ci) => {
+      const v = c.field ? null : readOwn(c, byKey.get(`${r.key}|${c.id}`))
+      const text = c.field ? fieldText(r, c.field) : (v!.step?.label ?? (v!.number !== undefined ? fmt(v!.number) : v!.text) ?? '')
+      out.push({ key: selKey(piece.id, r.key, c.id), text, box: { x: xs[ci], y, w: ws[ci], h: T.row }, page })
+    })
+  })
+  return out
+}
+
 // `onCard`: a card's row name clicked, beside its plane (D-211): the plane goes to the card. `onView`: a pane's own view
 // moved (beside a plane); without it, the focus's. `onCanvas`: live on the canvas itself, opened there (D-228): nothing
 // cut at its edge.
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCard?: (card: Card) => void; onView?: (v: PlaneCam) => void; onCanvas?: boolean }
+// `page`: this page rather than the one it's on here (the finder's preview, D-236).
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCard?: (card: Card) => void; onView?: (v: PlaneCam) => void; onCanvas?: boolean; page?: number }
 
-export function TableView({ piece, view, live, editor, onCard, onView, onCanvas = false }: Props) {
+export function TableView({ piece, view, live, editor, onCard, onView, onCanvas = false, page: pageAt }: Props) {
   const { wid, cards, cells } = useWs()
   const setup = tableOf(piece)
   const fieldText = useFieldText()
@@ -133,31 +185,10 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   const byKey = useMemo(() => new Map(mine.map((c) => [`${c.row}|${c.col}`, c])), [mine])
   const at = (row: string, col: string) => byKey.get(`${row}|${col}`)
   // The rows, in the source's order or sorted by a column.
-  const all = useMemo(() => {
-    const out = rowsOf(setup.rows, cards, !setup.manual)
-    const s = setup.sort
-    const col = s && (s.col === NAME_COL ? NAME_COL : setup.cols.find((c) => c.id === s.col))
-    if (!s || !col) return out
-    const key = (r: Row): string | number => {
-      if (col === NAME_COL) return r.name.toLowerCase()
-      if (col.field) return fieldText(r, col.field).toLowerCase()
-      const v = readOwn(col, byKey.get(`${r.key}|${col.id}`))
-      if (v.step) return (col.steps ?? DEFAULT_STEPS).indexOf(v.step)
-      if (v.number !== undefined) return v.number
-      if (v.checked) return 1
-      return v.text?.toLowerCase() ?? ''
-    }
-    const empty = (k: string | number) => k === ''
-    // Empty ones last, whichever way.
-    return [...out].sort((a, b) => {
-      const [x, y] = [key(a), key(b)]
-      if (empty(x) !== empty(y)) return empty(x) ? 1 : -1
-      const d = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))
-      return s.desc ? -d : d
-    })
-  }, [setup, cards, fieldText, byKey])
+  const all = useMemo(() => tableRows(setup, cards, fieldText, byKey), [setup, cards, fieldText, byKey])
   // The page shown (D-213); the rest wait on their pages.
-  const page = pagesOf(setup, all.length, useTableUi((s) => s.pages[piece.id]))
+  const myPage = useTableUi((s) => s.pages[piece.id])
+  const page = pagesOf(setup, all.length, pageAt ?? myPage)
   const rows = useMemo(() => all.slice(page.from, page.to), [all, page.from, page.to])
 
   const cols = setup.cols
@@ -177,6 +208,11 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   const [typing, setTyping] = useState<string | null>(null)
   const naming = useTableUi((s) => s.naming)
   const layer = useRef<HTMLDivElement>(null)
+
+  // Find (D-236): every head, row name and cell, on every page, in reading order; a match on another page turns to it.
+  const finding = useFind((s) => !s.open && s.target?.kind === 'lens' && s.target.space === piece.id) && live && !onCanvas
+  const findItems = useMemo(() => (finding ? tableFindItems(piece, cards, cells, fieldText) : null), [finding, piece, cards, cells, fieldText])
+  useFoundIn(live && !onCanvas ? piece.id : '', findItems, layer)
 
   const write = (row: string, col: string, value: Cell['value']) => void setCell(wid, piece.id, row, col, { value })
   const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(piece.id, rows[r].key, cols[c].id), labelSelected: null })
@@ -313,13 +349,14 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
             key={c.id}
             className={styles.head}
             data-own={c.field ? undefined : true}
+            data-find-box
             style={box(xs[i], 0, ws[i], T.head)}
             onPointerDown={own}
             onClick={() => sortBy(c.id)}
             tabIndex={live ? 0 : -1}
             title={live && editor ? 'sort by it' : undefined}
           >
-            <span className={styles.headName}>{colName(c)}</span>
+            <span className={styles.headName} data-find={`h|${c.id}`}>{colName(c)}</span>
             {c.kind === 'number' && c.unit && <span className={styles.unit}>{c.unit}</span>}
             <span className={styles.arrow}>{arrow(c.id)}</span>
           </button>
@@ -359,7 +396,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
               const text = fieldText(r, c.field)
               const tone = c.field === 'type' && r.card ? TYPE_ACCENT[r.card.type] : undefined
               return (
-                <button key={key} className={styles.cell} data-field={c.field} data-cell={key} data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
+                <button key={key} className={styles.cell} data-field={c.field} data-cell={key} data-find={key} data-find-box data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
                   tabIndex={live ? 0 : -1} onClick={live ? () => press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
                   {text ? <span className={styles.text}>{text}</span> : <span className={styles.unset}>·</span>}
                 </button>
@@ -513,7 +550,7 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
   const open = (editing || naming) && live && editor
   const tone = row.card ? TYPE_ACCENT[row.card.type] : undefined
   return (
-    <div className={styles.name} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }} data-card={row.card ? true : undefined} title={row.name || undefined} data-pick={onPick ? true : undefined} onPointerDown={onPress} onClick={live && !open ? onPick : undefined} onDoubleClick={live && editor ? () => setEditing(true) : undefined}>
+    <div className={styles.name} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }} data-find-box data-card={row.card ? true : undefined} title={row.name || undefined} data-pick={onPick ? true : undefined} onPointerDown={onPress} onClick={live && !open ? onPick : undefined} onDoubleClick={live && editor ? () => setEditing(true) : undefined}>
       {open ? (
         <input
           className={styles.nameField}
@@ -537,7 +574,7 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
           }}
         />
       ) : (
-        <span className={styles.nameText} data-unnamed={!row.name || undefined}>
+        <span className={styles.nameText} data-unnamed={!row.name || undefined} data-find={`n|${row.key}`}>
           {row.name || (row.card ? `untitled ${row.card.type}` : 'name')}
         </span>
       )}
@@ -604,6 +641,8 @@ function OwnCell({ id, col, cell, style, label, selected, live, typing, onPress,
       data-kind={col.kind}
       style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
       data-cell={id}
+      data-find={id}
+      data-find-box
       data-selected={selected || undefined}
       tabIndex={live ? 0 : -1}
       aria-label={`${label}: ${said}`}

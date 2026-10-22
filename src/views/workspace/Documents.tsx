@@ -18,6 +18,7 @@ import { ago } from '../../ui/ago'
 import { useWs } from './context'
 import { KindMark, lengthOf } from './DocContent'
 import { useOpenSize } from './shownBox'
+import { useFind, useFoundIn, type FindItem } from './find'
 import styles from './Documents.module.css'
 
 // Its parts in its own px: the table's head and rows, the shelf's sheets.
@@ -125,6 +126,29 @@ export function documentsBounds(piece: Pick<Piece, 'documents'>, count: number):
   return { x: 0, y: 0, w: TABLE_W, h: D.head + n * D.row }
 }
 
+// What find looks through in a documents list (D-236): each document's title, first words and who added it, on every
+// page, in the list's order; each with the box of its row or sheet and its page.
+export function documentsFindItems(piece: Pick<Piece, 'documents'>, docs: WithId<Doc>[], me: string | undefined, live: boolean): FindItem[] {
+  const setup = documentsOf(piece)
+  const all = listed(docs, setup, me)
+  const size = setup.pageSize
+  return all.flatMap((d, i): FindItem[] => {
+    const page = size ? Math.floor(i / size) : undefined
+    const k = i - (page ?? 0) * (size ?? 0)
+    const n = Math.min(size ?? all.length, all.length - (page ?? 0) * (size ?? 0))
+    const cols = shelfCols(n)
+    const box =
+      setup.view === 'shelf'
+        ? { x: D.pad + (k % cols) * (D.sheet.w + D.sheet.gap), y: D.pad + Math.floor(k / cols) * (D.sheet.h + D.sheet.gap), w: D.sheet.w, h: D.sheet.h }
+        : { x: 0, y: D.head + k * D.row, w: tableW(false, live), h: D.row }
+    return [
+      { key: `t|${d.id}`, text: d.title, box, page },
+      { key: `e|${d.id}`, text: d.excerpt ?? '', box, page },
+      { key: `b|${d.id}`, text: d.uid === me ? 'you' : d.name, box, page },
+    ]
+  })
+}
+
 type Props = {
   piece: WithId<Piece>
   view: PlaneCam
@@ -135,15 +159,18 @@ type Props = {
   // on a document calls `onOpen` (the list goes into focus) and opens it beside the list.
   onCanvas?: boolean
   onOpen?: () => void
+  // This page rather than the one it's on here (the finder's preview, D-236).
+  page?: number
 }
 
-export function DocumentsView({ piece, view, live, editor, onCanvas = false, onOpen }: Props) {
+export function DocumentsView({ piece, view, live, editor, onCanvas = false, onOpen, page: pageAt }: Props) {
   const { documents } = useWs()
   const { user } = useAuth()
   const me = user?.id
   const setup = documentsOf(piece)
   const all = useMemo(() => listed(documents, setup, me), [documents, setup, me])
-  const page = pagesOf(setup, all.length, useDocUi((s) => s.pages[piece.id]))
+  const myPage = useDocUi((s) => s.pages[piece.id])
+  const page = pagesOf(setup, all.length, pageAt ?? myPage)
   const shown = all.slice(page.from, page.to)
   const readers = useDocUi((s) => s.readers)
   const renaming = useDocUi((s) => s.renaming)
@@ -173,6 +200,11 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
     ro.observe(el)
     return () => ro.disconnect()
   }, [onCanvas, piece.id])
+  // Find (D-236): each document's title, first words and who added it, on every page, in the list's order.
+  const layer = useRef<HTMLDivElement>(null)
+  const finding = useFind((s) => !s.open && s.target?.kind === 'lens' && s.target.space === piece.id) && live && !onCanvas
+  const findItems = useMemo(() => (finding ? documentsFindItems(piece, documents, me, live) : null), [finding, piece, documents, me, live])
+  useFoundIn(live && !onCanvas ? piece.id : '', findItems, layer)
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }
   // A row's or sheet's grip drags it out onto the canvas (editors only): the canvas places it where it's let go.
   const grip = (d: WithId<Doc>) =>
@@ -184,7 +216,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
     ) : null
 
   return (
-    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
+    <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div ref={world} className={styles.world} style={style}>
         {all.length === 0 ? (
           <div className={styles.empty} style={{ width: TABLE_W }}>
@@ -198,6 +230,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                 key={d.id}
                 className={styles.sheet}
                 style={{ height: D.sheet.h }}
+                data-find-box
                 data-lit={readers.includes(d.id) || undefined}
                 data-target={live ? `doc:${d.id}` : undefined}
                 // A press here is the row's until it moves (the focus's pan would take the click, D-217).
@@ -210,11 +243,11 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                   <KindMark kind={d.kind} />
                   {!d.shared && <span className={styles.private}>◐</span>}
                 </span>
-                {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.sheetTitle}>{d.title}</span>}
+                {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.sheetTitle} data-find={`t|${d.id}`}>{d.title}</span>}
                 <SheetLines d={d} />
                 {actions(d)}
                 <span className={styles.sheetFoot}>
-                  <span>{d.uid === me ? 'you' : d.name}</span>
+                  <span data-find={`b|${d.id}`}>{d.uid === me ? 'you' : d.name}</span>
                   <span>{ago(d.createdAt)}</span>
                 </span>
                 {grip(d)}
@@ -233,6 +266,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                 key={d.id}
                 className={styles.row}
                 style={{ height: D.row }}
+                data-find-box
                 data-lit={readers.includes(d.id) || undefined}
                 data-target={live ? `doc:${d.id}` : undefined}
                 data-cell={live || undefined}
@@ -242,11 +276,11 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                   <KindMark kind={d.kind} />
                 </span>
                 <span className={styles.cell} style={{ width: COL_W.title }}>
-                  {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.title}>{d.title}</span>}
-                  {d.excerpt && <span className={styles.excerpt}>{d.excerpt}</span>}
+                  {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.title} data-find={`t|${d.id}`}>{d.title}</span>}
+                  {d.excerpt && <span className={styles.excerpt} data-find={`e|${d.id}`}>{d.excerpt}</span>}
                 </span>
                 <span className={styles.cell} style={{ width: COL_W.by }}>
-                  <span className={styles.by}>{d.uid === me ? 'you' : d.name}</span>
+                  <span className={styles.by} data-find={`b|${d.id}`}>{d.uid === me ? 'you' : d.name}</span>
                   {!d.shared && (
                     <span className={styles.private} title="only you see this until you share it">
                       ◐
@@ -349,8 +383,8 @@ function RenameField({ d }: { d: WithId<Doc> }) {
 }
 
 // A sheet's lines: the first words of its text, a grey bar a line when there are none.
-function SheetLines({ d }: { d: Doc }) {
-  if (d.excerpt) return <span className={styles.sheetText}>{d.excerpt}</span>
+function SheetLines({ d }: { d: WithId<Doc> }) {
+  if (d.excerpt) return <span className={styles.sheetText} data-find={`e|${d.id}`}>{d.excerpt}</span>
   return (
     <span className={styles.bars} aria-hidden>
       {[90, 100, 70, 85, 60].map((w, i) => (

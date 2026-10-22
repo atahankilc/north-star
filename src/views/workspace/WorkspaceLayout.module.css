@@ -146,3 +146,8 @@
 .fit:focus-visible {
   color: var(--fg-strong);
 }
+
+/* A switch that's on: find open (D-236). */
+.fit[data-on='true'] {
+  color: var(--accent-cyan);
+}
