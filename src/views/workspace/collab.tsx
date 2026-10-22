@@ -5,7 +5,7 @@
 // their cursor stays in view at your own zoom, gliding back to the middle when it leaves it, and what they select is
 // selected for you; your own pan, Escape, or a click on their square stops it (zooming doesn't, D-193).
 import { useEffect, useRef, type RefObject } from 'react'
-import { cursorAt, hasSelected, onCursorMove, setCursor, setPresencePlane, setPresenceSelection, usePresence, type Peer } from '../../data/presence'
+import { cursorAt, hasSelected, onCursorMove, selectionOf, setCursor, setPresencePlane, setPresenceSelection, usePresence, type Peer } from '../../data/presence'
 import { camOf, setCam, useCanvasView } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useThemeAccent } from '../../state/theme'
@@ -22,10 +22,13 @@ export const spaceOf = (p: Pick<Peer, 'plane'>) => p.plane ?? CANVAS
 type ToScreen = (x: number, y: number) => [number, number] | null
 
 // What this tab says about itself: its space and what it has selected.
+// Several selected on a plane (D-227, D-229): the first is `sel`, the rest go in `more` (D-124), so others see a frame
+// round each of them (D-230).
 export function usePresenceReport(space: string) {
-  const sel = useCanvasView((s) => s.cardSelected ?? s.labelSelected ?? s.selected)
+  const multi = useCanvasView((s) => s.cardMulti)
+  const sel = useCanvasView((s) => s.cardSelected ?? s.labelSelected ?? s.selected) ?? multi[0] ?? null
   useEffect(() => setPresencePlane(space === CANVAS ? undefined : space), [space])
-  useEffect(() => setPresenceSelection(sel), [sel])
+  useEffect(() => setPresenceSelection(sel, multi), [sel, multi])
   useEffect(() => () => setCursor(null), [])
 }
 
@@ -138,15 +141,18 @@ export function Follow({ focusId, focusTo }: FollowProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theirSpace, focusId, leaving])
 
-  // Their selection becomes yours (no panel, D-187).
+  // Their selection becomes yours, several too (D-230).
   const sel = leader?.sel
+  const more = leader?.more
   useEffect(() => {
     if (leader === null) return
-    if (!sel) return useCanvasView.setState({ cardSelected: null, labelSelected: null })
-    if (cards.some((c) => c.id === sel)) useCanvasView.setState({ cardSelected: sel, labelSelected: null })
-    else if (labels.some((l) => l.id === sel)) useCanvasView.setState({ labelSelected: sel, cardSelected: null })
+    if (!sel) return useCanvasView.setState({ cardSelected: null, labelSelected: null, cardMulti: [] })
+    const all = selectionOf(leader).filter((id) => cards.some((c) => c.id === id) || labels.some((l) => l.id === id))
+    if (all.length > 1) useCanvasView.setState({ cardMulti: all, cardSelected: null, labelSelected: null })
+    else if (cards.some((c) => c.id === sel)) useCanvasView.setState({ cardSelected: sel, labelSelected: null, cardMulti: [] })
+    else if (labels.some((l) => l.id === sel)) useCanvasView.setState({ labelSelected: sel, cardSelected: null, cardMulti: [] })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sel])
+  }, [sel, more])
 
   // Their cursor kept in view, at your zoom (D-193): while it's in the middle of your screen nothing moves; once it
   // leaves that middle, the view glides (eased by time, not by frame) until it's centred again, like following in Figma.

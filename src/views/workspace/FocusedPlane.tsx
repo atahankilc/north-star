@@ -100,14 +100,13 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     if ((e.button !== 0 && e.button !== 1) || !start || focusLeaving) return
     // A press on a matrix's cell (D-217) is the cell's until it moves 5 px: a click still selects it, a drag pans.
     const onCell = !!(e.target as HTMLElement).closest('[data-cell]')
-    // A press on the plane itself lets go of a card (D-187).
-    if (!onCell) useCanvasView.setState({ cardSelected: null, cardMulti: [], labelSelected: null, linkSelected: null })
     stopGlide()
     stopFollowing()
     const el = e.currentTarget
     const [sx, sy] = [e.clientX, e.clientY]
     const id = e.pointerId
     let panning = false
+    let moved = false
     const begin = () => {
       panning = true
       el.setPointerCapture(id)
@@ -115,13 +114,17 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     }
     if (!onCell) begin()
     const move = (ev: PointerEvent) => {
+      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) >= CELL_DRAG_PX) moved = true
       if (!panning) {
-        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < CELL_DRAG_PX) return
+        if (!moved) return
         begin()
       }
       useCanvasView.setState({ planeCam: { ...start, ox: start.ox + ev.clientX - sx, oy: start.oy + ev.clientY - sy } })
     }
     const up = () => {
+      // A click on the plane itself lets go of what's selected (D-187); a pan doesn't, so a panel stays open while you
+      // look round the plane (D-230).
+      if (!moved && !onCell) useCanvasView.setState({ cardSelected: null, cardMulti: [], labelSelected: null, linkSelected: null })
       delete el.dataset.panning
       el.removeEventListener('pointermove', move)
       el.removeEventListener('pointerup', up)

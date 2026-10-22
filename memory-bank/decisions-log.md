@@ -3816,3 +3816,16 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): an alt box over two cards, a heading and a paragraph selected four; dragged from the
   heading, all moved +100, +100 and the paragraph read the same place at 0, 30, 80, 150, 300, 600 and 1200 ms after
   letting go; the text bars hidden with several selected; no console errors; build.
+
+### D-230 · 2026-10-22 · Accepted (others see a selection of several; a right panel stays open through a pan)
+- *Decision:* a selection of several on a plane (D-227, D-229) goes out in presence as before for one (`sel`, the first)
+  plus `more` (the rest, D-124's field, no rules change): others in the space see a frame in your colour with your name
+  round each card and text you have selected, and someone following you takes the whole selection. The user asked:
+  "collaborative çalışırken de insanlar görecek mi multi selecti", then "evet yap".
+- *And:* a press on a focused plane lets go of what's selected only as a click (let go within 5 px); a pan (a drag on
+  the plane) no longer does, so a card's right panel stays open while you look round the plane. It closes on another
+  card, Escape, `[×]` or a click on the plane. The user: "side panel açık kalması lazım ben başka carda, esc'ye ya da
+  canvasa tıklamadığım sürece. Şu an drag yaptığımda direkt kapanıyor".
+- *Verified* headless (emulators, Alice and Bob in two browser contexts, Bob invited and accepted): Alice selected two
+  cards and a heading, Bob saw Alice's frame and name round all three and not round the fourth; with a card's panel
+  open a pan kept it open and a click on the plane closed it; no console errors; build.
