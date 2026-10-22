@@ -1,10 +1,10 @@
 // A document on its own (D-232): a piece on the canvas showing one document's content directly, in a window like a
 // table's (D-208): its title and text at reading size from the top-left, the text as wide as the window, cut at its
 // bottom with a fade. By its size on the screen, as cards are (D-153): the whole of it, then its title alone, then grey
-// bars, and the text isn't even read from the database until it's near enough to read. In focus it's live: the wheel
-// scrolls it (ctrl or a pinch zooms), links work, an outline of its headings on the left takes you to each.
+// bars, and the text isn't even read from the database until it's near enough to read. Its focus is the same page as
+// a document opened beside the documents list (DocPane, DocFocus): it scrolls as a page, its dock, "on this page".
 //
-// Also here: the document open beside the documents list in its focus (DocReader), and the question asked before a
+// Also here: the documents open beside the documents list in its focus (DocReaders), and the question asked before a
 // private document is put on the canvas, where everyone sees it (DocPlace).
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
@@ -13,7 +13,7 @@ import type { Piece } from '../../data/model'
 import { downloadDocument, shareDocument, useDocBody } from '../../data/documents'
 import { placeDocument, pieceRef } from '../../data/pieces'
 import { useAuth } from '../../data/auth'
-import { canvasCenter, glide, stopGlide, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
+import { canvasCenter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useWs } from './context'
 import { DocContent, KindMark } from './DocContent'
@@ -21,7 +21,7 @@ import { closeDoc, documentsBounds, documentsOf, listed, readerLeft, useDocUi } 
 import { DockAction, FocusDock } from './FocusDock'
 import { isOpen, useOpenSize } from './shownBox'
 import { useStill } from './still'
-import { docScope, docScrolledTo, scrollTo, useLandOnPage } from './find'
+import { docScope, scrollTo, useLandOnPage } from './find'
 import styles from './DocumentPiece.module.css'
 import beside from './Beside.module.css'
 
@@ -44,21 +44,11 @@ export function documentHome(piece: WithId<Piece>, screenW: number): PlaneCam {
 const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2]
 const stepZoom = (z: number, dir: 1 | -1) => (dir > 0 ? (ZOOMS.find((s) => s > z + 0.001) ?? ZOOMS[ZOOMS.length - 1]) : ([...ZOOMS].reverse().find((s) => s < z - 0.001) ?? ZOOMS[0]))
 
-// `[−] 100% [+]`: a click on the number goes back to 100 %. On a document's own focus it zooms its view round the
-// middle of the screen; beside the list (`reader`: that document's id), the page's text.
-export function DocZoom({ reader }: { reader?: string }) {
-  const z = useCanvasView((s) => (reader ? 1 : (s.planeCam?.zoom ?? 1)))
-  const rz = useDocUi((s) => (reader ? (s.readerZooms[reader] ?? 1) : 1))
-  const zoom = reader ? rz : z
-  const set = (to: number) => {
-    if (reader) return setReaderZoom(reader, to)
-    const { planeCam: c, size } = useCanvasView.getState()
-    if (!c) return
-    const [px, py] = [size.w / 2, size.h / 2]
-    const k = to / c.zoom
-    stopGlide()
-    useCanvasView.setState({ planeCam: { zoom: to, ox: px - (px - c.ox) * k, oy: py - (py - c.oy) * k } })
-  }
+// `[−] 100% [+]` in a document page's dock (`reader`: that document's id): its text's zoom; a click on the number goes
+// back to 100 %.
+function DocZoom({ reader }: { reader: string }) {
+  const zoom = useDocUi((s) => s.readerZooms[reader] ?? 1)
+  const set = (to: number) => setReaderZoom(reader, to)
   return (
     <span className={styles.zoom} role="group" aria-label="Zoom">
       <DockAction label="−" title="zoom out" onClick={() => set(stepZoom(zoom, -1))} />
@@ -101,19 +91,6 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
   const clip = useRef<HTMLDivElement>(null)
   const [cut, setCut] = useState(false)
   const width = docWidth(piece.w)
-  // The finder's pick in its text (D-236), in focus: a match out of sight scrolls the view to it.
-  const arrived = useCanvasView((s) => s.focusArrived)
-  useLandOnPage(live && !onCanvas ? piece.id : '', content, arrived, (r) => {
-    const c = useCanvasView.getState().planeCam
-    const box = layer.current?.getBoundingClientRect()
-    if (!c || !box) return
-    const oy = docScrolledTo(c.oy, r.top - box.top, r.bottom - box.top, box.height)
-    if (oy === c.oy) return
-    stopGlide()
-    if (isReducedMotion()) useCanvasView.setState({ planeCam: { ...c, oy } })
-    else glide(c, { ...c, oy }, 320, (v) => useCanvasView.setState({ planeCam: v }))
-  })
-
   // Its height, for fit and the scroll's ends.
   useLayoutEffect(() => {
     const el = content.current
@@ -132,23 +109,6 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
     // Again once the document and its text are in: the piece can come before them (on a slow line the first look finds
     // nothing to measure, and its box stayed the window's, the text running out of it).
   }, [piece.id, level, onCanvas, !!d, !!body.data])
-
-  // In focus the wheel scrolls it, kept from the plane's zoom (ctrl or a pinch still zooms).
-  useEffect(() => {
-    const el = layer.current
-    if (!el || !live || onCanvas) return
-    const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey) return
-      e.stopPropagation()
-      e.preventDefault()
-      const c = useCanvasView.getState().planeCam
-      if (!c) return
-      stopGlide()
-      useCanvasView.setState({ planeCam: scrolled(c, e.deltaX, e.deltaY, piece.id) })
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [live, piece.id, onCanvas])
 
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }
   return (
@@ -185,59 +145,7 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
           </div>
         )}
       </div>
-      {live && !onCanvas && d && level === 'full' && <Outline pieceId={piece.id} content={content} ready={!!body.data} />}
     </div>
-  )
-}
-
-// The view scrolled by the wheel, kept between its first line near the top and its last near the bottom.
-function scrolled(c: PlaneCam, dx: number, dy: number, id: string): PlaneCam {
-  const h = (useHeights.getState()[id] ?? 0) * c.zoom
-  const screen = useCanvasView.getState().size.h
-  const top = 96
-  const lowest = Math.min(top, screen - 120 - h)
-  return { ...c, ox: c.ox - dx, oy: Math.max(lowest, Math.min(top, c.oy - dy)) }
-}
-
-type Mark = { text: string; y: number; level: number }
-
-// Its headings on the left of the screen in focus (D-232): the one you're reading lit; a click glides there.
-// `ready`: its text is in (found again once it loads: the height may be the same as the canvas copy's).
-function Outline({ pieceId, content, ready }: { pieceId: string; content: React.RefObject<HTMLDivElement | null>; ready: boolean }) {
-  const [marks, setMarks] = useState<Mark[]>([])
-  const cam = useCanvasView((s) => s.planeCam)
-  const height = useHeights((s) => s[pieceId])
-  useEffect(() => {
-    const el = content.current
-    if (!el) return
-    const found = [...el.querySelectorAll<HTMLElement>('[data-heading]')]
-      .filter((h) => h.dataset.heading !== 'title' && /^H[1-3]$/.test(h.tagName))
-      .map((h) => ({ text: (h.textContent ?? '').trim().replace(/^(\d{2})(?=\S)/, '$1 '), y: h.offsetTop, level: Number(h.tagName[1]) }))
-    setMarks(found.slice(0, 60))
-  }, [content, height, ready])
-  if (marks.length < 2 || !cam) return null
-  const at = (m: Mark) => m.y * cam.zoom + cam.oy
-  // The one being read: the last whose top has passed near the top of the screen; the first before any has.
-  const reading = marks.reduce((cur, m, i) => (at(m) <= 140 ? i : cur), 0)
-  const go = (m: Mark) => {
-    const c = useCanvasView.getState().planeCam
-    if (!c) return
-    stopGlide()
-    const to = { ...c, oy: 96 - m.y * c.zoom }
-    if (isReducedMotion()) useCanvasView.setState({ planeCam: to })
-    else glide(c, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
-  }
-  const top = Math.min(...marks.map((m) => m.level))
-  return (
-    // As beside the list ("on this page", on the right): one look for both (D-232).
-    <nav className={styles.focusOutline} aria-label="On this page" onPointerDown={(e) => e.stopPropagation()}>
-      <span className={styles.outlineHead}>on this page</span>
-      {marks.map((m, i) => (
-        <button key={i} className={styles.outlineItem} data-on={i === reading || undefined} style={{ paddingLeft: `${(m.level - top) * 12}px` }} title={m.text} onClick={() => go(m)}>
-          {m.text}
-        </button>
-      ))}
-    </nav>
   )
 }
 
@@ -337,7 +245,11 @@ const NARROW = 560
 // How narrow one may be dragged.
 const PANE_MIN = 280
 
-function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piece>; box: Bounds; last: boolean; first: boolean }) {
+// `focus`: the page is a document piece's own focus (D-232), the whole screen right of the side nav: the same page, dock
+// and "on this page" as beside the list (one look for both), its close the focus's `[unfocus] esc`, nothing to place.
+type PaneProps = { id: string; box: Bounds; last: boolean; first: boolean } & ({ list: WithId<Piece>; focus?: undefined } | { list?: undefined; focus: { piece: WithId<Piece>; onUnfocus: () => void } })
+
+function DocPane({ id, list, box, last, first, focus }: PaneProps) {
   const { wid, documents, workspace } = useWs()
   const { user } = useAuth()
   const d = documents.find((x) => x.id === id)!
@@ -347,13 +259,13 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
   const el = useRef<HTMLDivElement>(null)
   // The finder's pick in it (D-236): its page scrolls to the match.
   const column = useRef<HTMLDivElement>(null)
-  useLandOnPage(docScope(id), column, true, (r) => scrollTo(el.current, r))
+  useLandOnPage(focus ? focus.piece.id : docScope(id), column, true, (r) => scrollTo(el.current, r))
   const editor = !!user && ['owner', 'editor'].includes(workspace.roles[user.id] ?? '')
   const mine = d.uid === user?.id
   const mayDelete = mine || (d.shared && workspace.roles[user?.id ?? ''] === 'owner')
   const narrow = box.w < NARROW
   // Escape with the list put away (D-232): back to the list when it's framed, to the canvas when it's unframed.
-  const framed = !isOpen(list)
+  const framed = !!list && !isOpen(list)
 
   // The wheel scrolls it as a page, kept from the list's view; ctrl (or a pinch) zooms its text.
   useEffect(() => {
@@ -371,7 +283,7 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
   }, [id])
 
   return (
-    <div className={`${beside.pane} ${styles.reader}`} data-alone={(hidden && first) || undefined} style={{ left: box.x, top: 0, width: box.w, height: box.h }} onPointerDown={(e) => e.stopPropagation()} aria-label={`${d.title}, beside the list`}>
+    <div className={`${beside.pane} ${styles.reader}`} data-alone={((hidden || focus) && first) || undefined} style={{ left: box.x, top: 0, width: box.w, height: box.h }} onPointerDown={(e) => e.stopPropagation()} aria-label={focus ? d.title : `${d.title}, beside the list`}>
       <div ref={el} className={styles.readerScroll} data-scrolls>
         <div className={styles.readerBody}>
           <div ref={column} className={styles.readerColumn} style={{ zoom }}>
@@ -381,20 +293,43 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
         </div>
       </div>
       {/* Its title is on the page already: the dock only says what it is, so it fits a narrow part. */}
-      <FocusDock label="document beside" name={narrow ? undefined : <span className={beside.kind}>document</span>}>
+      <FocusDock label={focus ? 'Focus' : 'document beside'} name={narrow ? undefined : <span className={beside.kind}>document</span>}>
         {/* The list put away: its button here, in the first one's dock (D-232). */}
-        {hidden && first && <DockAction label={narrow ? '≡' : '≡ list'} keyHint={framed && last && !narrow ? 'esc' : undefined} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
+        {!focus && hidden && first && <DockAction label={narrow ? '≡' : '≡ list'} keyHint={framed && last && !narrow ? 'esc' : undefined} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
         {mine && <DockAction label={narrow ? '◐' : d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => void shareDocument(wid, d.id, !d.shared)} />}
-        {editor && <DockAction label={narrow ? '↗' : 'place ↗'} title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
+        {editor && list && <DockAction label={narrow ? '↗' : 'place ↗'} title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
         <DockAction label={narrow ? '↓' : 'download'} title="download: save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
         {mayDelete && <DockAction label={narrow ? '⌫' : 'delete'} title="delete the document (asks first)" onClick={() => useDocUi.setState({ deleting: d.id })} />}
         <DocZoom reader={id} />
         {/* With the list put away Escape goes straight to the canvas: no `esc` on a close then. */}
-        <DockAction label={narrow ? '×' : 'close'} main keyHint={last && (!hidden || !framed) && !narrow ? 'esc' : undefined} title="close it" onClick={() => closeDoc(id)} />
+        {focus ? (
+          <DockAction label="unfocus" main keyHint="esc" title="back to the canvas" onClick={focus.onUnfocus} />
+        ) : (
+          <DockAction label={narrow ? '×' : 'close'} main keyHint={last && (!hidden || !framed) && !narrow ? 'esc' : undefined} title="close it" onClick={() => closeDoc(id)} />
+        )}
       </FocusDock>
     </div>
   )
 }
+
+// A document piece's focus (D-232): its document as beside the list, the whole screen right of the side nav. Once the
+// focus has arrived (the page builds cell by cell behind it till then).
+export function DocFocus({ piece, onUnfocus }: { piece: WithId<Piece>; onUnfocus: () => void }) {
+  const { documents } = useWs()
+  const size = useCanvasView((s) => s.size)
+  const arrived = useCanvasView((s) => s.focusArrived && !s.focusLeaving)
+  const d = documents.find((x) => x.id === piece.docId)
+  if (!arrived) return null
+  if (!d)
+    return (
+      <p className={styles.gone} style={{ position: 'absolute', left: 96, top: 96 }}>
+        This document is gone, or only its author sees it now.
+      </p>
+    )
+  return <DocPane id={d.id} focus={{ piece, onUnfocus }} box={{ x: SIDE_GAP, y: 0, w: size.w - SIDE_GAP, h: size.h }} first last />
+}
+// Right of the side nav, as with the list put away.
+const SIDE_GAP = 56
 
 const setReaderZoom = (id: string, z: number) => useDocUi.setState((s) => ({ readerZooms: { ...s.readerZooms, [id]: Math.min(2, Math.max(0.5, z)) } }))
 

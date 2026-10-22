@@ -3956,6 +3956,10 @@ categories shown like B, not in a card, and the features under them not indented
   reproduced headless (software drawing); the cut keeps the layer a size the GPU takes. Seen in the user's own Chrome
   afterwards: panned eight screens down, no black. Also there: an unframed document's box stayed its window's (the text
   ran out of its frame) when the piece came before its document and text, so its measuring now runs again once they're in.
+- *Then* (the user: "canvasa çıkarılan documente tıklanınca açılanla documents listesinden açılan documentın UI'ı" the
+  same): a document piece's focus is the very page a document beside the list is (DocPane in focus mode, DocFocus):
+  the whole screen right of the side nav, scrolling as a page, "on this page", its dock `DOCUMENT | [share] [download]
+  [delete] [−] 100% [+] [unfocus] esc`; the view-based focus (wheel scrolling the view, its own outline) is gone.
 - *Then* (the user: "frame iken upload yada table shelf seçimi sunma. Onu focus da ayarlanabilir yap"): framed, the
   documents list's console is only `[focus] [edit]`; upload, table/shelf, kinds and pages are in its focus dock, and in
   its console once unframed.

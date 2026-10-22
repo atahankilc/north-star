@@ -78,9 +78,9 @@ of its own). By size on the screen: full → kind + title alone → grey bars; t
 - **Private one: asked first.** The piece waits dashed where it was let go, a yellow-taped question inside it:
   `Show "…" to everyone?` with who will see it; `[cancel] esc`, `[share and place] ↵`. Sharing and placing are one undo
   step. A shared one is placed at once.
-- In focus: it arrives at 100 % with its top near the top; the wheel scrolls it (ctrl/pinch zooms), links work, an
-  **on this page** on the right, as beside the list (the one being read lit cyan, a click glides there). Dock:
-  `[share]/[unshare]` (author), `[download]`, `[−] 100% [+]`, `[unfocus]`.
+- In focus: the same page as a document beside the list (one look for both): the whole screen right of the side nav,
+  it scrolls as a page, links work, "on this page" on the right (the one being read lit cyan, a click scrolls there),
+  its dock `DOCUMENT | [share] [download] [delete] [−] 100% [+] [unfocus] esc` (no place: it's on the canvas already).
 - Deleting the piece leaves the document in its list.
 
 ## Unframed (D-234)

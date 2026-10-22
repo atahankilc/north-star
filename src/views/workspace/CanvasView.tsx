@@ -48,7 +48,7 @@ import { Beside, type EscNext } from './Beside'
 import { isOpen, OPEN_FOOT, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
 import { deleteDocument, downloadDocument, moveReports, shareDocument, type Doc } from '../../data/documents'
 import { closeDocs, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
-import { DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, DocZoom, membersOf, piecesOfDoc } from './DocumentPiece'
+import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
 import styles from './CanvasView.module.css'
 
@@ -829,7 +829,8 @@ export function CanvasView() {
           ) : focusedDocuments ? (
             <FocusedDocuments piece={focused} editor={editor} />
           ) : focusedDocument ? (
-            <FocusedDocument piece={focused} />
+            // The same page as a document beside the list (D-232), its own dock with `[unfocus]`.
+            <DocFocus piece={focused} onUnfocus={unfocus} />
           ) : (
             <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
           )}
@@ -842,7 +843,8 @@ export function CanvasView() {
           {focusedDocuments && focusArrived && !focusLeaving && <DocReaders list={focused} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {/* With the list put away its dock goes too; unfocus is in the bar top-left (DocReaders). */}
-          {focusArrived && !focusLeaving && !listHidden && (
+          {/* A document's focus has the page's own dock (DocFocus). */}
+          {focusArrived && !focusLeaving && !listHidden && !focusedDocument && (
             <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length ? (size.w * split) / 2 : undefined}>
               {focusedMatrix && editor && (
                 <DockAction label="setup" pressed={!!matrixSetup} keyHint={escOn('setup')} title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
@@ -855,8 +857,6 @@ export function CanvasView() {
               {/* Several documents side by side (D-232): a click opens one next to the others. */}
               {focusedDocuments && <DockAction label="⧉ side by side" pressed={sideBySide} title={sideBySide ? 'a click opens a document in place of the one open' : 'a click opens a document next to the ones open'} onClick={() => useDocUi.setState((s) => ({ sideBySide: !s.sideBySide }))} />}
               {focusedDocuments && readerOpen && <DockAction label="hide list" title="put the list away: the documents take the whole screen" onClick={() => useDocUi.setState({ listHidden: true })} />}
-              {focusedDocument && <DocumentDockTools piece={focused} />}
-              {focusedDocument && <DocZoom />}
               {/* What the plane shows (D-233) and what's stuck to it (D-210), each a strip over the dock (D-235): a stuck
                   piece's button opens it beside the plane, or closes it (D-211). Its snapping and guides and what it shows, in the view menu (D-231). */}
               {!isBare(focused) && (
@@ -1062,25 +1062,6 @@ function FocusedDocuments({ piece, editor }: { piece: WithId<Piece>; editor: boo
   return view ? <DocumentsView piece={piece} view={view} live editor={editor} /> : null
 }
 
-// A document in focus, live (D-232): the wheel scrolls it, its outline on the left.
-function FocusedDocument({ piece }: { piece: WithId<Piece> }) {
-  const view = useCanvasView((s) => s.planeCam)
-  return view ? <DocumentPieceView piece={piece} view={view} live /> : null
-}
-
-// A document's focus dock: share (its author), download.
-function DocumentDockTools({ piece }: { piece: WithId<Piece> }) {
-  const { wid, documents } = useWs()
-  const { user } = useAuth()
-  const d = documents.find((x) => x.id === piece.docId)
-  if (!d) return null
-  return (
-    <>
-      {d.uid === user?.id && <DockAction label={d.shared ? 'unshare' : 'share'} title={d.shared ? 'only you see it again (the canvas then shows it to no one else)' : 'everyone in the workspace sees it'} onClick={() => void shareDocument(wid, d.id, !d.shared)} />}
-      <DockAction label="download" title="save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
-    </>
-  )
-}
 
 // A document dragged out of its list (D-232): its name under the pointer, framed like the piece it'll become.
 function DragGhost({ doc, at, root }: { doc?: WithId<Doc>; at: { x: number; y: number }; root: React.RefObject<HTMLDivElement | null> }) {
