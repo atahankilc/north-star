@@ -4,7 +4,22 @@
 // its rule. Everything is edited in place and undoable; viewers only read. A card named in a row goes to it.
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { addCard, CARD, deleteCard, retitleCard, TITLE_MAX, updateCard, VALIDATIONS, type Card, type CardType } from '../../data/cards'
+import {
+  addCard,
+  CARD,
+  deleteCard,
+  FEATURE_EFFORTS,
+  FEATURE_IMPACTS,
+  FEATURE_PRIORITIES,
+  FEATURE_STATUSES,
+  retitleCard,
+  TITLE_MAX,
+  updateCard,
+  VALIDATIONS,
+  type Card,
+  type CardType,
+} from '../../data/cards'
+import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, MatchedBy, Parent, Parts, RestsOn } from './CardPanelKinds'
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../data/edges'
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../data/evidence'
 import { glide, useCanvasView } from '../../state/canvasView'
@@ -25,7 +40,7 @@ const TONE: Record<CardType, string> = {
   feature: 'var(--accent-cyan)',
 }
 
-const PLACEHOLDER: Record<CardType, string> = {
+export const PLACEHOLDER: Record<CardType, string> = {
   customer: 'Who are they?',
   problem: 'What hurts?',
   competitor: 'Who else does it?',
@@ -41,7 +56,7 @@ const NOTES_HINT: Record<CardType, string> = {
   feature: 'What does it do, and for whom?',
 }
 
-const KIND_LABEL: Record<string, string> = {
+export const KIND_LABEL: Record<string, string> = {
   relates: 'relates',
   solves: 'solves',
   'part-of': 'part of',
@@ -118,7 +133,7 @@ export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean })
 
 // What the panel shows of a card: its quick facts, then its type's sections.
 function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: boolean }) {
-  const { evidence, competitorFeatures, edges } = useWs()
+  const { evidence, competitorFeatures, comparisons, edges } = useWs()
   const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }).get(card.id), [cards, evidence, competitorFeatures, edges, card.id])
   const under = [facts?.head, facts?.meta].filter(Boolean).join(' · ')
   const mine = useMemo(() => edges.filter((e) => e.fromId === card.id || e.toId === card.id), [edges, card.id])
@@ -172,13 +187,31 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
     )
   }
   if (card.type === 'competitor') {
+    sections.push(<CompetitorProfile key="profile" n={next()} {...p} />, <CompetitorFeatures key="cfeatures" n={next()} {...p} />)
     sections.push(
       <LinkSection key="competes" n={next()} name="competes for" {...p} links={take((e) => e.kind === 'competes-with')} add={{ label: 'link', types: ['problem', 'idea'], kind: 'competes-with', from: 'me' }} />,
     )
   }
   if (card.type === 'feature') {
+    // Its parent (`part of` from it) has its own line under the header; its parts, the ideas it rests on.
+    take((e) => e.kind === 'part-of')
     sections.push(
-      <LinkSection key="for" n={next()} name="for" {...p} links={take((e) => e.kind === FOR && e.fromId === card.id)} add={{ label: 'customer', types: ['customer'], kind: FOR, from: 'me' }} />,
+      <PlanSection key="plan" n={next()} {...p} />,
+      <Parts key="parts" n={next()} {...p} />,
+      <Criteria key="criteria" n={next()} {...p} />,
+      <RestsOn key="rests" n={next()} {...p} />,
+    )
+    take((e) => e.kind !== FOR && (e.fromType === 'idea' || e.toType === 'idea'))
+    sections.push(
+      <LinkSection
+        key="for"
+        n={next()}
+        name="for · matched by"
+        {...p}
+        links={take((e) => e.kind === FOR && e.fromId === card.id)}
+        add={{ label: 'customer', types: ['customer'], kind: FOR, from: 'me' }}
+        extra={hasMatches(card, comparisons) ? <MatchedBy card={card} cards={cards} editor={editor} /> : undefined}
+      />,
     )
   }
   const rest = take(() => true)
@@ -190,8 +223,30 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
   return (
     <>
       {under && <div className={styles.under}>{under}</div>}
+      {card.type === 'feature' && <Parent card={card} cards={cards} editor={editor} />}
       {sections}
     </>
+  )
+}
+
+// A feature's plan (D-138): priority, status, impact, effort.
+function PlanSection({ n, card, editor }: P) {
+  const { wid } = useWs()
+  const row = (label: string, field: 'priority' | 'status' | 'impact' | 'effort', values: string[]) => (
+    <>
+      <span className={styles.k}>{label}</span>
+      <Pills values={values} value={card[field]} editor={editor} label={label} onPick={(v) => void updateCard(wid, card, { [field]: v }, `${label} of`)} />
+    </>
+  )
+  return (
+    <PanelSection n={n} name="plan">
+      <div className={styles.plan}>
+        {row('priority', 'priority', FEATURE_PRIORITIES)}
+        {row('status', 'status', FEATURE_STATUSES)}
+        {row('impact', 'impact', FEATURE_IMPACTS)}
+        {row('effort', 'effort', FEATURE_EFFORTS)}
+      </div>
+    </PanelSection>
   )
 }
 
@@ -239,7 +294,7 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
   )
 }
 
-type P = { n: number; card: Card; cards: Card[]; editor: boolean }
+export type P = { n: number; card: Card; cards: Card[]; editor: boolean }
 
 // `[pills]`: a click picks, a click on the picked one clears.
 export function Pills<T extends string>({ values, value, editor, onPick, label }: { values: readonly T[]; value?: T; editor: boolean; onPick: (v: T | undefined) => void; label: string }) {
@@ -378,11 +433,11 @@ function EvidenceForm({ start, onDone }: { start?: Evidence; onDone: (fields: Ev
 
 // What a section's add links: cards of these types (null: any), with this kind (null: the old default), from this card
 // or to it.
-type LinkAdd = { label: string; types: CardType[] | null; kind: EdgeKind | null; from: 'me' | 'other' }
+export type LinkAdd = { label: string; types: CardType[] | null; kind: EdgeKind | null; from: 'me' | 'other' }
 
 // Links as rows like the old panel's (D-154): the kind's colour, its name with an arrow (→ from this card, ← to it),
 // the other card, its type. A row goes to that card; `×` unlinks.
-function LinkSection({ n, name, card, cards, editor, links, add, count }: P & { name: string; links: Edge[]; add: LinkAdd; count?: boolean }) {
+export function LinkSection({ n, name, card, cards, editor, links, add, count, extra }: P & { name: string; links: Edge[]; add: LinkAdd; count?: boolean; extra?: ReactNode }) {
   const { wid } = useWs()
   const [picking, setPicking] = useState(false)
   const byId = new Map(cards.map((c) => [c.id, c]))
@@ -394,7 +449,7 @@ function LinkSection({ n, name, card, cards, editor, links, add, count }: P & { 
     if (!add.kind) useCanvasView.setState({ linkSelected: id, linkLabelling: true, cardSelected: null })
   }
   return (
-    <PanelSection n={n} name={name} count={count && links.length ? links.length : undefined} add={editor ? { label: add.label, onClick: () => setPicking(true) } : undefined} empty={!links.length && !picking}>
+    <PanelSection n={n} name={name} count={count && links.length ? links.length : undefined} add={editor ? { label: add.label, onClick: () => setPicking(true) } : undefined} empty={!links.length && !picking && !extra}>
       {links.map((e) => {
         const other = byId.get(e.fromId === card.id ? e.toId : e.fromId)!
         const out = e.fromId === card.id
@@ -415,6 +470,7 @@ function LinkSection({ n, name, card, cards, editor, links, add, count }: P & { 
           </div>
         )
       })}
+      {extra}
       {picking && (
         <CardPicker
           card={card}
@@ -431,7 +487,7 @@ function LinkSection({ n, name, card, cards, editor, links, add, count }: P & { 
 
 // Choosing a card on this plane by typing part of its title; with types given, a new card of the first type can be
 // made from what was typed (placed under this one, clear of the panel on its right).
-function CardPicker({ card, cards, types, exclude, onPick, onClose }: { card: Card; cards: Card[]; types: CardType[] | null; exclude: Set<string>; onPick: (c: Card) => void; onClose: () => void }) {
+export function CardPicker({ card, cards, types, exclude, onPick, onClose }: { card: Card; cards: Card[]; types: CardType[] | null; exclude: Set<string>; onPick: (c: Card) => void; onClose: () => void }) {
   const { wid } = useWs()
   const [q, setQ] = useState('')
   const [at, setAt] = useState(0)

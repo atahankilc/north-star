@@ -42,7 +42,6 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Card hover/selection as corner marks, dragged card shrinks to 0.8 with its corners on where it lands, 5 px drag
   threshold (D-150), 2026-10-19.
 - Grid `+` stays a thin `+` zoomed out, thinning to every 4th instead of turning to dots (D-151), 2026-10-19.
-- Card layout: 0.06 padding, header with status + evidence cells, facts line, tag chips; `›` link handle (D-152), 2026-10-19.
 - Zoomed out: title alone in whole words (≤3 lines), far out bars instead of stars (D-153), 2026-10-19.
 - Links: smaller chips, a new link opens ready to label, panel rows with label/reverse and the new one marked (D-154);
   bend points the user puts on a selected link (D-155; app-routed elbows tried and dropped). 2026-10-19, committed.
@@ -61,7 +60,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Threads panel as list + thread halves, nothing on the canvas, cell-by-cell build/break for the tab and each half, go there an icon in the header (D-199). 2026-10-21, committed.
 - Plane back to the old board's power, step by step (asked 2026-10-21): step 1, card motion (D-203); step 2, card inside
   (D-205, shown only, nothing sets it yet). Step 3, links (D-207); step 4, the right
-  panel's look (D-219), opened by a card. Next: what fills a card's panel (with the user). Fixed 2026-10-21:
+  panel's look (D-219), filled for every card type (D-221).
+  Next: multi-select, guides, right-click, competitor features beside cards, filters (the user picks). Fixed 2026-10-21:
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
 - Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
 - Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), links shown and made from a dropdown (D-215), 2026-10-22, rules deployed.

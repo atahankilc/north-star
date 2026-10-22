@@ -276,6 +276,9 @@ piece; check them with the user then.
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.
+- A plane card's panel (D-221): what it is → what backs it → links by meaning → tags → notes; a section's add at its
+  rule's right end; `for` as link rows; a competitor's features by category, opening in place, `≈ our`; a feature's
+  plan, parts tree, must-haves, rests on + confidence, `≈ theirs`; a part shows its parent. Edited in place.
 
 ## Collaboration
 - Real-time collaboration with presence and live cursors is in scope (D-005).

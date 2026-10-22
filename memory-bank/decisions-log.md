@@ -3608,3 +3608,36 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): at rest the header reads `[all threads] heading "Pri… [on the canvas ↗] [resolve]
   [delete] [×]`; hovered, the place and arrow turn cyan; a click glides the canvas to the heading; no console errors;
   typecheck.
+
+### D-221 · 2026-10-22 · Accepted (what fills a plane card's right panel, D-219's shell; brings back the old side panel's content)
+- *Decision:* every card type reads in one order: what it is (status / profile / plan) → what backs it (evidence /
+  parts) → what it touches (links by meaning, then the rest) → tags → notes; `[comment] [delete]` at the foot. Under
+  the title, the card's quick facts (D-205's head and facts line). Planned on a scratch preview (port 5196,
+  `cards.html`) with all five types and a part; the user liked it and changed two things: a section's add sits at the
+  right end of its rule (`02 EVIDENCE ──── + evidence`), and `for` rows look like every other link, not chips.
+- *Sections:* customer: status, evidence, tagged for them (`for` links to it; `+ tag a card`), links, tags, notes.
+  Problem: status, evidence, for, solved by · competed for (`+ idea that solves it`), other links, tags, notes. Idea:
+  status (with D-137's `!` line), evidence, solves, features, for, other links, tags, notes. Competitor: profile (does,
+  for, pricing, where = regions, site), features, competes for, other links, tags, notes. Feature: plan (priority,
+  status, impact, effort), parts, must do (≤ 8 criteria), rests on (ideas linked, the problems they solve, a confidence
+  = the weakest of them: invalidated none, a guess or a status the evidence doesn't back low, testing medium, validated
+  high; a part with none shows its parent), for · matched by (`≈ theirs` rows from competitors' features), other links,
+  tags, notes. A part's panel has `part of ↑ parent [detach]` under the header.
+- *A competitor's features* (the basic cards inside it, D-164): by category in grey caps (none first), each row its
+  name, how it's offered, `≈ our …` in cyan with a cyan bar when it matches one of ours. A row opens in place (one at a
+  time): its name, about, category, offered (free / paid / enterprise / beta), ours (a Select of the plane's features),
+  seen at, `[remove]`. `+ feature` takes a name, `category: name` files it. Which of ours one matches is the old
+  matrix's comparison doc (`<feature>_<competitor>`'s `competitorFeatureId`): one of theirs per feature and competitor.
+- *Editing:* the title is typed in place; choices are `[pills]` (a click picks, a click on the picked one clears);
+  evidence has a small form (text, for / against, kind, from, when, link; Enter adds), its cell turns it round, its text
+  edits it; link rows go to their card (selects it, glides it into view clear of the panel), `×` on hover unlinks; a
+  section's add opens a card finder over the plane's cards (arrows, Enter), which can make a new card of the first type
+  from what was typed (placed under this one); a plain `+ link` opens the new link's bar with its label ready (D-154);
+  tags and regions as chips (`×` on hover; Enter adds); notes (`body`, a competitor's `notes`) save as you type. One
+  undo step each, typing merged. Viewers read only.
+- *Left out:* files (attachments, not live until Blaze), `on N planes`, packages; `[unfold onto the plane]` waits for
+  folding parts on planes (D-164).
+- *Verified* headless (emulators): a problem filled end to end (status, evidence, a customer, a new idea that solves
+  it, two tags, notes; all in Firestore), a row going to the customer; a competitor's profile, regions, four features
+  in two categories, one opened, made paid and matched to our feature; that feature's plan, a new part, two
+  must-haves, `≈ theirs` showing; the part's panel with its parent; no console errors; build.

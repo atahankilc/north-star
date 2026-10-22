@@ -9,6 +9,7 @@ import type { Label } from './labels'
 import type { Cell } from './matrix'
 import type { Edge } from './edges'
 import type { Evidence } from './evidence'
+import type { Comparison, CompetitorFeature } from './competitorFeatures'
 import type { Piece, Thread } from './model'
 
 export type WorkspaceData = {
@@ -22,7 +23,9 @@ export type WorkspaceData = {
   cells: Cell[]
   // What was learned about a card (D-137) and a competitor's features (D-164): counted on the cards (D-205).
   evidence: Evidence[]
-  competitorFeatures: WithId<{ competitorId: string }>[]
+  competitorFeatures: CompetitorFeature[]
+  // Which of a competitor's features matches one of ours (D-221).
+  comparisons: Comparison[]
   // Links between cards (D-207).
   edges: Edge[]
 }
@@ -40,7 +43,8 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const labels = useMemo(() => labelDocs.data.filter((l) => l.pieceId) as Label[], [labelDocs.data])
   const cells = useWorkspaceCollection<Cell>(wid, 'cells')
   const evidence = useWorkspaceCollection<Omit<Evidence, 'id'>>(wid, 'evidence')
-  const competitorFeatures = useWorkspaceCollection<{ competitorId: string }>(wid, 'competitorFeatures')
+  const competitorFeatures = useWorkspaceCollection<Omit<CompetitorFeature, 'id'>>(wid, 'competitorFeatures')
+  const comparisons = useWorkspaceCollection<Omit<Comparison, 'id'>>(wid, 'comparisons')
   const edges = useWorkspaceCollection<Omit<Edge, 'id'>>(wid, 'edges')
   const threadDocs = useWorkspaceCollection<Thread>(wid, 'threads')
   const threads = useMemo(() => threadDocs.data.filter((t) => t.planeId), [threadDocs.data])
@@ -56,7 +60,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   )
   const all = [pieces, customers, problems, competitors, ideas, features, labelDocs, cells]
   return {
-    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, edges: edges.data },
+    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data },
     isLoading: all.some((l) => l.isLoading),
     error: all.find((l) => l.error)?.error ?? null,
   }

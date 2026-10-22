@@ -333,3 +333,195 @@
   padding: 3px 6px;
   color: var(--fg-faint);
 }
+
+/* Label | value rows: a feature's plan, a competitor's profile, a competitor feature's details. */
+.plan {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 6px 12px;
+  align-items: baseline;
+}
+
+.k {
+  color: var(--fg-dim);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field {
+  border-bottom-color: transparent;
+}
+
+.field:hover,
+.field:focus {
+  border-bottom-color: var(--line);
+}
+
+.field[data-link='true'] {
+  color: var(--accent-cyan);
+}
+
+.fieldText[data-empty='true'] {
+  color: var(--fg-faint);
+}
+
+.url {
+  color: var(--accent-cyan);
+  text-decoration: none;
+}
+
+.inlineAdd {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.inlineAdd::before {
+  content: '+ ';
+  color: var(--accent-magenta);
+}
+
+/* A competitor's features: a category in grey caps over its rows; a match has a cyan bar and `≈ our …`. */
+.cat {
+  margin: 10px 0 4px;
+  color: var(--fg-dim);
+  font-size: 10px;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.cf {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 10px;
+  width: 100%;
+  padding: 3px 0 3px 8px;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cf:hover {
+  background: var(--bg-raised);
+}
+
+.cf[data-match='true'] {
+  border-left-color: var(--accent-cyan);
+}
+
+.cfAv {
+  color: var(--fg-dim);
+  font-size: 10px;
+}
+
+.cfMatch {
+  grid-column: 1 / -1;
+  color: var(--accent-cyan);
+  font-size: 10px;
+}
+
+.cfOpen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 2px 0 6px;
+  padding: 8px 8px 8px 10px;
+  border-left: 2px solid var(--fg-dim);
+  background: var(--bg-raised);
+}
+
+.cfHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.select {
+  color: var(--fg);
+}
+
+/* A part's parent, under the header. */
+.parent {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--line);
+  color: var(--fg-dim);
+  font-size: 10px;
+}
+
+.parentTo {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--link-part);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.part {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.tree {
+  flex: none;
+  color: var(--link-part);
+}
+
+.part:hover .x {
+  opacity: 1;
+}
+
+.crit {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  gap: 0 8px;
+  align-items: baseline;
+}
+
+.critN {
+  color: var(--fg-faint);
+}
+
+.crit:hover .x {
+  opacity: 1;
+}
+
+.quiet {
+  margin: 0;
+  color: var(--fg-dim);
+}
+
+.conf {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 0;
+  color: var(--fg-dim);
+}
+
+.conf b {
+  color: var(--fg-strong);
+  font-weight: 400;
+}
+
+.conf b[data-level='none'] {
+  color: var(--accent-magenta);
+}
+
+.swatch[data-faint] {
+  opacity: 0.5;
+}
