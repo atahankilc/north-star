@@ -247,8 +247,7 @@ export function MatrixView({ piece, view, live, editor }: Props) {
                   hot={hot?.r === ri || hot?.c === ci}
                   live={live}
                   typing={typing === key}
-                  // On the focus's own view a press on a cell may pan (FocusedPlane, D-217); a pane's keeps it.
-                  onPress={main ? undefined : own}
+                  // No onPress: a press on a cell may pan its space (FocusedPlane, a pane beside a plane; D-217).
                   onHover={live ? () => setHot({ r: ri, c: ci }) : undefined}
                   onClick={() => {
                     if (!isSel) return select(ri, ci)

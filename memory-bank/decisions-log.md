@@ -3529,8 +3529,9 @@ categories shown like B, not in a card, and the features under them not indented
 - *Decision:*
   - *Panning from a cell:* in a matrix's focus a press on a cell is the cell's until it moves 5 px (a card's drag
     threshold, D-150): a click still selects it (no letting go of the selection on the press), a drag pans the view.
-    Elsewhere on the focused layer the press pans at once and lets go of the selection, as before. In a pane beside a
-    plane (D-211) cells still keep the press (the pane's own pan; north-star-67 offers the same rule there and for tables).
+    Elsewhere on the focused layer the press pans at once and lets go of the selection, as before. The same in a pane
+    beside a plane (D-211): the matrix's cells don't keep the press there either, and the pane's own pan follows the
+    rule (Beside.tsx, north-star-67, who also made tables' cells match).
   - *Held row heads* stop 56 px from the screen's left, just past the side nav's tools (was 160); while they're held the
     side nav's shade fades out (`html[data-held-heads]`, Hud.module.css), since the heads sit on their own paper. Still
     never further in than where fit puts them (D-216). The selected cell's bar hides while its cell is under the heads.
