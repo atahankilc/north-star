@@ -45,6 +45,8 @@ export type CardFields = {
   url?: string
   // A feature's must-haves (D-133), which a matrix scores.
   criteria?: { id: string; text: string }[]
+  // A feature's parts folded into it as names beside it (D-164, D-225); only `true` is stored.
+  folded?: boolean
 }
 
 export const VALIDATIONS: Validation[] = ['hypothesis', 'testing', 'validated', 'invalidated']
@@ -81,6 +83,18 @@ export async function moveCard(wid: string, card: Card, to: [number, number]) {
   const r = ref(wid, card.type, card.id)
   const before = await snapshotWith(r, { x: card.x, y: card.y })
   return tracked(`move ${one(card.type)}`, [r], () => updateDoc(r, { x: to[0], y: to[1], updatedAt: Date.now() }), { before })
+}
+
+// Several at once, one undo step: a folded feature carries its parts (D-164).
+export async function moveCards(wid: string, moves: { card: Card; to: [number, number] }[]) {
+  const refs = moves.map((m) => ref(wid, m.card.type, m.card.id))
+  const before = (await Promise.all(moves.map((m, i) => snapshotWith(refs[i], { x: m.card.x, y: m.card.y })))).flat()
+  return tracked(`move ${moves.length > 1 ? `${moves.length} cards` : one(moves[0].card.type)}`, refs, () => {
+    const batch = writeBatch(db())
+    const now = Date.now()
+    moves.forEach((m, i) => batch.update(refs[i], { x: m.to[0], y: m.to[1], updatedAt: now }))
+    return batch.commit()
+  }, { before })
 }
 
 // Typing merges into one undo step.
@@ -138,6 +152,7 @@ export function toCards(type: CardType, docs: CardDoc[]): Card[] {
             pricing: d.pricing,
             url: d.url,
             criteria: d.criteria,
+            folded: d.folded,
           },
         ]
       : [],

@@ -8,10 +8,14 @@
 // Inside (D-152, D-205): the type and, right of it, a status, regions or priority with the evidence as cells; the title;
 // the facts line; tags as chips. Smaller on screen (D-153): the title alone, bigger, in whole words; far out its lines
 // as bars. Links (D-207): a hovered card shows a `›` just right of it; dragged onto another card it draws a link there,
-// selected with its label ready to type. The selected card's right panel (D-219) opens at the right of the plane's part
-// of the screen; what fills it comes next.
+// selected with its label ready to type. Inside (D-225): a competitor grows on hover to hold its features as small
+// cards by category (a strip at its foot says how many while it's closed); a feature with parts folds them into itself
+// (`[−] 3 parts`), their cards shrinking into its rows, and grows back out on `[+]`.
+// The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { CARD, cardRef, moveCard, type Card, type CardType } from '../../data/cards'
+import { CARD, cardRef, moveCard, moveCards, updateCard, type Card, type CardType } from '../../data/cards'
+import type { CompetitorFeature } from '../../data/competitorFeatures'
+import { byCategory, foldedHeight, foldsOf, openHeight, partRowBox, type Box } from './cardInside'
 import type { Label } from '../../data/labels'
 import { TextItems } from './TextItems'
 import { PeerRing } from './collab'
@@ -72,15 +76,19 @@ type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; ed
 
 // A plane's contents: its sections under its cards, its text over them (D-188).
 export function PlaneCards({ cards, labels, view, live, editor }: Props) {
-  const { wid, evidence, competitorFeatures, edges } = useWs()
+  const { wid, evidence, competitorFeatures, comparisons, edges } = useWs()
   const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }), [cards, evidence, competitorFeatures, edges])
   // Links follow cards being dragged, and carried by a section.
   const cardsLive = useCanvasView((s) => (live ? s.cardsLive : NO_LIVE))
   const shift = useCanvasView((s) => (live ? s.dragShift : null))
-  const links = useMemo(
-    () => drawLinks(cards, edges, (c) => cardsLive[c.id] ?? (shift?.ids.includes(c.id) ? [c.x + shift.dx, c.y + shift.dy] : [c.x, c.y])),
-    [cards, edges, cardsLive, shift],
-  )
+  const folds = useMemo(() => foldsOf(cards, edges), [cards, edges])
+  const featuresOf = useMemo(() => {
+    const m = new Map<string, CompetitorFeature[]>()
+    for (const f of competitorFeatures) m.set(f.competitorId, [...(m.get(f.competitorId) ?? []), f])
+    return m
+  }, [competitorFeatures])
+  const matched = useMemo(() => new Set(comparisons.filter((c) => c.competitorFeatureId).map((c) => c.competitorFeatureId!)), [comparisons])
+  const hoverId = useCanvasView((s) => (live ? s.cardHovered : null))
   const linking = useCanvasView((s) => (live ? s.linking : null))
   const ghost = linking && !linking.over ? ghostOf(cards, linking) : null
   // On the canvas the plane's picture is scaled again by the canvas's zoom.
@@ -88,6 +96,30 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   const was = useRef<Detail>('full')
   const detail = detailAt(view.zoom * (live ? 1 : canvasZoom), was.current)
   was.current = detail
+  // Where each card is drawn, and how tall: a folded feature holds its parts, a hovered competitor its features (only
+  // while cards show everything); a folded part is its row in the feature that holds it.
+  const at = (c: Card): [number, number] => cardsLive[c.id] ?? (shift?.ids.includes(c.id) ? [c.x + shift.dx, c.y + shift.dy] : [c.x, c.y])
+  const heightOf = (c: Card) => {
+    if (detail !== 'full') return CARD.h
+    const rows = folds.rows.get(c.id)
+    if (rows) return foldedHeight(rows.length)
+    const list = c.type === 'competitor' && hoverId === c.id ? featuresOf.get(c.id) : undefined
+    return list?.length ? openHeight(byCategory(list)) : CARD.h
+  }
+  const boxOf = (c: Card): Box => {
+    const holder = folds.hidden.get(c.id)
+    const parent = holder ? cards.find((k) => k.id === holder) : undefined
+    if (parent) {
+      const [px, py] = at(parent)
+      const rows = folds.rows.get(parent.id)!
+      const i = rows.findIndex((r) => r.card.id === c.id)
+      return detail === 'full' ? partRowBox({ x: px, y: py, w: CARD.w, h: heightOf(parent) }, i, rows[i].depth) : { x: px, y: py, w: CARD.w, h: CARD.h }
+    }
+    const [x, y] = at(c)
+    return { x, y, w: CARD.w, h: heightOf(c) }
+  }
+  // `part of` lines inside a fold are left out.
+  const links = drawLinks(cards, edges, boxOf, (e) => e.kind === 'part-of' && folds.hidden.has(e.fromId))
   const carry = cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
   // The cards there when this opened are just there in focus (the plane's own picture was already showing them); on the
   // canvas they build up with the page. Any card after that builds up as it arrives.
@@ -98,7 +130,24 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
         <TextItems labels={labels} layer="frames" live={live} editor={editor} zoom={view.zoom} carry={carry} />
         <LinkLines links={links} live={live} zoom={view.zoom} ghost={ghost} />
         {cards.map((c) => (
-          <CardBox key={c.id} card={c} facts={facts.get(c.id)} detail={detail} zoom={view.zoom} live={live} editor={editor} arrive={!(live && first.has(c.id))} />
+          <CardBox
+            key={c.id}
+            card={c}
+            facts={facts.get(c.id)}
+            detail={detail}
+            zoom={view.zoom}
+            live={live}
+            editor={editor}
+            arrive={!(live && first.has(c.id))}
+            h={heightOf(c)}
+            tuck={folds.hidden.has(c.id) ? boxOf(c) : null}
+            parts={folds.count.get(c.id) ?? 0}
+            rows={folds.rows.get(c.id)}
+            carries={folds.rows.get(c.id)?.map((r) => r.card) ?? []}
+            features={c.type === 'competitor' ? featuresOf.get(c.id) : undefined}
+            matched={matched}
+            open={c.type === 'competitor' && hoverId === c.id && detail === 'full'}
+          />
         ))}
         <LinkChips links={links} live={live} editor={editor} zoom={view.zoom} />
         <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
@@ -112,9 +161,28 @@ const NO_LIVE: Record<string, [number, number]> = {}
 
 type Drag = { free: [number, number]; at: [number, number] }
 
-type BoxProps = { card: Card; facts?: Facts; detail: Detail; zoom: number; live: boolean; editor: boolean; arrive: boolean }
+type BoxProps = {
+  card: Card
+  facts?: Facts
+  detail: Detail
+  zoom: number
+  live: boolean
+  editor: boolean
+  arrive: boolean
+  // Its height (it grows to hold what's inside it), and for a folded part the row it's tucked into.
+  h: number
+  tuck: Box | null
+  // A feature's parts (all the way down); its folded rows; the parts a folded one carries when dragged.
+  parts: number
+  rows?: { card: Card; depth: number }[]
+  carries: Card[]
+  // A competitor's features, which of them match ours, and whether it's open (hovered).
+  features?: CompetitorFeature[]
+  matched: Set<string>
+  open: boolean
+}
 
-function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) {
+function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open }: BoxProps) {
   const { wid, threads, cards, edges } = useWs()
   const face = useRef<HTMLDivElement>(null)
   const revealed = useRevealed()
@@ -178,7 +246,10 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
       window.removeEventListener('pointercancel', up)
       setPressed(false)
       setDrag(null)
-      if (to && (to[0] !== card.x || to[1] !== card.y)) void moveCard(wid, card, to).catch(() => setHeld(null))
+      const [dx, dy] = to ? [to[0] - card.x, to[1] - card.y] : [0, 0]
+      // A folded feature carries its parts (D-164).
+      if (to && (dx || dy))
+        void (carries.length ? moveCards(wid, [{ card, to }, ...carries.map((c) => ({ card: c, to: [c.x + dx, c.y + dy] as [number, number] }))]) : moveCard(wid, card, to)).catch(() => setHeld(null))
       else setHeld(null)
     }
     window.addEventListener('pointermove', move)
@@ -220,11 +291,16 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
 
   // The face, small, under the pointer: from where it lands (the box) to where it is, shrunk round the point held.
   const carried = drag ? { translate: `${drag.free[0] - x}px ${drag.free[1] - y}px`, scale: `${CARRIED}`, transformOrigin: `${drag.at[0]}px ${drag.at[1]}px` } : undefined
+  // A folded part shrinks into its row in the feature that holds it, and grows back out of it.
+  const tucked = tuck ? { transform: `translate(${tuck.x - x}px, ${tuck.y - y}px) scale(${tuck.w / CARD.w}, ${tuck.h / CARD.h})` } : undefined
 
   return (
     <div
       className={styles.box}
-      style={{ left: x, top: y, width: CARD.w, height: CARD.h, ['--type' as string]: TYPE_ACCENT[card.type] }}
+      style={{ left: x, top: y, width: CARD.w, height: h, ['--type' as string]: TYPE_ACCENT[card.type], ...tucked }}
+      data-tucked={tuck ? true : undefined}
+      data-open={open && !drag ? true : undefined}
+      aria-hidden={tuck ? true : undefined}
       data-selected={selected || undefined}
       data-pressed={pressed || !!drag || undefined}
       data-dragging={drag ? true : undefined}
@@ -236,7 +312,16 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
     >
       <div ref={face} className={styles.card} style={carried} data-detail={detail}>
         {detail === 'full' ? (
-          <FullCard card={card} facts={facts} />
+          <FullCard
+            card={card}
+            facts={facts}
+            editor={live && editor}
+            parts={parts}
+            rows={rows}
+            features={features}
+            matched={matched}
+            open={open && !drag}
+          />
         ) : (
           <CompactTitle text={card.title || PLACEHOLDER[card.type]} empty={!card.title} bars={detail === 'far'} />
         )}
@@ -256,8 +341,14 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive }: BoxProps) 
   )
 }
 
-function FullCard({ card, facts }: { card: Card; facts?: Facts }) {
+type FullProps = { card: Card; facts?: Facts; editor: boolean; parts: number; rows?: { card: Card; depth: number }[]; features?: CompetitorFeature[]; matched: Set<string>; open: boolean }
+
+function FullCard({ card, facts, editor, parts, rows, features, matched, open }: FullProps) {
+  const { wid } = useWs()
   const tags = card.tags ?? []
+  const inside = !!rows || open
+  const groups = open && features?.length ? byCategory(features) : null
+  const ours = features?.filter((f) => matched.has(f.id)).length ?? 0
   const title = card.title.length > TITLE_SHOWN ? `${card.title.slice(0, TITLE_SHOWN - 1).trimEnd()}…` : card.title
   const head = facts?.head && facts.head.length > 24 ? `${facts.head.slice(0, 23)}…` : facts?.head
   return (
@@ -271,11 +362,80 @@ function FullCard({ card, facts }: { card: Card; facts?: Facts }) {
         )}
         {facts?.proof && <ProofCells proof={facts.proof} />}
       </span>
-      <p className={styles.title} data-empty={!card.title || undefined} data-lines={tags.length ? 2 : 3}>
+      <p className={styles.title} data-empty={!card.title || undefined} data-lines={inside || tags.length ? 2 : 3} data-inside={inside || undefined}>
         {title || PLACEHOLDER[card.type]}
       </p>
-      {facts?.meta && <span className={styles.facts}>{facts.meta}</span>}
-      {tags.length > 0 && <TagChips tags={tags} />}
+      {groups && (
+        <div className={styles.inner}>
+          {groups.map((g) => (
+            <div key={g.cat || '-'}>
+              {g.cat && (
+                <p className={styles.innerCat}>
+                  {g.cat} <span>{g.items.length}</span>
+                </p>
+              )}
+              {g.items.map((f) => (
+                <button
+                  key={f.id}
+                  className={styles.mini}
+                  data-match={matched.has(f.id) || undefined}
+                  onClick={() => useCanvasView.setState({ cardSelected: card.id, cfOpen: f.id, labelSelected: null, linkSelected: null })}
+                >
+                  <span className={styles.miniName}>{f.name}</span>
+                  <span className={styles.miniAv}>{f.availability}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+      {rows && (
+        <div className={styles.inner}>
+          {rows.map((r, i) => {
+            const last = i === rows.length - 1 || rows[i + 1].depth < r.depth || (rows.slice(i + 1).find((x) => x.depth <= r.depth)?.depth ?? -1) < r.depth
+            return (
+              <button
+                key={r.card.id}
+                className={styles.partRow}
+                style={{ paddingLeft: r.depth * 12 }}
+                onClick={() => useCanvasView.setState({ cardSelected: r.card.id, labelSelected: null, linkSelected: null })}
+              >
+                <span className={styles.partTree}>{last ? '└' : '├'}</span>
+                <span className={styles.miniName}>{r.card.title || PLACEHOLDER.feature}</span>
+                <span className={styles.miniAv}>{r.card.status}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {!open && features && features.length > 0 && (
+        <span className={styles.strip} aria-label={`${features.length} features, ${ours} match ours`}>
+          <span className={styles.cells}>
+            {byCategory(features)
+              .flatMap((g) => g.items)
+              .slice(0, 12)
+              .map((f) => (
+                <i key={f.id} data-match={matched.has(f.id) || undefined} />
+              ))}
+          </span>
+          {features.length} features{ours ? ` · ${ours} ≈ ours` : ''}
+        </span>
+      )}
+      <span className={styles.foot}>
+        {facts?.meta && <span className={styles.facts}>{facts.meta}</span>}
+        {parts > 0 && (
+          <button
+            className={styles.fold}
+            disabled={!editor}
+            title={card.folded ? 'Unfold its parts onto the plane' : 'Fold its parts into it'}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => void updateCard(wid, card, { folded: card.folded ? undefined : true }, card.folded ? 'unfold' : 'fold')}
+          >
+            [{card.folded ? '+' : '−'}] {parts} part{parts === 1 ? '' : 's'}
+          </button>
+        )}
+      </span>
+      {tags.length > 0 && !inside && <TagChips tags={tags} />}
     </>
   )
 }

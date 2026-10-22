@@ -45,11 +45,14 @@ const CHIP_MIN_PX = 4.5
 type V = [number, number]
 export type Drawn = { edge: Edge; a: V; b: V; mid: V }
 
+type B = { x: number; y: number; w: number; h: number }
+
 // Where a ray from `p` (inside the box) in direction `d` leaves the box.
-function exit(p: V, d: V, box: { x: number; y: number }): number {
+function exit(p: V, d: V, box: { x: number; y: number; w?: number; h?: number }): number {
+  const [w, h] = [box.w ?? CARD.w, box.h ?? CARD.h]
   const ts = [
-    d[0] > 0 ? (box.x + CARD.w - p[0]) / d[0] : d[0] < 0 ? (box.x - p[0]) / d[0] : Infinity,
-    d[1] > 0 ? (box.y + CARD.h - p[1]) / d[1] : d[1] < 0 ? (box.y - p[1]) / d[1] : Infinity,
+    d[0] > 0 ? (box.x + w - p[0]) / d[0] : d[0] < 0 ? (box.x - p[0]) / d[0] : Infinity,
+    d[1] > 0 ? (box.y + h - p[1]) / d[1] : d[1] < 0 ? (box.y - p[1]) / d[1] : Infinity,
   ]
   return Math.min(...ts)
 }
@@ -58,11 +61,12 @@ const centre = (c: Card): V => [c.x + CARD.w / 2, c.y + CARD.h / 2]
 
 // Each link whose two cards are both here, from edge to edge. Links between the same pair are spread square to their
 // line round the centres, the side taken from the pair (not the direction), within 80 % of a card's shorter side (D-113).
-export function drawLinks(cards: Card[], edges: Edge[], at: (c: Card) => V = (c) => [c.x, c.y]): Drawn[] {
+// `boxOf` is where a card is drawn: a grown card's whole box, a folded part's row (D-225); `skip` leaves a link out.
+export function drawLinks(cards: Card[], edges: Edge[], boxOf: (c: Card) => B = (c) => ({ x: c.x, y: c.y, w: CARD.w, h: CARD.h }), skip?: (e: Edge) => boolean): Drawn[] {
   const byId = new Map(cards.map((c) => [c.id, c]))
   const pairs = new Map<string, Edge[]>()
   for (const e of edges) {
-    if (!byId.has(e.fromId) || !byId.has(e.toId)) continue
+    if (!byId.has(e.fromId) || !byId.has(e.toId) || skip?.(e)) continue
     const key = [e.fromId, e.toId].sort().join('|')
     pairs.set(key, [...(pairs.get(key) ?? []), e])
   }
@@ -71,21 +75,21 @@ export function drawLinks(cards: Card[], edges: Edge[], at: (c: Card) => V = (c)
     const [i, j] = key.split('|')
     const ci = byId.get(i)!
     const cj = byId.get(j)!
-    const pi = at(ci)
-    const pj = at(cj)
-    const p0: V = [pi[0] + CARD.w / 2, pi[1] + CARD.h / 2]
-    const p1: V = [pj[0] + CARD.w / 2, pj[1] + CARD.h / 2]
+    const bi = boxOf(ci)
+    const bj = boxOf(cj)
+    const p0: V = [bi.x + bi.w / 2, bi.y + bi.h / 2]
+    const p1: V = [bj.x + bj.w / 2, bj.y + bj.h / 2]
     const len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1])
     if (len < 1) continue
     const d: V = [(p1[0] - p0[0]) / len, (p1[1] - p0[1]) / len]
     const n: V = [-d[1], d[0]]
-    const step = list.length > 1 ? Math.min(SPREAD, (0.8 * CARD.h) / (list.length - 1)) : 0
+    const step = list.length > 1 ? Math.min(SPREAD, (0.8 * Math.min(bi.h, bj.h)) / (list.length - 1)) : 0
     list.forEach((e, k) => {
       const off = (k - (list.length - 1) / 2) * step
       const s: V = [p0[0] + n[0] * off, p0[1] + n[1] * off]
       const t: V = [p1[0] + n[0] * off, p1[1] + n[1] * off]
-      const t0 = exit(s, d, { x: pi[0], y: pi[1] }) + GAP
-      const t1 = len - exit(t, [-d[0], -d[1]], { x: pj[0], y: pj[1] }) - GAP
+      const t0 = exit(s, d, bi) + GAP
+      const t1 = len - exit(t, [-d[0], -d[1]], bj) - GAP
       // Overlapping cards: nothing to draw between them.
       if (t1 - t0 < ARROW) return
       const a: V = [s[0] + d[0] * t0, s[1] + d[1] * t0]

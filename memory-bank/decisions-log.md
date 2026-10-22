@@ -3712,3 +3712,30 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless on emulators: a 14-row table zoomed in; `+ row` glided the new row to the middle with its name field
   open; adding `impact` from the setup glided it to the middle, head above the panel; a drag widened `tags` with the
   cyan line showing, kept after a reload; a double-click put it back; tsc.
+
+### D-225 · 2026-10-22 · Accepted (brings D-164's competitor features and folded parts back on planes, inside the card; changes D-164/D-173's names beside it)
+- *Decision:* picked from three looks each on a scratch preview (port 5196, `inside.html`: A names beside the card, the old
+  board's; B inside the card; C a deck under or behind it): B for both, "a card that holds cards". The user: "ikisinde de
+  B ile devam et. Competitor da mouse hover edince expand olup çıkınca eski görünümüne döncek … Feature da da fold/unfold
+  düğmesine basınca cardlar açılıp kapancak".
+- *A competitor's features:* closed, a strip over its facts line, a cell per feature (8 × 4 px, the first twelve; cyan
+  when it matches ours) and `6 features · 2 ≈ ours`. Hovered (in focus, cards showing everything, not while dragged),
+  the card grows down 280 ms (eased both ends) to hold its features as small cards by category (grey caps name and count
+  over them; 18 px rows, the competitor's yellow strip, cyan when matching ours, how it's offered on the right), and
+  shrinks back when the pointer leaves. It grows over the cards below (z above them) rather than pushing them, since
+  hover would make them jump. A small card's click opens the competitor's panel with that feature open (`cfOpen`).
+- *A feature's parts:* its facts line ends in `[−] 3 parts` (sky, the part-of colour; all the way down); a click folds
+  them (`folded: true`, shared, undoable): each part's card shrinks into its row inside the parent (280 ms) and the parent
+  grows to hold them as a tree (`├ └`, indented by depth, status on the right, Geist 9 px, 15 px rows); `[+] 3 parts`
+  unfolds, the cards growing back out to their own places. A row click selects that part (its panel). A part folded on
+  its own stays folded inside. Dragging a folded feature carries its parts (one undo step, `moveCards`).
+- *Links:* drawn to each card's real box (`drawLinks`' `boxOf`): a grown card's whole box; a folded part's row, so its
+  links end at the row; `part of` lines inside a fold left out.
+- *Sizes* (`cardInside.ts`): lists start 56 px down (the title keeps two lines' room while holding something); a folded
+  feature is 56 + 15 per part + 25 tall (at least 100); an open competitor 56 + 13 per named category + 21 per feature + 25.
+  Zoomed out (compact, far) neither grows.
+- *Not yet:* links to a competitor's features, and dropping a link on a small card; the assistant doesn't write `folded`.
+- *Verified* headless (emulators): a competitor with five features in two categories grew from 100 to 212 px on hover and
+  back on leaving; a feature with three parts (one a part of a part) folded mid-frame into its rows and then held them
+  (126 px), a part's `inspired by` link starting at its row; dragged +100, +50 with its parts carried; unfolded back
+  out; no console errors; build.

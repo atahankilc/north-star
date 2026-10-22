@@ -24,6 +24,7 @@ import { Select } from '../../ui/Select'
 import { CardPicker, goToCard, KIND_LABEL, PLACEHOLDER, Pills, useCommit, type P } from './CardPanel'
 import { createEdge } from '../../data/edges'
 import { useWs } from './context'
+import { useCanvasView } from '../../state/canvasView'
 import { linkTone } from './PlaneLinks'
 import styles from './CardPanel.module.css'
 
@@ -129,7 +130,9 @@ export function CompetitorProfile({ n, card, editor }: P) {
 export function CompetitorFeatures({ n, card, cards, editor }: P) {
   const { wid, competitorFeatures, comparisons } = useWs()
   const list = competitorFeatures.filter((f) => f.competitorId === card.id).sort((a, b) => a.createdAt - b.createdAt)
-  const [open, setOpen] = useState<string | null>(null)
+  // One open at a time; a small card inside the competitor on the plane opens its own here (D-225).
+  const open = useCanvasView((s) => s.cfOpen)
+  const setOpen = (id: string | null) => useCanvasView.setState({ cfOpen: id })
   const [adding, setAdding] = useState(false)
   const ours = (f: CompetitorFeature) => {
     const c = comparisons.find((x) => x.competitorFeatureId === f.id)
