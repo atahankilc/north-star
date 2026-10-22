@@ -17,7 +17,7 @@ const FOOT = 4 + 8 + 7 + 6
 export type Box = { x: number; y: number; w: number; h: number }
 
 export type Folds = {
-  // A part's feature, by the first `part of` from it to a feature here (loops left out).
+  // A part's parent, by the first `part of` from it to a card of its own type here (loops left out).
   parentOf: Map<string, string>
   // Every part (all the way down) under a folded feature that shows: which one holds it.
   hidden: Map<string, string>
@@ -33,7 +33,8 @@ export function foldsOf(cards: Card[], edges: Edge[]): Folds {
   for (const e of edges) {
     if (e.kind !== 'part-of' || parentOf.has(e.fromId)) continue
     const [a, b] = [byId.get(e.fromId), byId.get(e.toId)]
-    if (a?.type !== 'feature' || b?.type !== 'feature') continue
+    // Same type only, competitors aside (D-226): a sub-problem, a narrower idea or segment, a feature's part.
+    if (!a || !b || a.type !== b.type || a.type === 'competitor') continue
     // Not if it would close a loop.
     let up: string | undefined = b.id
     while (up && up !== a.id) up = parentOf.get(up)
@@ -56,7 +57,7 @@ export function foldsOf(cards: Card[], edges: Edge[]): Folds {
   const hidden = new Map<string, string>()
   const rows = new Map<string, { card: Card; depth: number }[]>()
   for (const c of cards) {
-    if (c.type !== 'feature' || !c.folded || !kids.has(c.id) || isHidden(c.id)) continue
+    if (!c.folded || !kids.has(c.id) || isHidden(c.id)) continue
     const list = below(c.id, 0, [])
     rows.set(c.id, list)
     for (const r of list) hidden.set(r.card.id, c.id)

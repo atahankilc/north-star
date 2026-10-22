@@ -288,7 +288,8 @@ function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: {
   )
 }
 
-// A feature that's a part of another (D-164): its parent on a line under the header; `[detach]` takes the link away.
+// A card that's a part of another of its type (D-164, D-226): its parent on a line under the header; `[detach]` takes
+// the link away.
 // Without one, `+ a feature` makes it a part of one (the user: from the part's side too, not only `+ part`).
 export function Parent({ card, cards, editor }: { card: Card; cards: Card[]; editor: boolean }) {
   const { wid, edges } = useWs()
@@ -308,11 +309,11 @@ export function Parent({ card, cards, editor }: { card: Card; cards: Card[]; edi
         <span>part of</span>
         {picking ? (
           <div className={styles.parentPick}>
-            <CardPicker card={card} cards={cards} types={['feature']} exclude={below} onPick={(c) => (setPicking(false), createEdge(wid, card, c, 'part-of'))} onClose={() => setPicking(false)} />
+            <CardPicker card={card} cards={cards} types={[card.type]} exclude={below} onPick={(c) => (setPicking(false), createEdge(wid, card, c, 'part-of'))} onClose={() => setPicking(false)} />
           </div>
         ) : (
           <button className={styles.inlineAdd} onClick={() => setPicking(true)}>
-            a feature
+            {card.type === 'idea' ? 'an idea' : `a ${card.type}`}
           </button>
         )}
       </div>
@@ -322,7 +323,7 @@ export function Parent({ card, cards, editor }: { card: Card; cards: Card[]; edi
     <div className={styles.parent}>
       <span>part of</span>
       <button className={styles.parentTo} onClick={() => goToCard(parent)}>
-        ↑ {parent.title || PLACEHOLDER.feature}
+        ↑ {parent.title || PLACEHOLDER[parent.type]}
       </button>
       {editor && (
         <button className={styles.small} onClick={() => void deleteEdge(wid, e.id)}>
@@ -358,9 +359,9 @@ export function Parts({ n, card, cards, editor }: P) {
         <div key={e.id} className={styles.part} style={{ paddingLeft: depth * 16 }}>
           <span className={styles.tree}>{last ? '└' : '├'}</span>
           <button className={styles.to} onClick={() => goToCard(c)}>
-            {c.title || PLACEHOLDER.feature}
+            {c.title || PLACEHOLDER[c.type]}
           </button>
-          <span className={styles.type}>{c.status}</span>
+          <span className={styles.type}>{c.status ?? c.validation}</span>
           {editor && depth === 0 && (
             <button className={styles.x} title="Detach" onClick={() => void deleteEdge(wid, e.id)}>
               ×
@@ -372,7 +373,7 @@ export function Parts({ n, card, cards, editor }: P) {
         <CardPicker
           card={card}
           cards={cards}
-          types={['feature']}
+          types={[card.type]}
           exclude={new Set([...above, ...rows.map((r) => r.c.id)])}
           onPick={(c) => (setPicking(false), createEdge(wid, c, card, 'part-of'))}
           onClose={() => setPicking(false)}

@@ -89,6 +89,9 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   }, [competitorFeatures])
   const matched = useMemo(() => new Set(comparisons.filter((c) => c.competitorFeatureId).map((c) => c.competitorFeatureId!)), [comparisons])
   const hoverId = useCanvasView((s) => (live ? s.cardHovered : null))
+  // A competitor is open while hovered and while it's selected (the user).
+  const selId = useCanvasView((s) => (live ? s.cardSelected : null))
+  const openIds = new Set([hoverId, selId].filter((x): x is string => !!x))
   const linking = useCanvasView((s) => (live ? s.linking : null))
   const ghost = linking && !linking.over ? ghostOf(cards, linking) : null
   // On the canvas the plane's picture is scaled again by the canvas's zoom.
@@ -103,7 +106,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     if (detail !== 'full') return CARD.h
     const rows = folds.rows.get(c.id)
     if (rows) return foldedHeight(rows.length)
-    const list = c.type === 'competitor' && hoverId === c.id ? featuresOf.get(c.id) : undefined
+    const list = c.type === 'competitor' && openIds.has(c.id) ? featuresOf.get(c.id) : undefined
     return list?.length ? openHeight(byCategory(list)) : CARD.h
   }
   const boxOf = (c: Card): Box => {
@@ -146,7 +149,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
             carries={folds.rows.get(c.id)?.map((r) => r.card) ?? []}
             features={c.type === 'competitor' ? featuresOf.get(c.id) : undefined}
             matched={matched}
-            open={c.type === 'competitor' && hoverId === c.id && detail === 'full'}
+            open={c.type === 'competitor' && openIds.has(c.id) && detail === 'full'}
           />
         ))}
         <LinkChips links={links} live={live} editor={editor} zoom={view.zoom} />
@@ -401,8 +404,8 @@ function FullCard({ card, facts, editor, parts, rows, features, matched, open }:
                 onClick={() => useCanvasView.setState({ cardSelected: r.card.id, labelSelected: null, linkSelected: null })}
               >
                 <span className={styles.partTree}>{last ? '└' : '├'}</span>
-                <span className={styles.miniName}>{r.card.title || PLACEHOLDER.feature}</span>
-                <span className={styles.miniAv}>{r.card.status}</span>
+                <span className={styles.miniName}>{r.card.title || PLACEHOLDER[r.card.type]}</span>
+                <span className={styles.miniAv}>{r.card.status ?? r.card.validation}</span>
               </button>
             )
           })}

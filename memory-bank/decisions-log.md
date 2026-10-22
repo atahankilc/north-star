@@ -3739,3 +3739,17 @@ categories shown like B, not in a card, and the features under them not indented
   back on leaving; a feature with three parts (one a part of a part) folded mid-frame into its rows and then held them
   (126 px), a part's `inspired by` link starting at its row; dragged +100, +50 with its parts carried; unfolded back
   out; no console errors; build.
+
+### D-226 · 2026-10-22 · Accepted (D-225's parts for customers, problems and ideas; a competitor stays open while selected)
+- *Decision:* any card but a competitor can have parts of its own type and fold them as a feature does (D-225): a
+  sub-problem under a problem, a narrower idea under an idea, a smaller segment under a customer. A `part of` between two
+  types isn't a part (an idea that answers a problem `solves` it), and a competitor holds its features instead. Their
+  panels get the same `part of + a <type>` / `↑ parent [detach]` line under the header and a `parts` section after the
+  evidence (a tree, `+ part` finds or makes one of its type); rows show a status (a feature's, else the validation).
+- *And:* a competitor stays grown (its features showing) while it's selected, not only while hovered (the user:
+  "competitor hover dışında tıklı kaldığı sürece de expanded kalsın").
+- *User:* "ben bu part of olayını çok sevdim. Bunları problem, idea, customer a da getirsek nasıl olur?"; same type only
+  was offered with it (the recommendation).
+- *Verified* headless (emulators): a selected competitor kept 200 px with the pointer away and shrank on Escape; a
+  problem folded its two sub-problems; a customer made a part of another from its panel (the line drawn, `[−] 1 part` on
+  the parent); no console errors; build.

@@ -177,7 +177,13 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
   const sections: ReactNode[] = []
 
   if (card.type === 'customer' || card.type === 'problem' || card.type === 'idea') {
-    sections.push(<StatusSection key="status" n={next()} {...p} />, <EvidenceSection key="evidence" n={next()} {...p} />)
+    // Parts of its own type (D-226), as a feature's: a sub-problem, a narrower idea or segment.
+    take((e) => e.kind === 'part-of' && e.fromType === e.toType)
+    sections.push(
+      <StatusSection key="status" n={next()} {...p} />,
+      <EvidenceSection key="evidence" n={next()} {...p} />,
+      <Parts key="parts" n={next()} {...p} />,
+    )
   }
   if (card.type === 'customer') {
     sections.push(
@@ -220,7 +226,7 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
   }
   if (card.type === 'feature') {
     // Its parent (`part of` from it) has its own line under the header; its parts, the ideas it rests on.
-    take((e) => e.kind === 'part-of')
+    take((e) => e.kind === 'part-of' && e.fromType === e.toType)
     sections.push(
       <PlanSection key="plan" n={next()} {...p} />,
       <Parts key="parts" n={next()} {...p} />,
@@ -249,7 +255,7 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
   return (
     <>
       {under && <div className={styles.under}>{under}</div>}
-      {card.type === 'feature' && <Parent card={card} cards={cards} editor={editor} />}
+      {card.type !== 'competitor' && <Parent card={card} cards={cards} editor={editor} />}
       {sections}
     </>
   )
