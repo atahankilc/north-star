@@ -97,9 +97,9 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   const linking = useCanvasView((s) => (live ? s.linking : null))
   const ghost = linking && !linking.over ? ghostOf(cards, linking) : null
   // On the canvas the plane's picture is scaled again by the canvas's zoom.
-  const canvasZoom = useCanvasView((s) => s.cams[wid]?.zoom ?? 1)
+  // Read as the level itself, so a wheel zoom re-renders the cards only when the level changes.
   const was = useRef<Detail>('full')
-  const detail = detailAt(view.zoom * (live ? 1 : canvasZoom), was.current)
+  const detail = useCanvasView((s) => detailAt(view.zoom * (live ? 1 : (s.cams[wid]?.zoom ?? 1)), was.current))
   was.current = detail
   // Where each card is drawn, and how tall: a folded feature holds its parts, a hovered competitor its features (only
   // while cards show everything); a folded part is its row in the feature that holds it.
