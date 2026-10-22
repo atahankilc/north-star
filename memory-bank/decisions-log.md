@@ -4118,7 +4118,17 @@ categories shown like B, not in a card, and the features under them not indented
   paket varsa headerları üst üste geliyor … Paket içinde paket yapılabilmeli"; "paket içinde bir cardda üstündeki
   paketi … bir şeyin partı olan feature sağ panelinde nasıl görüyosam görsem ve tıkladığımda gitse".
 - *Open:* telling members from other cards inside an unfolded frame: five looks on members.html (A dimmed outsiders,
-  B tabs, C a line hugging the members, D a spine, E plates); the user to pick.
+  B tabs, C a line hugging the members, D a spine, E plates); the user picked A (D-242).
 - *Verified* headless (emulators): package 2 holding package 1 + a problem: frames nested, bands apart; package 1
   folded: its inside link (inspired by) gone, the link out of it (solves) from its card; Deposit's panel `in package ↑
   Package 1 ↑ Package 2`; package 2 folded: rows `Package 1 +3`, `No-shows`; no console errors; tsc.
+
+### D-242 · 2026-10-22 · Accepted (adds to D-239)
+- *Decision:* a card inside an unfolded package's frame that isn't in that package is drawn faint (32 %) with a dashed
+  edge 3 px out; it comes back while hovered, selected or pressed. Packages' frames themselves aren't dimmed; a folded
+  package's card can be.
+- *Why:* in an unfolded package, cards that only sat in its area looked like members. The user picked A from
+  members.html: "dimmed olması ok benim için".
+- *Alternatives:* tabs on members (B), a line round the members only (C, my pick), a spine (D), plates (E).
+- *Verified* headless (emulators): a competitor placed inside a package's frame, not in it, drawn faint with the
+  dashed edge, the members full; no console errors; tsc.

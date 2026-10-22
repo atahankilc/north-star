@@ -166,6 +166,18 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
       outer(e.fromId) === outer(e.toId) ||
       (filter.links.includes(groupOf(e.kind)) && e.id !== linkSel && !lit.includes(e.fromId) && !lit.includes(e.toId)),
   )
+  // Cards inside an unfolded package's frame that aren't in it (D-242): drawn faint, so the frame says who's in.
+  const outsiders = new Set<string>()
+  for (const p of shown) {
+    if (p.type !== 'package' || p.folded || folds.hidden.has(p.id)) continue
+    const f = boxOf(p)
+    const inside = new Set([p.id, ...(folds.members.get(p.id) ?? []).map((m) => m.id)])
+    for (const c of shown) {
+      if (inside.has(c.id) || folds.hidden.has(c.id) || (c.type === 'package' && !c.folded)) continue
+      const b = boxOf(c)
+      if (b.x < f.x + f.w && b.x + b.w > f.x && b.y < f.y + f.h && b.y + b.h > f.y) outsiders.add(c.id)
+    }
+  }
   const carry = cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
   // The cards there when this opened are just there in focus (the plane's own picture was already showing them); on the
   // canvas they build up with the page. Any card after that builds up as it arrives.
@@ -254,6 +266,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
             arrive={!still && !(live && first.has(c.id))}
             h={heightOf(c)}
             tuck={folds.hidden.has(c.id) ? boxOf(c) : null}
+            dim={outsiders.has(c.id)}
             parts={folds.count.get(c.id) ?? 0}
             rows={folds.rows.get(c.id)}
             carries={carriedBy(c.id)}
@@ -391,6 +404,8 @@ type BoxProps = {
   features?: CompetitorFeature[]
   matched: Set<string>
   open: boolean
+  // In an unfolded package's frame but not in it (D-242).
+  dim?: boolean
   // An unfolded package (D-239): its box (band and frame round its members), and its members.
   place?: Box
   members?: Card[]
@@ -466,7 +481,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
   )
 }
 
-function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open, counts }: BoxProps) {
+function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open, counts, dim }: BoxProps) {
   const { wid, threads, cards, edges } = useWs()
   const face = useRef<HTMLDivElement>(null)
   const revealed = useRevealed()
@@ -612,6 +627,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
       data-selected={selected || undefined}
       data-pressed={pressed || !!drag || undefined}
       data-dragging={drag ? true : undefined}
+      data-dim={dim || undefined}
       data-link-target={target || undefined}
       data-target={`card:${card.id}`}
       onPointerDown={press}

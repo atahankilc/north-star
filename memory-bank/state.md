@@ -63,7 +63,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Documents (D-232, docs/specs/documents.md): .md/images/PDFs/old reports (moved once) in `documents/`, private until shared;
   a list piece (table or shelf) and one on its own (asks first), both unframe (D-234). .md only until Blaze; next: files, writing.
 - Finder (D-236): ⌘F / compass, one finder in the middle with a real preview; replaces the find bar and go to's menu. 2026-10-22, committed.
-- Packages on planes (D-239–D-241; next: the user picks a members look from members.html): from a selection or `+` (pick), parts come along; a frame + band unfolded, a card folded. 2026-10-22, committed.
+- Packages on planes (D-239–D-242): from a selection or `+` (pick), parts come along; a frame + band unfolded, a card folded. 2026-10-22, committed.
 - Menus as a prompt (D-222): `+`, go to, start over from, right-click and every Select; `>` line, letters; one click outside closes. 2026-10-22, committed.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
   left side nav piece by piece, you + settings bottom left first (D-175); planes (D-180, first called boards) placed on the canvas from the side

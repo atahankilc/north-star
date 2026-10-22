@@ -595,3 +595,21 @@
 .layer[data-packing='true'] .box {
   cursor: cell;
 }
+
+/* In an unfolded package's frame but not one of its cards (D-242): faint, a dashed edge a little out; back while
+   hovered, selected or dragged. */
+.box[data-dim='true'] > .card {
+  opacity: 0.32;
+  outline: 1px dashed var(--line-hover);
+  outline-offset: 3px;
+  transition:
+    opacity 160ms var(--ease-out),
+    scale 160ms var(--ease-out),
+    translate 160ms var(--ease-out);
+}
+
+.box[data-dim='true']:hover > .card,
+.box[data-dim='true'][data-selected='true'] > .card,
+.box[data-dim='true'][data-pressed='true'] > .card {
+  opacity: 1;
+}
