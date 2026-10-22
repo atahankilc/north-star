@@ -11,6 +11,8 @@ import { CANVAS, kindOf, type Label } from '../../data/labels'
 import { camOf, fitInto, glide, setCam, useCanvasView, type Bounds } from '../../state/canvasView'
 import { create } from 'zustand'
 import { labelBox } from './TextItems'
+import { kindOfPiece } from '../../data/pieces'
+import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 
 // `space`: where it is, the canvas or a plane's id; `inside`: a plane's, listed under it on the canvas.
 export type Place = { id: string; space: string; label: string; glyph: string; box: Bounds; whole: boolean; inside?: boolean }
@@ -38,9 +40,9 @@ function textIn(space: string, labels: Label[], workspaceName: string): Place[] 
       const k = kindOf(l)
       const name = l.text.trim()
       const at = { id: l.id, space, box: labelBox(l) }
-      if (k === 'title') return [{ ...at, label: workspaceName || 'project title', glyph: '✦', whole: true }]
-      if (k === 'section' && name) return [{ ...at, label: name, glyph: '⬚', whole: true }]
-      if (k === 'heading' && name && l.size !== 'minor') return [{ ...at, label: name, glyph: '↳', whole: false }]
+      if (k === 'title') return [{ ...at, label: workspaceName || 'project title', glyph: TEXT_GLYPH.title, whole: true }]
+      if (k === 'section' && name) return [{ ...at, label: name, glyph: TEXT_GLYPH.section, whole: true }]
+      if (k === 'heading' && name && l.size !== 'minor') return [{ ...at, label: name, glyph: TEXT_GLYPH.heading, whole: false }]
       return []
     })
     .sort(readingOrder)
@@ -49,7 +51,10 @@ function textIn(space: string, labels: Label[], workspaceName: string): Place[] 
 export function placesIn(space: string, pieces: WithId<Piece>[], labels: Label[], workspaceName: string): Place[] {
   if (space !== CANVAS) return textIn(space, labels, workspaceName)
   const ids = new Set(pieces.map((p) => p.id))
-  const planes: Place[] = pieces.map((p) => ({ id: p.id, space: CANVAS, label: p.name || 'plane', glyph: '▦', box: p, whole: true }))
+  const planes: Place[] = pieces.map((p) => {
+    const kind = kindOfPiece(p)
+    return { id: p.id, space: CANVAS, label: p.name || kind, glyph: PIECE_GLYPH[kind], box: p, whole: true }
+  })
   return [...planes, ...textIn(CANVAS, labels, workspaceName)]
     .sort(readingOrder)
     .flatMap((p) => (ids.has(p.id) ? [p, ...textIn(p.id, labels, workspaceName).map((q) => ({ ...q, inside: true }))] : [p]))

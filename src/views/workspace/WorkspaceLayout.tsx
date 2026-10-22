@@ -22,6 +22,7 @@ import { spaceBounds } from './spaceBounds'
 import { TYPE_ACCENT } from './PlaneCards'
 import { InboxButton } from './ThreadInbox'
 import { placesIn, shownPlaces, toggleOpen, useGoTo } from './goTo'
+import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { usePresenceSession } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
 import {
@@ -229,12 +230,12 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
   }
   const text = [
     { key: 'text', heading: 'text' },
-    { key: 'heading', label: 'heading', glyph: 'T', letter: 'h', onSelect: () => void addText('heading') },
-    { key: 'paragraph', label: 'paragraph', glyph: '¶', letter: 'a', onSelect: () => void addText('paragraph') },
-    { key: 'sticky', label: 'sticky note', glyph: '▤', letter: 'n', tone: 'var(--accent-yellow)', onSelect: () => void addText('sticky') },
-    { key: 'section', label: 'section', glyph: '⬚', letter: 's', hint: 'draw', onSelect: () => useCanvasView.setState({ drawing: plane ?? CANVAS }) },
+    { key: 'heading', label: 'heading', glyph: TEXT_GLYPH.heading, letter: 'h', onSelect: () => void addText('heading') },
+    { key: 'paragraph', label: 'paragraph', glyph: TEXT_GLYPH.paragraph, letter: 'a', onSelect: () => void addText('paragraph') },
+    { key: 'sticky', label: 'sticky note', glyph: TEXT_GLYPH.sticky, letter: 'n', tone: 'var(--accent-yellow)', onSelect: () => void addText('sticky') },
+    { key: 'section', label: 'section', glyph: TEXT_GLYPH.section, letter: 's', hint: 'draw', onSelect: () => useCanvasView.setState({ drawing: plane ?? CANVAS }) },
     // The project title goes on the canvas only, once (D-190).
-    ...(hasTitle || plane ? [] : [{ key: 'title', label: 'project title', glyph: '✦', letter: 'i', onSelect: () => void addText('title') }]),
+    ...(hasTitle || plane ? [] : [{ key: 'title', label: 'project title', glyph: TEXT_GLYPH.title, letter: 'i', onSelect: () => void addText('title') }]),
   ]
   const add = async (kind: PieceKind, template?: { name: string; setup: () => MatrixSetup | TableSetup }) => {
     const id = await addPiece(wid, kind, canvasCenter(wid), pieces, template?.setup(), template?.name)
@@ -269,11 +270,11 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
               ]
             : [
                 { key: 'canvas', heading: 'on the canvas' },
-                { key: 'plane', label: 'plane', glyph: '▦', letter: 'p', onSelect: () => void add('plane') },
+                { key: 'plane', label: 'plane', glyph: PIECE_GLYPH.plane, letter: 'p', onSelect: () => void add('plane') },
                 // A matrix (D-204), made in its wizard (D-212); its setup changes all of it after.
-                { key: 'matrix', label: 'matrix…', glyph: '⊞', letter: 'm', hint: 'two lists crossed', onSelect: () => useMatrixUi.setState({ wizard: true }) },
+                { key: 'matrix', label: 'matrix…', glyph: PIECE_GLYPH.matrix, letter: 'm', hint: 'two lists crossed', onSelect: () => useMatrixUi.setState({ wizard: true }) },
                 // A table (D-209), made in its wizard (D-218), as a matrix is.
-                { key: 'table', label: 'table…', glyph: '☰', letter: 't', hint: 'rows by rules, any columns', onSelect: () => useTableUi.setState({ wizard: true }) },
+                { key: 'table', label: 'table…', glyph: PIECE_GLYPH.table, letter: 't', hint: 'rows by rules, any columns', onSelect: () => useTableUi.setState({ wizard: true }) },
                 ...text,
               ]
         }
