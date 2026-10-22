@@ -169,6 +169,9 @@ piece; check them with the user then.
   `board`, still allowed by the rules). A press on a plane is the plane's (the canvas doesn't pan); only in edit mode does
   it move, resize (≥ 320 × 200) and take a name (the name is a field), and Delete removes it; edit stays on until
   pressed off (D-180).
+- Piece names (D-223): set into the top edge of a plane, matrix or table, held on the screen at 13 px × zoom (11–15 px),
+  `--fg`, weight 500, caps, its kind faint after it (`PAZAR · PLANE`; unnamed: the kind alone, faint); the kind gives way
+  first, then the name is cut with `…`, all of it while hovered. Edit mode: a cyan-framed field on the edge, a cyan `>`, the count `17/80`.
 - Plane look (D-179, D-181): terminal style (picked from four on a preview): name set into the top edge, the console a
   tab inside the bottom-right corner on the bottom edge, magenta marks on its top corners (D-189), `[focus] [edit]`, no `▸` before them (no name, no zoom: D-186);
   the cards' corner marks, grey on hover; edit mode = the plane's own edge (no dashed line), cyan L grips just inside the corners that resize (a section's, D-194), short

@@ -172,6 +172,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   `+N`, which opens a framed list of everyone with their view; click follows).
 - The side nav's tools sit at the middle of the left edge (D-178): unframed icon buttons like the gear; the canvas's `+` is a
   drawn 20 px `+` in magenta, its menu opening to the right.
+- A piece's name (D-223): in the top edge, held at a size on the screen whatever the zoom (13 px × zoom, never under 11 or
+  over 15), `--fg` caps at weight 500, the kind faint after it (`PAZAR · PLANE`); unnamed, the kind alone in `--fg-faint`.
+  Tight, the kind goes first, then the name takes a `…`; hovered, all of it. Edit mode: a field framed in cyan on the edge,
+  a cyan `>` before what's typed and `17/80` after it.
 - A plane on the canvas (D-181): thin frame, name set into the top edge, the cards' corner marks grey on hover; its
   console a terminal line outside under the bottom-right corner (`name ▸ zoom [−] 100% [+] [full] [edit]`). Edit mode: a
   faint dashed cyan frame, long cyan corner marks that resize, short bars on the edge middles, the console a cyan status

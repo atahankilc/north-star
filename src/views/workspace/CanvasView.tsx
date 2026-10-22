@@ -887,7 +887,8 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       data-kind={kind}
       // A matrix in focus is its focused copy's: the one here would show under it as it glides.
       data-away={bare && focusing ? true : undefined}
-      style={{ left: box.x + (shift?.dx ?? 0), top: box.y + (shift?.dy ?? 0), width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px` }}
+      // --z: the canvas's zoom, so the name holds its size on the screen (D-223).
+      style={{ left: box.x + (shift?.dx ?? 0), top: box.y + (shift?.dy ?? 0), width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: cam.zoom }}
       onPointerDown={press('move')}
       onPointerEnter={hover(true)}
       onPointerLeave={hover(false)}
@@ -895,8 +896,17 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       {editing ? (
         <NameField value={piece.name ?? ''} placeholder={KIND_NAME[kind]} onSave={(name) => name !== (piece.name ?? '') && void renamePiece(wid, piece.id, name, kind)} />
       ) : (
-        <span className={styles.name} data-unnamed={!piece.name || undefined}>
-          {piece.name || KIND_NAME[kind]}
+        // Named: the name, then its kind faint (D-223); unnamed: the kind alone, faint.
+        <span className={styles.name} data-unnamed={!piece.name || undefined} title={piece.name || undefined}>
+          <span className={styles.nameText}>{piece.name || KIND_NAME[kind]}</span>
+          {piece.name && (
+            <>
+              <span className={styles.nameSep} aria-hidden>
+                ·
+              </span>
+              <span className={styles.nameKind}>{KIND_NAME[kind]}</span>
+            </>
+          )}
         </span>
       )}
       <PeerRing id={piece.id} space={CANVAS} />
@@ -929,8 +939,9 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
   )
 }
 
-// The name in the top edge in edit mode (D-180): always a field, as wide as what's typed; Enter or leaving it keeps
-// it, Escape puts back what it was.
+// The name in the top edge in edit mode (D-180, D-223): a field framed in cyan on the edge, a cyan `>` before it and
+// what's typed against the most (`17/80`) after it; as wide as what's typed. Enter or leaving it keeps it, Escape puts
+// back what it was.
 function NameField({ value, placeholder, onSave }: { value: string; placeholder: string; onSave: (name: string) => void }) {
   const [draft, setDraft] = useState(value)
   const [focused, setFocused] = useState(false)
@@ -939,31 +950,39 @@ function NameField({ value, placeholder, onSave }: { value: string; placeholder:
     if (!focused) setDraft(value)
   }, [value, focused])
   return (
-    <input
-      className={`${styles.name} ${styles.nameField}`}
-      aria-label="Plane name"
-      value={draft}
-      placeholder={placeholder}
-      maxLength={PIECE_NAME_MAX}
-      // As wide as what's typed, its letter spacing included, plus room for the caret.
-      style={{ width: `calc(${Math.max(draft.length, placeholder.length) + 1} * (1ch + var(--track-label)))` }}
-      onChange={(e) => setDraft(e.target.value)}
-      onPointerDown={(e) => e.stopPropagation()}
-      onFocus={() => setFocused(true)}
-      onBlur={() => {
-        setFocused(false)
-        onSave(draft.trim())
-      }}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter') e.currentTarget.blur()
-        if (e.key === 'Escape') {
-          setDraft(value)
-          // Blurs after the draft is back, so nothing changes.
-          requestAnimationFrame(() => (document.activeElement as HTMLElement | null)?.blur())
-        }
-      }}
-    />
+    // A press anywhere on the frame types into it, never moves the piece.
+    <label className={`${styles.name} ${styles.nameEdit}`} onPointerDown={(e) => e.stopPropagation()}>
+      <span className={styles.namePrompt} aria-hidden>
+        &gt;
+      </span>
+      <input
+        className={styles.nameField}
+        aria-label={`${placeholder} name`}
+        value={draft}
+        placeholder={`name this ${placeholder}`}
+        maxLength={PIECE_NAME_MAX}
+        // As wide as what's typed (or the placeholder), plus room for the caret.
+        style={{ width: `${Math.max(draft.length, placeholder.length + 10) + 1}ch` }}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false)
+          onSave(draft.trim())
+        }}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.key === 'Enter') e.currentTarget.blur()
+          if (e.key === 'Escape') {
+            setDraft(value)
+            // Blurs after the draft is back, so nothing changes.
+            requestAnimationFrame(() => (document.activeElement as HTMLElement | null)?.blur())
+          }
+        }}
+      />
+      <span className={styles.nameCount}>
+        {draft.length}/{PIECE_NAME_MAX}
+      </span>
+    </label>
   )
 }
 

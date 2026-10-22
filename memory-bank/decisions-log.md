@@ -3679,3 +3679,19 @@ categories shown like B, not in a card, and the features under them not indented
 - *Fix after trying it:* a click on the canvas or a plane didn't close an open menu (they stop their presses from
   bubbling), so it took two clicks. Menu and Select now hear an outside press on the way down (capture). Checked: `+` and
   go to close on one click on the canvas and on a plane.
+
+### D-223 · 2026-10-22 · Accepted (a piece's name readable at any zoom; changes D-180's name field)
+- *What:* the name in the top edge of a plane, matrix or table stays where it was but is held at a size on the **screen**:
+  13 px × the canvas's zoom, never under 11 or over 15 (`--z` on the piece, the font size divided by it). `--fg`, weight
+  500, caps, tracked; named, its kind follows faint (`PAZAR ARAŞTIRMASI · PLANE`); unnamed, the kind alone, faint. When it
+  doesn't fit in the piece, the kind gives way first, then the name is cut with `…`; hovering the piece shows all of it.
+  Edit mode: the name is a field framed in cyan on the edge, a cyan `>` before it, what's typed in its own case, and
+  `17/80` after it (faint); the app's focus outline is off there since the frame says it.
+- *Why:* names were hard to read on the canvas. The name scaled with the canvas: 11 px was 5 px on screen at 45 % and 3 px
+  at 25 %. Five options on a scratch page (A on the edge, bigger; B outside above in Geist; C a tab mirroring the console;
+  D a heading with `01 ── PLANE`; E a title bar inside the top), each with its edit mode beside; the user picked A
+  ("A yı yap"). Before, edit mode was the same label with a faint underline, so it wasn't clear it could be typed in.
+- *Not changed:* the console still scales with the canvas.
+- *Verified* headless on emulators: four planes, one named; at 10 % zoom the name computes to 11 px on screen and is cut
+  `PAZAR…`, unnamed ones read `PLANE`; at 100 % `PAZAR ARAŞTIRMASI · PLANE`; edit mode shows the framed field with
+  `> name this plane 0/80` and typing works; tsc.

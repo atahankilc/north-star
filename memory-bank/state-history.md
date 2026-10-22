@@ -592,3 +592,11 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 
 ## Done (2026-10-20, moved from state.md 2026-10-22)
 - Competitor feature list opens on click only, category names in grey caps over un-indented rows, no tray, drawn over everything (D-173). 2026-10-20.
+
+## Done (2026-10-21, moved from state.md 2026-10-22)
+- Focus dock on the bottom edge + plane console inside its bottom-right corner, no `▸` (D-189), committed 2026-10-21.
+
+## Done (2026-10-22): piece names (D-223)
+- The name in a plane's, matrix's or table's top edge is held at 11–15 px on screen whatever the zoom, `--fg` caps with
+  the kind faint after it; edit mode a cyan-framed field with `>` and a count. Verified headless on emulators (10 % zoom
+  computes 11 px, cut `PAZAR…`; 100 % full; edit field types); tsc, build.

@@ -224,46 +224,102 @@
   visibility: hidden;
 }
 
+/* A piece's name (D-180, D-223): set into the top edge, held at a size on the screen whatever the canvas's zoom (13 px
+   at 100 %, never under 11 or over 15), so it reads zoomed out. `--z` is the canvas's zoom, set on the piece. Named, its
+   kind follows it faint (`PAZAR · PLANE`); when it doesn't fit, the kind goes first, then the name is cut with `…`, all
+   of it shown while hovered. */
 .name {
+  --name-size: clamp(var(--text-xs), calc(var(--text-sm) * var(--z, 1)), var(--text-md));
+
   position: absolute;
   /* Over the plane's cards (D-187). */
   z-index: 1;
   top: 0;
-  left: var(--space-4);
-  padding: 0 var(--space-2);
+  left: 1.2em;
+  display: flex;
+  gap: 0.6em;
+  max-width: calc(100% - 2.4em);
+  padding: 0 0.6em;
   transform: translateY(-50%);
   background: var(--bg);
-  color: var(--fg-dim);
+  color: var(--fg);
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  /* A whole, even height, so the -50% lift lands on a whole pixel. */
-  line-height: var(--space-4);
+  font-size: calc(var(--name-size) / var(--z, 1));
+  font-weight: 500;
+  line-height: 1.5;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.piece:hover .name {
+  max-width: none;
+}
+
+.nameText {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+.nameSep,
+.nameKind {
+  overflow: hidden;
+  /* The kind gives way before the name does. */
+  flex-shrink: 100;
+  min-width: 0;
+  color: var(--fg-faint);
+  font-weight: 400;
 }
 
 .name[data-unnamed='true'] {
   color: var(--fg-faint);
+  font-weight: 400;
 }
 
-/* The name in edit mode (D-179, D-180): the same label, typed into; a faint underline, cyan while typing. */
-.piece .name.nameField {
-  box-sizing: content-box;
-  border: 0;
-  border-bottom: 1px solid var(--line-hover);
+/* The name in edit mode (D-179, D-180, D-223): a field on the edge framed in cyan, a cyan `>` before what's typed and
+   the count after it, in the name's case as typed. */
+.piece .name.nameEdit {
+  gap: 0.5em;
+  max-width: none;
+  padding: 0.15em 0.6em;
+  border: 1px solid var(--accent-cyan);
   color: var(--fg-strong);
-  outline: none;
+  letter-spacing: normal;
   text-transform: none;
-  caret-color: var(--accent-cyan);
   cursor: text;
 }
 
-.piece .name.nameField:focus {
-  border-bottom-color: var(--accent-cyan);
+.namePrompt {
+  color: var(--accent-cyan);
+}
+
+.nameField {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  outline: none;
+  caret-color: var(--accent-cyan);
+}
+
+/* The cyan frame round it already says it's being typed in. */
+.nameField:focus-visible {
+  outline: none;
 }
 
 .nameField::placeholder {
   color: var(--placeholder);
+}
+
+.nameCount {
+  align-self: center;
+  color: var(--fg-faint);
+  font-size: 0.8em;
+  font-weight: 400;
 }
 
 /* A plane's console (D-179, D-181, D-189): a tab inside the plane's bottom-right corner, standing on its bottom edge (no
