@@ -237,8 +237,85 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   }
 
   const box = (x: number, y: number, w: number, h: number): CSSProperties => ({ left: x, top: y, width: w, height: h })
-  const selBox = selected ? { x: L.colX(selected.c), y: L.rowY(selected.r) } : null
+  // What's drawn of its rows, columns and cells, made again only when they, the selection or what's typed change, not as
+  // its view moves (in focus every pan and zoom): the cells are memoised too, so a frame touches only the held heads.
   const heads = headTotals(setup)
+  const sr = selected?.r
+  const sc = selected?.c
+  const cellsShown = useMemo(
+    () =>
+      rows.map((r, ri) =>
+        cols.map((c, ci) => {
+          const cell = at(r.key, c.key)
+          const key = selKey(piece.id, r.key, c.key)
+          const isSel = selected?.r === ri && selected.c === ci
+          return (
+            <CellBox
+              key={key}
+              id={key}
+              r={ri}
+              c={ci}
+              x={L.colX(ci)}
+              y={L.rowY(ri)}
+              setup={setup}
+              cell={cell}
+              label={`${r.name || 'untitled'} × ${c.name || 'untitled'}`}
+              selected={isSel}
+              hot={hotStore}
+              live={live}
+              typing={typing === key}
+              canType={editor && setup.cell !== 'scale'}
+              acts={acts}
+            />
+          )
+        }),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, cols, byKey, setup, sr, sc, typing, live, editor, piece.id, hotStore],
+  )
+  const endsShown = useMemo(
+    () =>
+      L.ends && (
+        <>
+          {rows.map((r, i) => (
+            <div key={r.key} className={styles.endCell} style={box(L.endX, L.rowY(i), M.end, M.row)}>
+              <Totals setup={setup} reading={readingOf(setup, rowCells(r))} wide />
+            </div>
+          ))}
+          {cols.map((c, i) => (
+            <div key={c.key} className={styles.endCell} data-row style={box(L.colX(i), L.endY, M.cell, M.endRow)}>
+              <Totals setup={setup} reading={readingOf(setup, colCells(c))} />
+            </div>
+          ))}
+        </>
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, cols, byKey, setup],
+  )
+  const rowHeads = useMemo(
+    () =>
+      rows.map((r, i) => (
+        <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} at={i} hot={hotStore} lit={selected?.r === i} live={live} editor={editor} naming={naming === r.item?.id}
+          onRename={(name) => void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name)} onRemove={() => remove('rows', r)} onPress={own}>
+          {heads && <Totals setup={setup} reading={readingOf(setup, rowCells(r))} />}
+        </Head>
+      )),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, cols, byKey, mine, setup, sr, live, editor, naming, piece.id, wid, hotStore],
+  )
+  const colHeads = useMemo(
+    () =>
+      cols.map((c, i) => (
+        <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} at={i} hot={hotStore} lit={selected?.c === i} live={live} editor={editor} naming={naming === c.item?.id}
+          onRename={(name) => void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name)} onRemove={() => remove('cols', c)} onPress={own}>
+          {heads && <Totals setup={setup} reading={readingOf(setup, colCells(c))} />}
+        </Head>
+      )),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, cols, byKey, mine, setup, sc, live, editor, naming, piece.id, wid, hotStore],
+  )
+
+  const selBox = selected ? { x: L.colX(selected.c), y: L.rowY(selected.r) } : null
   // How far the heads are held in from where they'd be, in the matrix's px; never past its last row or column.
   const fitted = fitInto({ x: 0, y: 0, w: L.w, h: L.h }, room.w, room.h, FIT_PAD)
   const stickTop = Math.min(STICK.top, Math.max(0, room.h / 2 - (L.h / 2) * fitted.zoom))
@@ -260,59 +337,16 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <div className={styles.table} style={{ width: L.w, height: L.h }} role="grid" aria-label={piece.name || 'matrix'} onPointerLeave={() => setHot(null)}>
-          {rows.map((r, ri) =>
-            cols.map((c, ci) => {
-              const cell = at(r.key, c.key)
-              const key = selKey(piece.id, r.key, c.key)
-              const isSel = selected?.r === ri && selected.c === ci
-              return (
-                <CellBox
-                  key={key}
-                  id={key}
-                  r={ri}
-                  c={ci}
-                  x={L.colX(ci)}
-                  y={L.rowY(ri)}
-                  setup={setup}
-                  cell={cell}
-                  label={`${r.name || 'untitled'} × ${c.name || 'untitled'}`}
-                  selected={isSel}
-                  hot={hotStore}
-                  live={live}
-                  typing={typing === key}
-                  canType={editor && setup.cell !== 'scale'}
-                  acts={acts}
-                />
-              )
-            }),
-          )}
+          {cellsShown}
 
           {/* The totals at the ends: a column after the cells, a row under them. */}
-          {L.ends && (
-            <>
-              {rows.map((r, i) => (
-                <div key={r.key} className={styles.endCell} style={box(L.endX, L.rowY(i), M.end, M.row)}>
-                  <Totals setup={setup} reading={readingOf(setup, rowCells(r))} wide />
-                </div>
-              ))}
-              {cols.map((c, i) => (
-                <div key={c.key} className={styles.endCell} data-row style={box(L.colX(i), L.endY, M.cell, M.endRow)}>
-                  <Totals setup={setup} reading={readingOf(setup, colCells(c))} />
-                </div>
-              ))}
-            </>
-          )}
+          {endsShown}
 
           {/* The row heads, and what closes their column, held in from the left when panned past (D-214). */}
           <div className={styles.stick} data-stuck={dx > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateX(${dx}px)`, clipPath: `inset(${dy + M.top}px -10000px -10000px -10000px)` }}>
             {/* Paper under them out to the screen's edge, so the cells pass under. */}
             {dx > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, stickLeft / view.zoom + M.head + M.gap, L.h + stickTop / view.zoom)} />}
-            {rows.map((r, i) => (
-              <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} at={i} hot={hotStore} lit={selected?.r === i} live={live} editor={editor} naming={naming === r.item?.id}
-                onRename={(name) => void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name)} onRemove={() => remove('rows', r)} onPress={own}>
-                {heads && <Totals setup={setup} reading={readingOf(setup, rowCells(r))} />}
-              </Head>
-            ))}
+            {rowHeads}
             {L.ends && (
               <div className={styles.endHead} data-row style={box(0, L.endY, M.head, M.endRow)}>
                 total
@@ -324,12 +358,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
           {/* Each layer cut where the other's heads begin, so neither shows past the corner. */}
           <div className={styles.stick} data-stuck={dy > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateY(${dy}px)`, clipPath: `inset(-10000px -10000px -10000px ${dx + M.head}px)` }}>
             {dy > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, L.w + stickLeft / view.zoom, stickTop / view.zoom + M.top + M.gap)} />}
-            {cols.map((c, i) => (
-              <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} at={i} hot={hotStore} lit={selected?.c === i} live={live} editor={editor} naming={naming === c.item?.id}
-                onRename={(name) => void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name)} onRemove={() => remove('cols', c)} onPress={own}>
-                {heads && <Totals setup={setup} reading={readingOf(setup, colCells(c))} />}
-              </Head>
-            ))}
+            {colHeads}
             {L.ends && (
               <div className={styles.endHead} style={box(L.endX, 0, M.end, M.top)}>
                 total

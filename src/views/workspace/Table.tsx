@@ -282,36 +282,141 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   const box = (x: number, y: number, w: number, h: number): CSSProperties => ({ left: x, top: y, width: w, height: h })
   const arrow = (col: string) => (setup.sort?.col === col ? (setup.sort.desc ? ' ↓' : ' ↑') : '')
   const bottom = T.head + rows.length * T.row
+  // What's drawn of its rows and heads, made again only when they, the selection, what's typed or a width change, not
+  // as its view moves (in focus every pan and zoom). The grips follow the zoom, so they're made every time.
+  const sr = selected?.r
+  const sc = selected?.c
+  const widths = ws.join(',')
+  const headsShown = useMemo(
+    () => (
+      <>
+        {rows.map((r, i) => (
+          <div key={r.key} className={styles.band} data-selected={selected?.r === i || undefined} data-lit={lit === r.key || undefined} style={box(0, T.head + i * T.row, width, T.row)} />
+        ))}
+        <div className={styles.headRule} style={box(0, T.head - 1, width, 1)} />
+
+        <button className={styles.head} data-name style={box(0, 0, nameW, T.head)} onPointerDown={own} onClick={() => sortBy(NAME_COL)} tabIndex={live ? 0 : -1} title={live && editor ? 'sort by it' : undefined}>
+          {setup.manual ? 'name' : 'title'}
+          <span className={styles.arrow}>{arrow(NAME_COL)}</span>
+        </button>
+        {cols.map((c, i) => (
+          <button
+            key={c.id}
+            className={styles.head}
+            data-own={c.field ? undefined : true}
+            style={box(xs[i], 0, ws[i], T.head)}
+            onPointerDown={own}
+            onClick={() => sortBy(c.id)}
+            tabIndex={live ? 0 : -1}
+            title={live && editor ? 'sort by it' : undefined}
+          >
+            <span className={styles.headName}>{colName(c)}</span>
+            {c.kind === 'number' && c.unit && <span className={styles.unit}>{c.unit}</span>}
+            <span className={styles.arrow}>{arrow(c.id)}</span>
+          </button>
+        ))}
+      </>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, cols, setup, sr, live, editor, lit, nameW, widths],
+  )
+  const rowsShown = useMemo(
+    () => (
+      <>
+        {rows.map((r, ri) => (
+          <NameCell
+            key={r.key}
+            row={r}
+            style={box(0, T.head + ri * T.row, nameW, T.row)}
+            live={live}
+            editor={editor}
+            naming={naming === r.item?.id}
+            onPress={own}
+            onRename={(name) => {
+              if (r.card) void retitleCard(wid, r.card, name)
+              else if (r.item) void renameRow(wid, piece.id, setup, r.item.id, name)
+            }}
+            onRemove={() => void removeRow(wid, piece.id, setup, r, mine)}
+            onPick={onCard && r.card ? () => onCard(r.card!) : undefined}
+          />
+        ))}
+
+        {rows.map((r, ri) =>
+          cols.map((c, ci) => {
+            const key = selKey(piece.id, r.key, c.id)
+            const style = box(xs[ci], T.head + ri * T.row, ws[ci], T.row)
+            const isSel = selected?.r === ri && selected.c === ci
+            if (c.field) {
+              const text = fieldText(r, c.field)
+              const tone = c.field === 'type' && r.card ? TYPE_ACCENT[r.card.type] : undefined
+              return (
+                <button key={key} className={styles.cell} data-field={c.field} data-cell={key} data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
+                  tabIndex={live ? 0 : -1} onClick={live ? () => press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
+                  {text ? <span className={styles.text}>{text}</span> : <span className={styles.unset}>·</span>}
+                </button>
+              )
+            }
+            return (
+              <OwnCell
+                key={key}
+                id={key}
+                col={c}
+                cell={at(r.key, c.id)}
+                style={style}
+                label={`${r.name || 'untitled'}, ${colName(c)}`}
+                selected={isSel}
+                live={live}
+                typing={typing === key}
+                // A cell lets the press through (D-217): its view pans once it moves 5 px, a click still selects.
+                onPress={typing === key ? own : undefined}
+                onClick={() => press(ri, ci)}
+                onType={editor && (c.kind === 'number' || c.kind === 'text') ? () => (select(ri, ci), setTyping(key)) : undefined}
+                onTyped={(value) => {
+                  setTyping(null)
+                  if (value !== null) write(r.key, c.id, value)
+                }}
+              />
+            )
+          }),
+        )}
+
+        {live && editor && (
+          <>
+            <button className={styles.add} data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id, tab: 'cols' })}>
+              +
+            </button>
+            <button
+              className={styles.add}
+              style={box(0, bottom, nameW, T.add)}
+              title="add a named row"
+              aria-label="Add a row"
+              onPointerDown={own}
+              onClick={() => {
+                followTable(piece.id)
+                void addNamedRow(wid, piece.id, setup).then((id) => useTableUi.setState({ naming: id }))
+              }}
+            >
+              + row
+            </button>
+          </>
+        )}
+        {!rows.length && (
+          <p className={styles.empty} style={box(nameW, T.head, Math.max(width - nameW, 200), T.row)}>
+            {setup.manual ? 'No rows yet' : 'No card meets its rules'}
+          </p>
+        )}
+      </>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, cols, byKey, mine, setup, sr, sc, typing, naming, live, editor, fieldText, onCard, nameW, widths, piece.id, wid],
+  )
+
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <div className={styles.table} style={{ width: width + (live && editor ? T.add : 0), height: bottom + T.add }} role="grid" aria-label={piece.name || 'table'}>
-          {rows.map((r, i) => (
-            <div key={r.key} className={styles.band} data-selected={selected?.r === i || undefined} data-lit={lit === r.key || undefined} style={box(0, T.head + i * T.row, width, T.row)} />
-          ))}
-          <div className={styles.headRule} style={box(0, T.head - 1, width, 1)} />
-
-          <button className={styles.head} data-name style={box(0, 0, nameW, T.head)} onPointerDown={own} onClick={() => sortBy(NAME_COL)} tabIndex={live ? 0 : -1} title={live && editor ? 'sort by it' : undefined}>
-            {setup.manual ? 'name' : 'title'}
-            <span className={styles.arrow}>{arrow(NAME_COL)}</span>
-          </button>
-          {cols.map((c, i) => (
-            <button
-              key={c.id}
-              className={styles.head}
-              data-own={c.field ? undefined : true}
-              style={box(xs[i], 0, ws[i], T.head)}
-              onPointerDown={own}
-              onClick={() => sortBy(c.id)}
-              tabIndex={live ? 0 : -1}
-              title={live && editor ? 'sort by it' : undefined}
-            >
-              <span className={styles.headName}>{colName(c)}</span>
-              {c.kind === 'number' && c.unit && <span className={styles.unit}>{c.unit}</span>}
-              <span className={styles.arrow}>{arrow(c.id)}</span>
-            </button>
-          ))}
+          {headsShown}
 
           {live && editor &&
             [{ id: NAME_COL, x: nameW, w: nameWidth(setup) }, ...cols.map((c, i) => ({ id: c.id, x: xs[i] + ws[i], w: widthOf(c) }))].map((g) => (
@@ -331,88 +436,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
               />
             ))}
 
-          {rows.map((r, ri) => (
-            <NameCell
-              key={r.key}
-              row={r}
-              style={box(0, T.head + ri * T.row, nameW, T.row)}
-              live={live}
-              editor={editor}
-              naming={naming === r.item?.id}
-              onPress={own}
-              onRename={(name) => {
-                if (r.card) void retitleCard(wid, r.card, name)
-                else if (r.item) void renameRow(wid, piece.id, setup, r.item.id, name)
-              }}
-              onRemove={() => void removeRow(wid, piece.id, setup, r, mine)}
-              onPick={onCard && r.card ? () => onCard(r.card!) : undefined}
-            />
-          ))}
-
-          {rows.map((r, ri) =>
-            cols.map((c, ci) => {
-              const key = selKey(piece.id, r.key, c.id)
-              const style = box(xs[ci], T.head + ri * T.row, ws[ci], T.row)
-              const isSel = selected?.r === ri && selected.c === ci
-              if (c.field) {
-                const text = fieldText(r, c.field)
-                const tone = c.field === 'type' && r.card ? TYPE_ACCENT[r.card.type] : undefined
-                return (
-                  <button key={key} className={styles.cell} data-field={c.field} data-cell={key} data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
-                    tabIndex={live ? 0 : -1} onClick={live ? () => press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
-                    {text ? <span className={styles.text}>{text}</span> : <span className={styles.unset}>·</span>}
-                  </button>
-                )
-              }
-              return (
-                <OwnCell
-                  key={key}
-                  id={key}
-                  col={c}
-                  cell={at(r.key, c.id)}
-                  style={style}
-                  label={`${r.name || 'untitled'}, ${colName(c)}`}
-                  selected={isSel}
-                  live={live}
-                  typing={typing === key}
-                  // A cell lets the press through (D-217): its view pans once it moves 5 px, a click still selects.
-                  onPress={typing === key ? own : undefined}
-                  onClick={() => press(ri, ci)}
-                  onType={editor && (c.kind === 'number' || c.kind === 'text') ? () => (select(ri, ci), setTyping(key)) : undefined}
-                  onTyped={(value) => {
-                    setTyping(null)
-                    if (value !== null) write(r.key, c.id, value)
-                  }}
-                />
-              )
-            }),
-          )}
-
-          {live && editor && (
-            <>
-              <button className={styles.add} data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id, tab: 'cols' })}>
-                +
-              </button>
-              <button
-                className={styles.add}
-                style={box(0, bottom, nameW, T.add)}
-                title="add a named row"
-                aria-label="Add a row"
-                onPointerDown={own}
-                onClick={() => {
-                  followTable(piece.id)
-                  void addNamedRow(wid, piece.id, setup).then((id) => useTableUi.setState({ naming: id }))
-                }}
-              >
-                + row
-              </button>
-            </>
-          )}
-          {!rows.length && (
-            <p className={styles.empty} style={box(nameW, T.head, Math.max(width - nameW, 200), T.row)}>
-              {setup.manual ? 'No rows yet' : 'No card meets its rules'}
-            </p>
-          )}
+          {rowsShown}
         </div>
       </div>
     </div>
