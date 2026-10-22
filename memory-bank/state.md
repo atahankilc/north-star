@@ -24,8 +24,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   each report body's delete reads its summary twice), so `deleteWorkspace` now takes reports 6 to a batch; rules test
   added. Reports "out of order": the code sorts right; two live workspaces hold reports written with made-up `createdAt`
   (2026-10-19 12:00:00.0xx), so reports made that morning sat below them. Flaky uploads: not reproduced.
-- Nothing uncommitted: D-124–D-131, autoGrow fields and the group drag fix pushed 2026-10-18 (see state-history.md).
-- D-132 (title block resize + animated fold with a bigger name) committed 2026-10-18 (see state-history.md).
+- D-124–D-132 pushed or committed 2026-10-18 (see state-history.md).
 - Phase 6 (docs/specs/usefulness.md), from examining the user's BUBBLES workspace: slice 1, matrix criteria (D-133), built,
   committed, rules deployed 2026-10-19. Slice 2, the assistant writes criteria (D-134), committed;
   try `/criteria` on BUBBLES with a real key. Slice 3, competitor lines off by default (D-135), committed.
@@ -37,9 +36,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   overview (D-144), committed, rules deployed, pushed 2026-10-19. Phase 6 plan done.
 - Competitor regions (D-145): where a competitor operates, REGION filter (bar + matrix footer), assistant fields; committed 2026-10-19.
 - LINKS filter: one group per kind (D-146), each with its own colour, solid lines (D-147), 2026-10-19.
-- Board grid (D-148): one `+` every 0.625, card corners land on marks, no perspective drift, cards 2.5 wide with no grey
-  edge; drags snap to fifths between marks (D-149), 2026-10-19.
-- Zoomed out: title alone in whole words (≤3 lines), far out bars instead of stars (D-153), 2026-10-19.
+- Board grid (D-148, D-149) and zoomed-out titles (D-153), 2026-10-19.
 - Links: smaller chips, a new link opens ready to label, panel rows with label/reverse and the new one marked (D-154);
   bend points the user puts on a selected link (D-155; app-routed elbows tried and dropped). 2026-10-19, committed.
 - Text and notes (2026-10-20, committed, not pushed; main is ahead of origin): headings with a small line + fading rule,
@@ -75,6 +72,9 @@ something is finished, add its entry to state-history.md and leave at most one l
   inside its piece (each board its own items: maybe a plane per board, D-139), then tables etc.; pieces in the export.
 
 ## Next steps
+- **Agreed order (2026-10-22):** export/import complete so nothing is lost (pieces, labels, links, new card fields, evidence,
+  competitor features, comparisons, packages, matrices/tables/cells, documents); then a v1 step that brings the old board's cards,
+  labels and threads (no `pieceId`) onto a plane; then merge/push, only with the user's yes.
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
    - Try `edit_link` / `add_note` with a real key.
    - Link chips already hide when too small (D-111); left: draw them at a constant screen size.
