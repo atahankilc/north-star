@@ -1,11 +1,8 @@
 // A whole workspace as one file (D-080, D-246): a .zip holding `workspace.json`. Only the content travels: the canvas's
 // pieces (planes, matrices, tables, documents lists and documents) and what's in them, the cards and everything on them
-// (links, evidence, competitor features, matched features, packages), text, matrix and table cells, the documents you
-// can see with their content, and the old board's data that hasn't been brought onto a plane yet (cards and text without
-// a space, its planes and placements). Members, roles, invite codes, comment threads (D-159) and anything AI never do.
-//
-// Version 2 since D-246; a version 1 file (the old board, D-080) still imports: its cards and text land as the old
-// board's, its reports as documents.
+// (links, evidence, competitor features, matched features, packages), text, matrix and table cells, and the documents
+// you can see with their content. Members, roles, invite codes, comment threads (D-159) and anything AI never do.
+// Version 2 (D-246); files from before it (version 1, North Star 1.0) are refused (D-248).
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import { CARD_TYPES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, VALIDATIONS, type AnyType } from '../data/cards'
 import { AVAILABILITIES, CRITERION_SCORES } from '../data/competitorFeatures'
@@ -18,7 +15,7 @@ import { COL_W, FIELDS, OWN_KINDS } from '../data/table'
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 2
 
-// Every content collection, as stored. `planes` and `placements` are the old board's (D-139), not the canvas's planes.
+// Every content collection, as stored.
 export const BUNDLE_COLLECTIONS = [
   'pieces',
   'customers',
@@ -33,8 +30,6 @@ export const BUNDLE_COLLECTIONS = [
   'evidence',
   'labels',
   'cells',
-  'planes',
-  'placements',
 ] as const
 export type BundleCollection = (typeof BUNDLE_COLLECTIONS)[number]
 
@@ -49,10 +44,6 @@ export type Bundle = {
   exportedAt: string
   workspace: { name: string; description?: string }
   documents: BundleDocument[]
-  // Version 1 only: research reports (D-090), imported as documents.
-  reports?: Raw[]
-  // Version 1 only: attachments (D-083), which can't be stored yet; counted as left out.
-  attachments?: Raw[]
 } & Record<BundleCollection, Raw[]>
 
 export class BundleError extends Error {}
@@ -105,6 +96,7 @@ export async function readBundle(file: File): Promise<Bundle> {
   if (typeof b.version !== 'number' || b.version > BUNDLE_VERSION) {
     throw new BundleError('That export comes from a newer version of North Star. Reload the page and try again.')
   }
+  if (b.version < BUNDLE_VERSION) throw new BundleError('That export comes from North Star 1.0, which this version no longer reads.')
   const description = str(b.workspace?.description, 1000)
   const bundle = {
     format: BUNDLE_FORMAT,
@@ -112,8 +104,6 @@ export async function readBundle(file: File): Promise<Bundle> {
     exportedAt: typeof b.exportedAt === 'string' ? b.exportedAt : '',
     workspace: { name: str(b.workspace?.name, 200)?.trim() || 'Imported workspace', ...(description && { description }) },
     documents: docs(b.documents),
-    reports: docs(b.reports),
-    attachments: docs(b.attachments),
   } as Bundle
   for (const c of BUNDLE_COLLECTIONS) bundle[c] = docs(b[c])
   return bundle
@@ -158,24 +148,22 @@ function compact<T extends Record<string, unknown>>(o: T): Partial<T> {
 
 const times = (d: Raw, now: number) => ({ createdAt: num(d.createdAt) ?? now, updatedAt: num(d.updatedAt) ?? now })
 
-// The old cards (cards.ts' ids from Firestore, criteria's base 36): only safe ids are kept as they are.
+// Ids a setup gives its own entries (matrix.ts' newId): only safe ones are kept as they are.
 const OWN_ID = /^[A-Za-z0-9_-]{1,40}$/
 const ownId = (v: unknown) => (typeof v === 'string' && OWN_ID.test(v) ? v : newId())
 
-// ---- Cards (cards.ts). `pieceId` and a package's members and home are added by the importer.
+// ---- Cards (cards.ts). `pieceId` and a package's members are added by the importer.
 
 export function cleanCard(type: AnyType, d: Raw, now: number) {
   const competitor = type === 'competitor'
   const x = num(d.x)
   const y = num(d.y)
-  // Every card but a competitor needs its place (rules: validCard).
-  if (!competitor && (x === undefined || y === undefined)) return null
+  if (x === undefined || y === undefined) return null
   return compact({
     ...(competitor ? { name: str(d.name, 200) ?? '' } : { title: str(d.title, 200) ?? '' }),
     x,
     y,
     tags: tags(d.tags),
-    color: str(d.color, 20),
     folded: yes(d.folded),
     // Notes: a competitor's `notes`, every other card's `body`.
     ...(competitor
@@ -232,14 +220,7 @@ export function cleanCompetitorFeature(d: Raw, now: number) {
 }
 
 export function cleanComparison(d: Raw, now: number) {
-  return compact({
-    coverage: oneOf(d.coverage, ['none', 'partial', 'full', 'better'] as const),
-    notes: str(d.notes, 20000),
-    criteria: scores(d.criteria),
-    notRelevant: yes(d.notRelevant),
-    confidence: oneOf(d.confidence, CONFIDENCES),
-    updatedAt: num(d.updatedAt) ?? now,
-  })
+  return compact({ criteria: scores(d.criteria), updatedAt: num(d.updatedAt) ?? now })
 }
 
 // One piece of evidence (D-137), without its card.
@@ -301,8 +282,7 @@ export function cleanLabel(d: Raw, now: number) {
 const PIECE_KINDS = ['plane', 'matrix', 'table', 'documents', 'document'] as const
 
 export function cleanPiece(d: Raw, now: number, ids: Ids) {
-  // A `board` from before D-180 is a plane.
-  const kind = d.kind === 'board' ? 'plane' : oneOf(d.kind, PIECE_KINDS)
+  const kind = oneOf(d.kind, PIECE_KINDS)
   const x = num(d.x)
   const y = num(d.y)
   const w = size(d.w)
@@ -457,20 +437,6 @@ export function cleanCell(d: Raw, now: number) {
   })
 }
 
-// ---- The old board's planes and placements (D-139), kept until it's brought onto the canvas.
-
-export function cleanOldPlane(d: Raw, now: number) {
-  const name = str(d.name, 80)?.trim()
-  if (!name) return null
-  return { name, order: num(d.order) ?? 0, createdAt: num(d.createdAt) ?? now }
-}
-
-export function cleanPlacement(d: Raw) {
-  const x = num(d.x)
-  const y = num(d.y)
-  return x === undefined || y === undefined ? null : compact({ x, y, folded: yes(d.folded) })
-}
-
 // ---- Documents (documents.ts): a .md or a report, whose content travels with it. Images and PDFs are files in Storage,
 // which needs the Blaze plan: not exported yet. The importer adds whose it is now.
 
@@ -521,25 +487,6 @@ function reportBody(b: Record<string, unknown>, ids: Ids): DocBody {
     })),
     openQuestions: list(b.openQuestions, 30).map((q) => str(q, 2000) ?? ''),
     sources,
-  }
-}
-
-// A version 1 report (D-090) as a document of kind `report` (D-232's move).
-export function reportAsDocument(r: Raw): BundleDocument {
-  const answer = str(r.answer, 4000) ?? ''
-  return {
-    id: r.id,
-    kind: 'report',
-    title: str(r.title, DOC_LIMITS.title) || 'untitled report',
-    excerpt: answer.replace(/\s+/g, ' ').trim().slice(0, DOC_LIMITS.excerpt) || undefined,
-    origin: 'moved',
-    name: r.name,
-    shared: r.shared,
-    topic: r.topic,
-    model: r.model,
-    reportKind: r.kind,
-    createdAt: r.createdAt,
-    body: { answer, sections: r.sections, implications: r.implications, openQuestions: r.openQuestions, sources: r.sources } as DocBody,
   }
 }
 

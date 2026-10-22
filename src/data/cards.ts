@@ -1,6 +1,6 @@
-// Cards on a plane (D-187): customers, problems, competitors, ideas and features, each in its own collection as before
-// (D-037, D-040), now belonging to one plane (`pieceId`) at x/y in that plane's px (its top-left corner). Cards from the
-// old board (no `pieceId`) stay where they are and aren't shown. A competitor keeps its title as `name`.
+// Cards on a plane (D-187): customers, problems, competitors, ideas, features and packages, each in its own collection
+// (D-037, D-040), belonging to one plane (`pieceId`) at x/y in that plane's px (its top-left corner). A competitor keeps
+// its title as `name`.
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from './firebase'
 import { absent, snapshotWith, tracked } from './history'
@@ -128,7 +128,7 @@ export function addPackage(wid: string, plane: string, members: Card[], at: [num
   const r = ref(wid, 'package')
   const now = Date.now()
   void tracked('package these', [r], () =>
-    setDoc(r, { title: `Package ${n}`, pieceId: plane, homePlaneId: plane, memberIds: members.map((m) => m.id).slice(0, 60), x: snap(at[0]), y: snap(at[1]), createdAt: now, updatedAt: now }),
+    setDoc(r, { title: `Package ${n}`, pieceId: plane, memberIds: members.map((m) => m.id).slice(0, 60), x: snap(at[0]), y: snap(at[1]), createdAt: now, updatedAt: now }),
   { before: absent([r]) })
   return r.id
 }
@@ -196,7 +196,6 @@ export function copyCards(wid: string, pieceId: string, list: Card[], edges: Edg
     // A package keeps its members: the copies when they were copied with it, else the same cards (D-239).
     if (c.type === 'package') {
       d.memberIds = (c.memberIds ?? []).map((m) => made.get(m)?.id ?? m)
-      d.homePlaneId = pieceId
     }
     if (c.notes) d[c.type === 'competitor' ? 'notes' : 'body'] = c.notes
     return d
@@ -229,7 +228,7 @@ export function deleteCard(wid: string, card: Card, edges: Edge[] = []) {
   })
 }
 
-// Docs from any of the five collections, as cards; the old board's (no `pieceId`) are left out.
+// Docs from any of the card collections, as cards; one without a plane (`pieceId`) isn't the app's and is left out.
 type CardDoc = { id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number; body?: string } & CardFields
 
 export function toCards(type: AnyType, docs: CardDoc[]): Card[] {

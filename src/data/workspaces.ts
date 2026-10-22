@@ -14,8 +14,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
-import { deleteObject, listAll, ref as storageRef, type StorageReference } from 'firebase/storage'
-import { db, firebase, useEmulators } from './firebase'
+import { db } from './firebase'
 import { useDoc, usePaged, useQuery } from './hooks'
 import type { AuthUser } from './auth'
 import type { InviteCode, JoinRequest, Member, Role, Workspace } from './model'
@@ -87,7 +86,7 @@ export async function requestToJoin(rawCode: string, user: AuthUser): Promise<Jo
   if (!code) throw new JoinError('Enter an invite code.')
   const snap = await getDoc(doc(db(), 'inviteCodes', code))
   if (!snap.exists()) throw new JoinError('That invite code does not exist.')
-  const { workspaceId, createdBy } = snap.data() as InviteCode
+  const { workspaceId } = snap.data() as InviteCode
 
   // Only members (and invitees) can read the workspace: if this works and you're in it, just go there.
   const ws = await getDoc(doc(db(), 'workspaces', workspaceId)).catch(() => null)
@@ -95,7 +94,6 @@ export async function requestToJoin(rawCode: string, user: AuthUser): Promise<Jo
 
   const request: JoinRequest = {
     workspaceId,
-    ownerId: createdBy,
     uid: user.id,
     name: user.name || user.email || 'Someone',
     email: user.email ?? '',
@@ -245,22 +243,6 @@ export function describeWorkspace(wid: string, description: string) {
   return updateDoc(doc(db(), 'workspaces', wid), { description: description.trim().slice(0, DESCRIPTION_MAX) })
 }
 
-// Attachment files (D-083) exist only where Storage is on: the emulators until Blaze. The rest of attachments.ts is
-// archived (D-177); deleting a workspace still takes its files.
-const attachmentsAvailable = useEmulators
-
-async function listFiles(dir: StorageReference): Promise<StorageReference[]> {
-  const res = await listAll(dir)
-  const nested = await Promise.all(res.prefixes.map(listFiles))
-  return [...res.items, ...nested.flat()]
-}
-
-async function deleteAttachmentFiles(wid: string) {
-  if (!attachmentsAvailable || !firebase) return
-  const files = await listFiles(storageRef(firebase.storage, `workspaces/${wid}/attachments`))
-  await Promise.all(files.map((f) => deleteObject(f)))
-}
-
 // A comment thread (D-159) with its messages in one batch: an owner may take others' messages only along with it (D-166).
 async function deleteThread(wid: string, tid: string) {
   const thread = doc(db(), 'workspaces', wid, 'threads', tid)
@@ -271,25 +253,18 @@ async function deleteThread(wid: string, tid: string) {
   await batch.commit()
 }
 
-// Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes. The archived views' data (D-177) is
-// still in older workspaces, so it all goes too.
-// `domains` and `groups` are retired (D-048, D-049) but older workspaces may still hold some.
-const WORKSPACE_COLLECTIONS = [
-  'labels', 'domains', 'customers', 'problems', 'ideas', 'edges', 'groups', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'evidence', 'planes', 'placements', 'packages', 'pieces', 'cells',
-  ...(attachmentsAvailable ? ['attachments'] : []),
-]
+// Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
+const WORKSPACE_COLLECTIONS = ['pieces', 'labels', 'customers', 'problems', 'competitors', 'ideas', 'features', 'packages', 'edges', 'competitorFeatures', 'comparisons', 'evidence', 'cells']
 const BATCH_LIMIT = 450
 // A report body's delete rule reads its summary (twice), and a batch's rules may read at most 20 documents, more and the
 // whole batch is refused: so reports go a few to a batch.
 const REPORTS_PER_BATCH = 6
 
-// Owners only. Children go first: their rules check membership on the workspace doc. Attachment files go before any
-// doc (storage.rules check membership the same way), so none are left behind.
+// Owners only. Children go first: their rules check membership on the workspace doc.
 export async function deleteWorkspace(wid: string, inviteCode: string, uid: string) {
-  await deleteAttachmentFiles(wid)
   const reports = await Promise.all([
-    // Reports (D-090): the shared ones and yours. Others' private reports can't be read here; the
-    // cleanUpWorkspaceAi function takes them once functions are deployed.
+    // Reports (D-090) not moved to documents yet (moveReports): the shared ones and yours. Others' private reports
+    // can't be read here; the cleanUpWorkspaceAi function takes them once functions are deployed.
     getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('shared', '==', true))),
     getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('uid', '==', uid))),
     // Documents (D-232) the same way: shared and yours; a body before its summary.

@@ -341,7 +341,7 @@ export function CanvasView() {
     const p = pieces.find((x) => x.id === sp)
     return sp === CANVAS ? 'the canvas' : p?.name || `a ${p ? KIND_NAME[kindOfPiece(p)] : 'plane'}`
   }
-  const titleOf = (t: Pick<Thread, 'on' | 'targetId' | 'planeId'>) => {
+  const titleOf = (t: Pick<Thread, 'on' | 'targetId'>) => {
     if (t.on === 'card') {
       const c = cards.find((x) => x.id === t.targetId)
       return c ? `${c.type} ${c.title ? `"${c.title}"` : ''}`.trim() : 'a deleted card'
@@ -354,12 +354,9 @@ export function CanvasView() {
       const p = pieces.find((x) => x.id === t.targetId)
       return `${p ? KIND_NAME[kindOfPiece(p)] : 'plane'} ${p?.name ? `"${p.name}"` : ''}`.trim()
     }
-    if (t.on === 'link') {
-      const e = edges.find((x) => x.id === t.targetId)
-      const name = (id?: string) => cards.find((c) => c.id === id)?.title || 'untitled'
-      return e ? `link "${name(e.fromId)}" → "${name(e.toId)}"` : 'a deleted link'
-    }
-    return `a spot on ${spaceName(t.planeId ?? CANVAS)}`
+    const e = edges.find((x) => x.id === t.targetId)
+    const name = (id?: string) => cards.find((c) => c.id === id)?.title || 'untitled'
+    return e ? `link "${name(e.fromId)}" → "${name(e.toId)}"` : 'a deleted link'
   }
   // Right-click (D-193): a menu on a plane, a card, a piece of text or a link (D-207); only `comment` for now. Elsewhere, nothing.
   const [menu, setMenu] = useState<{ at: [number, number]; what: string; items: MenuEntry[] } | null>(null)
@@ -492,7 +489,7 @@ export function CanvasView() {
 
   // From the threads panel: to its space, the pin in the middle, open.
   const goTo = (t: WithId<Thread>) => {
-    const sp = t.planeId ?? CANVAS
+    const sp = t.planeId
     openThread(t.id)
     if (sp !== space) return focusTo(sp === CANVAS ? null : sp)
     const [x, y] = pinOf(t).at

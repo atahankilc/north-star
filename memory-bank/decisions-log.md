@@ -216,11 +216,13 @@ Tracked writes are serialised but never wait for the server (Firestore applies w
 Was: groups as labelled frames on the board. Removed; text labels mark areas (D-049, D-050).
 
 ### D-048 · 2026-10-17 · Accepted (reverses D-039)
+*D-248:* domains are gone entirely: the rules no longer read or delete them, the cards no longer carry their fields.
 **No domains.** The user found them unnecessary: a workspace already is one idea space, and customers (the `for:` filter) plus
 text labels cover slicing and naming areas. Removed tabs, pickers, unsorted marks and the domain filters on Table/Matrix.
 Rules refuse new `domains` docs but keep read/delete for clean-up; old `domainId`/`domainIds` fields are tolerated and ignored.
 
 ### D-049 · 2026-10-17 · Accepted (reverses D-047; frames return as sections, D-130)
+*D-248:* the `groups` collection is gone entirely from the rules.
 **No groups collection.** Replaced by text labels (D-050) to mark areas. Rules refuse new `groups` docs, keep read/delete
 for clean-up. Named frames came back in D-130 as a kind of label, by the user's request.
 
@@ -390,6 +392,7 @@ theme before the first paint, so dark never flashes first.
   signed-in Settings thing only. The light background is a neutral grey (`#f5f5f5`); a warm off-white was tried and rejected.
 
 ### D-070 · 2026-10-17 · Accepted (changes D-001's routing)
+*D-248:* old `#/` links are no longer upgraded, and old view paths no longer open the canvas.
 **Readable URLs, and signing out goes back to `/`.** User feedback: after signing out the landing still showed the workspace's
 address, and `/#/w/<id>` was hard to read.
 - *Paths:* `/` landing, `/workspaces`, `/workspaces/<id>` (board), `/workspaces/<id>/flow|table|matrix`; `?item=<id>` selects an item,
@@ -666,6 +669,7 @@ pick from the roadmap. The model never deals in coordinates: it decides what bel
   a label renamed, one removed, a bad label row off; 22 cards moved, no two overlapping; one Ctrl+Z restores every position.
 
 ### D-083 · 2026-10-17 · Accepted (Phase 5; answers Q-004 and Q-009; revisits D-015)
+*D-248:* removed with 1.0: no `attachments` collection in the rules or the code, `storage.rules` allow nothing; files return as documents' (D-232).
 **Attachments: images, SVGs and PDFs on any card, in Firebase Storage, shown only where Storage is live.** The user's decisions.
 - *Storage now, flag for the live site:* built on Firebase Storage although the project isn't on Blaze yet; developed and
   verified on the emulators (storage emulator on 9199). `attachmentsAvailable = useEmulators || ATTACHMENTS_LIVE`
@@ -2639,6 +2643,7 @@ categories shown like B, not in a card, and the features under them not indented
   Firestore rules deployed 2026-10-20.
 
 ### D-177 · 2026-10-20 · Accepted (archives D-040–D-173's views for now)
+*D-248:* `src/archive/` is deleted; the code is in git at `493bf87`.
 - *Decision:* on branch `refactor/north-star-1.5`, everything from before the canvas goes to `src/archive/` (paths mirror
   `src/`, moved with `git mv`; `tsconfig.json` excludes it, nothing live imports it; README there): every view
   (board, focus, flow, table, matrix, priorities, overview, reports, competitors), the assistant (`src/ai`, the chat, orb,
@@ -2680,6 +2685,7 @@ categories shown like B, not in a card, and the features under them not indented
   (moved 50, 50); the console sits under the corner; `tsc`, build.
 
 ### D-180 · 2026-10-20 · Accepted (changes D-176's moving and D-179's renaming)
+*D-248:* `board` pieces are no longer accepted by the rules.
 - *Decision:* the piece is called a **plane**, everywhere: the `+` menu, its label, its console, the code (`PieceKind =
   'plane'`, `KIND_NAME`, `PlaneConsole`, undo labels). New pieces are stored `kind: 'plane'`; ones made before say
   `board`, which the rules still allow (and undo can bring back) and the app shows as a plane. Not the archived `planes`
@@ -4173,6 +4179,7 @@ categories shown like B, not in a card, and the features under them not indented
   a step in, the feature's part a step further, a problem (magenta) back at the start; no console errors; tsc.
 
 ### D-246 · 2026-10-22 · Accepted (changes D-080's bundle to version 2; the agreed first step of 2026-10-22)
+*D-248:* the old board's data (cards and text without a space, `planes`, `placements`) no longer travels, and version 1 files are refused.
 **Export and import carry everything the canvas has now.** User: "lets do export/import implementation. We have changed a
 lot and i want our new export/import to work perfectly with our current features and structure".
 - *Where:* Settings → workspace → export (`[download .zip]`, then a line saying what was packed); an `import` strip under the
@@ -4227,3 +4234,31 @@ plane deki cardları kullanıyosak tek tık bana sağ paneli açsın aynı plane
   a head's click opens the feature's / competitor's panel; Escape closes it (focus stays). Then: table row 0's head, its
   cell (panel stays), row 1's cell (panel goes to its card), `[×]` (cell still selected), a cell (stays closed); matrix
   head then a feature × competitor cell (closes). `tsc -b`.
+
+### D-248 · 2026-10-22 · Accepted (drops 1.0: changes D-048, D-049, D-070, D-083, D-177, D-180, D-246)
+**Nothing of North Star 1.0 stays, except moving old reports to documents.** User: "aslında önceden kalma bütün her şeyi
+droplayabilirim … 1.5 diyoruz, deprecated bişey bırakmasak da olur … db de dahil … Raportları documents a taşımak dışında
+bir şey bırakma geride". Instead of the agreed v1 step (bringing the old board onto a plane), 1.0's data is dropped.
+- *Code:* `src/archive/` deleted (in git at `493bf87`); no old-URL upgrade or old view paths (App.tsx, paths.ts); no
+  attachments (Storage files, the workspace delete's sweep); presence only `canvas`; join requests without `ownerId`;
+  packages without `homePlaneId`; threads always on a component (`spot` gone) with a `planeId`; `Workspace.joinCode` gone.
+  The live code still skips a card, text or thread without a space when one is read (those docs stay in old workspaces).
+- *Rules:* `firestore.rules`: cards, competitors and text need `pieceId` (competitors x/y too); no `color`, domain fields,
+  label `planeId`; no `planes`, `placements`, `attachments`, `domains`, `groups` (not even read or delete: old docs left in a
+  workspace stay there, unseen); no `board` piece; comparisons only `competitorFeatureId` and `criteria`; reports only read
+  and delete (for `moveReports`); threads `on` card/label/link/plane with `targetId` and `planeId`; join requests without
+  `ownerId`. `database.rules.json`: `view` only `canvas`. `storage.rules`: nothing allowed until documents' files.
+- *Export/import:* only 1.5's shape: cards and text without a space stay out of an export, are left out of an import;
+  version 1 files refused ("comes from North Star 1.0").
+- *Kept:* `moveReports` (D-232) and what it needs; the Cloud Functions in `functions/` and the `ai`/`aiUsage`/`aiSecrets`
+  rules (the assistant's server side, D-079, waiting for Blaze; not 1.0 data); comments in code that say where a look came
+  from ("as the old board did").
+- *Not deployed:* the live site (`main`) is still 1.0 and shares the Firebase project; these rules would break it. Deploy
+  them (`npm run deploy:rules`) together with merging 1.5 to `main`, with the user's yes.
+- *Alternatives:* the agreed v1 step (move the old board's cards, text and threads onto a plane), not wanted; deleting 1.0
+  docs from workspaces (not asked; they're unseen and cost nothing).
+- *Verified:* rules tests on separate emulators: 365 pass, 0 fail (1.0 shapes now denied: cards/text/threads without a space,
+  spots, board pieces, old planes/placements/attachments/domains/groups, old presence views, report writes; old reports
+  seeded past the rules still read and delete). Export/import round trip in headless Chrome: same counts in all 14 lists,
+  references the same; an old report seeded past the rules moved into documents by `moveReports`; a version 1 file refused.
+  `npm run build`.

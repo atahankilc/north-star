@@ -1,8 +1,9 @@
 # North Star: Architecture
 
-> **D-177:** on `refactor/north-star-1.5` most of what this file describes (board, views, assistant, export, their
-> data layer) is archived in `src/archive/`, out of the build; live today: auth, workspaces, members, presence, settings
-> and the canvas's `pieces`. It comes back piece by piece.
+> **D-177, D-248:** on `refactor/north-star-1.5` the 1.0 code (board, views, assistant, their data layer) is deleted
+> (in git at `493bf87`), and no 1.0 data shape is supported: only old reports are moved to documents. Live: auth,
+> workspaces, members, presence, settings, export/import and the canvas with its pieces. Sections below about the old
+> board, views and assistant describe 1.0, for when a feature comes back as a piece.
 
 Status: **accepted** unless marked. Items marked ⏳ wait on a decision in
 [../memory-bank/open-questions.md](../memory-bank/open-questions.md).
@@ -235,7 +236,7 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 - **Documents** (D-232, `docs/specs/documents.md`, `src/data/documents.ts`): every file the workspace keeps (.md,
   images, PDFs, reports) as a summary + `content/body`, private until its author shares it; old `reports/*` are moved over
   once when a workspace opens. Pieces `documents` (a list, table or shelf) and `document` (one, `docId`). Files need
-  Storage (Blaze): `filesAvailable` until then. The report entries below describe the archived code.
+  Storage (Blaze): `filesAvailable` until then. The report entries below describe 1.0's code (D-248).
 - **Saved reports** (D-090; split into summary + `content/body` by D-098, older one-doc reports still read): `workspaces/{wid}/reports/{id}` (`SavedReport` in `src/data/model.ts`: the report, `kind`
   research | chat, `topic, uid, name, model, shared, createdAt`; data in `src/data/reports.ts`). A research report is saved
   as it's written; a chat write-up (`make_report`, any chat, when asked) when you press save. Only the author reads it until
@@ -254,30 +255,14 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 
 ## 9. Files, export and import
 
-- **Attachments** ✅ on the emulators (D-083; live once Storage is deployed, which needs Blaze): images (PNG, JPEG, WebP, GIF),
-  SVGs and PDFs on any card, up to 10 MB each. All access is in `src/data/attachments.ts`.
-  - *Where:* the record in Firestore at `workspaces/{wid}/attachments/{id}` (`nodeId, nodeType, name, contentType, size, path,
-    width?, height?, thumbPath?, uid, createdAt`, listed live with the workspace); the file in Storage at
-    `workspaces/{wid}/attachments/{id}/{safe name}`, an image's 320 px WebP thumbnail beside it as `~thumb.webp`.
-  - *Rules:* `firestore.rules` checks the record's shape (size < 10 MB, the type list, `path` under its own id); `storage.rules`
-    lets members only (via `firestore.get` of the workspace) read, list and delete, and write < 10 MB of the same types.
-  - *Before upload:* a PNG, JPEG or WebP over 2560 px on a side or over 2 MB is resized to fit 2560 px and saved as WebP (0.85),
-    unless that comes out bigger. GIF, SVG and PDF go up as they are.
-  - *Loading:* a workspace loads only the records, and they don't hold the loading screen. Files load when they're looked at:
-    the panel shows thumbnails, the lightbox the full image, a PDF opens in a new tab; the board card shows only a count.
-    Images and SVGs are shown only through `<img>`, so an SVG's scripts never run.
-  - *Undo:* upload first, then the record with `tracked()`. Removing an attachment or deleting its item (it's in `cascadeOf`)
-    removes only the record, so undo brings it back with its file. Files with no record and over a day old are swept when a
-    member opens the workspace (once a day per browser); a record whose file is gone shows "file missing". Deleting a workspace
-    deletes the whole Storage prefix first, while you're still a member.
-  - *Live site:* hidden behind `ATTACHMENTS_LIVE = false` until `storage.rules` are deployed and the bucket has CORS (`cors.json`,
-    for `getBytes` in export).
+- **Attachments** (D-083) went with 1.0 (D-248): no `attachments` collection, `storage.rules` allow nothing. Files come back
+  as documents' files (images, PDFs, D-232) once Storage is live, with their own rules.
 - **Drawing:** upload only (Q-004 → D-083): draw elsewhere and attach the SVG/PNG/PDF. A built-in sketch pad may come later.
 - **Export** ✅ (D-080, D-246; Settings → workspace → export): a `.zip` holding `workspace.json` (`format:
   north-star.workspace`, `version: 2`), every content collection read fresh when asked (`src/data/exportWorkspace.ts`):
   `pieces` (planes, matrices and tables with their setups, documents lists, documents), the cards of every type and
-  packages, `competitorFeatures`, `comparisons`, `edges`, `evidence`, `labels`, `cells`, and the old board's data not yet
-  on a plane (cards and labels without a space, `planes`, `placements`); plus `documents`: the .md files and reports you
+  packages, `competitorFeatures`, `comparisons`, `edges`, `evidence`, `labels`, `cells` (cards and text without a space
+  stay out, D-248); plus `documents`: the .md files and reports you
   can see, each with its content as `body`, without its author's uid. Never members, roles, codes, comment threads (D-159)
   or anything AI. Images and PDFs (files in Storage) stay behind until Storage is live, and the page says how many.
   Code: `src/io/bundle.ts` (format, reading, cleaning).
@@ -289,9 +274,8 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   re-derived from matrix, row and column; typed rows and columns keep their own ids), report implications' cards. What
   points at something not in the file is left out (and counted). Documents become yours (shared as they were, the
   author's name kept). Written in batches (≤ 450 writes or ~4 MB; documents 6 to a batch, as their content's rule reads the
-  summary); if one fails the half-made workspace is deleted. A version 1 file still imports: its cards and text as the old
-  board's, its reports as documents, its attachments counted as left out.
-- **Matrix → TSV** and **board → PNG** (D-080) are archived with the old board (D-177). PDF later.
+  summary); if one fails the half-made workspace is deleted. A version 1 (1.0) file is refused (D-248).
+- **Matrix → TSV** and **board → PNG** (D-080) went with 1.0 (D-248). PDF later.
 
 ## 10. Repo layout (planned)
 

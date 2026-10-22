@@ -32,7 +32,7 @@ export const useReads = (wid: string, uid: string | null) => useDoc<ThreadReads>
 export const useMembers = (wid: string, on = true) =>
   useQuery<Member>(on ? query(collection(db(), 'workspaces', wid, 'members'), orderBy('name'), limit(200)) : null, `${wid}/members/all`)
 
-export type NewThread = { on: ThreadTarget; targetId?: string; planeId: string; at: [number, number] }
+export type NewThread = { on: ThreadTarget; targetId: string; planeId: string; at: [number, number] }
 
 const cap = (ids: string[]) => [...new Set(ids)].slice(0, MENTIONS_MAX)
 
@@ -44,7 +44,7 @@ export async function startThread(wid: string, t: NewThread, text: string, menti
   const ids = cap(mentions)
   const thread: Thread = {
     on: t.on,
-    ...(t.targetId && { targetId: t.targetId }),
+    targetId: t.targetId,
     planeId: t.planeId,
     x: t.at[0],
     y: t.at[1],

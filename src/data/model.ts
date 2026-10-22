@@ -1,6 +1,5 @@
-// Firestore data model: the logical model from docs/ARCHITECTURE.md §5. Only what's live (D-177); the old views' shapes
-// (cards, links, matrix, planes, reports, threads…) are in src/archive/data/model.ts. Their data is still in older
-// workspaces, and firestore.rules still knows it.
+// Firestore data model: the logical model from docs/ARCHITECTURE.md §5. Cards, links, text, evidence and competitor
+// features have their own modules in src/data/; the rest is here.
 //
 //   workspaces/{workspaceId}                 Workspace
 //     pieces/{id}                            Piece (D-176): something on the canvas, a plane (D-180), a matrix (D-204)…
@@ -8,6 +7,8 @@
 //       content/body                         DocBody: a .md's text, a report's sections
 //     cells/{matrixId}_{row}_{col}           Cell (D-204): one of a matrix's or a table's (D-209) cells (src/data/matrix.ts)
 //     members/{uid}                          Member (D-098): a member's name and email, for the people list
+//     threads/{id}, messages/{id}            Thread, ThreadMessage (D-159, D-192)
+//     reports/{id}                           an old research report, moved to documents once (documents.ts' moveReports)
 //   inviteCodes/{code}                       InviteCode (D-012)
 //   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)
 //
@@ -33,8 +34,6 @@ export type Workspace = {
   inviteCode: string
   // Lowercased addresses the owner invited; accepting or declining removes yours (D-062).
   invitedEmails?: string[]
-  // Retired (D-062): codes used to join directly. Older workspaces may still carry it.
-  joinCode?: string
   createdAt: number
 }
 
@@ -46,8 +45,6 @@ export type InviteCode = {
 // Someone entered the code and waits for the owner (D-062).
 export type JoinRequest = {
   workspaceId: string
-  // The workspace's creator when it was asked (unused since D-098: owners query by workspace).
-  ownerId: string
   uid: string
   name: string
   email: string
@@ -55,9 +52,8 @@ export type JoinRequest = {
   createdAt: number
 }
 
-// Something placed on the workspace's canvas (D-174, D-176): a plane (D-180; earlier called a board, and stored
-// as `kind: 'board'`, which still reads as a plane). World units are canvas pixels at zoom 1; x/y is its top-left corner.
-// Not the archived `planes` collection (D-139): that was the old board's own layouts.
+// Something placed on the workspace's canvas (D-174, D-176): a plane (D-180). World units are canvas pixels at zoom 1;
+// x/y is its top-left corner.
 // A matrix (D-204): two lists crossed, its cells filled; its setup on the piece, its cells in `cells`.
 // A table (D-209): rows from rules, columns of the cards' fields and its own; its own columns' values in `cells`.
 // Documents (D-232): `documents` lists them, `document` shows one on its own.
@@ -102,21 +98,19 @@ export type Presence = {
   ts: number
 }
 
-// A comment thread (D-159): a conversation pinned to something on the board (a card, text, a section, a sticky note,
-// a link) or to a spot on it. Any member may start one or answer, viewers too; it's not content, so it's not undone,
-// copied, exported or filtered. `x`/`y` is where it was pinned (a spot's place, or the thing's when the thread began),
-// used when the thing is gone. `count` and `lastAt` follow its messages.
-// `plane` (D-193): a plane on the canvas. New threads go on components only; `spot` is the old board's.
-export const THREAD_TARGETS = ['card', 'label', 'link', 'spot', 'plane'] as const
+// A comment thread (D-159, D-193): a conversation on a component: a card, text, a link or a plane (`plane`). Any member
+// may start one or answer, viewers too; it's not content, so it's not undone, copied, exported or filtered. `x`/`y` is
+// where the thing was when the thread began, used when the thing is gone. `count` and `lastAt` follow its messages.
+export const THREAD_TARGETS = ['card', 'label', 'link', 'plane'] as const
 export type ThreadTarget = (typeof THREAD_TARGETS)[number]
 export const MESSAGE_MAX = 2000
 
 export type Thread = {
   on: ThreadTarget
-  // What it's on: the card's, label's or link's id (none for a spot).
-  targetId?: string
-  // The space it's in (D-192): `canvas` or a plane's id. Threads from the old board have none and aren't shown.
-  planeId?: string
+  // What it's on: the card's, label's, link's or plane's id.
+  targetId: string
+  // The space it's in (D-192): `canvas` or a plane's id.
+  planeId: string
   x: number
   y: number
   uid: string

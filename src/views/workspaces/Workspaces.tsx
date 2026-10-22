@@ -380,12 +380,12 @@ function Pending({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =>
   )
 }
 
-// An exported .zip becomes a new workspace you own (D-080, D-246). What had to stay behind (files, broken parts) is said
-// before going there; otherwise it opens at once.
+// An exported .zip becomes a new workspace you own (D-080, D-246). What had to stay behind is said before going there;
+// otherwise it opens at once.
 function ImportStrip({ user, onCreated }: { user: AuthUser; onCreated: (id: string) => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState<{ id: string; files: number; skipped: number } | null>(null)
+  const [done, setDone] = useState<{ id: string; skipped: number } | null>(null)
   const input = useRef<HTMLInputElement>(null)
 
   const load = async (file: File | undefined) => {
@@ -396,8 +396,8 @@ function ImportStrip({ user, onCreated }: { user: AuthUser; onCreated: (id: stri
     try {
       const bundle = await readBundle(file)
       const result = await importWorkspace(bundle, user.id, user.name || user.email || 'someone')
-      if (result.filesLeftOut || result.skipped) {
-        setDone({ id: result.workspaceId, files: result.filesLeftOut, skipped: result.skipped })
+      if (result.skipped) {
+        setDone({ id: result.workspaceId, skipped: result.skipped })
         setBusy(false)
       } else onCreated(result.workspaceId)
     } catch (err) {
@@ -422,9 +422,7 @@ function ImportStrip({ user, onCreated }: { user: AuthUser; onCreated: (id: stri
       {done && (
         <>
           <p className={styles.importText}>
-            Imported.
-            {done.files > 0 && ` ${plural(done.files, 'file was', 'files were')} left out: files can't be stored here yet.`}
-            {done.skipped > 0 && ` ${plural(done.skipped, 'thing was', 'things were')} left out: broken, or pointing at something not in the file.`}
+            Imported. {plural(done.skipped, 'thing was', 'things were')} left out: broken, or pointing at something not in the file.
           </p>
           <AsciiButton accent="green" onClick={() => onCreated(done.id)}>
             open workspace

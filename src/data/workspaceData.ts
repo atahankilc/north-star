@@ -1,6 +1,6 @@
 // Everything in one workspace, live. Loaded once by the workspace layout (D-036): the canvas's pieces (D-176), the
-// cards on its planes (D-187), the text written anywhere (D-188) and the matrices' cells (D-204). What the old views loaded is in src/archive/data/workspaceData.ts and comes back as each
-// piece does (D-177).
+// cards on its planes (D-187), the text written anywhere (D-188), the matrices' cells (D-204), what hangs off the cards,
+// the comment threads and the documents you may see.
 import { useMemo } from 'react'
 import { CARD_COLLECTION, toCards, type Card, type CardFields } from './cards'
 import type { WithId } from './hooks'
@@ -17,9 +17,9 @@ import { useDocuments, type Doc } from './documents'
 export type WorkspaceData = {
   pieces: WithId<Piece>[]
   cards: Card[]
-  // Only the ones with a space (`pieceId`): the old board's labels aren't shown.
+  // Text always has a space (`pieceId`); a doc without one isn't the app's and is skipped.
   labels: Label[]
-  // Comment threads with a space (`planeId`, D-192): the old board's aren't shown.
+  // Comment threads (D-192), each in a space (`planeId`); one without is skipped.
   threads: WithId<Thread>[]
   // Every matrix's cells (D-204).
   cells: Cell[]
@@ -43,7 +43,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const competitors = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.competitor)
   const ideas = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.idea)
   const features = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.feature)
-  // Packages (D-239): the old board's too, but only those on a plane (a `pieceId`) show.
+  // Packages (D-239).
   const packages = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.package)
   const labelDocs = useWorkspaceCollection<Omit<Label, 'id'>>(wid, 'labels')
   const labels = useMemo(() => labelDocs.data.filter((l) => l.pieceId) as Label[], [labelDocs.data])

@@ -37,7 +37,8 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 
 ## 4. Views
 
-> **D-177:** the views below are archived (`src/archive/`) and come back one by one as canvas pieces.
+> **D-177, D-248:** the views below were 1.0's; their code is deleted (in git at `493bf87`) and they come back one by one
+> as canvas pieces.
 >
 > **Next (D-174, D-176):** no more pages. A workspace opens on an infinite canvas (the moving backdrop, no grid marks, no
 > view tabs; drag to pan, wheel to zoom). What used to be pages become pieces placed on it, several of each: the side

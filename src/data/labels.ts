@@ -1,7 +1,6 @@
 // Text and frames written anywhere in the workspace (D-188): headings, paragraphs, sticky notes, sections and the
 // project title. Not bound to a component: each sits on the canvas (`pieceId: 'canvas'`) or on a plane (its id), at x/y
-// (top-left) in that space's px. The `labels` collection and its fields are the old board's (D-050, D-130, D-156–D-158,
-// D-118); its labels have no `pieceId` and aren't shown.
+// (top-left) in that space's px (D-050, D-118, D-130, D-156–D-158).
 import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch, type DocumentReference } from 'firebase/firestore'
 import { db } from './firebase'
 import { snap } from './grid'

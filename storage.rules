@@ -1,31 +1,12 @@
 rules_version = '2';
 
-// Attachment files (D-083). Their metadata is in Firestore (workspaces/{wid}/attachments, firestore.rules);
-// the file sits at workspaces/{wid}/attachments/{id}/{name}. Members only, checked against the workspace doc.
-// Deploy (needs Blaze): npm run deploy:rules
+// Files in Storage (needs Blaze). Nothing is stored yet: documents' files (images, PDFs, D-232) come with Storage, at
+// workspaces/{wid}/documents/{id}/…, and get their rules then. Until then nobody reads or writes anything.
+// Deploy: npm run deploy:rules
 service firebase.storage {
   match /b/{bucket}/o {
-    function ws(wid) {
-      return firestore.get(/databases/(default)/documents/workspaces/$(wid)).data;
-    }
-
-    function isMember(wid) {
-      return request.auth != null && request.auth.uid in ws(wid).memberIds;
-    }
-
-    // Owners and editors; viewers only look (D-098).
-    function canEdit(wid) {
-      return isMember(wid) && ws(wid).roles[request.auth.uid] in ['owner', 'editor'];
-    }
-
-    match /workspaces/{wid}/attachments/{path=**} {
-      // get and list (the orphan sweep and workspace delete list the prefix): members. Delete: owners and editors.
-      allow read: if isMember(wid);
-      allow delete: if canEdit(wid);
-      // Up to 10 MB, images, SVGs and PDFs only; the same list as src/data/attachments.ts.
-      allow create, update: if canEdit(wid)
-        && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType in ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'];
+    match /{path=**} {
+      allow read, write: if false;
     }
   }
 }

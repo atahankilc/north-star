@@ -13,10 +13,7 @@ import {
   cleanEdge,
   cleanEvidence,
   cleanLabel,
-  cleanOldPlane,
   cleanPiece,
-  cleanPlacement,
-  reportAsDocument,
   type Bundle,
   type Ids,
 } from '../io/bundle'
@@ -32,9 +29,8 @@ const BATCH_BYTES = 4_000_000
 // A document's content rule reads its summary (getAfter), and a batch's rules may read at most 20 documents.
 const DOCUMENTS_PER_BATCH = 6
 
-// `skipped`: docs left out (broken, or pointing at what didn't come over). `filesLeftOut`: images, PDFs and old
-// attachments, which can't be stored until Storage is live (D-083).
-export type ImportResult = { workspaceId: string; written: number; skipped: number; filesLeftOut: number }
+// `skipped`: docs left out (broken, or pointing at what didn't come over).
+export type ImportResult = { workspaceId: string; written: number; skipped: number }
 
 type Write = [DocumentReference, object]
 
@@ -46,24 +42,18 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
   const docWrites: Write[][] = []
   let skipped = 0
 
-  // New ids first, for everything that can be pointed at: pieces, cards (and competitor features), documents, the old
-  // board's planes.
+  // New ids first, for everything that can be pointed at: pieces, cards (and competitor features), documents.
   const pieceIds = new Map(bundle.pieces.map((p) => [p.id, doc(col('pieces')).id]))
   const cardIds = new Map<string, { id: string; type: AnyType | 'competitorFeature' }>()
   for (const type of ALL_TYPES) for (const d of bundle[CARD_COLLECTION[type] as 'customers']) cardIds.set(d.id, { id: doc(col(CARD_COLLECTION[type])).id, type })
   for (const d of bundle.competitorFeatures) cardIds.set(d.id, { id: doc(col('competitorFeatures')).id, type: 'competitorFeature' })
-  const documents = [...bundle.documents, ...(bundle.reports ?? []).map(reportAsDocument)]
-  const docIds = new Map(documents.map((d) => [d.id, doc(col('documents')).id]))
-  const oldPlaneIds = new Map(bundle.planes.map((p) => [p.id, doc(col('planes')).id]))
+  const docIds = new Map(bundle.documents.map((d) => [d.id, doc(col('documents')).id]))
   const key = (v: unknown) => (typeof v === 'string' ? v : '')
   const ids: Ids = {
     card: (v) => cardIds.get(key(v)),
     piece: (v) => pieceIds.get(key(v)),
     doc: (v) => docIds.get(key(v)),
   }
-  // A card's space (D-187): a plane that came over. The old board's cards have none and stay the old board's.
-  const space = (d: Record<string, unknown>): string | null | undefined =>
-    d.pieceId === undefined ? null : ids.piece(d.pieceId)
 
   const put = (ref: DocumentReference, fields: object | null) => (fields ? writes.push([ref, fields]) : skipped++)
 
@@ -71,24 +61,16 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
 
   for (const type of ALL_TYPES) {
     for (const d of bundle[CARD_COLLECTION[type] as 'customers']) {
+      // On a plane that came over (D-187).
       const fields = cleanCard(type, d, now)
-      const on = space(d)
-      if (!fields || on === undefined) {
+      const on = ids.piece(d.pieceId)
+      if (!fields || !on) {
         skipped++
         continue
       }
-      const extra: Record<string, unknown> = on ? { pieceId: on } : {}
-      if (type === 'package') {
-        // Its members (D-141, D-239) that came over, and its home: its plane, or the old board's plane it was made on.
-        extra.memberIds = (Array.isArray(d.memberIds) ? d.memberIds : []).flatMap((m) => ids.card(m)?.id ?? []).slice(0, 60)
-        const home = ids.piece(d.homePlaneId) ?? oldPlaneIds.get(key(d.homePlaneId)) ?? on
-        if (!home) {
-          skipped++
-          continue
-        }
-        extra.homePlaneId = home
-      }
-      writes.push([doc(col(CARD_COLLECTION[type]), cardIds.get(d.id)!.id), { ...fields, ...extra }])
+      // A package's members (D-239) that came over.
+      const members = type === 'package' && { memberIds: (Array.isArray(d.memberIds) ? d.memberIds : []).flatMap((m) => ids.card(m)?.id ?? []).slice(0, 60) }
+      writes.push([doc(col(CARD_COLLECTION[type]), cardIds.get(d.id)!.id), { ...fields, pieceId: on, ...members }])
     }
   }
 
@@ -138,16 +120,11 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     put(doc(col('evidence')), ok && fields ? { nodeId: on.id, nodeType: on.type, ...fields } : null)
   }
 
-  // Text (D-188): on the canvas, on a plane that came over, or the old board's (no space; its old plane if it came over).
+  // Text (D-188): on the canvas, or on a plane that came over.
   for (const d of bundle.labels) {
     const fields = cleanLabel(d, now)
-    const on = d.pieceId === CANVAS ? CANVAS : space(d)
-    if (!fields || on === undefined) {
-      skipped++
-      continue
-    }
-    const oldPlane = on ? undefined : oldPlaneIds.get(key(d.planeId))
-    writes.push([doc(col('labels')), { ...fields, ...(on && { pieceId: on }), ...(oldPlane && { planeId: oldPlane }) }])
+    const on = d.pieceId === CANVAS ? CANVAS : ids.piece(d.pieceId)
+    put(doc(col('labels')), fields && on ? { ...fields, pieceId: on } : null)
   }
 
   // A matrix's or a table's cells (D-204, D-209): its piece came over; a row or column that's a card takes the card's new
@@ -167,22 +144,9 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     writes.push([doc(col('cells'), id), { matrixId: matrix, row, col: column, ...cleanCell(d, now) }])
   }
 
-  // The old board's planes and placements (D-139), until it's brought onto the canvas.
-  for (const d of bundle.planes) put(doc(col('planes'), oldPlaneIds.get(d.id)!), cleanOldPlane(d, now))
-  for (const d of bundle.placements) {
-    const plane = oldPlaneIds.get(key(d.planeId))
-    const item = ids.card(d.itemId)
-    const at = cleanPlacement(d)
-    if (!plane || !item || item.type === 'competitorFeature' || !at) {
-      skipped++
-      continue
-    }
-    writes.push([doc(col('placements'), `${plane}_${item.id}`), { planeId: plane, itemId: item.id, itemType: item.type, ...at }])
-  }
-
   // Documents (D-232): yours now, shared as they were, under the name of whoever added them. The summary first, as its
   // content's rule reads it.
-  for (const d of documents) {
+  for (const d of bundle.documents) {
     const clean = cleanDocument(d, now, ids)
     if (!clean) {
       skipped++
@@ -194,7 +158,6 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
       [doc(ref, 'content', 'body'), clean.body],
     ])
   }
-  const filesLeftOut = (bundle.attachments ?? []).length
 
   try {
     await commit(writes)
@@ -206,7 +169,7 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     if (code) await deleteWorkspace(wid, code, uid).catch(() => {})
     throw err
   }
-  return { workspaceId: wid, written: writes.length + docWrites.length, skipped, filesLeftOut }
+  return { workspaceId: wid, written: writes.length + docWrites.length, skipped }
 }
 
 // In batches, cut at BATCH_WRITES writes or about BATCH_BYTES of data.

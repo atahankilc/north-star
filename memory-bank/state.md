@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-22 (D-247: a card's head in a matrix/table opens its panel)_
+_Last updated: 2026-10-22 (D-247: a card's head in a matrix/table opens its panel; D-248: 1.0 dropped)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -8,14 +8,16 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## Phase
 - Phases 0–4 done: scaffold + design language, one board (D-040–D-052), collaboration (D-065–D-071), settings + AI (D-073–D-079).
-- Phase 5 in part: export/import/TSV/PNG done (D-080); attachments built, emulator-only (D-083).
+- Export/import for 1.5 done (D-246). 1.0 dropped: code, data shapes, rules (D-248); only old reports move to documents.
 - Ongoing: the user's assistant redesign (D-094–D-101, D-114, D-121 done) and board editing (D-108–D-113, D-115, D-117).
 
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. Firestore + RTDB rules and indexes deployed
   (latest: Firestore rules 2026-10-20 for D-155–D-159; RTDB 2026-10-18 for D-124's `more`; rules 253 tests incl. sections and text setting (D-130); reports readable while not saved yet, so a save shows at once; research written twice keeps only the newest).
-- Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger), `storage.rules`
-  (attachments D-083). Flags `WORKSPACE_KEYS_LIVE` (src/data/ai.ts) and `ATTACHMENTS_LIVE` (src/data/attachments.ts) are `false`.
+- Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger), Storage (documents'
+  files, D-232; `storage.rules` allow nothing yet).
+- **D-248's rules are not deployed:** `main` (live) is still 1.0 on the same Firebase project and would break. Deploy
+  `npm run deploy:rules` together with merging 1.5, with the user's yes.
 - Tried with a real key: chat, proposals, [web], agent loop, deep research, reports. Only with a fake OpenAI: `/analyze` (D-099),
   `edit_link` / `add_note` (D-108). Not tried in the app at all: `update_project` (D-120), D-122's edits, D-123's text and moves, D-125/D-126/D-129's layouts, D-131's frames.
 
@@ -69,13 +71,13 @@ something is finished, add its entry to state-history.md and leave at most one l
   delete asks with hazard tape, 25 px snapping (D-182, D-183); `focus` spreads a plane over the screen like ink (D-184, D-185).
   Cards on planes (D-187); text anywhere, canvas or plane (D-188, D-190); cursors, total follow, selection marks (D-191);
   comment threads (D-192); text's old look back: section names, kickers, turns, the title's sizes and fold (D-194;
-  what else was lost is in D-194's *Not yet*). All the old code archived in `src/archive/`, out of the build (D-177); features come back as pieces. Not pushed; RTDB + Firestore rules deployed 2026-10-20. Next: the board's cards
+  what else was lost is in D-194's *Not yet*). The old code was archived (D-177), then deleted (D-248); features come back as pieces. Not pushed; RTDB + Firestore rules deployed 2026-10-20. Next: the board's cards
   inside its piece (each board its own items: maybe a plane per board, D-139), then tables etc.; pieces in the export.
 
 ## Next steps
 - **Agreed order (2026-10-22):** export/import complete, done (D-246, bundle v2; Settings → export, workspaces → import);
-  next a v1 step that brings the old board's cards, labels and threads (no `pieceId`) onto a plane; then merge/push, only
-  with the user's yes.
+  the v1 step was dropped for D-248 (1.0 gone, old reports still moved); next merge/push + rules deploy, only with the
+  user's yes.
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
    - Try `edit_link` / `add_note` with a real key.
    - Link chips already hide when too small (D-111); left: draw them at a constant screen size.
@@ -85,9 +87,6 @@ something is finished, add its entry to state-history.md and leave at most one l
 1. Finish the workspace key (D-079) once Blaze goes through: user runs
    `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`, then `npm run deploy:functions`, set
    `WORKSPACE_KEYS_LIVE = true`, push, try with a real key as owner + member (also the workspace-delete cleanup).
-2. Attachments live (D-083), once on Blaze: `npm run deploy:rules` (includes storage; until Blaze use
-   `--only firestore:rules,database`), `gsutil cors set cors.json gs://north-star-db.firebasestorage.app` (or the
-   `VITE_FIREBASE_STORAGE_BUCKET` repo variable), flip `ATTACHMENTS_LIVE = true`, push, try upload, export and a workspace delete live.
 
 ## Blockers
 - Blaze: the user's payments profile was refused once (OR_BAOOC_15, likely profile country vs German card); retrying.
@@ -110,7 +109,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The user runs their own dev server on :5173. Use another port (e.g. 5179) and stop your servers when done.
 - Several Claude sessions work on this repo at once. Check `git status` and file times before editing shared files
   (memory-bank, NodeCard.tsx…), and don't commit another session's hunks.
-- Test data: click Alice, then create a workspace (the example is archived, D-177). Seed script: sign in to the auth emulator as `test-alice` with the
+- Test data: click Alice, then create a workspace (no example workspace since D-177). Seed script: sign in to the auth emulator as `test-alice` with the
   firebase client in node, write a workspace + items, open `/workspaces/<wid>` after clicking Alice.
 - Dev hooks: `window.__boardItems`, `__sceneTime`, `__backdrop`, `__curtain`, `__sweep`, `__canvas`, `__advance`,
   `__orbAntic`, `__orbFace`, `__orbReact`, `__orbPom`.

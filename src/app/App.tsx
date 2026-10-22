@@ -2,7 +2,7 @@
 // link still boots the app.
 import { MotionConfig } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from '../data/auth'
 import { useHoldCurtain } from '../state/curtain'
 import { useDisplay } from '../state/display'
@@ -12,9 +12,7 @@ import { Curtain } from '../ui/Curtain'
 import { Landing } from '../views/landing/Landing'
 import { WorkspaceLayout } from '../views/workspace/WorkspaceLayout'
 import { Workspaces } from '../views/workspaces/Workspaces'
-import { upgradeLegacyUrl, WORKSPACES, workspacePath } from './paths'
-
-upgradeLegacyUrl()
+import { WORKSPACES } from './paths'
 
 export function App() {
   const reduced = useMotion((s) => s.reduced)
@@ -53,9 +51,6 @@ function Shell() {
             <>
               <Route path={WORKSPACES} element={<Workspaces user={user} />} />
               <Route path={`${WORKSPACES}/:wid`} element={<WorkspaceLayout />} />
-              {/* No pages any more (D-174, D-177): the old views are archived (src/archive/) and come back as pieces on the
-                  canvas. Their old paths open the canvas. */}
-              <Route path={`${WORKSPACES}/:wid/*`} element={<ToCanvas />} />
               <Route path="/" element={<AfterSignIn />} />
               <Route path="*" element={<Navigate to={WORKSPACES} replace />} />
             </>
@@ -70,11 +65,6 @@ function Shell() {
       <Curtain field={field} />
     </>
   )
-}
-
-function ToCanvas() {
-  const { wid = '' } = useParams()
-  return <Navigate to={workspacePath(wid)} replace />
 }
 
 type Continue = { next?: string }

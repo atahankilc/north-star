@@ -7,10 +7,11 @@ user said, how it was verified) are in [decisions-log.md](decisions-log.md): rea
 New decision: append the full `### D-xxx` entry to the log, then add or edit its line here (edit the line it replaces,
 don't stack a second one). Spec detail belongs in `/docs`, not here.
 
-**Archived (D-177):** branch `refactor/north-star-1.5` keeps only landing, workspaces, settings (you, general, people),
-presence squares and the canvas live. Everything under Board, Other views, Assistant and Export/import below, and most of
-Data layer, describes code now in `src/archive/` (out of the build). Those lines stand for when a feature comes back as a
-piece; check them with the user then.
+**1.0 removed (D-177, D-248):** branch `refactor/north-star-1.5` keeps landing, workspaces, settings, presence and the
+canvas with its pieces. The 1.0 code (`src/archive/`) is deleted; it's in git at `493bf87` (`git show
+493bf87:src/archive/<path>`). Lines under Board, Other views (old pages), Assistant and parts of Data layer describe that
+code; they stand for when a feature comes back as a piece; check them with the user then. No 1.0 data is supported, only
+old reports are moved to documents once (D-248).
 
 ---
 
@@ -35,7 +36,7 @@ piece; check them with the user then.
 - Static React SPA on GitHub Pages, deployed by Actions; three.js via @react-three/fiber (D-001, D-003).
 - No app server: the browser talks to Firebase directly (Auth, Firestore, RTDB europe-west1); rules enforce security (D-002, D-014).
 - Only server code: Cloud Functions for the workspace key (needs Blaze, not deployed yet) (D-079).
-- Plain paths (`/workspaces/<id>/table?item=<id>`), BrowserRouter; build copies index.html to 404.html; old hash links upgraded;
+- Plain paths (`/workspaces/<id>/table?item=<id>`), BrowserRouter; build copies index.html to 404.html;
   signing out goes to `/`; a link opened signed out continues after sign-in (D-070). Paths only via `src/app/paths.ts`.
 - Local dev and tests on emulators with a `demo-` project and test users Alice/Bob/Carol; RTDB emulator on 9010 (D-020).
 
@@ -52,7 +53,9 @@ piece; check them with the user then.
 - All DB access in `src/data/`; every write through `tracked()` for undo/redo by document snapshots (cascades = one step;
   typing in a field and one drag merge). ⌘Z / ⇧⌘Z, Delete key; local to the tab (D-046).
 - Concurrent edits: last write wins per field, no locks, no Yjs (D-071).
-- Retired collections (`domains`, `groups`) stay readable/deletable; old fields tolerated and ignored (D-048, D-049).
+- No 1.0 data (D-248): cards and text always have a space (`pieceId`), threads a space (`planeId`) and a component; no
+  `domains`, `groups` (D-048, D-049), old `planes`/`placements`, `attachments`, `board` pieces, old presence views or 1.0
+  exports; rules refuse them. Only old `reports` stay readable and deletable, until moved to documents (D-232).
 - Nothing beyond the workspace's items loads up front: reports, people, usage, attachment files load where shown, paged
   (`usePaged`), with a `Loading` line (D-098, D-083).
 - Reports: summary doc + `content/body`; private to the author until `shared` (D-090, D-098).
@@ -179,15 +182,14 @@ piece; check them with the user then.
 - Filters SHOW / FOR / TAG / REGION / LINKS, remembered per workspace (D-053, D-056, D-108, D-145).
 
 ## Other views
-- The old implementation is in `src/archive/` (paths mirror `src/`, out of the build, README there); features come back
-  piece by piece onto the canvas; old paths open the canvas; settings keep you + general + people (D-177).
+- The old pages are gone (D-177, D-248: code deleted, in git at `493bf87`); features come back piece by piece onto the
+  canvas; settings keep you, general, people and export.
 - No pages any more: a workspace is one canvas (`/workspaces/<id>`, D-174), backdrop at full strength, no grid, no view
   tabs, no assistant; the old pages become pieces placed on it. The board is at `/board`; other views by their paths for now.
 - Pieces (D-176): `pieces/{id}` (x/y/w/h in canvas px, name); side nav `+` (D-178, opens right) puts one at the screen's
   middle, or the nearest clear spot round it, in edit mode to be moved (D-238); pan by drag, wheel zooms round the pointer (0.1–4). Each piece has its own
   background: a plane's is solid `--bg` with `+` marks every 25 px (`--grid-mark`), no backdrop.
-- The first piece is a **plane** (D-180): never "board" again, in the UI or the code (`kind: 'plane'`; old docs say
-  `board`, still allowed by the rules). A press on a plane is the plane's (the canvas doesn't pan); only in edit mode does
+- The first piece is a **plane** (D-180): never "board" again, in the UI or the code (`kind: 'plane'`). A press on a plane is the plane's (the canvas doesn't pan); only in edit mode does
   it move, resize (≥ 320 × 200) and take a name (the name is a field), and Delete removes it; edit stays on until
   pressed off (D-180).
 - Piece names (D-223): set into the top edge of a plane, matrix or table, held on the screen at 13 px × zoom (11–15 px),
@@ -421,11 +423,11 @@ piece; check them with the user then.
 
 ## Export, import, attachments
 - Export `.zip` bundle (format `north-star.workspace` v2, Settings → workspace → export): every piece, card, link, text,
-  cell, evidence, competitor feature, match, package, the old board's data and the documents you can see with their
-  content; never members, codes, threads, AI. Import (workspaces page) makes a new workspace with new ids, every reference
-  following, built from known fields; v1 files still import (D-080, D-246). The old `.tsv` / `.png` are archived (D-177).
-- Attachments: images, SVG, PDF ≤10 MB in Firebase Storage, thumbnails, files never downloaded up front; hidden on the
-  live site (`ATTACHMENTS_LIVE`) until Blaze (D-083).
+  cell, evidence, competitor feature, match, package and the documents you can see with their content; never members,
+  codes, threads, AI. Import (workspaces page) makes a new workspace with new ids, every reference following, built from
+  known fields (D-080, D-246); 1.0 files are refused (D-248). The old `.tsv` / `.png` went with 1.0.
+- Attachments (D-083) went with 1.0 (D-248); files come back as documents' files once Storage is live (D-232).
+  `storage.rules` allow nothing until then.
 
 ---
 

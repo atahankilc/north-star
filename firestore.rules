@@ -70,23 +70,16 @@ service cloud.firestore {
       return !(key in d) || d[key] in values;
     }
 
-    // Domains are retired (D-048); older items may still carry these fields, so they're tolerated, not required.
-    function validDomainRefs(d) {
-      return optText(d, 'domainId', 128)
-        && (!('domainIds' in d) || (d.domainIds is list && d.domainIds.size() <= 50));
-    }
-
-    // Customers, problems, ideas and features: cards on the board (D-037, D-040).
+    // Customers, problems, ideas, features and packages: cards on a plane (D-187), `pieceId` the plane.
     function validCard(d) {
       return isText(d.title, 200)
         && optText(d, 'body', 20000)
-        && optText(d, 'color', 20)
         && (!('tags' in d) || (d.tags is list && d.tags.size() <= 30))
         && d.x is number && d.y is number
         && optIn(d, 'validation', ['hypothesis', 'testing', 'validated', 'invalidated'])
-        // The plane it's on (D-187); the old board's cards have none.
-        && optText(d, 'pieceId', 128)
-        && validDomainRefs(d);
+        && isText(d.pieceId, 128)
+        // Its parts folded into it (D-164, D-226), a package's members (D-239).
+        && optBool(d, 'folded');
     }
 
     // What was learned, on a customer, problem or idea (D-137).
@@ -109,9 +102,7 @@ service cloud.firestore {
         && optIn(d, 'effort', ['S', 'M', 'L'])
         && optIn(d, 'impact', ['low', 'medium', 'high'])
         // What it must do (D-133): a short list; the cells score against it.
-        && (!('criteria' in d) || (d.criteria is list && d.criteria.size() <= 8))
-        // Its parts folded into it on All (D-164).
-        && optBool(d, 'folded');
+        && (!('criteria' in d) || (d.criteria is list && d.criteria.size() <= 8));
     }
 
     function validCompetitor(d) {
@@ -121,18 +112,16 @@ service cloud.firestore {
         && optText(d, 'pricing', 2000)
         && optText(d, 'audience', 2000)
         && optText(d, 'notes', 20000)
-        && optText(d, 'color', 20)
         && (!('tags' in d) || (d.tags is list && d.tags.size() <= 30))
         // Where it operates (D-145).
         && (!('regions' in d) || (d.regions is list && d.regions.size() <= 20))
-        && (!('x' in d) || d.x is number)
-        && (!('y' in d) || d.y is number)
-        && optText(d, 'pieceId', 128)
-        && validDomainRefs(d);
+        && d.x is number && d.y is number
+        && isText(d.pieceId, 128)
+        && optBool(d, 'folded');
     }
 
-    // Text on the board, and a place to jump to (D-050). A section (D-130) is a frame with a name: x/y its centre, w/h its size.
-    // In the old board's units up to 2000; since D-188 in space px, which run larger.
+    // Text anywhere (D-188): headings, paragraphs, sticky notes, sections (a frame with a name, w/h its size) and the
+    // project title, in a space (`canvas` or a plane's id), x/y its top-left corner in that space's px.
     function optSize(d, key) {
       return !(key in d) || (d[key] is number && d[key] > 0 && d[key] <= 100000);
     }
@@ -159,32 +148,21 @@ service cloud.firestore {
         && optText(d, 'uid', 128) && optText(d, 'author', 200)
         && optSize(d, 'w') && optSize(d, 'h')
         && (!('kind' in d) || d.kind != 'section' || ('w' in d && 'h' in d))
-        && optText(d, 'planeId', 128)
-        // The space it's written in (D-188): `canvas`, or a plane's id; the old board's labels have none.
-        && optText(d, 'pieceId', 128)
+        && isText(d.pieceId, 128)
         && d.x is number && d.y is number;
     }
 
-    // A package (D-141): a card holding a piece of the chain by id, laid out on its home plane.
+    // A package (D-239): a card holding a piece of the chain by id, on its plane.
     function validPackage(d) {
       return validCard(d)
         && d.memberIds is list && d.memberIds.size() <= 60
-        && isText(d.homePlaneId, 128)
         && optIn(d, 'impact', ['low', 'medium', 'high'])
         && optIn(d, 'effort', ['S', 'M', 'L']);
     }
 
-    // A plane (D-139): a name and its place in the list.
-    function validPlane(d) {
-      return isText(d.name, 80) && d.name.size() > 0
-        && d.order is number
-        && d.createdAt is number;
-    }
-
-    // Something on the workspace's canvas (D-176): a plane for now (D-180), a box in canvas pixels. `board` is the name it
-    // had before D-180, still on pieces made then (and brought back by undoing their changes).
+    // Something on the workspace's canvas (D-176): a plane (D-180), a matrix, a table, documents; a box in canvas pixels.
     function validPiece(d) {
-      return d.kind in ['plane', 'board', 'matrix', 'table', 'documents', 'document']
+      return d.kind in ['plane', 'matrix', 'table', 'documents', 'document']
         && d.x is number && d.y is number
         && d.w is number && d.w > 0 && d.w <= 100000
         && d.h is number && d.h > 0 && d.h <= 100000
@@ -265,17 +243,6 @@ service cloud.firestore {
         && d.updatedAt is number;
     }
 
-    // A card's place on a plane (D-139): the id is fixed by the two.
-    function validPlacement(id, d) {
-      return isText(d.planeId, 128)
-        && isText(d.itemId, 128)
-        && id == d.planeId + '_' + d.itemId
-        && d.itemType in ['customer', 'problem', 'idea', 'feature', 'competitor', 'package']
-        && d.x is number && d.y is number
-        // Its parts folded into it on this plane (D-164).
-        && optBool(d, 'folded');
-    }
-
     function validCompetitorFeature(d) {
       return isText(d.competitorId, 128)
         && isText(d.name, 200)
@@ -286,20 +253,16 @@ service cloud.firestore {
         && optText(d, 'url', 2000);
     }
 
-    // One matrix cell per (feature, competitor): the id is fixed by its two ends.
+    // One of ours against one competitor (D-221): which of theirs matches it, and its must-haves' scores (D-133). The id is
+    // fixed by its two ends.
     function validComparison(id, d) {
       return isText(d.featureId, 128)
         && isText(d.competitorId, 128)
         && id == d.featureId + '_' + d.competitorId
-        && optIn(d, 'coverage', ['none', 'partial', 'full', 'better'])
-        && optText(d, 'notes', 20000)
         && optText(d, 'competitorFeatureId', 128)
-        // Criterion id → score (D-133).
+        // Criterion id → score.
         && (!('criteria' in d) || (d.criteria is map && d.criteria.size() <= 8
-          && d.criteria.values().hasOnly(['met', 'part', 'no'])))
-        // Not comparable at all, and how sure the cell is (D-136).
-        && optBool(d, 'notRelevant')
-        && optIn(d, 'confidence', ['documented', 'inferred', 'guess']);
+          && d.criteria.values().hasOnly(['met', 'part', 'no'])));
     }
 
     function validEdge(d) {
@@ -309,23 +272,6 @@ service cloud.firestore {
         && isText(d.kind, 40)
         && optText(d, 'label', 200)
         && (!('bends' in d) || (d.bends is list && d.bends.size() <= 8));
-    }
-
-    // A file on an item (D-083): the metadata here, the file in Storage (storage.rules) at `path`.
-    // `uid` is who attached it; not tied to the writer, since undoing a delete restores someone else's attachment.
-    function validAttachment(wid, id, d) {
-      return isText(d.nodeId, 128)
-        && d.nodeType in ['customer', 'problem', 'idea', 'feature', 'competitor', 'competitorFeature']
-        && isText(d.name, 200) && d.name.size() > 0
-        && d.contentType in ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf']
-        && d.size is int && d.size >= 0 && d.size < 10 * 1024 * 1024
-        && isText(d.path, 400)
-        && d.path.matches('workspaces/' + wid + '/attachments/' + id + '/[^/]+')
-        && (!('thumbPath' in d) || d.thumbPath == 'workspaces/' + wid + '/attachments/' + id + '/~thumb.webp')
-        && (!('width' in d) || d.width is number)
-        && (!('height' in d) || d.height is number)
-        && isText(d.uid, 128)
-        && d.createdAt is number;
     }
 
     function valid(wid, collection, id, d) {
@@ -338,11 +284,8 @@ service cloud.firestore {
         || (collection == 'competitorFeatures' && validCompetitorFeature(d))
         || (collection == 'comparisons' && validComparison(id, d))
         || (collection == 'edges' && validEdge(d))
-        || (collection == 'attachments' && validAttachment(wid, id, d))
         || (collection == 'evidence' && validEvidence(d))
         || (collection == 'packages' && validPackage(d))
-        || (collection == 'planes' && validPlane(d))
-        || (collection == 'placements' && validPlacement(id, d))
         || (collection == 'pieces' && validPiece(d))
         || (collection == 'cells' && validCell(id, d));
     }
@@ -461,66 +404,27 @@ service cloud.firestore {
             || (resource.data.keySource == 'workspace' && isOwner(wid)));
       }
 
-      // Research reports (D-090). Saved by whoever ran them and seen only by them until they share it; then every member
-      // reads it. Only the author shares or unshares it, and nothing else in it changes. The author deletes it; an owner
-      // may delete a shared one. Undoing an owner's delete restores someone else's shared report, so owners may create that too.
-      // D-098: the doc is a summary (title, answer, counts) and the rest is in content/body. Reports saved before that hold
-      // everything in one doc; they stay readable, shareable and deletable, and undoing their delete may restore them.
-      // Shapes mirror ReportSummary / ReportBody and REPORT_LIMITS in src/data/model.ts.
+      // Research reports (D-090) from before documents (D-232): each is moved to `documents` once, by its author's browser
+      // or an owner's (documents.ts' moveReports), then deleted here. Nothing writes new ones. Read by whoever may see it
+      // (its author, or everyone once shared); deleted by its author, an owner a shared one. A report's content is in
+      // content/body, or, saved before D-098, inline.
       match /reports/{id} {
-        function validMeta(d) {
-          return optIn(d, 'kind', ['research', 'chat', 'upload'])
-            && isText(d.title, 300) && isText(d.answer, 4000)
-            && isText(d.topic, 500) && isText(d.uid, 128) && isText(d.name, 200) && isText(d.model, 100)
-            && d.shared is bool
-            && d.createdAt is number;
-        }
-        function validBody(d) {
-          return d.sections is list && d.sections.size() <= 30
-            && d.implications is list && d.implications.size() <= 20
-            && d.openQuestions is list && d.openQuestions.size() <= 30
-            && d.sources is list && d.sources.size() <= 200;
-        }
-        function validSummary(d) {
-          return d.keys().hasOnly(['kind', 'title', 'answer', 'topic', 'uid', 'name', 'model', 'shared', 'createdAt', 'sectionCount', 'sourceCount'])
-            && validMeta(d)
-            && d.sectionCount is int && d.sectionCount >= 0
-            && d.sourceCount is int && d.sourceCount >= 0;
-        }
-        function validWhole(d) {
-          return d.keys().hasOnly(['kind', 'title', 'answer', 'sections', 'implications', 'openQuestions', 'sources', 'topic', 'uid', 'name', 'model', 'shared', 'createdAt'])
-            && validMeta(d) && validBody(d);
-        }
         function mayRead(d) {
           return isMember(wid) && (d.shared == true || d.uid == request.auth.uid);
         }
-        // A report not saved yet reads as missing to any member: the chat listens for it before you save it, and a
-        // listener refused once never comes back, so the save would go unseen and a second one be refused as an edit.
+        function mayDelete(d) {
+          return isMember(wid) && (d.uid == request.auth.uid || (d.shared == true && isOwner(wid)));
+        }
         allow read: if resource == null ? isMember(wid) : mayRead(resource.data);
-        allow create: if isMember(wid) && (validSummary(request.resource.data) || validWhole(request.resource.data))
-          && (request.resource.data.uid == request.auth.uid || (request.resource.data.shared == true && isOwner(wid)));
-        allow update: if isMember(wid) && resource.data.uid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared'])
-          && request.resource.data.shared is bool;
-        allow delete: if isMember(wid) && (resource.data.uid == request.auth.uid || (resource.data.shared == true && isOwner(wid)));
+        allow delete: if mayDelete(resource.data);
 
-        // The body follows its summary: read by whoever reads the report, written with it (the summary in the same
-        // batch, hence getAfter), deleted by whoever may delete it.
         function summary() {
           return get(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id)).data;
         }
-        function summaryAfter() {
-          return getAfter(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id)).data;
-        }
         match /content/{part} {
           allow read: if part == 'body' && mayRead(summary());
-          allow create: if part == 'body' && isMember(wid)
-            && request.resource.data.keys().hasOnly(['sections', 'implications', 'openQuestions', 'sources'])
-            && validBody(request.resource.data)
-            && (summaryAfter().uid == request.auth.uid || (summaryAfter().shared == true && isOwner(wid)));
           allow delete: if part == 'body' && isMember(wid)
-            && (!exists(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id))
-              || summary().uid == request.auth.uid || (summary().shared == true && isOwner(wid)));
+            && (!exists(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id)) || mayDelete(summary()));
         }
       }
 
@@ -619,9 +523,9 @@ service cloud.firestore {
         function validThread(d) {
           return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
             // 'plane' (D-193): a comment on a plane on the canvas.
-            && d.on in ['card', 'label', 'link', 'spot', 'plane']
-            && optText(d, 'targetId', 128) && (d.on == 'spot' || 'targetId' in d)
-            && optText(d, 'planeId', 128)
+            && d.on in ['card', 'label', 'link', 'plane']
+            && isText(d.targetId, 128)
+            && isText(d.planeId, 128)
             && d.x is number && d.y is number
             && isText(d.uid, 128) && isText(d.name, 200)
             && d.count is int && d.count >= 0 && d.count <= 100000
@@ -680,9 +584,8 @@ service cloud.firestore {
       // Workspace content: members read it, owners and editors change it (D-098); known collections only, with a sane shape.
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
-        // `domains` and `groups` are retired (D-048, D-049): still readable and deletable so old workspaces can be cleaned up.
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'attachments', 'evidence', 'planes', 'placements', 'packages', 'pieces', 'cells', 'domains', 'groups'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();
@@ -706,15 +609,14 @@ service cloud.firestore {
     }
 
     // Asking to join with a code (D-062). The id is `<workspaceId>_<uid>`: one request per person per workspace.
-    // An owner approves (adds the member and deletes the request in one batch) or denies (deletes it). Since D-098 any
-    // owner settles them, querying by workspace; `ownerId` (the creator) is still copied in.
+    // An owner approves (adds the member and deletes the request in one batch) or denies (deletes it); any owner settles
+    // them, querying by workspace (D-098).
     match /joinRequests/{id} {
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['workspaceId', 'ownerId', 'uid', 'name', 'email', 'code', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['workspaceId', 'uid', 'name', 'email', 'code', 'createdAt'])
         && request.resource.data.uid == request.auth.uid
         && id == request.resource.data.workspaceId + '_' + request.auth.uid
         && request.resource.data.code == workspace(request.resource.data.workspaceId).inviteCode
-        && request.resource.data.ownerId == workspace(request.resource.data.workspaceId).ownerId
         && !(request.auth.uid in workspace(request.resource.data.workspaceId).memberIds)
         && request.resource.data.email == request.auth.token.email
         && isText(request.resource.data.name, 200)

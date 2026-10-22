@@ -32,7 +32,7 @@ export { GRID, snap }
 
 export const KIND_NAME: Record<PieceKind, string> = { plane: 'plane', matrix: 'matrix', table: 'table', documents: 'documents', document: 'document' }
 
-// What a piece is; a `board` from before D-180 is a plane.
+// What a piece is.
 const KINDS: PieceKind[] = ['matrix', 'table', 'documents', 'document']
 export const kindOfPiece = (p: Pick<Piece, 'kind'>): PieceKind => (KINDS.includes(p.kind) ? p.kind : 'plane')
 

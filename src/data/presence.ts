@@ -8,7 +8,7 @@ import { accents } from '../styles/tokens'
 import type { AuthUser } from './auth'
 import { firebase } from './firebase'
 
-// The canvas is the only view now (D-174, D-177); database.rules.json still accepts the old views' names.
+// The canvas is the only view (D-174).
 export type PresenceView = 'canvas'
 
 export type Presence = {
@@ -16,9 +16,9 @@ export type Presence = {
   color: string
   photo?: string
   view: PresenceView
-  // The plane they have open on the board (D-139); absent = All.
+  // The plane they have in focus (D-191); absent = the canvas.
   plane?: string
-  // Board cursor in world units; absent when the pointer is off the board (or on another view). In `usePresence`'s peers
+  // Cursor in that space's px; absent when the pointer is off it. In `usePresence`'s peers
   // only whether it's there is kept up to date: where it is now comes from `cursorAt` (D-169).
   x?: number
   y?: number
