@@ -717,10 +717,10 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
       {rows && (
         <div className={styles.inner}>
           {rows.map((r, i) => {
-            // A package's members (D-239): a bar in each one's type colour, its status or priority; a member's parts
-            // under it as a tree, or `+N` on it when it's folded them in.
+            // A package's members (D-239, D-243): a bar in each one's type colour, its status or priority; what's
+            // under one (a card's parts, a package's own) under it as a tree, all the way down.
             if (card.type === 'package') {
-              const tucked = r.card.folded ? (inPkg?.get(r.card.id) ?? 0) : 0
+              const held = r.card.type === 'package' ? (inPkg?.get(r.card.id) ?? 0) : 0
               return (
                 <button
                   key={r.card.id}
@@ -728,9 +728,10 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
                   style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type], paddingLeft: r.depth * 12 }}
                   onClick={() => useCanvasView.setState({ cardSelected: r.card.id, labelSelected: null, linkSelected: null })}
                 >
-                  {r.depth > 0 ? <span className={styles.partTree}>└</span> : <i aria-hidden />}
+                  {r.depth > 0 && <span className={styles.partTree}>{rows.slice(i + 1).find((x) => x.depth <= r.depth)?.depth === r.depth ? '├' : '└'}</span>}
+                  <i aria-hidden />
                   <span className={styles.miniName}>{r.card.title || PLACEHOLDER[r.card.type]}</span>
-                  <span className={styles.miniAv}>{[tucked ? `+${tucked}` : '', r.card.validation ?? r.card.priority].filter(Boolean).join(' · ')}</span>
+                  <span className={styles.miniAv}>{[held ? `${held} inside` : '', r.card.validation ?? r.card.priority].filter(Boolean).join(' · ')}</span>
                 </button>
               )
             }

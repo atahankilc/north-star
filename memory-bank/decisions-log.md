@@ -4115,7 +4115,7 @@ categories shown like B, not in a card, and the features under them not indented
 - *Decision:* packages hold packages: a package can be picked (`+` → package, shift-click, `N selected`, right-click,
   `holds`' `+ card`; never one it's inside), what's named under another named one goes under it; an unfolded package
   inside one is its own frame and band inside the outer's (the outer's band above it, no overlap), a folded one a row
-  with `+N`. Folded, a package's rows stop at anything itself folded (a folded feature or package holds its own). A
+  with `+N` (later D-243: the whole tree). Folded, a package's rows stopped at anything itself folded (D-243 changes it). A
   box drag takes an unfolded package only when all of it is inside the box. Links with both ends folded into the same
   thing (a feature's parts, a package's cards) aren't drawn. A card's panel says `in package ↑ Package 1 ↑ Package 2`
   (blue, nearest first) under its parent line; a click goes there (an unfolded package framed by its whole box).
@@ -4137,3 +4137,13 @@ categories shown like B, not in a card, and the features under them not indented
 - *Alternatives:* tabs on members (B), a line round the members only (C, my pick), a spine (D), plates (E).
 - *Verified* headless (emulators): a competitor placed inside a package's frame, not in it, drawn faint with the
   dashed edge, the members full; no console errors; tsc.
+
+### D-243 · 2026-10-22 · Accepted (changes D-241's folded rows)
+- *Decision:* a folded package shows all it holds as a tree, as a folded feature shows its parts: a package inside it
+  with what that holds under it (`├ └`, indented, each row's type colour; a package's row says `N inside`), a card's
+  parts under it, all the way down, whether those inner things are folded or not. A folded package inside a folded
+  one has no rows of its own: it's in the outer's tree.
+- *Why:* the user: "package lar içindekileri partlar bulunduran feature lar gibi gösterebilsin … şu an sadece birinci
+  package ı görüyorum ama altında ne var belli olmuyo folded ise".
+- *Verified* headless (emulators): package 2 (package 1 + a problem) folded: rows Package 1 `3 inside`, ├ Deposit,
+  └ Card hold, └ Part A, No-shows; no console errors; tsc.

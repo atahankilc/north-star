@@ -102,21 +102,23 @@ export function foldsOf(cards: Card[], edges: Edge[]): Folds {
     rows.set(c.id, list)
     for (const r of list) hidden.set(r.card.id, c.id)
   }
-  // A package (D-239, D-240): what it holds, all the way down (a card's parts, a package's own contents). Folded, what
-  // it holds is its rows and hidden in it, down to anything itself folded: that holds its own (a `+N` on its row).
+  // A package (D-239, D-240, D-243): what it holds, all the way down (a card's parts, a package's own contents). Folded,
+  // all of it is its rows, as a tree like a folded feature's, a package inside it and what that holds too; a folded
+  // package inside another folded one is just there in the outer's tree.
   const members = new Map<string, Card[]>()
   const packages = cards.filter((p) => p.type === 'package')
+  const trees = new Map(packages.map((p) => [p.id, treeIn(p, byId, kids)]))
   for (const p of packages) {
-    const list = treeIn(p, byId, kids).map((r) => r.card)
+    const list = trees.get(p.id)!.map((r) => r.card)
     members.set(p.id, list)
     count.set(p.id, list.length)
   }
-  const shut = (c: Card) => !!c.folded && (c.type === 'package' ? (members.get(c.id)?.length ?? 0) > 0 : kids.has(c.id))
+  const inFolded = new Set(packages.filter((p) => p.folded).flatMap((p) => members.get(p.id)!.map((c) => c.id)))
   for (const p of packages) {
-    if (!p.folded || !members.get(p.id)?.length) continue
-    const own = treeIn(p, byId, kids, shut)
-    rows.set(p.id, own.map(({ card, depth }) => ({ card, depth })))
-    for (const r of own) if (!hidden.has(r.card.id)) hidden.set(r.card.id, p.id)
+    if (!p.folded || inFolded.has(p.id) || !members.get(p.id)!.length) continue
+    const tree = trees.get(p.id)!
+    rows.set(p.id, tree.map(({ card, depth }) => ({ card, depth })))
+    for (const r of tree) hidden.set(r.card.id, p.id)
   }
   return { parentOf, hidden, rows, count, members }
 }
