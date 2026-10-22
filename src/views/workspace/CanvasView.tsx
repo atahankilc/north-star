@@ -11,13 +11,14 @@ import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { deletePiece, followTo, linkLens, pieceRef, KIND_NAME, isBare, kindOfPiece, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
+import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
 import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
 import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
-import { ContextMenu, type MenuItem } from './ContextMenu'
+import { ContextMenu } from './ContextMenu'
 import { isNew, useReads } from '../../data/threads'
 import { ThreadInbox } from './ThreadInbox'
 import { CARD } from '../../data/cards'
@@ -250,7 +251,7 @@ export function CanvasView() {
     return `a spot on ${spaceName(t.planeId ?? CANVAS)}`
   }
   // Right-click (D-193): a menu on a plane, a card, a piece of text or a link (D-207); only `comment` for now. Elsewhere, nothing.
-  const [menu, setMenu] = useState<{ at: [number, number]; items: MenuItem[] } | null>(null)
+  const [menu, setMenu] = useState<{ at: [number, number]; what: string; items: MenuEntry[] } | null>(null)
   const closeMenu = useCallback(() => setMenu(null), [])
   const rightClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('input, textarea, [role=dialog], [aria-label=Threads]')) return
@@ -262,11 +263,26 @@ export function CanvasView() {
     // A plane on the canvas is in the canvas; a card or text, in the space it's written in.
     const where = on === 'plane' ? CANVAS : space
     const r = root.current!.getBoundingClientRect()
+    // What it's on, for the menu's `>` line (D-222): "do with this customer…".
+    const label = on === 'label' ? labels.find((x) => x.id === targetId) : undefined
+    const piece = on === 'plane' ? pieces.find((x) => x.id === targetId) : undefined
+    const what =
+      on === 'card'
+        ? (cards.find((x) => x.id === targetId)?.type ?? 'card')
+        : label
+          ? (label.kind === 'sticky' ? 'sticky note' : label.kind === 'title' ? 'title' : (label.kind ?? (label.size === 'note' ? 'paragraph' : 'heading')))
+          : piece
+            ? KIND_NAME[kindOfPiece(piece)]
+            : 'link'
     setMenu({
       at: [e.clientX - r.left, e.clientY - r.top],
+      what,
       items: [
         {
+          key: 'comment',
           label: 'comment',
+          glyph: '▣',
+          letter: 'c',
           hint: threadOn(threads, targetId) ? 'open' : undefined,
           // Its conversation if it has one; a new one otherwise.
           onSelect: () => {
@@ -604,7 +620,7 @@ export function CanvasView() {
       )}
       {drawing === CANVAS && !focused && <DrawSection space={CANVAS} toSpace={canvasToSpace} />}
       <PeerCursors space={space} toScreen={toScreen} />
-      {menu && <ContextMenu at={menu.at} items={menu.items} onClose={closeMenu} />}
+      {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
       <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {confirming && (

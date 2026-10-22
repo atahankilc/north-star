@@ -1,38 +1,9 @@
-/* The right-click menu (D-193): a framed list at the pointer, like the app's dropdowns. */
+/* The right-click menu (D-193): at the pointer, the dropdowns' prompt (D-222, Menu.module.css .prompt). */
 .menu {
-  composes: frame from '../../ui/Frame.module.css';
   position: absolute;
   z-index: 10;
-  display: flex;
-  flex-direction: column;
-  min-width: 160px;
-  padding: var(--space-1) 0;
-  background: var(--menu);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
-
-.item {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-2) var(--space-3);
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.item:hover,
-.item:focus-visible {
-  outline: none;
-  background: color-mix(in srgb, var(--fg) 8%, transparent);
-  color: var(--fg-strong);
-}
-
-.hint {
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
+  min-width: 240px;
+  max-width: 340px;
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
 }

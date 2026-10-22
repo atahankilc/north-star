@@ -68,6 +68,8 @@ piece; check them with the user then.
   (D-069, D-093, D-097). `src/ui/Page.module.css`, `fieldLabel`, `small` buttons shared (D-093).
 - No magenta `▸` before a row of actions (consoles, bars); `▸`/`▾` only to open or fold something (D-189).
 - Actions lowercase, uppercase only for labels (D-093). No native `<select>`: `src/ui/Select.tsx` (D-093).
+- Menus, pickers and right-click are a **prompt** (D-222): `>` line on top that narrows the list (Enter picks the first), `# section`
+  lines, rows `› [p] ▦ label  hint`, letters put an item first, a counting foot; Select: `•` current, `>` line past 7 options.
 - One column header for Flow/Table/Matrix/Reports (`TableHead.module.css`, 40 px) (D-107). One thin square scroll bar (D-105).
 - Views as plain tabs with a sliding magenta bar; filters framed as `LABEL │ value ▾`, lit cyan when narrowing; dropdowns 30 px (D-066).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063, D-069).

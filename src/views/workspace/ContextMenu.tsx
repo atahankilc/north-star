@@ -1,15 +1,15 @@
-// The right-click menu (D-193): on a plane, a card or a piece of text, where the pointer is; a framed mono list like the
-// app's other menus. Only `comment` for now. A click outside, Escape, or the wheel closes it.
-import { useEffect, useRef } from 'react'
+// The right-click menu (D-193): on a plane, a card or a piece of text, where the pointer is; the dropdowns' prompt look
+// (D-222), its `>` line saying what it's on. Only `comment` for now. A click outside, Escape, or the wheel closes it.
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { Appear } from '../../ui/Appear'
+import { MenuPanel, type MenuEntry } from '../../ui/Menu'
 import styles from './ContextMenu.module.css'
 
-export type MenuItem = { label: string; hint?: string; onSelect: () => void }
-
-export function ContextMenu({ at, items, onClose }: { at: [number, number]; items: MenuItem[]; onClose: () => void }) {
-  const root = useRef<HTMLDivElement>(null)
+export function ContextMenu({ at, items, what, onClose }: { at: [number, number]; items: MenuEntry[]; what: string; onClose: () => void }) {
+  const root = useRef<HTMLElement>(null)
   useEffect(() => {
-    root.current?.querySelector('button')?.focus()
     const away = (e: Event) => !root.current?.contains(e.target as Node) && onClose()
+    // Escape closes only the menu, before the canvas hears it (it would leave focus).
     const key = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       e.stopPropagation()
@@ -24,29 +24,23 @@ export function ContextMenu({ at, items, onClose }: { at: [number, number]; item
       window.removeEventListener('keydown', key, true)
     }
   }, [onClose])
+  // Kept inside its space: moved left or up when it would run past the right or bottom edge.
+  useLayoutEffect(() => {
+    const el = root.current
+    const box = el?.offsetParent?.getBoundingClientRect()
+    if (!el || !box) return
+    el.style.left = `${Math.max(8, Math.min(at[0], box.width - el.offsetWidth - 8))}px`
+    el.style.top = `${Math.max(8, Math.min(at[1], box.height - el.offsetHeight - 8))}px`
+  }, [at])
   return (
-    <div
-      ref={root}
+    <Appear
+      elRef={root}
       className={styles.menu}
       style={{ left: at[0], top: at[1] }}
-      role="menu"
-      onPointerDown={(e) => e.stopPropagation()}
-      onContextMenu={(e) => (e.preventDefault(), e.stopPropagation())}
+      onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
+      onContextMenu={(e: React.MouseEvent) => (e.preventDefault(), e.stopPropagation())}
     >
-      {items.map((it) => (
-        <button
-          key={it.label}
-          role="menuitem"
-          className={styles.item}
-          onClick={() => {
-            onClose()
-            it.onSelect()
-          }}
-        >
-          <span>{it.label}</span>
-          {it.hint && <span className={styles.hint}>{it.hint}</span>}
-        </button>
-      ))}
-    </div>
+      <MenuPanel items={items} ariaLabel={`On this ${what}`} prompt={`do with this ${what}…`} onClose={onClose} />
+    </Appear>
   )
 }

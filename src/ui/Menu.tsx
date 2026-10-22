@@ -1,6 +1,7 @@
-// A dropdown menu (D-053): `[ show ▾ ]` opens a framed list. Checkbox items toggle and keep it open; action items run and
-// close it. Arrow keys move, Home/End jump, Escape closes and returns focus, a click outside closes. With `search`, a field
-// at the top narrows the list as you type; Enter picks the first match (D-116).
+// A dropdown menu (D-053) in the prompt look (D-222): `[ show ▾ ]` opens a list with a `>` line on top. Typing narrows the
+// list (matches in magenta) and Enter picks the first; an item's letter (`[p]`) puts it first, so `+` then `p` Enter makes
+// a plane. Checkbox items toggle and keep it open; action items run and close it. Arrow keys move, Home/End jump, Escape
+// closes and returns focus, a click outside closes. `MenuPanel` is the list alone, for the right-click menu too.
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Appear } from './Appear'
@@ -19,6 +20,10 @@ export type MenuEntry =
       hint?: string
       // Shown before the label (an action's mark).
       glyph?: string
+      // Its key in the prompt: typed alone, it puts the item first (D-222).
+      letter?: string
+      // Shown in red: something that can't be taken lightly.
+      danger?: boolean
       // Set in under the item before it (go to's places inside a plane, D-196).
       indent?: boolean
       // What it holds folded under it: `[▸ N inside]` on its right opens it (so does → on the item, ← shuts it), `[▾ …]`
@@ -28,6 +33,8 @@ export type MenuEntry =
       folded?: boolean
     }
   | { key: string; heading: string }
+
+type Item = Exclude<MenuEntry, { heading: string }>
 
 type Props = {
   // What the trigger says, e.g. "show" or "+".
@@ -51,48 +58,72 @@ type Props = {
   active?: boolean
   ariaLabel: string
   empty?: string
-  // The search field's placeholder; without it there is no field.
-  search?: string
+  // What the `>` line says before anything is typed.
+  prompt?: string
+  // What the foot counts: "8 things", "5 places".
+  noun?: string
 }
 
 const text = (n: ReactNode): string => (typeof n === 'string' || typeof n === 'number' ? String(n) : '')
 
-export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, active, ariaLabel, empty, search }: Props) {
-  const [open, setOpen] = useState(false)
+// The typed text lit in magenta inside a label (only a plain-text label).
+function Lit({ label, q }: { label: ReactNode; q: string }) {
+  const s = text(label)
+  const at = q ? s.toLowerCase().indexOf(q) : -1
+  if (at < 0) return <>{label}</>
+  return (
+    <>
+      {s.slice(0, at)}
+      <mark className={styles.match}>{s.slice(at, at + q.length)}</mark>
+      {s.slice(at + q.length)}
+    </>
+  )
+}
+
+// What a query shows: the items whose label holds it, those whose letter it is first; no headings.
+function find(items: MenuEntry[], q: string): Item[] {
+  const all = items.filter((i): i is Item => !('heading' in i))
+  const keyed = q.length === 1 ? all.filter((i) => i.letter === q) : []
+  return [...keyed, ...all.filter((i) => !keyed.includes(i) && text(i.label).toLowerCase().includes(q))]
+}
+
+type PanelProps = {
+  items: MenuEntry[]
+  ariaLabel: string
+  empty?: string
+  prompt?: string
+  noun?: string
+  // Closes the menu; `refocus` = give focus back to what opened it.
+  onClose: (refocus?: boolean) => void
+  id?: string
+}
+
+// The list with its `>` line and foot (D-222): a dropdown's panel, or the right-click menu's.
+export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…', noun = 'things', onClose, id }: PanelProps) {
   const [query, setQuery] = useState('')
   const field = useRef<HTMLInputElement>(null)
-  const root = useRef<HTMLDivElement>(null)
-  const trigger = useRef<HTMLButtonElement>(null)
   const list = useRef<HTMLDivElement>(null)
-  const id = useId()
-
   const q = query.trim().toLowerCase()
-  const shown = search && q ? items.filter((item) => !('heading' in item) && text(item.label).toLowerCase().includes(q)) : items.filter((item) => !('folded' in item && item.folded))
+  const shown: MenuEntry[] = q ? find(items, q) : items.filter((i) => !('folded' in i && i.folded))
+  const count = shown.filter((i) => !('heading' in i)).length
+  // A column for `[k]` only when some item has a letter.
+  const keyed = items.some((i) => 'letter' in i && i.letter)
 
-  const close = (refocus = true) => {
-    setOpen(false)
-    setQuery('')
-    if (refocus) trigger.current?.focus()
-  }
-
-  // Focus the search field or the first item on open; close on a click outside.
   useEffect(() => {
-    if (!open) return
     requestAnimationFrame(() => (field.current ?? list.current?.querySelector<HTMLElement>('[role^=menuitem]'))?.focus())
-    const onDown = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) close(false)
-    }
-    window.addEventListener('pointerdown', onDown)
-    return () => window.removeEventListener('pointerdown', onDown)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
+  }, [])
+
+  const pick = (item: Item) => {
+    item.onSelect()
+    if (item.checked === undefined) onClose()
+  }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const all = [...(list.current?.querySelectorAll<HTMLElement>('[role^=menuitem]') ?? [])]
     const at = all.indexOf(document.activeElement as HTMLElement)
     const go = (i: number) => all[(i + all.length) % all.length]?.focus()
     const inField = document.activeElement === field.current
-    // Keys stay in the menu: the board's own shortcuts (Delete, 1–9, ⌘Z) don't fire.
+    // Keys stay in the menu: the canvas's own shortcuts (Delete, 0, ⌘Z) don't fire.
     e.stopPropagation()
     // Up from the first item goes back to the field.
     if (e.key === 'ArrowUp' && at === 0 && field.current) (e.preventDefault(), field.current.focus())
@@ -104,12 +135,135 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
     else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !inField) {
       const item = shown.find((x) => x.key === (document.activeElement as HTMLElement | null)?.dataset.key)
       if (item && 'fold' in item && item.fold && item.fold.open === (e.key === 'ArrowLeft')) (e.preventDefault(), item.fold.onToggle())
-    } else if (e.key === 'Escape') (e.preventDefault(), close())
-    else if (e.key === 'Tab') close(false)
+    } else if (e.key === 'Escape') (e.preventDefault(), onClose())
+    else if (e.key === 'Tab') onClose(false)
+    // A letter typed on the list goes to the field.
+    else if (!inField && e.key.length === 1 && !e.metaKey && !e.ctrlKey && field.current) field.current.focus()
   }
 
   return (
-    <div ref={root} className={styles.root} onKeyDown={open ? onKeyDown : undefined}>
+    <div className={styles.prompt} onKeyDown={onKeyDown}>
+      {items.length > 0 && (
+        <label className={styles.line}>
+          <span className={styles.caretSign} aria-hidden>
+            &gt;
+          </span>
+          <input
+            ref={field}
+            className={styles.field}
+            type="text"
+            value={query}
+            placeholder={prompt}
+            aria-label={`${ariaLabel}: type to find`}
+            aria-controls={id}
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+      )}
+      <div ref={list} id={id} className={styles.list} role="menu" aria-label={ariaLabel}>
+        {items.length === 0 && <p className={styles.empty}>{empty ?? 'Nothing here yet'}</p>}
+        {items.length > 0 && count === 0 && <p className={styles.empty}>no match · esc closes</p>}
+        {shown.map((item, i) =>
+          'heading' in item ? (
+            <div key={item.key} className={styles.heading} role="presentation">
+              {item.heading}
+            </div>
+          ) : (
+            <button
+              key={item.key}
+              className={styles.item}
+              role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+              aria-checked={item.checked}
+              data-indent={item.indent || undefined}
+              data-danger={item.danger || undefined}
+              data-first={(q && i === 0) || undefined}
+              data-key={item.key}
+              data-open={item.fold?.open || undefined}
+              aria-expanded={item.fold?.open}
+              tabIndex={-1}
+              style={item.tone ? { ['--tone' as string]: item.tone } : undefined}
+              onClick={() => pick(item)}
+            >
+              <span className={styles.cursor} aria-hidden>
+                ›
+              </span>
+              {item.checked !== undefined ? (
+                <span className={styles.check} data-on={item.checked} aria-hidden>
+                  {item.checked ? '[x]' : '[ ]'}
+                </span>
+              ) : (
+                keyed && (
+                  <span className={styles.letter} aria-hidden>
+                    {item.letter ? (
+                      <>
+                        [<b>{item.letter}</b>]
+                      </>
+                    ) : null}
+                  </span>
+                )
+              )}
+              {item.glyph && (
+                <span className={styles.glyph} aria-hidden>
+                  {item.glyph}
+                </span>
+              )}
+              <span className={styles.itemLabel}>
+                <Lit label={item.label} q={q} />
+              </span>
+              {item.fold && !q && (
+                // Inside the item's button: its click opens or shuts the fold and doesn't pick the item.
+                <span
+                  className={styles.fold}
+                  aria-hidden
+                  title={item.fold.open ? 'hide what is inside (←)' : 'show what is inside (→)'}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    item.fold!.onToggle()
+                  }}
+                >
+                  <span className={styles.foldCaret}>{item.fold.open ? '▾' : '▸'}</span> {item.fold.count} inside
+                </span>
+              )}
+              {item.hint && <span className={styles.hint}>{item.hint}</span>}
+            </button>
+          ),
+        )}
+      </div>
+      {items.length > 0 && (
+        <div className={styles.foot} aria-hidden>
+          {q ? (count ? `${count} found · ↵ picks the first` : '') : `${count} ${count === 1 ? noun.replace(/s$/, '') : noun} · type to find${keyed ? ' · a letter goes first' : ''}`}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, active, ariaLabel, empty, prompt, noun }: Props) {
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const id = useId()
+
+  const close = (refocus = true) => {
+    setOpen(false)
+    if (refocus) trigger.current?.focus()
+  }
+
+  // Close on a click outside: heard on the way down, since the canvas and planes stop their presses from bubbling.
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) close(false)
+    }
+    window.addEventListener('pointerdown', onDown, true)
+    return () => window.removeEventListener('pointerdown', onDown, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  return (
+    <div ref={root} className={styles.root}>
       <button
         ref={trigger}
         className={icon ? styles.icon : primary ? styles.primary : styles.trigger}
@@ -135,75 +289,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
       <AnimatePresence>
         {open && (
           <Appear key="menu" className={styles.panel} data-up={up} data-right={right} data-end={alignEnd}>
-            {search && items.length > 0 && (
-              <input
-                ref={field}
-                className={styles.search}
-                type="text"
-                value={query}
-                placeholder={search}
-                aria-label={search}
-                aria-controls={id}
-                autoComplete="off"
-                spellCheck={false}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            )}
-            <div ref={list} id={id} role="menu" aria-label={ariaLabel}>
-              {items.length === 0 && <p className={styles.empty}>{empty ?? 'Nothing here yet'}</p>}
-              {items.length > 0 && shown.length === 0 && <p className={styles.empty}>No match</p>}
-              {shown.map((item) =>
-                'heading' in item ? (
-                  <div key={item.key} className={styles.heading} role="presentation">
-                    {item.heading}
-                  </div>
-                ) : (
-                  <button
-                    key={item.key}
-                    className={styles.item}
-                    role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
-                    aria-checked={item.checked}
-                    data-indent={item.indent || undefined}
-                    data-key={item.key}
-                    data-open={item.fold?.open || undefined}
-                    aria-expanded={item.fold?.open}
-                    tabIndex={-1}
-                    style={item.tone ? { ['--tone' as string]: item.tone } : undefined}
-                    onClick={() => {
-                      item.onSelect()
-                      if (item.checked === undefined) close()
-                    }}
-                  >
-                    {item.checked !== undefined && (
-                      <span className={styles.check} data-on={item.checked} aria-hidden>
-                        {item.checked ? '[x]' : '[ ]'}
-                      </span>
-                    )}
-                    {item.glyph && (
-                      <span className={styles.glyph} aria-hidden>
-                        {item.glyph}
-                      </span>
-                    )}
-                    <span className={styles.itemLabel}>{item.label}</span>
-                    {item.fold && !q && (
-                      // Inside the item's button: its click opens or shuts the fold and doesn't pick the item.
-                      <span
-                        className={styles.fold}
-                        aria-hidden
-                        title={item.fold.open ? 'hide what is inside (←)' : 'show what is inside (→)'}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          item.fold!.onToggle()
-                        }}
-                      >
-                        <span className={styles.foldCaret}>{item.fold.open ? '▾' : '▸'}</span> {item.fold.count} inside
-                      </span>
-                    )}
-                    {item.hint && <span className={styles.hint}>{item.hint}</span>}
-                  </button>
-                ),
-              )}
-            </div>
+            <MenuPanel id={id} items={items} ariaLabel={ariaLabel} empty={empty} prompt={prompt} noun={noun} onClose={close} />
           </Appear>
         )}
       </AnimatePresence>

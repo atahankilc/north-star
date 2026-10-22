@@ -186,12 +186,16 @@ function GoToButton({ plane }: { plane: string | null }) {
         </svg>
       }
       ariaLabel={plane ? 'Go to a place in the plane' : 'Go to a place on the canvas'}
-      search="find a place"
+      prompt="find a place…"
+      noun="places"
       empty={plane ? 'Write a heading or draw a named section (+) to go to it from here' : 'Planes, the project title, headings and named sections show here'}
       items={go.length ? [{ key: 'head', heading: plane ? 'go to · in the plane' : 'go to · on the canvas' }, ...go] : []}
     />
   )
 }
+
+// Each card type's letter in the `+` prompt (D-222): `+` then `c` Enter makes a customer.
+const CARD_LETTER: Record<CardType, string> = { customer: 'c', problem: 'r', competitor: 'o', idea: 'i', feature: 'f' }
 
 // The side nav's `+` (D-176): on the canvas a plane (D-180) at the middle of the screen, selected; in a focused plane a
 // card (D-187), at the middle of its view, its title ready to type. In both, text (D-188): a heading, a paragraph or a
@@ -225,12 +229,12 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
   }
   const text = [
     { key: 'text', heading: 'text' },
-    { key: 'heading', label: 'heading', glyph: 'T', onSelect: () => void addText('heading') },
-    { key: 'paragraph', label: 'paragraph', glyph: '¶', onSelect: () => void addText('paragraph') },
-    { key: 'sticky', label: 'sticky note', glyph: '▤', tone: 'var(--accent-yellow)', onSelect: () => void addText('sticky') },
-    { key: 'section', label: 'section', glyph: '⬚', hint: 'draw', onSelect: () => useCanvasView.setState({ drawing: plane ?? CANVAS }) },
+    { key: 'heading', label: 'heading', glyph: 'T', letter: 'h', onSelect: () => void addText('heading') },
+    { key: 'paragraph', label: 'paragraph', glyph: '¶', letter: 'a', onSelect: () => void addText('paragraph') },
+    { key: 'sticky', label: 'sticky note', glyph: '▤', letter: 'n', tone: 'var(--accent-yellow)', onSelect: () => void addText('sticky') },
+    { key: 'section', label: 'section', glyph: '⬚', letter: 's', hint: 'draw', onSelect: () => useCanvasView.setState({ drawing: plane ?? CANVAS }) },
     // The project title goes on the canvas only, once (D-190).
-    ...(hasTitle || plane ? [] : [{ key: 'title', label: 'project title', glyph: '✦', onSelect: () => void addText('title') }]),
+    ...(hasTitle || plane ? [] : [{ key: 'title', label: 'project title', glyph: '✦', letter: 'i', onSelect: () => void addText('title') }]),
   ]
   const add = async (kind: PieceKind, template?: { name: string; setup: () => MatrixSetup | TableSetup }) => {
     const id = await addPiece(wid, kind, canvasCenter(wid), pieces, template?.setup(), template?.name)
@@ -255,20 +259,21 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
           </svg>
         }
         ariaLabel={plane ? 'Add to the plane' : 'Add to the canvas'}
+        prompt="add…"
         items={
           plane
             ? [
                 { key: 'cards', heading: 'card' },
-                ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
+                ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
                 ...text,
               ]
             : [
                 { key: 'canvas', heading: 'on the canvas' },
-                { key: 'plane', label: 'plane', glyph: '▦', onSelect: () => void add('plane') },
+                { key: 'plane', label: 'plane', glyph: '▦', letter: 'p', onSelect: () => void add('plane') },
                 // A matrix (D-204), made in its wizard (D-212); its setup changes all of it after.
-                { key: 'matrix', label: 'matrix…', glyph: '⊞', hint: 'two lists crossed', onSelect: () => useMatrixUi.setState({ wizard: true }) },
+                { key: 'matrix', label: 'matrix…', glyph: '⊞', letter: 'm', hint: 'two lists crossed', onSelect: () => useMatrixUi.setState({ wizard: true }) },
                 // A table (D-209), made in its wizard (D-218), as a matrix is.
-                { key: 'table', label: 'table…', glyph: '☰', hint: 'rows by rules, any columns', onSelect: () => useTableUi.setState({ wizard: true }) },
+                { key: 'table', label: 'table…', glyph: '☰', letter: 't', hint: 'rows by rules, any columns', onSelect: () => useTableUi.setState({ wizard: true }) },
                 ...text,
               ]
         }

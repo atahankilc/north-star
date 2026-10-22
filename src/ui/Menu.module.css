@@ -182,16 +182,16 @@
   color: var(--fg-strong);
 }
 
+/* The panel (D-222): page black, a brighter edge, the prompt inside. */
 .panel {
-  composes: frame from './Frame.module.css';
   position: absolute;
   top: calc(100% + var(--space-1));
   left: 0;
   z-index: 40;
-  min-width: 220px;
-  max-height: min(60vh, 420px);
-  overflow-y: auto;
-  padding: var(--space-1) 0;
+  min-width: 260px;
+  max-width: 360px;
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
 }
 
 .panel[data-up='true'] {
@@ -209,34 +209,64 @@
   right: 0;
 }
 
-/* The search field at the top of a long list (go to, D-116). */
-.search {
-  display: block;
-  width: calc(100% - 2 * var(--space-2));
-  margin: var(--space-1) var(--space-2) var(--space-1);
-  padding: var(--space-2);
-  border: 1px solid var(--line);
-  background: none;
-  color: var(--fg);
-  font: inherit;
+/* The prompt (D-222): the `>` line, the list, the foot. Also the right-click menu's (ContextMenu.tsx). */
+.prompt {
+  display: flex;
+  flex-direction: column;
+  max-height: min(60vh, 460px);
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
 }
 
-.search::placeholder {
+.line {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-3);
+  border-bottom: 1px solid var(--line);
+  cursor: text;
+}
+
+.caretSign {
+  color: var(--accent-magenta);
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  caret-color: var(--accent-magenta);
+}
+
+.field::placeholder {
   color: var(--fg-faint);
 }
 
-.search:focus {
+.field:focus {
   outline: none;
-  border-color: var(--accent-cyan);
 }
 
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-1) 0;
+}
+
+/* `# text`: a section of the list, a comment line. */
 .heading {
-  padding: var(--space-2) var(--space-3) var(--space-1);
+  padding: var(--space-2) var(--space-3) 2px;
   color: var(--fg-faint);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.heading::before {
+  content: '# ';
 }
 
 .item {
@@ -244,27 +274,53 @@
   align-items: baseline;
   gap: var(--space-2);
   width: 100%;
-  padding: var(--space-2) var(--space-3);
+  padding: 5px var(--space-3);
   border: 0;
   background: none;
   color: var(--fg);
   font: inherit;
-  font-size: var(--text-sm);
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
 }
 
+/* `›`: where Enter or a click goes: under the pointer, on the keys, or the first match while typing. */
+.cursor {
+  flex: none;
+  width: 1ch;
+  color: var(--accent-magenta);
+  visibility: hidden;
+}
+
+.item:hover,
+.item:focus-visible,
+.item:focus,
+.list:not(:focus-within) .item[data-first] {
+  outline: none;
+  background: var(--wash-2);
+  color: var(--fg-strong);
+}
+
+.item:hover .cursor,
+.item:focus .cursor,
+.list:not(:focus-within) .item[data-first] .cursor {
+  visibility: visible;
+}
+
+.item[data-danger] {
+  color: var(--diff-deleted);
+}
+
 .item[data-indent] {
   position: relative;
-  padding-left: calc(var(--space-3) + 1.2em + var(--space-2));
+  padding-left: calc(var(--space-3) + 1ch + var(--space-2) + 1.2em + var(--space-2));
 }
 
 /* A plane's places hang off a line down from its glyph (D-201), so what's inside reads as inside. */
 .item[data-indent]::before {
   content: '';
   position: absolute;
-  left: calc(var(--space-3) + 0.45em);
+  left: calc(var(--space-3) + 1ch + var(--space-2) + 0.6em);
   top: 0;
   bottom: 0;
   width: 1px;
@@ -275,18 +331,25 @@
   color: var(--fg-strong);
 }
 
-.item:hover,
-.item:focus-visible {
-  outline: none;
-  background: var(--wash-2);
-  color: var(--fg-strong);
+/* `[p]`: the item's letter. */
+.letter {
+  flex: none;
+  width: 3ch;
+  color: var(--fg-faint);
 }
 
-.item:focus-visible {
-  box-shadow: inset 2px 0 0 var(--tone, var(--accent-cyan));
+.letter b {
+  color: var(--fg-dim);
+  font-weight: inherit;
+}
+
+.match {
+  background: none;
+  color: var(--accent-magenta);
 }
 
 .check {
+  flex: none;
   color: var(--fg-faint);
 }
 
@@ -295,9 +358,14 @@
 }
 
 .glyph {
+  flex: none;
   width: 1.2em;
   color: var(--tone, var(--fg-dim));
   text-align: center;
+}
+
+.item[data-danger] .glyph {
+  color: inherit;
 }
 
 .itemLabel {
@@ -307,6 +375,7 @@
 }
 
 .hint {
+  padding-left: var(--space-3);
   color: var(--fg-faint);
   font-size: var(--text-xs);
 }
@@ -340,6 +409,15 @@
   margin: 0;
   padding: var(--space-2) var(--space-3);
   color: var(--fg-faint);
-  font-size: var(--text-sm);
   white-space: normal;
+}
+
+.foot {
+  flex: none;
+  min-height: 29px;
+  padding: 7px var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--fg-faint);
+  font-size: 10px;
+  white-space: nowrap;
 }

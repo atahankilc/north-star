@@ -187,11 +187,19 @@ Values will be tuned against contrast checks (WCAG AA for text).
   has a title, a one-line description, and framed sections (label set into the top edge, rows split by hairlines, an optional
   note at the foot). Below 640 px the menu becomes a row of tabs above the page.
   Signed out, the right side is empty (no motion switch on the landing, D-069).
-- Dropdowns (`src/ui/Menu.tsx`): a framed trigger `SHOW all ▾`, a framed list below (or above, for the bottom toolbar), `[x]`/`[ ]` checks.
-  The create button is the one solid-magenta control on the board.
+- Dropdowns (`src/ui/Menu.tsx`): a framed trigger `SHOW all ▾` (or an icon in the side nav), a list below, above or to the
+  right, `[x]`/`[ ]` checks. The list is a **prompt** (D-222): page black, a `--line-hover` edge, built cell by cell. On top a
+  `>` line (magenta `>`, a placeholder saying what it does: `add…`, `find a place…`) that has focus on open: typing narrows the
+  list, the typed part lit magenta in each label, Enter picks the first. Sections as comment lines (`# text`). A row: a magenta
+  `›` where Enter goes (the row under the pointer or keys, or the first match), the item's letter `[p]` when it has one (typed
+  alone it puts that item first, so `+` then `p` Enter makes a plane), its glyph, the label, a faint hint right; something
+  dangerous in red. A foot line counts what's shown (`8 things · type to find · a letter goes first`, `2 found · ↵ picks the
+  first`). The right-click menu (`ContextMenu.tsx`) is the same panel at the pointer, kept on screen, its `>` line saying what
+  it's on (`do with this customer…`).
 - One-of pickers (`src/ui/Select.tsx`, D-093): never the browser's `<select>`. An inline `value ▾` trigger opens a compact list
-  right under it, the same as the tag picker's suggestions (frame, tight rows, a wash on the row under the pointer, the current
-  value bright), with no build-up animation; it opens upward only when it doesn't fit below, stays inside its side panel,
+  right under it in the prompt's look (D-222): page black, a `--line-hover` edge, tight rows, a cyan `•` on the current value
+  and the magenta `›` + wash on the row under the pointer or keys; more than 7 options get the `>` line that narrows them
+  (Enter picks the first), a shorter list jumps to an option by its first letter; no build-up animation; it opens upward only when it doesn't fit below, stays inside its side panel,
   follows its trigger when something scrolls, and Escape closes only the list. Used for link kinds, Table priority/status,
   the Matrix's "their version" and Settings models.
 - Adding a link (`+ link`, LinkList): a dropdown hanging from the links heading, as wide as the section, never spread into the

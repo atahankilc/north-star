@@ -3653,3 +3653,29 @@ categories shown like B, not in a card, and the features under them not indented
   it, two tags, notes; all in Firestore), a row going to the customer; a competitor's profile, regions, four features
   in two categories, one opened, made paid and matched to our feature; that feature's plan, a new part, two
   must-haves, `≈ theirs` showing; the part's panel with its parent; no console errors; build.
+
+### D-222 · 2026-10-22 · Accepted (every dropdown, picker and right-click menu in the prompt look; changes D-053's and D-093's lists)
+- *What:* the lists that open from a click (the side nav's `+` and go to, `start over from` in a matrix's or table's
+  setup, the right-click menu, every `Select`) share one look, the **prompt**: page black, a `--line-hover` edge, built cell
+  by cell. A `>` line on top has focus on open (`add…`, `find a place…`, `a template…`, `do with this customer…`): typing
+  narrows the list, the typed part lit magenta, Enter picks the first. Sections are comment lines (`# text`). Each row: a
+  magenta `›` where Enter goes, the item's letter `[p]` when it has one, its glyph, label, a faint hint; dangerous ones red.
+  A foot counts what's shown. Letters: plane p, matrix m, table t, heading h, paragraph a, sticky note n, section s,
+  project title i; cards customer c, problem r, competitor o, idea i, feature f; right-click comment c. A letter typed
+  alone puts its item first (so `+` `p` Enter makes a plane), it doesn't pick at once (typing `pa` must still find
+  paragraph). `Select` keeps its compact rows: a cyan `•` on the current value, the `›` + wash on the row under the
+  pointer or keys, the `>` line only past 7 options, a short list jumps by first letter.
+- *Why:* the user asked for a design refactor of the menus that open from a click or a right-click. Five directions were
+  shown on a scratch page (console like D-219's panel, TUI box drawing, tiles with ASCII drawings, prompt, list with a
+  preview beside); the user picked the prompt: "prompt baya iyi olmuş, onu uygulayalım".
+- *Where it's used now:* `Menu.tsx` (`MenuPanel` is the list alone), `ContextMenu.tsx` (uses `MenuPanel` at the pointer,
+  kept inside its space), `Select.tsx` (10 places: link kind, a piece's `⇆` link, a table's rows a page, table setup's rule
+  field / scale steps / sort, matrix setup's plane, people's role, a competitor feature's "ours"). Not changed: the
+  find-as-you-type lists under a field (the card finder in the card panel, the matrix's add field, its setup's add list,
+  `@` mentions); they could take the same rows later.
+- *Verified* headless on emulators: `+` opens with the field focused, `p` Enter made a plane, `tab` narrowed to `table…`
+  with the match lit, right-click on a plane says `do with this plane…`, go to shows `find a place…`, a 10-option Select
+  (matrix wizard's plane) shows the `>` line and the `•`; no console errors; build.
+- *Fix after trying it:* a click on the canvas or a plane didn't close an open menu (they stop their presses from
+  bubbling), so it took two clicks. Menu and Select now hear an outside press on the way down (capture). Checked: `+` and
+  go to close on one click on the canvas and on a plane.

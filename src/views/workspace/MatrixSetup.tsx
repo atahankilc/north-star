@@ -69,7 +69,7 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
           ))}
         </nav>
         <span className={styles.setupEnd}>
-          <Menu label="start over from" up quiet ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows, columns and cells' }, ...restart]} />
+          <Menu label="start over from" up quiet prompt="a template…" noun="templates" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows, columns and cells' }, ...restart]} />
           <button className={styles.tool} title="close (Esc)" onClick={closeMatrixSetup}>
             done
           </button>

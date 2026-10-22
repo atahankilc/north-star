@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-22 (D-174–D-185: canvas, planes, edit mode, hazard confirm, focus)_
+_Last updated: 2026-10-22 (D-222: menus as a prompt)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -55,7 +55,6 @@ something is finished, add its entry to state-history.md and leave at most one l
 - People here as overlapping squares + `+N` list; live cursors smoothed on the receiving side (D-169); following opens what they open (D-170). 2026-10-20.
 - Board speed with many competitors (2026-10-20, committed): hidden feature rows / folded-part rows are no longer mounted
   (they mount to open and unmount after closing), lists memoised, row decorations skip raycasts. Hover stalls 918 → 102 ms.
-- Competitor feature list opens on click only, category names in grey caps over un-indented rows, no tray, drawn over everything (D-173). 2026-10-20.
 - Go to back for every space (D-196): compass in the side nav under fit, no keys (D-201), planes' places folded (D-200); canvas (planes' insides too) and focused plane. 2026-10-21, not committed.
 - Threads panel as list + thread halves, nothing on the canvas, cell-by-cell build/break for the tab and each half, go there an icon in the header (D-199). 2026-10-21, committed.
 - Plane back to the old board's power, step by step (asked 2026-10-21): step 1, card motion (D-203); step 2, card inside
@@ -65,6 +64,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
 - Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
 - Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), links shown and made from a dropdown (D-215), 2026-10-22, rules deployed.
+- Menus as a prompt (D-222): `+`, go to, start over from, right-click and every Select; `>` line, letters; one click outside closes. 2026-10-22, committed.
 - Focus dock on the bottom edge + plane console inside its bottom-right corner, no `▸` (D-189), committed 2026-10-21.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
   left side nav piece by piece, you + settings bottom left first (D-175); planes (D-180, first called boards) placed on the canvas from the side

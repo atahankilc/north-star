@@ -589,3 +589,6 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 
 ## Done (moved out of state.md 2026-10-22, later)
 - Card layout: 0.06 padding, header with status + evidence cells, facts line, tag chips; `›` link handle (D-152), 2026-10-19.
+
+## Done (2026-10-20, moved from state.md 2026-10-22)
+- Competitor feature list opens on click only, category names in grey caps over un-indented rows, no tray, drawn over everything (D-173). 2026-10-20.

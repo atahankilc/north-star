@@ -37,18 +37,66 @@
   color: var(--fg-faint);
 }
 
-/* The list: the tag picker's suggestion list (TagInput.module.css), fixed where Select placed it. */
+/* The list in the menus' prompt look (D-222, Menu.module.css), fixed where Select placed it. */
 .list {
-  composes: frame from './Frame.module.css';
   position: fixed;
   z-index: 60;
   max-height: min(50vh, 320px);
   overflow-y: auto;
-  padding: var(--space-1) 0;
+  padding: 0 0 var(--space-1);
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  font-family: var(--font-mono);
+}
+
+/* The `>` line of a long list: typing narrows it. */
+.line {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 9px var(--space-3);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  cursor: text;
+}
+
+.sign {
+  color: var(--accent-magenta);
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-size: var(--text-sm);
+  caret-color: var(--accent-magenta);
+}
+
+.field::placeholder {
+  color: var(--fg-faint);
+}
+
+.field:focus {
+  outline: none;
+}
+
+.none {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--fg-faint);
+  font-size: var(--text-sm);
 }
 
 .option {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
   width: 100%;
   padding: var(--space-1) var(--space-3);
   border: 0;
@@ -61,14 +109,42 @@
   cursor: pointer;
 }
 
-/* The current value reads bright; the one under the pointer or the keys gets the wash. */
+.list > .option:first-child {
+  margin-top: var(--space-1);
+}
+
+/* The gutter: a cyan `•` on the current value, the magenta `›` where Enter goes. */
+.cursor {
+  flex: none;
+  width: 1ch;
+}
+
+.option[aria-selected='true'] .cursor::before {
+  content: '•';
+  color: var(--accent-cyan);
+}
+
+.optLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The current value reads bright; the one under the pointer or the keys gets the wash and the `›`. */
 .option[aria-selected='true'] {
   color: var(--fg-strong);
 }
 
 .option:focus-visible,
-.option:focus {
+.option:focus,
+.list:not(:has(.option:focus)) .option[data-first] {
   outline: none;
-  background: var(--wash-3);
+  background: var(--wash-2);
   color: var(--fg-strong);
+}
+
+.option:focus .cursor::before,
+.list:not(:has(.option:focus)) .option[data-first] .cursor::before {
+  content: '›';
+  color: var(--accent-magenta);
 }

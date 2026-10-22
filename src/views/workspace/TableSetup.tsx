@@ -64,7 +64,7 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
           ))}
         </nav>
         <span className={m.setupEnd}>
-          <Menu label="start over from" up quiet ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows and columns' }, ...restart]} />
+          <Menu label="start over from" up quiet prompt="a template…" noun="templates" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows and columns' }, ...restart]} />
           <button className={m.tool} title="close (Esc)" onClick={close}>
             done
           </button>
