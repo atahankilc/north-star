@@ -106,6 +106,8 @@ piece; check them with the user then.
   `a` guides, `g` snapping, kept per browser; both in the focus dock's `[grid ▾]` menu.
 - Plane filters (D-233): one `[filter]` in the focus dock opens a console-look strip on it holding the old filter bar
   (`SHOW ▾ FOR ▾ TAG ▾ REGION ▾ LINKS ▾`, each its own menu) (`for`/`relates`/`competes` hidden to start); per plane, per browser; the canvas picture follows it.
+- What's linked to a plane (D-235): `[linked · N]` in the focus dock opens a strip over it with the `⇆` buttons; strips
+  stack 8 px over the dock, linked nearest, each within the plane's own part.
 - A competitor's features are names beside its card (first four, `+N more`, in the open list's order); selected (never on hover), the full list:
   each category's name in grey caps over its rows, no tray, not indented, rows drawn like cards (no edge, corner marks), a cyan bar when it matches ours and its
   availability; open or closing, it sits over every card and list, on a soft page-coloured shade (no blur: it lagged); rows open it in the panel and take links (D-164, D-173). Competitor features have availability and a source; "matches our feature" is the matrix cell's their feature (D-164).
