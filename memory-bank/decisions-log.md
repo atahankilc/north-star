@@ -4140,7 +4140,7 @@ categories shown like B, not in a card, and the features under them not indented
 
 ### D-243 · 2026-10-22 · Accepted (changes D-241's folded rows)
 - *Decision:* a folded package shows all it holds as a tree, as a folded feature shows its parts: a package inside it
-  with what that holds under it (`├ └`, indented, each row's type colour; a package's row says `N inside`), a card's
+  with what that holds under it (indented, each row's type colour; D-245 drops the `├ └`; a package's row says `N inside`), a card's
   parts under it, all the way down, whether those inner things are folded or not. A folded package inside a folded
   one has no rows of its own: it's in the outer's tree.
 - *Why:* the user: "package lar içindekileri partlar bulunduran feature lar gibi gösterebilsin … şu an sadece birinci
@@ -4155,3 +4155,15 @@ categories shown like B, not in a card, and the features under them not indented
 - *Why:* the user: "package ın çizgileri griddlere diğerleri gibi tam oturmuyor … sağdan ve soldan az kalıyorlar. Grid
   snap açıkken bile + ların tam hizasında değiller" (the pad was 20 px and the band 30).
 - *Verified* headless (emulators): a package inside a package, both frames' four edges on marks; tsc.
+
+### D-245 · 2026-10-22 · Accepted (changes D-164/D-225's folded part rows and D-243's)
+- *Decision:* every folded list on a plane card (a feature's or other card's parts, a package's tree) draws each row
+  with a short upright bar in that row's own card colour (a feature's part cyan, a package blue, a problem magenta…),
+  no `├ └`; each level down sits 10 px further in (`INDENT`, also where a folded part's card tucks into its row), so
+  what's under what shows by the bars' steps. A row's right side: its status, validation or priority; a package's
+  `N inside`.
+- *Why:* the user: "renkleri kaybetmeyelim bu arada folded listesinde. Yeni karar: card içinde bir part varsa dik ve
+  part cardının kendi renginde çizgi. Eğer onların içinde de partlar var ise yine part cardın kendi renginde ama bi
+  tık indentli".
+- *Verified* headless (emulators): a folded package holding a package (blue bar), its idea (white) and feature (cyan)
+  a step in, the feature's part a step further, a problem (magenta) back at the start; no console errors; tsc.

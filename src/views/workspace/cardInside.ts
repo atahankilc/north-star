@@ -139,9 +139,12 @@ export function openHeight(groups: { cat: string; items: unknown[] }[]) {
   return Math.max(CARD.h, INNER_TOP + named * CATEGORY_ROW + rows * FEATURE_ROW + FOOT)
 }
 
+// How much further in each level down a folded card's rows sit (D-245).
+export const INDENT = 10
+
 // A folded part's row inside its feature: where links to it end and its card tucks into.
 export function partRowBox(parent: Box, index: number, depth: number): Box {
-  const left = 11 + depth * 12
+  const left = 11 + depth * INDENT
   return { x: parent.x + left, y: parent.y + INNER_TOP + index * PART_ROW, w: CARD.w - left - 7, h: PART_ROW }
 }
 

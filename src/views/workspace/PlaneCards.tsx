@@ -21,7 +21,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useHistory } from '../../data/history'
 import { labelRef, moveMany } from '../../data/labels'
 import type { CompetitorFeature } from '../../data/competitorFeatures'
-import { byCategory, foldedHeight, foldsOf, openHeight, packageBox, partRowBox, type Box } from './cardInside'
+import { byCategory, foldedHeight, foldsOf, INDENT, openHeight, packageBox, partRowBox, type Box } from './cardInside'
 import type { Label } from '../../data/labels'
 import { labelBox, TextItems } from './TextItems'
 import { PeerRing } from './collab'
@@ -716,36 +716,20 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
       )}
       {rows && (
         <div className={styles.inner}>
-          {rows.map((r, i) => {
-            // A package's members (D-239, D-243): a bar in each one's type colour, its status or priority; what's
-            // under one (a card's parts, a package's own) under it as a tree, all the way down.
-            if (card.type === 'package') {
-              const held = r.card.type === 'package' ? (inPkg?.get(r.card.id) ?? 0) : 0
-              return (
-                <button
-                  key={r.card.id}
-                  className={styles.memberRow}
-                  style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type], paddingLeft: r.depth * 12 }}
-                  onClick={() => useCanvasView.setState({ cardSelected: r.card.id, labelSelected: null, linkSelected: null })}
-                >
-                  {r.depth > 0 && <span className={styles.partTree}>{rows.slice(i + 1).find((x) => x.depth <= r.depth)?.depth === r.depth ? '├' : '└'}</span>}
-                  <i aria-hidden />
-                  <span className={styles.miniName}>{r.card.title || PLACEHOLDER[r.card.type]}</span>
-                  <span className={styles.miniAv}>{[held ? `${held} inside` : '', r.card.validation ?? r.card.priority].filter(Boolean).join(' · ')}</span>
-                </button>
-              )
-            }
-            const last = i === rows.length - 1 || rows[i + 1].depth < r.depth || (rows.slice(i + 1).find((x) => x.depth <= r.depth)?.depth ?? -1) < r.depth
+          {rows.map((r) => {
+            // What a folded card holds (D-245): each row a bar in its own card's colour, a step further in for each level
+            // down, so what's under what shows; its status or priority; a package's row, how much it holds.
+            const held = r.card.type === 'package' ? (inPkg?.get(r.card.id) ?? 0) : 0
             return (
               <button
                 key={r.card.id}
-                className={styles.partRow}
-                style={{ paddingLeft: r.depth * 12 }}
+                className={styles.memberRow}
+                style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type], paddingLeft: r.depth * INDENT }}
                 onClick={() => useCanvasView.setState({ cardSelected: r.card.id, labelSelected: null, linkSelected: null })}
               >
-                <span className={styles.partTree}>{last ? '└' : '├'}</span>
+                <i aria-hidden />
                 <span className={styles.miniName}>{r.card.title || PLACEHOLDER[r.card.type]}</span>
-                <span className={styles.miniAv}>{r.card.status ?? r.card.validation}</span>
+                <span className={styles.miniAv}>{[held ? `${held} inside` : '', r.card.status ?? r.card.validation ?? r.card.priority].filter(Boolean).join(' · ')}</span>
               </button>
             )
           })}
