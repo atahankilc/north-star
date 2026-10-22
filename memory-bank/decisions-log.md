@@ -3525,3 +3525,17 @@ categories shown like B, not in a card, and the features under them not indented
   with pills, the add pill's list for `Cr`, a name added by Enter; focus at fit with nothing covered, then panned up and
   left with both head layers stuck and the corner clean; no console errors; typecheck.
 
+### D-217 · 2026-10-22 · Accepted (changes D-214's stick line; adds to D-186's pan in focus)
+- *Decision:*
+  - *Panning from a cell:* in a matrix's focus a press on a cell is the cell's until it moves 5 px (a card's drag
+    threshold, D-150): a click still selects it (no letting go of the selection on the press), a drag pans the view.
+    Elsewhere on the focused layer the press pans at once and lets go of the selection, as before. In a pane beside a
+    plane (D-211) cells still keep the press (the pane's own pan; north-star-67 offers the same rule there and for tables).
+  - *Held row heads* stop 56 px from the screen's left, just past the side nav's tools (was 160); while they're held the
+    side nav's shade fades out (`html[data-held-heads]`, Hud.module.css), since the heads sit on their own paper. Still
+    never further in than where fit puts them (D-216). The selected cell's bar hides while its cell is under the heads.
+- *User:* "mouse celllerin üstündeyken matrixi dolaşmak için hold&drag yapmak çok zor, cellerin arasındaki boşluğa
+  getirmek gerekiyor"; "çok zoom olunca sticky'e dönüşen row headerları sol tarafa biraz daha yaklaşabilir".
+- *Verified:* headless Chrome on emulators: a click on a cell selected it; a drag started on another cell panned the
+  view 400 × 150 px and kept the selection; the row heads held at 56 px, the shade gone; no console errors; typecheck.
+

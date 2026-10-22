@@ -24,6 +24,9 @@ const BARE_MS = 420
 // How much the cells' order is left to chance: the rest is their distance from the plane.
 const RAGGED = 0.18
 
+// How far a press on a matrix's cell moves before it pans instead (D-217), as a card's drag (D-150).
+const CELL_DRAG_PX = 5
+
 const ZOOM_MIN = 0.1
 const ZOOM_MAX = 4
 
@@ -95,15 +98,29 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     e.stopPropagation()
     const { planeCam: start, focusLeaving } = useCanvasView.getState()
     if ((e.button !== 0 && e.button !== 1) || !start || focusLeaving) return
+    // A press on a matrix's cell (D-217) is the cell's until it moves 5 px: a click still selects it, a drag pans.
+    const onCell = !!(e.target as HTMLElement).closest('[data-cell]')
     // A press on the plane itself lets go of a card (D-187).
-    useCanvasView.setState({ cardSelected: null, labelSelected: null, linkSelected: null })
+    if (!onCell) useCanvasView.setState({ cardSelected: null, labelSelected: null, linkSelected: null })
     stopGlide()
     stopFollowing()
     const el = e.currentTarget
     const [sx, sy] = [e.clientX, e.clientY]
-    el.setPointerCapture(e.pointerId)
-    el.dataset.panning = 'true'
-    const move = (ev: PointerEvent) => useCanvasView.setState({ planeCam: { ...start, ox: start.ox + ev.clientX - sx, oy: start.oy + ev.clientY - sy } })
+    const id = e.pointerId
+    let panning = false
+    const begin = () => {
+      panning = true
+      el.setPointerCapture(id)
+      el.dataset.panning = 'true'
+    }
+    if (!onCell) begin()
+    const move = (ev: PointerEvent) => {
+      if (!panning) {
+        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < CELL_DRAG_PX) return
+        begin()
+      }
+      useCanvasView.setState({ planeCam: { ...start, ox: start.ox + ev.clientX - sx, oy: start.oy + ev.clientY - sy } })
+    }
     const up = () => {
       delete el.dataset.panning
       el.removeEventListener('pointermove', move)

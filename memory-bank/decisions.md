@@ -197,7 +197,7 @@ piece; check them with the user then.
 - Card motion on planes as D-150 (D-203): arriving cards build cell by cell, corner marks grey out on hover, in the
   type colour just outside selected and on the corners pressed; a drag goes 0.8 under the pointer, marks where it lands.
   No side panel on a card click until it's refactored (the user's call).
-- Matrix (D-204, D-206, D-208, D-212, D-214, D-216): a canvas piece made in a wizard from `+ → matrix…` (start from a template
+- Matrix (D-204, D-206, D-208, D-212, D-214, D-216, D-217): a canvas piece made in a wizard from `+ → matrix…` (start from a template
   or my own, rows, columns, cells, a preview; D-212). Rows and columns: every card of a type (any plane or one) + typed
   names + single cards; `×` hides a type's card or drops a typed one. Cells one kind per matrix: a scale of editable
   steps, a number (unit) or text; a note; options doesn't apply (—), guesses (~ ?), totals (in the heads, at the ends or
@@ -207,7 +207,8 @@ piece; check them with the user then.
   or pick a card. `[setup]` opens a tabbed panel (rows · columns · cells · options, start over from) at the bottom of
   its space. On the canvas the window fits the whole table; in focus the heads stick to the screen's top and left
   when panned past, a row or column just added glides to the middle, the add field is unframed (D-214). Long head names take up to three or four lines; the setup's added-by-hand is pills plus one field
-  that finds a card or takes a name (D-216). On the canvas a window: a plane's edge, fill, name in the top edge and
+  that finds a card or takes a name (D-216). In focus a drag that starts on a cell pans (after 5 px; a click
+  still selects); held row heads sit 56 px from the left, the side nav's shade fading meanwhile (D-217). On the canvas a window: a plane's edge, fill, name in the top edge and
   console, moved and resized in edit mode, no `+` marks (D-208), the whole table fitted in it (D-214); focus glides the table to the middle while the page builds cell by cell behind it, no ink (D-206). Live in focus (click, again steps, 1–9, arrows, Backspace, `-`, Enter;
   a bar under the cell); `[setup]` in the focus dock. Setup on the piece, cells in `cells/{matrixId}_{row}_{col}`.
 - Table (D-209), the first lens: a canvas piece from `+` (templates every card, features, competitors, blank), a window

@@ -52,10 +52,11 @@ import styles from './Matrix.module.css'
 export const M = { head: 220, cell: 104, top: 72, row: 44, gap: 6, end: 120, endRow: 36 }
 
 // In focus the heads stick (D-214): panned or zoomed so they'd leave the screen, the column heads stay this far from its
-// top (under the breadcrumb's bar) and the row heads this far from its left (clear of the side nav's shade, 160 px,
-// Hud.module.css), the cells moving under them. Never further in than where fit puts them (fitPlane's 96 px round), so
-// a fitted table's heads don't cover its first row or column.
-const STICK = { top: 64, left: 160 }
+// top (under the breadcrumb's bar) and the row heads this far from its left (just past the side nav's tools, D-217; the
+// nav's shade fades while they're held, `html[data-held-heads]`, Hud.module.css), the cells moving under them. Never
+// further in than where fit puts them (fitPlane's 96 px round), so a fitted table's heads don't cover its first row or
+// column.
+const STICK = { top: 64, left: 56 }
 const FIT_PAD = 96
 
 const NO_SETUP = emptySetup()
@@ -216,6 +217,14 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   const dy = live ? Math.min(Math.max(0, (stickTop - view.oy) / view.zoom), Math.max(0, L.addY - M.top)) : 0
   const dx = live ? Math.min(Math.max(0, (stickLeft - view.ox) / view.zoom), Math.max(0, L.addX - M.head)) : 0
   const added = (which: 'rows' | 'cols') => (centre.current = which)
+  const main = live && useCanvasView.getState().planeCam === view
+  // While the row heads are held at the left, the side nav's shade steps aside so it doesn't dim them.
+  const held = main && dx > 0
+  useEffect(() => {
+    if (!held) return
+    document.documentElement.dataset.heldHeads = ''
+    return () => void delete document.documentElement.dataset.heldHeads
+  }, [held])
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined}>
@@ -238,7 +247,8 @@ export function MatrixView({ piece, view, live, editor }: Props) {
                   hot={hot?.r === ri || hot?.c === ci}
                   live={live}
                   typing={typing === key}
-                  onPress={own}
+                  // On the focus's own view a press on a cell may pan (FocusedPlane, D-217); a pane's keeps it.
+                  onPress={main ? undefined : own}
                   onHover={live ? () => setHot({ r: ri, c: ci }) : undefined}
                   onClick={() => {
                     if (!isSel) return select(ri, ci)
@@ -325,7 +335,8 @@ export function MatrixView({ piece, view, live, editor }: Props) {
           )}
         </div>
       </div>
-      {live && selected && selBox && (
+      {/* Not while the cell is under the held heads. */}
+      {live && selected && selBox && !((dx > 0 && selBox.x < dx + M.head) || (dy > 0 && selBox.y < dy + M.top)) && (
         <CellBar
           key={selKey(rows[selected.r].key, cols[selected.c].key)}
           setup={setup}

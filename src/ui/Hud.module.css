@@ -93,6 +93,12 @@ a.link:hover {
     transparent
   );
   pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+/* A focused matrix's row heads held at the left edge (D-217) sit on their own paper: the shade would only dim them. */
+:global(html[data-held-heads]) .hud > .shade {
+  opacity: 0;
 }
 
 /* The side nav's tools (D-176, D-178): middle of the left edge, level with the corner below it. */
