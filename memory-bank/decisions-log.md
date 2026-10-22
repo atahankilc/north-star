@@ -3489,6 +3489,8 @@ categories shown like B, not in a card, and the features under them not indented
     another plane's edge it links to that one.
   - *Moving together:* a plane moved or resized carries everything linked to it: what touches it stays on its edge
     (D-210), what's apart moves as the plane's top-left corner does.
+  - *A matrix's axes:* both of its typed axes take the plane (D-210), so features × competitors linked to a plane with
+    no competitors shows no columns; asked whether only the rows should, the user kept it: "şimdilik böyle iyi".
   - *Live:* while a plane or a linked piece is dragged, its link is drawn where they are at that moment, turning from
     touching (`· ›`) to apart (a line) and back at once as the piece goes (the user: "component taşırken yada yukarı
     aşşaı kaydırırken iki bağlantı durumunun da anlık değişmesi … iyiydi"; only pulsing motion was unwanted).
