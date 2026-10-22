@@ -3325,18 +3325,18 @@ categories shown like B, not in a card, and the features under them not indented
   canvas, focus on one, a number typed into `cost`, sorted by it, the setup with a type rule and the columns; no
   console errors; typecheck.
 
-### D-210 · 2026-10-22 · Accepted (D-209's *Next*, first half: lenses stick to planes)
+### D-210 · 2026-10-22 · Accepted (D-209's *Next*, first half: lenses stick to planes; letting go, the `⇆` and the plane-only binding changed by D-215)
 - *Decision:* a matrix or a table (not a plane) moved in edit mode within 48 screen px of a plane's edge **sticks**
   there: the plane's edge lights cyan while it's near, the piece snaps one grid step (25 px) out from that edge (its top
   or left lines up with the plane's when that's near too), and on the drop it's bound to the plane (`stuckTo`). Alt
-  held: free, no sticking. Pulled away and dropped elsewhere, it lets go.
+  held: free, no sticking. Pulled away and dropped elsewhere, it let go (D-215: no more; it stays linked, far).
   - *What it shows:* a table gets a rule of its own, first in its list, `where plane is <the plane> · auto` (cyan);
     changing that rule by hand makes it yours (no longer `auto`, kept when it lets go); letting go takes the `auto`
     rule away. A matrix's typed axes take the plane (only where they had none, or the one sticking gave them; a plane
     picked by hand stays) and lose it on letting go.
   - *Moving together:* a plane moved or resized carries what's stuck to it (kept on the same edge, moved along it
-    with the plane), live while dragging and in the same undo step. A `⇆` chip in cyan, at screen size, sits in the
-    gap between them. A plane deleted leaves its pieces where they are (`stuckTo` kept, so ⌘Z binds them again).
+    with the plane), live while dragging and in the same undo step. A `⇆` chip in cyan, at screen size, sat in the
+    gap between them (D-215 replaced it with faint `· ›` cells). A plane deleted leaves its pieces where they are (`stuckTo` kept, so ⌘Z binds them again).
 - *Data:* `pieces/{id}.stuckTo` (a plane's id; matrices and tables only, rules allow it); a table's rule may carry
   `auto: true`.
 - *Next:* D-209's second half: in the plane's focus the dock lists what's stuck to it; each opens beside the plane,
@@ -3469,4 +3469,56 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified:* headless Chrome on emulators: the canvas window fitting the whole matrix; a typed row and column added,
   each glided to the middle; the add field's look; zoomed in and panned right, the row heads held at 160 px with the
   cells passing under; no console errors; typecheck.
+
+### D-215 · 2026-10-22 · Accepted (changes D-210: how a link shows, far links, letting go)
+- *Decision:* a matrix or a table linked to a plane (`stuckTo`) shows it quietly, in grey, and lights cyan while the
+  plane or the piece is under the pointer. Nothing moves (no flow, no glow).
+  - *Its name* in its top edge starts with its plane's: `01 PAZAR ▸ TABLE · every card` (the plane's name grey,
+    cyan when lit), so it's plain which is the main one: the plane; the piece hangs from it, never the other way.
+  - *Touching* (one grid step out, alongside): the 25 px gap along what they share holds faint `· ›` cells, 9 px each,
+    pointing away from the plane (`‹ ⌄ ⌃` on the other sides), and the plane's edge a notch there (`--edge`, 2 px). The
+    old `⇆` chip in the gap is gone.
+  - *Apart* (a far link): a thin straight line (1 screen px, `--line-hover`, never dashed) from the middle of the plane's
+    side facing the piece (kept 30 px from its corners) to the piece's facing side, with a notch where it leaves the plane.
+  - *Linking:* moving it to a plane's edge still links it there (D-210); a dropdown in its console does the rest:
+    `link ▾` when it isn't linked, `⇆ 01 Pazar ▾` when it is, listing every plane (`⇆ name`) and `let go`. Viewers see
+    `⇆ 01 Pazar` without the dropdown. Dragging never lets go any more (moved away it stays linked, far); dropped at
+    another plane's edge it links to that one.
+  - *Moving together:* a plane moved or resized carries everything linked to it: what touches it stays on its edge
+    (D-210), what's apart moves as the plane's top-left corner does.
+  - *Live:* while a plane or a linked piece is dragged, its link is drawn where they are at that moment, turning from
+    touching (`· ›`) to apart (a line) and back at once as the piece goes (the user: "component taşırken yada yukarı
+    aşşaı kaydırırken iki bağlantı durumunun da anlık değişmesi … iyiydi"; only pulsing motion was unwanted).
+- *User:* chose from two previews on a port (V2 "künye + çentik", then G1 "ASCII akış" + F1 "ince çizgi"): "Üst üste
+  binince oluşan bağın plane borderı üzerinde çizgi olarak gösterilmesi güzel ancak mavi parlaması her zaman güzel
+  olmamış, daha az dikkat çeken ama yine de bağlı oldukları gösteren bişi lazım"; "Uzaktaki bağlantılar için de kesik
+  çizgi kesinlikle olmaz"; "Uzaktan bağlamak da kesinlikle dropdown ile yapılmalı"; "G1 F1 harika duruyo. Ama
+  animasyonlara gerek yok".
+- *Alternatives:* a line with a filled square at the plane and a ring at the piece (V1); lines only on hover (V3); a
+  bridge or stitches in the gap (G2, G3); an elbow line (F2); a `⇆` handle dragged onto a plane (L1); flowing squares
+  and a glow wave. Not taken.
+- *Verified:* headless Chrome on emulators: a table touching a plane's right edge and a matrix its left, both named
+  `01 PAZAR ▸ …` with `· ›` gaps; hovering the table lit its gap, notch and name; the matrix dragged far in edit mode
+  stayed linked, drawn with a thin line; the table's dropdown listed `let go | ⇆ 01 Pazar | ⇆ 02 Rakipler`, picking 02
+  moved its link (its name and rows followed); the far matrix dragged to the plane's edge showed the `· ›` gap mid-drag,
+  then the line again as it went on; no console errors; typecheck.
+
+### D-216 · 2026-10-22 · Accepted (adds to D-212 and D-214)
+- *Decision:*
+  - *Long head names* use the head's room before they're cut: a column's card name three lines (line height 1.2, the
+    head's padding 6 px), a typed name four; a name over 30 characters (a column's) or 40 (a row's) is set a size smaller
+    and gets four lines (a row's three); a row's two lines otherwise. The full name stays in the head's tooltip.
+  - *Added by hand* in the setup (D-212) is one set of pills, as tall as the type choices: a card's with a square in its
+    type's colour, a typed name's with an outline square, `×` on each; then one dashed pill, `+ a card, or type a name`:
+    typing lists `"…" as a name` and the cards that match (the axis's type first), focused empty it offers the axis's
+    type's cards not on it yet; arrows move, Enter or a click takes the lit one, the list opens upward. The `+ a card ▾`
+    menu and the separate name field are gone; `called` is a pill-shaped field too.
+  - *Sticky heads* (D-214) never stick further in than where fit puts them (fit's 96 px round): at fit they don't cover
+    the first row or column. Each head layer is cut where the other's heads begin, so nothing shows past the corner.
+- *User:* "column ve row adı uzun olunca trancated oluyo … bu alanı biraz daha kullanmaya çalışalım. Yani sığdığı kadar";
+  "added by hand kısmı daha güzelleştirilebilir … farklı farklı üç ui parçası yan yana … ui parçalarını birbirine yakın
+  tutmaya çalışabiliriz".
+- *Verified:* headless Chrome on emulators: long typed and card names in column and row heads; the setup's columns tab
+  with pills, the add pill's list for `Cr`, a name added by Enter; focus at fit with nothing covered, then panned up and
+  left with both head layers stuck and the corner clean; no console errors; typecheck.
 
