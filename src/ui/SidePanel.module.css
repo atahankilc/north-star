@@ -1,0 +1,130 @@
+/* The right panel (D-219): a terminal column flush with the right edge of its space, from under the HUD's bar (whose
+   shade would dim its top line) to the bottom. */
+.panel {
+  position: absolute;
+  top: var(--hud-h);
+  bottom: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  width: min(400px, 100%);
+  border-left: 1px solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--space-4);
+  cursor: default;
+}
+
+/* Magenta marks on its left corners, as on a plane's console and the focus dock. */
+.panel::before,
+.panel::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  width: 7px;
+  height: 7px;
+  border-left: 1px solid var(--accent-magenta);
+  pointer-events: none;
+}
+
+.panel::before {
+  top: 0;
+  border-top: 1px solid var(--accent-magenta);
+}
+
+.panel::after {
+  bottom: 0;
+  border-bottom: 1px solid var(--accent-magenta);
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 14px 20px 0;
+}
+
+.kind {
+  color: var(--tone);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.close {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--fg-strong);
+}
+
+.br {
+  color: var(--fg-faint);
+}
+
+/* The title in Geist, under a rule. */
+.title {
+  padding: 10px 20px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-4);
+}
+
+.section {
+  padding: 14px 20px 6px;
+}
+
+/* `01 STATUS ────`: the number faint, the name a label, the rule to the edge. */
+.rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 10px;
+  color: var(--fg-dim);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.n {
+  color: var(--fg-faint);
+}
+
+.foot {
+  display: flex;
+  gap: 14px;
+  padding: 10px 20px 12px;
+  border-top: 1px solid var(--line);
+}
+
+.action {
+  composes: small from './AsciiButton.module.css';
+}

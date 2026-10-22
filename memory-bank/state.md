@@ -60,8 +60,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Go to back for every space (D-196): compass in the side nav under fit, no keys (D-201), planes' places folded (D-200); canvas (planes' insides too) and focused plane. 2026-10-21, not committed.
 - Threads panel as list + thread halves, nothing on the canvas, cell-by-cell build/break for the tab and each half, go there an icon in the header (D-199). 2026-10-21, committed.
 - Plane back to the old board's power, step by step (asked 2026-10-21): step 1, card motion (D-203); step 2, card inside
-  (D-205, shown only, nothing sets it yet). Step 3, links (D-207). Next proposed:
-  bends, multi-select, guides, right-click, competitor features, filters. Fixed 2026-10-21:
+  (D-205, shown only, nothing sets it yet). Step 3, links (D-207); step 4, the right
+  panel's look (D-219), opened by a card. Next: what fills a card's panel (with the user). Fixed 2026-10-21:
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
 - Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
 - Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), links shown and made from a dropdown (D-215), 2026-10-22, rules deployed.

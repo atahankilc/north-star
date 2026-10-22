@@ -273,6 +273,10 @@ piece; check them with the user then.
 - Reports tab: table alone, 10 a page with numbered pages, KIND/BY/SEEN BY filters + upload square in its top row; a report
   opens beside it (`?report=`), nothing opens by itself (D-103, D-106). Upload your own `.md` (≤512 KB), round-trips the download (D-091).
 
+- Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
+  or its part in a split; the screen for the canvas), 400 px, under the HUD bar, magenta left corner marks, kind +
+  `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.
+
 ## Collaboration
 - Real-time collaboration with presence and live cursors is in scope (D-005).
 - Presence in RTDB `presence/{wid}/{uid}`, readable by any signed-in user, own node writable; whole-node writes (D-016, D-065).

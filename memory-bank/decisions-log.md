@@ -3567,3 +3567,27 @@ categories shown like B, not in a card, and the features under them not indented
   effort) and `cost`; `make the table` placed it; in its focus the setup's three tabs, `view` → `10` paged it
   (`‹ 1 / 1 › 10 a page` in the dock); no console errors; typecheck.
 
+
+### D-219 · 2026-10-22 · Accepted (the right panel's look and place, for every panel that opens on the right; first use: a plane's cards, D-187's "side panel" now back as a shell)
+- *Decision:* one right panel for everything that opens on the right, whatever fills it (`src/ui/SidePanel.tsx`:
+  `SidePanel`, `PanelSection`, `PanelAction`). Picked from four on a scratch preview (port 5196; A terminal column, B the
+  card opened as a floating sheet, C a tab hanging from the top edge, D a terminal log with a `>` prompt): A.
+- *Look:* a column flush with the right edge of its space, 400 px (narrower if the space is), from under the HUD's bar
+  (`--hud-h`; the bar's shade dimmed its top line) to the bottom, `--bg`, a `--line-hover` line on its left with 7 px
+  magenta marks on its two left corners (a plane console's, the focus dock's). Along the top the kind in uppercase in
+  its colour and `[×] esc`; the title in Geist 22 px under it and a rule; then sections under rules that carry a number
+  and a name (`01 STATUS ────`), the body scrolling; `[verb]` actions at the foot over a rule. It builds up cell by cell
+  as it opens and breaks apart as it closes (`<Appear>`, D-034); one panel stays while what it shows changes.
+- *Where (the user):* a panel belongs to its component: a piece in focus opens it at the right of its own view, and
+  with something open beside it (D-211's split) at the right of its own part, never over the other part; a thing on the
+  canvas itself opens it at the screen's right edge. It's a dialog to the canvas (its wheel scrolls it, a press doesn't
+  pan). What it's for, if it would be covered, glides left clear of it (48 px).
+- *First use:* a plane's selected card (in focus) opens it: its type and colour, its title, `[comment]` (its thread, or
+  a new one) and `[delete]` (editors; with its links). Closing (`[×]`, Escape, a press on the plane) lets go of the
+  card. What fills a card's panel is next, with the user.
+- *User:* "Öncelikle burda alacağımız kararlar bütün sağda açılan paneller için geçerli olucak … Paneller componentlere
+  bağlı olcak … sağ panel açılması o componentin kendi viewı içinde gerçekleşcek … ana canvas da ise … en sağda
+  açılcak", then "A ile devam et".
+- *Verified* headless (emulators): a click on a card opens it cell by cell, another card swaps its content without a
+  rebuild, a card under it glides clear, with `beside` set it sits at the right of the plane's part, Escape closes it;
+  no console errors; build.
