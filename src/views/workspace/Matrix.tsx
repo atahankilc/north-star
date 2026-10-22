@@ -41,7 +41,7 @@ import {
   type Reading,
   type Step,
 } from '../../data/matrix'
-import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
+import { fitInto, glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { useWs } from './context'
 import { TYPE_ACCENT } from './PlaneCards'
@@ -53,8 +53,10 @@ export const M = { head: 220, cell: 104, top: 72, row: 44, gap: 6, end: 120, end
 
 // In focus the heads stick (D-214): panned or zoomed so they'd leave the screen, the column heads stay this far from its
 // top (under the breadcrumb's bar) and the row heads this far from its left (clear of the side nav's shade, 160 px,
-// Hud.module.css), the cells moving under them.
+// Hud.module.css), the cells moving under them. Never further in than where fit puts them (fitPlane's 96 px round), so
+// a fitted table's heads don't cover its first row or column.
 const STICK = { top: 64, left: 160 }
+const FIT_PAD = 96
 
 const NO_SETUP = emptySetup()
 export const setupOf = (p: Pick<Piece, 'matrix'>): MatrixSetup => p.matrix ?? NO_SETUP
@@ -118,6 +120,15 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   const [typing, setTyping] = useState<string | null>(null)
   const naming = useMatrixUi((s) => s.naming)
   const layer = useRef<HTMLDivElement>(null)
+  // Its space's size (the screen in focus, a pane beside a plane), for where fit would put the heads.
+  const [room, setRoom] = useState({ w: 0, h: 0 })
+  useEffect(() => {
+    const el = layer.current
+    if (!el || !live) return
+    const ro = new ResizeObserver(() => setRoom({ w: el.clientWidth, h: el.clientHeight }))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [live])
   // A row or column just added from its dashed card: the view glides to bring it to the middle (D-214).
   const centre = useRef<'rows' | 'cols' | null>(null)
 
@@ -199,8 +210,11 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   const selBox = selected ? { x: L.colX(selected.c), y: L.rowY(selected.r) } : null
   const heads = headTotals(setup)
   // How far the heads are held in from where they'd be, in the matrix's px; never past its last row or column.
-  const dy = live ? Math.min(Math.max(0, (STICK.top - view.oy) / view.zoom), Math.max(0, L.addY - M.top)) : 0
-  const dx = live ? Math.min(Math.max(0, (STICK.left - view.ox) / view.zoom), Math.max(0, L.addX - M.head)) : 0
+  const fitted = fitInto({ x: 0, y: 0, w: L.w, h: L.h }, room.w, room.h, FIT_PAD)
+  const stickTop = Math.min(STICK.top, Math.max(0, room.h / 2 - (L.h / 2) * fitted.zoom))
+  const stickLeft = Math.min(STICK.left, Math.max(0, room.w / 2 - (L.w / 2) * fitted.zoom))
+  const dy = live ? Math.min(Math.max(0, (stickTop - view.oy) / view.zoom), Math.max(0, L.addY - M.top)) : 0
+  const dx = live ? Math.min(Math.max(0, (stickLeft - view.ox) / view.zoom), Math.max(0, L.addX - M.head)) : 0
   const added = (which: 'rows' | 'cols') => (centre.current = which)
 
   return (
@@ -262,9 +276,9 @@ export function MatrixView({ piece, view, live, editor }: Props) {
           )}
 
           {/* The row heads, and what closes their column, held in from the left when panned past (D-214). */}
-          <div className={styles.stick} data-stuck={dx > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateX(${dx}px)` }}>
+          <div className={styles.stick} data-stuck={dx > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateX(${dx}px)`, clipPath: `inset(${dy + M.top}px -10000px -10000px -10000px)` }}>
             {/* Paper under them out to the screen's edge, so the cells pass under. */}
-            {dx > 0 && <div className={styles.band} style={box(-STICK.left / view.zoom, -STICK.top / view.zoom, STICK.left / view.zoom + M.head + M.gap, L.h + STICK.top / view.zoom)} />}
+            {dx > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, stickLeft / view.zoom + M.head + M.gap, L.h + stickTop / view.zoom)} />}
             {rows.map((r, i) => (
               <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} hot={hot?.r === i || selected?.r === i} live={live} editor={editor} naming={naming === r.item?.id}
                 onRename={(name) => void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name)} onRemove={() => remove('rows', r)} onPress={own}>
@@ -279,8 +293,9 @@ export function MatrixView({ piece, view, live, editor }: Props) {
             {live && editor && <AddEntry which="rows" label={oneOf(setup.rows, 'rows')} style={box(0, L.addY, M.head, M.row)} piece={piece} setup={setup} shown={shown} onPress={own} onAdded={added} />}
           </div>
           {/* The column heads, held in from the top. */}
-          <div className={styles.stick} data-stuck={dy > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateY(${dy}px)` }}>
-            {dy > 0 && <div className={styles.band} style={box(-STICK.left / view.zoom, -STICK.top / view.zoom, L.w + STICK.left / view.zoom, STICK.top / view.zoom + M.top + M.gap)} />}
+          {/* Each layer cut where the other's heads begin, so neither shows past the corner. */}
+          <div className={styles.stick} data-stuck={dy > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateY(${dy}px)`, clipPath: `inset(-10000px -10000px -10000px ${dx + M.head}px)` }}>
+            {dy > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, L.w + stickLeft / view.zoom, stickTop / view.zoom + M.top + M.gap)} />}
             {cols.map((c, i) => (
               <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} hot={hot?.c === i || selected?.c === i} live={live} editor={editor} naming={naming === c.item?.id}
                 onRename={(name) => void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name)} onRemove={() => remove('cols', c)} onPress={own}>
@@ -296,6 +311,7 @@ export function MatrixView({ piece, view, live, editor }: Props) {
           </div>
           {/* The corner, held in both ways, over both. */}
           <div className={styles.stick} style={{ width: L.w, height: L.h, transform: `translate(${dx}px, ${dy}px)` }}>
+            {(dx > 0 || dy > 0) && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, stickLeft / view.zoom + M.head + M.gap, stickTop / view.zoom + M.top + M.gap)} />}
             <div className={styles.corner} data-stuck={dx > 0 || dy > 0 || undefined} style={box(0, 0, M.head, M.top)}>
               <span>{nounOf(setup.rows)}</span>
               <span className={styles.cross}>×</span>
@@ -354,6 +370,8 @@ function Head({ entry, which, style, hot, live, editor, naming, onRename, onRemo
       className={which === 'rows' ? styles.rowHead : styles.colHead}
       style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }}
       data-card={entry.card ? true : undefined}
+      // A long one set smaller, so more of it fits (D-216).
+      data-long={(entry.name?.length ?? 0) > (which === 'rows' ? 40 : 30) || undefined}
       data-hot={hot || undefined}
       title={entry.name || undefined}
       onPointerDown={onPress}

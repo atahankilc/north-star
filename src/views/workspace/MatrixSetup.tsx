@@ -5,10 +5,10 @@
 // cells are a mark from a scale (its steps edited here: glyph, name, colour; shown as squares or as their glyphs), a
 // number (with a unit) or a few words. Options: `doesn't apply`, guesses marked, the totals (where, and as what).
 // Every change is one undo step; typing in a field merges into one.
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { CARD_TYPES } from '../../data/cards'
+import { CARD_TYPES, type Card, type CardType } from '../../data/cards'
 import { kindOfPiece } from '../../data/pieces'
 import {
   CELL_KINDS,
@@ -134,26 +134,11 @@ type AxisProps = {
 // of them is called in the corner.
 export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
   const { cards, pieces } = useWs()
-  const [name, setName] = useState('')
   const planes = pieces.filter((p) => kindOfPiece(p) === 'plane')
   const hidden = axis.hide?.length ?? 0
   const byId = new Map(cards.map((c) => [c.id, c]))
   const on = new Set([...entriesOf(axis, cards).map((e) => e.key)])
   const ofType = (t: string) => cards.filter((c) => c.type === t && (!axis.plane || c.pieceId === axis.plane)).length
-  const picks: MenuEntry[] = CARD_TYPES.flatMap((t) => {
-    const of = cards.filter((c) => c.type === t && !on.has(c.id))
-    if (!of.length) return []
-    return [
-      { key: `h-${t}`, heading: `${t}s` },
-      ...of.map((c) => ({ key: c.id, label: c.title || `untitled ${t}`, glyph: '▌', tone: TYPE_ACCENT[t], onSelect: () => onChange({ ...axis, items: [...axis.items, { id: newId(), cardType: c.type, cardId: c.id }] }) })),
-    ]
-  })
-  const addName = () => {
-    const n = name.trim().slice(0, NAME_MAX)
-    if (!n) return
-    onChange({ ...axis, items: [...axis.items, { id: newId(), name: n }] })
-    setName('')
-  }
   const drop = (item: AxisItem) => (onRemoveItem ? onRemoveItem(item) : onChange({ ...axis, items: axis.items.filter((i) => i !== item) }))
   return (
     <>
@@ -191,36 +176,118 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
         </Row>
       )}
       <Row label="added by hand" hint="single cards of any type, or names that aren't cards (criteria, questions…)">
-        {axis.items.map((item) => {
-          const c = item.cardId ? byId.get(item.cardId) : undefined
-          if (item.cardId && !c) return null
-          return (
-            <span key={item.id} className={styles.item} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined}>
-              {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
-              <button className={styles.remove} data-shown aria-label="Take it out" onClick={() => drop(item)}>
-                ×
-              </button>
-            </span>
-          )
-        })}
-        {picks.length > 0 && <Menu label="+ a card" up search="find a card" ariaLabel={`Add a card to the ${which === 'rows' ? 'rows' : 'columns'}`} items={picks} />}
-        <input
-          className={styles.field}
-          value={name}
-          maxLength={NAME_MAX}
-          placeholder="+ type a name, enter"
-          aria-label="Add a name"
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Enter') addName()
-          }}
-        />
+        <span className={styles.pills}>
+          {axis.items.map((item) => {
+            const c = item.cardId ? byId.get(item.cardId) : undefined
+            if (item.cardId && !c) return null
+            return (
+              <span key={item.id} className={styles.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
+                <span className={styles.pillMark} aria-hidden />
+                {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
+                <button className={styles.pillX} aria-label="Take it out" onClick={() => drop(item)}>
+                  ×
+                </button>
+              </span>
+            )
+          })}
+          <AddPill
+            exclude={on}
+            prefer={axis.type}
+            onCard={(c) => onChange({ ...axis, items: [...axis.items, { id: newId(), cardType: c.type, cardId: c.id }] })}
+            onName={(n) => onChange({ ...axis, items: [...axis.items, { id: newId(), name: n }] })}
+          />
+        </span>
       </Row>
       <Row label="called" hint="what one of them is, in the table's corner">
-        <AutosaveField className={styles.field} label="called" placeholder={axis.type ? `${axis.type}s` : 'names'} maxLength={40} value={axis.noun ?? ''} onSave={(n) => n.trim() !== (axis.noun ?? '') && onChange({ ...axis, noun: n.trim() || undefined }, 'noun')} />
+        <AutosaveField className={styles.pillField} label="called" placeholder={axis.type ? `${axis.type}s` : 'names'} maxLength={40} value={axis.noun ?? ''} onSave={(n) => n.trim() !== (axis.noun ?? '') && onChange({ ...axis, noun: n.trim() || undefined }, 'noun')} />
       </Row>
     </>
+  )
+}
+
+// One field to add by hand (D-216), shaped like the pills it adds: type and it lists the cards that match (the axis's
+// type first) under `+ "…" as a name`; arrows move, Enter or a click takes the lit one, Escape lets go. Focused empty,
+// the axis's type's cards not on it yet are offered. The list opens upward: the setup sits at the screen's bottom.
+function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<string>; prefer?: CardType; onCard: (c: Card) => void; onName: (n: string) => void }) {
+  const { cards } = useWs()
+  const [q, setQ] = useState('')
+  const [open, setOpen] = useState(false)
+  const [lit, setLit] = useState(0)
+  const field = useRef<HTMLInputElement>(null)
+  const query = q.trim().toLowerCase()
+  const free = cards.filter((c) => !exclude.has(c.id))
+  const matches = (query ? free.filter((c) => c.title.toLowerCase().includes(query)) : free.filter((c) => c.type === prefer))
+    .sort((a, b) => Number(b.type === prefer) - Number(a.type === prefer))
+    .slice(0, 6)
+  const options: ({ name: string } | { card: Card })[] = [...(query ? [{ name: q.trim().slice(0, NAME_MAX) }] : []), ...matches.map((card) => ({ card }))]
+  const take = (o: (typeof options)[number]) => {
+    if ('card' in o) onCard(o.card)
+    else onName(o.name)
+    setQ('')
+    setLit(0)
+    field.current?.focus()
+  }
+  return (
+    <span className={styles.addPill} data-open={open || undefined}>
+      <span className={styles.pillPlus} aria-hidden>
+        +
+      </span>
+      <input
+        ref={field}
+        className={styles.addPillField}
+        value={q}
+        maxLength={NAME_MAX}
+        placeholder="a card, or type a name"
+        aria-label="Add a card or a name"
+        role="combobox"
+        aria-expanded={open && options.length > 0}
+        onFocus={() => setOpen(true)}
+        onBlur={(e) => !e.currentTarget.parentElement?.contains(e.relatedTarget as Node) && setOpen(false)}
+        onChange={(e) => {
+          setQ(e.target.value)
+          setLit(0)
+        }}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault()
+            const n = options.length
+            if (n) setLit((lit + (e.key === 'ArrowDown' ? 1 : n - 1)) % n)
+          }
+          if (e.key === 'Enter' && options[lit]) take(options[lit])
+          if (e.key === 'Escape') {
+            setQ('')
+            e.currentTarget.blur()
+          }
+        }}
+      />
+      {open && options.length > 0 && (
+        <span className={styles.addList} role="listbox">
+          {options.map((o, i) => (
+            <button
+              key={'card' in o ? o.card.id : 'name'}
+              role="option"
+              aria-selected={i === lit}
+              className={styles.addOpt}
+              style={'card' in o ? { ['--type' as string]: TYPE_ACCENT[o.card.type] } : undefined}
+              data-card={'card' in o || undefined}
+              onPointerEnter={() => setLit(i)}
+              onClick={() => take(o)}
+            >
+              <span className={styles.pillMark} aria-hidden />
+              {'card' in o ? (
+                <>
+                  <span className={styles.addOptName}>{o.card.title || `untitled ${o.card.type}`}</span>
+                  <span className={styles.addOptType}>{o.card.type}</span>
+                </>
+              ) : (
+                <span className={styles.addOptName}>"{o.name}" as a name</span>
+              )}
+            </button>
+          ))}
+        </span>
+      )}
+    </span>
   )
 }
 
