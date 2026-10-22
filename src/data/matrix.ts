@@ -10,12 +10,12 @@
 // The setup lives on the piece (`matrix`); the cells in `cells/{matrixId}_{row}_{col}`, so a cell can't be made twice.
 // A row or column is keyed by its card's id, or by its typed entry's own id.
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
-import { CARD_TYPES, type Card, type CardType } from './cards'
+import { CARD_TYPES, type AnyType, type Card, type CardType } from './cards'
 import { db } from './firebase'
 import { tracked } from './history'
 import { pieceRef } from './pieces'
 
-export type AxisItem = { id: string; name?: string; cardType?: CardType; cardId?: string }
+export type AxisItem = { id: string; name?: string; cardType?: AnyType; cardId?: string }
 
 export type Axis = {
   // Every card of this type joins by itself; `plane`: only those on that plane.

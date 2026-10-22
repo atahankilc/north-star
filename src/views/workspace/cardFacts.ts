@@ -7,7 +7,7 @@ import { FOR } from '../../data/edges'
 
 export type Proof = { supports: number; contradicts: number; clash: boolean }
 // `clash`: the status and the evidence disagree (also with no evidence at all), the head in magenta.
-export type Facts = { head?: string; clash?: boolean; proof?: Proof; meta: string }
+export type Facts = { head?: string; clash?: boolean; proof?: Proof; meta: string; sure?: string }
 
 // Where it operates: `US · Germany +1` (D-145).
 const regionText = (regions: string[] | undefined) =>
@@ -36,6 +36,7 @@ export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'c
   for (const f of data.competitorFeatures) featureCount.set(f.competitorId, (featureCount.get(f.competitorId) ?? 0) + 1)
   const n = (k: number, one: string) => `${k} ${one}${k === 1 ? '' : 's'}`
 
+  const byId = new Map(cards.map((c) => [c.id, c]))
   const out = new Map<string, Facts>()
   for (const c of cards) {
     // Status and evidence (D-137): `!` when they disagree.
@@ -63,7 +64,36 @@ export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'c
       case 'feature':
         out.set(c.id, { head: c.priority, meta: line([c.status, c.impact && `impact ${c.impact}`, c.effort && `effort ${c.effort}`].filter(Boolean).join(' · '), forOf(c.id)) })
         break
+      case 'package': {
+        // What it holds by type, in chain order; its rating and how sure we are (D-239).
+        const held = (c.memberIds ?? []).map((id) => byId.get(id)).filter((k): k is Card => !!k)
+        const sure = confidenceOf(held)
+        out.set(c.id, {
+          head: [c.impact && `impact ${c.impact}`, c.effort].filter(Boolean).join(' · ') || undefined,
+          clash: sure === 'broken',
+          meta:
+            ORDER.map((t) => [t, held.filter((k) => k.type === t).length] as const)
+              .filter(([, k]) => k)
+              .map(([t, k]) => n(k, t))
+              .join(' · ') || 'nothing inside',
+          // In its panel only: the card has no room.
+          sure: sure && `confidence ${sure}`,
+        })
+        break
+      }
     }
   }
   return out
+}
+
+const ORDER = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
+
+// How sure a package is (D-239, the old feature rule D-138): from the status of what it holds that has one (customers,
+// problems, ideas). `broken` when any of them is invalidated; none with a status, nothing to say.
+export function confidenceOf(held: Card[]): 'high' | 'medium' | 'low' | 'broken' | undefined {
+  const rated = held.filter((k) => k.type === 'customer' || k.type === 'problem' || k.type === 'idea')
+  if (!rated.length) return undefined
+  if (rated.some((k) => k.validation === 'invalidated')) return 'broken'
+  const share = rated.filter((k) => k.validation === 'validated').length / rated.length
+  return share >= 0.67 ? 'high' : share >= 0.34 ? 'medium' : 'low'
 }

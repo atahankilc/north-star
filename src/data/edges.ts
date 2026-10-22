@@ -3,7 +3,7 @@
 import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, type DocumentReference } from 'firebase/firestore'
 import { db } from './firebase'
 import { absent, tracked } from './history'
-import type { CardType } from './cards'
+import type { AnyType } from './cards'
 
 // A customer tag (D-044): item → customer.
 export const FOR = 'for'
@@ -17,7 +17,7 @@ const edgesOf = (wid: string) => collection(db(), 'workspaces', wid, 'edges')
 export const edgeRef = (wid: string, id: string): DocumentReference => doc(edgesOf(wid), id)
 
 // The kind a link gets when drawn from one card to another (the old board's defaultKind); changed in its bar.
-export function defaultKind(from: CardType, to: CardType): EdgeKind {
+export function defaultKind(from: AnyType, to: AnyType): EdgeKind {
   if (to === 'customer' && from !== 'customer') return FOR
   if (from === 'idea' && to === 'problem') return 'solves'
   if (from === 'competitor' && (to === 'problem' || to === 'idea')) return 'competes-with'
@@ -26,7 +26,7 @@ export function defaultKind(from: CardType, to: CardType): EdgeKind {
 }
 
 // Returns the new link's id at once (the write goes on behind), so it can be selected straight away (D-154).
-export function createEdge(wid: string, from: { id: string; type: CardType }, to: { id: string; type: CardType }, kind: EdgeKind): string {
+export function createEdge(wid: string, from: { id: string; type: AnyType }, to: { id: string; type: AnyType }, kind: EdgeKind): string {
   const ref = doc(edgesOf(wid))
   void tracked(kind === FOR ? 'tag' : 'link', [ref], () => setDoc(ref, { fromId: from.id, fromType: from.type, toId: to.id, toType: to.type, kind }), {
     before: absent([ref]),

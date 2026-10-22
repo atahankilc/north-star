@@ -612,3 +612,10 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
   goes on the canvas, a row's grip to drag one out, .md dropped on the canvas. Verified: rules 419 pass; headless on the
   emulators (upload, both views, drag out + ask + place, reader, a seeded report moved and read, focus scroll + outline);
   build.
+
+## Done (2026-10-22): packages on planes (D-239)
+- `package these` from a selection; unfolded a blue frame with a band (drags its members, opens its panel), folded a card
+  holding them as rows; panel with rating, holds, confidence. Verified headless (make, drag, fold, drag folded, unfold,
+  panel, undo).
+- (Moved from state.md) Card hover/selection as corner marks, dragged card shrinks to 0.8 with its corners on where it
+  lands, 5 px drag threshold (D-150), 2026-10-19.

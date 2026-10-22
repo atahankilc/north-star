@@ -3,7 +3,7 @@
 // copy, delete; one in a selection of several does it to all of them. A link: its label, turn it round, its kind (the
 // current one checked), remove. Text: edit, duplicate, copy, delete. Empty plane: a card of each type or text right
 // there, and paste. Editors only for the changes; anyone can open.
-import { addCard, copyCards, deleteCard, deleteCards, updateCard, type Card, type CardType, CARD_TYPES } from '../../data/cards'
+import { addCard, copyCards, deleteCard, deleteCards, foldPackage, updateCard, type Card, type CardType, CARD_TYPES } from '../../data/cards'
 import { deleteEdge, reverseEdge, updateEdge, type Edge } from '../../data/edges'
 import { addLabel, deleteLabel, PARA_W, STICKY_W, type Label } from '../../data/labels'
 import { snap, GRID } from '../../data/grid'
@@ -12,7 +12,7 @@ import type { MenuEntry } from '../../ui/Menu'
 import { TEXT_GLYPH } from './glyphs'
 import { linkTone } from './PlaneLinks'
 import { LINK_GROUPS } from './planeFilter'
-import { clipboard, selectedIds, setSelection } from './selection'
+import { clipboard, onPlane, packageThese, selectedIds, setSelection } from './selection'
 import { foldsOf } from './cardInside'
 
 const CARD_LETTER: Record<CardType, string> = { customer: 'c', problem: 'r', competitor: 'o', idea: 'i', feature: 'f' }
@@ -37,6 +37,8 @@ type Ctx = {
   at: [number, number]
   // How many parts a card has (folding).
   parts: (id: string) => number
+  // Every card of the workspace (a package is named after how many there are).
+  all: Card[]
 }
 
 const by2 = (): [number, number] => [2 * GRID, 2 * GRID]
@@ -46,11 +48,15 @@ function several(c: Ctx, n: number): MenuEntry[] {
   const ids = selectedIds()
   const picked = c.cards.filter((x) => ids.includes(x.id))
   const texts = c.labels.filter((x) => ids.includes(x.id))
+  const packable = picked.filter((x) => x.type !== 'package')
   return [
     { key: 'sel', heading: `${n} selected` },
     { key: 'copy', label: 'copy them', glyph: '⧉', hint: '⌘C', onSelect: () => Object.assign(clipboard, { cards: picked, labels: texts, edges: c.edges, pasted: 0 }) },
     ...(c.editor
       ? [
+          ...(packable.length
+            ? [{ key: 'pkg', label: `package ${packable.length === picked.length ? 'these' : `the ${packable.length} cards`}`, glyph: '▣', letter: 'p', tone: 'var(--accent-blue)', onSelect: () => setSelection([packageThese(c.wid, packable, c.all)]) }]
+            : []),
           { key: 'dup', label: 'duplicate them', glyph: '⊕', letter: 'd', hint: '⌘D', onSelect: () => setSelection(copyCards(c.wid, c.plane, picked, c.edges, by2(), texts)) },
           {
             key: 'del',
@@ -76,7 +82,19 @@ export function cardItems(c: Ctx, id: string): MenuEntry[] {
   const parts = c.parts(id)
   return [
     { key: 'open', label: 'open', glyph: '▸', letter: 'o', hint: 'panel', onSelect: () => setSelection([id]) },
-    ...(c.editor && parts
+    ...(c.editor && parts && card.type === 'package'
+      ? [
+          {
+            key: 'fold',
+            label: card.folded ? `lay out its ${parts}` : `fold its ${parts} in`,
+            glyph: card.folded ? '+' : '−',
+            onSelect: () => {
+              const box = onPlane.boxes().find((b) => b.id === id)?.box
+              void foldPackage(c.wid, card, card.folded ? null : [snap(box?.x ?? card.x), snap(box?.y ?? card.y)])
+            },
+          },
+        ]
+      : c.editor && parts
       ? [{ key: 'fold', label: card.folded ? `unfold ${parts} part${parts > 1 ? 's' : ''}` : `fold ${parts} part${parts > 1 ? 's' : ''}`, glyph: card.folded ? '+' : '−', onSelect: () => void updateCard(c.wid, card, { folded: card.folded ? undefined : true }, card.folded ? 'unfold' : 'fold') }]
       : []),
     { key: 'copy', label: 'copy', glyph: '⧉', hint: '⌘C', onSelect: () => Object.assign(clipboard, { cards: [card], labels: [], edges: c.edges, pasted: 0 }) },
@@ -161,5 +179,5 @@ export function planeItems(on: 'card' | 'label' | 'link' | null, id: string | nu
 export function planeCtx(wid: string, plane: string, editor: boolean, all: { cards: Card[]; labels: Label[]; edges: Edge[] }, me: Ctx['me'], at: [number, number]): Ctx {
   const cards = all.cards.filter((k) => k.pieceId === plane)
   const folds = foldsOf(cards, all.edges)
-  return { wid, plane, editor, cards, labels: all.labels.filter((l) => l.pieceId === plane), edges: all.edges, me, at, parts: (id) => folds.count.get(id) ?? 0 }
+  return { wid, plane, editor, cards, labels: all.labels.filter((l) => l.pieceId === plane), edges: all.edges, me, at, parts: (id) => folds.count.get(id) ?? 0, all: all.cards }
 }

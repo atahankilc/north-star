@@ -7,7 +7,7 @@
 import { AnimatePresence } from 'motion/react'
 import { useEffect, type ReactNode } from 'react'
 import { create } from 'zustand'
-import { CARD_TYPES, type Card } from '../../data/cards'
+import { ALL_TYPES, type Card } from '../../data/cards'
 import { Appear } from '../../ui/Appear'
 import { useCanvasView } from '../../state/canvasView'
 import { Menu, type MenuEntry } from '../../ui/Menu'
@@ -86,7 +86,7 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   const swatches = (list: { key: string; tone: string; on: boolean }[]) =>
     list.map((s) => <span key={s.key} className={menuStyles.swatch} data-on={s.on} style={{ ['--tone' as string]: s.tone }} />)
   const named = (ids: string[], name: (id: string) => string) => (ids.length === 0 ? 'any' : ids.length === 1 ? name(ids[0]) : `${ids.length}`)
-  const show: MenuEntry[] = CARD_TYPES.map((t) => ({ key: t, label: `${t}s`, checked: !f.hide.includes(t), tone: TYPE_TONE[t], onSelect: () => set({ hide: flip(f.hide, t) }) }))
+  const show: MenuEntry[] = ALL_TYPES.map((t) => ({ key: t, label: `${t}s`, checked: !f.hide.includes(t), tone: TYPE_TONE[t], onSelect: () => set({ hide: flip(f.hide, t) }) }))
   const forItems: MenuEntry[] = [
     { key: 'any', label: 'any customer', checked: f.for.length === 0, onSelect: () => set({ for: [] }) },
     ...customers.map((c) => ({ key: c.id, label: c.title || 'untitled', checked: f.for.includes(c.id), tone: 'var(--accent-green)', onSelect: () => set({ for: flip(f.for, c.id) }) })),
@@ -106,7 +106,7 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   const linksNarrow = f.links.some((g) => !START.links.includes(g))
   return (
     <Appear className={styles.panel} role="group" aria-label="Filters">
-      <Menu label="show" up summary={swatches(CARD_TYPES.map((t) => ({ key: t, tone: TYPE_TONE[t], on: !f.hide.includes(t) })))} active={f.hide.length > 0} items={show} ariaLabel="Show card types" noun="types" />
+      <Menu label="show" up summary={swatches(ALL_TYPES.map((t) => ({ key: t, tone: TYPE_TONE[t], on: !f.hide.includes(t) })))} active={f.hide.length > 0} items={show} ariaLabel="Show card types" noun="types" />
       <Menu label="for" up summary={named(f.for, (id) => customers.find((c) => c.id === id)?.title || '1')} active={f.for.length > 0} items={customers.length ? forItems : []} ariaLabel="Only cards for these customers" empty="No customers on this plane" noun="customers" />
       <Menu label="tag" up summary={named(f.tags, (t) => `#${t}`)} active={f.tags.length > 0} items={tags.length ? tagItems : []} ariaLabel="Only cards with these tags" empty="No tags on this plane" noun="tags" />
       <Menu label="region" up summary={named(f.regions, (r) => r)} active={f.regions.length > 0} items={regions.length ? regionItems : []} ariaLabel="Competitors in these places" empty="No regions set on this plane's competitors" noun="places" />
@@ -134,4 +134,5 @@ const TYPE_TONE: Record<string, string> = {
   competitor: 'var(--accent-yellow)',
   idea: 'var(--fg)',
   feature: 'var(--accent-cyan)',
+  package: 'var(--accent-blue)',
 }

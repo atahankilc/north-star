@@ -9,8 +9,13 @@ import { edgeRef, edgesOn, type Edge } from './edges'
 
 export const CARD_TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
 export type CardType = (typeof CARD_TYPES)[number]
+// A package (D-239, the old board's D-141): a slice of the chain as one card, made from a selection, never from `+`.
+// Every card on a plane is one of these.
+export type AnyType = CardType | 'package'
+export const ALL_TYPES: AnyType[] = [...CARD_TYPES, 'package']
 
-export const CARD_COLLECTION: Record<CardType, string> = {
+export const CARD_COLLECTION: Record<AnyType, string> = {
+  package: 'packages',
   customer: 'customers',
   problem: 'problems',
   competitor: 'competitors',
@@ -45,8 +50,10 @@ export type CardFields = {
   url?: string
   // A feature's must-haves (D-133), which a matrix scores.
   criteria?: { id: string; text: string }[]
-  // A feature's parts folded into it as names beside it (D-164, D-225); only `true` is stored.
+  // A feature's parts folded into it as names beside it (D-164, D-225), or a package's members (D-239); only `true`.
   folded?: boolean
+  // A package's members (D-239): cards on its plane, by id; ones gone are skipped, never cleaned up (D-141).
+  memberIds?: string[]
 }
 
 export const VALIDATIONS: Validation[] = ['hypothesis', 'testing', 'validated', 'invalidated']
@@ -55,15 +62,15 @@ export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped']
 export const FEATURE_IMPACTS = ['low', 'medium', 'high']
 export const FEATURE_EFFORTS = ['S', 'M', 'L']
 
-export type Card = { id: string; type: CardType; pieceId: string; title: string; x: number; y: number } & CardFields
+export type Card = { id: string; type: AnyType; pieceId: string; title: string; x: number; y: number } & CardFields
 
-const ref = (wid: string, type: CardType, id?: string) =>
+const ref = (wid: string, type: AnyType, id?: string) =>
   id ? doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]), id) : doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]))
 
 // For undo's labels: `an idea`, `a feature`.
-const one = (type: CardType) => `${type === 'idea' ? 'an' : 'a'} ${type}`
+const one = (type: AnyType) => `${type === 'idea' ? 'an' : 'a'} ${type}`
 
-const titleField = (type: CardType) => (type === 'competitor' ? 'name' : 'title')
+const titleField = (type: AnyType) => (type === 'competitor' ? 'name' : 'title')
 
 const overlaps = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   a.x < b.x + CARD.w + GRID && b.x < a.x + CARD.w + GRID && a.y < b.y + CARD.h + GRID && b.y < a.y + CARD.h + GRID
@@ -113,6 +120,25 @@ export function updateCard(wid: string, card: Card, fields: Partial<CardFields>,
   for (const [k, v] of Object.entries(fields)) data[k === 'notes' && card.type !== 'competitor' ? 'body' : k] = v === undefined ? deleteField() : v
   const keys = Object.keys(fields).sort().join(',')
   return tracked(`${what} ${one(card.type)}`, [r], () => updateDoc(r, data), { key: `card:${card.id}:${keys}` })
+}
+
+// A package of these cards (D-239, the old board's D-141), on their plane: named `Package N`, its top-left at `at`,
+// shown unfolded (a frame round them). One undo step; returns its id.
+export function addPackage(wid: string, plane: string, members: Card[], at: [number, number], n: number) {
+  const r = ref(wid, 'package')
+  const now = Date.now()
+  void tracked('package these', [r], () =>
+    setDoc(r, { title: `Package ${n}`, pieceId: plane, homePlaneId: plane, memberIds: members.map((m) => m.id).slice(0, 60), x: snap(at[0]), y: snap(at[1]), createdAt: now, updatedAt: now }),
+  { before: absent([r]) })
+  return r.id
+}
+
+// A package folds its members in (`at`: where its card goes, where its band was) or lays them out again (`null`):
+// one undo step (D-239).
+export function foldPackage(wid: string, card: Card, at: [number, number] | null) {
+  const r = ref(wid, card.type, card.id)
+  const data = at ? { folded: true, x: at[0], y: at[1], updatedAt: Date.now() } : { folded: deleteField(), updatedAt: Date.now() }
+  return tracked(at ? 'fold a package' : 'unfold a package', [r], () => updateDoc(r, data))
 }
 
 // Several cards and their links, and text with them, one undo step (D-227, D-229: a selection's Delete).
@@ -167,6 +193,11 @@ export function copyCards(wid: string, pieceId: string, list: Card[], edges: Edg
     }
     for (const k of ['tags', 'validation', 'regions', 'priority', 'status', 'impact', 'effort', 'description', 'audience', 'pricing', 'url', 'criteria', 'folded'] as const)
       if (c[k] !== undefined) d[k] = c[k]
+    // A package keeps its members: the copies when they were copied with it, else the same cards (D-239).
+    if (c.type === 'package') {
+      d.memberIds = (c.memberIds ?? []).map((m) => made.get(m)?.id ?? m)
+      d.homePlaneId = pieceId
+    }
     if (c.notes) d[c.type === 'competitor' ? 'notes' : 'body'] = c.notes
     return d
   }
@@ -201,7 +232,7 @@ export function deleteCard(wid: string, card: Card, edges: Edge[] = []) {
 // Docs from any of the five collections, as cards; the old board's (no `pieceId`) are left out.
 type CardDoc = { id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number; body?: string } & CardFields
 
-export function toCards(type: CardType, docs: CardDoc[]): Card[] {
+export function toCards(type: AnyType, docs: CardDoc[]): Card[] {
   return docs.flatMap((d) =>
     d.pieceId
       ? [
@@ -226,6 +257,7 @@ export function toCards(type: CardType, docs: CardDoc[]): Card[] {
             url: d.url,
             criteria: d.criteria,
             folded: d.folded,
+            memberIds: d.memberIds,
           },
         ]
       : [],

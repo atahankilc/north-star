@@ -3,7 +3,7 @@
 // `labelSelected`). The selection moves together, nudges with the arrows, copies (⌘C, ⌘V, ⌘D: in this tab), deletes
 // with Delete, lets go with Escape.
 import { useCanvasView } from '../../state/canvasView'
-import type { Card } from '../../data/cards'
+import { addPackage, type Card } from '../../data/cards'
 import type { Edge } from '../../data/edges'
 import type { Label } from '../../data/labels'
 import { moveMany } from '../../data/labels'
@@ -18,10 +18,13 @@ export const onPlane: {
   items: (ids: string[]) => { id: string; ref: DocumentReference; x: number; y: number }[]
   // Every card and text drawn on the plane with its box, for the guides (D-231).
   boxes: () => { id: string; box: Box }[]
+  // What these carry: what's folded into them, all the way down (D-225, D-239).
+  carried: (ids: string[]) => string[]
 } = {
   labels: new Set(),
   items: () => [],
   boxes: () => [],
+  carried: () => [],
 }
 
 // What lines things up against: everything on the plane but these.
@@ -63,8 +66,9 @@ export function landed(id: string) {
 
 // A press on something selected with others: they all follow the pointer by the same snapped step (alt: free), each
 // 0.8 round its middle while carried; let go, they move in one undo step and stay where they were let go.
-export function startGroupDrag(e: { clientX: number; clientY: number }, zoom: number, from: { x: number; y: number }, onEnd?: () => void) {
-  const items = onPlane.items(useCanvasView.getState().cardMulti)
+// `ids0`: what moves, when it isn't the selection (an unfolded package's band carries its members, D-239).
+export function startGroupDrag(e: { clientX: number; clientY: number }, zoom: number, from: { x: number; y: number }, onEnd?: () => void, ids0?: string[]) {
+  const items = onPlane.items(ids0 ?? useCanvasView.getState().cardMulti)
   const ids = new Set(items.map((i) => i.id))
   // The selection's box, lined up as one against everything else (D-231).
   const boxes = onPlane.boxes().filter((b) => ids.has(b.id)).map((b) => b.box)
@@ -112,3 +116,10 @@ export function startGroupDrag(e: { clientX: number; clientY: number }, zoom: nu
 
 // The tab's clipboard: what was copied, and how many times it's been pasted (each paste lands a step further).
 export const clipboard: { cards: Card[]; labels: Label[]; edges: Edge[]; pasted: number } = { cards: [], labels: [], edges: [], pasted: 0 }
+
+// A package of these cards on their plane (D-239), named after how many the workspace has; it shows unfolded, a frame
+// round them. Returns its id, to select it.
+export function packageThese(wid: string, members: Card[], all: Card[]) {
+  const n = all.filter((c) => c.type === 'package').length + 1
+  return addPackage(wid, members[0].pieceId, members, [Math.min(...members.map((m) => m.x)), Math.min(...members.map((m) => m.y))], n)
+}

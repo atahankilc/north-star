@@ -43,6 +43,8 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const competitors = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.competitor)
   const ideas = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.idea)
   const features = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.feature)
+  // Packages (D-239): the old board's too, but only those on a plane (a `pieceId`) show.
+  const packages = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.package)
   const labelDocs = useWorkspaceCollection<Omit<Label, 'id'>>(wid, 'labels')
   const labels = useMemo(() => labelDocs.data.filter((l) => l.pieceId) as Label[], [labelDocs.data])
   const cells = useWorkspaceCollection<Cell>(wid, 'cells')
@@ -61,10 +63,11 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
       ...toCards('competitor', competitors.data),
       ...toCards('idea', ideas.data),
       ...toCards('feature', features.data),
+      ...toCards('package', packages.data),
     ],
-    [customers.data, problems.data, competitors.data, ideas.data, features.data],
+    [customers.data, problems.data, competitors.data, ideas.data, features.data, packages.data],
   )
-  const all = [pieces, customers, problems, competitors, ideas, features, labelDocs, cells]
+  const all = [pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells]
   return {
     data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data },
     isLoading: all.some((l) => l.isLoading),

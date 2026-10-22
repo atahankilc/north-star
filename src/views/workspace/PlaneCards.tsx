@@ -13,7 +13,7 @@
 // (`[−] 3 parts`), their cards shrinking into its rows, and grows back out on `[+]`.
 // The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { CARD, cardRef, copyCards, deleteCards, moveCard, moveCards, updateCard, type Card, type CardType } from '../../data/cards'
+import { CARD, cardRef, copyCards, deleteCards, foldPackage, moveCard, moveCards, updateCard, type AnyType, type Card } from '../../data/cards'
 import { clipboard, landed, onPlane, othersThan, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
 import { clearGuides, guide, showGuides, toggleGuides, toggleSnap, useGuides } from './guides'
 import { groupOf, keep, useFilter } from './planeFilter'
@@ -21,7 +21,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useHistory } from '../../data/history'
 import { labelRef, moveMany } from '../../data/labels'
 import type { CompetitorFeature } from '../../data/competitorFeatures'
-import { byCategory, foldedHeight, foldsOf, openHeight, partRowBox, type Box } from './cardInside'
+import { byCategory, foldedHeight, foldsOf, openHeight, packageBox, partRowBox, type Box } from './cardInside'
 import type { Label } from '../../data/labels'
 import { labelBox, TextItems } from './TextItems'
 import { PeerRing } from './collab'
@@ -62,7 +62,8 @@ const TITLE_SHOWN = 80
 const CARRIED = 0.8
 
 // Type = the left edge and the label in its colour (D-055, D-057).
-export const TYPE_ACCENT: Record<CardType, string> = {
+export const TYPE_ACCENT: Record<AnyType, string> = {
+  package: 'var(--accent-blue)',
   customer: 'var(--accent-green)',
   problem: 'var(--accent-magenta)',
   competitor: 'var(--accent-yellow)',
@@ -70,7 +71,8 @@ export const TYPE_ACCENT: Record<CardType, string> = {
   feature: 'var(--accent-cyan)',
 }
 
-const PLACEHOLDER: Record<CardType, string> = {
+const PLACEHOLDER: Record<AnyType, string> = {
+  package: 'What does this piece deliver?',
   customer: 'Who are they?',
   problem: 'What hurts?',
   competitor: 'Who else does it?',
@@ -116,14 +118,21 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     const list = c.type === 'competitor' && openIds.has(c.id) ? featuresOf.get(c.id) : undefined
     return list?.length ? openHeight(byCategory(list)) : CARD.h
   }
-  const boxOf = (c: Card): Box => {
+  const boxOf = (c: Card, depth = 0): Box => {
     const holder = folds.hidden.get(c.id)
     const parent = holder ? cards.find((k) => k.id === holder) : undefined
-    if (parent) {
+    if (parent && depth < 8) {
+      // Inside something itself folded away (a part of a feature in a package): where that is.
+      if (folds.hidden.has(parent.id)) return boxOf(parent, depth + 1)
       const [px, py] = at(parent)
       const rows = folds.rows.get(parent.id)!
       const i = rows.findIndex((r) => r.card.id === c.id)
       return detail === 'full' ? partRowBox({ x: px, y: py, w: CARD.w, h: heightOf(parent) }, i, rows[i].depth) : { x: px, y: py, w: CARD.w, h: CARD.h }
+    }
+    // An unfolded package (D-239): its band and the frame round its members.
+    if (c.type === 'package' && !c.folded && depth < 8) {
+      const framed = packageBox((folds.members.get(c.id) ?? []).filter((m) => !folds.hidden.has(m.id) && kept.has(m.id)).map((m) => boxOf(m, depth + 1)))
+      if (framed) return framed
     }
     const [x, y] = at(c)
     return { x, y, w: CARD.w, h: heightOf(c) }
@@ -150,6 +159,16 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   // The cards there when this opened are just there in focus (the plane's own picture was already showing them); on the
   // canvas they build up with the page. Any card after that builds up as it arrives.
   const [first] = useState(() => new Set(cards.map((c) => c.id)))
+  // What a card carries when it moves: what's folded into it, all the way down (a package's members and their parts).
+  const carriedBy = (id: string): Card[] => {
+    const out: Card[] = []
+    const walk = (i: string, depth: number) => {
+      for (const r of folds.rows.get(i) ?? []) if (depth < 8) (out.push(r.card), walk(r.card.id, depth + 1))
+    }
+    walk(id, 0)
+    return out
+  }
+  if (live) onPlane.carried = (ids) => ids.flatMap((id) => carriedBy(id).map((c) => c.id))
   // The selection (D-227, D-229) moves as one: what's on this plane, cards and text, and what a folded card carries.
   // Only the plane in focus says what's on it; the pictures on the canvas don't.
   if (live) onPlane.labels = new Set(labels.map((l) => l.id))
@@ -216,7 +235,9 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
             tuck={folds.hidden.has(c.id) ? boxOf(c) : null}
             parts={folds.count.get(c.id) ?? 0}
             rows={folds.rows.get(c.id)}
-            carries={folds.rows.get(c.id)?.map((r) => r.card) ?? []}
+            carries={carriedBy(c.id)}
+            place={c.type === 'package' && !c.folded ? boxOf(c) : undefined}
+            members={c.type === 'package' ? folds.members.get(c.id) : undefined}
             features={c.type === 'competitor' ? featuresOf.get(c.id) : undefined}
             matched={matched}
             open={c.type === 'competitor' && openIds.has(c.id) && detail === 'full'}
@@ -347,9 +368,79 @@ type BoxProps = {
   features?: CompetitorFeature[]
   matched: Set<string>
   open: boolean
+  // An unfolded package (D-239): its box (band and frame round its members), and its members.
+  place?: Box
+  members?: Card[]
 }
 
-function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open }: BoxProps) {
+function CardBox(props: BoxProps) {
+  if (props.place && props.card.type === 'package' && !props.card.folded) return <PackageFrame {...props} place={props.place} />
+  return <CardBody {...props} />
+}
+
+// An unfolded package (D-239): no card, a frame round its members and a band over it that is the package (its name,
+// rating, a cell per member, `[−]` to fold them in). The band takes the pointer (select, drag them all, its `›`); the
+// frame lets it through to the cards and the plane.
+function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: BoxProps & { place: Box }) {
+  const { wid, threads } = useWs()
+  const selected = useCanvasView((s) => live && (s.cardSelected === card.id || s.cardMulti.includes(card.id)))
+  const [pressed, setPressed] = useState(false)
+  // Its members carry it: `place` already follows them while they're dragged.
+  const [x, y] = [place.x, place.y]
+  const press = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!live || e.button !== 0) return
+    e.stopPropagation()
+    if (e.shiftKey) return toggleSelected(card.id)
+    setSelection([card.id])
+    if (!editor || !members.length) return
+    setPressed(true)
+    // Its members and what they carry; the package itself has no place of its own while unfolded.
+    const ids = members.map((m) => m.id)
+    startGroupDrag(e, zoom, members[0], () => setPressed(false), [...ids, ...onPlane.carried(ids)])
+  }
+  const fold = () => void foldPackage(wid, card, [snap(place.x), snap(place.y)])
+  return (
+    <div
+      className={styles.pkg}
+      style={{ left: x, top: y, width: place.w, height: place.h, ['--type' as string]: TYPE_ACCENT.package }}
+      data-selected={selected || undefined}
+      data-pressed={pressed || undefined}
+      data-target={`card:${card.id}`}
+    >
+      <div
+        className={styles.band}
+        onPointerDown={press}
+        onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
+        onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
+      >
+        <span className={styles.kind}>package</span>
+        <span className={styles.bandName} data-empty={!card.title || undefined}>
+          {card.title || PLACEHOLDER.package}
+        </span>
+        {facts?.head && <span className={styles.bandFacts}>{facts.head}</span>}
+        <span className={styles.cells}>
+          {members.slice(0, 12).map((m) => (
+            <i key={m.id} data-on style={{ background: TYPE_ACCENT[m.type] }} />
+          ))}
+        </span>
+        {editor && (
+          <button className={styles.fold} onPointerDown={(e) => e.stopPropagation()} onClick={fold} title="Fold its members into it">
+            [−] {members.length}
+          </button>
+        )}
+      </div>
+      <div className={styles.frame} />
+      <i className={styles.mark} data-corner="nw" aria-hidden />
+      <i className={styles.mark} data-corner="ne" aria-hidden />
+      <i className={styles.mark} data-corner="se" aria-hidden />
+      <i className={styles.mark} data-corner="sw" aria-hidden />
+      {live && <PeerRing id={card.id} space={card.pieceId} />}
+      {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
+    </div>
+  )
+}
+
+function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open }: BoxProps) {
   const { wid, threads, cards, edges } = useWs()
   const face = useRef<HTMLDivElement>(null)
   const revealed = useRevealed()
@@ -488,6 +579,7 @@ function CardBox({ card, facts, detail, zoom, live, editor, arrive, h, tuck, par
     <div
       className={styles.box}
       style={{ left: x, top: y, width: CARD.w, height: h, ['--type' as string]: TYPE_ACCENT[card.type], ...tucked }}
+      data-type={card.type}
       data-tucked={tuck ? true : undefined}
       data-open={open && !drag ? true : undefined}
       aria-hidden={tuck ? true : undefined}
@@ -582,6 +674,20 @@ function FullCard({ card, facts, editor, parts, rows, features, matched, open }:
       {rows && (
         <div className={styles.inner}>
           {rows.map((r, i) => {
+            // A package's members (D-239): a bar in each one's type colour, its status or priority.
+            if (card.type === 'package')
+              return (
+                <button
+                  key={r.card.id}
+                  className={styles.memberRow}
+                  style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type] }}
+                  onClick={() => useCanvasView.setState({ cardSelected: r.card.id, labelSelected: null, linkSelected: null })}
+                >
+                  <i aria-hidden />
+                  <span className={styles.miniName}>{r.card.title || PLACEHOLDER[r.card.type]}</span>
+                  <span className={styles.miniAv}>{r.card.validation ?? r.card.priority}</span>
+                </button>
+              )
             const last = i === rows.length - 1 || rows[i + 1].depth < r.depth || (rows.slice(i + 1).find((x) => x.depth <= r.depth)?.depth ?? -1) < r.depth
             return (
               <button
@@ -617,11 +723,13 @@ function FullCard({ card, facts, editor, parts, rows, features, matched, open }:
           <button
             className={styles.fold}
             disabled={!editor}
-            title={card.folded ? 'Unfold its parts onto the plane' : 'Fold its parts into it'}
+            title={card.type === 'package' ? 'Lay what it holds out on the plane' : card.folded ? 'Unfold its parts onto the plane' : 'Fold its parts into it'}
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => void updateCard(wid, card, { folded: card.folded ? undefined : true }, card.folded ? 'unfold' : 'fold')}
+            onClick={() =>
+              void (card.type === 'package' ? foldPackage(wid, card, null) : updateCard(wid, card, { folded: card.folded ? undefined : true }, card.folded ? 'unfold' : 'fold'))
+            }
           >
-            [{card.folded ? '+' : '−'}] {parts} part{parts === 1 ? '' : 's'}
+            {card.type === 'package' ? `[+] ${parts} inside` : `[${card.folded ? '+' : '−'}] ${parts} part${parts === 1 ? '' : 's'}`}
           </button>
         )}
       </span>

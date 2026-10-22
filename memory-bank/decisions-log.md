@@ -3999,3 +3999,30 @@ categories shown like B, not in a card, and the features under them not indented
 - *Not yet:* a big piece's nearest clear spot can sit partly past the screen's edge (still in view, in edit mode).
 - *Verified* headless (emulators): a plane added with the middle taken landed beside it on screen, in edit mode; a
   shared document placed from its list's focus left focus and showed on the canvas in edit mode; tsc.
+
+### D-239 · 2026-10-22 · Accepted (packages on planes; brings back D-141 in the new look)
+- *Decision:* a package is a slice of the chain as one thing to rate and rank, made only from a selection (`package
+  these N` in the `N selected` panel, `package these` in its right-click), never from `+`. Named `Package N`, it holds
+  its cards by id (≤ 60; gone ones skipped). **Unfolded** (how it starts) it has no card: a thin blue frame round its
+  members, under every card, the pointer going through, and a band on top that is the package (`PACKAGE`, its name,
+  impact · effort, a cell per member in its type's colour, `[−] N`); the band selects it (its panel), drags all its
+  members (and what they carry), takes links, comments and peers' marks. **Folded** (`[−]`) it is a blue card where the
+  band was, its members inside as rows (a bar in their colour, name, status or priority) and `[+] N inside` to lay them
+  out again where they were; dragged, it carries them. Its panel: rating (impact, effort), `holds` (rows going to the
+  card, `×` takes one out, `+ card` adds one from its plane), other links, tags, notes; the line under the title says
+  what it holds by type and its confidence (high / medium / low / broken, from the status of its customers, problems
+  and ideas, D-138's rule). SHOW lists packages too. A folded card's members can be in other packages (shown in the
+  first).
+- *Why:* the user picked B folded and C unfolded from three looks (packages.html): "folded looks like B, unfolded
+  like C".
+- *Alternatives:* the old board's card plus a dashed frame (A: confusing when members are far apart); only a card that
+  holds cards (B), only a frame (C).
+- *Code:* `packages` collection (rules already allow it, D-141; no rules change), `AnyType` in cards.ts, `addPackage`,
+  `foldPackage` (one undo step each), `packageThese` in selection.ts; cardInside's `members`, `packageBox`; PlaneCards'
+  `PackageFrame`; cardFacts' `confidenceOf`.
+- *Not yet:* a card in no package but inside a frame looks like a member; the assistant doesn't make packages; packages in
+  the priorities view (not back yet).
+- *Verified* headless (emulators): four cards selected → `package these 4` made a framed package, selected with its
+  panel; the band dragged all four (100, 50); `[−]` folded them into a card at the band; the card dragged them all;
+  `[+] 4 inside` laid them out; a click on the band opened the panel (`1 problem · 1 idea · 2 features · confidence
+  low`); four ⌘Z put everything back; no console errors; tsc.

@@ -4,7 +4,7 @@
 // bigger ones); LINKS hides kinds of link, `for`, `relates` and `competes` hidden to start with (D-128, D-135), a hidden
 // kind still showing on the hovered or selected card.
 import { create } from 'zustand'
-import type { Card, CardType } from '../../data/cards'
+import type { AnyType, Card } from '../../data/cards'
 import { FOR, type Edge } from '../../data/edges'
 import { inRegions } from '../../data/regions'
 
@@ -23,7 +23,7 @@ export const LINK_GROUPS: { key: LinkGroup; label: string; kind: string }[] = [
 const GROUP_OF: Record<string, LinkGroup> = Object.fromEntries(LINK_GROUPS.map((g) => [g.kind, g.key]))
 export const groupOf = (kind: string): LinkGroup => GROUP_OF[kind] ?? 'plain'
 
-export type Filter = { hide: CardType[]; for: string[]; tags: string[]; regions: string[]; links: LinkGroup[] }
+export type Filter = { hide: AnyType[]; for: string[]; tags: string[]; regions: string[]; links: LinkGroup[] }
 // Links hidden to start with (D-128, D-135).
 export const START: Filter = { hide: [], for: [], tags: [], regions: [], links: ['competes', 'plain', 'for'] }
 

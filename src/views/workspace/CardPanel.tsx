@@ -20,8 +20,8 @@ import {
   TITLE_MAX,
   updateCard,
   VALIDATIONS,
+  type AnyType,
   type Card,
-  type CardType,
 } from '../../data/cards'
 import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, MatchedBy, Parent, Parts, RestsOn } from './CardPanelKinds'
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../data/edges'
@@ -32,7 +32,7 @@ import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../ui/Sid
 import { factsOf } from './cardFacts'
 import { labelBox } from './TextItems'
 import { kindOf, labelRef, moveMany, type Label } from '../../data/labels'
-import { clipboard, setSelection } from './selection'
+import { clipboard, packageThese, setSelection } from './selection'
 import { GRID, snap } from '../../data/grid'
 import { useWs } from './context'
 import { linkTone } from './PlaneLinks'
@@ -40,7 +40,8 @@ import { openThread, startComment, threadOn } from './Threads'
 import styles from './CardPanel.module.css'
 
 // Type = the panel's colour, as the card's edge (D-055).
-const TONE: Record<CardType, string> = {
+const TONE: Record<AnyType, string> = {
+  package: 'var(--accent-blue)',
   customer: 'var(--accent-green)',
   problem: 'var(--accent-magenta)',
   competitor: 'var(--accent-yellow)',
@@ -48,7 +49,8 @@ const TONE: Record<CardType, string> = {
   feature: 'var(--accent-cyan)',
 }
 
-export const PLACEHOLDER: Record<CardType, string> = {
+export const PLACEHOLDER: Record<AnyType, string> = {
+  package: 'What does this piece deliver?',
   customer: 'Who are they?',
   problem: 'What hurts?',
   competitor: 'Who else does it?',
@@ -56,7 +58,8 @@ export const PLACEHOLDER: Record<CardType, string> = {
   feature: 'What does it do?',
 }
 
-const NOTES_HINT: Record<CardType, string> = {
+const NOTES_HINT: Record<AnyType, string> = {
+  package: 'What it delivers, and what it bets on.',
   customer: 'What do they do all day?',
   problem: 'How often, and what does it cost them?',
   competitor: 'What stands out about them?',
@@ -203,10 +206,11 @@ export function CardPanel({ cards, labels = [], editor }: { cards: Card[]; label
 // Several cards selected (D-227, the old board's "N selected", D-124): what they are, lining them up (six ways), spacing
 // them out evenly (three or more), the tags they all have (adding or taking one away does it on all of them).
 function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; editor: boolean }) {
-  const { wid } = useWs()
+  const { wid, cards: every } = useWs()
+  const packable = cards.filter((c) => c.type !== 'package')
   const textKinds = texts.reduce((m, x) => m.set(kindOf(x), (m.get(kindOf(x)) ?? 0) + 1), new Map<string, number>())
   const kinds = [
-    ...(['customer', 'problem', 'competitor', 'idea', 'feature'] as CardType[]).map((t) => [t, cards.filter((c) => c.type === t).length] as const),
+    ...(['customer', 'problem', 'competitor', 'idea', 'feature', 'package'] as AnyType[]).map((t) => [t, cards.filter((c) => c.type === t).length] as const),
     ...[...textKinds].map(([k, n]) => [k, n] as const),
   ]
     .filter(([, n]) => n)
@@ -309,6 +313,15 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
           )}
         </div>
       </PanelSection>
+      {editor && packable.length > 0 && (
+        <PanelSection n={4} name="package">
+          <div className={styles.pills}>
+            <button className={styles.pill} onClick={() => setSelection([packageThese(wid, packable, every)])} title="One thing to rate and rank, holding these cards (D-239)">
+              package these {packable.length}
+            </button>
+          </div>
+        </PanelSection>
+      )}
     </>
   )
 }
@@ -317,7 +330,7 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
 function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: boolean }) {
   const { evidence, competitorFeatures, comparisons, edges } = useWs()
   const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }).get(card.id), [cards, evidence, competitorFeatures, edges, card.id])
-  const under = [facts?.head, facts?.meta].filter(Boolean).join(' · ')
+  const under = [facts?.head, facts?.meta, facts?.sure].filter(Boolean).join(' · ')
   const mine = useMemo(() => edges.filter((e) => e.fromId === card.id || e.toId === card.id), [edges, card.id])
   const byId = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards])
   // Links in the sections before `other links` are taken out of it.
@@ -402,6 +415,7 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
       />,
     )
   }
+  if (card.type === 'package') sections.push(<PackagePlan key="plan" n={next()} {...p} />, <Holds key="holds" n={next()} {...p} />)
   const rest = take(() => true)
   sections.push(
     <LinkSection key="links" n={next()} name={card.type === 'customer' ? 'links' : 'other links'} {...p} links={rest} add={{ label: 'link', types: null, kind: null, from: 'me' }} />,
@@ -411,9 +425,70 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
   return (
     <>
       {under && <div className={styles.under}>{under}</div>}
-      {card.type !== 'competitor' && <Parent card={card} cards={cards} editor={editor} />}
+      {card.type !== 'competitor' && card.type !== 'package' && <Parent card={card} cards={cards} editor={editor} />}
       {sections}
     </>
+  )
+}
+
+// A package's rating (D-239, the old D-141): impact and effort; how sure it is comes from what it holds (the line under
+// the header).
+function PackagePlan({ n, card, editor }: P) {
+  const { wid } = useWs()
+  const row = (field: 'impact' | 'effort', values: string[]) => (
+    <>
+      <span className={styles.k}>{field}</span>
+      <Pills values={values} value={card[field]} editor={editor} label={field} onPick={(v) => void updateCard(wid, card, { [field]: v }, `${field} of`)} />
+    </>
+  )
+  return (
+    <PanelSection n={n} name="rating">
+      <div className={styles.plan}>
+        {row('impact', FEATURE_IMPACTS)}
+        {row('effort', FEATURE_EFFORTS)}
+      </div>
+    </PanelSection>
+  )
+}
+
+// What a package holds (D-239): each a row in its type's colour that goes to it, `×` takes it out (the card stays);
+// `+ card` adds one from its plane.
+function Holds({ n, card, cards, editor }: P) {
+  const { wid } = useWs()
+  const [picking, setPicking] = useState(false)
+  const ids = card.memberIds ?? []
+  const held = ids.map((id) => cards.find((c) => c.id === id)).filter((c): c is Card => !!c)
+  const set = (next: string[]) => void updateCard(wid, card, { memberIds: next }, 'contents of')
+  return (
+    <PanelSection n={n} name="holds" count={held.length || undefined} add={editor && ids.length < 60 ? { label: 'card', onClick: () => setPicking(true) } : undefined} empty={!held.length && !picking}>
+      {held.map((c) => (
+        <div key={c.id} className={styles.part}>
+          <span className={styles.tree} style={{ color: TONE[c.type] }}>
+            ▌
+          </span>
+          <button className={styles.to} onClick={() => goToCard(c)}>
+            {c.title || PLACEHOLDER[c.type]}
+          </button>
+          <span className={styles.type}>{c.validation ?? c.priority ?? c.type}</span>
+          {editor && (
+            <button className={styles.x} title="Take it out of the package (the card stays)" onClick={() => set(ids.filter((x) => x !== c.id))}>
+              ×
+            </button>
+          )}
+        </div>
+      ))}
+      {picking && (
+        <CardPicker
+          card={card}
+          cards={cards.filter((c) => c.pieceId === card.pieceId)}
+          types={['customer', 'problem', 'competitor', 'idea', 'feature']}
+          exclude={new Set([card.id, ...ids])}
+          make={false}
+          onPick={(c) => (setPicking(false), set([...ids, c.id]))}
+          onClose={() => setPicking(false)}
+        />
+      )}
+    </PanelSection>
   )
 }
 
@@ -628,7 +703,7 @@ function EvidenceForm({ start, onDone }: { start?: Evidence; onDone: (fields: Ev
 
 // What a section's add links: cards of these types (null: any), with this kind (null: the old default), from this card
 // or to it.
-export type LinkAdd = { label: string; types: CardType[] | null; kind: EdgeKind | null; from: 'me' | 'other' }
+export type LinkAdd = { label: string; types: AnyType[] | null; kind: EdgeKind | null; from: 'me' | 'other' }
 
 // Links as rows like the old panel's (D-154): the kind's colour, its name with an arrow (→ from this card, ← to it),
 // the other card, its type. A row goes to that card; `×` unlinks.
@@ -682,14 +757,32 @@ export function LinkSection({ n, name, card, cards, editor, links, add, count, e
 
 // Choosing a card on this plane by typing part of its title; with types given, a new card of the first type can be
 // made from what was typed (placed under this one, clear of the panel on its right).
-export function CardPicker({ card, cards, types, exclude, onPick, onClose }: { card: Card; cards: Card[]; types: CardType[] | null; exclude: Set<string>; onPick: (c: Card) => void; onClose: () => void }) {
+export function CardPicker({
+  card,
+  cards,
+  types,
+  exclude,
+  onPick,
+  onClose,
+  make: makes = true,
+}: {
+  card: Card
+  cards: Card[]
+  types: AnyType[] | null
+  exclude: Set<string>
+  onPick: (c: Card) => void
+  onClose: () => void
+  // Whether what's typed can make a new card of the first type.
+  make?: boolean
+}) {
   const { wid } = useWs()
   const [q, setQ] = useState('')
   const [at, setAt] = useState(0)
   const found = cards
     .filter((c) => !exclude.has(c.id) && (!types || types.includes(c.type)) && (c.title || '').toLowerCase().includes(q.trim().toLowerCase()))
     .slice(0, 8)
-  const makeType = types?.[0]
+  // A package is never made from here (only from a selection, D-239).
+  const makeType = !makes || types?.[0] === 'package' ? undefined : types?.[0]
   const make = async () => {
     if (!makeType || !q.trim()) return
     const id = await addCard(wid, card.pieceId, makeType, [card.x + CARD.w / 2, card.y + CARD.h * 2], cards)

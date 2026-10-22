@@ -23,8 +23,10 @@ export type Folds = {
   hidden: Map<string, string>
   // A shown folded feature's parts, depth first, with how deep each sits.
   rows: Map<string, { card: Card; depth: number }[]>
-  // How many parts under a feature, all the way down.
+  // How many parts under a feature, all the way down; a package's members.
   count: Map<string, number>
+  // A package's members on this plane (D-239).
+  members: Map<string, Card[]>
 }
 
 export function foldsOf(cards: Card[], edges: Edge[]): Folds {
@@ -33,8 +35,8 @@ export function foldsOf(cards: Card[], edges: Edge[]): Folds {
   for (const e of edges) {
     if (e.kind !== 'part-of' || parentOf.has(e.fromId)) continue
     const [a, b] = [byId.get(e.fromId), byId.get(e.toId)]
-    // Same type only, competitors aside (D-226): a sub-problem, a narrower idea or segment, a feature's part.
-    if (!a || !b || a.type !== b.type || a.type === 'competitor') continue
+    // Same type only, competitors and packages aside (D-226): a sub-problem, a narrower idea or segment, a feature's part.
+    if (!a || !b || a.type !== b.type || a.type === 'competitor' || a.type === 'package') continue
     // Not if it would close a loop.
     let up: string | undefined = b.id
     while (up && up !== a.id) up = parentOf.get(up)
@@ -57,12 +59,24 @@ export function foldsOf(cards: Card[], edges: Edge[]): Folds {
   const hidden = new Map<string, string>()
   const rows = new Map<string, { card: Card; depth: number }[]>()
   for (const c of cards) {
-    if (!c.folded || !kids.has(c.id) || isHidden(c.id)) continue
+    if (c.type === 'package' || !c.folded || !kids.has(c.id) || isHidden(c.id)) continue
     const list = below(c.id, 0, [])
     rows.set(c.id, list)
     for (const r of list) hidden.set(r.card.id, c.id)
   }
-  return { parentOf, hidden, rows, count }
+  // A package (D-239): its members, the ones on this plane; folded, they're its rows and hidden in it (a member's own
+  // folded parts stay inside that member).
+  const members = new Map<string, Card[]>()
+  for (const p of cards) {
+    if (p.type !== 'package') continue
+    const list = (p.memberIds ?? []).map((id) => byId.get(id)).filter((c): c is Card => !!c && c.type !== 'package')
+    members.set(p.id, list)
+    count.set(p.id, list.length)
+    if (!p.folded || !list.length) continue
+    rows.set(p.id, list.map((card) => ({ card, depth: 0 })))
+    for (const m of list) if (!hidden.has(m.id)) hidden.set(m.id, p.id)
+  }
+  return { parentOf, hidden, rows, count, members }
 }
 
 export const foldedHeight = (parts: number) => Math.max(CARD.h, INNER_TOP + parts * PART_ROW + FOOT)
@@ -84,4 +98,15 @@ export function openHeight(groups: { cat: string; items: unknown[] }[]) {
 export function partRowBox(parent: Box, index: number, depth: number): Box {
   const left = 11 + depth * 12
   return { x: parent.x + left, y: parent.y + INNER_TOP + index * PART_ROW, w: CARD.w - left - 7, h: PART_ROW }
+}
+
+// An unfolded package (D-239): a frame round its members, the band that is the package over it. The whole box, band and
+// frame, in plane px; null without members to frame.
+export const BAND_H = 30
+const FRAME_PAD = 20
+export function packageBox(members: Box[]): Box | null {
+  if (!members.length) return null
+  const [l, t] = [Math.min(...members.map((b) => b.x)), Math.min(...members.map((b) => b.y))]
+  const [r, b] = [Math.max(...members.map((m) => m.x + m.w)), Math.max(...members.map((m) => m.y + m.h))]
+  return { x: l - FRAME_PAD, y: t - FRAME_PAD - BAND_H, w: r - l + 2 * FRAME_PAD, h: b - t + 2 * FRAME_PAD + BAND_H }
 }
