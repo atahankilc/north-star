@@ -286,7 +286,7 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
                 const tone = c.field === 'type' && r.card ? TYPE_ACCENT[r.card.type] : undefined
                 return (
                   <button key={key} className={styles.cell} data-field={c.field} data-cell={key} data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
-                    tabIndex={live ? 0 : -1} onPointerDown={own} onClick={live ? () => press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
+                    tabIndex={live ? 0 : -1} onClick={live ? () => press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
                     {text ? <span className={styles.text}>{text}</span> : <span className={styles.unset}>·</span>}
                   </button>
                 )
@@ -302,7 +302,8 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
                   selected={isSel}
                   live={live}
                   typing={typing === key}
-                  onPress={own}
+                  // A cell lets the press through (D-217): its view pans once it moves 5 px, a click still selects.
+                  onPress={typing === key ? own : undefined}
                   onClick={() => press(ri, ci)}
                   onType={editor && (c.kind === 'number' || c.kind === 'text') ? () => (select(ri, ci), setTyping(key)) : undefined}
                   onTyped={(value) => {

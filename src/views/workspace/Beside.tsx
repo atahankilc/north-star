@@ -23,6 +23,8 @@ import styles from './Beside.module.css'
 const ZOOM_MIN = 0.1
 const ZOOM_MAX = 4
 const PAD = 48
+// How far a press on a cell moves before it pans instead (D-217).
+const CELL_DRAG_PX = 5
 
 // What Escape closes next (after a selection): a setup, then what's beside (the last opened), then focus. The dock
 // whose action that is shows `esc` on it.
@@ -151,13 +153,27 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
   const pan = (e: ReactPointerEvent<HTMLDivElement>) => {
     e.stopPropagation()
     if (e.button !== 0 && e.button !== 1) return
-    useCanvasView.setState({ cardSelected: null, labelSelected: null, linkSelected: null })
+    // A press on a cell is the cell's until it moves 5 px: a click still selects it, a drag pans (as in focus, D-217).
+    const onCell = !!(e.target as HTMLElement).closest('[data-cell]')
+    if (!onCell) useCanvasView.setState({ cardSelected: null, labelSelected: null, linkSelected: null })
     const start = viewRef.current
     const [sx, sy] = [e.clientX, e.clientY]
     const node = e.currentTarget
-    node.setPointerCapture(e.pointerId)
-    node.dataset.panning = 'true'
-    const move = (ev: PointerEvent) => setView({ ...start, ox: start.ox + ev.clientX - sx, oy: start.oy + ev.clientY - sy })
+    const id = e.pointerId
+    let panning = false
+    const begin = () => {
+      panning = true
+      node.setPointerCapture(id)
+      node.dataset.panning = 'true'
+    }
+    if (!onCell) begin()
+    const move = (ev: PointerEvent) => {
+      if (!panning) {
+        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < CELL_DRAG_PX) return
+        begin()
+      }
+      setView({ ...start, ox: start.ox + ev.clientX - sx, oy: start.oy + ev.clientY - sy })
+    }
     const up = () => {
       delete node.dataset.panning
       node.removeEventListener('pointermove', move)

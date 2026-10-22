@@ -3538,5 +3538,6 @@ categories shown like B, not in a card, and the features under them not indented
 - *User:* "mouse celllerin üstündeyken matrixi dolaşmak için hold&drag yapmak çok zor, cellerin arasındaki boşluğa
   getirmek gerekiyor"; "çok zoom olunca sticky'e dönüşen row headerları sol tarafa biraz daha yaklaşabilir".
 - *Verified:* headless Chrome on emulators: a click on a cell selected it; a drag started on another cell panned the
-  view 400 × 150 px and kept the selection; the row heads held at 56 px, the shade gone; no console errors; typecheck.
+  view 400 × 150 px and kept the selection; the row heads held at 56 px, the shade gone; no console errors; typecheck. In a pane
+  (north-star-67): a click on a table's cell selected it, a drag from it panned the pane 100 × 80 px.
 
