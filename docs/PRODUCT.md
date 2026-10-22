@@ -80,6 +80,10 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    plane's focus the dock opens what's stuck to it beside the plane, the screen split, each part its own area (D-211).
    A link shows quietly: faint `· ›` in the gap, or a thin line under everything when apart; the piece's console names
    its plane, and its dropdown links or unlinks it; a plane carries what's linked to it (D-215).
+   **Open on the canvas (D-228):** in edit mode a matrix's or table's console has `[unframe]`: the window goes and the
+   whole table lies on the canvas at its own size, live there (cells, heads, adds, pages and `[setup]` from its
+   console), for everyone. It only moves then (its size is its contents'); `[frame]` puts it back in its window.
+   Focus still works the same.
 5. **Overview** (D-144). The workspace read on one screen: next steps, what's on solid ground and what's still a
    guess, the riskiest bets, the white space, what looks off. Reached by its path; opening a workspace now lands on
    the canvas (D-174).

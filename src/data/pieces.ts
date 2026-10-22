@@ -65,7 +65,9 @@ export async function addPiece(wid: string, kind: PieceKind, at: [number, number
 export async function placePiece(wid: string, id: string, from: Box, to: Box, kind: PieceKind = 'plane', followers: { id: string; from: Box; to: Box }[] = []) {
   const ref = doc(col(wid), id)
   const refs = [ref, ...followers.map((f) => doc(col(wid), f.id))]
-  const before = (await Promise.all([snapshotWith(ref, { ...from }), ...followers.map((f, i) => snapshotWith(refs[i + 1], { ...f.from }))])).flat()
+  // A follower only moves (its size is its own; an open one's shown size isn't even stored, D-228).
+  const at = (b: Box) => ({ x: b.x, y: b.y })
+  const before = (await Promise.all([snapshotWith(ref, { ...from }), ...followers.map((f, i) => snapshotWith(refs[i + 1], at(f.from)))])).flat()
   const what = from.w === to.w && from.h === to.h ? 'move' : 'resize'
   return tracked(
     `${what} a ${KIND_NAME[kind]}`,
@@ -74,7 +76,7 @@ export async function placePiece(wid: string, id: string, from: Box, to: Box, ki
       const batch = writeBatch(db())
       const now = Date.now()
       batch.update(ref, { ...to, updatedAt: now })
-      followers.forEach((f, i) => batch.update(refs[i + 1], { ...f.to, updatedAt: now }))
+      followers.forEach((f, i) => batch.update(refs[i + 1], { ...at(f.to), updatedAt: now }))
       return batch.commit()
     },
     { before },
@@ -175,6 +177,13 @@ export async function placeLens(wid: string, piece: Piece & { id: string }, from
   const change = stuck === (piece.stuckTo ?? null) ? {} : { stuckTo: stuck ?? deleteField(), ...boundTo(piece, stuck) }
   const what = stuck && stuck !== piece.stuckTo ? 'stick' : !stuck && piece.stuckTo ? 'unstick' : 'move'
   return tracked(`${what} a ${KIND_NAME[kind]}`, [ref], () => updateDoc(ref, { ...to, ...change, updatedAt: Date.now() }), { before })
+}
+
+// A matrix or a table opened onto the canvas, or closed back into its window (D-228): shared, one undo step.
+export function openPiece(wid: string, piece: Piece & { id: string }, open: boolean) {
+  const ref = doc(col(wid), piece.id)
+  const kind = kindOfPiece(piece)
+  return tracked(`${open ? 'open' : 'close'} a ${KIND_NAME[kind]}`, [ref], () => updateDoc(ref, { open: open || deleteField(), updatedAt: Date.now() }))
 }
 
 // Its name (D-179); empty takes it away, so it shows its kind again. Typing merges into one undo step.

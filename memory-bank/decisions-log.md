@@ -3773,3 +3773,30 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): three cards by shift+click (panel `3 selected`), dragged together +100, +50, lined
   up top, nudged right 25, duplicated (7), the copies deleted (4) and undone (7), Escape with several kept focus, an
   alt box selected one card; no console errors; build.
+
+### D-228 · 2026-10-22 · Accepted (a matrix or table opened onto the canvas; adds to D-208's window)
+- *Decision:* a matrix or table can be taken out of its window onto the canvas: `[unframe]` in its edit-mode console,
+  `[frame]` to put it back (the user picked the names from four pairs: spread/window, unframe/frame, on canvas/in
+  window, a window ⇄ canvas switch; first built as a pressed `[open]`, "çok açıklayıcı değil"). Open, its edge and fill go, its contents lie on the canvas at their own size a
+  grid step in from its corner (two under them, where its console is) on a feathered page so the backdrop stays out
+  from under the text, and it's live there as in focus: cells (click, keys, the bar under a cell at screen size),
+  heads, the dashed add cards, a table's column widths; its console gets a table's pages and `[setup]`, which opens the
+  setup panel at the bottom of the screen (Escape closes it, then lets go of the cell). Its heads don't stick on the
+  canvas (focus does that). Shared (`open: true` on the piece, rules: matrix/table only, a bool), one undo step.
+- *Size:* open, its box is its contents' (`shownBox.ts`), not stored: the stored w/h stay the window's, so closing
+  brings the window back as it was. Fit, go to, sticking, links to a plane, comment chips and a new piece's place all
+  use the drawn box. Open, it only moves in edit mode (no grips, the corners thin cyan marks); a move writes x/y only,
+  and a plane carrying it writes only its x/y too.
+- *Live:* not in edit mode (a press moves it) and not while a plane is in focus. Drawn counter-scaled (a layer at
+  1/zoom holding a view at the canvas's zoom), so what's at screen size stays so. A press on a cell pans the canvas
+  only after 5 px (D-217's rule), so a click selects; a double-click on it types, never focuses. A cell's selection now
+  carries its matrix's or table's id (`cell|<piece>|row|col`), since more than one can be live at once.
+- *User:* "tablo ve matrixleri bounded oldukları yerden ana canvasımıza açabilir miyiz? Mesela default olarak olmasın
+  ama edit düğmesine tıklayıp seçersek table ve matriximizin bütün içi canvasa çıksın ve canvastan control edilebilsin";
+  shared for everyone and focus kept were the recommendations, taken ("ikisi de dediğin gibi olsun").
+- *Not yet:* a far zoom's simpler drawing (it draws every cell, as the window did); a big matrix isn't capped; a
+  table's follow (D-224) doesn't move the canvas.
+- *Verified* headless (emulators): an open matrix took 3 then → and 2 from the keys (full, partial) with its bar at
+  screen size; a table cell selected; edit → `[open]` (now `[frame]`) closed it back to its 400 × 250 window and reopened; a drag moved
+  it 175, 100 with w/h still 400 × 250; `[setup]` opened the panel, Escape closed it; focus and back; rules tests 385
+  passed (3 new), Firestore rules deployed; tsc.

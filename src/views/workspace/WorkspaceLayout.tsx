@@ -13,6 +13,7 @@ import { matrixBounds, useMatrixUi } from './Matrix'
 import { MatrixWizard } from './MatrixWizard'
 import { TableWizard } from './TableWizard'
 import { tableBounds, useTableUi } from './Table'
+import { shownPieces } from './shownBox'
 import type { TableSetup } from '../../data/table'
 import { addCard, CARD_TYPES, type CardType } from '../../data/cards'
 import { addLabel, CANVAS, PARA_W, STICKY_W, TITLE_W } from '../../data/labels'
@@ -141,7 +142,7 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
       onClick={() =>
         focused
           ? fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
-          : fitCanvas(wid, [...pieces, ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
+          : fitCanvas(wid, [...shownPieces(pieces, cards), ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
       }
     >
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
@@ -156,9 +157,9 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
 // folded until its `▸ N inside` opens them, D-200, D-201), with a search field that finds folded ones too. No keys
 // (D-201). The canvas does the going.
 function GoToButton({ plane }: { plane: string | null }) {
-  const { pieces, labels, workspace } = useWs()
+  const { pieces, cards, labels, workspace } = useWs()
   const open = useGoTo((s) => s.open)
-  const places = placesIn(plane ?? CANVAS, pieces, labels, workspace.name)
+  const places = placesIn(plane ?? CANVAS, shownPieces(pieces, cards), labels, workspace.name)
   const shown = shownPlaces(places, open)
   const inside = (id: string) => places.filter((p) => p.inside && p.space === id).length
   const go = places.map((p) => {
@@ -238,7 +239,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     ...(hasTitle || plane ? [] : [{ key: 'title', label: 'project title', glyph: TEXT_GLYPH.title, letter: 'i', onSelect: () => void addText('title') }]),
   ]
   const add = async (kind: PieceKind, template?: { name: string; setup: () => MatrixSetup | TableSetup }) => {
-    const id = await addPiece(wid, kind, canvasCenter(wid), pieces, template?.setup(), template?.name)
+    const id = await addPiece(wid, kind, canvasCenter(wid), shownPieces(pieces, cards), template?.setup(), template?.name)
     useCanvasView.setState({ selected: id })
   }
   const addHere = async (type: CardType) => {

@@ -69,6 +69,9 @@ export type Piece = {
   table?: TableSetup
   // A matrix or a table stuck to a plane's edge (D-210): moved with it, showing its cards.
   stuckTo?: string
+  // A matrix or a table opened onto the canvas (D-228): out of its window, at its own size and live there. Its w/h stay
+  // the window's, for when it's closed again.
+  open?: boolean
   createdAt: number
   updatedAt: number
 }

@@ -231,6 +231,10 @@ piece; check them with the user then.
   the matrix (D-218). Paged (D-213): `‹ 2 / 5 ›` + rows a page (all, 10/25/50/100; shared) in its dock, the page yours.
   A row or column you add is followed in, the matrix's glide (D-214); a column's width drags from its head's right edge
   (48–640, shared, double-click resets) (D-224).
+- Open on the canvas (D-228): edit mode's `[unframe]` takes a matrix or table out of its window (`[frame]` back) (shared, `open`): no edge or
+  fill, its contents at their own size a grid step in, on a feathered page, live there (cells, adds, a table's pages and
+  `[setup]` in its console); its box its contents' (`shownBox.ts`), the stored w/h the window's; it only moves; heads
+  don't stick; not live in edit mode or while a plane's in focus; a cell's selection names its piece.
 - Sticking (D-210, D-215): a matrix or table moved (edit mode) within 48 screen px of a plane's edge snaps one grid step
   out from it, the edge lit cyan, and is linked (`stuckTo`; alt = free): a table gets `where plane is … · auto` (changed
   by hand it's yours), a matrix's typed axes the plane. Links show quietly, grey, cyan on hover, no motion (D-215): the

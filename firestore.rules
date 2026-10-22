@@ -195,6 +195,8 @@ service cloud.firestore {
         && (!('table' in d) || (d.kind == 'table' && validTable(d.table)))
         // Stuck to a plane's edge (D-210): a matrix or a table.
         && (!('stuckTo' in d) || (d.kind in ['matrix', 'table'] && isText(d.stuckTo, 128)))
+        // Opened onto the canvas (D-228): a matrix or a table.
+        && (!('open' in d) || (d.kind in ['matrix', 'table'] && d.open is bool))
         && d.createdAt is number
         && d.updatedAt is number;
     }

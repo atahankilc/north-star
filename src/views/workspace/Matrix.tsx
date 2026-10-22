@@ -84,25 +84,28 @@ export function matrixBounds(piece: Pick<Piece, 'matrix'>, cards: Card[]): Bound
   return { x: 0, y: 0, w, h }
 }
 
-// The setup (D-212): closed (`false`), or open on one of its tabs (`true` is the first). The wizard makes a new matrix.
+// The setup (D-212): closed (`false`), or open on one of its tabs (`true` is the first); `canvas`: the matrix it's for when
+// it's opened from one open on the canvas (D-228), not in focus. The wizard makes a new matrix.
 export const SETUP_TABS = ['rows', 'cols', 'cells', 'options'] as const
 export type SetupTab = (typeof SETUP_TABS)[number]
-export const useMatrixUi = create<{ setup: boolean | SetupTab; naming: string | null; wizard: boolean }>(() => ({ setup: false, naming: null, wizard: false }))
+export const useMatrixUi = create<{ setup: boolean | SetupTab; canvas: string | null; naming: string | null; wizard: boolean }>(() => ({ setup: false, canvas: null, naming: null, wizard: false }))
 export const setupTab = (s: boolean | SetupTab): SetupTab | null => (s === true ? 'rows' : s || null)
 export const openMatrixSetup = (tab: SetupTab = 'rows') => useMatrixUi.setState({ setup: tab })
-export const closeMatrixSetup = () => useMatrixUi.setState({ setup: false })
+export const closeMatrixSetup = () => useMatrixUi.setState({ setup: false, canvas: null })
 export const toggleMatrixSetup = (tab?: SetupTab) => useMatrixUi.setState((s) => ({ setup: s.setup ? false : (tab ?? 'rows') }))
 
 // The selected cell rides on the canvas's card selection (D-187), so Escape and leaving focus let go of it as of a card.
+// The matrix's id in it: more than one can be live at once (open on the canvas, D-228; stacked beside a plane, D-211).
 const CELL = 'cell|'
-const selKey = (row: string, col: string) => `${CELL}${row}|${col}`
-const parseSel = (s: string | null) => (s?.startsWith(CELL) ? (s.slice(CELL.length).split('|') as [string, string]) : null)
+const selKey = (piece: string, row: string, col: string) => `${CELL}${piece}|${row}|${col}`
+const parseSel = (piece: string, s: string | null) => (s?.startsWith(`${CELL}${piece}|`) ? (s.slice(CELL.length + piece.length + 1).split('|') as [string, string]) : null)
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean }
+// `onCanvas`: live on the canvas itself, opened there (D-228): its heads never stick, nothing cut at its edge.
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean }
 
-export function MatrixView({ piece, view, live, editor }: Props) {
+export function MatrixView({ piece, view, live, editor, onCanvas = false }: Props) {
   const { wid, cards, cells } = useWs()
   const setup = setupOf(piece)
   const rows = useMemo(() => entriesOf(setup.rows, cards), [setup.rows, cards])
@@ -111,7 +114,7 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   const byKey = useMemo(() => new Map(mine.map((c) => [`${c.row}|${c.col}`, c])), [mine])
   const at = (row: string, col: string) => byKey.get(`${row}|${col}`)
   const L = layout(setup, rows.length, cols.length)
-  const sel = parseSel(useCanvasView((s) => (live ? s.cardSelected : null)))
+  const sel = parseSel(piece.id, useCanvasView((s) => (live ? s.cardSelected : null)))
   const ri = sel ? rows.findIndex((r) => r.key === sel[0]) : -1
   const ci = sel ? cols.findIndex((c) => c.key === sel[1]) : -1
   const selected = ri >= 0 && ci >= 0 ? { r: ri, c: ci } : null
@@ -134,7 +137,7 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   const centre = useRef<'rows' | 'cols' | null>(null)
 
   const write = (row: string, col: string, fields: Parameters<typeof setCell>[4]) => void setCell(wid, piece.id, row, col, fields)
-  const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(rows[r].key, cols[c].key), labelSelected: null })
+  const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(piece.id, rows[r].key, cols[c].key), labelSelected: null })
   const stepTo = (row: string, col: string, i: number | undefined) => write(row, col, { value: i === undefined ? undefined : setup.steps[i]?.id })
 
   // A selected cell whose row or column went (taken out, or its card deleted) lets go.
@@ -160,7 +163,7 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   // Leaving focus closes the setup.
   useEffect(() => {
     if (!live) return
-    return () => useMatrixUi.setState({ setup: false, naming: null })
+    return () => useMatrixUi.setState({ setup: false, canvas: null, naming: null })
   }, [live])
 
   // The keys on a selected cell; not while typing anywhere.
@@ -179,7 +182,7 @@ export function MatrixView({ piece, view, live, editor }: Props) {
       const c = Math.min(cols.length - 1, Math.max(0, selected.c + move[1]))
       select(r, c)
       // The keyboard's focus goes along, so the one left behind isn't ringed.
-      return layer.current?.querySelector<HTMLElement>(`[data-cell="${selKey(rows[r].key, cols[c].key)}"]`)?.focus()
+      return layer.current?.querySelector<HTMLElement>(`[data-cell="${selKey(piece.id, rows[r].key, cols[c].key)}"]`)?.focus()
     }
     if (!editor) return
     if (setup.cell === 'scale' && /^[1-9]$/.test(e.key) && Number(e.key) <= setup.steps.length) return stepTo(row, col, Number(e.key) - 1)
@@ -190,7 +193,7 @@ export function MatrixView({ piece, view, live, editor }: Props) {
     if (e.key === '-' && setup.notRelevant) return write(row, col, { notRelevant: at(row, col)?.notRelevant ? undefined : true })
     if (e.key === 'Enter' && setup.cell !== 'scale') {
       e.preventDefault()
-      setTyping(selKey(row, col))
+      setTyping(selKey(piece.id, row, col))
     }
   }
   useEffect(() => {
@@ -214,8 +217,9 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   const fitted = fitInto({ x: 0, y: 0, w: L.w, h: L.h }, room.w, room.h, FIT_PAD)
   const stickTop = Math.min(STICK.top, Math.max(0, room.h / 2 - (L.h / 2) * fitted.zoom))
   const stickLeft = Math.min(STICK.left, Math.max(0, room.w / 2 - (L.w / 2) * fitted.zoom))
-  const dy = live ? Math.min(Math.max(0, (stickTop - view.oy) / view.zoom), Math.max(0, L.addY - M.top)) : 0
-  const dx = live ? Math.min(Math.max(0, (stickLeft - view.ox) / view.zoom), Math.max(0, L.addX - M.head)) : 0
+  const stick = live && !onCanvas
+  const dy = stick ? Math.min(Math.max(0, (stickTop - view.oy) / view.zoom), Math.max(0, L.addY - M.top)) : 0
+  const dx = stick ? Math.min(Math.max(0, (stickLeft - view.ox) / view.zoom), Math.max(0, L.addX - M.head)) : 0
   const added = (which: 'rows' | 'cols') => (centre.current = which)
   const main = live && useCanvasView.getState().planeCam === view
   // While the row heads are held at the left, the side nav's shade steps aside so it doesn't dim them.
@@ -227,13 +231,13 @@ export function MatrixView({ piece, view, live, editor }: Props) {
   }, [held])
 
   return (
-    <div ref={layer} className={styles.layer} data-live={live || undefined}>
+    <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <div className={styles.table} style={{ width: L.w, height: L.h }} role="grid" aria-label={piece.name || 'matrix'} onPointerLeave={() => setHot(null)}>
           {rows.map((r, ri) =>
             cols.map((c, ci) => {
               const cell = at(r.key, c.key)
-              const key = selKey(r.key, c.key)
+              const key = selKey(piece.id, r.key, c.key)
               const isSel = selected?.r === ri && selected.c === ci
               return (
                 <CellBox
@@ -337,7 +341,7 @@ export function MatrixView({ piece, view, live, editor }: Props) {
       {/* Not while the cell is under the held heads. */}
       {live && selected && selBox && !((dx > 0 && selBox.x < dx + M.head) || (dy > 0 && selBox.y < dy + M.top)) && (
         <CellBar
-          key={selKey(rows[selected.r].key, cols[selected.c].key)}
+          key={selKey(piece.id, rows[selected.r].key, cols[selected.c].key)}
           setup={setup}
           cell={at(rows[selected.r].key, cols[selected.c].key)}
           row={rows[selected.r]}
@@ -347,7 +351,7 @@ export function MatrixView({ piece, view, live, editor }: Props) {
           at={[view.ox + selBox.x * view.zoom, view.oy + (selBox.y + M.row) * view.zoom]}
           room={layer.current?.clientWidth ?? 0}
           write={(fields) => write(rows[selected.r].key, cols[selected.c].key, fields)}
-          onType={() => setTyping(selKey(rows[selected.r].key, cols[selected.c].key))}
+          onType={() => setTyping(selKey(piece.id, rows[selected.r].key, cols[selected.c].key))}
         />
       )}
     </div>

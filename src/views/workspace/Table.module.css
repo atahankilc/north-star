@@ -11,6 +11,11 @@
   pointer-events: auto;
 }
 
+/* Opened onto the canvas (D-228): nothing cut at its edge (the bar under a cell hangs past it). */
+.layer[data-on-canvas='true'] {
+  overflow: visible;
+}
+
 .world {
   position: absolute;
   top: 0;

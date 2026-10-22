@@ -457,3 +457,43 @@
 .tool[data-new='true'] {
   color: var(--accent-magenta);
 }
+
+/* A matrix or table opened onto the canvas (D-228): no edge, no fill, its contents a margin in from the corner, its name
+   and console in that margin. What's live in it is counter-scaled to the screen's px (the view carries the zoom). */
+.piece[data-open='true'] {
+  border-color: transparent;
+  background: none;
+}
+
+.openLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+/* The page under an open one's contents: solid, its edge feathered out a little, never a box. */
+.openPaper {
+  position: absolute;
+  background: var(--bg);
+  box-shadow: 0 0 14px 10px var(--bg);
+  pointer-events: none;
+}
+
+/* Open, in edit mode it only moves: its corners are the selected marks in cyan, not grips. */
+.piece[data-open='true'][data-editing='true'] .mark {
+  width: 14px;
+  height: 14px;
+  border-width: 0;
+  border-color: var(--accent-cyan);
+  pointer-events: none;
+}
+
+.piece[data-open='true'][data-editing='true'] .mark::after {
+  content: none;
+}
+
+.piece[data-open='true'][data-editing='true'] .mark[data-handle='nw'] { top: -5px; left: -5px; border-top-width: 1px; border-left-width: 1px; }
+.piece[data-open='true'][data-editing='true'] .mark[data-handle='ne'] { top: -5px; right: -5px; left: auto; border-top-width: 1px; border-right-width: 1px; }
+.piece[data-open='true'][data-editing='true'] .mark[data-handle='se'] { bottom: -5px; right: -5px; top: auto; left: auto; border-bottom-width: 1px; border-right-width: 1px; }
+.piece[data-open='true'][data-editing='true'] .mark[data-handle='sw'] { bottom: -5px; left: -5px; top: auto; border-bottom-width: 1px; border-left-width: 1px; }

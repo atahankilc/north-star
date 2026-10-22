@@ -76,9 +76,10 @@ export function pagesOf(setup: TableSetup, count: number, page: number | undefin
 }
 
 // The selected cell rides on the canvas's card selection (D-187), so Escape and leaving focus let go of it as of a card.
+// The table's id in it: more than one can be live at once (open on the canvas, D-228; stacked beside a plane, D-211).
 const CELL = 'tcell|'
-const selKey = (row: string, col: string) => `${CELL}${row}|${col}`
-const parseSel = (s: string | null) => (s?.startsWith(CELL) ? (s.slice(CELL.length).split('|') as [string, string]) : null)
+const selKey = (piece: string, row: string, col: string) => `${CELL}${piece}|${row}|${col}`
+const parseSel = (piece: string, s: string | null) => (s?.startsWith(`${CELL}${piece}|`) ? (s.slice(CELL.length + piece.length + 1).split('|') as [string, string]) : null)
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
@@ -119,10 +120,11 @@ export function useFieldText() {
 }
 
 // `onCard`: a card's row name clicked, beside its plane (D-211): the plane goes to the card. `onView`: a pane's own view
-// moved (beside a plane); without it, the focus's.
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCard?: (card: Card) => void; onView?: (v: PlaneCam) => void }
+// moved (beside a plane); without it, the focus's. `onCanvas`: live on the canvas itself, opened there (D-228): nothing
+// cut at its edge.
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCard?: (card: Card) => void; onView?: (v: PlaneCam) => void; onCanvas?: boolean }
 
-export function TableView({ piece, view, live, editor, onCard, onView }: Props) {
+export function TableView({ piece, view, live, editor, onCard, onView, onCanvas = false }: Props) {
   const { wid, cards, cells } = useWs()
   const setup = tableOf(piece)
   const fieldText = useFieldText()
@@ -165,7 +167,7 @@ export function TableView({ piece, view, live, editor, onCard, onView }: Props) 
   const ws = cols.map(wOf)
   const xs = ws.reduce<number[]>((out, _, i) => [...out, i ? out[i - 1] + ws[i - 1] : nameW], [])
   const width = nameW + ws.reduce((s, w) => s + w, 0)
-  const sel = parseSel(useCanvasView((s) => (live ? s.cardSelected : null)))
+  const sel = parseSel(piece.id, useCanvasView((s) => (live ? s.cardSelected : null)))
   // A card selected on the plane beside it (D-211): its row lit.
   const lit = useCanvasView((s) => (live && onCard ? s.cardSelected : null))
   const ri = sel ? rows.findIndex((r) => r.key === sel[0]) : -1
@@ -176,7 +178,7 @@ export function TableView({ piece, view, live, editor, onCard, onView }: Props) 
   const layer = useRef<HTMLDivElement>(null)
 
   const write = (row: string, col: string, value: Cell['value']) => void setCell(wid, piece.id, row, col, { value })
-  const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(rows[r].key, cols[c].id), labelSelected: null })
+  const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(piece.id, rows[r].key, cols[c].id), labelSelected: null })
   // A press on a cell: selects it; again, a scale steps on (then nothing) and a check flips.
   const press = (r: number, c: number) => {
     if (selected?.r !== r || selected.c !== c) return select(r, c)
@@ -245,7 +247,7 @@ export function TableView({ piece, view, live, editor, onCard, onView }: Props) 
       const r = Math.min(rows.length - 1, Math.max(0, selected.r + move[0]))
       const c = Math.min(cols.length - 1, Math.max(0, selected.c + move[1]))
       select(r, c)
-      return layer.current?.querySelector<HTMLElement>(`[data-cell="${selKey(rows[r].key, cols[c].id)}"]`)?.focus()
+      return layer.current?.querySelector<HTMLElement>(`[data-cell="${selKey(piece.id, rows[r].key, cols[c].id)}"]`)?.focus()
     }
     if (!editor || col.field) return
     const steps = col.steps ?? DEFAULT_STEPS
@@ -256,7 +258,7 @@ export function TableView({ piece, view, live, editor, onCard, onView }: Props) 
     }
     if (e.key === 'Enter' && (col.kind === 'number' || col.kind === 'text' || !col.kind)) {
       e.preventDefault()
-      setTyping(selKey(row, col.id))
+      setTyping(selKey(piece.id, row, col.id))
     }
     if (e.key === ' ' && col.kind === 'check') {
       e.preventDefault()
@@ -282,7 +284,7 @@ export function TableView({ piece, view, live, editor, onCard, onView }: Props) 
   const bottom = T.head + rows.length * T.row
 
   return (
-    <div ref={layer} className={styles.layer} data-live={live || undefined}>
+    <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <div className={styles.table} style={{ width: width + (live && editor ? T.add : 0), height: bottom + T.add }} role="grid" aria-label={piece.name || 'table'}>
           {rows.map((r, i) => (
@@ -348,7 +350,7 @@ export function TableView({ piece, view, live, editor, onCard, onView }: Props) 
 
           {rows.map((r, ri) =>
             cols.map((c, ci) => {
-              const key = selKey(r.key, c.id)
+              const key = selKey(piece.id, r.key, c.id)
               const style = box(xs[ci], T.head + ri * T.row, ws[ci], T.row)
               const isSel = selected?.r === ri && selected.c === ci
               if (c.field) {

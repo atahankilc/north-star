@@ -4,12 +4,12 @@
 // when they're the plane's (FocusedPlane). A plane is moved, resized and renamed only in edit mode (D-180), switched on
 // and off from its console; in edit mode it takes the drag, it's selected, and Delete takes it away. Escape or a click on
 // empty space lets go of the selection. `0` (or the side nav's fit) frames everything, or in focus the plane's contents.
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { deletePiece, followTo, linkLens, pieceRef, KIND_NAME, isBare, kindOfPiece, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, kindOfPiece, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
@@ -41,6 +41,7 @@ import { MatrixSetupPanel } from './MatrixSetup'
 import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { TableSetupPanel } from './TableSetup'
 import { Beside, type EscNext } from './Beside'
+import { isOpen, OPEN_PAD, shownPieces } from './shownBox'
 import styles from './CanvasView.module.css'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
@@ -86,6 +87,8 @@ export function CanvasView() {
   const unfocusRef = useRef(() => {})
   const piecesRef = useRef(pieces)
   piecesRef.current = pieces
+  // As they're drawn: one opened onto the canvas as big as its contents (D-228).
+  const shown = useMemo(() => shownPieces(pieces, cards), [pieces, cards])
   const cardsOf = (id: string) => cards.filter((c) => c.pieceId === id)
   const labelsOf = (id: string) => labels.filter((l) => l.pieceId === id)
   const canvasLabels = labelsOf(CANVAS)
@@ -106,6 +109,8 @@ export function CanvasView() {
   setBesideRef.current = setBeside
   const matrixSetup = useMatrixUi((s) => s.setup)
   const tableSetup = useTableUi((s) => s.setup)
+  const matrixOnCanvas = useMatrixUi((s) => s.canvas)
+  const canvasSetup = pieces.find((p) => isOpen(p) && (kindOfPiece(p) === 'matrix' ? matrixSetup && p.id === matrixOnCanvas : p.id === tableSetup)) ?? null
   // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus. The
   // dock whose action that is shows `esc` on it; the key handler below goes in the same order.
   const matrixPane = besideOpen.find((p) => kindOfPiece(p) === 'matrix')?.id ?? null
@@ -124,17 +129,17 @@ export function CanvasView() {
     return kind === 'matrix' ? matrixBounds(p, cards) : kind === 'table' ? tableBounds(p, cards) : spaceBounds(cardsOf(p.id), labelsOf(p.id))
   }
   const bonds = (layer: 'under' | 'over') =>
-    pieces.map((p) => {
+    shown.map((p) => {
       const plane = p.stuckTo && isBare(p) ? planesBox.find((x) => x.id === p.stuckTo) : undefined
       return plane ? <Bond key={`bond-${layer}-${p.id}`} piece={p} plane={plane} zoom={cam.zoom} layer={layer} /> : null
     })
   // The planes as boxes, for sticking (D-210).
-  const planesBox = pieces.filter((p) => !isBare(p)).map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h, name: p.name }))
+  const planesBox = shown.filter((p) => !isBare(p)).map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h, name: p.name }))
   // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
   const fitRef = useRef((_instant?: boolean) => {})
   fitRef.current = (instant = false) => {
     if (focused) fitPlane(contentOf(focused), instant)
-    else fitCanvas(wid, [...pieces, ...canvasLabels.map(labelBox)])
+    else fitCanvas(wid, [...shown, ...canvasLabels.map(labelBox)])
   }
   // Go to (D-196): the side nav's list asks through `useGoTo`; no keys (D-201).
   // A place in the space you're in glides there; one in a plane, from outside it, waits for the plane to come into focus.
@@ -164,7 +169,7 @@ export function CanvasView() {
   focusedCardsRef.current = focusedCards
   const drawing = useCanvasView((s) => s.drawing)
   // What a canvas section carries besides text: the planes inside it.
-  const pieceCarry = pieces.map((p) => ({ id: p.id, ref: pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h }))
+  const pieceCarry = shown.map((p) => ({ id: p.id, ref: pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h }))
   // A point on screen (client px) in a space's px: the canvas's, or the focused plane's own view.
   const canvasToSpace = (cx: number, cy: number): [number, number] => {
     const r = root.current!.getBoundingClientRect()
@@ -215,7 +220,7 @@ export function CanvasView() {
       return { at: [b.x + b.w, b.y + b.h], gone: false }
     }
     if (t.on === 'plane') {
-      const p = pieces.find((x) => x.id === t.targetId)
+      const p = shown.find((x) => x.id === t.targetId)
       return p ? { at: [p.x + p.w, p.y + p.h], gone: false } : { at: [t.x, t.y], gone: true }
     }
     // A link (D-207): the middle between its cards' centres.
@@ -321,7 +326,10 @@ export function CanvasView() {
     return { x: onPixel(w / 2 + c.x) + p.x * c.zoom, y: onPixel(h / 2 + c.y) + p.y * c.zoom, w: p.w * c.zoom, h: p.h * c.zoom, zoom: c.zoom }
   }
   const focus = (p: WithId<Piece>) => {
-    useCanvasView.setState({ focusSpread: true, focusArrived: false, focusLeaving: false, selected: null })
+    // A cell or a setup of something open on the canvas (D-228) lets go: focus is a view of its own.
+    useCanvasView.setState({ focusSpread: true, focusArrived: false, focusLeaving: false, selected: null, cardSelected: null })
+    useMatrixUi.setState({ setup: false, canvas: null })
+    useTableUi.setState({ setup: null })
     setParams({ focus: p.id })
   }
   const unfocus = () => {
@@ -381,7 +389,7 @@ export function CanvasView() {
   // coming back finds the canvas where it was left.
   useEffect(() => {
     if (size.w === 0 || useCanvasView.getState().cams[wid]) return
-    fitCanvas(wid, [...pieces, ...canvasLabels.map(labelBox)], true)
+    fitCanvas(wid, [...shown, ...canvasLabels.map(labelBox)], true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wid, size.w])
 
@@ -472,6 +480,12 @@ export function CanvasView() {
         }
         return
       }
+      // Something open on the canvas (D-228): Escape closes its setup, then lets go of its cell.
+      if (e.key === 'Escape') {
+        if (useMatrixUi.getState().canvas) return useMatrixUi.setState({ setup: false, canvas: null })
+        if (useTableUi.getState().setup) return useTableUi.setState({ setup: null })
+        if (useCanvasView.getState().cardSelected) return useCanvasView.setState({ cardSelected: null })
+      }
       const id = useCanvasView.getState().selected
       if (!id) return
       if (e.key === 'Escape') useCanvasView.setState({ selected: null })
@@ -494,7 +508,8 @@ export function CanvasView() {
   const doubleClick = (e: React.MouseEvent) => {
     if (focusedRef.current) return
     const hit = document.elementFromPoint(e.clientX, e.clientY)
-    if (!hit || hit.closest('button, input, textarea, a')) return
+    // Nor through what's live on it, opened onto the canvas (D-228): a double-click there types in a cell.
+    if (!hit || hit.closest('button, input, textarea, a, [data-live]')) return
     const id = hit.closest<HTMLElement>('[data-target]')?.dataset.target?.match(/^plane:(.+)$/)?.[1]
     const p = id && pieces.find((x) => x.id === id)
     if (!p || useCanvasView.getState().editing.includes(p.id)) return
@@ -504,14 +519,29 @@ export function CanvasView() {
 
   const pan = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 && e.button !== 1) return
-    useCanvasView.setState({ selected: null, labelSelected: null })
+    // A press on a cell of something open on the canvas (D-228) is the cell's until it moves 5 px, as in focus (D-217):
+    // a click still selects it, a drag pans. Anywhere else it lets go of the cell too.
+    const onCell = !!(e.target as HTMLElement).closest('[data-cell]')
+    useCanvasView.setState(onCell ? { selected: null, labelSelected: null } : { selected: null, labelSelected: null, cardSelected: null })
     stopFollowing()
     const start = camOf(wid)
     const [sx, sy] = [e.clientX, e.clientY]
     const el = e.currentTarget
-    el.setPointerCapture(e.pointerId)
-    el.dataset.panning = 'true'
-    const move = (ev: PointerEvent) => setCam(wid, { ...start, x: start.x + ev.clientX - sx, y: start.y + ev.clientY - sy })
+    const id = e.pointerId
+    let panning = false
+    const begin = () => {
+      panning = true
+      el.setPointerCapture(id)
+      el.dataset.panning = 'true'
+    }
+    if (!onCell) begin()
+    const move = (ev: PointerEvent) => {
+      if (!panning) {
+        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < DRAG_PX) return
+        begin()
+      }
+      setCam(wid, { ...start, x: start.x + ev.clientX - sx, y: start.y + ev.clientY - sy })
+    }
     const up = () => {
       delete el.dataset.panning
       el.removeEventListener('pointermove', move)
@@ -533,10 +563,12 @@ export function CanvasView() {
         {/* What's linked to a plane (D-210, D-215): touching, ASCII in the gap; apart, a thin line. Under the pieces, so a
             line never crosses one. */}
         {bonds('under')}
-        {pieces.map((p) => (
+        {pieces.map((p, i) => (
           <PieceBox
             key={p.id}
             piece={p}
+            shown={shown[i]}
+            live={!focusId}
             cam={cam}
             selected={p.id === selected}
             editing={editor && editing.includes(p.id)}
@@ -547,7 +579,7 @@ export function CanvasView() {
             labels={labelsOf(p.id)}
             content={contentOf(p)}
             planes={isBare(p) ? planesBox.filter((x) => x.id !== p.id) : []}
-            followers={isBare(p) ? [] : pieces.filter((f) => f.stuckTo === p.id && isBare(f))}
+            followers={isBare(p) ? [] : shown.filter((f) => f.stuckTo === p.id && isBare(f))}
             host={isBare(p) && p.stuckTo ? (planesBox.find((x) => x.id === p.stuckTo) ?? null) : null}
           />
         ))}
@@ -562,8 +594,8 @@ export function CanvasView() {
         <FocusedPlane
           key={focused.id}
           piece={focused}
-          at={screenRect(focused)}
-          home={homeOf(focused, screenRect(focused), contentOf(focused))}
+          at={screenRect(shown.find((p) => p.id === focused.id) ?? focused)}
+          home={homeOf(focused, screenRect(shown.find((p) => p.id === focused.id) ?? focused), contentOf(focused))}
           bare={focusedBare}
           // A matrix's table glides from where it sits to the middle of the screen while the page fills in behind it.
           onSpread={focusedBare ? () => fitRef.current() : undefined}
@@ -619,6 +651,8 @@ export function CanvasView() {
         </FocusedPlane>
       )}
       {drawing === CANVAS && !focused && <DrawSection space={CANVAS} toSpace={canvasToSpace} />}
+      {/* The setup of a matrix or table open on the canvas (D-228), from its console, at the bottom of the screen. */}
+      {!focused && editor && canvasSetup && <CanvasSetup piece={canvasSetup} />}
       <PeerCursors space={space} toScreen={toScreen} />
       {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
       <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
@@ -644,6 +678,10 @@ const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'C
 
 type BoxProps = {
   piece: WithId<Piece>
+  // Where it's drawn: an open matrix or table as big as its contents (D-228).
+  shown: Box
+  // Whether what's open on it is live: not while a plane is in focus.
+  live: boolean
   cam: Cam
   selected: boolean
   editing: boolean
@@ -655,7 +693,7 @@ type BoxProps = {
   content: Bounds | null
   // A matrix or a table: the planes it can stick to (D-210).
   planes: (Box & { id: string })[]
-  // A plane: what's stuck to it, moved with it.
+  // A plane: what's stuck to it, moved with it (as drawn).
   followers: WithId<Piece>[]
   // A matrix or a table: the plane it's linked to (D-215), named first in its edge.
   host: (Box & { id: string; name?: string }) | null
@@ -732,7 +770,8 @@ const asShown = (p: Piece): [boolean, number] => (kindOfPiece(p) === 'matrix' ? 
 
 // That view on the screen, where focus starts from and goes back to.
 function homeOf(piece: Piece, at: ScreenRect, content: Bounds | null): PlaneCam {
-  const v = innerView(piece, content, ...asShown(piece))
+  // Open on the canvas (D-228): its contents a margin in from its corner, at their own size.
+  const v = isOpen(piece) ? { ox: OPEN_PAD, oy: OPEN_PAD, zoom: 1 } : innerView(piece, content, ...asShown(piece))
   return { ox: at.x + at.zoom * (1 + v.ox), oy: at.y + at.zoom * (1 + v.oy), zoom: at.zoom * v.zoom }
 }
 
@@ -783,17 +822,18 @@ function dragBox(from: Box, handle: Handle, dx: number, dy: number, free: boolea
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
 
-function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers, host }: BoxProps) {
+function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers, host }: BoxProps) {
   const { wid } = useWs()
   const kind = kindOfPiece(piece)
+  const open = isOpen(piece)
   // Where a move or resize has it, held after the drop until the data gets there (else it would jump back for a moment).
   const [held, setHeld] = useState<Box | null>(null)
   useEffect(() => {
-    if (held && same(held, piece)) setHeld(null)
-  }, [held, piece])
+    if (held && same(held, shown)) setHeld(null)
+  }, [held, shown])
   // Moved along with the plane it's stuck to (D-210), while that's dragged.
   const following = useCanvasView((s) => s.following[piece.id])
-  const box = held ?? following ?? piece
+  const box = held ?? following ?? shown
   // A matrix or table about to stick here (D-210): the plane's edge lights.
   const stickHere = useCanvasView((s) => s.stickHint?.plane === piece.id)
   // Its link lights while it or its plane is under the pointer (D-215).
@@ -808,7 +848,9 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
     e.stopPropagation()
     useCanvasView.setState({ selected: piece.id })
     const [sx, sy] = [e.clientX, e.clientY]
-    const from: Box = { x: piece.x, y: piece.y, w: piece.w, h: piece.h }
+    // Open on the canvas it only moves (its size is its contents', D-228).
+    if (open && handle !== 'move') return
+    const from: Box = { ...shown }
     let to: Box | null = null
     // A matrix or table moved near a plane's edge sticks there (D-210); moved anywhere else it stays linked as it was
     // (only its dropdown lets go, D-215). A plane carries what's linked to it: what touches it stays on its edge, what's
@@ -845,7 +887,9 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       // The followers stay where they were carried until their data's back.
       const done = () => useCanvasView.setState({ following: {} })
       if (to && !same(to, from)) {
-        const write = lens ? placeLens(wid, piece, from, to, stick) : placePiece(wid, piece.id, from, to, kind, followed(to))
+        // An open one's window keeps its stored size.
+        const kept = (b: Box): Box => (open ? { ...b, w: piece.w, h: piece.h } : b)
+        const write = lens ? placeLens(wid, piece, kept(from), kept(to), stick) : placePiece(wid, piece.id, from, to, kind, followed(to))
         void write.then(done, () => (setHeld(null), done()))
       } else {
         setHeld(null)
@@ -885,6 +929,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       // What the right-click menu comments on (D-193).
       data-target={`plane:${piece.id}`}
       data-kind={kind}
+      data-open={open || undefined}
       // A matrix in focus is its focused copy's: the one here would show under it as it glides.
       data-away={bare && focusing ? true : undefined}
       // --z: the canvas's zoom, so the name holds its size on the screen (D-223).
@@ -912,8 +957,20 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       <PeerRing id={piece.id} space={CANVAS} />
       {/* A comment on the plane itself (D-195), not on what's in it. */}
       <ThreadChip wid={wid} thread={own} zoom={cam.zoom} />
-      {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). */}
-      {kind === 'matrix' ? (
+      {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). Open on the canvas (D-228),
+          live at screen size: counter-scaled, so a cell's bar and the like are the screen's px, on a view at the canvas's
+          zoom a margin in from the corner. Not live in edit mode (a press moves it) or while a plane's in focus. */}
+      {/* Open, the page under its contents, feathered: the backdrop stays out from under its text (D-009). */}
+      {open && content && <span className={styles.openPaper} style={{ left: OPEN_PAD, top: OPEN_PAD, width: content.w, height: content.h }} aria-hidden />}
+      {open ? (
+        <div className={styles.openLayer} style={{ width: box.w * cam.zoom, height: box.h * cam.zoom, transform: `scale(${1 / cam.zoom})` }}>
+          {kind === 'matrix' ? (
+            <MatrixView piece={piece} view={{ ox: OPEN_PAD * cam.zoom, oy: OPEN_PAD * cam.zoom, zoom: cam.zoom }} live={live && !editing} editor={editor} onCanvas />
+          ) : (
+            <TableView piece={piece} view={{ ox: OPEN_PAD * cam.zoom, oy: OPEN_PAD * cam.zoom, zoom: cam.zoom }} live={live && !editing} editor={editor} onCanvas />
+          )}
+        </div>
+      ) : kind === 'matrix' ? (
         <MatrixView piece={piece} view={inner} live={false} editor={editor} />
       ) : kind === 'table' ? (
         <TableView piece={piece} view={inner} live={false} editor={editor} />
@@ -923,7 +980,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       {CORNERS.map((h) => (
         <span key={h} className={styles.mark} data-handle={h} onPointerDown={editing ? press(h) : undefined} aria-hidden />
       ))}
-      {editing && EDGES.map((h) => <span key={h} className={styles.bar} data-handle={h} onPointerDown={press(h)} aria-hidden />)}
+      {editing && !open && EDGES.map((h) => <span key={h} className={styles.bar} data-handle={h} onPointerDown={press(h)} aria-hidden />)}
       <PlaneConsole
         // In focus, or on its way there or back (D-185), the plane's console isn't here.
         className={focusing ? styles.consoleAway : undefined}
@@ -934,6 +991,9 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
         onFocus={onFocus}
         comments={comments}
         link={isBare(piece) ? { at: host?.id ?? null, planes, editor, onChange: (plane) => void linkLens(wid, piece, plane) } : undefined}
+        // Out of its window onto the canvas and back (D-228), in edit mode; open, its pages and setup are here.
+        open={isBare(piece) ? { on: open, onToggle: () => void openPiece(wid, piece, !open) } : undefined}
+        extra={open ? <OpenTools piece={piece} editor={editor} /> : undefined}
       />
     </div>
   )
@@ -1003,11 +1063,15 @@ type ConsoleProps = {
   className?: string
   // A matrix's or table's link to a plane (D-215): a dropdown, `link ▾` or `⇆ 01 Pazar ▾`, to pick a plane or unlink.
   link?: { at: string | null; planes: (Box & { id: string; name?: string })[]; editor: boolean; onChange: (plane: string | null) => void }
+  // A matrix or table opened onto the canvas or not (D-228), in edit mode: `[unframe]` takes it out, `[frame]` puts it back.
+  open?: { on: boolean; onToggle: () => void }
+  // Before `[focus]`: what an open one is used by from here (its pages, its setup).
+  extra?: ReactNode
 }
 
 const UNLINKED = 'none'
 
-function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, className, link }: ConsoleProps) {
+function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, className, link, open, extra }: ConsoleProps) {
   return (
     <div
       className={`${styles.console} ${className ?? ''}`}
@@ -1022,6 +1086,11 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
           <span className={styles.readout}>
             {size.w} × {size.h}
           </span>
+          {open && (
+            <button className={styles.tool} title={open.on ? 'back into its window' : 'out of its window onto the canvas, live there'} onClick={open.onToggle}>
+              {open.on ? 'frame' : 'unframe'}
+            </button>
+          )}
           {onDelete && (
             <button className={styles.tool} data-tone="danger" title={`delete the ${noun} (Delete)`} onClick={onDelete}>
               delete
@@ -1061,11 +1130,12 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
             ) : (
               link.at && <span className={styles.linkAt}>⇆ {link.planes.find((p) => p.id === link.at)?.name || 'plane'}</span>
             ))}
+          {extra}
           <button className={styles.tool} aria-pressed={false} title={`make the ${noun} the view`} onClick={onFocus}>
             focus
           </button>
           {onEdit && (
-            <button className={styles.tool} aria-pressed={false} title={noun === 'plane' ? 'move, resize or rename the plane' : `move or rename the ${noun}`} onClick={onEdit}>
+            <button className={styles.tool} aria-pressed={false} title={noun === 'plane' ? 'move, resize or rename the plane' : `move, rename or open the ${noun}`} onClick={onEdit}>
               edit
             </button>
           )}
@@ -1073,4 +1143,32 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
       )}
     </div>
   )
+}
+
+// What an open matrix or table (D-228) is used by from its console: a table's pages (D-213), and the setup, which opens
+// at the bottom of the screen (CanvasSetup).
+function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const matrix = kindOfPiece(piece) === 'matrix'
+  const matrixOn = useMatrixUi((s) => !!s.setup && s.canvas === piece.id)
+  const tableOn = useTableUi((s) => s.setup === piece.id)
+  const on = matrix ? matrixOn : tableOn
+  const toggle = () =>
+    matrix
+      ? useMatrixUi.setState((s) => (s.setup && s.canvas === piece.id ? { setup: false, canvas: null } : { setup: 'rows', canvas: piece.id }))
+      : useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
+  return (
+    <>
+      {!matrix && <TablePager piece={piece} editor={editor} />}
+      {editor && (
+        <button className={styles.tool} aria-pressed={on} title={matrix ? 'its rows, columns and cells' : 'where its rows come from, its columns'} onClick={toggle}>
+          setup
+        </button>
+      )}
+    </>
+  )
+}
+
+// The setup of a matrix or table open on the canvas (D-228), as in its focus.
+function CanvasSetup({ piece }: { piece: WithId<Piece> }) {
+  return kindOfPiece(piece) === 'matrix' ? <MatrixSetupPanel piece={piece} /> : <TableSetupPanel piece={piece} />
 }
