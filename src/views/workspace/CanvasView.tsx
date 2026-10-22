@@ -18,7 +18,7 @@ import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView,
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
 import { GridMenu } from './GridMenu'
-import { FilterDock } from './FilterDock'
+import { PlaneDockExtras } from './FilterDock'
 import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu } from './ContextMenu'
 import { isNew, useReads } from '../../data/threads'
@@ -763,16 +763,6 @@ export function CanvasView() {
           {/* With the list put away its dock goes too; unfocus is in the bar top-left (DocReaders). */}
           {focusArrived && !focusLeaving && !listHidden && (
             <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length ? (size.w * split) / 2 : undefined}>
-              {/* What's stuck to the plane (D-210): each opens beside it, or closes (D-211). */}
-              {stuckHere.map((p) => (
-                <DockAction
-                  key={p.id}
-                  label={`⇆ ${KIND_NAME[kindOfPiece(p)]}${p.name ? ` · ${p.name}` : ''}`}
-                  pressed={besideIds.includes(p.id)}
-                  title={besideIds.includes(p.id) ? 'close it beside the plane' : 'open it beside the plane'}
-                  onClick={() => toggleBeside(p.id)}
-                />
-              ))}
               {focusedMatrix && editor && (
                 <DockAction label="setup" pressed={!!matrixSetup} keyHint={escOn('setup')} title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
               )}
@@ -786,9 +776,26 @@ export function CanvasView() {
               {focusedDocuments && readerOpen && <DockAction label="hide list" title="put the list away: the documents take the whole screen" onClick={() => useDocUi.setState({ listHidden: true })} />}
               {focusedDocument && <DocumentDockTools piece={focused} />}
               {focusedDocument && <DocZoom />}
-              {/* A plane's snapping and guides (D-231). */}
-              {/* What the plane shows (D-233), anyone; its snapping and guides (D-231), editors. */}
-              {!isBare(focused) && <FilterDock plane={focused.id} cards={focusedCards} />}
+              {/* What the plane shows (D-233) and what's stuck to it (D-210), each a strip over the dock (D-235): a stuck
+                  piece's button opens it beside the plane, or closes it (D-211). Its snapping and guides (D-231), editors. */}
+              {!isBare(focused) && (
+                <PlaneDockExtras
+                  plane={focused.id}
+                  cards={focusedCards}
+                  stuck={{
+                    count: stuckHere.length,
+                    strip: stuckHere.map((p) => (
+                      <DockAction
+                        key={p.id}
+                        label={`⇆ ${KIND_NAME[kindOfPiece(p)]}${p.name ? ` · ${p.name}` : ''}`}
+                        pressed={besideIds.includes(p.id)}
+                        title={besideIds.includes(p.id) ? 'close it beside the plane' : 'open it beside the plane'}
+                        onClick={() => toggleBeside(p.id)}
+                      />
+                    )),
+                  }}
+                />
+              )}
               {!isBare(focused) && editor && <GridMenu />}
               {/* Always here; `esc` only when Escape does it next (with something open beside, that closes first, D-211). */}
               <DockAction label="unfocus" keyHint={escNext === 'unfocus' ? 'esc' : undefined} title="back to the canvas" main onClick={unfocus} />

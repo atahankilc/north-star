@@ -3938,3 +3938,18 @@ categories shown like B, not in a card, and the features under them not indented
 - *Then* (the user: "frame iken upload yada table shelf seçimi sunma. Onu focus da ayarlanabilir yap"): framed, the
   documents list's console is only `[focus] [edit]`; upload, table/shelf, kinds and pages are in its focus dock, and in
   its console once unframed.
+
+### D-235 · 2026-10-22 · Accepted (what's linked to a plane leaves the focus dock for a strip over it, like the filter; changes D-211's dock buttons)
+- *Decision:* the pieces stuck to a plane (D-210) no longer sit in the focus dock as `⇆ table · name` buttons; the dock
+  has `[linked · N]` (when there are any), and it opens a strip over the dock in the console's look holding those
+  buttons (each still opens its piece beside the plane, lit while open, D-211). The user: "split view yapılacak
+  bağlantılı olan componentleri de direkt console'a koymak yerine consolun üstüne bir alana çıkartalım".
+- *Strips:* what opens over the dock (the filter, D-233; what's linked) stacks upwards from 8 px over it (the user: the
+  filter and the dock "biraz üst üste geliyor"), what's linked nearest the dock, the filter over it; each no wider than
+  the plane's own part of the screen less 72 px a side (its half with something open beside it; clear of the side nav),
+  wrapping onto a second line when it doesn't fit. Escape closes the filter first, then what's linked (an open menu in
+  them first of all). `PlaneDockExtras` in FilterDock.tsx; one store (`useShelf`) for both.
+- *Region filter:* the user said it doesn't work; headless it narrows as D-145 says (Germany keeps a German or
+  Europe-wide or Global competitor, drops a US one, leaves other cards). What the user sees isn't known yet: asked.
+- *Verified* headless (emulators): a table stuck to a plane gave `[linked · 1]`; its strip's `⇆ table` opened it beside
+  the plane; with the filter open too the two stacked and fit in the plane's half; no console errors; build.

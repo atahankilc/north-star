@@ -37,8 +37,8 @@ const load = (plane: string): Filter => {
   }
 }
 
-type State = { byPlane: Record<string, Filter>; open: boolean }
-export const usePlaneFilter = create<State>(() => ({ byPlane: {}, open: false }))
+type State = { byPlane: Record<string, Filter> }
+export const usePlaneFilter = create<State>(() => ({ byPlane: {} }))
 
 // A plane's filter: what's been set in this tab, else what this browser kept.
 const cache = new Map<string, Filter>()

@@ -1,46 +1,74 @@
-// A focused plane's filters (D-233): one `[filter]` in the focus dock; pressed, a strip opens right on top of the dock in
-// the console's look (the same edge, magenta marks on its top corners), pressed again it closes. On it, the old board's
+// A focused plane's filters (D-233): one `[filter]` in the focus dock; pressed, a strip opens over the dock in the
+// console's look (the same edge, magenta marks on its top corners), pressed again it closes. What's linked to the plane
+// (D-210) has its own `[linked · N]` and strip the same way (D-235), under the filter's when both are open. On it, the old board's
 // filters in a row, each its own menu (the user): SHOW (card types), FOR (the plane's customers), TAG (its tags),
 // REGION (where its competitors are), LINKS (kinds of link, each in its colour), then `[reset]`. Builds and breaks cell
 // by cell (D-034).
 import { AnimatePresence } from 'motion/react'
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
+import { create } from 'zustand'
 import { CARD_TYPES, type Card } from '../../data/cards'
 import { Appear } from '../../ui/Appear'
+import { useCanvasView } from '../../state/canvasView'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import menuStyles from '../../ui/Menu.module.css'
 import { DockAction } from './FocusDock'
 import { linkTone } from './PlaneLinks'
-import { LINK_GROUPS, narrowing, setFilter, START, useFilter, usePlaneFilter, type Filter } from './planeFilter'
+import { LINK_GROUPS, narrowing, setFilter, START, useFilter, type Filter } from './planeFilter'
 import styles from './FilterDock.module.css'
 
-export function FilterDock({ plane, cards }: { plane: string; cards: Card[] }) {
-  const open = usePlaneFilter((s) => s.open)
+// What opens over the focus dock (D-233, D-235): each its own strip in the console's look, stacked with a gap; Escape
+// closes the top one (once no menu in it is open).
+type Shelf = { filter: boolean; linked: boolean }
+export const useShelf = create<Shelf>(() => ({ filter: false, linked: false }))
+
+// The plane's dock: `[filter]` and `[linked · N]` (what's stuck to it, D-210), each opening its strip over the dock.
+export function PlaneDockExtras({ plane, cards, stuck }: { plane: string; cards: Card[]; stuck?: { count: number; strip: ReactNode } }) {
+  const { filter, linked } = useShelf()
+  // No wider than the plane's own part of the screen (its half with something open beside it, D-211), clear of the
+  // side nav on the left.
+  const room = useCanvasView((s) => (s.beside ? Math.round(s.size.w * s.split) : s.size.w)) - 2 * 72
   const f = useFilter(plane)
   const n = narrowing(f)
-  // Escape closes it before anything else hears it, once no menu in it is open.
   useEffect(() => {
-    if (!open) return
+    if (!filter && !linked) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      // An open menu in it closes first (its prompt has the focus).
       if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=menu], [role=listbox]')) return
       e.stopImmediatePropagation()
-      usePlaneFilter.setState({ open: false })
+      useShelf.setState(filter ? { filter: false } : { linked: false })
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
-  }, [open])
-  useEffect(() => () => usePlaneFilter.setState({ open: false }), [])
+  }, [filter, linked])
+  useEffect(() => () => useShelf.setState({ filter: false, linked: false }), [])
   return (
     <>
       <DockAction
         label={n ? `filter · ${n}` : 'filter'}
-        pressed={open || n > 0}
-        title={open ? 'close the filters' : 'what this plane shows'}
-        onClick={() => usePlaneFilter.setState({ open: !open })}
+        pressed={filter || n > 0}
+        title={filter ? 'close the filters' : 'what this plane shows'}
+        onClick={() => useShelf.setState({ filter: !filter })}
       />
-      <AnimatePresence>{open && <Panel key="filter" plane={plane} cards={cards} f={f} />}</AnimatePresence>
+      {stuck && stuck.count > 0 && (
+        <DockAction
+          label={`linked · ${stuck.count}`}
+          pressed={linked}
+          title={linked ? 'close what is linked' : 'what is linked to this plane: open it beside'}
+          onClick={() => useShelf.setState({ linked: !linked })}
+        />
+      )}
+      {/* Stacked upwards: what's linked nearest the dock, the filter over it. */}
+      <div className={styles.shelf} style={{ maxWidth: room }}>
+        <AnimatePresence>
+          {linked && stuck && stuck.count > 0 && (
+            <Appear key="linked" className={styles.panel} role="group" aria-label="Linked">
+              {stuck.strip}
+            </Appear>
+          )}
+          {filter && <Panel key="filter" plane={plane} cards={cards} f={f} />}
+        </AnimatePresence>
+      </div>
     </>
   )
 }
