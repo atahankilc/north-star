@@ -3900,7 +3900,9 @@ categories shown like B, not in a card, and the features under them not indented
   does the same. No unfocus button top-left: the list's button is `[≡ list]` in the first document's dock, and no line
   stays down the left with the list put away. Each row (and sheet) in the list's focus has its actions as marks on its
   right: ✎ rename (its author; typed over in place, Enter keeps, Escape puts back), ◐ share/unshare, ↗ place, ↓ download,
-  ⌫ delete; rename is in the right-click menu too.
+  ⌫ delete; rename is in the right-click menu too. The marks are bigger (28 px, a size up), no frame: hovered, a faint
+  wash and the mark lit. Side by side, the line between two documents drags (each at least 280 px; a double-click
+  shares the width evenly again).
 - *Verified:* rules 419 pass (34 new: private reads, lists by shared/uid, author-only share/rename, owner deletes a
   shared one and restores it, moving a shared report as its author's, body size, file paths under its own id, the two
   piece kinds); headless on the emulators: two .md uploaded into a new list (◐ private), shelf and table switch, a row

@@ -221,8 +221,13 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
   useEffect(() => {
     if (open.length !== ids.length) useDocUi.setState({ readers: open })
   }, [open.length, ids.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Side by side, each its share of the width (the lines between them drag, D-232).
+  const weights = useDocUi((s) => s.readerWeights)
   if (!open.length) return null
-  const w = (size.w - left) / open.length
+  const room = size.w - left
+  const wt = open.map((id) => weights[id] ?? 1)
+  const total = wt.reduce((a, b) => a + b, 0)
+  const lefts = wt.reduce<number[]>((acc, x, i) => [...acc, acc[i] + (x / total) * room], [left])
 
   const drag = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
@@ -240,12 +245,48 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
     node.addEventListener('pointercancel', up)
   }
 
+  // The line after document `i`: moves the width between it and the next, each kept at least PANE_MIN wide.
+  const dragBetween = (i: number) => (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    const node = e.currentTarget
+    node.setPointerCapture(e.pointerId)
+    const [x0, x1] = [lefts[i], lefts[i + 2]]
+    const pair = wt[i] + wt[i + 1]
+    const move = (ev: PointerEvent) => {
+      const at = Math.min(x1 - PANE_MIN, Math.max(x0 + PANE_MIN, ev.clientX))
+      const a = (pair * (at - x0)) / (x1 - x0)
+      useDocUi.setState((s) => ({ readerWeights: { ...s.readerWeights, [open[i]]: a, [open[i + 1]]: pair - a } }))
+    }
+    const up = () => {
+      node.removeEventListener('pointermove', move)
+      node.removeEventListener('pointerup', up)
+      node.removeEventListener('pointercancel', up)
+    }
+    node.addEventListener('pointermove', move)
+    node.addEventListener('pointerup', up)
+    node.addEventListener('pointercancel', up)
+  }
+
   return (
     <>
       {open.map((id, i) => (
-        <DocPane key={id} id={id} list={list} box={{ x: Math.round(left + i * w), y: 0, w: Math.round(w), h: size.h }} last={i === open.length - 1} first={i === 0} />
+        <DocPane key={id} id={id} list={list} box={{ x: Math.round(lefts[i]), y: 0, w: Math.round(lefts[i + 1] - lefts[i]), h: size.h }} last={i === open.length - 1} first={i === 0} />
       ))}
       {!hidden && <div className={beside.divider} style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="List and documents" />}
+      {open.slice(0, -1).map((id, i) => (
+        <div
+          key={`between-${id}`}
+          className={beside.divider}
+          style={{ left: Math.round(lefts[i + 1]) }}
+          onPointerDown={dragBetween(i)}
+          // A double-click shares the width evenly again.
+          onDoubleClick={() => useDocUi.setState({ readerWeights: {} })}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Between two documents"
+        />
+      ))}
     </>
   )
 }
@@ -253,6 +294,8 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
 // One document open beside the list: a page that scrolls, its sections, its own zoom and dock.
 // A narrow one (side by side) says each action with a mark, its words in the tip.
 const NARROW = 560
+// How narrow one may be dragged.
+const PANE_MIN = 280
 
 function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piece>; box: Bounds; last: boolean; first: boolean }) {
   const { wid, documents, workspace } = useWs()
@@ -297,7 +340,7 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
       {/* Its title is on the page already: the dock only says what it is, so it fits a narrow part. */}
       <FocusDock label="document beside" name={narrow ? undefined : <span className={beside.kind}>document</span>}>
         {/* The list put away: its button here, in the first one's dock (D-232). */}
-        {hidden && first && <DockAction label="≡ list" keyHint={framed && last ? 'esc' : undefined} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
+        {hidden && first && <DockAction label={narrow ? '≡' : '≡ list'} keyHint={framed && last && !narrow ? 'esc' : undefined} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
         {mine && <DockAction label={narrow ? '◐' : d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => void shareDocument(wid, d.id, !d.shared)} />}
         {editor && <DockAction label={narrow ? '↗' : 'place ↗'} title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
         <DockAction label={narrow ? '↓' : 'download'} title="download: save it as a .md file" onClick={() => void downloadDocument(wid, d)} />

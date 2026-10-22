@@ -22,7 +22,7 @@ import styles from './Documents.module.css'
 
 // Its parts in its own px: the table's head and rows, the shelf's sheets.
 export const D = { head: 40, row: 54, pad: 16, sheet: { w: 140, h: 186, gap: 16, cols: 5 } }
-const COL_W: Record<DocCol | 'grip' | 'actions', number> = { kind: 70, title: 370, by: 130, size: 90, added: 96, grip: 36, actions: 150 }
+const COL_W: Record<DocCol | 'grip' | 'actions', number> = { kind: 70, title: 370, by: 130, size: 90, added: 96, grip: 36, actions: 160 }
 const COLS: DocCol[] = ['kind', 'title', 'by', 'size', 'added']
 // The grips' column only where they show (unframed on the canvas, D-234): elsewhere no empty column at its end.
 // The actions' column only where the list is live (in focus, unframed): a picture has nothing to press.
@@ -50,6 +50,8 @@ export const useDocUi = create<{
   readerAt: number | null
   // Each open document's zoom, kept in this tab.
   readerZooms: Record<string, number>
+  // Each open document's share of the width side by side (relative; 1 each until a line between them is dragged).
+  readerWeights: Record<string, number>
   // The document whose title is being typed over, in the list.
   renaming: string | null
   drag: { docId: string; x: number; y: number } | null
@@ -58,7 +60,7 @@ export const useDocUi = create<{
   placing: { docId: string; at?: [number, number]; near?: string } | null
   deleting: string | null
   uploads: { name: string; state: 'sending' | 'done' | 'refused'; why?: string }[]
-}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, renaming: null, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
+}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
 
 // At most this many side by side.
 export const READERS_MAX = 4
