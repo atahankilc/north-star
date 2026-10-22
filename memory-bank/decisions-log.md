@@ -4101,3 +4101,20 @@ categories shown like B, not in a card, and the features under them not indented
   with two named members framed with the parts too; panel `holds 4` with the parts under their parent; folded, rows
   `Deposit, Card hold, └ Hold part A, └ Hold part B`; no console errors; tsc. Not tried: the box drag while picking, a
   folded parent's `+N`.
+
+### D-241 · 2026-10-22 · Accepted (adds to D-239, D-240)
+- *Decision:* packages hold packages: a package can be picked (`+` → package, shift-click, `N selected`, right-click,
+  `holds`' `+ card`; never one it's inside), what's named under another named one goes under it; an unfolded package
+  inside one is its own frame and band inside the outer's (the outer's band above it, no overlap), a folded one a row
+  with `+N`. Folded, a package's rows stop at anything itself folded (a folded feature or package holds its own). A
+  box drag takes an unfolded package only when all of it is inside the box. Links with both ends folded into the same
+  thing (a feature's parts, a package's cards) aren't drawn. A card's panel says `in package ↑ Package 1 ↑ Package 2`
+  (blue, nearest first) under its parent line; a click goes there (an unfolded package framed by its whole box).
+- *Why:* the user: "package fold olunca, paketin içindeki cardların linklerinin labelını … görüyorum"; "paket içinde
+  paket varsa headerları üst üste geliyor … Paket içinde paket yapılabilmeli"; "paket içinde bir cardda üstündeki
+  paketi … bir şeyin partı olan feature sağ panelinde nasıl görüyosam görsem ve tıkladığımda gitse".
+- *Open:* telling members from other cards inside an unfolded frame: five looks on members.html (A dimmed outsiders,
+  B tabs, C a line hugging the members, D a spine, E plates); the user to pick.
+- *Verified* headless (emulators): package 2 holding package 1 + a problem: frames nested, bands apart; package 1
+  folded: its inside link (inspired by) gone, the link out of it (solves) from its card; Deposit's panel `in package ↑
+  Package 1 ↑ Package 2`; package 2 folded: rows `Package 1 +3`, `No-shows`; no console errors; tsc.

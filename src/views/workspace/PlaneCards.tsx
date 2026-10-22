@@ -151,12 +151,19 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   const shown = cards.filter((c) => kept.has(c.id))
   const lit = useCanvasView((s) => (live ? [s.cardHovered, s.cardSelected, ...s.cardMulti, s.linking?.from].filter(Boolean).join(' ') : ''))
   const linkSel = useCanvasView((s) => (live ? s.linkSelected : null))
+  // What a card is folded into, all the way out (itself when it isn't).
+  const outer = (id: string) => {
+    let at = id
+    for (let i = 0; i < 12 && folds.hidden.has(at); i++) at = folds.hidden.get(at)!
+    return at
+  }
   const links = drawLinks(
     shown,
     edges,
     boxOf,
     (e) =>
-      (e.kind === 'part-of' && folds.hidden.has(e.fromId)) ||
+      // Both ends folded into the same thing (a feature's parts, a package's cards, D-240): inside it, not drawn.
+      outer(e.fromId) === outer(e.toId) ||
       (filter.links.includes(groupOf(e.kind)) && e.id !== linkSel && !lit.includes(e.fromId) && !lit.includes(e.toId)),
   )
   const carry = cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
@@ -215,8 +222,12 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
       const [l, t, rr, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
       if (rr - l < 3 && b - t < 3) return
       const touches = (q: { x: number; y: number; w: number; h: number }) => q.x < rr && q.x + q.w > l && q.y < b && q.y + q.h > t
+      const inside = (q: { x: number; y: number; w: number; h: number }) => q.x >= l && q.x + q.w <= rr && q.y >= t && q.y + q.h <= b
       const hit = [
-        ...shown.filter((c) => !folds.hidden.has(c.id) && !(packing && c.type === 'package') && touches(boxOf(c))).map((c) => c.id),
+        // An unfolded package only when all of it is in the box (its frame round the cards would take it every time).
+        ...shown
+          .filter((c) => !folds.hidden.has(c.id) && (c.type === 'package' && !c.folded ? inside(boxOf(c)) : touches(boxOf(c))))
+          .map((c) => c.id),
         ...(packing ? [] : labels.filter((x) => touches(labelBox(x))).map((x) => x.id)),
       ]
       setSelection([...new Set([...keep, ...hit])])
@@ -404,9 +415,8 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
   const press = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!live || e.button !== 0) return
     e.stopPropagation()
-    // Picking a new package's cards: a package isn't one of them.
-    if (useCanvasView.getState().packing) return
-    if (e.shiftKey) return toggleSelected(card.id)
+    // Picking a new package's cards: a package can be one of them (D-240).
+    if (e.shiftKey || useCanvasView.getState().packing) return toggleSelected(card.id)
     setSelection([card.id])
     if (!editor || !members.length) return
     setPressed(true)
@@ -504,9 +514,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
     // The plane would pan.
     e.stopPropagation()
     // Shift, or picking a package's cards (D-240): in or out of the selection, no drag (D-227).
-    const packing = !!useCanvasView.getState().packing
-    if (packing && card.type === 'package') return
-    if (e.shiftKey || packing) return toggleSelected(card.id)
+    if (e.shiftKey || useCanvasView.getState().packing) return toggleSelected(card.id)
     // Pressed inside a selection, the whole of it moves (D-229); otherwise this card alone is picked.
     if (useCanvasView.getState().cardMulti.includes(card.id)) {
       if (!editor) return
@@ -706,10 +714,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
                 >
                   {r.depth > 0 ? <span className={styles.partTree}>└</span> : <i aria-hidden />}
                   <span className={styles.miniName}>{r.card.title || PLACEHOLDER[r.card.type]}</span>
-                  <span className={styles.miniAv}>
-                    {tucked ? `+${tucked} · ` : ''}
-                    {r.card.validation ?? r.card.priority}
-                  </span>
+                  <span className={styles.miniAv}>{[tucked ? `+${tucked}` : '', r.card.validation ?? r.card.priority].filter(Boolean).join(' · ')}</span>
                 </button>
               )
             }

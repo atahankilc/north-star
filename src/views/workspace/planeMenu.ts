@@ -48,7 +48,7 @@ function several(c: Ctx, n: number): MenuEntry[] {
   const ids = selectedIds()
   const picked = c.cards.filter((x) => ids.includes(x.id))
   const texts = c.labels.filter((x) => ids.includes(x.id))
-  const packable = picked.filter((x) => x.type !== 'package')
+  const packable = picked
   return [
     { key: 'sel', heading: `${n} selected` },
     { key: 'copy', label: 'copy them', glyph: '⧉', hint: '⌘C', onSelect: () => Object.assign(clipboard, { cards: picked, labels: texts, edges: c.edges, pasted: 0 }) },

@@ -14,7 +14,7 @@ export function PackPick({ cards }: { cards: Card[] }) {
   const multi = useCanvasView((s) => s.cardMulti)
   const one = useCanvasView((s) => s.cardSelected)
   const ids = multi.length ? multi : one ? [one] : []
-  const picked = cards.filter((c) => ids.includes(c.id) && c.type !== 'package')
+  const picked = cards.filter((c) => ids.includes(c.id))
   const stop = () => useCanvasView.setState({ packing: null })
   const make = () => {
     if (!picked.length) return

@@ -67,7 +67,7 @@ export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'c
       case 'package': {
         // What it holds by type, in chain order; its rating and how sure we are (D-239).
         // Its members' parts are in it too.
-        const held = packageTree(c.memberIds ?? [], cards, edges).map((r) => r.card)
+        const held = packageTree(c, cards, edges).map((r) => r.card)
         const sure = confidenceOf(held)
         out.set(c.id, {
           head: [c.impact && `impact ${c.impact}`, c.effort].filter(Boolean).join(' · ') || undefined,
@@ -87,7 +87,7 @@ export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'c
   return out
 }
 
-const ORDER = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
+const ORDER = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package'] as const
 
 // How sure a package is (D-239, the old feature rule D-138): from the status of what it holds that has one (customers,
 // problems, ideas). `broken` when any of them is invalidated; none with a status, nothing to say.

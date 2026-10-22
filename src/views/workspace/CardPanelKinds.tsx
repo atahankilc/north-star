@@ -26,6 +26,7 @@ import { createEdge } from '../../data/edges'
 import { useWs } from './context'
 import { useCanvasView } from '../../state/canvasView'
 import { linkTone } from './PlaneLinks'
+import { packageTree } from './cardInside'
 import styles from './CardPanel.module.css'
 
 const MAX_CRITERIA = 8
@@ -576,3 +577,25 @@ export function MatchedBy({ card, cards, editor }: { card: Card; cards: Card[]; 
 
 export const hasMatches = (card: Card, comparisons: { featureId: string; competitorFeatureId?: string }[]) =>
   comparisons.some((c) => c.featureId === card.id && c.competitorFeatureId)
+
+// The packages a card is in (D-240), as a part's parent shows (D-221): `in package ↑ Deposits`, nearest first; a click
+// goes to it.
+export function InPackages({ card, cards }: { card: Card; cards: Card[] }) {
+  const { edges } = useWs()
+  const around = cards
+    .filter((p) => p.type === 'package' && p.pieceId === card.pieceId)
+    .map((p) => ({ p, depth: packageTree(p, cards, edges).find((r) => r.card.id === card.id)?.depth }))
+    .filter((x): x is { p: Card; depth: number } => x.depth !== undefined)
+    .sort((a, b) => a.depth - b.depth)
+  if (!around.length) return null
+  return (
+    <div className={styles.parent}>
+      <span>in package</span>
+      {around.map(({ p }) => (
+        <button key={p.id} className={styles.parentTo} data-package onClick={() => goToCard(p)}>
+          ↑ {p.title || PLACEHOLDER.package}
+        </button>
+      ))}
+    </div>
+  )
+}

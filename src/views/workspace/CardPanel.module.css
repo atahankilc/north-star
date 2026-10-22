@@ -470,6 +470,12 @@
   cursor: pointer;
 }
 
+/* The package it's in (D-240): blue, side by side when several. */
+.parentTo[data-package] {
+  flex: none;
+  color: var(--accent-blue);
+}
+
 .part {
   display: flex;
   align-items: baseline;

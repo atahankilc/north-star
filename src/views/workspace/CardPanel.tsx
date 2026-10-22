@@ -23,7 +23,7 @@ import {
   type AnyType,
   type Card,
 } from '../../data/cards'
-import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, MatchedBy, Parent, Parts, RestsOn } from './CardPanelKinds'
+import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, InPackages, MatchedBy, Parent, Parts, RestsOn } from './CardPanelKinds'
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../data/edges'
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../data/evidence'
 import { glide, useCanvasView } from '../../state/canvasView'
@@ -33,7 +33,7 @@ import { factsOf } from './cardFacts'
 import { packageTree } from './cardInside'
 import { labelBox } from './TextItems'
 import { kindOf, labelRef, moveMany, type Label } from '../../data/labels'
-import { clipboard, packageThese, setSelection } from './selection'
+import { clipboard, onPlane, packageThese, setSelection } from './selection'
 import { GRID, snap } from '../../data/grid'
 import { useWs } from './context'
 import { linkTone } from './PlaneLinks'
@@ -208,7 +208,7 @@ export function CardPanel({ cards, labels = [], editor }: { cards: Card[]; label
 // them out evenly (three or more), the tags they all have (adding or taking one away does it on all of them).
 function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; editor: boolean }) {
   const { wid, cards: every } = useWs()
-  const packable = cards.filter((c) => c.type !== 'package')
+  const packable = cards
   const textKinds = texts.reduce((m, x) => m.set(kindOf(x), (m.get(kindOf(x)) ?? 0) + 1), new Map<string, number>())
   const kinds = [
     ...(['customer', 'problem', 'competitor', 'idea', 'feature', 'package'] as AnyType[]).map((t) => [t, cards.filter((c) => c.type === t).length] as const),
@@ -427,6 +427,7 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
     <>
       {under && <div className={styles.under}>{under}</div>}
       {card.type !== 'competitor' && card.type !== 'package' && <Parent card={card} cards={cards} editor={editor} />}
+      <InPackages card={card} cards={cards} />
       {sections}
     </>
   )
@@ -458,7 +459,9 @@ function Holds({ n, card, cards, editor }: P) {
   const { wid, edges } = useWs()
   const [picking, setPicking] = useState(false)
   const ids = card.memberIds ?? []
-  const tree = packageTree(ids, cards, edges)
+  const tree = packageTree(card, cards, edges)
+  // Not a package it's inside (no loops).
+  const around = new Set(cards.filter((c) => c.type === 'package' && packageTree(c, cards, edges).some((r) => r.card.id === card.id)).map((c) => c.id))
   const set = (next: string[]) => void updateCard(wid, card, { memberIds: next }, 'contents of')
   return (
     <PanelSection n={n} name="holds" count={tree.length || undefined} add={editor && ids.length < 60 ? { label: 'card', onClick: () => setPicking(true) } : undefined} empty={!tree.length && !picking}>
@@ -476,7 +479,10 @@ function Holds({ n, card, cards, editor }: P) {
               className={styles.x}
               title="Take it out of the package, with its parts (the cards stay)"
               onClick={() => {
-                const out = new Set(packageTree([c.id], cards, edges).map((r) => r.card.id))
+                // It and what's under it in the tree.
+                const at = tree.findIndex((r) => r.card.id === c.id)
+                const end = tree.findIndex((r, i) => i > at && r.depth <= depth)
+                const out = new Set(tree.slice(at, end < 0 ? undefined : end).map((r) => r.card.id))
                 set(ids.filter((x) => !out.has(x)))
               }}
             >
@@ -489,8 +495,8 @@ function Holds({ n, card, cards, editor }: P) {
         <CardPicker
           card={card}
           cards={cards.filter((c) => c.pieceId === card.pieceId)}
-          types={['customer', 'problem', 'competitor', 'idea', 'feature']}
-          exclude={new Set([card.id, ...tree.map((r) => r.card.id)])}
+          types={['customer', 'problem', 'competitor', 'idea', 'feature', 'package']}
+          exclude={new Set([card.id, ...around, ...tree.map((r) => r.card.id)])}
           make={false}
           onPick={(c) => (setPicking(false), set([...ids, c.id]))}
           onClose={() => setPicking(false)}
@@ -845,13 +851,15 @@ export function goToCard(c: Card) {
   useCanvasView.setState({ cardSelected: c.id, labelSelected: null, linkSelected: null })
   const { planeCam: v, size, beside, split } = useCanvasView.getState()
   if (!v) return
+  // Where it's drawn (an unfolded package is its frame).
+  const b = onPlane.boxes().find((x) => x.id === c.id)?.box ?? { x: c.x, y: c.y, w: CARD.w, h: CARD.h }
   const area = beside ? Math.round(size.w * split) : size.w
   const room = area - Math.min(SIDE_PANEL_W, area)
-  const [sx0, sy0] = [v.ox + c.x * v.zoom, v.oy + c.y * v.zoom]
-  const [sx1, sy1] = [sx0 + CARD.w * v.zoom, sy0 + CARD.h * v.zoom]
+  const [sx0, sy0] = [v.ox + b.x * v.zoom, v.oy + b.y * v.zoom]
+  const [sx1, sy1] = [sx0 + b.w * v.zoom, sy0 + b.h * v.zoom]
   if (sx0 >= 48 && sx1 <= room - 48 && sy0 >= 56 && sy1 <= size.h - 56) return
   const cx = room / 2
-  glide(v, { ...v, ox: cx - (c.x + CARD.w / 2) * v.zoom, oy: size.h / 2 - (c.y + CARD.h / 2) * v.zoom }, 420, (to) => useCanvasView.setState({ planeCam: to }))
+  glide(v, { ...v, ox: cx - (b.x + b.w / 2) * v.zoom, oy: size.h / 2 - (b.y + b.h / 2) * v.zoom }, 420, (to) => useCanvasView.setState({ planeCam: to }))
 }
 
 // Tags (D-056): chips, `×` on hover; `+ tag` types one (Enter adds, a leading `#` dropped).
