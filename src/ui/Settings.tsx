@@ -1,6 +1,6 @@
 // Settings (D-054, D-064, D-097): your square and the gear, bottom left (D-175); either opens a modal with a grouped side
-// menu on the left and the chosen page on the right: you (account, display) and the current workspace (general, people).
-// The assistant's pages (keys, usage) and export are archived (D-177).
+// menu on the left and the chosen page on the right: you (account, display) and the current workspace (general, people,
+// export, D-246). The assistant's pages (keys, usage) are archived (D-177).
 // A native <dialog>: focus stays inside, Escape and the backdrop close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../data/auth'
@@ -17,7 +17,7 @@ const BACKGROUND: readonly BackgroundPref[] = ['on', 'off']
 const THEME: readonly ThemePref[] = ['dark', 'light', 'system']
 
 // The workspace's own pages; WorkspaceLayout renders each (D-097).
-export type WorkspacePage = 'general' | 'people'
+export type WorkspacePage = 'general' | 'people' | 'export'
 type Page = 'account' | 'display' | WorkspacePage
 type Group = 'you' | 'workspace'
 
@@ -27,9 +27,10 @@ const PAGES: { id: Page; label: string; title: string; about: string; group: Gro
   { id: 'display', label: 'display', title: 'Display', about: 'How North Star looks and moves in this browser.', group: 'you' },
   { id: 'general', label: 'general', title: 'Workspace', about: 'Its name and what the team is building.', group: 'workspace' },
   { id: 'people', label: 'people', title: 'People', about: 'Who is in this workspace and how others get in.', group: 'workspace' },
+  { id: 'export', label: 'export', title: 'Export', about: 'Take the workspace with you as a file.', group: 'workspace' },
 ]
 
-const WORKSPACE_PAGES: readonly Page[] = ['general', 'people']
+const WORKSPACE_PAGES: readonly Page[] = ['general', 'people', 'export']
 
 type Props = {
   // The current workspace's pages, if there is one.

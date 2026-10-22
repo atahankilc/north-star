@@ -273,14 +273,25 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   - *Live site:* hidden behind `ATTACHMENTS_LIVE = false` until `storage.rules` are deployed and the bucket has CORS (`cors.json`,
     for `getBytes` in export).
 - **Drawing:** upload only (Q-004 → D-083): draw elsewhere and attach the SVG/PNG/PDF. A built-in sketch pad may come later.
-- **Export** ✅ (D-080, Settings → workspace → export): a workspace bundle as `.zip` holding `workspace.json`
-  (`format: north-star.workspace`, `version: 1`; every item, link, matrix cell and label, and the research reports you can
-  see without their author's uid (D-090); never members, codes or AI keys and usage),
-  plus each attachment's file at `attachments/<id>/<name>` with its record in `workspace.json`'s optional `attachments` (D-083;
-  still version 1). Code: `src/io/bundle.ts`.
-- **Import** ✅ (D-080, workspaces page; attachments D-083: files uploaded under new ids, or left out with a note where Storage isn't live): a bundle becomes a new workspace you own, docs rebuilt to the rules' shapes, IDs remapped,
-  dangling references dropped (`src/data/importWorkspace.ts`).
-- **Matrix → TSV** ✅ (`src/io/tsv.ts`; tabs, since Excel splits CSV by region) and **board → PNG** ✅ (offscreen render in `Board.tsx`). PDF later.
+- **Export** ✅ (D-080, D-246; Settings → workspace → export): a `.zip` holding `workspace.json` (`format:
+  north-star.workspace`, `version: 2`), every content collection read fresh when asked (`src/data/exportWorkspace.ts`):
+  `pieces` (planes, matrices and tables with their setups, documents lists, documents), the cards of every type and
+  packages, `competitorFeatures`, `comparisons`, `edges`, `evidence`, `labels`, `cells`, and the old board's data not yet
+  on a plane (cards and labels without a space, `planes`, `placements`); plus `documents`: the .md files and reports you
+  can see, each with its content as `body`, without its author's uid. Never members, roles, codes, comment threads (D-159)
+  or anything AI. Images and PDFs (files in Storage) stay behind until Storage is live, and the page says how many.
+  Code: `src/io/bundle.ts` (format, reading, cleaning).
+- **Import** ✅ (D-080, D-246; workspaces page): a bundle becomes a new workspace you own, under its name and description
+  (`src/data/importWorkspace.ts`). Every doc is rebuilt from known fields in the shapes `firestore.rules` takes, with new
+  ids; everything that points somewhere follows: a card's plane, text's space (`canvas` stays), links, evidence, competitor
+  features and matched features, a package's members and home, a matrix's axes (type's plane, hidden cards, cards added by
+  hand), a table's plane rules, hidden cards and rows, a lens's `stuckTo`, a document piece's `docId`, cells (ids
+  re-derived from matrix, row and column; typed rows and columns keep their own ids), report implications' cards. What
+  points at something not in the file is left out (and counted). Documents become yours (shared as they were, the
+  author's name kept). Written in batches (≤ 450 writes or ~4 MB; documents 6 to a batch, as their content's rule reads the
+  summary); if one fails the half-made workspace is deleted. A version 1 file still imports: its cards and text as the old
+  board's, its reports as documents, its attachments counted as left out.
+- **Matrix → TSV** and **board → PNG** (D-080) are archived with the old board (D-177). PDF later.
 
 ## 10. Repo layout (planned)
 

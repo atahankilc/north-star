@@ -41,6 +41,7 @@ import {
 } from '../../data/workspaces'
 import { canvasCenter, fitCanvas, fitPlane, setEditing, useCanvasView, type PlaneCam } from '../../state/canvasView'
 import { useHoldCurtain } from '../../state/curtain'
+import { AsciiButton } from '../../ui/AsciiButton'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { DecodeText } from '../../ui/DecodeText'
 import { Hud } from '../../ui/Hud'
@@ -52,6 +53,8 @@ import { Toast } from '../../ui/Toast'
 import { CanvasView } from './CanvasView'
 import { useWs, WorkspaceContext, type WorkspaceCtx } from './context'
 import { PeopleSettings } from './PeopleSettings'
+import { exportWorkspace } from '../../data/exportWorkspace'
+import { download, fileSlug, zipBundle } from '../../io/bundle'
 import { useEditKeys } from './useEditKeys'
 import styles from './WorkspaceLayout.module.css'
 
@@ -135,7 +138,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 // The side nav's fit (D-186), under the `+`; `0` does the same: everything on the canvas in view, or in focus the plane's
 // contents centred and fitted.
 function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
-  const { pieces, cards, labels, documents } = useWs()
+  const { pieces, cards, edges, labels, documents } = useWs()
   const { user } = useAuth()
   const focused = plane !== null
   const matrix = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'matrix')
@@ -158,7 +161,7 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
             : one
               ? // A document: at 100 %, its top near the top.
                 setPlaneCam(documentHome(one, useCanvasView.getState().size.w))
-              : fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? docsBounds(docs) : spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
+              : fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? docsBounds(docs) : spaceBounds(cards.filter((c) => c.pieceId === plane), edges, labels.filter((l) => l.pieceId === plane)))
           : fitCanvas(wid, [...shownPieces(pieces, cards), ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
       }
     >
@@ -284,7 +287,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
 }
 
 // The workspace's pages in the settings modal (D-054, D-064, D-097): general (name, what we're building) and people
-// (PeopleSettings.tsx: members and roles, requests, invites, the code; D-062, D-098). Export (D-080) is archived (D-177).
+// (PeopleSettings.tsx: members and roles, requests, invites, the code; D-062, D-098) and export (D-080, D-246).
 type SettingsProps = { page: WorkspacePage; wid: string; workspace: WorkspaceCtx['workspace']; requests: WithId<JoinRequest>[] }
 
 function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
@@ -293,6 +296,7 @@ function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
   const editor = canEditIn(workspace, user?.id)
 
   if (page === 'people') return <PeopleSettings wid={wid} workspace={workspace} requests={requests} />
+  if (page === 'export') return <ExportSection wid={wid} workspace={workspace} />
 
   const run = (p: Promise<unknown>) => {
     setError(null)
@@ -319,6 +323,61 @@ function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
           ) : (
             <span>{workspace.description || 'not written yet'}</span>
           )}
+        </Row>
+      </Section>
+      {error && <Note tone="error">! {error}</Note>}
+    </>
+  )
+}
+
+// The whole workspace as a .zip (D-246), read fresh when asked; what was packed is said after.
+function ExportSection({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['workspace'] }) {
+  const { user } = useAuth()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [packed, setPacked] = useState<string | null>(null)
+
+  const run = async () => {
+    if (!user) return
+    setBusy(true)
+    setError(null)
+    setPacked(null)
+    try {
+      const { bundle, leftOut } = await exportWorkspace(wid, user.id, workspace)
+      download(zipBundle(bundle), `${fileSlug(workspace.name)}-${new Date().toISOString().slice(0, 10)}.zip`)
+      const cards = bundle.customers.length + bundle.problems.length + bundle.competitors.length + bundle.ideas.length + bundle.features.length + bundle.packages.length
+      const n = (count: number, one: string) => `${count} ${one}${count === 1 ? '' : 's'}`
+      setPacked(
+        `Packed ${n(bundle.pieces.length, 'piece')}, ${n(cards, 'card')}, ${n(bundle.edges.length, 'link')}, ${n(bundle.labels.length, 'text item')}, ` +
+          `${n(bundle.cells.length, 'cell')} and ${n(bundle.documents.length, 'document')}.` +
+          (leftOut ? ` ${n(leftOut, 'file')} (images, PDFs) stayed behind: files can't travel until Storage is live.` : ''),
+      )
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <Section
+        label="files"
+        note={
+          <>
+            <p>
+              The .zip holds everything on the canvas: planes and their cards, links, evidence, competitor features, packages,
+              text, matrices and tables with their cells, and the documents you can see. Import it from the workspaces page to
+              make a copy you own. Members, invite codes and comment threads stay here.
+            </p>
+            {packed && <p>{packed}</p>}
+          </>
+        }
+      >
+        <Row label="workspace" hint="Everything, to import again later.">
+          <AsciiButton accent="cyan" onClick={() => void run()} disabled={busy}>
+            {busy ? 'packing' : 'download .zip'}
+          </AsciiButton>
         </Row>
       </Section>
       {error && <Note tone="error">! {error}</Note>}

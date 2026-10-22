@@ -555,6 +555,7 @@ cute nor pretty; then: moods under the pointer, things to do by itself, reaction
   the workspace name, and every doc of labels, customers, problems, ideas, features, competitors, competitorFeatures, comparisons and edges
   with its id. Never members, roles, invite codes, join requests or anything AI (keys, usage). Attachments go in the zip too (D-083).
   A bare `workspace.json` imports too; a newer `version` is refused.
+  *Since D-246:* version 2, carrying the canvas (pieces, cells, documents) and every reference remapped on import; v1 still imports.
 - *Import* (`src/data/importWorkspace.ts`): a new workspace you own, under the file's name. Every doc is rebuilt from known fields only, in the
   shapes `firestore.rules` accepts (the file may have been edited), with new ids; links, matrix cells (id = `feature_competitor`, re-derived) and
   competitor features follow their items; anything pointing at a missing item, self-links and duplicate links are dropped. Written in batches of
@@ -4170,3 +4171,37 @@ categories shown like B, not in a card, and the features under them not indented
   tık indentli".
 - *Verified* headless (emulators): a folded package holding a package (blue bar), its idea (white) and feature (cyan)
   a step in, the feature's part a step further, a problem (magenta) back at the start; no console errors; tsc.
+
+### D-246 · 2026-10-22 · Accepted (changes D-080's bundle to version 2; the agreed first step of 2026-10-22)
+**Export and import carry everything the canvas has now.** User: "lets do export/import implementation. We have changed a
+lot and i want our new export/import to work perfectly with our current features and structure".
+- *Where:* Settings → workspace → export (`[download .zip]`, then a line saying what was packed); an `import` strip under the
+  create and join forms on the workspaces page (as D-080's). TSV and PNG stay archived with the old board.
+- *Bundle v2* (`src/io/bundle.ts`): `workspace.json` with every content collection whole, read fresh at export time
+  (`src/data/exportWorkspace.ts`; the workspace keeps only what it shows): pieces, cards of every type and packages,
+  competitor features, comparisons, edges, evidence, labels, cells, and the old board's `planes`/`placements` and its
+  cards and text without a space, so nothing is lost before the step that brings the old board onto a plane. `documents`:
+  the shared ones and yours, `.md` and reports, each with its content as `body`, without the author's uid. Images and PDFs
+  stay behind until Storage is live (counted on the page). Never members, roles, codes, comment threads (D-159), AI.
+- *Import* (`src/data/importWorkspace.ts`): new ids for everything first, then each doc rebuilt from known fields in the
+  rules' shapes with every reference mapped: cards' `pieceId`, text's space (`canvas` kept), packages' members and home
+  (a plane piece or an old plane), matrix axes (plane, hide, card items), table rules (plane values), hide and card rows,
+  `stuckTo`, `docId`, cells (`matrixId_row_col` re-derived; typed rows/columns keep their ids), comparisons, report
+  implications. Anything pointing at what isn't in the file is left out and counted ("N things were left out"), as is a
+  `document` piece whose document didn't come. A `board` piece becomes `plane`. Documents become the importer's, shared as
+  they were, the author's name kept. Batches cut at 450 writes or ~4 MB; documents 6 to a batch (their content's rule
+  reads the summary); a failed write deletes the half-made workspace. Version 1 files still import: the old board's cards
+  and text as they were, reports as documents, attachments counted as left out. No rule change.
+- *Alternatives:* exporting only what's shown on the canvas (would lose the old board before it's brought over); `.md`
+  files as separate zip entries (the bodies in `workspace.json` keep one source; maybe later for reading outside the app);
+  threads in the export (D-159 keeps them out; ask the user if wanted).
+- *Verified* on the emulators in headless Chrome: a workspace with two planes (one a `board`), a matrix stuck to a plane and
+  open, a table with plane rule, hidden card and card row, a documents list, a document piece, cards of every type with
+  every field, a package (one member gone), competitor feature + match + criteria scores, three links (bends, part-of, from
+  a competitor feature), evidence, six labels (canvas heading and title, section, sticky, turned paragraph, old board's),
+  four cells (card × card, typed × typed, table card × own column, typed row), a .md and a report, an old plane and
+  placement: exported, read back, imported, exported again: same counts in all 16 lists and every reference the same once
+  ids are named; only differences: `board` → `plane`, the gone member dropped, `notRelevant: false` dropped, document
+  sizes recounted. A v1 file through a .zip: old cards stay without a space, the report a shared document under its
+  author's name with its card mapped, the dangling link and the attachment counted. A non-export refused. The export
+  button downloaded the .zip; both screens checked. `npm run build`.

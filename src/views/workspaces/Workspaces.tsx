@@ -1,11 +1,14 @@
-// /workspaces: your workspaces, plus create, ask to join with a code, and invites waiting for you (D-012, D-062).
+// /workspaces: your workspaces, plus create, ask to join with a code, import an export (D-080, D-246), and invites waiting
+// for you (D-012, D-062).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { workspacePath } from '../../app/paths'
 import type { AuthUser } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
+import { importWorkspace } from '../../data/importWorkspace'
 import type { JoinRequest, Workspace } from '../../data/model'
+import { readBundle } from '../../io/bundle'
 import {
   acceptInvite,
   createWorkspace,
@@ -50,6 +53,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
         <div className={styles.forms}>
           <CreateForm uid={user.id} onCreated={(id) => navigate(workspacePath(id))} />
           <JoinForm user={user} onJoined={(id) => navigate(workspacePath(id))} />
+          <ImportStrip user={user} onCreated={(id) => navigate(workspacePath(id))} />
         </div>
 
         <Pending user={user} onJoined={(id) => navigate(workspacePath(id))} />
@@ -373,5 +377,61 @@ function Pending({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =>
       </ul>
       {error && <p className={styles.error}>! {error}</p>}
     </Appear>
+  )
+}
+
+// An exported .zip becomes a new workspace you own (D-080, D-246). What had to stay behind (files, broken parts) is said
+// before going there; otherwise it opens at once.
+function ImportStrip({ user, onCreated }: { user: AuthUser; onCreated: (id: string) => void }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState<{ id: string; files: number; skipped: number } | null>(null)
+  const input = useRef<HTMLInputElement>(null)
+
+  const load = async (file: File | undefined) => {
+    if (!file) return
+    setBusy(true)
+    setError(null)
+    setDone(null)
+    try {
+      const bundle = await readBundle(file)
+      const result = await importWorkspace(bundle, user.id, user.name || user.email || 'someone')
+      if (result.filesLeftOut || result.skipped) {
+        setDone({ id: result.workspaceId, files: result.filesLeftOut, skipped: result.skipped })
+        setBusy(false)
+      } else onCreated(result.workspaceId)
+    } catch (err) {
+      setError((err as Error).message)
+      setBusy(false)
+    } finally {
+      if (input.current) input.current.value = ''
+    }
+  }
+
+  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+  return (
+    <div className={styles.import}>
+      <span className={styles.label}>import</span>
+      <p className={styles.importText}>
+        A workspace exported from North Star (.zip, in settings → workspace → export) becomes a new workspace you own.
+      </p>
+      <input ref={input} type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => void load(e.target.files?.[0])} />
+      <AsciiButton accent="cyan" onClick={() => input.current?.click()} disabled={busy}>
+        {busy ? 'importing' : 'choose file'}
+      </AsciiButton>
+      {done && (
+        <>
+          <p className={styles.importText}>
+            Imported.
+            {done.files > 0 && ` ${plural(done.files, 'file was', 'files were')} left out: files can't be stored here yet.`}
+            {done.skipped > 0 && ` ${plural(done.skipped, 'thing was', 'things were')} left out: broken, or pointing at something not in the file.`}
+          </p>
+          <AsciiButton accent="green" onClick={() => onCreated(done.id)}>
+            open workspace
+          </AsciiButton>
+        </>
+      )}
+      {error && <p className={styles.error}>! {error}</p>}
+    </div>
   )
 }

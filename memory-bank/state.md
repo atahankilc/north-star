@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-22 (D-232: documents)_
+_Last updated: 2026-10-22 (D-246: export/import)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -72,9 +72,9 @@ something is finished, add its entry to state-history.md and leave at most one l
   inside its piece (each board its own items: maybe a plane per board, D-139), then tables etc.; pieces in the export.
 
 ## Next steps
-- **Agreed order (2026-10-22):** export/import complete so nothing is lost (pieces, labels, links, new card fields, evidence,
-  competitor features, comparisons, packages, matrices/tables/cells, documents); then a v1 step that brings the old board's cards,
-  labels and threads (no `pieceId`) onto a plane; then merge/push, only with the user's yes.
+- **Agreed order (2026-10-22):** export/import complete, done (D-246, bundle v2; Settings → export, workspaces → import);
+  next a v1 step that brings the old board's cards, labels and threads (no `pieceId`) onto a plane; then merge/push, only
+  with the user's yes.
 0. **Board ideas after D-108 (suggested to the user, not started; ask which first):**
    - Try `edit_link` / `add_note` with a real key.
    - Link chips already hide when too small (D-111); left: draw them at a constant screen size.

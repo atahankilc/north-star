@@ -417,8 +417,10 @@ piece; check them with the user then.
   tab open in the tab, not on the stage (D-100).
 
 ## Export, import, attachments
-- Export `.zip` bundle (format `north-star.workspace` v1), matrix `.tsv` (not CSV), board `.png`; import makes a new
-  workspace with new ids, rebuilt from known fields (D-080).
+- Export `.zip` bundle (format `north-star.workspace` v2, Settings → workspace → export): every piece, card, link, text,
+  cell, evidence, competitor feature, match, package, the old board's data and the documents you can see with their
+  content; never members, codes, threads, AI. Import (workspaces page) makes a new workspace with new ids, every reference
+  following, built from known fields; v1 files still import (D-080, D-246). The old `.tsv` / `.png` are archived (D-177).
 - Attachments: images, SVG, PDF ≤10 MB in Firebase Storage, thumbnails, files never downloaded up front; hidden on the
   live site (`ATTACHMENTS_LIVE`) until Blaze (D-083).
 
