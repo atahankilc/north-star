@@ -10,14 +10,14 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { downloadDocument, shareDocument, useDocBody } from '../../data/documents'
+import { downloadDocument, useDocBody } from '../../data/documents'
 import { placeDocument, pieceRef } from '../../data/pieces'
 import { useAuth } from '../../data/auth'
 import { canvasCenter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useWs } from './context'
 import { DocContent, KindMark } from './DocContent'
-import { closeDoc, documentsBounds, documentsOf, listed, readerLeft, useDocUi } from './Documents'
+import { closeDoc, documentsBounds, shareOrAsk, documentsOf, listed, readerLeft, useDocUi } from './Documents'
 import { DockAction, FocusDock } from './FocusDock'
 import { isOpen, useOpenSize } from './shownBox'
 import { useStill } from './still'
@@ -250,7 +250,7 @@ const PANE_MIN = 280
 type PaneProps = { id: string; box: Bounds; last: boolean; first: boolean } & ({ list: WithId<Piece>; focus?: undefined } | { list?: undefined; focus: { piece: WithId<Piece>; onUnfocus: () => void } })
 
 function DocPane({ id, list, box, last, first, focus }: PaneProps) {
-  const { wid, documents, workspace } = useWs()
+  const { wid, documents, workspace, pieces } = useWs()
   const { user } = useAuth()
   const d = documents.find((x) => x.id === id)!
   const body = useDocBody(wid, d)
@@ -296,7 +296,7 @@ function DocPane({ id, list, box, last, first, focus }: PaneProps) {
       <FocusDock label={focus ? 'Focus' : 'document beside'} name={narrow ? undefined : <span className={beside.kind}>document</span>}>
         {/* The list put away: its button here, in the first one's dock (D-232). */}
         {!focus && hidden && first && <DockAction label={narrow ? '≡' : '≡ list'} keyHint={framed && last && !narrow ? 'esc' : undefined} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
-        {mine && <DockAction label={narrow ? '◐' : d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => void shareDocument(wid, d.id, !d.shared)} />}
+        {mine && <DockAction label={narrow ? '◐' : d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => shareOrAsk(wid, d, pieces)} />}
         {editor && list && <DockAction label={narrow ? '↗' : 'place ↗'} title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
         <DockAction label={narrow ? '↓' : 'download'} title="download: save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
         {mayDelete && <DockAction label={narrow ? '⌫' : 'delete'} title="delete the document (asks first)" onClick={() => useDocUi.setState({ deleting: d.id })} />}

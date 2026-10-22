@@ -3960,6 +3960,11 @@ categories shown like B, not in a card, and the features under them not indented
   same): a document piece's focus is the very page a document beside the list is (DocPane in focus mode, DocFocus):
   the whole screen right of the side nav, scrolling as a page, "on this page", its dock `DOCUMENT | [share] [download]
   [delete] [−] 100% [+] [unfocus] esc`; the view-based focus (wheel scrolling the view, its own outline) is gone.
+- *Then* (the user: "Canvasa konmuş bir documentın unshare olmaması lazım yada olursa canvasdaki componentlerin
+  silineceği bildirilmeli"): unsharing a document that's on the canvas on its own asks first, in the hazard confirm
+  ("It's on the canvas N times … taken off the canvas"), and takes those pieces off in the same undo step (⌘Z shares it
+  again and puts them back); a viewer is told an editor has to take it off first. From a row's ◐, the right-click menu
+  and a document's dock alike (`shareOrAsk`).
 - *Then* (the user: "frame iken upload yada table shelf seçimi sunma. Onu focus da ayarlanabilir yap"): framed, the
   documents list's console is only `[focus] [edit]`; upload, table/shelf, kinds and pages are in its focus dock, and in
   its console once unframed.

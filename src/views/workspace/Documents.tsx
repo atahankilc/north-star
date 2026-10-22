@@ -55,13 +55,15 @@ export const useDocUi = create<{
   readerWeights: Record<string, number>
   // The document whose title is being typed over, in the list.
   renaming: string | null
+  // A document on the canvas about to be unshared: asked first, its pieces go with it.
+  unsharing: string | null
   drag: { docId: string; x: number; y: number } | null
   dropped: { docId: string; x: number; y: number } | null
   // Put on the canvas once it's shared: at `at` (canvas px), or beside `near` (a piece) when asked from a focus.
   placing: { docId: string; at?: [number, number]; near?: string } | null
   deleting: string | null
   uploads: { name: string; state: 'sending' | 'done' | 'refused'; why?: string }[]
-}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
+}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, unsharing: null, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
 
 // At most this many side by side.
 export const READERS_MAX = 4
@@ -74,6 +76,12 @@ export function openDoc(id: string, alongside = useDocUi.getState().sideBySide) 
   })
 }
 export const closeDoc = (id: string) => useDocUi.setState((s) => ({ readers: s.readers.filter((x) => x !== id) }))
+// Sharing or unsharing (its author's). Unsharing one that's on the canvas on its own asks first (its pieces would go).
+export function shareOrAsk(wid: string, d: Pick<Doc, 'shared'> & { id: string }, pieces: Pick<Piece, 'docId'>[]) {
+  if (d.shared && pieces.some((p) => p.docId === d.id)) return useDocUi.setState({ unsharing: d.id })
+  void shareDocument(wid, d.id, !d.shared)
+}
+
 export const closeDocs = () => useDocUi.setState({ readers: [], listHidden: false })
 
 // With a document open beside it (D-232), the list sits pinned to the top-left of its part, fitted to its width
@@ -313,7 +321,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
 // `↗`: a click places it where you're looking; on the canvas (unframed) a press that moves drags it out to where it's
 // let go.
 function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithId<Piece>; editor: boolean; onCanvas: boolean }) {
-  const { wid, workspace } = useWs()
+  const { wid, workspace, pieces } = useWs()
   const { user } = useAuth()
   const mine = d.uid === user?.id
   const owner = workspace.roles[user?.id ?? ''] === 'owner'
@@ -329,7 +337,7 @@ function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithI
         </button>
       )}
       {mine && (
-        <button className={styles.act} data-on={d.shared || undefined} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => void shareDocument(wid, d.id, !d.shared))}>
+        <button className={styles.act} data-on={d.shared || undefined} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => shareOrAsk(wid, d, pieces))}>
           ◐
         </button>
       )}

@@ -46,8 +46,8 @@ import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { TableSetupPanel } from './TableSetup'
 import { Beside, type EscNext } from './Beside'
 import { isOpen, OPEN_FOOT, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
-import { deleteDocument, downloadDocument, moveReports, shareDocument, type Doc } from '../../data/documents'
-import { closeDocs, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
+import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Doc } from '../../data/documents'
+import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
 import styles from './CanvasView.module.css'
@@ -429,13 +429,16 @@ export function CanvasView() {
         : []),
       ...(editor ? [{ key: 'place', label: 'place on the canvas', glyph: '⇱', letter: 'p', hint: d.shared ? undefined : 'shares it', onSelect: () => useDocUi.setState({ placing: { docId: d.id, near: focusId ?? undefined } }) }] : []),
       ...(mine ? [{ key: 'rename', label: 'rename', glyph: '✎', letter: 'r', onSelect: () => useDocUi.setState({ renaming: d.id }) }] : []),
-      ...(mine ? [{ key: 'share', label: d.shared ? 'unshare' : 'share with everyone', glyph: '◐', letter: 's', onSelect: () => void shareDocument(wid, d.id, !d.shared) }] : []),
+      ...(mine ? [{ key: 'share', label: d.shared ? 'unshare' : 'share with everyone', glyph: '◐', letter: 's', onSelect: () => shareOrAsk(wid, d, pieces) }] : []),
       { key: 'download', label: 'download .md', glyph: '↓', letter: 'd', onSelect: () => void downloadDocument(wid, d) },
       ...(mine || (d.shared && isOwnerOf(workspace, user?.id)) ? [{ key: 'delete', label: 'delete', glyph: '×', letter: 'x', danger: true, onSelect: () => useDocUi.setState({ deleting: d.id }) }] : []),
     ]
   }
   const deletingId = useDocUi((s) => s.deleting)
   const deletingDoc = documents.find((d) => d.id === deletingId) ?? null
+  const unsharingId = useDocUi((s) => s.unsharing)
+  const unsharingDoc = documents.find((d) => d.id === unsharingId) ?? null
+  const unsharingPieces = unsharingDoc ? pieces.filter((p) => p.docId === unsharingDoc.id) : []
 
   // A document just put on the canvas (D-232): in edit mode where you're looking, to be moved; from a focus, back to the
   // canvas to see it.
@@ -892,6 +895,25 @@ export function CanvasView() {
       {/* A document being dragged out of its list, and the question before a private one goes on the canvas (D-232). */}
       {dragging && <DragGhost doc={documents.find((d) => d.id === dragging.docId)} at={dragging} root={root} />}
       <DocPlace toScreen={focusId ? null : toScreen} zoom={cam.zoom} others={shown.map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h }))} members={membersOf(workspace.roles)} onPlaced={placedDoc} />
+      {/* Unsharing a document that's on the canvas (D-232): its pieces go too; asks first. */}
+      {unsharingDoc && (
+        <HazardConfirm
+          title={`unshare "${unsharingDoc.title.length > 40 ? `${unsharingDoc.title.slice(0, 39)}…` : unsharingDoc.title}"?`}
+          lines={[
+            `It's on the canvas ${unsharingPieces.length === 1 ? 'once' : `${unsharingPieces.length} times`}. Only you would see it, so ${unsharingPieces.length === 1 ? 'that piece is' : 'those pieces are'} taken off the canvas.`,
+            editor ? `${UNDO_HINT} brings it back.` : 'An editor has to take it off the canvas first: you can only read here.',
+          ]}
+          confirm="unshare"
+          onCancel={() => useDocUi.setState({ unsharing: null })}
+          onConfirm={() => {
+            useDocUi.setState({ unsharing: null })
+            if (!editor) return
+            // A document in focus that goes off the canvas: back to the canvas first.
+            if (focused && unsharingPieces.some((p) => p.id === focused.id)) unfocus()
+            void unshareDocument(wid, unsharingDoc.id, unsharingPieces.map((p) => pieceRef(wid, p.id)))
+          }}
+        />
+      )}
       {deletingDoc && (
         <HazardConfirm
           title={`delete "${deletingDoc.title.length > 40 ? `${deletingDoc.title.slice(0, 39)}…` : deletingDoc.title}"?`}

@@ -217,6 +217,18 @@ export function shareDocument(wid: string, id: string, shared: boolean) {
   return tracked(shared ? 'share a document' : 'unshare a document', [ref], () => updateDoc(ref, { shared, updatedAt: Date.now() }))
 }
 
+// Unshared while it's on the canvas on its own (D-232): its pieces go with it, since no one else could see them any more.
+// One undo step: undoing shares it again and puts the pieces back.
+export function unshareDocument(wid: string, id: string, pieces: DocumentReference[]) {
+  const ref = docRef(wid, id)
+  return tracked('unshare a document', [ref, ...pieces], () => {
+    const batch = writeBatch(db())
+    pieces.forEach((p) => batch.delete(p))
+    batch.update(ref, { shared: false, updatedAt: Date.now() })
+    return batch.commit()
+  })
+}
+
 export function renameDocument(wid: string, id: string, title: string) {
   const ref = docRef(wid, id)
   const value = title.trim().slice(0, DOC_LIMITS.title)

@@ -82,6 +82,8 @@ of its own). By size on the screen: full → kind + title alone → grey bars; t
   it scrolls as a page, links work, "on this page" on the right (the one being read lit cyan, a click scrolls there),
   its dock `DOCUMENT | [share] [download] [delete] [−] 100% [+] [unfocus] esc` (no place: it's on the canvas already).
 - Deleting the piece leaves the document in its list.
+- **Unsharing it** while it's on the canvas asks first (hazard confirm): only its author would see it, so its pieces
+  are taken off the canvas, the same undo step (⌘Z shares it again and puts them back).
 
 ## Unframed (D-234)
 
