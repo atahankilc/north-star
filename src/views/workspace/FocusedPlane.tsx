@@ -101,7 +101,7 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     // A press on a matrix's cell (D-217) is the cell's until it moves 5 px: a click still selects it, a drag pans.
     const onCell = !!(e.target as HTMLElement).closest('[data-cell]')
     // A press on the plane itself lets go of a card (D-187).
-    if (!onCell) useCanvasView.setState({ cardSelected: null, labelSelected: null, linkSelected: null })
+    if (!onCell) useCanvasView.setState({ cardSelected: null, cardMulti: [], labelSelected: null, linkSelected: null })
     stopGlide()
     stopFollowing()
     const el = e.currentTarget

@@ -449,3 +449,12 @@
 .fold:disabled {
   cursor: default;
 }
+
+/* Alt+drag's box (D-227): what it touches is selected. */
+.selectBox {
+  position: absolute;
+  z-index: 30;
+  border: 1px dashed var(--accent-cyan);
+  background: color-mix(in srgb, var(--accent-cyan) 6%, transparent);
+  pointer-events: none;
+}

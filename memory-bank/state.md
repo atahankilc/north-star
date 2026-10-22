@@ -60,7 +60,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Plane back to the old board's power, step by step (asked 2026-10-21): step 1, card motion (D-203); step 2, card inside
   (D-205, shown only, nothing sets it yet). Step 3, links (D-207); step 4, the right
   panel's look (D-219), filled for every card type (D-221).
-  Step 5, inside cards: competitor features on hover, folded parts (D-225). Next: multi-select, guides, right-click, filters. Fixed 2026-10-21:
+  Step 5, inside cards (D-225, D-226); step 6, multi-select (D-227). Next: guides, right-click, filters. Fixed 2026-10-21:
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
 - Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
 - Piece names readable at any zoom, edit as a cyan field with `>` and a count (D-223), 2026-10-22, committed.

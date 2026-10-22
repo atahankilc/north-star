@@ -3753,3 +3753,23 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): a selected competitor kept 200 px with the pointer away and shrank on Escape; a
   problem folded its two sub-problems; a customer made a part of another from its panel (the line drawn, `[−] 1 part` on
   the parent); no console errors; build.
+
+### D-227 · 2026-10-22 · Accepted (brings D-108/D-124's multi-select back, on planes)
+- *Decision:* in a focused plane, shift+click puts a card in or out of the selection (no drag), alt+drag on the plane
+  draws a dashed cyan box and selects the cards it touches (shift+alt adds); two or more are `cardMulti` (one stays
+  `cardSelected`). A press on a selected card drags them all: the one held goes 0.8 under the pointer as before (D-150),
+  the others 0.8 round their middles, following by the same snapped step; dropped, they (and parts folded into them)
+  move in one undo step. Arrows nudge the selection a grid step (25 px), shift four; ⌘C / ⌘V / ⌘D copy, paste and
+  duplicate in this tab (each paste two steps further, the links between them copied, the copies selected); Delete takes
+  them all with their links (one undo step); Escape lets go of several before it would leave focus. A press on the plane
+  or on text lets go.
+- *Panel:* the right panel (D-219) shows `N selected` (kind `selection`, cyan): what they are (`2 problems · 1 idea`),
+  `01 LINE UP` [left] [centre] [right] [top] [middle] [bottom], `02 SPACE OUT` [↔ across] [↕ down] (three or more, evenly
+  from the first to the last), `03 TAGS` on all of them (add one to all, `×` takes it off all); foot `[copy]
+  [duplicate] … [delete]`.
+- *Keys:* heard before the canvas's (window, capture), never from a field, the panel, a menu or a list.
+- *Not yet:* text in the selection, presence `more` (others seeing the whole selection), `package these`.
+- *User:* "çoklu seçimi yapalım".
+- *Verified* headless (emulators): three cards by shift+click (panel `3 selected`), dragged together +100, +50, lined
+  up top, nudged right 25, duplicated (7), the copies deleted (4) and undone (7), Escape with several kept focus, an
+  alt box selected one card; no console errors; build.

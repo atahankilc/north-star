@@ -115,6 +115,68 @@ export function updateCard(wid: string, card: Card, fields: Partial<CardFields>,
   return tracked(`${what} ${one(card.type)}`, [r], () => updateDoc(r, data), { key: `card:${card.id}:${keys}` })
 }
 
+// Several cards and their links, one undo step (D-227: a selection's Delete).
+export function deleteCards(wid: string, list: Card[], edges: Edge[] = []) {
+  const ids = new Set(list.map((c) => c.id))
+  const refs = [...list.map((c) => ref(wid, c.type, c.id)), ...edgesOn(edges, ids).map((e) => edgeRef(wid, e.id))]
+  return tracked(`delete ${list.length} cards`, refs, async () => {
+    for (let i = 0; i < refs.length; i += 450) {
+      const batch = writeBatch(db())
+      refs.slice(i, i + 450).forEach((r) => batch.delete(r))
+      await batch.commit()
+    }
+  })
+}
+
+// The same fields on several cards, one undo step (a selection's tag).
+export function updateCards(wid: string, list: { card: Card; fields: Partial<CardFields> }[], what: string) {
+  const refs = list.map((x) => ref(wid, x.card.type, x.card.id))
+  return tracked(what, refs, () => {
+    const batch = writeBatch(db())
+    const now = Date.now()
+    list.forEach((x, i) => {
+      const data: Record<string, unknown> = { updatedAt: now }
+      for (const [k, v] of Object.entries(x.fields)) data[k === 'notes' && x.card.type !== 'competitor' ? 'body' : k] = v === undefined ? deleteField() : v
+      batch.update(refs[i], data)
+    })
+    return batch.commit()
+  })
+}
+
+// Copies of cards on a plane, moved by `by`, with the links between them (D-227: paste, duplicate): one undo step.
+// Returns the new cards' ids, in order.
+export function copyCards(wid: string, pieceId: string, list: Card[], edges: Edge[], by: [number, number]) {
+  const made = new Map(list.map((c) => [c.id, ref(wid, c.type)]))
+  const ids = new Set(list.map((c) => c.id))
+  const inner = edges.filter((e) => ids.has(e.fromId) && ids.has(e.toId))
+  const links = inner.map(() => doc(collection(db(), 'workspaces', wid, 'edges')))
+  const now = Date.now()
+  const fieldsOf = (c: Card) => {
+    const d: Record<string, unknown> = {
+      [titleField(c.type)]: c.title,
+      pieceId,
+      x: c.x + by[0],
+      y: c.y + by[1],
+      createdAt: now,
+      updatedAt: now,
+    }
+    for (const k of ['tags', 'validation', 'regions', 'priority', 'status', 'impact', 'effort', 'description', 'audience', 'pricing', 'url', 'criteria', 'folded'] as const)
+      if (c[k] !== undefined) d[k] = c[k]
+    if (c.notes) d[c.type === 'competitor' ? 'notes' : 'body'] = c.notes
+    return d
+  }
+  const refs = [...made.values(), ...links]
+  void tracked(list.length > 1 ? `paste ${list.length} cards` : `paste ${one(list[0].type)}`, refs, () => {
+    const batch = writeBatch(db())
+    list.forEach((c) => batch.set(made.get(c.id)!, fieldsOf(c)))
+    inner.forEach((e, i) =>
+      batch.set(links[i], { fromId: made.get(e.fromId)!.id, fromType: e.fromType, toId: made.get(e.toId)!.id, toType: e.toType, kind: e.kind, ...(e.label ? { label: e.label } : {}) }),
+    )
+    return batch.commit()
+  }, { before: absent(refs) })
+  return list.map((c) => made.get(c.id)!.id)
+}
+
 // With its links (D-207): one undo step brings them all back.
 export function deleteCard(wid: string, card: Card, edges: Edge[] = []) {
   const refs = [ref(wid, card.type, card.id), ...edgesOn(edges, new Set([card.id])).map((e) => edgeRef(wid, e.id))]

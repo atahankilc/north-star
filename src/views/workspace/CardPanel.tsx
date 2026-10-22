@@ -7,7 +7,11 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   addCard,
   CARD,
+  copyCards,
   deleteCard,
+  deleteCards,
+  moveCards,
+  updateCards,
   FEATURE_EFFORTS,
   FEATURE_IMPACTS,
   FEATURE_PRIORITIES,
@@ -26,6 +30,8 @@ import { glide, useCanvasView } from '../../state/canvasView'
 import { useAutoGrow } from '../../ui/autoGrow'
 import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../ui/SidePanel'
 import { factsOf } from './cardFacts'
+import { clipboard, setSelection } from './selection'
+import { GRID, snap } from '../../data/grid'
 import { useWs } from './context'
 import { linkTone } from './PlaneLinks'
 import { openThread, startComment, threadOn } from './Threads'
@@ -99,6 +105,8 @@ export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean })
   const ws = useWs()
   const { wid, threads, edges } = ws
   const id = useCanvasView((s) => s.cardSelected)
+  const multi = useCanvasView((s) => s.cardMulti)
+  const many = cards.filter((c) => multi.includes(c.id))
   const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
   const card = cards.find((c) => c.id === id)
   const close = () => useCanvasView.setState({ cardSelected: null })
@@ -116,7 +124,37 @@ export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean })
   }, [card?.id, right])
   return (
     <AnimatePresence>
-      {card && (
+      {many.length > 1 && (
+        <SidePanel
+          key="card"
+          kind="selection"
+          tone="var(--accent-cyan)"
+          label={`${many.length} cards selected`}
+          title={`${many.length} selected`}
+          right={right}
+          onClose={() => setSelection([])}
+          actions={
+            <>
+              <PanelAction label="copy" title="⌘C" onClick={() => ((clipboard.cards = many), (clipboard.edges = edges), (clipboard.pasted = 0))} />
+              {editor && <PanelAction label="duplicate" title="⌘D" onClick={() => setSelection(copyCards(wid, many[0].pieceId, many, edges, [2 * GRID, 2 * GRID]))} />}
+              {editor && (
+                <PanelAction
+                  label="delete"
+                  danger
+                  title="Delete or Backspace"
+                  onClick={() => {
+                    setSelection([])
+                    void deleteCards(wid, many, edges)
+                  }}
+                />
+              )}
+            </>
+          }
+        >
+          <ManyInside cards={many} editor={editor} />
+        </SidePanel>
+      )}
+      {card && many.length < 2 && (
         <SidePanel
           // One panel while cards change under it: it builds only when it opens.
           key="card"
@@ -154,6 +192,104 @@ export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean })
         </SidePanel>
       )}
     </AnimatePresence>
+  )
+}
+
+// Several cards selected (D-227, the old board's "N selected", D-124): what they are, lining them up (six ways), spacing
+// them out evenly (three or more), the tags they all have (adding or taking one away does it on all of them).
+function ManyInside({ cards, editor }: { cards: Card[]; editor: boolean }) {
+  const { wid } = useWs()
+  const kinds = (['customer', 'problem', 'competitor', 'idea', 'feature'] as CardType[])
+    .map((t) => [t, cards.filter((c) => c.type === t).length] as const)
+    .filter(([, n]) => n)
+    .map(([t, n]) => `${n} ${t}${n > 1 ? 's' : ''}`)
+    .join(' · ')
+  const moveTo = (to: (c: Card) => [number, number]) => {
+    const moves = cards.map((c) => ({ card: c, to: to(c).map(snap) as [number, number] })).filter((m) => m.to[0] !== m.card.x || m.to[1] !== m.card.y)
+    if (moves.length) void moveCards(wid, moves)
+  }
+  const [l, t] = [Math.min(...cards.map((c) => c.x)), Math.min(...cards.map((c) => c.y))]
+  const [r, b] = [Math.max(...cards.map((c) => c.x + CARD.w)), Math.max(...cards.map((c) => c.y + CARD.h))]
+  const ALIGN: [string, (c: Card) => [number, number]][] = [
+    ['left', (c) => [l, c.y]],
+    ['centre', (c) => [(l + r) / 2 - CARD.w / 2, c.y]],
+    ['right', (c) => [r - CARD.w, c.y]],
+    ['top', (c) => [c.x, t]],
+    ['middle', (c) => [c.x, (t + b) / 2 - CARD.h / 2]],
+    ['bottom', (c) => [c.x, b - CARD.h]],
+  ]
+  // Evenly from the first to the last, in their order along that way.
+  const spread = (axis: 0 | 1) => {
+    const sorted = [...cards].sort((p, q) => (axis ? p.y - q.y : p.x - q.x))
+    const [a, z] = axis ? [sorted[0].y, sorted[sorted.length - 1].y] : [sorted[0].x, sorted[sorted.length - 1].x]
+    const at = new Map(sorted.map((c, i) => [c.id, a + ((z - a) * i) / (sorted.length - 1)]))
+    moveTo((c) => (axis ? [c.x, at.get(c.id)!] : [at.get(c.id)!, c.y]))
+  }
+  const all = cards[0].tags?.filter((tag) => cards.every((c) => c.tags?.includes(tag))) ?? []
+  const [adding, setAdding] = useState<string | null>(null)
+  const retag = (tag: string, on: boolean) =>
+    void updateCards(
+      wid,
+      cards.map((c) => {
+        const tags = on ? [...new Set([...(c.tags ?? []), tag])] : (c.tags ?? []).filter((x) => x !== tag)
+        return { card: c, fields: { tags: tags.length ? tags : undefined } }
+      }),
+      on ? `tag ${cards.length} cards` : `untag ${cards.length} cards`,
+    )
+  return (
+    <>
+      <div className={styles.under}>{kinds}</div>
+      <PanelSection n={1} name="line up">
+        <div className={styles.pills}>
+          {ALIGN.map(([name, to]) => (
+            <button key={name} className={styles.pill} disabled={!editor} onClick={() => moveTo(to)}>
+              {name}
+            </button>
+          ))}
+        </div>
+      </PanelSection>
+      <PanelSection n={2} name="space out">
+        <div className={styles.pills}>
+          <button className={styles.pill} disabled={!editor || cards.length < 3} onClick={() => spread(0)}>
+            ↔ across
+          </button>
+          <button className={styles.pill} disabled={!editor || cards.length < 3} onClick={() => spread(1)}>
+            ↕ down
+          </button>
+        </div>
+      </PanelSection>
+      <PanelSection n={3} name="tags" count={all.length ? 'on all of them' : undefined} add={editor ? { label: 'tag', onClick: () => setAdding('') } : undefined} empty={!all.length && adding === null}>
+        <div className={styles.tags}>
+          {all.map((tag) => (
+            <span key={tag} className={styles.chip}>
+              #{tag}
+              {editor && (
+                <button className={styles.chipX} title="Take it off all of them" onClick={() => retag(tag, false)}>
+                  ×
+                </button>
+              )}
+            </span>
+          ))}
+          {adding !== null && (
+            <input
+              className={`${styles.input} ${styles.tagInput}`}
+              autoFocus
+              placeholder="tag"
+              value={adding}
+              maxLength={40}
+              onChange={(e) => setAdding(e.target.value)}
+              onBlur={() => setAdding(null)}
+              onKeyDown={(e) => {
+                e.stopPropagation()
+                const tag = adding.trim().replace(/^#/, '')
+                if (e.key === 'Enter' && tag) (retag(tag, true), setAdding(''))
+                if (e.key === 'Escape') setAdding(null)
+              }}
+            />
+          )}
+        </div>
+      </PanelSection>
+    </>
   )
 }
 
