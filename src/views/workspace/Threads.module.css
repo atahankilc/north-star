@@ -81,7 +81,9 @@
 
 /* What it's on (and where), faint, as the chat's model name. */
 .title {
+  display: flex;
   flex: 1;
+  align-items: baseline;
   min-width: 0;
   overflow: hidden;
   color: var(--fg-faint);
@@ -436,32 +438,67 @@
 }
 
 /* Where the thread is, after what it's on. */
-.titleWhere {
-  color: var(--fg-faint);
+.titleWhat {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Go there (D-199): a target in the thread's header, an icon alone, cyan. */
+.titleWhere {
+  flex: none;
+  color: var(--fg-faint);
+  white-space: pre;
+}
+
+/* Go there (D-220): the where in the header, in brackets as the other actions, its ↗ a size up; cyan on hover. */
 .goThere {
   display: inline-flex;
   flex: none;
-  align-items: center;
-  justify-content: center;
-  align-self: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid color-mix(in srgb, var(--accent-cyan) 60%, transparent);
+  align-items: baseline;
+  gap: 0.5ch;
+  max-width: 60%;
+  margin-left: var(--space-3);
+  padding: 2px 0;
+  border: 0;
   background: none;
-  color: var(--accent-cyan);
+  color: var(--fg-dim);
+  font: inherit;
   cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.goThere::before,
+.goThere::after {
+  flex: none;
+  color: var(--line-hover);
+}
+
+.goThere::before {
+  content: '[';
+  margin-right: -0.5ch;
+}
+
+.goThere::after {
+  content: ']';
+  margin-left: -0.5ch;
+}
+
+.goThereName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goThereMark {
+  flex: none;
+  font-size: var(--text-md);
+  line-height: 0;
 }
 
 .goThere:hover,
 .goThere:focus-visible {
   outline: none;
-  background: var(--accent-cyan);
-  color: var(--on-accent);
+  color: var(--accent-cyan);
 }
 
 .views {

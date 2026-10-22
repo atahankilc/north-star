@@ -3109,8 +3109,8 @@ categories shown like B, not in a card, and the features under them not indented
   picked) and breaks apart as it closes; the widths just change. A first try slid the tab up from the edge and the
   halves' widths open: the user turned it down ("bizim kareli animasyonu kullan, yeni animasyon türetme"). Reduced
   motion: none of it. Go there moved
-  from its own row under the header into the header: a cyan framed target icon alone (22 px), after the title, which
-  now reads `heading "Pricing" · on the canvas` (the place faint). Esc: the thread's handler takes the key
+  from its own row under the header into the header, after the title, which now reads `heading "Pricing" · on the
+  canvas` (the place faint). Its look, a cyan framed target icon, was changed by D-220. Esc: the thread's handler takes the key
   (`preventDefault`), so the list's never closes with it, whichever listened first.
 - *User:* "canvas üstünde thread componentlerini sil, zaten bir panel yapıp koyduk sol alta boşuna mı? … liste kapanırsa
   ikisi de kapanır, thread kapanırsa liste açık kalmaya devam edebilir", "go there butonunu üst sectiona taşı ve sadece
@@ -3592,3 +3592,19 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): a click on a card opens it cell by cell, another card swaps its content without a
   rebuild, a card under it glides clear, with `beside` set it sits at the right of the plane's part, Escape closes it;
   no console errors; build.
+
+### D-220 · 2026-10-22 · Accepted (changes D-199's go there)
+- *Decision:* the thread header's go there is no longer a cyan framed target icon. The place in the header is the
+  button, bracketed like the other actions: `[on the canvas ↗]`, grey as they are, the `↗` always there and a size up
+  (`--text-md`), all of it cyan on hover or focus. No ` · ` before it: the bracket parts it from the title. When the
+  line is short of room, what it's on is cut with `…` first; the place stays whole.
+- *Why:* every other control in that header is bracketed mono text (`[all threads]`, `[resolve]`, `[delete]`, `[×]`);
+  a 22 px cyan box with an SVG didn't match in shape, colour, size or line. The place is already written there, so
+  making it the link takes a control away.
+- *Alternatives:* `[↗ go there]` as its own action; a bracketed glyph `[⌖]`; the same icon unframed at text size.
+  The user picked the place as the link ("o icon buttonu diğer buttonlarla çok uyuşmuyo"). First built unbracketed,
+  faint, the `↗` only on hover; the user then asked for a bigger arrow and brackets ("oku daha büyük yapabiliriz bence.
+  Bir de bunun bir buton olduğunu gösterelim. diğerleri gibi köşeli paranteze koy").
+- *Verified* headless (emulators): at rest the header reads `[all threads] heading "Pri… [on the canvas ↗] [resolve]
+  [delete] [×]`; hovered, the place and arrow turn cyan; a click glides the canvas to the heading; no console errors;
+  typecheck.

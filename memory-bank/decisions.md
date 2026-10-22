@@ -303,8 +303,8 @@ piece; check them with the user then.
   (kept per browser). Nothing opens on the canvas itself: list and thread are two halves that open apart (D-199); a chip
   or right-click → comment opens only the thread, `[all threads]` in it opens the list beside; closing the list closes
   both, closing the thread (×, Esc) leaves the list. The tab, and each half on its own, builds cell by cell as it opens and
-  breaks apart as it closes (D-034's cells, no other motion). Go there: a cyan target
-  icon alone in the thread's header, after `what · on where`. Bottom-left corner, top to bottom:
+  breaks apart as it closes (D-034's cells, no other motion). Go there: the place in the thread's
+  header is a bracketed action like the rest, `[on the canvas ↗]`, the `↗` a size up, cyan on hover; no icon (D-220). Bottom-left corner, top to bottom:
   people here (squares, a column, follow on click), threads button, a rule, your square, the gear; the threads panel
   sticks to the bottom left beside them. Cursors sent 10×/s, drawn 200 ms behind; following glides only when their cursor
   leaves the middle (±22 %), eased by time; zooming doesn't stop following.

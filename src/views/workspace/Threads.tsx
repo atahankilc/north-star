@@ -239,8 +239,8 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
       onKeyDown={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.stopPropagation()}
     >
-      {/* As the assistant's chat (D-081): what it's on and where, faint; a target that goes there (D-199); actions in
-          brackets; [×]. With the list shut, `all threads` opens it beside. */}
+      {/* As the assistant's chat (D-081): what it's on and where, faint; the where is what goes there, `[on … ↗]`
+          as the other actions, cyan on hover (D-220); actions in brackets; [×]. With the list shut, `all threads` opens it beside. */}
       <header className={styles.head}>
         {onList && (
           <button className={styles.action} onClick={onList}>
@@ -248,19 +248,20 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
           </button>
         )}
         <span className={styles.title} title={where ? `${title} · on ${where}` : title}>
-          {resolved ? '✓ ' : ''}
-          {title}
-          {where && <span className={styles.titleWhere}> · on {where}</span>}
+          <span className={styles.titleWhat}>
+            {resolved ? '✓ ' : ''}
+            {title}
+          </span>
+          {where && !onShow && <span className={styles.titleWhere}> · on {where}</span>}
+          {onShow && (
+            <button className={styles.goThere} title={`go there${where ? ` (on ${where})` : ''}`} onClick={onShow}>
+              <span className={styles.goThereName}>{where ? `on ${where}` : 'go there'}</span>
+              <span className={styles.goThereMark} aria-hidden>
+                ↗
+              </span>
+            </button>
+          )}
         </span>
-        {onShow && (
-          <button className={styles.goThere} title={`go there${where ? ` (on ${where})` : ''}`} aria-label="Go there" onClick={onShow}>
-            <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
-              <circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-              <circle cx="8" cy="8" r="1.5" fill="currentColor" />
-              <path d="M8 0v3M8 13v3M0 8h3M13 8h3" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-          </button>
-        )}
         <span className={styles.actions}>
           {thread && (
             <button className={styles.action} onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>
