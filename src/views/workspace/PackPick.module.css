@@ -1,0 +1,65 @@
+/* Picking a package's cards (D-240): a strip in the console's look a little over the focus dock, in the middle. */
+.strip {
+  position: absolute;
+  bottom: calc(7px + var(--space-4) + 9px + var(--space-2));
+  left: 50%;
+  z-index: 12;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 7px var(--space-3) 8px;
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--space-4);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  cursor: default;
+}
+
+.strip::before,
+.strip::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  width: 6px;
+  height: 6px;
+  border-top: 1px solid var(--accent-blue);
+  pointer-events: none;
+}
+
+.strip::before {
+  left: -1px;
+  border-left: 1px solid var(--accent-blue);
+}
+
+.strip::after {
+  right: -1px;
+  border-right: 1px solid var(--accent-blue);
+}
+
+.kind {
+  color: var(--accent-blue);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.make {
+  composes: small from '../../ui/AsciiButton.module.css';
+  color: var(--accent-blue);
+}
+
+.make:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+.stop {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
+.esc {
+  color: var(--fg-faint);
+}

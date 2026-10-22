@@ -23,9 +23,9 @@ export type Folds = {
   hidden: Map<string, string>
   // A shown folded feature's parts, depth first, with how deep each sits.
   rows: Map<string, { card: Card; depth: number }[]>
-  // How many parts under a feature, all the way down; a package's members.
+  // How many parts under a feature, all the way down; a package's members with their parts.
   count: Map<string, number>
-  // A package's members on this plane (D-239).
+  // A package's members on this plane with their parts (D-239).
   members: Map<string, Card[]>
 }
 
@@ -64,16 +64,34 @@ export function foldsOf(cards: Card[], edges: Edge[]): Folds {
     rows.set(c.id, list)
     for (const r of list) hidden.set(r.card.id, c.id)
   }
-  // A package (D-239): its members, the ones on this plane; folded, they're its rows and hidden in it (a member's own
-  // folded parts stay inside that member).
+  // A package (D-239): its members, the ones on this plane, each with its parts all the way down (a parent put in a
+  // package brings its parts). Folded, they're its rows, a part under its parent, and hidden in it; a member's own
+  // folded parts stay inside that member (no rows of their own).
   const members = new Map<string, Card[]>()
   for (const p of cards) {
     if (p.type !== 'package') continue
-    const list = (p.memberIds ?? []).map((id) => byId.get(id)).filter((c): c is Card => !!c && c.type !== 'package')
+    const tree: { card: Card; depth: number }[] = []
+    const seen = new Set<string>()
+    const add = (c: Card, depth: number) => {
+      if (seen.has(c.id) || depth > 8) return
+      seen.add(c.id)
+      tree.push({ card: c, depth })
+      for (const k of kids.get(c.id) ?? []) add(k, depth + 1)
+    }
+    // A part also named on its own goes under its parent when the parent's in too.
+    const named = (p.memberIds ?? []).map((id) => byId.get(id)).filter((c): c is Card => !!c && c.type !== 'package')
+    const inPkg = new Set(named.map((c) => c.id))
+    const top = named.filter((c) => {
+      for (let up = parentOf.get(c.id); up; up = parentOf.get(up)) if (inPkg.has(up)) return false
+      return true
+    })
+    for (const c of top) add(c, 0)
+    const list = tree.map((r) => r.card)
     members.set(p.id, list)
     count.set(p.id, list.length)
     if (!p.folded || !list.length) continue
-    rows.set(p.id, list.map((card) => ({ card, depth: 0 })))
+    // What sits inside a folded member isn't a row of the package: it's in that member's own rows.
+    rows.set(p.id, tree.filter((r) => !hidden.has(r.card.id)))
     for (const m of list) if (!hidden.has(m.id)) hidden.set(m.id, p.id)
   }
   return { parentOf, hidden, rows, count, members }
@@ -109,4 +127,33 @@ export function packageBox(members: Box[]): Box | null {
   const [l, t] = [Math.min(...members.map((b) => b.x)), Math.min(...members.map((b) => b.y))]
   const [r, b] = [Math.max(...members.map((m) => m.x + m.w)), Math.max(...members.map((m) => m.y + m.h))]
   return { x: l - FRAME_PAD, y: t - FRAME_PAD - BAND_H, w: r - l + 2 * FRAME_PAD, h: b - t + 2 * FRAME_PAD + BAND_H }
+}
+
+// A package's cards (D-239): the ones named in it, each followed by its parts all the way down (same-type `part of`),
+// with how deep each sits and whether it was named; each card once.
+export function packageTree(ids: string[], cards: Card[], edges: Edge[]): { card: Card; depth: number; named: boolean }[] {
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  const kids = new Map<string, Card[]>()
+  for (const e of edges) {
+    if (e.kind !== 'part-of') continue
+    const [a, b] = [byId.get(e.fromId), byId.get(e.toId)]
+    if (a && b && a.type === b.type && a.type !== 'competitor' && a.type !== 'package') kids.set(b.id, [...(kids.get(b.id) ?? []), a])
+  }
+  const named = new Set(ids)
+  const out: { card: Card; depth: number; named: boolean }[] = []
+  const seen = new Set<string>()
+  const add = (c: Card, depth: number) => {
+    if (seen.has(c.id) || depth > 8) return
+    seen.add(c.id)
+    out.push({ card: c, depth, named: named.has(c.id) })
+    for (const k of (kids.get(c.id) ?? []).sort((p, q) => p.y - q.y || p.x - q.x)) add(k, depth + 1)
+  }
+  // A named part goes under its parent when that's in too.
+  const under = new Set([...kids.entries()].filter(([p]) => named.has(p)).flatMap(([, list]) => list.map((k) => k.id)))
+  const isUnder = (id: string): boolean => under.has(id) || [...kids.entries()].some(([p, list]) => list.some((k) => k.id === id) && (named.has(p) || isUnder(p)))
+  for (const id of ids) {
+    const c = byId.get(id)
+    if (c && c.type !== 'package' && !isUnder(id)) add(c, 0)
+  }
+  return out
 }

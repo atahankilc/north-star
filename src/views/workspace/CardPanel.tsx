@@ -30,6 +30,7 @@ import { glide, useCanvasView } from '../../state/canvasView'
 import { useAutoGrow } from '../../ui/autoGrow'
 import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../ui/SidePanel'
 import { factsOf } from './cardFacts'
+import { packageTree } from './cardInside'
 import { labelBox } from './TextItems'
 import { kindOf, labelRef, moveMany, type Label } from '../../data/labels'
 import { clipboard, packageThese, setSelection } from './selection'
@@ -452,26 +453,33 @@ function PackagePlan({ n, card, editor }: P) {
 }
 
 // What a package holds (D-239): each a row in its type's colour that goes to it, `×` takes it out (the card stays);
-// `+ card` adds one from its plane.
+// a member's parts come with it, under it (taken out with it); `+ card` adds one from its plane.
 function Holds({ n, card, cards, editor }: P) {
-  const { wid } = useWs()
+  const { wid, edges } = useWs()
   const [picking, setPicking] = useState(false)
   const ids = card.memberIds ?? []
-  const held = ids.map((id) => cards.find((c) => c.id === id)).filter((c): c is Card => !!c)
+  const tree = packageTree(ids, cards, edges)
   const set = (next: string[]) => void updateCard(wid, card, { memberIds: next }, 'contents of')
   return (
-    <PanelSection n={n} name="holds" count={held.length || undefined} add={editor && ids.length < 60 ? { label: 'card', onClick: () => setPicking(true) } : undefined} empty={!held.length && !picking}>
-      {held.map((c) => (
-        <div key={c.id} className={styles.part}>
-          <span className={styles.tree} style={{ color: TONE[c.type] }}>
-            ▌
+    <PanelSection n={n} name="holds" count={tree.length || undefined} add={editor && ids.length < 60 ? { label: 'card', onClick: () => setPicking(true) } : undefined} empty={!tree.length && !picking}>
+      {tree.map(({ card: c, depth }) => (
+        <div key={c.id} className={styles.part} style={{ paddingLeft: depth * 16 }}>
+          <span className={styles.tree} style={depth ? undefined : { color: TONE[c.type] }}>
+            {depth ? '└' : '▌'}
           </span>
           <button className={styles.to} onClick={() => goToCard(c)}>
             {c.title || PLACEHOLDER[c.type]}
           </button>
           <span className={styles.type}>{c.validation ?? c.priority ?? c.type}</span>
-          {editor && (
-            <button className={styles.x} title="Take it out of the package (the card stays)" onClick={() => set(ids.filter((x) => x !== c.id))}>
+          {editor && depth === 0 && (
+            <button
+              className={styles.x}
+              title="Take it out of the package, with its parts (the cards stay)"
+              onClick={() => {
+                const out = new Set(packageTree([c.id], cards, edges).map((r) => r.card.id))
+                set(ids.filter((x) => !out.has(x)))
+              }}
+            >
               ×
             </button>
           )}
@@ -482,7 +490,7 @@ function Holds({ n, card, cards, editor }: P) {
           card={card}
           cards={cards.filter((c) => c.pieceId === card.pieceId)}
           types={['customer', 'problem', 'competitor', 'idea', 'feature']}
-          exclude={new Set([card.id, ...ids])}
+          exclude={new Set([card.id, ...tree.map((r) => r.card.id)])}
           make={false}
           onPick={(c) => (setPicking(false), set([...ids, c.id]))}
           onClose={() => setPicking(false)}

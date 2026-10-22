@@ -110,7 +110,7 @@ piece; check them with the user then.
   stack 8 px over the dock, linked nearest, each within the plane's own part.
 - Right-click in a focused plane (D-237): a card's open / fold / copy / duplicate / delete, text's edit / copy / duplicate /
   delete, a link's label / turn round / kind / remove, several's copy / duplicate / delete; on the plane, paste and add here.
-- Packages on planes (D-239): made from a selection only (`package these`); unfolded, a blue frame round its members with
+- Packages on planes (D-239): made from a selection (`package these`) or the `+`'s `package` (D-240: click or box cards, Enter); a member brings its parts; unfolded, a blue frame round its members with
   a band on top that is the package (name, rating, cells, `[−]`; drags them all, opens its panel); folded, a blue card
   holding them as rows, `[+] N inside`; panel: rating, holds, links, tags, notes, confidence from what it holds.
 - A competitor's features are names beside its card (first four, `+N more`, in the open list's order); selected (never on hover), the full list:

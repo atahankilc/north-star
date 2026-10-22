@@ -31,6 +31,8 @@ type State = {
   labelSelected: string | null
   labelEditing: string | null
   drawing: string | null
+  // A package being picked in a plane (D-240): its id while clicks and boxes pick cards for it.
+  packing: string | null
   // Links on the focused plane (D-207): the one selected, the card hovered (its links light up), a link being drawn
   // from a card's `›` (its end follows the pointer, in plane px) and whether the selected link's label takes the cursor.
   linkSelected: string | null
@@ -94,7 +96,7 @@ export function planeArea() {
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({

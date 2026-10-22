@@ -589,3 +589,9 @@
   text-decoration-color: var(--fg-faint);
   text-underline-offset: 2px;
 }
+
+/* Picking a package's cards (D-240): clicks pick, a drag boxes them in. */
+.layer[data-packing='true'],
+.layer[data-packing='true'] .box {
+  cursor: cell;
+}

@@ -258,6 +258,8 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
             ? [
                 { key: 'cards', heading: 'card' },
                 ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
+                // A package (D-240): picked from the plane's cards, as a section is drawn.
+                { key: 'package', label: 'package', glyph: '▣', letter: 'k', tone: TYPE_ACCENT.package, hint: 'select', onSelect: () => useCanvasView.setState({ packing: plane, drawing: null }) },
                 ...text,
               ]
             : [

@@ -26,6 +26,7 @@ import type { Label } from '../../data/labels'
 import { labelBox, TextItems } from './TextItems'
 import { PeerRing } from './collab'
 import { ThreadChip, threadOn } from './Threads'
+import { PackPick } from './PackPick'
 import { CardPanel } from './CardPanel'
 import { GRID, snap } from '../../data/grid'
 import { useRevealed } from '../../state/curtain'
@@ -190,13 +191,15 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   usePlaneKeys(live, editor, cards, labels, edges)
   const [box, setBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
   // Alt+drag on the plane draws a box: the cards and text it touches are selected (with shift, added).
+  // Picking a package's cards (D-240): a drag on the plane draws the box without alt, adding to what's picked.
+  const packing = useCanvasView((s) => live && !!s.packing && s.packing === params.get('focus'))
   const boxSelect = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!live || !e.altKey || e.button !== 0) return
+    if (!live || !(e.altKey || packing) || e.button !== 0) return
     e.stopPropagation()
     const r = e.currentTarget.getBoundingClientRect()
     const toPlane = (ev: { clientX: number; clientY: number }) => [(ev.clientX - r.left - view.ox) / view.zoom, (ev.clientY - r.top - view.oy) / view.zoom] as const
     const [x0, y0] = toPlane(e)
-    const keep = e.shiftKey ? selectedIds() : []
+    const keep = e.shiftKey || packing ? selectedIds() : []
     let last = { x0, y0, x1: x0, y1: y0 }
     setBox(last)
     const move = (ev: PointerEvent) => {
@@ -212,7 +215,10 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
       const [l, t, rr, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
       if (rr - l < 3 && b - t < 3) return
       const touches = (q: { x: number; y: number; w: number; h: number }) => q.x < rr && q.x + q.w > l && q.y < b && q.y + q.h > t
-      const hit = [...shown.filter((c) => !folds.hidden.has(c.id) && touches(boxOf(c))).map((c) => c.id), ...labels.filter((x) => touches(labelBox(x))).map((x) => x.id)]
+      const hit = [
+        ...shown.filter((c) => !folds.hidden.has(c.id) && !(packing && c.type === 'package') && touches(boxOf(c))).map((c) => c.id),
+        ...(packing ? [] : labels.filter((x) => touches(labelBox(x))).map((x) => x.id)),
+      ]
       setSelection([...new Set([...keep, ...hit])])
     }
     window.addEventListener('pointermove', move)
@@ -220,7 +226,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     window.addEventListener('pointercancel', up)
   }
   return (
-    <div className={styles.layer} data-live={live || undefined} onPointerDown={boxSelect}>
+    <div className={styles.layer} data-live={live || undefined} data-packing={packing || undefined} onPointerDown={boxSelect}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <TextItems labels={labels} layer="frames" live={live} editor={editor} zoom={view.zoom} carry={carry} />
         <LinkLines links={links} live={live} zoom={view.zoom} ghost={ghost} />
@@ -241,6 +247,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
             carries={carriedBy(c.id)}
             place={c.type === 'package' && !c.folded ? boxOf(c) : undefined}
             members={c.type === 'package' ? folds.members.get(c.id) : undefined}
+            counts={c.type === 'package' ? folds.count : undefined}
             features={c.type === 'competitor' ? featuresOf.get(c.id) : undefined}
             matched={matched}
             open={c.type === 'competitor' && openIds.has(c.id) && detail === 'full'}
@@ -256,7 +263,8 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
         <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
         {live && <GuideLines zoom={view.zoom} />}
       </div>
-      {live && <CardPanel cards={cards} labels={labels} editor={editor} />}
+      {live && !packing && <CardPanel cards={cards} labels={labels} editor={editor} />}
+      {packing && <PackPick cards={cards} />}
     </div>
   )
 }
@@ -374,6 +382,8 @@ type BoxProps = {
   // An unfolded package (D-239): its box (band and frame round its members), and its members.
   place?: Box
   members?: Card[]
+  // How many parts each card has (a folded package's members say what they hold).
+  counts?: Map<string, number>
 }
 
 function CardBox(props: BoxProps) {
@@ -393,6 +403,8 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
   const press = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!live || e.button !== 0) return
     e.stopPropagation()
+    // Picking a new package's cards: a package isn't one of them.
+    if (useCanvasView.getState().packing) return
     if (e.shiftKey) return toggleSelected(card.id)
     setSelection([card.id])
     if (!editor || !members.length) return
@@ -443,7 +455,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
   )
 }
 
-function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open }: BoxProps) {
+function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open, counts }: BoxProps) {
   const { wid, threads, cards, edges } = useWs()
   const face = useRef<HTMLDivElement>(null)
   const revealed = useRevealed()
@@ -490,8 +502,10 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
     if (!live || e.button !== 0) return
     // The plane would pan.
     e.stopPropagation()
-    // Shift: in or out of the selection, no drag (D-227).
-    if (e.shiftKey) return toggleSelected(card.id)
+    // Shift, or picking a package's cards (D-240): in or out of the selection, no drag (D-227).
+    const packing = !!useCanvasView.getState().packing
+    if (packing && card.type === 'package') return
+    if (e.shiftKey || packing) return toggleSelected(card.id)
     // Pressed inside a selection, the whole of it moves (D-229); otherwise this card alone is picked.
     if (useCanvasView.getState().cardMulti.includes(card.id)) {
       if (!editor) return
@@ -603,6 +617,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
             editor={live && editor}
             parts={parts}
             rows={rows}
+            inPkg={counts}
             features={features}
             matched={matched}
             open={open && !drag}
@@ -626,9 +641,9 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
   )
 }
 
-type FullProps = { card: Card; facts?: Facts; editor: boolean; parts: number; rows?: { card: Card; depth: number }[]; features?: CompetitorFeature[]; matched: Set<string>; open: boolean }
+type FullProps = { card: Card; facts?: Facts; editor: boolean; parts: number; rows?: { card: Card; depth: number }[]; inPkg?: Map<string, number>; features?: CompetitorFeature[]; matched: Set<string>; open: boolean }
 
-function FullCard({ card, facts, editor, parts, rows, features, matched, open }: FullProps) {
+function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, open }: FullProps) {
   const { wid } = useWs()
   const tags = card.tags ?? []
   const inside = !!rows || open
@@ -677,20 +692,26 @@ function FullCard({ card, facts, editor, parts, rows, features, matched, open }:
       {rows && (
         <div className={styles.inner}>
           {rows.map((r, i) => {
-            // A package's members (D-239): a bar in each one's type colour, its status or priority.
-            if (card.type === 'package')
+            // A package's members (D-239): a bar in each one's type colour, its status or priority; a member's parts
+            // under it as a tree, or `+N` on it when it's folded them in.
+            if (card.type === 'package') {
+              const tucked = r.card.folded ? (inPkg?.get(r.card.id) ?? 0) : 0
               return (
                 <button
                   key={r.card.id}
                   className={styles.memberRow}
-                  style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type] }}
+                  style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type], paddingLeft: r.depth * 12 }}
                   onClick={() => useCanvasView.setState({ cardSelected: r.card.id, labelSelected: null, linkSelected: null })}
                 >
-                  <i aria-hidden />
+                  {r.depth > 0 ? <span className={styles.partTree}>└</span> : <i aria-hidden />}
                   <span className={styles.miniName}>{r.card.title || PLACEHOLDER[r.card.type]}</span>
-                  <span className={styles.miniAv}>{r.card.validation ?? r.card.priority}</span>
+                  <span className={styles.miniAv}>
+                    {tucked ? `+${tucked} · ` : ''}
+                    {r.card.validation ?? r.card.priority}
+                  </span>
                 </button>
               )
+            }
             const last = i === rows.length - 1 || rows[i + 1].depth < r.depth || (rows.slice(i + 1).find((x) => x.depth <= r.depth)?.depth ?? -1) < r.depth
             return (
               <button

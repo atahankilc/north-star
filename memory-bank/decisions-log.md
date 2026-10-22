@@ -4070,3 +4070,22 @@ categories shown like B, not in a card, and the features under them not indented
   panel; the band dragged all four (100, 50); `[−]` folded them into a card at the band; the card dragged them all;
   `[+] 4 inside` laid them out; a click on the band opened the panel (`1 problem · 1 idea · 2 features · confidence
   low`); four ⌘Z put everything back; no console errors; tsc.
+
+### D-240 · 2026-10-22 · Accepted (adds to D-239)
+- *Decision:* a package also comes from the side nav's `+` in a focused plane: `package` (blue, `[k]`, `select`) starts
+  picking, as `section` starts drawing: clicks put cards in or out, a drag on the plane boxes them in (no alt), a
+  package isn't picked, what was selected starts picked; a strip in the console's look (blue corner marks) over the
+  focus dock says `PACKAGE  2 picked  [package 2] [cancel] esc`; Enter or `[package N]` makes it (selected, its
+  panel), Escape stops; the right panel stays shut meanwhile; the pointer a cell cursor. And a card put in a package
+  brings its parts (same-type `part of`, all the way down): they're in its frame, move with it, fold into it (a part
+  under its parent, `└`; a folded member's parts stay in it, `+N` on its row), count in `N inside`, its panel's
+  `holds` (under their parent; `×` only on what was put in, taking its parts out with it) and its facts.
+- *Why:* the user: "package folded olmuş featurelara respect etmiyor … Eğer bir parent feature ı koyuyorsam package a,
+  onun partları da bu package a dahil olmalı"; "package yapmayı daha intuitive yapalım. + düğmesine ekleyelim ve
+  sectionda oluştururken nasıl draw diyosak, bunda da select diyelim".
+- *Code:* `packing` in canvasView, `PackPick.tsx`; cardInside's `packageTree` and package rows with depth; parts are
+  derived, never written into `memberIds`.
+- *Verified* headless (emulators): `+` → package, clicked an idea and a feature with two parts, Enter: `Package 1`
+  with two named members framed with the parts too; panel `holds 4` with the parts under their parent; folded, rows
+  `Deposit, Card hold, └ Hold part A, └ Hold part B`; no console errors; tsc. Not tried: the box drag while picking, a
+  folded parent's `+N`.

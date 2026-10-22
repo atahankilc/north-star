@@ -4,6 +4,7 @@
 import type { Card } from '../../data/cards'
 import type { WorkspaceData } from '../../data/workspaceData'
 import { FOR } from '../../data/edges'
+import { packageTree } from './cardInside'
 
 export type Proof = { supports: number; contradicts: number; clash: boolean }
 // `clash`: the status and the evidence disagree (also with no evidence at all), the head in magenta.
@@ -36,7 +37,6 @@ export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'c
   for (const f of data.competitorFeatures) featureCount.set(f.competitorId, (featureCount.get(f.competitorId) ?? 0) + 1)
   const n = (k: number, one: string) => `${k} ${one}${k === 1 ? '' : 's'}`
 
-  const byId = new Map(cards.map((c) => [c.id, c]))
   const out = new Map<string, Facts>()
   for (const c of cards) {
     // Status and evidence (D-137): `!` when they disagree.
@@ -66,7 +66,8 @@ export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'c
         break
       case 'package': {
         // What it holds by type, in chain order; its rating and how sure we are (D-239).
-        const held = (c.memberIds ?? []).map((id) => byId.get(id)).filter((k): k is Card => !!k)
+        // Its members' parts are in it too.
+        const held = packageTree(c.memberIds ?? [], cards, edges).map((r) => r.card)
         const sure = confidenceOf(held)
         out.set(c.id, {
           head: [c.impact && `impact ${c.impact}`, c.effort].filter(Boolean).join(' · ') || undefined,
