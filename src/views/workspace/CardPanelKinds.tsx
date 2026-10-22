@@ -10,6 +10,7 @@ import {
   removeCompetitorFeature,
   updateCompetitorFeature,
   type CompetitorFeature,
+  type NewCompetitorFeature,
 } from '../../data/competitorFeatures'
 import { deleteEdge, FOR } from '../../data/edges'
 import { mismatch } from '../../data/evidence'
@@ -125,7 +126,7 @@ export function CompetitorFeatures({ n, card, cards, editor }: P) {
   const { wid, competitorFeatures, comparisons } = useWs()
   const list = competitorFeatures.filter((f) => f.competitorId === card.id).sort((a, b) => a.createdAt - b.createdAt)
   const [open, setOpen] = useState<string | null>(null)
-  const [adding, setAdding] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
   const ours = (f: CompetitorFeature) => {
     const c = comparisons.find((x) => x.competitorFeatureId === f.id)
     return c ? cards.find((k) => k.id === c.featureId) : undefined
@@ -140,8 +141,8 @@ export function CompetitorFeatures({ n, card, cards, editor }: P) {
       n={n}
       name="features"
       count={list.length ? `${list.length}${matched ? ` · ${matched} match ours` : ''}` : undefined}
-      add={editor ? { label: 'feature', onClick: () => setAdding('') } : undefined}
-      empty={!list.length && adding === null}
+      add={editor ? { label: 'feature', onClick: () => setAdding(true) } : undefined}
+      empty={!list.length && !adding}
     >
       {order.map((cat) => (
         <div key={cat || '-'}>
@@ -160,25 +161,71 @@ export function CompetitorFeatures({ n, card, cards, editor }: P) {
           })}
         </div>
       ))}
-      {adding !== null && (
-        <input
-          className={styles.input}
-          autoFocus
-          placeholder="its name (enter adds; `category: name` files it)"
-          value={adding}
-          maxLength={200}
-          onChange={(e) => setAdding(e.target.value)}
-          onBlur={() => setAdding(null)}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Escape') setAdding(null)
-            const m = /^\s*([^:]{1,100}):\s*(.+)$/.exec(adding)
-            const [cat, name] = m ? [m[1].trim(), m[2].trim()] : [undefined, adding.trim()]
-            if (e.key === 'Enter' && name) (void addCompetitorFeature(wid, card.id, name, cat), setAdding(''))
+      {adding && (
+        <NewFeature
+          card={card}
+          cards={cards}
+          categories={categories}
+          onDone={(fields, oursId) => {
+            setAdding(false)
+            if (fields) void addCompetitorFeature(wid, card.id, fields, oursId)
           }}
         />
       )}
     </PanelSection>
+  )
+}
+
+// Adding one shows the whole of it, as evidence does (the user): its name, about, category (the ones in use offered),
+// how it's offered, which of ours it matches, where it was seen. Enter in a line, or `[add]`, adds it.
+function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Card[]; categories: string[]; onDone: (f: NewCompetitorFeature | null, oursId: string | null) => void }) {
+  const [f, setF] = useState<NewCompetitorFeature>({ name: '' })
+  const [ours, setOurs] = useState('')
+  const about = useRef<HTMLTextAreaElement>(null)
+  useAutoGrow(about, f.description ?? '')
+  const features = cards.filter((c) => c.type === 'feature' && c.pieceId === card.pieceId)
+  const add = () => (f.name.trim() ? onDone({ ...f, name: f.name.trim(), category: f.category?.trim() || undefined }, ours || null) : undefined)
+  const keys = (e: React.KeyboardEvent) => {
+    e.stopPropagation()
+    if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), add())
+    if (e.key === 'Escape') onDone(null, null)
+  }
+  return (
+    <div className={styles.form}>
+      <input className={styles.input} autoFocus placeholder="its name" value={f.name} maxLength={200} onChange={(e) => setF({ ...f, name: e.target.value })} onKeyDown={keys} />
+      <div className={styles.plan}>
+        <span className={styles.k}>about</span>
+        <textarea ref={about} className={styles.input} rows={1} placeholder="what it does" value={f.description ?? ''} maxLength={20000} onChange={(e) => setF({ ...f, description: e.target.value })} onKeyDown={keys} />
+        <span className={styles.k}>category</span>
+        <div className={styles.cats}>
+          <input className={styles.input} placeholder="booking, operations…" value={f.category ?? ''} maxLength={100} onChange={(e) => setF({ ...f, category: e.target.value })} onKeyDown={keys} />
+          {categories.length > 0 && (
+            <Pills values={categories} value={f.category} editor label="Categories in use" onPick={(v) => setF({ ...f, category: v })} />
+          )}
+        </div>
+        <span className={styles.k}>offered</span>
+        <Pills values={AVAILABILITIES} value={f.availability} editor label="Offered" onPick={(v) => setF({ ...f, availability: v })} />
+        <span className={styles.k}>ours</span>
+        <Select
+          className={styles.select}
+          value={ours}
+          ariaLabel="Our feature it matches"
+          options={[{ value: '', label: 'none' }, ...features.map((c) => ({ value: c.id, label: c.title || 'untitled feature' }))]}
+          onChange={setOurs}
+        />
+        <span className={styles.k}>seen at</span>
+        <input className={styles.input} placeholder="where it was seen" value={f.url ?? ''} maxLength={2000} onChange={(e) => setF({ ...f, url: e.target.value })} onKeyDown={keys} />
+      </div>
+      <div className={styles.formActions}>
+        <button className={styles.small} data-tone="primary" disabled={!f.name.trim()} onClick={add}>
+          add
+        </button>
+        <button className={styles.small} onClick={() => onDone(null, null)}>
+          cancel
+        </button>
+        <span className={styles.hint}>enter adds · esc</span>
+      </div>
+    </div>
   )
 }
 

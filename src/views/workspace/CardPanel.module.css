@@ -525,3 +525,9 @@
 .swatch[data-faint] {
   opacity: 0.5;
 }
+
+.cats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

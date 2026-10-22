@@ -3626,7 +3626,9 @@ categories shown like B, not in a card, and the features under them not indented
 - *A competitor's features* (the basic cards inside it, D-164): by category in grey caps (none first), each row its
   name, how it's offered, `≈ our …` in cyan with a cyan bar when it matches one of ours. A row opens in place (one at a
   time): its name, about, category, offered (free / paid / enterprise / beta), ours (a Select of the plane's features),
-  seen at, `[remove]`. `+ feature` takes a name, `category: name` files it. Which of ours one matches is the old
+  seen at, `[remove]`. `+ feature` opens the whole of it as a form, like evidence (the user: "Add bütün cardı
+  göstersin"): name, about, category (the ones in use as pills), offered, ours, seen at; Enter or `[add]` adds it and
+  its match in one undo step. Which of ours one matches is the old
   matrix's comparison doc (`<feature>_<competitor>`'s `competitorFeatureId`): one of theirs per feature and competitor.
 - *Editing:* the title is typed in place; choices are `[pills]` (a click picks, a click on the picked one clears);
   evidence has a small form (text, for / against, kind, from, when, link; Enter adds), its cell turns it round, its text

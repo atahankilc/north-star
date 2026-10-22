@@ -1,9 +1,9 @@
 // A competitor's features (D-038, D-164): the basic cards inside a competitor, listed by category in its panel (D-221).
 // Which of ours one matches is the old matrix's comparison doc (`<featureId>_<competitorId>`, its `competitorFeatureId`):
 // one of theirs per feature of ours and competitor. Every write is one undo step; typing in one field merges.
-import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+import { collection, deleteDoc, deleteField, doc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from './firebase'
-import { absent, tracked } from './history'
+import { tracked } from './history'
 
 export const AVAILABILITIES = ['free', 'paid', 'enterprise', 'beta'] as const
 export type Availability = (typeof AVAILABILITIES)[number]
@@ -25,11 +25,20 @@ export type Comparison = { id: string; featureId: string; competitorId: string; 
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'competitorFeatures')
 const cmp = (wid: string, featureId: string, competitorId: string) => doc(db(), 'workspaces', wid, 'comparisons', `${featureId}_${competitorId}`)
 
-export function addCompetitorFeature(wid: string, competitorId: string, name: string, category?: string) {
+export type NewCompetitorFeature = Pick<CompetitorFeature, 'name' | 'description' | 'category' | 'availability' | 'url'>
+
+// A new one, whole (D-221: the form shows every field), and which of ours it matches, as one undo step.
+export function addCompetitorFeature(wid: string, competitorId: string, fields: NewCompetitorFeature, oursId: string | null = null) {
   const ref = doc(col(wid))
   const now = Date.now()
-  return tracked('add a competitor feature', [ref], () => setDoc(ref, { competitorId, name, ...(category ? { category } : {}), createdAt: now, updatedAt: now }), {
-    before: absent([ref]),
+  const data: Record<string, unknown> = { competitorId, ...fields, createdAt: now, updatedAt: now }
+  for (const k of Object.keys(data)) if (data[k] === undefined || data[k] === '') delete data[k]
+  const match = oursId ? cmp(wid, oursId, competitorId) : null
+  return tracked('add a competitor feature', match ? [ref, match] : [ref], async () => {
+    const batch = writeBatch(db())
+    batch.set(ref, data)
+    if (match) batch.set(match, { featureId: oursId, competitorId, competitorFeatureId: ref.id }, { merge: true })
+    await batch.commit()
   })
 }
 
