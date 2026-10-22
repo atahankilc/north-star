@@ -1,0 +1,335 @@
+/* A plane card's right panel (D-221), inside the shared shell (src/ui/SidePanel). */
+.title {
+  display: block;
+  cursor: text;
+}
+
+.title[data-empty='true'] {
+  color: var(--placeholder);
+}
+
+.titleField {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  outline: none;
+  resize: none;
+  caret-color: var(--tone);
+}
+
+/* Its quick facts, under the title. */
+.under {
+  padding: 10px 20px 2px;
+  color: var(--fg-dim);
+  font-size: 10px;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+
+.pill {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pill::before {
+  content: '[';
+  color: var(--fg-faint);
+}
+
+.pill::after {
+  content: ']';
+  color: var(--fg-faint);
+}
+
+.pill:hover:not(:disabled) {
+  color: var(--fg);
+}
+
+.pill[aria-pressed='true'] {
+  color: var(--fg-strong);
+}
+
+.pill:disabled {
+  cursor: default;
+}
+
+.warn {
+  margin: 8px 0 0;
+  color: var(--accent-magenta);
+  font-size: 10px;
+}
+
+/* Evidence: cell, text, `×`; where it came from under it. */
+.ev {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 1px 8px;
+  margin-bottom: 8px;
+}
+
+.cell {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  padding: 0;
+  border: 1px solid var(--fg);
+  background: none;
+  cursor: pointer;
+}
+
+.cell[data-filled='true'] {
+  background: var(--fg);
+}
+
+.cell:disabled {
+  cursor: default;
+}
+
+.evText {
+  cursor: text;
+}
+
+.src {
+  grid-column: 2;
+  color: var(--fg-dim);
+  font-size: 10px;
+}
+
+.src a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+}
+
+/* A row's `×`: only while the row is hovered. */
+.x {
+  align-self: start;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--fg-faint);
+  font: inherit;
+  opacity: 0;
+  cursor: pointer;
+}
+
+:is(.ev, .link):hover .x {
+  opacity: 1;
+}
+
+.x:hover {
+  color: var(--accent-magenta);
+}
+
+/* A link row: swatch, kind with its arrow, the other card, its type. */
+.link {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 1px 0;
+}
+
+.swatch {
+  flex: none;
+  align-self: center;
+  width: 10px;
+  height: 3px;
+  background: var(--tone);
+}
+
+.kind {
+  flex: none;
+  width: 86px;
+  color: var(--tone);
+}
+
+.to {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.to:hover {
+  color: var(--fg-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--fg-faint);
+  text-underline-offset: 3px;
+}
+
+.type {
+  flex: none;
+  color: var(--fg-faint);
+  font-size: 10px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  background: var(--chip);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.chipX {
+  display: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-faint);
+  font: inherit;
+  cursor: pointer;
+}
+
+.chip:hover .chipX {
+  display: inline;
+}
+
+.chipX:hover {
+  color: var(--accent-magenta);
+}
+
+.notes {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1.5;
+  outline: none;
+  resize: none;
+}
+
+.notes:focus-visible,
+.input:focus-visible,
+.titleField:focus-visible {
+  outline: none;
+}
+
+.notes::placeholder,
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+/* Small forms in sections: evidence, the card picker, a tag. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 10px;
+  padding: 10px 10px 8px;
+  border-left: 2px solid var(--line-hover);
+  background: var(--bg-raised);
+}
+
+.formRow {
+  display: flex;
+  gap: 10px;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  outline: none;
+  resize: none;
+  color-scheme: dark;
+}
+
+.input:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.formActions {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.small {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
+.hint {
+  margin-left: auto;
+  color: var(--fg-faint);
+  font-size: 10px;
+}
+
+.tagInput {
+  width: 12ch;
+}
+
+.picker {
+  margin: 2px 0 8px;
+}
+
+.found {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.option {
+  display: flex;
+  gap: 10px;
+  padding: 3px 6px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option[aria-selected='true'],
+.option:hover {
+  background: var(--bg-raised);
+}
+
+.optType {
+  flex: none;
+  width: 80px;
+  color: var(--fg-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+}
+
+.none {
+  padding: 3px 6px;
+  color: var(--fg-faint);
+}

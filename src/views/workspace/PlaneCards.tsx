@@ -11,19 +11,18 @@
 // selected with its label ready to type. The selected card's right panel (D-219) opens at the right of the plane's part
 // of the screen; what fills it comes next.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { CARD, cardRef, deleteCard, moveCard, retitleCard, TITLE_MAX, type Card, type CardType } from '../../data/cards'
+import { CARD, cardRef, moveCard, retitleCard, TITLE_MAX, type Card, type CardType } from '../../data/cards'
 import type { Label } from '../../data/labels'
 import { TextItems } from './TextItems'
 import { PeerRing } from './collab'
-import { openThread, startComment, ThreadChip, threadOn } from './Threads'
-import { AnimatePresence } from 'motion/react'
-import { PanelAction, SIDE_PANEL_W, SidePanel } from '../../ui/SidePanel'
+import { ThreadChip, threadOn } from './Threads'
+import { CardPanel } from './CardPanel'
 import { snap } from '../../data/grid'
 import { useRevealed } from '../../state/curtain'
 import { isReducedMotion } from '../../state/motion'
 import { runCells } from '../../ui/Appear'
 import type { PlaneCam } from '../../state/canvasView'
-import { glide, useCanvasView } from '../../state/canvasView'
+import { useCanvasView } from '../../state/canvasView'
 import { useWs } from './context'
 import { factsOf, type Facts, type Proof } from './cardFacts'
 import { createEdge, defaultKind } from '../../data/edges'
@@ -110,67 +109,6 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
 }
 
 const NO_LIVE: Record<string, [number, number]> = {}
-
-// The selected card's right panel (D-219), in the plane's own part of the screen: what's open beside the plane (D-211)
-// keeps the rest.
-function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean }) {
-  const { wid, threads, edges } = useWs()
-  const id = useCanvasView((s) => s.cardSelected)
-  const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
-  const card = cards.find((c) => c.id === id)
-  const close = () => useCanvasView.setState({ cardSelected: null })
-  // A card the panel would cover glides left, clear of it (48 px).
-  useEffect(() => {
-    if (!card) return
-    const { planeCam: c, size } = useCanvasView.getState()
-    if (!c) return
-    const area = size.w - right
-    const clear = area - Math.min(SIDE_PANEL_W, area) - 48
-    const end = c.ox + (card.x + CARD.w) * c.zoom
-    if (end > clear) glide(c, { ...c, ox: c.ox - (end - clear) }, 320, (v) => useCanvasView.setState({ planeCam: v }))
-    // When a card is picked, or the panel's room changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [card?.id, right])
-  return (
-    <AnimatePresence>
-      {card && (
-        <SidePanel
-          // One panel while cards change under it: it builds only when it opens.
-          key="card"
-          kind={card.type}
-          tone={TYPE_ACCENT[card.type]}
-          label={`${card.type} ${card.title}`}
-          title={card.title || <span className={styles.untitled}>{PLACEHOLDER[card.type]}</span>}
-          right={right}
-          onClose={close}
-          actions={
-            <>
-              <PanelAction
-                label="comment"
-                onClick={() => {
-                  const t = threadOn(threads, card.id)
-                  if (t) openThread(t.id)
-                  else startComment({ on: 'card', targetId: card.id, planeId: card.pieceId, at: [card.x + CARD.w, card.y + CARD.h] })
-                }}
-              />
-              {editor && (
-                <PanelAction
-                  label="delete"
-                  danger
-                  title="Delete or Backspace"
-                  onClick={() => {
-                    close()
-                    void deleteCard(wid, card, edges)
-                  }}
-                />
-              )}
-            </>
-          }
-        />
-      )}
-    </AnimatePresence>
-  )
-}
 
 type Drag = { free: [number, number]; at: [number, number] }
 

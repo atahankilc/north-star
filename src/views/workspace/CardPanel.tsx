@@ -1,0 +1,580 @@
+// A plane card's right panel (D-219, D-221): the shell every right panel shares, filled for its type. Every type reads
+// in the same order: what it is (a status, a profile, a plan), what backs it (evidence, parts), what it touches (its
+// links by meaning, then the rest), tags, notes. A section's add sits at its rule's right end; an empty section is just
+// its rule. Everything is edited in place and undoable; viewers only read. A card named in a row goes to it.
+import { AnimatePresence } from 'motion/react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { addCard, CARD, deleteCard, retitleCard, TITLE_MAX, updateCard, VALIDATIONS, type Card, type CardType } from '../../data/cards'
+import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../data/edges'
+import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../data/evidence'
+import { glide, useCanvasView } from '../../state/canvasView'
+import { useAutoGrow } from '../../ui/autoGrow'
+import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../ui/SidePanel'
+import { factsOf } from './cardFacts'
+import { useWs } from './context'
+import { linkTone } from './PlaneLinks'
+import { openThread, startComment, threadOn } from './Threads'
+import styles from './CardPanel.module.css'
+
+// Type = the panel's colour, as the card's edge (D-055).
+const TONE: Record<CardType, string> = {
+  customer: 'var(--accent-green)',
+  problem: 'var(--accent-magenta)',
+  competitor: 'var(--accent-yellow)',
+  idea: 'var(--fg)',
+  feature: 'var(--accent-cyan)',
+}
+
+const PLACEHOLDER: Record<CardType, string> = {
+  customer: 'Who are they?',
+  problem: 'What hurts?',
+  competitor: 'Who else does it?',
+  idea: "What's the thought?",
+  feature: 'What does it do?',
+}
+
+const NOTES_HINT: Record<CardType, string> = {
+  customer: 'What do they do all day?',
+  problem: 'How often, and what does it cost them?',
+  competitor: 'What stands out about them?',
+  idea: "What's the thought behind it?",
+  feature: 'What does it do, and for whom?',
+}
+
+const KIND_LABEL: Record<string, string> = {
+  relates: 'relates',
+  solves: 'solves',
+  'part-of': 'part of',
+  'competes-with': 'competes',
+  contradicts: 'contradicts',
+  'inspired-by': 'inspired',
+  'depends-on': 'depends on',
+  [FOR]: 'for',
+}
+
+const NO_SAVE_MS = 400
+
+export function CardPanel({ cards, editor }: { cards: Card[]; editor: boolean }) {
+  const ws = useWs()
+  const { wid, threads, edges } = ws
+  const id = useCanvasView((s) => s.cardSelected)
+  const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
+  const card = cards.find((c) => c.id === id)
+  const close = () => useCanvasView.setState({ cardSelected: null })
+  // A card the panel would cover glides left, clear of it (48 px).
+  useEffect(() => {
+    if (!card) return
+    const { planeCam: c, size } = useCanvasView.getState()
+    if (!c) return
+    const area = size.w - right
+    const clear = area - Math.min(SIDE_PANEL_W, area) - 48
+    const end = c.ox + (card.x + CARD.w) * c.zoom
+    if (end > clear) glide(c, { ...c, ox: c.ox - (end - clear) }, 320, (v) => useCanvasView.setState({ planeCam: v }))
+    // When a card is picked, or the panel's room changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card?.id, right])
+  return (
+    <AnimatePresence>
+      {card && (
+        <SidePanel
+          // One panel while cards change under it: it builds only when it opens.
+          key="card"
+          kind={card.type}
+          tone={TONE[card.type]}
+          label={`${card.type} ${card.title}`}
+          title={<Title card={card} editor={editor} />}
+          right={right}
+          onClose={close}
+          actions={
+            <>
+              <PanelAction
+                label="comment"
+                onClick={() => {
+                  const t = threadOn(threads, card.id)
+                  if (t) openThread(t.id)
+                  else startComment({ on: 'card', targetId: card.id, planeId: card.pieceId, at: [card.x + CARD.w, card.y + CARD.h] })
+                }}
+              />
+              {editor && (
+                <PanelAction
+                  label="delete"
+                  danger
+                  title="Delete or Backspace"
+                  onClick={() => {
+                    close()
+                    void deleteCard(wid, card, edges)
+                  }}
+                />
+              )}
+            </>
+          }
+        >
+          <Inside key={card.id} card={card} cards={cards} editor={editor} />
+        </SidePanel>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// What the panel shows of a card: its quick facts, then its type's sections.
+function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: boolean }) {
+  const { evidence, competitorFeatures, edges } = useWs()
+  const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }).get(card.id), [cards, evidence, competitorFeatures, edges, card.id])
+  const under = [facts?.head, facts?.meta].filter(Boolean).join(' · ')
+  const mine = useMemo(() => edges.filter((e) => e.fromId === card.id || e.toId === card.id), [edges, card.id])
+  const byId = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards])
+  // Links in the sections before `other links` are taken out of it.
+  const shown = new Set<string>()
+  const take = (keep: (e: Edge) => boolean) => {
+    const list = mine.filter((e) => !shown.has(e.id) && keep(e) && byId.has(e.fromId === card.id ? e.toId : e.fromId))
+    list.forEach((e) => shown.add(e.id))
+    return list
+  }
+  const p = { card, cards, editor }
+  let n = 0
+  const next = () => ++n
+  const sections: ReactNode[] = []
+
+  if (card.type === 'customer' || card.type === 'problem' || card.type === 'idea') {
+    sections.push(<StatusSection key="status" n={next()} {...p} />, <EvidenceSection key="evidence" n={next()} {...p} />)
+  }
+  if (card.type === 'customer') {
+    sections.push(
+      <LinkSection key="tagged" n={next()} name="tagged for them" {...p} links={take((e) => e.kind === FOR && e.toId === card.id)} add={{ label: 'tag a card', types: ['problem', 'idea', 'feature', 'competitor'], kind: FOR, from: 'other' }} />,
+    )
+  }
+  if (card.type === 'problem') {
+    sections.push(
+      <LinkSection key="for" n={next()} name="for" {...p} links={take((e) => e.kind === FOR && e.fromId === card.id)} add={{ label: 'customer', types: ['customer'], kind: FOR, from: 'me' }} />,
+      <LinkSection
+        key="solved"
+        n={next()}
+        name="solved by · competed for"
+        {...p}
+        links={take((e) => (e.kind === 'solves' && e.toId === card.id) || e.kind === 'competes-with')}
+        add={{ label: 'idea that solves it', types: ['idea'], kind: 'solves', from: 'other' }}
+      />,
+    )
+  }
+  if (card.type === 'idea') {
+    sections.push(
+      <LinkSection key="solves" n={next()} name="solves" {...p} links={take((e) => e.kind === 'solves' && e.fromId === card.id)} add={{ label: 'problem', types: ['problem'], kind: 'solves', from: 'me' }} />,
+      <LinkSection
+        key="features"
+        n={next()}
+        name="features"
+        {...p}
+        links={take((e) => e.kind !== FOR && (e.fromType === 'feature' || e.toType === 'feature'))}
+        add={{ label: 'feature', types: ['feature'], kind: 'inspired-by', from: 'other' }}
+        count
+      />,
+      <LinkSection key="for" n={next()} name="for" {...p} links={take((e) => e.kind === FOR && e.fromId === card.id)} add={{ label: 'customer', types: ['customer'], kind: FOR, from: 'me' }} />,
+    )
+  }
+  if (card.type === 'competitor') {
+    sections.push(
+      <LinkSection key="competes" n={next()} name="competes for" {...p} links={take((e) => e.kind === 'competes-with')} add={{ label: 'link', types: ['problem', 'idea'], kind: 'competes-with', from: 'me' }} />,
+    )
+  }
+  if (card.type === 'feature') {
+    sections.push(
+      <LinkSection key="for" n={next()} name="for" {...p} links={take((e) => e.kind === FOR && e.fromId === card.id)} add={{ label: 'customer', types: ['customer'], kind: FOR, from: 'me' }} />,
+    )
+  }
+  const rest = take(() => true)
+  sections.push(
+    <LinkSection key="links" n={next()} name={card.type === 'customer' ? 'links' : 'other links'} {...p} links={rest} add={{ label: 'link', types: null, kind: null, from: 'me' }} />,
+    <TagsSection key="tags" n={next()} {...p} />,
+    <NotesSection key="notes" n={next()} {...p} />,
+  )
+  return (
+    <>
+      {under && <div className={styles.under}>{under}</div>}
+      {sections}
+    </>
+  )
+}
+
+// The title, typed in place: Enter or leaving keeps it, Escape puts it back.
+function Title({ card, editor }: { card: Card; editor: boolean }) {
+  const { wid } = useWs()
+  const [typing, setTyping] = useState(false)
+  const [draft, setDraft] = useState(card.title)
+  const field = useRef<HTMLTextAreaElement>(null)
+  useAutoGrow(field, draft)
+  useEffect(() => setDraft(card.title), [card.title, card.id])
+  useEffect(() => {
+    if (typing) field.current?.select()
+  }, [typing])
+  if (!typing || !editor)
+    return (
+      <span className={styles.title} data-empty={!card.title || undefined} onClick={editor ? () => setTyping(true) : undefined}>
+        {card.title || PLACEHOLDER[card.type]}
+      </span>
+    )
+  const done = (keep: boolean) => {
+    const t = draft.trim()
+    if (keep && t !== card.title) void retitleCard(wid, card, t)
+    else setDraft(card.title)
+    setTyping(false)
+  }
+  return (
+    <textarea
+      ref={field}
+      className={`${styles.title} ${styles.titleField}`}
+      value={draft}
+      rows={1}
+      maxLength={TITLE_MAX}
+      placeholder={PLACEHOLDER[card.type]}
+      aria-label="Title"
+      autoFocus
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => done(true)}
+      onKeyDown={(e) => {
+        e.stopPropagation()
+        if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), done(true))
+        if (e.key === 'Escape') done(false)
+      }}
+    />
+  )
+}
+
+type P = { n: number; card: Card; cards: Card[]; editor: boolean }
+
+// `[pills]`: a click picks, a click on the picked one clears.
+export function Pills<T extends string>({ values, value, editor, onPick, label }: { values: readonly T[]; value?: T; editor: boolean; onPick: (v: T | undefined) => void; label: string }) {
+  return (
+    <div className={styles.pills} role="group" aria-label={label}>
+      {values.map((v) => (
+        <button key={v} className={styles.pill} aria-pressed={v === value} disabled={!editor} onClick={() => onPick(v === value ? undefined : v)}>
+          {v}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function StatusSection({ n, card, editor }: P) {
+  const { wid, evidence } = useWs()
+  const warn = mismatch(card.validation, evidence.filter((e) => e.nodeId === card.id))
+  return (
+    <PanelSection n={n} name="status">
+      <Pills values={VALIDATIONS} value={card.validation} editor={editor} label="Status" onPick={(v) => void updateCard(wid, card, { validation: v }, 'status of')} />
+      {warn && <p className={styles.warn}>! {warn}</p>}
+    </PanelSection>
+  )
+}
+
+// What was learned (D-137): filled cell = supports, outlined = against (a click turns it round); `+ evidence` opens a
+// small form: the text, for or against, its kind, where it came from, when.
+function EvidenceSection({ n, card, editor }: P) {
+  const { wid, evidence } = useWs()
+  const list = evidence.filter((e) => e.nodeId === card.id).sort((a, b) => a.createdAt - b.createdAt)
+  const [adding, setAdding] = useState(false)
+  const t = tally(list)
+  return (
+    <PanelSection
+      n={n}
+      name="evidence"
+      count={list.length ? `${t.supports} for · ${t.contradicts} against` : undefined}
+      add={editor ? { label: 'evidence', onClick: () => setAdding(true) } : undefined}
+      empty={!list.length && !adding}
+    >
+      {list.map((e) => (
+        <EvidenceRow key={e.id} e={e} editor={editor} />
+      ))}
+      {adding && (
+        <EvidenceForm
+          onDone={(fields) => {
+            setAdding(false)
+            if (fields) void addEvidence(wid, { ...fields, nodeId: card.id, nodeType: card.type as Evidence['nodeType'] })
+          }}
+        />
+      )}
+    </PanelSection>
+  )
+}
+
+function EvidenceRow({ e, editor }: { e: Evidence; editor: boolean }) {
+  const { wid } = useWs()
+  const [editing, setEditing] = useState(false)
+  const src = [e.kind, e.source, e.date].filter(Boolean).join(' · ')
+  if (editing)
+    return (
+      <EvidenceForm
+        start={e}
+        onDone={(fields) => {
+          setEditing(false)
+          if (fields) void updateEvidence(wid, e.id, fields)
+        }}
+      />
+    )
+  return (
+    <div className={styles.ev}>
+      <button
+        className={styles.cell}
+        data-filled={e.stance === 'supports' || undefined}
+        disabled={!editor}
+        title={e.stance === 'supports' ? 'Supports it (click: against)' : 'Against it (click: supports)'}
+        onClick={() => void updateEvidence(wid, e.id, { stance: e.stance === 'supports' ? 'contradicts' : 'supports' })}
+      />
+      <span className={styles.evText} onClick={editor ? () => setEditing(true) : undefined}>
+        {e.text}
+      </span>
+      {editor && (
+        <button className={styles.x} title="Remove" onClick={() => void removeEvidence(wid, e.id)}>
+          ×
+        </button>
+      )}
+      {(src || e.url) && (
+        <span className={styles.src}>
+          {src}
+          {e.url && (
+            <a href={e.url} target="_blank" rel="noreferrer">
+              {' '}
+              ↗
+            </a>
+          )}
+        </span>
+      )}
+    </div>
+  )
+}
+
+type EvidenceFields = { text: string; stance: Stance; kind: EvidenceKind; source?: string; date?: string; url?: string }
+
+function EvidenceForm({ start, onDone }: { start?: Evidence; onDone: (fields: EvidenceFields | null) => void }) {
+  const [f, setF] = useState<EvidenceFields>({ text: start?.text ?? '', stance: start?.stance ?? 'supports', kind: start?.kind ?? 'interview', source: start?.source, date: start?.date, url: start?.url })
+  const text = useRef<HTMLTextAreaElement>(null)
+  useAutoGrow(text, f.text)
+  const save = () => onDone(f.text.trim() ? { ...f, text: f.text.trim() } : null)
+  const keys = (e: React.KeyboardEvent) => {
+    e.stopPropagation()
+    if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), save())
+    if (e.key === 'Escape') onDone(null)
+  }
+  return (
+    <div className={styles.form}>
+      <textarea ref={text} className={styles.input} rows={1} autoFocus placeholder="What was learned, in a sentence or a quote" value={f.text} maxLength={2000} onChange={(e) => setF({ ...f, text: e.target.value })} onKeyDown={keys} />
+      <Pills values={['supports', 'contradicts'] as const} value={f.stance} editor label="For or against" onPick={(v) => setF({ ...f, stance: v ?? f.stance })} />
+      <Pills values={EVIDENCE_KINDS} value={f.kind} editor label="Kind" onPick={(v) => setF({ ...f, kind: v ?? f.kind })} />
+      <div className={styles.formRow}>
+        <input className={styles.input} placeholder="from (who, where)" value={f.source ?? ''} maxLength={200} onChange={(e) => setF({ ...f, source: e.target.value })} onKeyDown={keys} />
+        <input className={styles.input} type="date" value={f.date ?? ''} onChange={(e) => setF({ ...f, date: e.target.value || undefined })} onKeyDown={keys} aria-label="When" />
+      </div>
+      <input className={styles.input} placeholder="link (optional)" value={f.url ?? ''} maxLength={2000} onChange={(e) => setF({ ...f, url: e.target.value })} onKeyDown={keys} />
+      <div className={styles.formActions}>
+        <button className={styles.small} data-tone="primary" onClick={save}>
+          {start ? 'save' : 'add'}
+        </button>
+        <button className={styles.small} onClick={() => onDone(null)}>
+          cancel
+        </button>
+        <span className={styles.hint}>enter {start ? 'saves' : 'adds'} · esc</span>
+      </div>
+    </div>
+  )
+}
+
+// What a section's add links: cards of these types (null: any), with this kind (null: the old default), from this card
+// or to it.
+type LinkAdd = { label: string; types: CardType[] | null; kind: EdgeKind | null; from: 'me' | 'other' }
+
+// Links as rows like the old panel's (D-154): the kind's colour, its name with an arrow (→ from this card, ← to it),
+// the other card, its type. A row goes to that card; `×` unlinks.
+function LinkSection({ n, name, card, cards, editor, links, add, count }: P & { name: string; links: Edge[]; add: LinkAdd; count?: boolean }) {
+  const { wid } = useWs()
+  const [picking, setPicking] = useState(false)
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  const pick = (other: Card) => {
+    setPicking(false)
+    const [from, to] = add.from === 'me' ? [card, other] : [other, card]
+    const id = createEdge(wid, from, to, add.kind ?? defaultKind(from.type, to.type))
+    // A plain link opens with its label ready, as one drawn on the plane does (D-154).
+    if (!add.kind) useCanvasView.setState({ linkSelected: id, linkLabelling: true, cardSelected: null })
+  }
+  return (
+    <PanelSection n={n} name={name} count={count && links.length ? links.length : undefined} add={editor ? { label: add.label, onClick: () => setPicking(true) } : undefined} empty={!links.length && !picking}>
+      {links.map((e) => {
+        const other = byId.get(e.fromId === card.id ? e.toId : e.fromId)!
+        const out = e.fromId === card.id
+        const kind = KIND_LABEL[e.kind] ?? e.kind
+        return (
+          <div key={e.id} className={styles.link} style={{ ['--tone' as string]: linkTone(e.kind) }}>
+            <span className={styles.swatch} aria-hidden />
+            <span className={styles.kind}>{out ? `${kind} →` : `← ${kind}`}</span>
+            <button className={styles.to} onClick={() => goToCard(other)} title={e.label ? `"${e.label}"` : undefined}>
+              {other.title || PLACEHOLDER[other.type]}
+            </button>
+            <span className={styles.type}>{other.type === 'feature' ? [other.priority, other.status].filter(Boolean).join(' · ') || 'feature' : other.type}</span>
+            {editor && (
+              <button className={styles.x} title="Unlink" onClick={() => void deleteEdge(wid, e.id)}>
+                ×
+              </button>
+            )}
+          </div>
+        )
+      })}
+      {picking && (
+        <CardPicker
+          card={card}
+          cards={cards}
+          types={add.types}
+          exclude={new Set([card.id, ...links.map((e) => (e.fromId === card.id ? e.toId : e.fromId))])}
+          onPick={pick}
+          onClose={() => setPicking(false)}
+        />
+      )}
+    </PanelSection>
+  )
+}
+
+// Choosing a card on this plane by typing part of its title; with types given, a new card of the first type can be
+// made from what was typed (placed under this one, clear of the panel on its right).
+function CardPicker({ card, cards, types, exclude, onPick, onClose }: { card: Card; cards: Card[]; types: CardType[] | null; exclude: Set<string>; onPick: (c: Card) => void; onClose: () => void }) {
+  const { wid } = useWs()
+  const [q, setQ] = useState('')
+  const [at, setAt] = useState(0)
+  const found = cards
+    .filter((c) => !exclude.has(c.id) && (!types || types.includes(c.type)) && (c.title || '').toLowerCase().includes(q.trim().toLowerCase()))
+    .slice(0, 8)
+  const makeType = types?.[0]
+  const make = async () => {
+    if (!makeType || !q.trim()) return
+    const id = await addCard(wid, card.pieceId, makeType, [card.x + CARD.w / 2, card.y + CARD.h * 2], cards)
+    const made: Card = { id, type: makeType, pieceId: card.pieceId, title: q.trim(), x: 0, y: 0 }
+    await retitleCard(wid, made, q.trim())
+    onPick(made)
+  }
+  const rows = found.length + (makeType && q.trim() ? 1 : 0)
+  return (
+    <div className={styles.picker}>
+      <input
+        className={styles.input}
+        autoFocus
+        placeholder={types ? `find ${types.join(', ')}…` : 'find a card…'}
+        value={q}
+        onChange={(e) => (setQ(e.target.value), setAt(0))}
+        onBlur={() => setTimeout(onClose, 150)}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.key === 'Escape') onClose()
+          if (e.key === 'ArrowDown') (e.preventDefault(), setAt((a) => Math.min(rows - 1, a + 1)))
+          if (e.key === 'ArrowUp') (e.preventDefault(), setAt((a) => Math.max(0, a - 1)))
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            if (at < found.length) onPick(found[at])
+            else void make()
+          }
+        }}
+      />
+      <div className={styles.found} role="listbox">
+        {found.map((c, i) => (
+          <button key={c.id} role="option" aria-selected={i === at} className={styles.option} onMouseDown={(e) => e.preventDefault()} onClick={() => onPick(c)}>
+            <span className={styles.optType} style={{ color: TONE[c.type] }}>
+              {c.type}
+            </span>
+            {c.title || PLACEHOLDER[c.type]}
+          </button>
+        ))}
+        {makeType && q.trim() && (
+          <button role="option" aria-selected={at === found.length} className={styles.option} onMouseDown={(e) => e.preventDefault()} onClick={() => void make()}>
+            <span className={styles.optType}>new {makeType}</span>“{q.trim()}”
+          </button>
+        )}
+        {!rows && <span className={styles.none}>nothing on this plane matches</span>}
+      </div>
+    </div>
+  )
+}
+
+// Selects a card on the plane and brings it into view, clear of the panel.
+export function goToCard(c: Card) {
+  useCanvasView.setState({ cardSelected: c.id, labelSelected: null, linkSelected: null })
+  const { planeCam: v, size, beside, split } = useCanvasView.getState()
+  if (!v) return
+  const area = beside ? Math.round(size.w * split) : size.w
+  const room = area - Math.min(SIDE_PANEL_W, area)
+  const [sx0, sy0] = [v.ox + c.x * v.zoom, v.oy + c.y * v.zoom]
+  const [sx1, sy1] = [sx0 + CARD.w * v.zoom, sy0 + CARD.h * v.zoom]
+  if (sx0 >= 48 && sx1 <= room - 48 && sy0 >= 56 && sy1 <= size.h - 56) return
+  const cx = room / 2
+  glide(v, { ...v, ox: cx - (c.x + CARD.w / 2) * v.zoom, oy: size.h / 2 - (c.y + CARD.h / 2) * v.zoom }, 420, (to) => useCanvasView.setState({ planeCam: to }))
+}
+
+// Tags (D-056): chips, `×` on hover; `+ tag` types one (Enter adds, a leading `#` dropped).
+function TagsSection({ n, card, editor }: P) {
+  const { wid } = useWs()
+  const tags = card.tags ?? []
+  const [adding, setAdding] = useState(false)
+  const [draft, setDraft] = useState('')
+  const set = (next: string[]) => void updateCard(wid, card, { tags: next.length ? next : undefined }, 'tag')
+  return (
+    <PanelSection n={n} name="tags" add={editor ? { label: 'tag', onClick: () => setAdding(true) } : undefined} empty={!tags.length && !adding}>
+      <div className={styles.tags}>
+        {tags.map((t) => (
+          <span key={t} className={styles.chip}>
+            #{t}
+            {editor && (
+              <button className={styles.chipX} title="Remove" onClick={() => set(tags.filter((x) => x !== t))}>
+                ×
+              </button>
+            )}
+          </span>
+        ))}
+        {adding && (
+          <input
+            className={`${styles.input} ${styles.tagInput}`}
+            autoFocus
+            placeholder="tag"
+            value={draft}
+            maxLength={40}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => (setAdding(false), setDraft(''))}
+            onKeyDown={(e) => {
+              e.stopPropagation()
+              const t = draft.trim().replace(/^#/, '')
+              if (e.key === 'Enter' && t) {
+                if (!tags.includes(t)) set([...tags, t])
+                setDraft('')
+              }
+              if (e.key === 'Escape') (setAdding(false), setDraft(''))
+            }}
+          />
+        )}
+      </div>
+    </PanelSection>
+  )
+}
+
+// Notes: Geist, as long as they are, saved as you type (merged into one undo step).
+function NotesSection({ n, card, editor }: P) {
+  const { wid } = useWs()
+  const [draft, setDraft] = useState(card.notes ?? '')
+  const field = useRef<HTMLTextAreaElement>(null)
+  const timer = useRef(0)
+  useAutoGrow(field, draft)
+  useEffect(() => {
+    if (document.activeElement !== field.current) setDraft(card.notes ?? '')
+  }, [card.notes])
+  const save = (v: string) => {
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => void updateCard(wid, card, { notes: v.trim() ? v : undefined }, 'notes of'), NO_SAVE_MS)
+  }
+  return (
+    <PanelSection n={n} name="notes">
+      <textarea
+        ref={field}
+        className={styles.notes}
+        rows={2}
+        value={draft}
+        readOnly={!editor}
+        placeholder={NOTES_HINT[card.type]}
+        maxLength={20000}
+        aria-label="Notes"
+        onChange={(e) => (setDraft(e.target.value), save(e.target.value))}
+        onKeyDown={(e) => e.stopPropagation()}
+      />
+    </PanelSection>
+  )
+}

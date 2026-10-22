@@ -52,15 +52,25 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
   )
 }
 
-// A section under a rule with its number and name.
-export function PanelSection({ n, name, children }: { n: number; name: ReactNode; children?: ReactNode }) {
+// A section under a rule with its number and name (and a count after it); what adds to it sits at the rule's right
+// end (`+ tag`, the user's). With nothing in it, it's just its rule.
+type SectionProps = { n: number; name: ReactNode; count?: ReactNode; add?: { label: string; onClick: () => void }; empty?: boolean; children?: ReactNode }
+
+export function PanelSection({ n, name, count, add, empty, children }: SectionProps) {
   return (
-    <section className={styles.section}>
+    <section className={styles.section} data-empty={empty || undefined}>
       <h3 className={styles.rule}>
         <span className={styles.n}>{String(n).padStart(2, '0')}</span>
         {name}
+        {count !== undefined && <span className={styles.count}>{count}</span>}
+        <span className={styles.line} aria-hidden />
+        {add && (
+          <button className={styles.add} onClick={add.onClick}>
+            {add.label}
+          </button>
+        )}
       </h3>
-      {children}
+      {!empty && children}
     </section>
   )
 }

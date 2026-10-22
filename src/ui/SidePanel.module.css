@@ -107,11 +107,46 @@
   text-transform: uppercase;
 }
 
-.rule::after {
-  content: '';
+.line {
   flex: 1;
   height: 1px;
   background: var(--line);
+}
+
+.count {
+  color: var(--fg-faint);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* `+ tag` at the rule's right end. */
+.add {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.add::before {
+  content: '+ ';
+  color: var(--accent-magenta);
+}
+
+.add:hover {
+  color: var(--fg-strong);
+}
+
+.section[data-empty='true'] {
+  padding-bottom: 0;
+}
+
+.section[data-empty='true'] .rule {
+  margin-bottom: 4px;
 }
 
 .n {

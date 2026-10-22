@@ -1,7 +1,7 @@
 // Cards on a plane (D-187): customers, problems, competitors, ideas and features, each in its own collection as before
 // (D-037, D-040), now belonging to one plane (`pieceId`) at x/y in that plane's px (its top-left corner). Cards from the
 // old board (no `pieceId`) stay where they are and aren't shown. A competitor keeps its title as `name`.
-import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from './firebase'
 import { absent, snapshotWith, tracked } from './history'
 import { GRID, snap } from './grid'
@@ -36,7 +36,22 @@ export type CardFields = {
   status?: string
   impact?: string
   effort?: string
+  // Its notes (D-219): a competitor's `notes`, every other card's `body`.
+  notes?: string
+  // A competitor's profile (D-219): what it does, for whom, its price, its site.
+  description?: string
+  audience?: string
+  pricing?: string
+  url?: string
+  // A feature's must-haves (D-133), which a matrix scores.
+  criteria?: { id: string; text: string }[]
 }
+
+export const VALIDATIONS: Validation[] = ['hypothesis', 'testing', 'validated', 'invalidated']
+export const FEATURE_PRIORITIES = ['P1', 'P2', 'P3']
+export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped']
+export const FEATURE_IMPACTS = ['low', 'medium', 'high']
+export const FEATURE_EFFORTS = ['S', 'M', 'L']
 
 export type Card = { id: string; type: CardType; pieceId: string; title: string; x: number; y: number } & CardFields
 
@@ -76,6 +91,16 @@ export function retitleCard(wid: string, card: Card, title: string) {
   })
 }
 
+// Fields from its panel (D-219): `undefined` clears one. `notes` is stored as a competitor's `notes`, any other card's
+// `body`. Typing in one field merges into one undo step.
+export function updateCard(wid: string, card: Card, fields: Partial<CardFields>, what = 'edit') {
+  const r = ref(wid, card.type, card.id)
+  const data: Record<string, unknown> = { updatedAt: Date.now() }
+  for (const [k, v] of Object.entries(fields)) data[k === 'notes' && card.type !== 'competitor' ? 'body' : k] = v === undefined ? deleteField() : v
+  const keys = Object.keys(fields).sort().join(',')
+  return tracked(`${what} ${one(card.type)}`, [r], () => updateDoc(r, data), { key: `card:${card.id}:${keys}` })
+}
+
 // With its links (D-207): one undo step brings them all back.
 export function deleteCard(wid: string, card: Card, edges: Edge[] = []) {
   const refs = [ref(wid, card.type, card.id), ...edgesOn(edges, new Set([card.id])).map((e) => edgeRef(wid, e.id))]
@@ -87,7 +112,9 @@ export function deleteCard(wid: string, card: Card, edges: Edge[] = []) {
 }
 
 // Docs from any of the five collections, as cards; the old board's (no `pieceId`) are left out.
-export function toCards(type: CardType, docs: ({ id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number } & CardFields)[]): Card[] {
+type CardDoc = { id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number; body?: string } & CardFields
+
+export function toCards(type: CardType, docs: CardDoc[]): Card[] {
   return docs.flatMap((d) =>
     d.pieceId
       ? [
@@ -105,6 +132,12 @@ export function toCards(type: CardType, docs: ({ id: string; pieceId?: string; t
             status: d.status,
             impact: d.impact,
             effort: d.effort,
+            notes: type === 'competitor' ? d.notes : d.body,
+            description: d.description,
+            audience: d.audience,
+            pricing: d.pricing,
+            url: d.url,
+            criteria: d.criteria,
           },
         ]
       : [],

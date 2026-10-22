@@ -279,8 +279,3 @@
 .handle[data-linking='true'] {
   color: var(--accent-cyan);
 }
-
-/* An untitled card's title in its panel. */
-.untitled {
-  color: var(--placeholder);
-}

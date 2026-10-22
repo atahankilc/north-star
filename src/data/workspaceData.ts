@@ -8,6 +8,7 @@ import { useWorkspaceCollection } from './hooks'
 import type { Label } from './labels'
 import type { Cell } from './matrix'
 import type { Edge } from './edges'
+import type { Evidence } from './evidence'
 import type { Piece, Thread } from './model'
 
 export type WorkspaceData = {
@@ -20,7 +21,7 @@ export type WorkspaceData = {
   // Every matrix's cells (D-204).
   cells: Cell[]
   // What was learned about a card (D-137) and a competitor's features (D-164): counted on the cards (D-205).
-  evidence: WithId<{ nodeId: string; stance: 'supports' | 'contradicts' }>[]
+  evidence: Evidence[]
   competitorFeatures: WithId<{ competitorId: string }>[]
   // Links between cards (D-207).
   edges: Edge[]
@@ -38,7 +39,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const labelDocs = useWorkspaceCollection<Omit<Label, 'id'>>(wid, 'labels')
   const labels = useMemo(() => labelDocs.data.filter((l) => l.pieceId) as Label[], [labelDocs.data])
   const cells = useWorkspaceCollection<Cell>(wid, 'cells')
-  const evidence = useWorkspaceCollection<{ nodeId: string; stance: 'supports' | 'contradicts' }>(wid, 'evidence')
+  const evidence = useWorkspaceCollection<Omit<Evidence, 'id'>>(wid, 'evidence')
   const competitorFeatures = useWorkspaceCollection<{ competitorId: string }>(wid, 'competitorFeatures')
   const edges = useWorkspaceCollection<Omit<Edge, 'id'>>(wid, 'edges')
   const threadDocs = useWorkspaceCollection<Thread>(wid, 'threads')
