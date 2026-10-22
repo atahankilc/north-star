@@ -3949,6 +3949,10 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): both unframed from edit mode, the open list sorted by title from the canvas, a row
   click went into the list's focus with the document beside it, the open document showed its whole text; both framed
   back to their windows; rules 421 pass (2 new); tsc; no console errors.
+- *Then* (a bug the user found: a very long document unframed, the canvas panned along it, turned the whole screen
+  black until a reload; fine zoomed all the way out): an unframed document draws at most 6000 px of itself (one huge
+  layer was too much for Chrome's GPU), cut with a fade and `[continue reading ↗]`, which reads it in focus. Not
+  reproduced headless (software drawing); the cut keeps the layer a size the GPU takes.
 - *Then* (the user: "frame iken upload yada table shelf seçimi sunma. Onu focus da ayarlanabilir yap"): framed, the
   documents list's console is only `[focus] [edit]`; upload, table/shelf, kinds and pages are in its focus dock, and in
   its console once unframed.

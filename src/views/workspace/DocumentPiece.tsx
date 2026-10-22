@@ -30,6 +30,8 @@ export const docWidth = (w: number) => Math.max(240, w - 2 - 2 * PAD)
 // How tall each document piece's text came out, measured as it's drawn: what fit frames (its first screen).
 const useHeights = create<Record<string, number>>(() => ({}))
 const FIRST_SCREEN = 640
+// Under a cut unframed document: room for its `[continue reading ↗]`.
+const MORE_H = 56
 
 // Where a document's focus sits (D-232): at 100 %, its column in the middle of the screen, its top near the top.
 export function documentHome(piece: WithId<Piece>, screenW: number): PlaneCam {
@@ -77,9 +79,14 @@ const levelAt = (zoom: number): Level => (zoom * 15 < 4.5 ? 'far' : zoom * 15 < 
 
 // `onCanvas`: opened onto the canvas (D-234): the whole of it at reading size, live there (links, text), its size measured
 // for its drawn box; never cut, never shrunk to its title (it would jump in size as you zoom).
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; onCanvas?: boolean }
+// Unframed (D-234), at most this much of it is drawn on the canvas: a very long one as a single layer turned the whole
+// screen black in Chrome once zoomed in and panned along it (its GPU gave up on the layer, until a reload). Past this,
+// a fade and `[continue reading ↗]` (`onMore`), which reads it in focus.
+const OPEN_MAX = 6000
 
-export function DocumentPieceView({ piece, view, live, onCanvas = false }: Props) {
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; onCanvas?: boolean; onMore?: () => void }
+
+export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore }: Props) {
   const { wid, documents } = useWs()
   const { user } = useAuth()
   const d = documents.find((x) => x.id === piece.docId) ?? null
@@ -87,6 +94,9 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false }: Props
   const body = useDocBody(wid, d, level === 'full')
   const layer = useRef<HTMLDivElement>(null)
   const content = useRef<HTMLDivElement>(null)
+  // Unframed: what's drawn of it, cut at OPEN_MAX; its size is the drawn box's (shownBox.ts).
+  const clip = useRef<HTMLDivElement>(null)
+  const [cut, setCut] = useState(false)
   const width = docWidth(piece.w)
 
   // Its height, for fit and the scroll's ends.
@@ -96,7 +106,9 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false }: Props
     const ro = new ResizeObserver(() => {
       useHeights.setState({ [piece.id]: el.offsetHeight })
       if (!onCanvas) return
-      const next = { w: el.offsetWidth, h: el.offsetHeight }
+      setCut(el.offsetHeight > OPEN_MAX)
+      const shown = clip.current ?? el
+      const next = { w: shown.offsetWidth, h: Math.min(el.offsetHeight, OPEN_MAX) + (el.offsetHeight > OPEN_MAX ? MORE_H : 0) }
       const was = useOpenSize.getState()[piece.id]
       if (!was || was.w !== next.w || was.h !== next.h) useOpenSize.setState({ [piece.id]: next })
     })
@@ -131,8 +143,10 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false }: Props
           </p>
         ) : level === 'full' ? (
           // On the canvas a press on it is its own until it moves 5 px (D-217's rule): a link's click still lands.
-          <div ref={content} className={styles.content} style={{ width, padding: PAD }} data-cell={(onCanvas && live) || undefined}>
-            <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links={live} />
+          <div ref={clip} className={onCanvas ? styles.openClip : undefined} style={onCanvas ? { maxHeight: OPEN_MAX } : undefined} data-cut={(onCanvas && cut) || undefined}>
+            <div ref={content} className={styles.content} style={{ width, padding: PAD }} data-cell={(onCanvas && live) || undefined}>
+              <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links={live} />
+            </div>
           </div>
         ) : level === 'compact' ? (
           <div ref={content} className={styles.compact} style={{ width: piece.w - 2, height: piece.h - 2 }}>
@@ -144,6 +158,13 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false }: Props
             {[80, 55, 100, 90, 70].map((w, i) => (
               <i key={i} style={{ width: `${w}%`, height: i === 0 ? 40 : 16 }} />
             ))}
+          </div>
+        )}
+        {onCanvas && cut && d && level === 'full' && (
+          <div className={styles.openMore} style={{ width: width + 2 * PAD, height: MORE_H }}>
+            <button className={styles.openMoreButton} data-live onPointerDown={(e) => e.stopPropagation()} onClick={onMore} title="read the rest in focus">
+              continue reading ↗
+            </button>
           </div>
         )}
       </div>

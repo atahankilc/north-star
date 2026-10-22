@@ -306,7 +306,8 @@ piece; check them with the user then.
 - Documents (D-232, spec documents.md): every file is a document (`markdown | image | pdf | report`; old reports moved
   over once), private until shared; a `documents` list piece (table or shelf, switched in its focus dock, or its console once unframed; framed, `[focus] [edit]` only) and a `document`
   piece showing one in a window; a private one put on the canvas asks first; files need Storage (`.md` only until Blaze).
-  Both unframe onto the canvas like D-228 (live there, their open size measured as drawn) (D-234). A document open
+  Both unframe onto the canvas like D-228 (live there, their open size measured as drawn; a document at most 6000 px,
+  then `[continue reading ↗]` into focus) (D-234). A document open
   beside the list: the list pinned top-left at its size, the document the rest, "on this page", zoom 50–200 %; several
   side by side, `[hide list]`, `[delete]`; from the canvas a click opens it full screen. Escape: closes the document;
   list put away → a framed list back, an unframed one to the canvas. Rows carry their actions as marks (rename …) (D-232).

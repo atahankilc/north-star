@@ -1244,7 +1244,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
             // Open on the canvas (D-234): its rows live there; a click takes the list into focus with the document beside it.
             <DocsList piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas onOpen={onFocus} />
           ) : (
-            <DocOne piece={piece} view={OPEN_VIEW} live={live && !editing} onCanvas />
+            <DocOne piece={piece} view={OPEN_VIEW} live={live && !editing} onCanvas onMore={onFocus} />
           )}
         </div>
       ) : kind === 'matrix' ? (

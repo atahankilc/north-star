@@ -87,7 +87,9 @@ of its own). By size on the screen: full → kind + title alone → grey bars; t
 
 Both pieces take D-228's `[unframe]` / `[frame]` (edit mode): out of the window onto the canvas, on a feathered page,
 live there. The list sorts, drags documents out, shows all its tools in its console; a click on a document goes into
-the list's focus with it beside. A document shows all of its text, links work. Their size there is measured as drawn.
+the list's focus with it beside. A document shows its text, links work, up to 6000 px of it: past that a fade and
+`[continue reading ↗]`, which reads it in focus (one very long layer turned the screen black in Chrome). Their size
+there is measured as drawn.
 
 ## Not yet
 

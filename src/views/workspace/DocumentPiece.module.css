@@ -359,3 +359,31 @@
 .reader[data-alone] {
   border-left-color: transparent;
 }
+
+/* Unframed (D-234): what's drawn of it, cut at its most (DocumentPiece's OPEN_MAX) with a fade into the page. */
+.openClip {
+  overflow: hidden;
+}
+
+.openClip[data-cut] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 160px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 160px), transparent);
+}
+
+.openMore {
+  display: flex;
+  align-items: center;
+  padding: 0 36px;
+  box-sizing: border-box;
+}
+
+.openMoreButton {
+  composes: small from '../../ui/AsciiButton.module.css';
+  color: var(--fg);
+  font-size: var(--text-sm);
+  pointer-events: auto;
+}
+
+.openMoreButton:hover {
+  color: var(--accent-cyan);
+}
