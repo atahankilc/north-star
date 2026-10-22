@@ -11,7 +11,7 @@
 // size, its bar: the steps, `doesn't apply`, how sure, a note. Rows, columns and cells are set up from the focus dock's
 // `[setup]` (MatrixSetupPanel); a typed head is renamed by a double-click, any head taken out by its `×`. Escape lets
 // go of the cell (CanvasView), then leaves focus.
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -119,7 +119,10 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const ci = sel ? cols.findIndex((c) => c.key === sel[1]) : -1
   const selected = ri >= 0 && ci >= 0 ? { r: ri, c: ci } : null
   // The row and column under the pointer: their heads light up and their cells wash.
-  const [hot, setHot] = useState<{ r: number; c: number } | null>(null)
+  // Kept in a little store of its own that each cell and head reads, so the pointer moving over it draws again only
+  // the cells and heads it lights or stops lighting, never the whole matrix.
+  const [hotStore] = useState(newHot)
+  const setHot = (at: Hot) => hotStore.setState({ at })
   // A number or a text being typed in its cell.
   const [typing, setTyping] = useState<string | null>(null)
   const naming = useMatrixUi((s) => s.naming)
@@ -209,6 +212,29 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const rowCells = (r: Entry) => cols.map((c) => at(r.key, c.key))
   const colCells = (c: Entry) => rows.map((r) => at(r.key, c.key))
   const shown = [...rows, ...cols].map((e) => e.key)
+  // What a cell does, by its row and column: one object kept for good, its functions this render's, so a cell (memoised)
+  // is drawn again only when what it shows changes, not when the view moves or another cell is hovered.
+  const acts = useRef<CellActs>(null!)
+  acts.current = {
+    // No press of its own: a press on a cell may pan its space (FocusedPlane, a pane beside a plane, the canvas; D-217).
+    // Not while a button's held (a pan passing over): nothing to light then.
+    hover: (ri, ci, e) => live && e.buttons === 0 && setHot({ r: ri, c: ci }),
+    click: (ri, ci) => {
+      if (selected?.r !== ri || selected.c !== ci) return select(ri, ci)
+      // Again on a selected scale cell: the next step, then nothing (D-133's cycle).
+      const cell = at(rows[ri].key, cols[ci].key)
+      if (!editor || setup.cell !== 'scale' || (setup.notRelevant && !relevant(cell))) return
+      const now = readCell(setup, cell).step
+      const i = now ? setup.steps.indexOf(now) + 1 : 0
+      stepTo(rows[ri].key, cols[ci].key, i < setup.steps.length ? i : undefined)
+    },
+    type: (ri, ci) => (select(ri, ci), setTyping(selKey(piece.id, rows[ri].key, cols[ci].key))),
+    typed: (ri, ci, value) => {
+      setTyping(null)
+      // null: cancelled, or not a number.
+      if (value !== null) write(rows[ri].key, cols[ci].key, { value })
+    },
+  }
 
   const box = (x: number, y: number, w: number, h: number): CSSProperties => ({ left: x, top: y, width: w, height: h })
   const selBox = selected ? { x: L.colX(selected.c), y: L.rowY(selected.r) } : null
@@ -243,30 +269,19 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
                 <CellBox
                   key={key}
                   id={key}
+                  r={ri}
+                  c={ci}
+                  x={L.colX(ci)}
+                  y={L.rowY(ri)}
                   setup={setup}
                   cell={cell}
-                  style={box(L.colX(ci), L.rowY(ri), M.cell, M.row)}
                   label={`${r.name || 'untitled'} × ${c.name || 'untitled'}`}
                   selected={isSel}
-                  hot={hot?.r === ri || hot?.c === ci}
+                  hot={hotStore}
                   live={live}
                   typing={typing === key}
-                  // No onPress: a press on a cell may pan its space (FocusedPlane, a pane beside a plane; D-217).
-                  onHover={live ? () => setHot({ r: ri, c: ci }) : undefined}
-                  onClick={() => {
-                    if (!isSel) return select(ri, ci)
-                    // Again on a selected scale cell: the next step, then nothing (D-133's cycle).
-                    if (!editor || setup.cell !== 'scale' || (setup.notRelevant && !relevant(cell))) return
-                    const now = readCell(setup, cell).step
-                    const i = now ? setup.steps.indexOf(now) + 1 : 0
-                    stepTo(r.key, c.key, i < setup.steps.length ? i : undefined)
-                  }}
-                  onType={editor && setup.cell !== 'scale' ? () => (select(ri, ci), setTyping(key)) : undefined}
-                  onTyped={(value) => {
-                    setTyping(null)
-                    // null: cancelled, or not a number.
-                    if (value !== null) write(r.key, c.key, { value })
-                  }}
+                  canType={editor && setup.cell !== 'scale'}
+                  acts={acts}
                 />
               )
             }),
@@ -293,7 +308,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
             {/* Paper under them out to the screen's edge, so the cells pass under. */}
             {dx > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, stickLeft / view.zoom + M.head + M.gap, L.h + stickTop / view.zoom)} />}
             {rows.map((r, i) => (
-              <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} hot={hot?.r === i || selected?.r === i} live={live} editor={editor} naming={naming === r.item?.id}
+              <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} at={i} hot={hotStore} lit={selected?.r === i} live={live} editor={editor} naming={naming === r.item?.id}
                 onRename={(name) => void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name)} onRemove={() => remove('rows', r)} onPress={own}>
                 {heads && <Totals setup={setup} reading={readingOf(setup, rowCells(r))} />}
               </Head>
@@ -310,7 +325,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
           <div className={styles.stick} data-stuck={dy > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateY(${dy}px)`, clipPath: `inset(-10000px -10000px -10000px ${dx + M.head}px)` }}>
             {dy > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, L.w + stickLeft / view.zoom, stickTop / view.zoom + M.top + M.gap)} />}
             {cols.map((c, i) => (
-              <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} hot={hot?.c === i || selected?.c === i} live={live} editor={editor} naming={naming === c.item?.id}
+              <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} at={i} hot={hotStore} lit={selected?.c === i} live={live} editor={editor} naming={naming === c.item?.id}
                 onRename={(name) => void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name)} onRemove={() => remove('cols', c)} onPress={own}>
                 {heads && <Totals setup={setup} reading={readingOf(setup, colCells(c))} />}
               </Head>
@@ -349,7 +364,8 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
           editor={editor}
           // Under the cell, at screen size, kept on the screen.
           at={[view.ox + selBox.x * view.zoom, view.oy + (selBox.y + M.row) * view.zoom]}
-          room={layer.current?.clientWidth ?? 0}
+          // On the canvas (D-228) it's counter-scaled in CSS and not kept in: the canvas pans.
+          room={onCanvas ? 0 : (layer.current?.clientWidth ?? 0)}
           write={(fields) => write(rows[selected.r].key, cols[selected.c].key, fields)}
           onType={() => setTyping(selKey(piece.id, rows[selected.r].key, cols[selected.c].key))}
         />
@@ -362,7 +378,10 @@ type HeadProps = {
   entry: Entry
   which: 'rows' | 'cols'
   style: CSSProperties
-  hot: boolean
+  // Its index on its axis, and the hovered cell: its row's or column's head lights; `lit`, its row's or column's cell is selected.
+  at: number
+  hot: HotStore
+  lit: boolean
   live: boolean
   editor: boolean
   naming: boolean
@@ -374,7 +393,8 @@ type HeadProps = {
 
 // A row's or a column's head: a card's (its title, its type's colour down the left, as on a plane), or a typed name in
 // mono over a dashed rule (a double-click renames it). Its totals under the name (a column's) or at its end (a row's).
-function Head({ entry, which, style, hot, live, editor, naming, onRename, onRemove, onPress, children }: HeadProps) {
+function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, naming, onRename, onRemove, onPress, children }: HeadProps) {
+  const hot = hotStore((s) => !!s.at && (which === 'rows' ? s.at.r : s.at.c) === at) || lit
   const [editing, setEditing] = useState(false)
   const typed = !entry.card
   const open = (editing || naming) && typed && live && editor
@@ -562,26 +582,42 @@ export function StepSquare({ steps, step }: { steps: Step[]; step: Step }) {
   return <span className={styles.square} style={{ ['--tone' as string]: TONE_VAR[step.tone], ['--fill' as string]: `${fill}%` }} aria-hidden />
 }
 
+// The cell under the pointer: its row and column light up.
+type Hot = { r: number; c: number } | null
+const newHot = () => create<{ at: Hot }>(() => ({ at: null }))
+type HotStore = ReturnType<typeof newHot>
+
+type CellActs = {
+  hover: (r: number, c: number, e: ReactPointerEvent) => void
+  click: (r: number, c: number) => void
+  type: (r: number, c: number) => void
+  typed: (r: number, c: number, value: string | number | undefined | null) => void
+}
+
 type CellProps = {
   id: string
+  // Its row and column, and where it is in the matrix's px.
+  r: number
+  c: number
+  x: number
+  y: number
   setup: MatrixSetup
   cell: Cell | undefined
-  style: CSSProperties
   label: string
   selected: boolean
-  hot: boolean
+  hot: HotStore
   live: boolean
   typing: boolean
-  onPress?: (e: ReactPointerEvent) => void
-  onHover?: () => void
-  onClick: () => void
-  onType?: () => void
-  onTyped: (value: string | number | undefined | null) => void
+  canType: boolean
+  acts: RefObject<CellActs>
 }
 
 // What a cell reads: — left out, a step (its square or glyph), a number, a text, or an empty outline; a folded corner
 // when it has a note, `~` / `?` in the other corner when it's not sure. Neither moves what's in the middle.
-function CellBox({ id, setup, cell, style, label, selected, hot, live, typing, onPress, onHover, onClick, onType, onTyped }: CellProps) {
+const CellBox = memo(function CellBox({ id, r, c, x, y, setup, cell, label, selected, hot: hotStore, live, typing, canType, acts }: CellProps) {
+  const hot = hotStore((s) => !!s.at && (s.at.r === r || s.at.c === c))
+  const style: CSSProperties = { left: x, top: y, width: M.cell, height: M.row }
+  const onTyped = (value: string | number | undefined | null) => acts.current.typed(r, c, value)
   const out = setup.notRelevant && !relevant(cell)
   const read = out ? {} : readCell(setup, cell)
   const sure = !out && setup.confidence && cell?.confidence ? CONFIDENCE_MARK[cell.confidence] : ''
@@ -589,7 +625,7 @@ function CellBox({ id, setup, cell, style, label, selected, hot, live, typing, o
   const said = out ? "doesn't apply" : read.step?.label ?? (read.number !== undefined ? fmt(read.number) : read.text) ?? 'empty'
   if (typing)
     return (
-      <div className={styles.cell} style={style} data-selected onPointerDown={onPress}>
+      <div className={styles.cell} style={style} data-selected>
         <input
           className={styles.cellField}
           autoFocus
@@ -626,10 +662,9 @@ function CellBox({ id, setup, cell, style, label, selected, hot, live, typing, o
       tabIndex={live ? 0 : -1}
       aria-label={`${label}: ${said}${sure ? `, ${cell!.confidence}` : ''}${cell?.notes ? ', has a note' : ''}`}
       title={cell?.notes ? cell.notes.slice(0, 200) : undefined}
-      onPointerDown={onPress}
-      onPointerEnter={onHover}
-      onClick={live ? onClick : undefined}
-      onDoubleClick={live ? onType : undefined}
+      onPointerEnter={live ? (e) => acts.current.hover(r, c, e) : undefined}
+      onClick={live ? () => acts.current.click(r, c) : undefined}
+      onDoubleClick={live && canType ? () => acts.current.type(r, c) : undefined}
     >
       {out ? (
         <span className={styles.out} aria-hidden />
@@ -660,7 +695,7 @@ function CellBox({ id, setup, cell, style, label, selected, hot, live, typing, o
       <span className={styles.marks} aria-hidden />
     </button>
   )
-}
+})
 
 type BarProps = {
   setup: MatrixSetup

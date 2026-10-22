@@ -459,7 +459,7 @@
 }
 
 /* A matrix or table opened onto the canvas (D-228): no edge, no fill, its contents a margin in from the corner, its name
-   and console in that margin. What's live in it is counter-scaled to the screen's px (the view carries the zoom). */
+   and console in that margin. Its view stays at 1 under the canvas's zoom; what's at screen size in it reads `--z`. */
 .piece[data-open='true'] {
   border-color: transparent;
   background: none;

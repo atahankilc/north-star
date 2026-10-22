@@ -319,7 +319,8 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
                 key={g.id}
                 x={g.x}
                 height={bottom}
-                zoom={view.zoom}
+                // Open on the canvas (D-228) its view stays at 1 under the canvas's zoom: the piece's `--z` (CSS) sizes it.
+                zoom={onCanvas ? undefined : view.zoom}
                 sizing={sizing?.col === g.id}
                 onMove={(dx) => setSizing({ col: g.id, w: Math.round(Math.min(COL_W.max, Math.max(COL_W.min, g.w + dx))) })}
                 onDone={(dx) => {
@@ -418,19 +419,22 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   )
 }
 
-type GripProps = { x: number; height: number; zoom: number; sizing: boolean; onMove: (dx: number) => void; onDone: (dx: number) => void; onReset: () => void }
+type GripProps = { x: number; height: number; zoom?: number; sizing: boolean; onMove: (dx: number) => void; onDone: (dx: number) => void; onReset: () => void }
 
 // A column's right edge, on its head: dragged, the column widens or narrows (the rows follow); a double-click puts it
 // back to its own width. As wide on the screen at any zoom.
 function WidthGrip({ x, height, zoom, sizing, onMove, onDone, onReset }: GripProps) {
-  const w = 9 / zoom
+  // The zoom it's drawn at: given, or the canvas's (`--z` on the piece) when it isn't.
+  const z = zoom ?? 'var(--z, 1)'
   const from = useRef<number | null>(null)
-  const dx = (e: ReactPointerEvent) => (from.current === null ? 0 : (e.clientX - from.current) / zoom)
+  // How much it's scaled on the screen, measured as the press starts: a drag's px back in the table's.
+  const scale = useRef(1)
+  const dx = (e: ReactPointerEvent) => (from.current === null ? 0 : (e.clientX - from.current) / scale.current)
   return (
     <div
       className={styles.grip}
       data-sizing={sizing || undefined}
-      style={{ left: x - w / 2, top: 0, width: w, height: T.head, ['--rule-h' as string]: `${height}px`, ['--hair' as string]: `${1 / zoom}px` }}
+      style={{ left: `calc(${x}px - 4.5px / ${z})`, top: 0, width: `calc(9px / ${z})`, height: T.head, ['--rule-h' as string]: `${height}px`, ['--hair' as string]: `calc(1px / ${z})` }}
       role="separator"
       aria-orientation="vertical"
       aria-label="Column width (drag; double-click for its own)"
@@ -439,6 +443,7 @@ function WidthGrip({ x, height, zoom, sizing, onMove, onDone, onReset }: GripPro
         e.stopPropagation()
         if (e.button !== 0) return
         e.currentTarget.setPointerCapture(e.pointerId)
+        scale.current = e.currentTarget.getBoundingClientRect().height / T.head || 1
         from.current = e.clientX
       }}
       onPointerMove={(e) => from.current !== null && onMove(dx(e))}

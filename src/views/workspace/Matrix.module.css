@@ -1271,3 +1271,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Open on the canvas (D-228) the matrix's view stays at 1 under the canvas's zoom: the bar under a cell is brought back
+   to the screen's size by the piece's `--z`. */
+.layer[data-on-canvas='true'] .cellBar {
+  transform: scale(calc(1 / var(--z, 1)));
+  transform-origin: 0 0;
+}

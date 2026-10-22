@@ -4,7 +4,7 @@
 // when they're the plane's (FocusedPlane). A plane is moved, resized and renamed only in edit mode (D-180), switched on
 // and off from its console; in edit mode it takes the drag, it's selected, and Delete takes it away. Escape or a click on
 // empty space lets go of the selection. `0` (or the side nav's fit) frames everything, or in focus the plane's contents.
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
@@ -89,8 +89,12 @@ export function CanvasView() {
   piecesRef.current = pieces
   // As they're drawn: one opened onto the canvas as big as its contents (D-228).
   const shown = useMemo(() => shownPieces(pieces, cards), [pieces, cards])
-  const cardsOf = (id: string) => cards.filter((c) => c.pieceId === id)
-  const labelsOf = (id: string) => labels.filter((l) => l.pieceId === id)
+  // Each space's cards and text, kept the same lists until they change: what's in a piece isn't drawn again as the
+  // camera moves (the pieces' contents are memoised, below).
+  const cardsBy = useMemo(() => groupBy(cards, (c) => c.pieceId), [cards])
+  const labelsBy = useMemo(() => groupBy(labels, (l) => l.pieceId), [labels])
+  const cardsOf = (id: string) => cardsBy.get(id) ?? NONE
+  const labelsOf = (id: string) => labelsBy.get(id) ?? NONE
   const canvasLabels = labelsOf(CANVAS)
   const focusedCards = focused ? cardsOf(focused.id) : []
   const focusedLabels = focused ? labelsOf(focused.id) : []
@@ -124,10 +128,14 @@ export function CanvasView() {
           : 'unfocus'
   const escOn = (what: 'setup' | 'close') => (escNext !== 'unfocus' && escNext.what === what && escNext.id === focused?.id ? 'esc' : undefined)
   // What's in a piece, in its own px: a plane's cards and text, a matrix's table (D-204) or a table's (D-209).
-  const contentOf = (p: WithId<Piece>) => {
-    const kind = kindOfPiece(p)
-    return kind === 'matrix' ? matrixBounds(p, cards) : kind === 'table' ? tableBounds(p, cards) : spaceBounds(cardsOf(p.id), labelsOf(p.id))
-  }
+  const contents = useMemo(() => {
+    const of = (p: WithId<Piece>) => {
+      const kind = kindOfPiece(p)
+      return kind === 'matrix' ? matrixBounds(p, cards) : kind === 'table' ? tableBounds(p, cards) : spaceBounds(cardsBy.get(p.id) ?? NONE, labelsBy.get(p.id) ?? NONE)
+    }
+    return new Map(pieces.map((p) => [p.id, of(p)]))
+  }, [pieces, cards, cardsBy, labelsBy])
+  const contentOf = (p: WithId<Piece>) => contents.get(p.id) ?? null
   const bonds = (layer: 'under' | 'over') =>
     shown.map((p) => {
       const plane = p.stuckTo && isBare(p) ? planesBox.find((x) => x.id === p.stuckTo) : undefined
@@ -169,7 +177,7 @@ export function CanvasView() {
   focusedCardsRef.current = focusedCards
   const drawing = useCanvasView((s) => s.drawing)
   // What a canvas section carries besides text: the planes inside it.
-  const pieceCarry = shown.map((p) => ({ id: p.id, ref: pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h }))
+  const pieceCarry = useMemo(() => shown.map((p) => ({ id: p.id, ref: pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h })), [shown, wid])
   // A point on screen (client px) in a space's px: the canvas's, or the focused plane's own view.
   const canvasToSpace = (cx: number, cy: number): [number, number] => {
     const r = root.current!.getBoundingClientRect()
@@ -586,8 +594,8 @@ export function CanvasView() {
         {/* The notches of what's linked to a plane, on its edge (D-215). */}
         {bonds('over')}
         {/* The canvas's own sections over its planes (no fill, so they hide nothing), its text over them (D-188). */}
-        <TextItems labels={canvasLabels} layer="frames" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
-        <TextItems labels={canvasLabels} layer="text" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
+        <Text labels={canvasLabels} layer="frames" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
+        <Text labels={canvasLabels} layer="text" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
       </div>
       </div>
       {focused && (
@@ -917,7 +925,10 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
   }
   // Its cards fitted inside it, and its marks with them (D-187).
   const bare = isBare(piece)
-  const inner = innerView(box, content, ...asShown(piece))
+  const [noFit, pad] = asShown(piece)
+  // Its own view, the same object until its box or contents change, so what's in it isn't drawn again as the canvas
+  // moves (Matrix, Table, Cards below).
+  const inner = useMemo(() => innerView({ x: 0, y: 0, w: box.w, h: box.h }, content, noFit, pad), [box.w, box.h, content, noFit, pad])
   const step = GRID * inner.zoom
   return (
     <div
@@ -958,24 +969,21 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       {/* A comment on the plane itself (D-195), not on what's in it. */}
       <ThreadChip wid={wid} thread={own} zoom={cam.zoom} />
       {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). Open on the canvas (D-228),
-          live at screen size: counter-scaled, so a cell's bar and the like are the screen's px, on a view at the canvas's
-          zoom a margin in from the corner. Not live in edit mode (a press moves it) or while a plane's in focus. */}
+          live: not in edit mode (a press moves it) or while a plane's in focus. */}
       {/* Open, the page under its contents, feathered: the backdrop stays out from under its text (D-009). */}
       {open && content && <span className={styles.openPaper} style={{ left: OPEN_PAD, top: OPEN_PAD, width: content.w, height: content.h }} aria-hidden />}
       {open ? (
-        <div className={styles.openLayer} style={{ width: box.w * cam.zoom, height: box.h * cam.zoom, transform: `scale(${1 / cam.zoom})` }}>
-          {kind === 'matrix' ? (
-            <MatrixView piece={piece} view={{ ox: OPEN_PAD * cam.zoom, oy: OPEN_PAD * cam.zoom, zoom: cam.zoom }} live={live && !editing} editor={editor} onCanvas />
-          ) : (
-            <TableView piece={piece} view={{ ox: OPEN_PAD * cam.zoom, oy: OPEN_PAD * cam.zoom, zoom: cam.zoom }} live={live && !editing} editor={editor} onCanvas />
-          )}
+        // Open on the canvas (D-228), live: at its own size a margin in, under the canvas's zoom (its view stays at 1, so
+        // the camera moving never draws it again); what's at screen size in it reads the piece's `--z`.
+        <div className={styles.openLayer} style={{ width: box.w, height: box.h }}>
+          {kind === 'matrix' ? <Matrix piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas /> : <Table piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas />}
         </div>
       ) : kind === 'matrix' ? (
-        <MatrixView piece={piece} view={inner} live={false} editor={editor} />
+        <Matrix piece={piece} view={inner} live={false} editor={editor} />
       ) : kind === 'table' ? (
-        <TableView piece={piece} view={inner} live={false} editor={editor} />
+        <Table piece={piece} view={inner} live={false} editor={editor} />
       ) : (
-        <PlaneCards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
+        <Cards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       )}
       {CORNERS.map((h) => (
         <span key={h} className={styles.mark} data-handle={h} onPointerDown={editing ? press(h) : undefined} aria-hidden />
@@ -1171,4 +1179,25 @@ function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean })
 // The setup of a matrix or table open on the canvas (D-228), as in its focus.
 function CanvasSetup({ piece }: { piece: WithId<Piece> }) {
   return kindOfPiece(piece) === 'matrix' ? <MatrixSetupPanel piece={piece} /> : <TableSetupPanel piece={piece} />
+}
+
+// What's in a piece, drawn again only when it changes, not as the camera moves (its view is the same object meanwhile).
+const Matrix = memo(MatrixView)
+const Table = memo(TableView)
+const Cards = memo(PlaneCards)
+// The canvas's text, drawn again as the zoom changes (its editors follow it), not as the canvas pans.
+const Text = memo(TextItems)
+const NONE: never[] = []
+// An open matrix's or table's view (D-228): a margin in from its corner, at 1.
+const OPEN_VIEW: PlaneCam = { ox: OPEN_PAD, oy: OPEN_PAD, zoom: 1 }
+
+function groupBy<T>(list: T[], key: (t: T) => string) {
+  const out = new Map<string, T[]>()
+  for (const t of list) {
+    const k = key(t)
+    const at = out.get(k)
+    if (at) at.push(t)
+    else out.set(k, [t])
+  }
+  return out
 }
