@@ -64,13 +64,13 @@ export const TEMPLATES: { key: string; name: string; hint: string; setup: () => 
   {
     key: 'cards',
     name: 'every card',
-    hint: 'every card on every plane, with its type, plane and status',
+    hint: 'every card, its type, plane and status',
     setup: () => ({ rows: { rules: [], items: [] }, cols: [field('type'), field('plane'), field('status'), field('tags')] }),
   },
   {
     key: 'features',
     name: 'features',
-    hint: 'features with their priority, impact, effort and a cost of your own',
+    hint: 'features by priority, impact and effort',
     setup: () => ({
       rows: { rules: [rule({ field: 'type', values: ['feature'] })], items: [] },
       cols: [field('status'), field('priority'), field('impact'), field('effort'), own('cost', 'number')],
@@ -79,7 +79,7 @@ export const TEMPLATES: { key: string; name: string; hint: string; setup: () => 
   {
     key: 'competitors',
     name: 'competitors',
-    hint: 'competitors with where they operate, a price and how much of a threat',
+    hint: 'competitors by region, price and threat',
     setup: () => ({
       rows: { rules: [rule({ field: 'type', values: ['competitor'] })], items: [] },
       cols: [field('regions'), field('tags'), own('price', 'text'), own('threat', 'scale', { steps: SCALES[2].steps })],
