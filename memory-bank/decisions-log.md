@@ -3953,7 +3953,9 @@ categories shown like B, not in a card, and the features under them not indented
 - *Then* (a bug the user found: a very long document unframed, the canvas panned along it, turned the whole screen
   black until a reload; fine zoomed all the way out): an unframed document draws at most 6000 px of itself (one huge
   layer was too much for Chrome's GPU), cut with a fade and `[continue reading ↗]`, which reads it in focus. Not
-  reproduced headless (software drawing); the cut keeps the layer a size the GPU takes.
+  reproduced headless (software drawing); the cut keeps the layer a size the GPU takes. Seen in the user's own Chrome
+  afterwards: panned eight screens down, no black. Also there: an unframed document's box stayed its window's (the text
+  ran out of its frame) when the piece came before its document and text, so its measuring now runs again once they're in.
 - *Then* (the user: "frame iken upload yada table shelf seçimi sunma. Onu focus da ayarlanabilir yap"): framed, the
   documents list's console is only `[focus] [edit]`; upload, table/shelf, kinds and pages are in its focus dock, and in
   its console once unframed.

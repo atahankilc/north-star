@@ -129,7 +129,9 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
     })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [piece.id, level, onCanvas])
+    // Again once the document and its text are in: the piece can come before them (on a slow line the first look finds
+    // nothing to measure, and its box stayed the window's, the text running out of it).
+  }, [piece.id, level, onCanvas, !!d, !!body.data])
 
   // In focus the wheel scrolls it, kept from the plane's zoom (ctrl or a pinch still zooms).
   useEffect(() => {
