@@ -4,7 +4,7 @@
 // canvas a picture, except each row's `⇱` grip, which drags the document out onto the canvas on its own (DocPlace); in
 // focus live: a click opens the document beside the list (DocReader), a right-click has the rest (open, place on the
 // canvas, share, download, delete). Paged like a table (D-213); which page is yours. Files dropped on it are uploaded.
-import { useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { useLayoutEffect, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -17,6 +17,7 @@ import { Select } from '../../ui/Select'
 import { ago } from '../../ui/ago'
 import { useWs } from './context'
 import { KindMark, lengthOf } from './DocContent'
+import { useOpenSize } from './shownBox'
 import styles from './Documents.module.css'
 
 // Its parts in its own px: the table's head and rows, the shelf's sheets.
@@ -82,9 +83,13 @@ type Props = {
   // In focus: rows open, heads sort, right-click works. On the canvas only the grips take the pointer.
   live: boolean
   editor: boolean
+  // Opened onto the canvas (D-234): live there, nothing cut at its edge, its size measured for its drawn box; a click
+  // on a document calls `onOpen` (the list goes into focus) and opens it beside the list.
+  onCanvas?: boolean
+  onOpen?: () => void
 }
 
-export function DocumentsView({ piece, view, live, editor }: Props) {
+export function DocumentsView({ piece, view, live, editor, onCanvas = false, onOpen }: Props) {
   const { documents } = useWs()
   const { user } = useAuth()
   const me = user?.id
@@ -93,19 +98,35 @@ export function DocumentsView({ piece, view, live, editor }: Props) {
   const page = pagesOf(setup, all.length, useDocUi((s) => s.pages[piece.id]))
   const shown = all.slice(page.from, page.to)
   const reader = useDocUi((s) => s.reader)
-  const open = (d: WithId<Doc>) => useDocUi.setState({ reader: d.id })
+  const open = (d: WithId<Doc>) => {
+    onOpen?.()
+    useDocUi.setState({ reader: d.id })
+  }
+  // Open on the canvas, how big it came out: its box there (shownBox.ts).
+  const world = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = world.current
+    if (!el || !onCanvas) return
+    const ro = new ResizeObserver(() => {
+      const next = { w: el.offsetWidth, h: el.offsetHeight }
+      const was = useOpenSize.getState()[piece.id]
+      if (!was || was.w !== next.w || was.h !== next.h) useOpenSize.setState({ [piece.id]: next })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [onCanvas, piece.id])
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }
   // A row's or sheet's grip drags it out onto the canvas (editors only): the canvas places it where it's let go.
   const grip = (d: WithId<Doc>) =>
-    editor && !live ? (
+    editor && (!live || onCanvas) ? (
       <span className={styles.grip} data-live title="drag out onto the canvas" aria-label={`Drag "${d.title}" onto the canvas`} onPointerDown={dragOut(d.id)}>
         ⇱
       </span>
     ) : null
 
   return (
-    <div className={styles.layer} data-live={live || undefined}>
-      <div className={styles.world} style={style}>
+    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
+      <div ref={world} className={styles.world} style={style}>
         {all.length === 0 ? (
           <div className={styles.empty} style={{ width: TABLE_W }}>
             <p>No documents yet.</p>

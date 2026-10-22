@@ -10,6 +10,11 @@
   pointer-events: auto;
 }
 
+/* Opened onto the canvas (D-234): all of it, nothing cut. */
+.layer[data-on-canvas='true'] {
+  overflow: visible;
+}
+
 /* On the canvas, cut at the bottom with a fade into the page. */
 .layer[data-cut='true']::after {
   content: '';

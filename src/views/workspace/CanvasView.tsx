@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, isLens, kindOfPiece, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { canOpen, deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, isLens, kindOfPiece, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
@@ -43,7 +43,7 @@ import { MatrixSetupPanel } from './MatrixSetup'
 import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { TableSetupPanel } from './TableSetup'
 import { Beside, type EscNext } from './Beside'
-import { isOpen, OPEN_PAD, shownPieces } from './shownBox'
+import { isOpen, OPEN_FOOT, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
 import { deleteDocument, downloadDocument, moveReports, shareDocument, type Doc } from '../../data/documents'
 import { documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, uploadFiles, useDocUi } from './Documents'
 import { DocPlace, DocReader, documentBounds, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
@@ -93,7 +93,10 @@ export function CanvasView() {
   const piecesRef = useRef(pieces)
   piecesRef.current = pieces
   // As they're drawn: one opened onto the canvas as big as its contents (D-228).
-  const shown = useMemo(() => shownPieces(pieces, cards), [pieces, cards])
+  // An open documents list or document (D-234) is as big as it came out when drawn.
+  const openSizes = useOpenSize()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const shown = useMemo(() => shownPieces(pieces, cards), [pieces, cards, openSizes])
   // Each space's cards and text, kept the same lists until they change: what's in a piece isn't drawn again as the
   // camera moves (the pieces' contents are memoised, below).
   const cardsBy = useMemo(() => groupBy(cards, (c) => c.pieceId), [cards])
@@ -1142,13 +1145,22 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). Open on the canvas (D-228),
           live: not in edit mode (a press moves it) or while a plane's in focus. */}
       {/* Open, the page under its contents, feathered: the backdrop stays out from under its text (D-009). */}
-      {open && content && <span className={styles.openPaper} style={{ left: OPEN_PAD, top: OPEN_PAD, width: content.w, height: content.h }} aria-hidden />}
+      {open && content && <span className={styles.openPaper} style={{ left: OPEN_PAD, top: OPEN_PAD, width: box.w - 2 * OPEN_PAD, height: box.h - OPEN_PAD - OPEN_FOOT }} aria-hidden />}
       {bare && focusing ? null : open ? (
         // In focus (and on its way there and back) its copy here is hidden: nothing drawn in it meanwhile.
         // Open on the canvas (D-228), live: at its own size a margin in, under the canvas's zoom (its view stays at 1, so
         // the camera moving never draws it again); what's at screen size in it reads the piece's `--z`.
         <div className={styles.openLayer} style={{ width: box.w, height: box.h }}>
-          {kind === 'matrix' ? <Matrix piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas /> : <Table piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas />}
+          {kind === 'matrix' ? (
+            <Matrix piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas />
+          ) : kind === 'table' ? (
+            <Table piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas />
+          ) : kind === 'documents' ? (
+            // Open on the canvas (D-234): its rows live there; a click takes the list into focus with the document beside it.
+            <DocsList piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas onOpen={onFocus} />
+          ) : (
+            <DocOne piece={piece} view={OPEN_VIEW} live={live && !editing} onCanvas />
+          )}
         </div>
       ) : kind === 'matrix' ? (
         <Matrix piece={piece} view={inner} live={false} editor={editor} />
@@ -1176,8 +1188,14 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         comments={comments}
         link={isLens(piece) ? { at: host?.id ?? null, planes, editor, onChange: (plane) => void linkLens(wid, piece, plane) } : undefined}
         // Out of its window onto the canvas and back (D-228), in edit mode; open, its pages and setup are here.
-        open={isLens(piece) ? { on: open, onToggle: () => void openPiece(wid, piece, !open) } : undefined}
-        extra={open ? <OpenTools piece={piece} editor={editor} /> : kind === 'documents' ? <DocumentsTools piece={piece} editor={editor} compact toolClass={styles.tool} /> : undefined}
+        open={canOpen(piece) ? { on: open, onToggle: () => void openPiece(wid, piece, !open) } : undefined}
+        extra={
+          kind === 'documents' ? (
+            <DocumentsTools piece={piece} editor={editor} compact={!open} toolClass={styles.tool} />
+          ) : kind === 'document' ? undefined : open ? (
+            <OpenTools piece={piece} editor={editor} />
+          ) : undefined
+        }
       />
     </div>
   )

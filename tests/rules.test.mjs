@@ -558,6 +558,8 @@ await allow('editor puts a document on the canvas', () => addDoc(sub(alice.fs, '
 await deny('a document piece without its document', () => addDoc(sub(alice.fs, 'pieces'), { kind: 'document', x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 await allow('editor puts a documents list on the canvas', () => addDoc(sub(alice.fs, 'pieces'), { kind: 'documents', documents: { view: 'shelf', kinds: ['markdown', 'report'], sort: { col: 'added', desc: true }, pageSize: 10 }, x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 await deny('a documents list of an unknown view', () => addDoc(sub(alice.fs, 'pieces'), { kind: 'documents', documents: { view: 'grid' }, x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
+await allow('a documents list opened onto the canvas (D-234)', () => addDoc(sub(alice.fs, 'pieces'), { kind: 'documents', documents: { view: 'table' }, open: true, x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
+await allow('a document opened onto the canvas (D-234)', () => addDoc(sub(alice.fs, 'pieces'), { kind: 'document', docId: 'd1', open: true, x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 await deny('a plane holding a docId', () => addDoc(sub(alice.fs, 'pieces'), { kind: 'plane', docId: 'd1', x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 
 // Comment threads (D-159): any member, viewers too, as themselves.

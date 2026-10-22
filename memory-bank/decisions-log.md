@@ -3899,3 +3899,18 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): links started as `solves` only; hiding ideas, FOR Owners (Owners + its problem),
   TAG #ops (the problem) and REGION Germany (Resmio kept, OpenTable in the US dropped) each narrowed as said; no console
   errors; build.
+
+### D-234 · 2026-10-22 · Accepted (D-228's unframe for documents; adds to D-232)
+- *Decision:* the documents list and a document on its own can be taken out of their windows onto the canvas like a
+  matrix or table: `[unframe]` / `[frame]` in the edit-mode console, shared (`open: true`, rules now allow it on
+  `documents` and `document`). Open, the edge and fill go and the contents lie on a feathered page at their own size,
+  live there: the list's heads sort, its `⇱` grips drag documents out, its console has the full tools (kinds, per
+  page, table/shelf, upload), a click on a document takes the list into focus with that document beside it; a
+  document shows the whole of its text (never cut, never shrunk to its title by zoom), links work, a press on it pans
+  only after 5 px (D-217). Their open size isn't known from the data, so it's measured as drawn (`useOpenSize` in
+  shownBox.ts) and feeds the drawn box (fit, go to, a new piece's place); until measured, the window's size.
+- *Also:* `canOpen` (lenses + the two document kinds) decides `[unframe]`; sticking to planes stays lenses only.
+- *User:* "diğer agentlar frame unframe gibi bişi implemente etmişlerdi … Onu bi araştır ve documentsı o hale getir".
+- *Verified* headless (emulators): both unframed from edit mode, the open list sorted by title from the canvas, a row
+  click went into the list's focus with the document beside it, the open document showed its whole text; both framed
+  back to their windows; rules 421 pass (2 new); tsc; no console errors.

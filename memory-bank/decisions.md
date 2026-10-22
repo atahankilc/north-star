@@ -302,6 +302,7 @@ piece; check them with the user then.
 - Documents (D-232, spec documents.md): every file is a document (`markdown | image | pdf | report`; old reports moved
   over once), private until shared; a `documents` list piece (table or shelf, switched in its console) and a `document`
   piece showing one in a window; a private one put on the canvas asks first; files need Storage (`.md` only until Blaze).
+  Both unframe onto the canvas like D-228 (live there, their open size measured as drawn) (D-234).
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

@@ -43,6 +43,9 @@ export const isBare = (p: Pick<Piece, 'kind'>) => kindOfPiece(p) !== 'plane'
 // A lens on the cards (D-209): a matrix or a table, which sticks to a plane (D-210) and opens onto the canvas (D-228).
 export const isLens = (p: Pick<Piece, 'kind'>) => p.kind === 'matrix' || p.kind === 'table'
 
+// What can be taken out of its window onto the canvas (D-228): a lens, the documents list, a document (D-234).
+export const canOpen = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'documents' || p.kind === 'document'
+
 // firestore.rules' validPiece allows 80.
 export const PIECE_NAME_MAX = 80
 
@@ -193,7 +196,7 @@ export async function placeLens(wid: string, piece: Piece & { id: string }, from
   return tracked(`${what} a ${KIND_NAME[kind]}`, [ref], () => updateDoc(ref, { ...to, ...change, updatedAt: Date.now() }), { before })
 }
 
-// A matrix or a table opened onto the canvas, or closed back into its window (D-228): shared, one undo step.
+// A matrix, a table or documents (D-234) opened onto the canvas, or closed back into its window (D-228): shared, one undo step.
 export function openPiece(wid: string, piece: Piece & { id: string }, open: boolean) {
   const ref = doc(col(wid), piece.id)
   const kind = kindOfPiece(piece)

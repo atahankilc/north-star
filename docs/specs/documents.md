@@ -64,9 +64,15 @@ of its own). By size on the screen: full → kind + title alone → grey bars; t
   being read lit cyan, a click glides there). Dock: `[share]/[unshare]` (author), `[download]`, `[unfocus]`.
 - Deleting the piece leaves the document in its list.
 
+## Unframed (D-234)
+
+Both pieces take D-228's `[unframe]` / `[frame]` (edit mode): out of the window onto the canvas, on a feathered page,
+live there. The list sorts, drags documents out, shows all its tools in its console; a click on a document goes into
+the list's focus with it beside. A document shows all of its text, links work. Their size there is measured as drawn.
+
 ## Not yet
 
 - Images and PDFs (Storage, step 4): upload with thumbnails, pdf.js pages, `[◐ dark]`, an image taking its shape.
 - Writing a document in the app (kind `note`); renaming from the UI; the assistant writing documents.
 - Viewers uploading (the client's read-only mode refuses it).
-- `[unframe]` for a document; comments on a document in a list; documents in the export.
+- Comments on a document in a list; documents in the export.

@@ -11,6 +11,11 @@
   pointer-events: auto;
 }
 
+/* Opened onto the canvas (D-234): nothing cut at its edge. */
+.layer[data-on-canvas='true'] {
+  overflow: visible;
+}
+
 .world {
   position: absolute;
   top: 0;

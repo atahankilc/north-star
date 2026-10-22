@@ -19,6 +19,7 @@ import { useWs } from './context'
 import { DocContent, KindMark } from './DocContent'
 import { useDocUi } from './Documents'
 import { DockAction, FocusDock } from './FocusDock'
+import { useOpenSize } from './shownBox'
 import styles from './DocumentPiece.module.css'
 import beside from './Beside.module.css'
 
@@ -39,13 +40,15 @@ export function documentBounds(piece: WithId<Piece>): Bounds {
 type Level = 'full' | 'compact' | 'far'
 const levelAt = (zoom: number): Level => (zoom * 15 < 4.5 ? 'far' : zoom * 15 < 8 ? 'compact' : 'full')
 
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean }
+// `onCanvas`: opened onto the canvas (D-234): the whole of it at reading size, live there (links, text), its size measured
+// for its drawn box; never cut, never shrunk to its title (it would jump in size as you zoom).
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; onCanvas?: boolean }
 
-export function DocumentPieceView({ piece, view, live }: Props) {
+export function DocumentPieceView({ piece, view, live, onCanvas = false }: Props) {
   const { wid, documents } = useWs()
   const { user } = useAuth()
   const d = documents.find((x) => x.id === piece.docId) ?? null
-  const level = useCanvasView((s) => levelAt((live ? (s.planeCam?.zoom ?? 1) : (s.cams[wid]?.zoom ?? 1)) * view.zoom))
+  const level = useCanvasView((s) => (onCanvas ? 'full' : levelAt((live ? (s.planeCam?.zoom ?? 1) : (s.cams[wid]?.zoom ?? 1)) * view.zoom)))
   const body = useDocBody(wid, d, level === 'full')
   const layer = useRef<HTMLDivElement>(null)
   const content = useRef<HTMLDivElement>(null)
@@ -55,15 +58,21 @@ export function DocumentPieceView({ piece, view, live }: Props) {
   useLayoutEffect(() => {
     const el = content.current
     if (!el) return
-    const ro = new ResizeObserver(() => useHeights.setState({ [piece.id]: el.offsetHeight }))
+    const ro = new ResizeObserver(() => {
+      useHeights.setState({ [piece.id]: el.offsetHeight })
+      if (!onCanvas) return
+      const next = { w: el.offsetWidth, h: el.offsetHeight }
+      const was = useOpenSize.getState()[piece.id]
+      if (!was || was.w !== next.w || was.h !== next.h) useOpenSize.setState({ [piece.id]: next })
+    })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [piece.id, level])
+  }, [piece.id, level, onCanvas])
 
   // In focus the wheel scrolls it, kept from the plane's zoom (ctrl or a pinch still zooms).
   useEffect(() => {
     const el = layer.current
-    if (!el || !live) return
+    if (!el || !live || onCanvas) return
     const onWheel = (e: WheelEvent) => {
       if (e.ctrlKey) return
       e.stopPropagation()
@@ -75,18 +84,19 @@ export function DocumentPieceView({ piece, view, live }: Props) {
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [live, piece.id])
+  }, [live, piece.id, onCanvas])
 
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }
   return (
-    <div ref={layer} className={styles.layer} data-live={live || undefined} data-cut={!live || undefined}>
+    <div ref={layer} className={styles.layer} data-live={live || undefined} data-cut={(!live && !onCanvas) || undefined} data-on-canvas={onCanvas || undefined}>
       <div className={styles.world} style={style}>
         {!d ? (
           <p className={styles.gone} style={{ width, margin: PAD }}>
             This document is gone, or only its author sees it now.
           </p>
         ) : level === 'full' ? (
-          <div ref={content} className={styles.content} style={{ width, padding: PAD }}>
+          // On the canvas a press on it is its own until it moves 5 px (D-217's rule): a link's click still lands.
+          <div ref={content} className={styles.content} style={{ width, padding: PAD }} data-cell={(onCanvas && live) || undefined}>
             <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links={live} />
           </div>
         ) : level === 'compact' ? (
@@ -102,7 +112,7 @@ export function DocumentPieceView({ piece, view, live }: Props) {
           </div>
         )}
       </div>
-      {live && d && level === 'full' && <Outline pieceId={piece.id} content={content} />}
+      {live && !onCanvas && d && level === 'full' && <Outline pieceId={piece.id} content={content} />}
     </div>
   )
 }
