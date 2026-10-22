@@ -12,10 +12,11 @@ import { camOf, fitInto, glide, setCam, useCanvasView, type Bounds } from '../..
 import { create } from 'zustand'
 import { labelBox } from './TextItems'
 import { kindOfPiece } from '../../data/pieces'
+import type { ReactNode } from 'react'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 
 // `space`: where it is, the canvas or a plane's id; `inside`: a plane's, listed under it on the canvas.
-export type Place = { id: string; space: string; label: string; glyph: string; box: Bounds; whole: boolean; inside?: boolean }
+export type Place = { id: string; space: string; label: string; glyph: ReactNode; box: Bounds; whole: boolean; inside?: boolean }
 
 // A place picked in the side nav, for the canvas to go to; one waiting for its plane to come into focus; and the planes
 // whose places are shown under them in the list (D-200: folded until opened, for the tab's life).

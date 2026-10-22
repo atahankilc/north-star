@@ -14,6 +14,7 @@ import { matrixBounds, matrixFindItems, M } from './Matrix'
 import { tableBounds, tableFindItems, type FieldText } from './Table'
 import { documentsBounds, documentsFindItems, documentsOf, listed } from './Documents'
 import { landing, matchesIn, MOST, type FindItem, type FindTarget } from './find'
+import type { ReactNode } from 'react'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import type { Place } from './goTo'
 
@@ -26,8 +27,8 @@ export type Dest =
   | { kind: 'reader'; list: WithId<Piece>; doc: WithId<Doc>; target: FindTarget }
 
 // `fold`: a plane's own places folded under it in go to (D-200), opened or not; `indent`: one of them.
-export type Row = { id: string; glyph: string; text: string; hint: string; dest: Dest; tone?: string; inside?: boolean; fold?: { open: boolean; count: number; plane: string }; indent?: boolean }
-export type Group = { space: string; title: string; glyph: string; rows: Row[]; count: number }
+export type Row = { id: string; glyph: ReactNode; text: string; hint: string; dest: Dest; tone?: string; inside?: boolean; fold?: { open: boolean; count: number; plane: string }; indent?: boolean }
+export type Group = { space: string; title: string; glyph: ReactNode; rows: Row[]; count: number }
 
 type Data = {
   pieces: WithId<Piece>[]

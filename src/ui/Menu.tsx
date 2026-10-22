@@ -19,7 +19,7 @@ export type MenuEntry =
       // Shown faint on the right (a shortcut, a count).
       hint?: string
       // Shown before the label (an action's mark).
-      glyph?: string
+      glyph?: ReactNode
       // Its key in the prompt: typed alone, it puts the item first (D-222).
       letter?: string
       // Shown in red: something that can't be taken lightly.
