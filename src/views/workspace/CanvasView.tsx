@@ -50,6 +50,7 @@ import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Do
 import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
+import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
@@ -152,6 +153,8 @@ export function CanvasView() {
           : 'unfocus'
   const escOn = (what: 'setup' | 'close') => (escNext !== 'unfocus' && escNext.what === what && escNext.id === focused?.id ? 'esc' : undefined)
   // What's in a piece, in its own px: a plane's cards and text, a matrix's table (D-204) or a table's (D-209).
+  // A plane's filter changes what its box holds.
+  const filters = usePlaneFilter((s) => s.byPlane)
   const contents = useMemo(() => {
     const of = (p: WithId<Piece>) => {
       const kind = kindOfPiece(p)
@@ -163,10 +166,10 @@ export function CanvasView() {
             ? documentsBounds(p, listed(documents, documentsOf(p), user?.id).length)
             : kind === 'document'
               ? documentBounds(p)
-              : spaceBounds(cardsBy.get(p.id) ?? NONE, labelsBy.get(p.id) ?? NONE)
+              : spaceBounds(cardsBy.get(p.id) ?? NONE, edges, labelsBy.get(p.id) ?? NONE, [], p.id)
     }
     return new Map(pieces.map((p) => [p.id, of(p)]))
-  }, [pieces, cards, cardsBy, labelsBy, documents, user?.id])
+  }, [pieces, cards, edges, cardsBy, labelsBy, documents, user?.id, filters])
   const contentOf = (p: WithId<Piece>) => contents.get(p.id) ?? null
   const bonds = (layer: 'under' | 'over') =>
     shown.map((p) => {

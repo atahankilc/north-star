@@ -161,7 +161,7 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
             : one
               ? // A document: at 100 %, its top near the top.
                 setPlaneCam(documentHome(one, useCanvasView.getState().size.w))
-              : fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? docsBounds(docs) : spaceBounds(cards.filter((c) => c.pieceId === plane), edges, labels.filter((l) => l.pieceId === plane)))
+              : fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? docsBounds(docs) : spaceBounds(cards.filter((c) => c.pieceId === plane), edges, labels.filter((l) => l.pieceId === plane), [], plane ?? undefined))
           : fitCanvas(wid, [...shownPieces(pieces, cards), ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
       }
     >

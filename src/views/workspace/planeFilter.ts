@@ -50,6 +50,14 @@ export function useFilter(plane: string | null): Filter {
   return cache.get(plane)!
 }
 
+// The same, read outside React (fit, the box round a plane's contents).
+export function filterOf(plane: string): Filter {
+  const set = usePlaneFilter.getState().byPlane[plane]
+  if (set) return set
+  if (!cache.has(plane)) cache.set(plane, load(plane))
+  return cache.get(plane)!
+}
+
 export function setFilter(plane: string, next: Filter) {
   usePlaneFilter.setState((s) => ({ byPlane: { ...s.byPlane, [plane]: next } }))
   try {
