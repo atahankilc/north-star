@@ -477,7 +477,7 @@
 
 .frame {
   position: absolute;
-  inset: 30px 0 0;
+  inset: 25px 0 0;
   border: 1px solid color-mix(in srgb, var(--type) 55%, transparent);
   border-top: 0;
 }
@@ -490,7 +490,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 30px;
+  height: 25px;
   padding: 0 8px 0 13px;
   background: var(--bg-raised);
   box-shadow: inset 4px 0 0 var(--type);

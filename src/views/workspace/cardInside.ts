@@ -2,6 +2,7 @@
 // parts, folded into it as a small tree while it's folded. Sizes in plane px, shared by the card's look, its box for
 // links and corner marks, and where a folded part's card tucks into its row.
 import { CARD, type Card } from '../../data/cards'
+import { GRID } from '../../data/grid'
 import type { CompetitorFeature } from '../../data/competitorFeatures'
 import type { Edge } from '../../data/edges'
 
@@ -145,14 +146,18 @@ export function partRowBox(parent: Box, index: number, depth: number): Box {
 }
 
 // An unfolded package (D-239): a frame round its members, the band that is the package over it. The whole box, band and
-// frame, in plane px; null without members to frame.
-export const BAND_H = 30
-const FRAME_PAD = 20
+// frame, in plane px; null without members to frame. Every edge on the plane's `+` marks (D-244): a grid step round
+// the members, out to the next mark, the band one step tall.
+export const BAND_H = GRID
+const FRAME_PAD = GRID
 export function packageBox(members: Box[]): Box | null {
   if (!members.length) return null
   const [l, t] = [Math.min(...members.map((b) => b.x)), Math.min(...members.map((b) => b.y))]
   const [r, b] = [Math.max(...members.map((m) => m.x + m.w)), Math.max(...members.map((m) => m.y + m.h))]
-  return { x: l - FRAME_PAD, y: t - FRAME_PAD - BAND_H, w: r - l + 2 * FRAME_PAD, h: b - t + 2 * FRAME_PAD + BAND_H }
+  const down = (v: number) => Math.floor(v / GRID + 1e-6) * GRID
+  const up = (v: number) => Math.ceil(v / GRID - 1e-6) * GRID
+  const [x0, y0, x1, y1] = [down(l - FRAME_PAD), down(t - FRAME_PAD) - BAND_H, up(r + FRAME_PAD), up(b + FRAME_PAD)]
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
 }
 
 // A package's cards (D-239, D-240): what it holds as a tree (its named cards and packages and what's under them), each

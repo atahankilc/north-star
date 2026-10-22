@@ -4147,3 +4147,11 @@ categories shown like B, not in a card, and the features under them not indented
   package ı görüyorum ama altında ne var belli olmuyo folded ise".
 - *Verified* headless (emulators): package 2 (package 1 + a problem) folded: rows Package 1 `3 inside`, ├ Deposit,
   └ Card hold, └ Part A, No-shows; no console errors; tsc.
+
+### D-244 · 2026-10-22 · Accepted (adds to D-239)
+- *Decision:* an unfolded package's frame sits on the plane's `+` marks on every side: a grid step (25 px) round its
+  members, each edge pushed out to the next mark (so a member off the grid, or a card grown taller, still gives edges
+  on marks), the band one grid step tall over it; nested frames land a step apart.
+- *Why:* the user: "package ın çizgileri griddlere diğerleri gibi tam oturmuyor … sağdan ve soldan az kalıyorlar. Grid
+  snap açıkken bile + ların tam hizasında değiller" (the pad was 20 px and the band 30).
+- *Verified* headless (emulators): a package inside a package, both frames' four edges on marks; tsc.
