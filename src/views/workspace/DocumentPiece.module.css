@@ -340,36 +340,7 @@
   font-size: var(--text-xs);
 }
 
-/* The list put away (D-232): its button, top-left under the breadcrumb, clear of the side nav; the first page leaves
-   room for it. */
-.readerScroll[data-under-bar] {
-  padding-top: 104px;
-}
-
-.listBar {
-  position: absolute;
-  top: 56px;
-  left: 64px;
-  z-index: 3;
-  display: flex;
-  gap: var(--space-2);
-}
-
-.listBar .listButton {
-  padding: var(--space-1) var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  border: 1px solid var(--line-hover);
-  background: var(--bg);
-  color: var(--fg);
-}
-
-.listBar .listButton:hover {
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
-}
-
-.listKey {
-  color: var(--fg-faint);
+/* The list put away (D-232): the first document starts at the side nav, no line down its left. */
+.reader[data-alone] {
+  border-left-color: transparent;
 }

@@ -3892,6 +3892,12 @@ categories shown like B, not in a card, and the features under them not indented
   dock makes a click open a document next to the ones open (up to four, equal columns; a narrow one's dock is marks, its
   words in the tips), right-click `open next to the others` too. From an unframed list on the canvas a click opens the
   document on the whole screen, the list put away; with the list put away Escape goes straight to the canvas.
+- *Then:* Escape: with the list there it closes the document (the last opened); with the list put away, a framed list
+  comes back (they all close), an unframed one goes straight to the canvas; closing the last document with `[close]`
+  does the same. No unfocus button top-left: the list's button is `[≡ list]` in the first document's dock, and no line
+  stays down the left with the list put away. Each row (and sheet) in the list's focus has its actions as marks on its
+  right: ✎ rename (its author; typed over in place, Enter keeps, Escape puts back), ◐ share/unshare, ↗ place, ↓ download,
+  ⌫ delete; rename is in the right-click menu too.
 - *Verified:* rules 419 pass (34 new: private reads, lists by shared/uid, author-only share/rename, owner deletes a
   shared one and restores it, moving a shared report as its author's, body size, file paths under its own id, the two
   piece kinds); headless on the emulators: two .md uploaded into a new list (◐ private), shelf and table switch, a row

@@ -19,7 +19,7 @@ import { useWs } from './context'
 import { DocContent, KindMark } from './DocContent'
 import { closeDoc, documentsBounds, documentsOf, listed, readerLeft, useDocUi } from './Documents'
 import { DockAction, FocusDock } from './FocusDock'
-import { useOpenSize } from './shownBox'
+import { isOpen, useOpenSize } from './shownBox'
 import styles from './DocumentPiece.module.css'
 import beside from './Beside.module.css'
 
@@ -205,7 +205,7 @@ function Outline({ pieceId, content, ready }: { pieceId: string; content: React.
 // screen, which splits as for what's beside a plane (D-211): the list keeps the left, the document reads on the right,
 // scrolling as a page does; the line between drags.
 
-export function DocReaders({ list, onUnfocus }: { list: WithId<Piece>; onUnfocus: () => void }) {
+export function DocReaders({ list }: { list: WithId<Piece> }) {
   const { documents } = useWs()
   const { user } = useAuth()
   const ids = useDocUi((s) => s.readers)
@@ -246,17 +246,6 @@ export function DocReaders({ list, onUnfocus }: { list: WithId<Piece>; onUnfocus
         <DocPane key={id} id={id} list={list} box={{ x: Math.round(left + i * w), y: 0, w: Math.round(w), h: size.h }} last={i === open.length - 1} first={i === 0} />
       ))}
       {!hidden && <div className={beside.divider} style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="List and documents" />}
-      {/* The list put away (D-232): its button top-left brings it back; unfocus is here too, its dock being gone. */}
-      {hidden && (
-        <div className={styles.listBar} onPointerDown={(e) => e.stopPropagation()}>
-          <button className={styles.listButton} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })}>
-            ≡ list
-          </button>
-          <button className={styles.listButton} title="back to the canvas (Escape)" onClick={onUnfocus}>
-            unfocus <span className={styles.listKey}>esc</span>
-          </button>
-        </div>
-      )}
     </>
   )
 }
@@ -277,6 +266,8 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
   const mine = d.uid === user?.id
   const mayDelete = mine || (d.shared && workspace.roles[user?.id ?? ''] === 'owner')
   const narrow = box.w < NARROW
+  // Escape with the list put away (D-232): back to the list when it's framed, to the canvas when it's unframed.
+  const framed = !isOpen(list)
 
   // The wheel scrolls it as a page, kept from the list's view; ctrl (or a pinch) zooms its text.
   useEffect(() => {
@@ -294,9 +285,8 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
   }, [id])
 
   return (
-    <div className={`${beside.pane} ${styles.reader}`} style={{ left: box.x, top: 0, width: box.w, height: box.h }} onPointerDown={(e) => e.stopPropagation()} aria-label={`${d.title}, beside the list`}>
-      {/* The first one leaves room on top for the list's bar when the list is put away. */}
-      <div ref={el} className={styles.readerScroll} data-scrolls data-under-bar={(hidden && first) || undefined}>
+    <div className={`${beside.pane} ${styles.reader}`} data-alone={(hidden && first) || undefined} style={{ left: box.x, top: 0, width: box.w, height: box.h }} onPointerDown={(e) => e.stopPropagation()} aria-label={`${d.title}, beside the list`}>
+      <div ref={el} className={styles.readerScroll} data-scrolls>
         <div className={styles.readerBody}>
           <div className={styles.readerColumn} style={{ zoom }}>
             <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links />
@@ -306,13 +296,15 @@ function DocPane({ id, list, box, last, first }: { id: string; list: WithId<Piec
       </div>
       {/* Its title is on the page already: the dock only says what it is, so it fits a narrow part. */}
       <FocusDock label="document beside" name={narrow ? undefined : <span className={beside.kind}>document</span>}>
+        {/* The list put away: its button here, in the first one's dock (D-232). */}
+        {hidden && first && <DockAction label="≡ list" keyHint={framed && last ? 'esc' : undefined} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
         {mine && <DockAction label={narrow ? '◐' : d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => void shareDocument(wid, d.id, !d.shared)} />}
         {editor && <DockAction label={narrow ? '↗' : 'place ↗'} title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
         <DockAction label={narrow ? '↓' : 'download'} title="download: save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
         {mayDelete && <DockAction label={narrow ? '⌫' : 'delete'} title="delete the document (asks first)" onClick={() => useDocUi.setState({ deleting: d.id })} />}
         <DocZoom reader={id} />
         {/* With the list put away Escape goes straight to the canvas: no `esc` on a close then. */}
-        <DockAction label={narrow ? '×' : 'close'} main keyHint={last && !hidden && !narrow ? 'esc' : undefined} title="close it" onClick={() => closeDoc(id)} />
+        <DockAction label={narrow ? '×' : 'close'} main keyHint={last && (!hidden || !framed) && !narrow ? 'esc' : undefined} title="close it" onClick={() => closeDoc(id)} />
       </FocusDock>
     </div>
   )

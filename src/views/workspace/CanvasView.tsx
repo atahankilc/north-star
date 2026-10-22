@@ -134,7 +134,12 @@ export function CanvasView() {
   // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus. The
   // dock whose action that is shows `esc` on it; the key handler below goes in the same order.
   const matrixPane = besideOpen.find((p) => kindOfPiece(p) === 'matrix')?.id ?? null
-  const escNext: EscNext = readerOpen && !listHidden
+  // Documents beside their list (D-232): Escape closes the last one; with the list put away, a framed list comes back,
+  // an unframed one (opened from the canvas) goes straight back to the canvas.
+  const focusedUnframed = !!focused && isOpen(focused)
+  const focusedUnframedRef = useRef(focusedUnframed)
+  focusedUnframedRef.current = focusedUnframed
+  const escNext: EscNext = readerOpen && !(listHidden && focusedUnframed)
     ? { what: 'close', id: 'reader' }
     : matrixSetup && focused && (focusedMatrix || matrixPane)
       ? { what: 'setup', id: focusedMatrix ? focused.id : matrixPane! }
@@ -185,6 +190,18 @@ export function CanvasView() {
     if (focusedDocuments && readerOpen && useCanvasView.getState().focusArrived) fitRef.current(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [readerAt, size.w])
+  // The last document closed with the list put away: a framed list shows again, an unframed one leaves for the canvas.
+  const readerCount = useDocUi((s) => s.readers.length)
+  const hadReaders = useRef(0)
+  useEffect(() => {
+    const was = hadReaders.current
+    hadReaders.current = readerCount
+    if (!focusedDocuments || was === 0 || readerCount > 0 || !useDocUi.getState().listHidden) return
+    if (focusedUnframed) unfocus()
+    else useDocUi.setState({ listHidden: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readerCount])
+
   // Table to shelf and back (or other kinds, another page): the list fits again, centred (or pinned beside documents).
   const focusedBox = focused && focusedDocuments ? `${contentOf(focused)?.w}x${contentOf(focused)?.h}:${listHidden}` : ''
   useEffect(() => {
@@ -365,6 +382,7 @@ export function CanvasView() {
         ? [{ key: 'alongside', label: 'open next to the others', glyph: '⧉', letter: 'n', onSelect: () => openDoc(d.id, true) }]
         : []),
       ...(editor ? [{ key: 'place', label: 'place on the canvas', glyph: '⇱', letter: 'p', hint: d.shared ? undefined : 'shares it', onSelect: () => useDocUi.setState({ placing: { docId: d.id, near: focusId ?? undefined } }) }] : []),
+      ...(mine ? [{ key: 'rename', label: 'rename', glyph: '✎', letter: 'r', onSelect: () => useDocUi.setState({ renaming: d.id }) }] : []),
       ...(mine ? [{ key: 'share', label: d.shared ? 'unshare' : 'share with everyone', glyph: '◐', letter: 's', onSelect: () => void shareDocument(wid, d.id, !d.shared) }] : []),
       { key: 'download', label: 'download .md', glyph: '↓', letter: 'd', onSelect: () => void downloadDocument(wid, d) },
       ...(mine || (d.shared && isOwnerOf(workspace, user?.id)) ? [{ key: 'delete', label: 'delete', glyph: '×', letter: 'x', danger: true, onSelect: () => useDocUi.setState({ deleting: d.id }) }] : []),
@@ -585,8 +603,10 @@ export function CanvasView() {
           if (cardSelected) useCanvasView.setState({ cardSelected: null })
           else if (useMatrixUi.getState().setup) useMatrixUi.setState({ setup: false })
           else if (useTableUi.getState().setup) useTableUi.setState({ setup: null })
-          // A document open beside its list (D-232), the last opened first; with the list put away, straight to the canvas.
+          // Documents open beside their list (D-232): with the list there, the last opened closes; with it put away, a
+          // framed list comes back (they all close), an unframed one goes straight to the canvas.
           else if (useDocUi.getState().readers.length && !useDocUi.getState().listHidden) useDocUi.setState((s) => ({ readers: s.readers.slice(0, -1) }))
+          else if (useDocUi.getState().readers.length && !focusedUnframedRef.current) closeDocs()
           // Then what's open beside the plane closes, the last opened first (D-211).
           else if (besideRef.current.length) setBesideRef.current(besideRef.current.slice(0, -1).map((p) => p.id))
           else unfocusRef.current()
@@ -758,7 +778,7 @@ export function CanvasView() {
           )}
           {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
-          {focusedDocuments && focusArrived && !focusLeaving && <DocReaders list={focused} onUnfocus={unfocus} />}
+          {focusedDocuments && focusArrived && !focusLeaving && <DocReaders list={focused} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {/* With the list put away its dock goes too; unfocus is in the bar top-left (DocReaders). */}
           {focusArrived && !focusLeaving && !listHidden && (

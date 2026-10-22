@@ -306,7 +306,8 @@ piece; check them with the user then.
   piece showing one in a window; a private one put on the canvas asks first; files need Storage (`.md` only until Blaze).
   Both unframe onto the canvas like D-228 (live there, their open size measured as drawn) (D-234). A document open
   beside the list: the list pinned top-left at its size, the document the rest, "on this page", zoom 50–200 %; several
-  side by side, `[hide list]`, `[delete]`; from the canvas a click opens it full screen, Escape back to the canvas (D-232).
+  side by side, `[hide list]`, `[delete]`; from the canvas a click opens it full screen. Escape: closes the document;
+  list put away → a framed list back, an unframed one to the canvas. Rows carry their actions as marks (rename …) (D-232).
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

@@ -8,7 +8,7 @@ import { useLayoutEffect, useMemo, useRef, type CSSProperties, type PointerEvent
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { DocumentError, emptyDocuments, refusal, typeOfFile, uploadMarkdown, type Doc, type DocCol, type DocKind, type DocumentsSetup } from '../../data/documents'
+import { DOC_LIMITS, DocumentError, downloadDocument, emptyDocuments, refusal, renameDocument, shareDocument, typeOfFile, uploadMarkdown, type Doc, type DocCol, type DocKind, type DocumentsSetup } from '../../data/documents'
 import { setDocumentsSetup } from '../../data/pieces'
 import { useHistory } from '../../data/history'
 import { useAuth } from '../../data/auth'
@@ -22,10 +22,11 @@ import styles from './Documents.module.css'
 
 // Its parts in its own px: the table's head and rows, the shelf's sheets.
 export const D = { head: 40, row: 54, pad: 16, sheet: { w: 140, h: 186, gap: 16, cols: 5 } }
-const COL_W: Record<DocCol | 'grip', number> = { kind: 70, title: 370, by: 130, size: 90, added: 96, grip: 36 }
+const COL_W: Record<DocCol | 'grip' | 'actions', number> = { kind: 70, title: 370, by: 130, size: 90, added: 96, grip: 36, actions: 150 }
 const COLS: DocCol[] = ['kind', 'title', 'by', 'size', 'added']
 // The grips' column only where they show (unframed on the canvas, D-234): elsewhere no empty column at its end.
-const tableW = (grips: boolean) => COLS.reduce((s, c) => s + COL_W[c], 0) + (grips ? COL_W.grip : 0)
+// The actions' column only where the list is live (in focus, unframed): a picture has nothing to press.
+const tableW = (grips: boolean, actions = true) => COLS.reduce((s, c) => s + COL_W[c], 0) + (grips ? COL_W.grip : 0) + (actions ? COL_W.actions : 0)
 const TABLE_W = tableW(false)
 // A shelf only as wide as its sheets need: up to five a row.
 const shelfCols = (n: number) => Math.max(1, Math.min(D.sheet.cols, n))
@@ -49,13 +50,15 @@ export const useDocUi = create<{
   readerAt: number | null
   // Each open document's zoom, kept in this tab.
   readerZooms: Record<string, number>
+  // The document whose title is being typed over, in the list.
+  renaming: string | null
   drag: { docId: string; x: number; y: number } | null
   dropped: { docId: string; x: number; y: number } | null
   // Put on the canvas once it's shared: at `at` (canvas px), or beside `near` (a piece) when asked from a focus.
   placing: { docId: string; at?: [number, number]; near?: string } | null
   deleting: string | null
   uploads: { name: string; state: 'sending' | 'done' | 'refused'; why?: string }[]
-}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
+}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, renaming: null, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
 
 // At most this many side by side.
 export const READERS_MAX = 4
@@ -141,6 +144,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
   const page = pagesOf(setup, all.length, useDocUi((s) => s.pages[piece.id]))
   const shown = all.slice(page.from, page.to)
   const readers = useDocUi((s) => s.readers)
+  const renaming = useDocUi((s) => s.renaming)
   // From the canvas (unframed) the document opens on the whole screen, the list put away (its button brings it back);
   // in focus, beside the list.
   const open = (d: WithId<Doc>) => {
@@ -151,6 +155,8 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
     openDoc(d.id)
   }
   const grips = editor && onCanvas
+  // Each document's actions right there, no need to open it (D-232): rename, share, place, download, delete.
+  const actions = (d: WithId<Doc>) => (live ? <RowActions d={d} list={piece} editor={editor} /> : null)
   // Open on the canvas, how big it came out: its box there (shownBox.ts).
   const world = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -201,8 +207,9 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                   <KindMark kind={d.kind} />
                   {!d.shared && <span className={styles.private}>◐</span>}
                 </span>
-                <span className={styles.sheetTitle}>{d.title}</span>
+                {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.sheetTitle}>{d.title}</span>}
                 <SheetLines d={d} />
+                {actions(d)}
                 <span className={styles.sheetFoot}>
                   <span>{d.uid === me ? 'you' : d.name}</span>
                   <span>{ago(d.createdAt)}</span>
@@ -212,7 +219,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
             ))}
           </div>
         ) : (
-          <div className={styles.table} style={{ width: tableW(grips) }}>
+          <div className={styles.table} style={{ width: tableW(grips, live) }}>
             <div className={styles.headRow} style={{ height: D.head }}>
               {COLS.map((c) => (
                 <Head key={c} col={c} setup={setup} live={live && editor} piece={piece} />
@@ -232,7 +239,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                   <KindMark kind={d.kind} />
                 </span>
                 <span className={styles.cell} style={{ width: COL_W.title }}>
-                  <span className={styles.title}>{d.title}</span>
+                  {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.title}>{d.title}</span>}
                   {d.excerpt && <span className={styles.excerpt}>{d.excerpt}</span>}
                 </span>
                 <span className={styles.cell} style={{ width: COL_W.by }}>
@@ -249,6 +256,11 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                 <span className={styles.cell} style={{ width: COL_W.added }}>
                   {ago(d.createdAt)}
                 </span>
+                {live && (
+                  <span className={styles.cell} style={{ width: COL_W.actions }}>
+                    {actions(d)}
+                  </span>
+                )}
                 {grips && (
                   <span className={styles.cell} style={{ width: COL_W.grip }}>
                     {grip(d)}
@@ -260,6 +272,74 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
         )}
       </div>
     </div>
+  )
+}
+
+// A document's actions in its row or on its sheet, as marks (their words in the tips): rename and share (its author),
+// place on the canvas (editors; asks first when it's private), download, delete (its author, an owner a shared one; asks
+// first). A press on one never opens the document.
+function RowActions({ d, list, editor }: { d: WithId<Doc>; list: WithId<Piece>; editor: boolean }) {
+  const { wid, workspace } = useWs()
+  const { user } = useAuth()
+  const mine = d.uid === user?.id
+  const owner = workspace.roles[user?.id ?? ''] === 'owner'
+  const act = (fn: () => void) => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    fn()
+  }
+  return (
+    <span className={styles.actions} role="group" aria-label={`${d.title}: actions`}>
+      {mine && (
+        <button className={styles.act} title="rename" aria-label="Rename" onClick={act(() => useDocUi.setState({ renaming: d.id }))}>
+          ✎
+        </button>
+      )}
+      {mine && (
+        <button className={styles.act} data-on={d.shared || undefined} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => void shareDocument(wid, d.id, !d.shared))}>
+          ◐
+        </button>
+      )}
+      {editor && (
+        <button className={styles.act} title={d.shared ? 'place it on the canvas, beside the list' : 'place it on the canvas, beside the list (shares it; asks first)'} aria-label="Place on the canvas" onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
+          ↗
+        </button>
+      )}
+      <button className={styles.act} title="download .md" aria-label="Download" onClick={act(() => void downloadDocument(wid, d))}>
+        ↓
+      </button>
+      {(mine || (d.shared && owner)) && (
+        <button className={styles.act} data-tone="danger" title="delete (asks first)" aria-label="Delete" onClick={act(() => useDocUi.setState({ deleting: d.id }))}>
+          ⌫
+        </button>
+      )}
+    </span>
+  )
+}
+
+// A document's title typed over in its row (its author's): Enter or leaving keeps it, Escape puts it back.
+function RenameField({ d }: { d: WithId<Doc> }) {
+  const { wid } = useWs()
+  const done = (save: boolean, value: string) => {
+    useDocUi.setState({ renaming: null })
+    if (save && value.trim() && value.trim() !== d.title) void renameDocument(wid, d.id, value)
+  }
+  return (
+    <input
+      className={styles.rename}
+      defaultValue={d.title}
+      maxLength={DOC_LIMITS.title}
+      aria-label="Document title"
+      autoFocus
+      onFocus={(e) => e.currentTarget.select()}
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        e.stopPropagation()
+        if (e.key === 'Enter') done(true, e.currentTarget.value)
+        if (e.key === 'Escape') done(false, '')
+      }}
+      onBlur={(e) => useDocUi.getState().renaming === d.id && done(true, e.currentTarget.value)}
+    />
   )
 }
 

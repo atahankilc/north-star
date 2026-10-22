@@ -54,6 +54,11 @@ unframed).
   documents take the screen, `[≡ list] [unfocus] esc` top-left; Escape then goes straight to the canvas. Each
   document's dock has `[delete]` (its author, an owner a shared one; asks first).
 - From an unframed list on the canvas, a click opens the document on the whole screen with the list put away.
+- **Escape:** with the list there, it closes the last document opened. With the list put away: a framed list comes back
+  (the documents close), an unframed one goes straight to the canvas. `[close]` on the last document does the same.
+  The list's button is `[≡ list]` in the first document's dock; nothing stays down the left.
+- **Row actions:** each row (and sheet) in the list's focus has its actions as marks on its right: ✎ rename (its
+  author, typed over in place), ◐ share/unshare, ↗ place, ↓ download, ⌫ delete (asks first). Right-click has them too.
 - Switching table and shelf (or kinds, a page) fits the list again. The table has no empty column at its end.
 - The shelf is only as wide as its sheets (up to five a row). Framed, nothing on the list takes a click; the `⇱`
   grips show only once it's unframed.
