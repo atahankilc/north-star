@@ -52,7 +52,8 @@ export function useSeen(layer: RefObject<HTMLDivElement | null>, view: PlaneCam,
 // Which of `n` items, the i-th from `start + i * step` and `size` long, are inside [lo, hi]: [from, to).
 export function within(lo: number, hi: number, start: number, step: number, size: number, n: number): [number, number] {
   if (!Number.isFinite(lo) && !Number.isFinite(hi)) return [0, n]
-  const from = Math.max(0, Math.floor((lo - start - size) / step) + 1)
+  const from = Math.min(n, Math.max(0, Math.floor((lo - start - size) / step) + 1))
   const to = Math.min(n, Math.ceil((hi - start) / step))
-  return [Math.min(from, n), Math.max(from, to)]
+  // Past its end (scrolled off the top or left), `from` is n: nothing, never indices beyond it.
+  return [from, Math.max(from, to)]
 }
