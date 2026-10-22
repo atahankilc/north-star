@@ -15,7 +15,7 @@ import { isReducedMotion } from '../../state/motion'
 import { useWs } from './context'
 import { matrixBounds, MatrixView, toggleMatrixSetup, useMatrixUi } from './Matrix'
 import { MatrixSetupPanel } from './MatrixSetup'
-import { tableBounds, TableView, useTableUi } from './Table'
+import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { DockAction, FocusDock } from './FocusDock'
 import { TableSetupPanel } from './TableSetup'
 import styles from './Beside.module.css'
@@ -213,6 +213,7 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
           </>
         }
       >
+        {kind === 'table' && <TablePager piece={piece} editor={editor} />}
         {editor && (
           <DockAction
             label="setup"

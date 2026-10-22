@@ -113,6 +113,14 @@ export function stickTarget(box: Box, planes: (Box & { id: string })[], reach: n
   return best && { plane: best.plane, box: best.box, side: best.side }
 }
 
+// The side of `plane` a piece touches (D-215): one grid step out from that edge and alongside it; null when it's apart.
+export function touchSide(box: Box, plane: Box): Side | null {
+  const side = sideOf(box, plane)
+  const gap = side === 'right' ? box.x - (plane.x + plane.w) : side === 'left' ? plane.x - (box.x + box.w) : side === 'bottom' ? box.y - (plane.y + plane.h) : plane.y - (box.y + box.h)
+  const along = side === 'right' || side === 'left' ? box.y < plane.y + plane.h && plane.y < box.y + box.h : box.x < plane.x + plane.w && plane.x < box.x + box.w
+  return along && Math.abs(gap - STICK_GAP) <= 1 ? side : null
+}
+
 // Which side of `plane` a stuck piece sits on.
 export function sideOf(box: Box, plane: Box): Side {
   const gaps: [Side, number][] = [
@@ -155,6 +163,9 @@ function boundTo(piece: Piece, plane: string | null): Record<string, unknown> {
   }
   return {}
 }
+
+// Linked to a plane, or let go, from its console's dropdown (D-215), where it is: one undo step.
+export const linkLens = (wid: string, piece: Piece & { id: string }, plane: string | null) => placeLens(wid, piece, piece, piece, plane)
 
 // The end of a matrix's or table's move: stuck to a plane, or let go; one undo step.
 export async function placeLens(wid: string, piece: Piece & { id: string }, from: Box, to: Box, stuck: string | null) {

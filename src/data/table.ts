@@ -39,6 +39,8 @@ export type TableSetup = {
   cols: Column[]
   // Sorted by a column (`name` for the first), shared by everyone; unset = the source's order.
   sort?: { col: string; desc?: boolean }
+  // Rows a page (D-213), shared; unset = all on one page. Which page you're on is yours (Table.tsx's useTableUi).
+  pageSize?: number
 }
 
 // firestore.rules' validTable allows these.
@@ -46,6 +48,9 @@ export const MAX_COLS = 30
 export const COL_NAME_MAX = 40
 export const CHECKED = 'yes'
 export const NAME_COL = 'name'
+
+// The page sizes the dock offers (D-213).
+export const PAGE_SIZES = [10, 25, 50, 100]
 
 // What a column is called in its head.
 export const colName = (c: Column) => c.name || c.field || 'column'

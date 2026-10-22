@@ -218,9 +218,9 @@ piece; check them with the user then.
 - Sticking (D-210, D-215): a matrix or table moved (edit mode) within 48 screen px of a plane's edge snaps one grid step
   out from it, the edge lit cyan, and is linked (`stuckTo`; alt = free): a table gets `where plane is … · auto` (changed
   by hand it's yours), a matrix's typed axes the plane. Links show quietly, grey, cyan on hover, no motion (D-215): the
-  piece's name starts with its plane's (`01 PAZAR ▸ TABLE · …`); touching, faint `· ›` cells in the gap and a notch on the
-  plane's edge; apart, a thin straight line, never dashed. Linked or let go from the console dropdown (`link ▾` /
-  `⇆ 01 Pazar ▾`, every plane + `let go`); dragging never lets go. A plane moved or resized carries all of it.
+  console says which plane (`⇆ 01 Pazar ▾`; no prefix on its name); touching, faint `· ›` cells in the gap and a notch on
+  the plane's edge; apart, a thin straight line, never dashed; both under the pieces. Linked or unlinked from that
+  dropdown (`link ▾` / `⇆ 01 Pazar ▾`, every plane + `unlink`); dragging never unlinks. A plane moved or resized carries all of it.
 - Beside (D-211): in a plane's focus the dock has `[⇆ kind · name]` for each piece stuck to it; on, it opens on the right
   (the screen split, more stacked), in the address (`beside=`); each part its own area (own view, fit, setup, dock); a
   pane's dock is the focus dock, named `TABLE · name | [setup] [close]`; `[unfocus]` always there; `esc` shows only

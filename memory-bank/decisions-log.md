@@ -3473,15 +3473,18 @@ categories shown like B, not in a card, and the features under them not indented
 ### D-215 · 2026-10-22 · Accepted (changes D-210: how a link shows, far links, letting go)
 - *Decision:* a matrix or a table linked to a plane (`stuckTo`) shows it quietly, in grey, and lights cyan while the
   plane or the piece is under the pointer. Nothing moves (no flow, no glow).
-  - *Its name* in its top edge starts with its plane's: `01 PAZAR ▸ TABLE · every card` (the plane's name grey,
-    cyan when lit), so it's plain which is the main one: the plane; the piece hangs from it, never the other way.
+  - *Which is the main one:* the plane; the piece hangs from it, never the other way. Its console says so
+    (`⇆ 01 Pazar ▾`); its name in its top edge stays just its own (a `01 PAZAR ▸ TABLE · …` prefix was tried and dropped:
+    "linkli componentlerin sol üstte adının önüne nereyle link olduğunu yazmamıza gerek yok zaten console da yazıyor").
   - *Touching* (one grid step out, alongside): the 25 px gap along what they share holds faint `· ›` cells, 9 px each,
     pointing away from the plane (`‹ ⌄ ⌃` on the other sides), and the plane's edge a notch there (`--edge`, 2 px). The
     old `⇆` chip in the gap is gone.
   - *Apart* (a far link): a thin straight line (1 screen px, `--line-hover`, never dashed) from the middle of the plane's
     side facing the piece (kept 30 px from its corners) to the piece's facing side, with a notch where it leaves the plane.
+    Lines and gaps are drawn under every piece, so a line never crosses one ("Linkler componentlerin üstünden geçiyor");
+    the notches over the plane's edge.
   - *Linking:* moving it to a plane's edge still links it there (D-210); a dropdown in its console does the rest:
-    `link ▾` when it isn't linked, `⇆ 01 Pazar ▾` when it is, listing every plane (`⇆ name`) and `let go`. Viewers see
+    `link ▾` when it isn't linked, `⇆ 01 Pazar ▾` when it is, listing every plane (`⇆ name`) and `unlink`. Viewers see
     `⇆ 01 Pazar` without the dropdown. Dragging never lets go any more (moved away it stays linked, far); dropped at
     another plane's edge it links to that one.
   - *Moving together:* a plane moved or resized carries everything linked to it: what touches it stays on its edge
@@ -3498,9 +3501,9 @@ categories shown like B, not in a card, and the features under them not indented
   bridge or stitches in the gap (G2, G3); an elbow line (F2); a `⇆` handle dragged onto a plane (L1); flowing squares
   and a glow wave. Not taken.
 - *Verified:* headless Chrome on emulators: a table touching a plane's right edge and a matrix its left, both named
-  `01 PAZAR ▸ …` with `· ›` gaps; hovering the table lit its gap, notch and name; the matrix dragged far in edit mode
-  stayed linked, drawn with a thin line; the table's dropdown listed `let go | ⇆ 01 Pazar | ⇆ 02 Rakipler`, picking 02
-  moved its link (its name and rows followed); the far matrix dragged to the plane's edge showed the `· ›` gap mid-drag,
+  `· ›` gaps; hovering the table lit its gap and notch; the matrix dragged far in edit mode
+  stayed linked, drawn with a thin line; the table's dropdown listed `unlink | ⇆ 01 Pazar | ⇆ 02 Rakipler`, picking 02
+  moved its link (its rows followed; `unlink` let it go, its console back to `link ▾`); the far matrix dragged to the plane's edge showed the `· ›` gap mid-drag,
   then the line again as it went on; no console errors; typecheck.
 
 ### D-216 · 2026-10-22 · Accepted (adds to D-212 and D-214)

@@ -11,9 +11,10 @@ import type { Piece } from '../../data/model'
 import { retitleCard, TITLE_MAX, type Card } from '../../data/cards'
 import { setCell, TEXT_MAX, TONE_VAR, type Cell } from '../../data/matrix'
 import { rowsOf, statusOf, type Row } from '../../data/source'
-import { addNamedRow, CHECKED, colName, DEFAULT_STEPS, emptyTable, NAME_COL, readOwn, removeRow, renameRow, setTablePart, type Column, type TableSetup } from '../../data/table'
+import { addNamedRow, CHECKED, colName, DEFAULT_STEPS, emptyTable, NAME_COL, PAGE_SIZES, readOwn, removeRow, renameRow, setTablePart, type Column, type TableSetup } from '../../data/table'
 import { kindOfPiece } from '../../data/pieces'
 import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
+import { Select } from '../../ui/Select'
 import { useWs } from './context'
 import { TYPE_ACCENT } from './PlaneCards'
 import styles from './Table.module.css'
@@ -32,11 +33,22 @@ export const tableOf = (p: Pick<Piece, 'table'>): TableSetup => p.table ?? NO_SE
 export function tableBounds(piece: Pick<Piece, 'table'>, cards: Card[]): Bounds {
   const setup = tableOf(piece)
   const w = T.name + setup.cols.reduce((s, c) => s + widthOf(c), 0) + T.add
-  return { x: 0, y: 0, w, h: T.head + Math.max(rowsOf(setup.rows, cards, !setup.manual).length, 1) * T.row + T.add }
+  const n = rowsOf(setup.rows, cards, !setup.manual).length
+  // A page's worth when it's paged (D-213): fit frames the page.
+  return { x: 0, y: 0, w, h: T.head + Math.max(setup.pageSize ? Math.min(n, setup.pageSize) : n, 1) * T.row + T.add }
 }
 
-// The table whose setup is open (from the focus dock's or its pane's `[setup]`, D-211); a typed row being named.
-export const useTableUi = create<{ setup: string | null; naming: string | null }>(() => ({ setup: null, naming: null }))
+// The table whose setup is open (from the focus dock's or its pane's `[setup]`, D-211); a typed row being named; the page
+// each table is on here (D-213: yours, not shared).
+export const useTableUi = create<{ setup: string | null; naming: string | null; pages: Record<string, number> }>(() => ({ setup: null, naming: null, pages: {} }))
+
+// Its pages (D-213): how many, and the one this table is on, kept in range.
+export function pagesOf(setup: TableSetup, count: number, page: number | undefined) {
+  const size = setup.pageSize
+  const pages = size ? Math.max(1, Math.ceil(count / size)) : 1
+  const at = Math.min(pages - 1, Math.max(0, page ?? 0))
+  return { size, pages, at, from: size ? at * size : 0, to: size ? Math.min(count, (at + 1) * size) : count }
+}
 
 // The selected cell rides on the canvas's card selection (D-187), so Escape and leaving focus let go of it as of a card.
 const CELL = 'tcell|'
@@ -92,7 +104,7 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
   const byKey = useMemo(() => new Map(mine.map((c) => [`${c.row}|${c.col}`, c])), [mine])
   const at = (row: string, col: string) => byKey.get(`${row}|${col}`)
   // The rows, in the source's order or sorted by a column.
-  const rows = useMemo(() => {
+  const all = useMemo(() => {
     const out = rowsOf(setup.rows, cards, !setup.manual)
     const s = setup.sort
     const col = s && (s.col === NAME_COL ? NAME_COL : setup.cols.find((c) => c.id === s.col))
@@ -115,6 +127,9 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
       return s.desc ? -d : d
     })
   }, [setup, cards, fieldText, byKey])
+  // The page shown (D-213); the rest wait on their pages.
+  const page = pagesOf(setup, all.length, useTableUi((s) => s.pages[piece.id]))
+  const rows = useMemo(() => all.slice(page.from, page.to), [all, page.from, page.to])
 
   const cols = setup.cols
   const xs = useMemo(() => {
@@ -460,5 +475,48 @@ function OwnCell({ id, col, cell, style, label, selected, live, typing, onPress,
         <span className={styles.unset}>·</span>
       )}
     </button>
+  )
+}
+
+const ALL = 'all'
+
+// The page controls in a table's dock (D-213): `‹ 2 / 5 ›` and how many rows a page (shared). Arrows step pages here.
+export function TablePager({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const { cards } = useWs()
+  const setup = tableOf(piece)
+  const count = useMemo(() => rowsOf(setup.rows, cards, !setup.manual).length, [setup.rows, setup.manual, cards])
+  const p = pagesOf(setup, count, useTableUi((s) => s.pages[piece.id]))
+  const go = (at: number) => useTableUi.setState((s) => ({ pages: { ...s.pages, [piece.id]: at } }))
+  const { wid } = useWs()
+  return (
+    <span className={styles.pager} role="group" aria-label="Pages">
+      {p.size && (
+        <>
+          <button className={styles.tool} disabled={p.at === 0} title="the page before" aria-label="Page before" onClick={() => go(p.at - 1)}>
+            ‹
+          </button>
+          <span className={styles.pageAt}>
+            {p.at + 1} / {p.pages}
+          </span>
+          <button className={styles.tool} disabled={p.at >= p.pages - 1} title="the page after" aria-label="Page after" onClick={() => go(p.at + 1)}>
+            ›
+          </button>
+        </>
+      )}
+      {editor ? (
+        <Select<string>
+          ariaLabel="Rows a page"
+          className={styles.pageSize}
+          value={p.size ? String(p.size) : ALL}
+          options={[{ value: ALL, label: `all ${count}` }, ...PAGE_SIZES.map((n) => ({ value: String(n), label: `${n} a page` }))]}
+          onChange={(v) => {
+            go(0)
+            void setTablePart(wid, piece.id, 'pageSize', v === ALL ? undefined : Number(v))
+          }}
+        />
+      ) : (
+        <span className={styles.pageAt}>{p.size ? `${p.size} a page` : `all ${count}`}</span>
+      )}
+    </span>
   )
 }

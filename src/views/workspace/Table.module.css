@@ -449,3 +449,24 @@
 .auto {
   color: var(--accent-cyan);
 }
+
+/* The page controls in its dock (D-213): `‹ 2 / 5 ›` and the rows a page. */
+.pager {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.pageAt {
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.pageSize {
+  color: var(--fg-muted);
+}
+
+.tool:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}

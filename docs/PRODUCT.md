@@ -76,8 +76,8 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    are the cards' own fields and columns of its own (a scale, a number, a text, a check), sorted by any. A matrix or a
    table moved to a plane's edge sticks there: it moves with the plane and shows that plane's cards (D-210). In the
    plane's focus the dock opens what's stuck to it beside the plane, the screen split, each part its own area (D-211).
-   A link shows quietly: the piece's name starts with its plane's, faint `· ›` in the gap or a thin line when apart;
-   it's made or let go from the piece's console dropdown, and a plane carries what's linked to it (D-215).
+   A link shows quietly: faint `· ›` in the gap, or a thin line under everything when apart; the piece's console names
+   its plane, and its dropdown links or unlinks it; a plane carries what's linked to it (D-215).
 5. **Overview** (D-144). The workspace read on one screen: next steps, what's on solid ground and what's still a
    guess, the riskiest bets, the white space, what looks off. Reached by its path; opening a workspace now lands on
    the canvas (D-174).

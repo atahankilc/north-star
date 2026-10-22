@@ -46,6 +46,8 @@ type State = {
   stickHint: { plane: string; box: { x: number; y: number; w: number; h: number } } | null
   // Pieces stuck to a plane being moved or resized (D-210): where each is meanwhile.
   following: Record<string, { x: number; y: number; w: number; h: number }>
+  // The plane or linked piece under the pointer (D-215): its links light up.
+  bondHover: string | null
   // In a plane's focus, how many pieces are open beside it (D-211) and how much of the screen's width the plane keeps.
   beside: number
   split: number
@@ -83,7 +85,7 @@ export function planeArea() {
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, stickHint: null, following: {}, beside: 0, split: savedSplit() }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({

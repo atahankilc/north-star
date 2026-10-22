@@ -161,19 +161,63 @@
   border-color: var(--accent-cyan);
 }
 
-/* What's stuck to a plane (D-210): a small `⇆` in the gap between them, framed in cyan. */
-.seam {
+/* A link between a plane and its matrix or table (D-215): quiet grey, cyan while either is under the pointer. No motion.
+   The notch on the plane's edge where it's linked. */
+.notch {
   position: absolute;
   z-index: 2;
-  padding: 0 3px;
-  border: 1px solid var(--accent-cyan);
-  background: var(--bg);
-  color: var(--accent-cyan);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  line-height: 14px;
-  transform: translate(-50%, -50%);
+  background: var(--edge);
   pointer-events: none;
+}
+
+/* Touching: the gap holds faint `· ›` cells, 9 px each (drawn under the pieces). */
+.bondGap {
+  position: absolute;
+  overflow: hidden;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 9px;
+  letter-spacing: 0;
+  text-align: center;
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* Apart: a thin straight line, never dashed, under the pieces so it never crosses one. */
+.bondLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.bondLine line {
+  stroke: var(--line-hover);
+}
+
+.notch[data-lit='true'] {
+  background: var(--accent-cyan);
+}
+
+.bondGap[data-lit='true'] {
+  color: var(--accent-cyan);
+}
+
+.bondLine[data-lit='true'] line {
+  stroke: var(--accent-cyan);
+}
+
+/* The link dropdown in a matrix's or table's console (D-215). */
+.linkPick {
+  color: var(--fg-muted);
+}
+
+.linkAt {
+  color: var(--fg-muted);
 }
 
 .piece[data-away='true'] {

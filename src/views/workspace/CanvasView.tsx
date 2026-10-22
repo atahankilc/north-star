@@ -9,8 +9,9 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { deletePiece, followTo, pieceRef, KIND_NAME, isBare, kindOfPiece, placeLens, sideOf, stickTarget, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { deletePiece, followTo, linkLens, pieceRef, KIND_NAME, isBare, kindOfPiece, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
+import { Select } from '../../ui/Select'
 import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
@@ -36,7 +37,7 @@ import { GRID } from '../../data/grid'
 import { goToPlace, useGoTo, type Place } from './goTo'
 import { matrixBounds, MatrixView, useMatrixUi } from './Matrix'
 import { MatrixSetupPanel } from './MatrixSetup'
-import { tableBounds, TableView, useTableUi } from './Table'
+import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { TableSetupPanel } from './TableSetup'
 import { Beside, type EscNext } from './Beside'
 import styles from './CanvasView.module.css'
@@ -121,8 +122,13 @@ export function CanvasView() {
     const kind = kindOfPiece(p)
     return kind === 'matrix' ? matrixBounds(p, cards) : kind === 'table' ? tableBounds(p, cards) : spaceBounds(cardsOf(p.id), labelsOf(p.id))
   }
+  const bonds = (layer: 'under' | 'over') =>
+    pieces.map((p) => {
+      const plane = p.stuckTo && isBare(p) ? planesBox.find((x) => x.id === p.stuckTo) : undefined
+      return plane ? <Bond key={`bond-${layer}-${p.id}`} piece={p} plane={plane} zoom={cam.zoom} layer={layer} /> : null
+    })
   // The planes as boxes, for sticking (D-210).
-  const planesBox = pieces.filter((p) => !isBare(p)).map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h }))
+  const planesBox = pieces.filter((p) => !isBare(p)).map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h, name: p.name }))
   // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
   const fitRef = useRef((_instant?: boolean) => {})
   fitRef.current = (instant = false) => {
@@ -508,6 +514,9 @@ export function CanvasView() {
         className={styles.world}
         style={{ transform: `translate(${onPixel(size.w / 2 + cam.x)}px, ${onPixel(size.h / 2 + cam.y)}px) scale(${cam.zoom})` }}
       >
+        {/* What's linked to a plane (D-210, D-215): touching, ASCII in the gap; apart, a thin line. Under the pieces, so a
+            line never crosses one. */}
+        {bonds('under')}
         {pieces.map((p) => (
           <PieceBox
             key={p.id}
@@ -523,13 +532,11 @@ export function CanvasView() {
             content={contentOf(p)}
             planes={isBare(p) ? planesBox.filter((x) => x.id !== p.id) : []}
             followers={isBare(p) ? [] : pieces.filter((f) => f.stuckTo === p.id && isBare(f))}
+            host={isBare(p) && p.stuckTo ? (planesBox.find((x) => x.id === p.stuckTo) ?? null) : null}
           />
         ))}
-        {/* What's stuck to a plane (D-210): a small `⇆` in the gap between them. */}
-        {pieces.map((p) => {
-          const plane = p.stuckTo && isBare(p) ? planesBox.find((x) => x.id === p.stuckTo) : undefined
-          return plane ? <Seam key={`seam-${p.id}`} piece={p} plane={plane} zoom={cam.zoom} /> : null
-        })}
+        {/* The notches of what's linked to a plane, on its edge (D-215). */}
+        {bonds('over')}
         {/* The canvas's own sections over its planes (no fill, so they hide nothing), its text over them (D-188). */}
         <TextItems labels={canvasLabels} layer="frames" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
         <TextItems labels={canvasLabels} layer="text" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
@@ -585,6 +592,7 @@ export function CanvasView() {
               {focusedMatrix && editor && (
                 <DockAction label="setup" pressed={!!matrixSetup} keyHint={escOn('setup')} title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
               )}
+              {focusedTable && <TablePager piece={focused} editor={editor} />}
               {focusedTable && editor && (
                 <DockAction label="setup" pressed={tableSetup === focused.id} keyHint={escOn('setup')} title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
               )}
@@ -633,26 +641,65 @@ type BoxProps = {
   planes: (Box & { id: string })[]
   // A plane: what's stuck to it, moved with it.
   followers: WithId<Piece>[]
+  // A matrix or a table: the plane it's linked to (D-215), named first in its edge.
+  host: (Box & { id: string; name?: string }) | null
 }
 
-// The `⇆` between a plane and what's stuck to it (D-210), in the middle of the gap.
-// At screen size, whatever the zoom, like a thread's chip.
-function Seam({ piece, plane: at, zoom }: { piece: WithId<Piece>; plane: Box & { id: string }; zoom: number }) {
+// A link between a plane and a matrix or table (D-210, D-215), quiet grey, cyan while either is under the pointer.
+// Touching (one grid step out): the gap along what they share holds faint `· ›` cells (9 px, pointing away from the
+// plane) and the plane's edge a notch there. Apart: a thin straight line from the middle of the plane's side facing it
+// to the piece's, never dashed, a notch where it leaves. No motion.
+// Drawn in two layers: the gap and the line under the pieces, the notch over its plane's edge.
+function Bond({ piece, plane: at, zoom, layer }: { piece: WithId<Piece>; plane: Box & { id: string }; zoom: number; layer: 'under' | 'over' }) {
   const box = useCanvasView((s) => s.following[piece.id]) ?? piece
   const plane = useCanvasView((s) => s.following[at.id]) ?? at
-  const side = sideOf(box, plane)
-  const mid = (a0: number, a1: number, b0: number, b1: number) => (Math.max(a0, b0) + Math.min(a1, b1)) / 2
-  const [x, y] =
-    side === 'right' ? [(plane.x + plane.w + box.x) / 2, mid(box.y, box.y + box.h, plane.y, plane.y + plane.h)]
-    : side === 'left' ? [(box.x + box.w + plane.x) / 2, mid(box.y, box.y + box.h, plane.y, plane.y + plane.h)]
-    : side === 'bottom' ? [mid(box.x, box.x + box.w, plane.x, plane.x + plane.w), (plane.y + plane.h + box.y) / 2]
-    : [mid(box.x, box.x + box.w, plane.x, plane.x + plane.w), (box.y + box.h + plane.y) / 2]
-  return (
-    <span className={styles.seam} style={{ left: x, top: y, transform: `translate(-50%, -50%) scale(${1 / zoom})` }} title={`stuck to its plane: moves with it, shows its cards`} aria-hidden>
-      ⇆
-    </span>
+  const lit = useCanvasView((s) => s.bondHover === piece.id || s.bondHover === at.id)
+  const side = touchSide(box, plane)
+  if (side) {
+    const across = side === 'right' || side === 'left'
+    const a = across ? Math.max(box.y, plane.y) : Math.max(box.x, plane.x)
+    const b = across ? Math.min(box.y + box.h, plane.y + plane.h) : Math.min(box.x + box.w, plane.x + plane.w)
+    const inset = 12
+    const len = Math.max(0, b - a - 2 * inset)
+    const notch = across
+      ? { left: side === 'right' ? plane.x + plane.w - 1 : plane.x - 1, top: a + inset, width: 2, height: len }
+      : { top: side === 'bottom' ? plane.y + plane.h - 1 : plane.y - 1, left: a + inset, height: 2, width: len }
+    const gap = across
+      ? { left: side === 'right' ? plane.x + plane.w : box.x + box.w, top: a + inset, width: STICK_GAP, height: len }
+      : { top: side === 'bottom' ? plane.y + plane.h : box.y + box.h, left: a + inset, width: len, height: STICK_GAP }
+    const glyph = side === 'right' ? '›' : side === 'left' ? '‹' : side === 'bottom' ? '⌄' : '⌃'
+    const cols = Math.floor(gap.width / BOND_CELL)
+    const rows = Math.floor(gap.height / BOND_CELL)
+    const text = Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => ((r + c) % 2 ? glyph : '·')).join('')).join('\n')
+    return layer === 'over' ? (
+      <span className={styles.notch} data-lit={lit || undefined} style={notch} aria-hidden />
+    ) : (
+      <span className={styles.bondGap} data-lit={lit || undefined} style={gap} aria-hidden>
+        {text}
+      </span>
+    )
+  }
+  // Apart: from the plane's side facing it, its middle (kept inside the side), to the piece's facing side.
+  const cx = (q: Box) => q.x + q.w / 2
+  const cy = (q: Box) => q.y + q.h / 2
+  const dx = cx(box) - cx(plane)
+  const dy = cy(box) - cy(plane)
+  const flat = Math.abs(dx) / plane.w > Math.abs(dy) / plane.h
+  const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi)
+  const A = flat ? [dx > 0 ? plane.x + plane.w : plane.x, clamp(cy(box), plane.y + 30, plane.y + plane.h - 30)] : [clamp(cx(box), plane.x + 30, plane.x + plane.w - 30), dy > 0 ? plane.y + plane.h : plane.y]
+  const B = flat ? [dx > 0 ? box.x : box.x + box.w, clamp(A[1], box.y + 20, box.y + box.h - 20)] : [clamp(A[0], box.x + 20, box.x + box.w - 20), dy > 0 ? box.y : box.y + box.h]
+  const notch = flat ? { left: A[0] - 1, top: A[1] - 10, width: 2, height: 20 } : { left: A[0] - 10, top: A[1] - 1, width: 20, height: 2 }
+  return layer === 'over' ? (
+    <span className={styles.notch} data-lit={lit || undefined} style={notch} aria-hidden />
+  ) : (
+    <svg className={styles.bondLine} data-lit={lit || undefined} aria-hidden>
+      <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} strokeWidth={1 / zoom} />
+    </svg>
   )
 }
+
+// The cells in the gap of a touching link (D-215): the backdrop's 9 px.
+const BOND_CELL = 9
 
 // What a piece shows of what's in it on the canvas (D-187): a plane's cards and text centred and fitted inside its box,
 // never past 1; nothing = its own (0, 0) at its corner. Its px inside its 1 px edge. A matrix is a window: its table at
@@ -720,7 +767,7 @@ function dragBox(from: Box, handle: Handle, dx: number, dy: number, free: boolea
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
 
-function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers }: BoxProps) {
+function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers, host }: BoxProps) {
   const { wid } = useWs()
   const kind = kindOfPiece(piece)
   // Where a move or resize has it, held after the drop until the data gets there (else it would jump back for a moment).
@@ -733,6 +780,8 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
   const box = held ?? following ?? piece
   // A matrix or table about to stick here (D-210): the plane's edge lights.
   const stickHere = useCanvasView((s) => s.stickHint?.plane === piece.id)
+  // Its link lights while it or its plane is under the pointer (D-215).
+  const hover = (on: boolean) => () => useCanvasView.setState((s) => (on ? { bondHover: piece.id } : s.bondHover === piece.id ? { bondHover: null } : {}))
   // Carried by a section being dragged (D-188).
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(piece.id) ? s.dragShift : null))
 
@@ -745,11 +794,15 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
     const [sx, sy] = [e.clientX, e.clientY]
     const from: Box = { x: piece.x, y: piece.y, w: piece.w, h: piece.h }
     let to: Box | null = null
-    // A matrix or table moved near a plane's edge sticks there (D-210); a plane carries what's stuck to it.
+    // A matrix or table moved near a plane's edge sticks there (D-210); moved anywhere else it stays linked as it was
+    // (only its dropdown lets go, D-215). A plane carries what's linked to it: what touches it stays on its edge, what's
+    // apart moves as the plane's corner does.
     const lens = isBare(piece) && handle === 'move'
-    let stick: string | null = piece.stuckTo && planes.some((p) => p.id === piece.stuckTo) ? piece.stuckTo : null
-    const carried = followers.map((f) => ({ id: f.id, from: { x: f.x, y: f.y, w: f.w, h: f.h }, side: sideOf(f, from) }))
-    const followed = (b: Box) => carried.map((f) => ({ id: f.id, from: f.from, to: followTo(f.from, f.side, from, b) }))
+    const linked: string | null = piece.stuckTo && planes.some((p) => p.id === piece.stuckTo) ? piece.stuckTo : null
+    let stick = linked
+    const carried = followers.map((f) => ({ id: f.id, from: { x: f.x, y: f.y, w: f.w, h: f.h }, side: touchSide(f, from) }))
+    const followed = (b: Box) =>
+      carried.map((f) => ({ id: f.id, from: f.from, to: f.side ? followTo(f.from, f.side, from, b) : { ...f.from, x: f.from.x + b.x - from.x, y: f.from.y + b.y - from.y } }))
     // On the window, not captured: a press that doesn't move stays a click.
     const move = (ev: PointerEvent) => {
       const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
@@ -758,13 +811,15 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       if (lens) {
         // Within 48 screen px of an edge; alt held: free, no sticking.
         const t = ev.altKey ? null : stickTarget(to, planes, 48 / cam.zoom)
-        stick = t?.plane ?? null
+        stick = t?.plane ?? linked
         if (t) to = t.box
         useCanvasView.setState({ stickHint: t ? { plane: t.plane, box: t.box } : null })
       }
       setHeld(to)
-      // The plane too, so the `⇆` between them follows.
+      // The plane too, so its links follow live (D-215); a linked matrix or table being moved, so its link turns from
+      // touching to apart and back as it goes, at once.
       if (carried.length) useCanvasView.setState({ following: { ...Object.fromEntries(followed(to).map((f) => [f.id, f.to])), [piece.id]: to } })
+      else if (lens && stick) useCanvasView.setState({ following: { [piece.id]: to } })
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
@@ -818,6 +873,8 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
       data-away={bare && focusing ? true : undefined}
       style={{ left: box.x + (shift?.dx ?? 0), top: box.y + (shift?.dy ?? 0), width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px` }}
       onPointerDown={press('move')}
+      onPointerEnter={hover(true)}
+      onPointerLeave={hover(false)}
     >
       {editing ? (
         <NameField value={piece.name ?? ''} placeholder={KIND_NAME[kind]} onSave={(name) => name !== (piece.name ?? '') && void renamePiece(wid, piece.id, name, kind)} />
@@ -850,6 +907,7 @@ function PieceBox({ piece, cam, selected, editing, editor, onFocus, focusing, ca
         onDelete={() => useCanvasView.setState({ confirming: piece.id })}
         onFocus={onFocus}
         comments={comments}
+        link={isBare(piece) ? { at: host?.id ?? null, planes, editor, onChange: (plane) => void linkLens(wid, piece, plane) } : undefined}
       />
     </div>
   )
@@ -908,9 +966,13 @@ type ConsoleProps = {
   onEdit?: () => void
   onDelete?: () => void
   className?: string
+  // A matrix's or table's link to a plane (D-215): a dropdown, `link ▾` or `⇆ 01 Pazar ▾`, to pick a plane or unlink.
+  link?: { at: string | null; planes: (Box & { id: string; name?: string })[]; editor: boolean; onChange: (plane: string | null) => void }
 }
 
-function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, className }: ConsoleProps) {
+const UNLINKED = 'none'
+
+function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, className, link }: ConsoleProps) {
   return (
     <div
       className={`${styles.console} ${className ?? ''}`}
@@ -949,6 +1011,21 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
               {comments.mentioned ? '@' : <CommentIcon size={11} />} {comments.count} inside
             </button>
           )}
+          {link &&
+            (link.editor ? (
+              <Select<string>
+                ariaLabel={`Link the ${noun} to a plane`}
+                className={styles.linkPick}
+                value={link.at ?? UNLINKED}
+                options={[
+                  { value: UNLINKED, label: link.at ? 'unlink' : 'link' },
+                  ...link.planes.map((p) => ({ value: p.id, label: `⇆ ${p.name || 'unnamed plane'}` })),
+                ]}
+                onChange={(v) => v !== (link.at ?? UNLINKED) && link.onChange(v === UNLINKED ? null : v)}
+              />
+            ) : (
+              link.at && <span className={styles.linkAt}>⇆ {link.planes.find((p) => p.id === link.at)?.name || 'plane'}</span>
+            ))}
           <button className={styles.tool} aria-pressed={false} title={`make the ${noun} the view`} onClick={onFocus}>
             focus
           </button>
