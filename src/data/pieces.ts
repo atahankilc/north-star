@@ -1,10 +1,12 @@
-// The workspace's canvas (D-174, D-176): what's placed on it. Planes (D-180), matrices (D-204) and tables (D-209); more later.
+// The workspace's canvas (D-174, D-176): what's placed on it. Planes (D-180), matrices (D-204), tables (D-209), and
+// documents (D-232): a list of them, or one on its own.
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { cardRef, type Card } from './cards'
 import { edgeRef, edgesOn, type Edge } from './edges'
 import { labelRef, type Label } from './labels'
 import { cellKey, cellRef, emptySetup, type Cell, type MatrixSetup } from './matrix'
 import { emptyTable, type TableSetup } from './table'
+import { docRef, emptyDocuments, type Doc, type DocumentsSetup } from './documents'
 import { db } from './firebase'
 import { GRID, snap } from './grid'
 import { absent, snapshotWith, tracked } from './history'
@@ -18,6 +20,8 @@ export const PIECE_SIZE: Record<PieceKind, { w: number; h: number }> = {
   plane: { w: 960, h: 600 },
   matrix: { w: 800, h: 500 },
   table: { w: 800, h: 400 },
+  documents: { w: 800, h: 450 },
+  document: { w: 650, h: 500 },
 }
 
 // The smallest a piece resizes to (D-180): room for its name and its console. Whole steps of the grid.
@@ -26,13 +30,18 @@ export const PIECE_MIN = { w: 325, h: 200 }
 // Pieces sit on the canvas's 25 px grid (D-182), the step of a plane's `+` marks, so marks of planes side by side line up.
 export { GRID, snap }
 
-export const KIND_NAME: Record<PieceKind, string> = { plane: 'plane', matrix: 'matrix', table: 'table' }
+export const KIND_NAME: Record<PieceKind, string> = { plane: 'plane', matrix: 'matrix', table: 'table', documents: 'documents', document: 'document' }
 
 // What a piece is; a `board` from before D-180 is a plane.
-export const kindOfPiece = (p: Pick<Piece, 'kind'>): PieceKind => (p.kind === 'matrix' || p.kind === 'table' ? p.kind : 'plane')
+const KINDS: PieceKind[] = ['matrix', 'table', 'documents', 'document']
+export const kindOfPiece = (p: Pick<Piece, 'kind'>): PieceKind => (KINDS.includes(p.kind) ? p.kind : 'plane')
 
-// Not a plane (D-206, D-209): just its table on the canvas, at its own size, with a focus of its own (no ink, no marks).
+// Not a plane (D-206, D-209, D-232): just its contents on the canvas, at their own size, with a focus of its own (no
+// ink, no marks).
 export const isBare = (p: Pick<Piece, 'kind'>) => kindOfPiece(p) !== 'plane'
+
+// A lens on the cards (D-209): a matrix or a table, which sticks to a plane (D-210) and opens onto the canvas (D-228).
+export const isLens = (p: Pick<Piece, 'kind'>) => p.kind === 'matrix' || p.kind === 'table'
 
 // firestore.rules' validPiece allows 80.
 export const PIECE_NAME_MAX = 80
@@ -43,9 +52,10 @@ const overlaps = (a: Box, b: Box) => a.x < b.x + b.w + GAP && b.x < a.x + a.w + 
 
 // A piece centred on `at` (canvas pixels), or the nearest place right of it clear of the others: one undo step.
 // A matrix starts blank (D-204), a table with every card (D-209), or from the setup given.
-export async function addPiece(wid: string, kind: PieceKind, at: [number, number], others: Box[], setup?: MatrixSetup | TableSetup, name?: string) {
+// A document piece (D-232) shows `docId`, sized as `size` when given (an image's shape).
+export async function addPiece(wid: string, kind: PieceKind, at: [number, number], others: Box[], setup?: MatrixSetup | TableSetup, name?: string, docId?: string, size?: { w: number; h: number }) {
   const ref = doc(col(wid))
-  const { w, h } = PIECE_SIZE[kind]
+  const { w, h } = size ?? PIECE_SIZE[kind]
   const box = { x: snap(at[0] - w / 2), y: snap(at[1] - h / 2), w, h }
   for (let hit = others.find((o) => overlaps(box, o)); hit; hit = others.find((o) => overlaps(box, o))) box.x = hit.x + hit.w + GAP
   const now = Date.now()
@@ -54,7 +64,11 @@ export async function addPiece(wid: string, kind: PieceKind, at: [number, number
       ? { matrix: JSON.parse(JSON.stringify(setup ?? emptySetup())), ...(name ? { name } : {}) }
       : kind === 'table'
         ? { table: JSON.parse(JSON.stringify(setup ?? emptyTable())), ...(name ? { name } : {}) }
-        : {}
+        : kind === 'documents'
+          ? { documents: emptyDocuments(), ...(name ? { name } : {}) }
+          : kind === 'document' && docId
+            ? { docId }
+            : {}
   const data = { kind, ...box, ...extra, createdAt: now, updatedAt: now }
   await tracked(`add a ${KIND_NAME[kind]}`, [ref], () => setDoc(ref, data), { before: absent([ref]) })
   return ref.id
@@ -184,6 +198,33 @@ export function openPiece(wid: string, piece: Piece & { id: string }, open: bool
   const ref = doc(col(wid), piece.id)
   const kind = kindOfPiece(piece)
   return tracked(`${open ? 'open' : 'close'} a ${KIND_NAME[kind]}`, [ref], () => updateDoc(ref, { open: open || deleteField(), updatedAt: Date.now() }))
+}
+
+// A document on its own on the canvas (D-232), centred on `at` or right of whatever it would cover; shared in the same
+// step when it isn't yet (asked first: everyone sees the canvas). An image takes its own shape. One undo step.
+export async function placeDocument(wid: string, d: Pick<Doc, 'shared' | 'kind' | 'width' | 'height'> & { id: string }, at: [number, number], others: Box[], share: boolean) {
+  const ref = doc(col(wid))
+  const base = PIECE_SIZE.document
+  const size = d.kind === 'image' && d.width && d.height ? { w: base.w, h: snap(Math.max(PIECE_MIN.h, Math.min(1200, (base.w * d.height) / d.width))) } : base
+  const box = { x: snap(at[0] - size.w / 2), y: snap(at[1] - size.h / 2), ...size }
+  for (let hit = others.find((o) => overlaps(box, o)); hit; hit = others.find((o) => overlaps(box, o))) box.x = hit.x + hit.w + GAP
+  const now = Date.now()
+  const shared = docRef(wid, d.id)
+  await tracked(share ? 'share and place a document' : 'place a document', share ? [ref, shared] : [ref], () => {
+    const batch = writeBatch(db())
+    batch.set(ref, { kind: 'document', docId: d.id, ...box, createdAt: now, updatedAt: now })
+    if (share) batch.update(shared, { shared: true, updatedAt: now })
+    return batch.commit()
+  })
+  return ref.id
+}
+
+// A documents list's setup (D-232): its view, kinds, sort, page size, merged; one undo step.
+export function setDocumentsSetup(wid: string, piece: Piece & { id: string }, change: Partial<DocumentsSetup>) {
+  const ref = doc(col(wid), piece.id)
+  const next = { ...(piece.documents ?? emptyDocuments()), ...change }
+  for (const k of Object.keys(next) as (keyof DocumentsSetup)[]) if (next[k] === undefined) delete next[k]
+  return tracked('change a documents list', [ref], () => updateDoc(ref, { documents: next, updatedAt: Date.now() }))
 }
 
 // Its name (D-179); empty takes it away, so it shows its kind again. Typing merges into one undo step.

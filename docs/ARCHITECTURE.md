@@ -85,6 +85,8 @@ Source of truth: `src/data/model.ts`.
 workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), memberIds[], roles{uid: owner|editor|viewer}, inviteCode, invitedEmails[]
   members/{uid}         name, email?, photo?, joinedAt                            (people list, D-098)
   reports/{id}          title, answer, sectionCount, sourceCount, kind, topic, uid, name, model, shared, createdAt   (summary, D-098)
+  documents/{id}        kind, title, excerpt, origin, uid, name, shared, size, words?, path?…   (D-232; old reports move here)
+    content/body        a .md's text, or a report's answer, sections, implications, openQuestions, sources
     content/body        sections, implications, openQuestions, sources            (fetched when opened, D-098)
   customers/{id}        title, body, color, tags[], x, y                          (D-042, D-044)
   problems/{id}         title, body, color, tags[], x, y                          (D-041)
@@ -230,6 +232,10 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 - **Deep research** (D-088): `/research` → a planned set of questions you pick → one web-searching call per question (3 at a
   time) → the agent loop writes one report from the findings (`src/ai/research.ts`); the report comes through `write_report`
   and opens on the report screen (`src/ui/ReportView.tsx`, D-089).
+- **Documents** (D-232, `docs/specs/documents.md`, `src/data/documents.ts`): every file the workspace keeps (.md,
+  images, PDFs, reports) as a summary + `content/body`, private until its author shares it; old `reports/*` are moved over
+  once when a workspace opens. Pieces `documents` (a list, table or shelf) and `document` (one, `docId`). Files need
+  Storage (Blaze): `filesAvailable` until then. The report entries below describe the archived code.
 - **Saved reports** (D-090; split into summary + `content/body` by D-098, older one-doc reports still read): `workspaces/{wid}/reports/{id}` (`SavedReport` in `src/data/model.ts`: the report, `kind`
   research | chat, `topic, uid, name, model, shared, createdAt`; data in `src/data/reports.ts`). A research report is saved
   as it's written; a chat write-up (`make_report`, any chat, when asked) when you press save. Only the author reads it until

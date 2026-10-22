@@ -152,7 +152,9 @@
    its own size from the top-left, cut by the edge. In focus its copy there glides out, so this one hides. A table
    (D-209) is the same kind of window. */
 .piece[data-kind='matrix']::before,
-.piece[data-kind='table']::before {
+.piece[data-kind='table']::before,
+.piece[data-kind='documents']::before,
+.piece[data-kind='document']::before {
   content: none;
 }
 
@@ -497,3 +499,44 @@
 .piece[data-open='true'][data-editing='true'] .mark[data-handle='ne'] { top: -5px; right: -5px; left: auto; border-top-width: 1px; border-right-width: 1px; }
 .piece[data-open='true'][data-editing='true'] .mark[data-handle='se'] { bottom: -5px; right: -5px; top: auto; left: auto; border-bottom-width: 1px; border-right-width: 1px; }
 .piece[data-open='true'][data-editing='true'] .mark[data-handle='sw'] { bottom: -5px; left: -5px; top: auto; border-bottom-width: 1px; border-left-width: 1px; }
+
+/* Files held over the canvas (D-232): its edge lit cyan, as a panel's is for a drop. */
+.canvas[data-file-over='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  border: 1px solid var(--accent-cyan);
+  background: var(--wash-cyan);
+  pointer-events: none;
+}
+
+/* A document dragged out of its list (D-232): a small window under the pointer, its name in the edge. */
+.dragGhost {
+  position: absolute;
+  z-index: 6;
+  width: 160px;
+  height: 110px;
+  margin: -12px 0 0 -12px;
+  border: 1px solid var(--accent-cyan);
+  background: var(--wash-cyan);
+  pointer-events: none;
+}
+
+.dragGhostName {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  padding: 0 6px;
+  transform: translateY(-50%);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

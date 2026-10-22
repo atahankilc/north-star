@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, kindOfPiece, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, isLens, kindOfPiece, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
@@ -43,10 +43,13 @@ import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { TableSetupPanel } from './TableSetup'
 import { Beside, type EscNext } from './Beside'
 import { isOpen, OPEN_PAD, shownPieces } from './shownBox'
+import { deleteDocument, downloadDocument, moveReports, shareDocument, type Doc } from '../../data/documents'
+import { documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, uploadFiles, useDocUi } from './Documents'
+import { DocPlace, DocReader, documentBounds, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import styles from './CanvasView.module.css'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
-export const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu]'
+export const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu], [data-scrolls]'
 
 const ZOOM_MIN = 0.1
 const ZOOM_MAX = 4
@@ -64,7 +67,7 @@ const onPixel = (v: number) => {
 }
 
 export function CanvasView() {
-  const { wid, workspace, pieces, cards, labels, threads, cells, edges } = useWs()
+  const { wid, workspace, pieces, cards, labels, threads, cells, edges, documents } = useWs()
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
   const cam = useCanvasView((s) => s.cams[wid]) ?? camOf(wid)
@@ -101,6 +104,10 @@ export function CanvasView() {
   const focusedLabels = focused ? labelsOf(focused.id) : []
   const focusedMatrix = focused && kindOfPiece(focused) === 'matrix'
   const focusedTable = focused && kindOfPiece(focused) === 'table'
+  // Documents (D-232): the list, and one on its own.
+  const focusedDocuments = focused && kindOfPiece(focused) === 'documents'
+  const focusedDocument = focused && kindOfPiece(focused) === 'document'
+  const readerOpen = useDocUi((s) => !!s.reader) && !!focusedDocuments
   // What's stuck to the focused plane (D-210), and what of it is open beside it (D-211), in the address (`beside`).
   const stuckHere = focused && !isBare(focused) ? pieces.filter((p) => p.stuckTo === focused.id && isBare(p)) : []
   const besideIds = (params.get('beside') ?? '').split(',').filter(Boolean)
@@ -119,8 +126,9 @@ export function CanvasView() {
   // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus. The
   // dock whose action that is shows `esc` on it; the key handler below goes in the same order.
   const matrixPane = besideOpen.find((p) => kindOfPiece(p) === 'matrix')?.id ?? null
-  const escNext: EscNext =
-    matrixSetup && focused && (focusedMatrix || matrixPane)
+  const escNext: EscNext = readerOpen
+    ? { what: 'close', id: 'reader' }
+    : matrixSetup && focused && (focusedMatrix || matrixPane)
       ? { what: 'setup', id: focusedMatrix ? focused.id : matrixPane! }
       : tableSetup
         ? { what: 'setup', id: tableSetup }
@@ -132,10 +140,18 @@ export function CanvasView() {
   const contents = useMemo(() => {
     const of = (p: WithId<Piece>) => {
       const kind = kindOfPiece(p)
-      return kind === 'matrix' ? matrixBounds(p, cards) : kind === 'table' ? tableBounds(p, cards) : spaceBounds(cardsBy.get(p.id) ?? NONE, labelsBy.get(p.id) ?? NONE)
+      return kind === 'matrix'
+        ? matrixBounds(p, cards)
+        : kind === 'table'
+          ? tableBounds(p, cards)
+          : kind === 'documents'
+            ? documentsBounds(p, listed(documents, documentsOf(p), user?.id).length)
+            : kind === 'document'
+              ? documentBounds(p)
+              : spaceBounds(cardsBy.get(p.id) ?? NONE, labelsBy.get(p.id) ?? NONE)
     }
     return new Map(pieces.map((p) => [p.id, of(p)]))
-  }, [pieces, cards, cardsBy, labelsBy])
+  }, [pieces, cards, cardsBy, labelsBy, documents, user?.id])
   const contentOf = (p: WithId<Piece>) => contents.get(p.id) ?? null
   const bonds = (layer: 'under' | 'over') =>
     shown.map((p) => {
@@ -273,7 +289,13 @@ export function CanvasView() {
     if (focusId && !useCanvasView.getState().focusArrived) return
     const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-target]')?.dataset.target
     if (!hit) return setMenu(null)
-    const [on, targetId] = hit.split(':') as ['card' | 'label' | 'plane' | 'link', string]
+    const [on, targetId] = hit.split(':') as ['card' | 'label' | 'plane' | 'link' | 'doc', string]
+    // A document in a list (D-232): its own menu, no comment (threads go on what's on the canvas).
+    if (on === 'doc') {
+      const d = documents.find((x) => x.id === targetId)
+      const r = root.current!.getBoundingClientRect()
+      return d ? setMenu({ at: [e.clientX - r.left, e.clientY - r.top], what: 'document', items: docMenu(d) }) : setMenu(null)
+    }
     // A plane on the canvas is in the canvas; a card or text, in the space it's written in.
     const where = on === 'plane' ? CANVAS : space
     const r = root.current!.getBoundingClientRect()
@@ -309,6 +331,59 @@ export function CanvasView() {
       ],
     })
   }
+  // What can be done with a document from its list's right-click (D-232).
+  const docMenu = (d: WithId<Doc>): MenuEntry[] => {
+    const mine = d.uid === user?.id
+    return [
+      { key: 'open', label: 'open beside', glyph: '›', letter: 'o', onSelect: () => useDocUi.setState({ reader: d.id }) },
+      ...(editor ? [{ key: 'place', label: 'place on the canvas', glyph: '⇱', letter: 'p', hint: d.shared ? undefined : 'shares it', onSelect: () => useDocUi.setState({ placing: { docId: d.id, near: focusId ?? undefined } }) }] : []),
+      ...(mine ? [{ key: 'share', label: d.shared ? 'unshare' : 'share with everyone', glyph: '◐', letter: 's', onSelect: () => void shareDocument(wid, d.id, !d.shared) }] : []),
+      { key: 'download', label: 'download .md', glyph: '↓', letter: 'd', onSelect: () => void downloadDocument(wid, d) },
+      ...(mine || (d.shared && isOwnerOf(workspace, user?.id)) ? [{ key: 'delete', label: 'delete', glyph: '×', letter: 'x', danger: true, onSelect: () => useDocUi.setState({ deleting: d.id }) }] : []),
+    ]
+  }
+  const deletingId = useDocUi((s) => s.deleting)
+  const deletingDoc = documents.find((d) => d.id === deletingId) ?? null
+
+  // Dragged out of a list (D-232): placed where it's let go, asked first when it's private.
+  const dropped = useDocUi((s) => s.dropped)
+  const dragging = useDocUi((s) => s.drag)
+  useEffect(() => {
+    if (!dropped) return
+    useDocUi.setState({ dropped: null })
+    if (focusedRef.current || !root.current) return
+    const r = root.current.getBoundingClientRect()
+    if (dropped.x < r.left || dropped.x > r.right || dropped.y < r.top || dropped.y > r.bottom) return
+    useDocUi.setState({ placing: { docId: dropped.docId, at: canvasToSpace(dropped.x, dropped.y) } })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dropped])
+
+  // Files dropped (D-232): on a documents list or in its focus they go into the workspace's documents; on the empty
+  // canvas each .md also goes on the canvas on its own, where it was dropped (asked first: it's private).
+  const [fileOver, setFileOver] = useState(false)
+  const dragOver = (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes('Files')) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    if (!fileOver) setFileOver(true)
+  }
+  const dropFiles = async (e: React.DragEvent) => {
+    setFileOver(false)
+    if (!e.dataTransfer.files.length || !user) return
+    e.preventDefault()
+    const files = [...e.dataTransfer.files]
+    const onList = focusedDocuments || !!(e.target as HTMLElement).closest('[data-kind=documents]')
+    const at = !focusId && !onList ? canvasToSpace(e.clientX, e.clientY) : null
+    const ids = await uploadFiles(wid, { uid: user.id, name: user.name || user.email || 'someone' }, files)
+    if (at && editor && ids[0]) useDocUi.setState({ placing: { docId: ids[0], at } })
+  }
+
+  // The old reports move over as documents once (D-232): yours, and the shared ones if you own the workspace.
+  useEffect(() => {
+    if (user?.id) void moveReports(wid, user.id, isOwnerOf(workspace, user.id)).catch((e) => console.warn('[documents] moving reports', e))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wid, user?.id])
+
   // From the threads panel: to its space, the pin in the middle, open.
   const goTo = (t: WithId<Thread>) => {
     const sp = t.planeId ?? CANVAS
@@ -339,6 +414,7 @@ export function CanvasView() {
     useCanvasView.setState({ focusSpread: true, focusArrived: false, focusLeaving: false, selected: null, cardSelected: null })
     useMatrixUi.setState({ setup: false, canvas: null })
     useTableUi.setState({ setup: null })
+    useDocUi.setState({ reader: null })
     setParams({ focus: p.id })
   }
   const unfocus = () => {
@@ -359,7 +435,8 @@ export function CanvasView() {
   }, [focusId, focused, pieces.length, setParams])
 
   // The plane's part of the screen follows what's open beside it (D-211); its contents fit there again.
-  const besideCount = besideOpen.length
+  // A document open beside its list (D-232) takes the right part the same way.
+  const besideCount = besideOpen.length + (readerOpen ? 1 : 0)
   useEffect(() => {
     useCanvasView.setState({ beside: besideCount })
     if (focusId && useCanvasView.getState().focusArrived) fitRef.current()
@@ -478,6 +555,8 @@ export function CanvasView() {
           if (cardSelected) useCanvasView.setState({ cardSelected: null })
           else if (useMatrixUi.getState().setup) useMatrixUi.setState({ setup: false })
           else if (useTableUi.getState().setup) useTableUi.setState({ setup: null })
+          // A document open beside its list (D-232).
+          else if (useDocUi.getState().reader) useDocUi.setState({ reader: null })
           // Then what's open beside the plane closes, the last opened first (D-211).
           else if (besideRef.current.length) setBesideRef.current(besideRef.current.slice(0, -1).map((p) => p.id))
           else unfocusRef.current()
@@ -563,7 +642,19 @@ export function CanvasView() {
   }
 
   return (
-    <div ref={root} className={styles.canvas} onPointerDown={pan} onDoubleClick={doubleClick} onContextMenu={rightClick} aria-label="Canvas" role="application">
+    <div
+      ref={root}
+      className={styles.canvas}
+      data-file-over={fileOver || undefined}
+      onPointerDown={pan}
+      onDoubleClick={doubleClick}
+      onContextMenu={rightClick}
+      onDragOver={dragOver}
+      onDragLeave={(e) => e.currentTarget === e.target && setFileOver(false)}
+      onDrop={(e) => void dropFiles(e)}
+      aria-label="Canvas"
+      role="application"
+    >
       <div ref={lens} className={styles.lens}>
       <div
         className={styles.world}
@@ -587,7 +678,7 @@ export function CanvasView() {
             cards={cardsOf(p.id)}
             labels={labelsOf(p.id)}
             content={contentOf(p)}
-            planes={isBare(p) ? planesBox.filter((x) => x.id !== p.id) : []}
+            planes={isLens(p) ? planesBox.filter((x) => x.id !== p.id) : []}
             followers={isBare(p) ? [] : shown.filter((f) => f.stuckTo === p.id && isBare(f))}
             host={isBare(p) && p.stuckTo ? (planesBox.find((x) => x.id === p.stuckTo) ?? null) : null}
           />
@@ -624,6 +715,10 @@ export function CanvasView() {
             <FocusedMatrix piece={focused} editor={editor} />
           ) : focusedTable ? (
             <FocusedTable piece={focused} editor={editor} />
+          ) : focusedDocuments ? (
+            <FocusedDocuments piece={focused} editor={editor} />
+          ) : focusedDocument ? (
+            <FocusedDocument piece={focused} />
           ) : (
             <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
           )}
@@ -633,9 +728,10 @@ export function CanvasView() {
           )}
           {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
+          {focusedDocuments && focusArrived && !focusLeaving && <DocReader list={focused} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {focusArrived && !focusLeaving && (
-            <FocusDock center={besideOpen.length ? (size.w * split) / 2 : undefined}>
+            <FocusDock center={besideOpen.length || readerOpen ? (size.w * split) / 2 : undefined}>
               {/* What's stuck to the plane (D-210): each opens beside it, or closes (D-211). */}
               {stuckHere.map((p) => (
                 <DockAction
@@ -653,8 +749,10 @@ export function CanvasView() {
               {focusedTable && editor && (
                 <DockAction label="setup" pressed={tableSetup === focused.id} keyHint={escOn('setup')} title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
               )}
-              {/* A plane's snapping and guides (D-231, D-232). */}
-              {!focusedMatrix && !focusedTable && editor && <GridMenu />}
+              {focusedDocuments && <DocumentsTools piece={focused} editor={editor} />}
+              {focusedDocument && <DocumentDockTools piece={focused} />}
+              {/* A plane's snapping and guides (D-231). */}
+              {!isBare(focused) && editor && <GridMenu />}
               {/* Always here; `esc` only when Escape does it next (with something open beside, that closes first, D-211). */}
               <DockAction label="unfocus" keyHint={escNext === 'unfocus' ? 'esc' : undefined} title="back to the canvas" main onClick={unfocus} />
             </FocusDock>
@@ -666,12 +764,39 @@ export function CanvasView() {
       {!focused && editor && canvasSetup && <CanvasSetup piece={canvasSetup} />}
       <PeerCursors space={space} toScreen={toScreen} />
       {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
+      {/* A document being dragged out of its list, and the question before a private one goes on the canvas (D-232). */}
+      {dragging && <DragGhost doc={documents.find((d) => d.id === dragging.docId)} at={dragging} root={root} />}
+      <DocPlace toScreen={focusId ? null : toScreen} zoom={cam.zoom} others={shown.map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h }))} members={membersOf(workspace.roles)} />
+      {deletingDoc && (
+        <HazardConfirm
+          title={`delete "${deletingDoc.title.length > 40 ? `${deletingDoc.title.slice(0, 39)}…` : deletingDoc.title}"?`}
+          lines={[
+            pieces.some((p) => p.docId === deletingDoc.id) ? 'The document goes, and every piece showing it on the canvas.' : 'The document goes from every list.',
+            `${UNDO_HINT} brings it back.`,
+          ]}
+          confirm="delete"
+          onCancel={() => useDocUi.setState({ deleting: null })}
+          onConfirm={() => {
+            useDocUi.setState({ deleting: null, reader: null })
+            void deleteDocument(wid, deletingDoc.id, piecesOfDoc(wid, pieces, deletingDoc.id))
+          }}
+        />
+      )}
       <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {confirming && (
         <HazardConfirm
           title={`delete ${confirming.name ? `"${confirming.name}"` : `this ${KIND_NAME[kindOfPiece(confirming)]}`}?`}
-          lines={[isBare(confirming) ? `The ${KIND_NAME[kindOfPiece(confirming)]} and its cells go; the cards in it stay.` : 'The plane and everything on it goes.', `${UNDO_HINT} brings it back.`]}
+          lines={[
+            kindOfPiece(confirming) === 'document'
+              ? 'It goes from the canvas; the document stays in its list.'
+              : kindOfPiece(confirming) === 'documents'
+                ? 'The list goes; the documents in it stay.'
+                : isBare(confirming)
+                  ? `The ${KIND_NAME[kindOfPiece(confirming)]} and its cells go; the cards in it stay.`
+                  : 'The plane and everything on it goes.',
+            `${UNDO_HINT} brings it back.`,
+          ]}
           confirm="delete"
           onCancel={() => useCanvasView.setState({ confirming: null })}
           onConfirm={() => {
@@ -798,6 +923,43 @@ function FocusedTable({ piece, editor }: { piece: WithId<Piece>; editor: boolean
   return view ? <TableView piece={piece} view={view} live editor={editor} /> : null
 }
 
+// The focused documents list, live (D-232); a click opens a document beside it (DocReader).
+function FocusedDocuments({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const view = useCanvasView((s) => s.planeCam)
+  return view ? <DocumentsView piece={piece} view={view} live editor={editor} /> : null
+}
+
+// A document in focus, live (D-232): the wheel scrolls it, its outline on the left.
+function FocusedDocument({ piece }: { piece: WithId<Piece> }) {
+  const view = useCanvasView((s) => s.planeCam)
+  return view ? <DocumentPieceView piece={piece} view={view} live /> : null
+}
+
+// A document's focus dock: share (its author), download.
+function DocumentDockTools({ piece }: { piece: WithId<Piece> }) {
+  const { wid, documents } = useWs()
+  const { user } = useAuth()
+  const d = documents.find((x) => x.id === piece.docId)
+  if (!d) return null
+  return (
+    <>
+      {d.uid === user?.id && <DockAction label={d.shared ? 'unshare' : 'share'} title={d.shared ? 'only you see it again (the canvas then shows it to no one else)' : 'everyone in the workspace sees it'} onClick={() => void shareDocument(wid, d.id, !d.shared)} />}
+      <DockAction label="download" title="save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
+    </>
+  )
+}
+
+// A document dragged out of its list (D-232): its name under the pointer, framed like the piece it'll become.
+function DragGhost({ doc, at, root }: { doc?: WithId<Doc>; at: { x: number; y: number }; root: React.RefObject<HTMLDivElement | null> }) {
+  const r = root.current?.getBoundingClientRect()
+  if (!doc || !r) return null
+  return (
+    <div className={styles.dragGhost} style={{ left: at.x - r.left, top: at.y - r.top }} aria-hidden>
+      <span className={styles.dragGhostName}>{doc.shared ? '' : '◐ '}{doc.title}</span>
+    </div>
+  )
+}
+
 // The focused plane's cards, live, on its own view.
 function FocusedCards({ cards, labels, editor }: { cards: Card[]; labels: Label[]; editor: boolean }) {
   const view = useCanvasView((s) => s.planeCam)
@@ -836,6 +998,9 @@ const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.
 function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers, host }: BoxProps) {
   const { wid } = useWs()
   const kind = kindOfPiece(piece)
+  // A document on its own is named by its document's title (D-232); it has no name of its own.
+  const docTitle = useWs().documents.find((d) => d.id === piece.docId)?.title
+  const name = kind === 'document' ? docTitle : piece.name
   const open = isOpen(piece)
   // Where a move or resize has it, held after the drop until the data gets there (else it would jump back for a moment).
   const [held, setHeld] = useState<Box | null>(null)
@@ -866,7 +1031,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
     // A matrix or table moved near a plane's edge sticks there (D-210); moved anywhere else it stays linked as it was
     // (only its dropdown lets go, D-215). A plane carries what's linked to it: what touches it stays on its edge, what's
     // apart moves as the plane's corner does.
-    const lens = isBare(piece) && handle === 'move'
+    const lens = isLens(piece) && handle === 'move'
     const linked: string | null = piece.stuckTo && planes.some((p) => p.id === piece.stuckTo) ? piece.stuckTo : null
     let stick = linked
     const carried = followers.map((f) => ({ id: f.id, from: { x: f.x, y: f.y, w: f.w, h: f.h }, side: touchSide(f, from) }))
@@ -952,13 +1117,13 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       onPointerEnter={hover(true)}
       onPointerLeave={hover(false)}
     >
-      {editing ? (
+      {editing && kind !== 'document' ? (
         <NameField value={piece.name ?? ''} placeholder={KIND_NAME[kind]} onSave={(name) => name !== (piece.name ?? '') && void renamePiece(wid, piece.id, name, kind)} />
       ) : (
         // Named: the name, then its kind faint (D-223); unnamed: the kind alone, faint.
-        <span className={styles.name} data-unnamed={!piece.name || undefined} title={piece.name || undefined}>
-          <span className={styles.nameText}>{piece.name || KIND_NAME[kind]}</span>
-          {piece.name && (
+        <span className={styles.name} data-unnamed={!name || undefined} title={name || undefined}>
+          <span className={styles.nameText}>{name || KIND_NAME[kind]}</span>
+          {name && (
             <>
               <span className={styles.nameSep} aria-hidden>
                 ·
@@ -986,6 +1151,10 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         <Matrix piece={piece} view={inner} live={false} editor={editor} />
       ) : kind === 'table' ? (
         <Table piece={piece} view={inner} live={false} editor={editor} />
+      ) : kind === 'documents' ? (
+        <DocsList piece={piece} view={inner} live={false} editor={editor} />
+      ) : kind === 'document' ? (
+        <DocOne piece={piece} view={inner} live={false} />
       ) : (
         <Cards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       )}
@@ -1002,10 +1171,10 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         onDelete={() => useCanvasView.setState({ confirming: piece.id })}
         onFocus={onFocus}
         comments={comments}
-        link={isBare(piece) ? { at: host?.id ?? null, planes, editor, onChange: (plane) => void linkLens(wid, piece, plane) } : undefined}
+        link={isLens(piece) ? { at: host?.id ?? null, planes, editor, onChange: (plane) => void linkLens(wid, piece, plane) } : undefined}
         // Out of its window onto the canvas and back (D-228), in edit mode; open, its pages and setup are here.
-        open={isBare(piece) ? { on: open, onToggle: () => void openPiece(wid, piece, !open) } : undefined}
-        extra={open ? <OpenTools piece={piece} editor={editor} /> : undefined}
+        open={isLens(piece) ? { on: open, onToggle: () => void openPiece(wid, piece, !open) } : undefined}
+        extra={open ? <OpenTools piece={piece} editor={editor} /> : kind === 'documents' ? <DocumentsTools piece={piece} editor={editor} compact toolClass={styles.tool} /> : undefined}
       />
     </div>
   )
@@ -1188,6 +1357,8 @@ function CanvasSetup({ piece }: { piece: WithId<Piece> }) {
 // What's in a piece, drawn again only when it changes, not as the camera moves (its view is the same object meanwhile).
 const Matrix = memo(MatrixView)
 const Table = memo(TableView)
+const DocsList = memo(DocumentsView)
+const DocOne = memo(DocumentPieceView)
 const Cards = memo(PlaneCards)
 // The canvas's text, drawn again as the zoom changes (its editors follow it), not as the canvas pans.
 const Text = memo(TextItems)

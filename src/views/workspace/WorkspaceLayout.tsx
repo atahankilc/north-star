@@ -26,6 +26,8 @@ import { placesIn, shownPlaces, toggleOpen, useGoTo } from './goTo'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { usePresenceSession } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
+import { documentsBounds, documentsOf, listed } from './Documents'
+import { documentBounds } from './DocumentPiece'
 import {
   canEditIn,
   describeWorkspace,
@@ -99,7 +101,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           crumbs={[
             { label: 'workspaces', to: WORKSPACES },
             focused ? { label: workspace.name, to: workspacePath(wid) } : { label: workspace.name },
-            ...(focused ? [{ label: focused.name || KIND_NAME[kindOfPiece(focused)] }] : []),
+            // A document on its own goes by its document's title (D-232).
+            ...(focused ? [{ label: focused.name || data.documents.find((d) => d.id === focused.docId)?.title || KIND_NAME[kindOfPiece(focused)] }] : []),
           ]}
           settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={requests.data} />}
           settingsName={workspace.name}
@@ -130,10 +133,13 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 // The side nav's fit (D-186), under the `+`; `0` does the same: everything on the canvas in view, or in focus the plane's
 // contents centred and fitted.
 function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
-  const { pieces, cards, labels } = useWs()
+  const { pieces, cards, labels, documents } = useWs()
+  const { user } = useAuth()
   const focused = plane !== null
   const matrix = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'matrix')
   const table = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'table')
+  const docs = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'documents')
+  const one = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'document')
   return (
     <button
       className={styles.fit}
@@ -141,7 +147,7 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
       title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
       onClick={() =>
         focused
-          ? fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
+          ? fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? documentsBounds(docs, listed(documents, documentsOf(docs), user?.id).length) : one ? documentBounds(one) : spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
           : fitCanvas(wid, [...shownPieces(pieces, cards), ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
       }
     >
@@ -276,6 +282,8 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
                 { key: 'matrix', label: 'matrix…', glyph: PIECE_GLYPH.matrix, letter: 'm', hint: 'two lists crossed', onSelect: () => useMatrixUi.setState({ wizard: true }) },
                 // A table (D-209), made in its wizard (D-218), as a matrix is.
                 { key: 'table', label: 'table…', glyph: PIECE_GLYPH.table, letter: 't', hint: 'rows by rules, any columns', onSelect: () => useTableUi.setState({ wizard: true }) },
+                // The documents list (D-232); a document on its own comes out of it (or a file dropped on the canvas).
+                { key: 'documents', label: 'documents', glyph: PIECE_GLYPH.documents, letter: 'd', hint: '.md, images, pdfs', onSelect: () => void add('documents') },
                 ...text,
               ]
         }

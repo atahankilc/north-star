@@ -292,6 +292,9 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
     // cleanUpWorkspaceAi function takes them once functions are deployed.
     getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('shared', '==', true))),
     getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('uid', '==', uid))),
+    // Documents (D-232) the same way: shared and yours; a body before its summary.
+    getDocs(query(collection(db(), 'workspaces', wid, 'documents'), where('shared', '==', true))),
+    getDocs(query(collection(db(), 'workspaces', wid, 'documents'), where('uid', '==', uid))),
   ])
   const snaps = await Promise.all([
     ...WORKSPACE_COLLECTIONS.map((c) => getDocs(collection(db(), 'workspaces', wid, c))),

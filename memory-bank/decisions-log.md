@@ -3846,3 +3846,39 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): with snapping on, a card dragged level with another showed a guide along their tops;
   `g` said "snapping to the grid off", then a card let go 2 px off another's left landed on it (x −100 like the other);
   no console errors; build.
+
+### D-232 · 2026-10-22 · Accepted (documents: replaces "reports" as a word and a collection, D-090/D-091/D-098's data moved over)
+- *Decision:* everything the workspace keeps as a file is a **document** (`documents/{id}` summary +
+  `content/body`): kinds `markdown | image | pdf | report`. Private until shared (only the author shares, unshares,
+  renames; deletes, or an owner a shared one). Two canvas pieces: `documents`, a list shown as a **table** or a
+  **shelf** of sheets (switched from its console or focus dock, shared), and `document`, one document's content in a
+  window. Putting a private document on the canvas on its own asks first, inside the dashed piece where it lands
+  ("Show … to everyone?"); sharing and placing are one undo step. Old `reports/*` are moved to `documents/*` once, by
+  each author's browser (an owner's moves the shared ones). Spec: `docs/specs/documents.md`.
+- *Free plan:* `.md` text lives in Firestore and works now; images and PDFs need Storage (Blaze), so only the emulators
+  take them (`filesAvailable`, `FILES_LIVE = false`), but the data already has `path`/`thumbPath`/`width`/`pages`.
+- *Looks* (picked from a preview page of options): the list as a table lens (kind · title + first words · by · length ·
+  added, heads sort, paged) and a shelf of sheets (folded corner, first lines); kind marks a small square + short name
+  (`md` white, `img` sky, `pdf` orange, `rep` violet, the links' quieter hues); one document as a window (03 A), title
+  in its edge, cut with a fade; far away its title alone, then bars. In the list's focus a click opens the document
+  beside it (the D-211 split, scrolling like a page); in a document's focus the wheel scrolls it and an outline of its
+  headings sits on the left. A row's `⇱` grip drags it out onto the canvas; a `.md` dropped on the empty canvas is
+  uploaded and placed there (asked first).
+- *Also:* `isLens` (matrix, table) now decides sticking (D-210) and opening onto the canvas (D-228); documents are bare
+  pieces but neither. Summaries load with the workspace (two queries, shared and yours), bodies only where read — a
+  change from D-098's "reports load where shown" now that documents sit on the canvas. A full Markdown renderer
+  (`src/ui/Markdown.tsx`: headings, lists with tasks, quotes, code, tables, rules; nothing as HTML, nothing fetched).
+- *Alternatives shown, not picked:* an `ls -l` listing; glyph-only or extension kind marks; a document as a sheet of
+  paper or open on the canvas; placing a private document blurred until shared.
+- *User:* "Document olcak ve bu her şeyi kapsicak, imagelardan pdflere ordan da .md lere kadar … kurguyu baştan doğru
+  yapalım"; "private until shared ama document tek başına sergilencekse ilk önce onay alınmalı"; "Move them once";
+  "everything you recommended is perfect … implement Table lens and Shelf of sheets for the list view. Maybe we can
+  switch the view from console."
+- *Not yet:* files (step 4), writing documents in the app, renaming from the UI, the assistant writing documents,
+  viewers uploading (the client's read-only mode refuses it though the rules allow it), documents in the export.
+- *Verified:* rules 419 pass (34 new: private reads, lists by shared/uid, author-only share/rename, owner deletes a
+  shared one and restores it, moving a shared report as its author's, body size, file paths under its own id, the two
+  piece kinds); headless on the emulators: two .md uploaded into a new list (◐ private), shelf and table switch, a row
+  dragged out asked to share and placed the piece, the list's focus opened a document beside it and a seeded old report
+  moved over and read with its sections and sources, a document's focus scrolled with its outline lit; no console
+  errors; build.

@@ -3,7 +3,9 @@
 // workspaces, and firestore.rules still knows it.
 //
 //   workspaces/{workspaceId}                 Workspace
-//     pieces/{id}                            Piece (D-176): something on the canvas, a plane (D-180) or a matrix (D-204)
+//     pieces/{id}                            Piece (D-176): something on the canvas, a plane (D-180), a matrix (D-204)…
+//     documents/{id}                         Doc (D-232, src/data/documents.ts): a file the workspace keeps
+//       content/body                         DocBody: a .md's text, a report's sections
 //     cells/{matrixId}_{row}_{col}           Cell (D-204): one of a matrix's or a table's (D-209) cells (src/data/matrix.ts)
 //     members/{uid}                          Member (D-098): a member's name and email, for the people list
 //   inviteCodes/{code}                       InviteCode (D-012)
@@ -12,6 +14,7 @@
 // Realtime Database (ephemeral):
 //   presence/{workspaceId}/{uid}             Presence (D-016)
 
+import type { DocumentsSetup } from './documents'
 import type { MatrixSetup } from './matrix'
 import type { TableSetup } from './table'
 
@@ -57,7 +60,8 @@ export type JoinRequest = {
 // Not the archived `planes` collection (D-139): that was the old board's own layouts.
 // A matrix (D-204): two lists crossed, its cells filled; its setup on the piece, its cells in `cells`.
 // A table (D-209): rows from rules, columns of the cards' fields and its own; its own columns' values in `cells`.
-export type PieceKind = 'plane' | 'matrix' | 'table'
+// Documents (D-232): `documents` lists them, `document` shows one on its own.
+export type PieceKind = 'plane' | 'matrix' | 'table' | 'documents' | 'document'
 export type Piece = {
   kind: PieceKind
   x: number
@@ -67,6 +71,10 @@ export type Piece = {
   name?: string
   matrix?: MatrixSetup
   table?: TableSetup
+  // A documents list's view, kinds, sort, page size (D-232).
+  documents?: DocumentsSetup
+  // The document a document piece shows (D-232).
+  docId?: string
   // A matrix or a table stuck to a plane's edge (D-210): moved with it, showing its cards.
   stuckTo?: string
   // A matrix or a table opened onto the canvas (D-228): out of its window, at its own size and live there. Its w/h stay

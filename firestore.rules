@@ -184,7 +184,7 @@ service cloud.firestore {
     // Something on the workspace's canvas (D-176): a plane for now (D-180), a box in canvas pixels. `board` is the name it
     // had before D-180, still on pieces made then (and brought back by undoing their changes).
     function validPiece(d) {
-      return d.kind in ['plane', 'board', 'matrix', 'table']
+      return d.kind in ['plane', 'board', 'matrix', 'table', 'documents', 'document']
         && d.x is number && d.y is number
         && d.w is number && d.w > 0 && d.w <= 100000
         && d.h is number && d.h > 0 && d.h <= 100000
@@ -193,6 +193,10 @@ service cloud.firestore {
         && (!('matrix' in d) || (d.kind == 'matrix' && validMatrix(d.matrix)))
         // A table's setup (D-209), on tables only.
         && (!('table' in d) || (d.kind == 'table' && validTable(d.table)))
+        // The documents list's setup (D-232), on documents lists only; the document a document piece shows.
+        && (!('documents' in d) || (d.kind == 'documents' && validDocuments(d.documents)))
+        && (d.kind != 'document' || isText(d.docId, 128))
+        && (!('docId' in d) || d.kind == 'document')
         // Stuck to a plane's edge (D-210): a matrix or a table.
         && (!('stuckTo' in d) || (d.kind in ['matrix', 'table'] && isText(d.stuckTo, 128)))
         // Opened onto the canvas (D-228): a matrix or a table.
@@ -221,6 +225,16 @@ service cloud.firestore {
         // The totals' place and look, a scale's cells as marks (D-212).
         && optIn(m, 'totalsAt', ['head', 'end', 'both']) && optIn(m, 'totalsAs', ['squares', 'number', 'bar'])
         && optBool(m, 'marks');
+    }
+
+    // How a documents piece lists them (D-232, src/data/documents.ts): a table or a shelf, which kinds, sorted, paged.
+    function validDocuments(t) {
+      return t is map
+        && t.keys().hasOnly(['view', 'kinds', 'sort', 'pageSize'])
+        && t.view in ['table', 'shelf']
+        && (!('kinds' in t) || (t.kinds is list && t.kinds.size() <= 4 && t.kinds.toSet().hasOnly(['markdown', 'image', 'pdf', 'report'].toSet())))
+        && (!('sort' in t) || (t.sort is map && t.sort.col in ['kind', 'title', 'by', 'size', 'added'] && optBool(t.sort, 'desc')))
+        && (!('pageSize' in t) || (t.pageSize is int && t.pageSize > 0 && t.pageSize <= 100));
     }
 
     // Where a lens's rows come from (D-209, src/data/source.ts): rules, cards taken out, entries added by hand.
@@ -507,6 +521,78 @@ service cloud.firestore {
           allow delete: if part == 'body' && isMember(wid)
             && (!exists(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id))
               || summary().uid == request.auth.uid || (summary().shared == true && isOwner(wid)));
+        }
+      }
+
+      // Documents (D-232): every file the workspace keeps (.md, images, PDFs, the old reports moved over). Seen only by
+      // whoever added it until they share it; then by every member. Any member adds their own (viewers too, as they kept
+      // reports, D-098); only its author shares, unshares or renames it, and nothing else in it changes. The author
+      // deletes it, an owner a shared one. Undoing an owner's delete restores someone else's shared document, and moving
+      // old reports writes them as their author's, so an owner may create a shared one for anyone.
+      // The content is in content/body, read by whoever reads the summary. Shapes mirror src/data/documents.ts.
+      match /documents/{id} {
+        function validDoc(d) {
+          return d.keys().hasOnly(['kind', 'title', 'excerpt', 'origin', 'uid', 'name', 'shared', 'contentType', 'size',
+              'words', 'pages', 'sections', 'sources', 'width', 'height', 'path', 'thumbPath', 'topic', 'model', 'reportKind',
+              'createdAt', 'updatedAt'])
+            && d.kind in ['markdown', 'image', 'pdf', 'report']
+            && isText(d.title, 300) && d.title.size() > 0
+            && optText(d, 'excerpt', 400)
+            && d.origin in ['upload', 'assistant', 'moved']
+            && isText(d.uid, 128) && isText(d.name, 200)
+            && d.shared is bool
+            && optIn(d, 'contentType', ['text/markdown', 'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'])
+            && d.size is int && d.size >= 0 && d.size <= 10485760
+            && optCount(d, 'words') && optCount(d, 'pages') && optCount(d, 'sections') && optCount(d, 'sources')
+            && optCount(d, 'width') && optCount(d, 'height')
+            // A file sits under its own id (D-083's layout).
+            && (!('path' in d) || (isText(d.path, 400) && d.path.matches('workspaces/' + wid + '/documents/' + id + '/.+')))
+            && (!('thumbPath' in d) || (isText(d.thumbPath, 400) && d.thumbPath.matches('workspaces/' + wid + '/documents/' + id + '/.+')))
+            && optText(d, 'topic', 500) && optText(d, 'model', 100)
+            && optIn(d, 'reportKind', ['research', 'chat', 'upload'])
+            && d.createdAt is number && d.updatedAt is number;
+        }
+        function optCount(d, key) {
+          return !(key in d) || (d[key] is int && d[key] >= 0);
+        }
+        function mayRead(d) {
+          return isMember(wid) && (d.shared == true || d.uid == request.auth.uid);
+        }
+        function mayCreate(d) {
+          return isMember(wid) && validDoc(d) && (d.uid == request.auth.uid || (d.shared == true && isOwner(wid)));
+        }
+        function mayDelete(d) {
+          return isMember(wid) && (d.uid == request.auth.uid || (d.shared == true && isOwner(wid)));
+        }
+        // Not there yet reads as missing to any member, as reports do (a listener refused once never comes back).
+        allow read: if resource == null ? isMember(wid) : mayRead(resource.data);
+        allow create: if mayCreate(request.resource.data);
+        allow update: if isMember(wid) && resource.data.uid == request.auth.uid && validDoc(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared', 'title', 'updatedAt']);
+        allow delete: if mayDelete(resource.data);
+
+        function summary() {
+          return get(/databases/$(database)/documents/workspaces/$(wid)/documents/$(id)).data;
+        }
+        function summaryAfter() {
+          return getAfter(/databases/$(database)/documents/workspaces/$(wid)/documents/$(id)).data;
+        }
+        // A .md's text, or a report's answer and sections; written with its summary (the same batch, hence getAfter).
+        match /content/{part} {
+          function validBody(b) {
+            return b.keys().hasOnly(['text', 'answer', 'sections', 'implications', 'openQuestions', 'sources'])
+              && (!('text' in b) || (b.text is string && b.text.size() <= 900000))
+              && optText(b, 'answer', 4000)
+              && (!('sections' in b) || (b.sections is list && b.sections.size() <= 30))
+              && (!('implications' in b) || (b.implications is list && b.implications.size() <= 20))
+              && (!('openQuestions' in b) || (b.openQuestions is list && b.openQuestions.size() <= 30))
+              && (!('sources' in b) || (b.sources is list && b.sources.size() <= 200));
+          }
+          allow read: if part == 'body' && mayRead(summary());
+          allow create: if part == 'body' && validBody(request.resource.data)
+            && isMember(wid) && (summaryAfter().uid == request.auth.uid || (summaryAfter().shared == true && isOwner(wid)));
+          allow delete: if part == 'body'
+            && (!exists(/databases/$(database)/documents/workspaces/$(wid)/documents/$(id)) ? isMember(wid) : mayDelete(summary()));
         }
       }
 

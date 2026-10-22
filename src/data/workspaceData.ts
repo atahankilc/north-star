@@ -11,6 +11,8 @@ import type { Edge } from './edges'
 import type { Evidence } from './evidence'
 import type { Comparison, CompetitorFeature } from './competitorFeatures'
 import type { Piece, Thread } from './model'
+import { useAuth } from './auth'
+import { useDocuments, type Doc } from './documents'
 
 export type WorkspaceData = {
   pieces: WithId<Piece>[]
@@ -28,6 +30,8 @@ export type WorkspaceData = {
   comparisons: Comparison[]
   // Links between cards (D-207).
   edges: Edge[]
+  // The documents you may see (D-232): the shared ones and your own, newest first. Summaries only.
+  documents: WithId<Doc>[]
 }
 
 type CardDoc = { pieceId?: string; title?: string; name?: string; x?: number; y?: number } & CardFields
@@ -48,6 +52,8 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const edges = useWorkspaceCollection<Omit<Edge, 'id'>>(wid, 'edges')
   const threadDocs = useWorkspaceCollection<Thread>(wid, 'threads')
   const threads = useMemo(() => threadDocs.data.filter((t) => t.planeId), [threadDocs.data])
+  const { user } = useAuth()
+  const documents = useDocuments(wid, user?.id)
   const cards = useMemo(
     () => [
       ...toCards('customer', customers.data),
@@ -60,7 +66,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   )
   const all = [pieces, customers, problems, competitors, ideas, features, labelDocs, cells]
   return {
-    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data },
+    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data },
     isLoading: all.some((l) => l.isLoading),
     error: all.find((l) => l.error)?.error ?? null,
   }

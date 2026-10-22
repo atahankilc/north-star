@@ -600,3 +600,15 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - The name in a plane's, matrix's or table's top edge is held at 11–15 px on screen whatever the zoom, `--fg` caps with
   the kind faint after it; edit mode a cyan-framed field with `>` and a count. Verified headless on emulators (10 % zoom
   computes 11 px, cut `PAZAR…`; 100 % full; edit field types); tsc, build.
+
+## Done (2026-10-20, moved from state.md 2026-10-22): board speed
+- Board speed with many competitors (committed): hidden feature rows / folded-part rows are no longer mounted
+  (they mount to open and unmount after closing), lists memoised, row decorations skip raycasts. Hover stalls 918 → 102 ms.
+
+## Done (2026-10-22): documents (D-232)
+- `documents/` (summary + content/body) for .md, images, PDFs and old reports (moved over once by each author's browser);
+  the documents list piece (table or shelf, from its console), a document on its own (a window, by zoom full/title/bars,
+  scroll + outline in focus), a document opened beside the list in its focus, the share question before a private one
+  goes on the canvas, a row's grip to drag one out, .md dropped on the canvas. Verified: rules 419 pass; headless on the
+  emulators (upload, both views, drag out + ask + place, reader, a seeded report moved and read, focus scroll + outline);
+  build.

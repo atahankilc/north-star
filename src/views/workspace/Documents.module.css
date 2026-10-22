@@ -1,0 +1,288 @@
+/* The documents list (D-232). The layer fills its piece (or the screen in focus) and clips it; on the canvas the pointer
+   goes through it to the canvas, except a row's grip. Its parts are placed in its own px (Documents.tsx's D). */
+.layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.layer[data-live='true'] {
+  pointer-events: auto;
+}
+
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.empty {
+  padding: var(--space-8) var(--space-6);
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.empty p {
+  margin: 0 0 var(--space-2);
+}
+
+.emptyHint {
+  color: var(--fg-dim);
+}
+
+/* The table: mono, solid under its text. */
+.table {
+  background: var(--bg);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.headRow {
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--line-hover);
+}
+
+.head {
+  flex: none;
+  padding: 0 var(--space-3) var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-align: left;
+  text-transform: uppercase;
+  cursor: default;
+}
+
+.head:not(:disabled) {
+  cursor: pointer;
+}
+
+.head:not(:disabled):hover,
+.head[data-on] {
+  color: var(--fg);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px dashed var(--line);
+}
+
+.layer[data-live='true'] .row {
+  cursor: pointer;
+}
+
+.layer[data-live='true'] .row:hover {
+  background: var(--wash-1);
+}
+
+/* The one open beside the list. */
+.row[data-lit],
+.sheet[data-lit] {
+  background: var(--wash-cyan);
+  box-shadow: inset 2px 0 0 var(--accent-cyan);
+}
+
+.cell {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 var(--space-3);
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.cell:nth-child(3) {
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.num {
+  align-items: flex-end;
+}
+
+.title {
+  overflow: hidden;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  text-overflow: ellipsis;
+}
+
+.excerpt {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+}
+
+.by {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.private {
+  color: var(--accent-yellow);
+  font-size: var(--text-xs);
+}
+
+/* Drags the document out onto the canvas; the only part of the list that takes the pointer there. */
+.grip {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--fg-faint);
+  pointer-events: auto;
+  cursor: grab;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.grip:hover {
+  color: var(--accent-cyan);
+}
+
+/* The shelf: sheets of paper, each its first lines, a folded corner. */
+.shelf {
+  display: grid;
+  background: var(--bg);
+}
+
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow: hidden;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  background: var(--card-behind);
+  font-family: var(--font-mono);
+}
+
+.layer[data-live='true'] .sheet {
+  cursor: pointer;
+}
+
+.layer[data-live='true'] .sheet:hover {
+  border-color: var(--line-hover);
+}
+
+.fold {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(225deg, var(--bg) 50%, var(--line-hover) 50%);
+}
+
+.sheetHead {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.sheetTitle {
+  display: -webkit-box;
+  flex: none;
+  overflow: hidden;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.sheetText {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--fg-dim);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.bars i {
+  display: block;
+  height: 3px;
+  margin: 5px 0;
+  background: var(--line);
+}
+
+.sheetFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: auto;
+  color: var(--fg-dim);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.sheet .grip {
+  position: absolute;
+  right: 4px;
+  bottom: 22px;
+}
+
+/* Its tools in a console or dock. */
+.tools {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.tool {
+  composes: small from '../../ui/AsciiButton.module.css';
+  padding: 0 2px;
+}
+
+.tool:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+.pageAt {
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.pick {
+  color: var(--fg-muted);
+}
+
+.switch {
+  display: inline-flex;
+  gap: 0;
+}
+
+.switch [data-on] {
+  color: var(--fg-strong);
+}
+
+.switch :not([data-on]) {
+  color: var(--fg-dim);
+}
+
+.upload {
+  color: var(--accent-cyan);
+  white-space: nowrap;
+}
+
+.upload[data-state='refused'] {
+  color: var(--accent-yellow);
+}

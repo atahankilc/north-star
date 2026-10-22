@@ -5,7 +5,7 @@
 import type { Card } from '../../data/cards'
 import { GRID } from '../../data/grid'
 import type { Piece } from '../../data/model'
-import { isBare, kindOfPiece, type Box } from '../../data/pieces'
+import { isLens, kindOfPiece, type Box } from '../../data/pieces'
 import { matrixBounds } from './Matrix'
 import { tableBounds } from './Table'
 
@@ -13,7 +13,8 @@ import { tableBounds } from './Table'
 export const OPEN_PAD = GRID
 const OPEN_FOOT = 2 * GRID
 
-export const isOpen = (p: Pick<Piece, 'kind' | 'open'>) => isBare(p) && !!p.open
+// Only a matrix or a table opens onto the canvas (D-228); documents stay in their windows (D-232).
+export const isOpen = (p: Pick<Piece, 'kind' | 'open'>) => isLens(p) && !!p.open
 
 export function shownBox(p: Piece, cards: Card[]): Box {
   if (!isOpen(p)) return { x: p.x, y: p.y, w: p.w, h: p.h }

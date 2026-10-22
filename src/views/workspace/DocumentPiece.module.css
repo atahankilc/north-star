@@ -1,0 +1,255 @@
+/* A document on its own (D-232): its text in its own px, from the top-left, cut by the window. */
+.layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.layer[data-live='true'] {
+  pointer-events: auto;
+}
+
+/* On the canvas, cut at the bottom with a fade into the page. */
+.layer[data-cut='true']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 72px;
+  background: linear-gradient(transparent, var(--bg));
+  pointer-events: none;
+}
+
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.content {
+  position: relative;
+  box-sizing: content-box;
+  user-select: text;
+}
+
+.layer:not([data-live]) .content {
+  user-select: none;
+}
+
+.gone {
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* Too far to read: its kind and title alone, big enough to read from there. */
+.compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 48px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.compact > :first-child {
+  transform: scale(3);
+}
+
+.compactTitle {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 500;
+  letter-spacing: var(--track-title);
+  line-height: 1.1;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Farther still: a grey bar a line. */
+.far {
+  box-sizing: content-box;
+}
+
+.far i {
+  display: block;
+  margin: 0 0 24px;
+  background: var(--line-hover);
+}
+
+/* Its headings in focus, on the left of the screen, clear of the side nav. */
+.outline {
+  position: absolute;
+  top: 96px;
+  left: 72px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  max-height: calc(100% - 200px);
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.outlineHead {
+  margin-bottom: var(--space-2);
+  color: var(--fg-faint);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.outlineItem {
+  overflow: hidden;
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.outlineItem:hover {
+  color: var(--fg);
+}
+
+.outlineItem[data-on] {
+  color: var(--accent-cyan);
+}
+
+.outlineItem[data-on]::before {
+  content: '› ';
+}
+
+/* Beside the list: a page that scrolls. */
+.reader {
+  cursor: default;
+}
+
+.readerScroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: var(--space-12) var(--space-8) 120px;
+}
+
+.readerColumn {
+  max-width: var(--measure);
+  margin: 0 auto;
+  user-select: text;
+}
+
+/* The question before a private document goes on the canvas (D-232). */
+.placeLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.ghost {
+  position: absolute;
+  border: 1px dashed var(--fg-dim);
+  background: var(--wash-1);
+}
+
+.ghostName {
+  position: absolute;
+  top: 0;
+  left: 14px;
+  padding: 0 8px;
+  transform: translateY(-50%);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Yellow, not hazard tape: a heads-up, nothing is lost. */
+.ask {
+  position: absolute;
+  width: min(440px, calc(100vw - 32px));
+  padding: var(--space-6) var(--space-6) var(--space-4);
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--accent-yellow);
+  background: var(--bg);
+  pointer-events: auto;
+  animation: ask-in 240ms steps(4) both;
+}
+
+@keyframes ask-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.tape {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--accent-yellow) 0 6px, transparent 6px 12px);
+}
+
+.askKicker {
+  margin: 0 0 var(--space-2);
+  color: var(--accent-yellow);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.askTitle {
+  margin: 0 0 var(--space-3);
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  overflow-wrap: anywhere;
+}
+
+.askLines {
+  margin: 0 0 var(--space-4);
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.askActions {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.askTool {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
+.askTool[data-go] {
+  margin-left: var(--space-3);
+  color: var(--accent-yellow);
+}
+
+.askKey {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
