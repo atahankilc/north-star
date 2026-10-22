@@ -103,7 +103,7 @@ piece; check them with the user then.
 - Others see a selection of several (`sel` + `more`), a follower takes it; a pan on a plane keeps the selection and its
   right panel, only a click on the plane lets go (D-230).
 - Alignment guides on planes (D-231): magenta lines while dragging; snapping on shows, off (`g`, alt) pulls within 6 px;
-  `a` guides, `g` snapping, kept per browser; both in the focus dock's `[grid ▾]` menu.
+  `a` guides, `g` snapping, kept per browser; in the focus dock's `[view ▾]` (arrange, and show: comments `c`).
 - Plane filters (D-233): one `[filter]` in the focus dock opens a console-look strip on it holding the old filter bar
   (`SHOW ▾ FOR ▾ TAG ▾ REGION ▾ LINKS ▾`, each its own menu) (`for`/`relates`/`competes` hidden to start); per plane, per browser; the canvas picture follows it.
 - What's linked to a plane (D-235): `[linked · N]` in the focus dock opens a strip over it with the `⇆` buttons; strips

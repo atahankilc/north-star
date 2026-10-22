@@ -3841,7 +3841,10 @@ categories shown like B, not in a card, and the features under them not indented
   pictures on the canvas had been writing over it as they drew.
 - *Then* (the user: "iki ayar için bir menü şart … Console'a koy ama menüyü kullan"): the focus dock (a plane's console
   in focus) has `[grid ▾]` before `[unfocus]` (editors, planes only), opening the shared menu (D-222) with two checkboxes,
-  `snap to the grid` (g) and `alignment guides` (a), toggled in place (`GridMenu.tsx`).
+  `snap to the grid` (g) and `alignment guides` (a), toggled in place. Then (the user: "grid dropdownumuzu setup gibi
+  generic bir şeye çevirip içine commentleri kapama gibi butonlar da eklemek istiyorum") it became `[view ▾]`
+  (`ViewMenu.tsx`), for anyone in a plane's focus: ARRANGE (editors) with those two, SHOW with `comments` (c, the
+  comment chips, D-159). New switches go here, not in the dock.
 - *User:* "hizalama çizgilerine geçelim".
 - *Verified* headless (emulators): with snapping on, a card dragged level with another showed a guide along their tops;
   `g` said "snapping to the grid off", then a card let go 2 px off another's left landed on it (x −100 like the other);

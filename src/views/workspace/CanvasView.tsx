@@ -17,7 +17,7 @@ import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
-import { GridMenu } from './GridMenu'
+import { ViewMenu } from './ViewMenu'
 import { PlaneDockExtras } from './FilterDock'
 import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu } from './ContextMenu'
@@ -797,7 +797,7 @@ export function CanvasView() {
               {focusedDocument && <DocumentDockTools piece={focused} />}
               {focusedDocument && <DocZoom />}
               {/* What the plane shows (D-233) and what's stuck to it (D-210), each a strip over the dock (D-235): a stuck
-                  piece's button opens it beside the plane, or closes it (D-211). Its snapping and guides (D-231), editors. */}
+                  piece's button opens it beside the plane, or closes it (D-211). Its snapping and guides and what it shows, in the view menu (D-231). */}
               {!isBare(focused) && (
                 <PlaneDockExtras
                   plane={focused.id}
@@ -816,7 +816,7 @@ export function CanvasView() {
                   }}
                 />
               )}
-              {!isBare(focused) && editor && <GridMenu />}
+              {!isBare(focused) && <ViewMenu editor={editor} />}
               {/* Always here; `esc` only when Escape does it next (with something open beside, that closes first, D-211). */}
               <DockAction label="unfocus" keyHint={escNext === 'unfocus' ? 'esc' : undefined} title="back to the canvas" main onClick={unfocus} />
             </FocusDock>
