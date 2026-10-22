@@ -181,7 +181,7 @@ piece; check them with the user then.
 - No pages any more: a workspace is one canvas (`/workspaces/<id>`, D-174), backdrop at full strength, no grid, no view
   tabs, no assistant; the old pages become pieces placed on it. The board is at `/board`; other views by their paths for now.
 - Pieces (D-176): `pieces/{id}` (x/y/w/h in canvas px, name); side nav `+` (D-178, opens right) puts one at the screen's
-  middle, moved right past any it would cover; pan by drag, wheel zooms round the pointer (0.1–4). Each piece has its own
+  middle, or the nearest clear spot round it, in edit mode to be moved (D-238); pan by drag, wheel zooms round the pointer (0.1–4). Each piece has its own
   background: a plane's is solid `--bg` with `+` marks every 25 px (`--grid-mark`), no backdrop.
 - The first piece is a **plane** (D-180): never "board" again, in the UI or the code (`kind: 'plane'`; old docs say
   `board`, still allowed by the rules). A press on a plane is the plane's (the canvas doesn't pan); only in edit mode does

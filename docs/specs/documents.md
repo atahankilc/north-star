@@ -73,8 +73,9 @@ A window showing one document's content directly: its kind's mark, who, when, le
 reading size, as wide as the window, cut at the bottom with a fade. Named in its edge by the document's title (no name
 of its own). By size on the screen: full → kind + title alone → grey bars; the text isn't read until it's near.
 
-- Made by dragging a row's grip out of the list, from a row's right-click or the reader's `[place ↗]` (put beside the
-  list), or by dropping a `.md` on the empty canvas (uploaded, then placed where it was dropped).
+- Made by dragging a row's grip out of an unframed list (where it's let go), from a row's `↗` or right-click or a
+  document's `[place ↗]` (where you're looking on the canvas, D-238; from a focus the canvas comes back to show it), or
+  by dropping a `.md` on the empty canvas (uploaded, then placed where it was dropped). It starts in edit mode.
 - **Private one: asked first.** The piece waits dashed where it was let go, a yellow-taped question inside it:
   `Show "…" to everyone?` with who will see it; `[cancel] esc`, `[share and place] ↵`. Sharing and placing are one undo
   step. A shared one is placed at once.

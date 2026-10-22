@@ -3977,3 +3977,18 @@ categories shown like B, not in a card, and the features under them not indented
 - *Code:* `planeMenu.ts` builds the items (`planeCtx`, `planeItems`); CanvasView's right-click adds them.
 - *Verified* headless (emulators): on the plane, `problem` made a card at the pointer with its title typed; on a card,
   `duplicate` made a copy; on a link's chip, `contradicts` changed its kind; no console errors; build.
+
+### D-238 · 2026-10-22 · Accepted (changes D-176's "moved right past any it would cover"; adds to D-232's place)
+- *Decision:* anything added to the canvas (plane, matrix, table, documents list, a document placed from its list)
+  lands where you're looking: centred on the middle of the screen, or the nearest clear spot round it within about its
+  own size (grid steps, nearest first, `nearClear` in pieces.ts), else on top there; and it starts in **edit mode**,
+  selected, to be moved where you want it. A document placed from a list's focus brings the canvas back to show it.
+  The row's `↗` and the dock's `[place ↗]` place there (asking first when private); dragged out of an unframed list,
+  where it's let go, in edit mode too.
+- *Why:* with many pieces a new one was slid right past all of them, out of view, and lost.
+- *Alternatives:* gliding the view to it after adding (go to); the user preferred it placed in view, in edit mode.
+- *User:* "Ben canvasa bir şey koyduğumda … görüş alanımın dışına koyuyor ve kaybediyorum. Yada direkt baktığım yere
+  koysun componenti ve edit modda başlasın ki istediğim yere taşıyabiliyim. Bu ikincisi daha mantıklı geldi".
+- *Not yet:* a big piece's nearest clear spot can sit partly past the screen's edge (still in view, in edit mode).
+- *Verified* headless (emulators): a plane added with the middle taken landed beside it on screen, in edit mode; a
+  shared document placed from its list's focus left focus and showed on the canvas in edit mode; tsc.
