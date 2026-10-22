@@ -37,8 +37,9 @@ pieces/{id}  kind 'document'   docId
 
 ## The documents list (`+ → documents`)
 
-A window on the canvas like the table (D-208): name in the top edge, console in the corner, no `+` marks. Its
-console: `[table] [shelf]`, `[upload]`, `[focus] [edit]` (and pages when it has more than one).
+A window on the canvas like the table (D-208): name in the top edge, console in the corner, no `+` marks. Framed,
+its console is only `[focus] [edit]`: table or shelf, upload, kinds and pages are set in its focus (or on it once
+unframed).
 
 - **Table**: kind · title (+ first words) · by (◐ = only you) · length (words, §, pages, size) · added; heads sort.
 - **Shelf**: sheets of paper with a folded corner: kind, title (3 lines), first words, by, when.

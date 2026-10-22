@@ -1190,8 +1190,10 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         // Out of its window onto the canvas and back (D-228), in edit mode; open, its pages and setup are here.
         open={canOpen(piece) ? { on: open, onToggle: () => void openPiece(wid, piece, !open) } : undefined}
         extra={
+          // A documents list's tools (upload, table or shelf…) are in its focus, and on it once unframed; framed, its
+          // console is only `[focus] [edit]`.
           kind === 'documents' ? (
-            <DocumentsTools piece={piece} editor={editor} compact={!open} toolClass={styles.tool} />
+            open ? <DocumentsTools piece={piece} editor={editor} toolClass={styles.tool} /> : undefined
           ) : kind === 'document' ? undefined : open ? (
             <OpenTools piece={piece} editor={editor} />
           ) : undefined

@@ -300,7 +300,7 @@ piece; check them with the user then.
   opens beside it (`?report=`), nothing opens by itself (D-103, D-106). Upload your own `.md` (≤512 KB), round-trips the download (D-091).
 
 - Documents (D-232, spec documents.md): every file is a document (`markdown | image | pdf | report`; old reports moved
-  over once), private until shared; a `documents` list piece (table or shelf, switched in its console) and a `document`
+  over once), private until shared; a `documents` list piece (table or shelf, switched in its focus dock, or its console once unframed; framed, `[focus] [edit]` only) and a `document`
   piece showing one in a window; a private one put on the canvas asks first; files need Storage (`.md` only until Blaze).
   Both unframe onto the canvas like D-228 (live there, their open size measured as drawn) (D-234).
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view

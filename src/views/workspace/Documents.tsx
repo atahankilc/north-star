@@ -333,8 +333,8 @@ const KIND_FILTER: { value: string; label: string; kinds?: DocKind[] }[] = [
   { value: 'pdf', label: 'pdfs', kinds: ['pdf'] },
 ]
 
-// The list's tools, in its focus dock: its pages, which kinds, how many a page, table or shelf, upload. On the canvas
-// (`compact`, its console) only the pages, table or shelf, and upload.
+// The list's tools, in its focus dock and in its console once unframed (D-234): its pages, which kinds, how many a
+// page, table or shelf, upload. Framed, its console has none of them. `compact`: only the pages, table or shelf, upload.
 export function DocumentsTools({ piece, editor, toolClass, compact = false }: { piece: WithId<Piece>; editor: boolean; toolClass?: string; compact?: boolean }) {
   const { wid, documents } = useWs()
   const { user } = useAuth()

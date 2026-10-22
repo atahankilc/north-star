@@ -3914,3 +3914,6 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless (emulators): both unframed from edit mode, the open list sorted by title from the canvas, a row
   click went into the list's focus with the document beside it, the open document showed its whole text; both framed
   back to their windows; rules 421 pass (2 new); tsc; no console errors.
+- *Then* (the user: "frame iken upload yada table shelf seçimi sunma. Onu focus da ayarlanabilir yap"): framed, the
+  documents list's console is only `[focus] [edit]`; upload, table/shelf, kinds and pages are in its focus dock, and in
+  its console once unframed.
