@@ -97,6 +97,42 @@
   color: var(--accent-cyan);
 }
 
+/* A column's right edge on its head (live, editors): a faint tick at the head's foot; hovered or dragged, a cyan line
+   down the whole table. Drawn at screen size (its width and the line's are divided by the zoom in Table.tsx). */
+.grip {
+  z-index: 2;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.grip::before,
+.grip::after {
+  position: absolute;
+  left: 50%;
+  width: var(--hair);
+  content: '';
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.grip::before {
+  bottom: 25%;
+  height: 30%;
+  background: var(--line-hover);
+}
+
+.grip::after {
+  top: 0;
+  height: var(--rule-h);
+  background: var(--accent-cyan);
+  opacity: 0;
+}
+
+.grip:hover::after,
+.grip[data-sizing='true']::after {
+  opacity: 1;
+}
+
 /* A row's name: Geist, one line; a card's carries its type's colour on its left edge. */
 .name {
   display: flex;

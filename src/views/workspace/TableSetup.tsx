@@ -34,7 +34,7 @@ import { Select } from '../../ui/Select'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { useWs } from './context'
 import { AddPill, Choices, Row, Toggle } from './MatrixSetup'
-import { tableOf, useTableUi, TABLE_TABS, type TableTab } from './Table'
+import { followTable, tableOf, useTableUi, TABLE_TABS, type TableTab } from './Table'
 import { TYPE_ACCENT } from './PlaneCards'
 import m from './Matrix.module.css'
 import styles from './Table.module.css'
@@ -48,7 +48,13 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
   const { wid, cards, cells } = useWs()
   const setup = tableOf(piece)
   const tab = useTableUi((s) => s.tab)
-  const part: SetTable = (k, v, key) => void setTablePart(wid, piece.id, k, v, key)
+  const part: SetTable = (k, v, key) => {
+    // A row or column added here: the table's view follows it in (D-214's way).
+    const r = k === 'rows' ? (v as Source | undefined) : undefined
+    if (r && (r.items.length > setup.rows.items.length || (r.hide?.length ?? 0) < (setup.rows.hide?.length ?? 0))) followTable(piece.id)
+    if (k === 'cols' && ((v as Column[] | undefined)?.length ?? 0) > setup.cols.length) followTable(piece.id)
+    void setTablePart(wid, piece.id, k, v, key)
+  }
   const close = () => useTableUi.setState({ setup: null })
   const count = { rows: rowsOf(setup.rows, cards, !setup.manual).length, cols: setup.cols.length + 1 }
   const restart: MenuEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setTable(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))

@@ -11,9 +11,9 @@ import type { Piece } from '../../data/model'
 import { retitleCard, TITLE_MAX, type Card } from '../../data/cards'
 import { setCell, TEXT_MAX, TONE_VAR, type Cell } from '../../data/matrix'
 import { rowsOf, statusOf, type Row } from '../../data/source'
-import { addNamedRow, CHECKED, colName, DEFAULT_STEPS, emptyTable, NAME_COL, PAGE_SIZES, readOwn, removeRow, renameRow, setTablePart, type Column, type TableSetup } from '../../data/table'
+import { addNamedRow, CHECKED, COL_W, colName, DEFAULT_STEPS, emptyTable, NAME_COL, PAGE_SIZES, readOwn, removeRow, renameRow, setColumnWidth, setTablePart, type Column, type TableSetup } from '../../data/table'
 import { kindOfPiece } from '../../data/pieces'
-import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
+import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { Select } from '../../ui/Select'
 import { useWs } from './context'
 import { TYPE_ACCENT } from './PlaneCards'
@@ -24,7 +24,8 @@ export const T = { head: 40, row: 32, name: 260, add: 40 }
 
 const FIELD_W: Record<string, number> = { type: 100, plane: 140, status: 120, tags: 180, regions: 160, priority: 90, impact: 90, effort: 90, evidence: 90 }
 const OWN_W: Record<string, number> = { scale: 90, number: 110, text: 220, check: 70 }
-export const widthOf = (c: Column) => (c.field ? FIELD_W[c.field] : OWN_W[c.kind ?? 'text']) ?? 120
+export const widthOf = (c: Column) => c.width ?? (c.field ? FIELD_W[c.field] : OWN_W[c.kind ?? 'text']) ?? 120
+export const nameWidth = (s: TableSetup) => s.nameWidth ?? T.name
 
 const NO_SETUP = emptyTable()
 export const tableOf = (p: Pick<Piece, 'table'>): TableSetup => p.table ?? NO_SETUP
@@ -32,21 +33,35 @@ export const tableOf = (p: Pick<Piece, 'table'>): TableSetup => p.table ?? NO_SE
 // The box round a table's rows and columns, in its px: what fit frames.
 export function tableBounds(piece: Pick<Piece, 'table'>, cards: Card[]): Bounds {
   const setup = tableOf(piece)
-  const w = T.name + setup.cols.reduce((s, c) => s + widthOf(c), 0) + T.add
+  const w = nameWidth(setup) + setup.cols.reduce((s, c) => s + widthOf(c), 0) + T.add
   const n = rowsOf(setup.rows, cards, !setup.manual).length
   // A page's worth when it's paged (D-213): fit frames the page.
   return { x: 0, y: 0, w, h: T.head + Math.max(setup.pageSize ? Math.min(n, setup.pageSize) : n, 1) * T.row + T.add }
 }
 
 // The table whose setup is open (from the focus dock's or its pane's `[setup]`, D-211); a typed row being named; the page
-// each table is on here (D-213: yours, not shared).
-export const useTableUi = create<{ setup: string | null; tab: TableTab; naming: string | null; pages: Record<string, number>; wizard: boolean }>(() => ({
+// each table is on here (D-213: yours, not shared); a table you just added a row or column to, which its view follows.
+export const useTableUi = create<{
+  setup: string | null
+  tab: TableTab
+  naming: string | null
+  pages: Record<string, number>
+  wizard: boolean
+  follow: { piece: string; at: number } | null
+}>(() => ({
   setup: null,
   tab: 'rows',
   naming: null,
   pages: {},
   wizard: false,
+  follow: null,
 }))
+
+// A row or column about to be added here: when it comes in, the table's view glides to it, as the matrix's (D-214).
+export const followTable = (piece: string) => useTableUi.setState({ follow: { piece, at: Date.now() } })
+const FOLLOW_MS = 4000
+// How far down the screen a followed column's head comes to, clear of the breadcrumb.
+const HEAD_IN = 64
 
 // The setup's tabs (D-218), as the matrix's (D-212); the wizard makes a new table.
 export const TABLE_TABS = ['rows', 'cols', 'view'] as const
@@ -103,10 +118,11 @@ export function useFieldText() {
   }, [pieces, evidence])
 }
 
-// `onCard`: a card's row name clicked, beside its plane (D-211): the plane goes to the card.
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCard?: (card: Card) => void }
+// `onCard`: a card's row name clicked, beside its plane (D-211): the plane goes to the card. `onView`: a pane's own view
+// moved (beside a plane); without it, the focus's.
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCard?: (card: Card) => void; onView?: (v: PlaneCam) => void }
 
-export function TableView({ piece, view, live, editor, onCard }: Props) {
+export function TableView({ piece, view, live, editor, onCard, onView }: Props) {
   const { wid, cards, cells } = useWs()
   const setup = tableOf(piece)
   const fieldText = useFieldText()
@@ -142,15 +158,13 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
   const rows = useMemo(() => all.slice(page.from, page.to), [all, page.from, page.to])
 
   const cols = setup.cols
-  const xs = useMemo(() => {
-    let x = T.name
-    return cols.map((c) => {
-      const at = x
-      x += widthOf(c)
-      return at
-    })
-  }, [cols])
-  const width = T.name + cols.reduce((s, c) => s + widthOf(c), 0)
+  // A column's right edge being dragged: its width shown while it moves, written once let go.
+  const [sizing, setSizing] = useState<{ col: string; w: number } | null>(null)
+  const nameW = sizing?.col === NAME_COL ? sizing.w : nameWidth(setup)
+  const wOf = (c: Column) => (sizing?.col === c.id ? sizing.w : widthOf(c))
+  const ws = cols.map(wOf)
+  const xs = ws.reduce<number[]>((out, _, i) => [...out, i ? out[i - 1] + ws[i - 1] : nameW], [])
+  const width = nameW + ws.reduce((s, w) => s + w, 0)
   const sel = parseSel(useCanvasView((s) => (live ? s.cardSelected : null)))
   // A card selected on the plane beside it (D-211): its row lit.
   const lit = useCanvasView((s) => (live && onCard ? s.cardSelected : null))
@@ -187,6 +201,35 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
     if (!live) return
     return () => useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : s.setup, naming: null }))
   }, [live])
+  // A row or column you just added (followTable): the view glides to bring it to the middle, a row up or down (its page
+  // turned to if it's on another), a column across. Others' adds don't move you.
+  const seen = useRef<{ rows: Set<string>; cols: Set<string> } | null>(null)
+  const rowKeys = all.map((r) => r.key).join('|')
+  const colIds = cols.map((c) => c.id).join('|')
+  useEffect(() => {
+    const was = seen.current
+    seen.current = { rows: new Set(all.map((r) => r.key)), cols: new Set(cols.map((c) => c.id)) }
+    const f = useTableUi.getState().follow
+    const el = layer.current
+    if (!was || !el || !live || f?.piece !== piece.id || Date.now() - f.at > FOLLOW_MS) return
+    const move = onView ?? (useCanvasView.getState().planeCam === view ? (v: PlaneCam) => useCanvasView.setState({ planeCam: v }) : null)
+    const ri = all.findIndex((r) => !was.rows.has(r.key))
+    const ci = cols.findIndex((c) => !was.cols.has(c.id))
+    if (!move || (ri < 0 && ci < 0)) return
+    useTableUi.setState({ follow: null })
+    let to = view
+    if (ri >= 0) {
+      const at = setup.pageSize ? Math.floor(ri / setup.pageSize) : 0
+      if (at !== page.at) useTableUi.setState((s) => ({ pages: { ...s.pages, [piece.id]: at } }))
+      const y = T.head + (ri - at * (setup.pageSize ?? 0)) * T.row + T.row / 2
+      to = { ...to, oy: el.clientHeight / 2 - y * view.zoom }
+    }
+    // A column across to the middle, its head brought down into sight if it's above (the setup sits over the middle).
+    if (ci >= 0) to = { ...to, ox: el.clientWidth / 2 - (xs[ci] + ws[ci] / 2) * view.zoom, oy: Math.max(to.oy, HEAD_IN) }
+    glide(view, to, 420, move)
+    // When one comes in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowKeys, colIds])
 
   const keysRef = useRef<(e: KeyboardEvent) => void>(() => {})
   keysRef.current = (e: KeyboardEvent) => {
@@ -247,7 +290,7 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
           ))}
           <div className={styles.headRule} style={box(0, T.head - 1, width, 1)} />
 
-          <button className={styles.head} data-name style={box(0, 0, T.name, T.head)} onPointerDown={own} onClick={() => sortBy(NAME_COL)} tabIndex={live ? 0 : -1} title={live && editor ? 'sort by it' : undefined}>
+          <button className={styles.head} data-name style={box(0, 0, nameW, T.head)} onPointerDown={own} onClick={() => sortBy(NAME_COL)} tabIndex={live ? 0 : -1} title={live && editor ? 'sort by it' : undefined}>
             {setup.manual ? 'name' : 'title'}
             <span className={styles.arrow}>{arrow(NAME_COL)}</span>
           </button>
@@ -256,7 +299,7 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
               key={c.id}
               className={styles.head}
               data-own={c.field ? undefined : true}
-              style={box(xs[i], 0, widthOf(c), T.head)}
+              style={box(xs[i], 0, ws[i], T.head)}
               onPointerDown={own}
               onClick={() => sortBy(c.id)}
               tabIndex={live ? 0 : -1}
@@ -268,11 +311,28 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
             </button>
           ))}
 
+          {live && editor &&
+            [{ id: NAME_COL, x: nameW, w: nameWidth(setup) }, ...cols.map((c, i) => ({ id: c.id, x: xs[i] + ws[i], w: widthOf(c) }))].map((g) => (
+              <WidthGrip
+                key={g.id}
+                x={g.x}
+                height={bottom}
+                zoom={view.zoom}
+                sizing={sizing?.col === g.id}
+                onMove={(dx) => setSizing({ col: g.id, w: Math.round(Math.min(COL_W.max, Math.max(COL_W.min, g.w + dx))) })}
+                onDone={(dx) => {
+                  setSizing(null)
+                  if (dx) void setColumnWidth(wid, piece.id, setup, g.id, g.w + dx)
+                }}
+                onReset={() => void setColumnWidth(wid, piece.id, setup, g.id, undefined)}
+              />
+            ))}
+
           {rows.map((r, ri) => (
             <NameCell
               key={r.key}
               row={r}
-              style={box(0, T.head + ri * T.row, T.name, T.row)}
+              style={box(0, T.head + ri * T.row, nameW, T.row)}
               live={live}
               editor={editor}
               naming={naming === r.item?.id}
@@ -289,7 +349,7 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
           {rows.map((r, ri) =>
             cols.map((c, ci) => {
               const key = selKey(r.key, c.id)
-              const style = box(xs[ci], T.head + ri * T.row, widthOf(c), T.row)
+              const style = box(xs[ci], T.head + ri * T.row, ws[ci], T.row)
               const isSel = selected?.r === ri && selected.c === ci
               if (c.field) {
                 const text = fieldText(r, c.field)
@@ -332,24 +392,66 @@ export function TableView({ piece, view, live, editor, onCard }: Props) {
               </button>
               <button
                 className={styles.add}
-                style={box(0, bottom, T.name, T.add)}
+                style={box(0, bottom, nameW, T.add)}
                 title="add a named row"
                 aria-label="Add a row"
                 onPointerDown={own}
-                onClick={() => void addNamedRow(wid, piece.id, setup).then((id) => useTableUi.setState({ naming: id }))}
+                onClick={() => {
+                  followTable(piece.id)
+                  void addNamedRow(wid, piece.id, setup).then((id) => useTableUi.setState({ naming: id }))
+                }}
               >
                 + row
               </button>
             </>
           )}
           {!rows.length && (
-            <p className={styles.empty} style={box(T.name, T.head, Math.max(width - T.name, 200), T.row)}>
+            <p className={styles.empty} style={box(nameW, T.head, Math.max(width - nameW, 200), T.row)}>
               {setup.manual ? 'No rows yet' : 'No card meets its rules'}
             </p>
           )}
         </div>
       </div>
     </div>
+  )
+}
+
+type GripProps = { x: number; height: number; zoom: number; sizing: boolean; onMove: (dx: number) => void; onDone: (dx: number) => void; onReset: () => void }
+
+// A column's right edge, on its head: dragged, the column widens or narrows (the rows follow); a double-click puts it
+// back to its own width. As wide on the screen at any zoom.
+function WidthGrip({ x, height, zoom, sizing, onMove, onDone, onReset }: GripProps) {
+  const w = 9 / zoom
+  const from = useRef<number | null>(null)
+  const dx = (e: ReactPointerEvent) => (from.current === null ? 0 : (e.clientX - from.current) / zoom)
+  return (
+    <div
+      className={styles.grip}
+      data-sizing={sizing || undefined}
+      style={{ left: x - w / 2, top: 0, width: w, height: T.head, ['--rule-h' as string]: `${height}px`, ['--hair' as string]: `${1 / zoom}px` }}
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Column width (drag; double-click for its own)"
+      title="drag to widen · double-click for its own width"
+      onPointerDown={(e) => {
+        e.stopPropagation()
+        if (e.button !== 0) return
+        e.currentTarget.setPointerCapture(e.pointerId)
+        from.current = e.clientX
+      }}
+      onPointerMove={(e) => from.current !== null && onMove(dx(e))}
+      onPointerUp={(e) => {
+        if (from.current === null) return
+        const d = dx(e)
+        from.current = null
+        onDone(Math.round(d))
+      }}
+      onPointerCancel={() => {
+        from.current = null
+        onDone(0)
+      }}
+      onDoubleClick={onReset}
+    />
   )
 }
 

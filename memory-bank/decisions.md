@@ -223,6 +223,8 @@ piece; check them with the user then.
   (read-only) and its own (scale, number + unit, text, check); a head's click sorts. Live in focus like the matrix;
   `[setup]` in the dock. Made in a wizard from `+ → table…` and set up in a tabbed panel (rows · columns · view), as
   the matrix (D-218). Paged (D-213): `‹ 2 / 5 ›` + rows a page (all, 10/25/50/100; shared) in its dock, the page yours.
+  A row or column you add is followed in, the matrix's glide (D-214); a column's width drags from its head's right edge
+  (48–640, shared, double-click resets) (D-224).
 - Sticking (D-210, D-215): a matrix or table moved (edit mode) within 48 screen px of a plane's edge snaps one grid step
   out from it, the edge lit cyan, and is linked (`stuckTo`; alt = free): a table gets `where plane is … · auto` (changed
   by hand it's yours), a matrix's typed axes the plane. Links show quietly, grey, cyan on hover, no motion (D-215): the

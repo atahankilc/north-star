@@ -30,6 +30,8 @@ export type Column = {
   // A scale's steps, low to high (kept when the kind changes, so changing back finds them).
   steps?: Step[]
   unit?: string
+  // Its width in the table's px, dragged from its head's right edge; unset = its kind's own.
+  width?: number
 }
 
 export type TableSetup = {
@@ -41,6 +43,8 @@ export type TableSetup = {
   sort?: { col: string; desc?: boolean }
   // Rows a page (D-213), shared; unset = all on one page. Which page you're on is yours (Table.tsx's useTableUi).
   pageSize?: number
+  // The name column's width, dragged like a column's; unset = the default.
+  nameWidth?: number
 }
 
 // firestore.rules' validTable allows these.
@@ -48,6 +52,8 @@ export const MAX_COLS = 30
 export const COL_NAME_MAX = 40
 export const CHECKED = 'yes'
 export const NAME_COL = 'name'
+// How narrow and how wide a column may be dragged, in the table's px.
+export const COL_W = { min: 48, max: 640 }
 
 // The page sizes the dock offers (D-213).
 export const PAGE_SIZES = [10, 25, 50, 100]
@@ -171,6 +177,13 @@ export function addColumn(wid: string, id: string, setup: TableSetup, col: Omit<
 export function editColumn(wid: string, id: string, setup: TableSetup, colId: string, change: Partial<Column>, key?: string) {
   const cols = setup.cols.map((c) => (c.id === colId ? { ...c, ...change } : c))
   return setTablePart(wid, id, 'cols', cols, key ? `col:${colId}:${key}` : undefined)
+}
+
+// A column's width (or the name column's, NAME_COL) dragged to `w`; undefined goes back to its own.
+export function setColumnWidth(wid: string, id: string, setup: TableSetup, colId: string, w: number | undefined) {
+  const width = w === undefined ? undefined : Math.round(Math.min(COL_W.max, Math.max(COL_W.min, w)))
+  if (colId === NAME_COL) return setTablePart(wid, id, 'nameWidth', width)
+  return editColumn(wid, id, setup, colId, { width })
 }
 
 export function moveColumn(wid: string, id: string, setup: TableSetup, colId: string, by: -1 | 1) {

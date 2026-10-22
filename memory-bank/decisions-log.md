@@ -3695,3 +3695,20 @@ categories shown like B, not in a card, and the features under them not indented
 - *Verified* headless on emulators: four planes, one named; at 10 % zoom the name computes to 11 px on screen and is cut
   `PAZAR…`, unnamed ones read `PLANE`; at 100 % `PAZAR ARAŞTIRMASI · PLANE`; edit mode shows the framed field with
   `> name this plane 0/80` and typing works; tsc.
+
+### D-224 · 2026-10-22 · Accepted (a table follows what you add; its columns' widths dragged)
+- *What:* a row or column you add to a table (its `+ row`, `+` column → setup, or the setup's rows and columns tabs) is
+  followed in, as the matrix's (D-214): the view glides 420 ms to put a new row in the middle of the screen (turning to
+  its page if it lands on another, D-213) and a new column across to the middle, its head brought down into sight
+  (64 px from the top) if it was above, since the setup sits over the middle. In focus and in a pane beside a plane
+  (D-211). Only your own adds (a `follow` mark in `useTableUi`, 4 s); others' don't move you.
+  Columns' widths: each head's right edge (the name column's too) is a grip, live in focus for editors: a faint tick at
+  the head's foot, a cyan line down the whole table while hovered or dragged, at screen size at any zoom. Dragging
+  widens or narrows the column (48–640 px of the table), written once let go (one undo step), shared;
+  a double-click puts it back to its kind's width. Stored as `width` on the column, `nameWidth` on the table (no rules change:
+  `validTable` doesn't look inside columns).
+- *Why:* the user asked: "table viewında yeni column yada row ekleyince table onları takip etsin matrixdeki gibi. Bir de
+  table columlarının boyu ayarlanabilir olsun".
+- *Verified* headless on emulators: a 14-row table zoomed in; `+ row` glided the new row to the middle with its name field
+  open; adding `impact` from the setup glided it to the middle, head above the panel; a drag widened `tags` with the
+  cyan line showing, kept after a reload; a double-click put it back; tsc.

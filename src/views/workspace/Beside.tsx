@@ -216,7 +216,7 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
       onPointerDown={pan}
       aria-label={`${piece.name || KIND_NAME[kind]}, beside the plane`}
     >
-      {kind === 'matrix' ? <MatrixView piece={piece} view={view} live editor={editor} /> : <TableView piece={piece} view={view} live editor={editor} onCard={toCard} />}
+      {kind === 'matrix' ? <MatrixView piece={piece} view={view} live editor={editor} /> : <TableView piece={piece} view={view} live editor={editor} onCard={toCard} onView={setView} />}
       {kind === 'table' && tableSetup && editor && <TableSetupPanel piece={piece} />}
       {kind === 'matrix' && matrixSetup && editor && <MatrixSetupPanel piece={piece} />}
       {/* Its dock: the focus dock itself, at the bottom middle of its part, named (D-189, D-211). */}
