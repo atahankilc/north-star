@@ -26,8 +26,8 @@ import { placesIn, shownPlaces, toggleOpen, useGoTo } from './goTo'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { usePresenceSession } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
-import { documentsBounds, documentsOf, listed } from './Documents'
-import { documentBounds } from './DocumentPiece'
+import { documentsBounds, documentsOf, listed, pinnedView, readerLeft, useDocUi } from './Documents'
+import { documentHome } from './DocumentPiece'
 import {
   canEditIn,
   describeWorkspace,
@@ -38,7 +38,7 @@ import {
   useJoinRequests,
   useWorkspace,
 } from '../../data/workspaces'
-import { canvasCenter, fitCanvas, fitPlane, useCanvasView } from '../../state/canvasView'
+import { canvasCenter, fitCanvas, fitPlane, useCanvasView, type PlaneCam } from '../../state/canvasView'
 import { useHoldCurtain } from '../../state/curtain'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { DecodeText } from '../../ui/DecodeText'
@@ -139,6 +139,9 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
   const matrix = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'matrix')
   const table = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'table')
   const docs = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'documents')
+  const reader = useDocUi((s) => !!s.reader)
+  const docsBounds = (p: NonNullable<typeof docs>) => documentsBounds(p, listed(documents, documentsOf(p), user?.id).length)
+  const setPlaneCam = (to: PlaneCam) => useCanvasView.setState({ planeCam: to })
   const one = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'document')
   return (
     <button
@@ -147,7 +150,13 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
       title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
       onClick={() =>
         focused
-          ? fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? documentsBounds(docs, listed(documents, documentsOf(docs), user?.id).length) : one ? documentBounds(one) : spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
+          ? docs && reader
+            ? // The list beside its open document: pinned top-left in its part (D-232).
+              setPlaneCam(pinnedView(docsBounds(docs), readerLeft(docsBounds(docs), useCanvasView.getState().size.w, useDocUi.getState().readerAt)))
+            : one
+              ? // A document: at 100 %, its top near the top.
+                setPlaneCam(documentHome(one, useCanvasView.getState().size.w))
+              : fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? docsBounds(docs) : spaceBounds(cards.filter((c) => c.pieceId === plane), labels.filter((l) => l.pieceId === plane)))
           : fitCanvas(wid, [...shownPieces(pieces, cards), ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
       }
     >

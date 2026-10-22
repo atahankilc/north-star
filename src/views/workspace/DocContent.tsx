@@ -129,7 +129,7 @@ function Report({ body, research, links }: { body: DocBody; research: boolean; l
       ))}
       {!!body.implications?.length && (
         <section className={styles.block}>
-          <h2 className={styles.blockLabel}>What it means for us</h2>
+          <h2 className={styles.blockLabel} data-heading="block">What it means for us</h2>
           <ul className={styles.points}>
             {body.implications.map((x, i) => (
               <li key={i}>{x.text}</li>
@@ -139,7 +139,7 @@ function Report({ body, research, links }: { body: DocBody; research: boolean; l
       )}
       {!!body.openQuestions?.length && (
         <section className={styles.block}>
-          <h2 className={styles.blockLabel}>Open questions</h2>
+          <h2 className={styles.blockLabel} data-heading="block">Open questions</h2>
           <ul className={styles.points}>
             {body.openQuestions.map((q, i) => (
               <li key={i}>{q}</li>
@@ -149,7 +149,7 @@ function Report({ body, research, links }: { body: DocBody; research: boolean; l
       )}
       {sources.length > 0 && (
         <section className={styles.block}>
-          <h2 className={styles.blockLabel}>Sources</h2>
+          <h2 className={styles.blockLabel} data-heading="block">Sources</h2>
           <ol className={styles.sources}>
             {sources.map((s, i) => (
               <li key={i}>

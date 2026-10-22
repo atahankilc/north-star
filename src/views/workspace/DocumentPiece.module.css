@@ -149,10 +149,91 @@
   padding: var(--space-12) var(--space-8) 120px;
 }
 
+/* The page and, on its right, what's on it. */
+.readerBody {
+  display: flex;
+  gap: var(--space-8);
+  justify-content: center;
+  align-items: flex-start;
+}
+
 .readerColumn {
+  flex: 1;
+  min-width: 0;
   max-width: var(--measure);
-  margin: 0 auto;
   user-select: text;
+}
+
+.pageOutline {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 180px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* A narrow page has it on top instead, its sections in a row. */
+@container (max-width: 680px) {
+  .readerBody {
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .readerColumn {
+    width: 100%;
+  }
+
+  .pageOutline {
+    position: static;
+    order: -1;
+    flex-flow: row wrap;
+    gap: var(--space-1) var(--space-4);
+    width: auto;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .pageOutline .outlineHead {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .pageOutline .outlineItem {
+    padding-left: 0 !important;
+  }
+}
+
+.readerScroll {
+  container-type: inline-size;
+}
+
+.pageOutline .outlineItem {
+  scroll-margin: 0;
+}
+
+/* The zoom in a dock: `[−] 100% [+]`. */
+.zoom {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.zoomAt {
+  min-width: 4ch;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.zoomAt:hover {
+  color: var(--accent-cyan);
 }
 
 /* The question before a private document goes on the canvas (D-232). */

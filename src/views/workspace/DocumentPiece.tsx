@@ -13,11 +13,11 @@ import type { Piece } from '../../data/model'
 import { downloadDocument, shareDocument, useDocBody } from '../../data/documents'
 import { placeDocument, pieceRef } from '../../data/pieces'
 import { useAuth } from '../../data/auth'
-import { glide, setSplit, stopGlide, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
+import { glide, stopGlide, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useWs } from './context'
 import { DocContent, KindMark } from './DocContent'
-import { useDocUi } from './Documents'
+import { documentsBounds, documentsOf, listed, readerLeft, useDocUi } from './Documents'
 import { DockAction, FocusDock } from './FocusDock'
 import { useOpenSize } from './shownBox'
 import styles from './DocumentPiece.module.css'
@@ -30,6 +30,41 @@ export const docWidth = (w: number) => Math.max(240, w - 2 - 2 * PAD)
 // How tall each document piece's text came out, measured as it's drawn: what fit frames (its first screen).
 const useHeights = create<Record<string, number>>(() => ({}))
 const FIRST_SCREEN = 640
+
+// Where a document's focus sits (D-232): at 100 %, its column in the middle of the screen, its top near the top.
+export function documentHome(piece: WithId<Piece>, screenW: number): PlaneCam {
+  return { zoom: 1, ox: Math.round((screenW - (piece.w - 2)) / 2), oy: 56 }
+}
+
+// Zoom steps for reading (D-232): 50 % to 200 %.
+const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2]
+const stepZoom = (z: number, dir: 1 | -1) => (dir > 0 ? (ZOOMS.find((s) => s > z + 0.001) ?? ZOOMS[ZOOMS.length - 1]) : ([...ZOOMS].reverse().find((s) => s < z - 0.001) ?? ZOOMS[0]))
+
+// `[−] 100% [+]`: a click on the number goes back to 100 %. On a document's own focus it zooms its view round the
+// middle of the screen; beside the list (`reader`), the page's text.
+export function DocZoom({ reader = false }: { reader?: boolean }) {
+  const z = useCanvasView((s) => (reader ? 1 : (s.planeCam?.zoom ?? 1)))
+  const rz = useDocUi((s) => s.readerZoom)
+  const zoom = reader ? rz : z
+  const set = (to: number) => {
+    if (reader) return useDocUi.setState({ readerZoom: to })
+    const { planeCam: c, size } = useCanvasView.getState()
+    if (!c) return
+    const [px, py] = [size.w / 2, size.h / 2]
+    const k = to / c.zoom
+    stopGlide()
+    useCanvasView.setState({ planeCam: { zoom: to, ox: px - (px - c.ox) * k, oy: py - (py - c.oy) * k } })
+  }
+  return (
+    <span className={styles.zoom} role="group" aria-label="Zoom">
+      <DockAction label="−" title="zoom out" onClick={() => set(stepZoom(zoom, -1))} />
+      <button className={styles.zoomAt} title="back to 100 %" onClick={() => set(1)}>
+        {Math.round(zoom * 100)}%
+      </button>
+      <DockAction label="+" title="zoom in" onClick={() => set(stepZoom(zoom, 1))} />
+    </span>
+  )
+}
 
 export function documentBounds(piece: WithId<Piece>): Bounds {
   const h = useHeights.getState()[piece.id] ?? FIRST_SCREEN
@@ -112,7 +147,7 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false }: Props
           </div>
         )}
       </div>
-      {live && !onCanvas && d && level === 'full' && <Outline pieceId={piece.id} content={content} />}
+      {live && !onCanvas && d && level === 'full' && <Outline pieceId={piece.id} content={content} ready={!!body.data} />}
     </div>
   )
 }
@@ -129,7 +164,8 @@ function scrolled(c: PlaneCam, dx: number, dy: number, id: string): PlaneCam {
 type Mark = { text: string; y: number; level: number }
 
 // Its headings on the left of the screen in focus (D-232): the one you're reading lit; a click glides there.
-function Outline({ pieceId, content }: { pieceId: string; content: React.RefObject<HTMLDivElement | null> }) {
+// `ready`: its text is in (found again once it loads: the height may be the same as the canvas copy's).
+function Outline({ pieceId, content, ready }: { pieceId: string; content: React.RefObject<HTMLDivElement | null>; ready: boolean }) {
   const [marks, setMarks] = useState<Mark[]>([])
   const cam = useCanvasView((s) => s.planeCam)
   const height = useHeights((s) => s[pieceId])
@@ -140,7 +176,7 @@ function Outline({ pieceId, content }: { pieceId: string; content: React.RefObje
       .filter((h) => h.dataset.heading !== 'title' && /^H[1-3]$/.test(h.tagName))
       .map((h) => ({ text: h.textContent ?? '', y: h.offsetTop, level: Number(h.tagName[1]) }))
     setMarks(found.slice(0, 60))
-  }, [content, height])
+  }, [content, height, ready])
   if (marks.length < 2 || !cam) return null
   const at = (m: Mark) => m.y * cam.zoom + cam.oy
   const reading = marks.reduce((cur, m, i) => (at(m) <= 140 ? i : cur), -1)
@@ -176,8 +212,11 @@ export function DocReader({ list }: { list: WithId<Piece> }) {
   const d = documents.find((x) => x.id === id) ?? null
   const body = useDocBody(wid, d)
   const size = useCanvasView((s) => s.size)
-  const split = useCanvasView((s) => s.split)
-  const left = Math.round(size.w * split)
+  // Right of the list, pinned top-left at its own size (or fitted to where the line was dragged).
+  const at = useDocUi((s) => s.readerAt)
+  const count = listed(documents, documentsOf(list), user?.id).length
+  const left = readerLeft(documentsBounds(list, count), size.w, at)
+  const zoom = useDocUi((s) => s.readerZoom)
   const el = useRef<HTMLDivElement>(null)
   const editor = !!user && ['owner', 'editor'].includes(workspace.roles[user.id] ?? '')
 
@@ -185,14 +224,24 @@ export function DocReader({ list }: { list: WithId<Piece> }) {
   useEffect(() => {
     if (id && !d) useDocUi.setState({ reader: null })
   }, [id, d])
-  // The wheel scrolls it as a page, kept from the list's view.
+  // The wheel scrolls it as a page, kept from the list's view; ctrl (or a pinch) zooms its text.
   useEffect(() => {
     const node = el.current
     if (!node) return
-    const stop = (e: WheelEvent) => e.stopPropagation()
-    node.addEventListener('wheel', stop, { passive: true })
-    return () => node.removeEventListener('wheel', stop)
+    const onWheel = (e: WheelEvent) => {
+      e.stopPropagation()
+      if (!e.ctrlKey) return
+      e.preventDefault()
+      const z = useDocUi.getState().readerZoom
+      useDocUi.setState({ readerZoom: Math.min(2, Math.max(0.5, Math.round(z * Math.exp(-e.deltaY * 0.01) * 100) / 100)) })
+    }
+    node.addEventListener('wheel', onWheel, { passive: false })
+    return () => node.removeEventListener('wheel', onWheel)
   }, [d])
+  // A new document starts at its top.
+  useEffect(() => {
+    el.current?.scrollTo({ top: 0 })
+  }, [id])
   if (!d) return null
   const mine = d.uid === user?.id
 
@@ -201,7 +250,7 @@ export function DocReader({ list }: { list: WithId<Piece> }) {
     e.stopPropagation()
     const node = e.currentTarget
     node.setPointerCapture(e.pointerId)
-    const move = (ev: PointerEvent) => setSplit(ev.clientX / Math.max(1, size.w))
+    const move = (ev: PointerEvent) => useDocUi.setState({ readerAt: ev.clientX })
     const up = () => {
       node.removeEventListener('pointermove', move)
       node.removeEventListener('pointerup', up)
@@ -216,26 +265,73 @@ export function DocReader({ list }: { list: WithId<Piece> }) {
     <>
       <div className={`${beside.pane} ${styles.reader}`} style={{ left, top: 0, width: size.w - left, height: size.h }} onPointerDown={(e) => e.stopPropagation()} aria-label={`${d.title}, beside the list`}>
         <div ref={el} className={styles.readerScroll} data-scrolls>
-          <div className={styles.readerColumn}>
-            <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links />
+          <div className={styles.readerBody}>
+            <div className={styles.readerColumn} style={{ zoom }}>
+              <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links />
+            </div>
+            <PageOutline scroller={el} at={`${d.id}:${body.data ? 1 : 0}:${zoom}`} />
           </div>
         </div>
         <FocusDock
           label="document beside"
-          name={
-            <>
-              <span className={beside.kind}>document</span> · {d.title.length > 28 ? `${d.title.slice(0, 27)}…` : d.title}
-            </>
-          }
+          // Its title is on the page already: the dock only says what it is, so it fits a narrow part.
+          name={<span className={beside.kind}>document</span>}
         >
           {mine && <DockAction label={d.shared ? 'unshare' : 'share'} title={d.shared ? 'only you see it again' : 'everyone in the workspace sees it'} onClick={() => void shareDocument(wid, d.id, !d.shared)} />}
           {editor && <DockAction label="place ↗" title="put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
           <DockAction label="download" title="save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
+          <DocZoom reader />
           <DockAction label="close" main keyHint="esc" title="close it" onClick={() => useDocUi.setState({ reader: null })} />
         </FocusDock>
       </div>
       <div className={beside.divider} style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="List and document" />
     </>
+  )
+}
+
+// "On this page" beside a document open by the list (as the old reports reader had, D-102): its sections, the one you're
+// reading lit as you scroll, a click scrolls there. Found in the page itself (headings, a report's questions and blocks).
+function PageOutline({ scroller, at }: { scroller: React.RefObject<HTMLDivElement | null>; at: string }) {
+  const [parts, setParts] = useState<{ text: string; level: number; el: HTMLElement }[]>([])
+  const [now, setNow] = useState(0)
+  useEffect(() => {
+    const box = scroller.current
+    if (!box) return
+    const found = [...box.querySelectorAll<HTMLElement>('[data-heading]')]
+      .filter((h) => h.dataset.heading !== 'title' && /^H[1-3]$/.test(h.tagName))
+      .map((h) => ({ text: (h.textContent ?? '').trim(), level: Number(h.tagName[1]), el: h }))
+    setParts(found.slice(0, 60))
+    const spy = () => {
+      const top = box.getBoundingClientRect().top + 96
+      let i = 0
+      found.forEach((p, j) => {
+        if (p.el.getBoundingClientRect().top <= top) i = j
+      })
+      if (box.scrollTop + box.clientHeight >= box.scrollHeight - 4) i = found.length - 1
+      setNow(i)
+    }
+    spy()
+    box.addEventListener('scroll', spy, { passive: true })
+    return () => box.removeEventListener('scroll', spy)
+  }, [scroller, at])
+  if (parts.length < 2) return null
+  const top = Math.min(...parts.map((p) => p.level))
+  return (
+    <nav className={styles.pageOutline} aria-label="On this page">
+      <span className={styles.outlineHead}>on this page</span>
+      {parts.map((p, i) => (
+        <button
+          key={i}
+          className={styles.outlineItem}
+          data-on={i === now || undefined}
+          style={{ paddingLeft: `${(p.level - top) * 12}px` }}
+          onClick={() => p.el.scrollIntoView({ block: 'start', behavior: isReducedMotion() ? 'auto' : 'smooth' })}
+          title={p.text}
+        >
+          {p.text}
+        </button>
+      ))}
+    </nav>
   )
 }
 

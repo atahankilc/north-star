@@ -24,7 +24,8 @@ import { ContextMenu } from './ContextMenu'
 import { isNew, useReads } from '../../data/threads'
 import { ThreadInbox } from './ThreadInbox'
 import { CARD } from '../../data/cards'
-import { glide } from '../../state/canvasView'
+import { glide, stopGlide } from '../../state/canvasView'
+import { isReducedMotion } from '../../state/motion'
 import { isOwnerOf } from '../../data/workspaces'
 import type { Thread } from '../../data/model'
 import { Follow, PeerCursors, PeerRing, stopFollowing, useCursorReport, usePresenceReport } from './collab'
@@ -45,8 +46,8 @@ import { TableSetupPanel } from './TableSetup'
 import { Beside, type EscNext } from './Beside'
 import { isOpen, OPEN_FOOT, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
 import { deleteDocument, downloadDocument, moveReports, shareDocument, type Doc } from '../../data/documents'
-import { documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, uploadFiles, useDocUi } from './Documents'
-import { DocPlace, DocReader, documentBounds, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
+import { documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
+import { DocPlace, DocReader, documentBounds, documentHome, DocumentPieceView, DocZoom, membersOf, piecesOfDoc } from './DocumentPiece'
 import styles from './CanvasView.module.css'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
@@ -167,9 +168,19 @@ export function CanvasView() {
   // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
   const fitRef = useRef((_instant?: boolean) => {})
   fitRef.current = (instant = false) => {
-    if (focused) fitPlane(contentOf(focused), instant)
+    // The documents list with a document beside it: pinned top-left, fitted to its part (D-232); a document on its
+    // own: at 100 %, its top near the top of the screen.
+    if (focused && focusedDocuments && readerOpen) setPlaneView(pinnedView(contentOf(focused)!, readerLeft(contentOf(focused)!, size.w, useDocUi.getState().readerAt)), instant)
+    else if (focused && focusedDocument) setPlaneView(documentHome(focused, size.w), instant)
+    else if (focused) fitPlane(contentOf(focused), instant)
     else fitCanvas(wid, [...shown, ...canvasLabels.map(labelBox)])
   }
+  // The line between the list and its document dragged: the list fits its new part at once.
+  const readerAt = useDocUi((s) => s.readerAt)
+  useEffect(() => {
+    if (focusedDocuments && readerOpen && useCanvasView.getState().focusArrived) fitRef.current(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readerAt, size.w])
   // Go to (D-196): the side nav's list asks through `useGoTo`; no keys (D-201).
   // A place in the space you're in glides there; one in a plane, from outside it, waits for the plane to come into focus.
   const goPlaceRef = useRef((_: Place) => {})
@@ -735,7 +746,7 @@ export function CanvasView() {
           {focusedDocuments && focusArrived && !focusLeaving && <DocReader list={focused} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {focusArrived && !focusLeaving && (
-            <FocusDock center={besideOpen.length || readerOpen ? (size.w * split) / 2 : undefined}>
+            <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length ? (size.w * split) / 2 : undefined}>
               {/* What's stuck to the plane (D-210): each opens beside it, or closes (D-211). */}
               {stuckHere.map((p) => (
                 <DockAction
@@ -755,6 +766,7 @@ export function CanvasView() {
               )}
               {focusedDocuments && <DocumentsTools piece={focused} editor={editor} />}
               {focusedDocument && <DocumentDockTools piece={focused} />}
+              {focusedDocument && <DocZoom />}
               {/* A plane's snapping and guides (D-231). */}
               {/* What the plane shows (D-233), anyone; its snapping and guides (D-231), editors. */}
               {!isBare(focused) && <FilterDock plane={focused.id} cards={focusedCards} />}
@@ -814,6 +826,14 @@ export function CanvasView() {
       )}
     </div>
   )
+}
+
+// The focus's own view set, gliding there unless `instant`.
+function setPlaneView(to: PlaneCam, instant: boolean) {
+  const c = useCanvasView.getState().planeCam
+  stopGlide()
+  if (instant || !c || isReducedMotion()) useCanvasView.setState({ planeCam: to })
+  else glide(c, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
 }
 
 const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'Ctrl+Z'

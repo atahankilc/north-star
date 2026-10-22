@@ -44,8 +44,13 @@ unframed).
 - **Table**: kind · title (+ first words) · by (◐ = only you) · length (words, §, pages, size) · added; heads sort.
 - **Shelf**: sheets of paper with a folded corner: kind, title (3 lines), first words, by, when.
 - On the canvas a picture, except each row's `⇱` grip (editors), which drags the document out onto the canvas.
-- In focus it's live. A click opens the document **beside** the list (the screen splits as for D-211; the line drags):
-  it scrolls like a page, links work, its dock `DOCUMENT · title | [share] [place ↗] [download] [close] esc`.
+- In focus it's live. A click opens the document **beside** the list: the list is pinned to the top-left at its own
+  size (fitted to its part's width, never over 100 %), the document takes the rest of the screen; the line between
+  drags and the list refits at once. The document scrolls like a page, links work, "on this page" lists its sections
+  (the one being read lit, a click scrolls there; a row on top when the part is narrow), its dock
+  `DOCUMENT | [share] [place ↗] [download] [−] 100% [+] [close] esc` (ctrl+wheel zooms too, 50–200 %).
+- The shelf is only as wide as its sheets (up to five a row). Framed, nothing on the list takes a click; the `⇱`
+  grips show only once it's unframed.
   Right-click a row: open beside, place on the canvas, share / unshare, download .md, delete (hazard confirm; takes
   the pieces showing it). Focus dock: kinds filter, per page, table/shelf, upload, unfocus.
 - Files dropped on it (or anywhere in its focus) are uploaded.
@@ -61,8 +66,9 @@ of its own). By size on the screen: full → kind + title alone → grey bars; t
 - **Private one: asked first.** The piece waits dashed where it was let go, a yellow-taped question inside it:
   `Show "…" to everyone?` with who will see it; `[cancel] esc`, `[share and place] ↵`. Sharing and placing are one undo
   step. A shared one is placed at once.
-- In focus: the wheel scrolls it (ctrl/pinch zooms), links work, an **outline** of its headings on the left (the one
-  being read lit cyan, a click glides there). Dock: `[share]/[unshare]` (author), `[download]`, `[unfocus]`.
+- In focus: it arrives at 100 % with its top near the top; the wheel scrolls it (ctrl/pinch zooms), links work, an
+  **outline** of its headings on the left (the one being read lit cyan, a click glides there). Dock:
+  `[share]/[unshare]` (author), `[download]`, `[−] 100% [+]`, `[unfocus]`.
 - Deleting the piece leaves the document in its list.
 
 ## Unframed (D-234)

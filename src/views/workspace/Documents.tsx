@@ -25,7 +25,9 @@ export const D = { head: 40, row: 54, pad: 16, sheet: { w: 140, h: 186, gap: 16,
 const COL_W: Record<DocCol | 'grip', number> = { kind: 70, title: 370, by: 130, size: 90, added: 96, grip: 36 }
 const COLS: DocCol[] = ['kind', 'title', 'by', 'size', 'added']
 const TABLE_W = COLS.reduce((s, c) => s + COL_W[c], 0) + COL_W.grip
-const SHELF_W = 2 * D.pad + D.sheet.cols * D.sheet.w + (D.sheet.cols - 1) * D.sheet.gap
+// A shelf only as wide as its sheets need: up to five a row.
+const shelfCols = (n: number) => Math.max(1, Math.min(D.sheet.cols, n))
+const shelfW = (n: number) => 2 * D.pad + shelfCols(n) * D.sheet.w + (shelfCols(n) - 1) * D.sheet.gap
 const PAGE_SIZES = [10, 20, 50]
 
 const NO_SETUP = emptyDocuments()
@@ -36,13 +38,32 @@ export const documentsOf = (p: Pick<Piece, 'documents'>): DocumentsSetup => p.do
 export const useDocUi = create<{
   pages: Record<string, number>
   reader: string | null
+  // Where the line between the list and the document open beside it is (screen px), dragged; null = right of the list
+  // at its own size.
+  readerAt: number | null
+  // The document's zoom beside the list, kept in this tab.
+  readerZoom: number
   drag: { docId: string; x: number; y: number } | null
   dropped: { docId: string; x: number; y: number } | null
   // Put on the canvas once it's shared: at `at` (canvas px), or beside `near` (a piece) when asked from a focus.
   placing: { docId: string; at?: [number, number]; near?: string } | null
   deleting: string | null
   uploads: { name: string; state: 'sending' | 'done' | 'refused'; why?: string }[]
-}>(() => ({ pages: {}, reader: null, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
+}>(() => ({ pages: {}, reader: null, readerAt: null, readerZoom: 1, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
+
+// With a document open beside it (D-232), the list sits pinned to the top-left of its part, fitted to its width
+// (never over 100 %), so it's never under the document or off the screen; the document takes what's left.
+export const PIN = { left: 72, top: 64, right: 24 }
+const READER_MIN = 420
+export function readerLeft(content: Bounds, screenW: number, at: number | null) {
+  const natural = PIN.left + content.w + PIN.right
+  const want = at ?? natural
+  return Math.round(Math.max(PIN.left + 160, Math.min(want, screenW - READER_MIN)))
+}
+export function pinnedView(content: Bounds, left: number): PlaneCam {
+  const zoom = Math.min(1, Math.max(0.1, (left - PIN.left - PIN.right) / Math.max(1, content.w)))
+  return { ox: PIN.left, oy: PIN.top, zoom }
+}
 
 // The documents a list shows, in its order: its kinds, sorted by a column (newest first when unset).
 export function listed(docs: WithId<Doc>[], setup: DocumentsSetup, me?: string) {
@@ -72,7 +93,7 @@ export function documentsBounds(piece: Pick<Piece, 'documents'>, count: number):
   const n = Math.max(1, setup.pageSize ? Math.min(count, setup.pageSize) : count)
   if (setup.view === 'shelf') {
     const rows = Math.ceil(n / D.sheet.cols)
-    return { x: 0, y: 0, w: SHELF_W, h: 2 * D.pad + rows * D.sheet.h + (rows - 1) * D.sheet.gap }
+    return { x: 0, y: 0, w: shelfW(n), h: 2 * D.pad + rows * D.sheet.h + (rows - 1) * D.sheet.gap }
   }
   return { x: 0, y: 0, w: TABLE_W, h: D.head + n * D.row + D.pad }
 }
@@ -118,7 +139,8 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }
   // A row's or sheet's grip drags it out onto the canvas (editors only): the canvas places it where it's let go.
   const grip = (d: WithId<Doc>) =>
-    editor && (!live || onCanvas) ? (
+    // Only where the list is live on the canvas (unframed, D-234): framed it's a picture, nothing on it takes a click.
+    editor && onCanvas ? (
       <span className={styles.grip} data-live title="drag out onto the canvas" aria-label={`Drag "${d.title}" onto the canvas`} onPointerDown={dragOut(d.id)}>
         ⇱
       </span>
@@ -133,7 +155,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
             <p className={styles.emptyHint}>Drop .md files here{live ? ', or [upload] below' : ''}. Images and PDFs come with Storage.</p>
           </div>
         ) : setup.view === 'shelf' ? (
-          <div className={styles.shelf} style={{ width: SHELF_W, padding: D.pad, gap: D.sheet.gap, gridTemplateColumns: `repeat(${D.sheet.cols}, ${D.sheet.w}px)` }}>
+          <div className={styles.shelf} style={{ width: shelfW(shown.length), padding: D.pad, gap: D.sheet.gap, gridTemplateColumns: `repeat(${shelfCols(shown.length)}, ${D.sheet.w}px)` }}>
             {shown.map((d) => (
               <div
                 key={d.id}

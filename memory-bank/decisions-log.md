@@ -3876,6 +3876,15 @@ categories shown like B, not in a card, and the features under them not indented
   switch the view from console."
 - *Not yet:* files (step 4), writing documents in the app, renaming from the UI, the assistant writing documents,
   viewers uploading (the client's read-only mode refuses it though the rules allow it), documents in the export.
+- *Then* (the user, 2026-10-22): framed and not in focus nothing on the list takes a click, so its `⇱` grips show
+  only once it's unframed; the shelf is only as wide as its sheets (up to five a row), so fit centres it; with a
+  document open beside it the list is pinned to the top-left of its part at its own size (fitted to the part's width,
+  never over 100 %) and the document takes what's left (no 50/50 split; the line drags, the list refits at once); the
+  document beside it has "on this page" (its sections, the one being read lit, a click scrolls there; a row on top when
+  the part is narrow), as the old reports reader had; zoom `[−] 100% [+]` in the document's dock beside the list (its
+  text, ctrl+wheel too) and in a document's own focus (its view round the middle), which now arrives at 100 % with its
+  top near the top. The user: "Split viewa geçince liste solda tam alan kaplayıp sol üste sabitlensin … Documentlara
+  zoom etme eklememiz lazım. Yine default olarak 100% ile gelsin".
 - *Verified:* rules 419 pass (34 new: private reads, lists by shared/uid, author-only share/rename, owner deletes a
   shared one and restores it, moving a shared report as its author's, body size, file paths under its own id, the two
   piece kinds); headless on the emulators: two .md uploaded into a new list (◐ private), shelf and table switch, a row
