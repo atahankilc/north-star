@@ -16,6 +16,7 @@ import { kindOfPiece } from '../../data/pieces'
 import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { Select } from '../../ui/Select'
 import { useWs } from './context'
+import { useSeen, within } from './visible'
 import { TYPE_ACCENT } from './PlaneCards'
 import styles from './Table.module.css'
 
@@ -286,11 +287,19 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   // as its view moves (in focus every pan and zoom). The grips follow the zoom, so they're made every time.
   const sr = selected?.r
   const sc = selected?.c
+  // Only the rows on the screen (and a block round it), and the selected one wherever it is, so the keys can move to it.
+  const onScreen = useSeen(layer, view, wid, onCanvas ? [piece.x + 1 + view.ox, piece.y + 1 + view.oy] : null)
+  const [r0, r1] = within(onScreen.y0, onScreen.y1, T.head, T.row, T.row, rows.length)
+  const seenRows = useMemo(() => {
+    const out = rows.slice(r0, r1).map((r, k) => [r, r0 + k] as const)
+    if (sr !== undefined && (sr < r0 || sr >= r1)) out.push([rows[sr], sr])
+    return out
+  }, [rows, r0, r1, sr])
   const widths = ws.join(',')
   const headsShown = useMemo(
     () => (
       <>
-        {rows.map((r, i) => (
+        {seenRows.map(([r, i]) => (
           <div key={r.key} className={styles.band} data-selected={selected?.r === i || undefined} data-lit={lit === r.key || undefined} style={box(0, T.head + i * T.row, width, T.row)} />
         ))}
         <div className={styles.headRule} style={box(0, T.head - 1, width, 1)} />
@@ -318,12 +327,12 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
       </>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, cols, setup, sr, live, editor, lit, nameW, widths],
+    [seenRows, cols, setup, sr, live, editor, lit, nameW, widths],
   )
   const rowsShown = useMemo(
     () => (
       <>
-        {rows.map((r, ri) => (
+        {seenRows.map(([r, ri]) => (
           <NameCell
             key={r.key}
             row={r}
@@ -341,7 +350,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
           />
         ))}
 
-        {rows.map((r, ri) =>
+        {seenRows.map(([r, ri]) =>
           cols.map((c, ci) => {
             const key = selKey(piece.id, r.key, c.id)
             const style = box(xs[ci], T.head + ri * T.row, ws[ci], T.row)
@@ -408,7 +417,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
       </>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, cols, byKey, mine, setup, sr, sc, typing, naming, live, editor, fieldText, onCard, nameW, widths, piece.id, wid],
+    [seenRows, cols, byKey, mine, setup, sr, sc, typing, naming, live, editor, fieldText, onCard, nameW, widths, piece.id, wid],
   )
 
 

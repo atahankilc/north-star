@@ -11,7 +11,7 @@
 // size, its bar: the steps, `doesn't apply`, how sure, a note. Rows, columns and cells are set up from the focus dock's
 // `[setup]` (MatrixSetupPanel); a typed head is renamed by a double-click, any head taken out by its `×`. Escape lets
 // go of the cell (CanvasView), then leaves focus.
-import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type RefObject, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -44,6 +44,8 @@ import {
 import { fitInto, glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { useWs } from './context'
+import { useSeen, within } from './visible'
+import { useTheme } from '../../state/theme'
 import { TYPE_ACCENT } from './PlaneCards'
 import styles from './Matrix.module.css'
 
@@ -242,37 +244,47 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const heads = headTotals(setup)
   const sr = selected?.r
   const sc = selected?.c
-  const cellsShown = useMemo(
-    () =>
-      rows.map((r, ri) =>
-        cols.map((c, ci) => {
-          const cell = at(r.key, c.key)
-          const key = selKey(piece.id, r.key, c.key)
-          const isSel = selected?.r === ri && selected.c === ci
-          return (
-            <CellBox
-              key={key}
-              id={key}
-              r={ri}
-              c={ci}
-              x={L.colX(ci)}
-              y={L.rowY(ri)}
-              setup={setup}
-              cell={cell}
-              label={`${r.name || 'untitled'} × ${c.name || 'untitled'}`}
-              selected={isSel}
-              hot={hotStore}
-              live={live}
-              typing={typing === key}
-              canType={editor && setup.cell !== 'scale'}
-              acts={acts}
-            />
-          )
-        }),
-      ),
+  // Only the cells on the screen (and a block round it), and the selected one wherever it is, so the keys can move to it.
+  const seen = useSeen(layer, view, wid, onCanvas ? [piece.x + 1 + view.ox, piece.y + 1 + view.oy] : null)
+  // Too small on the screen to read a cell (zoomed out, a big one fitted): every cell a square on one canvas instead.
+  const far = useCanvasView((s) => {
+    const z = s.cams[wid]?.zoom ?? 1
+    return M.cell * (onCanvas ? z : live ? view.zoom : view.zoom * z) < FAR_PX
+  })
+  const [r0, r1] = within(seen.y0, seen.y1, M.top + M.gap, M.row + M.gap, M.row, rows.length)
+  const [c0, c1] = within(seen.x0, seen.x1, M.head + M.gap, M.cell + M.gap, M.cell, cols.length)
+  const cellsShown = useMemo(() => {
+    if (far) return null
+    const cellAt = (ri: number, ci: number) => {
+      const r = rows[ri]
+      const c = cols[ci]
+      const key = selKey(piece.id, r.key, c.key)
+      return (
+        <CellBox
+          key={key}
+          id={key}
+          r={ri}
+          c={ci}
+          x={L.colX(ci)}
+          y={L.rowY(ri)}
+          setup={setup}
+          cell={at(r.key, c.key)}
+          label={`${r.name || 'untitled'} × ${c.name || 'untitled'}`}
+          selected={sr === ri && sc === ci}
+          hot={hotStore}
+          live={live}
+          typing={typing === key}
+          canType={editor && setup.cell !== 'scale'}
+          acts={acts}
+        />
+      )
+    }
+    const out = []
+    for (let ri = r0; ri < r1; ri++) for (let ci = c0; ci < c1; ci++) out.push(cellAt(ri, ci))
+    if (sr !== undefined && sc !== undefined && !(sr >= r0 && sr < r1 && sc >= c0 && sc < c1)) out.push(cellAt(sr, sc))
+    return out
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, cols, byKey, setup, sr, sc, typing, live, editor, piece.id, hotStore],
-  )
+  }, [rows, cols, byKey, setup, sr, sc, typing, live, editor, piece.id, hotStore, r0, r1, c0, c1, far])
   const endsShown = useMemo(
     () =>
       L.ends && (
@@ -338,6 +350,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <div className={styles.table} style={{ width: L.w, height: L.h }} role="grid" aria-label={piece.name || 'matrix'} onPointerLeave={() => setHot(null)}>
           {cellsShown}
+          {far && <CellDots setup={setup} rows={rows} cols={cols} byKey={byKey} L={L} live={live} acts={acts} />}
 
           {/* The totals at the ends: a column after the cells, a row under them. */}
           {endsShown}
@@ -383,7 +396,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
         </div>
       </div>
       {/* Not while the cell is under the held heads. */}
-      {live && selected && selBox && !((dx > 0 && selBox.x < dx + M.head) || (dy > 0 && selBox.y < dy + M.top)) && (
+      {live && !far && selected && selBox && !((dx > 0 && selBox.x < dx + M.head) || (dy > 0 && selBox.y < dy + M.top)) && (
         <CellBar
           key={selKey(piece.id, rows[selected.r].key, cols[selected.c].key)}
           setup={setup}
@@ -609,6 +622,76 @@ export function StepSquare({ steps, step }: { steps: Step[]; step: Step }) {
   const i = steps.indexOf(step)
   const fill = steps.length > 1 ? (i / (steps.length - 1)) * 100 : 100
   return <span className={styles.square} style={{ ['--tone' as string]: TONE_VAR[step.tone], ['--fill' as string]: `${fill}%` }} aria-hidden />
+}
+
+// A cell narrower than this on the screen isn't read: the cells are drawn as squares on one canvas (CellDots).
+const FAR_PX = 22
+// The most a side of that canvas takes, in device px.
+const DOTS_MAX = 4096
+
+type DotsProps = {
+  setup: MatrixSetup
+  rows: Entry[]
+  cols: Entry[]
+  byKey: Map<string, Cell>
+  L: ReturnType<typeof layout>
+  live: boolean
+  acts: RefObject<CellActs>
+}
+
+// Far out, every cell as a square in its place on one canvas, not thousands of elements: its paper, and a set step in
+// its colour (fuller the higher it is), a number or a text a grey mark, `doesn't apply` left empty. Drawn again when the
+// cells or the theme change, at a resolution of whole powers of two of what the screen shows. A click picks the cell
+// under it (selected, so its bar opens once it's near enough to read).
+function CellDots({ setup, rows, cols, byKey, L, live, acts }: DotsProps) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  const theme = useTheme((s) => s.theme)
+  const res = Math.min(1, DOTS_MAX / Math.max(1, L.w), DOTS_MAX / Math.max(1, L.h))
+  useEffect(() => {
+    const el = ref.current
+    const g = el?.getContext('2d')
+    if (!el || !g) return
+    el.width = Math.ceil(L.w * res)
+    el.height = Math.ceil(L.h * res)
+    const css = getComputedStyle(el)
+    const color = (v: string) => css.getPropertyValue(v.slice(4, -1)).trim() || '#888'
+    const paper = color('var(--wash-2)')
+    const mark = color('var(--fg-dim)')
+    const tones = new Map(setup.steps.map((st) => [st.id, color(TONE_VAR[st.tone])]))
+    g.setTransform(res, 0, 0, res, 0, 0)
+    for (let ri = 0; ri < rows.length; ri++) {
+      const y = L.rowY(ri)
+      for (let ci = 0; ci < cols.length; ci++) {
+        const x = L.colX(ci)
+        const cell = byKey.get(`${rows[ri].key}|${cols[ci].key}`)
+        if (setup.notRelevant && !relevant(cell)) continue
+        g.fillStyle = paper
+        g.fillRect(x, y, M.cell, M.row)
+        const read = readCell(setup, cell)
+        if (read.step) {
+          const i = setup.steps.indexOf(read.step)
+          g.globalAlpha = 0.45 + 0.55 * (setup.steps.length > 1 ? i / (setup.steps.length - 1) : 1)
+          g.fillStyle = tones.get(read.step.id) ?? mark
+          g.fillRect(x + 10, y + 6, M.cell - 20, M.row - 12)
+          g.globalAlpha = 1
+        } else if (read.number !== undefined || read.text) {
+          g.fillStyle = mark
+          g.fillRect(x + 24, y + M.row / 2 - 3, M.cell - 48, 6)
+        }
+      }
+    }
+    // L follows rows, cols and setup.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setup, rows, cols, byKey, res, theme])
+  const pick = (e: ReactMouseEvent<HTMLCanvasElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - r.left) / r.width) * L.w
+    const y = ((e.clientY - r.top) / r.height) * L.h
+    const ci = Math.floor((x - M.head - M.gap) / (M.cell + M.gap))
+    const ri = Math.floor((y - M.top - M.gap) / (M.row + M.gap))
+    if (ri >= 0 && ri < rows.length && ci >= 0 && ci < cols.length) acts.current.click(ri, ci)
+  }
+  return <canvas ref={ref} className={styles.dots} style={{ width: L.w, height: L.h }} data-cell="far" onClick={live ? pick : undefined} aria-hidden />
 }
 
 // The cell under the pointer: its row and column light up.

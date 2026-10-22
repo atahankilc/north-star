@@ -975,7 +975,8 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
           live: not in edit mode (a press moves it) or while a plane's in focus. */}
       {/* Open, the page under its contents, feathered: the backdrop stays out from under its text (D-009). */}
       {open && content && <span className={styles.openPaper} style={{ left: OPEN_PAD, top: OPEN_PAD, width: content.w, height: content.h }} aria-hidden />}
-      {open ? (
+      {bare && focusing ? null : open ? (
+        // In focus (and on its way there and back) its copy here is hidden: nothing drawn in it meanwhile.
         // Open on the canvas (D-228), live: at its own size a margin in, under the canvas's zoom (its view stays at 1, so
         // the camera moving never draws it again); what's at screen size in it reads the piece's `--z`.
         <div className={styles.openLayer} style={{ width: box.w, height: box.h }}>

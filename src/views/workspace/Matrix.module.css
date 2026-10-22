@@ -1278,3 +1278,14 @@
   transform: scale(calc(1 / var(--z, 1)));
   transform-origin: 0 0;
 }
+
+/* Far out, the cells as squares on one canvas (CellDots), under the heads. */
+.dots {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.layer[data-live='true'] .dots {
+  cursor: pointer;
+}
