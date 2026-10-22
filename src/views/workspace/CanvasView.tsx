@@ -18,6 +18,7 @@ import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView,
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
 import { GridMenu } from './GridMenu'
+import { FilterDock } from './FilterDock'
 import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu } from './ContextMenu'
 import { isNew, useReads } from '../../data/threads'
@@ -752,6 +753,8 @@ export function CanvasView() {
               {focusedDocuments && <DocumentsTools piece={focused} editor={editor} />}
               {focusedDocument && <DocumentDockTools piece={focused} />}
               {/* A plane's snapping and guides (D-231). */}
+              {/* What the plane shows (D-233), anyone; its snapping and guides (D-231), editors. */}
+              {!isBare(focused) && <FilterDock plane={focused.id} cards={focusedCards} />}
               {!isBare(focused) && editor && <GridMenu />}
               {/* Always here; `esc` only when Escape does it next (with something open beside, that closes first, D-211). */}
               <DockAction label="unfocus" keyHint={escNext === 'unfocus' ? 'esc' : undefined} title="back to the canvas" main onClick={unfocus} />

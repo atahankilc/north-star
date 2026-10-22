@@ -3882,3 +3882,20 @@ categories shown like B, not in a card, and the features under them not indented
   dragged out asked to share and placed the piece, the list's focus opened a document beside it and a seeded old report
   moved over and read with its sections and sources, a document's focus scrolled with its outline lit; no console
   errors; build.
+
+### D-233 · 2026-10-22 · Accepted (brings the old board's filters back for planes: SHOW, FOR, TAG, REGION, LINKS)
+- *Decision:* one `[filter]` in the focus dock (anyone; `[filter · N]` lit while N filters narrow); pressed, the filter
+  opens right on top of the dock in the console's look (its edge, magenta marks on its top corners, sitting on the dock's
+  top edge), pressed again or Escape it closes. The user picked one menu over five ("tek bir dropdown olsun ancak oraya
+  basmak consolun üstünde filtre alanını açsın … direkt consolun üstüne açılsın").
+- *Rows* (`[x]` kept, `[ ]` left out): SHOW the five card types; FOR the plane's customers (keeps the chosen ones and
+  what's tagged `for` them); TAG the plane's tags (keeps cards with one of them); REGION where its competitors are
+  (narrows competitors only, a place counting inside the bigger ones: D-145's rules, now `src/data/regions.ts`); LINKS
+  each kind in its colour; `[reset]`.
+- *Links:* `for`, `relates` and `competes` start hidden as on the old board (D-128, D-135; the user: "eskisi gibi gizli
+  başlasın"); a hidden kind still shows on the card hovered, selected, being linked from, and for the selected link.
+- *Kept* per plane in this browser (`north-star:filter:<plane>`); the plane's picture on the canvas shows it filtered
+  the same way. Filtered-out cards aren't drawn, boxed or lined up against; text isn't filtered.
+- *Verified* headless (emulators): links started as `solves` only; hiding ideas, FOR Owners (Owners + its problem),
+  TAG #ops (the problem) and REGION Germany (Resmio kept, OpenTable in the US dropped) each narrowed as said; no console
+  errors; build.

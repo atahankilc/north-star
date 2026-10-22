@@ -16,6 +16,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEven
 import { CARD, cardRef, copyCards, deleteCards, moveCard, moveCards, updateCard, type Card, type CardType } from '../../data/cards'
 import { clipboard, landed, onPlane, othersThan, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
 import { clearGuides, guide, showGuides, toggleGuides, toggleSnap, useGuides } from './guides'
+import { groupOf, keep, useFilter } from './planeFilter'
+import { useSearchParams } from 'react-router-dom'
 import { useHistory } from '../../data/history'
 import { labelRef, moveMany } from '../../data/labels'
 import type { CompetitorFeature } from '../../data/competitorFeatures'
@@ -127,7 +129,23 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     return { x, y, w: CARD.w, h: heightOf(c) }
   }
   // `part of` lines inside a fold are left out.
-  const links = drawLinks(cards, edges, boxOf, (e) => e.kind === 'part-of' && folds.hidden.has(e.fromId))
+  // The plane's filter (D-233), in focus: the cards it keeps, the kinds of link it hides (still shown on the card
+  // pointed at or selected, and the selected link).
+  // The canvas's picture of the plane shows it as its filter says too.
+  const [params] = useSearchParams()
+  const filter = useFilter(live ? params.get('focus') : (cards[0]?.pieceId ?? labels[0]?.pieceId ?? null))
+  const kept = useMemo(() => keep(cards, edges, filter), [cards, edges, filter])
+  const shown = cards.filter((c) => kept.has(c.id))
+  const lit = useCanvasView((s) => (live ? [s.cardHovered, s.cardSelected, ...s.cardMulti, s.linking?.from].filter(Boolean).join(' ') : ''))
+  const linkSel = useCanvasView((s) => (live ? s.linkSelected : null))
+  const links = drawLinks(
+    shown,
+    edges,
+    boxOf,
+    (e) =>
+      (e.kind === 'part-of' && folds.hidden.has(e.fromId)) ||
+      (filter.links.includes(groupOf(e.kind)) && e.id !== linkSel && !lit.includes(e.fromId) && !lit.includes(e.toId)),
+  )
   const carry = cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
   // The cards there when this opened are just there in focus (the plane's own picture was already showing them); on the
   // canvas they build up with the page. Any card after that builds up as it arrives.
@@ -144,7 +162,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     ]
   }
   if (live) onPlane.boxes = () => [
-    ...cards.filter((c) => !folds.hidden.has(c.id)).map((c) => ({ id: c.id, box: boxOf(c) })),
+    ...shown.filter((c) => !folds.hidden.has(c.id)).map((c) => ({ id: c.id, box: boxOf(c) })),
     ...labels.map((l) => ({ id: l.id, box: labelBox(l) })),
   ]
   usePlaneKeys(live, editor, cards, labels, edges)
@@ -172,7 +190,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
       const [l, t, rr, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
       if (rr - l < 3 && b - t < 3) return
       const touches = (q: { x: number; y: number; w: number; h: number }) => q.x < rr && q.x + q.w > l && q.y < b && q.y + q.h > t
-      const hit = [...cards.filter((c) => !folds.hidden.has(c.id) && touches(boxOf(c))).map((c) => c.id), ...labels.filter((x) => touches(labelBox(x))).map((x) => x.id)]
+      const hit = [...shown.filter((c) => !folds.hidden.has(c.id) && touches(boxOf(c))).map((c) => c.id), ...labels.filter((x) => touches(labelBox(x))).map((x) => x.id)]
       setSelection([...new Set([...keep, ...hit])])
     }
     window.addEventListener('pointermove', move)
@@ -184,7 +202,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <TextItems labels={labels} layer="frames" live={live} editor={editor} zoom={view.zoom} carry={carry} />
         <LinkLines links={links} live={live} zoom={view.zoom} ghost={ghost} />
-        {cards.map((c) => (
+        {shown.map((c) => (
           <CardBox
             key={c.id}
             card={c}
