@@ -1,7 +1,7 @@
 // A competitor's features (D-038, D-164): the basic cards inside a competitor, listed by category in its panel (D-221).
 // Which of ours one matches is the old matrix's comparison doc (`<featureId>_<competitorId>`, its `competitorFeatureId`):
 // one of theirs per feature of ours and competitor. Every write is one undo step; typing in one field merges.
-import { collection, deleteDoc, deleteField, doc, updateDoc, writeBatch } from 'firebase/firestore'
+import { collection, deleteDoc, deleteField, doc, FieldPath, setDoc, updateDoc, writeBatch, type DocumentReference, type WriteBatch } from 'firebase/firestore'
 import { db } from './firebase'
 import { tracked } from './history'
 
@@ -20,7 +20,12 @@ export type CompetitorFeature = {
   createdAt: number
 }
 
-export type Comparison = { id: string; featureId: string; competitorId: string; competitorFeatureId?: string }
+export type CriterionScore = 'met' | 'part' | 'no'
+export const CRITERION_SCORES: CriterionScore[] = ['met', 'part', 'no']
+
+// One feature of ours against one competitor (the old matrix's cell, D-040): which of theirs matches it, and how they do
+// on each of its must-haves (D-133; missing = not assessed).
+export type Comparison = { id: string; featureId: string; competitorId: string; competitorFeatureId?: string; criteria?: Record<string, CriterionScore> }
 
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'competitorFeatures')
 const cmp = (wid: string, featureId: string, competitorId: string) => doc(db(), 'workspaces', wid, 'comparisons', `${featureId}_${competitorId}`)
@@ -72,6 +77,26 @@ export function matchOurs(wid: string, f: CompetitorFeature, featureId: string |
     const batch = writeBatch(db())
     if (was && was.featureId !== featureId) batch.update(cmp(wid, was.featureId, was.competitorId), { competitorFeatureId: deleteField() })
     if (featureId) batch.set(cmp(wid, featureId, f.competitorId), { featureId, competitorId: f.competitorId, competitorFeatureId: f.id }, { merge: true })
+    await batch.commit()
+  })
+}
+
+// How a competitor does on one of a feature's must-haves: `null` takes the score away.
+export function scoreCriterion(wid: string, featureId: string, competitorId: string, criterionId: string, score: CriterionScore | null) {
+  const ref = cmp(wid, featureId, competitorId)
+  return tracked('score a must-have', [ref], () =>
+    setDoc(ref, { featureId, competitorId, criteria: { [criterionId]: score ?? deleteField() } }, { merge: true }),
+  )
+}
+
+// A must-have taken off a feature takes its scores from every competitor, in the same undo step (D-133).
+export function dropCriterionScores(wid: string, featureId: string, criterionId: string, comparisons: Comparison[], also: { ref: DocumentReference; write: (b: WriteBatch) => void }) {
+  const scored = comparisons.filter((c) => c.featureId === featureId && c.criteria && criterionId in c.criteria)
+  const refs = scored.map((c) => cmp(wid, c.featureId, c.competitorId))
+  return tracked('remove a must-have', [also.ref, ...refs], async () => {
+    const batch = writeBatch(db())
+    also.write(batch)
+    refs.forEach((r) => batch.update(r, new FieldPath('criteria', criterionId), deleteField()))
     await batch.commit()
   })
 }

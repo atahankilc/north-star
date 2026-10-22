@@ -2,7 +2,7 @@
 // inside it, by category, a row opening in place), a feature's parent, parts (a tree of `part of`), must-haves, what it
 // rests on (and how sure that makes it) and the features of theirs that match it.
 import { useRef, useState } from 'react'
-import { updateCard, type Card } from '../../data/cards'
+import { cardRef, updateCard, type Card } from '../../data/cards'
 import {
   addCompetitorFeature,
   AVAILABILITIES,
@@ -11,7 +11,11 @@ import {
   updateCompetitorFeature,
   type CompetitorFeature,
   type NewCompetitorFeature,
+  CRITERION_SCORES,
+  dropCriterionScores,
+  scoreCriterion,
 } from '../../data/competitorFeatures'
+import { deleteField } from 'firebase/firestore'
 import { deleteEdge, FOR } from '../../data/edges'
 import { mismatch } from '../../data/evidence'
 import { useAutoGrow } from '../../ui/autoGrow'
@@ -282,11 +286,35 @@ function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: {
 }
 
 // A feature that's a part of another (D-164): its parent on a line under the header; `[detach]` takes the link away.
+// Without one, `+ a feature` makes it a part of one (the user: from the part's side too, not only `+ part`).
 export function Parent({ card, cards, editor }: { card: Card; cards: Card[]; editor: boolean }) {
   const { wid, edges } = useWs()
+  const [picking, setPicking] = useState(false)
   const e = edges.find((x) => x.kind === 'part-of' && x.fromId === card.id)
   const parent = e && cards.find((c) => c.id === e.toId)
-  if (!e || !parent) return null
+  if (!e || !parent) {
+    if (!editor) return null
+    // Not itself or any of its parts, all the way down (no loops).
+    const below = new Set([card.id])
+    for (let grew = true; grew; ) {
+      grew = false
+      for (const x of edges) if (x.kind === 'part-of' && below.has(x.toId) && !below.has(x.fromId)) (below.add(x.fromId), (grew = true))
+    }
+    return (
+      <div className={styles.parent} data-none>
+        <span>part of</span>
+        {picking ? (
+          <div className={styles.parentPick}>
+            <CardPicker card={card} cards={cards} types={['feature']} exclude={below} onPick={(c) => (setPicking(false), createEdge(wid, card, c, 'part-of'))} onClose={() => setPicking(false)} />
+          </div>
+        ) : (
+          <button className={styles.inlineAdd} onClick={() => setPicking(true)}>
+            a feature
+          </button>
+        )}
+      </div>
+    )
+  }
   return (
     <div className={styles.parent}>
       <span>part of</span>
@@ -351,12 +379,22 @@ export function Parts({ n, card, cards, editor }: P) {
   )
 }
 
-// What it must do (D-133): up to eight, which a matrix scores; typed in place, `×` takes one away.
-export function Criteria({ n, card, editor }: P) {
-  const { wid } = useWs()
+// What it must do (D-133): up to eight, typed in place. Each says how the competitors do on it, `met by N` or `◇ open`
+// (nobody scored meets it: white space); a click on that opens the plane's competitors to score it `met / part / no`
+// (the old matrix's cell scores). `×` takes one away with its scores.
+export function Criteria({ n, card, cards, editor }: P) {
+  const { wid, comparisons } = useWs()
   const list = card.criteria ?? []
   const [adding, setAdding] = useState<string | null>(null)
+  const [open, setOpen] = useState<string | null>(null)
   const set = (next: { id: string; text: string }[]) => void updateCard(wid, card, { criteria: next.length ? next : undefined }, 'must-haves of')
+  const rivals = cards.filter((c) => c.type === 'competitor' && c.pieceId === card.pieceId)
+  const scoreOf = (who: string, id: string) => comparisons.find((c) => c.featureId === card.id && c.competitorId === who)?.criteria?.[id]
+  const remove = (id: string) => {
+    const next = list.filter((x) => x.id !== id)
+    const ref = cardRef(wid, card.type, card.id)
+    void dropCriterionScores(wid, card.id, id, comparisons, { ref, write: (b) => b.update(ref, { criteria: next.length ? next : deleteField(), updatedAt: Date.now() }) })
+  }
   return (
     <PanelSection
       n={n}
@@ -365,17 +403,41 @@ export function Criteria({ n, card, editor }: P) {
       add={editor && list.length < MAX_CRITERIA ? { label: 'must-have', onClick: () => setAdding('') } : undefined}
       empty={!list.length && adding === null}
     >
-      {list.map((c, i) => (
-        <div key={c.id} className={styles.crit}>
-          <span className={styles.critN}>{i + 1}</span>
-          <Field value={c.text} placeholder="what it must do" editor={editor} onSave={(v) => v && set(list.map((x) => (x.id === c.id ? { ...x, text: v } : x)))} />
-          {editor && (
-            <button className={styles.x} title="Remove" onClick={() => set(list.filter((x) => x.id !== c.id))}>
-              ×
-            </button>
-          )}
-        </div>
-      ))}
+      {list.map((c, i) => {
+        const scores = rivals.map((r) => scoreOf(r.id, c.id)).filter(Boolean)
+        const met = scores.filter((s) => s === 'met').length
+        const reading = !scores.length ? 'score' : met ? `met by ${met}` : '◇ open'
+        return (
+          <div key={c.id}>
+            <div className={styles.crit}>
+              <span className={styles.critN}>{i + 1}</span>
+              <Field value={c.text} placeholder="what it must do" editor={editor} onSave={(v) => v && set(list.map((x) => (x.id === c.id ? { ...x, text: v } : x)))} />
+              <button className={styles.critRead} data-open={!scores.length ? undefined : met ? 'met' : 'open'} aria-expanded={open === c.id} onClick={() => setOpen(open === c.id ? null : c.id)}>
+                {reading} {open === c.id ? '▾' : '▸'}
+              </button>
+              {editor && (
+                <button className={styles.x} title="Remove with its scores" onClick={() => remove(c.id)}>
+                  ×
+                </button>
+              )}
+            </div>
+            {open === c.id && (
+              <div className={styles.scores}>
+                {rivals.length ? (
+                  rivals.map((r) => (
+                    <div key={r.id} className={styles.score}>
+                      <span className={styles.scoreWho}>{r.title || PLACEHOLDER.competitor}</span>
+                      <Pills values={CRITERION_SCORES} value={scoreOf(r.id, c.id)} editor={editor} label={`${r.title} on it`} onPick={(v) => void scoreCriterion(wid, card.id, r.id, c.id, v ?? null)} />
+                    </div>
+                  ))
+                ) : (
+                  <p className={styles.quiet}>no competitors on this plane to score</p>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
       {adding !== null && (
         <input
           className={styles.input}

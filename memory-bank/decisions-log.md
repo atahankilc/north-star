@@ -3642,6 +3642,11 @@ categories shown like B, not in a card, and the features under them not indented
   a new line); leaving the panel with something typed keeps it (`useCommit`). And the card is no longer typed on
   ("Cardın üstüne tıklayıp isim değiştirme olayını kaldıralım"): no double-click title on the card; a new card opens
   its panel with the title field ready (`cardEditing`).
+- *Then* (the user asked for a part's side and the old must-haves): a feature without a parent shows `part of + a
+  feature` under its header (a finder; not itself or its parts); each must-have reads `met by N` (cyan), `◇ open`
+  (yellow: scored, nobody meets it) or `score`, and opens the plane's competitors to score it `[met] [part] [no]`,
+  kept in the comparison doc's `criteria` map (D-133's cell scores); taking one away takes its scores in the same undo
+  step. And `[delete]` sits in the far right corner of every panel's foot (the user), `[comment]` left.
 - *Left out:* files (attachments, not live until Blaze), `on N planes`, packages; `[unfold onto the plane]` waits for
   folding parts on planes (D-164).
 - *Verified* headless (emulators): a problem filled end to end (status, evidence, a customer, a new idea that solves
