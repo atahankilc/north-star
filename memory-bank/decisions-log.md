@@ -3965,6 +3965,9 @@ categories shown like B, not in a card, and the features under them not indented
   ("It's on the canvas N times … taken off the canvas"), and takes those pieces off in the same undo step (⌘Z shares it
   again and puts them back); a viewer is told an editor has to take it off first. From a row's ◐, the right-click menu
   and a document's dock alike (`shareOrAsk`).
+- *Then* (the user: "frame içinde olan bir document zoom out yapınca yazılar falan gidiyor … yazılar diğer her şey gibi
+  hep gözüksün"): a framed document draws its text at every zoom, as everything else on the canvas; the title-alone
+  and grey-bar levels are gone.
 - *Then* (the user: "frame iken upload yada table shelf seçimi sunma. Onu focus da ayarlanabilir yap"): framed, the
   documents list's console is only `[focus] [edit]`; upload, table/shelf, kinds and pages are in its focus dock, and in
   its console once unframed.

@@ -1,7 +1,6 @@
 // A document on its own (D-232): a piece on the canvas showing one document's content directly, in a window like a
 // table's (D-208): its title and text at reading size from the top-left, the text as wide as the window, cut at its
-// bottom with a fade. By its size on the screen, as cards are (D-153): the whole of it, then its title alone, then grey
-// bars, and the text isn't even read from the database until it's near enough to read. Its focus is the same page as
+// bottom with a fade; its text at every zoom, as everything else on the canvas. Its focus is the same page as
 // a document opened beside the documents list (DocPane, DocFocus): it scrolls as a page, its dock, "on this page".
 //
 // Also here: the documents open beside the documents list in its focus (DocReaders), and the question asked before a
@@ -16,11 +15,10 @@ import { useAuth } from '../../data/auth'
 import { canvasCenter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useWs } from './context'
-import { DocContent, KindMark } from './DocContent'
+import { DocContent } from './DocContent'
 import { closeDoc, documentsBounds, shareOrAsk, documentsOf, listed, readerLeft, useDocUi } from './Documents'
 import { DockAction, FocusDock } from './FocusDock'
 import { isOpen, useOpenSize } from './shownBox'
-import { useStill } from './still'
 import { docScope, scrollTo, useLandOnPage } from './find'
 import styles from './DocumentPiece.module.css'
 import beside from './Beside.module.css'
@@ -65,9 +63,6 @@ export function documentBounds(piece: WithId<Piece>): Bounds {
   return { x: 0, y: 0, w: piece.w - 2, h: Math.min(h, FIRST_SCREEN) }
 }
 
-// How much of it shows, by the size of its text on the screen (15 px at 1).
-type Level = 'full' | 'compact' | 'far'
-const levelAt = (zoom: number): Level => (zoom * 15 < 4.5 ? 'far' : zoom * 15 < 8 ? 'compact' : 'full')
 
 // `onCanvas`: opened onto the canvas (D-234): the whole of it at reading size, live there (links, text), its size measured
 // for its drawn box; never cut, never shrunk to its title (it would jump in size as you zoom).
@@ -82,9 +77,8 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
   const { wid, documents } = useWs()
   const { user } = useAuth()
   const d = documents.find((x) => x.id === piece.docId) ?? null
-  const still = useStill()
-  const level = useCanvasView((s) => (onCanvas || still ? 'full' : levelAt((live ? (s.planeCam?.zoom ?? 1) : (s.cams[wid]?.zoom ?? 1)) * view.zoom)))
-  const body = useDocBody(wid, d, level === 'full')
+  // Its text at every zoom, as everything else on the canvas (the user, 2026-10-22: no title alone, no bars).
+  const body = useDocBody(wid, d)
   const layer = useRef<HTMLDivElement>(null)
   const content = useRef<HTMLDivElement>(null)
   // Unframed: what's drawn of it, cut at OPEN_MAX; its size is the drawn box's (shownBox.ts).
@@ -108,7 +102,7 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
     return () => ro.disconnect()
     // Again once the document and its text are in: the piece can come before them (on a slow line the first look finds
     // nothing to measure, and its box stayed the window's, the text running out of it).
-  }, [piece.id, level, onCanvas, !!d, !!body.data])
+  }, [piece.id, onCanvas, !!d, !!body.data])
 
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }
   return (
@@ -118,26 +112,15 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
           <p className={styles.gone} style={{ width, margin: PAD }}>
             This document is gone, or only its author sees it now.
           </p>
-        ) : level === 'full' ? (
+        ) : (
           // On the canvas a press on it is its own until it moves 5 px (D-217's rule): a link's click still lands.
           <div ref={clip} className={onCanvas ? styles.openClip : undefined} style={onCanvas ? { maxHeight: OPEN_MAX } : undefined} data-cut={(onCanvas && cut) || undefined}>
             <div ref={content} className={styles.content} style={{ width, padding: PAD }} data-cell={(onCanvas && live) || undefined}>
               <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links={live} />
             </div>
           </div>
-        ) : level === 'compact' ? (
-          <div ref={content} className={styles.compact} style={{ width: piece.w - 2, height: piece.h - 2 }}>
-            <KindMark kind={d.kind} />
-            <span className={styles.compactTitle}>{d.title}</span>
-          </div>
-        ) : (
-          <div ref={content} className={styles.far} style={{ width, padding: PAD }} aria-hidden>
-            {[80, 55, 100, 90, 70].map((w, i) => (
-              <i key={i} style={{ width: `${w}%`, height: i === 0 ? 40 : 16 }} />
-            ))}
-          </div>
         )}
-        {onCanvas && cut && d && level === 'full' && (
+        {onCanvas && cut && d && (
           <div className={styles.openMore} style={{ width: width + 2 * PAD, height: MORE_H }}>
             <button className={styles.openMoreButton} data-live onPointerDown={(e) => e.stopPropagation()} onClick={onMore} title="read the rest in focus">
               continue reading ↗

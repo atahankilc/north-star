@@ -70,7 +70,7 @@ unframed).
 
 A window showing one document's content directly: its kind's mark, who, when, length, its title, then its text at
 reading size, as wide as the window, cut at the bottom with a fade. Named in its edge by the document's title (no name
-of its own). By size on the screen: full → kind + title alone → grey bars; the text isn't read until it's near.
+of its own). Its text shows at every zoom, as everything else on the canvas (no title alone, no bars).
 
 - Made by dragging a row's `↗` out of an unframed list (where it's let go), from a click on a row's `↗` or right-click or a
   document's `[place ↗]` (where you're looking on the canvas, D-238; from a focus the canvas comes back to show it), or
