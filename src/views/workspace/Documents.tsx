@@ -1,7 +1,7 @@
 // The documents list (D-232): a piece on the canvas listing the documents you may see (the shared ones and your own),
 // as a table (kind, title with its first words, by, length, added; heads sort) or a shelf of sheets (each its first
 // lines), switched from its console or its focus dock. Drawn in its own px through a view, as a table is (D-209): on the
-// canvas a picture, except each row's `⇱` grip, which drags the document out onto the canvas on its own (DocPlace); in
+// canvas a picture; unframed, live there, a row's `↗` places it (or drags it out onto the canvas on its own, DocPlace); in
 // focus live: a click opens the document beside the list (DocReader), a right-click has the rest (open, place on the
 // canvas, share, download, delete). Paged like a table (D-213); which page is yours. Files dropped on it are uploaded.
 import { useLayoutEffect, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
@@ -156,9 +156,10 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
     }
     openDoc(d.id)
   }
-  const grips = editor && onCanvas
+  // No grips any more (D-232): a row's `↗` places it, and dragged (unframed) drags it out.
+  const grips = false
   // Each document's actions right there, no need to open it (D-232): rename, share, place, download, delete.
-  const actions = (d: WithId<Doc>) => (live ? <RowActions d={d} list={piece} editor={editor} /> : null)
+  const actions = (d: WithId<Doc>) => (live ? <RowActions d={d} list={piece} editor={editor} onCanvas={onCanvas} /> : null)
   // Open on the canvas, how big it came out: its box there (shownBox.ts).
   const world = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -280,7 +281,9 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
 // A document's actions in its row or on its sheet, as marks (their words in the tips): rename and share (its author),
 // place on the canvas (editors; asks first when it's private), download, delete (its author, an owner a shared one; asks
 // first). A press on one never opens the document.
-function RowActions({ d, list, editor }: { d: WithId<Doc>; list: WithId<Piece>; editor: boolean }) {
+// `↗`: a click places it where you're looking; on the canvas (unframed) a press that moves drags it out to where it's
+// let go.
+function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithId<Piece>; editor: boolean; onCanvas: boolean }) {
   const { wid, workspace } = useWs()
   const { user } = useAuth()
   const mine = d.uid === user?.id
@@ -302,7 +305,7 @@ function RowActions({ d, list, editor }: { d: WithId<Doc>; list: WithId<Piece>; 
         </button>
       )}
       {editor && (
-        <button className={styles.act} title={d.shared ? 'place it on the canvas, beside the list' : 'place it on the canvas, beside the list (shares it; asks first)'} aria-label="Place on the canvas" onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
+        <button className={styles.act} title={`place it on the canvas where you're looking${onCanvas ? ', or drag it where you want it' : ''}${d.shared ? '' : ' (shares it; asks first)'}`} aria-label="Place on the canvas" onPointerDown={onCanvas ? dragOut(d.id) : undefined} onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
           ↗
         </button>
       )}
@@ -397,6 +400,15 @@ const dragOut = (docId: string) => (e: ReactPointerEvent<HTMLElement>) => {
     window.removeEventListener('pointerup', up)
     window.removeEventListener('pointercancel', up)
     useDocUi.setState({ drag: null, dropped: moving && ev.type === 'pointerup' ? { docId, x: ev.clientX, y: ev.clientY } : null })
+    // A drag isn't a click as well: the one that follows it (on the button or its row) goes nowhere.
+    if (moving) {
+      const swallow = (c: MouseEvent) => {
+        c.stopPropagation()
+        c.preventDefault()
+      }
+      window.addEventListener('click', swallow, { capture: true, once: true })
+      setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 0)
+    }
   }
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', up)

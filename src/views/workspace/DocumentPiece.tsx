@@ -174,12 +174,13 @@ function Outline({ pieceId, content, ready }: { pieceId: string; content: React.
     if (!el) return
     const found = [...el.querySelectorAll<HTMLElement>('[data-heading]')]
       .filter((h) => h.dataset.heading !== 'title' && /^H[1-3]$/.test(h.tagName))
-      .map((h) => ({ text: h.textContent ?? '', y: h.offsetTop, level: Number(h.tagName[1]) }))
+      .map((h) => ({ text: (h.textContent ?? '').trim().replace(/^(\d{2})(?=\S)/, '$1 '), y: h.offsetTop, level: Number(h.tagName[1]) }))
     setMarks(found.slice(0, 60))
   }, [content, height, ready])
   if (marks.length < 2 || !cam) return null
   const at = (m: Mark) => m.y * cam.zoom + cam.oy
-  const reading = marks.reduce((cur, m, i) => (at(m) <= 140 ? i : cur), -1)
+  // The one being read: the last whose top has passed near the top of the screen; the first before any has.
+  const reading = marks.reduce((cur, m, i) => (at(m) <= 140 ? i : cur), 0)
   const go = (m: Mark) => {
     const c = useCanvasView.getState().planeCam
     if (!c) return
@@ -190,10 +191,11 @@ function Outline({ pieceId, content, ready }: { pieceId: string; content: React.
   }
   const top = Math.min(...marks.map((m) => m.level))
   return (
-    <nav className={styles.outline} aria-label="Outline" onPointerDown={(e) => e.stopPropagation()}>
-      <span className={styles.outlineHead}>outline</span>
+    // As beside the list ("on this page", on the right): one look for both (D-232).
+    <nav className={styles.focusOutline} aria-label="On this page" onPointerDown={(e) => e.stopPropagation()}>
+      <span className={styles.outlineHead}>on this page</span>
       {marks.map((m, i) => (
-        <button key={i} className={styles.outlineItem} data-on={i === reading || undefined} style={{ paddingLeft: `${(m.level - top) * 12 + 12}px` }} onClick={() => go(m)}>
+        <button key={i} className={styles.outlineItem} data-on={i === reading || undefined} style={{ paddingLeft: `${(m.level - top) * 12}px` }} title={m.text} onClick={() => go(m)}>
           {m.text}
         </button>
       ))}

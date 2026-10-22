@@ -3902,7 +3902,10 @@ categories shown like B, not in a card, and the features under them not indented
   right: ✎ rename (its author; typed over in place, Enter keeps, Escape puts back), ◐ share/unshare, ↗ place, ↓ download,
   ⌫ delete; rename is in the right-click menu too. The marks are bigger (28 px, a size up), no frame: hovered, a faint
   wash and the mark lit. Side by side, the line between two documents drags (each at least 280 px; a double-click
-  shares the width evenly again).
+  shares the width evenly again). The `⇱` grips are gone (a click on them only opened the document): unframed, a row's
+  `↗` places it where you're looking on a click and drags it out where it's let go on a press that moves. A
+  document's own focus has "on this page" on the right as beside the list (one look for both; it had been "outline"
+  top-left).
 - *Verified:* rules 419 pass (34 new: private reads, lists by shared/uid, author-only share/rename, owner deletes a
   shared one and restores it, moving a shared report as its author's, body size, file paths under its own id, the two
   piece kinds); headless on the emulators: two .md uploaded into a new list (◐ private), shelf and table switch, a row

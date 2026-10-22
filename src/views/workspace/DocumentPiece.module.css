@@ -90,7 +90,22 @@
   background: var(--line-hover);
 }
 
-/* Its headings in focus, on the left of the screen, clear of the side nav. */
+/* Its headings in focus, on the right of the screen, as "on this page" is beside the list. */
+.focusOutline {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  width: 180px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  top: 96px;
+  right: 32px;
+  z-index: 2;
+  max-height: calc(100% - 200px);
+  overflow-y: auto;
+}
+
+/* (The old left-hand outline.) */
 .outline {
   position: absolute;
   top: 96px;

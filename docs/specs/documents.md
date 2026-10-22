@@ -43,7 +43,7 @@ unframed).
 
 - **Table**: kind · title (+ first words) · by (◐ = only you) · length (words, §, pages, size) · added; heads sort.
 - **Shelf**: sheets of paper with a folded corner: kind, title (3 lines), first words, by, when.
-- On the canvas a picture, except each row's `⇱` grip (editors), which drags the document out onto the canvas.
+- On the canvas a picture; unframed, live there: a row's `↗` places it where you're looking, or dragged, where it's let go.
 - In focus it's live. A click opens the document **beside** the list: the list is pinned to the top-left at its own
   size (fitted to its part's width, never over 100 %), the document takes the rest of the screen; the line between
   drags and the list refits at once. The document scrolls like a page, links work, "on this page" lists its sections
@@ -61,8 +61,7 @@ unframed).
 - **Row actions:** each row (and sheet) in the list's focus has its actions as marks on its right: ✎ rename (its
   author, typed over in place), ◐ share/unshare, ↗ place, ↓ download, ⌫ delete (asks first). Right-click has them too.
 - Switching table and shelf (or kinds, a page) fits the list again. The table has no empty column at its end.
-- The shelf is only as wide as its sheets (up to five a row). Framed, nothing on the list takes a click; the `⇱`
-  grips show only once it's unframed.
+- The shelf is only as wide as its sheets (up to five a row). Framed, nothing on the list takes a click.
   Right-click a row: open beside, place on the canvas, share / unshare, download .md, delete (hazard confirm; takes
   the pieces showing it). Focus dock: kinds filter, per page, table/shelf, upload, unfocus.
 - Files dropped on it (or anywhere in its focus) are uploaded.
@@ -73,14 +72,14 @@ A window showing one document's content directly: its kind's mark, who, when, le
 reading size, as wide as the window, cut at the bottom with a fade. Named in its edge by the document's title (no name
 of its own). By size on the screen: full → kind + title alone → grey bars; the text isn't read until it's near.
 
-- Made by dragging a row's grip out of an unframed list (where it's let go), from a row's `↗` or right-click or a
+- Made by dragging a row's `↗` out of an unframed list (where it's let go), from a click on a row's `↗` or right-click or a
   document's `[place ↗]` (where you're looking on the canvas, D-238; from a focus the canvas comes back to show it), or
   by dropping a `.md` on the empty canvas (uploaded, then placed where it was dropped). It starts in edit mode.
 - **Private one: asked first.** The piece waits dashed where it was let go, a yellow-taped question inside it:
   `Show "…" to everyone?` with who will see it; `[cancel] esc`, `[share and place] ↵`. Sharing and placing are one undo
   step. A shared one is placed at once.
 - In focus: it arrives at 100 % with its top near the top; the wheel scrolls it (ctrl/pinch zooms), links work, an
-  **outline** of its headings on the left (the one being read lit cyan, a click glides there). Dock:
+  **on this page** on the right, as beside the list (the one being read lit cyan, a click glides there). Dock:
   `[share]/[unshare]` (author), `[download]`, `[−] 100% [+]`, `[unfocus]`.
 - Deleting the piece leaves the document in its list.
 
