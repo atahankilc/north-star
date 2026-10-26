@@ -52,6 +52,7 @@ import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, Do
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
 import { kanbanBounds, KanbanDockTools, KanbanView } from './Kanban'
+import { KanbanFilterDock } from './KanbanFilterDock'
 import { TaskPanel } from './TaskPanel'
 import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
@@ -870,6 +871,7 @@ export function CanvasView() {
                 <DockAction label="setup" pressed={tableSetup === focused.id} keyHint={escOn('setup')} title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
               )}
               {focusedDocuments && <DocumentsTools piece={focused} editor={editor} />}
+              {focusedKanban && <KanbanFilterDock piece={focused} />}
               {focusedKanban && <KanbanDockTools piece={focused} editor={editor} />}
               {/* Several documents side by side (D-232): a click opens one next to the others. */}
               {focusedDocuments && <DockAction label="⧉ side by side" pressed={sideBySide} title={sideBySide ? 'a click opens a document in place of the one open' : 'a click opens a document next to the ones open'} onClick={() => useDocUi.setState((s) => ({ sideBySide: !s.sideBySide }))} />}

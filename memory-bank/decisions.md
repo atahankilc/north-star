@@ -338,6 +338,8 @@ old reports are moved to documents once (D-248).
 - A kanban sticks to a plane like a table (D-255): then shows only tasks for that plane's cards or for none
   (`[this plane only · N hidden]` in its dock, shared), opens beside the plane in its focus, a task picked glides the
   plane to its card.
+- Kanban filters, labels, priority, limits (D-256): `[filter]` in its dock (GIVEN TO, DUE, FOR, LABEL; per kanban, per
+  browser); tasks carry `#labels` and `P1`–`P3`; a column's limit from its head's `≤`, `4/3` magenta when over.
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

@@ -20,6 +20,7 @@ import { matrixBounds, MatrixView, toggleMatrixSetup, useMatrixUi } from './Matr
 import { MatrixSetupPanel } from './MatrixSetup'
 import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { kanbanBounds, KanbanDockTools, KanbanView } from './Kanban'
+import { KanbanFilterDock } from './KanbanFilterDock'
 import { DockAction, FocusDock } from './FocusDock'
 import { TableSetupPanel } from './TableSetup'
 import styles from './Beside.module.css'
@@ -250,6 +251,7 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
         }
       >
         {kind === 'table' && <TablePager piece={piece} editor={editor} />}
+        {kind === 'kanban' && <KanbanFilterDock piece={piece} />}
         {kind === 'kanban' && <KanbanDockTools piece={piece} editor={editor} />}
         {editor && kind !== 'kanban' && (
           <DockAction

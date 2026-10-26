@@ -138,8 +138,33 @@
   color: var(--accent-green);
 }
 
+.tool[data-limit][aria-pressed='true'] {
+  color: var(--fg);
+}
+
 .tool[data-danger]:hover {
   color: var(--accent-magenta);
+}
+
+/* Over its limit (D-256): its name and count magenta. */
+.head[data-over='true'] .name,
+.head[data-over='true'] .count {
+  color: var(--accent-magenta);
+}
+
+.limitField {
+  width: 3ch;
+  padding: 0 2px;
+  border: 1px solid var(--accent-cyan);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  text-align: center;
+  outline: none;
+}
+
+.limitField::placeholder {
+  color: var(--placeholder);
 }
 
 /* Its tasks, hung under the rule. */
@@ -202,6 +227,32 @@
   overflow: hidden;
   color: var(--fg-dim);
   font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* How urgent (D-256), before the title: P1 magenta, P2 as the text, P3 faint. */
+.priority {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0;
+  color: var(--fg-dim);
+}
+
+.priority[data-p='P1'] {
+  color: var(--accent-magenta);
+}
+
+.priority[data-p='P2'] {
+  color: var(--fg);
+}
+
+/* Its #labels, a line under the title. */
+.labels {
+  overflow: hidden;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

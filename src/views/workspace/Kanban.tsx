@@ -13,11 +13,15 @@
 // Stuck to a plane (D-255), like a table (D-210): it shows that plane's tasks (for its cards, or for none) unless set to
 // every plane (`[this plane only]` in its dock), and opens beside the plane in its focus, where a task picked glides the
 // plane to its card (`onTask`).
+//
+// Filters, labels, priority, limits (D-256): what it shows narrows by its dock's filter (kanbanFilter.ts, yours); a
+// task carries `#labels` and `P1`–`P3`; a column may have a limit (its head's `≤`), its head magenta when over.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { addTask, COL_NAME_MAX, deleteColumn, deleteTask, emptyKanban, KANBAN_COLS_MAX, moveTask, orderBetween, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
+import { passes, useKanbanFilter } from './kanbanFilter'
+import { addTask, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTask, emptyKanban, KANBAN_COLS_MAX, moveTask, orderBetween, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
 import { newId } from '../../data/matrix'
 import { useAuth } from '../../data/auth'
 import type { Bounds, PlaneCam } from '../../state/canvasView'
@@ -40,7 +44,7 @@ const useSizes = create<Record<string, { w: number; h: number }>>(() => ({}))
 
 const hasMeta = (t: Task) => !!(t.cardId || t.due || t.checks?.length || t.assignee)
 // About how tall a task is before it's drawn: its title's lines (about 30 letters each, at most 3) and its meta line.
-const guess = (t: Task) => K.pad + Math.min(3, Math.max(1, Math.ceil(t.title.length / 30))) * K.line + (hasMeta(t) ? K.meta : 0)
+const guess = (t: Task) => K.pad + Math.min(3, Math.max(1, Math.ceil(t.title.length / 30))) * K.line + (hasMeta(t) ? K.meta : 0) + (t.labels?.length ? K.line : 0)
 
 // The box round its columns, in its px: what fit frames. As drawn once it has been; until then, guessed.
 export function kanbanBounds(piece: WithId<Piece>, tasks: Task[]): Bounds {
@@ -98,7 +102,13 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
   const cols = kanbanOf(piece).cols
   const tasks = useMemo(() => all.filter((t) => t.pieceId === piece.id), [all, piece.id])
   // What it shows: stuck to a plane, that plane's tasks (D-255).
-  const shown = useMemo(() => shownTasks(tasks, piece, cards), [tasks, piece, cards])
+  // And by its filter, yours (D-256).
+  const filter = useKanbanFilter(piece.id)
+  const shown = useMemo(() => {
+    const done = new Set(cols.filter((c) => c.done).map((c) => c.id))
+    const typeOf = (id: string) => cards.find((c) => c.id === id)?.type
+    return shownTasks(tasks, piece, cards).filter((t) => passes(t, filter, done.has(t.col), user?.id, typeOf))
+  }, [tasks, piece, cards, filter, cols, user?.id])
   const byCol = useMemo(() => new Map(cols.map((c) => [c.id, tasksIn(shown, c.id)])), [cols, shown])
   const selected = useKanbanUi((s) => (live && s.selected?.piece === piece.id ? s.selected.task : null))
   const adding = useKanbanUi((s) => (live ? s.adding : null))
@@ -265,6 +275,7 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
                   col={c}
                   n={i + 1}
                   count={every.length}
+                  holds={tasks.filter((t) => t.col === c.id).length}
                   live={live}
                   editor={editor}
                   naming={naming === c.id}
@@ -279,6 +290,7 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
                     if (next && next !== c.name) setCols(cols.map((x) => (x.id === c.id ? { ...x, name: next } : x)), 'rename a column')
                   }}
                   onMove={(by) => moveCol(i, by)}
+                  onLimit={(limit) => setCols(cols.map((x) => (x.id === c.id ? { ...x, limit } : x)), limit ? 'set a column’s limit' : 'take a column’s limit away')}
                   onDone={() => setCols(cols.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)), c.done ? 'unmark a finished column' : 'mark a finished column')}
                   onDelete={() => void deleteColumn(wid, piece.id, cols, c.id, tasks)}
                 />
@@ -336,6 +348,8 @@ type HeadProps = {
   col: KanbanCol
   n: number
   count: number
+  // Every task in it, shown or not: what its limit counts.
+  holds: number
   live: boolean
   editor: boolean
   naming: boolean
@@ -348,16 +362,27 @@ type HeadProps = {
   onMove: (by: -1 | 1) => void
   onDone: () => void
   onDelete: () => void
+  onLimit: (limit: number | undefined) => void
 }
 
 // A column's head, as the right panel's sections: its number faint, its name in caps, a rule, its count; the finished
-// one's name green. Live, a double-click renames it, and on hover its tools come in after the count.
-function ColumnHead({ col, n, count, live, editor, naming, first, last, alone, onPress, onName, onRename, onMove, onDone, onDelete }: HeadProps) {
+// one's name green. Live, a double-click renames it, and on hover its tools come in after the count. With a limit
+// (D-256), the count reads `4/3` (every task in it, shown or not, over the limit), the head magenta once over; `≤` types
+// the limit (Enter keeps it, empty takes it away, Escape leaves it).
+function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, alone, onPress, onName, onRename, onMove, onDone, onDelete, onLimit }: HeadProps) {
   const [draft, setDraft] = useState(col.name)
   useEffect(() => setDraft(col.name), [col.name, naming])
-  const tools = live && editor && !naming
+  const [limiting, setLimiting] = useState<string | null>(null)
+  const tools = live && editor && !naming && limiting === null
+  const over = !!col.limit && holds > col.limit
+  const keepLimit = (v: string) => {
+    setLimiting(null)
+    const k = Math.round(Number(v))
+    const next = v.trim() && k >= 1 ? Math.min(LIMIT_MAX, k) : undefined
+    if (next !== col.limit) onLimit(next)
+  }
   return (
-    <div className={styles.head} onPointerDown={naming || tools ? onPress : undefined}>
+    <div className={styles.head} data-over={over || undefined} onPointerDown={naming || tools || limiting !== null ? onPress : undefined}>
       <span className={styles.n}>{String(n).padStart(2, '0')}</span>
       {naming ? (
         <input
@@ -382,9 +407,37 @@ function ColumnHead({ col, n, count, live, editor, naming, first, last, alone, o
         </span>
       )}
       <span className={styles.rule} aria-hidden />
-      <span className={styles.count}>{count}</span>
+      {limiting !== null ? (
+        <span className={styles.count}>
+          {holds}/
+          <input
+            className={styles.limitField}
+            value={limiting}
+            autoFocus
+            inputMode="numeric"
+            aria-label="Limit"
+            placeholder="–"
+            size={2}
+            onFocus={(e) => e.currentTarget.select()}
+            onChange={(e) => setLimiting(e.target.value.replace(/\D/g, '').slice(0, 2))}
+            onBlur={() => keepLimit(limiting)}
+            onKeyDown={(e) => {
+              e.stopPropagation()
+              if (e.key === 'Enter') e.currentTarget.blur()
+              if (e.key === 'Escape') setLimiting(null)
+            }}
+          />
+        </span>
+      ) : (
+        <span className={styles.count} title={col.limit ? `${holds} of at most ${col.limit}${over ? ': over its limit' : ''}` : undefined}>
+          {col.limit ? `${holds}/${col.limit}` : count}
+        </span>
+      )}
       {tools && (
         <span className={styles.tools}>
+          <button className={styles.tool} data-limit aria-pressed={!!col.limit} title={col.limit ? `at most ${col.limit}: change or take away` : 'how many it should hold at most'} aria-label="Column limit" onClick={() => setLimiting(col.limit ? String(col.limit) : '')}>
+            ≤
+          </button>
           {!first && (
             <button className={styles.tool} title="move it left" aria-label="Move the column left" onClick={() => onMove(-1)}>
               ‹
@@ -448,8 +501,14 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, onPoint
     >
       <span className={styles.title}>
         {finished && <span className={styles.tick}>✓ </span>}
+        {task.priority && (
+          <span className={styles.priority} data-p={task.priority}>
+            {task.priority}{' '}
+          </span>
+        )}
         {task.title}
       </span>
+      {!!task.labels?.length && <span className={styles.labels}>{task.labels.map((l) => `#${l}`).join(' ')}</span>}
       {hasMeta(task) && (
         <span className={styles.meta}>
           {task.cardId && (

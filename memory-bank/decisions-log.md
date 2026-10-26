@@ -4456,3 +4456,28 @@ User: picked idea 4 of the kanban list (2026-10-26); this is session 3 of docs/s
 - *Verified:* headless on the emulators: dragged next to a plane in edit mode → `stuckTo`, console `⇆ Pazar`, the other
   plane's task hidden on the canvas; in the plane's focus, `[linked · 1]` → the pane, `this plane only · 1 hidden`,
   switched off shows it; a task clicked opens its panel and the plane glides to its card; rules 387 pass; build.
+
+### D-256 · 2026-10-27 · Accepted (adds to D-233, D-251; kanban session 4, docs/specs/kanban.md)
+**A kanban's filters, task labels and priority, and column limits.**
+User: picked ideas 5, 10 and 9 of the kanban list (2026-10-26); this is session 4 of docs/specs/kanban.md.
+- *Filters:* `[filter]` in the kanban's dock (its focus, its pane beside a plane) opens a strip over it in the plane
+  filter's look (D-233): `GIVEN TO ▾ DUE ▾ FOR ▾ LABEL ▾ [reset]`, each a checkbox menu with counts. Given to: me, nobody,
+  each other member. Due: past its day (not finished), today, this week (to Sunday), no day. For: no card, a card type,
+  a card (those its tasks point at). Label: its tasks' labels. Within one menu any pick, across menus all; nothing
+  picked, everything. `[filter · N]` while narrowing. Kept per kanban in this browser (`kanbanFilter.ts`, like
+  `planeFilter.ts`), yours only. It narrows the canvas picture too; on top of D-255's plane-only.
+- *Labels:* `labels` on tasks (≤ 20, ≤ 40 letters), a line of `#labels` under the title; set in the panel's `labels`
+  section like a card's tags, the kanban's other labels offered as you type.
+- *Priority:* `priority` `P1 | P2 | P3` before the title (P1 magenta, P2 as the text, P3 faint); `[P1] [P2] [P3]` in the
+  panel (a click on the picked one clears it). The panel now reads column, given to, due, priority, labels, for,
+  (learned), checklist, notes.
+- *Limits:* a column's `limit` (1–99), typed from the head's `≤` tool (Enter keeps, empty takes it away, Escape leaves).
+  With one, the count reads `4/3`, counting every task in the column, filtered or not; over it, the column's name and
+  count turn magenta. Nothing stops a drop past it.
+- *Rules:* `labels` (list ≤ 20) and `priority` on tasks; columns aren't checked one by one, so `limit` needed no rule.
+  Export carries all three.
+- *Alternatives:* filters shared on the kanban (one person's view would change everyone's); a limit that refuses drops;
+  the limit counting only what's shown.
+- *Verified:* headless on the emulators: labels, priority and an over-limit DOING on the sheets; filter strip, DUE "past
+  its day" leaves the late task, `[filter · 1]`; panel: P1 set, a label offered from the kanban's others and one typed;
+  `≤` on TODO typed 1 → `2/1` magenta; light theme; rules 391 pass; build.

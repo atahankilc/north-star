@@ -20,6 +20,8 @@ export type KanbanCol = {
   name: string
   // Its tasks are finished: their due day no longer warns, their titles go quiet.
   done?: boolean
+  // How many tasks it should hold at most (D-256): over it, its head goes magenta.
+  limit?: number
 }
 export type KanbanSetup = {
   cols: KanbanCol[]
@@ -44,12 +46,17 @@ export type Task = {
   checks?: Check[]
   // The evidence it logged on its card once finished, or `skip` (D-254).
   learned?: string
+  // `#labels`, as cards' tags (D-056), and how urgent it is (D-256).
+  labels?: string[]
+  priority?: TaskPriority
   // Who made it.
   uid: string
   createdAt: number
   updatedAt: number
 }
-export type TaskFields = Partial<Pick<Task, 'title' | 'notes' | 'assignee' | 'assigneeName' | 'due' | 'cardId' | 'cardType' | 'checks' | 'learned'>>
+export type TaskFields = Partial<Pick<Task, 'title' | 'notes' | 'assignee' | 'assigneeName' | 'due' | 'cardId' | 'cardType' | 'checks' | 'learned' | 'labels' | 'priority'>>
+export const TASK_PRIORITIES = ['P1', 'P2', 'P3'] as const
+export type TaskPriority = (typeof TASK_PRIORITIES)[number]
 
 // firestore.rules allows these.
 export const KANBAN_COLS_MAX = 12
@@ -57,6 +64,9 @@ export const COL_NAME_MAX = 40
 export const TASK_TITLE_MAX = 200
 export const CHECKS_MAX = 50
 export const CHECK_MAX = 200
+export const LABELS_MAX = 20
+export const LABEL_MAX = 40
+export const LIMIT_MAX = 99
 
 export const emptyKanban = (): KanbanSetup => ({
   cols: [
@@ -121,7 +131,9 @@ export function deleteTask(wid: string, task: Pick<Task, 'id'>) {
 // Its columns, all at once (renamed, added, moved, marked done): one undo step; a name typed merges.
 export function setKanbanCols(wid: string, pieceId: string, cols: KanbanCol[], what = 'change a kanban', key?: string) {
   const ref = pieceRef(wid, pieceId)
-  const clean = cols.slice(0, KANBAN_COLS_MAX).map((c) => ({ id: c.id, name: c.name.slice(0, COL_NAME_MAX), ...(c.done ? { done: true } : {}) }))
+  const clean = cols
+    .slice(0, KANBAN_COLS_MAX)
+    .map((c) => ({ id: c.id, name: c.name.slice(0, COL_NAME_MAX), ...(c.done ? { done: true } : {}), ...(c.limit ? { limit: Math.min(LIMIT_MAX, Math.max(1, Math.round(c.limit))) } : {}) }))
   return tracked(what, [ref], () => updateDoc(ref, { 'kanban.cols': clean, updatedAt: Date.now() }), key ? { key } : {})
 }
 

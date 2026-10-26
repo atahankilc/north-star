@@ -6,7 +6,7 @@
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Card } from '../../data/cards'
-import { CHECK_MAX, deleteTask, logLearned, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, today, untested, updateTask, type Check, type Task } from '../../data/tasks'
+import { CHECK_MAX, LABEL_MAX, LABELS_MAX, TASK_PRIORITIES, deleteTask, logLearned, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, today, untested, updateTask, type Check, type Task } from '../../data/tasks'
 import type { Evidence } from '../../data/evidence'
 import { useMembers } from '../../data/workspaces'
 import { useCanvasView } from '../../state/canvasView'
@@ -120,7 +120,6 @@ function Inside({ task, cols, editor }: InsideProps) {
   const col = cols.find((c) => c.id === task.col)
   // `learned` is a section only when there's something in it, the ones after it numbered on.
   const learns = (task.learned && task.learned !== 'skip') || (editor && learnable(task, cards.find((c) => c.id === task.cardId), !!col?.done))
-  const after = learns ? 6 : 5
   const names = cols.map((c) => c.name)
   return (
     <>
@@ -139,12 +138,14 @@ function Inside({ task, cols, editor }: InsideProps) {
           }}
         />
       </PanelSection>
-      <Assignee task={task} editor={editor} />
-      <Due task={task} finished={!!col?.done} editor={editor} />
-      <ForCard task={task} editor={editor} />
-      <Learned task={task} finished={!!col?.done} editor={editor} />
-      <Checklist task={task} editor={editor} n={after} />
-      <Notes task={task} editor={editor} n={after + 1} />
+      <Assignee task={task} editor={editor} n={2} />
+      <Due task={task} finished={!!col?.done} editor={editor} n={3} />
+      <Priority task={task} editor={editor} n={4} />
+      <Labels task={task} editor={editor} n={5} />
+      <ForCard task={task} editor={editor} n={6} />
+      {learns && <Learned task={task} finished={!!col?.done} editor={editor} n={7} />}
+      <Checklist task={task} editor={editor} n={learns ? 8 : 7} />
+      <Notes task={task} editor={editor} n={learns ? 9 : 8} />
     </>
   )
 }
@@ -152,7 +153,7 @@ function Inside({ task, cols, editor }: InsideProps) {
 const NOBODY = ''
 
 // Who it's given to: one member (a square with their initials on the card), or nobody.
-function Assignee({ task, editor }: { task: Task; editor: boolean }) {
+function Assignee({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid, workspace } = useWs()
   const members = useMembers(wid, 100)
   const listed = members.data.filter((m) => workspace.memberIds.includes(m.id))
@@ -160,7 +161,7 @@ function Assignee({ task, editor }: { task: Task; editor: boolean }) {
   // Given to someone who's not loaded (or gone): their name as it was.
   if (task.assignee && !listed.some((m) => m.id === task.assignee)) options.push({ value: task.assignee, label: task.assigneeName ?? 'someone' })
   return (
-    <PanelSection n={2} name="given to">
+    <PanelSection n={n} name="given to">
       <Select
         value={task.assignee ?? NOBODY}
         options={options}
@@ -176,11 +177,11 @@ function Assignee({ task, editor }: { task: Task; editor: boolean }) {
 }
 
 // When it's due: a day, or none. Past it (and not finished), the card and this say so in magenta.
-function Due({ task, finished, editor }: { task: Task; finished: boolean; editor: boolean }) {
+function Due({ task, finished, editor, n }: { task: Task; finished: boolean; editor: boolean; n: number }) {
   const { wid } = useWs()
   const late = overdue(task, finished)
   return (
-    <PanelSection n={3} name="due" count={task.due ? dueText(task.due) : undefined}>
+    <PanelSection n={n} name="due" count={task.due ? dueText(task.due) : undefined}>
       <div className={own.row}>
         <input
           className={`${styles.input} ${own.date}`}
@@ -210,7 +211,7 @@ export function learnable(task: Task, card: Card | undefined, finished: boolean)
   return finished && !task.learned && untested(card)
 }
 
-function Learned({ task, finished, editor }: { task: Task; finished: boolean; editor: boolean }) {
+function Learned({ task, finished, editor, n }: { task: Task; finished: boolean; editor: boolean; n: number }) {
   const { wid, cards, evidence } = useWs()
   const card = task.cardId ? cards.find((c) => c.id === task.cardId) : undefined
   const asked = useKanbanUi((s) => s.learning === task.id)
@@ -223,7 +224,7 @@ function Learned({ task, finished, editor }: { task: Task; finished: boolean; ed
   const logged = task.learned && task.learned !== 'skip' ? evidence.find((e) => e.id === task.learned) : undefined
   if (logged)
     return (
-      <PanelSection n={5} name="learned" count={logged.stance === 'supports' ? 'supports it' : 'against it'}>
+      <PanelSection n={n} name="learned" count={logged.stance === 'supports' ? 'supports it' : 'against it'}>
         <p className={own.learned}>
           <span className={own.cell} data-filled={logged.stance === 'supports' || undefined} aria-hidden />
           {logged.text}
@@ -233,7 +234,7 @@ function Learned({ task, finished, editor }: { task: Task; finished: boolean; ed
   if (!editor || !card || !learnable(task, card, finished)) return null
   const start: Partial<Evidence> = { text: task.notes?.trim() ? `${task.title}: ${task.notes.trim()}` : task.title, kind: 'observation', date: today() }
   return (
-    <PanelSection n={5} name="learned" add={open ? undefined : { label: 'log it on the card', onClick: () => setOpen(true) }}>
+    <PanelSection n={n} name="learned" add={open ? undefined : { label: 'log it on the card', onClick: () => setOpen(true) }}>
       {open ? (
         <EvidenceForm
           start={start}
@@ -254,10 +255,78 @@ function Learned({ task, finished, editor }: { task: Task; finished: boolean; ed
   )
 }
 
+// How urgent (D-256): `[P1] [P2] [P3]`, a click on the picked one clears it.
+function Priority({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
+  const { wid } = useWs()
+  return (
+    <PanelSection n={n} name="priority">
+      <Pills values={TASK_PRIORITIES} value={task.priority} editor={editor} label="Priority" onPick={(v) => void updateTask(wid, task, { priority: v }, v ? 'set a task’s priority' : 'clear a task’s priority')} />
+    </PanelSection>
+  )
+}
+
+// Its #labels (D-256), as a card's tags (D-056): chips, `×` on hover; `+ label` types one (Enter adds and keeps typing, a
+// leading `#` dropped); the kanban's other labels offered as you type.
+function Labels({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
+  const { wid, tasks } = useWs()
+  const labels = task.labels ?? []
+  const [draft, setDraft] = useState<string | null>(null)
+  const set = (next: string[]) => void updateTask(wid, task, { labels: next.length ? next : undefined }, 'label a task')
+  const known = [...new Set(tasks.filter((t) => t.pieceId === task.pieceId).flatMap((t) => t.labels ?? []))].filter((l) => !labels.includes(l)).sort()
+  const typed = (draft ?? '').trim().replace(/^#/, '').toLowerCase()
+  const offer = draft === null ? [] : known.filter((l) => l.toLowerCase().includes(typed)).slice(0, 6)
+  const add = (l: string) => {
+    const t = l.trim().replace(/^#/, '').slice(0, LABEL_MAX)
+    if (t && !labels.includes(t) && labels.length < LABELS_MAX) set([...labels, t])
+    setDraft('')
+  }
+  return (
+    <PanelSection n={n} name="labels" add={editor && draft === null ? { label: 'label', onClick: () => setDraft('') } : undefined} empty={!labels.length && draft === null}>
+      <div className={styles.tags}>
+        {labels.map((l) => (
+          <span key={l} className={styles.chip}>
+            #{l}
+            {editor && (
+              <button className={styles.chipX} title="Remove" onClick={() => set(labels.filter((x) => x !== l))}>
+                ×
+              </button>
+            )}
+          </span>
+        ))}
+        {draft !== null && (
+          <input
+            className={`${styles.input} ${styles.tagInput}`}
+            autoFocus
+            placeholder="label"
+            value={draft}
+            maxLength={LABEL_MAX}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => setDraft(null)}
+            onKeyDown={(e) => {
+              e.stopPropagation()
+              if (e.key === 'Enter' && typed) add(draft)
+              if (e.key === 'Escape') setDraft(null)
+            }}
+          />
+        )}
+      </div>
+      {offer.length > 0 && (
+        <div className={styles.pills}>
+          {offer.map((l) => (
+            <button key={l} className={styles.pill} onMouseDown={(e) => e.preventDefault()} onClick={() => add(l)}>
+              #{l}
+            </button>
+          ))}
+        </div>
+      )}
+    </PanelSection>
+  )
+}
+
 const NO_CARD = { id: '', type: 'idea', pieceId: '', title: '', x: 0, y: 0 } as Card
 
 // The card it's for (a feature, an idea, a problem…, on any plane): its row opens that card's panel; `×` lets go.
-function ForCard({ task, editor }: { task: Task; editor: boolean }) {
+function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid, cards } = useWs()
   const [picking, setPicking] = useState(false)
   const card = task.cardId ? cards.find((c) => c.id === task.cardId) : undefined
@@ -267,7 +336,7 @@ function ForCard({ task, editor }: { task: Task; editor: boolean }) {
   }
   const exclude = useMemo(() => new Set(task.cardId ? [task.cardId] : []), [task.cardId])
   return (
-    <PanelSection n={4} name="for" add={editor && !picking ? { label: task.cardId ? 'change' : 'card', onClick: () => setPicking(true) } : undefined} empty={!task.cardId && !picking}>
+    <PanelSection n={n} name="for" add={editor && !picking ? { label: task.cardId ? 'change' : 'card', onClick: () => setPicking(true) } : undefined} empty={!task.cardId && !picking}>
       {task.cardId && (
         <div className={own.row}>
           {card ? (

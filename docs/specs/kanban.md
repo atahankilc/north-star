@@ -67,13 +67,16 @@ opens in a plane's focus too.
 Built (D-255): tasks whose card is gone show too; the switch is shared (`kanban.everyPlane`), on by default; the card
 isn't selected when a task is picked beside (that would close the task's panel), the plane only glides to it.
 
-## Session 4: filters, labels and priority, WIP limits (ideas 5, 10, 9)
+## Session 4: filters, labels and priority, WIP limits (ideas 5, 10, 9) · **done (D-256, 2026-10-27)**
 
 - A filter strip in the dock, the plane filter's look (D-233): `GIVEN TO ▾  DUE ▾  FOR ▾  LABEL ▾`. Given to: me,
   someone, nobody. Due: past, today, this week, none. For: a card type or a card. Kept per kanban, per browser.
 - Labels on tasks (`#tags` as on cards, D-056) and a priority (`P1`–`P3`), shown on the card; set in the panel.
 - A WIP limit per column (set from the head's tools): `DOING 4/3` in magenta when over.
 - Rules: `labels`, `priority` on tasks; `limit` on columns.
+
+Built (D-256): GIVEN TO lists me, nobody and each member; "this week" runs to Sunday; the limit counts every task in
+the column (filtered or not) and never refuses a drop; columns needed no rule change.
 
 ## Session 5: swimlanes and multi-select (ideas 6, 8)
 
@@ -107,6 +110,8 @@ isn't selected when a task is picked beside (that would close the task's panel),
 ## Found along the way
 
 - Open on the canvas (unframed), a kanban's size is its window's, not measured from what it holds.
+- With a filter on, a task typed at a column's foot may not pass it and vanish at once (D-256): maybe give it the
+  filter's values (its label, given to me…) or show it until the filter changes.
 - The assistant's brief doesn't list tasks (not picked: idea 3).
 - Priorities will be this kanban holding cards, columns and rows from their fields ([priorities.md](priorities.md)).
   Session 5's swimlanes: build them as "rows by a field" so cards can use them too.

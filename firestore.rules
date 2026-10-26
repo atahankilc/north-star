@@ -232,7 +232,7 @@ service cloud.firestore {
     // One of a kanban's tasks (D-251, src/data/tasks.ts): in a column of a kanban, in order; given to a member, due on a
     // day, pointing at a card, with a checklist.
     function validTask(d) {
-      return d.keys().hasOnly(['pieceId', 'col', 'order', 'title', 'notes', 'assignee', 'assigneeName', 'due', 'cardId', 'cardType', 'checks', 'learned', 'uid', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['pieceId', 'col', 'order', 'title', 'notes', 'assignee', 'assigneeName', 'due', 'cardId', 'cardType', 'checks', 'learned', 'labels', 'priority', 'uid', 'createdAt', 'updatedAt'])
         && isText(d.pieceId, 128) && isText(d.col, 40)
         && d.order is number
         && isText(d.title, 200)
@@ -244,6 +244,9 @@ service cloud.firestore {
         && (!('checks' in d) || (d.checks is list && d.checks.size() <= 50))
         // The evidence it logged on its card, or 'skip' (D-254).
         && optText(d, 'learned', 128)
+        // Its #labels and priority (D-256).
+        && (!('labels' in d) || (d.labels is list && d.labels.size() <= 20))
+        && optIn(d, 'priority', ['P1', 'P2', 'P3'])
         && isText(d.uid, 128)
         && d.createdAt is number
         && d.updatedAt is number;

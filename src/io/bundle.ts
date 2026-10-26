@@ -439,7 +439,8 @@ export function cleanKanban(v: unknown) {
     const id = ownId(c?.id)
     if (!c || !name || seen.has(id)) return []
     seen.add(id)
-    return [compact({ id, name, done: yes(c.done) })]
+    const limit = num(c.limit)
+    return [compact({ id, name, done: yes(c.done), limit: limit && limit >= 1 ? Math.min(99, Math.round(limit)) : undefined })]
   })
   return compact({ cols: cols.length ? cols : [{ id: newId(), name: 'todo' }], everyPlane: yes(obj(v)?.everyPlane) })
 }
@@ -456,7 +457,9 @@ export function cleanTask(d: Raw, now: number) {
     return c && text ? [compact({ id: ownId(c.id), text, done: yes(c.done) })] : []
   })
   const due = typeof d.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.due) ? d.due : undefined
-  return compact({ order, title, notes: str(d.notes, 20000), due, checks: checks.length ? checks : undefined, ...times(d, now) })
+  const labels = [...new Set(list(d.labels, 20).flatMap((l) => str(l, 40)?.trim() || []))]
+  const priority = oneOf(d.priority, ['P1', 'P2', 'P3'] as const)
+  return compact({ order, title, notes: str(d.notes, 20000), due, checks: checks.length ? checks : undefined, labels: labels.length ? labels : undefined, priority, ...times(d, now) })
 }
 
 // One of a matrix's or a table's cells, without its matrix, row and column.

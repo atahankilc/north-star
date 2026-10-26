@@ -286,6 +286,10 @@ await deny('a task for an unknown kind of card', () => addDoc(sub(bob.fs, 'tasks
 await deny('a task with a field nobody knows', () => addDoc(sub(bob.fs, 'tasks'), { ...task, points: 3 }))
 await allow('a finished task with what it taught logged (D-254)', () => addDoc(sub(bob.fs, 'tasks'), { ...task, cardId: 'p1', cardType: 'problem', learned: 'ev1' }))
 await deny('a task whose learned is not text', () => addDoc(sub(bob.fs, 'tasks'), { ...task, learned: true }))
+await allow('a task with labels and a priority (D-256)', () => addDoc(sub(bob.fs, 'tasks'), { ...task, labels: ['research', 'ops'], priority: 'P1' }))
+await deny('a task with an unknown priority', () => addDoc(sub(bob.fs, 'tasks'), { ...task, priority: 'urgent' }))
+await deny('a task with labels that are not a list', () => addDoc(sub(bob.fs, 'tasks'), { ...task, labels: 'research' }))
+await allow('a kanban column with a limit (D-256)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { cols: [{ id: 'k1', name: 'doing', limit: 3 }] } }))
 await deny('a task with a checklist that is not a list', () => addDoc(sub(bob.fs, 'tasks'), { ...task, checks: 'all of it' }))
 // Cards on a plane (D-187).
 await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
