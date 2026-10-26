@@ -217,6 +217,9 @@ old reports are moved to documents once (D-248).
   once; in focus click selects (corner marks), drag moves (snapped, alt free), Delete removes; the title is typed in
   its panel, never on the card (D-221);
   on the canvas they're a picture fitted in the plane, its marks following. Deleting a plane takes its cards.
+- Made and named (D-250): a card or text just made, Enter makes it (a card's panel shuts, it stays selected; Tab makes
+  the next of its type beside it), Escape or nothing typed takes it away with its undo step; making + first name one
+  undo step; paragraphs and sticky notes keep ⌘Enter. Wizards: Enter next step, last (or ⌘Enter) makes it.
 - Card inside on planes as D-152/D-153 (D-205): status/regions/priority + evidence cells, title, facts (link counts 0
   until links), tag chips; by size on screen the title alone in whole words, then bars. Only shown until the panel.
 - Links on planes (D-207): old `edges`, drawn when both cards are on the plane; straight, arrowhead, kind colours, chip

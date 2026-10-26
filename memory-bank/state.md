@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-22 (D-247: a card's head in a matrix/table opens its panel; D-248: 1.0 dropped)_
+_Last updated: 2026-10-26 (D-250: Enter makes, Escape cancels what's just made)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -26,7 +26,6 @@ something is finished, add its entry to state-history.md and leave at most one l
   each report body's delete reads its summary twice), so `deleteWorkspace` now takes reports 6 to a batch; rules test
   added. Reports "out of order": the code sorts right; two live workspaces hold reports written with made-up `createdAt`
   (2026-10-19 12:00:00.0xx), so reports made that morning sat below them. Flaky uploads: not reproduced.
-- D-124–D-132 pushed or committed 2026-10-18 (see state-history.md).
 - Phase 6 (docs/specs/usefulness.md), from examining the user's BUBBLES workspace: slice 1, matrix criteria (D-133), built,
   committed, rules deployed 2026-10-19. Slice 2, the assistant writes criteria (D-134), committed;
   try `/criteria` on BUBBLES with a real key. Slice 3, competitor lines off by default (D-135), committed.
@@ -59,6 +58,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
 - A card's head in a matrix or table opens its right panel on one click; a cell keeps it on its one card (D-247), 2026-10-22, committed.
 - Piece names readable at any zoom, edit as a cyan field with `>` and a count (D-223), 2026-10-22, committed.
+- Enter makes / Escape cancels what's just made, cards and text; add + name one undo step; Tab next card; wizards' Enter (D-250). 2026-10-26, not committed.
 - Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), links shown and made from a dropdown (D-215), 2026-10-22, rules deployed. Follows adds, column widths (D-224). Open on the canvas (D-228), committed, rules deployed 2026-10-22. Canvas speed: pieces' contents memoised (pan no longer draws them again; keep their props stable), matrix cells memoised with hover in its own store; in focus a matrix's cells and heads and a table's rows are made only when they change, not per frame; only what's on screen is drawn (`visible.ts`), and a matrix too small to read is squares on one canvas (`CellDots`).
 - Documents (D-232, docs/specs/documents.md): .md/images/PDFs/old reports (moved once) in `documents/`, private until shared;
   a list piece (table or shelf) and one on its own (asks first), both unframe (D-234). .md only until Blaze; next: files, writing.

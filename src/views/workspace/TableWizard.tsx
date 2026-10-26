@@ -1,14 +1,16 @@
 // A new table (D-218), made as a matrix is (D-212): `+ → table…` opens a short wizard in the middle of the screen. Three
 // steps, any of them at any time: start from (a template, or my own), which rows, which columns. A small preview beside
 // it shows the first rows and columns as they'll come, and how many. `make the table` puts it at the middle of the
-// canvas, selected. Escape or a click outside leaves it. It works on a draft: nothing is written until it's made.
-import { useEffect, useState } from 'react'
+// canvas, selected. Escape or a click outside leaves it; Enter goes to the next step, ⌘Enter makes it (D-250). It
+// works on a draft: nothing is written until it's made.
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { rowsOf } from '../../data/source'
 import { colName, TEMPLATES, type TableSetup } from '../../data/table'
 import { addPiece } from '../../data/pieces'
 import { canvasCenter, setEditing } from '../../state/canvasView'
 import { useWs } from './context'
+import { wizardEnter } from './wizardKeys'
 import { useFieldText, useTableUi } from './Table'
 import { ColumnsEditor, RowsEditor, type SetTable } from './TableSetup'
 import m from './Matrix.module.css'
@@ -41,8 +43,11 @@ function Wizard() {
   const rows = rowsOf(draft.rows, cards, !draft.manual)
   const cols = draft.cols.slice(0, 3)
 
+  // Heard first, wherever the focus is: Escape leaves, Enter steps on (D-250).
+  const enter = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') return enter.current(e)
       if (e.key !== 'Escape') return
       e.stopPropagation()
       close()
@@ -58,6 +63,7 @@ function Wizard() {
     // Where you're looking, in edit mode, to be moved where you want it.
     setEditing(id, true)
   }
+  enter.current = (e) => wizardEnter(e, step, STEPS.length, setStep, () => void make())
 
   return (
     <div className={m.wizardShade} onPointerDown={(e) => e.target === e.currentTarget && close()}>

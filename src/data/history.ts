@@ -1,6 +1,6 @@
 // Undo and redo (Q-013): every tracked write snapshots the documents it touches before and after, so undo
 // and redo just put a snapshot back. Local to this tab and workspace; last write wins against collaborators.
-import { doc, getDoc, getDocFromCache, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, getDocFromCache, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
 import { create } from 'zustand'
 import { db } from './firebase'
 
@@ -135,6 +135,17 @@ async function record(label: string, refs: DocumentReference[], write: () => Pro
   pending.catch(() => useHistory.setState((h) => ({ past: h.past.filter((p) => p !== step) })))
   // Wrapped: returning the promise itself would make the queue wait for the server.
   return { pending }
+}
+
+// Something just made and let go before it had a name (Escape, or Enter with nothing typed): it goes, and so do its
+// steps (`key`, which its making and naming share), as if it was never made. Nothing is left to undo or redo.
+export function discardNew(ref: DocumentReference, key: string) {
+  if (!writable()) return Promise.resolve()
+  return serial(async () => {
+    const pending = deleteDoc(ref)
+    useHistory.setState((h) => ({ past: h.past.filter((p) => p.key !== key) }))
+    return { pending }
+  }).then(({ pending }) => pending)
 }
 
 export const absent = (refs: DocumentReference[]): Snapshot => refs.map((ref) => ({ ref, data: null }))

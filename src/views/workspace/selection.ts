@@ -44,7 +44,7 @@ export function setSelection(ids: string[]) {
   if (ids.length > 1) return useCanvasView.setState({ cardMulti: ids, cardSelected: null, labelSelected: null, ...clear })
   const one = ids[0] ?? null
   const label = !!one && onPlane.labels.has(one)
-  useCanvasView.setState({ cardMulti: [], cardSelected: label ? null : one, labelSelected: label ? one : null, ...(one ? clear : {}) })
+  useCanvasView.setState({ cardMulti: [], cardSelected: label ? null : one, labelSelected: label ? one : null, panelShut: null, ...(one ? clear : {}) })
 }
 
 // Shift+click: in or out.

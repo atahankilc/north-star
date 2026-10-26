@@ -30,6 +30,10 @@ type State = {
   // Text anywhere (D-188): the one selected, the one being typed, and a section being drawn in a space.
   labelSelected: string | null
   labelEditing: string | null
+  // A card or text just made and not yet named (D-250): Enter makes it, Escape (or Enter with nothing typed) takes it
+  // away as if never made. And a card whose panel Enter closed while it stays selected, until the selection changes.
+  fresh: string | null
+  panelShut: string | null
   drawing: string | null
   // A package being picked in a plane (D-240): its id while clicks and boxes pick cards for it.
   packing: string | null
@@ -96,7 +100,12 @@ export function planeArea() {
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
+
+// A panel Enter shut opens again once the card is let go or another is picked.
+useCanvasView.subscribe((s, was) => {
+  if (s.panelShut && s.cardSelected !== was.cardSelected) useCanvasView.setState({ panelShut: null })
+})
 
 export function setEditing(id: string, on: boolean) {
   useCanvasView.setState((s) => ({

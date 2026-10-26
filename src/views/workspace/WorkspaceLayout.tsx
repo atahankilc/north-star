@@ -220,7 +220,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
             : { kind: 'title' as const, w: TITLE_W.initial, dx: TITLE_W.initial / 2, dy: 80 }
     const { dx, dy, ...rest } = fields
     const id = await addLabel(wid, { pieceId: space, text: '', ...rest, x: snap(at[0] - dx), y: snap(at[1] - dy) })
-    useCanvasView.setState({ labelSelected: id, labelEditing: id, cardSelected: null, selected: null })
+    useCanvasView.setState({ labelSelected: id, labelEditing: id, fresh: id, cardSelected: null, selected: null })
   }
   const text = [
     { key: 'text', heading: 'text' },
@@ -241,7 +241,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     if (!plane || !c) return
     const at: [number, number] = [(size.w / 2 - c.ox) / c.zoom, (size.h / 2 - c.oy) / c.zoom]
     const id = await addCard(wid, plane, type, at, cards.filter((x) => x.pieceId === plane))
-    useCanvasView.setState({ cardSelected: id, cardEditing: id })
+    useCanvasView.setState({ cardSelected: id, cardEditing: id, fresh: id })
   }
   return (
     <>

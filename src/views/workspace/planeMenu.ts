@@ -144,12 +144,12 @@ export function emptyItems(c: Ctx): MenuEntry[] {
   const others = c.cards.filter((k) => k.pieceId === c.plane)
   const card = async (type: CardType) => {
     const id = await addCard(c.wid, c.plane, type, [x + 100, y + 50], others)
-    useCanvasView.setState({ cardSelected: id, cardEditing: id, cardMulti: [] })
+    useCanvasView.setState({ cardSelected: id, cardEditing: id, fresh: id, cardMulti: [] })
   }
   const text = async (what: 'heading' | 'paragraph' | 'sticky') => {
     const fields = what === 'heading' ? { size: 'heading' as const } : what === 'paragraph' ? { size: 'note' as const, w: PARA_W.initial } : { kind: 'sticky' as const, w: STICKY_W.initial, color: 'yellow' as const, ...c.me }
     const id = await addLabel(c.wid, { pieceId: c.plane, text: '', ...fields, x: snap(x), y: snap(y) })
-    useCanvasView.setState({ labelSelected: id, labelEditing: id, cardSelected: null, cardMulti: [] })
+    useCanvasView.setState({ labelSelected: id, labelEditing: id, fresh: id, cardSelected: null, cardMulti: [] })
   }
   const paste = clipboard.cards.length + clipboard.labels.length
   const pasteHere = () => {

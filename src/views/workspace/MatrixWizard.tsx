@@ -2,13 +2,15 @@
 // Four steps, any of them at any time: start from (a template, or my own), what goes down the side, what goes across the
 // top, what a cell holds. A small preview beside it shows the first rows and columns as they'll come, and how many.
 // `make the matrix` puts it at the middle of the canvas, named after what it crosses, selected. Escape or a click
-// outside leaves it. It works on a draft: nothing is written until it's made.
-import { useEffect, useState } from 'react'
+// outside leaves it; Enter goes to the next step, ⌘Enter makes it (D-250). It works on a draft: nothing is written
+// until it's made.
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { entriesOf, nounOf, TEMPLATES, TONE_VAR, type MatrixSetup } from '../../data/matrix'
 import { addPiece } from '../../data/pieces'
 import { canvasCenter, setEditing } from '../../state/canvasView'
 import { useWs } from './context'
+import { wizardEnter } from './wizardKeys'
 import { StepSquare, useMatrixUi } from './Matrix'
 import { AxisEditor, CellsEditor, type SetPart } from './MatrixSetup'
 import styles from './Matrix.module.css'
@@ -36,8 +38,11 @@ function Wizard() {
   const rows = entriesOf(draft.rows, cards)
   const cols = entriesOf(draft.cols, cards)
 
+  // Heard first, wherever the focus is: Escape leaves, Enter steps on (D-250).
+  const enter = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') return enter.current(e)
       if (e.key !== 'Escape') return
       e.stopPropagation()
       close()
@@ -52,6 +57,7 @@ function Wizard() {
     // Where you're looking, in edit mode, to be moved where you want it.
     setEditing(id, true)
   }
+  enter.current = (e) => wizardEnter(e, step, STEPS.length, setStep, () => void make())
 
   // The preview's cells: the scale's steps in turn, a number, or a word.
   const sample = (i: number, j: number) => {

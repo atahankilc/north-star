@@ -42,7 +42,7 @@ export function DrawSection({ space, toSpace }: Props) {
       const w = Math.max(SECTION_MIN.w, at(Math.max(a[0], b[0])) - x)
       const h = Math.max(SECTION_MIN.h, at(Math.max(a[1], b[1])) - y)
       const id = await addLabel(wid, { pieceId: space, text: '', kind: 'section', x, y, w, h })
-      useCanvasView.setState({ labelSelected: id, labelEditing: id })
+      useCanvasView.setState({ labelSelected: id, labelEditing: id, fresh: id })
     }
     el.addEventListener('pointermove', move)
     el.addEventListener('pointerup', up)

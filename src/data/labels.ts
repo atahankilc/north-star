@@ -4,7 +4,7 @@
 import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch, type DocumentReference } from 'firebase/firestore'
 import { db } from './firebase'
 import { snap } from './grid'
-import { absent, snapshotWith, tracked } from './history'
+import { absent, discardNew, snapshotWith, tracked } from './history'
 
 // The canvas as a space, beside the planes (whose ids are Firestore's 20-character ones).
 export const CANVAS = 'canvas'
@@ -68,21 +68,25 @@ const NAMES: Record<TextKind, string> = { heading: 'a heading', paragraph: 'a pa
 
 type New = Omit<Label, 'id' | 'createdAt'>
 
-// A new one, at its place: one undo step.
+// A new one, at its place: one undo step, which the text typed into it first joins (keyed as its text is, D-250).
 export async function addLabel(wid: string, fields: New) {
   const ref = doc(col(wid))
   const now = Date.now()
   const data = Object.fromEntries(Object.entries({ ...fields, createdAt: now, updatedAt: now }).filter(([, v]) => v !== undefined))
-  await tracked(`add ${NAMES[kindOf(fields)]}`, [ref], () => setDoc(ref, data), { before: absent([ref]) })
+  await tracked(`add ${NAMES[kindOf(fields)]}`, [ref], () => setDoc(ref, data), { before: absent([ref]), key: `label:text:${ref.id}` })
   return ref.id
 }
 
-// Its text, its setting: typing merges into one undo step; `undefined` takes a field away.
-export function updateLabel(wid: string, l: Label, patch: Partial<Omit<Label, 'id' | 'pieceId' | 'createdAt'>>, key?: string) {
+// Its text, its setting: typing merges into one undo step; `undefined` takes a field away. `fresh`: the first text of
+// one just made, one step with its making.
+export function updateLabel(wid: string, l: Label, patch: Partial<Omit<Label, 'id' | 'pieceId' | 'createdAt'>>, key?: string, fresh = false) {
   const ref = labelRef(wid, l.id)
   const data = Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, v === undefined ? deleteField() : v]))
-  return tracked(`change ${NAMES[kindOf(l)]}`, [ref], () => updateDoc(ref, { ...data, updatedAt: Date.now() }), key ? { key: `label:${key}:${l.id}` } : {})
+  return tracked(`change ${NAMES[kindOf(l)]}`, [ref], () => updateDoc(ref, { ...data, updatedAt: Date.now() }), key ? { key: `label:${key}:${l.id}`, mergeAlways: fresh } : {})
 }
+
+// One just made, let go before it had any text: gone, with its step (D-250).
+export const discardLabel = (wid: string, l: Pick<Label, 'id'>) => discardNew(labelRef(wid, l.id), `label:text:${l.id}`)
 
 export function deleteLabel(wid: string, l: Label) {
   const ref = labelRef(wid, l.id)

@@ -11,6 +11,7 @@ import {
   copyCards,
   deleteCard,
   deleteCards,
+  discardCard,
   updateCards,
   FEATURE_EFFORTS,
   FEATURE_IMPACTS,
@@ -22,6 +23,7 @@ import {
   VALIDATIONS,
   type AnyType,
   type Card,
+  type CardType,
 } from '../../data/cards'
 import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, InPackages, MatchedBy, Parent, Parts, RestsOn } from './CardPanelKinds'
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../data/edges'
@@ -122,6 +124,8 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
   const plane = new URLSearchParams(location.search).get('focus')
   const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
   const card = cards.find((c) => c.id === id)
+  // Enter shut it on a card just made (D-250); the card stays selected.
+  const shut = useCanvasView((s) => s.panelShut)
   const close = onClose ?? (() => useCanvasView.setState({ cardSelected: null }))
   // A card the panel would cover glides left, clear of it (48 px). Only on its own plane in focus: picked from a matrix's
   // or a table's head, the view is the lens's.
@@ -168,7 +172,7 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
           <ManyInside cards={many} texts={texts} editor={editor} />
         </SidePanel>
       )}
-      {card && count < 2 && (
+      {card && count < 2 && card.id !== shut && (
         <SidePanel
           // One panel while cards change under it: it builds only when it opens.
           key="card"
@@ -563,20 +567,27 @@ function PlanSection({ n, card, editor }: P) {
 
 // The title, typed in place: Enter or leaving keeps it, Escape puts it back. The card itself isn't typed on any more
 // (the user, once the panel came): a new card opens its panel with this field ready (`cardEditing`).
+// A card just made (`fresh`, D-250): Enter makes it (one undo step with its making) and shuts the panel, the card still
+// selected; Tab makes it and starts the next of its type beside it; Escape, or Enter or leaving with nothing typed,
+// takes it away as if never made.
 function Title({ card, editor }: { card: Card; editor: boolean }) {
-  const { wid } = useWs()
+  const { wid, cards } = useWs()
   const [typing, setTyping] = useState(false)
-  const fresh = useCanvasView((s) => s.cardEditing === card.id)
+  const opening = useCanvasView((s) => s.cardEditing === card.id)
+  const fresh = useCanvasView((s) => s.fresh === card.id)
   useEffect(() => {
-    if (!fresh) return
+    if (!opening) return
     setTyping(true)
     useCanvasView.setState({ cardEditing: null })
-  }, [fresh])
+  }, [opening])
   const [draft, setDraft] = useState(card.title)
   const field = useRef<HTMLTextAreaElement>(null)
   useAutoGrow(field, draft)
   useEffect(() => setDraft(card.title), [card.title, card.id])
+  // Once per time typing: Escape or Enter ends it before the field's blur would.
+  const over = useRef(false)
   useEffect(() => {
+    over.current = false
     if (typing) field.current?.select()
   }, [typing])
   if (!typing || !editor)
@@ -585,11 +596,22 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
         {card.title || PLACEHOLDER[card.type]}
       </span>
     )
-  const done = (keep: boolean) => {
+  const done = (keep: boolean, then?: 'shut' | 'next') => {
+    if (over.current) return
+    over.current = true
     const t = draft.trim()
-    if (keep && t !== card.title) void retitleCard(wid, card, t)
-    else setDraft(card.title)
     setTyping(false)
+    if (fresh) {
+      useCanvasView.setState({ fresh: null })
+      if (!keep || !t) {
+        useCanvasView.setState({ cardSelected: null })
+        return void discardCard(wid, card)
+      }
+    }
+    if (keep && t !== card.title) void retitleCard(wid, card, t, fresh)
+    else setDraft(card.title)
+    if (then === 'shut') useCanvasView.setState({ panelShut: card.id })
+    if (then === 'next' && card.type !== 'package') void makeNext(wid, card, cards)
   }
   return (
     <textarea
@@ -605,11 +627,19 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
       onBlur={() => done(true)}
       onKeyDown={(e) => {
         e.stopPropagation()
-        if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), done(true))
+        if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), done(true, fresh ? 'shut' : undefined))
+        if (e.key === 'Tab' && fresh && !e.shiftKey) (e.preventDefault(), draft.trim() && done(true, 'next'))
         if (e.key === 'Escape') done(false)
       }}
     />
   )
+}
+
+// The next card of its type, a grid step right of this one (or the first clear spot past it), its title ready.
+async function makeNext(wid: string, card: Card, cards: Card[]) {
+  const at: [number, number] = [card.x + CARD.w + GRID + CARD.w / 2, card.y + CARD.h / 2]
+  const id = await addCard(wid, card.pieceId, card.type as CardType, at, cards.filter((c) => c.pieceId === card.pieceId))
+  useCanvasView.setState({ cardSelected: id, cardEditing: id, fresh: id, cardMulti: [] })
 }
 
 export type P = { n: number; card: Card; cards: Card[]; editor: boolean }
@@ -835,7 +865,7 @@ export function CardPicker({
     if (!makeType || !q.trim()) return
     const id = await addCard(wid, card.pieceId, makeType, [card.x + CARD.w / 2, card.y + CARD.h * 2], cards)
     const made: Card = { id, type: makeType, pieceId: card.pieceId, title: q.trim(), x: 0, y: 0 }
-    await retitleCard(wid, made, q.trim())
+    await retitleCard(wid, made, q.trim(), true)
     onPick(made)
   }
   const rows = found.length + (makeType && q.trim() ? 1 : 0)

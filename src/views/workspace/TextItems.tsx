@@ -22,6 +22,7 @@ import { useAuth } from '../../data/auth'
 import { snap } from '../../data/grid'
 import {
   deleteLabel,
+  discardLabel,
   CANVAS,
   HEADING_PX,
   KICKER_MAX,
@@ -425,7 +426,8 @@ function Kicker({ kick, size, hidden }: { kick: { num: string; rest: string }; s
 
 // Typing a heading with its small line over it, or a section's name with its number before it (`row`); Tab moves
 // between the two. Enter or leaving both keeps them, Escape puts them back. A heading left empty goes away; a section
-// may have no name.
+// may have no name. One just made (`fresh`, D-250): Escape takes it away as if never made, and its first text is one
+// undo step with its making.
 function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickSize: number; row?: boolean }) {
   const { wid } = useWs()
   const [text, setText] = useState(l.text)
@@ -440,9 +442,11 @@ function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickS
   const finish = (keep: boolean) => {
     if (done.current) return
     done.current = true
+    const fresh = endFresh(l.id)
     useCanvasView.setState({ labelEditing: null })
     const heading = kindOf(l) === 'heading'
     const t = (keep ? text : l.text).trim()
+    if (fresh && (!keep || (!t && heading))) return discard(wid, l)
     if (!t && heading) return void deleteLabel(wid, l)
     if (!keep) return
     const kk = k.trim()
@@ -450,7 +454,7 @@ function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickS
     const patch: Partial<Label> = {}
     if (t !== l.text) patch.text = t
     if (nextKick !== l.kicker) patch.kicker = nextKick
-    if (Object.keys(patch).length) void updateLabel(wid, l, patch, 'text')
+    if (Object.keys(patch).length) void updateLabel(wid, l, patch, 'text', fresh)
   }
   const onKeyDown = (e: ReactKeyboardEvent) => {
     e.stopPropagation()
@@ -494,7 +498,7 @@ function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickS
 }
 
 // Typing into a paragraph or a sticky note: ⌘Enter or leaving keeps it, Escape puts it back. A paragraph left empty
-// goes away.
+// goes away; one just made (D-250), a sticky note too, and Escape takes it away as if never made.
 function Field({ l }: { l: Label }) {
   const { wid } = useWs()
   const [draft, setDraft] = useState(l.text)
@@ -515,10 +519,12 @@ function Field({ l }: { l: Label }) {
   const finish = (keep: boolean) => {
     if (done.current) return
     done.current = true
+    const fresh = endFresh(l.id)
     useCanvasView.setState({ labelEditing: null })
     const text = (keep ? draft : l.text).trim()
+    if (fresh && (!keep || !text)) return discard(wid, l)
     if (!text && kindOf(l) === 'paragraph') return void deleteLabel(wid, l)
-    if (text !== l.text) void updateLabel(wid, l, { text }, 'text')
+    if (text !== l.text) void updateLabel(wid, l, { text }, 'text', fresh)
   }
   return (
     <textarea
@@ -540,6 +546,18 @@ function Field({ l }: { l: Label }) {
       }}
     />
   )
+}
+
+// Whether this was just made (D-250); it isn't any more.
+function endFresh(id: string) {
+  const fresh = useCanvasView.getState().fresh === id
+  if (fresh) useCanvasView.setState({ fresh: null })
+  return fresh
+}
+
+function discard(wid: string, l: Pick<Label, 'id'>) {
+  useCanvasView.setState((s) => (s.labelSelected === l.id ? { labelSelected: null } : {}))
+  void discardLabel(wid, l)
 }
 
 // The fonts' own metrics, once they're in, for laying out the title.
@@ -617,7 +635,7 @@ function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, ma
         </div>
       </div>
       {typing ? (
-        <TitleFields wid={wid} name={workspace.name} description={description} />
+        <TitleFields wid={wid} id={l.id} name={workspace.name} description={description} />
       ) : (
         <>
           <h2 className={styles.titleName} style={{ fontSize: folded ? lay.fold : T.name, paddingLeft: folded ? foldIndent(lay.fold) : 0 }}>
@@ -648,7 +666,8 @@ function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, ma
   )
 }
 
-function TitleFields({ wid, name, description }: { wid: string; name: string; description: string }) {
+// Just made (D-250), Escape takes the block away again.
+function TitleFields({ wid, id, name, description }: { wid: string; id: string; name: string; description: string }) {
   const [n, setN] = useState(name)
   const [d, setD] = useState(description)
   const root = useRef<HTMLDivElement>(null)
@@ -673,12 +692,17 @@ function TitleFields({ wid, name, description }: { wid: string; name: string; de
       // Leaving both fields keeps them.
       onBlur={(e) => {
         if (root.current?.contains(e.relatedTarget as Node)) return
+        if (useCanvasView.getState().labelEditing !== id) return
+        endFresh(id)
         keep()
         useCanvasView.setState({ labelEditing: null })
       }}
       onKeyDown={(e) => {
         e.stopPropagation()
-        if (e.key === 'Escape') useCanvasView.setState({ labelEditing: null })
+        if (e.key === 'Escape') {
+          if (endFresh(id)) discard(wid, { id })
+          useCanvasView.setState({ labelEditing: null })
+        }
         if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') (e.target as HTMLElement).blur()
       }}
     >

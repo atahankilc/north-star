@@ -3,7 +3,7 @@
 // its title as `name`.
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from './firebase'
-import { absent, snapshotWith, tracked } from './history'
+import { absent, discardNew, snapshotWith, tracked } from './history'
 import { GRID, snap } from './grid'
 import { edgeRef, edgesOn, type Edge } from './edges'
 
@@ -81,7 +81,8 @@ export async function addCard(wid: string, pieceId: string, type: CardType, at: 
   const spot = { x: snap(at[0] - CARD.w / 2), y: snap(at[1] - CARD.h / 2) }
   for (let hit = others.find((o) => overlaps(spot, o)); hit; hit = others.find((o) => overlaps(spot, o))) spot.x = hit.x + CARD.w + GRID
   const now = Date.now()
-  await tracked(`add ${one(type)}`, [r], () => setDoc(r, { [titleField(type)]: '', pieceId, ...spot, createdAt: now, updatedAt: now }), { before: absent([r]) })
+  // Keyed as its title is, so the title typed next (`fresh`) joins this step.
+  await tracked(`add ${one(type)}`, [r], () => setDoc(r, { [titleField(type)]: '', pieceId, ...spot, createdAt: now, updatedAt: now }), { before: absent([r]), key: `card-title:${r.id}` })
   return r.id
 }
 
@@ -105,12 +106,17 @@ export async function moveCards(wid: string, moves: { card: Card; to: [number, n
 }
 
 // Typing merges into one undo step.
-export function retitleCard(wid: string, card: Card, title: string) {
+// `fresh`: the first title of a card just made, one undo step with its making however long it took to type.
+export function retitleCard(wid: string, card: Card, title: string, fresh = false) {
   const r = ref(wid, card.type, card.id)
   return tracked(`rename ${one(card.type)}`, [r], () => updateDoc(r, { [titleField(card.type)]: title.slice(0, TITLE_MAX), updatedAt: Date.now() }), {
     key: `card-title:${card.id}`,
+    mergeAlways: fresh,
   })
 }
+
+// A card just made, let go before it had a title: gone, with its step (D-250).
+export const discardCard = (wid: string, card: Pick<Card, 'id' | 'type'>) => discardNew(ref(wid, card.type, card.id), `card-title:${card.id}`)
 
 // Fields from its panel (D-219): `undefined` clears one. `notes` is stored as a competitor's `notes`, any other card's
 // `body`. Typing in one field merges into one undo step.

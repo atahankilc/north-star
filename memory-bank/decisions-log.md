@@ -4262,3 +4262,26 @@ bir şey bırakma geride". Instead of the agreed v1 step (bringing the old board
   seeded past the rules still read and delete). Export/import round trip in headless Chrome: same counts in all 14 lists,
   references the same; an old report seeded past the rules moved into documents by `moveReports`; a version 1 file refused.
   `npm run build`.
+
+### D-250 · 2026-10-26 · Accepted (adds to D-046, D-187, D-188, D-212, D-218, D-221)
+**Something just made and named: Enter makes it, Escape takes it away as if never made.** User: "başlık ekledikten
+sonra enterla direkt oluşturabilme/esc özelliği. Bu bütün cardlar ve textle ilgili şeyler için geçerli olmalı".
+- *What:* a card or text made from `+`, right-click or a drawn section is `fresh` (canvasView) until its first typing
+  ends. A card: Enter keeps the title and shuts its panel, the card still selected (`panelShut`, cleared when the
+  selection changes or the card is clicked again); Tab keeps it and makes the next card of its type a grid step to its
+  right (or the first clear spot past it), its title ready; Escape, or Enter or leaving with nothing typed, removes it.
+  Text: a heading, section, paragraph, sticky note or the project title just made goes on Escape; a heading, paragraph
+  or sticky note also when left empty (a section may stay unnamed). Paragraphs and sticky notes keep ⌘Enter (the user:
+  Enter stays a new line). Things that already exist are as before: Enter (or leaving) keeps, Escape puts it back.
+- *Undo:* making and the first name are one step (`addCard`/`addLabel` keyed as the title/text is, the first save
+  `mergeAlways`); a removed fresh item takes its step with it (`discardNew` in history.ts), so nothing is left to undo.
+  A card made from a picker's "new …" row is one step too.
+- *Wizards* (matrix, table): Enter goes to the next step, on the last makes it; ⌘Enter makes it from any step; inside a
+  field Enter is the field's own.
+- *Already so, left alone:* matrix/table add fields and names, piece names, link labels, tags, regions, evidence,
+  competitor features, criteria, documents' titles (Enter keeps or adds, Escape puts back or closes).
+- *Not taken (offered):* Enter on a selected card or text starts typing it; an `enter make · esc cancel` hint.
+- *Verified* on the emulators in headless Chrome: idea + "Hello" + Enter (panel gone, card selected, a click on it opens
+  the panel again); + idea Escape and + idea Enter-empty leave nothing; "A" Tab "B" Enter makes two cards side by side;
+  heading and sticky note Escape leave nothing; paragraph ⌘Enter kept; heading "Head" Enter then one ⌘Z removes it,
+  as does one ⌘Z after a card made and named; the matrix wizard steps on with Enter and the last Enter makes it. `tsc`.
