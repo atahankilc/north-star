@@ -854,8 +854,8 @@ export function CanvasView() {
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
           {/* A card picked from a matrix's or a table's head, in its focus or beside the plane: its panel. */}
           {focusArrived && !focusLeaving && <LensCardPanel space={focused.id} editor={editor} />}
-          {/* A kanban's task picked (D-251): its panel. */}
-          {focusedKanban && focusArrived && !focusLeaving && <TaskPanel editor={editor} />}
+          {/* A kanban's task picked (D-251), or a task from a card's panel (D-254): its panel. */}
+          {focusArrived && !focusLeaving && <TaskPanel editor={editor} />}
           {focusedDocuments && focusArrived && !focusLeaving && <DocReaders list={focused} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {/* With the list put away its dock goes too; unfocus is in the bar top-left (DocReaders). */}
@@ -905,7 +905,7 @@ export function CanvasView() {
       {!focused && editor && canvasSetup && <CanvasSetup piece={canvasSetup} />}
       {/* And from one open on the canvas (D-228). */}
       {!focused && <LensCardPanel space={null} editor={editor} />}
-      {/* And a task picked on a kanban open on the canvas (D-251). */}
+      {/* And a task picked on a kanban open on the canvas (D-251), or from a card's panel there (D-254). */}
       {!focused && <TaskPanel editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />
       {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}

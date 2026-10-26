@@ -332,6 +332,9 @@ old reports are moved to documents once (D-248).
   renamed by double-click, `‹ › ✓ ×` on hover, `+ column`, one finished), tasks in `tasks` (title, given to, due, the card
   it's for, checklist, notes); in focus or unframed: drag between columns (after 5 px, a cyan slot), `+ task` types them
   (Enter keeps typing), a click opens its right panel; Delete, Escape. Overdue = magenta.
+- Tasks and cards (D-254): a card's panel lists its tasks (`[x]`, title, due, `kanban · column`; a row opens the task's
+  panel in its place), `+ task` into a kanban's first column; the card's facts line ends `☐ 2/5`; a customer, problem or
+  idea still being tested offers `+ test it`; finished, its task asks `+ log what it taught` → evidence on the card.
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

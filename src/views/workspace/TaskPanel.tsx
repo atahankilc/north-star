@@ -1,16 +1,19 @@
 // A kanban task's right panel (D-251), in the shell every right panel shares (D-219): its title, then the column it's
 // in, who it's given to, when it's due, the card it's for, its checklist and notes. Everything is edited in place and
-// undoable; viewers only read. The card it's for opens that card's own panel (LensCardPanel), in place of this one.
+// undoable; viewers only read. The card it's for opens that card's own panel (LensCardPanel), in place of this one; a
+// card's panel opens tasks here the same way (D-254), so it's mounted wherever a card's panel can be: a piece's focus and
+// the canvas. Escape closes it. Finished, a task for a card still being tested offers to log what it taught there (D-254).
 import { AnimatePresence } from 'motion/react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Card } from '../../data/cards'
-import { CHECK_MAX, deleteTask, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, updateTask, type Check, type Task } from '../../data/tasks'
+import { CHECK_MAX, deleteTask, logLearned, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, today, untested, updateTask, type Check, type Task } from '../../data/tasks'
+import type { Evidence } from '../../data/evidence'
 import { useMembers } from '../../data/workspaces'
 import { useCanvasView } from '../../state/canvasView'
 import { useAutoGrow } from '../../ui/autoGrow'
 import { PanelAction, PanelSection, SidePanel } from '../../ui/SidePanel'
 import { Select } from '../../ui/Select'
-import { CardPicker, Pills, PLACEHOLDER, useCommit } from './CardPanel'
+import { CardPicker, EvidenceForm, Pills, PLACEHOLDER, useCommit } from './CardPanel'
 import { useWs } from './context'
 import { dueText, kanbanOf, selectTask, useKanbanUi } from './Kanban'
 import { TYPE_ACCENT } from './PlaneCards'
@@ -25,6 +28,29 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   const task = sel ? tasks.find((t) => t.id === sel.task) : undefined
   const piece = task ? pieces.find((p) => p.id === task.pieceId) : undefined
   const close = () => selectTask('', null)
+  // Beside a plane, over the plane's part of the screen (as a card's, D-211).
+  const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
+  // A card picked closes it (its panel takes the place); so does this panel going (leaving a focus).
+  const card = useCanvasView((s) => s.cardSelected)
+  const was = useRef(card)
+  useEffect(() => {
+    if (card && card !== was.current) close()
+    was.current = card
+  }, [card])
+  useEffect(() => close, [])
+  // Escape closes it, unless typing somewhere or a menu or thread hears it first.
+  const open = !!task
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (e.key !== 'Escape' || t?.closest('input, textarea, [contenteditable], [role=menu], [role=dialog], [role=listbox]')) return
+      e.stopImmediatePropagation()
+      close()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [open])
   return (
     <AnimatePresence>
       {task && piece && (
@@ -35,6 +61,7 @@ export function TaskPanel({ editor }: { editor: boolean }) {
           tone={TONE}
           label={`task ${task.title}`}
           title={<Title key={task.id} task={task} editor={editor} />}
+          right={right}
           onClose={close}
           actions={
             editor && (
@@ -89,8 +116,11 @@ function Title({ task, editor }: { task: Task; editor: boolean }) {
 type InsideProps = { task: Task; cols: { id: string; name: string; done?: boolean }[]; editor: boolean }
 
 function Inside({ task, cols, editor }: InsideProps) {
-  const { wid, tasks } = useWs()
+  const { wid, tasks, cards } = useWs()
   const col = cols.find((c) => c.id === task.col)
+  // `learned` is a section only when there's something in it, the ones after it numbered on.
+  const learns = (task.learned && task.learned !== 'skip') || (editor && learnable(task, cards.find((c) => c.id === task.cardId), !!col?.done))
+  const after = learns ? 6 : 5
   const names = cols.map((c) => c.name)
   return (
     <>
@@ -112,8 +142,9 @@ function Inside({ task, cols, editor }: InsideProps) {
       <Assignee task={task} editor={editor} />
       <Due task={task} finished={!!col?.done} editor={editor} />
       <ForCard task={task} editor={editor} />
-      <Checklist task={task} editor={editor} />
-      <Notes task={task} editor={editor} />
+      <Learned task={task} finished={!!col?.done} editor={editor} />
+      <Checklist task={task} editor={editor} n={after} />
+      <Notes task={task} editor={editor} n={after + 1} />
     </>
   )
 }
@@ -167,6 +198,58 @@ function Due({ task, finished, editor }: { task: Task; finished: boolean; editor
         )}
       </div>
       {late && <p className={styles.warn}>past its day: was due {dueText(task.due!)}</p>}
+    </PanelSection>
+  )
+}
+
+// What a finished task taught (D-254): for a customer, problem or idea still being tested, `+ log it on the card` opens
+// the card's evidence form (D-137) filled with the task's title and notes, today, an observation; adding it puts the
+// evidence on the card and marks the task (one undo step); `not now` stops asking. Logged, the evidence's line, and its
+// card's panel a click away. Only once it's in a finished column, and only while there's something to say.
+export function learnable(task: Task, card: Card | undefined, finished: boolean) {
+  return finished && !task.learned && untested(card)
+}
+
+function Learned({ task, finished, editor }: { task: Task; finished: boolean; editor: boolean }) {
+  const { wid, cards, evidence } = useWs()
+  const card = task.cardId ? cards.find((c) => c.id === task.cardId) : undefined
+  const asked = useKanbanUi((s) => s.learning === task.id)
+  const [open, setOpen] = useState(asked)
+  useEffect(() => {
+    if (!asked) return
+    setOpen(true)
+    useKanbanUi.setState({ learning: null })
+  }, [asked])
+  const logged = task.learned && task.learned !== 'skip' ? evidence.find((e) => e.id === task.learned) : undefined
+  if (logged)
+    return (
+      <PanelSection n={5} name="learned" count={logged.stance === 'supports' ? 'supports it' : 'against it'}>
+        <p className={own.learned}>
+          <span className={own.cell} data-filled={logged.stance === 'supports' || undefined} aria-hidden />
+          {logged.text}
+        </p>
+      </PanelSection>
+    )
+  if (!editor || !card || !learnable(task, card, finished)) return null
+  const start: Partial<Evidence> = { text: task.notes?.trim() ? `${task.title}: ${task.notes.trim()}` : task.title, kind: 'observation', date: today() }
+  return (
+    <PanelSection n={5} name="learned" add={open ? undefined : { label: 'log it on the card', onClick: () => setOpen(true) }}>
+      {open ? (
+        <EvidenceForm
+          start={start}
+          onDone={(fields) => {
+            setOpen(false)
+            if (fields) void logLearned(wid, task, { ...fields, nodeId: card.id, nodeType: card.type as Evidence['nodeType'] })
+          }}
+        />
+      ) : (
+        <p className={own.offer}>
+          Finished. What did it teach about “{card.title || PLACEHOLDER[card.type]}”?{' '}
+          <button className={styles.pill} onClick={() => void updateTask(wid, task, { learned: 'skip' }, 'not log a task')}>
+            not now
+          </button>
+        </p>
+      )}
     </PanelSection>
   )
 }
@@ -225,7 +308,7 @@ function ForCard({ task, editor }: { task: Task; editor: boolean }) {
 
 // Its checklist: `[x]` rows, a click on the box ticks it, on the text types over it; `×` takes one away; `+ step` types
 // new ones (Enter adds and keeps typing).
-function Checklist({ task, editor }: { task: Task; editor: boolean }) {
+function Checklist({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid } = useWs()
   const checks = task.checks ?? []
   const [adding, setAdding] = useState(false)
@@ -234,7 +317,7 @@ function Checklist({ task, editor }: { task: Task; editor: boolean }) {
   const set = (next: Check[], key?: string) => void setChecks(wid, task, next, key)
   const ticked = checks.filter((c) => c.done).length
   return (
-    <PanelSection n={5} name="checklist" count={checks.length ? `${ticked}/${checks.length}` : undefined} add={editor ? { label: 'step', onClick: () => setAdding(true) } : undefined} empty={!checks.length && !adding}>
+    <PanelSection n={n} name="checklist" count={checks.length ? `${ticked}/${checks.length}` : undefined} add={editor ? { label: 'step', onClick: () => setAdding(true) } : undefined} empty={!checks.length && !adding}>
       <ul className={own.checks}>
         {checks.map((c) => (
           <li key={c.id} className={own.check} data-done={c.done || undefined}>
@@ -318,13 +401,13 @@ function CheckField({ value, onDone }: { value: string; onDone: (text: string | 
 }
 
 // Notes: Geist, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
-function Notes({ task, editor }: { task: Task; editor: boolean }) {
+function Notes({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid } = useWs()
   const field = useRef<HTMLTextAreaElement>(null)
   const { draft, setDraft, commit } = useCommit(task.notes ?? '', (v) => void updateTask(wid, task, { notes: v.trim() ? v : undefined }, 'edit a task’s notes'))
   useAutoGrow(field, draft)
   return (
-    <PanelSection n={6} name="notes">
+    <PanelSection n={n} name="notes">
       <textarea
         ref={field}
         className={styles.notes}

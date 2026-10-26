@@ -39,6 +39,7 @@ import { clipboard, onPlane, packageThese, setSelection } from './selection'
 import { GRID, snap } from '../../data/grid'
 import { useWs } from './context'
 import { linkTone } from './PlaneLinks'
+import { TasksSection } from './CardTasks'
 import { openThread, startComment, threadOn } from './Threads'
 import styles from './CardPanel.module.css'
 
@@ -458,6 +459,7 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
   const rest = take(() => true)
   sections.push(
     <LinkSection key="links" n={next()} name={card.type === 'customer' ? 'links' : 'other links'} {...p} links={rest} add={{ label: 'link', types: null, kind: null, from: 'me' }} />,
+    <TasksSection key="tasks" n={next()} card={card} editor={editor} />,
     <TagsSection key="tags" n={next()} {...p} />,
     <NotesSection key="notes" n={next()} {...p} />,
   )
@@ -744,9 +746,9 @@ function EvidenceRow({ e, editor }: { e: Evidence; editor: boolean }) {
   )
 }
 
-type EvidenceFields = { text: string; stance: Stance; kind: EvidenceKind; source?: string; date?: string; url?: string }
+export type EvidenceFields = { text: string; stance: Stance; kind: EvidenceKind; source?: string; date?: string; url?: string }
 
-function EvidenceForm({ start, onDone }: { start?: Evidence; onDone: (fields: EvidenceFields | null) => void }) {
+export function EvidenceForm({ start, onDone }: { start?: Partial<Evidence>; onDone: (fields: EvidenceFields | null) => void }) {
   const [f, setF] = useState<EvidenceFields>({ text: start?.text ?? '', stance: start?.stance ?? 'supports', kind: start?.kind ?? 'interview', source: start?.source, date: start?.date, url: start?.url })
   const text = useRef<HTMLTextAreaElement>(null)
   useAutoGrow(text, f.text)
@@ -768,12 +770,12 @@ function EvidenceForm({ start, onDone }: { start?: Evidence; onDone: (fields: Ev
       <input className={styles.input} placeholder="link (optional)" value={f.url ?? ''} maxLength={2000} onChange={(e) => setF({ ...f, url: e.target.value })} onKeyDown={keys} />
       <div className={styles.formActions}>
         <button className={styles.small} data-tone="primary" onClick={save}>
-          {start ? 'save' : 'add'}
+          {start?.id ? 'save' : 'add'}
         </button>
         <button className={styles.small} onClick={() => onDone(null)}>
           cancel
         </button>
-        <span className={styles.hint}>enter {start ? 'saves' : 'adds'} · esc</span>
+        <span className={styles.hint}>enter {start?.id ? 'saves' : 'adds'} · esc</span>
       </div>
     </div>
   )

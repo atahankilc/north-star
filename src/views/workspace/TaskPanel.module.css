@@ -119,3 +119,29 @@
 .check:focus-within > button:last-child {
   display: inline;
 }
+
+/* What a finished task taught (D-254). */
+.offer {
+  margin: 0;
+  color: var(--fg-dim);
+}
+
+.learned {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--fg);
+}
+
+/* The evidence's cell: filled = supports, outlined = against (the card panel's). */
+.cell {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--fg);
+}
+
+.cell[data-filled='true'] {
+  background: var(--fg);
+}

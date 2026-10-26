@@ -17,8 +17,10 @@ import { addTask, COL_NAME_MAX, deleteColumn, deleteTask, emptyKanban, KANBAN_CO
 import { newId } from '../../data/matrix'
 import { useAuth } from '../../data/auth'
 import type { Bounds, PlaneCam } from '../../state/canvasView'
+import type { Card } from '../../data/cards'
 import { useWs } from './context'
 import { TYPE_ACCENT } from './PlaneCards'
+import { learnable } from './TaskPanel'
 import styles from './Kanban.module.css'
 
 // Its parts in its own px: a column's width and the gap between, its head, the gap under a task, the `+ column` head's
@@ -46,11 +48,12 @@ export function kanbanBounds(piece: WithId<Piece>, tasks: Task[]): Bounds {
 }
 
 // The task whose panel is open (its kanban's id with it), the column `+ add a task` is typing into, the column being
-// renamed. Yours, not shared.
-export const useKanbanUi = create<{ selected: { piece: string; task: string } | null; adding: string | null; naming: string | null }>(() => ({
+// renamed, the task whose panel should open on its evidence form (D-254). Yours, not shared.
+export const useKanbanUi = create<{ selected: { piece: string; task: string } | null; adding: string | null; naming: string | null; learning: string | null }>(() => ({
   selected: null,
   adding: null,
   naming: null,
+  learning: null,
 }))
 export const selectTask = (piece: string, task: string | null) => useKanbanUi.setState({ selected: task ? { piece, task } : null })
 
@@ -272,6 +275,7 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false }: Prop
                         finished={!!c.done}
                         selected={selected === t.id}
                         live={live}
+                        learn={live && editor && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) : undefined}
                         onPointerDown={press(t)}
                         onClick={live && !editor ? () => selectTask(piece.id, selected === t.id ? null : t.id) : undefined}
                       />
@@ -391,11 +395,13 @@ function ColumnHead({ col, n, count, live, editor, naming, first, last, alone, o
 
 type CardProps = {
   task: Task
-  card: { title: string } | null
+  card: Card | null
   finished: boolean
   selected: boolean
   live: boolean
   lifted?: boolean
+  // Finished, for a card still being tested (D-254): its line asking what it taught.
+  learn?: () => void
   onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
   onClick?: () => void
 }
@@ -404,7 +410,7 @@ type CardProps = {
 // Under the title, only when there's something: the card's name, then on the right its due day (magenta once past,
 // unless finished), its checklist as cells, who it's given to (a square with their initials). Finished: a green `✓`
 // before the title, the title grey. Hover and selection are a card's corner marks (D-150).
-function TaskCard({ task, card, finished, selected, live, lifted, onPointerDown, onClick }: CardProps) {
+function TaskCard({ task, card, finished, selected, live, lifted, learn, onPointerDown, onClick }: CardProps) {
   const checks = task.checks ?? []
   const ticked = checks.filter((c) => c.done).length
   const late = overdue(task, finished)
@@ -452,6 +458,16 @@ function TaskCard({ task, card, finished, selected, live, lifted, onPointerDown,
             </span>
           )}
         </span>
+      )}
+      {learn && (
+        <button
+          className={styles.learn}
+          title="log what it taught on its card, as evidence"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => (e.stopPropagation(), learn())}
+        >
+          + log what it taught
+        </button>
       )}
       {(['nw', 'ne', 'se', 'sw'] as const).map((c) => (
         <span key={c} className={styles.mark} data-corner={c} aria-hidden />

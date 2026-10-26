@@ -205,6 +205,23 @@
   white-space: nowrap;
 }
 
+/* Finished, for a card still being tested (D-254): a cyan line asking what it taught. */
+.learn {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.learn:hover,
+.learn:focus-visible {
+  color: var(--fg-strong);
+}
+
 .for {
   min-width: 0;
   overflow: hidden;

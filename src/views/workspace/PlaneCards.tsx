@@ -36,7 +36,7 @@ import type { PlaneCam } from '../../state/canvasView'
 import { useCanvasView } from '../../state/canvasView'
 import { useWs } from './context'
 import { useStill } from './still'
-import { factsOf, type Facts, type Proof } from './cardFacts'
+import { factsOf, useTaskTally, type Facts, type Proof } from './cardFacts'
 import { createEdge, defaultKind } from '../../data/edges'
 import { drawLinks, ghostOf, LinkChips, LinkLines } from './PlaneLinks'
 import styles from './PlaneCards.module.css'
@@ -87,7 +87,8 @@ type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; ed
 // A plane's contents: its sections under its cards, its text over them (D-188).
 export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   const { wid, evidence, competitorFeatures, comparisons, edges } = useWs()
-  const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }), [cards, evidence, competitorFeatures, edges])
+  const tally = useTaskTally()
+  const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }, tally), [cards, evidence, competitorFeatures, edges, tally])
   // Links follow cards being dragged, and carried by a section.
   const cardsLive = useCanvasView((s) => (live ? s.cardsLive : NO_LIVE))
   const shift = useCanvasView((s) => (live ? s.dragShift : null))
@@ -750,6 +751,11 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
       )}
       <span className={styles.foot}>
         {facts?.meta && <span className={styles.facts}>{facts.meta}</span>}
+        {facts?.tasks && (
+          <span className={styles.tasks} data-all={facts.tasks.done === facts.tasks.all || undefined} title={`${facts.tasks.done} of ${facts.tasks.all} tasks finished`}>
+            {facts.tasks.done === facts.tasks.all ? '☑' : '☐'} {facts.tasks.done}/{facts.tasks.all}
+          </span>
+        )}
         {parts > 0 && (
           <button
             className={styles.fold}

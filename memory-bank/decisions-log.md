@@ -4404,3 +4404,32 @@ after reading docs/specs/kanban.md, a plan beside it; "ikisinde de önerin olsun
 - *Alternatives:* a separate generic grid piece (a second "things in boxes" piece beside the kanban); a priorities-only
   piece (fixed, quicker, nothing else); a board that only shows (values set in panels).
 - *Not built yet:* plan only.
+
+### D-254 · 2026-10-27 · Accepted (adds to D-137, D-221, D-251; kanban session 2, docs/specs/kanban.md)
+**Tasks and cards, both ways: a card's panel lists its tasks and makes them; the card counts them; a finished test asks
+what it taught and logs it as evidence.**
+User: picked ideas 1 and 2 of the kanban list (2026-10-26); this is session 2 of docs/specs/kanban.md.
+- *A card's panel* gets `tasks` (before tags, every type): its tasks on every kanban, unfinished first, `[ ]`/`[x]`
+  (finished = in the finished column), title, due day (magenta past it), `kanban · column` (the kanban's name only when
+  there are several). `+ task` types into a kanban's first column, at its end, for this card (Enter makes one and keeps
+  typing, Escape stops); with several kanbans, pills above the field pick which (the last one used is kept per tab).
+  No kanban: a faint line says to put one on the canvas.
+- *A row opens the task's panel in place of the card's* (the card's selection goes); the task's `for` row brings the
+  card's back. So TaskPanel is mounted in every piece's focus (planes too) and on the canvas; a card picked closes it,
+  leaving a focus closes it, Escape closes it (unless typing).
+- *The card's facts line* ends with `☐ 2/5` (finished/all), its own span so the line's `…` never cuts it; green `☑`
+  when all are finished. Counts from `taskTally` (tasks + kanbans' finished columns), memoised on the counts only.
+- *Validation tasks:* a customer, problem or idea with no status, `hypothesis` or `testing` ("still being tested", also
+  unset: an unset status is a guess too) offers `+ test it`: "Test: <title>", made at once with one kanban, typed first
+  with several; hidden while an unfinished `Test:` task of it is open.
+- *What it taught:* a task for such a card, in a finished column and not asked yet, shows a cyan `+ log what it taught`
+  on its sheet and a `learned` section in its panel ("Finished. What did it teach about …?" `[not now]`). It opens the
+  card's evidence form (D-137) filled with "title: notes", today, `observation`, supports; adding writes the evidence and
+  the task's `learned` (the evidence's id) as one undo step (`logLearned`). `not now` sets `learned: 'skip'`. Logged, the
+  section shows the evidence with its cell. A status changed to validated/invalidated also ends the offer.
+- *Rules:* `learned` (text ≤ 128) on tasks; tests added.
+- *Alternatives:* opening the task panel by itself when a task lands in done (too pushy); going into the kanban's focus
+  from a card's row (loses the card's place); a toast after the drop (gone before it's read).
+- *Verified:* headless on the emulators: counts on cards, the section, `+ test it` with two kanbans, row → task panel →
+  `for` → card panel, the sheet's offer → form prefilled → evidence on the card + `learned`; drag into done shows the
+  offer; light theme; rules 384 pass; build.

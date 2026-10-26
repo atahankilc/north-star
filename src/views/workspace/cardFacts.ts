@@ -1,20 +1,24 @@
 // What a card says besides its title (D-152, D-205), as the old board's useBoardItems did: the head right of its type
 // (a status, a competitor's regions, a feature's priority), its evidence as cells, and the facts line. Counts that come
-// from links (D-207): how many solve a problem, compete, are tagged for a customer; a card's customers by name.
+// from links (D-207): how many solve a problem, compete, are tagged for a customer; a card's customers by name. Its
+// tasks on any kanban, finished and all (D-254), kept apart so the line's cut never hides them.
 import type { Card } from '../../data/cards'
 import type { WorkspaceData } from '../../data/workspaceData'
 import { FOR } from '../../data/edges'
+import { taskTally } from '../../data/tasks'
+import { useMemo } from 'react'
 import { packageTree } from './cardInside'
+import { useWs } from './context'
 
 export type Proof = { supports: number; contradicts: number; clash: boolean }
 // `clash`: the status and the evidence disagree (also with no evidence at all), the head in magenta.
-export type Facts = { head?: string; clash?: boolean; proof?: Proof; meta: string; sure?: string }
+export type Facts = { head?: string; clash?: boolean; proof?: Proof; meta: string; sure?: string; tasks?: { done: number; all: number } }
 
 // Where it operates: `US · Germany +1` (D-145).
 const regionText = (regions: string[] | undefined) =>
   regions?.length ? regions.slice(0, 2).join(' · ') + (regions.length > 2 ? ` +${regions.length - 2}` : '') : undefined
 
-export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'competitorFeatures' | 'edges'>): Map<string, Facts> {
+export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'competitorFeatures' | 'edges'>, tasks?: Map<string, { done: number; all: number }>): Map<string, Facts> {
   const { edges } = data
   const count = (id: string, kind: string, dir: 'from' | 'to') => edges.filter((e) => e.kind === kind && (dir === 'from' ? e.fromId : e.toId) === id).length
   const linkedTo = (id: string, other: string) =>
@@ -83,6 +87,8 @@ export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'c
         break
       }
     }
+    const t2 = tasks?.get(c.id)
+    if (t2) out.get(c.id)!.tasks = t2
   }
   return out
 }
@@ -97,4 +103,14 @@ export function confidenceOf(held: Card[]): 'high' | 'medium' | 'low' | 'broken'
   if (rated.some((k) => k.validation === 'invalidated')) return 'broken'
   const share = rated.filter((k) => k.validation === 'validated').length / rated.length
   return share >= 0.67 ? 'high' : share >= 0.34 ? 'medium' : 'low'
+}
+
+// Each card's tasks, finished and all (D-254); the same map while the counts stay (a task's notes typed don't redraw
+// every card).
+export function useTaskTally() {
+  const { tasks, pieces } = useWs()
+  const tally = useMemo(() => taskTally(tasks, pieces), [tasks, pieces])
+  const key = [...tally].map(([id, n]) => `${id}:${n.done}/${n.all}`).join(',')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => tally, [key])
 }

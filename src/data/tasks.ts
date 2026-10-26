@@ -3,12 +3,16 @@
 // in `tasks/{id}`, each in one column of one kanban (`pieceId`, `col`), in order (`order`, a number between its
 // neighbours'). A task may be given to a member (`assignee`, their name kept beside it so the card needs no lookup),
 // have a due day (`due`, `YYYY-MM-DD`), point at a card (`cardId`, `cardType`) and carry a checklist (`checks`).
+// A task for a customer, problem or idea that's finished may log what it taught on that card (D-254): `learned` is the
+// evidence it wrote, or `skip` once that was declined.
 // Shapes mirror firestore.rules' validKanban and validTask; change both together.
 import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
-import type { AnyType } from './cards'
+import type { AnyType, Card } from './cards'
+import type { Evidence } from './evidence'
 import { db } from './firebase'
 import { absent, tracked } from './history'
 import { newId } from './matrix'
+import type { Piece } from './model'
 import { pieceRef } from './pieces'
 
 export type KanbanCol = {
@@ -34,12 +38,14 @@ export type Task = {
   cardId?: string
   cardType?: AnyType
   checks?: Check[]
+  // The evidence it logged on its card once finished, or `skip` (D-254).
+  learned?: string
   // Who made it.
   uid: string
   createdAt: number
   updatedAt: number
 }
-export type TaskFields = Partial<Pick<Task, 'title' | 'notes' | 'assignee' | 'assigneeName' | 'due' | 'cardId' | 'cardType' | 'checks'>>
+export type TaskFields = Partial<Pick<Task, 'title' | 'notes' | 'assignee' | 'assigneeName' | 'due' | 'cardId' | 'cardType' | 'checks' | 'learned'>>
 
 // firestore.rules allows these.
 export const KANBAN_COLS_MAX = 12
@@ -78,11 +84,12 @@ export function today(now = new Date()) {
 // Past its due day and not finished.
 export const overdue = (t: Pick<Task, 'due'>, finished: boolean) => !!t.due && !finished && t.due < today()
 
-// A new task at the end of a column, its title typed: one undo step; returns its id.
-export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, uid: string) {
+// A new task at the end of a column, its title typed (and from a card's panel, the card it's for): one undo step;
+// returns its id.
+export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, uid: string, fields: Pick<TaskFields, 'cardId' | 'cardType'> = {}) {
   const ref = doc(col(wid))
   const now = Date.now()
-  const data = { pieceId, col: column, order, title: title.trim().slice(0, TASK_TITLE_MAX), uid, createdAt: now, updatedAt: now }
+  const data = { pieceId, col: column, order, title: title.trim().slice(0, TASK_TITLE_MAX), ...fields, uid, createdAt: now, updatedAt: now }
   void tracked('add a task', [ref], () => setDoc(ref, data), { before: absent([ref]) })
   return ref.id
 }
@@ -141,3 +148,43 @@ export function setChecks(wid: string, task: Pick<Task, 'id'>, checks: Check[], 
 }
 
 export const newCheck = (text: string): Check => ({ id: newId(), text: text.slice(0, CHECK_MAX) })
+
+// Whether a task is in its kanban's finished column.
+export function finished(t: Pick<Task, 'pieceId' | 'col'>, pieces: (Pick<Piece, 'kanban'> & { id: string })[]) {
+  const p = pieces.find((x) => x.id === t.pieceId)
+  return !!p?.kanban?.cols.find((c) => c.id === t.col)?.done
+}
+
+// Each card's tasks (D-254): how many, how many finished; the card's facts line says `☐ 2/5`.
+export function taskTally(tasks: Task[], pieces: (Pick<Piece, 'kanban'> & { id: string })[]) {
+  const done = new Set(pieces.flatMap((p) => (p.kanban?.cols ?? []).filter((c) => c.done).map((c) => `${p.id}|${c.id}`)))
+  const out = new Map<string, { done: number; all: number }>()
+  for (const t of tasks) {
+    if (!t.cardId) continue
+    const n = out.get(t.cardId) ?? { done: 0, all: 0 }
+    n.all++
+    if (done.has(`${t.pieceId}|${t.col}`)) n.done++
+    out.set(t.cardId, n)
+  }
+  return out
+}
+
+// A card still being tested (D-254): a customer, problem or idea with no status yet, `hypothesis` or `testing`. Its
+// panel offers `+ test it`; a finished task for it offers to log what it taught.
+export const untested = (c: Pick<Card, 'type' | 'validation'> | undefined) =>
+  !!c && (c.type === 'customer' || c.type === 'problem' || c.type === 'idea') && (!c.validation || c.validation === 'hypothesis' || c.validation === 'testing')
+
+// What a finished task taught, logged on its card as evidence (D-137), the task marking it done: one undo step.
+export function logLearned(wid: string, task: Pick<Task, 'id'>, fields: Omit<Evidence, 'id' | 'createdAt'>) {
+  const ev = doc(collection(db(), 'workspaces', wid, 'evidence'))
+  const ref = taskRef(wid, task.id)
+  const now = Date.now()
+  const data: Record<string, unknown> = { ...fields, createdAt: now, updatedAt: now }
+  for (const k of Object.keys(data)) if (data[k] === undefined || data[k] === '') delete data[k]
+  return tracked('log what a task taught', [ev, ref], async () => {
+    const batch = writeBatch(db())
+    batch.set(ev, data)
+    batch.update(ref, { learned: ev.id, updatedAt: now })
+    await batch.commit()
+  })
+}

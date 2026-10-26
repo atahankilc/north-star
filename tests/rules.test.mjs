@@ -281,6 +281,8 @@ await deny('a task without an order', () => addDoc(sub(bob.fs, 'tasks'), { ...ta
 await deny('a task due on a day not written as a day', () => addDoc(sub(bob.fs, 'tasks'), { ...task, due: 'next week' }))
 await deny('a task for an unknown kind of card', () => addDoc(sub(bob.fs, 'tasks'), { ...task, cardId: 'x', cardType: 'video' }))
 await deny('a task with a field nobody knows', () => addDoc(sub(bob.fs, 'tasks'), { ...task, points: 3 }))
+await allow('a finished task with what it taught logged (D-254)', () => addDoc(sub(bob.fs, 'tasks'), { ...task, cardId: 'p1', cardType: 'problem', learned: 'ev1' }))
+await deny('a task whose learned is not text', () => addDoc(sub(bob.fs, 'tasks'), { ...task, learned: true }))
 await deny('a task with a checklist that is not a list', () => addDoc(sub(bob.fs, 'tasks'), { ...task, checks: 'all of it' }))
 // Cards on a plane (D-187).
 await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))

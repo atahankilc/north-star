@@ -1,0 +1,85 @@
+/* A card's tasks in its right panel (D-254), with CardPanel.module.css's parts. */
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.box {
+  flex: none;
+  color: var(--fg-dim);
+  white-space: pre;
+}
+
+.row[data-done='true'] .box {
+  color: var(--accent-green);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row[data-done='true'] .title {
+  color: var(--fg-dim);
+}
+
+.row:hover .title,
+.row:focus-visible .title {
+  color: var(--fg-strong);
+}
+
+.due {
+  flex: none;
+  color: var(--fg-dim);
+  font-size: 10px;
+}
+
+.due[data-late='true'] {
+  color: var(--accent-magenta);
+}
+
+.where {
+  flex: none;
+  max-width: 14ch;
+  overflow: hidden;
+  color: var(--fg-faint);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-1) 0;
+}
+
+.field {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.prompt {
+  flex: none;
+  color: var(--accent-cyan);
+}
+
+.none {
+  margin: 0;
+  color: var(--fg-faint);
+}

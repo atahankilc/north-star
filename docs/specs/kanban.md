@@ -43,7 +43,7 @@ everywhere, small heads. It doesn't look like the rest of North Star.
 
 **Done when:** the user likes it.
 
-## Session 2: tasks and cards, both ways (ideas 1, 2)
+## Session 2: tasks and cards, both ways (ideas 1, 2) · **done (D-254, 2026-10-27)**
 
 - A card's right panel gets a `tasks` section: the tasks for this card (which kanban, which column, done or not), `+ task`
   (pick the kanban, it goes in its first column), a row opens the task's panel.
@@ -52,6 +52,10 @@ everywhere, small heads. It doesn't look like the rest of North Star.
   (a task named "Test: <title>"). When a task for such a card goes into the finished column, offer to log evidence on
   the card (the D-137 form, prefilled with the task's title and notes).
 - Deleting a card leaves its tasks; they say "its card is gone" (v1 already does).
+
+Built (D-254): "still being tested" counts an unset status too; the offer is a cyan `+ log what it taught` on the
+finished sheet and a `learned` section in its panel (`[not now]` stops it; tasks keep `learned`); the task panel now
+opens in a plane's focus too.
 
 ## Session 3: a kanban stuck to a plane (idea 4)
 
