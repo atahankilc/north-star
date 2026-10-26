@@ -101,3 +101,5 @@ everywhere, small heads. It doesn't look like the rest of North Star.
 
 - Open on the canvas (unframed), a kanban's size is its window's, not measured from what it holds.
 - The assistant's brief doesn't list tasks (not picked: idea 3).
+- Priorities will be this kanban holding cards, columns and rows from their fields ([priorities.md](priorities.md)).
+  Session 5's swimlanes: build them as "rows by a field" so cards can use them too.

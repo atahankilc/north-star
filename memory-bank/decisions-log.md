@@ -4383,3 +4383,24 @@ shown on a local page with the same tasks (A ledger, B section frames, C termina
   people; dragged a task to another column and to the top of the finished one (line, lit rule, `✓` after); typed a task
   with Enter; selected one (panel); canvas window with room round it; light theme. `npm run build`.
 
+### D-253 · 2026-10-27 · Accepted (plans D-138's priorities onto D-251's kanban; spec docs/specs/priorities.md)
+**Priorities come back as the kanban holding cards, its columns and rows from two of their fields; no grid piece.**
+User: asked for priorities next; on a local preview of a generic grid vs a priorities-only piece, "grid ile matrix
+arasındaki fark ne?", then "grid i kanban componenti ile entegre edebilir miyiz? … aynı şeyin üstüne kurulabilir mi?";
+after reading docs/specs/kanban.md, a plan beside it; "ikisinde de önerin olsun".
+- *Why one piece:* a kanban and an impact × effort grid are both things in boxes, the box a thing's value, dragging it
+  changing that value; a kanban is one axis, priorities two. A matrix differs: cards on its edges, the pair's value in a
+  cell (D-204).
+- *Plan* (sessions P1–P3 in priorities.md, after kanban session 1): a kanban holds tasks or cards, never both; for cards
+  its columns (and later rows) come from a field (status, impact, effort, priority; never type) and which cards from the
+  table's rules (D-209); a `no value` lane; no hand order for cards; task-only things (given to, due, checklist, WIP,
+  timeline) stay task-only. Kanban session 5's swimlanes are built as "rows by a field" for both. P3: the priorities
+  template (features + packages, effort × impact, corners named) and the suggested order (D-138's score, `P2 → P1`,
+  never written to the card).
+- *Dragging sets the field* (recommended, taken): dropping on a box sets the card's values, one undo step.
+- *One confidence rule* (recommended, taken): D-138's share for features and packages (validated 2, testing 1, else 0;
+  ≥ 0.75 high, ≥ 0.34 medium; any invalidated `!`, score 0), replacing the feature panel's weakest-link (D-221's
+  `RestsOn`) and the package's own share (D-239's `confidenceOf`) when P3 is built.
+- *Alternatives:* a separate generic grid piece (a second "things in boxes" piece beside the kanban); a priorities-only
+  piece (fixed, quicker, nothing else); a board that only shows (values set in panels).
+- *Not built yet:* plan only.

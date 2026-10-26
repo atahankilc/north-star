@@ -301,6 +301,8 @@ old reports are moved to documents once (D-248).
 - Flow (columns in chain order, one row per problem), Table (sortable, inline edits), Matrix (features × competitors,
   coverage 1–4, verdict), Reports; all share the filter bar and side panel (D-040, D-045).
 - Frames as tall as their content, capped at the page (D-106).
+- Priorities come back as a kanban holding cards, columns and rows from two fields (impact × effort a template), dragging
+  setting the field, the suggested order beside; one confidence rule, D-138's share (D-253, plan: specs/priorities.md).
 - Priorities tab (after matrix): features on impact × effort (3 × 3, corners named), confidence from the status of what
   each rests on (its chain; `!`/0 when something it rests on is invalidated), suggested order impact × confidence ÷
   effort beside the priority set; impact set in the feature's panel; `/prioritize` (D-138).
