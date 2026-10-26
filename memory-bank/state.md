@@ -16,8 +16,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   (latest: Firestore rules 2026-10-20 for D-155–D-159; RTDB 2026-10-18 for D-124's `more`; rules 253 tests incl. sections and text setting (D-130); reports readable while not saved yet, so a save shows at once; research written twice keeps only the newest).
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger), Storage (documents'
   files, D-232; `storage.rules` allow nothing yet).
-- **D-248's rules are not deployed:** `main` (live) is still 1.0 on the same Firebase project and would break. Deploy
-  `npm run deploy:rules` together with merging 1.5, with the user's yes.
+- **All rules deployed 2026-10-26 (D-248–D-251)**, the user's call: live 1.0 can't write its old shapes. Until Blaze,
+  deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
 - Tried with a real key: chat, proposals, [web], agent loop, deep research, reports. Only with a fake OpenAI: `/analyze` (D-099),
   `edit_link` / `add_note` (D-108). Not tried in the app at all: `update_project` (D-120), D-122's edits, D-123's text and moves, D-125/D-126/D-129's layouts, D-131's frames.
 
@@ -57,7 +57,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
 - Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
 - A card's head in a matrix or table opens its right panel on one click; a cell keeps it on its one card (D-247), 2026-10-22, committed.
-- Kanban (D-251): a canvas piece of tasks in columns (assignee, due, card, checklist), drag, panel. 2026-10-26, committed; rules not deployed.
+- Kanban (D-251): a canvas piece of tasks in columns (assignee, due, card, checklist), drag, panel. 2026-10-26, committed, rules deployed.
 - Criteria back on the matrix (D-249): an axis unfolds features into what they're judged on, scored in its cells, `◇ open`; panel `must do` → `judged on`. 2026-10-26, committed.
 - Enter makes / Escape cancels what's just made, cards and text; add + name one undo step; Tab next card; wizards' Enter (D-250). 2026-10-26, not committed.
 - Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), links shown and made from a dropdown (D-215), 2026-10-22, rules deployed. Follows adds, column widths (D-224). Open on the canvas (D-228), committed, rules deployed 2026-10-22. Canvas speed: pieces' contents memoised (pan no longer draws them again; keep their props stable), matrix cells memoised with hover in its own store; in focus a matrix's cells and heads and a table's rows are made only when they change, not per frame; only what's on screen is drawn (`visible.ts`), and a matrix too small to read is squares on one canvas (`CellDots`).
