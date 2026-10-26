@@ -1,0 +1,121 @@
+/* A kanban task's right panel (D-251), inside the shared shell (src/ui/SidePanel), with CardPanel.module.css's parts. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* A day picked with the browser's own calendar, in our field's look. */
+.date {
+  width: auto;
+  font-family: var(--font-mono);
+}
+
+:global([data-theme='light']) .date {
+  color-scheme: light;
+}
+
+/* The card it's for: its type in its colour, its title, `↗` to its panel. */
+.card {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardType {
+  flex: none;
+  color: var(--tone);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.cardTitle {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.go {
+  flex: none;
+  color: var(--fg-dim);
+  font-size: var(--text-md);
+}
+
+.card:hover .go,
+.card:focus-visible .go {
+  color: var(--accent-cyan);
+}
+
+.gone {
+  color: var(--fg-dim);
+}
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 var(--space-1);
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.box {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  white-space: pre;
+  cursor: pointer;
+}
+
+.box[aria-pressed='true'] {
+  color: var(--accent-green);
+}
+
+.box:disabled {
+  cursor: default;
+}
+
+.checkText {
+  flex: 1;
+  min-width: 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  cursor: text;
+}
+
+.check[data-done='true'] .checkText {
+  color: var(--fg-dim);
+  text-decoration: line-through;
+  text-decoration-color: var(--fg-faint);
+}
+
+/* Its `×` only on hover, as a tag chip's. */
+.check > button:last-child {
+  display: none;
+}
+
+.check:hover > button:last-child,
+.check:focus-within > button:last-child {
+  display: inline;
+}

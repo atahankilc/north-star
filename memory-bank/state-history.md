@@ -623,3 +623,6 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - (Moved from state.md) Card hover/selection as corner marks, dragged card shrinks to 0.8 with its corners on where it
   lands, 5 px drag threshold (D-150), 2026-10-19.
 - (Moved from state.md) Piece names readable at any zoom, edit as a cyan field with `>` and a count (D-223), 2026-10-22, committed.
+
+## Done (2026-10-22, moved from state.md 2026-10-26): finder (D-236)
+- Finder (D-236): ⌘F / compass, one finder in the middle with a real preview; replaces the find bar and go to's menu. 2026-10-22, committed.

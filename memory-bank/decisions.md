@@ -326,6 +326,10 @@ old reports are moved to documents once (D-248).
 - A card's head in a matrix (row or column) or a table (row name) opens its D-221 panel on one click, in the lens's focus,
   beside a plane or open on the canvas; the head stays lit. Open, it stays on a cell picked next whose row or column (only
   one) is a card, on that card; a cell crossing two cards or none, Escape, a press elsewhere close it (D-247).
+- Kanban (D-251): a canvas piece (`+ → kanban`), a window like a table's; columns on the piece (`todo · doing · done`,
+  renamed by double-click, `‹ › ✓ ×` on hover, `+ column`, one finished), tasks in `tasks` (title, given to, due, the card
+  it's for, checklist, notes); in focus or unframed: drag between columns (after 5 px, a cyan slot), `+ task` types them
+  (Enter keeps typing), a click opens its right panel; Delete, Escape. Overdue = magenta.
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.
@@ -427,7 +431,7 @@ old reports are moved to documents once (D-248).
 
 ## Export, import, attachments
 - Export `.zip` bundle (format `north-star.workspace` v2, Settings → workspace → export): every piece, card, link, text,
-  cell, evidence, competitor feature, match, package and the documents you can see with their content; never members,
+  cell, evidence, competitor feature, match, package, kanban task (D-251) and the documents you can see with their content; never members,
   codes, threads, AI. Import (workspaces page) makes a new workspace with new ids, every reference following, built from
   known fields (D-080, D-246); 1.0 files are refused (D-248). The old `.tsv` / `.png` went with 1.0.
 - Attachments (D-083) went with 1.0 (D-248); files come back as documents' files once Storage is live (D-232).

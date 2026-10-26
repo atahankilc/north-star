@@ -264,6 +264,24 @@ await allow('a table opened onto the canvas', () => setDoc(doc(sub(bob.fs, 'piec
 await deny('a plane opened onto the canvas', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, open: true }))
 await deny('a table opened with a string', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'table', table, open: 'yes' }))
 await allow('a table cell', () => setDoc(doc(sub(bob.fs, 'cells'), 't1_f1_c2'), { matrixId: 't1', row: 'f1', col: 'c2', value: 1200, updatedAt: 1 }))
+// A kanban (D-251): its columns on the piece, its tasks in `tasks`.
+const kanban = { cols: [{ id: 'k1', name: 'todo' }, { id: 'k2', name: 'doing' }, { id: 'k3', name: 'done', done: true }] }
+await allow('a kanban on the canvas (D-251)', () => setDoc(doc(sub(bob.fs, 'pieces'), 'kb1'), { ...piece, kind: 'kanban', kanban }))
+await allow('a kanban opened onto the canvas', () => setDoc(doc(sub(bob.fs, 'pieces'), 'kb2'), { ...piece, kind: 'kanban', kanban, open: true }))
+await deny('a plane with kanban columns', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kanban }))
+await deny('a kanban without columns', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { cols: [] } }))
+await deny('a kanban with something else in its setup', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, swimlanes: [] } }))
+await deny('a kanban stuck to a plane', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban, stuckTo: 'p1' }))
+const task = { pieceId: 'kb1', col: 'k1', order: 1, title: 'Call three bakeries', uid: bob.uid, createdAt: 1, updatedAt: 1 }
+await allow('a task', () => addDoc(sub(bob.fs, 'tasks'), task))
+await allow('a task given to someone, due, for a card, with a checklist', () =>
+  addDoc(sub(bob.fs, 'tasks'), { ...task, assignee: alice.uid, assigneeName: 'Alice', due: '2026-11-02', cardId: 'f1', cardType: 'feature', checks: [{ id: 'c1', text: 'list them' }, { id: 'c2', text: 'call', done: true }], notes: 'mornings' }))
+await deny('a task with a title too long', () => addDoc(sub(bob.fs, 'tasks'), { ...task, title: 'x'.repeat(201) }))
+await deny('a task without an order', () => addDoc(sub(bob.fs, 'tasks'), { ...task, order: 'first' }))
+await deny('a task due on a day not written as a day', () => addDoc(sub(bob.fs, 'tasks'), { ...task, due: 'next week' }))
+await deny('a task for an unknown kind of card', () => addDoc(sub(bob.fs, 'tasks'), { ...task, cardId: 'x', cardType: 'video' }))
+await deny('a task with a field nobody knows', () => addDoc(sub(bob.fs, 'tasks'), { ...task, points: 3 }))
+await deny('a task with a checklist that is not a list', () => addDoc(sub(bob.fs, 'tasks'), { ...task, checks: 'all of it' }))
 // Cards on a plane (D-187).
 await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a competitor on a plane', () => addDoc(sub(bob.fs, 'competitors'), { name: 'Crewly', pieceId: 'p1', x: 25, y: 50, createdAt: 1, updatedAt: 1 }))

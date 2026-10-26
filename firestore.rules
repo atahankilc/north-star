@@ -162,7 +162,7 @@ service cloud.firestore {
 
     // Something on the workspace's canvas (D-176): a plane (D-180), a matrix, a table, documents; a box in canvas pixels.
     function validPiece(d) {
-      return d.kind in ['plane', 'matrix', 'table', 'documents', 'document']
+      return d.kind in ['plane', 'matrix', 'table', 'documents', 'document', 'kanban']
         && d.x is number && d.y is number
         && d.w is number && d.w > 0 && d.w <= 100000
         && d.h is number && d.h > 0 && d.h <= 100000
@@ -175,10 +175,12 @@ service cloud.firestore {
         && (!('documents' in d) || (d.kind == 'documents' && validDocuments(d.documents)))
         && (d.kind != 'document' || isText(d.docId, 128))
         && (!('docId' in d) || d.kind == 'document')
+        // A kanban's columns (D-251), on kanbans only.
+        && (!('kanban' in d) || (d.kind == 'kanban' && validKanban(d.kanban)))
         // Stuck to a plane's edge (D-210): a matrix or a table.
         && (!('stuckTo' in d) || (d.kind in ['matrix', 'table'] && isText(d.stuckTo, 128)))
         // Opened onto the canvas (D-228): a matrix or a table; a documents list or a document (D-234).
-        && (!('open' in d) || (d.kind in ['matrix', 'table', 'documents', 'document'] && d.open is bool))
+        && (!('open' in d) || (d.kind in ['matrix', 'table', 'documents', 'document', 'kanban'] && d.open is bool))
         && d.createdAt is number
         && d.updatedAt is number;
     }
@@ -216,6 +218,31 @@ service cloud.firestore {
         && (!('kinds' in t) || (t.kinds is list && t.kinds.size() <= 4 && t.kinds.toSet().hasOnly(['markdown', 'image', 'pdf', 'report'].toSet())))
         && (!('sort' in t) || (t.sort is map && t.sort.col in ['kind', 'title', 'by', 'size', 'added'] && optBool(t.sort, 'desc')))
         && (!('pageSize' in t) || (t.pageSize is int && t.pageSize > 0 && t.pageSize <= 100));
+    }
+
+    // A kanban's columns (D-251, src/data/tasks.ts): one to twelve, each an id, a name and whether it's the finished one.
+    function validKanban(k) {
+      return k is map
+        && k.keys().hasOnly(['cols'])
+        && k.cols is list && k.cols.size() >= 1 && k.cols.size() <= 12;
+    }
+
+    // One of a kanban's tasks (D-251, src/data/tasks.ts): in a column of a kanban, in order; given to a member, due on a
+    // day, pointing at a card, with a checklist.
+    function validTask(d) {
+      return d.keys().hasOnly(['pieceId', 'col', 'order', 'title', 'notes', 'assignee', 'assigneeName', 'due', 'cardId', 'cardType', 'checks', 'uid', 'createdAt', 'updatedAt'])
+        && isText(d.pieceId, 128) && isText(d.col, 40)
+        && d.order is number
+        && isText(d.title, 200)
+        && optText(d, 'notes', 20000)
+        && optText(d, 'assignee', 128) && optText(d, 'assigneeName', 200)
+        && (!('due' in d) || (d.due is string && d.due.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')))
+        && optText(d, 'cardId', 128)
+        && optIn(d, 'cardType', ['customer', 'problem', 'competitor', 'idea', 'feature', 'package'])
+        && (!('checks' in d) || (d.checks is list && d.checks.size() <= 50))
+        && isText(d.uid, 128)
+        && d.createdAt is number
+        && d.updatedAt is number;
     }
 
     // Where a lens's rows come from (D-209, src/data/source.ts): rules, cards taken out, entries added by hand.
@@ -290,7 +317,8 @@ service cloud.firestore {
         || (collection == 'evidence' && validEvidence(d))
         || (collection == 'packages' && validPackage(d))
         || (collection == 'pieces' && validPiece(d))
-        || (collection == 'cells' && validCell(id, d));
+        || (collection == 'cells' && validCell(id, d))
+        || (collection == 'tasks' && validTask(d));
     }
 
     match /workspaces/{wid} {
@@ -588,7 +616,7 @@ service cloud.firestore {
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells', 'tasks'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();

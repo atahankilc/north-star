@@ -274,6 +274,8 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
                 { key: 'table', label: 'table…', glyph: PIECE_GLYPH.table, letter: 't', hint: 'rows by rules, any columns', onSelect: () => useTableUi.setState({ wizard: true }) },
                 // The documents list (D-232); a document on its own comes out of it (or a file dropped on the canvas).
                 { key: 'documents', label: 'documents', glyph: PIECE_GLYPH.documents, letter: 'd', hint: '.md, images, pdfs', onSelect: () => void add('documents') },
+                // A kanban (D-251): the team's tasks in columns.
+                { key: 'kanban', label: 'kanban', glyph: PIECE_GLYPH.kanban, letter: 'k', hint: 'tasks in columns', onSelect: () => void add('kanban') },
                 ...text,
               ]
         }

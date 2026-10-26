@@ -116,6 +116,9 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         the window's, D-228) (D-176, D-180, D-204, D-209)
                         matrix = {rows, cols, cell (scale|number|text), steps[{id, glyph, label, tone}], unit?, notRelevant?,
                         confidence?, reading?}; an axis = {type?, plane?, hide?[], items[{id, name? | cardType, cardId}], noun?}
+  tasks/{id}            pieceId (a kanban), col (its column's id), order (number; between its neighbours'), title (≤ 200),
+                        notes?, assignee? (uid) + assigneeName?, due? (YYYY-MM-DD), cardId? + cardType?, checks?[{id, text,
+                        done?}] (≤ 50), uid (who made it) (D-251); a kanban piece carries kanban = {cols[{id, name, done?}]} (1–12)
   cells/{id}            matrixId, row, col, value? (step id | number | text ≤ 200), notes?, notRelevant?, confidence?
                         (row/col `card~criterion` for what a feature unfolded into; axis `unfold`, `open[]`, D-249)
                         table = {rows: {rules[{field (plane|type|status|tag|title), not?, values[]}], hide?[], items[]},

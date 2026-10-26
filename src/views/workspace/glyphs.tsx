@@ -26,5 +26,7 @@ export const PIECE_GLYPH: Record<PieceKind, ReactNode> = {
   table: '☰',
   documents: <Page behind />,
   document: <Page />,
+  // A kanban (D-251): columns side by side.
+  kanban: '▥',
 }
 export const TEXT_GLYPH = { heading: 'T', paragraph: '¶', sticky: '▤', section: '⬚', title: '✦' } as const

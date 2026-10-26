@@ -126,6 +126,10 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 - **Attachments**: images, SVGs and PDFs on any card, up to 10 MB each, big photos shrunk before upload (D-083); drawings are uploaded as files, no built-in sketch pad
 - **Web only**
 
+- **Kanban** (D-251): a canvas piece holding the team's tasks in columns (`todo · doing · done` to start, renamed,
+  added, moved, one marked finished); a task has a title, who it's given to, a due day, the card it's for, a checklist
+  and notes; dragged between columns, typed in at a column's foot, opened in a right panel.
+
 ### Later / nice to have
 - Templates (Lean Canvas, SWOT, positioning map)
 - Version history / snapshots

@@ -4323,3 +4323,41 @@ sonra enterla direkt oluşturabilme/esc özelliği. Bu bütün cardlar ve textle
   the panel again); + idea Escape and + idea Enter-empty leave nothing; "A" Tab "B" Enter makes two cards side by side;
   heading and sticky note Escape leave nothing; paragraph ⌘Enter kept; heading "Head" Enter then one ⌘Z removes it,
   as does one ⌘Z after a card made and named; the matrix wizard steps on with Enter and the last Enter makes it. `tsc`.
+
+### D-251 · 2026-10-26 · Accepted (adds to D-176, D-208, D-219, D-228, D-246)
+**A kanban: the team's tasks in columns, a piece on the canvas.** User: "kanban/task planner eklemek istiyorum
+uygulamaya". Asked first and picked (all the recommended ones): a new `task` type (not the cards themselves); a canvas
+piece like a matrix or table; ready columns you can change; a task has who it's given to, a due day, the card it's for
+and a checklist.
+- *Data:* `tasks/{id}` (src/data/tasks.ts): `pieceId` (the kanban), `col`, `order` (a number between its neighbours',
+  so a move writes one doc), `title` (≤ 200, required), `notes?`, `assignee?` + `assigneeName?` (kept beside it so the
+  card needs no member lookup), `due?` (`YYYY-MM-DD`), `cardId?` + `cardType?`, `checks?[{id, text, done?}]` (≤ 50),
+  `uid`. The piece (`kind: 'kanban'`) holds `kanban: {cols[{id, name, done?}]}` (1–12; `todo · doing · done` to start,
+  `done` marked finished). Rules `validKanban`, `validTask` (hasOnly); members read, editors write. Deleting the kanban
+  takes its tasks (one undo step); deleting a workspace too.
+- *Look:* a window like a table's (D-208, no `+` marks); columns 264 px, a head of faint caps and a count over a rule (the
+  finished one green with `✓`), tasks as raised paper 84 px high: the title in Geist (two lines), a mono line under it:
+  the person's square with initials, `◷ 28 oct` (`today`, `tomorrow`; magenta once past, unless in the finished
+  column), `☑ 2/5` (green when all), `▌card title` in the card's colour. Hover and selection: a card's corner marks,
+  cyan when selected. Focus: its own (D-206's glide), `[unfocus]` in the dock. Unframes onto the canvas (D-228).
+- *Live (focus, unframed):* a press on a task drags it after 5 px (the card under the pointer framed in cyan, a dashed
+  cyan slot where it lands, the others sliding 160 ms; reduced motion: no slide), a click opens its panel; viewers only
+  click (the press pans). `+ task` at a column's foot types new ones (Enter makes one and keeps typing, Escape stops,
+  as D-250). A head: double-click renames; on hover `‹ ›` move it, `✓` marks it finished, `×` takes it away (its tasks
+  go to the end of the column before it; the last column never goes). `+ column` after the last (≤ 12). Delete takes the
+  selected task away, Escape lets go of it (before Escape leaves focus).
+- *Panel* (D-219's shell, kind `task`, cyan): the title typed in place, then `01 COLUMN` (pills), `02 GIVEN TO` (a
+  Select of members, or nobody), `03 DUE` (the browser's date field, `[clear]`, a magenta line when past), `04 FOR` (the
+  card: a click opens that card's own panel in its place, LensCardPanel; `+ card` picks one from any plane, `×` lets
+  go), `05 CHECKLIST` (`[x]` rows, a click on the text types over it, `+ step`), `06 NOTES`; `[delete]` at the foot.
+- *Export/import* (D-246): `tasks` travel with their kanban (columns kept, a task in a missing column goes to the
+  first), the card they're for when it came over too; who it was given to stays behind (people don't travel).
+- *Not yet (offer later):* others don't see your selected task or a drag in progress; the assistant doesn't read or write
+  tasks; tasks aren't in the finder; no sticking to a plane; no swimlanes, labels or filters; open on the canvas its size
+  is the window's, not measured.
+- *Verified* on the emulators in headless Chrome (1600 × 1000): `+ → kanban` makes one with the three columns; in focus
+  three tasks typed with Enter, one dragged from todo to doing (slot and ghost seen mid-drag), one dragged to the top of
+  doing; a click opens the panel; two steps added and one ticked (`1/2` on the card), a past due day (magenta on the card
+  and in the panel), given to Alice (`AL`); Escape closes the panel and stays in focus; unfocused, the canvas picture
+  shows them. Rules tests 382 pass (14 new). `tsc`. Rules not deployed (D-248: main is still 1.0).
+

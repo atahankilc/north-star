@@ -1,5 +1,5 @@
 // A whole workspace as one file (D-080, D-246): a .zip holding `workspace.json`. Only the content travels: the canvas's
-// pieces (planes, matrices, tables, documents lists and documents) and what's in them, the cards and everything on them
+// pieces (planes, matrices, tables, documents lists and documents, kanbans) and what's in them, a kanban's tasks (D-251), the cards and everything on them
 // (links, evidence, competitor features, matched features, packages), text, matrix and table cells, and the documents
 // you can see with their content. Members, roles, invite codes, comment threads (D-159) and anything AI never do.
 // Version 2 (D-246); files from before it (version 1, North Star 1.0) are refused (D-248).
@@ -30,6 +30,7 @@ export const BUNDLE_COLLECTIONS = [
   'evidence',
   'labels',
   'cells',
+  'tasks',
 ] as const
 export type BundleCollection = (typeof BUNDLE_COLLECTIONS)[number]
 
@@ -279,7 +280,7 @@ export function cleanLabel(d: Raw, now: number) {
 
 // ---- Pieces (pieces.ts): their setups point at cards, planes and documents, all given their new ids here.
 
-const PIECE_KINDS = ['plane', 'matrix', 'table', 'documents', 'document'] as const
+const PIECE_KINDS = ['plane', 'matrix', 'table', 'documents', 'document', 'kanban'] as const
 
 export function cleanPiece(d: Raw, now: number, ids: Ids) {
   const kind = oneOf(d.kind, PIECE_KINDS)
@@ -304,6 +305,7 @@ export function cleanPiece(d: Raw, now: number, ids: Ids) {
     matrix,
     table,
     documents: kind === 'documents' ? cleanDocumentsSetup(d.documents) : undefined,
+    kanban: kind === 'kanban' ? cleanKanban(d.kanban) : undefined,
     docId,
     stuckTo: lens ? ids.piece(d.stuckTo) : undefined,
     open: kind !== 'plane' ? bool(d.open) : undefined,
@@ -426,6 +428,35 @@ function cleanDocumentsSetup(v: unknown) {
     sort: sort && oneOf(sort.col, DOC_COLS) ? compact({ col: sort.col as string, desc: bool(sort.desc) }) : undefined,
     pageSize: int(t?.pageSize, 1, 100),
   })
+}
+
+// A kanban's columns (D-251; rules: 1–12, these keys only); none left, it starts over.
+export function cleanKanban(v: unknown) {
+  const seen = new Set<string>()
+  const cols = list(obj(v)?.cols, 12).flatMap((raw) => {
+    const c = obj(raw)
+    const name = str(c?.name, 40)?.trim()
+    const id = ownId(c?.id)
+    if (!c || !name || seen.has(id)) return []
+    seen.add(id)
+    return [compact({ id, name, done: yes(c.done) })]
+  })
+  return { cols: cols.length ? cols : [{ id: newId(), name: 'todo' }] }
+}
+
+// One of a kanban's tasks (D-251), without its kanban, its card or who made it; who it was given to stays behind (the
+// people don't travel).
+export function cleanTask(d: Raw, now: number) {
+  const title = str(d.title, 200)?.trim()
+  const order = num(d.order)
+  if (!title || order === undefined) return null
+  const checks = list(d.checks, 50).flatMap((raw) => {
+    const c = obj(raw)
+    const text = str(c?.text, 200)
+    return c && text ? [compact({ id: ownId(c.id), text, done: yes(c.done) })] : []
+  })
+  const due = typeof d.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.due) ? d.due : undefined
+  return compact({ order, title, notes: str(d.notes, 20000), due, checks: checks.length ? checks : undefined, ...times(d, now) })
 }
 
 // One of a matrix's or a table's cells, without its matrix, row and column.

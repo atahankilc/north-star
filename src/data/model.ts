@@ -6,6 +6,7 @@
 //     documents/{id}                         Doc (D-232, src/data/documents.ts): a file the workspace keeps
 //       content/body                         DocBody: a .md's text, a report's sections
 //     cells/{matrixId}_{row}_{col}           Cell (D-204): one of a matrix's or a table's (D-209) cells (src/data/matrix.ts)
+//     tasks/{id}                             Task (D-251): one of a kanban's tasks (src/data/tasks.ts)
 //     members/{uid}                          Member (D-098): a member's name and email, for the people list
 //     threads/{id}, messages/{id}            Thread, ThreadMessage (D-159, D-192)
 //     reports/{id}                           an old research report, moved to documents once (documents.ts' moveReports)
@@ -16,6 +17,7 @@
 //   presence/{workspaceId}/{uid}             Presence (D-016)
 
 import type { DocumentsSetup } from './documents'
+import type { KanbanSetup } from './tasks'
 import type { MatrixSetup } from './matrix'
 import type { TableSetup } from './table'
 
@@ -57,7 +59,8 @@ export type JoinRequest = {
 // A matrix (D-204): two lists crossed, its cells filled; its setup on the piece, its cells in `cells`.
 // A table (D-209): rows from rules, columns of the cards' fields and its own; its own columns' values in `cells`.
 // Documents (D-232): `documents` lists them, `document` shows one on its own.
-export type PieceKind = 'plane' | 'matrix' | 'table' | 'documents' | 'document'
+// A kanban (D-251): its columns on the piece, its tasks in `tasks`.
+export type PieceKind = 'plane' | 'matrix' | 'table' | 'documents' | 'document' | 'kanban'
 export type Piece = {
   kind: PieceKind
   x: number
@@ -71,6 +74,8 @@ export type Piece = {
   documents?: DocumentsSetup
   // The document a document piece shows (D-232).
   docId?: string
+  // A kanban's columns (D-251).
+  kanban?: KanbanSetup
   // A matrix or a table stuck to a plane's edge (D-210): moved with it, showing its cards.
   stuckTo?: string
   // A matrix or a table opened onto the canvas (D-228): out of its window, at its own size and live there. Its w/h stay

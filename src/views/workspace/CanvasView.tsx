@@ -51,6 +51,8 @@ import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Do
 import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
+import { kanbanBounds, KanbanView } from './Kanban'
+import { TaskPanel } from './TaskPanel'
 import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
 
@@ -73,7 +75,7 @@ const onPixel = (v: number) => {
 }
 
 export function CanvasView() {
-  const { wid, workspace, pieces, cards, labels, threads, cells, edges, documents } = useWs()
+  const { wid, workspace, pieces, cards, labels, threads, cells, edges, documents, tasks } = useWs()
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
   const cam = useCanvasView((s) => s.cams[wid]) ?? camOf(wid)
@@ -116,6 +118,8 @@ export function CanvasView() {
   // Documents (D-232): the list, and one on its own.
   const focusedDocuments = focused && kindOfPiece(focused) === 'documents'
   const focusedDocument = focused && kindOfPiece(focused) === 'document'
+  // A kanban (D-251).
+  const focusedKanban = focused && kindOfPiece(focused) === 'kanban'
   const readerOpen = useDocUi((s) => s.readers.length > 0) && !!focusedDocuments
   // The list put away while documents are open: they fill the screen, and Escape goes straight back to the canvas.
   const listHidden = useDocUi((s) => s.listHidden) && readerOpen
@@ -167,10 +171,12 @@ export function CanvasView() {
             ? documentsBounds(p, listed(documents, documentsOf(p), user?.id).length)
             : kind === 'document'
               ? documentBounds(p)
-              : spaceBounds(cardsBy.get(p.id) ?? NONE, edges, labelsBy.get(p.id) ?? NONE, [], p.id)
+              : kind === 'kanban'
+                ? kanbanBounds(p, tasks)
+                : spaceBounds(cardsBy.get(p.id) ?? NONE, edges, labelsBy.get(p.id) ?? NONE, [], p.id)
     }
     return new Map(pieces.map((p) => [p.id, of(p)]))
-  }, [pieces, cards, edges, cardsBy, labelsBy, documents, user?.id, filters])
+  }, [pieces, cards, edges, cardsBy, labelsBy, documents, user?.id, filters, tasks])
   const contentOf = (p: WithId<Piece>) => contents.get(p.id) ?? null
   const bonds = (layer: 'under' | 'over') =>
     shown.map((p) => {
@@ -835,6 +841,8 @@ export function CanvasView() {
           ) : focusedDocument ? (
             // The same page as a document beside the list (D-232), its own dock with `[unfocus]`.
             <DocFocus piece={focused} onUnfocus={unfocus} />
+          ) : focusedKanban ? (
+            <FocusedKanban piece={focused} editor={editor} />
           ) : (
             <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
           )}
@@ -846,6 +854,8 @@ export function CanvasView() {
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
           {/* A card picked from a matrix's or a table's head, in its focus or beside the plane: its panel. */}
           {focusArrived && !focusLeaving && <LensCardPanel space={focused.id} editor={editor} />}
+          {/* A kanban's task picked (D-251): its panel. */}
+          {focusedKanban && focusArrived && !focusLeaving && <TaskPanel editor={editor} />}
           {focusedDocuments && focusArrived && !focusLeaving && <DocReaders list={focused} />}
           {/* Once it's there, and gone the moment it leaves (D-185): the dock on the bottom edge (D-189). */}
           {/* With the list put away its dock goes too; unfocus is in the bar top-left (DocReaders). */}
@@ -895,6 +905,8 @@ export function CanvasView() {
       {!focused && editor && canvasSetup && <CanvasSetup piece={canvasSetup} />}
       {/* And from one open on the canvas (D-228). */}
       {!focused && <LensCardPanel space={null} editor={editor} />}
+      {/* And a task picked on a kanban open on the canvas (D-251). */}
+      {!focused && <TaskPanel editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />
       {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
       {/* A document being dragged out of its list, and the question before a private one goes on the canvas (D-232). */}
@@ -944,7 +956,9 @@ export function CanvasView() {
               ? 'It goes from the canvas; the document stays in its list.'
               : kindOfPiece(confirming) === 'documents'
                 ? 'The list goes; the documents in it stay.'
-                : isBare(confirming)
+                : kindOfPiece(confirming) === 'kanban'
+                  ? 'The kanban and its tasks go; the cards they were for stay.'
+                  : isBare(confirming)
                   ? `The ${KIND_NAME[kindOfPiece(confirming)]} and its cells go; the cards in it stay.`
                   : 'The plane and everything on it goes.',
             `${UNDO_HINT} brings it back.`,
@@ -954,7 +968,7 @@ export function CanvasView() {
           onConfirm={() => {
             useCanvasView.setState({ confirming: null })
             setEditing(confirming.id, false)
-            void deletePiece(wid, confirming.id, cards, labels, cells, kindOfPiece(confirming), edges)
+            void deletePiece(wid, confirming.id, cards, labels, cells, kindOfPiece(confirming), edges, tasks)
           }}
         />
       )}
@@ -1081,6 +1095,12 @@ function FocusedMatrix({ piece, editor }: { piece: WithId<Piece>; editor: boolea
 function FocusedTable({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const view = useCanvasView((s) => s.planeCam)
   return view ? <TableView piece={piece} view={view} live editor={editor} /> : null
+}
+
+// The focused kanban, live, on its own view (D-251).
+function FocusedKanban({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const view = useCanvasView((s) => s.planeCam)
+  return view ? <KanbanView piece={piece} view={view} live editor={editor} /> : null
 }
 
 // The focused documents list, live (D-232); a click opens a document beside it (DocReader).
@@ -1293,6 +1313,8 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
           ) : kind === 'documents' ? (
             // Open on the canvas (D-234): its rows live there; a click takes the list into focus with the document beside it.
             <DocsList piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas onOpen={onFocus} />
+          ) : kind === 'kanban' ? (
+            <Kanban piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas />
           ) : (
             <DocOne piece={piece} view={OPEN_VIEW} live={live && !editing} onCanvas onMore={onFocus} />
           )}
@@ -1305,6 +1327,8 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         <DocsList piece={piece} view={inner} live={false} editor={editor} />
       ) : kind === 'document' ? (
         <DocOne piece={piece} view={inner} live={false} />
+      ) : kind === 'kanban' ? (
+        <Kanban piece={piece} view={inner} live={false} editor={editor} />
       ) : (
         <Cards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       )}
@@ -1329,7 +1353,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
           // console is only `[focus] [edit]`.
           kind === 'documents' ? (
             open ? <DocumentsTools piece={piece} editor={editor} toolClass={styles.tool} /> : undefined
-          ) : kind === 'document' ? undefined : open ? (
+          ) : kind === 'document' || kind === 'kanban' ? undefined : open ? (
             <OpenTools piece={piece} editor={editor} />
           ) : undefined
         }
@@ -1517,6 +1541,7 @@ const Matrix = memo(MatrixView)
 const Table = memo(TableView)
 const DocsList = memo(DocumentsView)
 const DocOne = memo(DocumentPieceView)
+const Kanban = memo(KanbanView)
 const Cards = memo(PlaneCards)
 // The canvas's text, drawn again as the zoom changes (its editors follow it), not as the canvas pans.
 const Text = memo(TextItems)

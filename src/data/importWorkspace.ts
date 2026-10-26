@@ -14,6 +14,7 @@ import {
   cleanEvidence,
   cleanLabel,
   cleanPiece,
+  cleanTask,
   type Bundle,
   type Ids,
 } from '../io/bundle'
@@ -58,7 +59,9 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
 
   const put = (ref: DocumentReference, fields: object | null) => (fields ? writes.push([ref, fields]) : skipped++)
 
-  for (const d of bundle.pieces) put(doc(col('pieces'), pieceIds.get(d.id)!), cleanPiece(d, now, ids))
+  // Kept by old id: a kanban's tasks go into the columns written (D-251).
+  const cleanPieces = new Map(bundle.pieces.map((d) => [d.id, cleanPiece(d, now, ids)]))
+  for (const d of bundle.pieces) put(doc(col('pieces'), pieceIds.get(d.id)!), cleanPieces.get(d.id) ?? null)
 
   for (const type of ALL_TYPES) {
     for (const d of bundle[CARD_COLLECTION[type] as 'customers']) {
@@ -148,6 +151,21 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     }
     celled.add(id)
     writes.push([doc(col('cells'), id), { matrixId: matrix, row, col: column, ...cleanCell(d, now) }])
+  }
+
+  // A kanban's tasks (D-251): their kanban came over, in one of its columns (else its first); the card they're for when
+  // it came over too.
+  for (const d of bundle.tasks) {
+    const on = ids.piece(d.pieceId)
+    const fields = cleanTask(d, now)
+    const cols = cleanPieces.get(typeof d.pieceId === 'string' ? d.pieceId : '')?.kanban?.cols ?? []
+    if (!on || !fields || !cols.length) {
+      skipped++
+      continue
+    }
+    const column = cols.some((c) => c.id === d.col) ? (d.col as string) : cols[0].id
+    const card = ids.card(d.cardId)
+    writes.push([doc(col('tasks')), { ...fields, pieceId: on, col: column, uid, ...(card && card.type !== 'competitorFeature' && { cardId: card.id, cardType: card.type }) }])
   }
 
   // Documents (D-232): yours now, shared as they were, under the name of whoever added them. The summary first, as its

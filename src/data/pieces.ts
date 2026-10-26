@@ -1,5 +1,5 @@
 // The workspace's canvas (D-174, D-176): what's placed on it. Planes (D-180), matrices (D-204), tables (D-209), and
-// documents (D-232): a list of them, or one on its own.
+// documents (D-232): a list of them, or one on its own; kanbans (D-251).
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { cardRef, type Card } from './cards'
 import { edgeRef, edgesOn, type Edge } from './edges'
@@ -7,6 +7,7 @@ import { labelRef, type Label } from './labels'
 import { cellKey, cellRef, emptySetup, type Cell, type MatrixSetup } from './matrix'
 import { emptyTable, type TableSetup } from './table'
 import { docRef, emptyDocuments, type Doc, type DocumentsSetup } from './documents'
+import { emptyKanban, taskRef, type Task } from './tasks'
 import { db } from './firebase'
 import { GRID, snap } from './grid'
 import { absent, snapshotWith, tracked } from './history'
@@ -22,6 +23,7 @@ export const PIECE_SIZE: Record<PieceKind, { w: number; h: number }> = {
   table: { w: 800, h: 400 },
   documents: { w: 800, h: 450 },
   document: { w: 650, h: 500 },
+  kanban: { w: 900, h: 500 },
 }
 
 // The smallest a piece resizes to (D-180): room for its name and its console. Whole steps of the grid.
@@ -30,10 +32,10 @@ export const PIECE_MIN = { w: 325, h: 200 }
 // Pieces sit on the canvas's 25 px grid (D-182), the step of a plane's `+` marks, so marks of planes side by side line up.
 export { GRID, snap }
 
-export const KIND_NAME: Record<PieceKind, string> = { plane: 'plane', matrix: 'matrix', table: 'table', documents: 'documents', document: 'document' }
+export const KIND_NAME: Record<PieceKind, string> = { plane: 'plane', matrix: 'matrix', table: 'table', documents: 'documents', document: 'document', kanban: 'kanban' }
 
 // What a piece is.
-const KINDS: PieceKind[] = ['matrix', 'table', 'documents', 'document']
+const KINDS: PieceKind[] = ['matrix', 'table', 'documents', 'document', 'kanban']
 export const kindOfPiece = (p: Pick<Piece, 'kind'>): PieceKind => (KINDS.includes(p.kind) ? p.kind : 'plane')
 
 // Not a plane (D-206, D-209, D-232): just its contents on the canvas, at their own size, with a focus of its own (no
@@ -43,8 +45,8 @@ export const isBare = (p: Pick<Piece, 'kind'>) => kindOfPiece(p) !== 'plane'
 // A lens on the cards (D-209): a matrix or a table, which sticks to a plane (D-210) and opens onto the canvas (D-228).
 export const isLens = (p: Pick<Piece, 'kind'>) => p.kind === 'matrix' || p.kind === 'table'
 
-// What can be taken out of its window onto the canvas (D-228): a lens, the documents list, a document (D-234).
-export const canOpen = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'documents' || p.kind === 'document'
+// What can be taken out of its window onto the canvas (D-228): a lens, the documents list, a document (D-234), a kanban (D-251).
+export const canOpen = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'documents' || p.kind === 'document' || p.kind === 'kanban'
 
 // firestore.rules' validPiece allows 80.
 export const PIECE_NAME_MAX = 80
@@ -88,6 +90,8 @@ export async function addPiece(wid: string, kind: PieceKind, at: [number, number
         ? { table: JSON.parse(JSON.stringify(setup ?? emptyTable())), ...(name ? { name } : {}) }
         : kind === 'documents'
           ? { documents: emptyDocuments(), ...(name ? { name } : {}) }
+          : kind === 'kanban'
+            ? { kanban: emptyKanban(), ...(name ? { name } : {}) }
           : kind === 'document' && docId
             ? { docId }
             : {}
@@ -256,8 +260,9 @@ export function renamePiece(wid: string, id: string, name: string, kind: PieceKi
   return tracked(`rename a ${KIND_NAME[kind]}`, [ref], () => updateDoc(ref, { name: value || deleteField(), updatedAt: Date.now() }), { key: `piece-name:${id}` })
 }
 
-// The plane, its cards (D-187) and its text (D-188), or the matrix or table and its cells (D-204, D-209), as one undo step.
-export function deletePiece(wid: string, id: string, cards: Card[], labels: Label[], cells: Cell[] = [], kind: PieceKind = 'plane', edges: Edge[] = []) {
+// The plane, its cards (D-187) and its text (D-188), or the matrix or table and its cells (D-204, D-209), or the kanban
+// and its tasks (D-251), as one undo step.
+export function deletePiece(wid: string, id: string, cards: Card[], labels: Label[], cells: Cell[] = [], kind: PieceKind = 'plane', edges: Edge[] = [], tasks: Task[] = []) {
   const on = cards.filter((c) => c.pieceId === id)
   const refs = [
     doc(col(wid), id),
@@ -266,6 +271,7 @@ export function deletePiece(wid: string, id: string, cards: Card[], labels: Labe
     ...edgesOn(edges, new Set(on.map((c) => c.id))).map((e) => edgeRef(wid, e.id)),
     ...labels.filter((l) => l.pieceId === id).map((l) => labelRef(wid, l.id)),
     ...cells.filter((c) => c.matrixId === id).map((c) => cellRef(wid, cellKey(c.matrixId, c.row, c.col))),
+    ...tasks.filter((t) => t.pieceId === id).map((t) => taskRef(wid, t.id)),
   ]
   return tracked(`delete a ${KIND_NAME[kind]}`, refs, async () => {
     // A big matrix has more cells than one batch takes.
