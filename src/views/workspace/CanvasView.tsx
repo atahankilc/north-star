@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { canOpen, deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, isLens, kindOfPiece, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { canOpen, deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, kindOfPiece, sticks, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
@@ -51,7 +51,7 @@ import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Do
 import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
-import { kanbanBounds, KanbanView } from './Kanban'
+import { kanbanBounds, KanbanDockTools, KanbanView } from './Kanban'
 import { TaskPanel } from './TaskPanel'
 import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
@@ -799,7 +799,7 @@ export function CanvasView() {
             cards={cardsOf(p.id)}
             labels={labelsOf(p.id)}
             content={contentOf(p)}
-            planes={isLens(p) ? planesBox.filter((x) => x.id !== p.id) : []}
+            planes={sticks(p) ? planesBox.filter((x) => x.id !== p.id) : []}
             followers={isBare(p) ? [] : shown.filter((f) => f.stuckTo === p.id && isBare(f))}
             host={isBare(p) && p.stuckTo ? (planesBox.find((x) => x.id === p.stuckTo) ?? null) : null}
           />
@@ -870,6 +870,7 @@ export function CanvasView() {
                 <DockAction label="setup" pressed={tableSetup === focused.id} keyHint={escOn('setup')} title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
               )}
               {focusedDocuments && <DocumentsTools piece={focused} editor={editor} />}
+              {focusedKanban && <KanbanDockTools piece={focused} editor={editor} />}
               {/* Several documents side by side (D-232): a click opens one next to the others. */}
               {focusedDocuments && <DockAction label="⧉ side by side" pressed={sideBySide} title={sideBySide ? 'a click opens a document in place of the one open' : 'a click opens a document next to the ones open'} onClick={() => useDocUi.setState((s) => ({ sideBySide: !s.sideBySide }))} />}
               {focusedDocuments && readerOpen && <DockAction label="hide list" title="put the list away: the documents take the whole screen" onClick={() => useDocUi.setState({ listHidden: true })} />}
@@ -1192,7 +1193,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
     // A matrix or table moved near a plane's edge sticks there (D-210); moved anywhere else it stays linked as it was
     // (only its dropdown lets go, D-215). A plane carries what's linked to it: what touches it stays on its edge, what's
     // apart moves as the plane's corner does.
-    const lens = isLens(piece) && handle === 'move'
+    const lens = sticks(piece) && handle === 'move'
     const linked: string | null = piece.stuckTo && planes.some((p) => p.id === piece.stuckTo) ? piece.stuckTo : null
     let stick = linked
     const carried = followers.map((f) => ({ id: f.id, from: { x: f.x, y: f.y, w: f.w, h: f.h }, side: touchSide(f, from) }))
@@ -1345,7 +1346,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         onDelete={() => useCanvasView.setState({ confirming: piece.id })}
         onFocus={onFocus}
         comments={comments}
-        link={isLens(piece) ? { at: host?.id ?? null, planes, editor, onChange: (plane) => void linkLens(wid, piece, plane) } : undefined}
+        link={sticks(piece) ? { at: host?.id ?? null, planes, editor, onChange: (plane) => void linkLens(wid, piece, plane) } : undefined}
         // Out of its window onto the canvas and back (D-228), in edit mode; open, its pages and setup are here.
         open={canOpen(piece) ? { on: open, onToggle: () => void openPiece(wid, piece, !open) } : undefined}
         extra={

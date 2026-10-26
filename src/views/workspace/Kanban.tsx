@@ -9,16 +9,21 @@
 // Its look, the ledger (D-252): no box round a column, only a numbered rule (`01 TODO ──── 5`, the right panel's
 // sections); tasks hang under it as raised sheets as tall as their text, their left edge in the colour of the card they're
 // for; the place a held task would land is a cyan line between two tasks.
+//
+// Stuck to a plane (D-255), like a table (D-210): it shows that plane's tasks (for its cards, or for none) unless set to
+// every plane (`[this plane only]` in its dock), and opens beside the plane in its focus, where a task picked glides the
+// plane to its card (`onTask`).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { addTask, COL_NAME_MAX, deleteColumn, deleteTask, emptyKanban, KANBAN_COLS_MAX, moveTask, orderBetween, overdue, setKanbanCols, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
+import { addTask, COL_NAME_MAX, deleteColumn, deleteTask, emptyKanban, KANBAN_COLS_MAX, moveTask, orderBetween, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
 import { newId } from '../../data/matrix'
 import { useAuth } from '../../data/auth'
 import type { Bounds, PlaneCam } from '../../state/canvasView'
 import type { Card } from '../../data/cards'
 import { useWs } from './context'
+import { DockAction } from './FocusDock'
 import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
 import styles from './Kanban.module.css'
@@ -84,14 +89,17 @@ const cells = (done: number, all: number) => (all > 8 ? '' : '▮'.repeat(done) 
 // is now (its px), and where it would land.
 type Drag = { id: string; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: { col: string; index: number } | null }
 
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean }
+// `onTask`: a task picked (beside a plane, D-255: the plane glides to its card).
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onTask?: (t: Task) => void }
 
-export function KanbanView({ piece, view, live, editor, onCanvas = false }: Props) {
+export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask }: Props) {
   const { wid, tasks: all, cards } = useWs()
   const { user } = useAuth()
   const cols = kanbanOf(piece).cols
   const tasks = useMemo(() => all.filter((t) => t.pieceId === piece.id), [all, piece.id])
-  const byCol = useMemo(() => new Map(cols.map((c) => [c.id, tasksIn(tasks, c.id)])), [cols, tasks])
+  // What it shows: stuck to a plane, that plane's tasks (D-255).
+  const shown = useMemo(() => shownTasks(tasks, piece, cards), [tasks, piece, cards])
+  const byCol = useMemo(() => new Map(cols.map((c) => [c.id, tasksIn(shown, c.id)])), [cols, shown])
   const selected = useKanbanUi((s) => (live && s.selected?.piece === piece.id ? s.selected.task : null))
   const adding = useKanbanUi((s) => (live ? s.adding : null))
   const naming = useKanbanUi((s) => (live ? s.naming : null))
@@ -177,7 +185,7 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false }: Prop
     const d = dragRef.current
     setDrag(null)
     if (!d) return
-    if (!d.moving) return selectTask(piece.id, useKanbanUi.getState().selected?.task === task.id ? null : task.id)
+    if (!d.moving) return pick(task)
     if (!d.over) return
     const list = (byCol.get(d.over.col) ?? []).filter((t) => t.id !== task.id)
     const before = list[d.over.index - 1]
@@ -213,6 +221,13 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false }: Prop
     window.addEventListener('pointercancel', up)
   }
 
+  // A click on a task: picked (its panel opens), or let go if it was.
+  const pick = (task: Task) => {
+    const again = useKanbanUi.getState().selected?.task === task.id
+    selectTask(piece.id, again ? null : task.id)
+    if (!again) onTask?.(task)
+  }
+
   const setCols = (next: KanbanCol[], what: string) => void setKanbanCols(wid, piece.id, next, what)
   const moveCol = (i: number, by: -1 | 1) => {
     const next = [...cols]
@@ -226,7 +241,8 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false }: Prop
   }
   const add = (column: string, title: string) => {
     if (!user) return
-    const last = (byCol.get(column) ?? []).at(-1)?.order
+    // After every task in it, those not shown too.
+    const last = tasksIn(tasks, column).at(-1)?.order
     addTask(wid, piece.id, column, orderBetween(last, undefined), title, user.id)
   }
 
@@ -277,7 +293,7 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false }: Prop
                         live={live}
                         learn={live && editor && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) : undefined}
                         onPointerDown={press(t)}
-                        onClick={live && !editor ? () => selectTask(piece.id, selected === t.id ? null : t.id) : undefined}
+                        onClick={live && !editor ? () => pick(t) : undefined}
                       />
                     </Slotted>
                   ))}
@@ -519,5 +535,23 @@ function AddTask({ open, onPress, onOpen, onClose, onAdd }: AddProps) {
         }}
       />
     </label>
+  )
+}
+
+// Its tools in a dock (its focus, its pane beside a plane): stuck to a plane, `[this plane only]` (D-255), lit while it
+// shows only that plane's tasks; how many it leaves out, beside. Editors switch it (shared); others see it.
+export function KanbanDockTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const { wid, tasks, cards } = useWs()
+  if (!piece.stuckTo) return null
+  const mine = tasks.filter((t) => t.pieceId === piece.id)
+  const only = !piece.kanban?.everyPlane
+  const left = only ? mine.length - shownTasks(mine, piece, cards).length : 0
+  return (
+    <DockAction
+      label={`this plane only${left ? ` · ${left} hidden` : ''}`}
+      pressed={only}
+      title={only ? 'showing tasks for this plane’s cards and for no card; click: every task' : 'showing every task; click: only this plane’s'}
+      onClick={() => editor && void setEveryPlane(wid, piece.id, only)}
+    />
   )
 }

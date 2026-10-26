@@ -4433,3 +4433,26 @@ User: picked ideas 1 and 2 of the kanban list (2026-10-26); this is session 2 of
 - *Verified:* headless on the emulators: counts on cards, the section, `+ test it` with two kanbans, row → task panel →
   `for` → card panel, the sheet's offer → form prefilled → evidence on the card + `learned`; drag into done shows the
   offer; light theme; rules 384 pass; build.
+
+### D-255 · 2026-10-27 · Accepted (adds to D-210, D-211, D-215, D-251; kanban session 3, docs/specs/kanban.md)
+**A kanban sticks to a plane like a table: it then shows that plane's tasks, and opens beside the plane in its focus.**
+User: picked idea 4 of the kanban list (2026-10-26); this is session 3 of docs/specs/kanban.md.
+- *Sticking:* `sticks()` (a lens or a kanban) takes D-210's path as is: moved in edit mode within 48 screen px of a
+  plane's edge it snaps a grid step out and is linked (`stuckTo`; alt = free), the console's `link ▾` / `⇆ Pazar ▾`
+  links and unlinks, the plane carries it, the quiet link (D-215) shows. Nothing else changes on the kanban when it
+  sticks (no rule written, unlike a table's `where plane is`).
+- *What it shows (`shownTasks`):* stuck, only tasks whose card is on that plane, tasks for no card, and tasks whose card
+  is gone (so nobody loses them). `[this plane only · N hidden]` in its dock (its focus, its pane beside the plane),
+  lit while on; off it shows every task. Shared, on the kanban (`kanban.everyPlane`), editors switch it. On by default
+  once stuck. Hidden tasks keep their place: a new one goes after every task in its column, a deleted column moves them too.
+- *Beside (D-211):* the plane's `[linked · N]` strip lists it; open, it's a pane like a table's (its own view, dock
+  `KANBAN · ROADMAP | [this plane only] [close]`, no setup). A task picked there opens its panel over the plane's part
+  and glides the plane so its card sits in the middle of what the panel leaves (the card isn't selected: that would
+  close the task's panel, D-254).
+- *Columns now written as `kanban.cols`* (not the whole `kanban`), so the switch survives renaming a column.
+- *Rules:* `stuckTo` allowed on kanbans; `everyPlane` (bool) in the kanban setup. Export carries both.
+- *Alternatives:* the switch per browser (others would see different tasks on the same kanban); hiding tasks for gone
+  cards; selecting the card when a task is picked (closes the task's panel).
+- *Verified:* headless on the emulators: dragged next to a plane in edit mode → `stuckTo`, console `⇆ Pazar`, the other
+  plane's task hidden on the canvas; in the plane's focus, `[linked · 1]` → the pane, `this plane only · 1 hidden`,
+  switched off shows it; a task clicked opens its panel and the plane glides to its card; rules 387 pass; build.

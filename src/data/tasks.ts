@@ -21,7 +21,11 @@ export type KanbanCol = {
   // Its tasks are finished: their due day no longer warns, their titles go quiet.
   done?: boolean
 }
-export type KanbanSetup = { cols: KanbanCol[] }
+export type KanbanSetup = {
+  cols: KanbanCol[]
+  // Stuck to a plane (D-255), it shows only tasks for that plane's cards and tasks for none; this shows them all.
+  everyPlane?: boolean
+}
 
 export type Check = { id: string; text: string; done?: boolean }
 
@@ -118,7 +122,21 @@ export function deleteTask(wid: string, task: Pick<Task, 'id'>) {
 export function setKanbanCols(wid: string, pieceId: string, cols: KanbanCol[], what = 'change a kanban', key?: string) {
   const ref = pieceRef(wid, pieceId)
   const clean = cols.slice(0, KANBAN_COLS_MAX).map((c) => ({ id: c.id, name: c.name.slice(0, COL_NAME_MAX), ...(c.done ? { done: true } : {}) }))
-  return tracked(what, [ref], () => updateDoc(ref, { kanban: { cols: clean }, updatedAt: Date.now() }), key ? { key } : {})
+  return tracked(what, [ref], () => updateDoc(ref, { 'kanban.cols': clean, updatedAt: Date.now() }), key ? { key } : {})
+}
+
+// Stuck to a plane (D-255): only that plane's tasks, or every task (shared): one undo step.
+export function setEveryPlane(wid: string, pieceId: string, every: boolean) {
+  const ref = pieceRef(wid, pieceId)
+  return tracked(every ? 'show every task' : 'show this plane’s tasks', [ref], () => updateDoc(ref, { 'kanban.everyPlane': every || deleteField(), updatedAt: Date.now() }))
+}
+
+// What a kanban shows (D-255): stuck to a plane and not set to every plane, the tasks for that plane's cards and those
+// for no card (or for one that's gone); otherwise all of them.
+export function shownTasks(tasks: Task[], piece: { stuckTo?: string; kanban?: KanbanSetup }, cards: Pick<Card, 'id' | 'pieceId'>[]) {
+  if (!piece.stuckTo || piece.kanban?.everyPlane) return tasks
+  const plane = new Map(cards.map((c) => [c.id, c.pieceId]))
+  return tasks.filter((t) => !t.cardId || !plane.has(t.cardId) || plane.get(t.cardId) === piece.stuckTo)
 }
 
 // A column taken away: its tasks go to the end of the one before it (or after, for the first): one undo step. The last
@@ -134,7 +152,7 @@ export function deleteColumn(wid: string, pieceId: string, cols: KanbanCol[], co
   return tracked('delete a column', [ref, ...refs], async () => {
     const batch = writeBatch(db())
     const now = Date.now()
-    batch.update(ref, { kanban: { cols: cols.filter((c) => c.id !== column) }, updatedAt: now })
+    batch.update(ref, { 'kanban.cols': cols.filter((c) => c.id !== column), updatedAt: now })
     moving.forEach((_t, k) => batch.update(refs[k], { col: to, order: last + k + 1, updatedAt: now }))
     await batch.commit()
   })

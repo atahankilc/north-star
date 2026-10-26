@@ -307,7 +307,7 @@ export function cleanPiece(d: Raw, now: number, ids: Ids) {
     documents: kind === 'documents' ? cleanDocumentsSetup(d.documents) : undefined,
     kanban: kind === 'kanban' ? cleanKanban(d.kanban) : undefined,
     docId,
-    stuckTo: lens ? ids.piece(d.stuckTo) : undefined,
+    stuckTo: lens || kind === 'kanban' ? ids.piece(d.stuckTo) : undefined,
     open: kind !== 'plane' ? bool(d.open) : undefined,
     ...times(d, now),
   })
@@ -441,7 +441,7 @@ export function cleanKanban(v: unknown) {
     seen.add(id)
     return [compact({ id, name, done: yes(c.done) })]
   })
-  return { cols: cols.length ? cols : [{ id: newId(), name: 'todo' }] }
+  return compact({ cols: cols.length ? cols : [{ id: newId(), name: 'todo' }], everyPlane: yes(obj(v)?.everyPlane) })
 }
 
 // One of a kanban's tasks (D-251), without its kanban, its card or who made it; who it was given to stays behind (the

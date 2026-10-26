@@ -57,12 +57,15 @@ Built (D-254): "still being tested" counts an unset status too; the offer is a c
 finished sheet and a `learned` section in its panel (`[not now]` stops it; tasks keep `learned`); the task panel now
 opens in a plane's focus too.
 
-## Session 3: a kanban stuck to a plane (idea 4)
+## Session 3: a kanban stuck to a plane (idea 4) · **done (D-255, 2026-10-27)**
 
 - A kanban moved near a plane's edge sticks like a table (D-210, D-215): `stuckTo`, the link dropdown in its console.
 - Stuck, it shows only tasks whose card is on that plane, plus tasks with no card (a switch in its dock: `this plane only`).
 - It opens beside the plane in the plane's focus (D-211), and a task picked there glides the plane to its card.
 - Rules: `stuckTo` allowed on kanbans.
+
+Built (D-255): tasks whose card is gone show too; the switch is shared (`kanban.everyPlane`), on by default; the card
+isn't selected when a task is picked beside (that would close the task's panel), the plane only glides to it.
 
 ## Session 4: filters, labels and priority, WIP limits (ideas 5, 10, 9)
 

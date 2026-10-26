@@ -4,18 +4,22 @@
 // (the wheel zooms it round the pointer, a drag on empty space pans it), its own dock (the focus dock, named:
 // `TABLE · name | [setup] [close]`), its setup
 // opening inside it. The line between the plane and the panes drags (kept per browser). A card's row in a table clicked
-// takes the plane to that card; a card selected on the plane lights its row.
+// takes the plane to that card; a card selected on the plane lights its row. A kanban (D-255) opens here too: a task
+// picked glides the plane to its card (the task's panel opens, over the plane's part).
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { CARD, type Card } from '../../data/cards'
+import type { Task } from '../../data/tasks'
 import { KIND_NAME, kindOfPiece } from '../../data/pieces'
 import { fitInto, glide, setSplit, stopGlide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
+import { SIDE_PANEL_W } from '../../ui/SidePanel'
 import { useWs } from './context'
 import { matrixBounds, MatrixView, toggleMatrixSetup, useMatrixUi } from './Matrix'
 import { MatrixSetupPanel } from './MatrixSetup'
 import { tableBounds, TablePager, TableView, useTableUi } from './Table'
+import { kanbanBounds, KanbanDockTools, KanbanView } from './Kanban'
 import { DockAction, FocusDock } from './FocusDock'
 import { TableSetupPanel } from './TableSetup'
 import styles from './Beside.module.css'
@@ -112,10 +116,10 @@ export function Beside({ plane, open, editor, esc, matrixSetupPane, onClose }: P
 type PaneProps = { piece: WithId<Piece>; plane: WithId<Piece>; box: Bounds; editor: boolean; first: boolean; esc: EscNext; matrixSetupHere: boolean; onClose: () => void }
 
 function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose }: PaneProps) {
-  const { cards } = useWs()
+  const { cards, tasks } = useWs()
   const kind = kindOfPiece(piece)
   const el = useRef<HTMLDivElement>(null)
-  const content = kind === 'matrix' ? matrixBounds(piece, cards) : tableBounds(piece, cards)
+  const content = kind === 'matrix' ? matrixBounds(piece, cards) : kind === 'kanban' ? kanbanBounds(piece, tasks) : tableBounds(piece, cards)
   const fitted = (): PlaneCam => {
     const { zoom, cx, cy } = fitInto(content, box.w, box.h, PAD)
     return { ox: box.w / 2 - cx * zoom, oy: box.h / 2 - cy * zoom, zoom }
@@ -188,10 +192,20 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
   // A card's row picked: the card selected, and the plane's view glides to put it in the middle of the plane's part.
   const toCard = (card: Card) => {
     useCanvasView.setState({ cardSelected: card.id, labelSelected: null })
+    glideTo(card)
+  }
+  // A task picked: the plane glides to its card (on this plane), not selecting it (the task's panel stays open).
+  const toTask = (t: Task) => {
+    const card = t.cardId ? cards.find((c) => c.id === t.cardId) : undefined
+    if (card) glideTo(card, true)
+  }
+  // `panel`: the task's panel covers the right of the plane's part; the card goes to the middle of what's left.
+  const glideTo = (card: Card, panel = false) => {
     if (card.pieceId !== plane.id) return
     const { planeCam: c, size, split } = useCanvasView.getState()
     if (!c) return
-    const w = size.w * split
+    const part = size.w * split
+    const w = panel ? part - Math.min(SIDE_PANEL_W, part) : part
     const to = { ...c, ox: w / 2 - (card.x + CARD.w / 2) * c.zoom, oy: size.h / 2 - (card.y + CARD.h / 2) * c.zoom }
     stopGlide()
     if (isReducedMotion()) useCanvasView.setState({ planeCam: to })
@@ -216,7 +230,13 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
       onPointerDown={pan}
       aria-label={`${piece.name || KIND_NAME[kind]}, beside the plane`}
     >
-      {kind === 'matrix' ? <MatrixView piece={piece} view={view} live editor={editor} /> : <TableView piece={piece} view={view} live editor={editor} onCard={toCard} onView={setView} />}
+      {kind === 'matrix' ? (
+        <MatrixView piece={piece} view={view} live editor={editor} />
+      ) : kind === 'kanban' ? (
+        <KanbanView piece={piece} view={view} live editor={editor} onTask={toTask} />
+      ) : (
+        <TableView piece={piece} view={view} live editor={editor} onCard={toCard} onView={setView} />
+      )}
       {kind === 'table' && tableSetup && editor && <TableSetupPanel piece={piece} />}
       {kind === 'matrix' && matrixSetup && editor && <MatrixSetupPanel piece={piece} />}
       {/* Its dock: the focus dock itself, at the bottom middle of its part, named (D-189, D-211). */}
@@ -230,7 +250,8 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
         }
       >
         {kind === 'table' && <TablePager piece={piece} editor={editor} />}
-        {editor && (
+        {kind === 'kanban' && <KanbanDockTools piece={piece} editor={editor} />}
+        {editor && kind !== 'kanban' && (
           <DockAction
             label="setup"
             pressed={setupOpen}
