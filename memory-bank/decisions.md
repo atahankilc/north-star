@@ -326,7 +326,7 @@ old reports are moved to documents once (D-248).
 - A card's head in a matrix (row or column) or a table (row name) opens its D-221 panel on one click, in the lens's focus,
   beside a plane or open on the canvas; the head stays lit. Open, it stays on a cell picked next whose row or column (only
   one) is a card, on that card; a cell crossing two cards or none, Escape, a press elsewhere close it (D-247).
-- Kanban (D-251): a canvas piece (`+ → kanban`), a window like a table's; columns on the piece (`todo · doing · done`,
+- Kanban (D-251, look D-252: the ledger, columns as `01 TODO ──── 5` rules, tasks as sheets edged in their card's colour, a cyan line where one lands): a canvas piece (`+ → kanban`), a window like a table's; columns on the piece (`todo · doing · done`,
   renamed by double-click, `‹ › ✓ ×` on hover, `+ column`, one finished), tasks in `tasks` (title, given to, due, the card
   it's for, checklist, notes); in focus or unframed: drag between columns (after 5 px, a cyan slot), `+ task` types them
   (Enter keeps typing), a click opens its right panel; Delete, Escape. Overdue = magenta.

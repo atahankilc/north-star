@@ -4361,3 +4361,25 @@ and a checklist.
   and in the panel), given to Alice (`AL`); Escape closes the panel and stays in focus; unfocused, the canvas picture
   shows them. Rules tests 382 pass (14 new). `tsc`. Rules not deployed (D-248: main is still 1.0).
 
+### D-252 · 2026-10-26 · Accepted (changes D-251's look)
+**The kanban's look: the ledger.** User: "kanbanın UI'ı iğrenç gözüküyor. Hiç mi güzel gözükmez?" Three looks were
+shown on a local page with the same tasks (A ledger, B section frames, C terminal rows); the user picked A ("A'yı yap").
+- *Columns:* no frame, no fill; whitespace (28 px) between them. The head is the right panel's section rule:
+  `01 TODO ──── 5` (number faint, name in caps, the finished column's name green). Live, the tools (`‹ › ✓ ×`) come in
+  after the count on hover; a double-click renames. A task held over a column lights its rule cyan.
+- *Tasks:* raised paper, no border, as tall as their text (title Geist 14 px, up to three lines). The left edge (2 px) is
+  the colour of the card it's for; none without one. Under the title, only when there's something: the card's name on
+  the left; its due day, its checklist as cells (`▮▮▯▯▯ 2/5`, up to 8, green when all), the person's square on the
+  right. Finished: a green `✓` before the title, the title grey. Overdue: the due text magenta, nothing else.
+- *Adding:* `+ add a task` is a faint line under the last task; a click turns it into a sheet in place with a cyan edge
+  and the menus' `>`. `+ column` is a faint head after the last column. Empty column: `· nothing yet`.
+- *Drag:* the drop place is a 2 px cyan line with a tick at each end between two tasks (no dashed box); the held task
+  follows the pointer framed in cyan; hover marks hide while holding. Tasks are laid out by the page now (no fixed
+  heights), so where it lands is read off the drawn tasks' middles, and the window hears the pointer while it's held.
+  Fit uses the kanban's measured size.
+- *Not taken:* B (each column a section frame with `+ task` as a tab in its bottom edge), C (one line per task, a `>`
+  prompt at each column's end). Either could come back as a "dense" switch.
+- *Verified* on the emulators in headless Chrome: seeded tasks with cards of five types, due days, checklists and
+  people; dragged a task to another column and to the top of the finished one (line, lit rule, `✓` after); typed a task
+  with Enter; selected one (panel); canvas window with room round it; light theme. `npm run build`.
+

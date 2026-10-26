@@ -26,7 +26,9 @@ writing tasks (3) and full keyboard use (7). Don't build those unless asked.
 
 ---
 
-## Session 1: a new look (the user: "kanbanın UI'ı iğrenç gözüküyor")
+## Session 1: a new look (the user: "kanbanın UI'ı iğrenç gözüküyor") · **done (D-252, 2026-10-26)**
+
+Picked: A, the ledger (decisions-log D-252 has the details).
 
 **Why:** v1 is boxes in boxes: a frame round every column, tall grey cards with empty space, dashed `+ task` boxes
 everywhere, small heads. It doesn't look like the rest of North Star.

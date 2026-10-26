@@ -1,5 +1,6 @@
-/* A kanban (D-251). The layer fills its piece (or the screen in focus) and clips it; on the canvas the pointer goes
-   through it to the canvas. Its parts are placed in its own px (Kanban.tsx's K). */
+/* A kanban (D-251) in the ledger look (D-252). The layer fills its piece (or the screen in focus) and clips it; on the
+   canvas the pointer goes through it to the canvas. Its board is laid out in its own px (Kanban.tsx's K), scaled by the
+   view. */
 .layer {
   position: absolute;
   inset: 0;
@@ -23,8 +24,14 @@
   transform-origin: 0 0;
 }
 
+/* Columns side by side, whitespace between them: no frames, no fill. */
 .board {
   position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap);
+  width: max-content;
+  padding: var(--space-3) var(--space-4) var(--space-4);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
 }
@@ -33,55 +40,61 @@
   cursor: grabbing;
 }
 
-/* A column: a faint wash down its length, so the backdrop stays out from under its tasks; lit while a task is held over it. */
 .column {
-  position: absolute;
-  background: var(--bg);
-  box-shadow: inset 0 0 0 1px var(--line);
-  transition: box-shadow 160ms var(--ease-out);
+  display: flex;
+  flex-direction: column;
+  width: var(--col);
 }
 
-.column > * {
-  position: absolute;
-}
-
-.column[data-over='true'] {
-  box-shadow: inset 0 0 0 1px var(--accent-cyan);
-}
-
-/* Its head: the name in faint caps and the count, over a rule. */
+/* A column's head, the right panel's section rule (D-219): `01 TODO ──── 5`. */
 .head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--space-3) var(--space-2);
-  border-bottom: 1px solid var(--line-hover);
+  height: var(--head);
   color: var(--fg-dim);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-}
-
-.headName {
-  overflow: hidden;
-  color: var(--fg);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.column[data-done='true'] .headName,
-.doneMark {
-  color: var(--accent-green);
-}
-
-.count {
+.n {
   color: var(--fg-faint);
 }
 
-.headField {
-  flex: 1;
+.name {
   min-width: 0;
-  padding: 2px var(--space-1);
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+}
+
+.column[data-done='true'] .name {
+  color: var(--accent-green);
+}
+
+.rule {
+  flex: 1;
+  min-width: var(--space-4);
+  height: 1px;
+  background: var(--line-hover);
+  transition: background-color 160ms var(--ease-out);
+}
+
+/* A task held over it: its rule lights. */
+.column[data-over='true'] .rule {
+  background: var(--accent-cyan);
+}
+
+.count {
+  color: var(--fg-dim);
+  letter-spacing: 0;
+}
+
+.headField {
+  min-width: 4ch;
+  padding: 1px var(--space-1);
   border: 1px solid var(--accent-cyan);
   background: var(--bg);
   color: var(--fg);
@@ -91,28 +104,26 @@
   outline: none;
 }
 
-/* Its tools, right of the head, while it's hovered. */
+/* Its tools, after the count, while it's hovered: they take no room until then. */
 .tools {
-  display: flex;
-  gap: 2px;
-  margin-left: auto;
-  opacity: 0;
-  transition: opacity 160ms var(--ease-out);
+  display: none;
+  gap: 1px;
 }
 
 .head:hover .tools,
 .head:focus-within .tools {
-  opacity: 1;
+  display: flex;
 }
 
 .tool {
-  min-width: 20px;
-  height: 20px;
-  padding: 0 var(--space-1);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
   border: 0;
   background: none;
   color: var(--fg-dim);
   font: inherit;
+  letter-spacing: 0;
   cursor: pointer;
 }
 
@@ -131,40 +142,32 @@
   color: var(--accent-magenta);
 }
 
-/* Where a held task would land. */
-.slot {
-  border: 1px dashed var(--accent-cyan);
-  background: var(--wash-cyan);
-  pointer-events: none;
-}
-
-/* A task: raised paper, the title in Geist, a mono line of what it has under it; inset from the column's sides. */
-.task {
-  --tone: var(--accent-cyan);
-  position: absolute;
+/* Its tasks, hung under the rule. */
+.list {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-3);
+  gap: var(--card-gap);
+  margin-top: 10px;
+}
+
+/* A task: raised paper as tall as its text, no border; its left edge in the colour of the card it's for. */
+.task {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 10px var(--space-3) 10px 14px;
   background: var(--bg-raised);
-  box-shadow: inset 0 0 0 1px var(--line);
   user-select: none;
   outline: none;
 }
 
+.task[data-card='true'] {
+  box-shadow: inset 2px 0 0 var(--tone);
+}
+
 .layer[data-live='true'] .task {
   cursor: grab;
-}
-
-.task[data-hidden='true'] {
-  opacity: 0;
-}
-
-/* Held: over everything, under the pointer, framed in cyan (no lift, no scale: D-061). */
-.task[data-lifted='true'] {
-  z-index: 2;
-  box-shadow: inset 0 0 0 1px var(--accent-cyan);
-  pointer-events: none;
 }
 
 .title {
@@ -173,9 +176,10 @@
   color: var(--fg);
   font-family: var(--font-display);
   font-size: 14px;
-  line-height: 1.25;
+  line-height: 1.3;
   letter-spacing: -0.01em;
-  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
@@ -183,10 +187,17 @@
   color: var(--fg-dim);
 }
 
+.tick {
+  color: var(--accent-green);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* What it has, one line: the card's name left, then its day, checklist and person right. */
 .meta {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 10px;
   min-height: 18px;
   overflow: hidden;
   color: var(--fg-dim);
@@ -194,10 +205,38 @@
   white-space: nowrap;
 }
 
+.for {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-muted);
+  text-overflow: ellipsis;
+}
+
+.push {
+  flex: 1;
+}
+
+.due,
+.checks,
+.who {
+  flex: none;
+}
+
+.due[data-late='true'] {
+  color: var(--accent-magenta);
+}
+
+.checks[data-all='true'] {
+  color: var(--accent-green);
+}
+
+.cells {
+  letter-spacing: -1px;
+}
+
 /* Who it's given to: a square with their initials (D-169's squares). */
 .who {
   display: inline-flex;
-  flex: none;
   align-items: center;
   justify-content: center;
   width: 18px;
@@ -206,34 +245,6 @@
   color: var(--fg);
   font-size: 9px;
   letter-spacing: 0;
-}
-
-.due {
-  flex: none;
-}
-
-.due[data-late='true'] {
-  color: var(--accent-magenta);
-}
-
-.checks {
-  flex: none;
-}
-
-.checks[data-all='true'] {
-  color: var(--accent-green);
-}
-
-/* The card it's for, in that card's colour; cut to the room left. */
-.for {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--fg-muted);
-  text-overflow: ellipsis;
-}
-
-.for::first-letter {
-  color: var(--tone);
 }
 
 /* Hover and selection: a card's corner marks (D-150), grey a little out on hover, cyan just outside once selected. */
@@ -263,31 +274,78 @@
   opacity: 1;
 }
 
+/* While one is held, the others show nothing on hover. */
+.board[data-dragging='true'] .task:hover > .mark {
+  opacity: 0;
+}
+
 .task[data-selected='true'] > .mark {
   --out: 3px;
-  border-color: var(--tone);
+  border-color: var(--accent-cyan);
   opacity: 1;
+}
+
+/* Held: under the pointer, over everything, framed in cyan (no lift, no scale: D-061). */
+.ghost {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.task[data-lifted='true'] {
+  box-shadow: inset 0 0 0 1px var(--accent-cyan);
+}
+
+.task[data-lifted='true'][data-card='true'] {
+  box-shadow:
+    inset 2px 0 0 var(--tone),
+    inset 0 0 0 1px var(--accent-cyan);
 }
 
 .task[data-lifted='true'] > .mark {
   opacity: 0;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .mark,
-  .column,
-  .tools {
-    transition: none;
-  }
+/* Where a held task lands: a cyan line with a tick at each end, in the gap between two tasks. */
+.slot {
+  position: relative;
+  height: 2px;
+  margin: -5px 0;
+  background: var(--accent-cyan);
+  pointer-events: none;
 }
 
-/* `+ task` at a column's foot, and `+ column`: dashed, faint until hovered. */
+.slot::before,
+.slot::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 8px;
+  background: var(--accent-cyan);
+}
+
+.slot::before {
+  left: 0;
+}
+
+.slot::after {
+  right: 0;
+}
+
+.empty {
+  padding: 2px 0 0 14px;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+/* `+ add a task`: a faint line, not a box. `+ column`: a head of its own, as faint. */
 .add,
 .addCol {
-  padding: 0 var(--space-3);
-  border: 1px dashed var(--line);
+  padding: 4px 0 4px 14px;
+  border: 0;
   background: none;
-  color: var(--fg-dim);
+  color: var(--fg-faint);
   font: inherit;
   font-size: var(--text-xs);
   text-align: left;
@@ -295,29 +353,31 @@
 }
 
 .addCol {
-  position: absolute;
+  height: var(--head);
+  padding: 0;
+  white-space: nowrap;
 }
 
 .add:hover,
 .add:focus-visible,
 .addCol:hover,
 .addCol:focus-visible {
-  border-color: var(--line-hover);
   color: var(--fg);
   outline: none;
 }
 
-/* Typing a new task: the menus' `>` (D-222) and a field as big as a task, framed in cyan. */
+/* Typing a new task: a sheet in its place, the menus' cyan `>` (D-222), a cyan edge. */
 .adding {
   display: flex;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  padding: 10px var(--space-3) 10px 14px;
   background: var(--bg-raised);
-  box-shadow: inset 0 0 0 1px var(--accent-cyan);
+  box-shadow: inset 2px 0 0 var(--accent-cyan);
 }
 
 .prompt {
   color: var(--accent-cyan);
+  line-height: 1.3;
 }
 
 .addField {
@@ -329,11 +389,24 @@
   color: var(--fg);
   font-family: var(--font-display);
   font-size: 14px;
-  line-height: 1.25;
+  line-height: 1.3;
   resize: none;
+  outline: none;
+}
+
+/* The sheet's cyan edge already says it's being typed in. */
+.addField:focus-visible,
+.headField:focus-visible {
   outline: none;
 }
 
 .addField::placeholder {
   color: var(--placeholder);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark,
+  .rule {
+    transition: none;
+  }
 }
