@@ -4484,7 +4484,7 @@ User: picked ideas 5, 10 and 9 of the kanban list (2026-10-26); this is session 
 
 ### D-257 · 2026-10-27 · Accepted (changes D-158, D-162's look; D-194's sticky sizes kept)
 **A sticky note is paper in its colour: solid, dark ink, a glue band a shade darker along the top holding the signature,
-at least 3/4 as tall as it is wide, its foot lifting off the space. Never tilted.**
+its foot lifting off the space. Never tilted.** (Its size: D-259.)
 User: "improve how sticky notes look like. Right now they do not look like sticky notes"; shown six directions on a
 preview page (today, A paper, B folded corner, C glyph paper, D taped & tilted, E glue band, F pad), picked "A yap ama
 tiltsiz" (A, without the tilt).
@@ -4493,9 +4493,26 @@ tiltsiz" (A, without the tilt).
   placeholder ink at 40 %. Tokens `--sticky-mix`, `--sticky-base`, `--sticky-yellow`, `--sticky-ink`, `--sticky-shadow`.
 - *Glue band:* the top 13 px a shade darker (86 % of the paper with black), the signed line inside it; text starts at the
   same 17.64 px as before.
-- *Shape:* `aspect-ratio: 4 / 3`, still growing with its text; `labelBox` takes the larger of the two.
+- *Shape:* superseded by D-259 (6 × 5 grid steps, growing down, foldable); 4 / 3 of its width at first.
 - *Shade:* a 1 px contact shadow and a soft one under its foot (`--sticky-shadow`); on black it barely shows, by design.
 - *Alternatives:* the tilt (±2° from its id) — the user said no; B/E stayed dark (less like a note); C's ▓ tape and ░
   dither, D's tape, F's pad edges.
 - *Verified:* headless on the emulators, six notes on the canvas (each colour, a list, a long one, an empty one) in dark
   and light; build.
+
+### D-259 · 2026-10-27 · Accepted (changes D-257's shape, D-158's width)
+**A sticky note starts 6 grid steps wide and 5 tall (150 × 125), grows down as its text does, and a long one folds back
+to the 5.**
+User: "sticky notelar default olarak çok büyük açılıyor. Bence 6 kare widthi yeterli olcaktır ... height 5 ile başlasın
+ve yazı uzadıkça alta büyüsün. Ama insanlar isterse collapse yapabilsin ve 5 height a geri kapansın"; the width strip
+not showing is fine as it is ("gözükmese de olur").
+- *Size:* `STICKY_W.initial` 150 (was 200), `STICKY_H` 125 as its least height; no aspect ratio. Notes already made keep
+  their width. The `+` puts a new one's middle at the view's.
+- *Fold:* `folded` (bool) on the label, shared. Only when the text is longer than fits the 5 (measured), or it's folded,
+  the band shows `▾` (fold) / `▸` (open) before the checks, for editors where it's live; the press doesn't select or drag.
+  Folded, it's held at 125, the text cut and fading over its last 40 %; typing shows all of it. `labelBox` reads 125.
+- *Rules:* `folded` optBool on labels (2 tests). Export carries it on sticky notes.
+- *Alternatives:* folding per browser (others would see a different size on a shared canvas); a `[−]` in the bar under it.
+- *Verified:* headless on the emulators: a short note at 150 × 125, a long one grown down, folded with `▾` to 125 and
+  faded, a folded one opened with `▸`; rules 395 pass; typecheck.
+

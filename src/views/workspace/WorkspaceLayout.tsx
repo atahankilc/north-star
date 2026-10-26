@@ -16,7 +16,7 @@ import { tableBounds, useTableUi } from './Table'
 import { shownPieces } from './shownBox'
 import type { TableSetup } from '../../data/table'
 import { addCard, CARD_TYPES, type CardType } from '../../data/cards'
-import { addLabel, CANVAS, PARA_W, STICKY_W, TITLE_W } from '../../data/labels'
+import { addLabel, CANVAS, PARA_W, STICKY_H, STICKY_W, TITLE_W } from '../../data/labels'
 import { snap } from '../../data/grid'
 import { labelBox, useAuthor } from './TextItems'
 import { spaceBounds } from './spaceBounds'
@@ -216,7 +216,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
         : what === 'paragraph'
           ? { size: 'note' as const, w: PARA_W.initial, dx: PARA_W.initial / 2, dy: 40 }
           : what === 'sticky'
-            ? { kind: 'sticky' as const, w: STICKY_W.initial, color: 'yellow' as const, ...me, dx: STICKY_W.initial / 2, dy: 50 }
+            ? { kind: 'sticky' as const, w: STICKY_W.initial, color: 'yellow' as const, ...me, dx: STICKY_W.initial / 2, dy: STICKY_H / 2 }
             : { kind: 'title' as const, w: TITLE_W.initial, dx: TITLE_W.initial / 2, dy: 80 }
     const { dx, dy, ...rest } = fields
     const id = await addLabel(wid, { pieceId: space, text: '', ...rest, x: snap(at[0] - dx), y: snap(at[1] - dy) })

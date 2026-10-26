@@ -272,6 +272,7 @@ export function cleanLabel(d: Raw, now: number) {
     scale: oneOf(d.scale, ['small', 'medium', 'large'] as const),
     uid: kind === 'sticky' ? str(d.uid, 128) : undefined,
     author: kind === 'sticky' ? str(d.author, 200) : undefined,
+    folded: kind === 'sticky' ? yes(d.folded) : undefined,
     w,
     h: kind === 'section' ? h : undefined,
     ...times(d, now),

@@ -145,8 +145,9 @@ old reports are moved to documents once (D-248).
   `take_off_plane`, `add_package`, `edit_package`; `/organize` may propose planes.
 - Plane filter (D-143): one remembered plane per workspace, the board's open one; Flow and Table (filter bar), Matrix and
   Priorities (footer) show only its cards; a matrix with none of its competitors shows them all.
-- Sticky notes (D-158, D-162, D-257): a label `kind: 'sticky'`, paper in its colour (solid, dark ink; pastel in light), a darker glue band on top, ≥ 3/4 as tall as wide, never tilted, yellow default,
-  card width, as tall as its text, signed on a small top line (`uid`, `author`), mono text S/M/L under a card title; grows as
+- Sticky notes (D-158, D-162, D-257, D-259): a label `kind: 'sticky'`, paper in its colour (solid, dark ink; pastel in
+  light), a darker glue band on top, never tilted, yellow default; 6 × 5 grid steps (150 × 125) growing down with its
+  text, a long one folded back to the 5 from `▾` in its band (shared, `folded`); signed on a small top line (`uid`, `author`), mono text S/M/L under a card title; grows as
   you type; from `+` or right-click; not a place; the brief lists them.
 - Sections look (D-157): thin frame, no fill, the name set into the top edge or up the left one (`side`), the line
   breaking round it, a number before it; a colour goes to the line and the name only.

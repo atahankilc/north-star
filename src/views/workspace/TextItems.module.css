@@ -148,13 +148,13 @@
 
 /* Sticky notes (D-158, D-162, D-257): paper in their colour with dark ink, a glue band a shade darker along the top
    holding the signature (first name · how long ago, three little checks on the right), the text in mono under a card
-   title's size; never narrower than tall by much (at least 3/4 of its width), and its foot lifting off the space. */
+   title's size, its foot lifting off the space. 6 × 5 grid steps to start, growing down with its text; folded, held
+   at the 5, the text fading out at its foot (D-259). */
 .sticky {
   --paper: color-mix(in srgb, var(--paper-tone, var(--tone)) var(--sticky-mix), var(--sticky-base));
   --glue: color-mix(in srgb, var(--paper) 86%, #000);
   display: flex;
   flex-direction: column;
-  aspect-ratio: 4 / 3;
   padding: 4.2px 7.2px 7.2px;
   background: linear-gradient(var(--glue) 0 13px, var(--paper) 14px);
   box-shadow:
@@ -181,6 +181,39 @@
   font-size: 5.2px;
   line-height: 1;
   letter-spacing: 0.08em;
+}
+
+.sticky[data-folded='true'] {
+  height: 125px;
+}
+
+.sticky[data-folded='true'] .stickyText {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(#000 60%, transparent);
+}
+
+.stickyTools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Folding a long note: a small glyph in the band, a size over its signature, ink, darker on hover. */
+.stickyFold {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 7px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.stickyFold:hover {
+  color: var(--sticky-ink);
 }
 
 .checks {

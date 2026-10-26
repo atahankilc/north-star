@@ -376,6 +376,8 @@ await deny('a paragraph at a huge size', () => addDoc(sub(bob.fs, 'labels'), { p
 // Sticky notes (D-158): long text, signed.
 await allow('a sticky note, signed', () => addDoc(sub(bob.fs, 'labels'), { pieceId: 'canvas', text: 'x'.repeat(2000), kind: 'sticky', uid: 'bob', author: 'Bob', w: 3.125, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await deny('a sticky note over 4000', () => addDoc(sub(bob.fs, 'labels'), { pieceId: 'canvas', text: 'x'.repeat(4001), kind: 'sticky', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await allow('a sticky note folded', () => addDoc(sub(bob.fs, 'labels'), { pieceId: 'canvas', text: 'x', kind: 'sticky', folded: true, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
+await deny('a sticky note folded by a word', () => addDoc(sub(bob.fs, 'labels'), { pieceId: 'canvas', text: 'x', kind: 'sticky', folded: 'yes', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await deny('a sticky note signed with a number', () => addDoc(sub(bob.fs, 'labels'), { pieceId: 'canvas', text: 'x', kind: 'sticky', author: 7, x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await deny('the retired groups (D-049)', () => addDoc(sub(bob.fs, 'groups'), { name: 'Pricing', x: 0, y: 0, w: 6, h: 4, createdAt: 1, updatedAt: 1 }))
 await deny('the retired attachments (D-248)', () => setDoc(doc(bob.fs, 'workspaces', wid, 'attachments', 'a1'), { nodeId: 'n1', nodeType: 'idea', name: 'a.pdf', contentType: 'application/pdf', size: 1, path: `workspaces/${wid}/attachments/a1/a.pdf`, uid: bob.uid, createdAt: 1 }))

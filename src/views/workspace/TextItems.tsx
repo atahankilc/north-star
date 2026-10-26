@@ -33,6 +33,7 @@ import {
   PARA_PX,
   PARA_W,
   SECTION_MIN,
+  STICKY_H,
   STICKY_PX,
   STICKY_W,
   textMax,
@@ -99,7 +100,7 @@ export function labelBox(l: Label) {
   if (k === 'section') return { x: l.x, y: l.y, w: l.w ?? 400, h: l.h ?? 300 }
   if (k === 'sticky') {
     const w = l.w ?? STICKY_W.initial
-    return { x: l.x, y: l.y, w, h: Math.max(w * 0.75, STICKY_TEXT_TOP + lines * STICKY_PX[l.scale ?? 'medium'] * 1.45 + 7.2) }
+    return { x: l.x, y: l.y, w, h: l.folded ? STICKY_H : Math.max(STICKY_H, STICKY_TEXT_TOP + lines * STICKY_PX[l.scale ?? 'medium'] * 1.45 + 7.2) }
   }
   if (k === 'title') return { x: l.x, y: l.y, w: l.w ?? TITLE_W.initial, h: 340 }
   let w: number
@@ -346,19 +347,18 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     return <TitleBlock l={l} style={style} common={common} press={press} edit={edit} typing={typing} editor={editor} zoom={zoom} w={w ?? TITLE_W.initial} marks={marks} resize={live && editor ? resize('w') : undefined} />
 
   if (kind === 'sticky') {
-    // Signed along its top (D-158): the writer's first name and how long ago, three little checks in its colour.
+    // Signed along its top (D-158): the writer's first name and how long ago, three little checks; foldable (D-259).
     const who = (l.author ?? 'someone').split(/\s+/)[0].toUpperCase()
     return (
       <div
         className={styles.sticky}
-        style={{ ...style, width: w ?? STICKY_W.initial, fontSize: STICKY_PX[l.scale ?? 'medium'], ...((l.color ?? 'yellow') === 'yellow' && { ['--paper-tone' as string]: 'var(--sticky-yellow)' }) }} {...common} onPointerDown={press} onDoubleClick={edit}>
-        <span className={styles.stickyHead}>
-          <span>
-            {who} · {ago(l.createdAt)}
-          </span>
-          <Checks />
-        </span>
-        {typing ? <Field l={l} /> : <div className={styles.stickyText}>{l.text ? <LightMarkdown text={l.text} mark="•" /> : <span className={styles.empty}>a note</span>}</div>}
+        data-folded={(l.folded && !typing) || undefined}
+        style={{ ...style, width: w ?? STICKY_W.initial, minHeight: STICKY_H, fontSize: STICKY_PX[l.scale ?? 'medium'], ...((l.color ?? 'yellow') === 'yellow' && { ['--paper-tone' as string]: 'var(--sticky-yellow)' }) }}
+        {...common}
+        onPointerDown={press}
+        onDoubleClick={edit}
+      >
+        <StickyBody l={l} who={who} typing={typing} fold={live && editor ? (folded) => void updateLabel(wid, l, { folded: folded || undefined }) : undefined} />
         {live && editor && <span className={styles.edge} onPointerDown={resize('w')} aria-hidden />}
         {marks}
         {bar}
@@ -401,6 +401,60 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
       {marks}
       {bar}
     </div>
+  )
+}
+
+// A sticky note's band and text (D-259). Longer than its first 5 grid steps, the band offers `▾` to fold it back to
+// them (`▸` opens it again), shared; typing shows it all.
+function StickyBody({ l, who, typing, fold }: { l: Label; who: string; typing: boolean; fold?: (folded: boolean) => void }) {
+  const text = useRef<HTMLDivElement>(null)
+  const [long, setLong] = useState(false)
+  useLayoutEffect(() => {
+    const el = text.current
+    if (!el) return
+    // What fits under the band in the first height, its foot padding taken off.
+    const room = STICKY_H - STICKY_TEXT_TOP - 7.2
+    const measure = () => setLong(el.scrollHeight > room + 1)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [typing])
+  const folded = !!l.folded && !typing
+  return (
+    <>
+      <span className={styles.stickyHead}>
+        <span>
+          {who} · {ago(l.createdAt)}
+        </span>
+        <span className={styles.stickyTools}>
+          {fold && (long || folded) && (
+            <button
+              type="button"
+              className={styles.stickyFold}
+              title={folded ? 'open' : 'fold'}
+              aria-label={folded ? 'open the note' : 'fold the note'}
+              onPointerDown={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                fold(!folded)
+              }}
+            >
+              {folded ? '▸' : '▾'}
+            </button>
+          )}
+          <Checks />
+        </span>
+      </span>
+      {typing ? (
+        <Field l={l} />
+      ) : (
+        <div ref={text} className={styles.stickyText}>
+          {l.text ? <LightMarkdown text={l.text} mark="•" /> : <span className={styles.empty}>a note</span>}
+        </div>
+      )}
+    </>
   )
 }
 

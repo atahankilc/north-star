@@ -145,6 +145,7 @@ service cloud.firestore {
         && optText(d, 'kicker', 60)
         && optIn(d, 'side', ['left'])
         && optIn(d, 'scale', ['small', 'medium', 'large'])
+        && optBool(d, 'folded')
         && optText(d, 'uid', 128) && optText(d, 'author', 200)
         && optSize(d, 'w') && optSize(d, 'h')
         && (!('kind' in d) || d.kind != 'section' || ('w' in d && 'h' in d))
