@@ -1,5 +1,5 @@
 // The card panel's sections that belong to one type (D-221): a competitor's profile and its features (the basic cards
-// inside it, by category, a row opening in place), a feature's parent, parts (a tree of `part of`), must-haves, what it
+// inside it, by category, a row opening in place), a feature's parent, parts (a tree of `part of`), what it's judged on, what it
 // rests on (and how sure that makes it) and the features of theirs that match it.
 import { useRef, useState } from 'react'
 import { cardRef, updateCard, type Card } from '../../data/cards'
@@ -11,10 +11,10 @@ import {
   updateCompetitorFeature,
   type CompetitorFeature,
   type NewCompetitorFeature,
-  CRITERION_SCORES,
   dropCriterionScores,
-  scoreCriterion,
 } from '../../data/competitorFeatures'
+import { cellKey, cellRef, meets, readCell, relevant, subKey } from '../../data/matrix'
+import { kindOfPiece } from '../../data/pieces'
 import { deleteField } from 'firebase/firestore'
 import { deleteEdge, FOR } from '../../data/edges'
 import { mismatch } from '../../data/evidence'
@@ -384,70 +384,71 @@ export function Parts({ n, card, cards, editor }: P) {
   )
 }
 
-// What it must do (D-133): up to eight, typed in place. Each says how the competitors do on it, `met by N` or `◇ open`
-// (nobody scored meets it: white space); a click on that opens the plane's competitors to score it `met / part / no`
-// (the old matrix's cell scores). `×` takes one away with its scores.
-export function Criteria({ n, card, cards, editor }: P) {
-  const { wid, comparisons } = useWs()
+// What it's judged on (D-133, D-249): up to eight, typed in place; the criteria a matrix unfolds the feature into and
+// scores against the other axis (competitors, mostly). Each says how it does there, across every matrix that scores it:
+// `met by N` (cells in the scale's upper half), `◇ open` (scored, nobody meets it: white space), or nothing yet. `×`
+// takes one away with its cells.
+export function Criteria({ n, card, editor }: P) {
+  const { wid, comparisons, cells, pieces } = useWs()
   const list = card.criteria ?? []
   const [adding, setAdding] = useState<string | null>(null)
-  const [open, setOpen] = useState<string | null>(null)
-  const set = (next: { id: string; text: string }[]) => void updateCard(wid, card, { criteria: next.length ? next : undefined }, 'must-haves of')
-  const rivals = cards.filter((c) => c.type === 'competitor' && c.pieceId === card.pieceId)
-  const scoreOf = (who: string, id: string) => comparisons.find((c) => c.featureId === card.id && c.competitorId === who)?.criteria?.[id]
+  const set = (next: { id: string; text: string }[]) => void updateCard(wid, card, { criteria: next.length ? next : undefined }, 'what it is judged on')
+  // The matrices that score on a scale, and whether any unfolds features at all.
+  const matrices = new Map(pieces.filter((p) => kindOfPiece(p) === 'matrix' && p.matrix?.cell === 'scale').map((p) => [p.id, p.matrix!]))
+  const unfolding = pieces.some((p) => kindOfPiece(p) === 'matrix' && (p.matrix?.rows.unfold || p.matrix?.cols.unfold))
+  const readingOf = (id: string) => {
+    const key = subKey(card.id, id)
+    let scored = 0
+    let met = 0
+    for (const c of cells) {
+      const setup = matrices.get(c.matrixId)
+      if (!setup || (c.row !== key && c.col !== key) || (setup.notRelevant && !relevant(c))) continue
+      const step = readCell(setup, c).step
+      if (!step) continue
+      scored++
+      if (meets(setup, step)) met++
+    }
+    return { scored, met }
+  }
   const remove = (id: string) => {
     const next = list.filter((x) => x.id !== id)
     const ref = cardRef(wid, card.type, card.id)
-    void dropCriterionScores(wid, card.id, id, comparisons, { ref, write: (b) => b.update(ref, { criteria: next.length ? next : deleteField(), updatedAt: Date.now() }) })
+    const key = subKey(card.id, id)
+    const gone = cells.filter((c) => c.row === key || c.col === key).map((c) => cellRef(wid, cellKey(c.matrixId, c.row, c.col)))
+    void dropCriterionScores(wid, card.id, id, comparisons, { ref, write: (b) => b.update(ref, { criteria: next.length ? next : deleteField(), updatedAt: Date.now() }) }, gone)
   }
   return (
     <PanelSection
       n={n}
-      name="must do"
+      name="judged on"
       count={list.length ? `${list.length} of ${MAX_CRITERIA}` : undefined}
-      add={editor && list.length < MAX_CRITERIA ? { label: 'must-have', onClick: () => setAdding('') } : undefined}
+      add={editor && list.length < MAX_CRITERIA ? { label: 'criterion', onClick: () => setAdding('') } : undefined}
       empty={!list.length && adding === null}
     >
       {list.map((c, i) => {
-        const scores = rivals.map((r) => scoreOf(r.id, c.id)).filter(Boolean)
-        const met = scores.filter((s) => s === 'met').length
-        const reading = !scores.length ? 'score' : met ? `met by ${met}` : '◇ open'
+        const { scored, met } = readingOf(c.id)
+        const reading = !scored ? '' : met ? `met by ${met}` : '◇ open'
         return (
-          <div key={c.id}>
-            <div className={styles.crit}>
-              <span className={styles.critN}>{i + 1}</span>
-              <Field value={c.text} placeholder="what it must do" editor={editor} onSave={(v) => v && set(list.map((x) => (x.id === c.id ? { ...x, text: v } : x)))} />
-              <button className={styles.critRead} data-open={!scores.length ? undefined : met ? 'met' : 'open'} aria-expanded={open === c.id} onClick={() => setOpen(open === c.id ? null : c.id)}>
-                {reading} {open === c.id ? '▾' : '▸'}
+          <div key={c.id} className={styles.crit}>
+            <span className={styles.critN}>{i + 1}</span>
+            <Field value={c.text} placeholder="what users judge it on" editor={editor} onSave={(v) => v && set(list.map((x) => (x.id === c.id ? { ...x, text: v } : x)))} />
+            <span className={styles.critRead} data-open={!scored ? undefined : met ? 'met' : 'open'} title={scored ? `${met} of ${scored} scored cells meet it` : 'not scored in a matrix yet'}>
+              {reading}
+            </span>
+            {editor && (
+              <button className={styles.x} title="Remove with its cells" onClick={() => remove(c.id)}>
+                ×
               </button>
-              {editor && (
-                <button className={styles.x} title="Remove with its scores" onClick={() => remove(c.id)}>
-                  ×
-                </button>
-              )}
-            </div>
-            {open === c.id && (
-              <div className={styles.scores}>
-                {rivals.length ? (
-                  rivals.map((r) => (
-                    <div key={r.id} className={styles.score}>
-                      <span className={styles.scoreWho}>{r.title || PLACEHOLDER.competitor}</span>
-                      <Pills values={CRITERION_SCORES} value={scoreOf(r.id, c.id)} editor={editor} label={`${r.title} on it`} onPick={(v) => void scoreCriterion(wid, card.id, r.id, c.id, v ?? null)} />
-                    </div>
-                  ))
-                ) : (
-                  <p className={styles.quiet}>no competitors on this plane to score</p>
-                )}
-              </div>
             )}
           </div>
         )
       })}
+      {list.length > 0 && !unfolding && <p className={styles.quiet}>scored in a matrix whose features unfold (its setup → rows)</p>}
       {adding !== null && (
         <input
           className={styles.input}
           autoFocus
-          placeholder="what it must do"
+          placeholder="what users judge it on"
           value={adding}
           maxLength={200}
           onChange={(e) => setAdding(e.target.value)}

@@ -8,7 +8,7 @@ import { CARD_TYPES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATU
 import { AVAILABILITIES, CRITERION_SCORES } from '../data/competitorFeatures'
 import { DOC_COLS, DOC_KINDS, DOC_LIMITS, type DocBody } from '../data/documents'
 import { EVIDENCE_KINDS } from '../data/evidence'
-import { CELL_KINDS, CONFIDENCES, TONES, TOTALS_AS, TOTALS_AT, newId } from '../data/matrix'
+import { CELL_KINDS, CONFIDENCES, TONES, TOTALS_AS, TOTALS_AT, UNFOLDS, newId } from '../data/matrix'
 import { RULE_FIELDS } from '../data/source'
 import { COL_W, FIELDS, OWN_KINDS } from '../data/table'
 
@@ -326,7 +326,7 @@ function items(v: unknown, ids: Ids): Item[] {
   })
 }
 
-// Cards taken out by hand: only those that came over.
+// Cards taken out by hand (or shown open, D-249): only those that came over.
 const hidden = (v: unknown, ids: Ids) => {
   const out = list(v, 200).flatMap((c) => ids.card(c)?.id ?? [])
   return out.length ? out : undefined
@@ -349,6 +349,9 @@ function cleanAxis(v: unknown, ids: Ids) {
     hide: hidden(a.hide, ids),
     items: items(a.items, ids),
     noun: str(a.noun, 40),
+    // Unfolded into what they're judged on (D-249); the cards shown open, those that came over.
+    unfold: oneOf(a.unfold, UNFOLDS),
+    open: hidden(a.open, ids),
   })
 }
 

@@ -9,6 +9,10 @@
 //
 // The setup lives on the piece (`matrix`); the cells in `cells/{matrixId}_{row}_{col}`, so a cell can't be made twice.
 // A row or column is keyed by its card's id, or by its typed entry's own id.
+//
+// An axis may unfold its cards into what they're made of (D-249): a feature into what it's judged on (its `criteria`,
+// D-133). Each is a row (or column) of its own under the card, `card~criterion`, its cells ordinary cells; the card's
+// own cells then read from them (rollUp), folded as one small square each. Shown open or folded per card, shared.
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { CARD_TYPES, type AnyType, type Card, type CardType } from './cards'
 import { db } from './firebase'
@@ -27,7 +31,14 @@ export type Axis = {
   items: AxisItem[]
   // What one of them is, said in the corner (`features`, `criteria`); the type's name when unset.
   noun?: string
+  // Its cards unfolded into what they're made of (D-249), and the cards shown open (the rest folded).
+  unfold?: Unfold
+  open?: string[]
 }
+
+// What a card can unfold into; only a feature's criteria for now (later its parts, a competitor's features).
+export const UNFOLDS = ['criteria'] as const
+export type Unfold = (typeof UNFOLDS)[number]
 
 export const TONES = ['dim', 'fg', 'cyan', 'yellow', 'magenta', 'green', 'blue'] as const
 export type Tone = (typeof TONES)[number]
@@ -125,7 +136,7 @@ export const TEMPLATES: { key: string; name: string; hint: string; setup: () => 
     key: 'compare',
     name: 'features × competitors',
     hint: 'how well each competitor covers each feature',
-    setup: () => ({ rows: axis('feature'), cols: axis('competitor'), cell: 'scale', steps: SCALES[0].steps, notRelevant: true, confidence: true, reading: true }),
+    setup: () => ({ rows: { ...axis('feature'), unfold: 'criteria' }, cols: axis('competitor'), cell: 'scale', steps: SCALES[0].steps, notRelevant: true, confidence: true, reading: true }),
   },
   {
     key: 'pain',
@@ -149,8 +160,25 @@ export const TEMPLATES: { key: string; name: string; hint: string; setup: () => 
 
 export const emptySetup = (): MatrixSetup => TEMPLATES[TEMPLATES.length - 1].setup()
 
-// One row or column as shown: its key (the card's id or the entry's), its name, and the card or entry behind it.
-export type Entry = { key: string; name: string; card?: Card; item?: AxisItem; auto: boolean }
+// One row or column as shown: its key (the card's id or the entry's), its name, and the card or entry behind it. An
+// unfolding card's `subs` are the keys of what it unfolds into (shown or not); one of those has its `parent` (the card's
+// key), its `sub` (the criterion) and its place among them, `n`.
+export type Entry = {
+  key: string
+  name: string
+  card?: Card
+  item?: AxisItem
+  auto: boolean
+  subs?: string[]
+  parent?: string
+  sub?: { id: string; text: string }
+  n?: number
+}
+
+// The key of what a card unfolds into: `card~criterion`.
+export const SUB = '~'
+export const subKey = (card: string, sub: string) => `${card}${SUB}${sub}`
+export const isSubKey = (key: string) => key.includes(SUB)
 
 const byTitle = (a: Card, b: Card) => (a.title ? (b.title ? a.title.localeCompare(b.title) : -1) : b.title ? 1 : 0)
 
@@ -170,8 +198,20 @@ export function entriesOf(a: Axis, cards: Card[]): Entry[] {
       out.push({ key: c.id, name: c.title, card: c, item, auto: false })
     } else out.push({ key: item.id, name: item.name ?? '', item, auto: false })
   }
-  return out
+  if (a.unfold !== 'criteria') return out
+  const open = new Set(a.open ?? [])
+  return out.flatMap((e) => {
+    const list = e.card?.type === 'feature' ? (e.card.criteria ?? []) : []
+    if (!list.length) return [e]
+    const subs = list.map((c) => subKey(e.key, c.id))
+    const head = { ...e, subs }
+    if (!open.has(e.key)) return [head]
+    return [head, ...list.map((c, i): Entry => ({ key: subs[i], name: c.text, card: e.card, auto: false, parent: e.key, sub: c, n: i + 1 }))]
+  })
 }
+
+// The entries that stand for themselves in a total across them: not what a card unfolded into (it's in the card's).
+export const tops = (list: Entry[]) => list.filter((e) => !e.parent)
 
 // What one row or column is called in the corner: `features`, `criteria`.
 export const nounOf = (a: Axis) => a.noun || (a.type ? `${a.type}s` : 'names')
@@ -210,7 +250,58 @@ export function readingOf(setup: MatrixSetup, cells: (Cell | undefined)[]): Read
   return { counts, filled, of: counted.length, avg: numbers.length ? numbers.reduce((a, b) => a + b, 0) / numbers.length : undefined }
 }
 
+// A card's cell read from what it unfolds into (D-249), the ones left out (—) and unset aside: a scale's the step at the
+// average of theirs, rounded down (one `none` among `full`s isn't full); numbers' average; words aren't summed.
+export function rollUp(setup: MatrixSetup, cells: (Cell | undefined)[]): string | number | undefined {
+  const counted = setup.notRelevant ? cells.filter(relevant) : cells
+  const read = counted.map((c) => readCell(setup, c))
+  if (setup.cell === 'scale') {
+    const at = read.flatMap((r) => (r.step ? [setup.steps.indexOf(r.step)] : []))
+    return at.length ? setup.steps[Math.floor(at.reduce((a, b) => a + b, 0) / at.length)]?.id : undefined
+  }
+  if (setup.cell === 'number') {
+    const n = read.flatMap((r) => (r.number !== undefined ? [r.number] : []))
+    return n.length ? n.reduce((a, b) => a + b, 0) / n.length : undefined
+  }
+  return undefined
+}
+
+// A cell as shown: a card's that unfolds reads from its parts (`parts`, each shown the same way), and `rolled` once any of
+// them is set; till then its own value shows (as D-133's unscored cells kept theirs). Its note, `—` and how sure stay its own.
+export type Shown = Cell & { parts?: (Shown | undefined)[]; rolled?: boolean }
+type Side = Pick<Entry, 'key' | 'subs'>
+export function cellView(matrixId: string, setup: MatrixSetup, at: (row: string, col: string) => Cell | undefined, row: Side, col: Side): Shown | undefined {
+  const own = at(row.key, col.key)
+  const parts = row.subs
+    ? row.subs.map((k) => cellView(matrixId, setup, at, { key: k }, col))
+    : col.subs
+      ? col.subs.map((k) => cellView(matrixId, setup, at, row, { key: k }))
+      : undefined
+  if (!parts) return own
+  const v = rollUp(setup, parts)
+  const base: Cell = own ?? { matrixId, row: row.key, col: col.key, updatedAt: 0 }
+  return { ...base, value: v ?? own?.value, parts, rolled: v !== undefined }
+}
+
+// A step that meets what it's judged on: the scale's upper half (full and better of none → better; yes; high; 4 and 5).
+export const meets = (setup: MatrixSetup, step: Step | undefined) => !!step && setup.steps.indexOf(step) >= Math.ceil(setup.steps.length / 2)
+
+// What nobody meets (D-133's white space): scored somewhere across, and nowhere in the upper half. Scales only.
+export function isOpen(setup: MatrixSetup, cells: (Cell | undefined)[]) {
+  if (setup.cell !== 'scale') return false
+  const steps = (setup.notRelevant ? cells.filter(relevant) : cells).map((c) => readCell(setup, c).step).filter(Boolean)
+  return steps.length > 0 && !steps.some((s) => meets(setup, s))
+}
+
 // ---- Writes. Each is one undo step; typing in a field merges into one.
+
+// A card on an unfolding axis shown open or folded (D-249), for everyone.
+export function setOpen(wid: string, id: string, setup: MatrixSetup, which: 'rows' | 'cols', keys: string[], open: boolean) {
+  const a = setup[which]
+  const now = new Set(a.open ?? [])
+  for (const k of keys) open ? now.add(k) : now.delete(k)
+  return setPart(wid, id, which, { ...a, open: now.size ? [...now] : undefined })
+}
 
 // The whole setup at once (a template).
 export function setSetup(wid: string, id: string, setup: MatrixSetup, name?: string) {
@@ -236,7 +327,9 @@ export function removeEntry(wid: string, id: string, setup: MatrixSetup, which: 
   const next: Axis = entry.auto
     ? { ...a, hide: [...(a.hide ?? []), entry.key] }
     : { ...a, items: a.items.filter((i) => i !== entry.item) }
-  const gone = entry.auto ? [] : cells.filter((c) => c.matrixId === id && (which === 'rows' ? c.row : c.col) === entry.key)
+  // With what it unfolded into.
+  const ofIt = (k: string) => k === entry.key || k.startsWith(entry.key + SUB)
+  const gone = entry.auto ? [] : cells.filter((c) => c.matrixId === id && ofIt(which === 'rows' ? c.row : c.col))
   const ref = pieceRef(wid, id)
   const refs = [ref, ...gone.map((c) => cellRef(wid, cellKey(c.matrixId, c.row, c.col)))]
   return tracked(`take out a ${which === 'rows' ? 'row' : 'column'}`, refs, () => {

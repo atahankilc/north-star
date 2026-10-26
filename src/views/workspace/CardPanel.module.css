@@ -550,16 +550,11 @@
   grid-template-columns: 14px 1fr auto auto;
 }
 
-/* `met by 2` / `◇ open` / `score`: opens the competitors' scores. */
+/* `met by 2` / `◇ open`, read from the matrices that score it (D-249). */
 .critRead {
-  padding: 0;
-  border: 0;
-  background: none;
   color: var(--fg-faint);
-  font: inherit;
   font-size: 10px;
   white-space: nowrap;
-  cursor: pointer;
 }
 
 .critRead[data-open='met'] {
@@ -567,11 +562,7 @@
 }
 
 .critRead[data-open='open'] {
-  color: var(--accent-yellow);
-}
-
-.critRead:hover {
-  color: var(--fg-strong);
+  color: var(--accent-magenta);
 }
 
 .scores {

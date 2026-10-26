@@ -243,6 +243,11 @@ await deny('a matrix with totals somewhere unknown', () => addDoc(sub(bob.fs, 'p
 await deny('a matrix with totals as a pie', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'matrix', matrix: { ...setup, totalsAs: 'pie' } }))
 await deny('a matrix axis of an unknown type', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'matrix', matrix: { ...setup, rows: axis('video') } }))
 await allow('a matrix cell', () => setDoc(doc(sub(bob.fs, 'cells'), 'm1_f1_a1'), { matrixId: 'm1', row: 'f1', col: 'a1', value: 'no', updatedAt: 1 }))
+await allow('a matrix whose features unfold into what they are judged on, one shown open (D-249)', () =>
+  setDoc(doc(sub(bob.fs, 'pieces'), 'm3'), { ...piece, kind: 'matrix', matrix: { ...setup, rows: { ...axis('feature'), unfold: 'criteria', open: ['f1'] } } }))
+await deny('a matrix axis unfolding into something unknown', () =>
+  addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'matrix', matrix: { ...setup, rows: { ...axis('feature'), unfold: 'parts-of-parts' } } }))
+await allow('a cell on what a feature unfolded into (D-249)', () => setDoc(doc(sub(bob.fs, 'cells'), 'm3_f1~c0_a1'), { matrixId: 'm3', row: 'f1~c0', col: 'a1', value: 'full', updatedAt: 1 }))
 await allow('a matrix cell with a number, a note, not relevant and a confidence', () =>
   setDoc(doc(sub(bob.fs, 'cells'), 'm1_f2_a1'), { matrixId: 'm1', row: 'f2', col: 'a1', value: 4.5, notes: 'seen on their site', notRelevant: true, confidence: 'guess', updatedAt: 1 }))
 await deny('a matrix cell under another id', () => setDoc(doc(sub(bob.fs, 'cells'), 'm1_f1'), { matrixId: 'm1', row: 'f1', col: 'a1', updatedAt: 1 }))

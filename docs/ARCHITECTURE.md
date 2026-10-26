@@ -117,6 +117,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         matrix = {rows, cols, cell (scale|number|text), steps[{id, glyph, label, tone}], unit?, notRelevant?,
                         confidence?, reading?}; an axis = {type?, plane?, hide?[], items[{id, name? | cardType, cardId}], noun?}
   cells/{id}            matrixId, row, col, value? (step id | number | text ≤ 200), notes?, notRelevant?, confidence?
+                        (row/col `card~criterion` for what a feature unfolded into; axis `unfold`, `open[]`, D-249)
                         table = {rows: {rules[{field (plane|type|status|tag|title), not?, values[]}], hide?[], items[]},
                         manual?, cols[{id, field? | name, kind (scale|number|text|check), steps?, unit?}], sort?{col, desc?}} (D-209)
                         (id = matrixId_row_col; a row or column is its card's id or its typed entry's id, D-204)

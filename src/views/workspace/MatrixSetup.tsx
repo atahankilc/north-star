@@ -3,7 +3,8 @@
 // what it replaced). The same editors make a new matrix in the wizard (MatrixWizard.tsx), on a draft instead of the
 // piece. An axis takes every card of a type (on any plane or one) and what's added by hand: cards and typed names. The
 // cells are a mark from a scale (its steps edited here: glyph, name, colour; shown as squares or as their glyphs), a
-// number (with a unit) or a few words. Options: `doesn't apply`, guesses marked, the totals (where, and as what).
+// number (with a unit) or a few words. Options: `doesn't apply`, guesses marked, the totals (where, and as what). An
+// axis's features may unfold into what they're judged on (D-249), all open or all folded from here.
 // Every change is one undo step; typing in a field merges into one.
 import { useRef, useState, type ReactNode } from 'react'
 import type { WithId } from '../../data/hooks'
@@ -27,6 +28,7 @@ import {
   TONES,
   TOTALS_AS,
   TOTALS_AT,
+  tops,
   type Axis,
   type AxisItem,
   type CellKind,
@@ -52,7 +54,7 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
   const setup = setupOf(piece)
   const tab = setupTab(useMatrixUi((s) => s.setup)) ?? 'rows'
   const part: SetPart = (k, v, key) => void setPart(wid, piece.id, k, v, key)
-  const count = { rows: entriesOf(setup.rows, cards).length, cols: entriesOf(setup.cols, cards).length }
+  const count = { rows: tops(entriesOf(setup.rows, cards)).length, cols: tops(entriesOf(setup.cols, cards)).length }
   // Taking a typed entry out takes its cells too, as its `×` on the table does.
   const removeItem = (which: 'rows' | 'cols', item: AxisItem) =>
     void removeEntry(wid, piece.id, setup, which, { key: item.cardId ?? item.id, name: item.name ?? '', item, auto: false }, cells)
@@ -198,10 +200,41 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
           />
         </span>
       </Row>
+      <Unfold axis={axis} onChange={onChange} />
       <Row label="called" hint="what one of them is, in the table's corner">
         <AutosaveField className={styles.pillField} label="called" placeholder={axis.type ? `${axis.type}s` : 'names'} maxLength={40} value={axis.noun ?? ''} onSave={(n) => n.trim() !== (axis.noun ?? '') && onChange({ ...axis, noun: n.trim() || undefined }, 'noun')} />
       </Row>
     </>
+  )
+}
+
+// Its features unfolded into what they're judged on (D-249): their criteria as rows of their own, the feature's cells
+// read from them. Then every one opened or folded at once (each its own from its head's `[+]`).
+function Unfold({ axis, onChange }: { axis: Axis; onChange: (a: Axis, key?: string) => void }) {
+  const { cards } = useWs()
+  const on = axis.unfold === 'criteria'
+  const features = entriesOf({ ...axis, unfold: undefined }, cards).filter((e) => e.card?.type === 'feature' && e.card.criteria?.length)
+  const all = features.map((e) => e.key)
+  const shown = all.filter((k) => axis.open?.includes(k)).length
+  return (
+    <Row label="unfold" hint="a card's cells read from what it's made of">
+      <Toggle
+        on={on}
+        label="features into what they're judged on"
+        hint={`their criteria as rows of their own; the feature's cells read from them${features.length ? ` · ${features.length} have some` : ''}`}
+        onChange={(v) => onChange({ ...axis, unfold: v ? 'criteria' : undefined, open: undefined })}
+      />
+      {on && all.length > 0 && (
+        <>
+          <button className={styles.tool} disabled={shown === all.length} onClick={() => onChange({ ...axis, open: all })}>
+            open all
+          </button>
+          <button className={styles.tool} disabled={!shown} onClick={() => onChange({ ...axis, open: undefined })}>
+            fold all
+          </button>
+        </>
+      )}
+    </Row>
   )
 }
 

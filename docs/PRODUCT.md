@@ -67,6 +67,8 @@ are nodes in a single graph. Each view is a different lens on that same graph.
    single cards; cells a scale of your own steps, a number or a text, with notes, `not relevant` and how sure; a reading
    for each row and column. Features × competitors is one of its templates; problems × customers, ideas × criteria and a
    blank one are the others.
+   An axis can unfold its features into what they're judged on (their criteria, D-249): each a row under the feature,
+   scored like any cell; the feature's cells read from them, and a criterion nobody meets is `◇ open`.
    On the canvas it's a window you move and resize, its table inside, no `+` marks (D-208); focus brings the table to
    the middle of the whole screen (D-206).
    Made in a short wizard (start from, rows, columns, cells, with a preview); its heads look like the cards they are,

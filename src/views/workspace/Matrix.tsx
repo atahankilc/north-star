@@ -11,17 +11,22 @@
 // size, its bar: the steps, `doesn't apply`, how sure, a note. Rows, columns and cells are set up from the focus dock's
 // `[setup]` (MatrixSetupPanel); a typed head is renamed by a double-click, any head taken out by its `×`. Escape lets
 // go of the cell (CanvasView), then leaves focus.
-import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type RefObject, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+// A feature on an axis that unfolds (D-249) carries `[+] 3` in its head: open, what it's judged on are rows of their
+// own under it (numbered, renamed by a double-click, written to the card), and its cells read from them; folded, its
+// cells show one small square for each. A criterion nobody meets is `◇ open`, the card's head counting them.
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type RefObject, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import type { Card } from '../../data/cards'
+import { updateCard, type Card } from '../../data/cards'
 import {
   addCardEntry,
   addNamed,
   CONFIDENCE_MARK,
   CONFIDENCES,
+  cellView,
   emptySetup,
+  isOpen,
   entriesOf,
   NAME_MAX,
   nounOf,
@@ -33,12 +38,15 @@ import {
   removeEntry,
   renameEntry,
   setCell,
+  setOpen,
   TEXT_MAX,
   TONE_VAR,
+  tops,
   type Cell,
   type Entry,
   type MatrixSetup,
   type Reading,
+  type Shown,
   type Step,
 } from '../../data/matrix'
 import { fitInto, glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
@@ -95,13 +103,14 @@ export function matrixFindItems(piece: WithId<Piece>, cards: Card[], cells: Cell
   const rows = entriesOf(setup.rows, cards)
   const cols = entriesOf(setup.cols, cards)
   const byKey = new Map(cells.filter((c) => c.matrixId === piece.id).map((c) => [`${c.row}|${c.col}`, c]))
+  const at = (row: string, col: string) => byKey.get(`${row}|${col}`)
   const L = layout(setup, rows.length, cols.length)
   const out: FindItem[] = cols.map((c, i) => ({ key: `cols|${c.key}`, text: c.name, box: { x: L.colX(i), y: 0, w: M.cell, h: M.top } }))
   rows.forEach((r, ri) => {
     const y = L.rowY(ri)
     out.push({ key: `rows|${r.key}`, text: r.name, box: { x: 0, y, w: M.head, h: M.row } })
     cols.forEach((c, ci) => {
-      const cell = byKey.get(`${r.key}|${c.key}`)
+      const cell = cellView(piece.id, setup, at, r, c)
       const read = setup.notRelevant && !relevant(cell) ? {} : readCell(setup, cell)
       const shown = read.step?.label ?? (read.number !== undefined ? fmt(read.number) : read.text) ?? ''
       out.push({ key: selKey(piece.id, r.key, c.key), text: [shown, cell?.notes].filter(Boolean).join('\n'), box: { x: L.colX(ci), y, w: M.cell, h: M.row } })
@@ -140,6 +149,17 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const mine = useMemo(() => cells.filter((c) => c.matrixId === piece.id), [cells, piece.id])
   const byKey = useMemo(() => new Map(mine.map((c) => [`${c.row}|${c.col}`, c])), [mine])
   const at = (row: string, col: string) => byKey.get(`${row}|${col}`)
+  // A cell as shown: a card that unfolds reads from its parts (D-249).
+  // Kept while the cells and the setup are, so the far canvas (CellDots) isn't drawn again on every pan.
+  const shownAt = useCallback(
+    (r: Entry, c: Entry): Shown | undefined => {
+      const get = (row: string, col: string) => byKey.get(`${row}|${col}`)
+      return r.subs || c.subs ? cellView(piece.id, setup, get, r, c) : get(r.key, c.key)
+    },
+    [byKey, setup, piece.id],
+  )
+  const topRows = useMemo(() => tops(rows), [rows])
+  const topCols = useMemo(() => tops(cols), [cols])
   const L = layout(setup, rows.length, cols.length)
   const sel = parseSel(piece.id, useCanvasView((s) => (live ? s.cardSelected : null)))
   const ri = sel ? rows.findIndex((r) => r.key === sel[0]) : -1
@@ -218,13 +238,16 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
       // The keyboard's focus goes along, so the one left behind isn't ringed.
       return layer.current?.querySelector<HTMLElement>(`[data-cell="${selKey(piece.id, rows[r].key, cols[c].key)}"]`)?.focus()
     }
+    // A card's cell read from its parts is set through them; only `-` is its own.
+    const rolled = !!shownAt(rows[selected.r], cols[selected.c])?.rolled
     if (!editor) return
+    if (e.key === '-' && setup.notRelevant) return write(row, col, { notRelevant: at(row, col)?.notRelevant ? undefined : true })
+    if (rolled) return
     if (setup.cell === 'scale' && /^[1-9]$/.test(e.key) && Number(e.key) <= setup.steps.length) return stepTo(row, col, Number(e.key) - 1)
     if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault()
       return write(row, col, { value: undefined })
     }
-    if (e.key === '-' && setup.notRelevant) return write(row, col, { notRelevant: at(row, col)?.notRelevant ? undefined : true })
     if (e.key === 'Enter' && setup.cell !== 'scale') {
       e.preventDefault()
       setTyping(selKey(piece.id, row, col))
@@ -240,8 +263,18 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   // A press on anything live is its own: the plane's pan would take the click.
   const own = live ? (e: ReactPointerEvent) => e.stopPropagation() : undefined
   const remove = (which: 'rows' | 'cols', entry: Entry) => void removeEntry(wid, piece.id, setup, which, entry, mine)
-  const rowCells = (r: Entry) => cols.map((c) => at(r.key, c.key))
-  const colCells = (c: Entry) => rows.map((r) => at(r.key, c.key))
+  // A total across a row or a column counts each card once: not what it unfolded into (that's in its own cell).
+  const rowCells = (r: Entry) => topCols.map((c) => shownAt(r, c))
+  const colCells = (c: Entry) => topRows.map((r) => shownAt(r, c))
+  // What a card unfolds into that nobody meets, by its key (D-249): across the other axis's cards.
+  const openOf = (which: 'rows' | 'cols', key: string) =>
+    isOpen(setup, which === 'rows' ? topCols.map((c) => cellView(piece.id, setup, at, { key }, c)) : topRows.map((r) => cellView(piece.id, setup, at, r, { key })))
+  const fold = (which: 'rows' | 'cols', e: Entry, open: boolean) => void setOpen(wid, piece.id, setup, which, [e.key], open)
+  const renameSub = (e: Entry, text: string) => {
+    const card = e.card
+    if (!card || !e.sub || !text) return
+    void updateCard(wid, card, { criteria: (card.criteria ?? []).map((x) => (x.id === e.sub!.id ? { ...x, text: text.slice(0, NAME_MAX) } : x)) }, 'what it is judged on')
+  }
   const shown = [...rows, ...cols].map((e) => e.key)
   // What a cell does, by its row and column: one object kept for good, its functions this render's, so a cell (memoised)
   // is drawn again only when what it shows changes, not when the view moves or another cell is hovered.
@@ -252,9 +285,9 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
     hover: (ri, ci, e) => live && e.buttons === 0 && setHot({ r: ri, c: ci }),
     click: (ri, ci) => {
       if (selected?.r !== ri || selected.c !== ci) return select(ri, ci)
-      // Again on a selected scale cell: the next step, then nothing (D-133's cycle).
-      const cell = at(rows[ri].key, cols[ci].key)
-      if (!editor || setup.cell !== 'scale' || (setup.notRelevant && !relevant(cell))) return
+      // Again on a selected scale cell: the next step, then nothing (D-133's cycle). Not on one read from its parts.
+      const cell = shownAt(rows[ri], cols[ci])
+      if (!editor || setup.cell !== 'scale' || cell?.rolled || (setup.notRelevant && !relevant(cell))) return
       const now = readCell(setup, cell).step
       const i = now ? setup.steps.indexOf(now) + 1 : 0
       stepTo(rows[ri].key, cols[ci].key, i < setup.steps.length ? i : undefined)
@@ -297,13 +330,13 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
           x={L.colX(ci)}
           y={L.rowY(ri)}
           setup={setup}
-          cell={at(r.key, c.key)}
+          cell={shownAt(r, c)}
           label={`${r.name || 'untitled'} × ${c.name || 'untitled'}`}
           selected={sr === ri && sc === ci}
           hot={hotStore}
           live={live}
           typing={typing === key}
-          canType={editor && setup.cell !== 'scale'}
+          canType={editor && setup.cell !== 'scale' && !(r.subs || c.subs)}
           acts={acts}
         />
       )
@@ -319,12 +352,12 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
       L.ends && (
         <>
           {rows.map((r, i) => (
-            <div key={r.key} className={styles.endCell} style={box(L.endX, L.rowY(i), M.end, M.row)}>
+            <div key={r.key} className={styles.endCell} data-sub={r.parent ? true : undefined} style={box(L.endX, L.rowY(i), M.end, M.row)}>
               <Totals setup={setup} reading={readingOf(setup, rowCells(r))} wide />
             </div>
           ))}
           {cols.map((c, i) => (
-            <div key={c.key} className={styles.endCell} data-row style={box(L.colX(i), L.endY, M.cell, M.endRow)}>
+            <div key={c.key} className={styles.endCell} data-row data-sub={c.parent ? true : undefined} style={box(L.colX(i), L.endY, M.cell, M.endRow)}>
               <Totals setup={setup} reading={readingOf(setup, colCells(c))} />
             </div>
           ))}
@@ -336,8 +369,10 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const rowHeads = useMemo(
     () =>
       rows.map((r, i) => (
-        <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} at={i} hot={hotStore} lit={selected?.r === i || (!!r.card && picked === r.card.id)} live={live} editor={editor} naming={naming === r.item?.id}
-          onRename={(name) => void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name)} onRemove={() => remove('rows', r)} onPress={own} onPick={live && r.card ? () => pick(r.card!) : undefined}>
+        <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} at={i} hot={hotStore} lit={selected?.r === i || (!!r.card && !r.parent && picked === r.card.id)} live={live} editor={editor} naming={naming === r.item?.id}
+          onRename={(name) => (r.sub ? renameSub(r, name) : void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name))} onRemove={() => remove('rows', r)} onPress={own} onPick={live && r.card ? () => pick(r.card!) : undefined}
+          open={r.subs ? { shown: !!setup.rows.open?.includes(r.key), open: r.subs.filter((k) => openOf('rows', k)).length, toggle: (v) => fold('rows', r, v) } : undefined}
+          isOpen={r.sub ? openOf('rows', r.key) : undefined}>
           {heads && <Totals setup={setup} reading={readingOf(setup, rowCells(r))} />}
         </Head>
       )),
@@ -347,8 +382,10 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const colHeads = useMemo(
     () =>
       cols.map((c, i) => (
-        <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} at={i} hot={hotStore} lit={selected?.c === i || (!!c.card && picked === c.card.id)} live={live} editor={editor} naming={naming === c.item?.id}
-          onRename={(name) => void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name)} onRemove={() => remove('cols', c)} onPress={own} onPick={live && c.card ? () => pick(c.card!) : undefined}>
+        <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} at={i} hot={hotStore} lit={selected?.c === i || (!!c.card && !c.parent && picked === c.card.id)} live={live} editor={editor} naming={naming === c.item?.id}
+          onRename={(name) => (c.sub ? renameSub(c, name) : void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name))} onRemove={() => remove('cols', c)} onPress={own} onPick={live && c.card ? () => pick(c.card!) : undefined}
+          open={c.subs ? { shown: !!setup.cols.open?.includes(c.key), open: c.subs.filter((k) => openOf('cols', k)).length, toggle: (v) => fold('cols', c, v) } : undefined}
+          isOpen={c.sub ? openOf('cols', c.key) : undefined}>
           {heads && <Totals setup={setup} reading={readingOf(setup, colCells(c))} />}
         </Head>
       )),
@@ -379,7 +416,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <div className={styles.table} style={{ width: L.w, height: L.h }} role="grid" aria-label={piece.name || 'matrix'} onPointerLeave={() => setHot(null)}>
           {cellsShown}
-          {far && <CellDots setup={setup} rows={rows} cols={cols} byKey={byKey} L={L} live={live} acts={acts} />}
+          {far && <CellDots setup={setup} rows={rows} cols={cols} cellAt={shownAt} L={L} live={live} acts={acts} />}
 
           {/* The totals at the ends: a column after the cells, a row under them. */}
           {endsShown}
@@ -429,10 +466,19 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
         <CellBar
           key={selKey(piece.id, rows[selected.r].key, cols[selected.c].key)}
           setup={setup}
-          cell={at(rows[selected.r].key, cols[selected.c].key)}
+          cell={shownAt(rows[selected.r], cols[selected.c])}
           row={rows[selected.r]}
           col={cols[selected.c]}
           editor={editor}
+          onFold={(() => {
+            const r = rows[selected.r]
+            const c = cols[selected.c]
+            const which = r.subs ? 'rows' : c.subs ? 'cols' : null
+            if (!which || !editor) return undefined
+            const e = which === 'rows' ? r : c
+            const shown = !!setup[which].open?.includes(e.key)
+            return { shown, toggle: () => fold(which, e, !shown) }
+          })()}
           // Under the cell, at screen size, kept on the screen.
           at={[view.ox + selBox.x * view.zoom, view.oy + (selBox.y + M.row) * view.zoom]}
           // On the canvas (D-228) it's counter-scaled in CSS and not kept in: the canvas pans.
@@ -461,22 +507,30 @@ type HeadProps = {
   onPress?: (e: ReactPointerEvent) => void
   // A card's head: a click opens its panel (not through its `×`, nor while it's being named).
   onPick?: () => void
+  // A card that unfolds (D-249): shown open or not, how many of its parts nobody meets, the switch.
+  open?: { shown: boolean; open: number; toggle: (open: boolean) => void }
+  // What a card unfolded into: whether nobody meets it.
+  isOpen?: boolean
   children?: ReactNode
 }
 
 // A row's or a column's head: a card's (its title, its type's colour down the left, as on a plane), or a typed name in
 // mono over a dashed rule (a double-click renames it). Its totals under the name (a column's) or at its end (a row's).
-function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, naming, onRename, onRemove, onPress, onPick, children }: HeadProps) {
+// What a card unfolded into (D-249) is a step in under it, numbered, in mono, `◇` when nobody meets it; renamed by a
+// double-click (on the card), never taken out here; a click opens the card's panel.
+function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, naming, onRename, onRemove, onPress, onPick, open: unfold, isOpen, children }: HeadProps) {
   const hot = hotStore((s) => !!s.at && (which === 'rows' ? s.at.r : s.at.c) === at) || lit
   const [editing, setEditing] = useState(false)
-  const typed = !entry.card
+  const sub = !!entry.sub
+  const typed = !entry.card || sub
   const open = (editing || naming) && typed && live && editor
   const tone = entry.card ? TYPE_ACCENT[entry.card.type] : undefined
   return (
     <div
       className={which === 'rows' ? styles.rowHead : styles.colHead}
       style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }}
-      data-card={entry.card ? true : undefined}
+      data-card={entry.card && !sub ? true : undefined}
+      data-sub={sub || undefined}
       data-find-box
       // A long one set smaller, so more of it fits (D-216).
       data-long={(entry.name?.length ?? 0) > (which === 'rows' ? 40 : 30) || undefined}
@@ -494,7 +548,7 @@ function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, namin
           aria-label={which === 'rows' ? 'Row name' : 'Column name'}
           defaultValue={entry.name}
           maxLength={NAME_MAX}
-          placeholder="name"
+          placeholder={sub ? 'what it is judged on' : 'name'}
           onKeyDown={(e) => {
             e.stopPropagation()
             if (e.key === 'Enter') e.currentTarget.blur()
@@ -510,12 +564,42 @@ function Head({ entry, which, style, at, hot: hotStore, lit, live, editor, namin
           }}
         />
       ) : (
-        <span className={styles.name} data-unnamed={!entry.name || undefined} data-find={`${which}|${entry.key}`}>
-          {entry.name || (entry.card ? `untitled ${entry.card.type}` : 'name')}
-        </span>
+        <>
+          {sub && (
+            <span className={styles.subN} aria-hidden>
+              {entry.n}
+            </span>
+          )}
+          <span className={styles.name} data-unnamed={!entry.name || undefined} data-find={`${which}|${entry.key}`}>
+            {entry.name || (sub ? 'unnamed' : entry.card ? `untitled ${entry.card.type}` : 'name')}
+          </span>
+          {sub && isOpen && (
+            <span className={styles.openMark} title="nobody meets it: white space">
+              ◇
+            </span>
+          )}
+        </>
       )}
       {children}
-      {live && editor && !open && (
+      {unfold && (
+        <span className={styles.unfold}>
+          {unfold.open > 0 && (
+            <span className={styles.openMark} title={`${unfold.open} of what it's judged on nobody meets: white space`}>
+              ◇ {unfold.open} open
+            </span>
+          )}
+          <button
+            className={styles.fold}
+            disabled={!(live && editor)}
+            aria-expanded={unfold.shown}
+            title={unfold.shown ? 'fold what it is judged on into its cells' : 'unfold what it is judged on, to score each'}
+            onClick={(e) => (e.stopPropagation(), unfold.toggle(!unfold.shown))}
+          >
+            {unfold.shown ? '[−]' : `[+] ${entry.subs!.length}`}
+          </button>
+        </span>
+      )}
+      {live && editor && !open && !sub && (
         <button className={styles.remove} title={entry.auto ? `take it out (it stays a ${entry.card!.type})` : 'take it out'} aria-label="Take it out" onClick={onRemove}>
           ×
         </button>
@@ -667,7 +751,7 @@ type DotsProps = {
   setup: MatrixSetup
   rows: Entry[]
   cols: Entry[]
-  byKey: Map<string, Cell>
+  cellAt: (r: Entry, c: Entry) => Cell | undefined
   L: ReturnType<typeof layout>
   live: boolean
   acts: RefObject<CellActs>
@@ -677,7 +761,7 @@ type DotsProps = {
 // its colour (fuller the higher it is), a number or a text a grey mark, `doesn't apply` left empty. Drawn again when the
 // cells or the theme change, at a resolution of whole powers of two of what the screen shows. A click picks the cell
 // under it (selected, so its bar opens once it's near enough to read).
-function CellDots({ setup, rows, cols, byKey, L, live, acts }: DotsProps) {
+function CellDots({ setup, rows, cols, cellAt, L, live, acts }: DotsProps) {
   const ref = useRef<HTMLCanvasElement>(null)
   const theme = useTheme((s) => s.theme)
   const res = Math.min(1, DOTS_MAX / Math.max(1, L.w), DOTS_MAX / Math.max(1, L.h))
@@ -697,7 +781,7 @@ function CellDots({ setup, rows, cols, byKey, L, live, acts }: DotsProps) {
       const y = L.rowY(ri)
       for (let ci = 0; ci < cols.length; ci++) {
         const x = L.colX(ci)
-        const cell = byKey.get(`${rows[ri].key}|${cols[ci].key}`)
+        const cell = cellAt(rows[ri], cols[ci])
         if (setup.notRelevant && !relevant(cell)) continue
         g.fillStyle = paper
         g.fillRect(x, y, M.cell, M.row)
@@ -714,9 +798,9 @@ function CellDots({ setup, rows, cols, byKey, L, live, acts }: DotsProps) {
         }
       }
     }
-    // L follows rows, cols and setup.
+    // L follows rows, cols and setup; cellAt the cells.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setup, rows, cols, byKey, res, theme])
+  }, [setup, rows, cols, cellAt, res, theme])
   const pick = (e: ReactMouseEvent<HTMLCanvasElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
     const x = ((e.clientX - r.left) / r.width) * L.w
@@ -748,7 +832,7 @@ type CellProps = {
   x: number
   y: number
   setup: MatrixSetup
-  cell: Cell | undefined
+  cell: Shown | undefined
   label: string
   selected: boolean
   hot: HotStore
@@ -769,6 +853,8 @@ const CellBox = memo(function CellBox({ id, r, c, x, y, setup, cell, label, sele
   const sure = !out && setup.confidence && cell?.confidence ? CONFIDENCE_MARK[cell.confidence] : ''
   const tone = read.step ? TONE_VAR[read.step.tone] : undefined
   const said = out ? "doesn't apply" : read.step?.label ?? (read.number !== undefined ? fmt(read.number) : read.text) ?? 'empty'
+  // A card's cell read from its parts (D-249): one small square each, as D-133's blocks; its own value while none is set.
+  const parts = !out && setup.cell === 'scale' && cell?.parts && (cell.rolled || !read.step) ? cell.parts : undefined
   if (typing)
     return (
       <div className={styles.cell} style={style} data-selected>
@@ -808,7 +894,7 @@ const CellBox = memo(function CellBox({ id, r, c, x, y, setup, cell, label, sele
       data-selected={selected || undefined}
       data-hot={hot || undefined}
       tabIndex={live ? 0 : -1}
-      aria-label={`${label}: ${said}${sure ? `, ${cell!.confidence}` : ''}${cell?.notes ? ', has a note' : ''}`}
+      aria-label={`${label}: ${said}${parts ? `, read from ${parts.length}` : ''}${sure ? `, ${cell!.confidence}` : ''}${cell?.notes ? ', has a note' : ''}`}
       title={cell?.notes ? cell.notes.slice(0, 200) : undefined}
       onPointerEnter={live ? (e) => acts.current.hover(r, c, e) : undefined}
       onClick={live ? () => acts.current.click(r, c) : undefined}
@@ -816,6 +902,8 @@ const CellBox = memo(function CellBox({ id, r, c, x, y, setup, cell, label, sele
     >
       {out ? (
         <span className={styles.out} aria-hidden />
+      ) : parts ? (
+        <PartSquares setup={setup} parts={parts} />
       ) : read.step ? (
         setup.marks ? (
           <span className={styles.glyph}>{read.step.glyph}</span>
@@ -845,12 +933,30 @@ const CellBox = memo(function CellBox({ id, r, c, x, y, setup, cell, label, sele
   )
 })
 
+// What a card's cell is read from, a square each in its step's colour, filled to it; unset an outline, left out a dash.
+function PartSquares({ setup, parts }: { setup: MatrixSetup; parts: (Shown | undefined)[] }) {
+  return (
+    <span className={styles.parts} aria-hidden>
+      {parts.map((p, i) => {
+        if (setup.notRelevant && !relevant(p)) return <i key={i} data-out />
+        const step = readCell(setup, p).step
+        if (!step) return <i key={i} data-empty />
+        const k = setup.steps.indexOf(step)
+        const fill = setup.steps.length > 1 ? (k / (setup.steps.length - 1)) * 100 : 100
+        return <i key={i} style={{ ['--tone' as string]: TONE_VAR[step.tone], ['--fill' as string]: `${fill}%` }} />
+      })}
+    </span>
+  )
+}
+
 type BarProps = {
   setup: MatrixSetup
-  cell: Cell | undefined
+  cell: Shown | undefined
   row: Entry
   col: Entry
   editor: boolean
+  // A card's cell read from its parts: unfold them to score each (D-249).
+  onFold?: { shown: boolean; toggle: () => void }
   at: [number, number]
   room: number
   write: (fields: Parameters<typeof setCell>[4]) => void
@@ -859,9 +965,10 @@ type BarProps = {
 
 // The selected cell's bar, at screen size under it, kept inside the screen: where it is, then its value (the steps, or
 // `[type]`), `doesn't apply`, how sure, and its note.
-function CellBar({ setup, cell, row, col, editor, at, room, write, onType }: BarProps) {
+function CellBar({ setup, cell, row, col, editor, onFold, at, room, write, onType }: BarProps) {
   const out = setup.notRelevant && !relevant(cell)
   const read = readCell(setup, cell)
+  const rolled = !!cell?.rolled
   const bar = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(0)
   useEffect(() => {
@@ -879,7 +986,19 @@ function CellBar({ setup, cell, row, col, editor, at, room, write, onType }: Bar
         <span className={styles.cross}>×</span>
         <span>{col.name || 'untitled'}</span>
       </div>
-      {!out && setup.cell === 'scale' && (
+      {cell?.parts && (
+        <div className={styles.barRow}>
+          <span className={styles.barNote}>
+            {rolled ? `${read.step?.label ?? (read.number !== undefined ? fmt(read.number) : '')} · ` : ''}read from what it's judged on, {cell.parts.length}
+          </span>
+          {onFold && (
+            <button className={styles.tool} onClick={onFold.toggle}>
+              {onFold.shown ? 'fold' : 'unfold to score'}
+            </button>
+          )}
+        </div>
+      )}
+      {!out && !rolled && setup.cell === 'scale' && (
         <div className={styles.barRow}>
           {setup.steps.map((s, i) => (
             <button
@@ -896,7 +1015,7 @@ function CellBar({ setup, cell, row, col, editor, at, room, write, onType }: Bar
           ))}
         </div>
       )}
-      {!out && setup.cell !== 'scale' && editor && (
+      {!out && !rolled && !cell?.parts && setup.cell !== 'scale' && editor && (
         <div className={styles.barRow}>
           <button className={styles.tool} onClick={onType} title="type it (Enter)">
             {read.number !== undefined || read.text ? 'change' : 'type'}

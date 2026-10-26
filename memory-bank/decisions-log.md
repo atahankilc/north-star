@@ -1775,6 +1775,8 @@ as partial but i mean how partial or what". Slice 1 of Phase 6.
   feature's first criteria are written.
 - *Feature panel:* a `CRITERIA` list under effort: edit, remove (×), add (Enter); each says `met by N` or `◇ open` once any
   cell is scored.
+- *Since D-249:* scored in the generic matrix's own cells, a feature unfolding into its criteria; the panel calls them
+  `judged on`; `comparisons.criteria` no longer written.
 - *TSV:* `partial (2/5 met)` and a last `nobody meets` column. *Assistant:* reads criteria and scores (brief and
   `get_items`); writing them is slice 2.
 - *Alternatives:* a finer coverage scale (still says nothing about which part); per-competitor feature lists only
@@ -4262,6 +4264,42 @@ bir şey bırakma geride". Instead of the agreed v1 step (bringing the old board
   seeded past the rules still read and delete). Export/import round trip in headless Chrome: same counts in all 14 lists,
   references the same; an old report seeded past the rules moved into documents by `moveReports`; a version 1 file refused.
   `npm run build`.
+
+### D-249 · 2026-10-26 · Accepted (brings D-133 back onto D-204's matrix; changes D-221's must-haves)
+**A matrix axis can unfold its cards into what they're made of; first, a feature into what it's judged on (its criteria).**
+User: "şu anda feature cardlarında criterialar yok … Must do var ama anladığım kadarıyla onlar Acceptance criterialar olmuş
+artık", then "önce criteria'yı matrix'e geri getirelim. Ama … matrix olabildiğince generic de tutulmalı". The panel's
+`must do` was D-133's `criteria` all along, scored per competitor in a fold of the panel; the generic matrix (D-204) never
+read them, so the white space was nowhere to be seen. Picked (asked): scores in the matrix's own cells; the name `judged on`.
+- *Axis:* `unfold: 'criteria'` and `open: string[]` (the cards shown open, shared, one undo step each). Its features with
+  criteria carry `[+] N` / `[−]` in their head. Open, each criterion is a row (or column) of its own under the card, keyed
+  `card~criterion`, numbered, mono, a faint line in the card's colour, renamed by a double-click (written to the card), no
+  `×`; a click opens the card's panel (D-247). Works on either axis and against any other axis (competitors, customers,
+  typed names), with any scale, numbers too.
+- *Cells:* what a criterion is scored at is an ordinary cell (the matrix's scale, note, `—`, how sure). The card's own
+  cell reads from them (`rollUp`): a scale's step at the average of theirs rounded down (one `none` among `full`s isn't
+  full), numbers' average, words not summed; shown as one small square per criterion filled to its step (D-133's blocks),
+  folded or open. Until any is set the card's own value shows and can be set (as D-133's unscored cells kept theirs); once
+  rolled, only `-` is its own and its bar says `full · read from what it's judged on, 3 [unfold to score]`. Totals across
+  count each card once, never its criteria.
+- *White space:* a criterion is met by a cell in the scale's upper half (`full`, `better`; `yes`; `high`; 4–5); scored
+  somewhere and met nowhere = `◇` on its head, the card's head `◇ N open` (magenta). Scales only.
+- *Panel:* `must do` → **judged on** (`what users judge it on`, add `criterion`); each says `met by N` / `◇ open` read from
+  every scale matrix's cells on it, nothing while unscored; the competitor pills are gone; with no unfolding matrix a quiet
+  line says where they're scored. `×` takes a criterion with its cells in every matrix (and any old comparison scores).
+- *Template:* features × competitors unfolds by default. Setup → rows/columns: `unfold [x] features into what they're
+  judged on`, `open all`, `fold all`.
+- *Data:* rules' `validAxis` takes `unfold` (`criteria`) and `open` (≤ 200); cell ids hold `~` (no rules change). Export
+  keeps `unfold`/`open` (open ids remapped); import maps `card~criterion` to the card's new id, the criterion's id kept.
+  `comparisons.criteria` is no longer written or shown (still read by rules and the bundle; old scores aren't moved).
+- *Generic on purpose:* `UNFOLDS` is a list; later a card's parts (`part of`) or a competitor's features can unfold the same way.
+- *Alternatives:* scores on the feature × competitor pair (`comparisons`): same everywhere but only that crossing and a
+  fixed met/part/no scale; a separate acceptance-criteria list (later, if at all: a part's "done when", the user's call).
+- *Verified* headless (emulators): seeded 3 features (3, 2, 0 criteria) × 3 competitors; open feature showed its three
+  rows, `◇ 2 open`; `[+] 2` unfolded the other; a criterion cell set with `3` rolled its feature's cells (`full, read from 2`);
+  a rolled cell ignored `1`; the panel read `met by 2 / ◇ open / ◇ open`; removing criterion 2 there deleted its cells.
+  Rules 368 pass (3 new). `npm run build`. Rules not deployed (D-248: main is still 1.0; validAxis has no hasOnly, so the
+  deployed rules already take these fields).
 
 ### D-250 · 2026-10-26 · Accepted (adds to D-046, D-187, D-188, D-212, D-218, D-221)
 **Something just made and named: Enter makes it, Escape takes it away as if never made.** User: "başlık ekledikten

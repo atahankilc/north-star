@@ -304,8 +304,9 @@ old reports are moved to documents once (D-248).
 - Priorities tab (after matrix): features on impact × effort (3 × 3, corners named), confidence from the status of what
   each rests on (its chain; `!`/0 when something it rests on is invalidated), suggested order impact × confidence ÷
   effort beside the priority set; impact set in the feature's panel; `/prioritize` (D-138).
-- Matrix criteria: a feature lists ≤ 8 must-haves, a cell scores each `met | part | no` and then reads from them (blocks per
-  criterion); `◇ N open` = criteria nobody meets (white space); edited in the feature or cell panel (D-133).
+- Matrix criteria (D-133, D-249): a feature lists ≤ 8 it's `judged on`; a matrix axis with `unfold` shows them as rows
+  under it (`[+] N`, open per card, shared), scored in ordinary cells; the feature's cell reads from them (squares, step at
+  the rounded-down average); `◇ N open` = scored, none in the scale's upper half (white space); the panel reads `met by N`.
 - A cell can be `not relevant` (`—`, left out of readings and counts, unlike `none`) and has a confidence
   `documented | inferred | guess` (`~` / `?` in its corner) (D-136).
 - Reports tab: table alone, 10 a page with numbered pages, KIND/BY/SEEN BY filters + upload square in its top row; a report

@@ -19,6 +19,7 @@ import {
 } from '../io/bundle'
 import { ALL_TYPES, CARD_COLLECTION, type AnyType } from './cards'
 import { CANVAS } from './labels'
+import { SUB, subKey } from './matrix'
 import { db } from './firebase'
 import type { Workspace } from './model'
 import { createWorkspace, deleteWorkspace } from './workspaces'
@@ -132,7 +133,12 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
   const celled = new Set<string>()
   for (const d of bundle.cells) {
     const matrix = ids.piece(d.matrixId)
-    const at = (v: unknown) => (typeof v === 'string' && v && v.length <= 128 && !v.includes('/') ? (ids.card(v)?.id ?? v) : undefined)
+    // What a card unfolded into, `card~criterion` (D-249): the card's new id, the criterion's kept.
+    const one = (v: string) => {
+      const [card, sub] = v.split(SUB)
+      return sub === undefined ? (ids.card(v)?.id ?? v) : subKey(ids.card(card)?.id ?? card, sub)
+    }
+    const at = (v: unknown) => (typeof v === 'string' && v && v.length <= 128 && !v.includes('/') ? one(v) : undefined)
     const row = at(d.row)
     const column = at(d.col)
     const id = `${matrix}_${row}_${column}`

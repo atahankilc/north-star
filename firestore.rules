@@ -190,7 +190,10 @@ service cloud.firestore {
         && optIn(a, 'type', ['customer', 'problem', 'competitor', 'idea', 'feature'])
         && optText(a, 'plane', 128)
         && optText(a, 'noun', 40)
-        && (!('hide' in a) || (a.hide is list && a.hide.size() <= 200));
+        && (!('hide' in a) || (a.hide is list && a.hide.size() <= 200))
+        // Its features unfolded into what they're judged on, and the ones shown open (D-249).
+        && optIn(a, 'unfold', ['criteria'])
+        && (!('open' in a) || (a.open is list && a.open.size() <= 200));
     }
 
     function validMatrix(m) {
