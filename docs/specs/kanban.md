@@ -78,12 +78,15 @@ isn't selected when a task is picked beside (that would close the task's panel),
 Built (D-256): GIVEN TO lists me, nobody and each member; "this week" runs to Sunday; the limit counts every task in
 the column (filtered or not) and never refuses a drop; columns needed no rule change.
 
-## Session 5: swimlanes and multi-select (ideas 6, 8)
+## Session 5: swimlanes and multi-select (ideas 6, 8) · **done (D-258, 2026-10-27)**
 
 - Swimlanes: rows by who it's given to, or by the card it's for, or none (a choice in the dock). Each lane folds.
   Dragging into a lane changes the task's person or card.
 - Multi-select: shift+click, alt+drag a box; drag them together; the panel turns into `N selected` (move to column,
   give to, set due, delete).
+
+Built (D-258): lanes as "rows by a field" (`rows.ts`), cards plug in for priorities P2; the lanes choice shared, folds
+yours; only people with tasks (and you) get a lane.
 
 ## Session 6: working together (ideas 11, 12)
 
@@ -112,6 +115,9 @@ the column (filtered or not) and never refuses a drop; columns needed no rule ch
 - Open on the canvas (unframed), a kanban's size is its window's, not measured from what it holds.
 - With a filter on, a task typed at a column's foot may not pass it and vanish at once (D-256): maybe give it the
   filter's values (its label, given to me…) or show it until the filter changes.
+- In lanes by given to, a member with no tasks has no lane to drop into (only you and nobody always do); a task is given
+  to them from its panel (D-258).
+- Held tasks leave their cell while dragged, so a lane emptied by the drag shrinks under the pointer (D-258).
 - The assistant's brief doesn't list tasks (not picked: idea 3).
 - Priorities will be this kanban holding cards, columns and rows from their fields ([priorities.md](priorities.md)).
-  Session 5's swimlanes: build them as "rows by a field" so cards can use them too.
+  Session 5's swimlanes are built as "rows by a field" (`rows.ts`, D-258) so cards can use them too.

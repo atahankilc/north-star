@@ -4500,6 +4500,33 @@ tiltsiz" (A, without the tilt).
 - *Verified:* headless on the emulators, six notes on the canvas (each colour, a list, a long one, an empty one) in dark
   and light; build.
 
+### D-258 · 2026-10-27 · Accepted (adds to D-227, D-251; kanban session 5, docs/specs/kanban.md)
+**Lanes on a kanban (by who a task is given to, or the card it's for), and several tasks selected at once.**
+User: picked ideas 6 and 8 of the kanban list (2026-10-26); this is session 5 of docs/specs/kanban.md.
+- *Rows by a field* (`rows.ts`, as priorities.md asks): a field says which lane an item is in, which lanes there are,
+  and what dropping into one writes. Tasks have two: given to (you first, always there; the others by name; nobody last)
+  and the card (the cards its tasks point at in chain order then by title; no card; tasks whose card is gone in a lane
+  that takes nothing). Cards' fields (priorities P2) plug in the same way.
+- *Look:* the column heads in a row on top, then each lane: its head across the columns (`▾`, a member's square or the
+  card type's bar, the name in caps, a rule, its count; a click folds it, `▸`), its cells under it. `+ add a task` in a
+  lane only while the cell is hovered; a task typed there gets the lane's person or card. Without lanes it looks as before.
+- *Choice:* `[LANES ▾]` in the kanban's dock (its focus, its pane beside a plane): no lanes · by given to · by card.
+  Shared, on the kanban (`kanban.rows`); folds are yours, per kanban per browser.
+- *Dragging:* lands in the nearest cell of an open lane (2D), dropping into another lane writes its field; into an
+  empty cell the task goes after the column's last task (other lanes' too), so turning lanes off keeps an order.
+- *Several:* shift+click adds a task or takes it out; alt+drag on empty space draws a cyan box, what it touches is
+  selected (shift keeps what was). A press on one of them drags them all, in the board's order, contiguous where they
+  land, a `+N` badge on the held one; one undo step. Delete takes them all away, Escape lets go.
+- *Panel `N selected`:* how many in which column; move to (pills; to the column's end, in their order), given to (a
+  `several` value when they differ), due (set or clear); `[delete N]` at the foot. Each one undo step for all of them
+  (`moveTasks`, `updateTasks`, `deleteTasks`).
+- *Rules:* `rows` (`assignee | card`) in the kanban setup. Export carries it.
+- *Alternatives:* lanes per browser (others would see a different board); every member as a lane (crowded; only those
+  with tasks, and you); a box drawn without alt (it would take the pan).
+- *Verified:* headless on the emulators: lanes by given to (me, two people, nobody), a drag into Bob's lane gives the
+  task to him, shift+click two → `2 selected`, dragged together into done/nobody, alt box over three → `3 selected`, a
+  lane folded, lanes by card (problem, feature, no card); rules 395 pass; build.
+
 ### D-259 · 2026-10-27 · Accepted (changes D-257's shape, D-158's width)
 **A sticky note starts 6 grid steps wide and 5 tall (150 × 125), grows down as its text does, and a long one folds back
 to the 5.**

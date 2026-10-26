@@ -6,7 +6,7 @@
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Card } from '../../data/cards'
-import { CHECK_MAX, LABEL_MAX, LABELS_MAX, TASK_PRIORITIES, deleteTask, logLearned, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, today, untested, updateTask, type Check, type Task } from '../../data/tasks'
+import { CHECK_MAX, LABEL_MAX, LABELS_MAX, TASK_PRIORITIES, deleteTask, deleteTasks, moveTasks, updateTasks, logLearned, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, today, untested, updateTask, type Check, type Task } from '../../data/tasks'
 import type { Evidence } from '../../data/evidence'
 import { useMembers } from '../../data/workspaces'
 import { useCanvasView } from '../../state/canvasView'
@@ -26,6 +26,10 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   const { wid, tasks, pieces } = useWs()
   const sel = useKanbanUi((s) => s.selected)
   const task = sel ? tasks.find((t) => t.id === sel.task) : undefined
+  // Several selected (D-258): `N selected`.
+  const manyIds = useKanbanUi((s) => s.many)
+  const many = manyIds ? tasks.filter((t) => manyIds.tasks.includes(t.id)) : []
+  const manyPiece = manyIds ? pieces.find((p) => p.id === manyIds.piece) : undefined
   const piece = task ? pieces.find((p) => p.id === task.pieceId) : undefined
   const close = () => selectTask('', null)
   // Beside a plane, over the plane's part of the screen (as a card's, D-211).
@@ -39,7 +43,7 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   }, [card])
   useEffect(() => close, [])
   // Escape closes it, unless typing somewhere or a menu or thread hears it first.
-  const open = !!task
+  const open = !!task || many.length > 1
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -53,7 +57,33 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   }, [open])
   return (
     <AnimatePresence>
-      {task && piece && (
+      {many.length > 1 && manyPiece && (
+        <SidePanel
+          key="task"
+          kind="tasks"
+          tone={TONE}
+          label={`${many.length} tasks selected`}
+          title={`${many.length} selected`}
+          right={right}
+          onClose={close}
+          actions={
+            editor && (
+              <PanelAction
+                label={`delete ${many.length}`}
+                danger
+                title="Delete or Backspace"
+                onClick={() => {
+                  close()
+                  void deleteTasks(wid, many.map((t) => t.id))
+                }}
+              />
+            )
+          }
+        >
+          <ManyInside tasks={many} cols={kanbanOf(manyPiece).cols} editor={editor} />
+        </SidePanel>
+      )}
+      {task && piece && many.length < 2 && (
         <SidePanel
           // One panel while tasks change under it: it builds only when it opens.
           key="task"
@@ -112,6 +142,73 @@ function Title({ task, editor }: { task: Task; editor: boolean }) {
     />
   )
 }
+
+// Several tasks selected (D-258): what they are (how many in which column), then, each one undo step for all of them:
+// move them to a column (to its end, in their order), give them to someone (or nobody), set their due day (or clear
+// it); `[delete N]` at the foot. A value they don't share reads `several`.
+function ManyInside({ tasks: picked, cols, editor }: { tasks: Task[]; cols: { id: string; name: string; done?: boolean }[]; editor: boolean }) {
+  const { wid, workspace, tasks } = useWs()
+  const members = useMembers(wid, 100).data.filter((m) => workspace.memberIds.includes(m.id))
+  const ids = picked.map((t) => t.id)
+  const inCol = cols.map((c) => [c, picked.filter((t) => t.col === c.id).length] as const).filter(([, n]) => n)
+  const same = <T,>(f: (t: Task) => T) => (picked.every((t) => f(t) === f(picked[0])) ? f(picked[0]) : SEVERAL)
+  const col = same((t) => t.col)
+  const who = same((t) => t.assignee ?? NOBODY)
+  const due = same((t) => t.due ?? '')
+  const ordered = cols.flatMap((c) => tasksIn(picked, c.id))
+  const moveTo = (to: string) => {
+    let last = tasksIn(tasks.filter((t) => t.pieceId === picked[0].pieceId && !ids.includes(t.id)), to).at(-1)?.order ?? 0
+    void moveTasks(wid, ordered.map((t) => ({ id: t.id, col: to, order: (last += 1) })), `move ${ids.length} tasks`)
+  }
+  const options = [
+    ...(who === SEVERAL ? [{ value: SEVERAL, label: 'several' }] : []),
+    { value: NOBODY, label: 'nobody' },
+    ...members.map((m) => ({ value: m.id, label: m.name })),
+  ]
+  return (
+    <>
+      <div className={styles.under}>{inCol.map(([c, n]) => `${n} in ${c.name}`).join(' · ')}</div>
+      <PanelSection n={1} name="move to">
+        <Pills values={cols.map((c) => c.name)} value={col === SEVERAL ? undefined : cols.find((c) => c.id === col)?.name} editor={editor} label="Move to" onPick={(name) => {
+          const to = cols.find((c) => c.name === name)
+          if (to) moveTo(to.id)
+        }} />
+      </PanelSection>
+      <PanelSection n={2} name="given to">
+        <Select
+          value={who}
+          options={options}
+          ariaLabel="Give them to"
+          disabled={!editor}
+          onChange={(uid) => {
+            if (uid === SEVERAL) return
+            const m = members.find((x) => x.id === uid)
+            void updateTasks(wid, ids, uid === NOBODY ? { assignee: undefined, assigneeName: undefined } : { assignee: uid, assigneeName: m?.name }, uid === NOBODY ? `take ${ids.length} tasks back` : `give ${ids.length} tasks`)
+          }}
+        />
+      </PanelSection>
+      <PanelSection n={3} name="due" count={due === SEVERAL ? 'several' : due ? dueText(due) : undefined}>
+        <div className={own.row}>
+          <input
+            className={`${styles.input} ${own.date}`}
+            type="date"
+            value={due === SEVERAL ? '' : due}
+            readOnly={!editor}
+            aria-label="Due"
+            onChange={(e) => editor && void updateTasks(wid, ids, { due: e.target.value || undefined }, `set ${ids.length} tasks’ due day`)}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          {editor && due !== '' && (
+            <button className={styles.pill} onClick={() => void updateTasks(wid, ids, { due: undefined }, `clear ${ids.length} tasks’ due day`)}>
+              clear
+            </button>
+          )}
+        </div>
+      </PanelSection>
+    </>
+  )
+}
+const SEVERAL = '\u0000several'
 
 type InsideProps = { task: Task; cols: { id: string; name: string; done?: boolean }[]; editor: boolean }
 

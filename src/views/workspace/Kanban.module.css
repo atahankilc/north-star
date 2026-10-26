@@ -24,12 +24,12 @@
   transform-origin: 0 0;
 }
 
-/* Columns side by side, whitespace between them: no frames, no fill. */
+/* The heads in a row, then a row of cells for each lane (one lane, with no head, without lanes): columns side by side,
+   whitespace between them, no frames, no fill. */
 .board {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: var(--gap);
+  flex-direction: column;
   width: max-content;
   padding: var(--space-3) var(--space-4) var(--space-4);
   font-family: var(--font-mono);
@@ -40,10 +40,102 @@
   cursor: grabbing;
 }
 
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap);
+}
+
+.colHead,
 .column {
   display: flex;
   flex-direction: column;
   width: var(--col);
+}
+
+/* A cell (a column in a lane): the room a dropped task can land in, its list under its head. */
+.column {
+  min-height: 24px;
+}
+
+/* A lane (D-258): its head across the columns, its cells under it. */
+.lane + .lane {
+  margin-top: var(--space-4);
+}
+
+.board[data-lanes='true'] .lane:first-of-type {
+  margin-top: var(--space-3);
+}
+
+.laneHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  height: 24px;
+  margin-bottom: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.laneFold {
+  width: 1ch;
+  color: var(--fg-faint);
+  letter-spacing: 0;
+}
+
+.laneHead:hover .laneFold,
+.laneHead:focus-visible .laneFold {
+  color: var(--accent-cyan);
+}
+
+.laneKind {
+  color: var(--tone);
+}
+
+.laneName {
+  overflow: hidden;
+  max-width: 40ch;
+  color: var(--fg);
+  text-overflow: ellipsis;
+}
+
+/* Nobody, no card: as faint as an empty column says so. */
+.laneName[data-none='true'] {
+  color: var(--fg-dim);
+}
+
+.lane[data-folded='true'] .laneHead .rule {
+  background: var(--line);
+}
+
+/* Several held (D-258): how many more come with it, on its top-right corner. */
+.more {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  padding: 1px 5px;
+  background: var(--accent-cyan);
+  color: var(--bg);
+  font-size: var(--text-xs);
+  letter-spacing: 0;
+}
+
+/* The box drawn with alt held. */
+.box {
+  position: absolute;
+  z-index: 3;
+  border: 1px solid var(--accent-cyan);
+  background: color-mix(in srgb, var(--accent-cyan) 8%, transparent);
+  pointer-events: none;
 }
 
 /* A column's head, the right panel's section rule (D-219): `01 TODO ──── 5`. */
@@ -70,7 +162,7 @@
   text-overflow: ellipsis;
 }
 
-.column[data-done='true'] .name {
+.colHead[data-done='true'] .name {
   color: var(--accent-green);
 }
 
@@ -83,7 +175,7 @@
 }
 
 /* A task held over it: its rule lights. */
-.column[data-over='true'] .rule {
+.colHead[data-over='true'] .rule {
   background: var(--accent-cyan);
 }
 
@@ -407,6 +499,16 @@
   font-size: var(--text-xs);
 }
 
+/* In a lane, `+ add a task` only while its cell is hovered (it keeps its room, so nothing jumps). */
+.add[data-quiet='true'] {
+  visibility: hidden;
+}
+
+.column:hover > .list > .add[data-quiet='true'],
+.add[data-quiet='true']:focus-visible {
+  visibility: visible;
+}
+
 /* `+ add a task`: a faint line, not a box. `+ column`: a head of its own, as faint. */
 .add,
 .addCol {
@@ -477,4 +579,9 @@
   .rule {
     transition: none;
   }
+}
+
+/* In lanes, the cells sit closer under their lane's head. */
+.board[data-lanes='true'] .list {
+  margin-top: 4px;
 }

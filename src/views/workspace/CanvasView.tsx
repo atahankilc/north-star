@@ -51,7 +51,7 @@ import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Do
 import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
-import { kanbanBounds, KanbanDockTools, KanbanView } from './Kanban'
+import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView } from './Kanban'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { TaskPanel } from './TaskPanel'
 import { usePlaneFilter } from './planeFilter'
@@ -872,6 +872,7 @@ export function CanvasView() {
               )}
               {focusedDocuments && <DocumentsTools piece={focused} editor={editor} />}
               {focusedKanban && <KanbanFilterDock piece={focused} />}
+              {focusedKanban && <KanbanLanes piece={focused} editor={editor} />}
               {focusedKanban && <KanbanDockTools piece={focused} editor={editor} />}
               {/* Several documents side by side (D-232): a click opens one next to the others. */}
               {focusedDocuments && <DockAction label="⧉ side by side" pressed={sideBySide} title={sideBySide ? 'a click opens a document in place of the one open' : 'a click opens a document next to the ones open'} onClick={() => useDocUi.setState((s) => ({ sideBySide: !s.sideBySide }))} />}

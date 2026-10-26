@@ -224,10 +224,12 @@ service cloud.firestore {
     // A kanban's columns (D-251, src/data/tasks.ts): one to twelve, each an id, a name and whether it's the finished one.
     function validKanban(k) {
       return k is map
-        && k.keys().hasOnly(['cols', 'everyPlane'])
+        && k.keys().hasOnly(['cols', 'everyPlane', 'rows'])
         && k.cols is list && k.cols.size() >= 1 && k.cols.size() <= 12
         // Stuck to a plane, every task shown, not only that plane's (D-255).
-        && optBool(k, 'everyPlane');
+        && optBool(k, 'everyPlane')
+        // Its lanes (D-258).
+        && optIn(k, 'rows', ['assignee', 'card']);
     }
 
     // One of a kanban's tasks (D-251, src/data/tasks.ts): in a column of a kanban, in order; given to a member, due on a

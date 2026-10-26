@@ -27,7 +27,11 @@ export type KanbanSetup = {
   cols: KanbanCol[]
   // Stuck to a plane (D-255), it shows only tasks for that plane's cards and tasks for none; this shows them all.
   everyPlane?: boolean
+  // Its rows (D-258): none, or lanes by who a task is given to or by the card it's for (src/views/workspace/rows.ts).
+  rows?: KanbanRows
 }
+export const KANBAN_ROWS = ['assignee', 'card'] as const
+export type KanbanRows = (typeof KANBAN_ROWS)[number]
 
 export type Check = { id: string; text: string; done?: boolean }
 
@@ -100,7 +104,7 @@ export const overdue = (t: Pick<Task, 'due'>, finished: boolean) => !!t.due && !
 
 // A new task at the end of a column, its title typed (and from a card's panel, the card it's for): one undo step;
 // returns its id.
-export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, uid: string, fields: Pick<TaskFields, 'cardId' | 'cardType'> = {}) {
+export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, uid: string, fields: Pick<TaskFields, 'cardId' | 'cardType' | 'assignee' | 'assigneeName'> = {}) {
   const ref = doc(col(wid))
   const now = Date.now()
   const data = { pieceId, col: column, order, title: title.trim().slice(0, TASK_TITLE_MAX), ...fields, uid, createdAt: now, updatedAt: now }
@@ -126,6 +130,43 @@ export function moveTask(wid: string, task: Pick<Task, 'id'>, column: string, or
 export function deleteTask(wid: string, task: Pick<Task, 'id'>) {
   const ref = taskRef(wid, task.id)
   return tracked('delete a task', [ref], () => deleteDoc(ref))
+}
+
+// Several tasks at once (D-258), each one undo step for all of them: moved (a column, an order, and a lane's fields), their
+// fields set, taken away.
+export type TaskMove = { id: string; col: string; order: number; fields?: TaskFields }
+const fieldsOf = (fields: TaskFields = {}) => Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v === undefined ? deleteField() : v]))
+export function moveTasks(wid: string, moves: TaskMove[], what = `move ${moves.length} tasks`) {
+  const refs = moves.map((m) => taskRef(wid, m.id))
+  const now = Date.now()
+  return tracked(what, refs, async () => {
+    const batch = writeBatch(db())
+    moves.forEach((m, i) => batch.update(refs[i], { col: m.col, order: m.order, ...fieldsOf(m.fields), updatedAt: now }))
+    await batch.commit()
+  })
+}
+export function updateTasks(wid: string, ids: string[], fields: TaskFields, what: string) {
+  const refs = ids.map((id) => taskRef(wid, id))
+  const now = Date.now()
+  return tracked(what, refs, async () => {
+    const batch = writeBatch(db())
+    for (const r of refs) batch.update(r, { ...fieldsOf(fields), updatedAt: now })
+    await batch.commit()
+  })
+}
+export function deleteTasks(wid: string, ids: string[]) {
+  const refs = ids.map((id) => taskRef(wid, id))
+  return tracked(ids.length > 1 ? `delete ${ids.length} tasks` : 'delete a task', refs, async () => {
+    const batch = writeBatch(db())
+    for (const r of refs) batch.delete(r)
+    await batch.commit()
+  })
+}
+
+// Its rows (D-258): shared, one undo step.
+export function setKanbanRows(wid: string, pieceId: string, rows: KanbanRows | undefined) {
+  const ref = pieceRef(wid, pieceId)
+  return tracked(rows ? `lanes by ${rows === 'assignee' ? 'who' : 'card'}` : 'no lanes', [ref], () => updateDoc(ref, { 'kanban.rows': rows ?? deleteField(), updatedAt: Date.now() }))
 }
 
 // Its columns, all at once (renamed, added, moved, marked done): one undo step; a name typed merges.

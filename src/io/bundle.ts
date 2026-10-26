@@ -443,7 +443,7 @@ export function cleanKanban(v: unknown) {
     const limit = num(c.limit)
     return [compact({ id, name, done: yes(c.done), limit: limit && limit >= 1 ? Math.min(99, Math.round(limit)) : undefined })]
   })
-  return compact({ cols: cols.length ? cols : [{ id: newId(), name: 'todo' }], everyPlane: yes(obj(v)?.everyPlane) })
+  return compact({ cols: cols.length ? cols : [{ id: newId(), name: 'todo' }], everyPlane: yes(obj(v)?.everyPlane), rows: oneOf(obj(v)?.rows, ['assignee', 'card'] as const) })
 }
 
 // One of a kanban's tasks (D-251), without its kanban, its card or who made it; who it was given to stays behind (the

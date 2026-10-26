@@ -16,18 +16,25 @@
 //
 // Filters, labels, priority, limits (D-256): what it shows narrows by its dock's filter (kanbanFilter.ts, yours); a
 // task carries `#labels` and `P1`–`P3`; a column may have a limit (its head's `≤`), its head magenta when over.
+//
+// Lanes and several at once (D-258): rows across the columns by who a task is given to or the card it's for (rows.ts,
+// `[lanes ▾]` in its dock), each folding from its head (yours); dropping into a lane gives the task to that person or
+// card. Shift+click adds a task to the selection or takes it out, alt+drag a box selects what it touches; dragging one of
+// them carries them all, in their order; the panel turns into `N selected`.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { passes, useKanbanFilter } from './kanbanFilter'
-import { addTask, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTask, emptyKanban, KANBAN_COLS_MAX, moveTask, orderBetween, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
+import { addTask, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
 import { newId } from '../../data/matrix'
 import { useAuth } from '../../data/auth'
 import type { Bounds, PlaneCam } from '../../state/canvasView'
 import type { Card } from '../../data/cards'
 import { useWs } from './context'
 import { DockAction } from './FocusDock'
+import { Menu, type MenuEntry } from '../../ui/Menu'
+import { loadFolds, saveFolds, taskRows, type Lane } from './rows'
 import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
 import styles from './Kanban.module.css'
@@ -57,14 +64,23 @@ export function kanbanBounds(piece: WithId<Piece>, tasks: Task[]): Bounds {
 }
 
 // The task whose panel is open (its kanban's id with it), the column `+ add a task` is typing into, the column being
-// renamed, the task whose panel should open on its evidence form (D-254). Yours, not shared.
-export const useKanbanUi = create<{ selected: { piece: string; task: string } | null; adding: string | null; naming: string | null; learning: string | null }>(() => ({
+// renamed, the task whose panel should open on its evidence form (D-254), the tasks selected together (D-258; `adding`
+// is a column and a lane, `col|lane`). Yours, not shared.
+type Many = { piece: string; tasks: string[] }
+export const useKanbanUi = create<{ selected: { piece: string; task: string } | null; adding: string | null; naming: string | null; learning: string | null; many: Many | null }>(() => ({
   selected: null,
   adding: null,
   naming: null,
   learning: null,
+  many: null,
 }))
-export const selectTask = (piece: string, task: string | null) => useKanbanUi.setState({ selected: task ? { piece, task } : null })
+// One task picked (or none): the several selected let go.
+export const selectTask = (piece: string, task: string | null) => useKanbanUi.setState({ selected: task ? { piece, task } : null, many: null })
+// Several (D-258): two or more is a selection of several, one is that task picked, none lets go.
+export function selectTasks(piece: string, tasks: string[]) {
+  if (tasks.length > 1) useKanbanUi.setState({ selected: null, many: { piece, tasks } })
+  else selectTask(piece, tasks[0] ?? null)
+}
 
 // Two letters for a member's square: their initials, or the first two letters of a one-word name.
 export function initials(name?: string) {
@@ -89,17 +105,24 @@ export function dueText(due: string) {
 // A checklist as small cells, done ones filled (up to 8; past that, the count alone).
 const cells = (done: number, all: number) => (all > 8 ? '' : '▮'.repeat(done) + '▯'.repeat(all - done))
 
-// A task held: where the press began (screen), where in the task it was taken and its size (its px), where the pointer
-// is now (its px), and where it would land.
-type Drag = { id: string; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: { col: string; index: number } | null }
+// Tasks held: the one pressed (and the others selected with it, in their order), where the press began (screen), where
+// in the task it was taken and its size (its px), where the pointer is now (its px), and where they'd land: a column, a
+// lane ('' without lanes), the place among that cell's tasks.
+type Over = { col: string; lane: string; index: number }
+type Drag = { id: string; ids: string[]; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: Over | null }
+// A box being drawn with alt held (its px), from where it began to the pointer.
+type Box = { from: [number, number]; to: [number, number] }
 
 // `onTask`: a task picked (beside a plane, D-255: the plane glides to its card).
 type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onTask?: (t: Task) => void }
 
+const NO_LANE: Lane[] = [{ key: '', label: '', drop: true }]
+
 export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask }: Props) {
   const { wid, tasks: all, cards } = useWs()
   const { user } = useAuth()
-  const cols = kanbanOf(piece).cols
+  const setup = kanbanOf(piece)
+  const cols = setup.cols
   const tasks = useMemo(() => all.filter((t) => t.pieceId === piece.id), [all, piece.id])
   // What it shows: stuck to a plane, that plane's tasks (D-255).
   // And by its filter, yours (D-256).
@@ -109,14 +132,37 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
     const typeOf = (id: string) => cards.find((c) => c.id === id)?.type
     return shownTasks(tasks, piece, cards).filter((t) => passes(t, filter, done.has(t.col), user?.id, typeOf))
   }, [tasks, piece, cards, filter, cols, user?.id])
+  // Its lanes (D-258): by a field, or one lane with no head.
+  const field = useMemo(() => {
+    const names = new Map(tasks.flatMap((t) => (t.assignee && t.assigneeName ? [[t.assignee, t.assigneeName] as const] : [])))
+    return taskRows(setup.rows, cards, { me: user ? { id: user.id, name: user.name ?? '' } : undefined, names })
+  }, [setup.rows, cards, tasks, user])
+  const lanes = useMemo(() => (field ? field.lanes(shown) : NO_LANE), [field, shown])
+  const laneOf = (t: Task) => (field ? field.laneOf(t) : '')
   const byCol = useMemo(() => new Map(cols.map((c) => [c.id, tasksIn(shown, c.id)])), [cols, shown])
+  const byCell = useMemo(() => {
+    const m = new Map<string, Task[]>()
+    for (const c of cols) for (const t of byCol.get(c.id) ?? []) {
+      const k = `${c.id}|${field ? field.laneOf(t) : ''}`
+      m.set(k, [...(m.get(k) ?? []), t])
+    }
+    return m
+  }, [cols, byCol, field])
+  const [folds, setFolds] = useState(() => loadFolds(piece.id))
+  const fold = (lane: string) => {
+    const next = folds.includes(lane) ? folds.filter((x) => x !== lane) : [...folds, lane]
+    setFolds(next)
+    saveFolds(piece.id, next)
+  }
   const selected = useKanbanUi((s) => (live && s.selected?.piece === piece.id ? s.selected.task : null))
+  const many = useKanbanUi((s) => (live && s.many?.piece === piece.id ? s.many.tasks : null))
   const adding = useKanbanUi((s) => (live ? s.adding : null))
   const naming = useKanbanUi((s) => (live ? s.naming : null))
   const board = useRef<HTMLDivElement>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const dragRef = useRef(drag)
   dragRef.current = drag
+  const [box, setBox] = useState<Box | null>(null)
 
   // Its drawn size, for fit (written only when it changes).
   useLayoutEffect(() => {
@@ -138,14 +184,19 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
     if (selected && !tasks.some((t) => t.id === selected)) selectTask(piece.id, null)
   }, [selected, tasks, piece.id])
   useEffect(() => {
+    if (many && many.some((id) => !tasks.some((t) => t.id === id))) selectTasks(piece.id, many.filter((id) => tasks.some((t) => t.id === id)))
+  }, [many, tasks, piece.id])
+  useEffect(() => {
     if (!live) return
-    return () => useKanbanUi.setState((s) => ({ selected: s.selected?.piece === piece.id ? null : s.selected, adding: null, naming: null }))
+    return () =>
+      useKanbanUi.setState((s) => ({ selected: s.selected?.piece === piece.id ? null : s.selected, many: s.many?.piece === piece.id ? null : s.many, adding: null, naming: null }))
   }, [live, piece.id])
 
-  // Delete takes the selected task away, Escape lets go of it; heard before the canvas's own keys (Escape would leave
-  // focus).
+  // Delete takes the selected task (or tasks) away, Escape lets go; heard before the canvas's own keys (Escape would
+  // leave focus).
+  const picked = many ?? (selected ? [selected] : null)
   useEffect(() => {
-    if (!live || !selected) return
+    if (!live || !picked) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t?.closest('input, textarea, [contenteditable], [role=menu], [role=dialog] input, [role=listbox]')) return
@@ -156,12 +207,13 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
       if (editor && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault()
         e.stopImmediatePropagation()
-        void deleteTask(wid, { id: selected })
+        void deleteTasks(wid, picked)
       }
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
-  }, [live, selected, editor, wid, piece.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, picked?.join(','), editor, wid, piece.id])
 
   // The board's scale on the screen (the canvas's zoom and the view's), and a point on the screen in its px.
   const scale = () => {
@@ -173,22 +225,24 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
     const s = scale()
     return r ? [(x - r.left) / s, (y - r.top) / s] : [0, 0]
   }
-  // Where a task held under the pointer would land, read off what's drawn: the column under the pointer (or the
-  // nearest), and the place among its other tasks by their middles.
-  const landing = (x: number, y: number, id: string) => {
-    const columns = [...(board.current?.querySelectorAll<HTMLElement>('[data-col]') ?? [])]
-    if (!columns.length) return null
+  // Where tasks held under the pointer would land, read off what's drawn: the cell (a column in an open lane that takes
+  // them) under the pointer or the nearest, and the place among its other tasks by their middles.
+  const landing = (x: number, y: number, ids: string[]): Over | null => {
+    const cellsAt = [...(board.current?.querySelectorAll<HTMLElement>('[data-cell][data-drop]') ?? [])]
+    if (!cellsAt.length) return null
     const dist = (c: HTMLElement) => {
       const r = c.getBoundingClientRect()
-      return x < r.left ? r.left - x : x > r.right ? x - r.right : 0
+      const dx = x < r.left ? r.left - x : x > r.right ? x - r.right : 0
+      const dy = y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0
+      return Math.hypot(dx, dy)
     }
-    const col = columns.reduce((a, b) => (dist(b) < dist(a) ? b : a))
-    const rows = [...col.querySelectorAll<HTMLElement>('[data-task]')].filter((t) => t.dataset.task !== id)
+    const cell = cellsAt.reduce((a, b) => (dist(b) < dist(a) ? b : a))
+    const rows = [...cell.querySelectorAll<HTMLElement>('[data-task]')].filter((t) => !ids.includes(t.dataset.task!))
     const index = rows.filter((t) => {
       const r = t.getBoundingClientRect()
       return r.top + r.height / 2 < y
     }).length
-    return { col: col.dataset.col!, index }
+    return { col: cell.dataset.col!, lane: cell.dataset.lane ?? '', index }
   }
 
   const drop = (task: Task) => {
@@ -197,34 +251,89 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
     if (!d) return
     if (!d.moving) return pick(task)
     if (!d.over) return
-    const list = (byCol.get(d.over.col) ?? []).filter((t) => t.id !== task.id)
+    const moving = d.ids.map((id) => tasks.find((t) => t.id === id)!).filter(Boolean)
+    const list = (byCell.get(`${d.over.col}|${d.over.lane}`) ?? []).filter((t) => !d.ids.includes(t.id))
     const before = list[d.over.index - 1]
     const after = list[d.over.index]
-    const was = byCol.get(task.col) ?? []
-    const k = was.findIndex((t) => t.id === task.id)
-    // Let go where it was: nothing changes.
-    if (d.over.col === task.col && was[k - 1]?.id === before?.id && was[k + 1]?.id === after?.id) return
-    void moveTask(wid, task, d.over.col, orderBetween(before?.order, after?.order))
+    // Let go where it was (one task, its own cell, between the same two): nothing changes.
+    if (moving.length === 1) {
+      const was = byCell.get(`${task.col}|${laneOf(task)}`) ?? []
+      const k = was.findIndex((t) => t.id === task.id)
+      if (d.over.col === task.col && d.over.lane === laneOf(task) && was[k - 1]?.id === before?.id && was[k + 1]?.id === after?.id) return
+    }
+    // Into another lane: its field too (null: the lane takes nothing, so they keep theirs).
+    const lanePatch = field && d.over.lane ? field.set(d.over.lane) : null
+    // Into an empty cell: after every task in that column (the other lanes' too), so lanes switched off keep the order.
+    const lo = before?.order ?? (after ? undefined : tasksIn(tasks.filter((t) => !d.ids.includes(t.id)), d.over.col).at(-1)?.order)
+    const hi = after?.order
+    const moves: TaskMove[] = moving.map((t, i) => {
+      const order = lo === undefined && hi === undefined ? i + 1 : lo === undefined ? hi! - (moving.length - i) : hi === undefined ? lo + i + 1 : lo + ((hi - lo) * (i + 1)) / (moving.length + 1)
+      return { id: t.id, col: d.over!.col, order, fields: lanePatch && laneOf(t) !== d.over!.lane ? lanePatch : undefined }
+    })
+    void moveTasks(wid, moves, moves.length > 1 ? `move ${moves.length} tasks` : 'move a task')
   }
-  // A press on a task: held; it moves after 5 px. The window hears the pointer meanwhile, since the task leaves its list
-  // while it's held.
+  // A press on a task: held; it moves after 5 px (with the others selected, if it's one of them). The window hears the
+  // pointer meanwhile, since the task leaves its list while it's held. With shift, it joins the selection or leaves it.
   const press = (task: Task) => (e: ReactPointerEvent<HTMLElement>) => {
-    if (!live || e.button !== 0 || !editor) return
+    if (!live || e.button !== 0) return
+    if (e.shiftKey) {
+      e.stopPropagation()
+      const now = many ?? (selected ? [selected] : [])
+      return selectTasks(piece.id, now.includes(task.id) ? now.filter((x) => x !== task.id) : [...now, task.id])
+    }
+    if (!editor) return
     e.stopPropagation()
     const r = e.currentTarget.getBoundingClientRect()
     const s = scale()
-    setDrag({ id: task.id, from: [e.clientX, e.clientY], grab: [(e.clientX - r.left) / s, (e.clientY - r.top) / s], size: [r.width / s, r.height / s], at: local(e.clientX, e.clientY), moving: false, over: null })
+    // The selection in the board's order (column, then place).
+    const order = cols.flatMap((c) => byCol.get(c.id) ?? []).map((t) => t.id)
+    const ids = many?.includes(task.id) ? order.filter((id) => many.includes(id)) : [task.id]
+    setDrag({ id: task.id, ids, from: [e.clientX, e.clientY], grab: [(e.clientX - r.left) / s, (e.clientY - r.top) / s], size: [r.width / s, r.height / s], at: local(e.clientX, e.clientY), moving: false, over: null })
     const move = (ev: PointerEvent) => {
       const d = dragRef.current
       if (!d) return
       const moving = d.moving || Math.hypot(ev.clientX - d.from[0], ev.clientY - d.from[1]) > 5
-      if (moving) setDrag({ ...d, at: local(ev.clientX, ev.clientY), moving, over: landing(ev.clientX, ev.clientY, d.id) ?? d.over })
+      if (moving) setDrag({ ...d, at: local(ev.clientX, ev.clientY), moving, over: landing(ev.clientX, ev.clientY, d.ids) ?? d.over })
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
       drop(task)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
+  // Alt held, a press on the board's empty space draws a box; let go, what it touches is selected (with shift, added).
+  const boxPress = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!live || e.button !== 0 || !e.altKey) return
+    if ((e.target as HTMLElement).closest('[data-task], button, input, textarea')) return
+    e.stopPropagation()
+    e.preventDefault()
+    const from = local(e.clientX, e.clientY)
+    const keep = e.shiftKey ? (many ?? (selected ? [selected] : [])) : []
+    let to = from
+    setBox({ from, to })
+    const move = (ev: PointerEvent) => {
+      to = local(ev.clientX, ev.clientY)
+      setBox({ from, to })
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      setBox(null)
+      const [x0, x1] = [Math.min(from[0], to[0]), Math.max(from[0], to[0])]
+      const [y0, y1] = [Math.min(from[1], to[1]), Math.max(from[1], to[1])]
+      const hit = [...(board.current?.querySelectorAll<HTMLElement>('[data-task]') ?? [])]
+        .filter((el) => {
+          const r = el.getBoundingClientRect()
+          const [a, b] = [local(r.left, r.top), local(r.right, r.bottom)]
+          return a[0] < x1 && b[0] > x0 && a[1] < y1 && b[1] > y0
+        })
+        .map((el) => el.dataset.task!)
+      selectTasks(piece.id, [...new Set([...keep, ...hit])])
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -249,32 +358,33 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
     setCols([...cols, { id, name: 'new column' }], 'add a column')
     useKanbanUi.setState({ naming: id })
   }
-  const add = (column: string, title: string) => {
+  // Typed at a cell's foot: in that column, after every task in it (those not shown too), given its lane's value.
+  const add = (column: string, lane: string, title: string) => {
     if (!user) return
-    // After every task in it, those not shown too.
     const last = tasksIn(tasks, column).at(-1)?.order
-    addTask(wid, piece.id, column, orderBetween(last, undefined), title, user.id)
+    const fields = field && lane ? (field.set(lane) ?? {}) : {}
+    const clean = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== undefined))
+    addTask(wid, piece.id, column, orderBetween(last, undefined), title, user.id, clean)
   }
 
   const own = live ? (e: ReactPointerEvent) => e.stopPropagation() : undefined
   const held = drag?.moving ? tasks.find((t) => t.id === drag.id) : undefined
+  const heldIds = held && drag ? drag.ids : []
   const cardOf = (t: Task) => (t.cardId ? (cards.find((x) => x.id === t.cardId) ?? null) : null)
   const vars = { ['--col' as string]: `${K.col}px`, ['--gap' as string]: `${K.gap}px`, ['--head' as string]: `${K.head}px`, ['--card-gap' as string]: `${K.cardGap}px` } as CSSProperties
+  const isPicked = (id: string) => (many ? many.includes(id) : selected === id)
 
   return (
     <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
-        <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'kanban'} data-dragging={held ? true : undefined}>
-          {cols.map((c, i) => {
-            const every = byCol.get(c.id) ?? []
-            const list = held ? every.filter((t) => t.id !== held.id) : every
-            const slot = held && drag?.over?.col === c.id ? drag.over.index : -1
-            return (
-              <div key={c.id} className={styles.column} data-col={c.id} data-done={c.done || undefined} data-over={slot >= 0 || undefined} role="listitem" aria-label={`${c.name}, ${every.length} tasks`}>
+        <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'kanban'} data-dragging={held ? true : undefined} data-lanes={field ? true : undefined} onPointerDown={boxPress}>
+          <div className={styles.row}>
+            {cols.map((c, i) => (
+              <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-over={(held && drag?.over?.col === c.id) || undefined}>
                 <ColumnHead
                   col={c}
                   n={i + 1}
-                  count={every.length}
+                  count={(byCol.get(c.id) ?? []).length}
                   holds={tasks.filter((t) => t.col === c.id).length}
                   live={live}
                   editor={editor}
@@ -294,44 +404,116 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
                   onDone={() => setCols(cols.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)), c.done ? 'unmark a finished column' : 'mark a finished column')}
                   onDelete={() => void deleteColumn(wid, piece.id, cols, c.id, tasks)}
                 />
-                <div className={styles.list}>
-                  {list.map((t, k) => (
-                    <Slotted key={t.id} slot={slot === k}>
-                      <TaskCard
-                        task={t}
-                        card={cardOf(t)}
-                        finished={!!c.done}
-                        selected={selected === t.id}
-                        live={live}
-                        learn={live && editor && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) : undefined}
-                        onPointerDown={press(t)}
-                        onClick={live && !editor ? () => pick(t) : undefined}
-                      />
-                    </Slotted>
-                  ))}
-                  {slot >= 0 && slot >= list.length && <span className={styles.slot} aria-hidden />}
-                  {!list.length && slot < 0 && adding !== c.id && <span className={styles.empty}>· nothing yet</span>}
-                  {live && editor && (
-                    <AddTask open={adding === c.id} onPress={own} onOpen={() => useKanbanUi.setState({ adding: c.id })} onClose={() => useKanbanUi.setState({ adding: null })} onAdd={(title) => add(c.id, title)} />
-                  )}
-                </div>
+              </div>
+            ))}
+            {live && editor && cols.length < KANBAN_COLS_MAX && (
+              <button className={styles.addCol} onPointerDown={own} onClick={addCol} title="add a column">
+                + column
+              </button>
+            )}
+          </div>
+          {lanes.map((lane) => {
+            const folded = !!field && folds.includes(lane.key)
+            const count = shown.filter((t) => laneOf(t) === lane.key).length
+            return (
+              <div key={lane.key || 'all'} className={styles.lane} data-folded={folded || undefined}>
+                {field && <LaneHead lane={lane} count={count} folded={folded} onFold={() => fold(lane.key)} onPress={own} />}
+                {!folded && (
+                  <div className={styles.row}>
+                    {cols.map((c) => {
+                      const cell = `${c.id}|${lane.key}`
+                      const every = byCell.get(cell) ?? []
+                      const list = held ? every.filter((t) => !heldIds.includes(t.id)) : every
+                      const slot = held && drag?.over?.col === c.id && drag.over.lane === lane.key ? drag.over.index : -1
+                      return (
+                        <div
+                          key={c.id}
+                          className={styles.column}
+                          data-cell
+                          data-col={c.id}
+                          data-lane={lane.key}
+                          data-drop={lane.drop || undefined}
+                          data-done={c.done || undefined}
+                          role="listitem"
+                          aria-label={`${c.name}${lane.label ? `, ${lane.label}` : ''}, ${every.length} tasks`}
+                        >
+                          <div className={styles.list}>
+                            {list.map((t, k) => (
+                              <Slotted key={t.id} slot={slot === k}>
+                                <TaskCard
+                                  task={t}
+                                  card={cardOf(t)}
+                                  finished={!!c.done}
+                                  selected={isPicked(t.id)}
+                                  live={live}
+                                  learn={live && editor && !many && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) : undefined}
+                                  onPointerDown={press(t)}
+                                  onClick={live && !editor ? (e: React.MouseEvent) => void (!e.shiftKey && pick(t)) : undefined}
+                                />
+                              </Slotted>
+                            ))}
+                            {slot >= 0 && slot >= list.length && <span className={styles.slot} aria-hidden />}
+                            {!list.length && slot < 0 && adding !== cell && !field && <span className={styles.empty}>· nothing yet</span>}
+                            {live && editor && lane.drop && (
+                              <AddTask open={adding === cell} quiet={!!field} onPress={own} onOpen={() => useKanbanUi.setState({ adding: cell })} onClose={() => useKanbanUi.setState({ adding: null })} onAdd={(title) => add(c.id, lane.key, title)} />
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )
           })}
-          {live && editor && cols.length < KANBAN_COLS_MAX && (
-            <button className={styles.addCol} onPointerDown={own} onClick={addCol} title="add a column">
-              + column
-            </button>
-          )}
           {held && drag && (
             <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0] }} aria-hidden>
               <TaskCard task={held} card={cardOf(held)} finished={!!cols.find((c) => c.id === (drag.over?.col ?? held.col))?.done} selected={false} live lifted />
+              {heldIds.length > 1 && <span className={styles.more}>+{heldIds.length - 1}</span>}
             </div>
+          )}
+          {box && (
+            <div
+              className={styles.box}
+              style={{ left: Math.min(box.from[0], box.to[0]), top: Math.min(box.from[1], box.to[1]), width: Math.abs(box.to[0] - box.from[0]), height: Math.abs(box.to[1] - box.from[1]) }}
+              aria-hidden
+            />
           )}
         </div>
       </div>
     </div>
   )
+}
+
+// A lane's head (D-258), the width of the columns: `▾`, its mark (a member's square, a card type's bar), its name, a
+// rule, how many it holds. A click folds it or opens it.
+function LaneHead({ lane, count, folded, onFold, onPress }: { lane: Lane; count: number; folded: boolean; onFold: () => void; onPress?: (e: ReactPointerEvent) => void }) {
+  return (
+    <button className={styles.laneHead} onPointerDown={onPress} onClick={onFold} aria-expanded={!folded} title={folded ? 'open it' : 'fold it'} style={lane.tone ? ({ ['--tone' as string]: lane.tone } as CSSProperties) : undefined}>
+      <span className={styles.laneFold} aria-hidden>
+        {folded ? '▸' : '▾'}
+      </span>
+      {lane.initials && <span className={styles.who}>{lane.initials}</span>}
+      {lane.kind && <span className={styles.laneKind}>▌{lane.kind}</span>}
+      <span className={styles.laneName} data-none={!lane.initials && !lane.kind ? true : undefined}>
+        {lane.label}
+      </span>
+      <span className={styles.rule} aria-hidden />
+      <span className={styles.count}>{count}</span>
+    </button>
+  )
+}
+
+// Its lanes, in its dock (D-258): none, by who a task is given to, by the card it's for. Shared; editors choose.
+export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const { wid } = useWs()
+  const rows = kanbanOf(piece).rows
+  const NAME: Record<KanbanRows, string> = { assignee: 'given to', card: 'card' }
+  const items: MenuEntry[] = [
+    { key: 'none', label: 'no lanes', checked: !rows, onSelect: () => editor && rows && void setKanbanRows(wid, piece.id, undefined) },
+    ...KANBAN_ROWS.map((r) => ({ key: r, label: `by ${NAME[r]}`, checked: rows === r, onSelect: () => editor && rows !== r && void setKanbanRows(wid, piece.id, r) })),
+  ]
+  return <Menu label="lanes" up summary={rows ? NAME[rows] : 'none'} active={!!rows} items={items} ariaLabel="Lanes" noun="ways" />
 }
 
 // A task with the place a held one would land just above it.
@@ -472,7 +654,7 @@ type CardProps = {
   // Finished, for a card still being tested (D-254): its line asking what it taught.
   learn?: () => void
   onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
-  onClick?: () => void
+  onClick?: (e: React.MouseEvent) => void
 }
 
 // A task: raised paper as tall as its title (Geist, up to three lines), its left edge in the colour of the card it's for.
@@ -551,15 +733,16 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, onPoint
   )
 }
 
-type AddProps = { open: boolean; onPress?: (e: ReactPointerEvent) => void; onOpen: () => void; onClose: () => void; onAdd: (title: string) => void }
+// `quiet`: in a lane, shown only while its cell is hovered (one in every cell would crowd it).
+type AddProps = { open: boolean; quiet?: boolean; onPress?: (e: ReactPointerEvent) => void; onOpen: () => void; onClose: () => void; onAdd: (title: string) => void }
 
 // `+ add a task` under a column's last task, a faint line: a click types a new one in its place, a sheet like a task with
 // the menus' cyan `>` (D-222); Enter makes it and keeps the field for the next, Escape (or leaving it empty) stops.
-function AddTask({ open, onPress, onOpen, onClose, onAdd }: AddProps) {
+function AddTask({ open, quiet, onPress, onOpen, onClose, onAdd }: AddProps) {
   const [draft, setDraft] = useState('')
   if (!open)
     return (
-      <button className={styles.add} onPointerDown={onPress} onClick={onOpen}>
+      <button className={styles.add} data-quiet={quiet || undefined} onPointerDown={onPress} onClick={onOpen}>
         + add a task
       </button>
     )
