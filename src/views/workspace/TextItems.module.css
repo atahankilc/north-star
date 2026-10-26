@@ -146,18 +146,29 @@
   background: var(--tone);
 }
 
-/* Sticky notes (D-158, D-162), as the old board set them (its units × 80): quieter than a card, on paper a shade off
-   the page, a 2 px bar of their colour along the top, signed on a small line under it (first name · how long ago, three
-   little checks on the right), then the text in mono, under a card title's size. */
+/* Sticky notes (D-158, D-162, D-257): paper in their colour with dark ink, a glue band a shade darker along the top
+   holding the signature (first name · how long ago, three little checks on the right), the text in mono under a card
+   title's size; never narrower than tall by much (at least 3/4 of its width), and its foot lifting off the space. */
 .sticky {
+  --paper: color-mix(in srgb, var(--paper-tone, var(--tone)) var(--sticky-mix), var(--sticky-base));
+  --glue: color-mix(in srgb, var(--paper) 86%, #000);
   display: flex;
   flex-direction: column;
-  padding: 7.76px 7.2px 7.2px;
-  background: var(--card-behind);
-  box-shadow: inset 0 2px 0 var(--tone);
-  color: var(--fg);
+  aspect-ratio: 4 / 3;
+  padding: 4.2px 7.2px 7.2px;
+  background: linear-gradient(var(--glue) 0 13px, var(--paper) 14px);
+  box-shadow:
+    0 1px 1px color-mix(in srgb, var(--sticky-shadow) 40%, transparent),
+    0 7px 9px -5px var(--sticky-shadow);
+  color: var(--sticky-ink);
   font-family: var(--font-mono);
   line-height: 1.45;
+}
+
+/* Its colour may be ink-dark: the placeholder stays on the paper's terms. */
+.sticky .empty,
+.sticky .field::placeholder {
+  color: color-mix(in srgb, var(--sticky-ink) 40%, transparent);
 }
 
 .stickyHead {
@@ -165,8 +176,8 @@
   align-items: center;
   justify-content: space-between;
   height: 5.2px;
-  margin-bottom: 4.68px;
-  color: var(--fg-dim);
+  margin-bottom: 8.24px;
+  color: color-mix(in srgb, var(--sticky-ink) 62%, transparent);
   font-size: 5.2px;
   line-height: 1;
   letter-spacing: 0.08em;
@@ -174,7 +185,7 @@
 
 .checks {
   flex: none;
-  fill: var(--tone);
+  fill: color-mix(in srgb, var(--sticky-ink) 70%, transparent);
 }
 
 /* Sections (D-130, D-157): a thin frame, no fill, in its colour (the canvas's edge grey when it has none); the line

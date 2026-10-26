@@ -1,6 +1,6 @@
 // Text anywhere in the workspace (D-188), drawn in its space's px (the canvas's world, or a plane's view). Headings
 // (H1–H3, an H1 with a rule fading right, a small line over it), paragraphs (light Markdown at a width, a hairline down
-// the left), either turned a quarter; sticky notes (signed, a colour bar); sections (a frame holding what's inside it,
+// the left), either turned a quarter; sticky notes (signed paper in their colour); sections (a frame holding what's inside it,
 // its number and name set into its top or left edge, the line breaking round them) and the project title (the
 // workspace's name and what it's building, folding round the name when too far out to read). Live, a click selects
 // (corner marks, closing in while pressed), a drag moves (5 px first, snapped, alt = free; a section carries what's
@@ -57,7 +57,7 @@ import { ThreadChip, threadOn } from './Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 
 const DRAG_PX = 5
-// Down from a sticky note's top to its text: the bar, a gap, the signed line (the old board's units × 80).
+// Down from a sticky note's top to its text: the glue band holding the signed line, then a gap (D-257).
 const STICKY_TEXT_TOP = 17.64
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
 const MIN_TEXT_PX = 6
@@ -97,7 +97,10 @@ export function labelBox(l: Label) {
   const k = kindOf(l)
   const lines = Math.max(1, l.text.split('\n').length)
   if (k === 'section') return { x: l.x, y: l.y, w: l.w ?? 400, h: l.h ?? 300 }
-  if (k === 'sticky') return { x: l.x, y: l.y, w: l.w ?? STICKY_W.initial, h: STICKY_TEXT_TOP + lines * STICKY_PX[l.scale ?? 'medium'] * 1.45 + 7.2 }
+  if (k === 'sticky') {
+    const w = l.w ?? STICKY_W.initial
+    return { x: l.x, y: l.y, w, h: Math.max(w * 0.75, STICKY_TEXT_TOP + lines * STICKY_PX[l.scale ?? 'medium'] * 1.45 + 7.2) }
+  }
   if (k === 'title') return { x: l.x, y: l.y, w: l.w ?? TITLE_W.initial, h: 340 }
   let w: number
   let h: number
@@ -346,7 +349,9 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     // Signed along its top (D-158): the writer's first name and how long ago, three little checks in its colour.
     const who = (l.author ?? 'someone').split(/\s+/)[0].toUpperCase()
     return (
-      <div className={styles.sticky} style={{ ...style, width: w ?? STICKY_W.initial, fontSize: STICKY_PX[l.scale ?? 'medium'] }} {...common} onPointerDown={press} onDoubleClick={edit}>
+      <div
+        className={styles.sticky}
+        style={{ ...style, width: w ?? STICKY_W.initial, fontSize: STICKY_PX[l.scale ?? 'medium'], ...((l.color ?? 'yellow') === 'yellow' && { ['--paper-tone' as string]: 'var(--sticky-yellow)' }) }} {...common} onPointerDown={press} onDoubleClick={edit}>
         <span className={styles.stickyHead}>
           <span>
             {who} · {ago(l.createdAt)}

@@ -626,3 +626,6 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 
 ## Done (2026-10-22, moved from state.md 2026-10-26): finder (D-236)
 - Finder (D-236): ⌘F / compass, one finder in the middle with a real preview; replaces the find bar and go to's menu. 2026-10-22, committed.
+
+## Done (2026-10-22, moved from state.md 2026-10-27): heads open panels (D-247)
+- A card's head in a matrix or table opens its right panel on one click; a cell keeps it on its one card (D-247), 2026-10-22, committed.

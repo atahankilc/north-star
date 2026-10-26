@@ -17,8 +17,14 @@
   --line-hover: #3a3a3a;
   /* A frame drawn on the canvas: a section's line (the old board's edge colour). */
   --edge: #6a6a6a;
-  /* A sticky note's paper: a shade quieter than a card (the old board's card-behind). */
+  /* A sticky note's paper (D-257): its colour, nearly solid (the light theme's a pastel of it), dark ink on it, a soft
+     shade where its foot lifts off. Yellow paper is always the bright yellow, never the light theme's ochre. */
   --card-behind: #0e0e0e;
+  --sticky-mix: 92%;
+  --sticky-base: #000000;
+  --sticky-yellow: #ffd23f;
+  --sticky-ink: #141414;
+  --sticky-shadow: rgba(0, 0, 0, 0.65);
   /* A tag chip on a card (palettes.chip in tokens.ts). */
   --chip: #161616;
   --fg: #e8e8e8;
@@ -124,6 +130,9 @@
   --line-hover: #b5b5b5;
   --edge: #8a8a8a;
   --card-behind: #e9e9e9;
+  --sticky-mix: 34%;
+  --sticky-base: #ffffff;
+  --sticky-shadow: rgba(0, 0, 0, 0.18);
   --chip: #fafafa;
   --fg: #161616;
   --fg-strong: #000000;

@@ -4481,3 +4481,21 @@ User: picked ideas 5, 10 and 9 of the kanban list (2026-10-26); this is session 
 - *Verified:* headless on the emulators: labels, priority and an over-limit DOING on the sheets; filter strip, DUE "past
   its day" leaves the late task, `[filter · 1]`; panel: P1 set, a label offered from the kanban's others and one typed;
   `≤` on TODO typed 1 → `2/1` magenta; light theme; rules 391 pass; build.
+
+### D-257 · 2026-10-27 · Accepted (changes D-158, D-162's look; D-194's sticky sizes kept)
+**A sticky note is paper in its colour: solid, dark ink, a glue band a shade darker along the top holding the signature,
+at least 3/4 as tall as it is wide, its foot lifting off the space. Never tilted.**
+User: "improve how sticky notes look like. Right now they do not look like sticky notes"; shown six directions on a
+preview page (today, A paper, B folded corner, C glyph paper, D taped & tilted, E glue band, F pad), picked "A yap ama
+tiltsiz" (A, without the tilt).
+- *Paper:* `color-mix(colour 92%, black)` in dark, a pastel `color-mix(colour 34%, white)` in light; yellow always the
+  bright `--sticky-yellow` (the light theme's yellow is ochre). Text `--sticky-ink`, signature and checks ink at 62/70 %,
+  placeholder ink at 40 %. Tokens `--sticky-mix`, `--sticky-base`, `--sticky-yellow`, `--sticky-ink`, `--sticky-shadow`.
+- *Glue band:* the top 13 px a shade darker (86 % of the paper with black), the signed line inside it; text starts at the
+  same 17.64 px as before.
+- *Shape:* `aspect-ratio: 4 / 3`, still growing with its text; `labelBox` takes the larger of the two.
+- *Shade:* a 1 px contact shadow and a soft one under its foot (`--sticky-shadow`); on black it barely shows, by design.
+- *Alternatives:* the tilt (±2° from its id) — the user said no; B/E stayed dark (less like a note); C's ▓ tape and ░
+  dither, D's tape, F's pad edges.
+- *Verified:* headless on the emulators, six notes on the canvas (each colour, a list, a long one, an empty one) in dark
+  and light; build.

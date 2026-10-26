@@ -145,7 +145,7 @@ old reports are moved to documents once (D-248).
   `take_off_plane`, `add_package`, `edit_package`; `/organize` may propose planes.
 - Plane filter (D-143): one remembered plane per workspace, the board's open one; Flow and Table (filter bar), Matrix and
   Priorities (footer) show only its cards; a matrix with none of its competitors shows them all.
-- Sticky notes (D-158, D-162): a label `kind: 'sticky'`, quieter than a card (darker paper, thin colour bar, yellow default),
+- Sticky notes (D-158, D-162, D-257): a label `kind: 'sticky'`, paper in its colour (solid, dark ink; pastel in light), a darker glue band on top, ≥ 3/4 as tall as wide, never tilted, yellow default,
   card width, as tall as its text, signed on a small top line (`uid`, `author`), mono text S/M/L under a card title; grows as
   you type; from `+` or right-click; not a place; the brief lists them.
 - Sections look (D-157): thin frame, no fill, the name set into the top edge or up the left one (`side`), the line
@@ -271,7 +271,7 @@ old reports are moved to documents once (D-248).
   headings and sections, in reading order; glides there (planes, sections, title framed whole; a heading at 100 % near
   the top); a place in a plane focuses the plane first, then glides.
 - Text anywhere (D-188): headings H1–H3 (48/29/22 px, H1 with a rule fading right), paragraphs (light Markdown, S/M/L,
-  width from the right edge), sticky notes (signed, colour bar, yellow default), sections (frame drawn with a crosshair,
+  width from the right edge), sticky notes (signed, paper in its colour, D-257), sections (frame drawn with a crosshair,
   number + name in an edge, carries what's fully inside it, corner resizes) and the project title (workspace name and
   description, one per workspace). `labels` docs with `pieceId` (`canvas` or a plane's id), x/y top-left in that space's
   px; the old board's labels (none) aren't shown. From the side nav's `+` in both spaces; live on the canvas, in a plane
@@ -283,7 +283,7 @@ old reports are moved to documents once (D-248).
   corner marks close in while pressed and take the item's colour (a section's 32 px, an L grip). Project title at the old
   sizes (name 92 px, 26 px description at 72 %, star + PROJECT, magenta-lead rule, 48 px edge-grey brackets as its marks, 800 wide) and
   folding round the name when the description is under 6 screen px (320 ms, `titleLayout.ts`). Sticky notes at the old
-  sizes (text 6.8/8.4/10.4 px, `ATAHAN · 2m`, ▚▚▚ in its colour, `--card-behind` paper, `•` bullets); paragraphs and
+  sizes (text 6.8/8.4/10.4 px, `ATAHAN · 2m`, ▚▚▚, `•` bullets; paper per D-257); paragraphs and
   sticky notes widen by a thin strip just inside the right edge, shown only while hovered or dragged.
 - Text reads the same typed or not (D-190): fields keep the item's face, size and layout (no frame, same placeholder);
   a soft feathered shade of the page sits behind headings, paragraphs and the title so the backdrop dims under them.
