@@ -84,12 +84,12 @@ a.link:hover {
   left: 0;
   /* Under everything else in the bar, the breadcrumb too (the bar is its own layer, so this stays over the canvas). */
   z-index: -1;
-  width: 160px;
+  width: 120px;
   background: linear-gradient(
     to right,
     color-mix(in srgb, var(--bg) 96%, transparent) 0,
-    color-mix(in srgb, var(--bg) 90%, transparent) 60px,
-    color-mix(in srgb, var(--bg) 45%, transparent) 110px,
+    color-mix(in srgb, var(--bg) 90%, transparent) 50px,
+    color-mix(in srgb, var(--bg) 45%, transparent) 82px,
     transparent
   );
   pointer-events: none;
