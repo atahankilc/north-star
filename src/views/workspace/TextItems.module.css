@@ -39,11 +39,9 @@
   color: var(--placeholder);
 }
 
-/* A soft shade of the page behind text (D-190): the moving backdrop dims under it, so it reads; feathered, never a box.
-   Sticky notes have their own paper. */
-.heading::before,
-.para::before,
-.title::before {
+/* Text sits on ink (D-277, `src/ui/Ink.tsx`): a shade on each line, as long as the line. While it's typed in, its fields
+   have none, so a soft shade of the page is behind it meanwhile (D-190's). Sticky notes have their own paper. */
+:is(.heading, .para, .title)[data-typing='true']::before {
   content: '';
   position: absolute;
   inset: -10px -16px;
@@ -119,15 +117,17 @@
   text-transform: uppercase;
 }
 
+/* An H1 opens a region: its rule fades out to the right, from a short magenta lead, as the project title's does (one
+   family of lines, D-277: straight holds, fading opens, dashed separates rows, a magenta lead starts something numbered). */
 .rule {
   display: block;
   width: 130%;
   margin-top: 0.2em;
-  background: linear-gradient(to right, var(--fg-dim), transparent);
+  background: linear-gradient(to right, var(--accent-magenta) 0 24px, var(--fg-dim) 24px, transparent);
 }
 
 [data-colored='true'] .rule {
-  background: linear-gradient(to right, var(--tone), transparent);
+  background: linear-gradient(to right, var(--accent-magenta) 0 24px, var(--tone) 24px, transparent);
 }
 
 /* Paragraphs (D-156): light Markdown at their width, a hairline down the left edge (its colour when it has one). */

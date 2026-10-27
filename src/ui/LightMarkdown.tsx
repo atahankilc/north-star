@@ -2,11 +2,12 @@
 // line starting `- ` or `* ` is a bullet, `1. ` a numbered one; inside a line `**bold**`, `*italic*` or `_italic_`,
 // `` `code` `` and `[text](url)`, shown as the text, underlined.
 import { Fragment, type ReactNode } from 'react'
+import { Ink } from './Ink'
 import styles from './LightMarkdown.module.css'
 
 const INLINE = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)\s]+\)|\*[^*\s][^*]*\*|_[^_\s][^_]*_)/g
 
-function inline(line: string): ReactNode[] {
+function inlineOf(line: string): ReactNode[] {
   const out: ReactNode[] = []
   let at = 0
   for (const m of line.matchAll(INLINE)) {
@@ -23,8 +24,10 @@ function inline(line: string): ReactNode[] {
   return out
 }
 
-// `mark`: what a bullet line hangs in the margin (text on the canvas uses the old board's `•`).
-export function LightMarkdown({ text, mark = '–' }: { text: string; mark?: string }) {
+// `mark`: what a bullet line hangs in the margin (text on the canvas uses the old board's `•`). `ink`: each line on its
+// own shade (D-277), for text over the backdrop.
+export function LightMarkdown({ text, mark = '–', ink = false }: { text: string; mark?: string; ink?: boolean }) {
+  const inline = (line: string) => (ink ? <Ink>{inlineOf(line)}</Ink> : inlineOf(line))
   return (
     <div className={styles.md}>
       {text.split('\n').map((raw, i) => {

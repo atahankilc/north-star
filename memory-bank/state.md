@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-27 (D-276: names, lines, unframed; consistency plan done)_
+_Last updated: 2026-10-27 (D-277: ink line by line, one family of lines)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -57,8 +57,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Criteria back on the matrix (D-249): an axis unfolds features into what they're judged on, scored in its cells, `◇ open`; panel `must do` → `judged on`. 2026-10-26, committed. Priorities as a kanban holding cards (D-253): done (D-268, D-269, D-271).
 - Enter makes / Escape cancels what's just made, cards and text; add + name one undo step; Tab next card; wizards' Enter (D-250). 2026-10-26, not committed.
 - **One look and behaviour across the canvas (D-263–D-267), agreed 2026-10-27: docs/specs/consistency.md, six sessions.
-  All six sessions done 2026-10-27 (D-270, D-272–D-276). Open: the spec's "Asked, not decided" (`<Ink>` line shades,
-  one family of rules): ask the user.**
+  All six sessions done 2026-10-27 (D-270, D-272–D-276), and ink + one family of lines (D-277). Next: merge the
+  branch to main and push (the user said yes, after D-277 is checked).**
 - Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), links shown and made from a dropdown (D-215), 2026-10-22, rules deployed. Follows adds, column widths (D-224). Open on the canvas (D-228), committed, rules deployed 2026-10-22. Canvas speed: pieces' contents memoised (pan no longer draws them again; keep their props stable), matrix cells memoised with hover in its own store; in focus a matrix's cells and heads and a table's rows are made only when they change, not per frame; only what's on screen is drawn (`visible.ts`), and a matrix too small to read is squares on one canvas (`CellDots`).
 - Documents (D-232, docs/specs/documents.md): .md/images/PDFs/old reports (moved once) in `documents/`, private until shared;
   a list piece (table or shelf) and one on its own (asks first), both unframe (D-234). .md only until Blaze; next: files, writing.

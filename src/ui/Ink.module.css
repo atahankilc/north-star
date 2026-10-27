@@ -1,0 +1,7 @@
+/* Ink (D-277): a shade on each line of text, as long as the line: the page at 84 %, feathered 12 px out at 70 %. */
+.ink {
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  box-shadow: 0 0 12px 8px color-mix(in srgb, var(--bg) 70%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}

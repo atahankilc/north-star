@@ -102,6 +102,9 @@ old reports are moved to documents once (D-248).
 - Names, lines, unframed built (D-276, session 6): magenta numbers (piece names' leading number, kanban columns, panel
   sections); one edge-name geometry (16 lead, 8 clear); unframed = ink, rows on hugging shades, the name a small line
   (`04 ── RIVALS · TABLE`), the console hanging under; framing/unframing turns cell by cell in 320 ms. DESIGN.md has it.
+- Ink and one family of lines (D-277): text's shade line by line (`src/ui/Ink.tsx`), not a box (D-190's only while
+  typing); straight holds, fading opens, dashed separates rows, a magenta lead starts something numbered (H1, title,
+  panel sections).
 
 ## Motion and backdrop
 - One entrance everywhere: cell-by-cell build-up in random order, all at once, starting at `revealed`; components 320 ms,

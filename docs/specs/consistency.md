@@ -144,11 +144,8 @@ the transition both ways).
 
 ---
 
-## Asked, not decided
-- Text's shade hugging each line instead of one feathered box per item (`<Ink>`), and one family of rules (straight =
-  holds, fading = opens a region, dashed = separates rows, magenta lead = numbered start; H1's rule gets the magenta
-  lead). In the preview under 4 → "tek dil + mürekkep zemini". The user didn't pick it or turn it down; ask before
-  building. Unframed rows (D-267) use the hugging shade either way.
+## Asked, then decided
+- Text's ink line by line and one family of lines: built (D-277), the user's pick after the six sessions.
 
 ## Found along the way
 - Session 6 (D-276): a single document unframed keeps its feathered page (it's a page of text, not rows). A name's

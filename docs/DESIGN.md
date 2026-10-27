@@ -95,6 +95,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   the same hover rule, hanging 10 px under the contents' right end. A single document keeps its feathered page.
   Going between: the window breaks (or builds) cell by cell while the contents grow from fitted to their own size (or
   shrink back), 320 ms, eased both ends; nothing else moves.
+- *Ink (D-277).* Text on the canvas (headings and their small lines, paragraphs, the project title, section names) sits
+  on a shade line by line, as long as each line (`src/ui/Ink.tsx`), never a box. *Lines:* straight, edge grey, holds
+  (pieces, sections); fading to the right opens a region (H1, the project title); dashed separates a list's rows
+  (tables, lists); a short magenta lead starts something numbered (the title's and an H1's rule, panel sections).
 
 ## 5. ASCII rendering
 

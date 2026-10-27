@@ -4958,3 +4958,19 @@ The user asked for session 6 of the consistency plan.
   kanban, list and matrix on the canvas with their small-line names and row shades; the hanging console. Build.
 - *Still asked, not decided:* text's shade hugging each line (`<Ink>`) and one family of rules (spec "Asked, not
   decided").
+
+### D-277 · 2026-10-27 · Accepted (the consistency spec's "Asked, not decided", chosen by the user: "İkisi de, önce <Ink>"; changes D-190's shade behind text)
+**Text on the canvas sits on ink, line by line; one family of lines: straight holds, fading opens, dashed separates
+rows, a magenta lead starts something numbered.**
+- *Ink:* `src/ui/Ink.tsx` (`<Ink>`, `inkClass`): an inline shade on each line of text, as long as the line
+  (`box-decoration-break: clone`), the page (or the piece's surface inside one) at 84 %, feathered `0 0 12px 8px` at
+  70 %. On a heading's text and its small line, a paragraph's lines (`LightMarkdown`'s `ink`), the project title's
+  PROJECT, name and description, a section's number and name. It replaces D-190's one feathered box per item (a box as
+  wide as the longest line, its holes in the backdrop); that box stays only while the text is typed in
+  (`data-typing`), since its fields have no ink. Sticky notes keep their paper; unframed pieces' rows their D-267
+  shades.
+- *Lines:* an H1's fading rule starts with a 24 px magenta lead, as the project title's does; a panel section's rule
+  (`01 STATUS ──`) starts with a 12 px one. Containers' edges (straight, edge grey), the title's and H1's fading rules,
+  dashed rows (tables, lists) were that way already.
+- *Verified:* headless on the emulators: the canvas's title, heading and a three-line paragraph on ink; a plane in
+  focus (its text's ink the surface, so unseen); the H1's and the panel's magenta leads. Build.

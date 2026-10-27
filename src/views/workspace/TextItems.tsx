@@ -51,6 +51,7 @@ import { clearGuides, guide, showGuides, useGuides } from './guides'
 import { useMotion } from '../../state/motion'
 import { ago } from '../../ui/ago'
 import { LightMarkdown } from '../../ui/LightMarkdown'
+import { Ink, inkClass } from '../../ui/Ink'
 import { useWs } from './context'
 import styles from './TextItems.module.css'
 import { usePeersOn } from './collab'
@@ -298,6 +299,8 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const common = {
     ref: self,
     'data-carried': !!carried || undefined,
+    // Typed in: its fields have no ink of their own (D-277), so the old feathered shade is behind them meanwhile.
+    'data-typing': typing || undefined,
     'data-target': `label:${l.id}`,
     'data-selected': selected || undefined,
     'data-pressed': pressed || undefined,
@@ -376,11 +379,11 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
               <>
                 {num && (
                   <span className={styles.secNum} style={{ fontSize: secKickPx(px), marginRight: px * 0.3 }}>
-                    {num}
+                    <Ink>{num}</Ink>
                   </span>
                 )}
                 <span className={styles.secText} data-empty={!l.text || undefined}>
-                  {l.text || 'Section'}
+                  <Ink>{l.text || 'Section'}</Ink>
                 </span>
               </>
             )}
@@ -420,7 +423,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     return withLanding(
       <div className={styles.para} style={{ ...style, fontSize: PARA_PX[l.scale ?? 'large'], ...(turn ? turnedBox : { width: pw }) }} {...common} onPointerDown={press} onDoubleClick={edit}>
         <div ref={body} className={styles.body} data-turn={turn} style={{ width: pw }}>
-          {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} mark="•" /> : <span className={styles.empty}>a paragraph</span>}
+          {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} mark="•" ink /> : <span className={styles.empty}><Ink>a paragraph</Ink></span>}
         </div>
         {marks}
         {bar}
@@ -440,7 +443,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
           <>
             {kick && <Kicker kick={kick} size={kickPx(px)} hidden={kickPx(px) * zoom < MIN_TEXT_PX} />}
             <span className={styles.headText} data-empty={!l.text || undefined}>
-              {l.text || 'heading'}
+              <Ink>{l.text || 'heading'}</Ink>
             </span>
           </>
         )}
@@ -525,8 +528,8 @@ function Checks() {
 function Kicker({ kick, size, hidden }: { kick: { num: string; rest: string }; size: number; hidden: boolean }) {
   return (
     <span className={styles.kicker} style={{ fontSize: size, visibility: hidden ? 'hidden' : undefined }}>
-      {kick.num && <span className={styles.kickNum}>{kick.num}</span>}
-      {kick.rest && <span className={styles.kickRest}>{kick.num ? `── ${kick.rest}` : kick.rest}</span>}
+      {kick.num && <span className={`${styles.kickNum} ${inkClass}`}>{kick.num}</span>}
+      {kick.rest && <span className={`${styles.kickRest} ${inkClass}`}>{kick.num ? `── ${kick.rest}` : kick.rest}</span>}
     </span>
   )
 }
@@ -735,7 +738,7 @@ function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, ma
       <div className={styles.fold}>
         <div>
           <span className={styles.titleKick} style={{ fontSize: T.caption, lineHeight: `${T.caption}px`, paddingLeft: T.star * 2 + 13 }}>
-            PROJECT
+            <Ink>PROJECT</Ink>
           </span>
           <i className={styles.spacer} style={{ height: T.gap }} />
         </div>
@@ -745,7 +748,7 @@ function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, ma
       ) : (
         <>
           <h2 className={styles.titleName} style={{ fontSize: folded ? lay.fold : T.name, paddingLeft: folded ? foldIndent(lay.fold) : 0 }}>
-            {workspace.name}
+            <Ink>{workspace.name}</Ink>
           </h2>
           <div className={styles.fold}>
             <div>
@@ -755,7 +758,7 @@ function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, ma
                 <>
                   <i className={styles.spacer} style={{ height: T.gap }} />
                   <p className={styles.titleAbout} data-empty={!description || undefined} style={{ width: `${DESC_SHARE * 100}%` }}>
-                    {about}
+                    <Ink>{about}</Ink>
                   </p>
                 </>
               )}

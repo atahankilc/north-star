@@ -94,7 +94,7 @@
   padding: 14px 20px 6px;
 }
 
-/* `01 STATUS ────`: the number faint, the name a label, the rule to the edge. */
+/* `01 STATUS ────`: the number magenta (D-266), the name a label, the rule to the edge from a magenta lead (D-277). */
 .rule {
   display: flex;
   align-items: center;
@@ -110,7 +110,8 @@
 .line {
   flex: 1;
   height: 1px;
-  background: var(--line);
+  /* A numbered start: a short magenta lead (D-277's family of lines). */
+  background: linear-gradient(to right, var(--accent-magenta) 0 12px, var(--line) 12px);
 }
 
 .count {
