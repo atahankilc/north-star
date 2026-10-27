@@ -585,3 +585,16 @@
 .board[data-lanes='true'] .list {
   margin-top: 4px;
 }
+
+/* Its comments' chip (D-260), in its top-right corner; the title keeps clear of it. */
+.chipHere {
+  position: absolute;
+  top: 0;
+  right: 8px;
+  width: 0;
+  height: 0;
+}
+
+.task[data-talk='true'] .title {
+  padding-right: 36px;
+}

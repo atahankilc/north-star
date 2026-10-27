@@ -4543,3 +4543,28 @@ not showing is fine as it is ("gözükmese de olur").
 - *Verified:* headless on the emulators: a short note at 150 × 125, a long one grown down, folded with `▾` to 125 and
   faded, a folded one opened with `▸`; rules 395 pass; typecheck.
 
+
+### D-260 · 2026-10-27 · Accepted (adds to D-169, D-191, D-192, D-193, D-251; kanban session 6, docs/specs/kanban.md)
+**Working together on a kanban: others see the tasks you've picked and the one you're dragging, a follower takes your
+pick, and tasks take comment threads.**
+User: picked ideas 11 and 12 of the kanban list (2026-10-26); this is session 6 of docs/specs/kanban.md.
+- *Picked:* your picked task, or several (D-258), is your presence selection (`sel` + `more`) while it is, instead of a
+  card's; others see a frame in your colour with your name round it (`PeerTaskRing`), wherever that kanban is drawn
+  (its focus, beside a plane, open on the canvas: a task is on one kanban only, so no space check).
+- *Dragging:* presence `drag` = `<task> <x> <y> <how many>` (its top-left in the kanban's px), sent with the cursor
+  (10 a second) and cleared on letting go; others see a ghost of the task in your colour with your name (`· 3` for
+  several), gliding 110 ms between updates (none with reduced motion). RTDB rule: `drag` string ≤ 200.
+- *Following:* the leader's selection, when it's tasks, is picked for the follower (their panel opens); otherwise a
+  task pick lets go.
+- *Comments:* `THREAD_TARGETS` gets `task` (rules too); its thread's `planeId` is the kanban, so it's counted in the
+  kanban's `[N inside]` and the threads panel's `on Roadmap ↗` goes into the kanban's focus and picks the task (a
+  `pending` pick, taken once that kanban is live). Right-click a task → `comment` (only that); its chip sits inside
+  the task's top-right corner (under it, as on a card, it lay on the next task), the title keeping clear of it.
+- *Fixed along the way:* a task pick is let go when the space changes (focus, unfocus, back), not when the task panel
+  unmounts: React's development double mount cleared a pick made just before. Dev hook `window.__kanbanUi`.
+- *Alternatives:* the ghost drawn from cursors alone (the kanban's px aren't the space's beside a plane or on the
+  canvas); a chip under the task (covered the next one).
+- *Verified:* headless on the emulators with two browsers (Alice, Bob): Bob sees Alice's pick framed in her colour and
+  her held task's ghost; Alice right-clicks → comment → Bob sees the chip (new) and the threads count; Bob follows Alice
+  and gets her pick with its panel; from the canvas, the thread's go there opens the kanban with the task picked;
+  rules 398 pass; build.

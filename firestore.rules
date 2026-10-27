@@ -564,7 +564,8 @@ service cloud.firestore {
         function validThread(d) {
           return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
             // 'plane' (D-193): a comment on a plane on the canvas.
-            && d.on in ['card', 'label', 'link', 'plane']
+            // 'task' (D-260): one of a kanban's tasks.
+            && d.on in ['card', 'label', 'link', 'plane', 'task']
             && isText(d.targetId, 128)
             && isText(d.planeId, 128)
             && d.x is number && d.y is number

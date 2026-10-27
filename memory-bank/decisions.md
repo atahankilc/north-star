@@ -343,6 +343,9 @@ old reports are moved to documents once (D-248).
   browser); tasks carry `#labels` and `P1`–`P3`; a column's limit from its head's `≤`, `4/3` magenta when over.
 - Kanban lanes and several at once (D-258): `[LANES ▾]` (none, by given to, by card; shared), lanes fold (yours),
   dropping into one sets its person or card; shift+click, alt+drag a box, drag them together, panel `N selected`.
+- Kanban together (D-260): your picked tasks are your presence selection (a frame in your colour for others), a held
+  task a ghost in your colour (presence `drag`), followers take the pick; comments on tasks (`task` target, chip in its
+  top-right corner, right-click → comment, go there picks it in the kanban's focus).
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

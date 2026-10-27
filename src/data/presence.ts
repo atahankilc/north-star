@@ -26,6 +26,8 @@ export type Presence = {
   sel?: string
   // …and the rest of a selection of several, ids joined by spaces (D-124). Absent with one or none.
   more?: string
+  // A kanban task they're dragging (D-260): `<task id> <x> <y> <how many>`, x/y its top-left in its kanban's px.
+  drag?: string
   // When they joined (server time). Earlier joiners keep their colour when someone new arrives.
   since?: number
   ts: number
@@ -179,6 +181,16 @@ export function setPresenceSelection(id: string | null, selection: string[] = []
     more = more ? `${more} ${s}` : s
   }
   patch({ sel: id ?? undefined, more: id && more ? more : undefined })
+}
+
+// A task being dragged on a kanban (D-260), its top-left in the kanban's px and how many come with it; null once let go.
+// Sent with the cursor (10 a second at most).
+export function setPresenceDrag(d: { id: string; x: number; y: number; n: number } | null) {
+  patch({ drag: d ? `${d.id} ${Math.round(d.x)} ${Math.round(d.y)} ${d.n}` : undefined })
+}
+export function dragOf(p: Pick<Presence, 'drag'>): { id: string; x: number; y: number; n: number } | null {
+  const [id, x, y, n] = (p.drag ?? '').split(' ')
+  return id && x && y ? { id, x: +x, y: +y, n: +n || 1 } : null
 }
 
 // The rules' cap on `more` (database.rules.json): about a hundred ids. A bigger selection shows its first hundred.

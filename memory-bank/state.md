@@ -56,7 +56,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   Step 5, inside cards (D-225, D-226); step 6, multi-select (D-227, D-229, D-230); step 7, guides (D-231); step 8, filters (D-233, D-235). Next: right-click. Fixed 2026-10-21:
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
 - Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
-- Kanban (D-251): a canvas piece of tasks in columns (assignee, due, card, checklist), drag, panel. 2026-10-26, committed, rules deployed. Look: the ledger (D-252). **Next: docs/specs/kanban.md, one session at a time** (sessions 1–5 done, D-252, D-254–D-256, D-258; next, session 6). Their rules deployed 2026-10-27.
+- Kanban (D-251): a canvas piece of tasks in columns (assignee, due, card, checklist), drag, panel. 2026-10-26, committed, rules deployed. Look: the ledger (D-252). **Next: docs/specs/kanban.md, one session at a time** (sessions 1–6 done, D-252, D-254–D-256, D-258, D-260; next, session 7). Their rules deployed 2026-10-27.
 - Criteria back on the matrix (D-249): an axis unfolds features into what they're judged on, scored in its cells, `◇ open`; panel `must do` → `judged on`. 2026-10-26, committed. Next: priorities as a kanban holding cards, P1 first (D-253, docs/specs/priorities.md).
 - Enter makes / Escape cancels what's just made, cards and text; add + name one undo step; Tab next card; wizards' Enter (D-250). 2026-10-26, not committed.
 - Sticky notes look like sticky notes (D-257): paper in their colour, dark ink, a glue band, no tilt; 6 × 5 steps, growing down, foldable (D-259). 2026-10-27; rules deployed.
@@ -111,7 +111,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   (memory-bank, NodeCard.tsx…), and don't commit another session's hunks.
 - Test data: click Alice, then create a workspace (no example workspace since D-177). Seed script: sign in to the auth emulator as `test-alice` with the
   firebase client in node, write a workspace + items, open `/workspaces/<wid>` after clicking Alice.
-- Dev hooks: `window.__boardItems`, `__sceneTime`, `__backdrop`, `__curtain`, `__sweep`, `__canvas`, `__advance`,
+- Dev hooks: `window.__kanbanUi` (D-260), `window.__boardItems`, `__sceneTime`, `__backdrop`, `__curtain`, `__sweep`, `__canvas`, `__advance`,
   `__orbAntic`, `__orbFace`, `__orbReact`, `__orbPom`.
 - Chrome extension screenshots are scaled: viewport 2560 px vs 1568 px frame, so clientX/Y needs ×(innerWidth/1568).
 - OrbitControls listens on the Board's wrapper div (not the canvas), so card handlers run first and can disable panning.

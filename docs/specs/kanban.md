@@ -88,12 +88,15 @@ the column (filtered or not) and never refuses a drop; columns needed no rule ch
 Built (D-258): lanes as "rows by a field" (`rows.ts`), cards plug in for priorities P2; the lanes choice shared, folds
 yours; only people with tasks (and you) get a lane.
 
-## Session 6: working together (ideas 11, 12)
+## Session 6: working together (ideas 11, 12) · **done (D-260, 2026-10-27)**
 
 - Others see the task you've selected (corner marks in your colour, D-191) and a task being dragged (its ghost in their
   colour, sent like cursors, D-169). A follower takes your selection.
 - Comments on tasks: right-click → `comment`, a chip on the card, the threads panel lists them (D-192/D-193).
   `THREAD_TARGETS` gets `task`; rules follow.
+
+Built (D-260): the chip sits inside the task's top-right corner (under it, it covered the next task); presence `drag`
+carries the ghost in the kanban's px; a thread's go there enters the kanban's focus and picks the task.
 
 ## Session 7: "given to me" and the finder (ideas 13, 16)
 

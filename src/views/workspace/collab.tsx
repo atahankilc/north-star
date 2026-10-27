@@ -4,8 +4,11 @@
 // selected. Following someone is total: you go where they go, into the plane they focus and back out (with the ink),
 // their cursor stays in view at your own zoom, gliding back to the middle when it leaves it, and what they select is
 // selected for you; your own pan, Escape, or a click on their square stops it (zooming doesn't, D-193).
+// A kanban's tasks (D-260) too: the task (or tasks) you've picked is your selection, others see a frame in your colour
+// round it wherever that kanban is drawn, and a task you're dragging as a ghost in your colour; a follower takes it.
 import { useEffect, useRef, type RefObject } from 'react'
-import { cursorAt, hasSelected, onCursorMove, selectionOf, setCursor, setPresencePlane, setPresenceSelection, usePresence, type Peer } from '../../data/presence'
+import { cursorAt, dragOf, hasSelected, onCursorMove, selectionOf, setCursor, setPresencePlane, setPresenceSelection, usePresence, type Peer } from '../../data/presence'
+import { selectTask, selectTasks, useKanbanUi } from './Kanban'
 import { camOf, setCam, useCanvasView } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useThemeAccent } from '../../state/theme'
@@ -27,8 +30,11 @@ type ToScreen = (x: number, y: number) => [number, number] | null
 export function usePresenceReport(space: string) {
   const multi = useCanvasView((s) => s.cardMulti)
   const sel = useCanvasView((s) => s.cardSelected ?? s.labelSelected ?? s.selected) ?? multi[0] ?? null
+  // A kanban's task, or several (D-260): what's picked there instead, while it is.
+  const task = useKanbanUi((s) => s.selected?.task ?? null)
+  const tasks = useKanbanUi((s) => s.many?.tasks ?? null)
   useEffect(() => setPresencePlane(space === CANVAS ? undefined : space), [space])
-  useEffect(() => setPresenceSelection(sel, multi), [sel, multi])
+  useEffect(() => (tasks ? setPresenceSelection(tasks[0], tasks) : task ? setPresenceSelection(task) : setPresenceSelection(sel, multi)), [sel, multi, task, tasks])
   useEffect(() => () => setCursor(null), [])
 }
 
@@ -129,7 +135,7 @@ type FollowProps = {
 // Following someone (D-067, D-170, D-191): their space, their cursor in your middle, their selection.
 export function Follow({ focusId, focusTo }: FollowProps) {
   const leader = usePresence((s) => s.peers.find((p) => p.uid === s.following) ?? null)
-  const { cards, labels, pieces } = useWs()
+  const { cards, labels, pieces, tasks } = useWs()
   const arrived = useCanvasView((s) => s.focusArrived)
   const leaving = useCanvasView((s) => s.focusLeaving)
   const theirSpace = leader ? (leader.plane ?? null) : undefined
@@ -146,7 +152,14 @@ export function Follow({ focusId, focusTo }: FollowProps) {
   const more = leader?.more
   useEffect(() => {
     if (leader === null) return
-    if (!sel) return useCanvasView.setState({ cardSelected: null, labelSelected: null, cardMulti: [] })
+    if (!sel) return (useCanvasView.setState({ cardSelected: null, labelSelected: null, cardMulti: [] }), selectTask('', null))
+    // A kanban's tasks (D-260): picked for you, their panel open.
+    const theirTasks = selectionOf(leader).flatMap((id) => tasks.filter((t) => t.id === id))
+    if (theirTasks.length) {
+      useCanvasView.setState({ cardSelected: null, labelSelected: null, cardMulti: [] })
+      return selectTasks(theirTasks[0].pieceId, theirTasks.map((t) => t.id))
+    }
+    selectTask('', null)
     const all = selectionOf(leader).filter((id) => cards.some((c) => c.id === id) || labels.some((l) => l.id === id))
     if (all.length > 1) useCanvasView.setState({ cardMulti: all, cardSelected: null, labelSelected: null })
     else if (cards.some((c) => c.id === sel)) useCanvasView.setState({ cardSelected: sel, labelSelected: null, cardMulti: [] })
@@ -228,6 +241,50 @@ export function PeerRing({ id, space }: { id: string; space: string }) {
         <span key={p.uid} className={styles.ring} style={{ ['--peer' as string]: tone(p.color), ['--i' as string]: i }} aria-hidden>
           <span className={styles.ringName}>{p.name}</span>
         </span>
+      ))}
+    </>
+  )
+}
+
+// Who else has this task picked (D-260): a frame in their colour round it with their name, as round a card (D-191).
+// Wherever its kanban is drawn (its focus, beside a plane, open on the canvas): a task is on one kanban only.
+export function PeerTaskRing({ id }: { id: string }) {
+  const peers = usePresence((s) => s.peers)
+  const tone = useThemeAccent()
+  const me = firebase?.auth.currentUser?.uid
+  const on = peers.filter((p) => p.uid !== me && hasSelected(p, id))
+  if (!on.length) return null
+  return (
+    <>
+      {on.map((p, i) => (
+        <span key={p.uid} className={styles.ring} style={{ ['--peer' as string]: tone(p.color), ['--i' as string]: i }} aria-hidden>
+          <span className={styles.ringName}>{p.name}</span>
+        </span>
+      ))}
+    </>
+  )
+}
+
+// Tasks others are dragging on this kanban (D-260): each a ghost of its task in their colour, where they hold it, with
+// their name and how many come with it; it glides between what arrives (10 a second). `render` draws the task.
+export function PeerTaskDrags({ taskIds, render }: { taskIds: Set<string>; render: (id: string) => React.ReactNode }) {
+  const peers = usePresence((s) => s.peers)
+  const tone = useThemeAccent()
+  const me = firebase?.auth.currentUser?.uid
+  const held = peers.flatMap((p) => {
+    const d = p.uid !== me ? dragOf(p) : null
+    return d && taskIds.has(d.id) ? [{ p, d }] : []
+  })
+  return (
+    <>
+      {held.map(({ p, d }) => (
+        <div key={p.uid} className={styles.peerDrag} style={{ ['--peer' as string]: tone(p.color), transform: `translate(${d.x}px, ${d.y}px)` }} aria-hidden>
+          {render(d.id)}
+          <span className={styles.ringName} data-drag>
+            {p.name}
+            {d.n > 1 ? ` · ${d.n}` : ''}
+          </span>
+        </div>
       ))}
     </>
   )

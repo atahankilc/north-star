@@ -21,6 +21,9 @@
 // `[lanes ▾]` in its dock), each folding from its head (yours); dropping into a lane gives the task to that person or
 // card. Shift+click adds a task to the selection or takes it out, alt+drag a box selects what it touches; dragging one of
 // them carries them all, in their order; the panel turns into `N selected`.
+//
+// Working together (D-260): others see the tasks you've picked (a frame in your colour) and one you're dragging (a ghost
+// in your colour, collab.tsx); right-click a task → `comment`, its thread's chip on its bottom-right corner.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
@@ -35,6 +38,9 @@ import { useWs } from './context'
 import { DockAction } from './FocusDock'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import { loadFolds, saveFolds, taskRows, type Lane } from './rows'
+import { setPresenceDrag } from '../../data/presence'
+import { PeerTaskDrags, PeerTaskRing } from './collab'
+import { ThreadChip, threadOn } from './Threads'
 import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
 import styles from './Kanban.module.css'
@@ -66,14 +72,19 @@ export function kanbanBounds(piece: WithId<Piece>, tasks: Task[]): Bounds {
 // The task whose panel is open (its kanban's id with it), the column `+ add a task` is typing into, the column being
 // renamed, the task whose panel should open on its evidence form (D-254), the tasks selected together (D-258; `adding`
 // is a column and a lane, `col|lane`). Yours, not shared.
+// `pending`: a task to pick once its kanban is live (a thread's go there, D-260).
 type Many = { piece: string; tasks: string[] }
-export const useKanbanUi = create<{ selected: { piece: string; task: string } | null; adding: string | null; naming: string | null; learning: string | null; many: Many | null }>(() => ({
+type One = { piece: string; task: string }
+export const useKanbanUi = create<{ selected: One | null; adding: string | null; naming: string | null; learning: string | null; many: Many | null; pending: One | null }>(() => ({
+  pending: null,
   selected: null,
   adding: null,
   naming: null,
   learning: null,
   many: null,
 }))
+// Dev hook: the kanban's own state, for checks in a headless browser.
+if (import.meta.env.DEV) (window as unknown as { __kanbanUi: typeof useKanbanUi }).__kanbanUi = useKanbanUi
 // One task picked (or none): the several selected let go.
 export const selectTask = (piece: string, task: string | null) => useKanbanUi.setState({ selected: task ? { piece, task } : null, many: null })
 // Several (D-258): two or more is a selection of several, one is that task picked, none lets go.
@@ -119,7 +130,7 @@ type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: bool
 const NO_LANE: Lane[] = [{ key: '', label: '', drop: true }]
 
 export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask }: Props) {
-  const { wid, tasks: all, cards } = useWs()
+  const { wid, tasks: all, cards, threads } = useWs()
   const { user } = useAuth()
   const setup = kanbanOf(piece)
   const cols = setup.cols
@@ -164,6 +175,18 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
   dragRef.current = drag
   const [box, setBox] = useState<Box | null>(null)
 
+  // What you're dragging, for the others (D-260): sent with your cursor, gone once let go.
+  const sending = drag?.moving ? { id: drag.id, x: drag.at[0] - drag.grab[0], y: drag.at[1] - drag.grab[1], n: drag.ids.length } : null
+  useEffect(() => {
+    if (sending) setPresenceDrag(sending)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sending?.id, sending?.x, sending?.y, sending?.n])
+  const draggingNow = !!sending
+  useEffect(() => {
+    if (!draggingNow) return
+    return () => setPresenceDrag(null)
+  }, [draggingNow])
+
   // Its drawn size, for fit (written only when it changes).
   useLayoutEffect(() => {
     const el = board.current
@@ -186,6 +209,13 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
   useEffect(() => {
     if (many && many.some((id) => !tasks.some((t) => t.id === id))) selectTasks(piece.id, many.filter((id) => tasks.some((t) => t.id === id)))
   }, [many, tasks, piece.id])
+  // A pick waiting for it (D-260): taken once it's live.
+  const pending = useKanbanUi((s) => (live && s.pending?.piece === piece.id ? s.pending.task : null))
+  useEffect(() => {
+    if (!pending) return
+    useKanbanUi.setState({ pending: null })
+    if (tasks.some((t) => t.id === pending)) selectTask(piece.id, pending)
+  }, [pending, tasks, piece.id])
   useEffect(() => {
     if (!live) return
     return () =>
@@ -326,7 +356,7 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
       setBox(null)
       const [x0, x1] = [Math.min(from[0], to[0]), Math.max(from[0], to[0])]
       const [y0, y1] = [Math.min(from[1], to[1]), Math.max(from[1], to[1])]
-      const hit = [...(board.current?.querySelectorAll<HTMLElement>('[data-task]') ?? [])]
+      const hit = [...(board.current?.querySelectorAll<HTMLElement>('[data-cell] [data-task]') ?? [])]
         .filter((el) => {
           const r = el.getBoundingClientRect()
           const [a, b] = [local(r.left, r.top), local(r.right, r.bottom)]
@@ -372,6 +402,7 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
   const heldIds = held && drag ? drag.ids : []
   const cardOf = (t: Task) => (t.cardId ? (cards.find((x) => x.id === t.cardId) ?? null) : null)
   const vars = { ['--col' as string]: `${K.col}px`, ['--gap' as string]: `${K.gap}px`, ['--head' as string]: `${K.head}px`, ['--card-gap' as string]: `${K.cardGap}px` } as CSSProperties
+  const taskIds = useMemo(() => new Set(tasks.map((t) => t.id)), [tasks])
   const isPicked = (id: string) => (many ? many.includes(id) : selected === id)
 
   return (
@@ -446,6 +477,18 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
                                   finished={!!c.done}
                                   selected={isPicked(t.id)}
                                   live={live}
+                                  talk={live && !!threadOn(threads, t.id)}
+                                  extra={
+                                    <>
+                                      <PeerTaskRing id={t.id} />
+                                      {/* In its top-right corner (under it would sit on the next task). */}
+                                      {live && (
+                                        <span className={styles.chipHere}>
+                                          <ThreadChip wid={wid} thread={threadOn(threads, t.id)} zoom={view.zoom} />
+                                        </span>
+                                      )}
+                                    </>
+                                  }
                                   learn={live && editor && !many && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) : undefined}
                                   onPointerDown={press(t)}
                                   onClick={live && !editor ? (e: React.MouseEvent) => void (!e.shiftKey && pick(t)) : undefined}
@@ -472,6 +515,13 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
               {heldIds.length > 1 && <span className={styles.more}>+{heldIds.length - 1}</span>}
             </div>
           )}
+          <PeerTaskDrags
+            taskIds={taskIds}
+            render={(id) => {
+              const t = tasks.find((x) => x.id === id)!
+              return <TaskCard task={t} card={cardOf(t)} finished={!!cols.find((c) => c.id === t.col)?.done} selected={false} live={false} />
+            }}
+          />
           {box && (
             <div
               className={styles.box}
@@ -653,6 +703,9 @@ type CardProps = {
   lifted?: boolean
   // Finished, for a card still being tested (D-254): its line asking what it taught.
   learn?: () => void
+  // Drawn over it (D-260): others' frames, its comments' chip; `talk`: it has one, so its title leaves room.
+  extra?: ReactNode
+  talk?: boolean
   onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
   onClick?: (e: React.MouseEvent) => void
 }
@@ -661,7 +714,7 @@ type CardProps = {
 // Under the title, only when there's something: the card's name, then on the right its due day (magenta once past,
 // unless finished), its checklist as cells, who it's given to (a square with their initials). Finished: a green `✓`
 // before the title, the title grey. Hover and selection are a card's corner marks (D-150).
-function TaskCard({ task, card, finished, selected, live, lifted, learn, onPointerDown, onClick }: CardProps) {
+function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, talk, onPointerDown, onClick }: CardProps) {
   const checks = task.checks ?? []
   const ticked = checks.filter((c) => c.done).length
   const late = overdue(task, finished)
@@ -670,6 +723,8 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, onPoint
     <div
       className={styles.task}
       data-task={task.id}
+      data-target={`task:${task.id}`}
+      data-talk={talk || undefined}
       data-selected={selected || undefined}
       data-finished={finished || undefined}
       data-lifted={lifted || undefined}
@@ -729,6 +784,7 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, onPoint
       {(['nw', 'ne', 'se', 'sw'] as const).map((c) => (
         <span key={c} className={styles.mark} data-corner={c} aria-hidden />
       ))}
+      {extra}
     </div>
   )
 }

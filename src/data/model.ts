@@ -106,7 +106,8 @@ export type Presence = {
 // A comment thread (D-159, D-193): a conversation on a component: a card, text, a link or a plane (`plane`). Any member
 // may start one or answer, viewers too; it's not content, so it's not undone, copied, exported or filtered. `x`/`y` is
 // where the thing was when the thread began, used when the thing is gone. `count` and `lastAt` follow its messages.
-export const THREAD_TARGETS = ['card', 'label', 'link', 'plane'] as const
+// 'task' (D-260): a kanban's task; its thread's `planeId` is the kanban.
+export const THREAD_TARGETS = ['card', 'label', 'link', 'plane', 'task'] as const
 export type ThreadTarget = (typeof THREAD_TARGETS)[number]
 export const MESSAGE_MAX = 2000
 

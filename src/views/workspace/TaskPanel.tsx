@@ -34,14 +34,14 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   const close = () => selectTask('', null)
   // Beside a plane, over the plane's part of the screen (as a card's, D-211).
   const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
-  // A card picked closes it (its panel takes the place); so does this panel going (leaving a focus).
+  // A card picked closes it (its panel takes the place). Going into a space or out of one lets go (CanvasView's focus
+  // and unfocus), not this panel going: it's mounted per space, and remounted in development.
   const card = useCanvasView((s) => s.cardSelected)
   const was = useRef(card)
   useEffect(() => {
     if (card && card !== was.current) close()
     was.current = card
   }, [card])
-  useEffect(() => close, [])
   // Escape closes it, unless typing somewhere or a menu or thread hears it first.
   const open = !!task || many.length > 1
   useEffect(() => {

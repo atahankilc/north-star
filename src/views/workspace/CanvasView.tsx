@@ -51,7 +51,7 @@ import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Do
 import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
-import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView } from './Kanban'
+import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView, selectTask, useKanbanUi } from './Kanban'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { TaskPanel } from './TaskPanel'
 import { usePlaneFilter } from './planeFilter'
@@ -315,6 +315,7 @@ export function CanvasView() {
     // From another plane straight to theirs: no ink (it would spread from a plane that isn't on screen).
     if (focusId) {
       useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, labelSelected: null })
+      selectTask('', null)
       setParams({ focus: planeId })
     } else focus(p)
   }
@@ -342,6 +343,8 @@ export function CanvasView() {
       const [a, b] = [cards.find((c) => c.id === e?.fromId), cards.find((c) => c.id === e?.toId)]
       return a && b ? { at: [(a.x + b.x + CARD.w) / 2, (a.y + b.y + CARD.h) / 2], gone: false } : { at: [t.x, t.y], gone: true }
     }
+    // A task (D-260): it has no place in its kanban's px worth keeping; only whether it's still there.
+    if (t.on === 'task') return { at: [t.x, t.y], gone: !tasks.some((x) => x.id === t.targetId) }
     return { at: [t.x, t.y], gone: false }
   }
   const spaceName = (sp: string) => {
@@ -360,6 +363,10 @@ export function CanvasView() {
     if (t.on === 'plane') {
       const p = pieces.find((x) => x.id === t.targetId)
       return `${p ? KIND_NAME[kindOfPiece(p)] : 'plane'} ${p?.name ? `"${p.name}"` : ''}`.trim()
+    }
+    if (t.on === 'task') {
+      const k = tasks.find((x) => x.id === t.targetId)
+      return k ? `task "${k.title.slice(0, 40)}"` : 'a deleted task'
     }
     const e = edges.find((x) => x.id === t.targetId)
     const name = (id?: string) => cards.find((c) => c.id === id)?.title || 'untitled'
@@ -380,15 +387,17 @@ export function CanvasView() {
       const r0 = root.current!.getBoundingClientRect()
       return setMenu(items.length ? { at: [e.clientX - r0.left, e.clientY - r0.top], what: 'plane', items } : null)
     }
-    const [on, targetId] = hit.split(':') as ['card' | 'label' | 'plane' | 'link' | 'doc', string]
+    const [on, targetId] = hit.split(':') as ['card' | 'label' | 'plane' | 'link' | 'doc' | 'task', string]
     // A document in a list (D-232): its own menu, no comment (threads go on what's on the canvas).
     if (on === 'doc') {
       const d = documents.find((x) => x.id === targetId)
       const r = root.current!.getBoundingClientRect()
       return d ? setMenu({ at: [e.clientX - r.left, e.clientY - r.top], what: 'document', items: docMenu(d) }) : setMenu(null)
     }
-    // A plane on the canvas is in the canvas; a card or text, in the space it's written in.
-    const where = on === 'plane' ? CANVAS : space
+    // A plane on the canvas is in the canvas; a card or text, in the space it's written in; a task, its kanban (D-260).
+    const task = on === 'task' ? tasks.find((x) => x.id === targetId) : undefined
+    if (on === 'task' && !task) return setMenu(null)
+    const where = on === 'plane' ? CANVAS : task ? task.pieceId : space
     const r = root.current!.getBoundingClientRect()
     // What it's on, for the menu's `>` line (D-222): "do with this customer…".
     const label = on === 'label' ? labels.find((x) => x.id === targetId) : undefined
@@ -400,8 +409,10 @@ export function CanvasView() {
           ? (label.kind === 'sticky' ? 'sticky note' : label.kind === 'title' ? 'title' : (label.kind ?? (label.size === 'note' ? 'paragraph' : 'heading')))
           : piece
             ? KIND_NAME[kindOfPiece(piece)]
-            : 'link'
-    const own = inPlane && on !== 'plane' ? planeItems(on, targetId, inPlane) : []
+            : task
+              ? 'task'
+              : 'link'
+    const own = inPlane && on !== 'plane' && on !== 'task' ? planeItems(on, targetId, inPlane) : []
     // Several selected: only what's done to all of them, no comment.
     if (own[0] && 'heading' in own[0]) return setMenu({ at: [e.clientX - r.left, e.clientY - r.top], what: 'selection', items: own })
     setMenu({
@@ -498,6 +509,14 @@ export function CanvasView() {
   const goTo = (t: WithId<Thread>) => {
     const sp = t.planeId
     openThread(t.id)
+    // A task (D-260): picked, so its kanban (its focus, gone into first if need be) shows it framed.
+    // Going into its kanban first, the pick waits for the kanban to be live there (leaving a space lets go of picks).
+    if (t.on === 'task') {
+      const k = tasks.find((x) => x.id === t.targetId)
+      if (sp === space) return k && selectTask(k.pieceId, k.id)
+      if (k) useKanbanUi.setState({ pending: { piece: k.pieceId, task: k.id } })
+      return focusTo(sp)
+    }
     if (sp !== space) return focusTo(sp === CANVAS ? null : sp)
     const [x, y] = pinOf(t).at
     const { size, planeCam } = useCanvasView.getState()
@@ -522,6 +541,8 @@ export function CanvasView() {
   const focus = (p: WithId<Piece>) => {
     // A cell or a setup of something open on the canvas (D-228) lets go: focus is a view of its own.
     useCanvasView.setState({ focusSpread: true, focusArrived: false, focusLeaving: false, selected: null, cardSelected: null })
+    // A task picked (D-251, D-254) stays in the space it was picked in; a thread's go there picks after (`pending`).
+    selectTask('', null)
     useMatrixUi.setState({ setup: false, canvas: null })
     useTableUi.setState({ setup: null })
     closeDocs()
@@ -530,6 +551,7 @@ export function CanvasView() {
   const unfocus = () => {
     if (!focused || useCanvasView.getState().focusLeaving) return
     useCanvasView.setState({ focusLeaving: true })
+    selectTask('', null)
   }
   unfocusRef.current = unfocus
   const left = () => {
@@ -540,7 +562,11 @@ export function CanvasView() {
   }
   // Left by the back button, or a plane deleted (by someone else) while in focus: nothing to animate.
   useEffect(() => {
-    if (!focusId) useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null, linkSelected: null, linking: null })
+    if (!focusId) {
+      useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null, linkSelected: null, linking: null })
+      // A task picked from a card's panel in there stays there (D-254).
+      if (useKanbanUi.getState().selected && !useKanbanUi.getState().pending) selectTask('', null)
+    }
   }, [focusId])
   useEffect(() => {
     if (focusId && !focused && pieces.length > 0) setParams({}, { replace: true })

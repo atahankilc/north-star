@@ -61,3 +61,22 @@
   bottom: 100%;
   left: -1px;
 }
+
+/* Someone else's held task (D-260): a ghost of it in their colour, gliding between what arrives. */
+.peerDrag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: var(--col);
+  opacity: 0.85;
+  box-shadow: 0 0 0 1px var(--peer);
+  pointer-events: none;
+  transition: transform 110ms linear;
+}
+
+.peerDrag > .ringName {
+  position: absolute;
+  bottom: 100%;
+  left: -1px;
+}
