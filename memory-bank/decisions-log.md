@@ -4594,3 +4594,34 @@ User: picked ideas 13 and 16 of the kanban list (2026-10-26); this is session 7 
   gave herself, not the finished one); opening it wrote the mark and the badge went; Bob drops a task into Alice's lane →
   `givenBy` Bob, her badge back to 1; a row goes into the kanban with the task picked; ⌘F "empty state" finds a step,
   the preview lights its task, Enter picks it; rules 402 pass; build.
+
+### D-262 · 2026-10-27 · Accepted (adds to D-210, D-211, D-251, D-256; kanban session 8, docs/specs/kanban.md)
+**A timeline is a piece of its own (`+ → timeline`): kanbans' tasks on a row of days, stuck beside a kanban; and a
+kanban gets a "soon" band over its columns.**
+User: on a local preview of three ways (a switch on the kanban, recommended; a new piece; a ruler of days under the
+columns), picked "B: a new piece".
+- *The piece:* `kind: 'timeline'`, a window on the canvas (fitted in it, as a matrix), live in its focus. Its setup
+  (`timeline`): `kanbans` (those ticked in `shows ▾`, in its console and dock), else the kanban it's stuck to, else every
+  kanban; `rows`: by kanban (default), by who it's given to, by the card it's for (rows.ts).
+- *Inside:* two weeks from Monday (`‹ today ›` steps a week, yours per tab), a day 150 px, weekends a shade darker, today
+  a cyan line; a task a sheet on its day in its card's colour (`P1` before its title); past its day and not finished it
+  sits on today, magenta, `← 25`; finished faint with a green `✓`; `N →` / `← N` for tasks outside the two weeks; tasks
+  with no day in a tray under the rows. Drag a task (or a tray pill) onto a day: its due day; onto another row by person
+  or card: that too; rows by kanban keep it on its kanban; one undo step. A click opens its panel. Its own filter (the
+  kanban's strip, D-256, over its kanbans' tasks).
+- *Sticking:* a timeline sticks to a kanban as a lens to a plane (D-210): `hostKind` (lens and kanban → plane, timeline
+  → kanban), `isHost` (plane, kanban); a kanban is both stuck and a host, so its move carries its timelines
+  (`placeLens` takes followers). In the kanban's focus, `[⇆ timeline · name]` in its dock opens it beside (D-211), one
+  week there (half the screen), its dock without `shows`; a task picked there is picked on the kanban.
+- *Soon (on the kanban):* over the columns, unfinished tasks due by Sunday as pills: `was 25 oct` magenta, `today` cyan,
+  `thu`; a pill picks its task; `▾ SOON` folds to `1 past · 1 today · 2 this week` (yours, per kanban per browser);
+  nothing due, no band.
+- *Rules:* `timeline` kind and setup (`kanbans` ≤ 20, `rows`), `stuckTo` on timelines. Export carries it (its kanbans
+  that came over).
+- *Alternatives:* A, a switch on the kanban (fewer parts, one kanban at a time); C, a ruler under the columns (crowds).
+- *Not yet:* a plane moved carries its kanban but not that kanban's timeline (one level); no comments or presence on
+  the timeline's sheets; go there (finder, your tasks) lands on the kanban, not the timeline.
+- *Verified:* headless on the emulators: on the canvas fitted beside the kanban; in focus a drag to Friday sets the
+  due day, a tray task dragged onto Wednesday gets it, a click opens the panel, rows by given to; stuck to the kanban
+  by dragging in edit mode (`⇆ Roadmap`), opened beside in the kanban's focus at one week, a task picked there picked on
+  the kanban; the soon band; rules 406 pass; build.

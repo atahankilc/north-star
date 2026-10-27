@@ -1,6 +1,6 @@
 # Spec: the kanban, step by step
 
-Status: **v1 built (D-251)**. This file is the plan for what comes next, split into sessions. The user checks each
+Status: **v1 built (D-251); all eight sessions done (D-252–D-262)**. This file is the plan for what comes next, split into sessions. The user checks each
 session's work, then starts a new one with a fresh context ("reset"). So every session must be able to start from this
 file alone.
 
@@ -108,11 +108,14 @@ carries the ghost in the kanban's px; a thread's go there enters the kanban's fo
 Built (D-261): the button sits under the corner's rule, right above your square (your square itself opens settings);
 the read mark is a field in the thread read marks; going lands on the task's guessed place (lanes not counted).
 
-## Session 8: time (ideas 14, 15)
+## Session 8: time (ideas 14, 15) · **done (D-262, 2026-10-27)**
 
 - A "soon" band over the columns: tasks past due, due today, this week, in that order (click goes to the task). Folds.
 - A timeline lens: a new piece (`+ → timeline`) or a view switch on the kanban (ask the user which): the same tasks
   on a day axis, by due day; drag to change the day.
+
+Built (D-262): the user picked a new piece (from a preview of three: a switch on the kanban, a piece, a ruler under the
+columns). It sticks to a kanban and opens beside it at one week; two weeks in its own focus.
 
 ---
 
@@ -125,6 +128,8 @@ the read mark is a field in the thread read marks; going lands on the task's gue
   to them from its panel (D-258).
 - Held tasks leave their cell while dragged, so a lane emptied by the drag shrinks under the pointer (D-258).
 - Going to a task lands on its guessed place, which is off in lanes (`taskBox` doesn't count them) (D-261).
+- A plane moved carries its kanban but not the kanban's timeline; the timeline's sheets have no comments or presence;
+  going to a task lands on its kanban, never a timeline (D-262).
 - The assistant's brief doesn't list tasks (not picked: idea 3).
 - Priorities will be this kanban holding cards, columns and rows from their fields ([priorities.md](priorities.md)).
   Session 5's swimlanes are built as "rows by a field" (`rows.ts`, D-258) so cards can use them too.

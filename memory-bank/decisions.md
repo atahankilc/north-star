@@ -349,6 +349,9 @@ old reports are moved to documents once (D-248).
 - Your tasks (D-261): `☐` by your square counts tasks given to you by others since you last looked (magenta), its list
   goes to them; tasks carry `givenAt`/`givenBy`, your mark is `threadReads.tasks`. The finder finds tasks (title,
   notes, steps) and goes into the kanban with the task picked.
+- Timeline (D-262): a piece (`+ → timeline`) showing kanbans' tasks on two weeks of days (rows by kanban, person or
+  card; drag sets the due day; late on today in magenta; a no-day tray; its own filter), sticks to a kanban and opens
+  beside it (one week); a kanban's `SOON` band over its columns (past, today, this week; folds).
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

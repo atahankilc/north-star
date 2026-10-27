@@ -24,6 +24,9 @@
 //
 // Working together (D-260): others see the tasks you've picked (a frame in your colour) and one you're dragging (a ghost
 // in your colour, collab.tsx); right-click a task → `comment`, its thread's chip on its bottom-right corner.
+//
+// Soon (D-262): over the columns, a line of what's due soon: past its day (magenta), today (cyan), this week, each a
+// pill that picks its task; `▾ SOON` folds it to counts (yours, per kanban per browser); nothing due, no line.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
@@ -48,7 +51,28 @@ import styles from './Kanban.module.css'
 
 // Its parts in its own px: a column's width and the gap between, its head, the gap under a task, the `+ column` head's
 // width; what an unmeasured task is guessed at (a line of title, its meta line, its padding).
-export const K = { col: 256, gap: 28, head: 32, cardGap: 8, add: 120, line: 18, meta: 26, pad: 22 }
+export const K = { col: 256, gap: 28, head: 32, cardGap: 8, add: 120, line: 18, meta: 26, pad: 22, soon: 40 }
+
+// What's due soon on it (D-262): not finished, due by Sunday; past its day first, then by day.
+function weekEnd() {
+  const d = new Date()
+  d.setDate(d.getDate() + ((7 - d.getDay()) % 7))
+  return today(d)
+}
+export function soonOf(piece: Pick<Piece, 'kanban'>, tasks: Task[]) {
+  const done = new Set(kanbanOf(piece).cols.filter((c) => c.done).map((c) => c.id))
+  const end = weekEnd()
+  return tasks.filter((t) => t.due && t.due <= end && !done.has(t.col)).sort((a, b) => a.due!.localeCompare(b.due!) || a.order - b.order)
+}
+const hasSoon = (piece: Pick<Piece, 'kanban'>, tasks: Task[]) => soonOf(piece, tasks).length > 0
+const SOON_KEY = (id: string) => `north-star:kanban-soon:${id}`
+function soonFolded(id: string) {
+  try {
+    return localStorage.getItem(SOON_KEY(id)) === 'folded'
+  } catch {
+    return false
+  }
+}
 
 const NO_SETUP = emptyKanban()
 export const kanbanOf = (p: Pick<Piece, 'kanban'>): KanbanSetup => p.kanban ?? NO_SETUP
@@ -67,7 +91,7 @@ export function kanbanBounds(piece: WithId<Piece>, tasks: Task[]): Bounds {
   const cols = kanbanOf(piece).cols
   const mine = tasks.filter((t) => t.pieceId === piece.id)
   const tall = Math.max(0, ...cols.map((c) => mine.filter((t) => t.col === c.id).reduce((s, t) => s + guess(t) + K.cardGap, 0)))
-  return { x: 0, y: 0, w: cols.length * (K.col + K.gap) + K.add + 32, h: K.head + 10 + tall + 68 }
+  return { x: 0, y: 0, w: cols.length * (K.col + K.gap) + K.add + 32, h: K.head + 10 + tall + 68 + (hasSoon(piece, mine) ? K.soon : 0) }
 }
 
 // About where a task is on its kanban, in its px (its column, the tasks above it at their guessed heights; lanes not
@@ -78,7 +102,7 @@ export function taskBox(piece: WithId<Piece>, tasks: Task[], id: string): Bounds
   const i = t ? cols.findIndex((c) => c.id === t.col) : -1
   if (!t || i < 0) return null
   const above = tasksIn(tasks.filter((x) => x.pieceId === piece.id), t.col).filter((x) => x.order < t.order || (x.order === t.order && x.createdAt < t.createdAt))
-  const y = 12 + K.head + 10 + above.reduce((sum, x) => sum + guess(x) + K.cardGap, 0)
+  const y = 12 + (hasSoon(piece, tasks.filter((x) => x.pieceId === piece.id)) ? K.soon : 0) + K.head + 10 + above.reduce((sum, x) => sum + guess(x) + K.cardGap, 0)
   return { x: 16 + i * (K.col + K.gap), y, w: K.col, h: guess(t) }
 }
 
@@ -431,6 +455,7 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
     <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'kanban'} data-dragging={held ? true : undefined} data-lanes={field ? true : undefined} onPointerDown={boxPress}>
+          <SoonBand piece={piece} tasks={shown} live={live} picked={isPicked} onPick={pick} onPress={own} />
           <div className={styles.row}>
             {cols.map((c, i) => (
               <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-over={(held && drag?.over?.col === c.id) || undefined}>
@@ -553,6 +578,50 @@ export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// What's due soon (D-262), over the columns: `▾ SOON`, then a pill a task (its day: `was 25 oct` magenta, `today` cyan,
+// `thu`), a rule, how many. A click on `▾` folds it to `▸ SOON · 1 past · 1 today · 2 this week` (yours); on a pill, picks
+// it. Nothing due by Sunday: no band.
+function SoonBand({ piece, tasks, live, picked, onPick, onPress }: { piece: WithId<Piece>; tasks: Task[]; live: boolean; picked: (id: string) => boolean; onPick: (t: Task) => void; onPress?: (e: ReactPointerEvent) => void }) {
+  const [folded, setFolded] = useState(() => soonFolded(piece.id))
+  const soon = soonOf(piece, tasks)
+  if (!soon.length) return null
+  const day = today()
+  const past = soon.filter((t) => t.due! < day).length
+  const now = soon.filter((t) => t.due === day).length
+  const fold = () => {
+    setFolded(!folded)
+    try {
+      if (folded) localStorage.removeItem(SOON_KEY(piece.id))
+      else localStorage.setItem(SOON_KEY(piece.id), 'folded')
+    } catch {
+      // This tab only.
+    }
+  }
+  const weekday = (due: string) => new Date(Date.UTC(+due.slice(0, 4), +due.slice(5, 7) - 1, +due.slice(8, 10))).toLocaleString('en', { weekday: 'short', timeZone: 'UTC' }).toLowerCase()
+  return (
+    <div className={styles.soon} onPointerDown={live ? onPress : undefined}>
+      <button className={styles.soonFold} onClick={live ? fold : undefined} aria-expanded={!folded} title={folded ? 'show what’s due' : 'fold it'}>
+        {folded ? '▸' : '▾'} <span className={styles.soonName}>soon</span>
+      </button>
+      {folded ? (
+        <span className={styles.soonCounts}>{[past && `${past} past`, now && `${now} today`, soon.length - past - now && `${soon.length - past - now} this week`].filter(Boolean).join(' · ')}</span>
+      ) : (
+        soon.map((t) => {
+          const late = t.due! < day
+          return (
+            <button key={t.id} className={styles.soonPill} data-late={late || undefined} data-today={t.due === day || undefined} data-selected={picked(t.id) || undefined} onClick={live ? () => onPick(t) : undefined} tabIndex={live ? 0 : -1} title={t.title}>
+              <span className={styles.soonDay}>{late ? `was ${dueText(t.due!)}` : t.due === day ? 'today' : weekday(t.due!)}</span>
+              {t.title}
+            </button>
+          )
+        })
+      )}
+      <span className={styles.soonRule} aria-hidden />
+      <span className={styles.count}>{soon.length}</span>
     </div>
   )
 }

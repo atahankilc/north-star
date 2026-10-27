@@ -105,7 +105,8 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         (comment threads, D-159, D-166: any member writes them as themselves, viewers too; not undone, copied
                         or exported; only a message's writer deletes it, an owner only with the whole thread)
     messages/{id}       uid, name, text (≤ 2000), mentions? (uids ≤ 20), createdAt, editedAt?
-  threadReads/{uid}     seen {threadId: lastAt}, updatedAt (what you've read, D-166; yours alone)
+  threadReads/{uid}     seen {threadId: lastAt}, tasks? (when you last looked at your tasks, D-261), updatedAt (what you've
+                        read, D-166; yours alone)
   planes/{id}           name, order (D-139); All has no doc
   placements/{id}       planeId, itemId, itemType, x, y, folded? (D-164) (id = planeId_itemId; a card's place on a plane other than All)
   packages/{id}         title, body?, tags?, x, y, memberIds (≤ 60), homePlaneId, impact?, effort? (D-141)
@@ -118,7 +119,10 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         confidence?, reading?}; an axis = {type?, plane?, hide?[], items[{id, name? | cardType, cardId}], noun?}
   tasks/{id}            pieceId (a kanban), col (its column's id), order (number; between its neighbours'), title (≤ 200),
                         notes?, assignee? (uid) + assigneeName?, due? (YYYY-MM-DD), cardId? + cardType?, checks?[{id, text,
-                        done?}] (≤ 50), uid (who made it) (D-251); a kanban piece carries kanban = {cols[{id, name, done?}]} (1–12)
+                        done?}] (≤ 50), learned? (evidence id | 'skip', D-254), labels?[] (≤ 20) + priority? (P1–P3, D-256),
+                        givenAt? + givenBy? (D-261), uid (who made it) (D-251); a kanban piece carries kanban = {cols[{id, name,
+                        done?, limit?}] (1–12), everyPlane? (D-255), rows? (assignee|card, D-258)}; a timeline piece carries
+                        timeline = {kanbans?[] (≤ 20), rows? (kanban|assignee|card)} and may be stuckTo a kanban (D-262)
   cells/{id}            matrixId, row, col, value? (step id | number | text ≤ 200), notes?, notRelevant?, confidence?
                         (row/col `card~criterion` for what a feature unfolded into; axis `unfold`, `open[]`, D-249)
                         table = {rows: {rules[{field (plane|type|status|tag|title), not?, values[]}], hide?[], items[]},
@@ -128,7 +132,8 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
 inviteCodes/{code}      workspaceId, createdBy
 joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)
 
-RTDB: presence/{wid}/{uid}   name, color, photo?, view, x?, y?, sel?, more?, since?, ts   (D-065, D-067, D-124; edit/field retired, D-071)
+RTDB: presence/{wid}/{uid}   name, color, photo?, view, plane?, x?, y?, sel?, more?, drag? (a task held, D-260), since?, ts
+                             (D-065, D-067, D-124; edit/field retired, D-071)
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: members (`memberIds`) read them; owners and
   editors write them (D-098).

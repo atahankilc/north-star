@@ -163,7 +163,7 @@ service cloud.firestore {
 
     // Something on the workspace's canvas (D-176): a plane (D-180), a matrix, a table, documents; a box in canvas pixels.
     function validPiece(d) {
-      return d.kind in ['plane', 'matrix', 'table', 'documents', 'document', 'kanban']
+      return d.kind in ['plane', 'matrix', 'table', 'documents', 'document', 'kanban', 'timeline']
         && d.x is number && d.y is number
         && d.w is number && d.w > 0 && d.w <= 100000
         && d.h is number && d.h > 0 && d.h <= 100000
@@ -178,8 +178,10 @@ service cloud.firestore {
         && (!('docId' in d) || d.kind == 'document')
         // A kanban's columns (D-251), on kanbans only.
         && (!('kanban' in d) || (d.kind == 'kanban' && validKanban(d.kanban)))
+        // A timeline's kanbans and rows (D-262), on timelines only.
+        && (!('timeline' in d) || (d.kind == 'timeline' && validTimeline(d.timeline)))
         // Stuck to a plane's edge (D-210): a matrix or a table.
-        && (!('stuckTo' in d) || (d.kind in ['matrix', 'table', 'kanban'] && isText(d.stuckTo, 128)))
+        && (!('stuckTo' in d) || (d.kind in ['matrix', 'table', 'kanban', 'timeline'] && isText(d.stuckTo, 128)))
         // Opened onto the canvas (D-228): a matrix or a table; a documents list or a document (D-234).
         && (!('open' in d) || (d.kind in ['matrix', 'table', 'documents', 'document', 'kanban'] && d.open is bool))
         && d.createdAt is number
@@ -222,6 +224,13 @@ service cloud.firestore {
     }
 
     // A kanban's columns (D-251, src/data/tasks.ts): one to twelve, each an id, a name and whether it's the finished one.
+    function validTimeline(t) {
+      return t is map
+        && t.keys().hasOnly(['kanbans', 'rows'])
+        && (!('kanbans' in t) || (t.kanbans is list && t.kanbans.size() <= 20))
+        && optIn(t, 'rows', ['kanban', 'assignee', 'card']);
+    }
+
     function validKanban(k) {
       return k is map
         && k.keys().hasOnly(['cols', 'everyPlane', 'rows'])

@@ -155,7 +155,8 @@
 .piece[data-kind='table']::before,
 .piece[data-kind='documents']::before,
 .piece[data-kind='document']::before,
-.piece[data-kind='kanban']::before {
+.piece[data-kind='kanban']::before,
+.piece[data-kind='timeline']::before {
   content: none;
 }
 

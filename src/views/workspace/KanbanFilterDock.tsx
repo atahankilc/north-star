@@ -1,6 +1,7 @@
 // A kanban's filters in its dock (D-256), the plane's way (D-233): `[filter]` (`[filter · N]` while narrowing) opens a
 // strip over the dock in the console's look: GIVEN TO, DUE, FOR, LABEL, each its own menu, then `[reset]`. Escape
-// closes it. In the kanban's focus and in its pane beside a plane.
+// closes it. In the kanban's focus and in its pane beside a plane; a timeline's too (D-262), over its kanbans' tasks
+// (`pool`).
 import { AnimatePresence } from 'motion/react'
 import { useEffect } from 'react'
 import { create } from 'zustand'
@@ -8,6 +9,7 @@ import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { useAuth } from '../../data/auth'
 import { useMembers } from '../../data/workspaces'
+import type { Task } from '../../data/tasks'
 import { Appear } from '../../ui/Appear'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import { useCanvasView } from '../../state/canvasView'
@@ -28,7 +30,7 @@ const DUE: { key: DueKey; label: string }[] = [
 ]
 const TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package'] as const
 
-export function KanbanFilterDock({ piece }: { piece: WithId<Piece> }) {
+export function KanbanFilterDock({ piece, pool }: { piece: WithId<Piece>; pool?: Task[] }) {
   const open = useOpen((s) => s.piece === piece.id)
   const f = useKanbanFilter(piece.id)
   const n = narrowing(f)
@@ -48,17 +50,17 @@ export function KanbanFilterDock({ piece }: { piece: WithId<Piece> }) {
     <>
       <DockAction label={n ? `filter · ${n}` : 'filter'} pressed={open || n > 0} title={open ? 'close the filters' : 'which tasks it shows'} onClick={() => useOpen.setState({ piece: open ? null : piece.id })} />
       <div className={styles.shelf} style={{ maxWidth: room }}>
-        <AnimatePresence>{open && <Strip key="filter" piece={piece} f={f} />}</AnimatePresence>
+        <AnimatePresence>{open && <Strip key="filter" piece={piece} f={f} pool={pool} />}</AnimatePresence>
       </div>
     </>
   )
 }
 
-function Strip({ piece, f }: { piece: WithId<Piece>; f: KanbanFilter }) {
+function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool?: Task[] }) {
   const { wid, workspace, tasks, cards } = useWs()
   const { user } = useAuth()
   const members = useMembers(wid, 100).data.filter((m) => workspace.memberIds.includes(m.id) && m.id !== user?.id)
-  const mine = tasks.filter((t) => t.pieceId === piece.id)
+  const mine = pool ?? tasks.filter((t) => t.pieceId === piece.id)
   const set = (patch: Partial<KanbanFilter>) => setKanbanFilter(piece.id, { ...f, ...patch })
   const flip = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
   const count = (keep: (t: (typeof mine)[number]) => boolean) => `${mine.filter(keep).length}`

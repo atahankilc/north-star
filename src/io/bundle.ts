@@ -281,7 +281,7 @@ export function cleanLabel(d: Raw, now: number) {
 
 // ---- Pieces (pieces.ts): their setups point at cards, planes and documents, all given their new ids here.
 
-const PIECE_KINDS = ['plane', 'matrix', 'table', 'documents', 'document', 'kanban'] as const
+const PIECE_KINDS = ['plane', 'matrix', 'table', 'documents', 'document', 'kanban', 'timeline'] as const
 
 export function cleanPiece(d: Raw, now: number, ids: Ids) {
   const kind = oneOf(d.kind, PIECE_KINDS)
@@ -307,8 +307,9 @@ export function cleanPiece(d: Raw, now: number, ids: Ids) {
     table,
     documents: kind === 'documents' ? cleanDocumentsSetup(d.documents) : undefined,
     kanban: kind === 'kanban' ? cleanKanban(d.kanban) : undefined,
+    timeline: kind === 'timeline' ? cleanTimeline(d.timeline, ids) : undefined,
     docId,
-    stuckTo: lens || kind === 'kanban' ? ids.piece(d.stuckTo) : undefined,
+    stuckTo: lens || kind === 'kanban' || kind === 'timeline' ? ids.piece(d.stuckTo) : undefined,
     open: kind !== 'plane' ? bool(d.open) : undefined,
     ...times(d, now),
   })
@@ -432,6 +433,12 @@ function cleanDocumentsSetup(v: unknown) {
 }
 
 // A kanban's columns (D-251; rules: 1–12, these keys only); none left, it starts over.
+// A timeline's setup (D-262): the kanbans it shows that came over, its rows.
+export function cleanTimeline(v: unknown, ids: Ids) {
+  const kanbans = list(obj(v)?.kanbans, 20).flatMap((k) => ids.piece(k) ?? [])
+  return compact({ kanbans: kanbans.length ? kanbans : undefined, rows: oneOf(obj(v)?.rows, ['kanban', 'assignee', 'card'] as const) })
+}
+
 export function cleanKanban(v: unknown) {
   const seen = new Set<string>()
   const cols = list(obj(v)?.cols, 12).flatMap((raw) => {

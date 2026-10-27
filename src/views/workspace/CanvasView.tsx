@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { canOpen, deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, kindOfPiece, sticks, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { canOpen, deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, isHost, hostKind, kindOfPiece, sticks, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
@@ -52,6 +52,7 @@ import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, Do
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
 import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView, selectTask, useKanbanUi } from './Kanban'
+import { timelineBounds, TimelineDockTools, TimelineShows, TimelineView } from './Timeline'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { TaskPanel } from './TaskPanel'
 import { usePlaneFilter } from './planeFilter'
@@ -119,14 +120,16 @@ export function CanvasView() {
   // Documents (D-232): the list, and one on its own.
   const focusedDocuments = focused && kindOfPiece(focused) === 'documents'
   const focusedDocument = focused && kindOfPiece(focused) === 'document'
-  // A kanban (D-251).
+  // A kanban (D-251), a timeline (D-262).
   const focusedKanban = focused && kindOfPiece(focused) === 'kanban'
+  const focusedTimeline = focused && kindOfPiece(focused) === 'timeline'
   const readerOpen = useDocUi((s) => s.readers.length > 0) && !!focusedDocuments
   // The list put away while documents are open: they fill the screen, and Escape goes straight back to the canvas.
   const listHidden = useDocUi((s) => s.listHidden) && readerOpen
   const sideBySide = useDocUi((s) => s.sideBySide)
-  // What's stuck to the focused plane (D-210), and what of it is open beside it (D-211), in the address (`beside`).
-  const stuckHere = focused && !isBare(focused) ? pieces.filter((p) => p.stuckTo === focused.id && isBare(p)) : []
+  // What's stuck to the focused plane (D-210) or kanban (D-262), and what of it is open beside it (D-211), in the address
+  // (`beside`).
+  const stuckHere = focused && isHost(focused) ? pieces.filter((p) => p.stuckTo === focused.id && sticks(p)) : []
   const besideIds = (params.get('beside') ?? '').split(',').filter(Boolean)
   const besideOpen = besideIds.flatMap((id) => stuckHere.filter((p) => p.id === id))
   const besideRef = useRef(besideOpen)
@@ -174,18 +177,20 @@ export function CanvasView() {
               ? documentBounds(p)
               : kind === 'kanban'
                 ? kanbanBounds(p, tasks)
-                : spaceBounds(cardsBy.get(p.id) ?? NONE, edges, labelsBy.get(p.id) ?? NONE, [], p.id)
+                : kind === 'timeline'
+                  ? timelineBounds(p, pieces, tasks, cards)
+                  : spaceBounds(cardsBy.get(p.id) ?? NONE, edges, labelsBy.get(p.id) ?? NONE, [], p.id)
     }
     return new Map(pieces.map((p) => [p.id, of(p)]))
   }, [pieces, cards, edges, cardsBy, labelsBy, documents, user?.id, filters, tasks])
   const contentOf = (p: WithId<Piece>) => contents.get(p.id) ?? null
   const bonds = (layer: 'under' | 'over') =>
     shown.map((p) => {
-      const plane = p.stuckTo && isBare(p) ? planesBox.find((x) => x.id === p.stuckTo) : undefined
+      const plane = p.stuckTo && sticks(p) ? hostsBox.find((x) => x.id === p.stuckTo) : undefined
       return plane ? <Bond key={`bond-${layer}-${p.id}`} piece={p} plane={plane} zoom={cam.zoom} layer={layer} /> : null
     })
-  // The planes as boxes, for sticking (D-210).
-  const planesBox = shown.filter((p) => !isBare(p)).map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h, name: p.name }))
+  // What can be stuck to, as boxes (D-210): planes, and kanbans for timelines (D-262).
+  const hostsBox = shown.filter((p) => isHost(p)).map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h, name: p.name, kind: kindOfPiece(p) }))
   // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
   const fitRef = useRef((_instant?: boolean) => {})
   fitRef.current = (instant = false) => {
@@ -826,9 +831,9 @@ export function CanvasView() {
             cards={cardsOf(p.id)}
             labels={labelsOf(p.id)}
             content={contentOf(p)}
-            planes={sticks(p) ? planesBox.filter((x) => x.id !== p.id) : []}
-            followers={isBare(p) ? [] : shown.filter((f) => f.stuckTo === p.id && isBare(f))}
-            host={isBare(p) && p.stuckTo ? (planesBox.find((x) => x.id === p.stuckTo) ?? null) : null}
+            planes={sticks(p) ? hostsBox.filter((x) => x.id !== p.id && x.kind === hostKind(p)) : []}
+            followers={isHost(p) ? shown.filter((f) => f.stuckTo === p.id && sticks(f)) : []}
+            host={sticks(p) && p.stuckTo ? (hostsBox.find((x) => x.id === p.stuckTo) ?? null) : null}
           />
         ))}
         {/* The notches of what's linked to a plane, on its edge (D-215). */}
@@ -870,6 +875,8 @@ export function CanvasView() {
             <DocFocus piece={focused} onUnfocus={unfocus} />
           ) : focusedKanban ? (
             <FocusedKanban piece={focused} editor={editor} />
+          ) : focusedTimeline ? (
+            <FocusedTimeline piece={focused} editor={editor} />
           ) : (
             <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
           )}
@@ -900,6 +907,18 @@ export function CanvasView() {
               {focusedKanban && <KanbanFilterDock piece={focused} />}
               {focusedKanban && <KanbanLanes piece={focused} editor={editor} />}
               {focusedKanban && <KanbanDockTools piece={focused} editor={editor} />}
+              {/* A timeline stuck to the kanban (D-262): opened beside it, or closed (D-211). */}
+              {focusedKanban &&
+                stuckHere.map((p) => (
+                  <DockAction
+                    key={p.id}
+                    label={`⇆ ${KIND_NAME[kindOfPiece(p)]}${p.name ? ` · ${p.name}` : ''}`}
+                    pressed={besideIds.includes(p.id)}
+                    title={besideIds.includes(p.id) ? 'close it beside the kanban' : 'open it beside the kanban'}
+                    onClick={() => toggleBeside(p.id)}
+                  />
+                ))}
+              {focusedTimeline && <TimelineDockTools piece={focused} editor={editor} />}
               {/* Several documents side by side (D-232): a click opens one next to the others. */}
               {focusedDocuments && <DockAction label="⧉ side by side" pressed={sideBySide} title={sideBySide ? 'a click opens a document in place of the one open' : 'a click opens a document next to the ones open'} onClick={() => useDocUi.setState((s) => ({ sideBySide: !s.sideBySide }))} />}
               {focusedDocuments && readerOpen && <DockAction label="hide list" title="put the list away: the documents take the whole screen" onClick={() => useDocUi.setState({ listHidden: true })} />}
@@ -1106,7 +1125,8 @@ function innerView(box: Box, b: Bounds | null, bare = false, pad = GRID): PlaneC
 
 // How a piece shows what's in it: a table at its own size from the top-left, cut by its edge (D-208); a matrix fitted
 // whole in its window, a little room round it (D-214); a plane's cards fitted.
-const asShown = (p: Piece): [boolean, number] => (kindOfPiece(p) === 'matrix' ? [false, 12] : [isBare(p), GRID])
+// A timeline (D-262) is fitted in its window, as a matrix is: two weeks are wider than any window.
+const asShown = (p: Piece): [boolean, number] => (kindOfPiece(p) === 'matrix' || kindOfPiece(p) === 'timeline' ? [false, 12] : [isBare(p), GRID])
 
 // That view on the screen, where focus starts from and goes back to.
 function homeOf(piece: Piece, at: ScreenRect, content: Bounds | null): PlaneCam {
@@ -1128,6 +1148,12 @@ function FocusedTable({ piece, editor }: { piece: WithId<Piece>; editor: boolean
 }
 
 // The focused kanban, live, on its own view (D-251).
+// The focused timeline, live, on its own view (D-262).
+function FocusedTimeline({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const view = useCanvasView((s) => s.planeCam)
+  return view ? <TimelineView piece={piece} view={view} live editor={editor} /> : null
+}
+
 function FocusedKanban({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const view = useCanvasView((s) => s.planeCam)
   return view ? <KanbanView piece={piece} view={view} live editor={editor} /> : null
@@ -1256,7 +1282,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       if (to && !same(to, from)) {
         // An open one's window keeps its stored size.
         const kept = (b: Box): Box => (open ? { ...b, w: piece.w, h: piece.h } : b)
-        const write = lens ? placeLens(wid, piece, kept(from), kept(to), stick) : placePiece(wid, piece.id, from, to, kind, followed(to))
+        const write = lens ? placeLens(wid, piece, kept(from), kept(to), stick, followed(to)) : placePiece(wid, piece.id, from, to, kind, followed(to))
         void write.then(done, () => (setHeld(null), done()))
       } else {
         setHeld(null)
@@ -1359,6 +1385,8 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         <DocOne piece={piece} view={inner} live={false} />
       ) : kind === 'kanban' ? (
         <Kanban piece={piece} view={inner} live={false} editor={editor} />
+      ) : kind === 'timeline' ? (
+        <TimelineView piece={piece} view={inner} live={false} editor={editor} />
       ) : (
         <Cards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       )}
@@ -1383,6 +1411,8 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
           // console is only `[focus] [edit]`.
           kind === 'documents' ? (
             open ? <DocumentsTools piece={piece} editor={editor} toolClass={styles.tool} /> : undefined
+          ) : kind === 'timeline' ? (
+            <TimelineShows piece={piece} editor={editor} />
           ) : kind === 'document' || kind === 'kanban' ? undefined : open ? (
             <OpenTools piece={piece} editor={editor} />
           ) : undefined

@@ -128,7 +128,14 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 
 - **Kanban** (D-251): a canvas piece holding the team's tasks in columns (`todo · doing · done` to start, renamed,
   added, moved, one marked finished); a task has a title, who it's given to, a due day, the card it's for, a checklist
-  and notes; dragged between columns, typed in at a column's foot, opened in a right panel.
+  and notes; dragged between columns, typed in at a column's foot, opened in a right panel. Grown in eight sessions
+  (docs/specs/kanban.md): the ledger look (D-252); a card's panel lists and makes its tasks, a finished test logs
+  evidence (D-254); stuck to a plane it shows that plane's tasks and opens beside it (D-255); filters, `#labels`, `P1–P3`,
+  column limits (D-256); lanes by person or card, several selected at once (D-258); others' picks and drags shown,
+  comments on tasks (D-260); tasks given to you counted by your square, found by ⌘F (D-261); a `SOON` band of what's due.
+- **Timeline** (D-262): a canvas piece showing kanbans' tasks on two weeks of days, rows by kanban, person or card;
+  dragging a task onto a day sets its due day; late ones on today in magenta; a tray of tasks with no day. Sticks to a
+  kanban and opens beside it in the kanban's focus.
 
 ### Later / nice to have
 - Templates (Lean Canvas, SWOT, positioning map)

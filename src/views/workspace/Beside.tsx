@@ -21,6 +21,7 @@ import { MatrixSetupPanel } from './MatrixSetup'
 import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView } from './Kanban'
 import { KanbanFilterDock } from './KanbanFilterDock'
+import { T, timelineBounds, TimelineDockTools, TimelineView } from './Timeline'
 import { DockAction, FocusDock } from './FocusDock'
 import { TableSetupPanel } from './TableSetup'
 import styles from './Beside.module.css'
@@ -117,10 +118,10 @@ export function Beside({ plane, open, editor, esc, matrixSetupPane, onClose }: P
 type PaneProps = { piece: WithId<Piece>; plane: WithId<Piece>; box: Bounds; editor: boolean; first: boolean; esc: EscNext; matrixSetupHere: boolean; onClose: () => void }
 
 function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose }: PaneProps) {
-  const { cards, tasks } = useWs()
+  const { cards, tasks, pieces } = useWs()
   const kind = kindOfPiece(piece)
   const el = useRef<HTMLDivElement>(null)
-  const content = kind === 'matrix' ? matrixBounds(piece, cards) : kind === 'kanban' ? kanbanBounds(piece, tasks) : tableBounds(piece, cards)
+  const content = kind === 'matrix' ? matrixBounds(piece, cards) : kind === 'kanban' ? kanbanBounds(piece, tasks) : kind === 'timeline' ? timelineBounds(piece, pieces, tasks, cards, T.besideDays) : tableBounds(piece, cards)
   const fitted = (): PlaneCam => {
     const { zoom, cx, cy } = fitInto(content, box.w, box.h, PAD)
     return { ox: box.w / 2 - cx * zoom, oy: box.h / 2 - cy * zoom, zoom }
@@ -235,6 +236,9 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
         <MatrixView piece={piece} view={view} live editor={editor} />
       ) : kind === 'kanban' ? (
         <KanbanView piece={piece} view={view} live editor={editor} onTask={toTask} />
+      ) : kind === 'timeline' ? (
+        // Beside its kanban (D-262): a task picked here is picked on the kanban too.
+        <TimelineView piece={piece} view={view} live editor={editor} span={T.besideDays} />
       ) : (
         <TableView piece={piece} view={view} live editor={editor} onCard={toCard} onView={setView} />
       )}
@@ -254,7 +258,8 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
         {kind === 'kanban' && <KanbanFilterDock piece={piece} />}
         {kind === 'kanban' && <KanbanLanes piece={piece} editor={editor} />}
         {kind === 'kanban' && <KanbanDockTools piece={piece} editor={editor} />}
-        {editor && kind !== 'kanban' && (
+        {kind === 'timeline' && <TimelineDockTools piece={piece} editor={editor} beside />}
+        {editor && kind !== 'kanban' && kind !== 'timeline' && (
           <DockAction
             label="setup"
             pressed={setupOpen}

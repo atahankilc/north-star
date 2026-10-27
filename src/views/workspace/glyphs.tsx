@@ -28,5 +28,7 @@ export const PIECE_GLYPH: Record<PieceKind, ReactNode> = {
   document: <Page />,
   // A kanban (D-251): columns side by side.
   kanban: '▥',
+  // A timeline (D-262): days in a row.
+  timeline: '▤',
 }
 export const TEXT_GLYPH = { heading: 'T', paragraph: '¶', sticky: '▤', section: '⬚', title: '✦' } as const

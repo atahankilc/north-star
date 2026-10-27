@@ -17,7 +17,7 @@
 //   presence/{workspaceId}/{uid}             Presence (D-016)
 
 import type { DocumentsSetup } from './documents'
-import type { KanbanSetup } from './tasks'
+import type { KanbanSetup, TimelineSetup } from './tasks'
 import type { MatrixSetup } from './matrix'
 import type { TableSetup } from './table'
 
@@ -60,7 +60,8 @@ export type JoinRequest = {
 // A table (D-209): rows from rules, columns of the cards' fields and its own; its own columns' values in `cells`.
 // Documents (D-232): `documents` lists them, `document` shows one on its own.
 // A kanban (D-251): its columns on the piece, its tasks in `tasks`.
-export type PieceKind = 'plane' | 'matrix' | 'table' | 'documents' | 'document' | 'kanban'
+// A timeline (D-262): kanbans' tasks on a row of days, by due day; which kanbans and its rows on the piece.
+export type PieceKind = 'plane' | 'matrix' | 'table' | 'documents' | 'document' | 'kanban' | 'timeline'
 export type Piece = {
   kind: PieceKind
   x: number
@@ -76,6 +77,8 @@ export type Piece = {
   docId?: string
   // A kanban's columns (D-251).
   kanban?: KanbanSetup
+  // A timeline's kanbans and rows (D-262).
+  timeline?: TimelineSetup
   // A matrix or a table stuck to a plane's edge (D-210): moved with it, showing its cards.
   stuckTo?: string
   // A matrix or a table opened onto the canvas (D-228): out of its window, at its own size and live there. Its w/h stay

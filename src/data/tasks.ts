@@ -30,6 +30,28 @@ export type KanbanSetup = {
   // Its rows (D-258): none, or lanes by who a task is given to or by the card it's for (src/views/workspace/rows.ts).
   rows?: KanbanRows
 }
+// A timeline (D-262): the kanbans it shows (none picked: the one it's stuck to, else every kanban), and its rows.
+export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
+export type TimelineRows = (typeof TIMELINE_ROWS)[number]
+export type TimelineSetup = { kanbans?: string[]; rows?: TimelineRows }
+
+// Which kanbans a timeline shows.
+export function timelineKanbans<P extends { id: string; kind: string; stuckTo?: string; timeline?: TimelineSetup }>(t: P, pieces: P[]): P[] {
+  const kanbans = pieces.filter((p) => p.kind === 'kanban')
+  const picked = (t.timeline?.kanbans ?? []).flatMap((id) => kanbans.filter((k) => k.id === id))
+  if (picked.length) return picked
+  const host = kanbans.find((k) => k.id === t.stuckTo)
+  return host ? [host] : kanbans
+}
+
+// Its setup, merged (shared): one undo step.
+export function setTimeline(wid: string, pieceId: string, patch: TimelineSetup, what: string) {
+  const ref = pieceRef(wid, pieceId)
+  const data: Record<string, unknown> = { updatedAt: Date.now() }
+  for (const [k, v] of Object.entries(patch)) data[`timeline.${k}`] = v === undefined || (Array.isArray(v) && !v.length) ? deleteField() : v
+  return tracked(what, [ref], () => updateDoc(ref, data))
+}
+
 export const KANBAN_ROWS = ['assignee', 'card'] as const
 export type KanbanRows = (typeof KANBAN_ROWS)[number]
 
