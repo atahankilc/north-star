@@ -17,6 +17,21 @@
   overflow: visible;
 }
 
+/* Unframed (D-267): ink on the canvas, no paper box; each column's head and each task on a shade that hugs it. */
+.layer[data-on-canvas='true'] .head {
+  position: relative;
+}
+
+.layer[data-on-canvas='true'] :is(.task, .head)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  box-shadow: 0 0 16px 10px color-mix(in srgb, var(--bg) 72%, transparent);
+  pointer-events: none;
+}
+
 .world {
   position: absolute;
   top: 0;
@@ -151,8 +166,9 @@
   white-space: nowrap;
 }
 
+/* A number, wherever there is one, is magenta (D-266). */
 .n {
-  color: var(--fg-faint);
+  color: var(--accent-magenta);
 }
 
 .name {

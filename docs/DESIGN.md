@@ -75,6 +75,27 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - *The assistant's stage (D-096, D-101):* one cyan box (`src/ui/StageBox.tsx`) with its title and controls written into the top
   edge; the preview and the chat's report both use it, each with a `‹ n/N ›` stepper (n / p) lit both ways with the chat's box.
 
+### Names and lines on the canvas (D-266)
+- *Two voices.* The system's: Geist Mono, caps, tracked (piece names, type labels, column heads, panel sections, the
+  small line over a heading, consoles). The user's: Geist (card titles, headings, paragraphs, section names, the
+  project title).
+- *Numbers.* A number, wherever there is one, is magenta, mono, before the name: a piece's name (`01 PAZAR · PLANE`, a
+  leading number in the name is taken apart), kanban columns (`01 TODO`), sections, a heading's small line, the right
+  panel's sections (`01 STATUS`), the suggested order.
+- *Two edges.* Containers have one (pieces, sections), their name cut into it the same way: a 16 px lead of edge, 8 px
+  clear each side of the name (a piece's in screen px, a section's in its space's). What's held has none (cards, tasks,
+  rows, cells): it's a surface whose colour comes from a band.
+- *Two bands.* Held things carry theirs on the left (a card's, a task's, a row's type colour); containers on top (a
+  piece's kind, D-263).
+- *Framed and unframed (D-267).* Framed is a window (the surface, its band, shadow, the name in its edge, the console).
+  Unframed is ink on the canvas: no fill, edge, band or shadow; under each row (a matrix's heads and cells, a table's
+  rows, a kanban's heads and tasks, a list's rows and sheets) a shade that hugs it (page colour at 80 %, feathered
+  `0 0 16px 10px` at 72 %), as under text; its name a heading's small line 8 px over its contents
+  (`04 ── RIVALS · TABLE`, mono 11 px on the screen, caps, tracked .14em, the number magenta); its console the same, on
+  the same hover rule, hanging 10 px under the contents' right end. A single document keeps its feathered page.
+  Going between: the window breaks (or builds) cell by cell while the contents grow from fitted to their own size (or
+  shrink back), 320 ms, eased both ends; nothing else moves.
+
 ## 5. ASCII rendering
 
 - A post-processing **ASCII shader**: sample luminance per cell, map it to a glyph ramp

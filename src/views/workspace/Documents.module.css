@@ -16,6 +16,25 @@
   overflow: visible;
 }
 
+/* Unframed (D-267): ink on the canvas, no paper box; each row, the head row and each sheet on a shade that hugs it. */
+.layer[data-on-canvas='true'] .table {
+  background: none;
+}
+
+.layer[data-on-canvas='true'] .headRow {
+  position: relative;
+}
+
+.layer[data-on-canvas='true'] :is(.row, .headRow, .sheetAt)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  box-shadow: 0 0 16px 10px color-mix(in srgb, var(--bg) 72%, transparent);
+  pointer-events: none;
+}
+
 .world {
   position: absolute;
   top: 0;

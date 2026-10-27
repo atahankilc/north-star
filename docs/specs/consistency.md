@@ -1,6 +1,6 @@
 # Spec: one look and one behaviour across the canvas
 
-Status: **agreed 2026-10-27 (D-263–D-267); sessions 1–5 built (D-270, D-272–D-275)**. This file is the plan, split into sessions. The user checks each
+Status: **agreed 2026-10-27 (D-263–D-267); all six sessions built (D-270, D-272–D-276)**. This file is the plan, split into sessions. The user checks each
 session's work, then starts a new one with a fresh context ("reset"). So every session must be able to start from this
 file alone.
 
@@ -138,7 +138,7 @@ piece), the band, focus's page. Light theme.
 ## Session 5: the console · **done** (D-275, 2026-10-27)
 D-264: hover only (cells), the growing size, the fresh-comments tab, edit / setup / focus-within keep it, touch.
 
-## Session 6: names, lines, unframed · not done
+## Session 6: names, lines, unframed · **done** (D-276, 2026-10-27)
 D-266 (magenta numbers, the shared edge-name geometry, DESIGN.md) and D-267 (unframed as ink, its name, its console,
 the transition both ways).
 
@@ -151,6 +151,8 @@ the transition both ways).
   building. Unframed rows (D-267) use the hugging shade either way.
 
 ## Found along the way
+- Session 6 (D-276): a single document unframed keeps its feathered page (it's a page of text, not rows). A name's
+  leading number is taken apart only when it's 1–4 digits and then a space or a dash (`2024 plan` reads as `2024`).
 - Session 4 (D-274): `--piece-head` has no user yet. In focus the HUD's shades were page-coloured strips over the
   surface: `html[data-in-focus]` turns them to `--piece`.
 - Session 1 (D-270): the tier rule read literally gave a one-line paragraph S and a section M; built as the kind's tier,

@@ -16,6 +16,17 @@
   overflow: visible;
 }
 
+/* Unframed (D-267): ink on the canvas, no paper box; each head and cell on a shade that hugs it, as text's does. */
+.layer[data-on-canvas='true'] :is(.rowHead:not([data-sub]), .colHead:not([data-sub]), .cell, .endCell)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  box-shadow: 0 0 16px 10px color-mix(in srgb, var(--bg) 72%, transparent);
+  pointer-events: none;
+}
+
 .world {
   position: absolute;
   top: 0;

@@ -1227,6 +1227,12 @@ function dragBox(from: Box, handle: Handle, dx: number, dy: number, free: boolea
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
 
+// A name's leading number, apart (D-266): `04 Rivals` → `04`, `Rivals`.
+function numberOf(name: string | undefined): { num: string; rest: string } {
+  const m = /^(\d{1,4})(?:[\s.·:—–-]+(.*))?$/.exec(name?.trim() ?? '')
+  return m ? { num: m[1], rest: m[2] ?? '' } : { num: '', rest: name ?? '' }
+}
+
 // A piece's kind's colour (D-263): its marks' tone now, its band later.
 const KIND_TONE: Record<string, string> = {
   plane: 'var(--fg)',
@@ -1376,6 +1382,37 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
   // Its own view, the same object until its box or contents change, so what's in it isn't drawn again as the canvas
   // moves (Matrix, Table, Cards below).
   const inner = useMemo(() => innerView({ x: 0, y: 0, w: box.w, h: box.h }, content, noFit, pad), [box.w, box.h, content, noFit, pad])
+  // Going between framed and unframed (D-267): the window breaks cell by cell (or builds) while what's in it grows from
+  // fitted in it to its own size (or shrinks back), 320 ms; nothing else moves. Reduced motion: at once.
+  const fitted = useMemo(() => innerView({ x: 0, y: 0, w: piece.w, h: piece.h }, content, noFit, pad), [piece.w, piece.h, content, noFit, pad])
+  const [morph, setMorph] = useState<{ to: 'open' | 'framed'; t: number } | null>(null)
+  const wasOpen = useRef(open)
+  useEffect(() => {
+    if (wasOpen.current === open) return
+    wasOpen.current = open
+    if (isReducedMotion()) return
+    const to = open ? 'open' : 'framed'
+    const t0 = performance.now()
+    let f = 0
+    const step = (now: number) => {
+      const t = Math.min(1, (now - t0) / MORPH_MS)
+      setMorph(t < 1 ? { to, t } : null)
+      if (t < 1) f = requestAnimationFrame(step)
+    }
+    setMorph({ to, t: 0 })
+    f = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(f)
+  }, [open])
+  const ghost = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    if (!ghost.current || !morph) return
+    return runCells(ghost.current, morph.to === 'open' ? 'exit' : 'enter', 0, MORPH_MS)
+    // Once a turn: on its start.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [morph?.to])
+  const eased = morph ? easeBoth(morph.t) : 1
+  const openView = morph?.to === 'open' ? between(fitted, OPEN_VIEW, eased) : OPEN_VIEW
+  const framedView = morph?.to === 'framed' ? between(OPEN_VIEW, inner, eased) : inner
   const step = GRID * inner.zoom
   // Carried (its own move, or by a section): 0.8 round the point held under the pointer, its marks where it lands.
   const left = box.x + (shift?.dx ?? 0)
@@ -1386,6 +1423,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       ? { translate: `${shift.free[0] - shift.dx}px ${shift.free[1] - shift.dy}px`, scale: '0.8', transformOrigin: `${shift.at[0] - box.x}px ${shift.at[1] - box.y}px` }
       : undefined
   const tone = KIND_TONE[kind]
+  const numbered = numberOf(name)
   return (
     <>
     <div
@@ -1399,6 +1437,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       data-target={`plane:${piece.id}`}
       data-kind={kind}
       data-open={open || undefined}
+      data-morph={morph?.to}
       // A matrix in focus is its focused copy's: the one here would show under it as it glides.
       data-away={bare && focusing ? true : undefined}
       // --z: the canvas's zoom, so the name holds its size on the screen (D-223).
@@ -1411,9 +1450,12 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       {editing && kind !== 'document' ? (
         <NameField value={piece.name ?? ''} placeholder={KIND_NAME[kind]} onSave={(name) => name !== (piece.name ?? '') && void renamePiece(wid, piece.id, name, kind)} />
       ) : (
-        // Named: the name, then its kind faint (D-223); unnamed: the kind alone, faint.
+        // Named: the name, then its kind faint (D-223); unnamed: the kind alone, faint. A number it starts with in
+        // magenta before it (D-266); unframed, the name is a heading's small line, `04 ── RIVALS · TABLE` (D-267).
         <span className={styles.name} data-unnamed={!name || undefined} title={name || undefined}>
-          <span className={styles.nameText}>{name || KIND_NAME[kind]}</span>
+          {numbered.num && <span className={styles.nameNum}>{numbered.num}</span>}
+          {numbered.num && open && <span className={styles.nameRule} aria-hidden />}
+          {(numbered.rest || !numbered.num) && <span className={styles.nameText}>{numbered.rest || KIND_NAME[kind]}</span>}
           {name && (
             <>
               <span className={styles.nameSep} aria-hidden>
@@ -1445,35 +1487,38 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). Open on the canvas (D-228),
           live: not in edit mode (a press moves it) or while a plane's in focus. */}
       {/* Open, the page under its contents, feathered: the backdrop stays out from under its text (D-009). */}
-      {open && content && <span className={styles.openPaper} style={{ left: OPEN_PAD, top: OPEN_PAD, width: box.w - 2 * OPEN_PAD, height: box.h - OPEN_PAD - OPEN_FOOT }} aria-hidden />}
+      {/* The window it's leaving or going into (D-267), breaking or building cell by cell under what's in it. */}
+      {morph && <span ref={ghost} className={styles.ghostWindow} style={{ width: piece.w, height: piece.h }} aria-hidden />}
+      {/* A document unframed is a page of text: its paper stays; the rest are rows, each on its own shade (D-267). */}
+      {open && content && kind === 'document' && <span className={styles.openPaper} style={{ left: OPEN_PAD, top: OPEN_PAD, width: box.w - 2 * OPEN_PAD, height: box.h - OPEN_PAD - OPEN_FOOT }} aria-hidden />}
       {bare && focusing ? null : open ? (
         // In focus (and on its way there and back) its copy here is hidden: nothing drawn in it meanwhile.
         // Open on the canvas (D-228), live: at its own size a margin in, under the canvas's zoom (its view stays at 1, so
         // the camera moving never draws it again); what's at screen size in it reads the piece's `--z`.
         <div className={styles.openLayer} style={{ width: box.w, height: box.h }}>
           {kind === 'matrix' ? (
-            <Matrix piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas />
+            <Matrix piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas />
           ) : kind === 'table' ? (
-            <Table piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas />
+            <Table piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas />
           ) : kind === 'documents' ? (
             // Open on the canvas (D-234): its rows live there; a click takes the list into focus with the document beside it.
-            <DocsList piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas onOpen={onFocus} />
+            <DocsList piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas onOpen={onFocus} />
           ) : kind === 'kanban' ? (
-            <Kanban piece={piece} view={OPEN_VIEW} live={live && !editing} editor={editor} onCanvas />
+            <Kanban piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas />
           ) : (
-            <DocOne piece={piece} view={OPEN_VIEW} live={live && !editing} onCanvas onMore={onFocus} />
+            <DocOne piece={piece} view={openView} live={live && !editing} onCanvas onMore={onFocus} />
           )}
         </div>
       ) : kind === 'matrix' ? (
-        <Matrix piece={piece} view={inner} live={false} editor={editor} />
+        <Matrix piece={piece} view={framedView} live={false} editor={editor} />
       ) : kind === 'table' ? (
-        <Table piece={piece} view={inner} live={false} editor={editor} />
+        <Table piece={piece} view={framedView} live={false} editor={editor} />
       ) : kind === 'documents' ? (
-        <DocsList piece={piece} view={inner} live={false} editor={editor} />
+        <DocsList piece={piece} view={framedView} live={false} editor={editor} />
       ) : kind === 'document' ? (
-        <DocOne piece={piece} view={inner} live={false} />
+        <DocOne piece={piece} view={framedView} live={false} />
       ) : kind === 'kanban' ? (
-        <Kanban piece={piece} view={inner} live={false} editor={editor} />
+        <Kanban piece={piece} view={framedView} live={false} editor={editor} />
       ) : kind === 'timeline' ? (
         <TimelineView piece={piece} view={inner} live={false} editor={editor} />
       ) : (
@@ -1737,6 +1782,11 @@ const Text = memo(TextItems)
 const NONE: never[] = []
 // An open matrix's or table's view (D-228): a margin in from its corner, at 1.
 const OPEN_VIEW: PlaneCam = { ox: OPEN_PAD, oy: OPEN_PAD, zoom: 1 }
+
+// Framing and unframing (D-267): as long as the cells' build-up (D-034's components'), eased both ends.
+const MORPH_MS = 320
+const easeBoth = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
+const between = (a: PlaneCam, b: PlaneCam, t: number): PlaneCam => ({ ox: a.ox + (b.ox - a.ox) * t, oy: a.oy + (b.oy - a.oy) * t, zoom: a.zoom + (b.zoom - a.zoom) * t })
 
 function groupBy<T>(list: T[], key: (t: T) => string) {
   const out = new Map<string, T[]>()

@@ -351,8 +351,9 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     // the line breaking round it; a number (its small line) before it only when someone typed one.
     const size = headingSize(l)
     const px = HEADING_PX[size]
-    const inset = 28 + px * 0.4
-    const gap = px * 0.35
+    // The same geometry as a piece's name in its edge (D-266): a 16 px lead of line, 8 px clear each side.
+    const inset = 24
+    const gap = 8
     const kick = kickerParts(l.kicker)
     const num = kick ? [kick.num, kick.rest].filter(Boolean).join(' ') : ''
     const onLeft = l.side === 'left'

@@ -204,11 +204,12 @@
   /* Over the plane's cards (D-187). */
   z-index: 1;
   top: 0;
-  left: 1.2em;
+  /* Cut into the edge as a section's name is (D-266): a 16 px lead of edge, then 8 px clear each side of it. */
+  left: calc(16px / var(--z, 1));
   display: flex;
   gap: 0.6em;
-  max-width: calc(100% - 2.4em);
-  padding: 0 0.6em;
+  max-width: calc(100% - 32px / var(--z, 1));
+  padding: 0 calc(8px / var(--z, 1));
   transform: translateY(-50%);
   background: var(--bg);
   color: var(--fg);
@@ -229,6 +230,37 @@
   overflow: hidden;
   min-width: 0;
   text-overflow: ellipsis;
+}
+
+/* A number it starts with: magenta, before it (D-266). */
+.nameNum {
+  flex: none;
+  color: var(--accent-magenta);
+  font-weight: 400;
+}
+
+/* Unframed (D-267): no edge to be cut into; the name is a heading's small line 8 px over its contents, on the canvas:
+   mono 11 px on the screen, caps, tracked, `04 ── RIVALS · TABLE`, on a shade that hugs it. */
+.piece[data-open='true'] .name {
+  --name-size: 11px;
+  top: calc(25px - 8px / var(--z, 1));
+  left: 25px;
+  align-items: center;
+  max-width: calc(100% - 50px);
+  padding: 0;
+  transform: translateY(-100%);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  box-shadow: 0 0 calc(16px / var(--z, 1)) calc(10px / var(--z, 1)) color-mix(in srgb, var(--bg) 72%, transparent);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+}
+
+.nameRule {
+  flex: none;
+  width: 1.8em;
+  height: calc(1px / var(--z, 1));
+  background: var(--fg-dim);
 }
 
 .nameSep,
@@ -452,6 +484,49 @@
 }
 
 .piece[data-open='true']::after {
+  content: none;
+}
+
+/* Unframed (D-267): the same console on the same hover rule, hanging 10 px under its contents' right end, its own edge
+   all round (nothing to stand on). */
+.piece[data-open='true'] > .console {
+  top: calc(100% - 50px + 10px * var(--cs, 1));
+  right: 25px;
+  bottom: auto;
+  border-bottom: calc(1px * var(--cs, 1)) solid var(--piece-edge);
+}
+
+/* Going between (D-267): the window it leaves or goes into, the piece's own look, breaking or building cell by cell
+   under what's in it; meanwhile the piece itself shows none of it (framing: it's the copy that builds). */
+.ghostWindow {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  border: 1px solid var(--piece-edge);
+  background: var(--piece);
+  box-shadow:
+    var(--piece-shadow),
+    inset 0 1px 0 var(--piece-hi);
+  pointer-events: none;
+}
+
+.ghostWindow::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  left: -1px;
+  height: var(--piece-band);
+  background: var(--kind);
+}
+
+.piece[data-morph='framed'] {
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+}
+
+.piece[data-morph='framed']::after {
   content: none;
 }
 

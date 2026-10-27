@@ -4930,3 +4930,31 @@ The user asked for session 5 of the consistency plan.
   at 380, gone on leaving; Bob's comment inside the plane gave Alice the magenta `▢ 1` tab; zoomed out to the floor its
   height stayed 40 screen px (1.4 ×); edit mode kept it with the pointer away; reduced: on and off at once; two taps:
   shown, then `?focus=p1`. Build.
+
+### D-276 · 2026-10-27 · Accepted (builds D-266 and D-267; consistency session 6, the plan's last, docs/specs/consistency.md)
+**Names and lines: magenta numbers, one edge-name geometry; unframed pieces as ink on the canvas, a small line for a
+name, the console hanging under them, and a cell-by-cell turn between framed and unframed.**
+The user asked for session 6 of the consistency plan.
+- *Numbers (D-266):* a piece's name taken apart when it starts with a number (`01 Pazar` → magenta `01`, then `PAZAR ·
+  PLANE`; `numberOf` in CanvasView, the heading kicker's pattern); kanban column numbers and the suggested order's
+  (`Kanban.module.css .n`) and the right panel's section numbers (`SidePanel.module.css .n`) magenta, faint before.
+  Sections' and headings' small lines were magenta already.
+- *Edge-name geometry (D-266):* a piece's name in its edge: `16 px` lead, `8 px` clear each side, in screen px (`/ --z`);
+  a section's: the same in its space's px (lead line 16, padding 8; before, both grew with the name's size).
+- *DESIGN.md:* "Names and lines on the canvas" holds D-266's two voices, numbers, edges, bands, and D-267.
+- *Unframed (D-267):* no fill, edge, shadow or band (D-274's surface already skipped open pieces); the feathered paper
+  box under the contents is gone except for a single document (a page of text); instead each head and cell of a
+  matrix, a table's rows and heads, a kanban's heads and tasks, a list's rows, head row and sheets have a `::before`
+  shade under them (page 80 %, `0 0 16px 10px` at 72 %, z-index −1 so no neighbour's covers another's text); a table's
+  and list's solid fill off. The name: `04 ── RIVALS · TABLE`, mono 11 screen px, caps, .14em, the number magenta, a
+  short rule after it (only with a number), 8 px over the contents at their left, on a hugging shade. The console:
+  hanging 10 px (× `--cs`) under the contents' right end, its own edge all round, on D-275's hover rule.
+- *Going between (D-267):* `PieceBox` sees `open` change (from anyone) and for 320 ms draws the window as it was
+  (`.ghostWindow`: the surface, edge, shadow, band) breaking (unframing) or building (framing) with `runCells`, while
+  the contents' view is eased (both ends) from fitted in the window to their own size, or back (`between`); framing,
+  the piece shows no frame of its own until the copy has built. Reduced motion: at once.
+- *Verified:* headless on the emulators: `01 PAZAR`, `02 WORK`, `04 RIVALS` with magenta numbers; a table unframed and
+  framed again (frames 40 ms apart: the window's cells going, then coming; reduced: no copy at all); unframed table,
+  kanban, list and matrix on the canvas with their small-line names and row shades; the hanging console. Build.
+- *Still asked, not decided:* text's shade hugging each line (`<Ink>`) and one family of rules (spec "Asked, not
+  decided").

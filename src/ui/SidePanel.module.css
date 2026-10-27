@@ -149,8 +149,9 @@
   margin-bottom: 4px;
 }
 
+/* A number, wherever there is one, is magenta (D-266). */
 .n {
-  color: var(--fg-faint);
+  color: var(--accent-magenta);
 }
 
 .foot {
