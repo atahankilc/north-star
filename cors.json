@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["https://atahankilc.github.io", "http://localhost:5173"],
+    "origin": ["https://atahankilc.github.io", "http://localhost:5288"],
     "method": ["GET"],
     "maxAgeSeconds": 3600
   }

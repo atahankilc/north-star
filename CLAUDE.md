@@ -29,7 +29,7 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 - If a decision changes a spec, update the relevant `/docs` file in the same change.
 
 ## Commands
-- `npm run dev` (real Firebase), `npm run dev:emu` + `npm run emulators` (local, test users; builds and runs the functions too)
+- `npm run dev` (real Firebase, http://localhost:5288, set in `vite.config.ts`), `npm run dev:emu` + `npm run emulators` (local, test users; builds and runs the functions too)
 - `npm run test:rules`: run after any change to `firestore.rules` / `database.rules.json`, then `npm run deploy:rules`
 - `npm run check:memory`: the memory bank agrees with itself (log numbering, every standing decision has a line in
   decisions.md, nothing superseded cited as a rule, state.md ≤ 120 lines); run after editing memory-bank/

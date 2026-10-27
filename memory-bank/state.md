@@ -103,7 +103,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   `window.__curtain.getState().revealed` before capturing.
 - Hidden or background Chrome tabs (the extension's) pause rAF and throttle timers: scripts stall, exit animations never
   finish, screenshots come out stale. In dev, `window.__advance(t, true)` steps frames.
-- The user runs their own dev server on :5173. Use another port (e.g. 5179) and stop your servers when done.
+- The app's port is 5288 (`vite.config.ts`, strict); the user runs their own dev server there. Use another port
+  (e.g. 5179: `npm run dev -- --port 5179`) and stop your servers when done.
 - Several Claude sessions work on this repo at once. Check `git status` and file times before editing shared files
   (memory-bank, NodeCard.tsx…), and don't commit another session's hunks.
 - Test data: click Alice, then create a workspace (no example workspace since D-177). Seed script: sign in to the auth emulator as `test-alice` with the

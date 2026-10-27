@@ -15,4 +15,6 @@ export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
   customLogger: logger,
   plugins: [react()],
+  // This app's own port, so it never lands on another project's 5173; strict, so it fails rather than moving.
+  server: { port: 5288, strictPort: true },
 })

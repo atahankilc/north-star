@@ -17,7 +17,7 @@ Status: Phase 0 (foundations). See [memory-bank/state.md](memory-bank/state.md).
 ```sh
 npm install
 cp .env.example .env.local   # fill in the VITE_FIREBASE_* values
-npm run dev                  # http://localhost:5173/
+npm run dev                  # http://localhost:5288/
 ```
 
 Without Firebase config the UI still runs (sign-in disabled), which is handy for design work.
