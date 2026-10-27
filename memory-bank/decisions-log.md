@@ -4817,3 +4817,38 @@ The user asked for P3 of the priorities plan.
   on: 1 validated, 1 testing`; `[order]` hid and showed it; an unrated card dragged into quick wins joined the order and
   the thirds moved (`P2 → P3`); the wizard's priorities template and its grid preview; light theme. Build.
 
+
+### D-272 · 2026-10-27 · Accepted (builds D-265 for everything but plane cards and text; consistency session 2, docs/specs/consistency.md)
+**`Marks` everywhere else: kanban tasks and card sheets, matrix cells and heads, table cells and rows, documents rows and
+sheets, link chips, pieces, timeline sheets and pills, the SOON band, the suggested order; others' selections as L's.**
+The user asked for session 2 of the consistency plan.
+- *Tiers:* S for matrix cells and heads, table cells, rows and names, documents rows, link chips, timeline pills, SOON
+  pills, the suggested order's rows; M for tasks, card sheets, timeline sheets, documents sheets; L for pieces (D-270's
+  rule: the kind's tier, a step down when small on screen).
+- *Tones:* a task's card (cyan with none), a sheet's card type, a piece's kind (D-263's colours, `KIND_TONE` in
+  CanvasView), a link chip its kind, a documents row `--link-depends`; cells cyan (they have no tone of their own).
+- *What each replaced:* matrix cells' gradient corners; table cells' `[ ● ]` and their hover wash; the table row's cyan
+  wash for the card selected (now the band's L's in the card's colour, D-247's picked card the same); documents rows'
+  hover wash and the open one's cyan wash + left bar, sheets' hover edge; link chips' fill when selected; pieces'
+  hover corners; timeline sheets' and pills' outlines, the over cell's cyan box; SOON pills' cyan edge; the order's
+  cyan inset; tasks' and card sheets' own corner marks; `PeerRing` and `PeerTaskRing` (both gone; `usePeersOn(id,
+  space?)`, no space for tasks and card heads).
+- *Kanban drag:* the cyan slot line is now a gap as tall as the held task (or card) opening where it lands, its L's on
+  the gap's corners in its card's colour (`Gap`, shared with CardKanban); a card over its own box shows them on the room
+  it keeps. The held one (ghost) goes 0.8 round the point held, no cyan frame. The timeline's held sheet the same, its
+  `<Landing>` on the day's first slot.
+- *Others' selections in every view:* a card someone has selected (anywhere) shows their L's on its matrix head and its
+  table row's name; a task or card sheet someone picked, on it; a piece, on the canvas.
+- *Zoom:* `Marks` takes `--zs` from its space when not given a zoom (`zsOf(screen)` on the matrix's, table's,
+  documents', kanban's and timeline's worlds), so memoised cells don't draw again as the view zooms.
+- *Clipping:* L's stand outside what they mark, so the timeline's sheets and pills and the SOON pills cut their text in
+  an inner span now, and a documents sheet sits in a wrapper (`sheetAt`) holding its marks.
+- *Left as it is:* a piece in edit mode keeps its cyan grips and bars and shows no selection L's (session 3 gives it
+  the resize handles and the landing L's); matrix/table "hot" heads (the hovered cell's row and column) stay a
+  highlight, not marks.
+- *Verified:* headless on the emulators, no-preference and reduced: a matrix on the canvas hovered (L, its kind's
+  colour); a matrix cell hovered and selected, a card head picked (its L's in the card's colour); a table cell, a row
+  picked (the band's L's); a documents row hovered; a task hovered and picked; a task dragged to another column (a
+  64 px gap with green L's, the ghost at 0.8); a tray pill dragged onto a day (landing L's); a link chip hovered
+  (gliding in), clicked (from the corners, sprung), reduced (at once); Bob's picks seen by Alice on a table row's name
+  and on a task. Build.

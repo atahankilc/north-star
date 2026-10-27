@@ -61,8 +61,8 @@
   cursor: grabbing;
 }
 
-/* Corner marks (D-150's, on a plane, D-181): hidden at rest, grey just outside the corners on hover. In edit mode each
-   corner is a section's resize grip (D-194): an L just inside it, 2 px, in cyan, taking the pointer to resize. */
+/* Hover and selection are its `Marks` (D-265). In edit mode each corner is a section's resize grip (D-194): an L just
+   inside it, 2 px, in cyan, taking the pointer to resize (until consistency session 3). */
 .mark {
   position: absolute;
   z-index: 1;
@@ -81,10 +81,6 @@
 .mark[data-handle='ne'] { top: -5px; right: -5px; border-top-width: 1px; border-right-width: 1px; }
 .mark[data-handle='se'] { bottom: -5px; right: -5px; border-bottom-width: 1px; border-right-width: 1px; }
 .mark[data-handle='sw'] { bottom: -5px; left: -5px; border-bottom-width: 1px; border-left-width: 1px; }
-
-.piece:hover .mark {
-  opacity: 1;
-}
 
 .piece[data-editing='true'] .mark {
   width: 34px;

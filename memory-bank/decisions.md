@@ -86,6 +86,9 @@ old reports are moved to documents once (D-248).
 - `Marks` built (D-270, session 1): `src/ui/Marks.tsx` on plane cards, packages and all text; tier by kind, a step down
   when small on screen; a text's drag and a selection's drag go 0.8 round the point held, `<Landing>` L's where they land;
   `<BoxSelect>`; peers as L's + a name tag. Sections still move whole until session 3.
+- `Marks` everywhere else (D-272, session 2): tasks, card sheets, matrix cells/heads, table cells/rows, documents rows,
+  link chips, pieces, timeline; a kanban drop opens a gap with the L's round it, the held one 0.8; others' selections
+  as L's in every view (`PeerRing`/`PeerTaskRing` gone). Pieces in edit mode keep their grips until session 3.
 
 ## Motion and backdrop
 - One entrance everywhere: cell-by-cell build-up in random order, all at once, starting at `revealed`; components 320 ms,

@@ -7,7 +7,8 @@
 // from the corners too. While it's dragged they're on `<Landing>`, where it will land; let go, it grows into them and
 // they spring out. Others who have it selected get the same L's in their colour, their name on a tag. Reduced motion:
 // states switch at once.
-// Drawn inside a space scaled by `zoom` (screen px per space px), so the sizes are divided back by it (`--zs`).
+// Drawn inside a space scaled by `zoom` (screen px per space px), so the sizes are divided back by it (`--zs`); without
+// `zoom` it's the `--zs` its space sets (`zsOf`), so a memoised cell needn't draw again as the view zooms.
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { useMotion } from '../state/motion'
 import styles from './Marks.module.css'
@@ -25,8 +26,11 @@ export function tierFor(tier: Tier, screenPx: number): Tier {
 // How long a dropped thing takes to grow back into its marks before they spring out.
 const SETTLE_MS = 180
 
+// What a space sets for the marks inside it, when they don't each get its zoom.
+export const zsOf = (zoom: number) => ({ '--zs': 1 / zoom }) as CSSProperties
+
 type Props = {
-  zoom: number
+  zoom?: number
   // Its kind's tier, and its short side in its space's px (a tier down when small on screen).
   tier?: Tier
   short?: number
@@ -81,11 +85,11 @@ export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live 
               ? 'hover'
               : 'none'
   const style = {
-    '--zs': 1 / zoom,
+    ...(zoom && { '--zs': 1 / zoom }),
     '--pad': `${pad}px`,
     ...(tone && { '--tone': tone }),
   } as CSSProperties
-  const t = tierFor(tier, short * zoom)
+  const t = tierFor(tier, short * (zoom ?? 1))
   return (
     <>
       <span

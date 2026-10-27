@@ -121,12 +121,6 @@
   background: var(--wash-2);
 }
 
-.cell[data-over='true'] {
-  outline: 1px solid var(--accent-cyan);
-  outline-offset: -1px;
-  background: color-mix(in srgb, var(--accent-cyan) 8%, transparent);
-}
-
 .today {
   position: absolute;
   width: 1px;
@@ -147,25 +141,24 @@
   font-size: 13px;
   line-height: var(--bar);
   text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   cursor: pointer;
   user-select: none;
+}
+
+/* A sheet's or pill's text, cut with `…`; its marks stand outside it. */
+.line {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .layer:not([data-live='true']) .task {
   cursor: default;
 }
 
-.task:hover,
 .task:focus-visible {
   outline: 1px solid var(--fg-dim);
-  outline-offset: -1px;
-}
-
-.task[data-selected='true'] {
-  outline: 1px solid var(--accent-cyan);
   outline-offset: -1px;
 }
 
@@ -192,8 +185,6 @@
 
 .task[data-lifted] {
   z-index: 3;
-  outline: 1px solid var(--accent-cyan);
-  outline-offset: -1px;
   pointer-events: none;
 }
 
@@ -227,6 +218,7 @@
 }
 
 .pill {
+  position: relative;
   max-width: 260px;
   padding: 4px 9px;
   border: 1px solid var(--line-hover);
@@ -235,16 +227,10 @@
   color: var(--fg);
   font-family: var(--font-display);
   font-size: 12.5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   cursor: pointer;
   user-select: none;
 }
 
-.pill[data-selected='true'] {
-  border-color: var(--accent-cyan);
-}
 
 .trayNone,
 .trayHint {

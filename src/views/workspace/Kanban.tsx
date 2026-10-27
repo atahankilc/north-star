@@ -46,7 +46,8 @@ import { DockAction } from './FocusDock'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import { loadFolds, saveFolds, taskRows, type Lane } from './rows'
 import { setPresenceDrag } from '../../data/presence'
-import { PeerTaskDrags, PeerTaskRing } from './collab'
+import { PeerTaskDrags, usePeersOn } from './collab'
+import { Marks, zsOf } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
@@ -197,6 +198,8 @@ export function KanbanView({ onCard, ...props }: Props) {
 
 function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }: Props) {
   const { wid, tasks: all, cards, threads } = useWs()
+  // Its screen px per its own, for the marks inside it (D-265).
+  const screen = useCanvasView((s) => (onCanvas || !live ? (s.cams[wid]?.zoom ?? 1) : 1) * view.zoom)
   const { user } = useAuth()
   const setup = kanbanOf(piece)
   const cols = setup.cols
@@ -473,7 +476,7 @@ function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }:
 
   return (
     <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }}>
         <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'kanban'} data-dragging={held ? true : undefined} data-lanes={field ? true : undefined} onPointerDown={boxPress}>
           <SoonBand piece={piece} tasks={shown} live={live} picked={isPicked} onPick={pick} onPress={own} />
           <div className={styles.row}>
@@ -537,7 +540,7 @@ function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }:
                         >
                           <div className={styles.list}>
                             {list.map((t, k) => (
-                              <Slotted key={t.id} slot={slot === k}>
+                              <Slotted key={t.id} slot={slot === k ? drag!.size[1] : 0} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined}>
                                 <TaskCard
                                   task={t}
                                   card={cardOf(t)}
@@ -547,7 +550,6 @@ function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }:
                                   talk={live && !!threadOn(threads, t.id)}
                                   extra={
                                     <>
-                                      <PeerTaskRing id={t.id} />
                                       {/* In its top-right corner (under it would sit on the next task). */}
                                       {live && (
                                         <span className={styles.chipHere}>
@@ -562,7 +564,7 @@ function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }:
                                 />
                               </Slotted>
                             ))}
-                            {slot >= 0 && slot >= list.length && <span className={styles.slot} aria-hidden />}
+                            {slot >= 0 && slot >= list.length && <Gap h={drag!.size[1]} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined} />}
                             {!list.length && slot < 0 && adding !== cell && !field && <span className={styles.empty}>· nothing yet</span>}
                             {live && editor && lane.drop && (
                               <AddTask open={adding === cell} quiet={!!field} onPress={own} onOpen={() => useKanbanUi.setState({ adding: cell })} onClose={() => useKanbanUi.setState({ adding: null })} onAdd={(title) => add(c.id, lane.key, title)} />
@@ -577,7 +579,7 @@ function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }:
             )
           })}
           {held && drag && (
-            <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0] }} aria-hidden>
+            <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
               <TaskCard task={held} card={cardOf(held)} finished={!!cols.find((c) => c.id === (drag.over?.col ?? held.col))?.done} selected={false} live lifted />
               {heldIds.length > 1 && <span className={styles.more}>+{heldIds.length - 1}</span>}
             </div>
@@ -635,7 +637,8 @@ function SoonBand({ piece, tasks, live, picked, onPick, onPress }: { piece: With
           return (
             <button key={t.id} className={styles.soonPill} data-late={late || undefined} data-today={t.due === day || undefined} data-selected={picked(t.id) || undefined} onClick={live ? () => onPick(t) : undefined} tabIndex={live ? 0 : -1} title={t.title}>
               <span className={styles.soonDay}>{late ? `was ${dueText(t.due!)}` : t.due === day ? 'today' : weekday(t.due!)}</span>
-              {t.title}
+              <span className={styles.soonTitle}>{t.title}</span>
+              <Marks tier="s" tone={t.cardType ? TYPE_ACCENT[t.cardType] : undefined} live={live} selected={picked(t.id)} />
             </button>
           )
         })
@@ -688,13 +691,22 @@ export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: b
   return <Menu label="lanes" up summary={rows ? NAME[rows] : 'none'} active={!!rows} items={items} ariaLabel="Lanes" noun="ways" />
 }
 
-// A task with the place a held one would land just above it.
-function Slotted({ slot, children }: { slot: boolean; children: ReactNode }) {
+// A task with the place a held one would land just above it (`slot`: its height, 0 none).
+function Slotted({ slot, tone, children }: { slot: number; tone?: string; children: ReactNode }) {
   return (
     <>
-      {slot && <span className={styles.slot} aria-hidden />}
+      {slot > 0 && <Gap h={slot} tone={tone} />}
       {children}
     </>
+  )
+}
+
+// Where a held task or card lands (D-265): a gap opens as tall as it, its L's on the gap's corners at full size.
+export function Gap({ h, tone }: { h: number; tone?: string }) {
+  return (
+    <span className={styles.slot} style={{ height: h }} aria-hidden>
+      <Marks tone={tone} pressed />
+    </span>
   )
 }
 
@@ -835,8 +847,10 @@ type CardProps = {
 // A task: raised paper as tall as its title (Geist, up to three lines), its left edge in the colour of the card it's for.
 // Under the title, only when there's something: the card's name, then on the right its due day (magenta once past,
 // unless finished), its checklist as cells, who it's given to (a square with their initials). Finished: a green `✓`
-// before the title, the title grey. Hover and selection are a card's corner marks (D-150).
+// before the title, the title grey. Hover and selection are its marks (D-265), in its card's colour (cyan with none);
+// others who have it picked, theirs in their colours.
 function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, talk, onPointerDown, onClick }: CardProps) {
+  const peers = usePeersOn(task.id)
   const checks = task.checks ?? []
   const ticked = checks.filter((c) => c.done).length
   const late = overdue(task, finished)
@@ -904,9 +918,7 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, 
           + log what it taught
         </button>
       )}
-      {(['nw', 'ne', 'se', 'sw'] as const).map((c) => (
-        <span key={c} className={styles.mark} data-corner={c} aria-hidden />
-      ))}
+      {live && !lifted && <Marks tone={tone} selected={selected} peers={peers} />}
       {extra}
     </div>
   )

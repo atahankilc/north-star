@@ -10,6 +10,7 @@ import { deleteEdge, FOR, reverseEdge, updateEdge, type Edge } from '../../data/
 import { useCanvasView } from '../../state/canvasView'
 import { Select } from '../../ui/Select'
 import { useWs } from './context'
+import { Marks } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import styles from './PlaneLinks.module.css'
 
@@ -195,6 +196,7 @@ export function LinkChips({ links, live, editor, zoom }: { links: Drawn[]; live:
               }}
             >
               {text}
+              {live && <Marks zoom={zoom} tier="s" tone="var(--tone)" selected={s.selected} />}
               {thread && (
                 <span className={styles.thread}>
                   <ThreadChip wid={wid} thread={thread} zoom={zoom} />

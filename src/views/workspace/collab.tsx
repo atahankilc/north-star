@@ -229,49 +229,15 @@ const EASE_S = 0.45
 export const stopFollowing = () => usePresence.getState().following && usePresence.getState().follow(null)
 
 // Who else, in this space, has `id` selected: a frame in their colour round it, with their name (D-067, D-068).
-// Who else has this selected in this space, in their colours: their L's on it (D-265).
-export function usePeersOn(id: string, space: string): PeerMark[] {
+// Who else has this selected (in this space; a task is on one kanban only, wherever it's drawn), in their colours:
+// their L's on it (D-265).
+export function usePeersOn(id: string, space?: string): PeerMark[] {
   const peers = usePresence((s) => s.peers)
   const tone = useThemeAccent()
   const me = firebase?.auth.currentUser?.uid
-  return peers.filter((p) => p.uid !== me && spaceOf(p) === space && hasSelected(p, id)).map((p) => ({ uid: p.uid, name: p.name, color: tone(p.color) }))
-}
-
-export function PeerRing({ id, space }: { id: string; space: string }) {
-  const peers = usePresence((s) => s.peers)
-  const tone = useThemeAccent()
-  // Never yourself (presence leaves you out; this makes sure, other tabs of yours included).
-  const me = firebase?.auth.currentUser?.uid
-  const on = peers.filter((p) => p.uid !== me && spaceOf(p) === space && hasSelected(p, id))
-  if (!on.length) return null
-  return (
-    <>
-      {on.map((p, i) => (
-        <span key={p.uid} className={styles.ring} style={{ ['--peer' as string]: tone(p.color), ['--i' as string]: i }} aria-hidden>
-          <span className={styles.ringName}>{p.name}</span>
-        </span>
-      ))}
-    </>
-  )
-}
-
-// Who else has this task picked (D-260): a frame in their colour round it with their name, as round a card (D-191).
-// Wherever its kanban is drawn (its focus, beside a plane, open on the canvas): a task is on one kanban only.
-export function PeerTaskRing({ id }: { id: string }) {
-  const peers = usePresence((s) => s.peers)
-  const tone = useThemeAccent()
-  const me = firebase?.auth.currentUser?.uid
-  const on = peers.filter((p) => p.uid !== me && hasSelected(p, id))
-  if (!on.length) return null
-  return (
-    <>
-      {on.map((p, i) => (
-        <span key={p.uid} className={styles.ring} style={{ ['--peer' as string]: tone(p.color), ['--i' as string]: i }} aria-hidden>
-          <span className={styles.ringName}>{p.name}</span>
-        </span>
-      ))}
-    </>
-  )
+  return peers
+    .filter((p) => p.uid !== me && (space === undefined || spaceOf(p) === space) && hasSelected(p, id))
+    .map((p) => ({ uid: p.uid, name: p.name, color: tone(p.color) }))
 }
 
 // Tasks others are dragging on this kanban (D-260): each a ghost of its task in their colour, where they hold it, with

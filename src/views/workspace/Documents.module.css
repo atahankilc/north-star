@@ -75,6 +75,7 @@
 }
 
 .row {
+  position: relative;
   display: flex;
   align-items: center;
   border-bottom: 1px dashed var(--line);
@@ -84,16 +85,7 @@
   cursor: pointer;
 }
 
-.layer[data-live='true'] .row:hover {
-  background: var(--wash-1);
-}
-
-/* The one open beside the list. */
-.row[data-lit],
-.sheet[data-lit] {
-  background: var(--wash-cyan);
-  box-shadow: inset 2px 0 0 var(--accent-cyan);
-}
+/* Hovered, and the one open beside the list: its marks (D-265). */
 
 .cell {
   display: flex;
@@ -165,6 +157,10 @@
   background: var(--bg);
 }
 
+.sheetAt {
+  position: relative;
+}
+
 .sheet {
   position: relative;
   display: flex;
@@ -179,10 +175,6 @@
 
 .layer[data-live='true'] .sheet {
   cursor: pointer;
-}
-
-.layer[data-live='true'] .sheet:hover {
-  border-color: var(--line-hover);
 }
 
 .fold {

@@ -12,13 +12,14 @@ import { DOC_LIMITS, DocumentError, downloadDocument, emptyDocuments, refusal, r
 import { setDocumentsSetup } from '../../data/pieces'
 import { useHistory } from '../../data/history'
 import { useAuth } from '../../data/auth'
-import type { Bounds, PlaneCam } from '../../state/canvasView'
+import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { Select } from '../../ui/Select'
 import { ago } from '../../ui/ago'
 import { useWs } from './context'
 import { KindMark, lengthOf } from './DocContent'
 import { useOpenSize } from './shownBox'
 import type { FindItem } from './find'
+import { Marks, zsOf } from '../../ui/Marks'
 import styles from './Documents.module.css'
 
 // Its parts in its own px: the table's head and rows, the shelf's sheets.
@@ -172,7 +173,7 @@ type Props = {
 }
 
 export function DocumentsView({ piece, view, live, editor, onCanvas = false, onOpen, page: pageAt }: Props) {
-  const { documents } = useWs()
+  const { documents, wid } = useWs()
   const { user } = useAuth()
   const me = user?.id
   const setup = documentsOf(piece)
@@ -208,7 +209,9 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
     ro.observe(el)
     return () => ro.disconnect()
   }, [onCanvas, piece.id])
-  const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }
+  // Its screen px per its own, for the marks inside it (D-265).
+  const screen = useCanvasView((s) => (onCanvas || !live ? (s.cams[wid]?.zoom ?? 1) : 1) * view.zoom)
+  const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }
   // A row's or sheet's grip drags it out onto the canvas (editors only): the canvas places it where it's let go.
   const grip = (d: WithId<Doc>) =>
     // Only where the list is live on the canvas (unframed, D-234): framed it's a picture, nothing on it takes a click.
@@ -229,8 +232,9 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
         ) : setup.view === 'shelf' ? (
           <div className={styles.shelf} style={{ width: shelfW(shown.length), padding: D.pad, gap: D.sheet.gap, gridTemplateColumns: `repeat(${shelfCols(shown.length)}, ${D.sheet.w}px)` }}>
             {shown.map((d) => (
+              // Its marks outside the sheet, which cuts its text off at its foot (D-265).
+              <div key={d.id} className={styles.sheetAt}>
               <div
-                key={d.id}
                 className={styles.sheet}
                 style={{ height: D.sheet.h }}
                 data-find-box
@@ -254,6 +258,8 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                   <span>{ago(d.createdAt)}</span>
                 </span>
                 {grip(d)}
+              </div>
+              <Marks tone="var(--link-depends)" live={live} selected={readers.includes(d.id)} />
               </div>
             ))}
           </div>
@@ -306,6 +312,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
                     {grip(d)}
                   </span>
                 )}
+                <Marks tier="s" tone="var(--link-depends)" live={live} selected={readers.includes(d.id)} />
               </div>
             ))}
           </div>

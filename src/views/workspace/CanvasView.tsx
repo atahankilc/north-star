@@ -29,7 +29,8 @@ import { glide, stopGlide } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { isOwnerOf } from '../../data/workspaces'
 import type { Thread } from '../../data/model'
-import { Follow, PeerCursors, PeerRing, stopFollowing, useCursorReport, usePresenceReport } from './collab'
+import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePresenceReport } from './collab'
+import { Marks } from '../../ui/Marks'
 import { DrawSection } from './DrawSection'
 import { labelBox, TextItems } from './TextItems'
 import { spaceBounds } from './spaceBounds'
@@ -1224,7 +1225,19 @@ function dragBox(from: Box, handle: Handle, dx: number, dy: number, free: boolea
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
 
+// A piece's kind's colour (D-263): its marks' tone now, its band later.
+const KIND_TONE: Record<string, string> = {
+  plane: 'var(--fg)',
+  matrix: 'var(--link-solves)',
+  table: 'var(--link-part)',
+  kanban: 'var(--link-draws)',
+  documents: 'var(--link-depends)',
+  document: 'var(--link-depends)',
+  timeline: 'var(--link-competes)',
+}
+
 function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers, host }: BoxProps) {
+  const peers = usePeersOn(piece.id, CANVAS)
   const { wid } = useWs()
   const kind = kindOfPiece(piece)
   // A document on its own is named by its document's title (D-232); it has no name of its own.
@@ -1362,7 +1375,8 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
           )}
         </span>
       )}
-      <PeerRing id={piece.id} space={CANVAS} />
+      {/* Its marks (D-265, tier L, its kind's colour): hover and others' selection; edit mode keeps its grips (session 3). */}
+      <Marks zoom={cam.zoom} tier="l" tone={KIND_TONE[kind]} live={!editing} selected={selected && !editing} peers={peers} />
       {/* A comment on the plane itself (D-195), not on what's in it. */}
       <ThreadChip wid={wid} thread={own} zoom={cam.zoom} />
       {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). Open on the canvas (D-228),

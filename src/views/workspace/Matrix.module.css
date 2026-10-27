@@ -316,41 +316,6 @@
   background: var(--wash-3);
 }
 
-/* Corner marks (D-150): grey just inside on hover, cyan just outside once selected. */
-.marks {
-  --m: var(--fg-dim);
-  --l: 7px;
-  --t: 1px;
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  background:
-    linear-gradient(var(--m), var(--m)) left top / var(--l) var(--t) no-repeat,
-    linear-gradient(var(--m), var(--m)) left top / var(--t) var(--l) no-repeat,
-    linear-gradient(var(--m), var(--m)) right top / var(--l) var(--t) no-repeat,
-    linear-gradient(var(--m), var(--m)) right top / var(--t) var(--l) no-repeat,
-    linear-gradient(var(--m), var(--m)) left bottom / var(--l) var(--t) no-repeat,
-    linear-gradient(var(--m), var(--m)) left bottom / var(--t) var(--l) no-repeat,
-    linear-gradient(var(--m), var(--m)) right bottom / var(--l) var(--t) no-repeat,
-    linear-gradient(var(--m), var(--m)) right bottom / var(--t) var(--l) no-repeat;
-  transition:
-    opacity var(--dur-fast) var(--ease-out),
-    inset var(--dur-fast) var(--ease-out);
-}
-
-.layer[data-live='true'] .cell:hover > .marks {
-  opacity: 1;
-}
-
-.cell[data-selected='true'] > .marks {
-  --m: var(--accent-cyan);
-  --l: 9px;
-  --t: 2px;
-  inset: -4px;
-  opacity: 1;
-}
-
 /* A scale's step: a square filled to it from the left, in its colour (D-212); empty, a faint outline. */
 .square {
   display: block;

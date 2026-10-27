@@ -121,7 +121,7 @@ the cyan L's. Peer selection on these as L's + name tag.
 Check: hover, press, release, deselect on a card and on each text kind, with and without reduced motion; drag a card,
 a heading, a sticky note (landing L's, snapped, alt free); a multi-select drag; a peer's selection.
 
-## Session 2: marks everywhere else · not done
+## Session 2: marks everywhere else · **done** (D-272, 2026-10-27)
 Kanban tasks (landing L's round the opening gap instead of the cyan slot; the held task 0.8), matrix cells and heads,
 table rows and cells (no `[ ● ]`), documents rows, link chips, pieces' hover and selection (tier L), timeline sheets,
 `PeerMarks` in every view.
@@ -157,4 +157,8 @@ the transition both ways).
   CanvasView moves by `dragShift`); give it the landing L's with the pieces in session 3.
 - The project title keeps its edge-grey corner brackets as decoration; its marks sit just outside them, which reads
   as a double corner. Ask the user whether the brackets go once marks are everywhere.
-- `PeerRing` (a full frame) is left only on pieces (CanvasView) and `PeerTaskRing` on kanban tasks: session 2.
+- `PeerRing` and `PeerTaskRing` are gone (D-272).
+- Session 2 (D-272): a piece in edit mode shows its old cyan grips and no selection L's; session 3 replaces the grips
+  with D-265's handles. The matrix's and table's "hot" head (the hovered cell's row and column) stays a highlight.
+- L's stand outside what they mark: anything with `overflow: hidden` that gets marks needs its text cut in an inner
+  span instead (done for timeline sheets/pills, SOON pills; documents sheets sit in a wrapper).

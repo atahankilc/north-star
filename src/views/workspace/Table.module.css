@@ -45,12 +45,6 @@
   background: var(--wash-1);
 }
 
-/* The card selected on the plane beside it (D-211). */
-.band[data-lit='true'] {
-  background: var(--wash-cyan);
-  box-shadow: inset 0 -1px 0 var(--accent-cyan);
-}
-
 .name[data-pick='true'] {
   cursor: pointer;
 }
@@ -234,30 +228,7 @@
   cursor: pointer;
 }
 
-.layer[data-live='true'] .cell:hover {
-  background: var(--wash-2);
-}
-
-/* Selected: `[ ● ]` brackets in cyan, as the matrix's. */
-.cell[data-selected='true']::before,
-.cell[data-selected='true']::after {
-  position: absolute;
-  top: 50%;
-  color: var(--accent-cyan);
-  font-size: var(--text-sm);
-  transform: translateY(-50%);
-}
-
-.cell[data-selected='true']::before {
-  content: '[';
-  left: 2px;
-}
-
-.cell[data-selected='true']::after {
-  content: ']';
-  right: 2px;
-}
-
+/* Hovered and selected: its marks (D-265). */
 .cell:focus-visible {
   background: var(--wash-3);
 }

@@ -23,7 +23,9 @@ import { TYPE_ACCENT } from './PlaneCards'
 import { boxKey, boxPatch, byBox, byColumn, columnsOf, FIELD_NAME, heldCards, isPriorities, NO_VALUE, placeOf, rowFieldOf, rowsOfField, scorer, sureOf, takes, type CardCol } from './kanbanCards'
 import { suggestedOrder, type Ranked } from './cardFacts'
 import { create } from 'zustand'
-import { kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
+import { Gap, kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
+import { Marks, zsOf } from '../../ui/Marks'
+import { usePeersOn } from './collab'
 import { loadFolds, saveFolds } from './rows'
 import styles from './Kanban.module.css'
 
@@ -49,6 +51,8 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
   const order = useMemo(() => (orderOn ? suggestedOrder(held, cards, edges) : []), [orderOn, held, cards, edges])
   const names = useMemo(() => new Map((setup.names ?? []).map((n) => [boxKey(n.col, n.row), n])), [setup.names])
   const selected = useCanvasView((s) => (live ? s.cardSelected : null))
+  // Its screen px per its own, for the marks inside it (D-265).
+  const screen = useCanvasView((s) => (onCanvas || !live ? (s.cams[wid]?.zoom ?? 1) : 1) * view.zoom)
   const board = useRef<HTMLDivElement>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const dragRef = useRef(drag)
@@ -155,7 +159,7 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
 
   return (
     <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }}>
         <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || `cards by ${FIELD_NAME[field]}`} data-dragging={lifted ? true : undefined} data-order={orderOn || undefined}>
           <div className={styles.grid}>
           <div className={styles.row}>
@@ -213,11 +217,17 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
                           {name && <span className={styles.boxName}>{name.name}</span>}
                           <div className={styles.list}>
                             {list.map((x) => (
-                              <div key={x.id} style={x.id === lifted?.id ? { visibility: 'hidden' } : undefined}>
+                              <div key={x.id} style={x.id === lifted?.id ? { visibility: 'hidden', position: 'relative' } : undefined}>
                                 {sheet(x, c)}
+                                {/* Over its own box, it lands back in the room it kept: the L's there (D-265). */}
+                                {x.id === lifted?.id && over && here && (
+                                  <span style={{ position: 'absolute', inset: 0, visibility: 'visible' }}>
+                                    <Marks tone={TYPE_ACCENT[x.type]} pressed />
+                                  </span>
+                                )}
                               </div>
                             ))}
-                            {over && !here && <span className={styles.slot} aria-hidden />}
+                            {over && !here && <Gap h={drag!.size[1]} tone={TYPE_ACCENT[lifted!.type]} />}
                             {!list.length && !over && !rowField && <span className={styles.empty}>· none</span>}
                           </div>
                         </div>
@@ -236,7 +246,7 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
           </div>
           {orderOn && <OrderList order={order} unrated={held.length - order.length} live={live} selected={selected} onPick={(c) => live && pick(c)} onPress={own} />}
           {lifted && drag && (
-            <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0] }} aria-hidden>
+            <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
               {sheet(lifted, cols.find((c) => c.id === drag.over?.col), { lifted: true })}
             </div>
           )}
@@ -264,6 +274,7 @@ type SheetProps = {
 // (P1 magenta) on top, its title (Geist, up to three lines), then how sure we are (`◆ high`, `! broken` magenta) and the
 // values it has other than the columns' own.
 function CardSheet({ card, field, rowField, sure, finished, selected, live, lifted, onPointerDown, onClick }: SheetProps) {
+  const peers = usePeersOn(card.id)
   const shown = (f: string) => f !== field && f !== rowField
   const rest = [
     shown('status') && card.type === 'feature' ? card.status : undefined,
@@ -309,9 +320,7 @@ function CardSheet({ card, field, rowField, sure, finished, selected, live, lift
           {rest.join(' · ')}
         </span>
       )}
-      {(['nw', 'ne', 'se', 'sw'] as const).map((c) => (
-        <span key={c} className={styles.mark} data-corner={c} aria-hidden />
-      ))}
+      {live && !lifted && <Marks tone={TYPE_ACCENT[card.type]} selected={selected} peers={peers} />}
     </div>
   )
 }
@@ -368,6 +377,7 @@ function OrderList({ order, unrated, live, selected, onPick, onPress }: OrderPro
             title={`confidence ${r.sure.level}: ${r.sure.why}`}
             onClick={() => onPick(r.card)}
           >
+            <Marks tier="s" tone="var(--tone)" live={live} selected={selected === r.card.id} />
             <span className={styles.n}>{String(i + 1).padStart(2, '0')}</span>
             <span className={styles.orderTitle}>{r.card.title || `untitled ${r.card.type}`}</span>
             <span className={styles.orderScore} data-broken={r.sure.level === 'broken' || undefined}>

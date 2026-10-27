@@ -13,7 +13,7 @@ import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { useAuth } from '../../data/auth'
 import { setTimeline, shownTasks, timelineKanbans, today, TIMELINE_ROWS, updateTask, type Task, type TaskFields, type TimelineRows } from '../../data/tasks'
-import type { Bounds, PlaneCam } from '../../state/canvasView'
+import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import { useWs } from './context'
 import { DockAction } from './FocusDock'
@@ -22,6 +22,7 @@ import { KanbanFilterDock } from './KanbanFilterDock'
 import { passes, useKanbanFilter } from './kanbanFilter'
 import { TYPE_ACCENT } from './PlaneCards'
 import { taskRows, type Lane } from './rows'
+import { Landing, Marks, zsOf } from '../../ui/Marks'
 import styles from './Timeline.module.css'
 
 // Its parts in its own px: the rows' names, a day, the days' head, a task, the gap between, a row's padding, the tray;
@@ -173,21 +174,24 @@ export function TimelineView({ piece, view, live, editor, onTask, span = T.days 
   }
 
   const held = drag?.moving ? tasks.find((t) => t.id === drag.id) : undefined
+  // Its screen px per its own, for the marks inside it (D-265).
+  const screen = useCanvasView((s) => (live ? 1 : (s.cams[wid]?.zoom ?? 1)) * view.zoom)
   const todayAt = Math.round((dayOf(today()) - layout.from) / DAY_MS)
   const days = Array.from({ length: layout.span }, (_, i) => new Date(layout.from + i * DAY_MS))
   const vars = { ['--left' as string]: `${T.left}px`, ['--day' as string]: `${T.day}px`, ['--head' as string]: `${T.head}px`, ['--bar' as string]: `${T.bar}px` } as CSSProperties
+  // Its text cut with `…` inside it, so its marks (D-265) can stand outside it.
   const sheet = (t: Task, late: boolean) => (
-    <>
+    <span className={styles.line}>
       {late && <span className={styles.late}>← {+t.due!.slice(8, 10)} · </span>}
       {t.priority && <span className={styles.p} data-p={t.priority}>{t.priority} </span>}
       {t.title}
-    </>
+    </span>
   )
   const tone = (t: Task) => (t.cardType ? TYPE_ACCENT[t.cardType] : undefined)
 
   return (
     <div className={styles.layer} data-live={live || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }}>
         <div ref={board} className={styles.board} style={{ ...vars, width: layout.w, height: layout.h }} data-dragging={held ? true : undefined}>
           {/* The days' head: `MON 26`, today cyan, weekends faint; a month's first day says its month. */}
           {days.map((d, i) => {
@@ -214,7 +218,6 @@ export function TimelineView({ piece, view, live, editor, onTask, span = T.days 
                   key={i}
                   className={styles.cell}
                   data-weekend={d.getUTCDay() === 0 || d.getUTCDay() === 6 || undefined}
-                  data-over={(held && drag?.over?.row === r.key && drag.over.day === i) || undefined}
                   style={{ left: T.left + i * T.day }}
                 />
               ))}
@@ -241,6 +244,7 @@ export function TimelineView({ piece, view, live, editor, onTask, span = T.days 
                 onClick={live && !editor ? () => pick(p.task) : undefined}
               >
                 {sheet(p.task, p.late)}
+                {live && <Marks tone={t} selected={selected === p.task.id} />}
               </button>
             )
           })}
@@ -250,15 +254,26 @@ export function TimelineView({ piece, view, live, editor, onTask, span = T.days 
             {layout.tray.map((t) =>
               t.id === held?.id ? null : (
                 <button key={t.id} className={styles.pill} data-task={t.id} data-selected={selected === t.id || undefined} style={tone(t) ? ({ ['--tone' as string]: tone(t) } as CSSProperties) : undefined} tabIndex={live ? 0 : -1} onPointerDown={press(t, null)} onClick={live && !editor ? () => pick(t) : undefined}>
-                  ☐ {t.title}
+                  <span className={styles.line}>☐ {t.title}</span>
+                  {live && <Marks tier="s" tone={tone(t)} selected={selected === t.id} />}
                 </button>
               ),
             )}
             {!layout.tray.length && <span className={styles.trayNone}>every task has a day</span>}
             {live && editor && layout.tray.length > 0 && <span className={styles.trayHint}>drag onto a day to give it one</span>}
           </div>
+          {/* Held (D-265): 0.8 round the point held under the pointer, its marks where it lands, on that day's first row. */}
+          {held && drag?.over && (() => {
+            const r = layout.rows.find((x) => x.key === drag.over!.row)
+            return r ? <Landing x={T.left + drag.over.day * T.day + 4} y={r.top + T.pad} w={T.day - 8} h={T.bar} zoom={screen} tone={tone(held)} /> : null
+          })()}
           {held && drag && (
-            <div className={styles.task} data-lifted style={{ left: drag.at[0] - Math.min(drag.grab[0], T.day - 12), top: drag.at[1] - drag.grab[1], width: T.day - 8, ...(tone(held) ? { ['--tone' as string]: tone(held) } : {}) } as CSSProperties} aria-hidden>
+            <div
+              className={styles.task}
+              data-lifted
+              style={{ left: drag.at[0] - Math.min(drag.grab[0], T.day - 12), top: drag.at[1] - drag.grab[1], width: T.day - 8, scale: '0.8', transformOrigin: `${Math.min(drag.grab[0], T.day - 12)}px ${drag.grab[1]}px`, ...(tone(held) ? { ['--tone' as string]: tone(held) } : {}) } as CSSProperties}
+              aria-hidden
+            >
               {sheet(held, false)}
             </div>
           )}

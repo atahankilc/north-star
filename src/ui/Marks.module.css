@@ -7,30 +7,30 @@
 }
 
 .marks[data-tier='s'] {
-  --len: calc(var(--mark-s-len) * var(--zs));
-  --th: calc(var(--mark-s-th) * var(--zs));
-  --hov: calc(var(--mark-s-hover) * var(--zs));
-  --sel: calc(var(--mark-s-sel) * var(--zs));
-  --rest: calc(var(--mark-s-rest) * var(--zs));
-  --press: calc(var(--mark-s-press) * var(--zs));
+  --len: calc(var(--mark-s-len) * var(--zs, 1));
+  --th: calc(var(--mark-s-th) * var(--zs, 1));
+  --hov: calc(var(--mark-s-hover) * var(--zs, 1));
+  --sel: calc(var(--mark-s-sel) * var(--zs, 1));
+  --rest: calc(var(--mark-s-rest) * var(--zs, 1));
+  --press: calc(var(--mark-s-press) * var(--zs, 1));
 }
 
 .marks[data-tier='m'] {
-  --len: calc(var(--mark-m-len) * var(--zs));
-  --th: calc(var(--mark-m-th) * var(--zs));
-  --hov: calc(var(--mark-m-hover) * var(--zs));
-  --sel: calc(var(--mark-m-sel) * var(--zs));
-  --rest: calc(var(--mark-m-rest) * var(--zs));
-  --press: calc(var(--mark-m-press) * var(--zs));
+  --len: calc(var(--mark-m-len) * var(--zs, 1));
+  --th: calc(var(--mark-m-th) * var(--zs, 1));
+  --hov: calc(var(--mark-m-hover) * var(--zs, 1));
+  --sel: calc(var(--mark-m-sel) * var(--zs, 1));
+  --rest: calc(var(--mark-m-rest) * var(--zs, 1));
+  --press: calc(var(--mark-m-press) * var(--zs, 1));
 }
 
 .marks[data-tier='l'] {
-  --len: calc(var(--mark-l-len) * var(--zs));
-  --th: calc(var(--mark-l-th) * var(--zs));
-  --hov: calc(var(--mark-l-hover) * var(--zs));
-  --sel: calc(var(--mark-l-sel) * var(--zs));
-  --rest: calc(var(--mark-l-rest) * var(--zs));
-  --press: calc(var(--mark-l-press) * var(--zs));
+  --len: calc(var(--mark-l-len) * var(--zs, 1));
+  --th: calc(var(--mark-l-th) * var(--zs, 1));
+  --hov: calc(var(--mark-l-hover) * var(--zs, 1));
+  --sel: calc(var(--mark-l-sel) * var(--zs, 1));
+  --rest: calc(var(--mark-l-rest) * var(--zs, 1));
+  --press: calc(var(--mark-l-press) * var(--zs, 1));
 }
 
 /* At rest: further out, unseen; leaving (deselect, hover out), they drift out there and fade. */
@@ -126,13 +126,13 @@
 
 .tag {
   position: absolute;
-  bottom: calc(100% + var(--sel) + var(--th) + 3px * var(--zs) + var(--i) * 15px * var(--zs));
+  bottom: calc(100% + var(--sel) + var(--th) + 3px * var(--zs, 1) + var(--i) * 15px * var(--zs, 1));
   left: calc(-1 * (var(--sel) + var(--th)));
-  padding: 0 calc(5px * var(--zs));
+  padding: 0 calc(5px * var(--zs, 1));
   background: var(--peer);
   color: var(--on-accent);
   font-family: var(--font-mono);
-  font-size: calc(10px * var(--zs));
+  font-size: calc(10px * var(--zs, 1));
   font-style: normal;
   font-weight: 400;
   line-height: 1.4;
@@ -160,8 +160,8 @@
 }
 
 .marks[data-state='box'] {
-  --len: calc(12px * var(--zs));
-  --th: calc(1.5px * var(--zs));
+  --len: calc(12px * var(--zs, 1));
+  --th: calc(1.5px * var(--zs, 1));
 }
 
 .marks[data-state='box'] i {

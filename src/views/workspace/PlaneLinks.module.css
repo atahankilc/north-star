@@ -76,10 +76,7 @@
   opacity: 1;
 }
 
-.chip[data-selected='true'] {
-  background: var(--tone);
-  color: var(--bg);
-}
+/* Hovered and selected: its marks (D-265), the chip itself unchanged. */
 
 /* The selected link's bar, at the screen's size under its chip. */
 .barAt {

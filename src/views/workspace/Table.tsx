@@ -19,6 +19,8 @@ import { useWs } from './context'
 import { useSeen, within } from './visible'
 import { TYPE_ACCENT } from './PlaneCards'
 import type { FindItem } from './find'
+import { usePeersOn } from './collab'
+import { Marks, zsOf } from '../../ui/Marks'
 import styles from './Table.module.css'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
@@ -202,6 +204,8 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   const sel = parseSel(piece.id, useCanvasView((s) => (live ? s.cardSelected : null)))
   // A card selected (on the plane beside it, D-211, or from its row): its row lit.
   const lit = useCanvasView((s) => (live ? s.cardSelected : null))
+  // Its screen px per its own: for the marks inside it (D-265), set once on its world.
+  const screen = useCanvasView((s) => (onCanvas || !live ? (s.cams[wid]?.zoom ?? 1) : 1) * view.zoom)
   // A card's row name clicked: beside its plane the plane goes to it; either way the card's selected, its panel open as
   // on its plane (LensCardPanel).
   const pick = onCard ?? ((card: Card) => useCanvasView.setState({ cardSelected: card.id, labelSelected: null }))
@@ -334,7 +338,9 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
     () => (
       <>
         {seenRows.map(([r, i]) => (
-          <div key={r.key} className={styles.band} data-selected={selected?.r === i || undefined} data-lit={lit === r.key || undefined} style={box(0, T.head + i * T.row, width, T.row)} />
+          <div key={r.key} className={styles.band} data-selected={selected?.r === i || undefined} style={box(0, T.head + i * T.row, width, T.row)}>
+            {r.card && <Marks tier="s" tone={TYPE_ACCENT[r.card.type]} live={false} selected={lit === r.key} />}
+          </div>
         ))}
         <div className={styles.headRule} style={box(0, T.head - 1, width, 1)} />
 
@@ -397,6 +403,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
                 <button key={key} className={styles.cell} data-field={c.field} data-cell={key} data-find={key} data-find-box data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
                   tabIndex={live ? 0 : -1} onClick={live ? () => press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
                   {text ? <span className={styles.text}>{text}</span> : <span className={styles.unset}>·</span>}
+                  <Marks tier="s" live={live} selected={isSel} />
                 </button>
               )
             }
@@ -458,7 +465,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }}>
         <div className={styles.table} style={{ width: width + (live && editor ? T.add : 0), height: bottom + T.add }} role="grid" aria-label={piece.name || 'table'}>
           {headsShown}
 
@@ -547,6 +554,8 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
   const [editing, setEditing] = useState(false)
   const open = (editing || naming) && live && editor
   const tone = row.card ? TYPE_ACCENT[row.card.type] : undefined
+  // Others who have its card selected, wherever (D-265): their L's on its name.
+  const peers = usePeersOn(row.card?.id ?? '')
   return (
     <div className={styles.name} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }} data-find-box data-card={row.card ? true : undefined} title={row.name || undefined} data-pick={onPick ? true : undefined} onPointerDown={onPress} onClick={live && !open && onPick ? (e) => !(e.target as HTMLElement).closest('button') && onPick() : undefined} onDoubleClick={live && editor ? () => setEditing(true) : undefined}>
       {open ? (
@@ -581,6 +590,7 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
           ×
         </button>
       )}
+      <Marks tier="s" tone={tone} live={live && !!onPick} peers={live ? peers : undefined} />
     </div>
   )
 }
@@ -608,6 +618,7 @@ function OwnCell({ id, col, cell, style, label, selected, live, typing, onPress,
   if (typing)
     return (
       <div className={styles.cell} style={style} data-selected onPointerDown={onPress}>
+        <Marks tier="s" selected />
         <input
           className={styles.cellField}
           autoFocus
@@ -664,6 +675,7 @@ function OwnCell({ id, col, cell, style, label, selected, live, typing, onPress,
       ) : (
         <span className={styles.unset}>·</span>
       )}
+      <Marks tier="s" live={live} selected={selected} />
     </button>
   )
 }

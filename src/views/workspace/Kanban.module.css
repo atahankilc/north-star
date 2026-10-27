@@ -407,90 +407,24 @@
   letter-spacing: 0;
 }
 
-/* Hover and selection: a card's corner marks (D-150), grey a little out on hover, cyan just outside once selected. */
-.mark {
-  --len: 12px;
-  --out: 6px;
-  --thick: 2px;
-  --at: calc(-1 * (var(--out) + var(--thick)));
-  position: absolute;
-  width: var(--len);
-  height: var(--len);
-  border: 0 solid var(--fg-dim);
-  opacity: 0;
-  pointer-events: none;
-  transition-property: top, right, bottom, left, border-color, opacity;
-  transition-duration: 160ms;
-  transition-timing-function: var(--ease-out);
-}
-
-.mark[data-corner='nw'] { top: var(--at); left: var(--at); border-top-width: var(--thick); border-left-width: var(--thick); }
-.mark[data-corner='ne'] { top: var(--at); right: var(--at); border-top-width: var(--thick); border-right-width: var(--thick); }
-.mark[data-corner='se'] { bottom: var(--at); right: var(--at); border-bottom-width: var(--thick); border-right-width: var(--thick); }
-.mark[data-corner='sw'] { bottom: var(--at); left: var(--at); border-bottom-width: var(--thick); border-left-width: var(--thick); }
-
-.layer[data-live='true'] .task:hover > .mark,
-.task:focus-visible > .mark {
-  opacity: 1;
-}
-
-/* While one is held, the others show nothing on hover. */
-.board[data-dragging='true'] .task:hover > .mark {
+/* Hover and selection are its marks (D-265). While one is held, the others show nothing on hover. */
+.board[data-dragging='true'] .task:hover > [data-state='none'] i {
   opacity: 0;
 }
 
-.task[data-selected='true'] > .mark {
-  --out: 3px;
-  border-color: var(--accent-cyan);
-  opacity: 1;
-}
-
-/* Held: under the pointer, over everything, framed in cyan (no lift, no scale: D-061). */
+/* Held: under the pointer, over everything, 0.8 round the point held (D-265; no lift: D-061). */
 .ghost {
   position: absolute;
   z-index: 2;
   pointer-events: none;
 }
 
-.task[data-lifted='true'] {
-  box-shadow: inset 0 0 0 1px var(--accent-cyan);
-}
-
-.task[data-lifted='true'][data-card='true'] {
-  box-shadow:
-    inset 2px 0 0 var(--tone),
-    inset 0 0 0 1px var(--accent-cyan);
-}
-
-.task[data-lifted='true'] > .mark {
-  opacity: 0;
-}
-
-/* Where a held task lands: a cyan line with a tick at each end, in the gap between two tasks. */
+/* Where a held one lands: a gap opens as tall as it, its marks on the gap's corners (D-265). */
 .slot {
   position: relative;
-  height: 2px;
-  margin: -5px 0;
-  background: var(--accent-cyan);
+  display: block;
+  flex: none;
   pointer-events: none;
-}
-
-.slot::before,
-.slot::after {
-  content: '';
-  position: absolute;
-  top: -3px;
-  width: 2px;
-  height: 8px;
-  background: var(--accent-cyan);
-}
-
-.slot::before {
-  left: 0;
-}
-
-.slot::after {
-  right: 0;
 }
 
 .empty {
@@ -575,7 +509,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mark,
   .rule {
     transition: none;
   }
@@ -646,12 +579,18 @@
   color: var(--fg);
   font-family: var(--font-display);
   font-size: 12.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  position: relative;
   cursor: pointer;
 }
 
-.soonPill:hover,
+/* Its title cut with `…`; its marks (D-265) stand outside the pill. */
+.soonTitle {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .soonPill:focus-visible {
   border-color: var(--fg-dim);
   outline: none;
@@ -659,10 +598,6 @@
 
 .soonPill[data-late='true'] {
   border-color: var(--accent-magenta);
-}
-
-.soonPill[data-selected='true'] {
-  border-color: var(--accent-cyan);
 }
 
 .soonDay {
@@ -880,6 +815,7 @@
 
 /* A row: its place, its type's bar, its title, its score, the suggested priority. */
 .orderRow {
+  position: relative;
   display: grid;
   grid-template-columns: 2.5ch 1fr auto auto;
   align-items: baseline;
@@ -907,9 +843,6 @@
 
 .orderRow[data-selected='true'] {
   background: var(--bg-raised);
-  box-shadow:
-    inset 2px 0 0 var(--tone),
-    inset 0 0 0 1px var(--accent-cyan);
 }
 
 .orderTitle {
