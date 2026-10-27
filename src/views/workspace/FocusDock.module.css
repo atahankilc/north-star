@@ -9,9 +9,10 @@
   align-items: baseline;
   gap: var(--space-3);
   padding: 7px var(--space-4) 9px;
-  border: 1px solid var(--line-hover);
+  border: 1px solid var(--piece-edge);
   border-bottom: 0;
-  background: var(--bg);
+  /* On the piece in focus: its surface (D-263). */
+  background: var(--piece);
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);

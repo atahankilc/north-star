@@ -78,7 +78,7 @@ old reports are moved to documents once (D-248).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063, D-069).
 - Light theme via tokens under `[data-theme='light']` and `usePalette()`; light bg `#f5f5f5`; no-flash script (D-069).
 
-- One look and behaviour across the canvas (spec consistency.md, not built yet): pieces graphite (`--piece*`) with a 2 px
+- One look and behaviour across the canvas (spec consistency.md, sessions 1–4 built): pieces graphite (`--piece*`) with a 2 px
   band in their kind's colour on top (D-263); the console where it is, shown only on hover, growing as you zoom out
   (D-264); one `Marks` for everything selectable: three tiers in screen px, distance = state, tone = what it is, cyan =
   what you can do, press 70 ms / release spring, drag: L's where it lands, resize: cyan handles on the ring (D-265);
@@ -93,6 +93,9 @@ old reports are moved to documents once (D-248).
   right bar; section: right, bottom, corner; a piece in edit mode: every corner and edge; a table column: its head's
   edge under the pointer); dragging lights the moving edges and shows the size; pieces and sections move at 0.8 with
   landing L's.
+- Surface and band built (D-274, session 4): pieces graphite (`--piece*`, white in light) with their kind's 2 px band; a
+  piece, its focus and a pane beside it map `--bg`/`--bg-raised`/`--grid-mark` to the surface for what's inside; the
+  HUD's shades take it in focus (`html[data-in-focus]`).
 
 ## Motion and backdrop
 - One entrance everywhere: cell-by-cell build-up in random order, all at once, starting at `revealed`; components 320 ms,

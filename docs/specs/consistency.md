@@ -1,6 +1,6 @@
 # Spec: one look and one behaviour across the canvas
 
-Status: **agreed 2026-10-27 (D-263–D-267), not built**. This file is the plan, split into sessions. The user checks each
+Status: **agreed 2026-10-27 (D-263–D-267); sessions 1–4 built (D-270, D-272–D-274)**. This file is the plan, split into sessions. The user checks each
 session's work, then starts a new one with a fresh context ("reset"). So every session must be able to start from this
 file alone.
 
@@ -130,7 +130,7 @@ table rows and cells (no `[ ● ]`), documents rows, link chips, pieces' hover a
 D-265's handles for paragraph, sticky note, title, section, table columns, and pieces in edit mode (which also drag
 with the landing L's). The full-length cyan edge and the readout. Remove the old grips and strips.
 
-## Session 4: surface and band · not done
+## Session 4: surface and band · **done** (D-274, 2026-10-27)
 D-263: tokens (css + `tokens.ts` for WebGL: `CellDots`, the plane's canvas picture), every piece's `var(--bg)` →
 `--piece*` (CanvasView, Matrix, Table, Kanban, Documents, DocumentPiece, Timeline, Beside, FocusDock where it is the
 piece), the band, focus's page. Light theme.
@@ -151,6 +151,8 @@ the transition both ways).
   building. Unframed rows (D-267) use the hugging shade either way.
 
 ## Found along the way
+- Session 4 (D-274): `--piece-head` has no user yet. In focus the HUD's shades were page-coloured strips over the
+  surface: `html[data-in-focus]` turns them to `--piece`.
 - Session 1 (D-270): the tier rule read literally gave a one-line paragraph S and a section M; built as the kind's tier,
   a step down when small on screen (L < 120 px, M < 24 px). Sessions 2–3: give each kind its tier the same way.
 - A section's own drag now shrinks with what it holds and lands on its L's (D-273).

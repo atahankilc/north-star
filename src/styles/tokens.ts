@@ -45,6 +45,8 @@ export type Palette = {
   edgeFaint: string
   edgeLabel: string
   grid: number
+  // A piece's surface (D-263): its fill, its head rows, what's held on it, its edge, its `+` marks.
+  piece: { fill: string; head: string; card: string; edge: string; mark: string }
 }
 
 export const palettes: Record<Theme, Palette> = {
@@ -66,6 +68,7 @@ export const palettes: Record<Theme, Palette> = {
     edgeFaint: '#3a3a3a',
     edgeLabel: '#8a8a8a',
     grid: 0.3,
+    piece: { fill: '#121315', head: '#17181b', card: '#1d1e22', edge: '#2f3136', mark: '#3b3e44' },
   },
   light: {
     bg: '#f5f5f5',
@@ -93,6 +96,7 @@ export const palettes: Record<Theme, Palette> = {
     edgeFaint: '#c6c6c6',
     edgeLabel: '#5e5e5e',
     grid: 0.72,
+    piece: { fill: '#ffffff', head: '#f7f7f8', card: '#ffffff', edge: '#d4d5d8', mark: '#c9cbd0' },
   },
 }
 

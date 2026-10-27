@@ -275,12 +275,13 @@
   gap: var(--space-2);
   padding: 10px var(--space-3) 10px 14px;
   background: var(--bg-raised);
+  box-shadow: 0 0 0 1px var(--piece-card-edge);
   user-select: none;
   outline: none;
 }
 
 .task[data-card='true'] {
-  box-shadow: inset 2px 0 0 var(--tone);
+  box-shadow: inset 2px 0 0 var(--tone), 0 0 0 1px var(--piece-card-edge);
 }
 
 .layer[data-live='true'] .task {

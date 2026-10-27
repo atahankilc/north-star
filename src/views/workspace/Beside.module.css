@@ -1,10 +1,12 @@
-/* What's opened beside a plane in its focus (D-211): panes on the right of the screen, each its own area on solid
-   page colour (no `+` marks: they're not planes), split from the plane by a line that drags. */
+/* What's opened beside a plane in its focus (D-211): panes on the right of the screen, each its own area on the
+   pieces' surface (D-263) (no `+` marks: they're not planes), split from the plane by a line that drags. */
 .pane {
+  --bg: var(--piece);
+  --bg-raised: var(--piece-card);
   position: absolute;
   z-index: 2;
   overflow: hidden;
-  border-left: 1px solid var(--line-hover);
+  border-left: 1px solid var(--piece-edge);
   background: var(--bg);
   cursor: grab;
   animation: pane-in 200ms steps(4) both;

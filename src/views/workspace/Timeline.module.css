@@ -135,7 +135,7 @@
   padding: 0 8px 0 10px;
   border: 0;
   background: var(--bg-raised);
-  box-shadow: inset 2px 0 0 var(--tone, var(--line-hover));
+  box-shadow: inset 2px 0 0 var(--tone, var(--line-hover)), 0 0 0 1px var(--piece-card-edge);
   color: var(--fg);
   font-family: var(--font-display);
   font-size: 13px;

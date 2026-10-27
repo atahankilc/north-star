@@ -90,7 +90,7 @@
 .rowHead[data-card='true'],
 .colHead[data-card='true'] {
   background: var(--bg-raised);
-  box-shadow: inset 3px 0 0 var(--type);
+  box-shadow: inset 3px 0 0 var(--type), 0 0 0 1px var(--piece-card-edge);
 }
 
 .rowHead[data-pick='true'],

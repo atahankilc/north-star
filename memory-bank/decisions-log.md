@@ -4882,3 +4882,29 @@ The user asked for session 3 of the consistency plan.
   a section moved (0.8, one landing); a table column widened (`180`, the line down the table); a plane in edit mode
   (eight handles), resized from its corner (`1325 × 800`, edges lit) and moved (0.8, landing L's, back to 1 after).
   Build.
+
+### D-274 · 2026-10-27 · Accepted (builds D-263; consistency session 4, docs/specs/consistency.md)
+**Pieces on a graphite surface with their kind's band; in focus, beside, and under the HUD the same surface.**
+The user asked for session 4 of the consistency plan.
+- *Tokens* (`tokens.css`, mirrored in `tokens.ts` `palette.piece`): `--piece` `#121315`, `--piece-head` `#17181b`,
+  `--piece-card` `#1d1e22`, `--piece-edge` `#2f3136`, `--piece-mark` `#3b3e44`, `--piece-hi` (1 px top light),
+  `--piece-shadow`, `--piece-band` 2 px, `--piece-card-edge` (transparent; `#e6e6e8` in light, where the surface is as
+  white as what's held on it). Light: `#fff`, `#f7f7f8`, `#fff`, `#d4d5d8`, `#c9cbd0`, a soft shadow.
+- *How it reaches everything:* a framed piece (`.piece:not([data-open])`), a piece in focus (`.focused`) and a pane
+  beside one (`.pane`) set `--bg` → `--piece`, `--bg-raised` → `--piece-card`, `--grid-mark` → `--piece-mark` for what's
+  inside them, so the cards, tasks, sheets, heads, the matrix's paper and bands, text's shades and bars, the name's
+  notch and the console all sit on the surface without each file changing (`CellDots` reads them from its canvas's
+  computed style). The focus dock takes `--piece` and `--piece-edge`.
+- *The piece:* `--piece` fill, `--piece-edge` edge, the shadow and top light; `::after` the band, 2 px over the top
+  edge in `--kind` (plane `--fg`, matrix `--link-solves`, table `--link-part`, kanban `--link-draws`, documents and
+  document `--link-depends`, timeline `--link-competes`); the name's notch cuts it. Unframed pieces keep none of it
+  (D-267 is session 6).
+- *Held things in light theme:* plane cards, packages' bands, tasks and card sheets, timeline sheets, matrix card heads
+  get `0 0 0 1px var(--piece-card-edge)` with their type edge (the preview's).
+- *The HUD in focus:* `html[data-in-focus]` (set by `FocusedPlane`) turns the bar's top fade and the side nav's shade
+  to `--piece`, so they don't lay a strip of page colour over the surface.
+- *Not changed:* `--piece-head` has no user yet (no piece has a separate head row's fill); the plane console, name and
+  marks look are sessions 5–6.
+- *Verified:* headless on the emulators, dark and light: the canvas (six pieces graphite / white with their bands, the
+  page round them), a plane in focus (graphite page, `+` marks, cards a step lighter; light: white, hairlined cards),
+  a matrix and a kanban in focus, the HUD's shades on the surface. Build.

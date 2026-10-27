@@ -20,6 +20,11 @@
 /* The welcome's night in light theme (D-072): it reaches the top first and leaves it last, so the bar keeps night colours
    for as long as Landing holds data-night-top (tokens.css has the page's). Its fade strip stays clear meanwhile: the tones cross
    the bar diagonally, so any one colour there would be wrong somewhere. */
+/* A piece in focus (D-263): its surface is the screen, so the bar's and the side nav's shades are made of it. */
+:global(html[data-in-focus]) .hud {
+  --bg: var(--piece);
+}
+
 :global(:root[data-theme='light'][data-night-top]) .hud {
   --bg: transparent;
   --fg: #e8ecf5;

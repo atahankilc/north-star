@@ -135,6 +135,19 @@
   --mark-l-rest: 16px;
   --mark-l-press: 26px;
   --mark-spring: cubic-bezier(0.3, 1.8, 0.5, 1);
+
+  /* A piece's surface (D-263): graphite, a step off the page, so a piece reads as a window on the canvas, not a hole in
+     it. Inside one, `--bg`, `--bg-raised` and `--grid-mark` take these (CanvasView.module.css `.surface`). */
+  --piece: #121315;
+  --piece-head: #17181b;
+  --piece-card: #1d1e22;
+  --piece-edge: #2f3136;
+  --piece-mark: #3b3e44;
+  --piece-hi: rgba(255, 255, 255, 0.05);
+  --piece-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(0, 0, 0, 0.6);
+  --piece-band: 2px;
+  /* What's held on a piece (cards, tasks, sheets): an edge only where the surface is as light as they are. */
+  --piece-card-edge: transparent;
 }
 
 /* Light theme (D-069), set on <html> by src/state/theme.ts. Mirror any change in palettes.light (tokens.ts). */
@@ -142,6 +155,14 @@
   color-scheme: light;
   --bg: #f5f5f5;
   --bg-raised: #ffffff;
+  --piece: #ffffff;
+  --piece-head: #f7f7f8;
+  --piece-card: #ffffff;
+  --piece-edge: #d4d5d8;
+  --piece-mark: #c9cbd0;
+  --piece-hi: transparent;
+  --piece-shadow: 0 14px 40px -14px rgba(0, 0, 0, 0.22);
+  --piece-card-edge: #e6e6e8;
   --line: #d9d9d9;
   --fg-dim: #6b6b6b;
   --fg-muted: #555555;

@@ -185,6 +185,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   over 15), `--fg` caps at weight 500, the kind faint after it (`PAZAR · PLANE`); unnamed, the kind alone in `--fg-faint`.
   Tight, the kind goes first, then the name takes a `…`; hovered, all of it. Edit mode: a field framed in cyan on the edge,
   a cyan `>` before what's typed and `17/80` after it.
+- Pieces (plane, matrix, table, kanban, timeline, documents, document) sit on their own surface (D-263, D-274): graphite
+  `--piece` (white in light), `--piece-edge`, a deep shadow and a 1 px light on top, a 2 px band along the top edge in
+  the kind's colour (plane fg, matrix violet, table sky, kanban gold, documents moss, timeline orange); what they hold
+  sits a step lighter (`--piece-card`); in focus and beside, the screen is that surface, the HUD's shades too.
 - A plane on the canvas (D-181): thin frame, name set into the top edge, the cards' corner marks grey on hover; its
   console a terminal line outside under the bottom-right corner (`name ▸ zoom [−] 100% [+] [full] [edit]`). Edit mode: its
   marks selected in its kind's colour, a cyan handle on every corner (the L) and edge (a bar) on the ring (D-273), the

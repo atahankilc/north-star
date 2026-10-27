@@ -28,13 +28,25 @@
 }
 
 /* A plane on the canvas (D-180): a framed box, its name set into the top edge like a section's (D-157). Everything on the
-   canvas has its own background; a plane's is the page colour, solid (no backdrop through it), with only its `+` marks. */
+   canvas has its own background; a piece's is graphite (D-263), solid (no backdrop through it), lifted off the page by a
+   shadow and a hairline of light on top, a 2 px band in its kind's colour along the top edge. Inside it (and in a
+   piece's focus `.focused`, and a pane beside it) the page's tokens take the surface's, so what it holds sits on it. */
+.piece:not([data-open='true']) {
+  --bg: var(--piece);
+  --bg-raised: var(--piece-card);
+  --grid-mark: var(--piece-mark);
+}
+
 .piece {
+  --kind: var(--fg);
   position: absolute;
   display: grid;
   place-items: center;
-  border: 1px solid var(--line-hover);
-  background: var(--bg);
+  border: 1px solid var(--piece-edge);
+  background: var(--piece);
+  box-shadow:
+    var(--piece-shadow),
+    inset 0 1px 0 var(--piece-hi);
   /* Out of edit mode it pans the canvas like empty space (D-186). */
   cursor: inherit;
   transition:
@@ -83,6 +95,25 @@
 .piece[data-kind='timeline']::before {
   content: none;
 }
+
+/* Its kind's band on the top edge (D-263), over the edge line; the name's notch (on `--bg`, the surface) cuts it. */
+.piece::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  left: -1px;
+  height: var(--piece-band);
+  background: var(--kind);
+  pointer-events: none;
+}
+
+.piece[data-kind='matrix'] { --kind: var(--link-solves); }
+.piece[data-kind='table'] { --kind: var(--link-part); }
+.piece[data-kind='kanban'] { --kind: var(--link-draws); }
+.piece[data-kind='documents'],
+.piece[data-kind='document'] { --kind: var(--link-depends); }
+.piece[data-kind='timeline'] { --kind: var(--link-competes); }
 
 /* A matrix or table about to stick to this plane (D-210): its edge in cyan. */
 .piece[data-stick='true'] {
@@ -331,6 +362,9 @@
 /* A plane in focus (D-184, D-185): the whole screen, solid, carrying the plane's `+` marks on its own grid (--mx, --my)
    at the canvas's zoom (--mark), so they never move. The ink transition cuts it with a clip-path. */
 .focused {
+  --bg: var(--piece);
+  --bg-raised: var(--piece-card);
+  --grid-mark: var(--piece-mark);
   position: absolute;
   inset: 0;
   z-index: 4;
@@ -391,6 +425,11 @@
 .piece[data-open='true'] {
   border-color: transparent;
   background: none;
+  box-shadow: none;
+}
+
+.piece[data-open='true']::after {
+  content: none;
 }
 
 .openLayer {
