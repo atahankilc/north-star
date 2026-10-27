@@ -4,7 +4,7 @@
 // when they're the plane's (FocusedPlane). A plane is moved, resized and renamed only in edit mode (D-180), switched on
 // and off from its console; in edit mode it takes the drag, it's selected, and Delete takes it away. Escape or a click on
 // empty space lets go of the selection. `0` (or the side nav's fit) frames everything, or in focus the plane's contents.
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
@@ -31,6 +31,7 @@ import { isOwnerOf } from '../../data/workspaces'
 import type { Thread } from '../../data/model'
 import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePresenceReport } from './collab'
 import { heldAt } from './selection'
+import { runCells } from '../../ui/Appear'
 import { EVERY_HANDLE, Landing, Marks } from '../../ui/Marks'
 import { DrawSection } from './DrawSection'
 import { labelBox, TextItems } from './TextItems'
@@ -1263,6 +1264,32 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
   // resized: by which handle, for its lit edges and the readout.
   const [moving, setMoving] = useState<{ free: [number, number]; at: [number, number] } | null>(null)
   const [sizing, setSizing] = useState<Handle | null>(null)
+  // Its console (D-264) shows while the pointer's on it, or after a first tap on a touch screen (a second goes in);
+  // its setup open (unframed, D-228) keeps it too.
+  const [pointed, setPointed] = useState(false)
+  const [tapped, setTapped] = useState(false)
+  const self = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!tapped) return
+    const away = (e: PointerEvent) => !self.current?.contains(e.target as Node) && setTapped(false)
+    window.addEventListener('pointerdown', away, true)
+    return () => window.removeEventListener('pointerdown', away, true)
+  }, [tapped])
+  const matrixSetupOn = useMatrixUi((s) => !!s.setup && s.canvas === piece.id)
+  const tableSetupOn = useTableUi((s) => s.setup === piece.id)
+  const kanbanSetupOn = useKanbanUi((s) => s.setup === piece.id)
+  const setupOn = matrixSetupOn || tableSetupOn || kanbanSetupOn
+  const tap = (e: ReactPointerEvent<HTMLElement>) => {
+    if (e.pointerType !== 'touch' || editing || e.button !== 0) return
+    const [sx, sy] = [e.clientX, e.clientY]
+    const up = (ev: PointerEvent) => {
+      window.removeEventListener('pointerup', up)
+      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > DRAG_PX) return
+      if (tapped) onFocus()
+      else setTapped(true)
+    }
+    window.addEventListener('pointerup', up)
+  }
 
   // Out of edit mode a press on a plane is the canvas's: it pans (D-186). In edit mode it selects the plane, and moving or
   // one of the handles changes its box (5 px before a press turns into a drag).
@@ -1375,10 +1402,11 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       // A matrix in focus is its focused copy's: the one here would show under it as it glides.
       data-away={bare && focusing ? true : undefined}
       // --z: the canvas's zoom, so the name holds its size on the screen (D-223).
-      style={{ ...carried, left, top, width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: cam.zoom }}
-      onPointerDown={press('move')}
-      onPointerEnter={hover(true)}
-      onPointerLeave={hover(false)}
+      style={{ ...carried, left, top, width: box.w, height: box.h, ['--cs' as string]: consoleScale(cam.zoom), ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: cam.zoom }}
+      ref={self}
+      onPointerDown={(e) => (tap(e), press('move')(e))}
+      onPointerEnter={(e) => (hover(true)(), e.pointerType !== 'touch' && setPointed(true))}
+      onPointerLeave={() => (hover(false)(), setPointed(false))}
     >
       {editing && kind !== 'document' ? (
         <NameField value={piece.name ?? ''} placeholder={KIND_NAME[kind]} onSave={(name) => name !== (piece.name ?? '') && void renamePiece(wid, piece.id, name, kind)} />
@@ -1454,6 +1482,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       <PlaneConsole
         // In focus, or on its way there or back (D-185), the plane's console isn't here.
         className={focusing ? styles.consoleAway : undefined}
+        shown={pointed || tapped || setupOn}
         size={editing ? box : null}
         noun={KIND_NAME[kind]}
         onEdit={editor ? () => setEditing(piece.id, !editing) : undefined}
@@ -1549,18 +1578,53 @@ type ConsoleProps = {
   open?: { on: boolean; onToggle: () => void }
   // Before `[focus]`: what an open one is used by from here (its pages, its setup).
   extra?: ReactNode
+  // Pointed at, tapped, or its setup open (D-264); edit mode and the keyboard in it show it anyway.
+  shown?: boolean
 }
 
 const UNLINKED = 'none'
 
-function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, className, link, open, extra }: ConsoleProps) {
+// A console's size on the screen (D-264): 11 px at 100 % and over, growing as the canvas zooms out, 1.4 times at most
+// (70 %: 13.1 px; 50 % and under: 15.4 px). In the canvas's px, so its zoom's divided back out.
+const consoleScale = (zoom: number) => Math.min(1.4, Math.max(1, zoom ** -0.5)) / zoom
+
+function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, className, link, open, extra, shown = true }: ConsoleProps) {
+  // Shown only while the piece is pointed at (D-264), in edit mode, or with the keyboard in it: built cell by cell as it
+  // comes (170 ms), broken as it goes (90 ms). Something new in its comments stays meanwhile, a small magenta tab.
+  const ref = useRef<HTMLDivElement>(null)
+  const [keys, setKeys] = useState(false)
+  const on = shown || !!size || keys
+  const first = useRef(true)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (first.current) {
+      first.current = false
+      el.style.clipPath = on ? '' : 'polygon(0 0, 0 0, 0 0)'
+      return
+    }
+    return runCells(el, on ? 'enter' : 'exit', 0, on ? 170 : 90)
+  }, [on])
+  const fresh = !on && !!comments?.fresh && comments.count > 0
   return (
+    <>
+    {fresh && (
+      <div className={`${styles.console} ${className ?? ''}`} data-fresh onPointerDown={(e) => e.stopPropagation()}>
+        <button className={styles.tool} data-new title={`something new in the conversations inside this ${noun}`} aria-label={`Comments inside, ${comments!.count}, something new`} onClick={comments!.onOpen}>
+          {comments!.mentioned ? '@' : <CommentIcon size={11} />} {comments!.count}
+        </button>
+      </div>
+    )}
     <div
+      ref={ref}
       className={`${styles.console} ${className ?? ''}`}
       role="toolbar"
       aria-label={noun}
       data-editing={size ? true : undefined}
+      data-shown={on || undefined}
       onPointerDown={(e) => e.stopPropagation()}
+      onFocus={() => setKeys(true)}
+      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setKeys(false)}
     >
       {size ? (
         <>
@@ -1624,6 +1688,7 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
         </>
       )}
     </div>
+    </>
   )
 }
 

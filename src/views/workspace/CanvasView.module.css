@@ -175,6 +175,16 @@
   color: var(--fg-muted);
 }
 
+/* What's in a console grows with it (D-264): the dropdown's text, the comment icon. */
+.console :is(.linkPick, .linkPick *) {
+  font-size: inherit;
+}
+
+.console svg {
+  width: 1em;
+  height: 1em;
+}
+
 .linkAt {
   color: var(--fg-muted);
 }
@@ -281,48 +291,56 @@
   font-weight: 400;
 }
 
-/* A plane's console (D-179, D-181, D-189): a tab inside the plane's bottom-right corner, standing on its bottom edge (no
-   bottom border), magenta marks on its top corners, like the focus dock; always there, over the plane's cards.
-   Bracketed actions, nothing before them. In edit mode a status line in cyan. */
+/* A piece's console (D-179, D-181, D-189, D-264): a tab inside its bottom-right corner, standing on its bottom edge (no
+   bottom border), magenta marks on its top corners, like the focus dock; over what the piece holds. Shown only while the
+   piece is pointed at (built cell by cell, CanvasView's PlaneConsole), in edit mode, with its setup open or the keyboard
+   in it. On the screen 11 px at 100 % and over, growing as the canvas zooms out (`--cs`, 1.4 times at most); everything
+   in it by the same factor. On a piece narrower than it, it runs past the left edge. Bracketed actions, nothing before
+   them. In edit mode a status line in cyan. */
 .console {
   position: absolute;
   z-index: 2;
-  right: var(--space-4);
+  right: calc(16px * var(--cs, 1));
   bottom: 0;
   display: flex;
   align-items: baseline;
-  gap: var(--space-2);
-  padding: 5px 10px 6px;
-  border: 1px solid var(--line-hover);
+  gap: calc(8px * var(--cs, 1));
+  padding: calc(5px * var(--cs, 1)) calc(10px * var(--cs, 1)) calc(6px * var(--cs, 1));
+  border: calc(1px * var(--cs, 1)) solid var(--piece-edge);
   border-bottom: 0;
   background: var(--bg);
   color: var(--fg-dim);
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  line-height: var(--space-4);
+  font-size: calc(11px * var(--cs, 1));
+  line-height: calc(16px * var(--cs, 1));
   white-space: nowrap;
   cursor: default;
+}
+
+/* Hidden (its cells broken): takes nothing. */
+.console:not([data-shown]):not([data-fresh]) {
+  pointer-events: none;
 }
 
 .console::before,
 .console::after {
   content: '';
   position: absolute;
-  top: -1px;
-  width: 6px;
-  height: 6px;
-  border-top: 1px solid var(--accent-magenta);
+  top: calc(-1px * var(--cs, 1));
+  width: calc(6px * var(--cs, 1));
+  height: calc(6px * var(--cs, 1));
+  border-top: calc(1px * var(--cs, 1)) solid var(--accent-magenta);
   pointer-events: none;
 }
 
 .console::before {
-  left: -1px;
-  border-left: 1px solid var(--accent-magenta);
+  left: calc(-1px * var(--cs, 1));
+  border-left: calc(1px * var(--cs, 1)) solid var(--accent-magenta);
 }
 
 .console::after {
-  right: -1px;
-  border-right: 1px solid var(--accent-magenta);
+  right: calc(-1px * var(--cs, 1));
+  border-right: calc(1px * var(--cs, 1)) solid var(--accent-magenta);
 }
 
 .console[data-editing='true'],
@@ -331,9 +349,10 @@
   border-color: var(--accent-cyan);
 }
 
-/* In edit mode the bottom-right corner is a resize grip (34 px, D-194): the console steps clear of it. */
-.console[data-editing='true'] {
-  right: 40px;
+/* Something new inside while the console's hidden: a small tab of its own, magenta (D-264). */
+.console[data-fresh] {
+  padding-inline: calc(6px * var(--cs, 1));
+  border-color: var(--accent-magenta);
 }
 
 .mode {
@@ -347,7 +366,11 @@
 
 .tool {
   composes: small from '../../ui/AsciiButton.module.css';
-  padding: 0 2px;
+  padding: 0 calc(2px * var(--cs, 1));
+}
+
+.console .tool {
+  font-size: inherit;
 }
 
 .console[data-editing='true'] .tool {

@@ -190,7 +190,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
   the kind's colour (plane fg, matrix violet, table sky, kanban gold, documents moss, timeline orange); what they hold
   sits a step lighter (`--piece-card`); in focus and beside, the screen is that surface, the HUD's shades too.
 - A plane on the canvas (D-181): thin frame, name set into the top edge, the cards' corner marks grey on hover; its
-  console a terminal line outside under the bottom-right corner (`name ▸ zoom [−] 100% [+] [full] [edit]`). Edit mode: its
+  console a tab standing on the bottom edge inside the bottom-right corner, shown only while the piece is pointed at
+  (built cell by cell), in edit mode, with its setup or the keyboard in it; 11 screen px, growing to 1.4 × as the
+  canvas zooms out; something new in its comments a small magenta tab meanwhile (D-264, D-275). Edit mode: its
   marks selected in its kind's colour, a cyan handle on every corner (the L) and edge (a bar) on the ring (D-273), the
   console a cyan status line with the live size and `[done]`; moved, it goes 0.8 under the pointer, its L's where it lands.
 - Focus (D-185): a plane spreads over the screen like ink, cell by cell, its `+` marks never moving; nothing zooms. In

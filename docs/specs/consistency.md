@@ -1,6 +1,6 @@
 # Spec: one look and one behaviour across the canvas
 
-Status: **agreed 2026-10-27 (D-263–D-267); sessions 1–4 built (D-270, D-272–D-274)**. This file is the plan, split into sessions. The user checks each
+Status: **agreed 2026-10-27 (D-263–D-267); sessions 1–5 built (D-270, D-272–D-275)**. This file is the plan, split into sessions. The user checks each
 session's work, then starts a new one with a fresh context ("reset"). So every session must be able to start from this
 file alone.
 
@@ -135,7 +135,7 @@ D-263: tokens (css + `tokens.ts` for WebGL: `CellDots`, the plane's canvas pictu
 `--piece*` (CanvasView, Matrix, Table, Kanban, Documents, DocumentPiece, Timeline, Beside, FocusDock where it is the
 piece), the band, focus's page. Light theme.
 
-## Session 5: the console · not done
+## Session 5: the console · **done** (D-275, 2026-10-27)
 D-264: hover only (cells), the growing size, the fresh-comments tab, edit / setup / focus-within keep it, touch.
 
 ## Session 6: names, lines, unframed · not done

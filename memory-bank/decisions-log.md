@@ -4908,3 +4908,25 @@ The user asked for session 4 of the consistency plan.
 - *Verified:* headless on the emulators, dark and light: the canvas (six pieces graphite / white with their bands, the
   page round them), a plane in focus (graphite page, `+` marks, cards a step lighter; light: white, hairlined cards),
   a matrix and a kanban in focus, the HUD's shades on the surface. Build.
+
+### D-275 · 2026-10-27 · Accepted (builds D-264; consistency session 5, docs/specs/consistency.md)
+**A piece's console shows only while the piece is pointed at, built and broken cell by cell; it grows as the canvas
+zooms out; something new in its comments stays as a small magenta tab; a first tap shows it, a second goes in.**
+The user asked for session 5 of the consistency plan.
+- *When:* `PlaneConsole` takes `shown` (the pointer on the piece, a tap, or its setup open when unframed, D-228) and
+  shows anyway in edit mode or with keyboard focus inside it (focus in, focus out of the whole console). Coming on it
+  builds with D-034's cells (`runCells`, 170 ms), going it breaks (90 ms); hidden it takes no pointer. Reduced motion:
+  at once. Every piece's console, framed or open.
+- *Fresh:* while hidden, comments inside with something new for you (`fresh`) keep a small tab of their own on the
+  same spot, a magenta edge, the icon (or `@`) and the count, opening the threads panel on them.
+- *Size:* `--cs` on the piece, `min(1.4, max(1, zoom^-0.5)) / zoom`: 11 px on the screen at 100 % and over, 13.1 at
+  70 %, 15.4 at 50 % and under; padding, gaps, the magenta marks, its edge, the dropdown's text and the comment icon
+  by the same factor. Before, it shrank with the canvas. It stands on the bottom-right corner, `16 × --cs` in, and on a
+  piece narrower than it runs past the left edge. Edit mode no longer steps it 40 px clear (the grips are on the ring
+  now, D-273).
+- *Touch:* a tap (under 5 px of travel) on a piece out of edit mode shows its console; a second tap focuses it; a
+  press anywhere else lets go.
+- *Verified:* headless on the emulators: hidden at rest (clip-path, no pointer), pointed at: part built at 80 ms, whole
+  at 380, gone on leaving; Bob's comment inside the plane gave Alice the magenta `▢ 1` tab; zoomed out to the floor its
+  height stayed 40 screen px (1.4 ×); edit mode kept it with the pointer away; reduced: on and off at once; two taps:
+  shown, then `?focus=p1`. Build.
