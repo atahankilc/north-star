@@ -1,7 +1,7 @@
 // Checks that the memory bank agrees with itself (README.md in memory-bank/ has the rules):
 // - decisions-log.md: numbers run D-001, D-002, … with no gaps or repeats; every `Superseded by` names entries that exist.
-// - decisions.md: cites only numbers that exist; every decision still standing has a line; a superseded one is cited only
-//   under "Rejected".
+// - decisions.md + decisions-1.0.md: cite only numbers that exist; every decision still standing has a line in one of
+//   them; a superseded one is cited only under decisions.md's "Rejected".
 // - state.md stays a snapshot (at most STATE_MAX_LINES lines).
 // Run: npm run check:memory. Exits 1 with a list of problems.
 import { readFileSync } from 'node:fs'
@@ -12,6 +12,8 @@ const read = (name) => readFileSync(new URL(name, dir), 'utf8')
 
 const log = read('decisions-log.md')
 const current = read('decisions.md')
+// 1.0's rules, kept apart and not auto-loaded (D-248): lines there count as a decision's line too.
+const old = read('decisions-1.0.md')
 const state = read('state.md')
 const problems = []
 
@@ -42,17 +44,17 @@ for (const e of entries.filter((e) => e.superseded)) {
 
 const rejectedAt = current.search(/^## Rejected/m)
 const rules = rejectedAt === -1 ? current : current.slice(0, rejectedAt)
-const cited = new Set(current.match(/D-\d{3}/g) ?? [])
-const citedInRules = new Set(rules.match(/D-\d{3}/g) ?? [])
+const cited = new Set([...(current.match(/D-\d{3}/g) ?? []), ...(old.match(/D-\d{3}/g) ?? [])])
+const citedInRules = new Set([...(rules.match(/D-\d{3}/g) ?? []), ...(old.match(/D-\d{3}/g) ?? [])])
 
 for (const id of cited) {
-  if (!ids.has(id)) problems.push(`decisions.md: cites ${id}, which isn't in decisions-log.md`)
+  if (!ids.has(id)) problems.push(`decisions(-1.0).md: cites ${id}, which isn't in decisions-log.md`)
 }
 for (const { id, superseded: gone } of entries) {
-  if (!gone && !cited.has(id)) problems.push(`decisions.md: ${id} is still standing but has no line`)
+  if (!gone && !cited.has(id)) problems.push(`decisions.md: ${id} is still standing but has no line (here or in decisions-1.0.md)`)
 }
 for (const id of citedInRules) {
-  if (superseded.has(id)) problems.push(`decisions.md: cites ${id} as a current rule, but it is superseded (move it under "Rejected" or drop it)`)
+  if (superseded.has(id)) problems.push(`decisions(-1.0).md: cites ${id} as a rule, but it is superseded (move it under "Rejected" or drop it)`)
 }
 
 const stateLines = state.split('\n').length

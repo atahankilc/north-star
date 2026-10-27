@@ -1,12 +1,13 @@
 # Memory Bank
 
 The project's working memory. It lets any session (human or Claude) pick up exactly where the
-last one stopped. `state.md`, `decisions.md` and `open-questions.md` are auto-loaded (CLAUDE.md); the two logs are read on demand.
+last one stopped. `state.md`, `decisions.md` and `open-questions.md` are auto-loaded (CLAUDE.md); the two logs and `decisions-1.0.md` are read on demand.
 
 | File | Holds | Update when |
 |---|---|---|
 | [state.md](state.md) | Current phase, what's done, in progress, next steps | At the end of every work session or milestone |
 | [decisions.md](decisions.md) | Current rules by topic, one line each with its D-number; a "rejected" list | A decision is made or reversed (edit the line it replaces) |
+| [decisions-1.0.md](decisions-1.0.md) | 1.0's rules (code deleted, D-248), for when a feature comes back | A feature comes back: its line moves to decisions.md |
 | [decisions-log.md](decisions-log.md) | Every decision in full (ADR-lite): what, why, alternatives, verification | Append each new `D-xxx` entry |
 | [state-history.md](state-history.md) | What was done and verified, session by session | Work finishes (state.md keeps only the snapshot) |
 | [open-questions.md](open-questions.md) | Unresolved questions, each with a recommendation | A question comes up or gets answered (answered → move to decisions.md) |

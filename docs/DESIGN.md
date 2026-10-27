@@ -1,5 +1,8 @@
 # North Star: Design Language
 
+> Since 1.5 a workspace is one canvas of pieces (D-174). Where a rule below was written for 1.0's board, views or
+> assistant (code deleted, D-248), it says so; those stand as reference for when the feature comes back.
+
 ## 1. Direction: "3D ASCII"
 
 The interface is a dark, monochrome world rendered through **ASCII glyphs**, with depth and motion
@@ -45,7 +48,7 @@ tokens above for neutral light grey (`--bg #f5f5f5`), white surfaces, near-black
 yellow `#a87d00`, blue `#2a5fe0`, green `#0f9a4b`); the ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
 (`[data-theme='light']`) and `palettes.light` in `tokens.ts`. Text on an accent fill uses `--on-accent`; tints use `--wash-*`.
 
-**Diff colours (D-096):** the assistant's preview marks what a proposal does with the checklist's signs in their own colours,
+**Diff colours (D-096, 1.0's assistant):** the assistant's preview marks what a proposal does with the checklist's signs in their own colours,
 apart from the type colours: `--diff-new` `+` (`#a6ff3d`), `--diff-edited` `~` (`#ff9f1c`), `--diff-moved` `→` (`#3d7bff`),
 `--diff-deleted` `−` (`#ff4545`); darker in light (`palettes.*.diff` for WebGL). Only the sign badge, the ring and the moved
 ghost carry them; a deleted item turns grey and struck through, an edit shows `was` and the old value under the new.
@@ -65,15 +68,12 @@ Values will be tuned against contrast checks (WCAG AA for text).
   and controls), `--text-md` 15 (report body), `--text-lg` 18 (card and list titles), `--text-heading` 26, 20 on phones (page,
   panel and report titles), `--text-xl`, `--text-hero` (the workspaces page title), `--text-display` (landing headline).
 - *Case:* uppercase means a label (`NOTES`, `┌ DISPLAY`, column heads, type names); everything you click is lowercase
-  (buttons, view tabs, the Settings menu, choices).
+  (buttons, the Settings menu, choices).
 - *Tracking:* `--track-label` 0.12em on every small uppercase label, `--track-title` -0.02em on Geist titles,
   `--track-display` -0.045em on the display headline. Lowercase actions are untracked.
-- *Reading width:* `--measure` (760 px) for a report's text (the tab's reader, the stage's report).
-- *Reports tab (D-102, D-106):* a table on solid `--bg` (never the see-through surface: nothing animates behind reading
-  text) with its filters and upload in its top row, numbered pages; an opened report builds up beside it while the table
-  rebuilds as a list on the left; the reader has an "on this page" outline that follows the scroll.
-- *The assistant's stage (D-096, D-101):* one cyan box (`src/ui/StageBox.tsx`) with its title and controls written into the top
-  edge; the preview and the chat's report both use it, each with a `‹ n/N ›` stepper (n / p) lit both ways with the chat's box.
+- *Reading width:* `--measure` (760 px) for long text (a document open in its reader).
+- *1.0 (D-096, D-101, D-102, D-106):* the reports tab read on solid `--bg` with an "on this page" outline (documents keep
+  that); the assistant's stage was one cyan box (`StageBox`) with a `‹ n/N ›` stepper.
 
 ### Names and lines on the canvas (D-266)
 - *Two voices.* The system's: Geist Mono, caps, tracked (piece names, type labels, column heads, panel sections, the
@@ -119,136 +119,103 @@ Values will be tuned against contrast checks (WCAG AA for text).
   `data-tone="primary"` cyan, `"danger"` magenta on hover) for row and inline actions. Compose `small`; never redraw brackets.
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
-- Cards: flat, one shape for every type (D-055). A left border and a small uppercase label in the type's colour say what it is
-  (customer green, problem magenta, competitor yellow, idea white, feature cyan); no edge of their own (D-148). Hover and selection are the one `Marks` (D-265, `src/ui/Marks.tsx`,
-  tokens `--mark-*`) on everything selectable (cards, text, tasks, sheets, cells, rows, heads, chips, pieces): four L's
-  in screen px, three tiers (S cells/rows/heads/chips 6 px, M cards/text/tasks 12, L pieces/sections
-  18; a tier down when small on screen); grey a little out on hover (gliding in, 160 ms), on the corners and longer in the
-  tone while pressed (70 ms), just outside in the tone once selected (a 300 ms overshooting spring, also when selected
-  without a press); cyan for what you can do (a link's target, the box select's L's on a cyan wash); others' selection the
-  same L's in their colour with their name on a tag. A press becomes a drag after 5 px; the dragged thing (cards and text
-  alike, each of several) shrinks to 0.8 round the point held and follows the pointer, its L's at full size where it
-  lands (`<Landing>`, stepping 80 ms grid to grid; on a kanban the gap that opens, D-272); let go, it grows into them (180 ms) and they spring out. Resizing: cyan handles on the ring
-  only while selected (a corner's L, an edge's bar), the moving edges lit cyan and the size beside them (D-273). Reduced
-  motion: states switch at once. Type colours are reserved for type: tags are white `#chips` (D-056). Cards never lift or tilt (D-061).
-  Inside (D-152): 0.06 padding; a header row (type label left; right, the status, regions, priority or rating, then
-  the evidence as cells: filled supports, outlined against, magenta when they disagree with the status), the title (up
-  to 3 lines), a dim mono facts line, and tags as framed chips. A hovered card shows a dim `›` just right of it to drag
-  a link from (cyan while linking); not while dragged, not far out.
-  Zoomed out (D-111, D-153): once the small text can't be read, the title alone in Geist 0.3, top-aligned, at most 3
-  lines ending at a whole word with `…`; once no text can be read, the card keeps its shape and each title line becomes
-  a `--fg-dim` bar as long as the line.
-- Board grid (D-110, D-148): faint `+` marks every 0.625 units (cards are 4 × 2 steps). A dragged card's top-left corner
-  snaps to a mark or to one of the four even steps between two marks (0.125, not drawn, D-149); on a mark, all four
-  corners sit on marks. Drawn where the camera sees them on the
-  cards' plane (no perspective shift). Zoomed in, a mark's arms reach 0.06 out; zoomed out they stop at 3 px and the stroke
-  eases to 1 px, so a mark is always a thin `+`, never a dot (D-151). Under 18 px apart every other mark fades, then all but
-  every fourth (a card's width); all fade out before the zoom limit.
-- Text labels: display-face text straight on the board (D-050); editing swaps in a DOM field at the same spot. A heading
-  (H1–H3, D-156) is set on its centre, left-aligned, with an optional small line over its left edge (`02 ── WHO WE BEAT`:
-  Geist Mono capitals, `--fg-dim`, a leading number in magenta or the label's colour); an H1 also gets a hairline rule
-  under it fading out to the right. A paragraph (`¶`) is Geist at 0.2 (L; D-162) wrapping at its width (6.25 until its right-edge
-  handle is dragged), light Markdown (bold in `fgStrong`, italic, bullets and numbers with dim markers, `code`, links
-  underlined cyan), a hairline down its left side. Any text turns a quarter either way (↺ reads up, ↻ down). Hovered or
-  selected, its marks go round it (D-265), in its colour once selected; selected, a paragraph's or sticky note's width
-  drags by a cyan bar on the ring at its right edge (D-273). A paragraph's text is S 0.13 / M 0.165 / L 0.2, the default, clearly under an H3 (D-161, D-162);
-  headings and paragraphs never switch into each other. Headings and section names are drawn at any zoom (D-160)
-- Sticky notes (D-158, D-162, D-257): paper in its colour (`color-mix` 92 % with black in dark, a 34 % pastel on white in
-  light; yellow always the bright one), dark ink (`--sticky-ink`), the top 13 px a darker glue band holding a small line
-  `ATAHAN · 2h` in ink mono 0.065 with three little checks on the right, a soft shade under its foot, never tilted; 6 × 5
-  grid steps (150 × 125 px) to start, growing down with its text; a long one folds back to 125 from `▾` / `▸` in its band,
-  its text fading out at the foot (D-259); then its text in Geist Mono S 0.085 / M 0.105 (default) / L 0.13 with light Markdown (bold in `fgStrong`).
-  6 grid steps wide until its right-edge handle drags it, padding 0.09, as tall as its text past the 5; it grows as you
-  type, its top-left kept. Corner marks when hovered/selected (D-163)
-- Comment threads (D-159, D-166): a pin per thread, a small framed mono chip like a link's (`--bg`, 1px `--line-hover`),
-  the comment icon (a square speech bubble with three square dots, D-167) and a count, its bottom-left corner at the spot (a card's, text's or section's top-right corner, a link's chip, the spot
-  clicked); magenta border and mark when someone else wrote since you read it, `@` when it mentions you, cyan while open; no
-  pin when what it was on was deleted (it stays in the panel, D-171). The open thread looks like the assistant's chat window (D-081): a 340 px frame
-  right of the pin (left when it would run off), header with what it's on in faint mono and `[resolve]` `[delete]`
-  `[×]`, a terminal log (the writer's full name in `--fg-strong`, yours in cyan, `2d`, the text indented under it,
-  `@Name` in cyan, `[edit]` `[delete]` on your own on hover), and the chat's `>` prompt with `[send]`; `@` opens a list
-  of people over the prompt. No person colours. Pins stay one size at any zoom (DOM over the canvas). The threads panel:
-  a square icon button right of `+` (the comment icon; a magenta count of new mentions in its corner, or a magenta dot
-  while anything else is new) opens the same chat frame above it,
-  views as bracket actions, one row per thread (mark, what it's on, when, last writer + how it began, count, and `· on <plane> ↗` in cyan when it's on
-  another plane, D-168); the
-  filter bar's `COMMENTS │ on ▾` sets what the pins show
-- Sections (D-130, D-157): a thin frame, no fill. The name sits in the frame's edge, the line breaking round it: along
-  the top from near the left corner, or up the left edge ending near the top (read bottom to top). A small line before
-  the name in mono (a number in magenta). A section's colour goes to its line and name, nothing else; hover and selection
-  are a card's corner marks (D-150, D-160), the line keeps its colour
-- Connections (D-059, D-108): straight, edge to edge, with an arrowhead and the kind on a small framed chip (solid `--bg`,
-  thin border in the link's colour; mono text the size of a card's small text, D-154) at the midpoint; a bent link
-  (D-155) runs through its bend points, its chip on the longest piece. One colour per kind, all solid lines (D-147), from `--link-*` tokens soft enough
-  to stay apart from type, people and diff colours: violet solves, sky part of, orange competes, raspberry contradicts, gold inspired by, moss depends on, grey relates, near-white `for` (near-black in light theme). Thicker on the selected card; links not touching the hovered or selected
-  card go faint (a competitor's include the links to its features, D-115). A selected link fills its chip and shows a hollow square on each piece: drag a piece to put
-  a bend point there (a filled square: drag to move, double-click to take out; on the grid's fifths, alt free);
-  `straighten` takes them all out. No animation. Several straight links between the same two cards sit side by side,
-  0.32 apart (closer if the end is too small), their chips moved along the lines so they don't overlap (D-113)
-- Floating bars (D-108, `FloatBar.module.css`): a selected link or text label gets a small solid bar under it (2px top edge
-  in its colour) with its tools; the only tool UI drawn on the board itself
-- Alignment guides (D-117): while dragging, a card pulls into line with other cards' edges and centres (text by its centre)
-  within 6 px, and 1 px magenta lines run across everything it lines up with (a card in the same column: the centre line
-  only). Gone when the drag ends. Switch beside the grid's, `a`, cyan while on, on by default; alt drags freely
-- Right-click menu (D-117): the dropdown's panel and rows (`Menu.module.css`) at the pointer, flipped to stay on screen, built
-  cell by cell like any panel. A right drag still pans; the menu opens only if the pointer stayed put. Card / text: copy,
-  duplicate, zoom to, delete (for the whole selection if it's in it); link: its kinds (`●` the current one), reverse,
-  remove; empty board: `add here` each type and text, paste here, fit all, the grid and guide switches. While it's open on a
-  link or text, their floating bar waits
+- **Marks** (D-265, `src/ui/Marks.tsx`, tokens `--mark-*`): hover and selection on everything selectable (cards, text,
+  tasks, sheets, cells, rows, heads, chips, pieces, sections) are four L's in screen px, in three tiers (S 6 px for
+  cells, rows, heads, chips; M 12 for cards, text, tasks; L 18 for pieces and sections; a tier down when small on
+  screen). Grey a little out on hover (160 ms); on the corners, longer, in the item's tone while pressed (70 ms); just
+  outside in the tone once selected (a 300 ms overshooting spring). Cyan is what you can do (a link's target, the box
+  select). Others' selections: the same L's in their colour with their name on a tag. Reduced motion: states switch at once.
+- **Drag and resize** (D-265, D-272, D-273): a press becomes a drag after 5 px; what's dragged (each of several) shrinks
+  to 0.8 round the point held and follows the pointer, its L's at full size where it will land (`<Landing>`, 80 ms per
+  grid step; on a kanban the gap that opens); let go, it grows into them (180 ms). Resizing: cyan handles on the ring
+  only while selected (a corner's L, an edge's bar), the moving edges lit cyan, the size beside them.
+- **Cards** (D-055, D-152, D-205): flat, one shape for every type; a left border and a small uppercase label in the type's
+  colour (customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue), no edge of their
+  own (D-148); never lift or tilt (D-061). Type colours are only for type: tags are white `#chips` (D-056). Inside: a
+  header (type label; the status, regions, priority or rating, then evidence cells: filled supports, outlined against,
+  magenta when they disagree with the status), the title (≤ 3 lines), a dim mono facts line, tag chips. Smaller on
+  screen (D-111, D-153): the title alone, whole words, `…`; then each line a `--fg-dim` bar. A hovered card shows a dim
+  `›` to drag a link from (cyan while linking).
+- Plane grid (D-182, D-187): faint `+` marks every 25 px (`--grid-mark`); pieces, cards and text snap to it (alt free).
+  A card is 200 × 100, 8 × 4 steps, a mark on each corner. (1.0's board: 0.625 units, marks thinning as they crowded,
+  D-110, D-148, D-149, D-151.)
+- Text (D-050, D-156, D-188, D-194): Geist straight on the canvas or a plane; typing keeps its face, size and layout
+  (D-190); under it the ink shade, line by line (D-277). Headings H1–H3 (48 / 29 / 22 px on the canvas), left-aligned,
+  with an optional small line (`02 ── WHO WE BEAT`: mono caps, `--fg-dim`, the number magenta); an H1's hairline rule
+  fades right. Paragraphs (`¶`, S/M/L, L the default and still under an H3, D-161, D-162) wrap at their width, light
+  Markdown (bold in `fgStrong`, italic, bullets, `code`, cyan links), a hairline down the left. Any text turns a quarter
+  (↺ reads up, ↻ down). Headings and paragraphs never turn into each other; headings and section names show at any zoom
+  (D-160). A paragraph's or sticky note's width drags by the cyan bar on its right edge (D-273).
+- Sticky notes (D-158, D-162, D-257, D-259): paper in its colour (92 % with black in dark, a 34 % pastel in light; yellow
+  the bright one), dark ink (`--sticky-ink`), a darker 13 px glue band with `ATAHAN · 2h` and three checks, a soft shade
+  under its foot, never tilted. 150 × 125 to start (6 × 5 steps), growing down as you type; a long one folds back from
+  `▾` / `▸`, its text fading at the foot. Text Geist Mono S/M/L, light Markdown.
+- Sections (D-130, D-157): a thin frame, no fill; the name in the edge, the line breaking round it, along the top or up
+  the left edge (read bottom to top), a number before it in magenta; a colour goes to the line and name only.
+- Comment threads (D-159, D-166, D-167, D-193): a chip under the component's bottom-right corner, at screen size: the
+  comment icon (a square speech bubble, three square dots) and a count; magenta when someone else wrote since you read
+  it, `@` when it mentions you. Nothing opens on the canvas (D-199): the threads panel is one wide tab on the bottom edge
+  right of the corner's buttons (D-197), the list left and the conversation right, each half building and breaking cell
+  by cell. A conversation: a header with what it's on and `[on the canvas ↗]` (D-220), a terminal log (writer in
+  `--fg-strong`, you in cyan, `2d`, the text indented, `@Name` cyan, `[edit]` `[delete]` on your own), a `>` prompt; no
+  person colours. The panel says what it shows: `whole workspace`, or `inside "<plane>"` in cyan (D-195).
+- Connections (D-059, D-147, D-154): straight, edge to edge, an arrowhead, the kind on a small framed chip at the middle
+  (solid `--bg`, a thin border in the link's colour, mono at a card's small size). One colour per kind, all solid, from
+  `--link-*`: violet solves, sky part of, orange competes, raspberry contradicts, gold inspired by, moss depends on, grey
+  relates, near-white `for` (near-black in light). Links not touching the hovered or selected card go faint (a
+  competitor's include its features', D-115). Several between two cards sit side by side, chips staggered (D-113). No
+  animation. 1.0's board also had bend points (D-155: squares on a selected link, `straighten`); not on planes yet.
+- Floating bars (D-108, D-188): a selected link or text gets a small solid bar under it (2 px top edge in its colour)
+  with its tools.
+- Alignment guides (D-117, D-231): while dragging on a plane, a card pulls into line with others' edges and centres
+  within 6 px, 1 px magenta lines across what it lines up with. `a` guides, `g` snapping, per browser, in the focus
+  dock's `[view ▾]`; alt drags freely.
+- Right-click (D-117, D-237): the prompt (D-222) at the pointer. In a focused plane: a card's open / fold / copy /
+  duplicate / delete; text's edit / copy / duplicate / delete; a link's label / turn round / kind / remove; several's
+  copy / duplicate / delete; the plane's paste and add here; `comment` on any component (D-193). A right drag still pans.
 
-### HUD (D-027, D-053, D-054)
-- Fixed top bar, same on every page: breadcrumb left (`# north-star / workspaces / <name>`), actions right. It moves to a
-  left side nav piece by piece (D-175 first).
-- Screen-edge margins come only from `--hud-x` / `--hud-y` (toolbar, panels and status line too).
+### Pieces (D-176, D-263–D-276)
+- Surface (D-263, D-274): every piece (plane, matrix, table, kanban, timeline, documents, document) is graphite
+  `--piece` (white in light), `--piece-edge`, a deep shadow, a 1 px light on top and a 2 px band along the top in its
+  kind's colour (plane fg, matrix violet, table sky, kanban gold, documents moss, timeline orange); what it holds sits a
+  step lighter (`--piece-card`); in focus and beside, the screen is that surface, the HUD's shades too.
+- Name (D-223, D-276): in the top edge (see *Names and lines*), 13 px × zoom on screen (11–15), `--fg` caps weight 500,
+  the kind faint after it (`PAZAR · PLANE`; unnamed, the kind alone in `--fg-faint`); tight, the kind goes first, then
+  the name takes a `…`; hovered, all of it. Edit mode: a cyan-framed field, a cyan `>` and `17/80`.
+- Console (D-181, D-264, D-275): a tab standing on the bottom edge inside the bottom-right corner, shown only while the
+  piece is pointed at (cell by cell), in edit mode, with its setup or the keyboard in it; 11 px, growing to 1.4 × as the
+  canvas zooms out; new comments keep a small magenta tab. Edit mode: marks in the kind's colour, a cyan handle on every
+  corner and edge, the console a cyan status line with the live size and `[done]`.
+- Focus (D-185, D-189): a plane spreads over the screen like ink, cell by cell, its `+` marks never moving; nothing
+  zooms. The focus dock is a tab on the bottom edge's middle, `[unfocus] esc` last. The right of the screen stays free,
+  except what's beside the plane (D-211) and the right panel (D-219).
 
-- In a workspace, the views sit beside the breadcrumb as unframed tabs after a vertical rule (current view bright with a sliding magenta underline; D-066), and the right side holds one
-  people here (D-169: squares only, no names, overlapping, name on hover, the first three then
-  `+N`, which opens a framed list of everyone with their view; click follows).
-- The side nav's tools sit at the middle of the left edge (D-178): unframed icon buttons like the gear; the canvas's `+` is a
-  drawn 20 px `+` in magenta, its menu opening to the right.
-- A piece's name (D-223): in the top edge, held at a size on the screen whatever the zoom (13 px × zoom, never under 11 or
-  over 15), `--fg` caps at weight 500, the kind faint after it (`PAZAR · PLANE`); unnamed, the kind alone in `--fg-faint`.
-  Tight, the kind goes first, then the name takes a `…`; hovered, all of it. Edit mode: a field framed in cyan on the edge,
-  a cyan `>` before what's typed and `17/80` after it.
-- Pieces (plane, matrix, table, kanban, timeline, documents, document) sit on their own surface (D-263, D-274): graphite
-  `--piece` (white in light), `--piece-edge`, a deep shadow and a 1 px light on top, a 2 px band along the top edge in
-  the kind's colour (plane fg, matrix violet, table sky, kanban gold, documents moss, timeline orange); what they hold
-  sits a step lighter (`--piece-card`); in focus and beside, the screen is that surface, the HUD's shades too.
-- A plane on the canvas (D-181): thin frame, name set into the top edge, the cards' corner marks grey on hover; its
-  console a tab standing on the bottom edge inside the bottom-right corner, shown only while the piece is pointed at
-  (built cell by cell), in edit mode, with its setup or the keyboard in it; 11 screen px, growing to 1.4 × as the
-  canvas zooms out; something new in its comments a small magenta tab meanwhile (D-264, D-275). Edit mode: its
-  marks selected in its kind's colour, a cyan handle on every corner (the L) and edge (a bar) on the ring (D-273), the
-  console a cyan status line with the live size and `[done]`; moved, it goes 0.8 under the pointer, its L's where it lands.
-- Focus (D-185): a plane spreads over the screen like ink, cell by cell, its `+` marks never moving; nothing zooms. In
-  focus its console sits bottom left beside the gear. Keep the right of the screen free.
-- You and settings sit in the bottom-left corner, `--space-3` from the edges (D-175), stacked like the foot of the side nav
-  the HUD is becoming: a short horizontal rule, your square (initial, name on hover), the ⚙ icon button under it (cyan count in
-  the corner when people wait to join). Whatever else sits bottom left (board toolbar, threads panel, page padding) stays
-  `--corner-h` above it. The square opens settings on the account page, the gear on the last page used. It opens the settings
-  modal (D-064, D-097): a side menu on the left in three groups, `YOU` (account, display), `WORKSPACE <name>` (general, people,
-  export; only inside a workspace) and `ASSISTANT` (keys, usage); the current page gets a cyan left bar. The page on the right
-  has a title, a one-line description, and framed sections (label set into the top edge, rows split by hairlines, an optional
-  note at the foot). Below 640 px the menu becomes a row of tabs above the page.
-  Signed out, the right side is empty (no motion switch on the landing, D-069).
-- Dropdowns (`src/ui/Menu.tsx`): a framed trigger `SHOW all ▾` (or an icon in the side nav), a list below, above or to the
-  right, `[x]`/`[ ]` checks. The list is a **prompt** (D-222): page black, a `--line-hover` edge, built cell by cell. On top a
-  `>` line (magenta `>`, a placeholder saying what it does: `add…`, `find a place…`) that has focus on open: typing narrows the
-  list, the typed part lit magenta in each label, Enter picks the first. Sections as comment lines (`# text`). A row: a magenta
-  `›` where Enter goes (the row under the pointer or keys, or the first match), the item's letter `[p]` when it has one (typed
-  alone it puts that item first, so `+` then `p` Enter makes a plane), its glyph, the label, a faint hint right; something
-  dangerous in red. A foot line counts what's shown (`8 things · type to find · a letter goes first`, `2 found · ↵ picks the
-  first`). The right-click menu (`ContextMenu.tsx`) is the same panel at the pointer, kept on screen, its `>` line saying what
-  it's on (`do with this customer…`).
-- One-of pickers (`src/ui/Select.tsx`, D-093): never the browser's `<select>`. An inline `value ▾` trigger opens a compact list
-  right under it in the prompt's look (D-222): page black, a `--line-hover` edge, tight rows, a cyan `•` on the current value
-  and the magenta `›` + wash on the row under the pointer or keys; more than 7 options get the `>` line that narrows them
-  (Enter picks the first), a shorter list jumps to an option by its first letter; no build-up animation; it opens upward only when it doesn't fit below, stays inside its side panel,
-  follows its trigger when something scrolls, and Escape closes only the list. Used for link kinds, Table priority/status,
-  the Matrix's "their version" and Settings models.
-- Adding a link (`+ link`, LinkList): a dropdown hanging from the links heading, as wide as the section, never spread into the
-  panel: a search box on top, matches below in the same compact rows (type dim, title); arrows move, Enter links and closes,
-  Escape or a click outside closes. Placement shared with Select (`src/ui/floating.ts`).
+### HUD (D-027, D-175)
+- Top left on every page: the breadcrumb (`# north-star / workspaces / <name>`, then the focused plane's name, D-189).
+  Everything else moves to a left side nav piece by piece. Screen-edge margins come only from `--hud-x` / `--hud-y`.
+- The side nav's tools at the middle of the left edge (D-178): unframed icon buttons like the gear; the `+` a drawn 20 px
+  magenta `+`, its menu opening right.
+- Bottom-left corner, `--space-3` from the edges, top to bottom (D-175, D-193): people here (D-169: squares, no names,
+  overlapping, name on hover, `+N` past four; a click follows), the threads button, a short rule, your square (initial,
+  name on hover), the ⚙ (a cyan count when people wait to join). Anything else bottom left stays `--corner-h` above.
+- Settings (D-064, D-097): your square opens it on the account page, the gear on the last page used. A modal with a side
+  menu in groups, `YOU` (account, display) and `WORKSPACE <name>` (general, people, export; only inside a workspace),
+  the current page with a cyan left bar; on the right a title, a one-line description and framed sections (label in the
+  top edge, rows split by hairlines, a note at the foot). Below 640 px the menu becomes tabs. 1.0's `ASSISTANT` (keys,
+  usage) comes back with the assistant. Signed out there are no controls (D-069).
+- Dropdowns (`src/ui/Menu.tsx`) are a **prompt** (D-222): a framed trigger `SHOW all ▾` (or a side nav icon), a list on
+  page black with a `--line-hover` edge, built cell by cell. On top a `>` line with focus (a placeholder saying what it
+  does: `add…`, `find a place…`): typing narrows the list, the typed part lit magenta, Enter picks the first. `# text`
+  section lines. A row: a magenta `›` where Enter goes, the item's letter `[p]` (typed alone it goes first: `+` `p` Enter
+  makes a plane), its glyph, the label, a faint hint; dangerous ones red; `[x]`/`[ ]` checks. A foot counts what's shown
+  (`8 things · type to find · a letter goes first`). The right-click menu (`ContextMenu.tsx`) is the same panel at the
+  pointer, its `>` line saying what it's on (`do with this customer…`).
+- One-of pickers (`src/ui/Select.tsx`, D-093), never the browser's `<select>`: an inline `value ▾` opens a compact list in
+  the prompt's look, a cyan `•` on the current value, the magenta `›` + wash under the pointer or keys; past 7 options the
+  `>` line, otherwise a first letter jumps; no build-up; opens upward only when it must, stays inside its panel, follows
+  its trigger on scroll; Escape closes only the list. Placement in `src/ui/floating.ts`.
+- Adding a link from a card's panel: each links section's add (at its rule's right end, D-221) opens the same kind of
+  list, narrowed to the cards that fit (a problem for `solves`, a customer for `for`).
 
 ### Surfaces (D-024)
 Every framed element (panels, cards, forms, chips, empty states) composes `src/ui/Frame.module.css`:
@@ -259,8 +226,8 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
 - `fieldLabel`: the same without the glyph, names one field or list (`NOTES`, `LINKS`, Choice), and the label set into a
   Settings section's top edge (the box draws its own corner)
 
-### Pages (D-093)
-Every workspace view except the board composes `src/ui/Page.module.css`:
+### Pages (D-093, 1.0's views; `Page.module.css` is still used by Settings)
+Every 1.0 workspace view except the board composed `src/ui/Page.module.css`:
 - `page`: content from `--hud-x`, starting below the filter row, so switching views never moves it. Frames fill the width
   (Flow, Table, Reports); the Matrix keeps its fit-content width (D-060). Every frame is as tall as its content and stops at
   the page's bottom edge, scrolling inside past that; none stretches to the full height when it has less to show.
@@ -295,20 +262,16 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
   to the top right with room between them, ragged edges of small squares, 0.8 s; from 8.4 s the tones go out the same direction. Signed-in
   pages play the intro on paper. Light theme prints its ASCII ink in sRGB space, so it reads as strongly as the dark theme's glyphs.
 - **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour
-  (`<Appear>` for DOM, `CardReveal` for 3D cards), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
+  (`<Appear>`, `src/ui/cellReveal.ts`), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
 - Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.
-- **Assistant** (D-094, D-095): an empty chat is a small box that slides up from below and lifts the orb onto its top edge
-  (startled); a side panel wider than the box pushes the orb off its end (D-121): it falls, bounces on the floor (squashed,
-  dust, dizzy stars, then cross), peeks around the box's left side, and hops back up once there's room. The first message grows it into a tall column (by its edges, 650 ms) while the orb sinks behind the edge to peek. When a preview or a report opens, the chat glides across
-  to the left (700 ms, eased in and out) while the app breaks apart and the stage builds up in its wake from the right; closing
-  runs it back. Instant under reduced motion. Steps (D-114): a live log, each with its time on the right, and a last line
-  `thinking` / `writing the answer`; once answered it folds into `▸ N steps · 4.7s`, which opens by its height. On phones the
-  chat covers the screen; beside a stage a `chat · preview` switch shrinks it to its header along the bottom (450 ms).
+- **1.0's assistant** (D-094, D-095, D-114, D-121): the chat a small box sliding up with the orb perched on it (pushed off
+  by a wide panel: it falls, bounces, peeks, hops back); the first message grows it into a column (650 ms); a preview or
+  report glides it left (700 ms) while the stage builds in its wake; steps a live log folding into `▸ N steps · 4.7s`.
 - **Motion setting** (D-030, D-063): `full | reduced | system`, default `full`; reduced = frozen background, no waves or sweeps.
   **Background** `on | off` beside it (signed-in pages only).
-
-- Camera flies between views (Canvas → Features → Competitor map) with eased paths
-- Cards spring in on create and dissolve into glyphs on delete
-- Collaborator cursors are drawn 120 ms behind on a curve through what was sent, so they glide like the sender's (D-169; no trail: tried and removed, D-067)
-- Hover: subtle parallax and glyph shimmer
-- Durations of roughly 200–600 ms, spring-based where possible
+- **Focus** (D-185): ink spreading cell by cell on the 9 px grid, nearest first, 820 ms in, 700 ms out; matrices and
+  tables glide to the middle instead (D-206). Framing and unframing turn cell by cell in 320 ms (D-276).
+- Cards build cell by cell when they arrive and break apart when they go (D-203); nothing lifts, tilts or shimmers (D-061).
+- Collaborator cursors are drawn 200 ms behind on a curve through what was sent, so they glide like the sender's
+  (D-169, D-193; no trail: tried and removed, D-067)
+- Marks and drags: see §6 (D-265).

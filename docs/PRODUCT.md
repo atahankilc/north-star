@@ -1,7 +1,7 @@
 # North Star: Product Spec
 
 > A visual, real-time collaborative workspace for the startup ideation phase.
-> Capture ideas as post-its, connect and structure them, break competitors down into features,
+> Capture ideas as cards on planes, connect and structure them, break competitors down into features,
 > and compare everything in one linked model.
 
 ## 1. Problem
@@ -22,136 +22,97 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Workspace** | One startup idea space; the unit of sharing | name, description, members, roles (owners, editors, viewers; D-098) |
 | **Customer** | Who it's for, at any breadth; doubles as the segment (D-044) | title, notes, position, status (D-137) |
 | **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position, status (D-137) |
-| **Text label** | Text written on the board: a heading that names an area and is a place to jump to (D-050), or a paragraph of light Markdown (D-156); either can turn a quarter | text, size, small line, turn, width, position |
-| **Sticky note** | A note anyone who edits drops on the board, signed with who wrote it and when (D-158); the assistant reads them | text, colour, author, width, position |
-| **Comment thread** | A conversation pinned to anything you can select on the board (card, text, section, sticky note, link) or a spot; anyone in the workspace starts one or answers, viewers too; `@` mentions people; new ones light up, and all of them are in the threads panel; resolved threads leave the board (D-159, D-166) | what it's on, messages (who, text, mentions, when), resolved, what each person has read |
-| **Idea** (post-it) | A thought, problem, insight or feature idea | title, body, color, tags, position (x,y,z), status, attachments |
-| **Connection** | Typed link between any two nodes | from, to, type (`relates`, `depends-on`, `contradicts`, `part-of`, `inspired-by`, custom), label, bend points the user put on it (D-155) |
+| **Piece** | Something placed on a workspace's canvas: a plane, matrix, table, documents list, document, kanban or timeline (D-176) | kind, position, size, name, its setup, the plane it's stuck to, framed or open |
+| **Text label** | Text written on the canvas or a plane: a heading that names an area and is a place to jump to (D-050, D-188), a paragraph of light Markdown (D-156), a section (a named frame, D-130) or the project title (D-118); any can turn a quarter | text, size, small line, turn, width, position, its space |
+| **Sticky note** | A note anyone who edits drops on the canvas or a plane, signed with who wrote it and when (D-158, D-257) | text, colour, author, width, folded, position |
+| **Comment thread** | A conversation on a component: a plane, card, text, link or kanban task (D-193, D-260); anyone in the workspace starts one or answers, viewers too; `@` mentions people; new ones light up, and all of them are in the threads panel (D-159, D-166, D-199) | what it's on, its space, messages (who, text, mentions, when), resolved, what each person has read |
+| **Idea** | A thought, insight or answer to a problem | title, body, tags, position on its plane, status |
+| **Connection** | Typed link between any two cards | from, to, kind (`solves`, `part-of`, `competes-with`, `contradicts`, `inspired-by`, `depends-on`, `relates`, `for`, or custom; D-147), label, bend points (kept, not drawn on planes yet, D-155) |
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, impact (D-138), linked ideas |
-| **Competitor** | A company or product in the space | name, URL, logo, description, pricing, audience, regions it operates in (D-145), notes |
+| **Competitor** | A company or product in the space | name, URL, description, pricing, audience, regions it operates in (D-145), notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor, availability, source link (D-164) |
-| **Package** | A piece of the chain as one card: on its home plane its members sit in its frame; elsewhere it links and is rated like a feature (D-141) | name, notes, tags, members, home plane, impact, effort |
+| **Package** | A piece of the chain as one card on a plane: unfolded a frame round its members, folded a card holding them as rows; rated like a feature (D-141, D-239) | name, notes, tags, members, impact, effort |
 | **Evidence** | What was learned about a customer, problem or idea: listed in its panel, counted on its card (D-137) | card, kind (`interview`/`quote`/`data`/`observation`/`link`), text, supports or contradicts, source, link, date |
-| **Comparison** | How a competitor covers one of our features | feature, competitor, coverage (`none`/`partial`/`full`/`better`), notes, linked competitor feature, a score per feature criterion (`met`/`part`/`no`, D-133), not relevant, confidence (`documented`/`inferred`/`guess`, D-136) |
-| **Attachment** | Image, SVG or PDF on any card (D-083; upload only, no sketch pad) | file, type, name, size, owner item |
+| **Comparison** | Which competitor feature matches one of our features (D-164), and old criteria scores (D-133); how well is scored in a matrix's cells now (D-204, D-249) | feature, competitor, matched competitor feature, criteria scores (`met`/`part`/`no`) |
+| **Matrix cell** | One cell of a matrix piece, or of a table's own column (D-204, D-209) | matrix, row, column, value (a step, a number or text), note, not relevant, confidence (`documented`/`inferred`/`guess`, D-136) |
+| **Document** | A file the workspace keeps: a `.md`, an image, a PDF or an old report (D-232); private to its author until shared | kind, title, excerpt, author, shared, its content |
+| **Task** | A to-do on a kanban (D-251): in a column, given to someone, due on a day, for a card | title, notes, column, assignee, due, card, checklist, labels, priority |
 
 ## 4. Views
 
-> **D-177, D-248:** the views below were 1.0's; their code is deleted (in git at `493bf87`) and they come back one by one
-> as canvas pieces.
->
-> **Next (D-174, D-176):** no more pages. A workspace opens on an infinite canvas (the moving backdrop, no grid marks, no
-> view tabs; drag to pan, wheel to zoom). What used to be pages become pieces placed on it, several of each: the side
-> nav's `+` puts a **plane** (D-180; first called a board) at the middle of the screen (beside any it would cover). Every
-> piece has its own background: a plane's is solid page colour with only its `+` marks, no animation. Under its
-> bottom-right corner a console stays open (zoom, full screen, edit); only in edit mode is a plane moved, resized,
-> renamed or deleted, since a press inside it belongs to what's in it. Today a plane is still empty; its cards, tables and
-> the rest come next. Until then the views
-> below open by their paths (`/board`, `/table`, …).
->
-> Now one board with every item type, text labels to jump between, and Board / Flow / Table / Matrix views (D-040, D-050):
-> see [specs/board.md](specs/board.md). Items 1–3 below describe the earlier per-type pages. A built-in example workspace shows it all (D-052).
+A workspace is one infinite canvas (D-174): the moving backdrop, drag to pan, wheel to zoom. Everything else is a
+**piece** placed on it from the side nav's `+` (D-176), several of each; each piece sits on its own graphite surface
+with a band in its kind's colour (D-274), opens into **focus** (it becomes the view, D-184), and in edit mode is moved,
+resized, renamed or deleted. A matrix, table or documents piece can be **unframed** onto the canvas (D-228, D-234).
 
-1. **Idea Canvas.** A 3D/2.5D infinite board of post-its with connections, groups, zoom/pan,
-   mini-map, and live collaborator cursors.
-2. **Features View.** A 3D board like the idea canvas, for our features (priority, status, effort).
-   Each feature links back to its source ideas ("promote to feature") and forward to comparisons (D-037).
-3. **Competitors.** A list of competitors; each has a profile (URL, pricing, audience, regions, notes) and its
-   features grouped by category. Those features can be linked to our ideas and features (D-038).
-4. **Comparison Matrix.** A spreadsheet-style view: rows are our features, columns are competitors,
-   and each cell holds coverage plus notes. Extra columns hold description, priority and status. A feature can list
-   criteria (its must-haves); a cell then scores each one and shows which are met, and the row counts the criteria no
-   competitor meets: the white space (D-133).
-   Shows gaps (opportunities) and table stakes.
-   **Now (D-204):** a generic matrix, a piece on the canvas: rows and columns are every card of a type, typed names or
-   single cards; cells a scale of your own steps, a number or a text, with notes, `not relevant` and how sure; a reading
-   for each row and column. Features × competitors is one of its templates; problems × customers, ideas × criteria and a
-   blank one are the others.
-   An axis can unfold its features into what they're judged on (their criteria, D-249): each a row under the feature,
-   scored like any cell; the feature's cells read from them, and a criterion nobody meets is `◇ open`.
-   On the canvas it's a window you move and resize, its table inside, no `+` marks (D-208); focus brings the table to
-   the middle of the whole screen (D-206).
-   Made in a short wizard (start from, rows, columns, cells, with a preview); its heads look like the cards they are,
-   a scale's cells are squares filled to the step, each axis ends in a dashed card to add to, and the totals can sit
-   in the heads, at the ends or both, as squares, a number or a line (D-212).
-   **Table (D-209):** the first *lens*, a window like the matrix's: rows are the cards that meet its rules (plane,
-   type, status, tag, words in the title; is or is not; none required) plus cards and names added by hand; columns
-   are the cards' own fields and columns of its own (a scale, a number, a text, a check), sorted by any; each column's
-   width is dragged from its head's edge, and a row or column just added is glided to (D-224). Made, like the
-   matrix, in a short wizard from `+ → table…`, and set up in the same tabbed panel (D-218). A matrix or a
-   table moved to a plane's edge sticks there: it moves with the plane and shows that plane's cards (D-210). In the
-   plane's focus the dock opens what's stuck to it beside the plane, the screen split, each part its own area (D-211).
-   A link shows quietly: faint `· ›` in the gap, or a thin line under everything when apart; the piece's console names
-   its plane, and its dropdown links or unlinks it; a plane carries what's linked to it (D-215).
-   **Open on the canvas (D-228):** in edit mode a matrix's or table's console has `[unframe]`: the window goes and the
-   whole table lies on the canvas at its own size, live there (cells, heads, adds, pages and `[setup]` from its
-   console), for everyone. It only moves then (its size is its contents'); `[frame]` puts it back in its window.
-   Focus still works the same.
-5. **Overview** (D-144). The workspace read on one screen: next steps, what's on solid ground and what's still a
-   guess, the riskiest bets, the white space, what looks off. Reached by its path; opening a workspace now lands on
-   the canvas (D-174).
-6. **Priorities** (D-138). Our features on impact × effort, each with a confidence read from the status of the ideas,
-   problems and customers it rests on, and the order impact × confidence ÷ effort suggests beside the priority we set.
-7. **Detail Panel.** A side panel for any node: edit fields, see all links, attachments,
-   and AI actions.
-6. **Reports.** Research reports, write-ups of assistant chats and uploaded `.md` files (D-091), saved per person and shared with the workspace by
-   choice (D-090). One tab beside board, flow, table and matrix.
-8. **Focus.** The board showing one card's chain only (customers → problems → ideas → features both ways from it, and the
-   competitors around them), cards in place; the tab right of Board (D-127, [specs/board.md](specs/board.md)).
-7. **Settings.** Profile, workspace members, AI config (OpenAI key, model), export/import.
+1. **Plane** (D-180). Where the cards live: customers, problems, competitors (their features inside them), ideas,
+   features and packages, linked to each other (D-187, D-207, D-225, D-239). Text, sections and sticky notes go on it
+   or straight on the canvas (D-188). In focus: multi-select, alignment guides, filters, right-click (D-227–D-237).
+   A card's panel opens on the right (D-219, D-221).
+2. **Matrix** (D-204). Rows and columns are every card of a type (one plane or all), typed names or single cards;
+   cells a scale of your own steps, a number or a text, with notes, `not relevant` and how sure; a reading for each
+   row and column. Features × competitors is one of its templates; problems × customers, ideas × criteria and a blank
+   one are the others. An axis can unfold its features into what they're judged on (their criteria, D-249): each a row
+   under the feature, scored like any cell; a criterion nobody meets is `◇ open` (the white space). Made in a short
+   wizard (start from, rows, columns, cells, with a preview); its heads look like the cards they are (D-212).
+3. **Table** (D-209). The first *lens*: rows are the cards that meet its rules (plane, type, status, tag, words in the
+   title; is or is not) plus cards and names added by hand; columns are the cards' own fields and columns of its own
+   (a scale, a number, a text, a check), sorted by any, widths dragged (D-224), paged (D-213).
+   A matrix or a table moved to a plane's edge **sticks** there: it moves with the plane and shows that plane's cards
+   (D-210, D-215); in the plane's focus it opens **beside** the plane, the screen split (D-211).
+4. **Documents** (D-232, [specs/documents.md](specs/documents.md)). A list of the workspace's documents (a table or a
+   shelf of sheets) and a piece showing one document; old research reports were moved here.
+5. **Kanban** (D-251) and **timeline** (D-262): see §6.
+6. **Finder** (D-236). ⌘F or the side nav's compass: the places (planes, headings, sections, the project title) and
+   anything typed, with a preview of where you'll land.
+7. **Settings.** You (account, display) and the workspace (general, people, export) (D-064, D-097, D-246).
+
+**1.0's pages** (D-177, D-248; code deleted, in git at `493bf87`): one board (Board, Flow, Table, Matrix tabs, D-040,
+[specs/board.md](specs/board.md)), Focus (one card's chain, D-127), Priorities (D-138; back as a kanban, D-271),
+Overview (D-144), Reports (D-090, D-103; now documents), the assistant (D-074–D-134) and a built-in example workspace
+(D-052). They come back one by one as pieces, or not.
 
 ## 5. Key flows
 
-1. Brain-dump: create post-its quickly on the canvas
-2. Structure: connect, tag, name areas with text labels
+1. Brain-dump: put cards on a plane quickly (Enter makes one, Tab the next, D-250)
+2. Structure: link, tag, name areas with headings and sections, group cards into packages
 3. Research: add competitors and break their products into features
 4. Link: ideas ↔ competitor features
 5. Plan: add features and link them to the ideas and competitor features they come from
-6. Compare: fill in the matrix
+6. Compare: fill in a matrix; prioritise on a kanban holding cards (D-271)
 7. Decide: use gaps and differences to pick what to build
-8. Collaborate: invite people, see live cursors, edit together
+8. Collaborate: invite people, see live cursors, follow someone, comment, give tasks
 
 ## 6. Feature scope
 
 ### In scope (confirmed by user)
 - **Real-time collaboration**: live cursors, presence (who is here), live edits
 - **Authentication**
-- **AI assist with BYOK** (bring your own OpenAI key), using a cheap model for:
-  - summarize an area (the cards under a text label)
-  - suggest connections between ideas
-  - draft a competitor breakdown from a description or URL text
-  - fill or suggest matrix notes
-- **Settings page** where users enter their own API key and choose a model
-- **Export / Import** of a workspace (JSON bundle)
-- **Attachments**: images, SVGs and PDFs on any card, up to 10 MB each, big photos shrunk before upload (D-083); drawings are uploaded as files, no built-in sketch pad
+- **AI assist with BYOK** (bring your own OpenAI key, or a workspace key, D-079): 1.0's assistant (chat, proposals,
+  deep research) is deleted with 1.0 (D-248); it comes back as a piece. Its server side waits for Blaze.
+- **Settings** in a modal: account, display, the workspace's name, people and export
+- **Export / Import** of a workspace (`.zip` bundle, D-246)
+- **Files**: `.md` documents now; images and PDFs as documents once Storage is live (D-232). Drawings are uploaded as
+  files, no built-in sketch pad
+- **Comments and mentions** on any component (D-193)
 - **Web only**
 
-- **Kanban** (D-251): a canvas piece holding the team's tasks in columns (`todo · doing · done` to start, renamed,
-  added, moved, one marked finished); a task has a title, who it's given to, a due day, the card it's for, a checklist
-  and notes; dragged between columns, typed in at a column's foot, opened in a right panel. Grown in eight sessions
-  (docs/specs/kanban.md): the ledger look (D-252); a card's panel lists and makes its tasks, a finished test logs
-  evidence (D-254); stuck to a plane it shows that plane's tasks and opens beside it (D-255); filters, `#labels`, `P1–P3`,
-  column limits (D-256); lanes by person or card, several selected at once (D-258); others' picks and drags shown,
-  comments on tasks (D-260); tasks given to you counted by your square, found by ⌘F (D-261); a `SOON` band of what's due.
-- **Cards on a kanban** (D-268, docs/specs/priorities.md): a kanban holds tasks or cards, never both; made from
-  `+ → kanban…` (tasks, features by status, my own) and set up in a tabbed panel (holds · cards · columns). Holding
-  cards, which come from the table's rules (plane, type, status, tag, title; cards by hand), its columns are one field's
-  values (status, impact, effort, priority), `no value` first; dragging a card to another column sets that field (one
-  undo step), a click opens its panel. Stuck to a plane it shows that plane's cards. Rows from a second field make it a
-  grid of boxes, dropping in one sets both fields; a box can carry a name (`quick wins`), washed green or named in
-  magenta (D-269). The `priorities` template (D-271): features and packages, effort × impact, the corners named (quick
-  wins, big bets, fill-ins, money pits), and beside it the suggested order: impact × confidence ÷ effort, in thirds as
-  P1–P3, `P2 → P1` where a card's own priority differs; never written. Confidence is one rule everywhere: the share of
-  what a feature or package rests on that's validated (2) or testing (1); anything invalidated breaks it (`!`, score 0).
-- **Timeline** (D-262): a canvas piece showing kanbans' tasks on two weeks of days, rows by kanban, person or card;
-  dragging a task onto a day sets its due day; late ones on today in magenta; a tray of tasks with no day. Sticks to a
-  kanban and opens beside it in the kanban's focus.
+- **Kanban** (D-251, [specs/kanban.md](specs/kanban.md)): the team's tasks in columns (`todo · doing · done` to start);
+  a task has a title, who it's given to, a due day, the card it's for, a checklist and notes. A card's panel lists its
+  tasks, and a finished test logs evidence (D-254); stuck to a plane it shows that plane's tasks (D-255); filters,
+  labels, priorities, limits, lanes (D-256, D-258); others' picks and drags shown, tasks given to you counted by your
+  square (D-260, D-261).
+- **Cards on a kanban** (D-268, D-269, [specs/priorities.md](specs/priorities.md)): a kanban can hold cards instead,
+  its columns (and rows) a field's values (status, impact, effort, priority), so a drag sets the field. The
+  `priorities` template (D-271): features and packages on effort × impact, the corners named, and beside it the
+  suggested order impact × confidence ÷ effort; confidence is the share of what a card rests on that's validated or
+  being tested, broken by anything invalidated.
+- **Timeline** (D-262): kanbans' tasks on two weeks of days; a drag sets the due day; stuck to a kanban, beside it.
 
 ### Later / nice to have
 - Templates (Lean Canvas, SWOT, positioning map)
 - Version history / snapshots
 - Export to PDF, PNG or CSV (matrix)
-- Comments and mentions
 
 See [ROADMAP.md](ROADMAP.md) for phasing and [../memory-bank/open-questions.md](../memory-bank/open-questions.md)
 for unresolved items.

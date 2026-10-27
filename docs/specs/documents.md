@@ -98,4 +98,4 @@ there is measured as drawn.
 - Images and PDFs (Storage, step 4): upload with thumbnails, pdf.js pages, `[◐ dark]`, an image taking its shape.
 - Writing a document in the app (kind `note`); renaming from the UI; the assistant writing documents.
 - Viewers uploading (the client's read-only mode refuses it).
-- Comments on a document in a list; documents in the export.
+- Comments on a document in a list. (Documents are in the export since D-246: .md and reports; files once Storage is live.)

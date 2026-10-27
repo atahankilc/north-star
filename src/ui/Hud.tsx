@@ -1,11 +1,9 @@
-// The top bar on every page: breadcrumb and view menu bar on the left, page actions on the right; you and settings in
-// the bottom-left corner (D-175). The HUD moves to the left piece by piece.
+// The HUD on every page: the breadcrumb top left, page actions top right; you and settings in the bottom-left corner
+// (D-175). The rest moves to the left side nav piece by piece.
 // Same position and margins everywhere (--hud-x / --hud-y), so nothing shifts between pages.
-import { motion } from 'motion/react'
 import { Fragment, type ReactNode } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../data/auth'
-import { useMotion } from '../state/motion'
 import styles from './Hud.module.css'
 import { SettingsButton, type WorkspacePage } from './Settings'
 
@@ -15,12 +13,8 @@ export type Crumb = {
   to?: string
 }
 
-// The workspace's views, as tabs beside the breadcrumb (D-053, D-066): `│ board  flow  table  matrix`, the current one underlined.
-export type Tab = { label: string; to: string; end?: boolean }
-
 type Props = {
   crumbs?: Crumb[]
-  views?: Tab[]
   right?: ReactNode
   // The current workspace's pages in the settings modal, and its name for the menu (D-097).
   settings?: (page: WorkspacePage) => ReactNode
@@ -35,10 +29,9 @@ type Props = {
   mine?: ReactNode
 }
 
-export function Hud({ crumbs = [], views, right, settings, settingsName, settingsBadge, side, corner, mine }: Props) {
+export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge, side, corner, mine }: Props) {
   const atRoot = crumbs.length === 0
   const { user } = useAuth()
-  const reduced = useMotion((s) => s.reduced)
 
   return (
     <header className={styles.hud}>
@@ -74,27 +67,6 @@ export function Hud({ crumbs = [], views, right, settings, settingsName, setting
           )
         })}
       </nav>
-      {views && (
-        <nav className={styles.views} aria-label="Views">
-          {views.map((t) => (
-            <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => (isActive ? styles.viewActive : styles.view)}>
-              {({ isActive }) => (
-                <>
-                  {t.label}
-                  {/* One bar that slides to the current view. */}
-                  {isActive && (
-                    <motion.span
-                      layoutId="hud-view-bar"
-                      className={styles.viewBar}
-                      transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 520, damping: 40 }}
-                    />
-                  )}
-                </>
-              )}
-            </NavLink>
-          ))}
-        </nav>
-      )}
       <div className={styles.right} data-glide>
         {right}
       </div>

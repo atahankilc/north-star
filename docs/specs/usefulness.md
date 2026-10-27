@@ -1,6 +1,7 @@
 # Spec: from research to decisions (Phase 6)
 
-Status: **slices 1–6 and 8 built (D-133–D-138, D-144)**; slice 7 became planes and packages (D-139–D-143). Each slice gets its own D-number when it's built.
+Status: **built in 1.0, code deleted (D-248)**; back on the canvas: criteria (D-249), status + evidence on plane cards
+(D-205, D-221), priorities as a kanban (D-271). Slices 1–6 and 8 were D-133–D-138, D-144; slice 7 became planes and packages (D-139–D-143). Each slice gets its own D-number when it's built.
 
 ## 1. Why
 

@@ -10,8 +10,9 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
    - @memory-bank/state.md
    - @memory-bank/open-questions.md
    - @memory-bank/decisions.md (current rules by topic; the full entries are in `decisions-log.md`)
-   Not auto-loaded, read on demand: `memory-bank/decisions-log.md` (every D-xxx in full: why, alternatives, user quotes)
-   and `memory-bank/state-history.md` (what was done and verified, session by session). Grep them by D-number.
+   Not auto-loaded, read on demand: `memory-bank/decisions-log.md` (every D-xxx in full: why, alternatives, user quotes),
+   `memory-bank/state-history.md` (what was done and verified, session by session) and `memory-bank/decisions-1.0.md`
+   (1.0's rules, for when a deleted feature comes back). Grep them by D-number.
 2. Consult `/docs` as needed:
    - `docs/PRODUCT.md`: what we're building (entities, views, flows)
    - `docs/ARCHITECTURE.md`: stack, backend, data model, collaboration, AI, export/import
@@ -32,7 +33,7 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 - `npm run dev` (real Firebase, http://localhost:5288, set in `vite.config.ts`), `npm run dev:emu` + `npm run emulators` (local, test users; builds and runs the functions too)
 - `npm run test:rules`: run after any change to `firestore.rules` / `database.rules.json`, then `npm run deploy:rules`
 - `npm run check:memory`: the memory bank agrees with itself (log numbering, every standing decision has a line in
-  decisions.md, nothing superseded cited as a rule, state.md ≤ 120 lines); run after editing memory-bank/
+  decisions.md or decisions-1.0.md, nothing superseded cited as a rule, state.md ≤ 120 lines); run after editing memory-bank/
 - `npm run build`: typecheck + production build; `npm run build:functions`, `npm run deploy:functions` (needs the Blaze plan)
 
 ## Hard rules

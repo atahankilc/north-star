@@ -1,13 +1,13 @@
 # North Star: Architecture
 
-> **D-177, D-248:** on `refactor/north-star-1.5` the 1.0 code (board, views, assistant, their data layer) is deleted
+> **D-177, D-248:** since 1.5 (on `main` since 2026-10-27) the 1.0 code (board, views, assistant, their data layer) is deleted
 > (in git at `493bf87`), and no 1.0 data shape is supported: only old reports are moved to documents. Live: auth,
-> workspaces, members, presence, settings, export/import and the canvas with its pieces. Sections below about the old
-> board, views and assistant describe 1.0, for when a feature comes back as a piece.
+> workspaces, members, presence, settings, export/import and the canvas with its pieces. §8's assistant describes 1.0,
+> for when it comes back as a piece; its server side (`functions/`) is kept.
 
 Status: **accepted** unless marked. Items marked ⏳ wait on a decision in
 [../memory-bank/open-questions.md](../memory-bank/open-questions.md).
-Accepted decisions are logged in [../memory-bank/decisions.md](../memory-bank/decisions.md).
+Accepted decisions are listed in [../memory-bank/decisions.md](../memory-bank/decisions.md), in full in `decisions-log.md`.
 
 ## 1. Constraints
 
@@ -57,26 +57,26 @@ Firebase services used:
 
 The app talks to Firebase only through **`src/data/`**, so another swap would stay contained.
 
-## 4. Frontend stack (proposed)
+## 4. Frontend stack
 
 - **Vite + React + TypeScript**
-- **three.js via @react-three/fiber** with **@react-three/drei** helpers and
-  **@react-three/postprocessing** for the ASCII/dither effect
-- **Zustand** for local UI state (selection, tool mode, camera)
+- **three.js via @react-three/fiber** for the backdrop, with a hand-written ASCII effect (`src/three/AsciiEffect.ts`)
+- **Zustand** for local UI state (selection, canvas view, display, motion)
 - **React Router** with **BrowserRouter** (plain paths, no `#`, D-070). GitHub Pages has no rewrites, so the build copies
   `index.html` to `404.html`; every deep link boots the app. All paths come from `src/app/paths.ts`
-- **Framer Motion / motion** for DOM transitions, and R3F springs (`@react-spring/three`) for 3D
+- **motion** for DOM transitions; most entrances are the cell-by-cell build (`src/ui/cellReveal.ts`, D-034)
 - **GitHub Actions** builds and deploys to Pages
 
 ### Rendering strategy (hybrid)
 Fully WebGL text editing is painful and inaccessible. So:
-- **3D layer (R3F):** scene, camera, post-it card meshes, connection curves, ambient ASCII-shaded
-  backgrounds, transitions between views, and collaborator cursors in world space.
-- **DOM layer:** all text editing (the detail panel), side panels, the matrix/table view, settings,
-  and modals. These are styled in the same ASCII language.
-- **Card text** is WebGL SDF text (troika), crisp at any zoom (D-019). The board is a 2.5D scene: pan and zoom, no rotation (D-018).
-- The **ASCII post-processing** applies to decorative and ambient layers and transitions, never to
-  text the user has to read or edit.
+- **WebGL (R3F):** the flowing ASCII backdrop and the welcome intro (`src/three/`), and the curtain's cell-by-cell reveal.
+- **DOM:** the canvas and every piece on it (planes and their cards, links, text, matrices, tables, kanbans, documents),
+  panels, menus and settings, styled in the same ASCII language. The canvas is a transformed DOM layer that pans and
+  zooms (`CanvasView.tsx`); only what's on screen is drawn (`visible.ts`); a few dense things paint into a 2D `<canvas>`
+  (a far-out matrix's cells, `CellDots`).
+- The **ASCII post-processing** applies to the backdrop and transitions, never to text the user has to read or edit.
+- 1.0's board was a 2.5D WebGL scene with SDF card text (troika, D-018, D-019); drei and troika
+  were removed with it.
 
 ## 5. Data model (Firestore)
 
@@ -85,82 +85,86 @@ Source of truth: `src/data/model.ts`.
 ```
 workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), memberIds[], roles{uid: owner|editor|viewer}, inviteCode, invitedEmails[]
   members/{uid}         name, email?, photo?, joinedAt                            (people list, D-098)
-  reports/{id}          title, answer, sectionCount, sourceCount, kind, topic, uid, name, model, shared, createdAt   (summary, D-098)
-  documents/{id}        kind, title, excerpt, origin, uid, name, shared, size, words?, path?…   (D-232; old reports move here)
-    content/body        a .md's text, or a report's answer, sections, implications, openQuestions, sources
-    content/body        sections, implications, openQuestions, sources            (fetched when opened, D-098)
-  customers/{id}        title, body, color, tags[], x, y                          (D-042, D-044)
-  problems/{id}         title, body, color, tags[], x, y                          (D-041)
-  ideas/{id}            title, body, color, tags[], status, x, y
-  features/{id}         title, body, color, tags[], x, y, priority, status, effort, folded? (its parts folded into it on All, D-164)   (same card fields as ideas, D-037)
-  competitors/{id}      name, url, description, pricing, audience, regions[] (D-145), notes, color, x, y
-  labels/{id}           text, color, size, kind?, x, y                            (text on the board, D-050; size heading|subheading|minor|note, bold/italic/caps true or absent; kind 'title': the project title block, D-118, + w once resized, D-132; kind 'section' + w, h: a frame, D-130, side 'left' when its name runs up the left edge, D-157; size note = a paragraph ≤ 4000 + w, scale small|medium, missing = large (D-160, D-161), D-156; rotate 90|-90 and kicker ≤ 60 on any text or section, D-156; kind 'sticky' + uid, author, w, scale small|large (missing = medium): a sticky note ≤ 4000, D-158, D-162)
-  competitorFeatures/{id}  competitorId, name, description, category, availability? (free|paid|enterprise|beta), url? (D-164)
-  comparisons/{id}      featureId, competitorId, coverage?, notes, competitorFeatureId, criteria? {criterionId: met|part|no},
-                        notRelevant?: true, confidence? documented|inferred|guess (D-136)
-                        (id = featureId_competitorId; a feature's own `criteria: {id, text}[]`, ≤ 8, D-133)
-  edges/{id}            fromId, fromType, toId, toType, kind, label, bends? [{x, y}] (D-155)
-  threads/{id}          on (card|label|link|spot), targetId?, planeId?, x, y, uid, name, count, lastAt, lastUid, lastName,
-                        lastText (≤ 160), mentions? (uids ≤ 50), resolved?, resolvedBy?
-                        (comment threads, D-159, D-166: any member writes them as themselves, viewers too; not undone, copied
-                        or exported; only a message's writer deletes it, an owner only with the whole thread)
-    messages/{id}       uid, name, text (≤ 2000), mentions? (uids ≤ 20), createdAt, editedAt?
-  threadReads/{uid}     seen {threadId: lastAt}, tasks? (when you last looked at your tasks, D-261), updatedAt (what you've
-                        read, D-166; yours alone)
-  planes/{id}           name, order (D-139); All has no doc
-  placements/{id}       planeId, itemId, itemType, x, y, folded? (D-164) (id = planeId_itemId; a card's place on a plane other than All)
-  packages/{id}         title, body?, tags?, x, y, memberIds (≤ 60), homePlaneId, impact?, effort? (D-141)
-  evidence/{id}         nodeId, nodeType (customer|problem|idea), kind, text, stance (supports|contradicts), source?, url?,
-                        date? (YYYY-MM-DD) (D-137); customers, problems and ideas carry validation? (hypothesis|testing|validated|invalidated)
-  pieces/{id}           kind (plane|matrix|table; old `board` = plane), x, y, w, h, name?, matrix?, table?, stuckTo? (a plane's id,
-                        matrix/table only, D-210), open? (true: out of its window on the canvas, matrix/table only; w/h stay
-                        the window's, D-228) (D-176, D-180, D-204, D-209)
+  pieces/{id}           kind (plane|matrix|table|documents|document|kanban|timeline), x, y, w, h (canvas px), name?,
+                        stuckTo? (a plane's id, or a kanban's for a timeline; D-210, D-262), open? (out of its window on the
+                        canvas; w/h stay the window's, D-228), and its kind's setup: matrix?, table?, documents?, docId?,
+                        kanban?, timeline?                                       (D-176, D-180, D-204, D-209, D-232, D-251, D-262)
                         matrix = {rows, cols, cell (scale|number|text), steps[{id, glyph, label, tone}], unit?, notRelevant?,
-                        confidence?, reading?}; an axis = {type?, plane?, hide?[], items[{id, name? | cardType, cardId}], noun?}
-  tasks/{id}            pieceId (a kanban), col (its column's id), order (number; between its neighbours'), title (≤ 200),
-                        notes?, assignee? (uid) + assigneeName?, due? (YYYY-MM-DD), cardId? + cardType?, checks?[{id, text,
-                        done?}] (≤ 50), learned? (evidence id | 'skip', D-254), labels?[] (≤ 20) + priority? (P1–P3, D-256),
-                        givenAt? + givenBy? (D-261), uid (who made it) (D-251); a kanban piece carries kanban = {cols[{id, name,
-                        done?, limit?}] (1–12), everyPlane? (D-255), rows? (assignee|card, D-258), holds? ('cards'), source? (a
-                        table's rows source), colField? (status|impact|effort|priority) (D-268), rowField? (another of those), names?[{col, row,
-                        name ≤ 40, tone? (good|bad)}] (≤ 40) (D-269)}; a timeline piece carries
-                        timeline = {kanbans?[] (≤ 20), rows? (kanban|assignee|card)} and may be stuckTo a kanban (D-262)
-  cells/{id}            matrixId, row, col, value? (step id | number | text ≤ 200), notes?, notRelevant?, confidence?
-                        (row/col `card~criterion` for what a feature unfolded into; axis `unfold`, `open[]`, D-249)
+                        confidence?, reading?}; an axis = {type?, plane?, hide?[], items[{id, name? | cardType, cardId}], noun?,
+                        unfold? ('criteria'), open?[] (D-249)}
                         table = {rows: {rules[{field (plane|type|status|tag|title), not?, values[]}], hide?[], items[]},
                         manual?, cols[{id, field? | name, kind (scale|number|text|check), steps?, unit?}], sort?{col, desc?}} (D-209)
-                        (id = matrixId_row_col; a row or column is its card's id or its typed entry's id, D-204)
-                        (a table's own columns' values too: matrixId = the table's id, col = its column's id, D-209)
+                        kanban = {cols[{id, name, done?, limit?}] (1–12), everyPlane? (D-255), rows? (assignee|card, D-258),
+                        holds? ('cards'), source? (a table's rows), colField? (status|impact|effort|priority) (D-268),
+                        rowField?, names?[{col, row, name ≤ 40, tone? (good|bad)}] (≤ 40) (D-269)}
+                        timeline = {kanbans?[] (≤ 20), rows? (kanban|assignee|card)} (D-262)
+  customers/{id}        pieceId (its plane), title, x, y (plane px), body?, tags[]?, validation? (D-137)
+  problems/{id}         the same
+  ideas/{id}            the same
+  features/{id}         pieceId, title, x, y, body?, tags[]?, priority?, status?, impact?, effort? (D-138),
+                        criteria?[{id, text}] (≤ 8, D-133), folded? (its parts folded into it, D-164, D-225)
+  competitors/{id}      pieceId, name, x, y, description?, audience?, pricing?, url?, regions[]? (D-145), notes?, tags[]?
+  packages/{id}         pieceId, title, x, y, body?, tags[]?, memberIds (≤ 60), impact?, effort?, folded? (D-141, D-239)
+  competitorFeatures/{id}  competitorId, name, description?, category?, availability? (free|paid|enterprise|beta), url? (D-164)
+  comparisons/{id}      featureId, competitorId, competitorFeatureId? (their feature matching ours, D-164),
+                        criteria? {criterionId: met|part|no} (D-133) (id = featureId_competitorId)
+  edges/{id}            fromId, fromType, toId, toType, kind, label?, bends? [{x, y}] (D-155; kept, not drawn on planes yet)
+  evidence/{id}         nodeId, nodeType (customer|problem|idea), kind, text, stance (supports|contradicts), source?, url?,
+                        date? (YYYY-MM-DD) (D-137)
+  labels/{id}           pieceId (`canvas` or a plane's id), text, x, y, size? (heading|subheading|minor|note), bold?, italic?,
+                        caps?, color?, kicker? (≤ 60), rotate? (90|-90), w?, scale? (D-156, D-161), kind?:
+                        'section' + w, h, side? ('left') (D-130, D-157); 'title' (the project title, one per workspace, D-118);
+                        'sticky' + uid, author, folded? (D-158, D-257, D-259)                   (D-188)
+  cells/{id}            matrixId, row, col, value? (step id | number | text ≤ 200), notes?, notRelevant?, confidence?
+                        (id = matrixId_row_col; a row or column is its card's id, its typed entry's id, or `card~criterion`
+                        for what a feature unfolded into, D-249; a table's own columns' values too, matrixId = the table's id)
+  tasks/{id}            pieceId (a kanban), col (its column's id), order (between its neighbours'), title (≤ 200),
+                        notes?, assignee? (uid) + assigneeName?, due? (YYYY-MM-DD), cardId? + cardType?, checks?[{id, text,
+                        done?}] (≤ 50), learned? (evidence id | 'skip', D-254), labels?[] (≤ 20) + priority? (P1–P3, D-256),
+                        givenAt? + givenBy? (D-261), uid (who made it) (D-251)
+  documents/{id}        kind (markdown|image|pdf|report), title, excerpt, origin, uid, name, shared, size, words?, path?…   (D-232)
+    content/body        a .md's text, or a report's answer, sections, implications, openQuestions, sources (fetched when opened)
+  reports/{id}          1.0's reports: only read and deleted, to be moved to documents once (D-090, D-248)
+    content/body
+  threads/{id}          on (card|label|link|plane|task), targetId, planeId (its space: `canvas`, a plane's or a kanban's id),
+                        x, y, uid, name, count, lastAt, lastUid, lastName, lastText (≤ 160), mentions? (uids ≤ 50), resolved?,
+                        resolvedBy?  (D-159, D-166, D-192, D-193: any member writes them as themselves, viewers too; not
+                        undone, copied or exported; only a message's writer deletes it, an owner only with the whole thread)
+    messages/{id}       uid, name, text (≤ 2000), mentions? (uids ≤ 20), createdAt, editedAt?
+  threadReads/{uid}     seen {threadId: lastAt}, tasks? (when you last looked at your tasks, D-261), updatedAt (yours alone)
+  ai/{docId}, aiUsage/{id}   the assistant's settings and usage log (D-079, D-104), kept for when it comes back
 inviteCodes/{code}      workspaceId, createdBy
-joinRequests/{wid}_{uid} workspaceId, ownerId, uid, name, email, code, createdAt   (D-062)
+joinRequests/{wid}_{uid} workspaceId, uid, name, email, code, createdAt   (D-062)
+aiSecrets/{wid}         the workspace key, encrypted; no client reads or writes it (D-079)
 
-RTDB: presence/{wid}/{uid}   name, color, photo?, view, plane?, x?, y?, sel?, more?, drag? (a task held, D-260), since?, ts
-                             (D-065, D-067, D-124; edit/field retired, D-071)
+RTDB: presence/{wid}/{uid}   name, color, photo?, view ('canvas'), plane? (the plane in focus), x?, y? (that space's px),
+                             sel?, more?, drag? (a task held, D-260), since?, ts   (D-065, D-067, D-124, D-191)
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: members (`memberIds`) read them; owners and
   editors write them (D-098).
-- **Roles** (D-098): `owner` (any number, never none: people, roles, the invite code, the assistant key, deleting it),
-  `editor` (all content), `viewer` (reads everything, keeps their own reports). Authority comes from `roles`; `ownerId` is
-  only the creator. Viewers get the preview's lock in viewer mode (`viewerLock.ts`) and writes are refused in `history.ts`.
-- **Loaded on demand** (D-098): opening a workspace loads its items, links, matrix and attachment records, nothing else.
-  Reports (summaries, 20 at a time; a body when opened), the people list (20 at a time), the usage log (20 at a time; the
-  month's totals once per visit) load only where they're shown. Paged live queries: `usePaged` in `src/data/hooks.ts`
-  (several queries merged, never skipping rows). Composite indexes in `firestore.indexes.json`.
-- `edges` is one generic edge collection, so any node type can connect to any other.
-  Tagging an item with a customer is an edge with `kind: 'for'` (item → customer), drawn as a card label (D-044).
+- **Roles** (D-098): `owner` (any number, never none: people, roles, the invite code, the workspace key, deleting it),
+  `editor` (all content), `viewer` (reads everything, keeps their own documents). Authority comes from `roles`; `ownerId` is
+  only the creator. Viewers get the app locked (`editLocked`) and writes are refused in `history.ts`.
+- **Loaded on demand** (D-098): opening a workspace loads its pieces, cards, links, text, cells and tasks once
+  (`src/data/workspaceData.ts`, shared by every piece), nothing else.
+  Documents, the people list and threads' messages load only where they're shown, paged (`usePaged` in
+  `src/data/hooks.ts`: several queries merged, never skipping rows). Composite indexes in `firestore.indexes.json`.
+- `edges` is one generic collection, so any card can link to any other; tagging a card with a customer is an edge
+  `kind: 'for'` (card → customer) (D-044).
 - Undo/redo: every write in `src/data/` goes through `tracked()` in `history.ts`, which snapshots the touched documents (D-046).
-- `domains` and `groups` are retired (D-048, D-049; frames came back as section labels, D-130): rules allow only reading and deleting them, so old workspaces can be cleaned up.
-- Rules allow only these collections and check each one's basic shape (`firestore.rules`, mirrors `model.ts`).
-- The workspace route loads every collection once (`src/data/workspaceData.ts`); all views share it (D-036).
+- No 1.0 shapes (D-248): cards, text and threads always have a space; `domains`, `groups`, `planes`, `placements`,
+  `attachments` and `board` pieces are refused by the rules (not even read: old docs stay unseen in old workspaces).
+- Rules allow only these collections and check each one's basic shape (`firestore.rules`, mirrors `model.ts` and the
+  types in `src/data/`).
 - "My workspaces" = `where('memberIds', 'array-contains', uid)`.
-- **Joining (D-062, replaces the direct join of D-012).** Two ways in, both checked by the rules:
+- **Joining (D-062).** Two ways in, both checked by the rules:
   - *Email invite:* the owner adds a lowercased address to `invitedEmails`. That person (signed in with a verified Google
     address) can read the workspace doc, so it shows on their workspaces page (`where('invitedEmails', 'array-contains', email)`).
     Accepting adds only yourself as `editor` and removes your address in the same write; declining only removes your address.
     No mail is sent (no server); the owner tells them.
   - *Code + approval:* read `inviteCodes/{code}` (get only) → create `joinRequests/{wid}_{uid}` carrying the code; the rules
-    check it against the workspace's current `inviteCode` and copy in `ownerId`. The owner sees requests in Settings
-    (`where('ownerId', '==', uid)`) and approves (adds the member and deletes the request in one batch) or denies (deletes it).
+    check it against the workspace's current `inviteCode`. The owner sees requests in Settings
+    (`where('workspaceId', '==', wid)`) and approves (adds the member and deletes the request in one batch) or denies (deletes it).
     The requester can see and withdraw their own. A code alone never makes anyone a member.
   - The owner can swap in a new code (old `inviteCodes` doc deleted, new one created, `inviteCode` updated in one batch).
 
@@ -169,14 +173,14 @@ RTDB: presence/{wid}/{uid}   name, color, photo?, view, plane?, x?, y?, sel?, mo
 - **Persistent data:** DB subscriptions. Every client re-renders on change.
   The conflict model is **last-write-wins per field**, which is enough for post-it fields.
   Simultaneous typing in the same field: last write wins, no lock or warning (D-071, answers Q-006).
-- **Ephemeral data** (cursors, selection, "is typing", viewport): Realtime Database at
-  `presence/{wid}/{uid}`, removed automatically with `onDisconnect()`. Throttled to ~16 Hz (one write per 60 ms) and
-  smoothed only on the receiving side (D-169): each position is kept with the time it arrived, and the cursor is drawn
-  120 ms in the past on a curve (Catmull-Rom) through them, bunched arrivals spread out again; cursor positions stay out of
+- **Ephemeral data** (cursors, selection, what's held, the plane in focus): Realtime Database at
+  `presence/{wid}/{uid}`, removed automatically with `onDisconnect()`. Sent about 10 times a second and
+  smoothed only on the receiving side (D-169, D-193): each position is kept with the time it arrived, and the cursor is drawn
+  200 ms in the past on a curve (Catmull-Rom) through them, bunched arrivals spread out again; cursor positions stay out of
   React state, so a moving pointer re-renders nothing but the canvas. Each tab writes its whole node, so a second tab survives
-  the first one's disconnect (D-065). Cursors are board world coordinates; other views report only which view you're on. `sel` is the selected item
-  (or a matrix cell, `<featureId>_<competitorId>`), shown in every view (D-068), and taken as your own while you follow them (D-170); `more` is the rest of a selection of
-  several on the board, ids joined by spaces, ≤2048 characters (D-124). RTDB writes are free (billed by bandwidth),
+  the first one's disconnect (D-065). A cursor is in its space's px: the canvas's, or the focused plane's (`plane`, D-191); you see the cursors of people in
+  your space. `sel` is the selected item (a card, text, piece, cell or task), shown wherever it is drawn (D-068, D-272), and
+  taken as your own while you follow them (D-170); `more` is the rest of a selection of several, ids joined by spaces, ≤2048 characters (D-124). RTDB writes are free (billed by bandwidth),
   and Spark allows 100 simultaneous connections.
 - RTDB rules can't read Firestore membership, so any signed-in user who knows a workspace ID could
   read its cursors (name, colour, coordinates only). The IDs are random. Accepted for now (D-016).
@@ -189,117 +193,78 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
 
 ## 8. AI (BYOK)
 
-- **Models per key** (D-104): own key: a default per task (chat, web answers, deep research) and per-workspace overrides
-  in this browser; workspace key: owners' picks per task and an allowed list in `ai/config`, enforced by the `ai` proxy.
-  `resolveModel` in `src/ai/models.ts` decides each call's model; the chat header can switch it for one conversation.
-- **Two kinds of key** (D-079): your own (below), or a **workspace key** the owner sets once in Settings → ai → keys and
-  shares with everyone or chosen members. The workspace key is held only by Cloud Functions (`functions/`): encrypted in
-  `aiSecrets/{wid}` (no client access), used by the `ai` function, which streams the answer back and logs the call.
-  Every call, on either key, goes through `callAi` (`src/ai/call.ts`) and lands in `workspaces/{wid}/aiUsage` (tokens, model,
-  tools, time; never messages). You see your own calls; the owner also sees all workspace-key calls.
-- The user pastes an **OpenAI API key on the Settings page**.
-- The key is stored **only in the user's browser (localStorage)** and is **never written to the DB**,
-  so collaborators can never see it. Each collaborator uses their own key.
-- Calls go **directly from browser to OpenAI** with `fetch` (Responses API, streaming, `store: false`; `src/ai/openai.ts`).
-- **Models** (D-077): one for chat and one for research (`[web]` on), picked in Settings → ai; both default to `gpt-6-luna`.
-- **Context:** each message sends a fresh plain-text brief of the workspace (`src/ai/context.ts`), built from the data the page
-  already holds; every item carries a short `[ref]`. It opens with the workspace name and `WHAT WE'RE BUILDING` (the workspace
-  description, set in Settings → workspace), then whether the board has the project block (D-120), and is wrapped in `<workspace>…</workspace>` as data, not instructions. The prompt
-  says North Star is the app, never the startup (D-082).
-- **Changes** (D-074): one strict function tool, `propose_changes` (`src/ai/tools.ts`). The model proposes; the chat shows a
-  checklist; only what the user applies is written, through `src/data/assistant.ts`, as one undo step. Deletes cascade like
-  a delete by hand (D-075). `update_project` (D-120) edits the workspace's name and description (the project block, D-118);
-  for the workspace doc `history.ts` snapshots only those two fields and puts them back merged, never roles or codes.
-  New cards are placed clear of the project block; a label row never names a label with no text.
-  Edits (D-122): `update_competitor_feature`; `set_matrix_cell` sets `their_feature` (`competitorFeatureId`) and clears
-  coverage with `not assessed`; in update rows and cells `""` empties a field (a `null` write → `deleteField()`).
-  Board text and moves (D-123): `add_label` / `edit_label` (size, colour by accent name, `above` a card; placed after the
-  cards, stepping up until clear) and `move_card` (beside another card, then the nearest free spot).
-  Planes (D-142): a proposal lands on the plane open when it was made (`proposal.plane`): planned on `layoutWs`, moves
-  become placements, new cards placed there and on All's right column; rows `add_plane`, `place_on_plane`,
-  `take_off_plane`, `add_package`, `edit_package`.
-  Criteria (D-134): `set_criteria` sets a feature's criteria and every competitor's scores in one row (`do: 'criteria'`);
-  criteria kept word for word keep their ids, dropped ones' scores leave the feature's cells in the same batch.
-- **Agent loop** (D-084): an answer is up to 6 calls. After each one, the browser runs the function tools the model called
-  (`propose_changes`, and `get_items` in `src/ai/readTools.ts`, which reads a few items in full) and sends the step's output
-  items plus the `function_call_output`s back. Reasoning carries over as `reasoning.encrypted_content` (still `store: false`).
-  The last call uses `tool_choice: none`, so every answer ends in words. Each call is its own usage-log entry.
-- **Analysis modes** (D-085): `/validate`, `/interview`, `/swot`, `/gaps`, `/next`, `/pitch`, `/organize`, `/analyze` (D-099), `/criteria` (D-134) (`src/ai/modes.ts`) are canned
-  asks sent as a normal message (the chat shows the short form); one-item modes use the selected card when it fits.
-- **Board areas** (D-086, D-125): `arrange_area` rows name an area and its cards, and may give a `layout` (`columns`: a
-  column per type, linked cards level; `rows`: one band per problem with its chain beside it; `grid`; `line`; `hub`: the
-  first card ringed by the rest; D-129: `cycle`, a ring in order with nothing in the middle; `orbit`, the first card, what
-  links to it on an inner ring, the rest outside what they link to; `tree`, top-down by links from the first card;
-  `quadrant`, its first four sections as a 2 × 2), is drawn as a section frame (D-131, `frame`; default unless it reuses a
-  heading) with its sections as frames inside it, take a `color`, make it a section `within` another area (its name a subheading), or put it `beside`
-  another area on a side. `src/ai/arrange.ts` lays them out with room for link chips and packs the areas (and sections)
-  about 1.7 : 1 wide, never one long row. Columns are ordered by sweeps that cut link crossings; an area without a place goes
-  to the spot (first free, or beside an area or a staying card it links to) with the shortest links that keeps the whole
-  compact; a lone area with an existing label is tidied in place (D-126). After a proposal with areas, `layoutReport`
-  tells the model the outlines, crossings and long links, and it may propose once more. Labels are referred to by their text.
-  Section frames that stay are obstacles, so no card lands in one by accident; `add_section` frames cards where they are,
-  `edit_section` renames, `delete_section` removes the frame only (D-131).
-- **Preview** (D-087): `src/ai/simulate.ts` plays a proposal's writes onto an in-memory copy; while open, `useWs()` serves that copy
-  to every view (not to the assistant window), marks show on items, and `tracked()` refuses writes.
-- **Deep research** (D-088): `/research` → a planned set of questions you pick → one web-searching call per question (3 at a
-  time) → the agent loop writes one report from the findings (`src/ai/research.ts`); the report comes through `write_report`
-  and opens on the report screen (`src/ui/ReportView.tsx`, D-089).
-- **Documents** (D-232, `docs/specs/documents.md`, `src/data/documents.ts`): every file the workspace keeps (.md,
-  images, PDFs, reports) as a summary + `content/body`, private until its author shares it; old `reports/*` are moved over
-  once when a workspace opens. Pieces `documents` (a list, table or shelf) and `document` (one, `docId`). Files need
-  Storage (Blaze): `filesAvailable` until then. The report entries below describe 1.0's code (D-248).
-- **Saved reports** (D-090; split into summary + `content/body` by D-098, older one-doc reports still read): `workspaces/{wid}/reports/{id}` (`SavedReport` in `src/data/model.ts`: the report, `kind`
-  research | chat, `topic, uid, name, model, shared, createdAt`; data in `src/data/reports.ts`). A research report is saved
-  as it's written; a chat write-up (`make_report`, any chat, when asked) when you press save. Only the author reads it until
-  `shared`; then every member does. The client lists it with two queries (`shared == true`, `uid == me`). Author shares,
-  unshares (only that field changes) and deletes; an owner may delete a shared one. Shown on the reports tab
-  (`/workspaces/<id>/reports`, `?report=<id>` opens one in the tab's reader beside the table, `src/views/reports/ReportReader.tsx`, D-100/D-102/D-106; the table is paged 10 at a time with numbered pages and filters, `useReportPage`; only a report the chat just wrote opens on the assistant's stage); the brief lists the newest 10 by title and answer.
-  `upload .md` (D-091) reads a Markdown file into the same shape (`src/io/reportMarkdown.ts`, `kind: 'upload'`).
-- **Reports in the assistant** (D-099): the report open (on the stage, else the tab's reader, D-100) is in the brief in full; listed reports carry a
-  `[report:…]` handle that `get_report` reads in full. `/analyze` turns a report into a proposal (new items, edits with sources,
-  links, matrix cells, an area).
-- **Web research** (D-076): OpenAI's `web_search` tool, only while the chat's `[web]` switch is on (about $0.01 per search on the
-  user's account). Cited sources are shown as clickable links.
-- Prompts live in `src/ai/prompts/`.
-- Risk: a key in localStorage is exposed to XSS. Mitigation: strict CSP, no untrusted HTML, no
-  third-party scripts. Settings explains this to the user.
+> 1.0's assistant: its client code (`src/ai`, the chat, the report screen) is deleted (D-248) and comes back as a piece.
+> Live in the repo: the Cloud Functions (`functions/`: `setWorkspaceKey`, the `ai` proxy, cleanup) and the rules for
+> `ai`, `aiUsage` and `aiSecrets`, waiting for Blaze. Below is how 1.0 worked, in short; the details are in
+> `memory-bank/decisions-1.0.md` and the log, and the code in git at `493bf87` (`src/archive/ai/`).
+
+**Keys and what stays live**
+- **Your own key** lives only in your browser (localStorage), never in the DB; calls go straight to OpenAI (Responses
+  API, streaming, `store: false`). Risk: a key in localStorage is exposed to XSS; mitigation: strict CSP, no untrusted
+  HTML, no third-party scripts.
+- **A workspace key** (D-079): the owner sends it once to `setWorkspaceKey`; it is kept encrypted in `aiSecrets/{wid}` (no
+  client access) and used only by the `ai` function, which streams the answer back. Owners share it with everyone or
+  chosen members, pick a model per task and an allowed list in `ai/config`, enforced by the proxy (D-104).
+- **Usage log** (D-079): every call, on either key, lands in `workspaces/{wid}/aiUsage` (tokens, model, tools, time; never
+  messages). You see your own; owners also see all workspace-key calls.
+
+**How 1.0's assistant worked**
+- **Brief** (D-082): each message sent a fresh plain-text brief of the workspace, every item with a short `[ref]`, the
+  workspace's name and description first, wrapped in `<workspace>…</workspace>` as data, not instructions; North Star is
+  the app, never the startup.
+- **Changes** (D-074, D-075): one strict function tool, `propose_changes`. The model proposed, the chat showed a
+  checklist, only what the user applied was written, as one undo step; deletes cascaded like a delete by hand. Rows
+  grew to edit the project, competitor features, matrix cells, board text, planes, packages and criteria (D-120, D-122,
+  D-123, D-134, D-142), and to lay out areas as section frames in shapes (columns, rows, grid, hub, cycle, orbit, tree,
+  quadrant), packed ~1.7 : 1 with fewer link crossings (D-086, D-125, D-126, D-129, D-131).
+- **Preview** (D-087): a proposal's writes played onto an in-memory copy that every view showed, writes refused meanwhile.
+- **Agent loop** (D-084): up to 6 calls; the browser ran the tools the model called (`propose_changes`, `get_items`,
+  `get_report`) and sent their output back; reasoning carried as `encrypted_content`; the last call `tool_choice: none`.
+- **Modes** (D-085, D-099, D-134): `/validate /interview /swot /gaps /next /pitch /organize /analyze /criteria`, canned
+  asks sent as a normal message.
+- **Web and research** (D-076, D-088, D-089): OpenAI's `web_search` only while `[web]` is on, sources as links; `/research`
+  planned questions, ran up to 3 web researchers and wrote one report.
+- **Reports** (D-090, D-091, D-098, D-099): saved per person (summary + `content/body`), private until shared, listed on
+  a reports tab, `.md` uploads too; the open report was in the brief. They are documents now (D-232).
 
 ## 9. Files, export and import
 
+- **Documents** (D-232, `docs/specs/documents.md`, `src/data/documents.ts`): every file the workspace keeps (.md,
+  images, PDFs, reports) as a summary + `content/body`, private until its author shares it; old `reports/*` are moved over
+  once when a workspace opens. Pieces `documents` (a list, table or shelf) and `document` (one, `docId`). Files need
+  Storage (Blaze): `filesAvailable` until then. 1.0's reports (§8) are only read, to be moved.
 - **Attachments** (D-083) went with 1.0 (D-248): no `attachments` collection, `storage.rules` allow nothing. Files come back
   as documents' files (images, PDFs, D-232) once Storage is live, with their own rules.
-- **Drawing:** upload only (Q-004 → D-083): draw elsewhere and attach the SVG/PNG/PDF. A built-in sketch pad may come later.
+- **Drawing:** upload only (Q-004 → D-083): draw elsewhere and upload the SVG/PNG/PDF as a document. A built-in sketch pad may come later.
 - **Export** ✅ (D-080, D-246; Settings → workspace → export): a `.zip` holding `workspace.json` (`format:
-  north-star.workspace`, `version: 2`), every content collection read fresh when asked (`src/data/exportWorkspace.ts`):
-  `pieces` (planes, matrices and tables with their setups, documents lists, documents), the cards of every type and
-  packages, `competitorFeatures`, `comparisons`, `edges`, `evidence`, `labels`, `cells` (cards and text without a space
-  stay out, D-248); plus `documents`: the .md files and reports you
-  can see, each with its content as `body`, without its author's uid. Never members, roles, codes, comment threads (D-159)
-  or anything AI. Images and PDFs (files in Storage) stay behind until Storage is live, and the page says how many.
-  Code: `src/io/bundle.ts` (format, reading, cleaning).
-- **Import** ✅ (D-080, D-246; workspaces page): a bundle becomes a new workspace you own, under its name and description
-  (`src/data/importWorkspace.ts`). Every doc is rebuilt from known fields in the shapes `firestore.rules` takes, with new
-  ids; everything that points somewhere follows: a card's plane, text's space (`canvas` stays), links, evidence, competitor
-  features and matched features, a package's members and home, a matrix's axes (type's plane, hidden cards, cards added by
-  hand), a table's plane rules, hidden cards and rows (a kanban holding cards its source the same way, D-268), a lens's `stuckTo`, a document piece's `docId`, cells (ids
-  re-derived from matrix, row and column; typed rows and columns keep their own ids), report implications' cards. What
-  points at something not in the file is left out (and counted). Documents become yours (shared as they were, the
-  author's name kept). Written in batches (≤ 450 writes or ~4 MB; documents 6 to a batch, as their content's rule reads the
-  summary); if one fails the half-made workspace is deleted. A version 1 (1.0) file is refused (D-248).
+  north-star.workspace`, `version: 2`) with every content collection read fresh (`BUNDLE_COLLECTIONS` in
+  `src/io/bundle.ts`: pieces, the cards of every type and packages, competitor features, comparisons, edges, evidence,
+  labels, cells, tasks; cards and text without a space stay out, D-248), plus the documents you can see (`.md` and
+  reports) with their content, without the author's uid. Never members, roles, codes, threads (D-159) or anything AI.
+  Images and PDFs stay behind until Storage is live, and the page says how many.
+- **Import** ✅ (D-080, D-246; workspaces page, `src/data/importWorkspace.ts`): a bundle becomes a new workspace you own.
+  Every doc is rebuilt from known fields in the shapes `firestore.rules` takes, with new ids, and everything that points
+  somewhere follows (planes and spaces, links, evidence, competitor features and matches, package members, matrix axes,
+  table and kanban rules, `stuckTo`, `docId`, cell ids re-derived from matrix, row and column). What points outside the
+  file is left out and counted. Documents become yours, shared as they were. Written in batches (≤ 450 writes or ~4 MB;
+  documents 6 to a batch); if one fails the half-made workspace is deleted. A version 1 (1.0) file is refused (D-248).
 - **Matrix → TSV** and **board → PNG** (D-080) went with 1.0 (D-248). PDF later.
 
-## 10. Repo layout (planned)
+## 10. Repo layout
 
 ```
 src/
-  app/            routes, providers, layout
-  views/          canvas/, features/, competitors/, matrix/, settings/
-  three/          scene, cards, edges, cursors, ascii effect, transitions
-  ui/             ASCII-styled DOM components
-  data/           DB adapter, schema, hooks, permissions
-  ai/             client, prompts
-  io/             export/import
-  styles/         tokens
-docs/             product, architecture, design, roadmap
-memory-bank/      project state, decisions, open questions
+  app/            App.tsx (routes), paths.ts (every URL, D-070)
+  views/          landing/, workspaces/, workspace/ (the canvas and every piece, panel, dock, menu)
+  three/          the ASCII backdrop and its effect (WebGL)
+  ui/             ASCII-styled DOM components (Frame, Marks, Ink, Menu, Select, HazardConfirm, Settings, Hud…)
+  data/           Firebase adapter, one file per collection, hooks, history (undo), export/import
+  io/             the export bundle's format
+  state/          canvas view, curtain, display, motion, theme
+  styles/         tokens (tokens.css + tokens.ts), global.css
+functions/        Cloud Functions: the workspace key (D-079), waiting for Blaze
+tests/            rules tests (npm run test:rules)
+scripts/          check-memory.mjs
+docs/             product, architecture, design, roadmap, specs/
+memory-bank/      state, decisions, open questions, the logs
 ```

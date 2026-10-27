@@ -1,6 +1,7 @@
 # Spec: planes and packages (Phase 6)
 
-Status: **built (D-140–D-143)**. Left: the focus view on a plane (§6). The user's idea (2026-10-19); the three open choices went with the
+Status: **built in 1.0 (D-140–D-143), code deleted (D-248)**. 1.5's planes are a different thing: canvas pieces holding
+their own cards (D-180, D-187); packages came back on them (D-239). Kept as reference. The user's idea (2026-10-19); the three open choices went with the
 recommendations (D-139). Replaces slice 7 (bets) and "later, board readability"
 in [usefulness.md](usefulness.md).
 

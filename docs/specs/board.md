@@ -1,7 +1,8 @@
 # Spec: one board (Phase 2b)
 
-Status: **built**. Decisions D-040 to D-052. Domains (D-039) and groups (D-047) were tried and removed (D-048, D-049).
-North Star is for any kind of startup, B2B or B2C (D-043). The built-in example workspace (D-052) shows every part of this spec filled in.
+Status: **built in 1.0, code deleted (D-177, D-248; in git at `493bf87`)**. Reference for when its parts come back on
+planes; what already did is in memory-bank/decisions.md (D-187–D-245), the rest in decisions-1.0.md. Decisions D-040 to D-052. Domains (D-039) and groups (D-047) were tried and removed (D-048, D-049).
+North Star is for any kind of startup, B2B or B2C (D-043). The built-in example workspace (D-052, gone with 1.0) showed every part of this spec filled in.
 
 ## 1. Why
 

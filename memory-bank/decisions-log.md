@@ -241,6 +241,7 @@ Was: one 3D silhouette per card type. Rejected by the user; flat cards with a ty
 **Built-in example workspace** ("Create example" on the workspaces page, `src/data/example.ts`): a made-up startup, Tablebook
 (shift scheduling for independent restaurants), with 4 customers, 4 problems, 4 fictional competitors and their features,
 4 ideas, 6 features, every link kind, customer tags, a full matrix and six area labels. Competitor names are invented on purpose.
+*D-177, D-248:* gone with 1.0 (`src/data/example.ts` deleted); there is no example workspace.
 
 ### D-053 · 2026-10-17 · Accepted
 **Fewer, clearer controls.** One `+` create button (bottom-left, solid magenta) opens a menu of card types and text.

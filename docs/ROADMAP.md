@@ -2,41 +2,30 @@
 
 Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 
-## Phase 0: Foundations
-- Resolve the blocking open questions (backend, auth methods, fonts)
-- Scaffold Vite + React + TS + R3F; GitHub Actions → Pages deploy
-- Design tokens, fonts, base ASCII-styled UI components
-- ASCII post-processing effect prototype plus an ambient background
+## 1.0 ✅ done, then dropped (D-177, D-248)
+Phases 0–6 were built as pages: one board with every card type, Flow, Table, Matrix, Priorities, Overview, Reports, the
+assistant, attachments and export/import. In 1.5 that code and its data shapes were deleted (in git at `493bf87`); only
+old reports move to documents. Its specs stay as reference for when a feature comes back:
+[specs/board.md](specs/board.md), [specs/usefulness.md](specs/usefulness.md), [specs/planes.md](specs/planes.md).
 
-## Phase 1: Single-user core (mostly done; see memory-bank/state.md)
-- Auth and workspace list
-- Idea Canvas: create, edit, move and delete post-its; connections; tags; text labels to name and jump between areas (groups dropped, D-049)
-- Detail panel
-- Data adapter, schema and permission rules
+- Phase 0, foundations ✅: scaffold, GitHub Pages deploy, tokens, fonts, the ASCII effect and backdrop.
+- Phase 1–2, the board, competitors and features, the matrix ✅ (D-040–D-052).
+- Phase 3, collaboration ✅: sharing (D-062, D-098), presence, cursors, following (D-065–D-071).
+- Phase 4, settings and AI ✅ (D-073–D-079).
+- Phase 5, files and export ✅ (D-080, D-083).
+- Phase 6, from research to decisions ✅ (D-133–D-144).
 
-## Phase 2: Competitors and features
-- Competitors list plus a per-competitor map with competitor features
-- Features view, linked to ideas
-- Comparison matrix (spreadsheet view)
-- Cross-linking from any node to any node; view transitions
+## 1.5: one canvas (D-174) — live on `main` since 2026-10-27
+- Canvas and pieces ✅: planes (cards, links, text, sections, sticky notes, packages, multi-select, guides, filters,
+  right-click), matrix, table, documents, kanban (tasks or cards; priorities), timeline (D-176–D-271).
+- Collaboration on the canvas ✅: cursors, following, selections, comment threads (D-191–D-199, D-260).
+- Export/import v2 ✅ (D-246).
+- One look and behaviour across the canvas ✅ ([specs/consistency.md](specs/consistency.md), D-263–D-277).
 
-## Phase 3: Collaboration ✅ done (D-071)
-- Workspace sharing (invites, roles) ✅ (D-021, D-062)
-- Presence: live cursors, avatars, selections, following ✅ (D-065, D-067, D-068)
-- Live edits across clients ✅ (last write wins per field; no typing indicator, D-071)
-
-## Phase 4: AI and settings
-- Settings page: OpenAI key (local only), model choice, effect quality
-- AI actions: summarize, suggest links, draft competitor breakdown, fill matrix notes
-
-## Phase 5: Files, export and import
-- Attachments (images, SVGs, PDFs; drawings as uploaded files) ✅ on the emulators (D-083); live once Storage is deployed (Blaze)
-- Workspace export/import (zip bundle) ✅ (D-080)
-- Matrix → TSV, canvas → PNG ✅ (D-080)
-
-## Phase 6: from research to decisions
-- Matrix criteria and white space, evidence and status, prioritisation, bets, an overview page; competitor lines off the
-  board. Slices in [specs/usefulness.md](specs/usefulness.md). Then planes and packages: [specs/planes.md](specs/planes.md).
+## Next
+- What the old board still did that planes don't: link bend points, links to a competitor's features.
+- Documents' files (images, PDFs) and the workspace key: both need the Blaze plan (D-232, D-079).
+- The assistant back, as a piece.
 
 ## Later
-- Templates, version history, comments, collaborative text (Yjs)
+- Templates (Lean Canvas, SWOT, positioning map), version history, collaborative text (Yjs).
