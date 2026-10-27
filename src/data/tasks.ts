@@ -5,6 +5,9 @@
 // have a due day (`due`, `YYYY-MM-DD`), point at a card (`cardId`, `cardType`) and carry a checklist (`checks`).
 // A task for a customer, problem or idea that's finished may log what it taught on that card (D-254): `learned` is the
 // evidence it wrote, or `skip` once that was declined.
+// A kanban may hold cards instead (D-268, docs/specs/priorities.md): `holds: 'cards'`, which cards from a `source` (the
+// table's rules, D-209), its columns a field's values (`colField`; src/views/workspace/kanbanCards.ts); its own `cols`
+// stay, unused, for if it holds tasks again.
 // Shapes mirror firestore.rules' validKanban and validTask; change both together.
 import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import type { AnyType, Card } from './cards'
@@ -14,6 +17,7 @@ import { absent, tracked } from './history'
 import { newId } from './matrix'
 import type { Piece } from './model'
 import { pieceRef } from './pieces'
+import type { Source } from './source'
 
 export type KanbanCol = {
   id: string
@@ -29,7 +33,14 @@ export type KanbanSetup = {
   everyPlane?: boolean
   // Its rows (D-258): none, or lanes by who a task is given to or by the card it's for (src/views/workspace/rows.ts).
   rows?: KanbanRows
+  // What it holds (D-268): tasks (unset) or cards; for cards, which (a source) and the field its columns come from.
+  holds?: 'cards'
+  source?: Source
+  colField?: CardField
 }
+// The cards' fields a kanban's columns can come from (D-268): never type (dragging doesn't change a card's type).
+export const CARD_FIELDS = ['status', 'impact', 'effort', 'priority'] as const
+export type CardField = (typeof CARD_FIELDS)[number]
 // A timeline (D-262): the kanbans it shows (none picked: the one it's stuck to, else every kanban), and its rows.
 export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
 export type TimelineRows = (typeof TIMELINE_ROWS)[number]
@@ -208,6 +219,15 @@ export function setKanbanCols(wid: string, pieceId: string, cols: KanbanCol[], w
     .slice(0, KANBAN_COLS_MAX)
     .map((c) => ({ id: c.id, name: c.name.slice(0, COL_NAME_MAX), ...(c.done ? { done: true } : {}), ...(c.limit ? { limit: Math.min(LIMIT_MAX, Math.max(1, Math.round(c.limit))) } : {}) }))
   return tracked(what, [ref], () => updateDoc(ref, { 'kanban.cols': clean, updatedAt: Date.now() }), key ? { key } : {})
+}
+
+// What it holds and, for cards, which and by what (D-268), merged (shared): one undo step. Setting a field to undefined
+// takes it away.
+export function setKanbanSetup(wid: string, pieceId: string, patch: Partial<Pick<KanbanSetup, 'holds' | 'source' | 'colField'>>, what = 'change a kanban', key?: string) {
+  const ref = pieceRef(wid, pieceId)
+  const data: Record<string, unknown> = { updatedAt: Date.now() }
+  for (const [k, v] of Object.entries(patch)) data[`kanban.${k}`] = v === undefined ? deleteField() : JSON.parse(JSON.stringify(v))
+  return tracked(what, [ref], () => updateDoc(ref, data), key ? { key } : {})
 }
 
 // Stuck to a plane (D-255): only that plane's tasks, or every task (shared): one undo step.

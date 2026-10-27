@@ -1,6 +1,6 @@
 # Spec: priorities on the kanban, step by step
 
-Status: **planned** (D-253, 2026-10-27), not started; P1 is next (kanban session 1 is done, D-252). Same way of working as [kanban.md](kanban.md): one session at a time,
+Status: **planned** (D-253, 2026-10-27); P1 done (D-268, 2026-10-27), P2 is next. Same way of working as [kanban.md](kanban.md): one session at a time,
 the user checks it, the next session starts from this file alone. Follow kanban.md's "How to run a session" (git status
 and `ListAgents` first, verify headless, rules tests, `D-xxx`, mark the session **done** here, commit only your hunks).
 
@@ -65,7 +65,7 @@ and cards alike, the other only adds its fields.
 
 ---
 
-## Session P1: cards on a kanban, columns from a field
+## Session P1: cards on a kanban, columns from a field · **done (D-268, 2026-10-27)**
 
 - A kanban's setup gets what it holds (`tasks` | `cards`), and for cards: which (a `source`, D-209) and the field its
   columns come from. The cards are drawn small, in the type colour, with their confidence and priority (the look from
@@ -74,6 +74,16 @@ and cards alike, the other only adds its fields.
 - A click on a card opens its panel (D-221, as D-247 does from a matrix head).
 - `+ → kanban…` with templates: tasks, features by status. The setup in a tabbed panel like the matrix's (D-212).
 - Rules: `validKanban` takes `holds`, `source`, `colField` (today it allows only `cols`); export/import carry them.
+
+Built (D-268): code in `kanbanCards.ts` (fields, columns, which cards), `CardKanban.tsx` (the view), `KanbanSetup.tsx`,
+`KanbanWizard.tsx`. `no value` is a column (there are no rows yet), first; dropping a card there takes the value away.
+A field shows only the cards it applies to (status: customers, problems, ideas, features; impact and effort: features
+and packages; priority: features, as the rules allow); a status kanban of both kinds shows both lists of columns, and a
+held card's other-kind columns go faint and don't take it. Cards sorted by type, then title (P3: by score). The kanban's
+own `cols` stay on the piece, unused, so switching back to tasks keeps them. Stuck to a plane it uses the kanban's
+`[this plane only]` switch (`everyPlane`), not a table's auto rule. The sheet's confidence uses the package share for
+features too (what it rests on: its ideas and the problems they solve), so it can differ from the feature panel's
+weakest-of rule until P3. The dock's task filter and lanes are hidden on a kanban holding cards.
 
 ## Session P2: rows from a field
 
@@ -96,4 +106,7 @@ and cards alike, the other only adds its fields.
 
 ## Found along the way
 
-- (nothing yet)
+- A kanban holding cards has no filter yet (the task filter's fields don't fit cards); the plan says the strip applies to
+  both: needs card fields (type, tag, plane) (P1).
+- No several-at-once on a card kanban (shift+click, box) and no presence for a held card yet (P1).
+- The wizard's preview cuts column names at five letters or so (`no va…`) (P1).

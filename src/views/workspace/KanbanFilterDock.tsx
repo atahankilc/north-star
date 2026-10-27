@@ -30,7 +30,12 @@ const DUE: { key: DueKey; label: string }[] = [
 ]
 const TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package'] as const
 
-export function KanbanFilterDock({ piece, pool }: { piece: WithId<Piece>; pool?: Task[] }) {
+// A kanban holding cards (D-268) has no task filter (its own filter is for later: docs/specs/priorities.md).
+export function KanbanFilterDock(props: { piece: WithId<Piece>; pool?: Task[] }) {
+  return props.piece.kanban?.holds === 'cards' ? null : <TaskFilterDock {...props} />
+}
+
+function TaskFilterDock({ piece, pool }: { piece: WithId<Piece>; pool?: Task[] }) {
   const open = useOpen((s) => s.piece === piece.id)
   const f = useKanbanFilter(piece.id)
   const n = narrowing(f)

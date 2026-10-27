@@ -133,6 +133,12 @@ are nodes in a single graph. Each view is a different lens on that same graph.
   evidence (D-254); stuck to a plane it shows that plane's tasks and opens beside it (D-255); filters, `#labels`, `P1–P3`,
   column limits (D-256); lanes by person or card, several selected at once (D-258); others' picks and drags shown,
   comments on tasks (D-260); tasks given to you counted by your square, found by ⌘F (D-261); a `SOON` band of what's due.
+- **Cards on a kanban** (D-268, docs/specs/priorities.md): a kanban holds tasks or cards, never both; made from
+  `+ → kanban…` (tasks, features by status, my own) and set up in a tabbed panel (holds · cards · columns). Holding
+  cards, which come from the table's rules (plane, type, status, tag, title; cards by hand), its columns are one field's
+  values (status, impact, effort, priority), `no value` first; dragging a card to another column sets that field (one
+  undo step), a click opens its panel. Stuck to a plane it shows that plane's cards. Rows and the priorities template come
+  next (P2, P3).
 - **Timeline** (D-262): a canvas piece showing kanbans' tasks on two weeks of days, rows by kanban, person or card;
   dragging a task onto a day sets its due day; late ones on today in magenta; a tray of tasks with no day. Sticks to a
   kanban and opens beside it in the kanban's focus.

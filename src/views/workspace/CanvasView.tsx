@@ -45,6 +45,7 @@ import { matrixBounds, MatrixView, useMatrixUi } from './Matrix'
 import { MatrixSetupPanel } from './MatrixSetup'
 import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { TableSetupPanel } from './TableSetup'
+import { KanbanSetupPanel } from './KanbanSetup'
 import { Beside, type EscNext } from './Beside'
 import { isOpen, OPEN_FOOT, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
 import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Doc } from '../../data/documents'
@@ -141,8 +142,10 @@ export function CanvasView() {
   setBesideRef.current = setBeside
   const matrixSetup = useMatrixUi((s) => s.setup)
   const tableSetup = useTableUi((s) => s.setup)
+  // A kanban's setup (D-268).
+  const kanbanSetup = useKanbanUi((s) => s.setup)
   const matrixOnCanvas = useMatrixUi((s) => s.canvas)
-  const canvasSetup = pieces.find((p) => isOpen(p) && (kindOfPiece(p) === 'matrix' ? matrixSetup && p.id === matrixOnCanvas : p.id === tableSetup)) ?? null
+  const canvasSetup = pieces.find((p) => isOpen(p) && (kindOfPiece(p) === 'matrix' ? matrixSetup && p.id === matrixOnCanvas : p.id === tableSetup || p.id === kanbanSetup)) ?? null
   // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus. The
   // dock whose action that is shows `esc` on it; the key handler below goes in the same order.
   const matrixPane = besideOpen.find((p) => kindOfPiece(p) === 'matrix')?.id ?? null
@@ -157,7 +160,9 @@ export function CanvasView() {
       ? { what: 'setup', id: focusedMatrix ? focused.id : matrixPane! }
       : tableSetup
         ? { what: 'setup', id: tableSetup }
-        : besideOpen.length
+        : kanbanSetup
+          ? { what: 'setup', id: kanbanSetup }
+          : besideOpen.length
           ? { what: 'close', id: besideOpen[besideOpen.length - 1].id }
           : 'unfocus'
   const escOn = (what: 'setup' | 'close') => (escNext !== 'unfocus' && escNext.what === what && escNext.id === focused?.id ? 'esc' : undefined)
@@ -550,6 +555,7 @@ export function CanvasView() {
     selectTask('', null)
     useMatrixUi.setState({ setup: false, canvas: null })
     useTableUi.setState({ setup: null })
+    useKanbanUi.setState({ setup: null })
     closeDocs()
     setParams({ focus: p.id })
   }
@@ -704,6 +710,7 @@ export function CanvasView() {
           if (cardSelected) useCanvasView.setState({ cardSelected: null })
           else if (useMatrixUi.getState().setup) useMatrixUi.setState({ setup: false })
           else if (useTableUi.getState().setup) useTableUi.setState({ setup: null })
+          else if (useKanbanUi.getState().setup) useKanbanUi.setState({ setup: null })
           // Documents open beside their list (D-232): with the list there, the last opened closes; with it put away, a
           // framed list comes back (they all close), an unframed one goes straight to the canvas.
           else if (useDocUi.getState().readers.length && !useDocUi.getState().listHidden) useDocUi.setState((s) => ({ readers: s.readers.slice(0, -1) }))
@@ -723,6 +730,7 @@ export function CanvasView() {
       if (e.key === 'Escape') {
         if (useMatrixUi.getState().canvas) return useMatrixUi.setState({ setup: false, canvas: null })
         if (useTableUi.getState().setup) return useTableUi.setState({ setup: null })
+        if (useKanbanUi.getState().setup) return useKanbanUi.setState({ setup: null })
         if (useCanvasView.getState().cardSelected) return useCanvasView.setState({ cardSelected: null })
       }
       const id = useCanvasView.getState().selected
@@ -886,6 +894,7 @@ export function CanvasView() {
           )}
           {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
+          {focusedKanban && editor && kanbanSetup === focused.id && focusArrived && !focusLeaving && <KanbanSetupPanel piece={focused} />}
           {/* A card picked from a matrix's or a table's head, in its focus or beside the plane: its panel. */}
           {focusArrived && !focusLeaving && <LensCardPanel space={focused.id} editor={editor} />}
           {/* A kanban's task picked (D-251), or a task from a card's panel (D-254): its panel. */}
@@ -907,6 +916,9 @@ export function CanvasView() {
               {focusedKanban && <KanbanFilterDock piece={focused} />}
               {focusedKanban && <KanbanLanes piece={focused} editor={editor} />}
               {focusedKanban && <KanbanDockTools piece={focused} editor={editor} />}
+              {focusedKanban && editor && (
+                <DockAction label="setup" pressed={kanbanSetup === focused.id} keyHint={escOn('setup')} title="what it holds: tasks, or cards by a field" onClick={() => useKanbanUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
+              )}
               {/* A timeline stuck to the kanban (D-262): opened beside it, or closed (D-211). */}
               {focusedKanban &&
                 stuckHere.map((p) => (
@@ -1413,7 +1425,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
             open ? <DocumentsTools piece={piece} editor={editor} toolClass={styles.tool} /> : undefined
           ) : kind === 'timeline' ? (
             <TimelineShows piece={piece} editor={editor} />
-          ) : kind === 'document' || kind === 'kanban' ? undefined : open ? (
+          ) : kind === 'document' ? undefined : open ? (
             <OpenTools piece={piece} editor={editor} />
           ) : undefined
         }
@@ -1571,19 +1583,23 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
 // What an open matrix or table (D-228) is used by from its console: a table's pages (D-213), and the setup, which opens
 // at the bottom of the screen (CanvasSetup).
 function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
-  const matrix = kindOfPiece(piece) === 'matrix'
+  const kind = kindOfPiece(piece)
+  const matrix = kind === 'matrix'
   const matrixOn = useMatrixUi((s) => !!s.setup && s.canvas === piece.id)
   const tableOn = useTableUi((s) => s.setup === piece.id)
-  const on = matrix ? matrixOn : tableOn
+  const kanbanOn = useKanbanUi((s) => s.setup === piece.id)
+  const on = matrix ? matrixOn : kind === 'kanban' ? kanbanOn : tableOn
   const toggle = () =>
     matrix
       ? useMatrixUi.setState((s) => (s.setup && s.canvas === piece.id ? { setup: false, canvas: null } : { setup: 'rows', canvas: piece.id }))
-      : useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
+      : kind === 'kanban'
+        ? useKanbanUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
+        : useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
   return (
     <>
-      {!matrix && <TablePager piece={piece} editor={editor} />}
+      {kind === 'table' && <TablePager piece={piece} editor={editor} />}
       {editor && (
-        <button className={styles.tool} aria-pressed={on} title={matrix ? 'its rows, columns and cells' : 'where its rows come from, its columns'} onClick={toggle}>
+        <button className={styles.tool} aria-pressed={on} title={matrix ? 'its rows, columns and cells' : kind === 'kanban' ? 'what it holds: tasks, or cards by a field' : 'where its rows come from, its columns'} onClick={toggle}>
           setup
         </button>
       )}
@@ -1593,7 +1609,8 @@ function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean })
 
 // The setup of a matrix or table open on the canvas (D-228), as in its focus.
 function CanvasSetup({ piece }: { piece: WithId<Piece> }) {
-  return kindOfPiece(piece) === 'matrix' ? <MatrixSetupPanel piece={piece} /> : <TableSetupPanel piece={piece} />
+  const kind = kindOfPiece(piece)
+  return kind === 'matrix' ? <MatrixSetupPanel piece={piece} /> : kind === 'kanban' ? <KanbanSetupPanel piece={piece} /> : <TableSetupPanel piece={piece} />
 }
 
 // What's in a piece, drawn again only when it changes, not as the camera moves (its view is the same object meanwhile).

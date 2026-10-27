@@ -4625,3 +4625,35 @@ columns), picked "B: a new piece".
   due day, a tray task dragged onto Wednesday gets it, a click opens the panel, rows by given to; stuck to the kanban
   by dragging in edit mode (`⇆ Roadmap`), opened beside in the kanban's focus at one week, a task picked there picked on
   the kanban; the soon band; rules 406 pass; build.
+
+### D-268 · 2026-10-27 · Accepted (adds to D-251, D-253; priorities session P1, docs/specs/priorities.md)
+**A kanban holds tasks or cards. Holding cards, its columns are one of their fields' values, and dragging a card to
+another column sets that field.**
+The user asked for P1 of the priorities plan, built on the kanban (D-253's two settled points: dragging sets the field;
+one confidence rule, P3).
+- *Data:* `kanban.holds: 'cards'` (unset: tasks), `kanban.source` (the table's source, D-209: rules + cards by hand + hidden),
+  `kanban.colField` (`status | impact | effort | priority`); its own `cols` stay on the piece, unused, so switching back
+  keeps them. Rules: `validKanban` takes the three (source checked as a table's); export/import carry them (plane rules
+  and cards follow their new ids, `cleanSource` shared with the table).
+- *Which cards:* the source's cards the field applies to (status: customers, problems and ideas by their validation,
+  features by their own; impact and effort: features and packages; priority: features, as the rules allow); typed names
+  never. Stuck to a plane: that plane's cards, with the kanban's own `[this plane only]` switch (`everyPlane`).
+- *Columns:* `no value` first, then the values (a status kanban with both kinds shows both lists, the validation one
+  first); `shipped` and `validated` green as a finished column, `invalidated` magenta. No hand order: by type, then title.
+- *Drag:* after 5 px, as a task (a click still picks); columns that don't take the card (another kind's status) go
+  faint; the nearest that does lights its rule and gets a cyan line; dropped, `updateCards` writes the field (validation for
+  c/p/i), one undo step; into `no value` it takes the value away.
+- *Sheet:* the task's sheet (D-252) edged in the type colour, the type in that colour and the priority (`P1` magenta) on
+  top, the title, then confidence (`◆ high`, `! broken` magenta; packages by what they hold, features by the ideas linked
+  to them and the problems those solve, both with D-239's share until P3 makes one rule) and its other values.
+- *Click:* selects the card (`cardSelected`), its panel opens through LensCardPanel (D-247's way); beside a plane, the
+  plane glides to it.
+- *Made and set up:* `+ → kanban…` opens a wizard as the table's (start from: tasks, features by status, my own; holds;
+  columns; a preview of the columns with their counts; Enter steps, ⌘Enter makes). `[setup]` in its focus dock, its
+  pane beside a plane and its console once unframed: holds · cards (the table's rows editor, cards only) · columns.
+- *Left out (P1):* the task filter and lanes are hidden on a card kanban; no several-at-once, no presence of a held card.
+- *Verified:* headless on the emulators: a seeded features-by-status kanban in focus (five columns, sheets with P1–P3,
+  `◆ medium`, `! broken`); a drag from `no value` to `planned` set the status, ⌘Z put it back; a click opened the
+  feature's panel; setup switched the columns to impact; the cards tab; the wizard (features by status, preview `6 cards
+  in 5 columns`, ⌘Enter made it on the canvas in edit mode); the canvas picture; light theme. Rules 410 pass (4 new).
+  Build.

@@ -11,6 +11,7 @@ import { EVIDENCE_KINDS } from '../data/evidence'
 import { CELL_KINDS, CONFIDENCES, TONES, TOTALS_AS, TOTALS_AT, UNFOLDS, newId } from '../data/matrix'
 import { RULE_FIELDS } from '../data/source'
 import { COL_W, FIELDS, OWN_KINDS } from '../data/table'
+import { CARD_FIELDS } from '../data/tasks'
 
 export const BUNDLE_FORMAT = 'north-star.workspace'
 export const BUNDLE_VERSION = 2
@@ -306,7 +307,7 @@ export function cleanPiece(d: Raw, now: number, ids: Ids) {
     matrix,
     table,
     documents: kind === 'documents' ? cleanDocumentsSetup(d.documents) : undefined,
-    kanban: kind === 'kanban' ? cleanKanban(d.kanban) : undefined,
+    kanban: kind === 'kanban' ? cleanKanban(d.kanban, ids) : undefined,
     timeline: kind === 'timeline' ? cleanTimeline(d.timeline, ids) : undefined,
     docId,
     stuckTo: lens || kind === 'kanban' || kind === 'timeline' ? ids.piece(d.stuckTo) : undefined,
@@ -377,10 +378,10 @@ function cleanMatrix(v: unknown, ids: Ids) {
   })
 }
 
-function cleanTable(v: unknown, ids: Ids) {
-  const t = obj(v)
-  if (!t) return undefined
-  const rows = obj(t.rows) ?? {}
+// Where a lens's rows (or a kanban's cards, D-268) come from (D-209): its rules, the planes they name and the cards
+// hidden or added that came over.
+function cleanSource(v: unknown, ids: Ids) {
+  const rows = obj(v) ?? {}
   const rules = list(rows.rules, 12).flatMap((raw) => {
     const r = obj(raw)
     const field = oneOf(r?.field, RULE_FIELDS)
@@ -390,6 +391,12 @@ function cleanTable(v: unknown, ids: Ids) {
     if (field === 'plane') values = values.flatMap((p) => ids.piece(p) ?? [])
     return [compact({ field, not: yes(r.not), values, auto: yes(r.auto) })]
   })
+  return compact({ rules, hide: hidden(rows.hide, ids), items: items(rows.items, ids) })
+}
+
+function cleanTable(v: unknown, ids: Ids) {
+  const t = obj(v)
+  if (!t) return undefined
   const cols = list(t.cols, 30).flatMap((raw) => {
     const c = obj(raw)
     if (!c) return []
@@ -410,7 +417,7 @@ function cleanTable(v: unknown, ids: Ids) {
   const sort = obj(t.sort)
   const nameWidth = num(t.nameWidth)
   return compact({
-    rows: compact({ rules, hide: hidden(rows.hide, ids), items: items(rows.items, ids) }),
+    rows: cleanSource(t.rows, ids),
     manual: yes(t.manual),
     cols,
     sort: sort && typeof sort.col === 'string' ? compact({ col: sort.col.slice(0, 128), desc: yes(sort.desc) }) : undefined,
@@ -439,7 +446,8 @@ export function cleanTimeline(v: unknown, ids: Ids) {
   return compact({ kanbans: kanbans.length ? kanbans : undefined, rows: oneOf(obj(v)?.rows, ['kanban', 'assignee', 'card'] as const) })
 }
 
-export function cleanKanban(v: unknown) {
+// Holding cards (D-268): which (its source) and the field its columns come from.
+export function cleanKanban(v: unknown, ids: Ids) {
   const seen = new Set<string>()
   const cols = list(obj(v)?.cols, 12).flatMap((raw) => {
     const c = obj(raw)
@@ -450,7 +458,15 @@ export function cleanKanban(v: unknown) {
     const limit = num(c.limit)
     return [compact({ id, name, done: yes(c.done), limit: limit && limit >= 1 ? Math.min(99, Math.round(limit)) : undefined })]
   })
-  return compact({ cols: cols.length ? cols : [{ id: newId(), name: 'todo' }], everyPlane: yes(obj(v)?.everyPlane), rows: oneOf(obj(v)?.rows, ['assignee', 'card'] as const) })
+  const cards = oneOf(obj(v)?.holds, ['cards'] as const)
+  return compact({
+    cols: cols.length ? cols : [{ id: newId(), name: 'todo' }],
+    everyPlane: yes(obj(v)?.everyPlane),
+    rows: oneOf(obj(v)?.rows, ['assignee', 'card'] as const),
+    holds: cards,
+    source: obj(v)?.source ? cleanSource(obj(v)!.source, ids) : undefined,
+    colField: oneOf(obj(v)?.colField, CARD_FIELDS),
+  })
 }
 
 // One of a kanban's tasks (D-251), without its kanban, its card or who made it; who it was given to stays behind (the

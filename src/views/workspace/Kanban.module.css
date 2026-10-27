@@ -686,3 +686,64 @@
   height: 1px;
   background: var(--line);
 }
+
+/* ---- Holding cards (D-268, CardKanban.tsx). ---- */
+
+/* A card: a task's sheet, always edged in its type's colour; its type on top in that colour, its priority on the right. */
+.sheetHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: calc(-1 * var(--space-1));
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.sheetType {
+  color: var(--tone);
+}
+
+/* How sure we are: `◆ high` as the text, medium dim, low faint, broken magenta. */
+.sure {
+  color: var(--fg);
+}
+
+.sure[data-level='medium'] {
+  color: var(--fg-dim);
+}
+
+.sure[data-level='low'] {
+  color: var(--fg-faint);
+}
+
+.sure[data-level='broken'] {
+  color: var(--accent-magenta);
+}
+
+/* `no value`: its name faint; ruled out (invalidated): magenta. */
+.colHead[data-none='true'] .name {
+  color: var(--fg-dim);
+}
+
+.colHead[data-out='true'] .name {
+  color: var(--accent-magenta);
+}
+
+/* While a card is held: the columns that don't take it go faint; the one it would land in, a cyan rule at its foot. */
+.colHead[data-off='true'],
+.column[data-off='true'] {
+  opacity: 0.35;
+  transition: opacity 160ms var(--ease-out);
+}
+
+.column[data-over='true'] > .list > .slot {
+  margin: 0;
+}
+
+/* Nothing in it at all: a line under the heads. */
+.empty[data-wide] {
+  display: block;
+  margin-top: var(--space-3);
+  padding-left: 0;
+}

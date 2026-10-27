@@ -95,7 +95,8 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
 type EditorProps = { setup: TableSetup; onChange: SetTable }
 
 // Rows: the cards that meet the rules (switched off: a list of names), the rules, and what's added by hand.
-export function RowsEditor({ setup, onChange, onRemoveItem }: EditorProps & { onRemoveItem?: (item: SourceItem) => void }) {
+// `cardsOnly` (a kanban holding cards, D-268): always the rules' cards, and only cards added by hand, no typed names.
+export function RowsEditor({ setup, onChange, onRemoveItem, cardsOnly }: EditorProps & { onRemoveItem?: (item: SourceItem) => void; cardsOnly?: boolean }) {
   const { cards } = useWs()
   const rows = setup.rows
   const set = (s: Source, key?: string) => onChange('rows', s, key)
@@ -111,7 +112,7 @@ export function RowsEditor({ setup, onChange, onRemoveItem }: EditorProps & { on
   return (
     <>
       <Row label="cards" hint="they join and leave by themselves as cards are made, changed or deleted">
-        <Toggle on={!setup.manual} label="the cards that meet these rules" hint={rows.rules.length ? 'every rule must hold' : 'no rules: every card on every plane'} onChange={(v) => onChange('manual', v ? undefined : true)} />
+        {cardsOnly ? <span className={m.checkHint}>{rows.rules.length ? 'the cards that meet these rules: every rule must hold' : 'no rules: every card on every plane'}</span> : <Toggle on={!setup.manual} label="the cards that meet these rules" hint={rows.rules.length ? 'every rule must hold' : 'no rules: every card on every plane'} onChange={(v) => onChange('manual', v ? undefined : true)} />}
         {hidden > 0 && (
           <button className={m.tool} title="bring back the cards taken out" onClick={() => set({ ...rows, hide: undefined })}>
             {hidden} hidden · show
@@ -131,7 +132,7 @@ export function RowsEditor({ setup, onChange, onRemoveItem }: EditorProps & { on
           </span>
         </Row>
       )}
-      <Row label="added by hand" hint="single cards of any type, or names that aren't cards">
+      <Row label="added by hand" hint={cardsOnly ? 'single cards of any type' : "single cards of any type, or names that aren't cards"}>
         <span className={m.pills}>
           {rows.items.map((item) => {
             const c = item.cardId ? byId.get(item.cardId) : undefined
@@ -149,7 +150,7 @@ export function RowsEditor({ setup, onChange, onRemoveItem }: EditorProps & { on
           <AddPill
             exclude={on}
             onCard={(c) => set({ ...rows, hide: rows.hide?.filter((h) => h !== c.id), items: rows.hide?.includes(c.id) ? rows.items : [...rows.items, { id: newId(), cardType: c.type, cardId: c.id }] })}
-            onName={(n) => set({ ...rows, items: [...rows.items, { id: newId(), name: n }] })}
+            onName={cardsOnly ? undefined : (n) => set({ ...rows, items: [...rows.items, { id: newId(), name: n }] })}
           />
         </span>
       </Row>

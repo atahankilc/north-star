@@ -297,6 +297,10 @@ await allow('a task given by someone, when (D-261)', () => addDoc(sub(bob.fs, 't
 await deny('a task given at a time that is not a number', () => addDoc(sub(bob.fs, 'tasks'), { ...task, givenAt: 'now' }))
 await deny('a task with an unknown priority', () => addDoc(sub(bob.fs, 'tasks'), { ...task, priority: 'urgent' }))
 await deny('a task with labels that are not a list', () => addDoc(sub(bob.fs, 'tasks'), { ...task, labels: 'research' }))
+await allow('a kanban holding features by status (D-268)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'cards', colField: 'status', source: { rules: [{ field: 'type', values: ['feature'] }], items: [] } } }))
+await deny('a kanban holding something else', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'people' } }))
+await deny('a kanban whose columns come from a card type', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'cards', colField: 'type' } }))
+await deny('a kanban whose cards come from a source without rules', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'cards', source: { items: [] } } }))
 await allow('a kanban column with a limit (D-256)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { cols: [{ id: 'k1', name: 'doing', limit: 3 }] } }))
 await deny('a task with a checklist that is not a list', () => addDoc(sub(bob.fs, 'tasks'), { ...task, checks: 'all of it' }))
 // Cards on a plane (D-187).

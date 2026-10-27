@@ -27,6 +27,9 @@
 //
 // Soon (D-262): over the columns, a line of what's due soon: past its day (magenta), today (cyan), this week, each a
 // pill that picks its task; `▾ SOON` folds it to counts (yours, per kanban per browser); nothing due, no line.
+//
+// Cards instead of tasks (D-268): a kanban whose setup holds cards is drawn by CardKanban.tsx, its columns a field's
+// values; made from `+ → kanban…` (KanbanWizard.tsx), set up in its tabbed panel (KanbanSetup.tsx).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
@@ -47,6 +50,8 @@ import { PeerTaskDrags, PeerTaskRing } from './collab'
 import { ThreadChip, threadOn } from './Threads'
 import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
+import { CardKanbanView } from './CardKanban'
+import { heldCards } from './kanbanCards'
 import styles from './Kanban.module.css'
 
 // Its parts in its own px: a column's width and the gap between, its head, the gap under a task, the `+ column` head's
@@ -78,7 +83,8 @@ const NO_SETUP = emptyKanban()
 export const kanbanOf = (p: Pick<Piece, 'kanban'>): KanbanSetup => p.kanban ?? NO_SETUP
 
 // How big each kanban came out, measured as it's drawn (its tasks are as tall as their text): what fit frames.
-const useSizes = create<Record<string, { w: number; h: number }>>(() => ({}))
+export const useKanbanSizes = create<Record<string, { w: number; h: number }>>(() => ({}))
+const useSizes = useKanbanSizes
 
 const hasMeta = (t: Task) => !!(t.cardId || t.due || t.checks?.length || t.assignee)
 // About how tall a task is before it's drawn: its title's lines (about 30 letters each, at most 3) and its meta line.
@@ -88,6 +94,8 @@ const guess = (t: Task) => K.pad + Math.min(3, Math.max(1, Math.ceil(t.title.len
 export function kanbanBounds(piece: WithId<Piece>, tasks: Task[]): Bounds {
   const seen = useSizes.getState()[piece.id]
   if (seen) return { x: 0, y: 0, ...seen }
+  // Holding cards (D-268): about five columns of a few cards, until it's drawn.
+  if (kanbanOf(piece).holds === 'cards') return { x: 0, y: 0, w: 5 * (K.col + K.gap), h: 400 }
   const cols = kanbanOf(piece).cols
   const mine = tasks.filter((t) => t.pieceId === piece.id)
   const tall = Math.max(0, ...cols.map((c) => mine.filter((t) => t.col === c.id).reduce((s, t) => s + guess(t) + K.cardGap, 0)))
@@ -121,7 +129,13 @@ export function goToTask(piece: WithId<Piece>, tasks: Task[], task: Pick<Task, '
 // `pending`: a task to pick once its kanban is live (a thread's go there, D-260).
 type Many = { piece: string; tasks: string[] }
 type One = { piece: string; task: string }
-export const useKanbanUi = create<{ selected: One | null; adding: string | null; naming: string | null; learning: string | null; many: Many | null; pending: One | null }>(() => ({
+// `setup`: the kanban whose setup is open (D-268), on its `tab`; `wizard`: a new kanban's wizard is open.
+export const KANBAN_TABS = ['holds', 'cards', 'cols'] as const
+export type KanbanTab = (typeof KANBAN_TABS)[number]
+export const useKanbanUi = create<{ selected: One | null; adding: string | null; naming: string | null; learning: string | null; many: Many | null; pending: One | null; setup: string | null; tab: KanbanTab; wizard: boolean }>(() => ({
+  setup: null,
+  tab: 'holds',
+  wizard: false,
   pending: null,
   selected: null,
   adding: null,
@@ -170,12 +184,18 @@ type Drag = { id: string; ids: string[]; from: [number, number]; grab: [number, 
 // A box being drawn with alt held (its px), from where it began to the pointer.
 type Box = { from: [number, number]; to: [number, number] }
 
-// `onTask`: a task picked (beside a plane, D-255: the plane glides to its card).
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onTask?: (t: Task) => void }
+// `onTask`: a task picked (beside a plane, D-255: the plane glides to its card); `onCard`: a card picked on one holding
+// cards (D-268).
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onTask?: (t: Task) => void; onCard?: (c: Card) => void }
 
 const NO_LANE: Lane[] = [{ key: '', label: '', drop: true }]
 
-export function KanbanView({ piece, view, live, editor, onCanvas = false, onTask }: Props) {
+// Tasks, or cards (D-268).
+export function KanbanView({ onCard, ...props }: Props) {
+  return kanbanOf(props.piece).holds === 'cards' ? <CardKanbanView {...props} onCard={onCard} /> : <TaskKanbanView {...props} />
+}
+
+function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }: Props) {
   const { wid, tasks: all, cards, threads } = useWs()
   const { user } = useAuth()
   const setup = kanbanOf(piece)
@@ -648,6 +668,8 @@ function LaneHead({ lane, count, folded, onFold, onPress }: { lane: Lane; count:
 // Its lanes, in its dock (D-258): none, by who a task is given to, by the card it's for. Shared; editors choose.
 export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const { wid } = useWs()
+  // Lanes for cards are P2's (docs/specs/priorities.md).
+  if (kanbanOf(piece).holds === 'cards') return null
   const rows = kanbanOf(piece).rows
   const NAME: Record<KanbanRows, string> = { assignee: 'given to', card: 'card' }
   const items: MenuEntry[] = [
@@ -933,14 +955,17 @@ function AddTask({ open, quiet, onPress, onOpen, onClose, onAdd }: AddProps) {
 export function KanbanDockTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const { wid, tasks, cards } = useWs()
   if (!piece.stuckTo) return null
-  const mine = tasks.filter((t) => t.pieceId === piece.id)
   const only = !piece.kanban?.everyPlane
-  const left = only ? mine.length - shownTasks(mine, piece, cards).length : 0
+  // Holding cards (D-268): this plane's cards, or every card its setup picks.
+  const holdsCards = kanbanOf(piece).holds === 'cards'
+  const mine = tasks.filter((t) => t.pieceId === piece.id)
+  const left = !only ? 0 : holdsCards ? heldCards({ ...piece, kanban: { ...kanbanOf(piece), everyPlane: true } }, cards).length - heldCards(piece, cards).length : mine.length - shownTasks(mine, piece, cards).length
+  const what = holdsCards ? 'cards' : 'tasks'
   return (
     <DockAction
       label={`this plane only${left ? ` · ${left} hidden` : ''}`}
       pressed={only}
-      title={only ? 'showing tasks for this plane’s cards and for no card; click: every task' : 'showing every task; click: only this plane’s'}
+      title={only ? (holdsCards ? 'showing this plane’s cards; click: every card its setup picks' : 'showing tasks for this plane’s cards and for no card; click: every task') : `showing every ${what.slice(0, -1)}; click: only this plane’s`}
       onClick={() => editor && void setEveryPlane(wid, piece.id, only)}
     />
   )

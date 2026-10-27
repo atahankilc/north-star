@@ -241,7 +241,8 @@ function Unfold({ axis, onChange }: { axis: Axis; onChange: (a: Axis, key?: stri
 // One field to add by hand (D-216), shaped like the pills it adds: type and it lists the cards that match (the axis's
 // type first) under `+ "…" as a name`; arrows move, Enter or a click takes the lit one, Escape lets go. Focused empty,
 // the axis's type's cards not on it yet are offered. The list opens upward: the setup sits at the screen's bottom.
-export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<string>; prefer?: CardType; onCard: (c: Card) => void; onName: (n: string) => void }) {
+// Without `onName`, cards only (a kanban holding cards, D-268).
+export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<string>; prefer?: CardType; onCard: (c: Card) => void; onName?: (n: string) => void }) {
   const { cards } = useWs()
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
@@ -252,10 +253,10 @@ export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<stri
   const matches = (query ? free.filter((c) => c.title.toLowerCase().includes(query)) : free.filter((c) => c.type === prefer))
     .sort((a, b) => Number(b.type === prefer) - Number(a.type === prefer))
     .slice(0, 6)
-  const options: ({ name: string } | { card: Card })[] = [...(query ? [{ name: q.trim().slice(0, NAME_MAX) }] : []), ...matches.map((card) => ({ card }))]
+  const options: ({ name: string } | { card: Card })[] = [...(query && onName ? [{ name: q.trim().slice(0, NAME_MAX) }] : []), ...matches.map((card) => ({ card }))]
   const take = (o: (typeof options)[number]) => {
     if ('card' in o) onCard(o.card)
-    else onName(o.name)
+    else onName?.(o.name)
     setQ('')
     setLit(0)
     field.current?.focus()
@@ -270,8 +271,8 @@ export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<stri
         className={styles.addPillField}
         value={q}
         maxLength={NAME_MAX}
-        placeholder="a card, or type a name"
-        aria-label="Add a card or a name"
+        placeholder={onName ? 'a card, or type a name' : 'find a card'}
+        aria-label={onName ? 'Add a card or a name' : 'Add a card'}
         role="combobox"
         aria-expanded={open && options.length > 0}
         onFocus={() => setOpen(true)}

@@ -7,7 +7,7 @@ import { labelRef, type Label } from './labels'
 import { cellKey, cellRef, emptySetup, type Cell, type MatrixSetup } from './matrix'
 import { emptyTable, type TableSetup } from './table'
 import { docRef, emptyDocuments, type Doc, type DocumentsSetup } from './documents'
-import { emptyKanban, taskRef, type Task } from './tasks'
+import { emptyKanban, taskRef, type KanbanSetup, type Task } from './tasks'
 import { db } from './firebase'
 import { GRID, snap } from './grid'
 import { absent, snapshotWith, tracked } from './history'
@@ -83,9 +83,10 @@ function nearClear(box: Box, others: Box[]): Pick<Box, 'x' | 'y'> {
 }
 
 // A piece centred on `at` (canvas pixels), or the nearest clear place round it (nearClear): one undo step.
-// A matrix starts blank (D-204), a table with every card (D-209), or from the setup given.
+// A matrix starts blank (D-204), a table with every card (D-209), a kanban with tasks (D-251), or from the setup given
+// (a kanban's from its wizard, D-268).
 // A document piece (D-232) shows `docId`, sized as `size` when given (an image's shape).
-export async function addPiece(wid: string, kind: PieceKind, at: [number, number], others: Box[], setup?: MatrixSetup | TableSetup, name?: string, docId?: string, size?: { w: number; h: number }) {
+export async function addPiece(wid: string, kind: PieceKind, at: [number, number], others: Box[], setup?: MatrixSetup | TableSetup | KanbanSetup, name?: string, docId?: string, size?: { w: number; h: number }) {
   const ref = doc(col(wid))
   const { w, h } = size ?? PIECE_SIZE[kind]
   const box = { x: snap(at[0] - w / 2), y: snap(at[1] - h / 2), w, h }
@@ -99,7 +100,7 @@ export async function addPiece(wid: string, kind: PieceKind, at: [number, number
         : kind === 'documents'
           ? { documents: emptyDocuments(), ...(name ? { name } : {}) }
           : kind === 'kanban'
-            ? { kanban: emptyKanban(), ...(name ? { name } : {}) }
+            ? { kanban: JSON.parse(JSON.stringify(setup ?? emptyKanban())), ...(name ? { name } : {}) }
           : kind === 'document' && docId
             ? { docId }
             : {}

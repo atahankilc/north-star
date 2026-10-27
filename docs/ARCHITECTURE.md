@@ -121,7 +121,8 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         notes?, assignee? (uid) + assigneeName?, due? (YYYY-MM-DD), cardId? + cardType?, checks?[{id, text,
                         done?}] (≤ 50), learned? (evidence id | 'skip', D-254), labels?[] (≤ 20) + priority? (P1–P3, D-256),
                         givenAt? + givenBy? (D-261), uid (who made it) (D-251); a kanban piece carries kanban = {cols[{id, name,
-                        done?, limit?}] (1–12), everyPlane? (D-255), rows? (assignee|card, D-258)}; a timeline piece carries
+                        done?, limit?}] (1–12), everyPlane? (D-255), rows? (assignee|card, D-258), holds? ('cards'), source? (a
+                        table's rows source), colField? (status|impact|effort|priority) (D-268)}; a timeline piece carries
                         timeline = {kanbans?[] (≤ 20), rows? (kanban|assignee|card)} and may be stuckTo a kanban (D-262)
   cells/{id}            matrixId, row, col, value? (step id | number | text ≤ 200), notes?, notRelevant?, confidence?
                         (row/col `card~criterion` for what a feature unfolded into; axis `unfold`, `open[]`, D-249)
@@ -279,7 +280,7 @@ must be in Firebase Auth → Settings → Authorized domains. Workspaces are sha
   (`src/data/importWorkspace.ts`). Every doc is rebuilt from known fields in the shapes `firestore.rules` takes, with new
   ids; everything that points somewhere follows: a card's plane, text's space (`canvas` stays), links, evidence, competitor
   features and matched features, a package's members and home, a matrix's axes (type's plane, hidden cards, cards added by
-  hand), a table's plane rules, hidden cards and rows, a lens's `stuckTo`, a document piece's `docId`, cells (ids
+  hand), a table's plane rules, hidden cards and rows (a kanban holding cards its source the same way, D-268), a lens's `stuckTo`, a document piece's `docId`, cells (ids
   re-derived from matrix, row and column; typed rows and columns keep their own ids), report implications' cards. What
   points at something not in the file is left out (and counted). Documents become yours (shared as they were, the
   author's name kept). Written in batches (≤ 450 writes or ~4 MB; documents 6 to a batch, as their content's rule reads the
