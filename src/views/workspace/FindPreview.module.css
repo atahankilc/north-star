@@ -40,7 +40,7 @@
   transform-origin: 0 0;
 }
 
-/* A plane's `+` marks (CanvasView.module.css's .focused::before). */
+/* A plane's `+` marks (CanvasView.module.css's .focusMarks). */
 .plane[data-marks]::before {
   content: '';
   position: absolute;

@@ -58,7 +58,7 @@ import { TYPE_ACCENT } from './PlaneCards'
 import type { FindItem } from './find'
 import { useStill } from './still'
 import { usePeersOn } from './collab'
-import { Marks, zsOf } from '../../ui/Marks'
+import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import styles from './Matrix.module.css'
 
 // The matrix's parts in its own px: the row heads' column, a cell, the column heads' row, a row, the gap between them,
@@ -145,6 +145,8 @@ type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: bool
 export function MatrixView({ piece, view, live, editor, onCanvas = false }: Props) {
   const { wid, cards, cells } = useWs()
   const still = useStill()
+  // Marks and chips at screen size take the zoom once it settles (D-278): a wheel step restyles none of them.
+  const settled = useSettledZoom(view.zoom, live)
   const setup = setupOf(piece)
   const rows = useMemo(() => entriesOf(setup.rows, cards), [setup.rows, cards])
   const cols = useMemo(() => entriesOf(setup.cols, cards), [setup.cols, cards])
@@ -315,8 +317,6 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
     const z = s.cams[wid]?.zoom ?? 1
     return M.cell * (onCanvas ? z : live || still ? view.zoom : view.zoom * z) < FAR_PX
   })
-  // Its screen px per its own: for the marks inside it (D-265), set once on its world so the cells needn't draw again.
-  const screen = useCanvasView((s) => (onCanvas || !(live || still) ? (s.cams[wid]?.zoom ?? 1) : 1) * view.zoom)
   const [r0, r1] = within(seen.y0, seen.y1, M.top + M.gap, M.row + M.gap, M.row, rows.length)
   const [c0, c1] = within(seen.x0, seen.x1, M.head + M.gap, M.cell + M.gap, M.cell, cols.length)
   const cellsShown = useMemo(() => {
@@ -417,7 +417,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !(live || still)) }}>
         <div className={styles.table} style={{ width: L.w, height: L.h }} role="grid" aria-label={piece.name || 'matrix'} onPointerLeave={() => setHot(null)}>
           {cellsShown}
           {far && <CellDots setup={setup} rows={rows} cols={cols} cellAt={shownAt} L={L} live={live} acts={acts} />}

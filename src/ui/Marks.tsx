@@ -12,7 +12,8 @@
 // dragged (`resizing`) the edges it moves light cyan along their whole length, and `readout` says the size beside them.
 // Drawn inside a space scaled by `zoom` (screen px per space px), so the sizes are divided back by it (`--zs`); without
 // `zoom` it's the `--zs` its space sets (`zsOf`), so a memoised cell needn't draw again as the view zooms.
-import { useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { useMotion } from '../state/motion'
 import styles from './Marks.module.css'
 
@@ -33,6 +34,34 @@ const SETTLE_MS = 180
 
 // What a space sets for the marks inside it, when they don't each get its zoom.
 export const zsOf = (zoom: number) => ({ '--zs': 1 / zoom }) as CSSProperties
+// The same for a space that may sit on the canvas: there its view's zoom times the canvas's, read in CSS from the piece's
+// `--z`, so the camera moving never draws the space again (read in React, every kanban, table and matrix redrew on each
+// wheel step, and zooming crawled).
+export const zsIn = (viewZoom: number, onCanvas: boolean) =>
+  (onCanvas ? { '--zs': `calc(1 / (var(--z, 1) * ${viewZoom}))` } : zsOf(viewZoom)) as CSSProperties
+
+// What's at screen size follows a zoom as shown: the camera's, once it stops changing for ZOOM_SETTLE_MS (D-278). Until
+// then it's scaled with the rest, so a wheel step moves only a transform, not every mark's `--zs`. A press takes the
+// zoom at once, so a drag right after reads the zoom it's under.
+export const ZOOM_SETTLE_MS = 120
+// A space's own view's zoom as shown, while `settling` (in a focus); otherwise the zoom itself.
+export function useSettledZoom(zoom: number, settling: boolean) {
+  const [shown, setShown] = useState(zoom)
+  const want = useRef(zoom)
+  want.current = zoom
+  if (!settling && shown !== zoom) setShown(zoom)
+  useEffect(() => {
+    if (!settling || zoom === shown) return
+    const now = () => flushSync(() => setShown(want.current))
+    const t = window.setTimeout(() => setShown(want.current), ZOOM_SETTLE_MS)
+    window.addEventListener('pointerdown', now, true)
+    return () => {
+      window.clearTimeout(t)
+      window.removeEventListener('pointerdown', now, true)
+    }
+  }, [zoom, shown, settling])
+  return settling ? shown : zoom
+}
 
 type Props = {
   zoom?: number

@@ -125,6 +125,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   screen). Grey a little out on hover (160 ms); on the corners, longer, in the item's tone while pressed (70 ms); just
   outside in the tone once selected (a 300 ms overshooting spring). Cyan is what you can do (a link's target, the box
   select). Others' selections: the same L's in their colour with their name on a tag. Reduced motion: states switch at once.
+- **Screen size while zooming** (D-278, D-280): during a wheel, pinch or glide only the canvas's (or a focus's view's)
+  transform changes; marks, piece names, consoles, chips and text's bars grow and shrink with it and settle to their
+  screen size 120 ms after it stops (at once on a press). The same in a focused plane, table, matrix, kanban, timeline
+  and documents list.
 - **Drag and resize** (D-265, D-272, D-273): a press becomes a drag after 5 px; what's dragged (each of several) shrinks
   to 0.8 round the point held and follows the pointer, its L's at full size where it will land (`<Landing>`, 80 ms per
   grid step; on a kanban the gap that opens); let go, it grows into them (180 ms). Resizing: cyan handles on the ring

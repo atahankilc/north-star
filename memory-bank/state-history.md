@@ -737,3 +737,41 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   views and entities, ARCHITECTURE's data model, rendering, presence, AI (1.0, shortened) and repo layout, DESIGN's marks,
   pieces, HUD, comments, grid, menus and motion; 1.0 specs marked. Unused `@react-three/drei` and `troika-three-text`
   removed; the HUD's unused view tabs (`views` prop, CSS) removed.
+
+## Done (2026-10-27): zoom lag (D-278)
+- Zooming the canvas crawled (user report: "zoom in/out yapamayacak derecede"). Measured in the user's busiest
+  workspace (15 pieces, 7.5k nodes, 2560 px at 2×): 131 ms a wheel step. Three causes, all from D-272 on: (1) the
+  Marks' L's transitioned top/left/width/height, all `× --zs`, so each step started ~4000 transitions; (2) kanbans,
+  tables, matrices, timelines and lists read the camera's zoom in React for `--zs`, so each step drew them again with
+  every task, row and cell; (3) each step wrote `--z`/`--zs` on every piece and text, restyling all 7.5k nodes (~60 ms).
+  Fixes: L's move by unscaled `@property --mo/--ml`; spaces' `--zs` from the piece's `--z` in CSS (`zsIn`); CanvasView's
+  `useShownZoom` (the camera's zoom 120 ms after it stops, at once on a pointerdown via flushSync) for everything at
+  screen size; the timeline memoised like the other pieces' contents. After: 10 ms a step, frames 7 ms (120 Hz).
+- Verified: CPU profile and trace on the emulators with a copy of that workspace (deleted after); in the user's Chrome
+  on their dev server; names and L's back to screen size (16.5 / 18 px) once settled; a text dragged 20 ms after a
+  zoom lands exactly (200, 100 px); L's rest/hover/press/spring/leave unchanged. Build.
+
+## Done (2026-10-27): pans redraw nothing (D-279), and a performance survey
+- Asked for: find D-278-like bottlenecks elsewhere, measured before and after, nothing visible changed. Emulators,
+  headless Chrome 2560 × 1300 at 2×, a seeded workspace (3 planes × 25 cards + links + text, matrix, table and kanban
+  unframed, timeline, documents list with 6 documents, ~6k nodes), dev for render counts (a devtools hook counting
+  fibers that rendered), a production build (`vite build` + `vite preview`) for times.
+- Fixed (D-279): a focused plane's pan restyled and redrew everything in it (style 152 → 10 ms, script 83 → 44 ms per
+  60 steps; 5.2 → 1.7 ms a step); kanban pan script 115 → 42, timeline 90 → 49; the canvas pan no longer draws
+  CanvasView and the pieces (script 77 → 45; the frame there is mostly Layerize, ~1.8 ms, and the backdrop).
+- Measured, not changed:
+  - Zoom in a focus: one `--zs` write costs 18.7 ms of style in a focused table, 10.6 in a matrix, 1.3 in a kanban
+    (Marks: 450 / 1800 L's in the table). Fix = D-278's settle in focus; visible, asked.
+  - One Firestore write (a card's title, from another tab) draws ~1,100 components: every plane's cards, the table's
+    rows, the matrix heads, every task; 12–15 ms script, 20–32 ms main thread on the watching page (prod).
+  - Load: one 2.66 MB chunk (778 KB gzip): firebase 230 KB, three 187 + r3f 59, workspace views 173, react 79, motion
+    45 (gzip). Landing ready 185 ms unthrottled, ~1.2 s at 10 Mbps + 4× CPU (JS download ~0.75 s, script ~0.35 s).
+  - Backdrop idle in a workspace: ~30 ms/s main thread, ~10 ms/s script, ~30 ms/s GPU process (headless); off: ~1.
+  - Memory: 13 focus in/out cycles with zooms: heap 22.8 → 24.3 MB, flat (+0.3) over the last five; nodes and
+    listeners flat. No leak found.
+- Verified: pixel-identical screenshots before/after (canvas, focused plane, kanban, timeline; light theme; reduced
+  motion); card drag after a zoom, alt box select (2 selected), pan, task drag to another column, a task's click opens
+  its panel; canvas zoom settle 16.5 / 18 px; a text dragged 20 ms after a zoom moves 200.4, 100.2 px. Build.
+- Then, asked and approved (D-280): zoom in a focus settles like the canvas's. Prod, 60 wheel steps: table main thread
+  1924 → 461 ms (style 971 → 48, no dropped frames), matrix 1089 → 217, plane 312 → 123, kanban 304 → 123. L's 12 →
+  17.2 px while zooming, 11.98 settled, at once on a press; settled screenshots identical; interactions as above.

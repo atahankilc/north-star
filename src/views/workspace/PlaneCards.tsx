@@ -12,7 +12,7 @@
 // cards by category (a strip at its foot says how many while it's closed); a feature with parts folds them into itself
 // (`[−] 3 parts`), their cards shrinking into its rows, and grows back out on `[+]`.
 // The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, cardRef, copyCards, deleteCards, foldPackage, moveCard, moveCards, updateCard, type AnyType, type Card } from '../../data/cards'
 import { clipboard, heldAt, landed, onPlane, othersThan, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
 import { clearGuides, guide, showGuides, toggleGuides, toggleSnap, useGuides } from './guides'
@@ -25,7 +25,7 @@ import { byCategory, foldedHeight, foldsOf, INDENT, openHeight, packageBox, part
 import type { Label } from '../../data/labels'
 import { labelBox, TextItems } from './TextItems'
 import { usePeersOn } from './collab'
-import { BoxSelect, Landing, Marks } from '../../ui/Marks'
+import { BoxSelect, Landing, Marks, useSettledZoom } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import { PackPick } from './PackPick'
 import { CardPanel } from './CardPanel'
@@ -85,8 +85,67 @@ const PLACEHOLDER: Record<AnyType, string> = {
 
 type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; editor: boolean }
 
-// A plane's contents: its sections under its cards, its text over them (D-188).
+// A plane's contents: its sections under its cards, its text over them (D-188). Its view moves only the world's
+// transform: what's in it is drawn again when the zoom changes, never as the view pans.
 export function PlaneCards({ cards, labels, view, live, editor }: Props) {
+  const { wid } = useWs()
+  // On the canvas the plane's picture is scaled again by the canvas's zoom.
+  // Read as the level itself, so a wheel zoom re-renders the cards only when the level changes.
+  const was = useRef<Detail>('full')
+  // Drawn still in the finder's preview (D-236), its detail is read as in focus.
+  const still = useStill()
+  const settled = useSettledZoom(view.zoom, live)
+  const detail = useCanvasView((s) => detailAt(view.zoom * (live || still ? 1 : (s.cams[wid]?.zoom ?? 1)), was.current))
+  was.current = detail
+  const [params] = useSearchParams()
+  const [box, setBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
+  // Alt+drag on the plane draws a box: the cards and text it touches are selected (with shift, added).
+  // Picking a package's cards (D-240): a drag on the plane draws the box without alt, adding to what's picked.
+  const packing = useCanvasView((s) => live && !!s.packing && s.packing === params.get('focus'))
+  const boxSelect = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!live || !(e.altKey || packing) || e.button !== 0) return
+    e.stopPropagation()
+    const r = e.currentTarget.getBoundingClientRect()
+    const toPlane = (ev: { clientX: number; clientY: number }) => [(ev.clientX - r.left - view.ox) / view.zoom, (ev.clientY - r.top - view.oy) / view.zoom] as const
+    const [x0, y0] = toPlane(e)
+    const keep = e.shiftKey || packing ? selectedIds() : []
+    let last = { x0, y0, x1: x0, y1: y0 }
+    setBox(last)
+    const move = (ev: PointerEvent) => {
+      const [x1, y1] = toPlane(ev)
+      last = { x0, y0, x1, y1 }
+      setBox(last)
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      setBox(null)
+      const [l, t, rr, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
+      if (rr - l < 3 && b - t < 3) return
+      setSelection([...new Set([...keep, ...onPlane.hit({ l, t, r: rr, b }, packing)])])
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
+  return (
+    <div className={styles.layer} data-live={live || undefined} data-packing={packing || undefined} onPointerDown={boxSelect}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
+        <Inside cards={cards} labels={labels} zoom={settled} detail={detail} live={live} editor={editor} still={still} box={box} />
+      </div>
+      {live && !packing && <Panel cards={cards} labels={labels} editor={editor} />}
+      {packing && <PackPick cards={cards} />}
+    </div>
+  )
+}
+
+type InsideProps = { cards: Card[]; labels: Label[]; zoom: number; detail: Detail; live: boolean; editor: boolean; still: boolean; box: { x0: number; y0: number; x1: number; y1: number } | null }
+
+const Inside = memo(PlaneInside)
+const Panel = memo(CardPanel)
+
+function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: InsideProps) {
   const { wid, evidence, competitorFeatures, comparisons, edges } = useWs()
   const tally = useTaskTally()
   const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }, tally), [cards, evidence, competitorFeatures, edges, tally])
@@ -106,13 +165,6 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   const openIds = new Set([hoverId, selId].filter((x): x is string => !!x))
   const linking = useCanvasView((s) => (live ? s.linking : null))
   const ghost = linking && !linking.over ? ghostOf(cards, linking) : null
-  // On the canvas the plane's picture is scaled again by the canvas's zoom.
-  // Read as the level itself, so a wheel zoom re-renders the cards only when the level changes.
-  const was = useRef<Detail>('full')
-  // Drawn still in the finder's preview (D-236), its detail is read as in focus.
-  const still = useStill()
-  const detail = useCanvasView((s) => detailAt(view.zoom * (live || still ? 1 : (s.cams[wid]?.zoom ?? 1)), was.current))
-  was.current = detail
   // Where each card is drawn, and how tall: a folded feature holds its parts, a hovered competitor its features (only
   // while cards show everything); a folded part is its row in the feature that holds it.
   const landing = useCanvasView((s) => (live ? s.landing : NO_LIVE))
@@ -210,86 +262,52 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     ...labels.map((l) => ({ id: l.id, box: labelBox(l) })),
   ]
   usePlaneKeys(live, editor, cards, labels, edges)
-  const [box, setBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
-  // Alt+drag on the plane draws a box: the cards and text it touches are selected (with shift, added).
-  // Picking a package's cards (D-240): a drag on the plane draws the box without alt, adding to what's picked.
-  const packing = useCanvasView((s) => live && !!s.packing && s.packing === params.get('focus'))
-  const boxSelect = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!live || !(e.altKey || packing) || e.button !== 0) return
-    e.stopPropagation()
-    const r = e.currentTarget.getBoundingClientRect()
-    const toPlane = (ev: { clientX: number; clientY: number }) => [(ev.clientX - r.left - view.ox) / view.zoom, (ev.clientY - r.top - view.oy) / view.zoom] as const
-    const [x0, y0] = toPlane(e)
-    const keep = e.shiftKey || packing ? selectedIds() : []
-    let last = { x0, y0, x1: x0, y1: y0 }
-    setBox(last)
-    const move = (ev: PointerEvent) => {
-      const [x1, y1] = toPlane(ev)
-      last = { x0, y0, x1, y1 }
-      setBox(last)
-    }
-    const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
-      setBox(null)
-      const [l, t, rr, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
-      if (rr - l < 3 && b - t < 3) return
-      const touches = (q: { x: number; y: number; w: number; h: number }) => q.x < rr && q.x + q.w > l && q.y < b && q.y + q.h > t
-      const inside = (q: { x: number; y: number; w: number; h: number }) => q.x >= l && q.x + q.w <= rr && q.y >= t && q.y + q.h <= b
-      const hit = [
-        // An unfolded package only when all of it is in the box (its frame round the cards would take it every time).
-        ...shown
-          .filter((c) => !folds.hidden.has(c.id) && (c.type === 'package' && !c.folded ? inside(boxOf(c)) : touches(boxOf(c))))
-          .map((c) => c.id),
-        ...(packing ? [] : labels.filter((x) => touches(labelBox(x))).map((x) => x.id)),
-      ]
-      setSelection([...new Set([...keep, ...hit])])
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+  // What a box drawn on the plane touches (PlaneCards' boxSelect): an unfolded package only when all of it is in the box
+  // (its frame round the cards would take it every time); picking a package's cards, no text.
+  if (live) onPlane.hit = ({ l, t, r: rr, b }, picking) => {
+    const touches = (q: { x: number; y: number; w: number; h: number }) => q.x < rr && q.x + q.w > l && q.y < b && q.y + q.h > t
+    const inside = (q: { x: number; y: number; w: number; h: number }) => q.x >= l && q.x + q.w <= rr && q.y >= t && q.y + q.h <= b
+    return [
+      ...shown.filter((c) => !folds.hidden.has(c.id) && (c.type === 'package' && !c.folded ? inside(boxOf(c)) : touches(boxOf(c)))).map((c) => c.id),
+      ...(picking ? [] : labels.filter((x) => touches(labelBox(x))).map((x) => x.id)),
+    ]
   }
   return (
-    <div className={styles.layer} data-live={live || undefined} data-packing={packing || undefined} onPointerDown={boxSelect}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
-        <TextItems labels={labels} layer="frames" live={live} editor={editor} zoom={view.zoom} carry={carry} />
-        <LinkLines links={links} live={live} zoom={view.zoom} ghost={ghost} />
-        {shown.map((c) => (
-          <CardBox
-            key={c.id}
-            card={c}
-            facts={facts.get(c.id)}
-            detail={detail}
-            zoom={view.zoom}
-            live={live}
-            editor={editor}
-            // Not in the finder's preview (D-236): it's drawn as it'll be, already there.
-            arrive={!still && !(live && first.has(c.id))}
-            h={heightOf(c)}
-            tuck={folds.hidden.has(c.id) ? boxOf(c) : null}
-            dim={outsiders.has(c.id)}
-            parts={folds.count.get(c.id) ?? 0}
-            rows={folds.rows.get(c.id)}
-            carries={carriedBy(c.id)}
-            place={c.type === 'package' && !c.folded ? boxOf(c) : undefined}
-            members={c.type === 'package' ? folds.members.get(c.id) : undefined}
-            counts={c.type === 'package' ? folds.count : undefined}
-            features={c.type === 'competitor' ? featuresOf.get(c.id) : undefined}
-            matched={matched}
-            open={c.type === 'competitor' && openIds.has(c.id) && detail === 'full'}
-          />
-        ))}
-        <LinkChips links={links} live={live} editor={editor} zoom={view.zoom} />
-        {box && (
-          <BoxSelect x={Math.min(box.x0, box.x1)} y={Math.min(box.y0, box.y1)} w={Math.abs(box.x1 - box.x0)} h={Math.abs(box.y1 - box.y0)} zoom={view.zoom} />
-        )}
-        <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
-        {live && <GuideLines zoom={view.zoom} />}
-      </div>
-      {live && !packing && <CardPanel cards={cards} labels={labels} editor={editor} />}
-      {packing && <PackPick cards={cards} />}
-    </div>
+    <>
+      <TextItems labels={labels} layer="frames" live={live} editor={editor} zoom={zoom} carry={carry} />
+      <LinkLines links={links} live={live} zoom={zoom} ghost={ghost} />
+      {shown.map((c) => (
+        <CardBox
+          key={c.id}
+          card={c}
+          facts={facts.get(c.id)}
+          detail={detail}
+          zoom={zoom}
+          live={live}
+          editor={editor}
+          // Not in the finder's preview (D-236): it's drawn as it'll be, already there.
+          arrive={!still && !(live && first.has(c.id))}
+          h={heightOf(c)}
+          tuck={folds.hidden.has(c.id) ? boxOf(c) : null}
+          dim={outsiders.has(c.id)}
+          parts={folds.count.get(c.id) ?? 0}
+          rows={folds.rows.get(c.id)}
+          carries={carriedBy(c.id)}
+          place={c.type === 'package' && !c.folded ? boxOf(c) : undefined}
+          members={c.type === 'package' ? folds.members.get(c.id) : undefined}
+          counts={c.type === 'package' ? folds.count : undefined}
+          features={c.type === 'competitor' ? featuresOf.get(c.id) : undefined}
+          matched={matched}
+          open={c.type === 'competitor' && openIds.has(c.id) && detail === 'full'}
+        />
+      ))}
+      <LinkChips links={links} live={live} editor={editor} zoom={zoom} />
+      {box && (
+        <BoxSelect x={Math.min(box.x0, box.x1)} y={Math.min(box.y0, box.y1)} w={Math.abs(box.x1 - box.x0)} h={Math.abs(box.y1 - box.y0)} zoom={zoom} />
+      )}
+      <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={zoom} carry={carry} />
+      {live && <GuideLines zoom={zoom} />}
+    </>
   )
 }
 

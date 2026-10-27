@@ -20,7 +20,7 @@ import { useSeen, within } from './visible'
 import { TYPE_ACCENT } from './PlaneCards'
 import type { FindItem } from './find'
 import { usePeersOn } from './collab'
-import { Marks, zsOf } from '../../ui/Marks'
+import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import styles from './Table.module.css'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
@@ -181,6 +181,8 @@ type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: bool
 
 export function TableView({ piece, view, live, editor, onCard, onView, onCanvas = false, page: pageAt }: Props) {
   const { wid, cards, cells } = useWs()
+  // Marks and chips at screen size take the zoom once it settles (D-278): a wheel step restyles none of them.
+  const settled = useSettledZoom(view.zoom, live)
   const setup = tableOf(piece)
   const fieldText = useFieldText()
   const mine = useMemo(() => cells.filter((c) => c.matrixId === piece.id), [cells, piece.id])
@@ -204,8 +206,6 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   const sel = parseSel(piece.id, useCanvasView((s) => (live ? s.cardSelected : null)))
   // A card selected (on the plane beside it, D-211, or from its row): its row lit.
   const lit = useCanvasView((s) => (live ? s.cardSelected : null))
-  // Its screen px per its own: for the marks inside it (D-265), set once on its world.
-  const screen = useCanvasView((s) => (onCanvas || !live ? (s.cams[wid]?.zoom ?? 1) : 1) * view.zoom)
   // A card's row name clicked: beside its plane the plane goes to it; either way the card's selected, its panel open as
   // on its plane (LensCardPanel).
   const pick = onCard ?? ((card: Card) => useCanvasView.setState({ cardSelected: card.id, labelSelected: null }))
@@ -465,7 +465,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
         <div className={styles.table} style={{ width: width + (live && editor ? T.add : 0), height: bottom + T.add }} role="grid" aria-label={piece.name || 'table'}>
           {headsShown}
 

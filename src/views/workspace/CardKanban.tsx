@@ -13,7 +13,7 @@
 // dock (`[order]`, yours, per kanban per browser; on to start): rated cards best first, their score, `!` when they rest
 // on something invalidated, the suggested P1–P3, `P2 → P1` in yellow where the card's own priority differs; a row picks
 // the card (its panel). Boxes sort by score too.
-import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { updateCards, type Card } from '../../data/cards'
@@ -24,7 +24,7 @@ import { boxKey, boxPatch, byBox, byColumn, columnsOf, FIELD_NAME, heldCards, is
 import { suggestedOrder, type Ranked } from './cardFacts'
 import { create } from 'zustand'
 import { Gap, kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
-import { Marks, zsOf } from '../../ui/Marks'
+import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import { usePeersOn } from './collab'
 import { loadFolds, saveFolds } from './rows'
 import styles from './Kanban.module.css'
@@ -36,7 +36,22 @@ type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: bool
 // Without rows: one row with no head.
 const ONE_ROW: CardCol[] = [{ id: '', name: '', types: [] }]
 
+// Its view moves only the world's transform: the board is drawn again when the zoom changes, never as the view pans.
 export function CardKanbanView({ piece, view, live, editor, onCanvas = false, onCard }: Props) {
+  // Marks, chips and handles at screen size take the zoom once it settles (D-278), so a wheel step restyles none of them.
+  const settled = useSettledZoom(view.zoom, live)
+  return (
+    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
+        <CardBoard piece={piece} live={live} editor={editor} onCard={onCard} />
+      </div>
+    </div>
+  )
+}
+
+type BoardProps = Omit<Props, 'view' | 'onCanvas'>
+
+const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: BoardProps) {
   const { wid, cards, edges } = useWs()
   const setup = kanbanOf(piece)
   const field = setup.colField ?? 'status'
@@ -51,8 +66,6 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
   const order = useMemo(() => (orderOn ? suggestedOrder(held, cards, edges) : []), [orderOn, held, cards, edges])
   const names = useMemo(() => new Map((setup.names ?? []).map((n) => [boxKey(n.col, n.row), n])), [setup.names])
   const selected = useCanvasView((s) => (live ? s.cardSelected : null))
-  // Its screen px per its own, for the marks inside it (D-265).
-  const screen = useCanvasView((s) => (onCanvas || !live ? (s.cams[wid]?.zoom ?? 1) : 1) * view.zoom)
   const board = useRef<HTMLDivElement>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const dragRef = useRef(drag)
@@ -158,103 +171,99 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
   )
 
   return (
-    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }}>
-        <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || `cards by ${FIELD_NAME[field]}`} data-dragging={lifted ? true : undefined} data-order={orderOn || undefined}>
-          <div className={styles.grid}>
-          <div className={styles.row}>
-            {cols.map((c, i) => {
-              const off = !!lifted && !takes(c, lifted)
-              return (
-                <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-out={c.out || undefined} data-none={c.id === NO_VALUE || undefined} data-over={(lifted && drag?.over?.col === c.id) || undefined} data-off={off || undefined}>
-                  <div className={styles.head}>
-                    <span className={styles.n}>{String(i).padStart(2, '0')}</span>
-                    <span className={styles.name}>{c.name}</span>
-                    <span className={styles.rule} aria-hidden />
-                    <span className={styles.count}>{byCol.get(c.id)?.length ?? 0}</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          {rows.map((r) => {
-            const folded = !!rowField && folds.includes(r.id)
-            const count = cols.reduce((n, c) => n + (boxes.get(boxKey(c.id, r.id))?.length ?? 0), 0)
-            return (
-              <div key={r.id || 'all'} className={styles.lane} data-folded={folded || undefined} data-off={(!!lifted && !!rowField && !takes(r, lifted)) || undefined}>
-                {rowField && (
-                  <LaneHead
-                    lane={{ key: r.id, label: r.id === NO_VALUE ? `no ${FIELD_NAME[rowField]}` : `${FIELD_NAME[rowField]} ${r.name}`, drop: true }}
-                    count={count}
-                    folded={folded}
-                    onFold={() => fold(r.id)}
-                    onPress={own}
-                  />
-                )}
-                {!folded && (
-                  <div className={styles.row}>
-                    {cols.map((c) => {
-                      // The held card keeps its room (hidden), so nothing under the pointer moves while it's dragged.
-                      const list = boxes.get(boxKey(c.id, r.id)) ?? []
-                      const over = !!lifted && drag?.over?.col === c.id && drag.over.row === r.id
-                      const here = !!lifted && placeOf(lifted, field, cols) === c.id && (!rowField || placeOf(lifted, rowField, rows) === r.id)
-                      const name = rowField ? names.get(boxKey(c.id, r.id)) : undefined
-                      return (
-                        <div
-                          key={c.id}
-                          className={styles.column}
-                          data-ccol={c.id}
-                          data-crow={r.id}
-                          data-box={rowField ? true : undefined}
-                          data-tone={name?.tone}
-                          data-done={c.done || undefined}
-                          data-over={over || undefined}
-                          data-off={(!!lifted && !boxTakes(c, r, lifted)) || undefined}
-                          role="listitem"
-                          aria-label={`${c.name}${rowField ? `, ${r.name}` : ''}${name ? ` (${name.name})` : ''}, ${list.length} cards`}
-                          onPointerDown={own}
-                        >
-                          {name && <span className={styles.boxName}>{name.name}</span>}
-                          <div className={styles.list}>
-                            {list.map((x) => (
-                              <div key={x.id} style={x.id === lifted?.id ? { visibility: 'hidden', position: 'relative' } : undefined}>
-                                {sheet(x, c)}
-                                {/* Over its own box, it lands back in the room it kept: the L's there (D-265). */}
-                                {x.id === lifted?.id && over && here && (
-                                  <span style={{ position: 'absolute', inset: 0, visibility: 'visible' }}>
-                                    <Marks tone={TYPE_ACCENT[x.type]} pressed />
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                            {over && !here && <Gap h={drag!.size[1]} tone={TYPE_ACCENT[lifted!.type]} />}
-                            {!list.length && !over && !rowField && <span className={styles.empty}>· none</span>}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+    <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || `cards by ${FIELD_NAME[field]}`} data-dragging={lifted ? true : undefined} data-order={orderOn || undefined}>
+      <div className={styles.grid}>
+      <div className={styles.row}>
+        {cols.map((c, i) => {
+          const off = !!lifted && !takes(c, lifted)
+          return (
+            <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-out={c.out || undefined} data-none={c.id === NO_VALUE || undefined} data-over={(lifted && drag?.over?.col === c.id) || undefined} data-off={off || undefined}>
+              <div className={styles.head}>
+                <span className={styles.n}>{String(i).padStart(2, '0')}</span>
+                <span className={styles.name}>{c.name}</span>
+                <span className={styles.rule} aria-hidden />
+                <span className={styles.count}>{byCol.get(c.id)?.length ?? 0}</span>
               </div>
-            )
-          })}
-          {!held.length && (
-            <p className={styles.empty} data-wide>
-              no cards here yet: its setup picks which ({FIELD_NAME[field]} applies to {field === 'status' ? 'customers, problems, ideas and features' : field === 'priority' ? 'features' : 'features and packages'})
-            </p>
-          )}
-          </div>
-          {orderOn && <OrderList order={order} unrated={held.length - order.length} live={live} selected={selected} onPick={(c) => live && pick(c)} onPress={own} />}
-          {lifted && drag && (
-            <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
-              {sheet(lifted, cols.find((c) => c.id === drag.over?.col), { lifted: true })}
             </div>
-          )}
-        </div>
+          )
+        })}
       </div>
+      {rows.map((r) => {
+        const folded = !!rowField && folds.includes(r.id)
+        const count = cols.reduce((n, c) => n + (boxes.get(boxKey(c.id, r.id))?.length ?? 0), 0)
+        return (
+          <div key={r.id || 'all'} className={styles.lane} data-folded={folded || undefined} data-off={(!!lifted && !!rowField && !takes(r, lifted)) || undefined}>
+            {rowField && (
+              <LaneHead
+                lane={{ key: r.id, label: r.id === NO_VALUE ? `no ${FIELD_NAME[rowField]}` : `${FIELD_NAME[rowField]} ${r.name}`, drop: true }}
+                count={count}
+                folded={folded}
+                onFold={() => fold(r.id)}
+                onPress={own}
+              />
+            )}
+            {!folded && (
+              <div className={styles.row}>
+                {cols.map((c) => {
+                  // The held card keeps its room (hidden), so nothing under the pointer moves while it's dragged.
+                  const list = boxes.get(boxKey(c.id, r.id)) ?? []
+                  const over = !!lifted && drag?.over?.col === c.id && drag.over.row === r.id
+                  const here = !!lifted && placeOf(lifted, field, cols) === c.id && (!rowField || placeOf(lifted, rowField, rows) === r.id)
+                  const name = rowField ? names.get(boxKey(c.id, r.id)) : undefined
+                  return (
+                    <div
+                      key={c.id}
+                      className={styles.column}
+                      data-ccol={c.id}
+                      data-crow={r.id}
+                      data-box={rowField ? true : undefined}
+                      data-tone={name?.tone}
+                      data-done={c.done || undefined}
+                      data-over={over || undefined}
+                      data-off={(!!lifted && !boxTakes(c, r, lifted)) || undefined}
+                      role="listitem"
+                      aria-label={`${c.name}${rowField ? `, ${r.name}` : ''}${name ? ` (${name.name})` : ''}, ${list.length} cards`}
+                      onPointerDown={own}
+                    >
+                      {name && <span className={styles.boxName}>{name.name}</span>}
+                      <div className={styles.list}>
+                        {list.map((x) => (
+                          <div key={x.id} style={x.id === lifted?.id ? { visibility: 'hidden', position: 'relative' } : undefined}>
+                            {sheet(x, c)}
+                            {/* Over its own box, it lands back in the room it kept: the L's there (D-265). */}
+                            {x.id === lifted?.id && over && here && (
+                              <span style={{ position: 'absolute', inset: 0, visibility: 'visible' }}>
+                                <Marks tone={TYPE_ACCENT[x.type]} pressed />
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                        {over && !here && <Gap h={drag!.size[1]} tone={TYPE_ACCENT[lifted!.type]} />}
+                        {!list.length && !over && !rowField && <span className={styles.empty}>· none</span>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+      {!held.length && (
+        <p className={styles.empty} data-wide>
+          no cards here yet: its setup picks which ({FIELD_NAME[field]} applies to {field === 'status' ? 'customers, problems, ideas and features' : field === 'priority' ? 'features' : 'features and packages'})
+        </p>
+      )}
+      </div>
+      {orderOn && <OrderList order={order} unrated={held.length - order.length} live={live} selected={selected} onPick={(c) => live && pick(c)} onPress={own} />}
+      {lifted && drag && (
+        <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
+          {sheet(lifted, cols.find((c) => c.id === drag.over?.col), { lifted: true })}
+        </div>
+      )}
     </div>
   )
-}
+})
 
 type SheetProps = {
   card: Card

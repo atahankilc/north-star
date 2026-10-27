@@ -7,13 +7,13 @@
 // finished, faint with a green `✓`. Tasks with no day wait in a tray under the rows. Dragging a task (or one from the
 // tray) onto a day gives it that day; onto another row (by person or card) gives it that person or card too; rows by
 // kanban keep it on its kanban. A click opens its panel (TaskPanel). Its own filter (the kanban's strip, its tasks).
-import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { useAuth } from '../../data/auth'
 import { setTimeline, shownTasks, timelineKanbans, today, TIMELINE_ROWS, updateTask, type Task, type TaskFields, type TimelineRows } from '../../data/tasks'
-import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
+import { camOf, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import { useWs } from './context'
 import { DockAction } from './FocusDock'
@@ -22,7 +22,7 @@ import { KanbanFilterDock } from './KanbanFilterDock'
 import { passes, useKanbanFilter } from './kanbanFilter'
 import { TYPE_ACCENT } from './PlaneCards'
 import { taskRows, type Lane } from './rows'
-import { Landing, Marks, zsOf } from '../../ui/Marks'
+import { Landing, Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import styles from './Timeline.module.css'
 
 // Its parts in its own px: the rows' names, a day, the days' head, a task, the gap between, a row's padding, the tray;
@@ -105,7 +105,22 @@ type Drag = { id: string; from: [number, number]; grab: [number, number]; at: [n
 
 type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onTask?: (t: Task) => void; span?: number }
 
+// Its view moves only the world's transform: the days are drawn again when the zoom changes, never as the view pans.
 export function TimelineView({ piece, view, live, editor, onTask, span = T.days }: Props) {
+  // Marks, chips and handles at screen size take the zoom once it settles (D-278), so a wheel step restyles none of them.
+  const settled = useSettledZoom(view.zoom, live)
+  return (
+    <div className={styles.layer} data-live={live || undefined}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, !live) }}>
+        <Days piece={piece} zoom={settled} live={live} editor={editor} onTask={onTask} span={span} />
+      </div>
+    </div>
+  )
+}
+
+type DaysProps = Omit<Props, 'view'> & { zoom: number }
+
+const Days = memo(function Days({ piece, zoom, live, editor, onTask, span = T.days }: DaysProps) {
   const { wid, pieces, tasks, cards } = useWs()
   const { user } = useAuth()
   const week = useWeeks((s) => s[piece.id] ?? 0)
@@ -174,8 +189,8 @@ export function TimelineView({ piece, view, live, editor, onTask, span = T.days 
   }
 
   const held = drag?.moving ? tasks.find((t) => t.id === drag.id) : undefined
-  // Its screen px per its own, for the marks inside it (D-265).
-  const screen = useCanvasView((s) => (live ? 1 : (s.cams[wid]?.zoom ?? 1)) * view.zoom)
+  // Its screen px per its own, for a held task's landing (read as it's drawn: a drag draws it again).
+  const screen = (live ? 1 : camOf(wid).zoom) * zoom
   const todayAt = Math.round((dayOf(today()) - layout.from) / DAY_MS)
   const days = Array.from({ length: layout.span }, (_, i) => new Date(layout.from + i * DAY_MS))
   const vars = { ['--left' as string]: `${T.left}px`, ['--day' as string]: `${T.day}px`, ['--head' as string]: `${T.head}px`, ['--bar' as string]: `${T.bar}px` } as CSSProperties
@@ -190,98 +205,94 @@ export function TimelineView({ piece, view, live, editor, onTask, span = T.days 
   const tone = (t: Task) => (t.cardType ? TYPE_ACCENT[t.cardType] : undefined)
 
   return (
-    <div className={styles.layer} data-live={live || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }}>
-        <div ref={board} className={styles.board} style={{ ...vars, width: layout.w, height: layout.h }} data-dragging={held ? true : undefined}>
-          {/* The days' head: `MON 26`, today cyan, weekends faint; a month's first day says its month. */}
-          {days.map((d, i) => {
-            const dow = d.getUTCDay()
-            const label = `${d.toLocaleString('en', { weekday: 'short', timeZone: 'UTC' })} ${d.getUTCDate()}${d.getUTCDate() === 1 ? ` ${d.toLocaleString('en', { month: 'short', timeZone: 'UTC' })}` : ''}`
-            return (
-              <div key={i} className={styles.dayHead} data-today={i === todayAt || undefined} data-weekend={dow === 0 || dow === 6 || undefined} style={{ left: T.left + i * T.day }}>
-                {label}
-              </div>
-            )
-          })}
-          {layout.earlier > 0 && <div className={styles.more} style={{ left: T.left - 8, transform: 'translateX(-100%)' }}>← {layout.earlier}</div>}
-          {layout.later > 0 && <div className={styles.more} style={{ left: T.left + layout.span * T.day + 6 }}>{layout.later} →</div>}
-          {/* The rows: a name, the days' cells (weekends a shade darker), a rule under. */}
-          {layout.rows.map((r) => (
-            <div key={r.key} className={styles.row} style={{ top: r.top, height: r.h }} data-none={!r.drop || undefined}>
-              <span className={styles.rowName} style={r.tone ? ({ ['--tone' as string]: r.tone } as CSSProperties) : undefined}>
-                {r.initials && <span className={styles.who}>{r.initials}</span>}
-                {r.kind && <span className={styles.kind}>▌</span>}
-                <span className={styles.rowLabel}>{r.label}</span>
-              </span>
-              {days.map((d, i) => (
-                <span
-                  key={i}
-                  className={styles.cell}
-                  data-weekend={d.getUTCDay() === 0 || d.getUTCDay() === 6 || undefined}
-                  style={{ left: T.left + i * T.day }}
-                />
-              ))}
-            </div>
-          ))}
-          {todayAt >= 0 && todayAt < layout.span && <span className={styles.today} style={{ left: T.left + todayAt * T.day, top: T.head - 8, height: (layout.rows.at(-1)?.top ?? T.head) + (layout.rows.at(-1)?.h ?? 0) - T.head + 8 }} />}
-          {/* Its tasks on their days. */}
-          {layout.placed.map((p) => {
-            const r = layout.rows.find((x) => x.key === p.row)
-            if (!r || p.task.id === held?.id) return null
-            const t = tone(p.task)
-            return (
-              <button
-                key={p.task.id}
-                className={styles.task}
-                data-task={p.task.id}
-                data-late={p.late || undefined}
-                data-finished={p.finished || undefined}
-                data-selected={selected === p.task.id || undefined}
-                style={{ left: T.left + p.day * T.day + 4, top: r.top + T.pad + p.slot * (T.bar + T.gap), width: T.day - 8, ...(t ? { ['--tone' as string]: t } : {}) } as CSSProperties}
-                tabIndex={live ? 0 : -1}
-                title={`${p.task.title}${p.task.due ? ` · due ${p.task.due}` : ''}`}
-                onPointerDown={press(p.task, p.row)}
-                onClick={live && !editor ? () => pick(p.task) : undefined}
-              >
-                {sheet(p.task, p.late)}
-                {live && <Marks tone={t} selected={selected === p.task.id} />}
-              </button>
-            )
-          })}
-          {/* No day yet: a tray under the rows. */}
-          <div className={styles.tray} style={{ top: (layout.rows.at(-1)?.top ?? T.head) + (layout.rows.at(-1)?.h ?? 0) + 16 }}>
-            <span className={styles.trayLabel}>no day · {layout.tray.length}</span>
-            {layout.tray.map((t) =>
-              t.id === held?.id ? null : (
-                <button key={t.id} className={styles.pill} data-task={t.id} data-selected={selected === t.id || undefined} style={tone(t) ? ({ ['--tone' as string]: tone(t) } as CSSProperties) : undefined} tabIndex={live ? 0 : -1} onPointerDown={press(t, null)} onClick={live && !editor ? () => pick(t) : undefined}>
-                  <span className={styles.line}>☐ {t.title}</span>
-                  {live && <Marks tier="s" tone={tone(t)} selected={selected === t.id} />}
-                </button>
-              ),
-            )}
-            {!layout.tray.length && <span className={styles.trayNone}>every task has a day</span>}
-            {live && editor && layout.tray.length > 0 && <span className={styles.trayHint}>drag onto a day to give it one</span>}
+    <div ref={board} className={styles.board} style={{ ...vars, width: layout.w, height: layout.h }} data-dragging={held ? true : undefined}>
+      {/* The days' head: `MON 26`, today cyan, weekends faint; a month's first day says its month. */}
+      {days.map((d, i) => {
+        const dow = d.getUTCDay()
+        const label = `${d.toLocaleString('en', { weekday: 'short', timeZone: 'UTC' })} ${d.getUTCDate()}${d.getUTCDate() === 1 ? ` ${d.toLocaleString('en', { month: 'short', timeZone: 'UTC' })}` : ''}`
+        return (
+          <div key={i} className={styles.dayHead} data-today={i === todayAt || undefined} data-weekend={dow === 0 || dow === 6 || undefined} style={{ left: T.left + i * T.day }}>
+            {label}
           </div>
-          {/* Held (D-265): 0.8 round the point held under the pointer, its marks where it lands, on that day's first row. */}
-          {held && drag?.over && (() => {
-            const r = layout.rows.find((x) => x.key === drag.over!.row)
-            return r ? <Landing x={T.left + drag.over.day * T.day + 4} y={r.top + T.pad} w={T.day - 8} h={T.bar} zoom={screen} tone={tone(held)} /> : null
-          })()}
-          {held && drag && (
-            <div
-              className={styles.task}
-              data-lifted
-              style={{ left: drag.at[0] - Math.min(drag.grab[0], T.day - 12), top: drag.at[1] - drag.grab[1], width: T.day - 8, scale: '0.8', transformOrigin: `${Math.min(drag.grab[0], T.day - 12)}px ${drag.grab[1]}px`, ...(tone(held) ? { ['--tone' as string]: tone(held) } : {}) } as CSSProperties}
-              aria-hidden
-            >
-              {sheet(held, false)}
-            </div>
-          )}
+        )
+      })}
+      {layout.earlier > 0 && <div className={styles.more} style={{ left: T.left - 8, transform: 'translateX(-100%)' }}>← {layout.earlier}</div>}
+      {layout.later > 0 && <div className={styles.more} style={{ left: T.left + layout.span * T.day + 6 }}>{layout.later} →</div>}
+      {/* The rows: a name, the days' cells (weekends a shade darker), a rule under. */}
+      {layout.rows.map((r) => (
+        <div key={r.key} className={styles.row} style={{ top: r.top, height: r.h }} data-none={!r.drop || undefined}>
+          <span className={styles.rowName} style={r.tone ? ({ ['--tone' as string]: r.tone } as CSSProperties) : undefined}>
+            {r.initials && <span className={styles.who}>{r.initials}</span>}
+            {r.kind && <span className={styles.kind}>▌</span>}
+            <span className={styles.rowLabel}>{r.label}</span>
+          </span>
+          {days.map((d, i) => (
+            <span
+              key={i}
+              className={styles.cell}
+              data-weekend={d.getUTCDay() === 0 || d.getUTCDay() === 6 || undefined}
+              style={{ left: T.left + i * T.day }}
+            />
+          ))}
         </div>
+      ))}
+      {todayAt >= 0 && todayAt < layout.span && <span className={styles.today} style={{ left: T.left + todayAt * T.day, top: T.head - 8, height: (layout.rows.at(-1)?.top ?? T.head) + (layout.rows.at(-1)?.h ?? 0) - T.head + 8 }} />}
+      {/* Its tasks on their days. */}
+      {layout.placed.map((p) => {
+        const r = layout.rows.find((x) => x.key === p.row)
+        if (!r || p.task.id === held?.id) return null
+        const t = tone(p.task)
+        return (
+          <button
+            key={p.task.id}
+            className={styles.task}
+            data-task={p.task.id}
+            data-late={p.late || undefined}
+            data-finished={p.finished || undefined}
+            data-selected={selected === p.task.id || undefined}
+            style={{ left: T.left + p.day * T.day + 4, top: r.top + T.pad + p.slot * (T.bar + T.gap), width: T.day - 8, ...(t ? { ['--tone' as string]: t } : {}) } as CSSProperties}
+            tabIndex={live ? 0 : -1}
+            title={`${p.task.title}${p.task.due ? ` · due ${p.task.due}` : ''}`}
+            onPointerDown={press(p.task, p.row)}
+            onClick={live && !editor ? () => pick(p.task) : undefined}
+          >
+            {sheet(p.task, p.late)}
+            {live && <Marks tone={t} selected={selected === p.task.id} />}
+          </button>
+        )
+      })}
+      {/* No day yet: a tray under the rows. */}
+      <div className={styles.tray} style={{ top: (layout.rows.at(-1)?.top ?? T.head) + (layout.rows.at(-1)?.h ?? 0) + 16 }}>
+        <span className={styles.trayLabel}>no day · {layout.tray.length}</span>
+        {layout.tray.map((t) =>
+          t.id === held?.id ? null : (
+            <button key={t.id} className={styles.pill} data-task={t.id} data-selected={selected === t.id || undefined} style={tone(t) ? ({ ['--tone' as string]: tone(t) } as CSSProperties) : undefined} tabIndex={live ? 0 : -1} onPointerDown={press(t, null)} onClick={live && !editor ? () => pick(t) : undefined}>
+              <span className={styles.line}>☐ {t.title}</span>
+              {live && <Marks tier="s" tone={tone(t)} selected={selected === t.id} />}
+            </button>
+          ),
+        )}
+        {!layout.tray.length && <span className={styles.trayNone}>every task has a day</span>}
+        {live && editor && layout.tray.length > 0 && <span className={styles.trayHint}>drag onto a day to give it one</span>}
       </div>
+      {/* Held (D-265): 0.8 round the point held under the pointer, its marks where it lands, on that day's first row. */}
+      {held && drag?.over && (() => {
+        const r = layout.rows.find((x) => x.key === drag.over!.row)
+        return r ? <Landing x={T.left + drag.over.day * T.day + 4} y={r.top + T.pad} w={T.day - 8} h={T.bar} zoom={screen} tone={tone(held)} /> : null
+      })()}
+      {held && drag && (
+        <div
+          className={styles.task}
+          data-lifted
+          style={{ left: drag.at[0] - Math.min(drag.grab[0], T.day - 12), top: drag.at[1] - drag.grab[1], width: T.day - 8, scale: '0.8', transformOrigin: `${Math.min(drag.grab[0], T.day - 12)}px ${drag.grab[1]}px`, ...(tone(held) ? { ['--tone' as string]: tone(held) } : {}) } as CSSProperties}
+          aria-hidden
+        >
+          {sheet(held, false)}
+        </div>
+      )}
     </div>
   )
-}
+})
 
 // Its tools in its dock (its focus, beside its kanban): its filter, which kanbans, its rows, the weeks.
 // `beside`: in its pane beside its kanban, where it shows that kanban: no `shows`.

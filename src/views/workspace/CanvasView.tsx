@@ -5,6 +5,7 @@
 // and off from its console; in edit mode it takes the drag, it's selected, and Delete takes it away. Escape or a click on
 // empty space lets go of the selection. `0` (or the side nav's fit) frames everything, or in focus the plane's contents.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
@@ -14,7 +15,7 @@ import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
 import { canEditIn } from '../../data/workspaces'
-import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type Cam, type PlaneCam, type ScreenRect } from '../../state/canvasView'
+import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs } from './context'
 import { FocusedPlane } from './FocusedPlane'
 import { ViewMenu } from './ViewMenu'
@@ -32,7 +33,7 @@ import type { Thread } from '../../data/model'
 import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePresenceReport } from './collab'
 import { heldAt } from './selection'
 import { runCells } from '../../ui/Appear'
-import { EVERY_HANDLE, Landing, Marks } from '../../ui/Marks'
+import { EVERY_HANDLE, Landing, Marks, ZOOM_SETTLE_MS } from '../../ui/Marks'
 import { DrawSection } from './DrawSection'
 import { labelBox, TextItems } from './TextItems'
 import { spaceBounds } from './spaceBounds'
@@ -84,7 +85,9 @@ export function CanvasView() {
   const { wid, workspace, pieces, cards, labels, threads, cells, edges, documents, tasks } = useWs()
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
-  const cam = useCanvasView((s) => s.cams[wid]) ?? camOf(wid)
+  // Not the camera itself: a pan or a zoom step moves only the world (World, below), and this draws again when the zoom
+  // it shows settles.
+  const zoom = useShownZoom(wid)
   const size = useCanvasView((s) => s.size)
   const selected = useCanvasView((s) => s.selected)
   const editing = useCanvasView((s) => s.editing)
@@ -195,7 +198,7 @@ export function CanvasView() {
   const bonds = (layer: 'under' | 'over') =>
     shown.map((p) => {
       const plane = p.stuckTo && sticks(p) ? hostsBox.find((x) => x.id === p.stuckTo) : undefined
-      return plane ? <Bond key={`bond-${layer}-${p.id}`} piece={p} plane={plane} zoom={cam.zoom} layer={layer} /> : null
+      return plane ? <Bond key={`bond-${layer}-${p.id}`} piece={p} plane={plane} zoom={zoom} layer={layer} /> : null
     })
   // What can be stuck to, as boxes (D-210): planes, and kanbans for timelines (D-262).
   const hostsBox = shown.filter((p) => isHost(p)).map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h, name: p.name, kind: kindOfPiece(p) }))
@@ -818,12 +821,7 @@ export function CanvasView() {
       role="application"
     >
       <div ref={lens} className={styles.lens}>
-      <div
-        className={styles.world}
-        // The finder's preview copies it (D-236).
-        data-canvas-world
-        style={{ transform: `translate(${onPixel(size.w / 2 + cam.x)}px, ${onPixel(size.h / 2 + cam.y)}px) scale(${cam.zoom})` }}
-      >
+      <World wid={wid} size={size}>
         {/* What's linked to a plane (D-210, D-215): touching, ASCII in the gap; apart, a thin line. Under the pieces, so a
             line never crosses one. */}
         {bonds('under')}
@@ -833,7 +831,7 @@ export function CanvasView() {
             piece={p}
             shown={shown[i]}
             live={!focusId}
-            cam={cam}
+            zoom={zoom}
             selected={p.id === selected}
             editing={editor && editing.includes(p.id)}
             editor={editor}
@@ -850,9 +848,9 @@ export function CanvasView() {
         {/* The notches of what's linked to a plane, on its edge (D-215). */}
         {bonds('over')}
         {/* The canvas's own sections over its planes (no fill, so they hide nothing), its text over them (D-188). */}
-        <Text labels={canvasLabels} layer="frames" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
-        <Text labels={canvasLabels} layer="text" live editor={editor} zoom={cam.zoom} carry={pieceCarry} />
-      </div>
+        <Text labels={canvasLabels} layer="frames" live editor={editor} zoom={zoom} carry={pieceCarry} />
+        <Text labels={canvasLabels} layer="text" live editor={editor} zoom={zoom} carry={pieceCarry} />
+      </World>
       </div>
       {focused && (
         <FocusedPlane
@@ -975,7 +973,7 @@ export function CanvasView() {
       {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
       {/* A document being dragged out of its list, and the question before a private one goes on the canvas (D-232). */}
       {dragging && <DragGhost doc={documents.find((d) => d.id === dragging.docId)} at={dragging} root={root} />}
-      <DocPlace toScreen={focusId ? null : toScreen} zoom={cam.zoom} others={shown.map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h }))} members={membersOf(workspace.roles)} onPlaced={placedDoc} />
+      <DocPlaceHere wid={wid} toScreen={focusId ? null : toScreen} others={shown.map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h }))} members={membersOf(workspace.roles)} onPlaced={placedDoc} />
       {/* Unsharing a document that's on the canvas (D-232): its pieces go too; asks first. */}
       {unsharingDoc && (
         <HazardConfirm
@@ -1048,6 +1046,68 @@ function setPlaneView(to: PlaneCam, instant: boolean) {
   else glide(c, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
 }
 
+// The zoom what's held at screen size on the canvas is drawn for (piece names, consoles, marks, text's bars): the
+// camera's, once it stops changing for ZOOM_SETTLE_MS. Each wheel step (or a glide's frame) then moves only the world's
+// transform; with that zoom in the pieces' styles (--z, --zs), every step restyled all that's on the canvas and zooming
+// crawled. A press takes the camera's at once, so a drag right after a zoom reads the zoom it's under. Heard from the
+// store, not read in render: a pan leaves the canvas undrawn.
+function useShownZoom(wid: string) {
+  const [shown, setShown] = useState(() => camOf(wid).zoom)
+  const shownRef = useRef(shown)
+  shownRef.current = shown
+  useEffect(() => {
+    let last = camOf(wid).zoom
+    let t = 0
+    const now = () => {
+      off()
+      flushSync(() => setShown(camOf(wid).zoom))
+    }
+    const off = () => {
+      window.clearTimeout(t)
+      window.removeEventListener('pointerdown', now, true)
+    }
+    const heard = () => {
+      const z = camOf(wid).zoom
+      if (z === last) return
+      last = z
+      off()
+      if (z === shownRef.current) return
+      t = window.setTimeout(() => setShown(z), ZOOM_SETTLE_MS)
+      window.addEventListener('pointerdown', now, true)
+    }
+    // A zoom between the first draw and this.
+    if (last !== shownRef.current) setShown(last)
+    const unsub = useCanvasView.subscribe(heard)
+    return () => {
+      unsub()
+      off()
+    }
+  }, [wid])
+  return shown
+}
+
+// The canvas's world: the camera's pan and zoom as its transform, the only thing a pan or a wheel step changes. What's
+// in it is CanvasView's, drawn again only when that is.
+function World({ wid, size, children }: { wid: string; size: { w: number; h: number }; children: ReactNode }) {
+  const cam = useCanvasView((s) => s.cams[wid]) ?? camOf(wid)
+  return (
+    <div
+      className={styles.world}
+      // The finder's preview copies it (D-236).
+      data-canvas-world
+      style={{ transform: `translate(${onPixel(size.w / 2 + cam.x)}px, ${onPixel(size.h / 2 + cam.y)}px) scale(${cam.zoom})` }}
+    >
+      {children}
+    </div>
+  )
+}
+
+// Placing a document (D-232): its frame where it'll land follows the camera.
+function DocPlaceHere({ wid, ...props }: Omit<Parameters<typeof DocPlace>[0], 'zoom'> & { wid: string }) {
+  const cam = useCanvasView((s) => s.cams[wid])
+  return <DocPlace {...props} zoom={cam?.zoom ?? 1} />
+}
+
 const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'Ctrl+Z'
 
 type BoxProps = {
@@ -1056,7 +1116,8 @@ type BoxProps = {
   shown: Box
   // Whether what's open on it is live: not while a plane is in focus.
   live: boolean
-  cam: Cam
+  // The canvas's zoom as shown (useShownZoom), for what's held at screen size on it.
+  zoom: number
   selected: boolean
   editing: boolean
   editor: boolean
@@ -1244,7 +1305,7 @@ const KIND_TONE: Record<string, string> = {
   timeline: 'var(--link-competes)',
 }
 
-function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers, host }: BoxProps) {
+function PieceBox({ piece, shown, live, zoom, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers, host }: BoxProps) {
   const peers = usePeersOn(piece.id, CANVAS)
   const { wid } = useWs()
   const kind = kindOfPiece(piece)
@@ -1304,7 +1365,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
     e.stopPropagation()
     useCanvasView.setState({ selected: piece.id })
     const [sx, sy] = [e.clientX, e.clientY]
-    const at = heldAt(e, 0, 0, cam.zoom)
+    const at = heldAt(e, 0, 0, zoom)
     // Open on the canvas it only moves (its size is its contents', D-228).
     if (open && handle !== 'move') return
     const from: Box = { ...shown }
@@ -1322,12 +1383,12 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
     const move = (ev: PointerEvent) => {
       const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
       if (!to && Math.hypot(dx, dy) < DRAG_PX) return
-      to = dragBox(from, handle, dx / cam.zoom, dy / cam.zoom, ev.altKey)
-      if (handle === 'move') setMoving({ free: [from.x + dx / cam.zoom, from.y + dy / cam.zoom], at })
+      to = dragBox(from, handle, dx / zoom, dy / zoom, ev.altKey)
+      if (handle === 'move') setMoving({ free: [from.x + dx / zoom, from.y + dy / zoom], at })
       else setSizing(handle)
       if (lens) {
         // Within 48 screen px of an edge; alt held: free, no sticking.
-        const t = ev.altKey ? null : stickTarget(to, planes, 48 / cam.zoom)
+        const t = ev.altKey ? null : stickTarget(to, planes, 48 / zoom)
         stick = t?.plane ?? linked
         if (t) to = t.box
         useCanvasView.setState({ stickHint: t ? { plane: t.plane, box: t.box } : null })
@@ -1441,7 +1502,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       // A matrix in focus is its focused copy's: the one here would show under it as it glides.
       data-away={bare && focusing ? true : undefined}
       // --z: the canvas's zoom, so the name holds its size on the screen (D-223).
-      style={{ ...carried, left, top, width: box.w, height: box.h, ['--cs' as string]: consoleScale(cam.zoom), ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: cam.zoom }}
+      style={{ ...carried, left, top, width: box.w, height: box.h, ['--cs' as string]: consoleScale(zoom), ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: zoom }}
       ref={self}
       onPointerDown={(e) => (tap(e), press('move')(e))}
       onPointerEnter={(e) => (hover(true)(), e.pointerType !== 'touch' && setPointed(true))}
@@ -1469,7 +1530,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       {/* Its marks (D-265, tier L, its kind's colour): hover, others' selection; in edit mode selected, with a cyan
           handle on every corner and edge (an open one only moves), the moving edges lit and its size beside them. */}
       <Marks
-        zoom={cam.zoom}
+        zoom={zoom}
         tier="l"
         short={Math.min(box.w, box.h)}
         tone={tone}
@@ -1483,7 +1544,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         readout={sizing && sizing !== 'move' ? `${Math.round(box.w)} × ${Math.round(box.h)}` : undefined}
       />
       {/* A comment on the plane itself (D-195), not on what's in it. */}
-      <ThreadChip wid={wid} thread={own} zoom={cam.zoom} />
+      <ThreadChip wid={wid} thread={own} zoom={zoom} />
       {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). Open on the canvas (D-228),
           live: not in edit mode (a press moves it) or while a plane's in focus. */}
       {/* Open, the page under its contents, feathered: the backdrop stays out from under its text (D-009). */}
@@ -1520,7 +1581,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       ) : kind === 'kanban' ? (
         <Kanban piece={piece} view={framedView} live={false} editor={editor} />
       ) : kind === 'timeline' ? (
-        <TimelineView piece={piece} view={inner} live={false} editor={editor} />
+        <Timeline piece={piece} view={inner} live={false} editor={editor} />
       ) : (
         <Cards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       )}
@@ -1550,7 +1611,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         }
       />
     </div>
-    {carried && <Landing x={left} y={top} w={box.w} h={box.h} zoom={cam.zoom} tier="l" tone={tone} />}
+    {carried && <Landing x={left} y={top} w={box.w} h={box.h} zoom={zoom} tier="l" tone={tone} />}
     </>
   )
 }
@@ -1776,6 +1837,7 @@ const Table = memo(TableView)
 const DocsList = memo(DocumentsView)
 const DocOne = memo(DocumentPieceView)
 const Kanban = memo(KanbanView)
+const Timeline = memo(TimelineView)
 const Cards = memo(PlaneCards)
 // The canvas's text, drawn again as the zoom changes (its editors follow it), not as the canvas pans.
 const Text = memo(TextItems)

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-27 (memory bank and docs cleanup after the merge to main)_
+_Last updated: 2026-10-27 (pans redraw nothing, D-279; zoom in a focus settles, D-280; performance survey)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -32,6 +32,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The assistant back as a piece (its rules are in decisions-1.0.md; check them with the user first). Then the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
+- Speed, measured, not done (D-279's *Not yet*, numbers in state-history): one write draws every piece (`useWs` one context, new arrays per snapshot); code-split the workspace
+  route (Pages drops old chunks on deploy: needs a reload on a failed chunk).
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers
@@ -63,5 +65,11 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Canvas speed: pieces' contents are memoised (keep their props stable); in focus a matrix's cells and heads and a table's
   rows are made only when they change; only what's on screen is drawn (`visible.ts`); a matrix too small to read is
   squares on one canvas (`CellDots`).
+  Zooming moves only the world's transform (D-278): what's at screen size reads the *shown* zoom (`useShownZoom`, the
+  camera's 120 ms after it stops, at once on a press; in a focus `useSettledZoom`, D-280); spaces take `--zs` from the piece's `--z` in CSS (`zsIn`), never
+  from the camera in React; the Marks' L's transition only `--mo`/`--ml` (unscaled `@property`).
+  A pan redraws nothing (D-279): a space's view goes to a thin shell moving the world, its contents memoised on the
+  zoom (`PlaneInside`, `TaskBoard`, `CardBoard`, `Days`); CanvasView never reads the camera (`World`); nothing written
+  per step (`--mark`, `--zs`…) on an element holding the contents. How it was measured: state-history D-279.
 - Dev hooks: `window.__kanbanUi` (D-260), `__sceneTime`, `__backdrop`, `__curtain`, `__sweep`, `__advance`.
 - Chrome extension screenshots are scaled: viewport 2560 px vs 1568 px frame, so clientX/Y needs ×(innerWidth/1568).

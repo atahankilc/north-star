@@ -116,6 +116,10 @@ feature comes back as a piece, and check them with the user then.
 - Planes (D-180, D-181, D-189): never "board" again (`kind: 'plane'`); terminal look, the name in the top edge, the console
   a tab on the bottom edge in the bottom-right corner (`[focus] [edit]`; editing: `EDIT 960 × 600 [delete] [done]`), no
   name or zoom in it (D-186); old looks (D-179) replaced by the surface, Marks and resize above.
+- While zooming only the canvas's (or a focus's view's) transform changes; what's at screen size settles 120 ms after
+  it stops (D-278, D-280). A
+  pan, on the canvas or in a focus, redraws and restyles nothing inside the world; per-step values never go on an
+  element that holds the contents (D-279).
 - Piece names (D-223): in the top edge of every piece, 13 px × zoom on screen (11–15), `--fg` caps weight 500, the kind
   faint after it (`PAZAR · PLANE`); the kind gives way first, then `…`, all of it on hover. Edit mode: a cyan-framed
   field, a `>` and `17/80`.

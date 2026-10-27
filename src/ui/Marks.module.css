@@ -1,5 +1,10 @@
 /* Marks (D-265): four L's round the thing (a `--pad` out), sized in screen px by tier (`--zs` = 1 / the space's zoom).
-   `--o` is how far out of the box they are: at rest (where they leave to), hovered, selected; pressed on its corners. */
+   `--mo` is how far out of the box they are (screen px): at rest (where they leave to), hovered, selected; pressed on
+   their corners. `--mo` and `--ml` (the L's length) are what moves, unscaled: their transitions never start on a zoom,
+   which only rescales them (with every L on the canvas transitioning at each wheel step, zooming crawled). */
+@property --mo { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --ml { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
 .marks {
   position: absolute;
   inset: calc(-1 * var(--pad, 0px));
@@ -7,42 +12,53 @@
 }
 
 :is(.marks, .handles)[data-tier='s'] {
-  --len: calc(var(--mark-s-len) * var(--zs, 1));
-  --th: calc(var(--mark-s-th) * var(--zs, 1));
-  --hov: calc(var(--mark-s-hover) * var(--zs, 1));
-  --sel: calc(var(--mark-s-sel) * var(--zs, 1));
-  --rest: calc(var(--mark-s-rest) * var(--zs, 1));
-  --press: calc(var(--mark-s-press) * var(--zs, 1));
+  --len0: var(--mark-s-len);
+  --th0: var(--mark-s-th);
+  --hov0: var(--mark-s-hover);
+  --sel0: var(--mark-s-sel);
+  --rest0: var(--mark-s-rest);
+  --press0: var(--mark-s-press);
 }
 
 :is(.marks, .handles)[data-tier='m'] {
-  --len: calc(var(--mark-m-len) * var(--zs, 1));
-  --th: calc(var(--mark-m-th) * var(--zs, 1));
-  --hov: calc(var(--mark-m-hover) * var(--zs, 1));
-  --sel: calc(var(--mark-m-sel) * var(--zs, 1));
-  --rest: calc(var(--mark-m-rest) * var(--zs, 1));
-  --press: calc(var(--mark-m-press) * var(--zs, 1));
+  --len0: var(--mark-m-len);
+  --th0: var(--mark-m-th);
+  --hov0: var(--mark-m-hover);
+  --sel0: var(--mark-m-sel);
+  --rest0: var(--mark-m-rest);
+  --press0: var(--mark-m-press);
 }
 
 :is(.marks, .handles)[data-tier='l'] {
-  --len: calc(var(--mark-l-len) * var(--zs, 1));
-  --th: calc(var(--mark-l-th) * var(--zs, 1));
-  --hov: calc(var(--mark-l-hover) * var(--zs, 1));
-  --sel: calc(var(--mark-l-sel) * var(--zs, 1));
-  --rest: calc(var(--mark-l-rest) * var(--zs, 1));
-  --press: calc(var(--mark-l-press) * var(--zs, 1));
+  --len0: var(--mark-l-len);
+  --th0: var(--mark-l-th);
+  --hov0: var(--mark-l-hover);
+  --sel0: var(--mark-l-sel);
+  --rest0: var(--mark-l-rest);
+  --press0: var(--mark-l-press);
+}
+
+/* The same in the space's px, for what doesn't move (the handles, a peer's tag). */
+:is(.marks, .handles)[data-tier] {
+  --len: calc(var(--len0) * var(--zs, 1));
+  --th: calc(var(--th0) * var(--zs, 1));
+  --hov: calc(var(--hov0) * var(--zs, 1));
+  --sel: calc(var(--sel0) * var(--zs, 1));
+  --rest: calc(var(--rest0) * var(--zs, 1));
+  --press: calc(var(--press0) * var(--zs, 1));
 }
 
 /* At rest: further out, unseen; leaving (deselect, hover out), they drift out there and fade. */
 .marks i {
-  --o: var(--rest);
-  --at: calc(-1 * (var(--o) + var(--th)));
+  --mo: var(--rest0);
+  --ml: var(--len0);
+  --at: calc(-1 * (var(--mo) + var(--th0)) * var(--zs, 1));
   position: absolute;
-  width: var(--len);
-  height: var(--len);
+  width: calc(var(--ml) * var(--zs, 1));
+  height: calc(var(--ml) * var(--zs, 1));
   border: 0 solid var(--fg-dim);
   opacity: 0;
-  transition-property: top, right, bottom, left, width, height, border-color, opacity;
+  transition-property: --mo, --ml, border-color, opacity;
   transition-duration: 140ms;
   transition-timing-function: var(--ease-out);
 }
@@ -55,48 +71,39 @@
 /* Hovered: grey, a little out, gliding in. */
 :hover > .marks[data-live='true'][data-state='none'] i,
 .marks[data-state='hover'] i {
-  --o: var(--hov);
+  --mo: var(--hov0);
   opacity: 1;
   transition-duration: 160ms;
 }
 
 /* Selected: just outside, in its tone, sprung out to the ring. */
 .marks[data-state='sel'] i {
-  --o: var(--sel);
+  --mo: var(--sel0);
   border-color: var(--tone, var(--accent-cyan));
   opacity: 1;
   transition:
-    top 300ms var(--mark-spring),
-    right 300ms var(--mark-spring),
-    bottom 300ms var(--mark-spring),
-    left 300ms var(--mark-spring),
-    width 300ms var(--mark-spring),
-    height 300ms var(--mark-spring),
+    --mo 300ms var(--mark-spring),
+    --ml 300ms var(--mark-spring),
     border-color 120ms,
     opacity 80ms;
 }
 
 /* Pressed (and where it lands while dragged): on its corners, longer, in its tone, snapped there. */
 .marks[data-state='press'] i {
-  --o: calc(-1 * var(--th));
-  width: var(--press);
-  height: var(--press);
+  --mo: calc(-1 * var(--th0));
+  --ml: var(--press0);
   border-color: var(--tone, var(--accent-cyan));
   opacity: 1;
   transition:
-    top 70ms var(--ease-out),
-    right 70ms var(--ease-out),
-    bottom 70ms var(--ease-out),
-    left 70ms var(--ease-out),
-    width 70ms var(--ease-out),
-    height 70ms var(--ease-out),
+    --mo 70ms var(--ease-out),
+    --ml 70ms var(--ease-out),
     border-color 40ms,
     opacity 40ms;
 }
 
 /* Selected without a press: drawn on the corners for a frame, then the spring. */
 .marks[data-state='arrive'] i {
-  --o: calc(-1 * var(--th));
+  --mo: calc(-1 * var(--th0));
   border-color: var(--tone, var(--accent-cyan));
   opacity: 1;
   transition: none;
@@ -104,7 +111,7 @@
 
 /* A link's target while one is drawn: cyan, what you can do to it. */
 .marks[data-state='target'] i {
-  --o: var(--hov);
+  --mo: var(--hov0);
   border-color: var(--accent-cyan);
   opacity: 1;
   transition-duration: 160ms;
@@ -118,7 +125,7 @@
 
 /* Someone else's selection: the same L's in their colour, each a little further out, their name on a tag. */
 .marks[data-state='peer'] i {
-  --o: calc(var(--sel) + var(--i) * 2 * var(--th));
+  --mo: calc(var(--sel0) + var(--i) * 2 * var(--th0));
   border-color: var(--peer);
   opacity: 1;
   transition-duration: 200ms;
@@ -160,12 +167,13 @@
 }
 
 .marks[data-state='box'] {
-  --len: calc(12px * var(--zs, 1));
+  --len0: 12px;
+  --th0: 1.5px;
   --th: calc(1.5px * var(--zs, 1));
 }
 
 .marks[data-state='box'] i {
-  --o: 0px;
+  --mo: 0px;
   border-color: var(--accent-cyan);
   opacity: 1;
   transition: none;

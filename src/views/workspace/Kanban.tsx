@@ -30,7 +30,7 @@
 //
 // Cards instead of tasks (D-268): a kanban whose setup holds cards is drawn by CardKanban.tsx, its columns a field's
 // values; made from `+ → kanban…` (KanbanWizard.tsx), set up in its tabbed panel (KanbanSetup.tsx).
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -47,7 +47,7 @@ import { Menu, type MenuEntry } from '../../ui/Menu'
 import { loadFolds, saveFolds, taskRows, type Lane } from './rows'
 import { setPresenceDrag } from '../../data/presence'
 import { PeerTaskDrags, usePeersOn } from './collab'
-import { Marks, zsOf } from '../../ui/Marks'
+import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
@@ -196,10 +196,23 @@ export function KanbanView({ onCard, ...props }: Props) {
   return kanbanOf(props.piece).holds === 'cards' ? <CardKanbanView {...props} onCard={onCard} /> : <TaskKanbanView {...props} />
 }
 
+// Its view moves only the world's transform: the board is drawn again when the zoom changes, never as the view pans.
 function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }: Props) {
+  // Marks, chips and handles at screen size take the zoom once it settles (D-278), so a wheel step restyles none of them.
+  const settled = useSettledZoom(view.zoom, live)
+  return (
+    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
+        <TaskBoard piece={piece} zoom={settled} live={live} editor={editor} onTask={onTask} />
+      </div>
+    </div>
+  )
+}
+
+type BoardProps = { piece: WithId<Piece>; zoom: number; live: boolean; editor: boolean; onTask?: (t: Task) => void }
+
+const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }: BoardProps) {
   const { wid, tasks: all, cards, threads } = useWs()
-  // Its screen px per its own, for the marks inside it (D-265).
-  const screen = useCanvasView((s) => (onCanvas || !live ? (s.cams[wid]?.zoom ?? 1) : 1) * view.zoom)
   const { user } = useAuth()
   const setup = kanbanOf(piece)
   const cols = setup.cols
@@ -475,134 +488,130 @@ function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }:
   const isPicked = (id: string) => (many ? many.includes(id) : selected === id)
 
   return (
-    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsOf(screen) }}>
-        <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'kanban'} data-dragging={held ? true : undefined} data-lanes={field ? true : undefined} onPointerDown={boxPress}>
-          <SoonBand piece={piece} tasks={shown} live={live} picked={isPicked} onPick={pick} onPress={own} />
-          <div className={styles.row}>
-            {cols.map((c, i) => (
-              <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-over={(held && drag?.over?.col === c.id) || undefined}>
-                <ColumnHead
-                  col={c}
-                  n={i + 1}
-                  count={(byCol.get(c.id) ?? []).length}
-                  holds={tasks.filter((t) => t.col === c.id).length}
-                  live={live}
-                  editor={editor}
-                  naming={naming === c.id}
-                  first={i === 0}
-                  last={i === cols.length - 1}
-                  alone={cols.length < 2}
-                  onPress={own}
-                  onName={() => useKanbanUi.setState({ naming: c.id })}
-                  onRename={(name) => {
-                    useKanbanUi.setState({ naming: null })
-                    const next = name.trim().slice(0, COL_NAME_MAX)
-                    if (next && next !== c.name) setCols(cols.map((x) => (x.id === c.id ? { ...x, name: next } : x)), 'rename a column')
-                  }}
-                  onMove={(by) => moveCol(i, by)}
-                  onLimit={(limit) => setCols(cols.map((x) => (x.id === c.id ? { ...x, limit } : x)), limit ? 'set a column’s limit' : 'take a column’s limit away')}
-                  onDone={() => setCols(cols.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)), c.done ? 'unmark a finished column' : 'mark a finished column')}
-                  onDelete={() => void deleteColumn(wid, piece.id, cols, c.id, tasks)}
-                />
+    <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'kanban'} data-dragging={held ? true : undefined} data-lanes={field ? true : undefined} onPointerDown={boxPress}>
+      <SoonBand piece={piece} tasks={shown} live={live} picked={isPicked} onPick={pick} onPress={own} />
+      <div className={styles.row}>
+        {cols.map((c, i) => (
+          <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-over={(held && drag?.over?.col === c.id) || undefined}>
+            <ColumnHead
+              col={c}
+              n={i + 1}
+              count={(byCol.get(c.id) ?? []).length}
+              holds={tasks.filter((t) => t.col === c.id).length}
+              live={live}
+              editor={editor}
+              naming={naming === c.id}
+              first={i === 0}
+              last={i === cols.length - 1}
+              alone={cols.length < 2}
+              onPress={own}
+              onName={() => useKanbanUi.setState({ naming: c.id })}
+              onRename={(name) => {
+                useKanbanUi.setState({ naming: null })
+                const next = name.trim().slice(0, COL_NAME_MAX)
+                if (next && next !== c.name) setCols(cols.map((x) => (x.id === c.id ? { ...x, name: next } : x)), 'rename a column')
+              }}
+              onMove={(by) => moveCol(i, by)}
+              onLimit={(limit) => setCols(cols.map((x) => (x.id === c.id ? { ...x, limit } : x)), limit ? 'set a column’s limit' : 'take a column’s limit away')}
+              onDone={() => setCols(cols.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)), c.done ? 'unmark a finished column' : 'mark a finished column')}
+              onDelete={() => void deleteColumn(wid, piece.id, cols, c.id, tasks)}
+            />
+          </div>
+        ))}
+        {live && editor && cols.length < KANBAN_COLS_MAX && (
+          <button className={styles.addCol} onPointerDown={own} onClick={addCol} title="add a column">
+            + column
+          </button>
+        )}
+      </div>
+      {lanes.map((lane) => {
+        const folded = !!field && folds.includes(lane.key)
+        const count = shown.filter((t) => laneOf(t) === lane.key).length
+        return (
+          <div key={lane.key || 'all'} className={styles.lane} data-folded={folded || undefined}>
+            {field && <LaneHead lane={lane} count={count} folded={folded} onFold={() => fold(lane.key)} onPress={own} />}
+            {!folded && (
+              <div className={styles.row}>
+                {cols.map((c) => {
+                  const cell = `${c.id}|${lane.key}`
+                  const every = byCell.get(cell) ?? []
+                  const list = held ? every.filter((t) => !heldIds.includes(t.id)) : every
+                  const slot = held && drag?.over?.col === c.id && drag.over.lane === lane.key ? drag.over.index : -1
+                  return (
+                    <div
+                      key={c.id}
+                      className={styles.column}
+                      data-cell
+                      data-col={c.id}
+                      data-lane={lane.key}
+                      data-drop={lane.drop || undefined}
+                      data-done={c.done || undefined}
+                      role="listitem"
+                      aria-label={`${c.name}${lane.label ? `, ${lane.label}` : ''}, ${every.length} tasks`}
+                    >
+                      <div className={styles.list}>
+                        {list.map((t, k) => (
+                          <Slotted key={t.id} slot={slot === k ? drag!.size[1] : 0} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined}>
+                            <TaskCard
+                              task={t}
+                              card={cardOf(t)}
+                              finished={!!c.done}
+                              selected={isPicked(t.id)}
+                              live={live}
+                              talk={live && !!threadOn(threads, t.id)}
+                              extra={
+                                <>
+                                  {/* In its top-right corner (under it would sit on the next task). */}
+                                  {live && (
+                                    <span className={styles.chipHere}>
+                                      <ThreadChip wid={wid} thread={threadOn(threads, t.id)} zoom={zoom} />
+                                    </span>
+                                  )}
+                                </>
+                              }
+                              learn={live && editor && !many && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) : undefined}
+                              onPointerDown={press(t)}
+                              onClick={live && !editor ? (e: React.MouseEvent) => void (!e.shiftKey && pick(t)) : undefined}
+                            />
+                          </Slotted>
+                        ))}
+                        {slot >= 0 && slot >= list.length && <Gap h={drag!.size[1]} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined} />}
+                        {!list.length && slot < 0 && adding !== cell && !field && <span className={styles.empty}>· nothing yet</span>}
+                        {live && editor && lane.drop && (
+                          <AddTask open={adding === cell} quiet={!!field} onPress={own} onOpen={() => useKanbanUi.setState({ adding: cell })} onClose={() => useKanbanUi.setState({ adding: null })} onAdd={(title) => add(c.id, lane.key, title)} />
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            ))}
-            {live && editor && cols.length < KANBAN_COLS_MAX && (
-              <button className={styles.addCol} onPointerDown={own} onClick={addCol} title="add a column">
-                + column
-              </button>
             )}
           </div>
-          {lanes.map((lane) => {
-            const folded = !!field && folds.includes(lane.key)
-            const count = shown.filter((t) => laneOf(t) === lane.key).length
-            return (
-              <div key={lane.key || 'all'} className={styles.lane} data-folded={folded || undefined}>
-                {field && <LaneHead lane={lane} count={count} folded={folded} onFold={() => fold(lane.key)} onPress={own} />}
-                {!folded && (
-                  <div className={styles.row}>
-                    {cols.map((c) => {
-                      const cell = `${c.id}|${lane.key}`
-                      const every = byCell.get(cell) ?? []
-                      const list = held ? every.filter((t) => !heldIds.includes(t.id)) : every
-                      const slot = held && drag?.over?.col === c.id && drag.over.lane === lane.key ? drag.over.index : -1
-                      return (
-                        <div
-                          key={c.id}
-                          className={styles.column}
-                          data-cell
-                          data-col={c.id}
-                          data-lane={lane.key}
-                          data-drop={lane.drop || undefined}
-                          data-done={c.done || undefined}
-                          role="listitem"
-                          aria-label={`${c.name}${lane.label ? `, ${lane.label}` : ''}, ${every.length} tasks`}
-                        >
-                          <div className={styles.list}>
-                            {list.map((t, k) => (
-                              <Slotted key={t.id} slot={slot === k ? drag!.size[1] : 0} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined}>
-                                <TaskCard
-                                  task={t}
-                                  card={cardOf(t)}
-                                  finished={!!c.done}
-                                  selected={isPicked(t.id)}
-                                  live={live}
-                                  talk={live && !!threadOn(threads, t.id)}
-                                  extra={
-                                    <>
-                                      {/* In its top-right corner (under it would sit on the next task). */}
-                                      {live && (
-                                        <span className={styles.chipHere}>
-                                          <ThreadChip wid={wid} thread={threadOn(threads, t.id)} zoom={view.zoom} />
-                                        </span>
-                                      )}
-                                    </>
-                                  }
-                                  learn={live && editor && !many && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) : undefined}
-                                  onPointerDown={press(t)}
-                                  onClick={live && !editor ? (e: React.MouseEvent) => void (!e.shiftKey && pick(t)) : undefined}
-                                />
-                              </Slotted>
-                            ))}
-                            {slot >= 0 && slot >= list.length && <Gap h={drag!.size[1]} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined} />}
-                            {!list.length && slot < 0 && adding !== cell && !field && <span className={styles.empty}>· nothing yet</span>}
-                            {live && editor && lane.drop && (
-                              <AddTask open={adding === cell} quiet={!!field} onPress={own} onOpen={() => useKanbanUi.setState({ adding: cell })} onClose={() => useKanbanUi.setState({ adding: null })} onAdd={(title) => add(c.id, lane.key, title)} />
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-          {held && drag && (
-            <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
-              <TaskCard task={held} card={cardOf(held)} finished={!!cols.find((c) => c.id === (drag.over?.col ?? held.col))?.done} selected={false} live lifted />
-              {heldIds.length > 1 && <span className={styles.more}>+{heldIds.length - 1}</span>}
-            </div>
-          )}
-          <PeerTaskDrags
-            taskIds={taskIds}
-            render={(id) => {
-              const t = tasks.find((x) => x.id === id)!
-              return <TaskCard task={t} card={cardOf(t)} finished={!!cols.find((c) => c.id === t.col)?.done} selected={false} live={false} />
-            }}
-          />
-          {box && (
-            <div
-              className={styles.box}
-              style={{ left: Math.min(box.from[0], box.to[0]), top: Math.min(box.from[1], box.to[1]), width: Math.abs(box.to[0] - box.from[0]), height: Math.abs(box.to[1] - box.from[1]) }}
-              aria-hidden
-            />
-          )}
+        )
+      })}
+      {held && drag && (
+        <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
+          <TaskCard task={held} card={cardOf(held)} finished={!!cols.find((c) => c.id === (drag.over?.col ?? held.col))?.done} selected={false} live lifted />
+          {heldIds.length > 1 && <span className={styles.more}>+{heldIds.length - 1}</span>}
         </div>
-      </div>
+      )}
+      <PeerTaskDrags
+        taskIds={taskIds}
+        render={(id) => {
+          const t = tasks.find((x) => x.id === id)!
+          return <TaskCard task={t} card={cardOf(t)} finished={!!cols.find((c) => c.id === t.col)?.done} selected={false} live={false} />
+        }}
+      />
+      {box && (
+        <div
+          className={styles.box}
+          style={{ left: Math.min(box.from[0], box.to[0]), top: Math.min(box.from[1], box.to[1]), width: Math.abs(box.to[0] - box.from[0]), height: Math.abs(box.to[1] - box.from[1]) }}
+          aria-hidden
+        />
+      )}
     </div>
   )
-}
+})
 
 // What's due soon (D-262), over the columns: `▾ SOON`, then a pill a task (its day: `was 25 oct` magenta, `today` cyan,
 // `thu`), a rule, how many. A click on `▾` folds it to `▸ SOON · 1 past · 1 today · 2 this week` (yours); on a pill, picks

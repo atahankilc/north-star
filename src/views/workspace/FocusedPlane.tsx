@@ -180,8 +180,8 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
   const step = GRID * cam.zoom
   const marks = { '--mark': `${step}px`, '--mx': `${cam.ox - step / 2}px`, '--my': `${cam.oy - step / 2}px` } as CSSProperties
   return (
-    <div ref={layer} className={styles.focused} style={bare ? undefined : marks} data-bare={bare || undefined} data-reduced={reduced || undefined} onPointerDown={pan} aria-label={piece.name || 'plane'}>
-      {bare && <div ref={page} className={styles.page} aria-hidden />}
+    <div ref={layer} className={styles.focused} data-bare={bare || undefined} data-reduced={reduced || undefined} onPointerDown={pan} aria-label={piece.name || 'plane'}>
+      {bare ? <div ref={page} className={styles.page} aria-hidden /> : <div className={styles.focusMarks} style={marks} aria-hidden />}
       {children}
     </div>
   )

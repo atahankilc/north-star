@@ -4975,3 +4975,59 @@ rows, a magenta lead starts something numbered.**
   dashed rows (tables, lists) were that way already.
 - *Verified:* headless on the emulators: the canvas's title, heading and a three-line paragraph on ink; a plane in
   focus (its text's ink the surface, so unseen); the H1's and the panel's magenta leads. Build.
+
+### D-278 · 2026-10-27 · Accepted (a speed fix; the user: "sorun zoom da")
+**While the canvas zooms, only its transform changes; what's held at screen size (piece names, consoles, marks, text's
+bars, chips) follows once the zoom stops.**
+- *Why:* every wheel step wrote the zoom into the pieces' and text's styles (`--z`, `--zs`) and props, so the browser
+  restyled everything on the canvas and React drew every piece's contents again: 131 ms a step in a 7.5k-node
+  workspace. Now 10 ms.
+- *How:* CanvasView's `useShownZoom`: the camera's zoom 120 ms after it last changed, taken at once on a pointerdown
+  (`flushSync`) so a drag always reads the zoom it's under. Spaces inside pieces take `--zs` from the piece's `--z` in
+  CSS (`zsIn` in Marks.tsx), never by subscribing to the camera. The Marks' L's transition only unscaled registered
+  lengths (`--mo`, `--ml`), so a change of `--zs` never starts a transition.
+- *Seen:* during a wheel or pinch (and a glide) names and marks grow and shrink with the canvas, then settle to their
+  screen size in one step. Alternatives: updating them every step (the lag), throttled every ~100 ms (a hitch each
+  time).
+- *Not yet:* a focused space's own zoom (`planeCam`) still redraws its contents and restyles them each step (its pans
+  no longer do, D-279).
+
+### D-279 · 2026-10-27 · Accepted (a speed fix, nothing visible changes; the user: "tasarımı ve davranışı değiştirmeden")
+**A pan, on the canvas or in a focus, changes only the world's transform: nothing inside it is drawn or restyled
+again. A value written on every pan or zoom step never goes on an element that holds the contents.**
+- *Why:* measured on the emulators (3 planes × 25 cards, text, matrix, table and kanban unframed, timeline, documents;
+  2560 × 1300 at 2×, production build): a focused plane's pan restyled everything in it each step, because the plane's
+  `+` marks' `--mark/--mx/--my` sat on the layer holding the cards (custom properties inherit), and every card, Marks
+  and link was drawn again, because PlaneCards took the whole view; kanbans and timelines the same; on the canvas
+  CanvasView and every PieceBox were drawn again on each step because CanvasView read the camera.
+- *How:* FocusedPlane's marks are an element of their own (`.focusMarks`) under the contents; PlaneCards, the task and
+  card kanbans and the timeline are a thin shell that moves the world, the contents memoised on the zoom
+  (`PlaneInside`, `TaskBoard`, `CardBoard`, `Days`; the card panel memoised too); CanvasView no longer subscribes to
+  the camera: `World` renders the transform, `useShownZoom(wid)` listens to the store, `DocPlaceHere` follows the
+  camera for a document being placed. PieceBox didn't need memo once CanvasView stopped drawing on a pan.
+- *Measured (prod, per 60 steps):* focused plane pan: style 152 → 10 ms, script 83 → 44, main thread 5.2 → 1.7 ms a
+  step; kanban pan: script 115 → 42; timeline pan: 90 → 49; canvas pan: script 77 → 45. Screenshots before and after
+  pixel-identical (dark, light, reduced motion); card drag, alt box select, task drag and click, zoom settle (16.5 /
+  18 px) and a drag 20 ms after a zoom (200.4, 100.2 px) unchanged.
+- *Not yet:* zooming in a focus still writes `--zs` each step on the world: 18.7 ms of style a step in a focused table
+  (450 Marks), 10.6 ms in a matrix. Settling it as D-278 does on the canvas is visible (marks grow and shrink with the
+  zoom, then settle): asked the user. One Firestore write still draws nearly every piece (~1,100 components, 20–30 ms
+  of main thread on the watching page): `useWs` is one context and each snapshot makes new arrays. Zoom in a focus:
+  done by D-280.
+
+### D-280 · 2026-10-27 · Accepted (the user, asked about D-279's *Not yet*: "evet uygula")
+**Zooming in a focus settles as on the canvas (D-278): a wheel step moves only the view's transform; marks, chips and
+handles inside grow and shrink with it and go back to their screen size 120 ms after it stops, at once on a press.**
+- *Why:* every wheel step in a focus wrote `--zs` on the world, restyling every Marks inside: 18.7 ms of style a step
+  in a focused table (450 Marks), 10.6 in a matrix; a plane and a kanban drew all their cards or tasks again on each
+  step (their contents were memoised on the zoom).
+- *How:* `useSettledZoom(view.zoom, live)` (`src/ui/Marks.tsx`, with `ZOOM_SETTLE_MS`, shared with CanvasView's
+  `useShownZoom`): the zoom as shown while live, the zoom itself otherwise. Each space's `zsIn` and its memoised
+  contents (`PlaneInside`, `TaskBoard`, `Days`) take it; the transform, culling, the detail level, a matrix's dots and
+  a table's width grips keep the live zoom.
+- *Measured (prod, 60 wheel steps, 2560 × 1300 at 2×):* main thread table 1924 → 461 ms (style 971 → 48; it dropped
+  frames before: 194 frames for 60 steps, now 138), matrix 1089 → 217 (style 597 → 19), plane 312 → 123, kanban
+  304 → 123. Marks' L 12 px → 17.2 during a zoom in, 11.98 after 300 ms, 11.99 at once on a press; the same in table,
+  matrix and timeline. Settled screenshots identical (plane, table, matrix, kanban; light; reduced motion); card drag
+  after a zoom, alt box select, pan, task drag and its panel unchanged.
+

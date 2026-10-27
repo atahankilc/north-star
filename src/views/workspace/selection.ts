@@ -20,11 +20,14 @@ export const onPlane: {
   boxes: () => { id: string; box: Box }[]
   // What these carry: what's folded into them, all the way down (D-225, D-239).
   carried: (ids: string[]) => string[]
+  // What a box drawn on it (left, top, right, bottom in its px) touches; `picking` a package's cards, no text (D-240).
+  hit: (box: { l: number; t: number; r: number; b: number }, picking: boolean) => string[]
 } = {
   labels: new Set(),
   items: () => [],
   boxes: () => [],
   carried: () => [],
+  hit: () => [],
 }
 
 // What lines things up against: everything on the plane but these.

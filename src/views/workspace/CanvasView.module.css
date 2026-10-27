@@ -432,8 +432,9 @@
   cursor: grabbing;
 }
 
-.focused::before {
-  content: '';
+/* Its `+` marks: an element of their own under what it holds, so the view's --mark/--mx/--my, written on every pan
+   and zoom step, restyle only it and not everything inside (custom properties inherit). */
+.focusMarks {
   position: absolute;
   inset: 0;
   background: var(--grid-mark);
@@ -445,10 +446,6 @@
 /* A matrix in focus: no marks and nothing of its own behind; its page (`.page`) is what the cells build, under the table. */
 .focused[data-bare='true'] {
   background: none;
-}
-
-.focused[data-bare='true']::before {
-  content: none;
 }
 
 .page {
