@@ -37,7 +37,14 @@ export type KanbanSetup = {
   holds?: 'cards'
   source?: Source
   colField?: CardField
+  // Its rows (D-269, holding cards): none or another field; and names for its boxes (a column × a row).
+  rowField?: CardField
+  names?: BoxName[]
 }
+// A box's name (D-269): small in its corner; `good` washes the box green, `bad` sets its name in magenta.
+export type BoxName = { col: string; row: string; name: string; tone?: 'good' | 'bad' }
+export const BOX_NAMES_MAX = 40
+export const BOX_NAME_MAX = 40
 // The cards' fields a kanban's columns can come from (D-268): never type (dragging doesn't change a card's type).
 export const CARD_FIELDS = ['status', 'impact', 'effort', 'priority'] as const
 export type CardField = (typeof CARD_FIELDS)[number]
@@ -223,7 +230,7 @@ export function setKanbanCols(wid: string, pieceId: string, cols: KanbanCol[], w
 
 // What it holds and, for cards, which and by what (D-268), merged (shared): one undo step. Setting a field to undefined
 // takes it away.
-export function setKanbanSetup(wid: string, pieceId: string, patch: Partial<Pick<KanbanSetup, 'holds' | 'source' | 'colField'>>, what = 'change a kanban', key?: string) {
+export function setKanbanSetup(wid: string, pieceId: string, patch: Partial<Pick<KanbanSetup, 'holds' | 'source' | 'colField' | 'rowField' | 'names'>>, what = 'change a kanban', key?: string) {
   const ref = pieceRef(wid, pieceId)
   const data: Record<string, unknown> = { updatedAt: Date.now() }
   for (const [k, v] of Object.entries(patch)) data[`kanban.${k}`] = v === undefined ? deleteField() : JSON.parse(JSON.stringify(v))

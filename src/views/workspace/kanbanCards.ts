@@ -2,6 +2,9 @@
 // column sets that value. Which cards: its source (the table's rules, D-209), only those the field applies to, and stuck
 // to a plane (D-255) only that plane's unless set to every plane. A `no value` column first holds the cards with the field
 // unset; dragged out of it, they're rated; dragged into it, the value goes.
+//
+// Rows (D-269): another field across the columns, `no value` on top, so the kanban becomes a grid of boxes (a column ×
+// a row), dropping into one setting both fields. A card shows only when both fields apply to it.
 import type { AnyType, Card, CardFields } from '../../data/cards'
 import { FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, VALIDATIONS } from '../../data/cards'
 import type { Edge } from '../../data/edges'
@@ -60,38 +63,71 @@ export type CardCol = {
 }
 
 // Its columns: `no value`, then the values of the field, for the types of the cards it holds (a status kanban of
-// features only shows the features' four; of ideas and features, both lists, the chain's first). Impact runs low → high.
-export function columnsOf(field: CardField, cards: Card[]): CardCol[] {
+// features only shows the features' four; of ideas and features, both lists, the chain's first). Impact runs low → high
+// across, high → low down (D-269: the best on top).
+export function axisOf(field: CardField, cards: Card[], down = false): CardCol[] {
   const types = new Set(cards.map((c) => c.type))
   const lists = FIELD_VALUES[field].filter((v, _, all) => all.length === 1 || !cards.length || v.types.some((t) => types.has(t)))
+  const order = (values: readonly string[]) => (down && field === 'impact' ? [...values].reverse() : values)
   return [
     { id: NO_VALUE, name: 'no value', types: [...new Set(lists.flatMap((l) => l.types))] },
-    ...lists.flatMap((l) => l.values.map((v) => ({ id: v, name: v, types: l.types, done: v === 'shipped' || v === 'validated' || undefined, out: v === 'invalidated' || undefined }))),
+    ...lists.flatMap((l) => order(l.values).map((v) => ({ id: v, name: v, types: l.types, done: v === 'shipped' || v === 'validated' || undefined, out: v === 'invalidated' || undefined }))),
   ]
 }
+export const columnsOf = (field: CardField, cards: Card[]) => axisOf(field, cards)
+export const rowsOfField = (field: CardField, cards: Card[]) => axisOf(field, cards, true)
 
-// The cards it holds: its source's cards the field applies to (typed names left out: they aren't cards), stuck to a plane
-// that plane's unless it shows every plane.
+// Whether a column or a row takes a card: `no value` any it holds; a value only its own types'.
+export const takes = (at: CardCol | undefined, card: Card) => !!at && at.types.includes(card.type)
+
+// The value a card sits under on an axis: its own, or `no value`.
+export const placeOf = (c: Card, field: CardField, axis: CardCol[]) => {
+  const v = valueOf(c, field)
+  return v && axis.some((a) => a.id === v) ? v : NO_VALUE
+}
+
+// The cards it holds: its source's cards the field applies to (and its rows' field, D-269; typed names left out: they
+// aren't cards), stuck to a plane that plane's unless it shows every plane.
 export function heldCards(piece: Pick<Piece, 'stuckTo'> & { kanban?: KanbanSetup }, cards: Card[]): Card[] {
   const k = piece.kanban
   const field = k?.colField ?? 'status'
+  const row = rowFieldOf(k)
   const source: Source = k?.source ?? { rules: [], items: [] }
   return rowsOf(source, cards)
-    .flatMap((r) => (r.card && appliesTo(field, r.card.type) ? [r.card] : []))
+    .flatMap((r) => (r.card && appliesTo(field, r.card.type) && (!row || appliesTo(row, r.card.type)) ? [r.card] : []))
     .filter((c) => !piece.stuckTo || k?.everyPlane || c.pieceId === piece.stuckTo)
 }
 
+// Its rows' field (D-269): none, or one that isn't its columns'.
+export const rowFieldOf = (k: KanbanSetup | undefined) => (k?.rowField && k.rowField !== (k.colField ?? 'status') ? k.rowField : undefined)
+
 // The cards in each column. No hand order (D-253): by type in the chain's order, then by title (P3 sorts by score).
 const ORDER: AnyType[] = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package']
+const sorted = (list: Card[]) => list.sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type) || (a.title || '￿').localeCompare(b.title || '￿'))
 export function byColumn(field: CardField, cols: CardCol[], cards: Card[]) {
   const out = new Map<string, Card[]>(cols.map((c) => [c.id, []]))
-  for (const c of cards) {
-    const v = valueOf(c, field)
-    const at = v && out.has(v) ? v : NO_VALUE
-    out.get(at)!.push(c)
-  }
-  for (const list of out.values()) list.sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type) || (a.title || '￿').localeCompare(b.title || '￿'))
+  for (const c of cards) out.get(placeOf(c, field, cols))!.push(c)
+  for (const list of out.values()) sorted(list)
   return out
+}
+
+// The cards in each box (D-269), keyed `col|row` (row '' without rows).
+export const boxKey = (col: string, row: string) => `${col}|${row}`
+export function byBox(colField: CardField, cols: CardCol[], rowField: CardField | undefined, rows: CardCol[], cards: Card[]) {
+  const out = new Map<string, Card[]>()
+  for (const c of cards) {
+    const k = boxKey(placeOf(c, colField, cols), rowField ? placeOf(c, rowField, rows) : '')
+    out.set(k, [...(out.get(k) ?? []), c])
+  }
+  for (const list of out.values()) sorted(list)
+  return out
+}
+
+// What dropping a card in a box writes (both fields at once, one undo step); null: nothing changes. A box whose column
+// or row doesn't take it is never offered.
+export function boxPatch(c: Card, colField: CardField, col: string, rowField: CardField | undefined, row: string): Partial<CardFields> | null {
+  const patch = { ...patchFor(c, colField, col), ...(rowField ? patchFor(c, rowField, row) : null) }
+  return Object.keys(patch).length ? patch : null
 }
 
 // How sure we are of it, on its sheet: a package from what it holds (D-239), a feature from the ideas linked to it and the

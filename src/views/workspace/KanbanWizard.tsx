@@ -1,6 +1,6 @@
 // A new kanban (D-268), made as a table is (D-218): `+ → kanban…` opens a short wizard in the middle of the screen. Three
 // steps, any of them at any time: start from (tasks, features by status, or my own), what it holds (tasks or cards, and
-// which cards), its columns (a field's values, for cards). A small preview beside it shows the columns as they'll come and
+// which cards), its columns (a field's values, for cards) and rows (another field, D-269). A small preview beside it shows the columns as they'll come and
 // how many cards each gets. `make the kanban` puts it at the middle of the canvas, in edit mode. Escape or a click outside
 // leaves it; Enter goes to the next step, ⌘Enter makes it (D-250). Nothing is written until it's made.
 import { useEffect, useRef, useState } from 'react'
@@ -12,11 +12,11 @@ import { useWs } from './context'
 import { wizardEnter } from './wizardKeys'
 import { useKanbanUi, type KanbanTab } from './Kanban'
 import { KanbanEditor, type SetKanban } from './KanbanSetup'
-import { byColumn, columnsOf, heldCards, KANBAN_TEMPLATES } from './kanbanCards'
+import { boxKey, byBox, byColumn, columnsOf, heldCards, KANBAN_TEMPLATES, NO_VALUE, rowFieldOf, rowsOfField, type CardCol } from './kanbanCards'
 import m from './Matrix.module.css'
 
-const STEPS = ['start from', 'holds', 'columns'] as const
-const QUESTION = ['Start from', 'What does it hold?', 'Its columns']
+const STEPS = ['start from', 'holds', 'columns · rows'] as const
+const QUESTION = ['Start from', 'What does it hold?', 'Its columns and rows']
 
 export function KanbanWizard() {
   const open = useKanbanUi((s) => s.wizard)
@@ -43,6 +43,10 @@ function Wizard() {
   const held = cardsHere ? heldCards({ kanban: draft }, cards) : []
   const cols = cardsHere ? columnsOf(field, held) : draft.cols
   const counts = cardsHere ? byColumn(field, columnsOf(field, held), held) : null
+  // Rows (D-269): the preview becomes the grid, a count in each box.
+  const rowField = cardsHere ? rowFieldOf(draft) : undefined
+  const rows = rowField ? rowsOfField(rowField, held) : []
+  const boxes = rowField ? byBox(field, cols as CardCol[], rowField, rows, held) : null
 
   // Heard first, wherever the focus is: Escape leaves, Enter steps on (D-250).
   const enter = useRef<(e: KeyboardEvent) => void>(() => {})
@@ -125,16 +129,29 @@ function Wizard() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  {cols.slice(0, 5).map((c) => (
-                    <td key={c.id}>{counts ? (counts.get(c.id)?.length ?? 0) : '·'}</td>
-                  ))}
-                </tr>
+                {boxes ? (
+                  rows.slice(0, 5).map((r) => (
+                    <tr key={r.id}>
+                      {cols.slice(0, 5).map((c) => (
+                        <td key={c.id} title={`${c.name} × ${r.name}`}>
+                          {boxes.get(boxKey(c.id, r.id))?.length ?? 0}
+                        </td>
+                      ))}
+                      <th title={r.name}>{r.id === NO_VALUE ? '–' : r.name}</th>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    {cols.slice(0, 5).map((c) => (
+                      <td key={c.id}>{counts ? (counts.get(c.id)?.length ?? 0) : '·'}</td>
+                    ))}
+                  </tr>
+                )}
               </tbody>
             </table>
             <p className={m.checkHint}>
-              {cardsHere ? `${held.length} cards in ${cols.length} columns` : `tasks in ${cols.length} columns`}
-              {cols.length > 5 ? ' · the first few shown' : ''}
+              {cardsHere ? `${held.length} cards in ${cols.length} columns${rowField ? ` × ${rows.length} rows` : ''}` : `tasks in ${cols.length} columns`}
+              {cols.length > 5 || rows.length > 5 ? ' · the first few shown' : ''}
             </p>
           </aside>
         </div>

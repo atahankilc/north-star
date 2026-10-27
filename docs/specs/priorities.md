@@ -1,6 +1,6 @@
 # Spec: priorities on the kanban, step by step
 
-Status: **planned** (D-253, 2026-10-27); P1 done (D-268, 2026-10-27), P2 is next. Same way of working as [kanban.md](kanban.md): one session at a time,
+Status: **planned** (D-253, 2026-10-27); P1 done (D-268), P2 done (D-269), 2026-10-27; P3 is next. Same way of working as [kanban.md](kanban.md): one session at a time,
 the user checks it, the next session starts from this file alone. Follow kanban.md's "How to run a session" (git status
 and `ListAgents` first, verify headless, rules tests, `D-xxx`, mark the session **done** here, commit only your hunks).
 
@@ -85,13 +85,22 @@ own `cols` stay on the piece, unused, so switching back to tasks keeps them. Stu
 features too (what it rests on: its ideas and the problems they solve), so it can differ from the feature panel's
 weakest-of rule until P3. The dock's task filter and lanes are hidden on a kanban holding cards.
 
-## Session P2: rows from a field
+## Session P2: rows from a field · **done (D-269, 2026-10-27)**
 
 - The kanban's rows: none or a field; for tasks given to / the card (kanban.md session 5), for cards impact, effort,
   priority, status. Each row folds. Dragging into a row sets its field too.
 - A box (column × row) can carry a name, shown small in its corner and set in the setup (`quick wins`…), a wash for the
   first and a magenta name for the last if the template says so.
 - Rules: `rowField`, `names`.
+
+Built (D-269): for a kanban holding cards, `rowField` (any card field but the columns'), `no value` the top row; impact
+runs high → low down the rows (low → high across). A card shows only when both fields apply to it. A row is the tasks'
+lane head (`▾ IMPACT HIGH ──── 2`), folds (yours, per browser). Dropping in a box sets both fields, one undo step; rows
+and boxes that don't take the held card go faint. The dock's `[lanes ▾]` reads `[rows ▾]` on a card kanban; the setup's
+columns tab has `rows from`, and a new `boxes` tab names boxes in a small grid (a name ≤ 40, and `·` plain, `wash` green,
+`warn` magenta; ≤ 40 names). The wizard's last step is `columns · rows`, its preview the grid. Tasks keep their lanes by
+who / card (D-258) and get no box names. The held card keeps its room while dragged (else the rows under the pointer
+moved up as it left its box).
 
 ## Session P3: the priorities template and the suggested order
 
@@ -110,3 +119,7 @@ weakest-of rule until P3. The dock's task filter and lanes are hidden on a kanba
   both: needs card fields (type, tag, plane) (P1).
 - No several-at-once on a card kanban (shift+click, box) and no presence for a held card yet (P1).
 - The wizard's preview cuts column names at five letters or so (`no va…`) (P1).
+- Box names are kept by value, so a box whose value goes (a status kanban switched from features to ideas) keeps a
+  name nothing shows; the boxes tab doesn't list it (P2).
+- The task kanban's lanes still shrink under the pointer as a task leaves its cell (D-258's note); the card kanban now
+  keeps the held card's room, the task one could do the same (P2).

@@ -4657,3 +4657,27 @@ one confidence rule, P3).
   feature's panel; setup switched the columns to impact; the cards tab; the wizard (features by status, preview `6 cards
   in 5 columns`, ⌘Enter made it on the canvas in edit mode); the canvas picture; light theme. Rules 410 pass (4 new).
   Build.
+
+### D-269 · 2026-10-27 · Accepted (adds to D-258, D-268; priorities session P2, docs/specs/priorities.md)
+**A kanban holding cards takes rows from a second field: a grid of boxes, a drop setting both fields; boxes can be named.**
+The user asked for P2 of the priorities plan.
+- *Data:* `kanban.rowField` (status, impact, effort or priority; never the columns' own: picking that field for the
+  columns drops it from the rows), `kanban.names` [{col, row, name ≤ 40, tone?: good | bad}] (≤ 40). Rules: both on
+  `validKanban`; export/import carry them (`boxNames` keeps only named or toned boxes).
+- *Rows:* `no value` on top, then the values; impact runs high → low down (the best on top), low → high across. A card
+  shows only when both fields apply to it (the setup's count says how many). Each row is the tasks' lane head (D-258:
+  `▾ IMPACT HIGH ──── 2`), folding per browser.
+- *Drag:* to a box, whose column and row both take the card (others go faint, rows' heads too); a cyan edge on it; one
+  undo step writes both fields (`set a card to effort S, impact high`). The held card keeps its room, hidden, so rows
+  don't move up under the pointer as it leaves (found when a drop meant for `S × high` landed in `S × medium`).
+- *Boxes:* a name small in the box's top-left corner (mono caps, dim); `good` washes the box green and the name, `bad`
+  sets the name magenta. Set in the setup's new `boxes` tab: a grid of columns × rows, a name field and a tone button
+  (`·` → `wash` → `warn`) per box. Only with rows; tasks' lanes get no names.
+- *Where it's set:* the dock's `[rows ▾]` (a card kanban's form of `[lanes ▾]`), the setup's columns tab (`rows from`), the
+  wizard's last step (`columns · rows`, its preview the grid of counts).
+- *The sheet* no longer repeats the row's field (the column's already wasn't).
+- *Verified:* headless on the emulators: a seeded features + package kanban, effort × impact, named corners (quick
+  wins washed, money pits magenta); a drag from no value × no impact to S × high set both and ⌘Z put both back; a
+  row folded; a box named from the boxes tab showed on the board; the wizard's rows and grid preview; light theme.
+  Rules 413 pass (3 new). Build.
+

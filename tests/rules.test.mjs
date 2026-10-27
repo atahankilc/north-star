@@ -301,6 +301,9 @@ await allow('a kanban holding features by status (D-268)', () => addDoc(sub(bob.
 await deny('a kanban holding something else', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'people' } }))
 await deny('a kanban whose columns come from a card type', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'cards', colField: 'type' } }))
 await deny('a kanban whose cards come from a source without rules', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'cards', source: { items: [] } } }))
+await allow('a kanban of features, effort × impact, its corners named (D-269)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'cards', colField: 'effort', rowField: 'impact', names: [{ col: 'S', row: 'high', name: 'quick wins', tone: 'good' }, { col: 'L', row: 'low', name: 'money pits', tone: 'bad' }] } }))
+await deny('a kanban whose rows come from a card type', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'cards', rowField: 'type' } }))
+await deny('a kanban whose box names are not a list', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'cards', rowField: 'impact', names: 'quick wins' } }))
 await allow('a kanban column with a limit (D-256)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { cols: [{ id: 'k1', name: 'doing', limit: 3 }] } }))
 await deny('a task with a checklist that is not a list', () => addDoc(sub(bob.fs, 'tasks'), { ...task, checks: 'all of it' }))
 // Cards on a plane (D-187).

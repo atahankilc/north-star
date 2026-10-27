@@ -466,7 +466,23 @@ export function cleanKanban(v: unknown, ids: Ids) {
     holds: cards,
     source: obj(v)?.source ? cleanSource(obj(v)!.source, ids) : undefined,
     colField: oneOf(obj(v)?.colField, CARD_FIELDS),
+    // Its rows and its boxes' names (D-269).
+    rowField: oneOf(obj(v)?.rowField, CARD_FIELDS),
+    names: boxNames(obj(v)?.names),
   })
+}
+
+// A kanban's box names (D-269): a column, a row, a name (≤ 40) and a tone; none left, none.
+function boxNames(v: unknown) {
+  const out = list(v, 40).flatMap((raw) => {
+    const n = obj(raw)
+    const col = str(n?.col, 40)
+    const row = str(n?.row, 40)
+    const name = str(n?.name, 40) ?? ''
+    const tone = oneOf(n?.tone, ['good', 'bad'] as const)
+    return n && col !== undefined && row !== undefined && (name.trim() || tone) ? [compact({ col, row, name, tone })] : []
+  })
+  return out.length ? out : undefined
 }
 
 // One of a kanban's tasks (D-251), without its kanban, its card or who made it; who it was given to stays behind (the

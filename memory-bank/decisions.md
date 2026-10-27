@@ -356,6 +356,9 @@ old reports are moved to documents once (D-248).
   features by status, my own), `[setup]` a tabbed panel (holds · cards · columns). Cards from a source (the table's
   rules), only those the field applies to; columns a field's values (status, impact, effort, priority), `no value` first;
   a drag sets the field (one undo step), a click opens its panel; sheets edged in the type colour, priority, confidence.
+- Rows on a card kanban (D-269, priorities P2): `rowField` (another field, `no value` on top, impact high → low), a grid
+  of boxes; a drop sets both fields; rows fold (yours); `[rows ▾]` in its dock; box names (setup → boxes) small in the
+  corner, `good` washed green, `bad` magenta. Cards show only when both fields apply.
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

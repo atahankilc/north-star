@@ -35,7 +35,7 @@ import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { passes, useKanbanFilter } from './kanbanFilter'
-import { addTask, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
+import { addTask, CARD_FIELDS, setKanbanSetup, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
 import { newId } from '../../data/matrix'
 import { useAuth } from '../../data/auth'
 import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
@@ -51,7 +51,7 @@ import { ThreadChip, threadOn } from './Threads'
 import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
 import { CardKanbanView } from './CardKanban'
-import { heldCards } from './kanbanCards'
+import { FIELD_NAME, heldCards, rowFieldOf } from './kanbanCards'
 import styles from './Kanban.module.css'
 
 // Its parts in its own px: a column's width and the gap between, its head, the gap under a task, the `+ column` head's
@@ -130,7 +130,7 @@ export function goToTask(piece: WithId<Piece>, tasks: Task[], task: Pick<Task, '
 type Many = { piece: string; tasks: string[] }
 type One = { piece: string; task: string }
 // `setup`: the kanban whose setup is open (D-268), on its `tab`; `wizard`: a new kanban's wizard is open.
-export const KANBAN_TABS = ['holds', 'cards', 'cols'] as const
+export const KANBAN_TABS = ['holds', 'cards', 'cols', 'boxes'] as const
 export type KanbanTab = (typeof KANBAN_TABS)[number]
 export const useKanbanUi = create<{ selected: One | null; adding: string | null; naming: string | null; learning: string | null; many: Many | null; pending: One | null; setup: string | null; tab: KanbanTab; wizard: boolean }>(() => ({
   setup: null,
@@ -648,7 +648,7 @@ function SoonBand({ piece, tasks, live, picked, onPick, onPress }: { piece: With
 
 // A lane's head (D-258), the width of the columns: `▾`, its mark (a member's square, a card type's bar), its name, a
 // rule, how many it holds. A click folds it or opens it.
-function LaneHead({ lane, count, folded, onFold, onPress }: { lane: Lane; count: number; folded: boolean; onFold: () => void; onPress?: (e: ReactPointerEvent) => void }) {
+export function LaneHead({ lane, count, folded, onFold, onPress }: { lane: Lane; count: number; folded: boolean; onFold: () => void; onPress?: (e: ReactPointerEvent) => void }) {
   return (
     <button className={styles.laneHead} onPointerDown={onPress} onClick={onFold} aria-expanded={!folded} title={folded ? 'open it' : 'fold it'} style={lane.tone ? ({ ['--tone' as string]: lane.tone } as CSSProperties) : undefined}>
       <span className={styles.laneFold} aria-hidden>
@@ -668,8 +668,17 @@ function LaneHead({ lane, count, folded, onFold, onPress }: { lane: Lane; count:
 // Its lanes, in its dock (D-258): none, by who a task is given to, by the card it's for. Shared; editors choose.
 export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const { wid } = useWs()
-  // Lanes for cards are P2's (docs/specs/priorities.md).
-  if (kanbanOf(piece).holds === 'cards') return null
+  // Holding cards (D-269): rows by another of their fields.
+  if (kanbanOf(piece).holds === 'cards') {
+    const setup = kanbanOf(piece)
+    const row = rowFieldOf(setup)
+    const fields = CARD_FIELDS.filter((f) => f !== (setup.colField ?? 'status'))
+    const cardItems: MenuEntry[] = [
+      { key: 'none', label: 'no rows', checked: !row, onSelect: () => editor && row && void setKanbanSetup(wid, piece.id, { rowField: undefined }, 'no rows on a kanban') },
+      ...fields.map((f) => ({ key: f, label: `by ${FIELD_NAME[f]}`, checked: row === f, onSelect: () => editor && row !== f && void setKanbanSetup(wid, piece.id, { rowField: f }, `a kanban’s rows by ${FIELD_NAME[f]}`) })),
+    ]
+    return <Menu label="rows" up summary={row ? FIELD_NAME[row] : 'none'} active={!!row} items={cardItems} ariaLabel="Rows" noun="fields" />
+  }
   const rows = kanbanOf(piece).rows
   const NAME: Record<KanbanRows, string> = { assignee: 'given to', card: 'card' }
   const items: MenuEntry[] = [

@@ -122,7 +122,8 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         done?}] (≤ 50), learned? (evidence id | 'skip', D-254), labels?[] (≤ 20) + priority? (P1–P3, D-256),
                         givenAt? + givenBy? (D-261), uid (who made it) (D-251); a kanban piece carries kanban = {cols[{id, name,
                         done?, limit?}] (1–12), everyPlane? (D-255), rows? (assignee|card, D-258), holds? ('cards'), source? (a
-                        table's rows source), colField? (status|impact|effort|priority) (D-268)}; a timeline piece carries
+                        table's rows source), colField? (status|impact|effort|priority) (D-268), rowField? (another of those), names?[{col, row,
+                        name ≤ 40, tone? (good|bad)}] (≤ 40) (D-269)}; a timeline piece carries
                         timeline = {kanbans?[] (≤ 20), rows? (kanban|assignee|card)} and may be stuckTo a kanban (D-262)
   cells/{id}            matrixId, row, col, value? (step id | number | text ≤ 200), notes?, notRelevant?, confidence?
                         (row/col `card~criterion` for what a feature unfolded into; axis `unfold`, `open[]`, D-249)

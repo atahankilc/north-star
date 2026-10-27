@@ -747,3 +747,109 @@
   margin-top: var(--space-3);
   padding-left: 0;
 }
+
+/* Rows of boxes (D-269): each box a faint field you can drop into, its name (if any) small in its top-left corner. */
+.column[data-box='true'] {
+  min-height: 76px;
+  padding: var(--space-2);
+  background: color-mix(in srgb, var(--fg) 3%, transparent);
+}
+
+.column[data-box='true'] > .list {
+  margin-top: 0;
+}
+
+.boxName {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+/* `good`: the box washed green, its name green; `bad`: its name magenta. */
+.column[data-tone='good'] {
+  background: color-mix(in srgb, var(--accent-green) 8%, transparent);
+}
+
+.column[data-tone='good'] > .boxName {
+  color: var(--accent-green);
+}
+
+.column[data-tone='bad'] > .boxName {
+  color: var(--accent-magenta);
+}
+
+/* The box a held card would land in: a cyan edge. */
+.column[data-box='true'][data-over='true'] {
+  box-shadow: inset 0 0 0 1px var(--accent-cyan);
+}
+
+.lane[data-off='true'] > .laneHead {
+  opacity: 0.35;
+}
+
+/* The setup's boxes (D-269): columns × rows, each cell a name field and its tone. */
+.boxes {
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+
+.boxes th {
+  padding: var(--space-1) var(--space-2);
+  color: var(--fg-dim);
+  font-weight: 400;
+  letter-spacing: var(--track-label);
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.boxes td {
+  padding: 2px;
+  white-space: nowrap;
+}
+
+.boxes td[data-tone='good'] {
+  background: color-mix(in srgb, var(--accent-green) 8%, transparent);
+}
+
+.boxField {
+  width: 12ch;
+  padding: 3px var(--space-1);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  outline: none;
+}
+
+.boxField:focus-visible {
+  border-color: var(--accent-cyan);
+}
+
+.boxTone {
+  min-width: 5ch;
+  margin-left: 2px;
+  padding: 3px var(--space-1);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg-faint);
+  font: inherit;
+  cursor: pointer;
+}
+
+.boxTone[data-tone='good'] {
+  color: var(--accent-green);
+}
+
+.boxTone[data-tone='bad'] {
+  color: var(--accent-magenta);
+}
+
+.boxTone:hover,
+.boxTone:focus-visible {
+  border-color: var(--accent-cyan);
+  outline: none;
+}

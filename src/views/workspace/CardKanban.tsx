@@ -4,6 +4,10 @@
 // another column (after 5 px; a click still picks it) takes that column's value, one undo step; columns that don't take
 // it (a status of another type's) go faint while it's held. A click selects it and opens its panel (D-221) as a matrix's
 // head does (D-247, LensCardPanel); beside a plane, the plane glides to it (`onCard`). No hand order: sorted.
+//
+// Rows (D-269): with a row field, a row of boxes per value under a lane head (the tasks' lanes, D-258: `▾`, its name, a
+// rule, its count; folds, yours), `no value` on top. Dropping in a box sets both fields, one undo step. A box may carry a
+// name (the setup's `boxes`), small in its top-left corner; `good` washes the box green, `bad` sets the name magenta.
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -11,25 +15,42 @@ import { updateCards, type Card } from '../../data/cards'
 import { useCanvasView, type PlaneCam } from '../../state/canvasView'
 import { useWs } from './context'
 import { TYPE_ACCENT } from './PlaneCards'
-import { byColumn, columnsOf, FIELD_NAME, heldCards, NO_VALUE, patchFor, sureOf, valueOf, type CardCol } from './kanbanCards'
-import { kanbanOf, K, useKanbanSizes } from './Kanban'
+import { boxKey, boxPatch, byBox, byColumn, columnsOf, FIELD_NAME, heldCards, NO_VALUE, placeOf, rowFieldOf, rowsOfField, sureOf, takes, type CardCol } from './kanbanCards'
+import { kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
+import { loadFolds, saveFolds } from './rows'
 import styles from './Kanban.module.css'
 
-type Drag = { id: string; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: string | null }
+type Over = { col: string; row: string }
+type Drag = { id: string; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: Over | null }
 type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onCard?: (c: Card) => void }
+
+// Without rows: one row with no head.
+const ONE_ROW: CardCol[] = [{ id: '', name: '', types: [] }]
 
 export function CardKanbanView({ piece, view, live, editor, onCanvas = false, onCard }: Props) {
   const { wid, cards, edges } = useWs()
   const setup = kanbanOf(piece)
   const field = setup.colField ?? 'status'
+  const rowField = rowFieldOf(setup)
   const held = useMemo(() => heldCards(piece, cards), [piece, cards])
   const cols = useMemo(() => columnsOf(field, held), [field, held])
+  const rows = useMemo(() => (rowField ? rowsOfField(rowField, held) : ONE_ROW), [rowField, held])
   const byCol = useMemo(() => byColumn(field, cols, held), [field, cols, held])
+  const boxes = useMemo(() => byBox(field, cols, rowField, rows, held), [field, cols, rowField, rows, held])
+  const names = useMemo(() => new Map((setup.names ?? []).map((n) => [boxKey(n.col, n.row), n])), [setup.names])
   const selected = useCanvasView((s) => (live ? s.cardSelected : null))
   const board = useRef<HTMLDivElement>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const dragRef = useRef(drag)
   dragRef.current = drag
+  const [folds, setFolds] = useState(() => loadFolds(piece.id))
+  const fold = (row: string) => {
+    const next = folds.includes(row) ? folds.filter((x) => x !== row) : [...folds, row]
+    setFolds(next)
+    saveFolds(piece.id, next)
+  }
+  // Whether a box takes the held card: its column and its row both.
+  const boxTakes = (col: CardCol, row: CardCol, card: Card) => takes(col, card) && (!rowField || takes(row, card))
 
   // Its drawn size, for fit (written only when it changes).
   useLayoutEffect(() => {
@@ -55,9 +76,13 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
     const s = scale()
     return r ? [(x - r.left) / s, (y - r.top) / s] : [0, 0]
   }
-  // The column under the pointer, or the nearest, of those that take the held card.
-  const landing = (x: number, y: number, card: Card): string | null => {
-    const at = [...(board.current?.querySelectorAll<HTMLElement>('[data-ccol]') ?? [])].filter((c) => takes(cols.find((k) => k.id === c.dataset.ccol), card))
+  // The box under the pointer, or the nearest, of those that take the held card (folded rows have none drawn).
+  const landing = (x: number, y: number, card: Card): Over | null => {
+    const at = [...(board.current?.querySelectorAll<HTMLElement>('[data-ccol]') ?? [])].filter((c) => {
+      const col = cols.find((k) => k.id === c.dataset.ccol)
+      const row = rows.find((k) => k.id === (c.dataset.crow ?? ''))
+      return !!col && !!row && boxTakes(col, row, card)
+    })
     if (!at.length) return null
     const dist = (c: HTMLElement) => {
       const r = c.getBoundingClientRect()
@@ -65,7 +90,8 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
       const dy = y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0
       return Math.hypot(dx, dy)
     }
-    return at.reduce((a, b) => (dist(b) < dist(a) ? b : a)).dataset.ccol!
+    const best = at.reduce((a, b) => (dist(b) < dist(a) ? b : a))
+    return { col: best.dataset.ccol!, row: best.dataset.crow ?? '' }
   }
 
   const pick = (card: Card) => {
@@ -79,8 +105,12 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
     if (!d) return
     if (!d.moving) return pick(card)
     if (!d.over) return
-    const patch = patchFor(card, field, d.over)
-    if (patch) void updateCards(wid, [{ card, fields: patch }], d.over === NO_VALUE ? `take away the ${FIELD_NAME[field]} of a card` : `set a card’s ${FIELD_NAME[field]} to ${d.over}`)
+    const patch = boxPatch(card, field, d.over.col, rowField, d.over.row)
+    if (!patch) return
+    // Says what changed: one field, or both.
+    const said = (f: string, v: string) => (v === NO_VALUE ? `no ${f}` : `${f} ${v}`)
+    const parts = [placeOf(card, field, cols) !== d.over.col && said(FIELD_NAME[field], d.over.col), rowField && placeOf(card, rowField, rows) !== d.over.row && said(FIELD_NAME[rowField], d.over.row)].filter(Boolean)
+    void updateCards(wid, [{ card, fields: patch }], `set a card to ${parts.join(', ')}`)
   }
   const press = (card: Card) => (e: ReactPointerEvent<HTMLElement>) => {
     if (!live || e.button !== 0) return
@@ -110,7 +140,7 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
   const own = live ? (e: ReactPointerEvent) => e.stopPropagation() : undefined
   const vars = { ['--col' as string]: `${K.col}px`, ['--gap' as string]: `${K.gap}px`, ['--head' as string]: `${K.head}px`, ['--card-gap' as string]: `${K.cardGap}px` } as CSSProperties
   const sheet = (c: Card, col: CardCol | undefined, extra: { lifted?: boolean } = {}) => (
-    <CardSheet card={c} field={field} sure={sureOf(c, cards, edges)} finished={!!col?.done} selected={!extra.lifted && selected === c.id} live={live} lifted={extra.lifted} onPointerDown={extra.lifted ? undefined : press(c)} onClick={live && !editor ? () => pick(c) : undefined} />
+    <CardSheet card={c} field={field} rowField={rowField} sure={sureOf(c, cards, edges)} finished={!!col?.done} selected={!extra.lifted && selected === c.id} live={live} lifted={extra.lifted} onPointerDown={extra.lifted ? undefined : press(c)} onClick={live && !editor ? () => pick(c) : undefined} />
   )
 
   return (
@@ -121,7 +151,7 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
             {cols.map((c, i) => {
               const off = !!lifted && !takes(c, lifted)
               return (
-                <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-out={c.out || undefined} data-none={c.id === NO_VALUE || undefined} data-over={(lifted && drag?.over === c.id) || undefined} data-off={off || undefined}>
+                <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-out={c.out || undefined} data-none={c.id === NO_VALUE || undefined} data-over={(lifted && drag?.over?.col === c.id) || undefined} data-off={off || undefined}>
                   <div className={styles.head}>
                     <span className={styles.n}>{String(i).padStart(2, '0')}</span>
                     <span className={styles.name}>{c.name}</span>
@@ -132,23 +162,61 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
               )
             })}
           </div>
-          <div className={styles.row}>
-            {cols.map((c) => {
-              const list = (byCol.get(c.id) ?? []).filter((x) => x.id !== lifted?.id)
-              const over = !!lifted && drag?.over === c.id
-              return (
-                <div key={c.id} className={styles.column} data-ccol={c.id} data-done={c.done || undefined} data-over={over || undefined} data-off={(!!lifted && !takes(c, lifted)) || undefined} role="listitem" aria-label={`${c.name}, ${list.length} cards`} onPointerDown={own}>
-                  <div className={styles.list}>
-                    {list.map((x) => (
-                      <div key={x.id}>{sheet(x, c)}</div>
-                    ))}
-                    {over && valueOf(lifted, field) !== (c.id === NO_VALUE ? undefined : c.id) && <span className={styles.slot} aria-hidden />}
-                    {!list.length && !over && <span className={styles.empty}>· none</span>}
+          {rows.map((r) => {
+            const folded = !!rowField && folds.includes(r.id)
+            const count = cols.reduce((n, c) => n + (boxes.get(boxKey(c.id, r.id))?.length ?? 0), 0)
+            return (
+              <div key={r.id || 'all'} className={styles.lane} data-folded={folded || undefined} data-off={(!!lifted && !!rowField && !takes(r, lifted)) || undefined}>
+                {rowField && (
+                  <LaneHead
+                    lane={{ key: r.id, label: r.id === NO_VALUE ? `no ${FIELD_NAME[rowField]}` : `${FIELD_NAME[rowField]} ${r.name}`, drop: true }}
+                    count={count}
+                    folded={folded}
+                    onFold={() => fold(r.id)}
+                    onPress={own}
+                  />
+                )}
+                {!folded && (
+                  <div className={styles.row}>
+                    {cols.map((c) => {
+                      // The held card keeps its room (hidden), so nothing under the pointer moves while it's dragged.
+                      const list = boxes.get(boxKey(c.id, r.id)) ?? []
+                      const over = !!lifted && drag?.over?.col === c.id && drag.over.row === r.id
+                      const here = !!lifted && placeOf(lifted, field, cols) === c.id && (!rowField || placeOf(lifted, rowField, rows) === r.id)
+                      const name = rowField ? names.get(boxKey(c.id, r.id)) : undefined
+                      return (
+                        <div
+                          key={c.id}
+                          className={styles.column}
+                          data-ccol={c.id}
+                          data-crow={r.id}
+                          data-box={rowField ? true : undefined}
+                          data-tone={name?.tone}
+                          data-done={c.done || undefined}
+                          data-over={over || undefined}
+                          data-off={(!!lifted && !boxTakes(c, r, lifted)) || undefined}
+                          role="listitem"
+                          aria-label={`${c.name}${rowField ? `, ${r.name}` : ''}${name ? ` (${name.name})` : ''}, ${list.length} cards`}
+                          onPointerDown={own}
+                        >
+                          {name && <span className={styles.boxName}>{name.name}</span>}
+                          <div className={styles.list}>
+                            {list.map((x) => (
+                              <div key={x.id} style={x.id === lifted?.id ? { visibility: 'hidden' } : undefined}>
+                                {sheet(x, c)}
+                              </div>
+                            ))}
+                            {over && !here && <span className={styles.slot} aria-hidden />}
+                            {!list.length && !over && !rowField && <span className={styles.empty}>· none</span>}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )}
+              </div>
+            )
+          })}
           {!held.length && (
             <p className={styles.empty} data-wide>
               no cards here yet: its setup picks which ({FIELD_NAME[field]} applies to {field === 'status' ? 'customers, problems, ideas and features' : field === 'priority' ? 'features' : 'features and packages'})
@@ -156,7 +224,7 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
           )}
           {lifted && drag && (
             <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0] }} aria-hidden>
-              {sheet(lifted, cols.find((c) => c.id === drag.over), { lifted: true })}
+              {sheet(lifted, cols.find((c) => c.id === drag.over?.col), { lifted: true })}
             </div>
           )}
         </div>
@@ -165,12 +233,11 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
   )
 }
 
-// Whether a column takes a card: `no value` any; a value only its own types'.
-const takes = (col: CardCol | undefined, card: Card) => !!col && col.types.includes(card.type)
-
 type SheetProps = {
   card: Card
   field: string
+  // Its row's field (D-269): left off the sheet too, as the column's.
+  rowField?: string
   sure?: 'high' | 'medium' | 'low' | 'broken'
   finished: boolean
   selected: boolean
@@ -183,12 +250,13 @@ type SheetProps = {
 // A card on a kanban: a sheet as a task's (D-252), edged in its type's colour. Its type in that colour and its priority
 // (P1 magenta) on top, its title (Geist, up to three lines), then how sure we are (`◆ high`, `! broken` magenta) and the
 // values it has other than the columns' own.
-function CardSheet({ card, field, sure, finished, selected, live, lifted, onPointerDown, onClick }: SheetProps) {
+function CardSheet({ card, field, rowField, sure, finished, selected, live, lifted, onPointerDown, onClick }: SheetProps) {
+  const shown = (f: string) => f !== field && f !== rowField
   const rest = [
-    field !== 'status' && card.type === 'feature' ? card.status : undefined,
-    field !== 'status' && card.type !== 'feature' ? card.validation : undefined,
-    field !== 'impact' && card.impact ? `impact ${card.impact}` : undefined,
-    field !== 'effort' && card.effort ? `effort ${card.effort}` : undefined,
+    shown('status') && card.type === 'feature' ? card.status : undefined,
+    shown('status') && card.type !== 'feature' ? card.validation : undefined,
+    shown('impact') && card.impact ? `impact ${card.impact}` : undefined,
+    shown('effort') && card.effort ? `effort ${card.effort}` : undefined,
   ].filter(Boolean)
   return (
     <div
@@ -210,7 +278,7 @@ function CardSheet({ card, field, sure, finished, selected, live, lifted, onPoin
       <span className={styles.sheetHead}>
         <span className={styles.sheetType}>{card.type}</span>
         <span className={styles.push} />
-        {field !== 'priority' && card.priority && (
+        {shown('priority') && card.priority && (
           <span className={styles.priority} data-p={card.priority}>
             {card.priority}
           </span>
