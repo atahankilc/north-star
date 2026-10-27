@@ -46,14 +46,15 @@ import {
 } from '../../data/labels'
 import { DESCRIPTION_MAX, describeWorkspace, renameWorkspace } from '../../data/workspaces'
 import { useCanvasView } from '../../state/canvasView'
-import { land, landed, othersThan, startGroupDrag, toggleSelected } from './selection'
+import { heldAt, land, landed, othersThan, startGroupDrag, toggleSelected } from './selection'
 import { clearGuides, guide, showGuides, useGuides } from './guides'
 import { useMotion } from '../../state/motion'
 import { ago } from '../../ui/ago'
 import { LightMarkdown } from '../../ui/LightMarkdown'
 import { useWs } from './context'
 import styles from './TextItems.module.css'
-import { PeerRing } from './collab'
+import { usePeersOn } from './collab'
+import { Landing, Marks } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 
@@ -181,6 +182,8 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     if (!editor || typing) return
     setPressed(true)
     const [sx, sy] = [e.clientX, e.clientY]
+    // Held 0.8 round this point under the pointer, its marks where it lands (D-265); a section moves whole, as it is.
+    const at = kind === 'section' ? null : heldAt(e, l.x, y, zoom)
     const box = { ...labelBox(l), w: w ?? labelBox(l).w, h: h ?? labelBox(l).h }
     // What a section holds, by where it is now.
     const held: { id: string; ref: DocumentReference; x: number; y: number }[] = [{ id: l.id, ref: labelRef(wid, l.id), x: l.x, y: l.y }]
@@ -202,7 +205,8 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
         showGuides(g.lines)
       }
       d = [to[0] - l.x, to[1] - l.y]
-      useCanvasView.setState({ dragShift: { ids: held.map((x) => x.id), dx: d[0], dy: d[1] } })
+      const carry = at && { shrink: true, free: [dx / zoom, dy / zoom] as [number, number], at }
+      useCanvasView.setState({ dragShift: { ids: held.map((x) => x.id), dx: d[0], dy: d[1], ...carry } })
     }
     const up = async () => {
       window.removeEventListener('pointermove', move)
@@ -263,16 +267,35 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   useEffect(() => {
     if (landing && landing[0] === l.x && landing[1] === l.y) landed(l.id)
   }, [landing, l.x, l.y, l.id])
-  // Carried with a selection (D-229): 0.8 round its middle, as cards are.
+  // Carried (its own drag, or with a selection, D-229): 0.8 round the point held, following the pointer, as cards are; its
+  // marks on `<Landing>` where it lands, at its full size (D-265).
+  const carried = shift?.shrink && shift.free && shift.at ? { free: shift.free, at: shift.at } : null
+  const self = useRef<HTMLDivElement>(null)
+  const [measured, setMeasured] = useState<[number, number] | null>(null)
+  useLayoutEffect(() => {
+    if (carried && self.current) setMeasured([self.current.offsetWidth, self.current.offsetHeight])
+    // Once as it's picked up: its size doesn't change while carried.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!carried])
+  const peers = usePeersOn(l.id, l.pieceId)
+  const left = landing ? landing[0] : l.x + (shift?.dx ?? 0)
+  const top = landing ? landing[1] : y + (shift?.dy ?? 0)
   const style: CSSProperties = {
-    left: landing ? landing[0] : l.x + (shift?.dx ?? 0),
-    top: landing ? landing[1] : y + (shift?.dy ?? 0),
-    ...(shift?.shrink && { scale: '0.8', transformOrigin: '50% 50%' }),
+    left,
+    top,
+    ...(carried &&
+      shift && {
+        translate: `${carried.free[0] - shift.dx}px ${carried.free[1] - shift.dy}px`,
+        scale: '0.8',
+        transformOrigin: `${carried.at[0] - l.x}px ${carried.at[1] - y}px`,
+      }),
     ['--tone' as string]: color,
     fontWeight: l.bold ? 700 : undefined,
     fontStyle: l.italic ? 'italic' : undefined,
   }
   const common = {
+    ref: self,
+    'data-carried': !!carried || undefined,
     'data-target': `label:${l.id}`,
     'data-selected': selected || undefined,
     'data-pressed': pressed || undefined,
@@ -282,14 +305,32 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     // A width being dragged: its strip in its colour.
     'data-resizing': !!held || undefined,
   }
+  // Text keeps its marks a little clear of its glyphs; a sticky note's and a section's go round their edges (D-265).
+  const pad = kind === 'sticky' || kind === 'section' ? 0 : 7
+  const tier = kind === 'section' ? 'l' : 'm'
+  const near = labelBox(l)
   const marks = (
     <>
-      <i className={styles.mark} data-corner="nw" aria-hidden />
-      <i className={styles.mark} data-corner="ne" aria-hidden />
-      <i className={styles.mark} data-corner="se" aria-hidden />
-      <i className={styles.mark} data-corner="sw" aria-hidden />
-      {live && <PeerRing id={l.id} space={l.pieceId} />}
+      {live && (
+        <Marks
+          zoom={zoom}
+          tier={tier}
+          short={Math.min(w ?? near.w, h ?? near.h) + 2 * pad}
+          tone={color}
+          pad={pad}
+          selected={selected}
+          pressed={pressed}
+          dragging={!!carried}
+          peers={peers}
+        />
+      )}
       {live && <ThreadChip wid={wid} thread={threadOn(threads, l.id)} zoom={zoom} />}
+    </>
+  )
+  const withLanding = (item: ReactNode) => (
+    <>
+      {item}
+      {live && carried && measured && <Landing x={left} y={top} w={measured[0]} h={measured[1]} zoom={zoom} tier={tier} tone={color} pad={pad} />}
     </>
   )
   // Its own bar only while it's selected alone; with others, the right panel's `N selected` is theirs (D-229).
@@ -306,7 +347,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     const kick = kickerParts(l.kicker)
     const num = kick ? [kick.num, kick.rest].filter(Boolean).join(' ') : ''
     const onLeft = l.side === 'left'
-    return (
+    return withLanding(
       <div className={styles.section} data-side={onLeft ? 'left' : 'top'} style={{ ...style, width: w, height: h, fontWeight: undefined, fontStyle: undefined }} {...common}>
         {(['n', 'e', 's', 'w'] as const).map((side) => (
           <span key={side} className={styles.band} data-side={side} onPointerDown={press} onDoubleClick={edit} />
@@ -344,12 +385,12 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   }
 
   if (kind === 'title')
-    return <TitleBlock l={l} style={style} common={common} press={press} edit={edit} typing={typing} editor={editor} zoom={zoom} w={w ?? TITLE_W.initial} marks={marks} resize={live && editor ? resize('w') : undefined} />
+    return withLanding(<TitleBlock l={l} style={style} common={common} press={press} edit={edit} typing={typing} editor={editor} zoom={zoom} w={w ?? TITLE_W.initial} marks={marks} resize={live && editor ? resize('w') : undefined} />)
 
   if (kind === 'sticky') {
     // Signed along its top (D-158): the writer's first name and how long ago, three little checks; foldable (D-259).
     const who = (l.author ?? 'someone').split(/\s+/)[0].toUpperCase()
-    return (
+    return withLanding(
       <div
         className={styles.sticky}
         data-folded={(l.folded && !typing) || undefined}
@@ -368,7 +409,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
 
   if (kind === 'paragraph') {
     const pw = w ?? PARA_W.initial
-    return (
+    return withLanding(
       <div className={styles.para} style={{ ...style, fontSize: PARA_PX[l.scale ?? 'large'], ...(turn ? turnedBox : { width: pw }) }} {...common} onPointerDown={press} onDoubleClick={edit}>
         <div ref={body} className={styles.body} data-turn={turn} style={{ width: pw }}>
           {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} mark="•" /> : <span className={styles.empty}>a paragraph</span>}
@@ -383,7 +424,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const size = headingSize(l)
   const px = HEADING_PX[size]
   const kick = kickerParts(l.kicker)
-  return (
+  return withLanding(
     <div className={styles.heading} data-size={size} style={{ ...style, fontSize: px, letterSpacing: tracking(l, size), ...turnedBox }} {...common} onPointerDown={press} onDoubleClick={edit}>
       <div ref={body} className={styles.body} data-turn={turn}>
         {typing ? (

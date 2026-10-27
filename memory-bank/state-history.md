@@ -636,3 +636,6 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 - Menus as a prompt (D-222): `+`, go to, start over from, right-click and every Select; `>` line, letters; one click outside closes. 2026-10-22, committed.
 - Competitor regions (D-145): where a competitor operates, REGION filter (bar + matrix footer), assistant fields; committed 2026-10-19.
 - LINKS filter: one group per kind (D-146), each with its own colour, solid lines (D-147), 2026-10-19.
+
+## Done (moved from state.md 2026-10-27): sticky notes
+- Sticky notes look like sticky notes (D-257): paper in their colour, dark ink, a glue band, no tilt; 6 × 5 steps, growing down, foldable (D-259). 2026-10-27; rules deployed.

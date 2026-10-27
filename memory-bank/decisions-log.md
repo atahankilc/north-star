@@ -4626,6 +4626,83 @@ columns), picked "B: a new piece".
   by dragging in edit mode (`⇆ Roadmap`), opened beside in the kanban's focus at one week, a task picked there picked on
   the kanban; the soon band; rules 406 pass; build.
 
+### D-263 · 2026-10-27 · Accepted (changes D-176's, D-180's and D-208's piece background; plan, docs/specs/consistency.md)
+**Pieces get a surface of their own: graphite layers over the black page, and a 2 px band in their kind's colour on the
+top edge.**
+Feedback the user got: the components' background shouldn't be black. Every piece used `--bg` (the page's #000), so on
+the full-strength backdrop they read as holes, and cards (#0b0b0b) barely stood off a plane.
+- *Picked:* on a local preview of six (today; A graphite layers; B a tone by kind; C an ASCII texture with plates under
+  text; D smoked glass, the backdrop dimmed through; E light paper; F a mix), the user: "türe göre componentin üst
+  borderını boyamak mantıklıymış. Ayrıca grafit de kötü durmadı". So A's layers + B's colour as a top band only.
+- *Values:* `--piece` #121315, `--piece-head` #17181b, `--piece-card` #1d1e22, `--piece-edge` #2f3136, a shadow and a
+  1 px top highlight; `+` marks #3b3e44; light #fff / #f7f7f8 / #fff / #d4d5d8. Band: plane `--fg`, matrix
+  `--link-solves`, table `--link-part`, kanban `--link-draws`, documents and document `--link-depends`, timeline
+  `--link-competes` (the kinds share hues with link kinds; the band is thin and never where links are).
+- *Alternatives:* B over the whole body (a third colour system beside types and links), C (noise against an ASCII
+  backdrop, close to D-019), D (motion behind reading, the plane's `+` marks mixing with glyphs), E/F (bright areas in
+  the dark default).
+- *Not yet built:* session 4 of the spec.
+
+### D-264 · 2026-10-27 · Accepted (changes D-179/D-181's always-open console; plan, docs/specs/consistency.md)
+**The console stays where it is, shows only while the pointer is on the piece, and grows as the canvas zooms out.**
+Feedback: the focus button is hard to find. Shown four ways on the preview (today; the console in the corner nearest the
+pointer, with a dead zone and cell moves; the top edge as a window title bar, `[⤢ focus]` at its right end; title bar +
+nearest bottom corner), the user: "şimdiki gibi kalsın. ancak console uzaklaşınca büyüsün ki tıklaması kolay olsun. Bir
+de console sadece hover edince ortaya çıksın".
+- *Hover:* built cell by cell (170 ms, 6 steps) as the pointer comes on, broken (90 ms) as it leaves; kept in edit mode,
+  while its setup is open, with focus inside it; touch: first tap shows it, second goes in. Something new (comments, a
+  mention) stays alone as a small magenta tab, so hiding the console never hides it.
+- *Size:* `11 px × min(1.4, zoom^-0.5)`; padding, gaps and marks by the same factor; a first try capped at 1.6 (17.6 px)
+  looked too big beside small pieces.
+- *Alternatives:* see Rejected (nearest corner/edge, title bar).
+
+### D-265 · 2026-10-27 · Accepted (replaces D-150's, D-203's, D-194's and every component's own marks and grips; plan, docs/specs/consistency.md)
+**One set of corner marks for everything selectable, with one motion, one drag rule and one resize language.**
+The user: hover and selection L's differ from component to component (length, distance, animation); found that a
+drag's landing marks are on plane cards only ("bu tarz inconsistency'lerin olmasını istemiyorum"); wants the click felt
+and the right / down / both resizes to show the same way.
+- *Found in the code:* six implementations (piece 14/1 hover only; plane card 17.6/2.4 in plane units, type colour;
+  kanban task 12/2 cyan; matrix cell 7→9 inside; table cell `[ ● ]`; documents row a wash; text 16/2.4 at 17 → 12 with
+  no motion; section 32), four drags (card: landing marks; text: marks shrink with it; task: ghost + cyan line; piece:
+  full size, no marks), four resize looks (piece: cyan L grips + bars; section: a grey L; paragraph/sticky/title: a
+  thin grey line on hover; table column: a tick and a cyan line).
+- *The rules:* three tiers in screen px (S 6/1.5, M 12/2, L 18/2) by the thing's short side on screen; distance is the
+  state (hover out and grey, pressed on the corners and longer, selected just out in the tone); tone = what it is,
+  cyan = what you can do to it; press 70 ms, release a 300 ms spring, hover 160, leave 140; drag: the thing at 0.8
+  under the pointer, the L's in a landing box where it lands; resize: cyan handles on the ring only when selected, the
+  moving edge lit along its length with a readout; box select cyan L's; peers' selection as L's in their colour + a
+  name tag. Values in the spec.
+- *Verified on the preview:* hover, press/release, deselect, drag (card, heading, sticky), resize (paragraph, section,
+  plane in edit), box select, in both themes.
+- *Not yet built:* sessions 1–3 of the spec.
+
+### D-266 · 2026-10-27 · Accepted (adds to D-093, D-157, D-194, D-223; plan, docs/specs/consistency.md)
+**One language for names and lines: two voices, magenta numbers, two edges, two bands.**
+On the preview the user: "tek dil güzel duruyo".
+- *Two voices:* the system's in Geist Mono caps (piece names, type labels, column heads, panel sections, headings' small
+  lines, consoles), the user's in Geist (card titles, headings, paragraphs, section names, the title).
+- *Numbers* magenta wherever there is one (piece names were white, kanban columns faint).
+- *Edges:* containers have one (pieces, sections), the name cut into it with the same lead (16 px) and gap (8 px); held
+  things have none (cards, tasks, rows, cells). *Bands:* held things' on the left, containers' on top (D-263).
+- *Asked, not decided:* text's shade hugging each line, and one family of rules (spec, "Asked, not decided").
+
+### D-267 · 2026-10-27 · Accepted (changes D-228's unframed look; plan, docs/specs/consistency.md)
+**Framed is a window, unframed is ink on the canvas (option A, without a scale).**
+The user wasn't satisfied with the first proposals ("hala şu ankinden daha iyi bir framed ve unframed ui designı
+sunamamışsın"); three directions on the preview, built on what the two are: framed is closed (its contents fitted into
+it, D-214, used by going in), unframed is open and live (its own size, used right there, D-228). The user: "A ile devam
+et".
+- *Framed:* D-263's surface, band and shadow, the name in the edge, the console. A scale readout (`· 82%`) was turned
+  down ("ölçek olmadan").
+- *Unframed:* no fill, edge, band or shadow; under each row a shade hugging it (page at 80 %, feathered 16/10 at 72 %);
+  its name a heading's small line (`04 ── RIVALS · TABLE`, mono 11 screen px, the number magenta, 8 px over it); its
+  console the same, on the same hover rule, hanging 10 px under the contents' right end.
+- *Between:* the window breaks cell by cell (320 ms) while the contents grow to their own size; framing the reverse.
+- *Alternatives:* B, a block (a hatched ╱ thickness on the right and bottom, world units) and its unframed contents in a
+  clearing of page-coloured cells thinning to dots (focus's ragged ink edge); C, unframed printed onto a light sheet
+  line by line. See Rejected.
+- *Not yet built:* session 6 of the spec.
+
 ### D-268 · 2026-10-27 · Accepted (adds to D-251, D-253; priorities session P1, docs/specs/priorities.md)
 **A kanban holds tasks or cards. Holding cards, its columns are one of their fields' values, and dragging a card to
 another column sets that field.**
@@ -4681,3 +4758,35 @@ The user asked for P2 of the priorities plan.
   row folded; a box named from the boxes tab showed on the board; the wizard's rows and grid preview; light theme.
   Rules 413 pass (3 new). Build.
 
+
+### D-270 · 2026-10-27 · Accepted (builds D-265 for plane cards and text; consistency session 1, docs/specs/consistency.md)
+**One `Marks` component, used by plane cards, packages and every kind of text; a dragged text lands like a card.**
+The user asked for session 1 of the consistency plan (D-263–D-267).
+- *The component:* `src/ui/Marks.tsx` + `Marks.module.css`, tokens `--mark-{s,m,l}-{len,th,hover,sel,rest,press}` and
+  `--mark-spring` in `tokens.css`. Four L's, sized in screen px (`--zs` = 1 / the space's zoom), state from props
+  (`selected`, `pressed`, `dragging`, `target`, `hover` or the parent's `:hover`), tone from the thing; a peer's
+  selection the same L's in their colour (a step further out each) with their name on a tag at the top-left
+  (`usePeersOn` in collab.tsx; replaces `PeerRing` on cards and text). `<Landing>`: where something dragged lands, the
+  pressed L's at full size, stepping 80 ms. `<BoxSelect>`: alt+drag's box, a cyan wash with cyan L's.
+- *Tiers, an interpretation:* D-265 says "by the short side on screen", its table by kind (text M, sections L). Taken
+  literally a one-line paragraph got S and a 200-tall section M at 100 %. So: the kind's tier (cards, text, sticky
+  notes, the title M; sections and an unfolded package's frame L), a step down while small on screen (L under 120 px,
+  M under 24 px). Text's short side counts its 7 px clearance.
+- *Motion:* as D-265: hover in 160 ms from further out, press 70 ms (colour 40), release a 300 ms spring overshooting,
+  leave 140 ms; selected without a press (box, shift+click, a peer, a follow) drawn on the corners for a frame, then the
+  spring; after a drop the L's stay on the corners 180 ms while the thing grows back, then spring. Reduced: no
+  transitions, no phases (checked: hover, press, release, drop land at once).
+- *Drag, one rule:* a text's own drag now goes 0.8 round the point held, following the pointer, its L's at full size
+  where it lands (fixes the text marks that shrank with it). A selection's drag (cards and text) the same: each goes
+  0.8 round the point held in the one pressed (`dragShift` gains `free` and `at`; `heldAt()` in selection.ts), each with
+  its own landing L's; before, they shrank round their own middles at the landing spot. Let go, they grow back 180 ms.
+  A section still moves whole, unscaled (its carried planes and cards too); its landing L's come with session 3.
+  Landing L's are drawn only where it's live (a focused plane's cards are drawn twice, D-174's picture under it).
+- *Left as they are:* the project title's corner brackets stay, edge grey, never cyan now (its state is its marks,
+  outside them); the resize grips and strips (session 3); a link's target is the hover distance in cyan.
+- *Verified:* headless Chrome on the emulators, no-preference and reduced: a card's hover (7 out, grey), press (on its
+  corners, 18 long, green), release (overshoots to 4.5 out at 150 ms, settles at 3); heading, paragraph, sticky note,
+  section and the title hover / press / select; heading and sticky note drags (item at 0.8, one landing box at full
+  size, snapped; after the drop the L's on the corners, then sprung); alt+drag box; a card + heading + card dragged
+  together (a landing each); Bob's selection of a card and a sticky note seen by Alice (pink L's + `Bob` tag); a canvas
+  heading's drag. Build.

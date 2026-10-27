@@ -16,6 +16,7 @@ import { CANVAS } from '../../data/labels'
 import { firebase } from '../../data/firebase'
 import { useWs } from './context'
 import styles from './collab.module.css'
+import type { PeerMark } from '../../ui/Marks'
 
 // Which space a peer is in: the canvas, or the plane they have in focus.
 export const spaceOf = (p: Pick<Peer, 'plane'>) => p.plane ?? CANVAS
@@ -228,6 +229,14 @@ const EASE_S = 0.45
 export const stopFollowing = () => usePresence.getState().following && usePresence.getState().follow(null)
 
 // Who else, in this space, has `id` selected: a frame in their colour round it, with their name (D-067, D-068).
+// Who else has this selected in this space, in their colours: their L's on it (D-265).
+export function usePeersOn(id: string, space: string): PeerMark[] {
+  const peers = usePresence((s) => s.peers)
+  const tone = useThemeAccent()
+  const me = firebase?.auth.currentUser?.uid
+  return peers.filter((p) => p.uid !== me && spaceOf(p) === space && hasSelected(p, id)).map((p) => ({ uid: p.uid, name: p.name, color: tone(p.color) }))
+}
+
 export function PeerRing({ id, space }: { id: string; space: string }) {
   const peers = usePresence((s) => s.peers)
   const tone = useThemeAccent()

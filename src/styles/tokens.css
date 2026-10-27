@@ -112,6 +112,29 @@
   --dur-fast: 200ms;
   --dur-med: 400ms;
   --dur-slow: 600ms;
+
+  /* Marks (D-265, src/ui/Marks.tsx): the four L's of anything selectable, in screen px, by tier (the thing's short side
+     on screen: < 48 S, < 240 M, else L). len / stroke; how far out hovered, selected, at rest (where they leave to);
+     pressed, the L's length on the corners. */
+  --mark-s-len: 6px;
+  --mark-s-th: 1.5px;
+  --mark-s-hover: 3px;
+  --mark-s-sel: 1px;
+  --mark-s-rest: 8px;
+  --mark-s-press: 9px;
+  --mark-m-len: 12px;
+  --mark-m-th: 2px;
+  --mark-m-hover: 7px;
+  --mark-m-sel: 3px;
+  --mark-m-rest: 13px;
+  --mark-m-press: 18px;
+  --mark-l-len: 18px;
+  --mark-l-th: 2px;
+  --mark-l-hover: 10px;
+  --mark-l-sel: 4px;
+  --mark-l-rest: 16px;
+  --mark-l-press: 26px;
+  --mark-spring: cubic-bezier(0.3, 1.8, 0.5, 1);
 }
 
 /* Light theme (D-069), set on <html> by src/state/theme.ts. Mirror any change in palettes.light (tokens.ts). */

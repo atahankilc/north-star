@@ -48,10 +48,11 @@
   background: var(--bg-raised);
   box-shadow: inset 4px 0 0 var(--type);
   transition:
-    scale 160ms var(--ease-out),
-    translate 160ms var(--ease-out);
+    scale 180ms var(--ease-out),
+    translate 180ms var(--ease-out);
 }
 
+/* Carried, it follows the pointer at once; let go, it grows back into its marks (D-265). */
 .box[data-dragging='true'] .card {
   transition: scale 160ms var(--ease-out);
 }
@@ -188,52 +189,6 @@
   color: transparent;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-}
-
-/* Corner marks (D-150, the old board's CardCorners at 80 px a unit): grey a little out on hover; in the type's colour
-   just outside once selected; pressed or dragged, on its corners, inside it, longer. They glide between. */
-.mark {
-  --len: 17.6px;
-  --out: 9.6px;
-  --thick: 2.4px;
-  --at: calc(-1 * (var(--out) + var(--thick)));
-  position: absolute;
-  width: var(--len);
-  height: var(--len);
-  border: 0 solid var(--fg-dim);
-  opacity: 0;
-  pointer-events: none;
-  transition-property: top, right, bottom, left, width, height, border-color, opacity;
-  transition-duration: 160ms;
-  transition-timing-function: var(--ease-out);
-}
-
-.mark[data-corner='nw'] { top: var(--at); left: var(--at); border-top-width: var(--thick); border-left-width: var(--thick); }
-.mark[data-corner='ne'] { top: var(--at); right: var(--at); border-top-width: var(--thick); border-right-width: var(--thick); }
-.mark[data-corner='se'] { bottom: var(--at); right: var(--at); border-bottom-width: var(--thick); border-right-width: var(--thick); }
-.mark[data-corner='sw'] { bottom: var(--at); left: var(--at); border-bottom-width: var(--thick); border-left-width: var(--thick); }
-
-.layer[data-live='true'] .box:hover > .mark {
-  opacity: 1;
-}
-
-.box[data-selected='true'] > .mark {
-  --out: 4.8px;
-  border-color: var(--type);
-  opacity: 1;
-}
-
-.box[data-pressed='true'] > .mark {
-  --len: 25.6px;
-  --out: calc(-1 * var(--thick));
-  border-color: var(--type);
-  opacity: 1;
-}
-
-/* A link's target while one is drawn (D-150): its corner marks in cyan. */
-.box[data-link-target='true'] > .mark {
-  border-color: var(--accent-cyan);
-  opacity: 1;
 }
 
 /* The link handle (D-152): a `›` just right of a hovered card, dim, bright under the pointer, cyan while linking. What
@@ -435,15 +390,6 @@
   cursor: default;
 }
 
-/* Alt+drag's box (D-227): what it touches is selected. */
-.selectBox {
-  position: absolute;
-  z-index: 30;
-  border: 1px dashed var(--accent-cyan);
-  background: color-mix(in srgb, var(--accent-cyan) 6%, transparent);
-  pointer-events: none;
-}
-
 /* An alignment guide (D-231). */
 .guide {
   position: absolute;
@@ -526,23 +472,6 @@
 .band .fold,
 .box[data-type='package'] .fold {
   color: var(--type);
-}
-
-.layer[data-live='true'] .pkg:has(.band:hover) > .mark {
-  opacity: 1;
-}
-
-.pkg[data-selected='true'] > .mark {
-  --out: 4.8px;
-  border-color: var(--type);
-  opacity: 1;
-}
-
-.pkg[data-pressed='true'] > .mark {
-  --len: 25.6px;
-  --out: calc(-1 * var(--thick));
-  border-color: var(--type);
-  opacity: 1;
 }
 
 /* A row in a folded card (D-245): a bar in its own card's colour, its name, its status (cardInside's PART_ROW). */

@@ -38,6 +38,21 @@
         ],
         "createdAt": "2026-10-21T00:05:13.125Z",
         "reason": "Claude: the title's name has to re-wrap as it grows when folding (D-132/D-194), so font-size/padding must animate; one element, 320 ms, measured smooth; the star now moves by transform"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.3, 1.8, 0.5, 1)",
+        "createdAt": "2026-10-27T01:23:20.346Z",
+        "reason": "Spec value: D-265's release spring, picked by the user on the consistency preview"
+      },
+      {
+        "rule": "layout-transition",
+        "value": "*",
+        "files": [
+          "src/ui/Marks.module.css"
+        ],
+        "createdAt": "2026-10-27T01:23:20.369Z",
+        "reason": "Claude's call: the 4 tiny absolutely positioned corner L's animate top/left/width/height (no layout reflow of siblings), as the marks they replace did"
       }
     ]
   }

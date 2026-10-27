@@ -78,6 +78,15 @@ old reports are moved to documents once (D-248).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063, D-069).
 - Light theme via tokens under `[data-theme='light']` and `usePalette()`; light bg `#f5f5f5`; no-flash script (D-069).
 
+- One look and behaviour across the canvas (spec consistency.md, not built yet): pieces graphite (`--piece*`) with a 2 px
+  band in their kind's colour on top (D-263); the console where it is, shown only on hover, growing as you zoom out
+  (D-264); one `Marks` for everything selectable: three tiers in screen px, distance = state, tone = what it is, cyan =
+  what you can do, press 70 ms / release spring, drag: L's where it lands, resize: cyan handles on the ring (D-265);
+  two voices, magenta numbers, containers edged, held things banded (D-266); unframed = ink, framed = window (D-267).
+- `Marks` built (D-270, session 1): `src/ui/Marks.tsx` on plane cards, packages and all text; tier by kind, a step down
+  when small on screen; a text's drag and a selection's drag go 0.8 round the point held, `<Landing>` L's where they land;
+  `<BoxSelect>`; peers as L's + a name tag. Sections still move whole until session 3.
+
 ## Motion and backdrop
 - One entrance everywhere: cell-by-cell build-up in random order, all at once, starting at `revealed`; components 320 ms,
   headline 400, page reveal 400, text decode 260 (D-034, D-035). `<Appear>`, `src/ui/cellReveal.ts`.
@@ -495,3 +504,6 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Focus that zooms: the plane scaling up with its marks, the canvas behind scaling and fading, warp streaks; the marks slid
   about and it looked bad (D-185). Nothing on the right of the screen during or in focus (kept free for something else),
   except what's stuck to the plane, opened beside it (D-211).
+- Piece surfaces tinted by kind, an ASCII texture, smoked glass, light paper (D-263). A scale readout on framed pieces (D-267).
+- The console in the corner (or on the edge) nearest the pointer; focus in the top edge as a window title bar (D-264).
+- Framed as a 3D block with a hatched thickness and unframed in a clearing of cells; unframed printed on a light sheet (D-267).

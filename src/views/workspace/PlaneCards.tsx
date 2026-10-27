@@ -14,7 +14,7 @@
 // The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, cardRef, copyCards, deleteCards, foldPackage, moveCard, moveCards, updateCard, type AnyType, type Card } from '../../data/cards'
-import { clipboard, landed, onPlane, othersThan, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
+import { clipboard, heldAt, landed, onPlane, othersThan, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
 import { clearGuides, guide, showGuides, toggleGuides, toggleSnap, useGuides } from './guides'
 import { groupOf, keep, useFilter } from './planeFilter'
 import { useSearchParams } from 'react-router-dom'
@@ -24,7 +24,8 @@ import type { CompetitorFeature } from '../../data/competitorFeatures'
 import { byCategory, foldedHeight, foldsOf, INDENT, openHeight, packageBox, partRowBox, type Box } from './cardInside'
 import type { Label } from '../../data/labels'
 import { labelBox, TextItems } from './TextItems'
-import { PeerRing } from './collab'
+import { usePeersOn } from './collab'
+import { BoxSelect, Landing, Marks } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import { PackPick } from './PackPick'
 import { CardPanel } from './CardPanel'
@@ -281,10 +282,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
         ))}
         <LinkChips links={links} live={live} editor={editor} zoom={view.zoom} />
         {box && (
-          <div
-            className={styles.selectBox}
-            style={{ left: Math.min(box.x0, box.x1), top: Math.min(box.y0, box.y1), width: Math.abs(box.x1 - box.x0), height: Math.abs(box.y1 - box.y0) }}
-          />
+          <BoxSelect x={Math.min(box.x0, box.x1)} y={Math.min(box.y0, box.y1)} w={Math.abs(box.x1 - box.x0)} h={Math.abs(box.y1 - box.y0)} zoom={view.zoom} />
         )}
         <TextItems labels={labels} layer="text" live={live} editor={editor} zoom={view.zoom} carry={carry} />
         {live && <GuideLines zoom={view.zoom} />}
@@ -425,6 +423,8 @@ function CardBox(props: BoxProps) {
 function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: BoxProps & { place: Box }) {
   const { wid, threads } = useWs()
   const selected = useCanvasView((s) => live && (s.cardSelected === card.id || s.cardMulti.includes(card.id)))
+  const hovered = useCanvasView((s) => live && s.cardHovered === card.id)
+  const peers = usePeersOn(card.id, card.pieceId)
   const [pressed, setPressed] = useState(false)
   // Its members carry it: `place` already follows them while they're dragged.
   const [x, y] = [place.x, place.y]
@@ -438,7 +438,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
     setPressed(true)
     // Its members and what they carry; the package itself has no place of its own while unfolded.
     const ids = members.map((m) => m.id)
-    startGroupDrag(e, zoom, members[0], () => setPressed(false), [...ids, ...onPlane.carried(ids)])
+    startGroupDrag(e, zoom, members[0], () => setPressed(false), [...ids, ...onPlane.carried(ids)], heldAt(e, place.x, place.y, zoom))
   }
   const fold = () => void foldPackage(wid, card, [snap(place.x), snap(place.y)])
   return (
@@ -472,11 +472,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
         )}
       </div>
       <div className={styles.frame} />
-      <i className={styles.mark} data-corner="nw" aria-hidden />
-      <i className={styles.mark} data-corner="ne" aria-hidden />
-      <i className={styles.mark} data-corner="se" aria-hidden />
-      <i className={styles.mark} data-corner="sw" aria-hidden />
-      {live && <PeerRing id={card.id} space={card.pieceId} />}
+      {live && <Marks zoom={zoom} tier="l" short={Math.min(place.w, place.h)} hover={hovered} selected={selected} pressed={pressed} peers={peers} />}
       {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
     </div>
   )
@@ -522,6 +518,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
       })
   }, [held, card.id])
   const hovered = useCanvasView((s) => live && s.cardHovered === card.id)
+  const peers = usePeersOn(card.id, card.pieceId)
   const target = useCanvasView((s) => live && s.linking?.over === card.id)
   const linkingFrom = useCanvasView((s) => live && s.linking?.from === card.id)
 
@@ -608,62 +605,68 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
     window.addEventListener('pointercancel', up)
   }
 
-  // The face, small, under the pointer: from where it lands (the box) to where it is, shrunk round the point held.
+  // The face, small, under the pointer: from where it lands (the box) to where it is, shrunk round the point held. Carried
+  // with a selection, the same round the point held in the one pressed; its marks on `<Landing>` meanwhile (D-265).
+  const along = shift?.shrink && shift.free && shift.at ? { free: shift.free, at: shift.at } : null
   const carried = drag
     ? { translate: `${drag.free[0] - x}px ${drag.free[1] - y}px`, scale: `${CARRIED}`, transformOrigin: `${drag.at[0]}px ${drag.at[1]}px` }
-    : shift?.shrink
-      ? { scale: `${CARRIED}`, transformOrigin: '50% 50%' }
+    : along && shift
+      ? {
+          translate: `${along.free[0] - shift.dx}px ${along.free[1] - shift.dy}px`,
+          scale: `${CARRIED}`,
+          transformOrigin: `${along.at[0] - card.x}px ${along.at[1] - card.y}px`,
+        }
       : undefined
+  const moving = !!drag || !!along
   // A folded part shrinks into its row in the feature that holds it, and grows back out of it.
   const tucked = tuck ? { transform: `translate(${tuck.x - x}px, ${tuck.y - y}px) scale(${tuck.w / CARD.w}, ${tuck.h / CARD.h})` } : undefined
 
   return (
-    <div
-      className={styles.box}
-      style={{ left: x, top: y, width: CARD.w, height: h, ['--type' as string]: TYPE_ACCENT[card.type], ...tucked }}
-      data-type={card.type}
-      data-tucked={tuck ? true : undefined}
-      data-open={open && !drag ? true : undefined}
-      aria-hidden={tuck ? true : undefined}
-      data-selected={selected || undefined}
-      data-pressed={pressed || !!drag || undefined}
-      data-dragging={drag ? true : undefined}
-      data-dim={dim || undefined}
-      data-link-target={target || undefined}
-      data-target={`card:${card.id}`}
-      onPointerDown={press}
-      onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
-      onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
-    >
-      <div ref={face} className={styles.card} style={carried} data-detail={detail}>
-        {detail === 'full' ? (
-          <FullCard
-            card={card}
-            facts={facts}
-            editor={live && editor}
-            parts={parts}
-            rows={rows}
-            inPkg={counts}
-            features={features}
-            matched={matched}
-            open={open && !drag}
-          />
-        ) : (
-          <CompactTitle text={card.title || PLACEHOLDER[card.type]} empty={!card.title} bars={detail === 'far'} />
+    <>
+      <div
+        className={styles.box}
+        style={{ left: x, top: y, width: CARD.w, height: h, ['--type' as string]: TYPE_ACCENT[card.type], ...tucked }}
+        data-type={card.type}
+        data-tucked={tuck ? true : undefined}
+        data-open={open && !drag ? true : undefined}
+        aria-hidden={tuck ? true : undefined}
+        data-selected={selected || undefined}
+        data-pressed={pressed || moving || undefined}
+        data-dragging={moving || undefined}
+        data-dim={dim || undefined}
+        data-link-target={target || undefined}
+        data-target={`card:${card.id}`}
+        onPointerDown={press}
+        onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
+        onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
+      >
+        <div ref={face} className={styles.card} style={carried} data-detail={detail}>
+          {detail === 'full' ? (
+            <FullCard
+              card={card}
+              facts={facts}
+              editor={live && editor}
+              parts={parts}
+              rows={rows}
+              inPkg={counts}
+              features={features}
+              matched={matched}
+              open={open && !drag}
+            />
+          ) : (
+            <CompactTitle text={card.title || PLACEHOLDER[card.type]} empty={!card.title} bars={detail === 'far'} />
+          )}
+        </div>
+        {live && <Marks zoom={zoom} short={Math.min(CARD.w, h)} tone="var(--type)" selected={selected} pressed={pressed} dragging={moving} target={target} peers={peers} />}
+        {live && editor && !drag && (hovered || linkingFrom) && (
+          <span className={styles.handle} data-linking={linkingFrom || undefined} onPointerDown={startLink} aria-label="Drag to another card to link">
+            <span aria-hidden>›</span>
+          </span>
         )}
+        {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
       </div>
-      <i className={styles.mark} data-corner="nw" aria-hidden />
-      <i className={styles.mark} data-corner="ne" aria-hidden />
-      <i className={styles.mark} data-corner="se" aria-hidden />
-      <i className={styles.mark} data-corner="sw" aria-hidden />
-      {live && editor && !drag && (hovered || linkingFrom) && (
-        <span className={styles.handle} data-linking={linkingFrom || undefined} onPointerDown={startLink} aria-label="Drag to another card to link">
-          <span aria-hidden>›</span>
-        </span>
-      )}
-      {live && <PeerRing id={card.id} space={card.pieceId} />}
-      {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
-    </div>
+      {live && moving && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={TYPE_ACCENT[card.type]} />}
+    </>
   )
 }
 

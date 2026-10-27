@@ -95,10 +95,15 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
 - Cards: flat, one shape for every type (D-055). A left border and a small uppercase label in the type's colour say what it is
-  (customer green, problem magenta, competitor yellow, idea white, feature cyan); no edge of their own (D-148). Hover and selection are four L-shaped corner marks (D-150): grey,
-  0.12 outside on hover; type colour, on the corners just inside the card while pressed; 0.06 outside once selected. A press becomes
-  a drag after 5 px; the dragged card shrinks to 0.8 round the point held, and its marks show the full-size corners of
-  where it lands. Type colours are reserved for type: tags are white `#chips` (D-056). Cards never lift or tilt (D-061).
+  (customer green, problem magenta, competitor yellow, idea white, feature cyan); no edge of their own (D-148). Hover and selection are the one `Marks` (D-265, `src/ui/Marks.tsx`,
+  tokens `--mark-*`): four L's in screen px, three tiers (S cells/rows/heads/chips 6 px, M cards/text 12, L pieces/sections
+  18; a tier down when small on screen); grey a little out on hover (gliding in, 160 ms), on the corners and longer in the
+  tone while pressed (70 ms), just outside in the tone once selected (a 300 ms overshooting spring, also when selected
+  without a press); cyan for what you can do (a link's target, the box select's L's on a cyan wash); others' selection the
+  same L's in their colour with their name on a tag. A press becomes a drag after 5 px; the dragged thing (cards and text
+  alike, each of several) shrinks to 0.8 round the point held and follows the pointer, its L's at full size where it
+  lands (`<Landing>`, stepping 80 ms grid to grid); let go, it grows into them (180 ms) and they spring out. Reduced
+  motion: states switch at once. Type colours are reserved for type: tags are white `#chips` (D-056). Cards never lift or tilt (D-061).
   Inside (D-152): 0.06 padding; a header row (type label left; right, the status, regions, priority or rating, then
   the evidence as cells: filled supports, outlined against, magenta when they disagree with the status), the title (up
   to 3 lines), a dim mono facts line, and tags as framed chips. A hovered card shows a dim `›` just right of it to drag
