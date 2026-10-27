@@ -32,7 +32,8 @@ import { passes, useKanbanFilter } from './kanbanFilter'
 import { addTask, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
 import { newId } from '../../data/matrix'
 import { useAuth } from '../../data/auth'
-import type { Bounds, PlaneCam } from '../../state/canvasView'
+import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
+import { findGo, landing } from './find'
 import type { Card } from '../../data/cards'
 import { useWs } from './context'
 import { DockAction } from './FocusDock'
@@ -67,6 +68,27 @@ export function kanbanBounds(piece: WithId<Piece>, tasks: Task[]): Bounds {
   const mine = tasks.filter((t) => t.pieceId === piece.id)
   const tall = Math.max(0, ...cols.map((c) => mine.filter((t) => t.col === c.id).reduce((s, t) => s + guess(t) + K.cardGap, 0)))
   return { x: 0, y: 0, w: cols.length * (K.col + K.gap) + K.add + 32, h: K.head + 10 + tall + 68 }
+}
+
+// About where a task is on its kanban, in its px (its column, the tasks above it at their guessed heights; lanes not
+// counted): what going to it lands on.
+export function taskBox(piece: WithId<Piece>, tasks: Task[], id: string): Bounds | null {
+  const t = tasks.find((x) => x.id === id)
+  const cols = kanbanOf(piece).cols
+  const i = t ? cols.findIndex((c) => c.id === t.col) : -1
+  if (!t || i < 0) return null
+  const above = tasksIn(tasks.filter((x) => x.pieceId === piece.id), t.col).filter((x) => x.order < t.order || (x.order === t.order && x.createdAt < t.createdAt))
+  const y = 12 + K.head + 10 + above.reduce((sum, x) => sum + guess(x) + K.cardGap, 0)
+  return { x: 16 + i * (K.col + K.gap), y, w: K.col, h: guess(t) }
+}
+
+// Going to a task (D-261: from your tasks, the finder): into its kanban's focus, landing on it, the task picked once the
+// kanban is live (`pending`); already there, picked at once and brought into view.
+export function goToTask(piece: WithId<Piece>, tasks: Task[], task: Pick<Task, 'id'>) {
+  useKanbanUi.setState({ pending: { piece: piece.id, task: task.id } })
+  const content = kanbanBounds(piece, tasks)
+  const view = landing(content, taskBox(piece, tasks, task.id) ?? content, useCanvasView.getState().size)
+  findGo({ kind: 'lens', space: piece.id, key: `task:${task.id}`, k: 0, focus: piece.id, view })
 }
 
 // The task whose panel is open (its kanban's id with it), the column `+ add a task` is typing into, the column being
@@ -724,6 +746,7 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, 
       className={styles.task}
       data-task={task.id}
       data-target={`task:${task.id}`}
+      data-find={`task:${task.id}`}
       data-talk={talk || undefined}
       data-selected={selected || undefined}
       data-finished={finished || undefined}

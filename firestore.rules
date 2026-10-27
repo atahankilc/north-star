@@ -235,7 +235,7 @@ service cloud.firestore {
     // One of a kanban's tasks (D-251, src/data/tasks.ts): in a column of a kanban, in order; given to a member, due on a
     // day, pointing at a card, with a checklist.
     function validTask(d) {
-      return d.keys().hasOnly(['pieceId', 'col', 'order', 'title', 'notes', 'assignee', 'assigneeName', 'due', 'cardId', 'cardType', 'checks', 'learned', 'labels', 'priority', 'uid', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['pieceId', 'col', 'order', 'title', 'notes', 'assignee', 'assigneeName', 'due', 'cardId', 'cardType', 'checks', 'learned', 'labels', 'priority', 'givenAt', 'givenBy', 'uid', 'createdAt', 'updatedAt'])
         && isText(d.pieceId, 128) && isText(d.col, 40)
         && d.order is number
         && isText(d.title, 200)
@@ -250,6 +250,8 @@ service cloud.firestore {
         // Its #labels and priority (D-256).
         && (!('labels' in d) || (d.labels is list && d.labels.size() <= 20))
         && optIn(d, 'priority', ['P1', 'P2', 'P3'])
+        // When and by whom it was given to its person (D-261).
+        && (!('givenAt' in d) || d.givenAt is number) && optText(d, 'givenBy', 128)
         && isText(d.uid, 128)
         && d.createdAt is number
         && d.updatedAt is number;
@@ -617,8 +619,10 @@ service cloud.firestore {
       match /threadReads/{uid} {
         allow read: if isMember(wid) && request.auth.uid == uid;
         allow create, update: if isMember(wid) && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['seen', 'updatedAt'])
+          && request.resource.data.keys().hasOnly(['seen', 'tasks', 'updatedAt'])
           && request.resource.data.seen is map
+          // When you last looked at the tasks given to you (D-261).
+          && (!('tasks' in request.resource.data) || request.resource.data.tasks is number)
           && request.resource.data.updatedAt is number;
         allow delete: if signedIn() && (request.auth.uid == uid || isOwner(wid));
       }

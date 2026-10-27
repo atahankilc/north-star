@@ -31,9 +31,11 @@ type Props = {
   side?: ReactNode
   // In the bottom-left corner, just above your square (D-193): the threads button.
   corner?: ReactNode
+  // Under the rule, by your square: what's yours (the tasks given to you, D-261).
+  mine?: ReactNode
 }
 
-export function Hud({ crumbs = [], views, right, settings, settingsName, settingsBadge, side, corner }: Props) {
+export function Hud({ crumbs = [], views, right, settings, settingsName, settingsBadge, side, corner, mine }: Props) {
   const atRoot = crumbs.length === 0
   const { user } = useAuth()
   const reduced = useMotion((s) => s.reduced)
@@ -106,6 +108,7 @@ export function Hud({ crumbs = [], views, right, settings, settingsName, setting
           {corner}
           {/* The rule just above your square (D-175): what's above it is others' and the workspace's. */}
           <span className={styles.rule} aria-hidden />
+          {mine}
           <SettingsButton workspace={settings} workspaceName={settingsName} badge={settingsBadge} />
         </div>
       )}

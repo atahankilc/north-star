@@ -4568,3 +4568,29 @@ User: picked ideas 11 and 12 of the kanban list (2026-10-26); this is session 6 
   her held task's ghost; Alice right-clicks → comment → Bob sees the chip (new) and the threads count; Bob follows Alice
   and gets her pick with its panel; from the canvas, the thread's go there opens the kanban with the task picked;
   rules 398 pass; build.
+
+### D-261 · 2026-10-27 · Accepted (adds to D-166, D-175, D-236, D-251; kanban session 7, docs/specs/kanban.md)
+**Tasks given to you by your square, new ones counted in magenta; and the finder finds tasks.**
+User: picked ideas 13 and 16 of the kanban list (2026-10-26); this is session 7 of docs/specs/kanban.md.
+- *Given:* a task records when it was given and by whom (`givenAt`, `givenBy`), stamped by the data layer on every write
+  that sets `assignee` (panel, `N selected`, a lane drop, a task typed in a person's lane); taken back, both go.
+- *Looked at:* your read marks (`threadReads/{you}`, D-166) get `tasks`, the time you last opened the list. New = given
+  to you by someone else after that (giving yourself one is never new).
+- *The button:* `☐` under the corner's rule, right above your square (the HUD's new `mine` slot: yours, not the
+  workspace's), shown once a task is given to you; a magenta count of the new ones (as a mention's), else a faint total.
+  A click opens the list on its right, a prompt like every menu (D-222): `# new · N` first (a magenta `●`), then
+  `# given to you` by due day; each row the title and `column · due` (`was due 25 oct`, magenta), the kanban's name
+  too when they're on several; finished ones aren't listed. Opening it marks them looked at; a row goes there.
+- *Going to a task* (`goToTask`, shared with the finder): the kanban's focus, landing on the task's guessed place
+  (`taskBox`: its column, the tasks above at their guessed heights; lanes not counted), the task picked once the
+  kanban is live (D-260's `pending`).
+- *Finder (D-236):* a kanban is a group; a task matches by its title, notes or a checklist step, one row a task
+  (`title — …snippet` and `column · in notes/step`); the preview draws the kanban with the task lit (`data-find`);
+  Enter or a double-click goes there, the task picked.
+- *Rules:* `givenAt` (number), `givenBy` (text) on tasks; `tasks` (number) in read marks.
+- *Alternatives:* a collection of its own for the mark (the thread marks' doc already has the rules and the cleanup);
+  `updatedAt` as "when given" (any edit would make it new); a count on your square itself (it opens settings).
+- *Verified:* headless on the emulators with Alice and Bob: Alice's `☐ 1` for the task Bob gave her (not the one she
+  gave herself, not the finished one); opening it wrote the mark and the badge went; Bob drops a task into Alice's lane →
+  `givenBy` Bob, her badge back to 1; a row goes into the kanban with the task picked; ⌘F "empty state" finds a step,
+  the preview lights its task, Enter picks it; rules 402 pass; build.

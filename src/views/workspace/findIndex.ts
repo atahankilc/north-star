@@ -1,6 +1,7 @@
 // What the finder (D-236) looks through, built from the workspace's data: one group a space (the canvas, each plane,
 // each table, matrix and documents list, each document), each match a row saying where it goes. Every page of a table
-// or list counts, not only what's drawn; a document's text is read while the finder is open (FindBodies).
+// or list counts, not only what's drawn; a document's text is read while the finder is open (FindBodies). A kanban's
+// tasks (D-261) by their title, notes and checklist steps, one row a task.
 import type { WithId } from '../../data/hooks'
 import type { Piece, Workspace } from '../../data/model'
 import { CARD, type Card } from '../../data/cards'
@@ -13,6 +14,8 @@ import { labelBox } from './TextItems'
 import { matrixBounds, matrixFindItems, M } from './Matrix'
 import { tableBounds, tableFindItems, type FieldText } from './Table'
 import { documentsBounds, documentsFindItems, documentsOf, listed } from './Documents'
+import { kanbanBounds, kanbanOf, taskBox } from './Kanban'
+import { tasksIn, type Task } from '../../data/tasks'
 import { landing, matchesIn, MOST, type FindItem, type FindTarget } from './find'
 import type { ReactNode } from 'react'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
@@ -35,6 +38,7 @@ type Data = {
   cards: Card[]
   labels: Label[]
   cells: Cell[]
+  tasks: Task[]
   documents: WithId<Doc>[]
   bodies: Record<string, DocBody>
   workspace: WithId<Workspace>
@@ -101,7 +105,7 @@ function pageRows(id: string, text: string, re: RegExp, dest: (k: number) => Des
 
 // Every space's matches, in reading order; the one you're in (`here`) first.
 export function findGroups(data: Data, re: RegExp, here: string): Group[] {
-  const { pieces, cards, labels, cells, documents, bodies, workspace, me, fieldText, room, held } = data
+  const { pieces, cards, labels, cells, tasks, documents, bodies, workspace, me, fieldText, room, held } = data
   const groups: Group[] = []
   const textRows = (space: string): Row[] =>
     labels
@@ -154,6 +158,23 @@ export function findGroups(data: Data, re: RegExp, here: string): Group[] {
         const view = landing(content, it.box, room, heads)
         return [{ id: `${p.id}:${it.key}`, glyph: '·', text: snippet(it.text, re), hint: hintOf(kind, it), dest: { kind: 'lens', piece: p, page: it.page, target: { kind: 'lens', space: p.id, key: it.key, k: 0, view } } }]
       })
+    } else if (kind === 'kanban') {
+      // Its tasks column by column, in order; the first field that matches says where (its title, notes, a step).
+      const content = kanbanBounds(p, tasks)
+      rows = kanbanOf(p).cols.flatMap((c) =>
+        tasksIn(tasks.filter((t) => t.pieceId === p.id), c.id).flatMap((t): Row[] => {
+          const fields: [string, string][] = [
+            ['', t.title],
+            ['notes', t.notes ?? ''],
+            ...(t.checks ?? []).map((x): [string, string] => ['step', x.text]),
+          ]
+          const hit = fields.find(([, text]) => text && matchesIn(text, re, 1).length)
+          if (!hit) return []
+          const view = landing(content, taskBox(p, tasks, t.id) ?? content, room)
+          const hint = [c.name, hit[0] && `in ${hit[0]}`].filter(Boolean).join(' · ')
+          return [{ id: `${p.id}:task:${t.id}`, glyph: '☐', text: hit[0] ? `${t.title} — ${snippet(hit[1], re)}` : snippet(t.title, re), hint, dest: { kind: 'lens', piece: p, target: { kind: 'lens', space: p.id, key: `task:${t.id}`, k: 0, view } } }]
+        }),
+      )
     } else if (kind === 'document') {
       const d = documents.find((x) => x.id === p.docId)
       if (d) rows = pageRows(p.id, pageText(d, bodies[d.id]), re, (k) => ({ kind: 'doc', piece: p, target: { kind: 'page', space: p.id, k } }), d.title)

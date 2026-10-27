@@ -98,12 +98,15 @@ yours; only people with tasks (and you) get a lane.
 Built (D-260): the chip sits inside the task's top-right corner (under it, it covered the next task); presence `drag`
 carries the ghost in the kanban's px; a thread's go there enters the kanban's focus and picks the task.
 
-## Session 7: "given to me" and the finder (ideas 13, 16)
+## Session 7: "given to me" and the finder (ideas 13, 16) · **done (D-261, 2026-10-27)**
 
 - Tasks given to you show as a count by your square bottom left (like `@` mentions, D-166): new since you last looked.
   A click lists them (kanban, column, due); a row goes there. Read marks per person.
 - The finder (⌘F, D-236) finds tasks by title, notes and checklist text; Enter goes into the kanban's focus with the task
   picked.
+
+Built (D-261): the button sits under the corner's rule, right above your square (your square itself opens settings);
+the read mark is a field in the thread read marks; going lands on the task's guessed place (lanes not counted).
 
 ## Session 8: time (ideas 14, 15)
 
@@ -121,6 +124,7 @@ carries the ghost in the kanban's px; a thread's go there enters the kanban's fo
 - In lanes by given to, a member with no tasks has no lane to drop into (only you and nobody always do); a task is given
   to them from its panel (D-258).
 - Held tasks leave their cell while dragged, so a lane emptied by the drag shrinks under the pointer (D-258).
+- Going to a task lands on its guessed place, which is off in lanes (`taskBox` doesn't count them) (D-261).
 - The assistant's brief doesn't list tasks (not picked: idea 3).
 - Priorities will be this kanban holding cards, columns and rows from their fields ([priorities.md](priorities.md)).
   Session 5's swimlanes are built as "rows by a field" (`rows.ts`, D-258) so cards can use them too.

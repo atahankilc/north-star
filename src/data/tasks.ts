@@ -9,7 +9,7 @@
 import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import type { AnyType, Card } from './cards'
 import type { Evidence } from './evidence'
-import { db } from './firebase'
+import { db, firebase } from './firebase'
 import { absent, tracked } from './history'
 import { newId } from './matrix'
 import type { Piece } from './model'
@@ -53,6 +53,9 @@ export type Task = {
   // `#labels`, as cards' tags (D-056), and how urgent it is (D-256).
   labels?: string[]
   priority?: TaskPriority
+  // When it was given to `assignee`, and by whom (D-261): given to you by someone else since you last looked, it's new.
+  givenAt?: number
+  givenBy?: string
   // Who made it.
   uid: string
   createdAt: number
@@ -102,12 +105,19 @@ export function today(now = new Date()) {
 // Past its due day and not finished.
 export const overdue = (t: Pick<Task, 'due'>, finished: boolean) => !!t.due && !finished && t.due < today()
 
+// Given to someone (D-261): when, and by whom; given to nobody, neither. Added to any write that sets `assignee`.
+function given(fields: TaskFields): Record<string, unknown> {
+  if (!('assignee' in fields)) return {}
+  if (fields.assignee === undefined) return { givenAt: deleteField(), givenBy: deleteField() }
+  return { givenAt: Date.now(), givenBy: firebase?.auth.currentUser?.uid ?? '' }
+}
+
 // A new task at the end of a column, its title typed (and from a card's panel, the card it's for): one undo step;
 // returns its id.
 export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, uid: string, fields: Pick<TaskFields, 'cardId' | 'cardType' | 'assignee' | 'assigneeName'> = {}) {
   const ref = doc(col(wid))
   const now = Date.now()
-  const data = { pieceId, col: column, order, title: title.trim().slice(0, TASK_TITLE_MAX), ...fields, uid, createdAt: now, updatedAt: now }
+  const data = { pieceId, col: column, order, title: title.trim().slice(0, TASK_TITLE_MAX), ...fields, ...(fields.assignee ? { givenAt: now, givenBy: uid } : {}), uid, createdAt: now, updatedAt: now }
   void tracked('add a task', [ref], () => setDoc(ref, data), { before: absent([ref]) })
   return ref.id
 }
@@ -115,7 +125,7 @@ export function addTask(wid: string, pieceId: string, column: string, order: num
 // Its fields, merged; `undefined` takes one away. Typing in one field merges into one undo step.
 export function updateTask(wid: string, task: Pick<Task, 'id'>, fields: TaskFields, what = 'edit a task') {
   const ref = taskRef(wid, task.id)
-  const data: Record<string, unknown> = { updatedAt: Date.now() }
+  const data: Record<string, unknown> = { updatedAt: Date.now(), ...given(fields) }
   for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v
   const keys = Object.keys(fields).sort().join(',')
   return tracked(what, [ref], () => updateDoc(ref, data), { key: `task:${task.id}:${keys}` })
@@ -141,7 +151,7 @@ export function moveTasks(wid: string, moves: TaskMove[], what = `move ${moves.l
   const now = Date.now()
   return tracked(what, refs, async () => {
     const batch = writeBatch(db())
-    moves.forEach((m, i) => batch.update(refs[i], { col: m.col, order: m.order, ...fieldsOf(m.fields), updatedAt: now }))
+    moves.forEach((m, i) => batch.update(refs[i], { col: m.col, order: m.order, ...fieldsOf(m.fields), ...given(m.fields ?? {}), updatedAt: now }))
     await batch.commit()
   })
 }
@@ -150,7 +160,7 @@ export function updateTasks(wid: string, ids: string[], fields: TaskFields, what
   const now = Date.now()
   return tracked(what, refs, async () => {
     const batch = writeBatch(db())
-    for (const r of refs) batch.update(r, { ...fieldsOf(fields), updatedAt: now })
+    for (const r of refs) batch.update(r, { ...fieldsOf(fields), ...given(fields), updatedAt: now })
     await batch.commit()
   })
 }

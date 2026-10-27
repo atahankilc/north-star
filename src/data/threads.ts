@@ -115,6 +115,13 @@ export async function deleteThread(wid: string, tid: string) {
 }
 
 // You've seen a thread up to `at` (its lastAt).
+// Your tasks looked at (D-261): those given to you after this are new. In the same read marks.
+export function markTasksSeen(wid: string, at = Date.now()) {
+  const user = firebase?.auth.currentUser
+  if (!user) return Promise.resolve()
+  return setDoc(readsRef(wid, user.uid), { seen: {}, tasks: at, updatedAt: Date.now() }, { merge: true })
+}
+
 export function markSeen(wid: string, tid: string, at: number) {
   const user = firebase?.auth.currentUser
   if (!user) return Promise.resolve()

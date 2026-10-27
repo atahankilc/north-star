@@ -14,6 +14,7 @@ import type { Dest } from './findIndex'
 import { aim } from './goTo'
 import { TableView } from './Table'
 import { MatrixView } from './Matrix'
+import { KanbanView } from './Kanban'
 import { DocumentsView, documentsBounds, documentsOf, listed, pinnedView, readerLeft, useDocUi } from './Documents'
 import { DocumentPieceView, documentHome } from './DocumentPiece'
 import { DocContent } from './DocContent'
@@ -138,6 +139,8 @@ function Shown({ dest, lens, scale, refocus }: { dest: Dest } & Measure) {
           <TableView piece={dest.piece} view={view} live={false} editor={false} page={dest.page} />
         ) : kind === 'matrix' ? (
           <MatrixView piece={dest.piece} view={view} live={false} editor={false} />
+        ) : kind === 'kanban' ? (
+          <KanbanView piece={dest.piece} view={view} live={false} editor={false} />
         ) : (
           <DocumentsView piece={dest.piece} view={view} live={false} editor={false} page={dest.page} />
         )}

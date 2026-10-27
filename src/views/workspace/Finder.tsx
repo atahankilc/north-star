@@ -17,6 +17,7 @@ import { isReducedMotion } from '../../state/motion'
 import { useWs } from './context'
 import { closeFinder, findGo, matcherOf, matchesIn, openFinder, setQuery, toggleOpt, toggleScope, useFind, useMatcher, type FindOpts } from './find'
 import { findGroups, folded, type Dest, type Group, type Row } from './findIndex'
+import { goToTask } from './Kanban'
 import { FindPreview } from './FindPreview'
 import { placesIn, shownPlaces, toggleOpen, useGoTo } from './goTo'
 import { shownPieces } from './shownBox'
@@ -130,7 +131,7 @@ function Panel() {
     if (!(found instanceof RegExp)) return []
     const re = found
     const all = findGroups(
-      { pieces: ws.pieces, cards: ws.cards, labels: ws.labels, cells: ws.cells, documents: ws.documents, bodies, workspace: ws.workspace, me: user?.id, fieldText, room: size, held },
+      { pieces: ws.pieces, cards: ws.cards, labels: ws.labels, cells: ws.cells, tasks: ws.tasks, documents: ws.documents, bodies, workspace: ws.workspace, me: user?.id, fieldText, room: size, held },
       re,
       here,
     )
@@ -153,7 +154,7 @@ function Panel() {
         ]
       : []
     return [...places, ...(scope === 'here' ? folded(all, here) : all)]
-  }, [going, unfolded, found, scope, here, ws.pieces, ws.cards, ws.labels, ws.cells, ws.documents, ws.workspace, bodies, user?.id, fieldText, size, held])
+  }, [going, unfolded, found, scope, here, ws.pieces, ws.cards, ws.labels, ws.cells, ws.tasks, ws.documents, ws.workspace, bodies, user?.id, fieldText, size, held])
 
   // Only so many rows are drawn (typing more narrows them); each group still says how many it has.
   const total = groups.reduce((s, g) => s + (g.space === 'places' ? 0 : g.count), 0)
@@ -184,6 +185,8 @@ function Panel() {
     if (!row) return
     const d = row.dest
     if (d.kind === 'place') return findGo({ ...(d.target ?? { kind: 'space', space: d.place.space, k: 0 }), place: d.place })
+    // A kanban's task (D-261): its kanban's focus, the task picked.
+    if (d.kind === 'lens' && kindOfPiece(d.piece) === 'kanban' && d.target.key?.startsWith('task:')) return goToTask(d.piece, ws.tasks, { id: d.target.key.slice(5) })
     if (d.kind === 'lens') {
       const page = d.page
       if (page !== undefined) {

@@ -148,4 +148,5 @@ export type ThreadMessage = {
 export const MENTIONS_MAX = 20
 
 // What you've read of the workspace's threads (D-166), yours only: each thread's `lastAt` when you last saw it.
-export type ThreadReads = { seen: Record<string, number>; updatedAt: number }
+// `tasks` (D-261): when you last looked at the tasks given to you.
+export type ThreadReads = { seen: Record<string, number>; tasks?: number; updatedAt: number }

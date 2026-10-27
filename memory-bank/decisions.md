@@ -346,6 +346,9 @@ old reports are moved to documents once (D-248).
 - Kanban together (D-260): your picked tasks are your presence selection (a frame in your colour for others), a held
   task a ghost in your colour (presence `drag`), followers take the pick; comments on tasks (`task` target, chip in its
   top-right corner, right-click → comment, go there picks it in the kanban's focus).
+- Your tasks (D-261): `☐` by your square counts tasks given to you by others since you last looked (magenta), its list
+  goes to them; tasks carry `givenAt`/`givenBy`, your mark is `threadReads.tasks`. The finder finds tasks (title,
+  notes, steps) and goes into the kanban with the task picked.
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.

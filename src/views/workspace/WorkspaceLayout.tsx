@@ -22,6 +22,7 @@ import { labelBox, useAuthor } from './TextItems'
 import { spaceBounds } from './spaceBounds'
 import { TYPE_ACCENT } from './PlaneCards'
 import { InboxButton } from './ThreadInbox'
+import { MyTasks } from './MyTasks'
 import { openFinder, useFind } from './find'
 import { Finder } from './Finder'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
@@ -118,6 +119,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
               <InboxButton wid={wid} threads={data.threads} />
             </>
           }
+          mine={<MyTasks />}
           side={
             <>
               {/* A matrix or a table in focus takes its rows and columns from its setup (D-204, D-209), not from `+`. */}
