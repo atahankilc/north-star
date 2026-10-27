@@ -3631,7 +3631,7 @@ categories shown like B, not in a card, and the features under them not indented
   for, pricing, where = regions, site), features, competes for, other links, tags, notes. Feature: plan (priority,
   status, impact, effort), parts, must do (≤ 8 criteria), rests on (ideas linked, the problems they solve, a confidence
   = the weakest of them: invalidated none, a guess or a status the evidence doesn't back low, testing medium, validated
-  high; a part with none shows its parent), for · matched by (`≈ theirs` rows from competitors' features), other links,
+  high; replaced by D-253's one rule, built in D-271; a part with none shows its parent), for · matched by (`≈ theirs` rows from competitors' features), other links,
   tags, notes. A part's panel has `part of ↑ parent [detach]` under the header.
 - *A competitor's features* (the basic cards inside it, D-164): by category in grey caps (none first), each row its
   name, how it's offered, `≈ our …` in cyan with a cyan bar when it matches one of ours. A row opens in place (one at a
@@ -4790,3 +4790,30 @@ The user asked for session 1 of the consistency plan (D-263–D-267).
   size, snapped; after the drop the L's on the corners, then sprung); alt+drag box; a card + heading + card dragged
   together (a landing each); Bob's selection of a card and a sticky note seen by Alice (pink L's + `Bob` tag); a canvas
   heading's drag. Build.
+
+### D-271 · 2026-10-27 · Accepted (builds D-253's last part; replaces D-221's and D-239's confidence; priorities session P3, docs/specs/priorities.md)
+**The priorities template, the suggested order beside it, and one confidence rule for features and packages.**
+The user asked for P3 of the priorities plan.
+- *One rule* (`cardFacts.ts`, D-253 as planned): of the customers, problems and ideas it rests on (a feature: the ideas
+  linked to it and the problems they solve, or its parent's when it has none; a package: what it holds), validated 2,
+  testing 1, else 0; share ≥ 0.75 high, ≥ 0.34 medium, else low; nothing behind it low (D-138); anything invalidated
+  `broken`. With a `why` ("of the 2 it rests on: 1 validated, 1 testing"; `"Voice notes" is invalidated`). Used by the
+  feature panel's rests on (was the weakest link, D-221; the evidence clash no longer lowers it, it still shows as `!`
+  on the row), a package's facts (was validated-only at 0.67, D-239), the kanban's sheets and the order.
+- *Template `priorities`* in `+ → kanban…`: features and packages, effort S · M · L across, impact high → low down,
+  corners named: quick wins (S × high, washed green), big bets (L × high), fill-ins (S × low), money pits (L × low,
+  magenta).
+- *Suggested order* (D-138): score impact × confidence ÷ effort, each 1–3, 0 when broken; rated (impact and effort set)
+  cards best first, split in thirds as P1–P3, equal scores alike; a column beside the grid inside the kanban (`SUGGESTED
+  ORDER ──── 6`, `impact × confidence ÷ effort`, rows: place, type bar, title, score with `!` magenta when broken, the
+  suggestion, `P3 → P1` yellow where the card's own priority differs; `N not rated yet`). A row picks the card (its
+  panel). Never written to the card. Shown while columns are effort and rows impact; `[order]` in the dock hides it
+  (yours, per kanban per browser, on to start).
+- *Boxes sort by score* (unrated last), then type, then title (P1 sorted by type and title).
+- *No rules change.*
+- *Verified:* headless on the emulators: a seeded priorities kanban (features + a package, statuses on ideas and
+  problems): order 3.0 Offline sync P1, 2.0 Decision templates `P3 → P1`, 1.5 Launch pack, 0.5 Slack import, `! 0.0`
+  Voice capture (rests on an invalidated idea); a row opened the feature's panel with `confidence high · of the 2 it rests
+  on: 1 validated, 1 testing`; `[order]` hid and showed it; an unrated card dragged into quick wins joined the order and
+  the thirds moved (`P2 → P3`); the wizard's priorities template and its grid preview; light theme. Build.
+

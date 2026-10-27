@@ -1,6 +1,6 @@
 # Spec: priorities on the kanban, step by step
 
-Status: **planned** (D-253, 2026-10-27); P1 done (D-268), P2 done (D-269), 2026-10-27; P3 is next. Same way of working as [kanban.md](kanban.md): one session at a time,
+Status: **done** (D-253 plan; P1 D-268, P2 D-269, P3 D-271; all 2026-10-27). Same way of working as [kanban.md](kanban.md): one session at a time,
 the user checks it, the next session starts from this file alone. Follow kanban.md's "How to run a session" (git status
 and `ListAgents` first, verify headless, rules tests, `D-xxx`, mark the session **done** here, commit only your hunks).
 
@@ -102,7 +102,7 @@ columns tab has `rows from`, and a new `boxes` tab names boxes in a small grid (
 who / card (D-258) and get no box names. The held card keeps its room while dragged (else the rows under the pointer
 moved up as it left its box).
 
-## Session P3: the priorities template and the suggested order
+## Session P3: the priorities template and the suggested order · **done (D-271, 2026-10-27)**
 
 - Template **priorities**: features and packages, columns effort S · M · L, rows impact high → low, the four corners
   named (quick wins washed green, big bets, fill-ins, money pits in magenta).
@@ -110,6 +110,14 @@ moved up as it left its box).
   it rests on something invalidated (`!`); rated cards in thirds as P1–P3; `P2 → P1` in yellow where the card's priority
   differs; a row opens the card's panel. Shown whenever the columns and rows are effort and impact.
 - One confidence rule (D-253), in `cardFacts.ts`, used by the panel, packages and the order.
+
+Built (D-271): `cardFacts.ts` has `confidenceOf` (the share, with a `why`), `restsOn` (a feature: its ideas and the
+problems they solve, or its parent's; a package: what it holds), `confidenceFor`, `scoreOf`, `suggestedOrder`. Nothing
+behind it is `low` (D-138), so every feature and package now shows a confidence, on sheets and in the feature panel
+(`confidence high · of the 2 it rests on: 1 validated, 1 testing`). The order is a column beside the grid inside the
+kanban (so fit takes it in), `[order]` in its dock (yours, per kanban per browser, on to start), shown while the columns
+are effort and the rows impact. Boxes sort by score, unrated last. "Rated" is having impact and effort; the cards not
+rated are counted under the order. No rules change.
 
 ---
 
@@ -121,5 +129,7 @@ moved up as it left its box).
 - The wizard's preview cuts column names at five letters or so (`no va…`) (P1).
 - Box names are kept by value, so a box whose value goes (a status kanban switched from features to ideas) keeps a
   name nothing shows; the boxes tab doesn't list it (P2).
+- The suggested order isn't in the assistant's brief, and `/prioritize` (D-138) didn't come back (P3).
+- Confidence counts the ideas and problems a feature rests on, not the customers they're for (D-138 said its chain) (P3).
 - The task kanban's lanes still shrink under the pointer as a task leaves its cell (D-258's note); the card kanban now
   keeps the held card's room, the task one could do the same (P2).

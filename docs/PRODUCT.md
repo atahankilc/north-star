@@ -139,7 +139,10 @@ are nodes in a single graph. Each view is a different lens on that same graph.
   values (status, impact, effort, priority), `no value` first; dragging a card to another column sets that field (one
   undo step), a click opens its panel. Stuck to a plane it shows that plane's cards. Rows from a second field make it a
   grid of boxes, dropping in one sets both fields; a box can carry a name (`quick wins`), washed green or named in
-  magenta (D-269). The priorities template comes next (P3).
+  magenta (D-269). The `priorities` template (D-271): features and packages, effort × impact, the corners named (quick
+  wins, big bets, fill-ins, money pits), and beside it the suggested order: impact × confidence ÷ effort, in thirds as
+  P1–P3, `P2 → P1` where a card's own priority differs; never written. Confidence is one rule everywhere: the share of
+  what a feature or package rests on that's validated (2) or testing (1); anything invalidated breaks it (`!`, score 0).
 - **Timeline** (D-262): a canvas piece showing kanbans' tasks on two weeks of days, rows by kanban, person or card;
   dragging a task onto a day sets its due day; late ones on today in magenta; a tray of tasks with no day. Sticks to a
   kanban and opens beside it in the kanban's focus.

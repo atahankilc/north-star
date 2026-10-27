@@ -27,6 +27,7 @@ import { useWs } from './context'
 import { useCanvasView } from '../../state/canvasView'
 import { linkTone } from './PlaneLinks'
 import { packageTree } from './cardInside'
+import { confidenceFor } from './cardFacts'
 import styles from './CardPanel.module.css'
 
 const MAX_CRITERIA = 8
@@ -468,26 +469,15 @@ export function Criteria({ n, card, editor }: P) {
   )
 }
 
-const RANK = { none: 0, low: 1, medium: 2, high: 3 } as const
-
 // What it rests on (D-138): the ideas linked to it, and the problems they solve, with their status; how sure that makes
-// it is the weakest of them (invalidated: none; a status the evidence doesn't back: low).
+// it is the one rule (D-271, cardFacts.ts: the share of validated and testing; anything invalidated: `broken`).
 export function RestsOn({ n, card, cards, editor }: P) {
   const { wid, edges, evidence } = useWs()
   const [picking, setPicking] = useState(false)
   const byId = new Map(cards.map((c) => [c.id, c]))
   const ideaLinks = edges.filter((e) => e.kind !== FOR && e.kind !== 'part-of' && ((e.fromId === card.id && e.toType === 'idea') || (e.toId === card.id && e.fromType === 'idea')))
   const ideas = ideaLinks.map((e) => ({ e, c: byId.get(e.fromId === card.id ? e.toId : e.fromId) })).filter((x): x is { e: typeof x.e; c: Card } => !!x.c)
-  const problems = ideas.flatMap(({ c }) => edges.filter((e) => e.kind === 'solves' && e.fromId === c.id).map((e) => byId.get(e.toId))).filter((c): c is Card => !!c)
-  const sure = (c: Card) => {
-    const clash = mismatch(c.validation, evidence.filter((e) => e.nodeId === c.id))
-    if (c.validation === 'invalidated') return { level: 'none' as const, why: `"${c.title}" is invalidated` }
-    if (clash || !c.validation || c.validation === 'hypothesis') return { level: 'low' as const, why: clash ? `"${c.title}": ${clash.toLowerCase()}` : `"${c.title}" is a guess` }
-    if (c.validation === 'testing') return { level: 'medium' as const, why: `"${c.title}" is being tested` }
-    return { level: 'high' as const, why: 'what it rests on is validated' }
-  }
-  const all = [...ideas.map((x) => x.c), ...problems]
-  const weakest = all.map(sure).sort((a, b) => RANK[a.level] - RANK[b.level])[0]
+  const sure = confidenceFor(card, cards, edges)
   const parent = edges.find((e) => e.kind === 'part-of' && e.fromId === card.id)
   const parentCard = parent && byId.get(parent.toId)
   const status = (c: Card) => `${c.validation ?? 'no status'}${mismatch(c.validation, evidence.filter((e) => e.nodeId === c.id)) ? ' !' : ''}`
@@ -526,11 +516,11 @@ export function RestsOn({ n, card, cards, editor }: P) {
         </div>
       ))}
       {!ideas.length && parentCard && <p className={styles.quiet}>what its parent rests on: {parentCard.title || PLACEHOLDER.feature}</p>}
-      {weakest && (
+      {sure && (
         <p className={styles.conf}>
           <span>confidence</span>
-          <b data-level={weakest.level}>{weakest.level}</b>
-          <span>· {weakest.why}</span>
+          <b data-level={sure.level === 'broken' ? 'none' : sure.level}>{sure.level === 'broken' ? '! broken' : sure.level}</b>
+          <span>· {sure.why}</span>
         </p>
       )}
       {picking && (

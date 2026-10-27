@@ -50,8 +50,8 @@ import { PeerTaskDrags, PeerTaskRing } from './collab'
 import { ThreadChip, threadOn } from './Threads'
 import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
-import { CardKanbanView } from './CardKanban'
-import { FIELD_NAME, heldCards, rowFieldOf } from './kanbanCards'
+import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
+import { FIELD_NAME, heldCards, isPriorities, rowFieldOf } from './kanbanCards'
 import styles from './Kanban.module.css'
 
 // Its parts in its own px: a column's width and the gap between, its head, the gap under a task, the `+ column` head's
@@ -962,6 +962,20 @@ function AddTask({ open, quiet, onPress, onOpen, onClose, onAdd }: AddProps) {
 // Its tools in a dock (its focus, its pane beside a plane): stuck to a plane, `[this plane only]` (D-255), lit while it
 // shows only that plane's tasks; how many it leaves out, beside. Editors switch it (shared); others see it.
 export function KanbanDockTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  // Set up as priorities (D-271): `[order]` shows the suggested order beside the grid (yours).
+  const orderOn = useOrderOn(piece.id)
+  const order = isPriorities(kanbanOf(piece)) && (
+    <DockAction label="order" pressed={orderOn} title={orderOn ? 'hide the suggested order' : 'the suggested order beside it: impact × confidence ÷ effort'} onClick={() => toggleOrder(piece.id)} />
+  )
+  return (
+    <>
+      {order}
+      <StuckTools piece={piece} editor={editor} />
+    </>
+  )
+}
+
+function StuckTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const { wid, tasks, cards } = useWs()
   if (!piece.stuckTo) return null
   const only = !piece.kanban?.everyPlane

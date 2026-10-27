@@ -853,3 +853,82 @@
   border-color: var(--accent-cyan);
   outline: none;
 }
+
+/* Priorities (D-271): the grid and, beside it, the suggested order. */
+.grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.board[data-order='true'] {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: calc(2 * var(--gap));
+}
+
+.order {
+  display: flex;
+  flex-direction: column;
+  width: calc(var(--col) * 1.25);
+}
+
+.orderHow {
+  margin: 2px 0 var(--space-2);
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+/* A row: its place, its type's bar, its title, its score, the suggested priority. */
+.orderRow {
+  display: grid;
+  grid-template-columns: 2.5ch 1fr auto auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 6px var(--space-2) 6px 10px;
+  border: 0;
+  background: transparent;
+  box-shadow: inset 2px 0 0 var(--tone);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-xs);
+  text-align: left;
+  cursor: pointer;
+}
+
+.orderRow + .orderRow {
+  margin-top: 2px;
+}
+
+.orderRow:hover,
+.orderRow:focus-visible {
+  background: var(--bg-raised);
+  outline: none;
+}
+
+.orderRow[data-selected='true'] {
+  background: var(--bg-raised);
+  box-shadow:
+    inset 2px 0 0 var(--tone),
+    inset 0 0 0 1px var(--accent-cyan);
+}
+
+.orderTitle {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orderScore {
+  color: var(--fg-dim);
+}
+
+.orderScore[data-broken='true'] {
+  color: var(--accent-magenta);
+}
+
+/* Where the card's own priority differs: `P2 → P1` in yellow. */
+.priority[data-differs='true'] {
+  color: var(--accent-yellow);
+}

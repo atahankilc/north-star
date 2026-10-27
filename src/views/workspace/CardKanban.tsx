@@ -8,6 +8,11 @@
 // Rows (D-269): with a row field, a row of boxes per value under a lane head (the tasks' lanes, D-258: `▾`, its name, a
 // rule, its count; folds, yours), `no value` on top. Dropping in a box sets both fields, one undo step. A box may carry a
 // name (the setup's `boxes`), small in its top-left corner; `good` washes the box green, `bad` sets the name magenta.
+//
+// Priorities (D-271): set up as effort × impact, the suggested order (D-138) stands beside the grid, switched from its
+// dock (`[order]`, yours, per kanban per browser; on to start): rated cards best first, their score, `!` when they rest
+// on something invalidated, the suggested P1–P3, `P2 → P1` in yellow where the card's own priority differs; a row picks
+// the card (its panel). Boxes sort by score too.
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -15,7 +20,9 @@ import { updateCards, type Card } from '../../data/cards'
 import { useCanvasView, type PlaneCam } from '../../state/canvasView'
 import { useWs } from './context'
 import { TYPE_ACCENT } from './PlaneCards'
-import { boxKey, boxPatch, byBox, byColumn, columnsOf, FIELD_NAME, heldCards, NO_VALUE, placeOf, rowFieldOf, rowsOfField, sureOf, takes, type CardCol } from './kanbanCards'
+import { boxKey, boxPatch, byBox, byColumn, columnsOf, FIELD_NAME, heldCards, isPriorities, NO_VALUE, placeOf, rowFieldOf, rowsOfField, scorer, sureOf, takes, type CardCol } from './kanbanCards'
+import { suggestedOrder, type Ranked } from './cardFacts'
+import { create } from 'zustand'
 import { kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
 import { loadFolds, saveFolds } from './rows'
 import styles from './Kanban.module.css'
@@ -36,7 +43,10 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
   const cols = useMemo(() => columnsOf(field, held), [field, held])
   const rows = useMemo(() => (rowField ? rowsOfField(rowField, held) : ONE_ROW), [rowField, held])
   const byCol = useMemo(() => byColumn(field, cols, held), [field, cols, held])
-  const boxes = useMemo(() => byBox(field, cols, rowField, rows, held), [field, cols, rowField, rows, held])
+  const boxes = useMemo(() => byBox(field, cols, rowField, rows, held, scorer(cards, edges)), [field, cols, rowField, rows, held, cards, edges])
+  // The suggested order beside it (D-271).
+  const orderOn = useOrderShown((s) => s[piece.id] ?? orderSaved(piece.id)) && isPriorities(setup)
+  const order = useMemo(() => (orderOn ? suggestedOrder(held, cards, edges) : []), [orderOn, held, cards, edges])
   const names = useMemo(() => new Map((setup.names ?? []).map((n) => [boxKey(n.col, n.row), n])), [setup.names])
   const selected = useCanvasView((s) => (live ? s.cardSelected : null))
   const board = useRef<HTMLDivElement>(null)
@@ -146,7 +156,8 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
   return (
     <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
-        <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || `cards by ${FIELD_NAME[field]}`} data-dragging={lifted ? true : undefined}>
+        <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || `cards by ${FIELD_NAME[field]}`} data-dragging={lifted ? true : undefined} data-order={orderOn || undefined}>
+          <div className={styles.grid}>
           <div className={styles.row}>
             {cols.map((c, i) => {
               const off = !!lifted && !takes(c, lifted)
@@ -222,6 +233,8 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
               no cards here yet: its setup picks which ({FIELD_NAME[field]} applies to {field === 'status' ? 'customers, problems, ideas and features' : field === 'priority' ? 'features' : 'features and packages'})
             </p>
           )}
+          </div>
+          {orderOn && <OrderList order={order} unrated={held.length - order.length} live={live} selected={selected} onPick={(c) => live && pick(c)} onPress={own} />}
           {lifted && drag && (
             <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0] }} aria-hidden>
               {sheet(lifted, cols.find((c) => c.id === drag.over?.col), { lifted: true })}
@@ -300,5 +313,75 @@ function CardSheet({ card, field, rowField, sure, finished, selected, live, lift
         <span key={c} className={styles.mark} data-corner={c} aria-hidden />
       ))}
     </div>
+  )
+}
+
+// Whether the suggested order shows beside a priorities kanban (D-271): yours, per kanban, in this browser; on to start.
+const ORDER_KEY = (id: string) => `north-star:kanban-order:${id}`
+function orderSaved(id: string) {
+  try {
+    return localStorage.getItem(ORDER_KEY(id)) !== 'off'
+  } catch {
+    return true
+  }
+}
+const useOrderShown = create<Record<string, boolean>>(() => ({}))
+export const orderShown = (id: string) => useOrderShown.getState()[id] ?? orderSaved(id)
+export function useOrderOn(id: string) {
+  return useOrderShown((s) => s[id] ?? orderSaved(id))
+}
+export function toggleOrder(id: string) {
+  const on = !orderShown(id)
+  useOrderShown.setState({ [id]: on })
+  try {
+    if (on) localStorage.removeItem(ORDER_KEY(id))
+    else localStorage.setItem(ORDER_KEY(id), 'off')
+  } catch {
+    // This tab only.
+  }
+}
+
+type OrderProps = { order: Ranked[]; unrated: number; live: boolean; selected: string | null; onPick: (c: Card) => void; onPress?: (e: ReactPointerEvent) => void }
+
+// The suggested order (D-138, D-271), a column beside the grid in the ledger's look: `SUGGESTED ORDER ──── 6`, then a row
+// a card: its place, its type's bar, its title, its score (`!` magenta and 0.0 when it rests on something invalidated),
+// the suggested priority, and `P2 → P1` in yellow where its own differs. A suggestion only: nothing is ever written.
+function OrderList({ order, unrated, live, selected, onPick, onPress }: OrderProps) {
+  return (
+    <aside className={styles.order} aria-label="Suggested order" onPointerDown={live ? onPress : undefined}>
+      <div className={styles.head}>
+        <span className={styles.name}>suggested order</span>
+        <span className={styles.rule} aria-hidden />
+        <span className={styles.count}>{order.length}</span>
+      </div>
+      <p className={styles.orderHow}>impact × confidence ÷ effort</p>
+      {order.map((r, i) => {
+        const own = r.card.priority
+        const differs = !!own && own !== r.suggested
+        return (
+          <button
+            key={r.card.id}
+            className={styles.orderRow}
+            data-selected={selected === r.card.id || undefined}
+            style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type] } as CSSProperties}
+            tabIndex={live ? 0 : -1}
+            title={`confidence ${r.sure.level}: ${r.sure.why}`}
+            onClick={() => onPick(r.card)}
+          >
+            <span className={styles.n}>{String(i + 1).padStart(2, '0')}</span>
+            <span className={styles.orderTitle}>{r.card.title || `untitled ${r.card.type}`}</span>
+            <span className={styles.orderScore} data-broken={r.sure.level === 'broken' || undefined}>
+              {r.sure.level === 'broken' ? '! ' : ''}
+              {r.score.toFixed(1)}
+            </span>
+            <span className={styles.priority} data-p={r.suggested} data-differs={differs || undefined}>
+              {differs ? `${own} → ${r.suggested}` : r.suggested}
+            </span>
+          </button>
+        )
+      })}
+      {!order.length && <p className={styles.empty}>· nothing rated yet</p>}
+      {unrated > 0 && <p className={styles.orderHow}>{unrated} not rated yet: give them an impact and an effort</p>}
+    </aside>
   )
 }

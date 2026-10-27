@@ -8,12 +8,10 @@
 import type { AnyType, Card, CardFields } from '../../data/cards'
 import { FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, VALIDATIONS } from '../../data/cards'
 import type { Edge } from '../../data/edges'
-import { FOR } from '../../data/edges'
 import { rowsOf, type Source } from '../../data/source'
 import type { CardField, KanbanSetup } from '../../data/tasks'
 import type { Piece } from '../../data/model'
-import { packageTree } from './cardInside'
-import { confidenceOf } from './cardFacts'
+import { confidenceFor, scoreOf } from './cardFacts'
 
 // The column of cards with the field unset.
 export const NO_VALUE = '-'
@@ -101,9 +99,12 @@ export function heldCards(piece: Pick<Piece, 'stuckTo'> & { kanban?: KanbanSetup
 // Its rows' field (D-269): none, or one that isn't its columns'.
 export const rowFieldOf = (k: KanbanSetup | undefined) => (k?.rowField && k.rowField !== (k.colField ?? 'status') ? k.rowField : undefined)
 
-// The cards in each column. No hand order (D-253): by type in the chain's order, then by title (P3 sorts by score).
+// The cards in each column. No hand order (D-253): by score, best first (D-271: the suggested order's, `score`, unrated
+// last), then by type in the chain's order, then by title.
 const ORDER: AnyType[] = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package']
-const sorted = (list: Card[]) => list.sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type) || (a.title || '￿').localeCompare(b.title || '￿'))
+type Score = (c: Card) => number | null
+const sorted = (list: Card[], score?: Score) =>
+  list.sort((a, b) => (score ? (score(b) ?? -1) - (score(a) ?? -1) : 0) || ORDER.indexOf(a.type) - ORDER.indexOf(b.type) || (a.title || '\uffff').localeCompare(b.title || '\uffff'))
 export function byColumn(field: CardField, cols: CardCol[], cards: Card[]) {
   const out = new Map<string, Card[]>(cols.map((c) => [c.id, []]))
   for (const c of cards) out.get(placeOf(c, field, cols))!.push(c)
@@ -111,15 +112,24 @@ export function byColumn(field: CardField, cols: CardCol[], cards: Card[]) {
   return out
 }
 
+// Each card's score (D-271), for sorting the boxes.
+export function scorer(cards: Card[], edges: Edge[]): Score {
+  const memo = new Map<string, number | null>()
+  return (c) => {
+    if (!memo.has(c.id)) memo.set(c.id, scoreOf(c, confidenceFor(c, cards, edges)?.level))
+    return memo.get(c.id)!
+  }
+}
+
 // The cards in each box (D-269), keyed `col|row` (row '' without rows).
 export const boxKey = (col: string, row: string) => `${col}|${row}`
-export function byBox(colField: CardField, cols: CardCol[], rowField: CardField | undefined, rows: CardCol[], cards: Card[]) {
+export function byBox(colField: CardField, cols: CardCol[], rowField: CardField | undefined, rows: CardCol[], cards: Card[], score?: Score) {
   const out = new Map<string, Card[]>()
   for (const c of cards) {
     const k = boxKey(placeOf(c, colField, cols), rowField ? placeOf(c, rowField, rows) : '')
     out.set(k, [...(out.get(k) ?? []), c])
   }
-  for (const list of out.values()) sorted(list)
+  for (const list of out.values()) sorted(list, score)
   return out
 }
 
@@ -130,20 +140,10 @@ export function boxPatch(c: Card, colField: CardField, col: string, rowField: Ca
   return Object.keys(patch).length ? patch : null
 }
 
-// How sure we are of it, on its sheet: a package from what it holds (D-239), a feature from the ideas linked to it and the
-// problems they solve, by the same rule (D-138's share; P3 makes this one rule everywhere, D-253). Others: nothing.
-export function sureOf(c: Card, cards: Card[], edges: Edge[]) {
-  if (c.type === 'package') return confidenceOf(packageTree(c, cards, edges).map((r) => r.card))
-  if (c.type !== 'feature') return undefined
-  const byId = new Map(cards.map((x) => [x.id, x]))
-  const ideas = edges
-    .filter((e) => e.kind !== FOR && e.kind !== 'part-of' && ((e.fromId === c.id && e.toType === 'idea') || (e.toId === c.id && e.fromType === 'idea')))
-    .flatMap((e) => byId.get(e.fromId === c.id ? e.toId : e.fromId) ?? [])
-  const problems = ideas.flatMap((i) => edges.filter((e) => e.kind === 'solves' && e.fromId === i.id).flatMap((e) => byId.get(e.toId) ?? []))
-  return confidenceOf([...ideas, ...problems])
-}
+// How sure we are of it, on its sheet: the one rule (D-271, cardFacts.ts); customers, problems, ideas: nothing.
+export const sureOf = (c: Card, cards: Card[], edges: Edge[]) => confidenceFor(c, cards, edges)?.level
 
-// Templates for a new kanban (D-268): today's tasks, or features by status. P3 adds priorities.
+// Templates for a new kanban (D-268): today's tasks, features by status, priorities (D-271).
 export type KanbanTemplate = { key: string; name: string; hint: string; setup: () => Partial<KanbanSetup> }
 export const KANBAN_TEMPLATES: KanbanTemplate[] = [
   { key: 'tasks', name: 'tasks', hint: 'todo · doing · done; the team’s work', setup: () => ({}) },
@@ -153,4 +153,25 @@ export const KANBAN_TEMPLATES: KanbanTemplate[] = [
     hint: 'idea · planned · building · shipped; drag to move one on',
     setup: () => ({ holds: 'cards', colField: 'status', source: { rules: [{ field: 'type', values: ['feature'] }], items: [] } }),
   },
+  // Priorities (D-138, D-271): features and packages, effort across, impact down, the four corners named.
+  {
+    key: 'priorities',
+    name: 'priorities',
+    hint: 'effort × impact; quick wins, big bets, fill-ins, money pits; a suggested order beside',
+    setup: () => ({
+      holds: 'cards',
+      colField: 'effort',
+      rowField: 'impact',
+      source: { rules: [{ field: 'type', values: ['feature', 'package'] }], items: [] },
+      names: [
+        { col: 'S', row: 'high', name: 'quick wins', tone: 'good' },
+        { col: 'L', row: 'high', name: 'big bets' },
+        { col: 'S', row: 'low', name: 'fill-ins' },
+        { col: 'L', row: 'low', name: 'money pits', tone: 'bad' },
+      ],
+    }),
+  },
 ]
+
+// Whether a kanban is set up as priorities (effort across, impact down): then its suggested order can show beside it.
+export const isPriorities = (k: KanbanSetup | undefined) => k?.holds === 'cards' && (k.colField ?? 'status') === 'effort' && rowFieldOf(k) === 'impact'

@@ -311,8 +311,8 @@ old reports are moved to documents once (D-248).
 - Flow (columns in chain order, one row per problem), Table (sortable, inline edits), Matrix (features × competitors,
   coverage 1–4, verdict), Reports; all share the filter bar and side panel (D-040, D-045).
 - Frames as tall as their content, capped at the page (D-106).
-- Priorities come back as a kanban holding cards, columns and rows from two fields (impact × effort a template), dragging
-  setting the field, the suggested order beside; one confidence rule, D-138's share (D-253, plan: specs/priorities.md).
+- Priorities came back as a kanban holding cards, columns and rows from two fields (impact × effort a template), dragging
+  setting the field, the suggested order beside; one confidence rule, D-138's share (D-253; built D-268, D-269, D-271).
 - Priorities tab (after matrix): features on impact × effort (3 × 3, corners named), confidence from the status of what
   each rests on (its chain; `!`/0 when something it rests on is invalidated), suggested order impact × confidence ÷
   effort beside the priority set; impact set in the feature's panel; `/prioritize` (D-138).
@@ -368,6 +368,10 @@ old reports are moved to documents once (D-248).
 - Rows on a card kanban (D-269, priorities P2): `rowField` (another field, `no value` on top, impact high → low), a grid
   of boxes; a drop sets both fields; rows fold (yours); `[rows ▾]` in its dock; box names (setup → boxes) small in the
   corner, `good` washed green, `bad` magenta. Cards show only when both fields apply.
+- Priorities on a kanban (D-271, P3): template `priorities` (features + packages, effort × impact, corners named); the
+  suggested order beside it (`[order]`, yours): impact × confidence ÷ effort (1–3 each, 0 if broken), thirds as P1–P3,
+  `P2 → P1` yellow, never written; boxes sorted by score. One confidence rule (`cardFacts.ts`): validated 2, testing 1,
+  share ≥ 0.75 high, ≥ 0.34 medium, else low (nothing behind it too); invalidated → broken.
 - Right panel (D-219), for every panel on the right: a terminal column flush with its space's right edge (a piece's view
   or its part in a split; the screen for the canvas), 400 px, full height over the HUD bar, magenta left corner marks, kind +
   `[×] esc`, Geist title, `01 NAME ──` sections, `[verb]` foot; builds and breaks cell by cell. First: plane cards.
