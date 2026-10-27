@@ -629,3 +629,10 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 
 ## Done (2026-10-22, moved from state.md 2026-10-27): heads open panels (D-247)
 - A card's head in a matrix or table opens its right panel on one click; a cell keeps it on its one card (D-247), 2026-10-22, committed.
+
+## Done (moved from state.md 2026-10-27): matrix, packages, menus
+- Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
+- Packages on planes (D-239–D-245): from a selection or `+` (pick), parts come along; a frame + band unfolded, a card folded. 2026-10-22, committed.
+- Menus as a prompt (D-222): `+`, go to, start over from, right-click and every Select; `>` line, letters; one click outside closes. 2026-10-22, committed.
+- Competitor regions (D-145): where a competitor operates, REGION filter (bar + matrix footer), assistant fields; committed 2026-10-19.
+- LINKS filter: one group per kind (D-146), each with its own colour, solid lines (D-147), 2026-10-19.

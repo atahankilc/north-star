@@ -35,8 +35,6 @@ something is finished, add its entry to state-history.md and leave at most one l
   Step 2, packages (D-141), committed, rules deployed 2026-10-19. Step 3, the assistant on planes (D-142), committed
   (no rules change). Step 4, plane filter in other views (D-143), committed. Planes spec done. Slice 8,
   overview (D-144), committed, rules deployed, pushed 2026-10-19. Phase 6 plan done.
-- Competitor regions (D-145): where a competitor operates, REGION filter (bar + matrix footer), assistant fields; committed 2026-10-19.
-- LINKS filter: one group per kind (D-146), each with its own colour, solid lines (D-147), 2026-10-19.
 - Board grid (D-148, D-149) and zoomed-out titles (D-153), 2026-10-19.
 - Links: smaller chips, a new link opens ready to label, panel rows with label/reverse and the new one marked (D-154);
   bend points the user puts on a selected link (D-155; app-routed elbows tried and dropped). 2026-10-19, committed.
@@ -55,16 +53,13 @@ something is finished, add its entry to state-history.md and leave at most one l
   panel's look (D-219), filled for every card type (D-221).
   Step 5, inside cards (D-225, D-226); step 6, multi-select (D-227, D-229, D-230); step 7, guides (D-231); step 8, filters (D-233, D-235). Next: right-click. Fixed 2026-10-21:
   reloading in focus was black (the fit ran before the screen was measured: zoom 0.1 at 0, 0); it now waits, then sits at once.
-- Matrix as a generic canvas piece (D-204): templates, card/typed axes, scale/number/text cells, setup in focus. 2026-10-21, committed, Firestore rules deployed; not pushed. A resizable window on the canvas, no marks (D-208), its own focus (D-206), 2026-10-22. Cards-crossed look, wizard + tabbed setup, totals options (D-212), 2026-10-22, committed, Firestore rules deployed. Fit, sticky heads, centring (D-214); long names, setup pills (D-216); pan from cells, heads nearer the left (D-217).
-- Kanban (D-251): a canvas piece of tasks in columns (assignee, due, card, checklist), drag, panel. 2026-10-26, committed, rules deployed. Look: the ledger (D-252). **Next: docs/specs/kanban.md, one session at a time** (all 8 sessions done, D-252–D-262; the timeline is a piece, D-262). Their rules deployed 2026-10-27.
+- Kanban (D-251): a canvas piece of tasks in columns (assignee, due, card, checklist), drag, panel. 2026-10-26, committed, rules deployed. Look: the ledger (D-252). Grown in docs/specs/kanban.md's 8 sessions (D-252–D-262, done 2026-10-27, rules deployed); the timeline is a piece (D-262). **Next: docs/specs/priorities.md, session P1.**
 - Criteria back on the matrix (D-249): an axis unfolds features into what they're judged on, scored in its cells, `◇ open`; panel `must do` → `judged on`. 2026-10-26, committed. Next: priorities as a kanban holding cards, P1 first (D-253, docs/specs/priorities.md).
 - Enter makes / Escape cancels what's just made, cards and text; add + name one undo step; Tab next card; wizards' Enter (D-250). 2026-10-26, not committed.
 - Sticky notes look like sticky notes (D-257): paper in their colour, dark ink, a glue band, no tilt; 6 × 5 steps, growing down, foldable (D-259). 2026-10-27; rules deployed.
 - Lenses: table (D-209), sticking (D-210), beside the plane in focus (D-211), table pages (D-213), links shown and made from a dropdown (D-215), 2026-10-22, rules deployed. Follows adds, column widths (D-224). Open on the canvas (D-228), committed, rules deployed 2026-10-22. Canvas speed: pieces' contents memoised (pan no longer draws them again; keep their props stable), matrix cells memoised with hover in its own store; in focus a matrix's cells and heads and a table's rows are made only when they change, not per frame; only what's on screen is drawn (`visible.ts`), and a matrix too small to read is squares on one canvas (`CellDots`).
 - Documents (D-232, docs/specs/documents.md): .md/images/PDFs/old reports (moved once) in `documents/`, private until shared;
   a list piece (table or shelf) and one on its own (asks first), both unframe (D-234). .md only until Blaze; next: files, writing.
-- Packages on planes (D-239–D-245): from a selection or `+` (pick), parts come along; a frame + band unfolded, a card folded. 2026-10-22, committed.
-- Menus as a prompt (D-222): `+`, go to, start over from, right-click and every Select; `>` line, letters; one click outside closes. 2026-10-22, committed.
 - Redesign started (2026-10-20): no pages, one canvas per workspace, the board at `/board` (D-174); the HUD moves to a
   left side nav piece by piece, you + settings bottom left first (D-175); planes (D-180, first called boards) placed on the canvas from the side
   nav's `+` (D-176, `pieces`), renamed/moved/resized in edit mode from their console (D-179, D-180); terminal look with corner marks (D-181);
@@ -111,6 +106,9 @@ something is finished, add its entry to state-history.md and leave at most one l
   (memory-bank, NodeCard.tsx…), and don't commit another session's hunks.
 - Test data: click Alice, then create a workspace (no example workspace since D-177). Seed script: sign in to the auth emulator as `test-alice` with the
   firebase client in node, write a workspace + items, open `/workspaces/<wid>` after clicking Alice.
+- Emulators: a firestore one left on 8080 (its CLI gone) keeps its old rules: `PUT 127.0.0.1:8080/emulator/v1/projects/demo-north-star:securityRules`
+  loads them, `DELETE …/documents` clears data, start the rest `--only auth,database,storage`; stop yours with `kill -INT`.
+  Headless: items draw twice (canvas picture + focus), take the last `[data-task]`; dev mounts twice, never clear on unmount.
 - Dev hooks: `window.__kanbanUi` (D-260), `window.__boardItems`, `__sceneTime`, `__backdrop`, `__curtain`, `__sweep`, `__canvas`, `__advance`,
   `__orbAntic`, `__orbFace`, `__orbReact`, `__orbPom`.
 - Chrome extension screenshots are scaled: viewport 2560 px vs 1568 px frame, so clientX/Y needs ×(innerWidth/1568).
