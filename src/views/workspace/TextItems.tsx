@@ -54,7 +54,7 @@ import { LightMarkdown } from '../../ui/LightMarkdown'
 import { useWs } from './context'
 import styles from './TextItems.module.css'
 import { usePeersOn } from './collab'
-import { Landing, Marks } from '../../ui/Marks'
+import { Landing, Marks, type Handle } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 
@@ -182,8 +182,8 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     if (!editor || typing) return
     setPressed(true)
     const [sx, sy] = [e.clientX, e.clientY]
-    // Held 0.8 round this point under the pointer, its marks where it lands (D-265); a section moves whole, as it is.
-    const at = kind === 'section' ? null : heldAt(e, l.x, y, zoom)
+    // Held 0.8 round this point under the pointer, its marks where it lands (D-265); a section with what it holds.
+    const at = heldAt(e, l.x, y, zoom)
     const box = { ...labelBox(l), w: w ?? labelBox(l).w, h: h ?? labelBox(l).h }
     // What a section holds, by where it is now.
     const held: { id: string; ref: DocumentReference; x: number; y: number }[] = [{ id: l.id, ref: labelRef(wid, l.id), x: l.x, y: l.y }]
@@ -205,7 +205,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
         showGuides(g.lines)
       }
       d = [to[0] - l.x, to[1] - l.y]
-      const carry = at && { shrink: true, free: [dx / zoom, dy / zoom] as [number, number], at }
+      const carry = { shrink: true, free: [dx / zoom, dy / zoom] as [number, number], at }
       useCanvasView.setState({ dragShift: { ids: held.map((x) => x.id), dx: d[0], dy: d[1], ...carry } })
     }
     const up = async () => {
@@ -229,11 +229,14 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     window.addEventListener('pointercancel', up)
   }
 
-  // A width from the right edge (along the text: a turned one's top or bottom), a section's size from its corner:
-  // snapped, alt = free, one undo step. A paragraph reading upwards keeps its start (the bottom) where it is.
-  const resize = (which: 'w' | 'wh') => (e: ReactPointerEvent<HTMLElement>) => {
+  // A width from the right edge (along the text: a turned one's top or bottom), a section's from its right edge, its
+  // height from its bottom, both from its corner: snapped, alt = free, one undo step. A paragraph reading upwards keeps
+  // its start (the bottom) where it is. From its handle on the ring (D-265), shown only while it's selected.
+  const [sizing, setSizing] = useState<Handle | null>(null)
+  const resize = (which: 'w' | 'h' | 'wh', handle: Handle) => (e: ReactPointerEvent<HTMLElement>) => {
     if (!live || !editor || e.button !== 0) return
     e.stopPropagation()
+    setSizing(handle)
     const [sx, sy] = [e.clientX, e.clientY]
     const w0 = w ?? { paragraph: PARA_W.initial, sticky: STICKY_W.initial, title: TITLE_W.initial, section: 400, heading: 0 }[kind]
     const h0 = h ?? labelBox(l).h
@@ -244,16 +247,15 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
       const [dx, dy] = [(ev.clientX - sx) / zoom, (ev.clientY - sy) / zoom]
       const edge = turn === 90 ? l.y + w0 - at(l.y + dy) : turn === -90 ? at(l.y + w0 + dy) - l.y : at(l.x + w0 + dx) - l.x
       const nw = Math.min(lim.max, Math.max(lim.min, edge))
-      to =
-        which === 'w'
-          ? { w: nw, ...(turn === 90 && { y: l.y + w0 - nw }) }
-          : { w: nw, h: Math.max(SECTION_MIN.h, at(l.y + h0 + dy) - l.y) }
+      const nh = Math.max(SECTION_MIN.h, at(l.y + h0 + dy) - l.y)
+      to = which === 'w' ? { w: nw, ...(turn === 90 && { y: l.y + w0 - nw }) } : which === 'h' ? { h: nh } : { w: nw, h: nh }
       setHeld(to)
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
+      setSizing(null)
       if (to) void updateLabel(wid, l, to).catch(() => setHeld(null))
     }
     window.addEventListener('pointermove', move)
@@ -302,13 +304,16 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     'data-live': live || undefined,
     'data-caps': l.caps || undefined,
     'data-colored': !!l.color || undefined,
-    // A width being dragged: its strip in its colour.
-    'data-resizing': !!held || undefined,
   }
   // Text keeps its marks a little clear of its glyphs; a sticky note's and a section's go round their edges (D-265).
   const pad = kind === 'sticky' || kind === 'section' ? 0 : 7
   const tier = kind === 'section' ? 'l' : 'm'
   const near = labelBox(l)
+  // Its handle (D-265): a paragraph's, sticky note's or the title's width at its right edge (a turned one's along its
+  // text: the top reading upwards, the bottom reading down); a section's right, bottom and corner.
+  const handles: Handle[] = kind === 'section' ? ['e', 's', 'se'] : kind === 'heading' ? [] : [turn === 90 ? 'n' : turn === -90 ? 's' : 'e']
+  const onHandle = (hd: Handle, e: ReactPointerEvent<HTMLElement>) => resize(kind !== 'section' ? 'w' : hd === 'e' ? 'w' : hd === 's' ? 'h' : 'wh', hd)(e)
+  const readout = sizing && held ? (kind === 'section' ? `${Math.round(w ?? 0)} × ${Math.round(h ?? 0)}` : `${Math.round(held.w ?? w ?? 0)}`) : undefined
   const marks = (
     <>
       {live && (
@@ -322,6 +327,10 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
           pressed={pressed}
           dragging={!!carried}
           peers={peers}
+          handles={selected && editor && !typing ? handles : undefined}
+          onHandle={onHandle}
+          resizing={sizing}
+          readout={readout}
         />
       )}
       {live && <ThreadChip wid={wid} thread={threadOn(threads, l.id)} zoom={zoom} />}
@@ -377,7 +386,6 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
           </span>
           <span className={styles.secLine} style={{ flex: '1 1 0' }} />
         </div>
-        {live && editor && <span className={styles.corner} onPointerDown={resize('wh')} aria-hidden />}
         {marks}
         {bar}
       </div>
@@ -385,7 +393,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   }
 
   if (kind === 'title')
-    return withLanding(<TitleBlock l={l} style={style} common={common} press={press} edit={edit} typing={typing} editor={editor} zoom={zoom} w={w ?? TITLE_W.initial} marks={marks} resize={live && editor ? resize('w') : undefined} />)
+    return withLanding(<TitleBlock l={l} style={style} common={common} press={press} edit={edit} typing={typing} editor={editor} zoom={zoom} w={w ?? TITLE_W.initial} marks={marks} />)
 
   if (kind === 'sticky') {
     // Signed along its top (D-158): the writer's first name and how long ago, three little checks; foldable (D-259).
@@ -400,7 +408,6 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
         onDoubleClick={edit}
       >
         <StickyBody l={l} who={who} typing={typing} fold={live && editor ? (folded) => void updateLabel(wid, l, { folded: folded || undefined }) : undefined} />
-        {live && editor && <span className={styles.edge} onPointerDown={resize('w')} aria-hidden />}
         {marks}
         {bar}
       </div>
@@ -413,7 +420,6 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
       <div className={styles.para} style={{ ...style, fontSize: PARA_PX[l.scale ?? 'large'], ...(turn ? turnedBox : { width: pw }) }} {...common} onPointerDown={press} onDoubleClick={edit}>
         <div ref={body} className={styles.body} data-turn={turn} style={{ width: pw }}>
           {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} mark="•" /> : <span className={styles.empty}>a paragraph</span>}
-          {live && editor && <span className={styles.edge} onPointerDown={resize('w')} aria-hidden />}
         </div>
         {marks}
         {bar}
@@ -698,10 +704,9 @@ type TitleProps = {
   zoom: number
   w: number
   marks: ReactNode
-  resize?: (e: ReactPointerEvent<HTMLElement>) => void
 }
 
-function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, marks, resize }: TitleProps) {
+function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, marks }: TitleProps) {
   const { wid, workspace } = useWs()
   const reduced = useMotion((s) => s.reduced)
   const fonts = useFontsReady()
@@ -760,7 +765,6 @@ function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, ma
       {(['nw', 'ne', 'se', 'sw'] as const).map((c) => (
         <i key={c} className={styles.bracket} data-corner={c} style={{ width: T.arm, height: T.arm }} aria-hidden />
       ))}
-      {resize && <span className={styles.edge} onPointerDown={resize} aria-hidden />}
       {marks}
     </div>
   )

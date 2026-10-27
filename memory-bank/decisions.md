@@ -88,7 +88,11 @@ old reports are moved to documents once (D-248).
   `<BoxSelect>`; peers as L's + a name tag. Sections still move whole until session 3.
 - `Marks` everywhere else (D-272, session 2): tasks, card sheets, matrix cells/heads, table cells/rows, documents rows,
   link chips, pieces, timeline; a kanban drop opens a gap with the L's round it, the held one 0.8; others' selections
-  as L's in every view (`PeerRing`/`PeerTaskRing` gone). Pieces in edit mode keep their grips until session 3.
+  as L's in every view (`PeerRing`/`PeerTaskRing` gone).
+- One resize language (D-273, session 3): cyan handles on the ring only when selected (paragraph, sticky note, title: the
+  right bar; section: right, bottom, corner; a piece in edit mode: every corner and edge; a table column: its head's
+  edge under the pointer); dragging lights the moving edges and shows the size; pieces and sections move at 0.8 with
+  landing L's.
 
 ## Motion and backdrop
 - One entrance everywhere: cell-by-cell build-up in random order, all at once, starting at `revealed`; components 320 ms,

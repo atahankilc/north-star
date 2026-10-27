@@ -477,7 +477,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
                 height={bottom}
                 // Open on the canvas (D-228) its view stays at 1 under the canvas's zoom: the piece's `--z` (CSS) sizes it.
                 zoom={onCanvas ? undefined : view.zoom}
-                sizing={sizing?.col === g.id}
+                sizing={sizing?.col === g.id ? sizing.w : null}
                 onMove={(dx) => setSizing({ col: g.id, w: Math.round(Math.min(COL_W.max, Math.max(COL_W.min, g.w + dx))) })}
                 onDone={(dx) => {
                   setSizing(null)
@@ -494,10 +494,12 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   )
 }
 
-type GripProps = { x: number; height: number; zoom?: number; sizing: boolean; onMove: (dx: number) => void; onDone: (dx: number) => void; onReset: () => void }
+type GripProps = { x: number; height: number; zoom?: number; sizing: number | null; onMove: (dx: number) => void; onDone: (dx: number) => void; onReset: () => void }
 
 // A column's right edge, on its head: dragged, the column widens or narrows (the rows follow); a double-click puts it
-// back to its own width. As wide on the screen at any zoom.
+// back to its own width. As wide on the screen at any zoom. Its look is D-265's edge handle: a cyan bar at the head's
+// middle under the pointer (a column isn't selected, so its head's edge is where it's found); dragged, the edge lit cyan
+// down the whole table and the width beside it.
 function WidthGrip({ x, height, zoom, sizing, onMove, onDone, onReset }: GripProps) {
   // The zoom it's drawn at: given, or the canvas's (`--z` on the piece) when it isn't.
   const z = zoom ?? 'var(--z, 1)'
@@ -508,7 +510,7 @@ function WidthGrip({ x, height, zoom, sizing, onMove, onDone, onReset }: GripPro
   return (
     <div
       className={styles.grip}
-      data-sizing={sizing || undefined}
+      data-sizing={sizing !== null || undefined}
       style={{ left: `calc(${x}px - 4.5px / ${z})`, top: 0, width: `calc(9px / ${z})`, height: T.head, ['--rule-h' as string]: `${height}px`, ['--hair' as string]: `calc(1px / ${z})` }}
       role="separator"
       aria-orientation="vertical"
@@ -533,7 +535,9 @@ function WidthGrip({ x, height, zoom, sizing, onMove, onDone, onReset }: GripPro
         onDone(0)
       }}
       onDoubleClick={onReset}
-    />
+    >
+      {sizing !== null && <span className={styles.readout}>{sizing}</span>}
+    </div>
   )
 }
 

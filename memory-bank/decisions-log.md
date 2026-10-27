@@ -4852,3 +4852,33 @@ The user asked for session 2 of the consistency plan.
   64 px gap with green L's, the ghost at 0.8); a tray pill dragged onto a day (landing L's); a link chip hovered
   (gliding in), clicked (from the corners, sprung), reduced (at once); Bob's picks seen by Alice on a table row's name
   and on a task. Build.
+
+### D-273 · 2026-10-27 · Accepted (builds D-265's resize language and its drag rule for pieces and sections; consistency session 3, docs/specs/consistency.md)
+**One resize language: cyan handles on the ring, only when selected (a piece in edit mode); the moving edges lit and the
+size beside them. Pieces in edit mode and sections move like everything else: 0.8 under the pointer, L's where they land.**
+The user asked for session 3 of the consistency plan.
+- *Handles (`Marks`' `handles`, `onHandle`, `resizing`, `readout`):* a corner's is its L in cyan, `len + 2 × 5 px` to
+  grab; an edge's a bar at its middle, the L's stroke wide, `1.2 × L` long, 5 px of grab round it; both on the ring
+  (the selected L's place); hovered or held they grow like a pressed L (120 ms). While one's dragged the edges it moves
+  are a 1 px cyan line their whole length on the ring, and a cyan tag says the size (`410`; `560 × 340`): right of the
+  middle for a width, beside the bottom-right corner when the height moves too (clear of a text's bar and a console).
+- *Which:* paragraph, sticky note, project title: the right bar (a turned paragraph's along its text: the top reading
+  upwards, the bottom reading down); a heading none; a section: right, bottom, bottom-right; a piece in edit mode: all
+  four corners and edges (an unframed one only moves). Only while selected: hovering never shows them (before, a
+  paragraph's strip showed on hover and an unselected one could be resized by accident).
+- *A table column:* not a selectable thing, so its handle shows where it's found: under the pointer at its head's right
+  edge, as D-265's edge bar (cyan, 2 px × 14.4, growing while dragged); dragged, the cyan line down the table (as
+  before) and the width beside it. The grey tick at rest is gone.
+- *Removed:* text's width strips (`.edge`), the section's corner grip (`.corner`), the pieces' grips and bars (`.mark`,
+  `.bar`), the open piece's edit-mode corners, the title's `resize` prop.
+- *Pieces in edit mode:* their L's selected in their kind's colour under the cyan handles. Moved, the piece goes 0.8
+  round the point held and follows the pointer, a `<Landing>` (tier L) where it lands (snapped, stuck to a plane's edge
+  when it will stick); let go, it grows back (180 ms). What it carries (stuck matrices and tables) still moves at full
+  size by `following`.
+- *Sections:* moved, they now shrink too, with what they hold (cards, text, planes on the canvas, which read
+  `dragShift`'s `free`/`at` now), the section's landing L's at full size.
+- *Verified:* headless on the emulators, no-preference and reduced: a paragraph hovered (no handle), selected (`e`),
+  widened by its bar (edge lit, `450`, stored); a section's three handles, its corner dragged (`500 × 250`, stored);
+  a section moved (0.8, one landing); a table column widened (`180`, the line down the table); a plane in edit mode
+  (eight handles), resized from its corner (`1325 × 800`, edges lit) and moved (0.8, landing L's, back to 1 after).
+  Build.

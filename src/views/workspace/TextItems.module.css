@@ -235,7 +235,7 @@
 
 /* Sections (D-130, D-157): a thin frame, no fill, in its colour (the canvas's edge grey when it has none); the line
    keeps its colour selected (D-160). The name and number sit in the top edge, or up the left one, the line breaking round
-   them. Only the edge bands, the name and the corner take the pointer, so what's inside stays reachable. */
+   them. Only the edge bands, the name and its handles (D-265) take the pointer, so what's inside stays reachable. */
 .section {
   --line-tone: var(--edge);
   border: 1px solid var(--line-tone);
@@ -260,7 +260,7 @@
   pointer-events: auto;
 }
 
-.section:not([data-live='true']) :is(.band, .secName, .corner) {
+.section:not([data-live='true']) :is(.band, .secName) {
   pointer-events: none;
 }
 
@@ -330,38 +330,6 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* The resize handle: an L in the bottom-right corner, shown while it's hovered or selected. */
-.corner {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 34px;
-  height: 34px;
-  pointer-events: auto;
-  cursor: nwse-resize;
-}
-
-.corner::after {
-  content: '';
-  position: absolute;
-  right: 5px;
-  bottom: 5px;
-  width: 29px;
-  height: 29px;
-  border-right: 2px solid var(--fg-dim);
-  border-bottom: 2px solid var(--fg-dim);
-  opacity: 0;
-}
-
-.section[data-live='true']:hover > .corner::after {
-  opacity: 1;
-}
-
-.section[data-selected='true'] > .corner::after {
-  border-color: var(--tone);
-  opacity: 1;
 }
 
 /* The project title (D-118, D-132): the north star and PROJECT, the name, a rule, what it's building, corner brackets. */
@@ -550,48 +518,6 @@
   font-family: var(--font-display);
   font-size: 26px;
   line-height: 1.4;
-}
-
-/* A width from the right edge (D-163): a thin strip just inside it, shown only while hovered (grey; its colour when
-   it's selected) or dragged; the pointer takes a wider band round it. Paragraphs, sticky notes and the title. */
-.edge {
-  position: absolute;
-  top: 0;
-  right: -5.5px;
-  bottom: 0;
-  width: 19px;
-  cursor: ew-resize;
-}
-
-.edge::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 1.2px;
-  height: max(16px, 60%);
-  background: var(--fg-dim);
-  opacity: 0;
-  transform: translate(-50%, -50%);
-}
-
-/* Only the item under the pointer: the layer holding a focused plane's things is `data-live` too. */
-:is(.para, .sticky, .title)[data-live='true']:hover .edge::after {
-  opacity: 1;
-}
-
-:is(.para, .sticky, .title)[data-selected='true']:hover .edge::after {
-  background: var(--tone);
-}
-
-:is(.para, .sticky, .title)[data-resizing='true'] .edge::after {
-  background: var(--tone);
-  opacity: 1;
-}
-
-/* Turned, the edge runs across. */
-.body[data-turn] .edge {
-  cursor: ns-resize;
 }
 
 /* The selected one over everything else in its space, so its bar is never under another's text or comment chip. */

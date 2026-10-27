@@ -6,7 +6,7 @@
   pointer-events: none;
 }
 
-.marks[data-tier='s'] {
+:is(.marks, .handles)[data-tier='s'] {
   --len: calc(var(--mark-s-len) * var(--zs, 1));
   --th: calc(var(--mark-s-th) * var(--zs, 1));
   --hov: calc(var(--mark-s-hover) * var(--zs, 1));
@@ -15,7 +15,7 @@
   --press: calc(var(--mark-s-press) * var(--zs, 1));
 }
 
-.marks[data-tier='m'] {
+:is(.marks, .handles)[data-tier='m'] {
   --len: calc(var(--mark-m-len) * var(--zs, 1));
   --th: calc(var(--mark-m-th) * var(--zs, 1));
   --hov: calc(var(--mark-m-hover) * var(--zs, 1));
@@ -24,7 +24,7 @@
   --press: calc(var(--mark-m-press) * var(--zs, 1));
 }
 
-.marks[data-tier='l'] {
+:is(.marks, .handles)[data-tier='l'] {
   --len: calc(var(--mark-l-len) * var(--zs, 1));
   --th: calc(var(--mark-l-th) * var(--zs, 1));
   --hov: calc(var(--mark-l-hover) * var(--zs, 1));
@@ -173,5 +173,137 @@
 
 .marks[data-reduced='true'] i,
 .landing[data-reduced='true'] {
+  transition: none;
+}
+
+/* Resize handles (D-265): on the ring (where the selected L's are), cyan, taking the pointer. A corner's is its L, an
+   edge's a bar at its middle the L's stroke wide and 1.2 L long; hovered or held, they grow like a pressed L. */
+.handles {
+  --r: calc(var(--sel) + var(--th));
+  --hit: calc(5px * var(--zs, 1));
+  position: absolute;
+  inset: calc(-1 * var(--pad, 0px));
+  z-index: 3;
+  pointer-events: none;
+}
+
+.handle {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.handle[data-k='c'] {
+  width: calc(var(--len) + 2 * var(--hit));
+  height: calc(var(--len) + 2 * var(--hit));
+}
+
+.handle[data-k='c']::after {
+  content: '';
+  position: absolute;
+  width: var(--len);
+  height: var(--len);
+  border: 0 solid var(--accent-cyan);
+  transition:
+    width 120ms var(--ease-out),
+    height 120ms var(--ease-out);
+}
+
+.handle[data-k='c']:is(:hover, [data-on])::after {
+  width: var(--press);
+  height: var(--press);
+}
+
+.handle[data-h='nw'] { top: calc(-1 * var(--r)); left: calc(-1 * var(--r)); cursor: nwse-resize; }
+.handle[data-h='ne'] { top: calc(-1 * var(--r)); right: calc(-1 * var(--r)); cursor: nesw-resize; }
+.handle[data-h='se'] { bottom: calc(-1 * var(--r)); right: calc(-1 * var(--r)); cursor: nwse-resize; }
+.handle[data-h='sw'] { bottom: calc(-1 * var(--r)); left: calc(-1 * var(--r)); cursor: nesw-resize; }
+.handle[data-h='nw']::after { top: 0; left: 0; border-top-width: var(--th); border-left-width: var(--th); }
+.handle[data-h='ne']::after { top: 0; right: 0; border-top-width: var(--th); border-right-width: var(--th); }
+.handle[data-h='se']::after { bottom: 0; right: 0; border-bottom-width: var(--th); border-right-width: var(--th); }
+.handle[data-h='sw']::after { bottom: 0; left: 0; border-bottom-width: var(--th); border-left-width: var(--th); }
+
+.handle[data-k='b'] {
+  box-sizing: content-box;
+  background: var(--accent-cyan);
+  background-clip: content-box;
+  transition:
+    width 120ms var(--ease-out),
+    height 120ms var(--ease-out),
+    margin 120ms var(--ease-out);
+}
+
+.handle[data-k='b']:is([data-h='e'], [data-h='w']) {
+  top: 50%;
+  width: var(--th);
+  height: calc(var(--len) * 1.2);
+  margin-top: calc(var(--len) * -0.6);
+  padding: 0 var(--hit);
+  cursor: ew-resize;
+}
+
+.handle[data-k='b']:is([data-h='n'], [data-h='s']) {
+  left: 50%;
+  width: calc(var(--len) * 1.2);
+  height: var(--th);
+  margin-left: calc(var(--len) * -0.6);
+  padding: var(--hit) 0;
+  cursor: ns-resize;
+}
+
+.handle[data-h='e'] { right: calc(-1 * var(--r) - var(--hit)); }
+.handle[data-h='w'] { left: calc(-1 * var(--r) - var(--hit)); }
+.handle[data-h='s'] { bottom: calc(-1 * var(--r) - var(--hit)); }
+.handle[data-h='n'] { top: calc(-1 * var(--r) - var(--hit)); }
+
+.handle[data-k='b']:is([data-h='e'], [data-h='w']):is(:hover, [data-on]) {
+  height: calc(var(--press) * 1.2);
+  margin-top: calc(var(--press) * -0.6);
+}
+
+.handle[data-k='b']:is([data-h='n'], [data-h='s']):is(:hover, [data-on]) {
+  width: calc(var(--press) * 1.2);
+  margin-left: calc(var(--press) * -0.6);
+}
+
+/* While resizing: the edges it moves, cyan along their whole length on the ring; the size beside them. */
+.edge {
+  position: absolute;
+  background: var(--accent-cyan);
+}
+
+.edge[data-e='e'] { top: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); right: calc(-1 * var(--r)); width: calc(1px * var(--zs, 1)); }
+.edge[data-e='w'] { top: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); left: calc(-1 * var(--r)); width: calc(1px * var(--zs, 1)); }
+.edge[data-e='s'] { left: calc(-1 * var(--r)); right: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); height: calc(1px * var(--zs, 1)); }
+.edge[data-e='n'] { left: calc(-1 * var(--r)); right: calc(-1 * var(--r)); top: calc(-1 * var(--r)); height: calc(1px * var(--zs, 1)); }
+
+.readout {
+  position: absolute;
+  padding: 0 calc(5px * var(--zs, 1));
+  background: var(--accent-cyan);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: calc(11px * var(--zs, 1));
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.readout[data-at='right'] {
+  top: 50%;
+  left: calc(100% + var(--r) + 8px * var(--zs, 1));
+  transform: translateY(-50%);
+}
+
+/* Height too: beside the bottom-right corner, clear of what hangs under the thing (a text's bar, a console). */
+.readout[data-at='below'] {
+  bottom: calc(-1 * var(--r));
+  left: calc(100% + var(--r) + 8px * var(--zs, 1));
+}
+
+.handles[data-reduced='true'] .handle,
+.handles[data-reduced='true'] .handle::after {
   transition: none;
 }

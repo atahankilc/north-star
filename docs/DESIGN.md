@@ -103,7 +103,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   without a press); cyan for what you can do (a link's target, the box select's L's on a cyan wash); others' selection the
   same L's in their colour with their name on a tag. A press becomes a drag after 5 px; the dragged thing (cards and text
   alike, each of several) shrinks to 0.8 round the point held and follows the pointer, its L's at full size where it
-  lands (`<Landing>`, stepping 80 ms grid to grid; on a kanban the gap that opens, D-272); let go, it grows into them (180 ms) and they spring out. Reduced
+  lands (`<Landing>`, stepping 80 ms grid to grid; on a kanban the gap that opens, D-272); let go, it grows into them (180 ms) and they spring out. Resizing: cyan handles on the ring
+  only while selected (a corner's L, an edge's bar), the moving edges lit cyan and the size beside them (D-273). Reduced
   motion: states switch at once. Type colours are reserved for type: tags are white `#chips` (D-056). Cards never lift or tilt (D-061).
   Inside (D-152): 0.06 padding; a header row (type label left; right, the status, regions, priority or rating, then
   the evidence as cells: filled supports, outlined against, magenta when they disagree with the status), the title (up
@@ -122,17 +123,17 @@ Values will be tuned against contrast checks (WCAG AA for text).
   (H1–H3, D-156) is set on its centre, left-aligned, with an optional small line over its left edge (`02 ── WHO WE BEAT`:
   Geist Mono capitals, `--fg-dim`, a leading number in magenta or the label's colour); an H1 also gets a hairline rule
   under it fading out to the right. A paragraph (`¶`) is Geist at 0.2 (L; D-162) wrapping at its width (6.25 until its right-edge
-  grip is dragged), light Markdown (bold in `fgStrong`, italic, bullets and numbers with dim markers, `code`, links
+  handle is dragged), light Markdown (bold in `fgStrong`, italic, bullets and numbers with dim markers, `code`, links
   underlined cyan), a hairline down its left side. Any text turns a quarter either way (↺ reads up, ↻ down). Hovered or
-  selected, a card's corner marks go round it (D-163), in its colour once selected; a paragraph's or sticky note's width
-  drags by a thin strip just inside its right edge. A paragraph's text is S 0.13 / M 0.165 / L 0.2, the default, clearly under an H3 (D-161, D-162);
+  selected, its marks go round it (D-265), in its colour once selected; selected, a paragraph's or sticky note's width
+  drags by a cyan bar on the ring at its right edge (D-273). A paragraph's text is S 0.13 / M 0.165 / L 0.2, the default, clearly under an H3 (D-161, D-162);
   headings and paragraphs never switch into each other. Headings and section names are drawn at any zoom (D-160)
 - Sticky notes (D-158, D-162, D-257): paper in its colour (`color-mix` 92 % with black in dark, a 34 % pastel on white in
   light; yellow always the bright one), dark ink (`--sticky-ink`), the top 13 px a darker glue band holding a small line
   `ATAHAN · 2h` in ink mono 0.065 with three little checks on the right, a soft shade under its foot, never tilted; 6 × 5
   grid steps (150 × 125 px) to start, growing down with its text; a long one folds back to 125 from `▾` / `▸` in its band,
   its text fading out at the foot (D-259); then its text in Geist Mono S 0.085 / M 0.105 (default) / L 0.13 with light Markdown (bold in `fgStrong`).
-  6 grid steps wide until its right-edge grip drags it, padding 0.09, as tall as its text past the 5; it grows as you
+  6 grid steps wide until its right-edge handle drags it, padding 0.09, as tall as its text past the 5; it grows as you
   type, its top-left kept. Corner marks when hovered/selected (D-163)
 - Comment threads (D-159, D-166): a pin per thread, a small framed mono chip like a link's (`--bg`, 1px `--line-hover`),
   the comment icon (a square speech bubble with three square dots, D-167) and a count, its bottom-left corner at the spot (a card's, text's or section's top-right corner, a link's chip, the spot
@@ -185,9 +186,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
   Tight, the kind goes first, then the name takes a `…`; hovered, all of it. Edit mode: a field framed in cyan on the edge,
   a cyan `>` before what's typed and `17/80` after it.
 - A plane on the canvas (D-181): thin frame, name set into the top edge, the cards' corner marks grey on hover; its
-  console a terminal line outside under the bottom-right corner (`name ▸ zoom [−] 100% [+] [full] [edit]`). Edit mode: a
-  faint dashed cyan frame, long cyan corner marks that resize, short bars on the edge middles, the console a cyan status
-  line with the live size and `[done]`.
+  console a terminal line outside under the bottom-right corner (`name ▸ zoom [−] 100% [+] [full] [edit]`). Edit mode: its
+  marks selected in its kind's colour, a cyan handle on every corner (the L) and edge (a bar) on the ring (D-273), the
+  console a cyan status line with the live size and `[done]`; moved, it goes 0.8 under the pointer, its L's where it lands.
 - Focus (D-185): a plane spreads over the screen like ink, cell by cell, its `+` marks never moving; nothing zooms. In
   focus its console sits bottom left beside the gear. Keep the right of the screen free.
 - You and settings sit in the bottom-left corner, `--space-3` from the edges (D-175), stacked like the foot of the side nav

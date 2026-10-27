@@ -7,13 +7,18 @@
 // from the corners too. While it's dragged they're on `<Landing>`, where it will land; let go, it grows into them and
 // they spring out. Others who have it selected get the same L's in their colour, their name on a tag. Reduced motion:
 // states switch at once.
+// Resizing (D-265): handles on the ring, in cyan, where the caller says (only while it's selected, or a piece in edit
+// mode): a corner's is that corner's L, an edge's a bar at its middle; hovered they grow like a pressed L. While one is
+// dragged (`resizing`) the edges it moves light cyan along their whole length, and `readout` says the size beside them.
 // Drawn inside a space scaled by `zoom` (screen px per space px), so the sizes are divided back by it (`--zs`); without
 // `zoom` it's the `--zs` its space sets (`zsOf`), so a memoised cell needn't draw again as the view zooms.
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { useMotion } from '../state/motion'
 import styles from './Marks.module.css'
 
 export type Tier = 's' | 'm' | 'l'
+export type Handle = 'n' | 'e' | 's' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
+export const EVERY_HANDLE: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 export type PeerMark = { uid: string; name: string; color: string }
 
 // A kind's tier, a step down while its short side on screen is too small for it: L under 120 px, M under 24 px.
@@ -45,11 +50,15 @@ type Props = {
   dragging?: boolean
   target?: boolean
   peers?: PeerMark[]
+  handles?: Handle[]
+  onHandle?: (h: Handle, e: ReactPointerEvent<HTMLElement>) => void
+  resizing?: Handle | null
+  readout?: string
 }
 
 type State = 'none' | 'hover' | 'sel' | 'press' | 'arrive' | 'drag' | 'target'
 
-export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live = true, hover, selected = false, pressed = false, dragging = false, target = false, peers }: Props) {
+export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live = true, hover, selected = false, pressed = false, dragging = false, target = false, peers, handles, onHandle, resizing, readout }: Props) {
   const reduced = useMotion((s) => s.reduced)
   // Selected without a press: a frame on the corners first, then the spring out (`arrive`). Let go after a drag: on the
   // corners while it grows back (`settle`), then the spring.
@@ -103,6 +112,19 @@ export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live 
       >
         <Ls />
       </span>
+      {!!handles?.length && !dragging && (
+        <span className={styles.handles} style={style} data-tier={t} data-reduced={reduced || undefined}>
+          {handles.map((h) => (
+            <span key={h} className={styles.handle} data-h={h} data-k={h.length === 2 ? 'c' : 'b'} data-on={resizing === h || undefined} onPointerDown={(e) => onHandle?.(h, e)} aria-hidden />
+          ))}
+          {resizing && [...resizing].map((e) => <span key={e} className={styles.edge} data-e={e} aria-hidden />)}
+          {resizing && readout && (
+            <span className={styles.readout} data-at={/[ns]/.test(resizing) ? 'below' : 'right'}>
+              {readout}
+            </span>
+          )}
+        </span>
+      )}
       {peers?.map((p, i) => (
         <span key={p.uid} className={styles.marks} style={{ ...style, '--peer': p.color, '--i': i } as CSSProperties} data-tier={t} data-state="peer" data-reduced={reduced || undefined} aria-hidden>
           <Ls />

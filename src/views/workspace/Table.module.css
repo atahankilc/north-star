@@ -96,8 +96,9 @@
   color: var(--accent-cyan);
 }
 
-/* A column's right edge on its head (live, editors): a faint tick at the head's foot; hovered or dragged, a cyan line
-   down the whole table. Drawn at screen size (its width and the line's are divided by the zoom in Table.tsx). */
+/* A column's right edge on its head (live, editors), D-265's edge handle: under the pointer a cyan bar at the head's
+   middle, 2 screen px wide and 1.2 × 12 long (a pressed L's while dragged); dragged, a cyan line down the whole table
+   and the width beside it. Drawn at screen size (`--hair` and `--z` from Table.tsx). */
 .grip {
   z-index: 2;
   cursor: col-resize;
@@ -108,28 +109,54 @@
 .grip::after {
   position: absolute;
   left: 50%;
-  width: var(--hair);
   content: '';
   pointer-events: none;
   transform: translateX(-50%);
+  opacity: 0;
 }
 
 .grip::before {
-  bottom: 25%;
-  height: 30%;
-  background: var(--line-hover);
+  top: 50%;
+  width: calc(2 * var(--hair));
+  height: calc(14.4 * var(--hair));
+  background: var(--accent-cyan);
+  transform: translate(-50%, -50%);
+  transition: height 120ms var(--ease-out);
 }
 
 .grip::after {
   top: 0;
+  width: var(--hair);
   height: var(--rule-h);
   background: var(--accent-cyan);
-  opacity: 0;
 }
 
-.grip:hover::after,
+.grip:hover::before,
+.grip[data-sizing='true']::before {
+  opacity: 1;
+}
+
+.grip[data-sizing='true']::before {
+  height: calc(21.6 * var(--hair));
+}
+
 .grip[data-sizing='true']::after {
   opacity: 1;
+}
+
+.readout {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 4 * var(--hair));
+  padding: 0 calc(5 * var(--hair));
+  background: var(--accent-cyan);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: calc(11 * var(--hair));
+  line-height: 1.5;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 /* A row's name: Geist, one line; a card's carries its type's colour on its left edge. */

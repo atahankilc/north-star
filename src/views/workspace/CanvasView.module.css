@@ -37,7 +37,10 @@
   background: var(--bg);
   /* Out of edit mode it pans the canvas like empty space (D-186). */
   cursor: inherit;
-  transition: border-color var(--dur-fast) var(--ease-out);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    scale 180ms var(--ease-out),
+    translate 180ms var(--ease-out);
 }
 
 /* The marks: a thin `+` (3 px arms, 1 px stroke) every 25 plane px, on its cards' grid as it shows them (D-187). */
@@ -61,88 +64,13 @@
   cursor: grabbing;
 }
 
-/* Hover and selection are its `Marks` (D-265). In edit mode each corner is a section's resize grip (D-194): an L just
-   inside it, 2 px, in cyan, taking the pointer to resize (until consistency session 3). */
-.mark {
-  position: absolute;
-  z-index: 1;
-  width: 14px;
-  height: 14px;
-  border: 0 solid var(--fg-dim);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity var(--dur-fast) var(--ease-out),
-    width var(--dur-fast) var(--ease-out),
-    height var(--dur-fast) var(--ease-out);
+/* Hover and selection are its `Marks` (D-265); in edit mode they're selected, with a cyan handle on every corner and
+   edge (Marks' handles). Moved, it goes 0.8 round the point held under the pointer, its L's where it lands; let go,
+   it grows back into them. */
+.piece[data-carried='true'] {
+  z-index: 5;
+  transition: none;
 }
-
-.mark[data-handle='nw'] { top: -5px; left: -5px; border-top-width: 1px; border-left-width: 1px; }
-.mark[data-handle='ne'] { top: -5px; right: -5px; border-top-width: 1px; border-right-width: 1px; }
-.mark[data-handle='se'] { bottom: -5px; right: -5px; border-bottom-width: 1px; border-right-width: 1px; }
-.mark[data-handle='sw'] { bottom: -5px; left: -5px; border-bottom-width: 1px; border-left-width: 1px; }
-
-.piece[data-editing='true'] .mark {
-  width: 34px;
-  height: 34px;
-  border-width: 0;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.piece[data-editing='true'] .mark::after {
-  content: '';
-  position: absolute;
-  width: 29px;
-  height: 29px;
-  border: 0 solid var(--accent-cyan);
-}
-
-.piece[data-editing='true'] .mark[data-handle='nw'] { top: 0; left: 0; cursor: nwse-resize; }
-.piece[data-editing='true'] .mark[data-handle='ne'] { top: 0; right: 0; cursor: nesw-resize; }
-.piece[data-editing='true'] .mark[data-handle='se'] { bottom: 0; right: 0; cursor: nwse-resize; }
-.piece[data-editing='true'] .mark[data-handle='sw'] { bottom: 0; left: 0; cursor: nesw-resize; }
-
-.piece[data-editing='true'] .mark[data-handle='nw']::after { top: 5px; left: 5px; border-top-width: 2px; border-left-width: 2px; }
-.piece[data-editing='true'] .mark[data-handle='ne']::after { top: 5px; right: 5px; border-top-width: 2px; border-right-width: 2px; }
-.piece[data-editing='true'] .mark[data-handle='se']::after { bottom: 5px; right: 5px; border-bottom-width: 2px; border-right-width: 2px; }
-.piece[data-editing='true'] .mark[data-handle='sw']::after { bottom: 5px; left: 5px; border-bottom-width: 2px; border-left-width: 2px; }
-
-/* The edges' middles in edit mode: short cyan bars on the line, a little more to grab than they show. */
-.bar {
-  position: absolute;
-  z-index: 1;
-  background: var(--accent-cyan);
-  background-clip: content-box;
-}
-
-.bar[data-handle='n'],
-.bar[data-handle='s'] {
-  left: 50%;
-  width: 18px;
-  height: 2px;
-  margin-left: -9px;
-  padding: 4px 0;
-  box-sizing: content-box;
-  cursor: ns-resize;
-}
-
-.bar[data-handle='n'] { top: -5px; }
-.bar[data-handle='s'] { bottom: -5px; }
-
-.bar[data-handle='e'],
-.bar[data-handle='w'] {
-  top: 50%;
-  width: 2px;
-  height: 18px;
-  margin-top: -9px;
-  padding: 0 4px;
-  box-sizing: content-box;
-  cursor: ew-resize;
-}
-
-.bar[data-handle='e'] { right: -5px; }
-.bar[data-handle='w'] { left: -5px; }
 
 /* A matrix (D-204, D-208) is a window: a plane's edge, fill, name and console, but no `+` marks; its table sits at
    its own size from the top-left, cut by the edge. In focus its copy there glides out, so this one hides. A table
@@ -479,24 +407,6 @@
   box-shadow: 0 0 14px 10px var(--bg);
   pointer-events: none;
 }
-
-/* Open, in edit mode it only moves: its corners are the selected marks in cyan, not grips. */
-.piece[data-open='true'][data-editing='true'] .mark {
-  width: 14px;
-  height: 14px;
-  border-width: 0;
-  border-color: var(--accent-cyan);
-  pointer-events: none;
-}
-
-.piece[data-open='true'][data-editing='true'] .mark::after {
-  content: none;
-}
-
-.piece[data-open='true'][data-editing='true'] .mark[data-handle='nw'] { top: -5px; left: -5px; border-top-width: 1px; border-left-width: 1px; }
-.piece[data-open='true'][data-editing='true'] .mark[data-handle='ne'] { top: -5px; right: -5px; left: auto; border-top-width: 1px; border-right-width: 1px; }
-.piece[data-open='true'][data-editing='true'] .mark[data-handle='se'] { bottom: -5px; right: -5px; top: auto; left: auto; border-bottom-width: 1px; border-right-width: 1px; }
-.piece[data-open='true'][data-editing='true'] .mark[data-handle='sw'] { bottom: -5px; left: -5px; top: auto; border-bottom-width: 1px; border-left-width: 1px; }
 
 /* Files held over the canvas (D-232): its edge lit cyan, as a panel's is for a drop. */
 .canvas[data-file-over='true']::after {

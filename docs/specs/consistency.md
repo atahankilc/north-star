@@ -126,7 +126,7 @@ Kanban tasks (landing L's round the opening gap instead of the cyan slot; the he
 table rows and cells (no `[ ● ]`), documents rows, link chips, pieces' hover and selection (tier L), timeline sheets,
 `PeerMarks` in every view.
 
-## Session 3: one resize language · not done
+## Session 3: one resize language · **done** (D-273, 2026-10-27)
 D-265's handles for paragraph, sticky note, title, section, table columns, and pieces in edit mode (which also drag
 with the landing L's). The full-length cyan edge and the readout. Remove the old grips and strips.
 
@@ -153,8 +153,9 @@ the transition both ways).
 ## Found along the way
 - Session 1 (D-270): the tier rule read literally gave a one-line paragraph S and a section M; built as the kind's tier,
   a step down when small on screen (L < 120 px, M < 24 px). Sessions 2–3: give each kind its tier the same way.
-- A section's own drag still moves it whole at full size (with what it carries, planes on the canvas too, which
-  CanvasView moves by `dragShift`); give it the landing L's with the pieces in session 3.
+- A section's own drag now shrinks with what it holds and lands on its L's (D-273).
+- Session 3 (D-273): a table column isn't selectable, so its edge bar shows under the pointer at its head; stuck
+  matrices and tables carried by a plane in edit mode still move at full size (`following`), not 0.8.
 - The project title keeps its edge-grey corner brackets as decoration; its marks sit just outside them, which reads
   as a double corner. Ask the user whether the brackets go once marks are everywhere.
 - `PeerRing` and `PeerTaskRing` are gone (D-272).

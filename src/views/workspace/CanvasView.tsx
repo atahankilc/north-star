@@ -30,7 +30,8 @@ import { isReducedMotion } from '../../state/motion'
 import { isOwnerOf } from '../../data/workspaces'
 import type { Thread } from '../../data/model'
 import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePresenceReport } from './collab'
-import { Marks } from '../../ui/Marks'
+import { heldAt } from './selection'
+import { EVERY_HANDLE, Landing, Marks } from '../../ui/Marks'
 import { DrawSection } from './DrawSection'
 import { labelBox, TextItems } from './TextItems'
 import { spaceBounds } from './spaceBounds'
@@ -1258,6 +1259,10 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
   const hover = (on: boolean) => () => useCanvasView.setState((s) => (on ? { bondHover: piece.id } : s.bondHover === piece.id ? { bondHover: null } : {}))
   // Carried by a section being dragged (D-188).
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(piece.id) ? s.dragShift : null))
+  // Moved (D-265): where it is under the pointer (canvas px) and the point held in it, while its box is where it lands;
+  // resized: by which handle, for its lit edges and the readout.
+  const [moving, setMoving] = useState<{ free: [number, number]; at: [number, number] } | null>(null)
+  const [sizing, setSizing] = useState<Handle | null>(null)
 
   // Out of edit mode a press on a plane is the canvas's: it pans (D-186). In edit mode it selects the plane, and moving or
   // one of the handles changes its box (5 px before a press turns into a drag).
@@ -1266,6 +1271,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
     e.stopPropagation()
     useCanvasView.setState({ selected: piece.id })
     const [sx, sy] = [e.clientX, e.clientY]
+    const at = heldAt(e, 0, 0, cam.zoom)
     // Open on the canvas it only moves (its size is its contents', D-228).
     if (open && handle !== 'move') return
     const from: Box = { ...shown }
@@ -1284,6 +1290,8 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
       if (!to && Math.hypot(dx, dy) < DRAG_PX) return
       to = dragBox(from, handle, dx / cam.zoom, dy / cam.zoom, ev.altKey)
+      if (handle === 'move') setMoving({ free: [from.x + dx / cam.zoom, from.y + dy / cam.zoom], at })
+      else setSizing(handle)
       if (lens) {
         // Within 48 screen px of an edge; alt held: free, no sticking.
         const t = ev.altKey ? null : stickTarget(to, planes, 48 / cam.zoom)
@@ -1302,6 +1310,8 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
       useCanvasView.setState({ stickHint: null })
+      setMoving(null)
+      setSizing(null)
       // The followers stay where they were carried until their data's back.
       const done = () => useCanvasView.setState({ following: {} })
       if (to && !same(to, from)) {
@@ -1340,12 +1350,23 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
   // moves (Matrix, Table, Cards below).
   const inner = useMemo(() => innerView({ x: 0, y: 0, w: box.w, h: box.h }, content, noFit, pad), [box.w, box.h, content, noFit, pad])
   const step = GRID * inner.zoom
+  // Carried (its own move, or by a section): 0.8 round the point held under the pointer, its marks where it lands.
+  const left = box.x + (shift?.dx ?? 0)
+  const top = box.y + (shift?.dy ?? 0)
+  const carried = moving
+    ? { translate: `${moving.free[0] - left}px ${moving.free[1] - top}px`, scale: '0.8', transformOrigin: `${moving.at[0]}px ${moving.at[1]}px` }
+    : shift?.shrink && shift.free && shift.at
+      ? { translate: `${shift.free[0] - shift.dx}px ${shift.free[1] - shift.dy}px`, scale: '0.8', transformOrigin: `${shift.at[0] - box.x}px ${shift.at[1] - box.y}px` }
+      : undefined
+  const tone = KIND_TONE[kind]
   return (
+    <>
     <div
       className={styles.piece}
       data-selected={selected || undefined}
       data-editing={editing || undefined}
       data-dragging={held ? true : undefined}
+      data-carried={carried ? true : undefined}
       data-stick={stickHere || undefined}
       // What the right-click menu comments on (D-193).
       data-target={`plane:${piece.id}`}
@@ -1354,7 +1375,7 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       // A matrix in focus is its focused copy's: the one here would show under it as it glides.
       data-away={bare && focusing ? true : undefined}
       // --z: the canvas's zoom, so the name holds its size on the screen (D-223).
-      style={{ left: box.x + (shift?.dx ?? 0), top: box.y + (shift?.dy ?? 0), width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: cam.zoom }}
+      style={{ ...carried, left, top, width: box.w, height: box.h, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: cam.zoom }}
       onPointerDown={press('move')}
       onPointerEnter={hover(true)}
       onPointerLeave={hover(false)}
@@ -1375,8 +1396,22 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
           )}
         </span>
       )}
-      {/* Its marks (D-265, tier L, its kind's colour): hover and others' selection; edit mode keeps its grips (session 3). */}
-      <Marks zoom={cam.zoom} tier="l" tone={KIND_TONE[kind]} live={!editing} selected={selected && !editing} peers={peers} />
+      {/* Its marks (D-265, tier L, its kind's colour): hover, others' selection; in edit mode selected, with a cyan
+          handle on every corner and edge (an open one only moves), the moving edges lit and its size beside them. */}
+      <Marks
+        zoom={cam.zoom}
+        tier="l"
+        short={Math.min(box.w, box.h)}
+        tone={tone}
+        live={!editing}
+        selected={editing}
+        dragging={!!carried}
+        peers={peers}
+        handles={editing && !open ? EVERY_HANDLE : undefined}
+        onHandle={(h, ev) => press(h)(ev)}
+        resizing={sizing === 'move' ? null : sizing}
+        readout={sizing && sizing !== 'move' ? `${Math.round(box.w)} × ${Math.round(box.h)}` : undefined}
+      />
       {/* A comment on the plane itself (D-195), not on what's in it. */}
       <ThreadChip wid={wid} thread={own} zoom={cam.zoom} />
       {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). Open on the canvas (D-228),
@@ -1416,10 +1451,6 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
       ) : (
         <Cards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       )}
-      {CORNERS.map((h) => (
-        <span key={h} className={styles.mark} data-handle={h} onPointerDown={editing ? press(h) : undefined} aria-hidden />
-      ))}
-      {editing && !open && EDGES.map((h) => <span key={h} className={styles.bar} data-handle={h} onPointerDown={press(h)} aria-hidden />)}
       <PlaneConsole
         // In focus, or on its way there or back (D-185), the plane's console isn't here.
         className={focusing ? styles.consoleAway : undefined}
@@ -1445,6 +1476,8 @@ function PieceBox({ piece, shown, live, cam, selected, editing, editor, onFocus,
         }
       />
     </div>
+    {carried && <Landing x={left} y={top} w={box.w} h={box.h} zoom={cam.zoom} tier="l" tone={tone} />}
+    </>
   )
 }
 
