@@ -82,7 +82,7 @@ const onPixel = (v: number) => {
 }
 
 export function CanvasView() {
-  const { wid, workspace, pieces, cards, labels, threads, cells, edges, documents, tasks } = useWs()
+  const { wid, workspace, pieces, cards, labels, threads, cells, edges, documents, tasks, places } = useWs()
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
   // Not the camera itself: a pan or a zoom step moves only the world (World, below), and this draws again when the zoom
@@ -294,6 +294,8 @@ export function CanvasView() {
   allLabelsRef.current = labels
   const edgesRef = useRef(edges)
   edgesRef.current = edges
+  const placesRef = useRef(places)
+  placesRef.current = places
   const focusedCardsRef = useRef(focusedCards)
   focusedCardsRef.current = focusedCards
   const drawing = useCanvasView((s) => s.drawing)
@@ -397,7 +399,7 @@ export function CanvasView() {
     if (focusId && !useCanvasView.getState().focusArrived) return
     const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-target]')?.dataset.target
     // Inside a focused plane (D-237): what can be done with what's under the pointer, or added where it is.
-    const inPlane = focused && !isBare(focused) ? planeCtx(wid, focused.id, editor, { cards, labels, edges }, { uid: user?.id, author: user?.name || user?.email || 'someone' }, planeToSpace(e.clientX, e.clientY)) : null
+    const inPlane = focused && !isBare(focused) ? planeCtx(wid, focused.id, editor, { cards, labels, edges, places }, { uid: user?.id, author: user?.name || user?.email || 'someone' }, planeToSpace(e.clientX, e.clientY)) : null
     if (!hit) {
       const items = inPlane ? planeItems(null, null, inPlane) : []
       const r0 = root.current!.getBoundingClientRect()
@@ -728,7 +730,7 @@ export function CanvasView() {
         if ((e.key === 'Delete' || e.key === 'Backspace') && card && editor) {
           e.preventDefault()
           useCanvasView.setState({ cardSelected: null })
-          void deleteCard(wid, card, edgesRef.current)
+          void deleteCard(wid, card, edgesRef.current, placesRef.current)
         }
         return
       }
@@ -1030,7 +1032,7 @@ export function CanvasView() {
           onConfirm={() => {
             useCanvasView.setState({ confirming: null })
             setEditing(confirming.id, false)
-            void deletePiece(wid, confirming.id, cards, labels, cells, kindOfPiece(confirming), edges, tasks)
+            void deletePiece(wid, confirming.id, cards, labels, cells, kindOfPiece(confirming), edges, tasks, places)
           }}
         />
       )}

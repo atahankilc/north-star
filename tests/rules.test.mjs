@@ -306,6 +306,21 @@ await deny('a kanban whose rows come from a card type', () => addDoc(sub(bob.fs,
 await deny('a kanban whose box names are not a list', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, holds: 'cards', rowField: 'impact', names: 'quick wins' } }))
 await allow('a kanban column with a limit (D-256)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { cols: [{ id: 'k1', name: 'doing', limit: 3 }] } }))
 await deny('a task with a checklist that is not a list', () => addDoc(sub(bob.fs, 'tasks'), { ...task, checks: 'all of it' }))
+// A card on another plane (D-281): `places/{planeId}_{cardId}`.
+const place = { planeId: 'p2', cardId: 'f1', type: 'feature', x: 50, y: 75, createdAt: 1 }
+const placeRef = (who, id = 'p2_f1') => doc(sub(who.fs, 'places'), id)
+await allow('a card placed on another plane', () => setDoc(placeRef(bob), place))
+await allow('a placed card moved there', () => updateDoc(placeRef(bob), { x: 100, y: 0 }))
+await allow('a placed card folded there only', () => updateDoc(placeRef(bob), { folded: true }))
+await allow('a package placed on another plane', () => setDoc(placeRef(bob, 'p2_pk1'), { ...place, cardId: 'pk1', type: 'package' }))
+await deny('a place whose id is not its plane and card', () => setDoc(placeRef(bob, 'p3_f1'), place))
+await deny('a place whose id is made up', () => addDoc(sub(bob.fs, 'places'), place))
+await deny('a place of an unknown kind of card', () => setDoc(placeRef(bob), { ...place, type: 'note' }))
+await deny('a place without a spot', () => setDoc(placeRef(bob), { planeId: 'p2', cardId: 'f1', type: 'feature', createdAt: 1 }))
+await deny('a place with a title of its own', () => setDoc(placeRef(bob), { ...place, title: 'Mine' }))
+await deny('a place folded with a string', () => updateDoc(placeRef(bob), { folded: 'yes' }))
+await allow('a member reads the places', () => getDocs(sub(alice.fs, 'places')))
+await allow('a card taken off another plane', () => deleteDoc(placeRef(bob, 'p2_pk1')))
 // Cards on a plane (D-187).
 await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a competitor on a plane', () => addDoc(sub(bob.fs, 'competitors'), { name: 'Crewly', pieceId: 'p1', x: 25, y: 50, createdAt: 1, updatedAt: 1 }))
@@ -493,6 +508,10 @@ await deny('viewer puts a plane on the canvas (D-176)', () => addDoc(sub(dave.fs
 await allow('viewer reads the canvas', () => getDocs(sub(dave.fs, 'pieces')))
 await deny('viewer fills a matrix cell (D-204)', () => setDoc(doc(sub(dave.fs, 'cells'), 'm1_f9_a1'), { matrixId: 'm1', row: 'f9', col: 'a1', value: 'no', updatedAt: 1 }))
 await allow('viewer reads the matrices\' cells', () => getDocs(sub(dave.fs, 'cells')))
+await deny('viewer places a card on another plane (D-281)', () => setDoc(doc(sub(dave.fs, 'places'), 'p3_f1'), { planeId: 'p3', cardId: 'f1', type: 'feature', x: 0, y: 0, createdAt: 1 }))
+await deny('viewer moves a placed card', () => updateDoc(doc(sub(dave.fs, 'places'), 'p2_f1'), { x: 5 }))
+await deny('viewer takes a card off a plane', () => deleteDoc(doc(sub(dave.fs, 'places'), 'p2_f1')))
+await allow('viewer reads the places', () => getDocs(sub(dave.fs, 'places')))
 await deny('viewer deletes an idea', async () => {
   const one = (await getDocs(ideas(dave.fs))).docs[0]
   await deleteDoc(doc(dave.fs, one.ref.path))

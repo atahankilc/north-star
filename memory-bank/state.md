@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-27 (pans redraw nothing, D-279; zoom in a focus settles, D-280; performance survey)_
+_Last updated: 2026-10-28 (one card on many planes: planned D-281, session 1 data + rules D-282)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -26,6 +26,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Nothing open. The last work (D-277, ink and lines) is merged and pushed.
 
 ## Next steps (not started; ask the user which first)
+- **In progress:** one card on many planes (D-281), docs/specs/shared-cards.md: session 1 (data, rules) done (D-282,
+  rules not deployed); session 2 next (planes draw and move placed cards).
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): link bend points (D-155), links to a
   competitor's features and dropping a link on a small card.
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.

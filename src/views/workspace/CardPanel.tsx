@@ -115,7 +115,7 @@ export function useCommit(value: string, save: (v: string) => void) {
 type PanelProps = { cards: Card[]; labels?: Label[]; editor: boolean; selected?: string | null; onClose?: () => void }
 export function CardPanel({ cards, labels = [], editor, selected, onClose }: PanelProps) {
   const ws = useWs()
-  const { wid, threads, edges } = ws
+  const { wid, threads, edges, places } = ws
   const picked = useCanvasView((s) => s.cardSelected)
   const id = selected === undefined ? picked : selected
   const multi = useCanvasView((s) => s.cardMulti)
@@ -163,7 +163,7 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
                   title="Delete or Backspace"
                   onClick={() => {
                     setSelection([])
-                    void deleteCards(wid, many, edges, texts)
+                    void deleteCards(wid, many, edges, texts, places)
                   }}
                 />
               )}
@@ -200,7 +200,7 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
                   title="Delete or Backspace"
                   onClick={() => {
                     close()
-                    void deleteCard(wid, card, edges)
+                    void deleteCard(wid, card, edges, places)
                   }}
                 />
               )}

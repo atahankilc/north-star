@@ -2,6 +2,7 @@
 // documents (D-232): a list of them, or one on its own; kanbans (D-251).
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { cardRef, type Card } from './cards'
+import { planeGoes, runOps, type Place } from './places'
 import { edgeRef, edgesOn, type Edge } from './edges'
 import { labelRef, type Label } from './labels'
 import { cellKey, cellRef, emptySetup, type Cell, type MatrixSetup } from './matrix'
@@ -285,9 +286,12 @@ export function renamePiece(wid: string, id: string, name: string, kind: PieceKi
 
 // The plane, its cards (D-187) and its text (D-188), or the matrix or table and its cells (D-204, D-209), or the kanban
 // and its tasks (D-251), as one undo step.
-export function deletePiece(wid: string, id: string, cards: Card[], labels: Label[], cells: Cell[] = [], kind: PieceKind = 'plane', edges: Edge[] = [], tasks: Task[] = []) {
-  const on = cards.filter((c) => c.pieceId === id)
-  const refs = [
+// A plane takes its cards with it, except those also on another plane, which stay there with their links (D-281); the
+// places on it go.
+export function deletePiece(wid: string, id: string, cards: Card[], labels: Label[], cells: Cell[] = [], kind: PieceKind = 'plane', edges: Edge[] = [], tasks: Task[] = [], places: Place[] = []) {
+  const kept = planeGoes(wid, id, cards, places)
+  const on = cards.filter((c) => c.pieceId === id && !kept.stay.has(c.id))
+  const gone = [
     doc(col(wid), id),
     ...on.map((c) => cardRef(wid, c.type, c.id)),
     // Its cards' links (D-207).
@@ -296,12 +300,7 @@ export function deletePiece(wid: string, id: string, cards: Card[], labels: Labe
     ...cells.filter((c) => c.matrixId === id).map((c) => cellRef(wid, cellKey(c.matrixId, c.row, c.col))),
     ...tasks.filter((t) => t.pieceId === id).map((t) => taskRef(wid, t.id)),
   ]
-  return tracked(`delete a ${KIND_NAME[kind]}`, refs, async () => {
-    // A big matrix has more cells than one batch takes.
-    for (let i = 0; i < refs.length; i += 450) {
-      const batch = writeBatch(db())
-      refs.slice(i, i + 450).forEach((r) => batch.delete(r))
-      await batch.commit()
-    }
-  })
+  // A big matrix has more cells than one batch takes.
+  const ops = [...gone.map((ref) => ({ ref, data: null })), ...kept.ops]
+  return tracked(`delete a ${KIND_NAME[kind]}`, ops.map((o) => o.ref), runOps(ops))
 }

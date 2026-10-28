@@ -337,15 +337,15 @@ function GuideLines({ zoom }: { zoom: number }) {
 // several, Delete takes them all away, the arrows nudge a grid step (shift: four), ⌘C / ⌘V / ⌘D copy, paste and
 // duplicate within this tab (pasted a step further each time, with the links between the cards, selected).
 function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Label[], edges: import('../../data/edges').Edge[]) {
-  const { wid } = useWs()
-  const now = useRef({ cards, labels, edges, editor })
-  now.current = { cards, labels, edges, editor }
+  const { wid, places } = useWs()
+  const now = useRef({ cards, labels, edges, editor, places })
+  now.current = { cards, labels, edges, editor, places }
   useEffect(() => {
     if (!live) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t?.closest('input, textarea, [contenteditable], [role=dialog], [role=menu], [role=listbox]')) return
-      const { cards, labels, edges, editor } = now.current
+      const { cards, labels, edges, editor, places } = now.current
       const { cardMulti } = useCanvasView.getState()
       const ids = selectedIds()
       const picked = cards.filter((c) => ids.includes(c.id))
@@ -370,7 +370,7 @@ function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Lab
       if ((e.key === 'Delete' || e.key === 'Backspace') && cardMulti.length && editor) {
         stop()
         setSelection([])
-        return void deleteCards(wid, picked, edges, texts)
+        return void deleteCards(wid, picked, edges, texts, places)
       }
       const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key] as [number, number] | undefined
       if (step && ids.length && editor && !mod) {

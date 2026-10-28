@@ -332,6 +332,20 @@ service cloud.firestore {
         && (!('bends' in d) || (d.bends is list && d.bends.size() <= 8));
     }
 
+    // A card on a plane besides its own (D-281, src/data/places.ts): its spot there and whether it's folded there. The id
+    // is fixed by its two ends, so a card is on a plane at most once. Whether the plane and the card exist isn't checked:
+    // a batch's rules may read at most 20 documents, and placing a tree of parts or undoing a plane's delete writes more;
+    // the app skips a place whose card or plane is gone.
+    function validPlace(id, d) {
+      return d.keys().hasOnly(['planeId', 'cardId', 'type', 'x', 'y', 'folded', 'createdAt'])
+        && isText(d.planeId, 128) && isText(d.cardId, 128)
+        && id == d.planeId + '_' + d.cardId
+        && d.type in ['customer', 'problem', 'competitor', 'idea', 'feature', 'package']
+        && d.x is number && d.y is number
+        && optBool(d, 'folded')
+        && d.createdAt is number;
+    }
+
     function valid(wid, collection, id, d) {
       return (collection == 'labels' && validLabel(d))
         || (collection == 'customers' && validCard(d))
@@ -346,7 +360,8 @@ service cloud.firestore {
         || (collection == 'packages' && validPackage(d))
         || (collection == 'pieces' && validPiece(d))
         || (collection == 'cells' && validCell(id, d))
-        || (collection == 'tasks' && validTask(d));
+        || (collection == 'tasks' && validTask(d))
+        || (collection == 'places' && validPlace(id, d));
     }
 
     match /workspaces/{wid} {
@@ -647,7 +662,7 @@ service cloud.firestore {
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells', 'tasks'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells', 'tasks', 'places'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();

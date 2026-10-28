@@ -14,6 +14,7 @@ import type { Piece, Thread } from './model'
 import { useAuth } from './auth'
 import { useDocuments, type Doc } from './documents'
 import type { Task } from './tasks'
+import type { Place } from './places'
 
 export type WorkspaceData = {
   pieces: WithId<Piece>[]
@@ -35,6 +36,8 @@ export type WorkspaceData = {
   documents: WithId<Doc>[]
   // Every kanban's tasks (D-251).
   tasks: Task[]
+  // Cards on planes besides their home (D-281); one whose card or plane is gone is skipped.
+  places: Place[]
 }
 
 type CardDoc = { pieceId?: string; title?: string; name?: string; x?: number; y?: number } & CardFields
@@ -57,6 +60,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const edges = useWorkspaceCollection<Omit<Edge, 'id'>>(wid, 'edges')
   const threadDocs = useWorkspaceCollection<Thread>(wid, 'threads')
   const tasks = useWorkspaceCollection<Omit<Task, 'id'>>(wid, 'tasks')
+  const placeDocs = useWorkspaceCollection<Omit<Place, 'id'>>(wid, 'places')
   const threads = useMemo(() => threadDocs.data.filter((t) => t.planeId), [threadDocs.data])
   const { user } = useAuth()
   const documents = useDocuments(wid, user?.id)
@@ -71,9 +75,14 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
     ],
     [customers.data, problems.data, competitors.data, ideas.data, features.data, packages.data],
   )
-  const all = [pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells]
+  const places = useMemo(() => {
+    const planes = new Set(pieces.data.filter((p) => p.kind === 'plane').map((p) => p.id))
+    const ids = new Set(cards.map((c) => c.id))
+    return placeDocs.data.filter((p) => planes.has(p.planeId) && ids.has(p.cardId))
+  }, [placeDocs.data, pieces.data, cards])
+  const all = [pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs]
   return {
-    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data },
+    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places },
     isLoading: all.some((l) => l.isLoading),
     error: all.find((l) => l.error)?.error ?? null,
   }

@@ -1,6 +1,6 @@
 // Import (D-080, D-246): a bundle becomes a new workspace you own. Every id is new, and everything that points at
 // something follows it: cards their plane, text its space, links and evidence their cards, a package its members, a
-// matrix or a table its planes, cards and cells, a document piece its document. Anything pointing at something that isn't
+// matrix or a table its planes, cards and cells, a document piece its document, a card's other planes (D-281). Anything pointing at something that isn't
 // in the file is left out (a card on a plane that didn't come over, a link to a card that didn't). Not undoable: it's a
 // new workspace; if a write fails, the half-made workspace is deleted.
 import { collection, doc, getDoc, writeBatch, type DocumentReference } from 'firebase/firestore'
@@ -14,6 +14,7 @@ import {
   cleanEvidence,
   cleanLabel,
   cleanPiece,
+  cleanPlace,
   cleanTask,
   type Bundle,
   type Ids,
@@ -63,6 +64,8 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
   const cleanPieces = new Map(bundle.pieces.map((d) => [d.id, cleanPiece(d, now, ids)]))
   for (const d of bundle.pieces) put(doc(col('pieces'), pieceIds.get(d.id)!), cleanPieces.get(d.id) ?? null)
 
+  // Cards written, with their home: a place needs its card here, on another plane than that.
+  const homes = new Map<string, string>()
   for (const type of ALL_TYPES) {
     for (const d of bundle[CARD_COLLECTION[type] as 'customers']) {
       // On a plane that came over (D-187).
@@ -75,7 +78,24 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
       // A package's members (D-239) that came over.
       const members = type === 'package' && { memberIds: (Array.isArray(d.memberIds) ? d.memberIds : []).flatMap((m) => ids.card(m)?.id ?? []).slice(0, 60) }
       writes.push([doc(col(CARD_COLLECTION[type]), cardIds.get(d.id)!.id), { ...fields, pieceId: on, ...members }])
+      homes.set(cardIds.get(d.id)!.id, on)
     }
+  }
+
+  // The other planes a card is on (D-281): a plane that came over, not its home; once per plane. The id is fixed by the two.
+  const placed = new Set<string>()
+  for (const d of bundle.places) {
+    const card = ids.card(d.cardId)
+    const plane = ids.piece(d.planeId)
+    const fields = cleanPlace(d, now)
+    const id = `${plane}_${card?.id}`
+    const ok = card && card.type !== 'competitorFeature' && plane && homes.has(card.id) && homes.get(card.id) !== plane
+    if (!ok || !fields || cleanPieces.get(d.planeId as string)?.kind !== 'plane' || placed.has(id)) {
+      skipped++
+      continue
+    }
+    placed.add(id)
+    writes.push([doc(col('places'), id), { planeId: plane, cardId: card.id, type: card.type, ...fields }])
   }
 
   for (const d of bundle.competitorFeatures) {

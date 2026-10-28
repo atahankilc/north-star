@@ -1,6 +1,6 @@
 // Cards on a plane (D-187): customers, problems, competitors, ideas, features and packages, each in its own collection
-// (D-037, D-040), belonging to one plane (`pieceId`) at x/y in that plane's px (its top-left corner). A competitor keeps
-// its title as `name`.
+// (D-037, D-040), at home on one plane (`pieceId`) at x/y in that plane's px (its top-left corner); other planes it's on
+// keep its spot there in `places` (D-281, places.ts). A competitor keeps its title as `name`.
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from './firebase'
 import { absent, discardNew, snapshotWith, tracked } from './history'
@@ -62,10 +62,20 @@ export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped']
 export const FEATURE_IMPACTS = ['low', 'medium', 'high']
 export const FEATURE_EFFORTS = ['S', 'M', 'L']
 
-export type Card = { id: string; type: AnyType; pieceId: string; title: string; x: number; y: number } & CardFields
+// `on`: set when the card is shown on a plane that isn't its home (D-281, `cardsOn`); x/y and `folded` are then its
+// place's there, and its spot is written there.
+export type Card = { id: string; type: AnyType; pieceId: string; title: string; x: number; y: number; on?: string } & CardFields
 
 const ref = (wid: string, type: AnyType, id?: string) =>
   id ? doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]), id) : doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]))
+
+// A card on a plane besides its home (D-281): fixed by the two, so a card is on a plane once.
+export const placeRef = (wid: string, plane: string, cardId: string) => doc(collection(db(), 'workspaces', wid, 'places'), `${plane}_${cardId}`)
+
+// Where a card's spot on the plane it's shown on is stored: the card itself on its home, its place elsewhere.
+const spotRef = (wid: string, card: Card) => (card.on ? placeRef(wid, card.on, card.id) : ref(wid, card.type, card.id))
+// A place has no `updatedAt`.
+const stamp = (card: Card, now: number) => (card.on ? {} : { updatedAt: now })
 
 // For undo's labels: `an idea`, `a feature`.
 const one = (type: AnyType) => `${type === 'idea' ? 'an' : 'a'} ${type}`
@@ -88,19 +98,19 @@ export async function addCard(wid: string, pieceId: string, type: CardType, at: 
 
 // The end of a drag: one undo step from where it started.
 export async function moveCard(wid: string, card: Card, to: [number, number]) {
-  const r = ref(wid, card.type, card.id)
+  const r = spotRef(wid, card)
   const before = await snapshotWith(r, { x: card.x, y: card.y })
-  return tracked(`move ${one(card.type)}`, [r], () => updateDoc(r, { x: to[0], y: to[1], updatedAt: Date.now() }), { before })
+  return tracked(`move ${one(card.type)}`, [r], () => updateDoc(r, { x: to[0], y: to[1], ...stamp(card, Date.now()) }), { before })
 }
 
 // Several at once, one undo step: a folded feature carries its parts (D-164).
 export async function moveCards(wid: string, moves: { card: Card; to: [number, number] }[]) {
-  const refs = moves.map((m) => ref(wid, m.card.type, m.card.id))
+  const refs = moves.map((m) => spotRef(wid, m.card))
   const before = (await Promise.all(moves.map((m, i) => snapshotWith(refs[i], { x: m.card.x, y: m.card.y })))).flat()
   return tracked(`move ${moves.length > 1 ? `${moves.length} cards` : one(moves[0].card.type)}`, refs, () => {
     const batch = writeBatch(db())
     const now = Date.now()
-    moves.forEach((m, i) => batch.update(refs[i], { x: m.to[0], y: m.to[1], updatedAt: now }))
+    moves.forEach((m, i) => batch.update(refs[i], { x: m.to[0], y: m.to[1], ...stamp(m.card, now) }))
     return batch.commit()
   }, { before })
 }
@@ -140,19 +150,32 @@ export function addPackage(wid: string, plane: string, members: Card[], at: [num
 }
 
 // A package folds its members in (`at`: where its card goes, where its band was) or lays them out again (`null`):
-// one undo step (D-239).
+// one undo step (D-239). On the plane it's shown on only (D-281).
 export function foldPackage(wid: string, card: Card, at: [number, number] | null) {
-  const r = ref(wid, card.type, card.id)
-  const data = at ? { folded: true, x: at[0], y: at[1], updatedAt: Date.now() } : { folded: deleteField(), updatedAt: Date.now() }
+  const r = spotRef(wid, card)
+  const data = at ? { folded: true, x: at[0], y: at[1], ...stamp(card, Date.now()) } : { folded: deleteField(), ...stamp(card, Date.now()) }
   return tracked(at ? 'fold a package' : 'unfold a package', [r], () => updateDoc(r, data))
 }
 
-// Several cards and their links, and text with them, one undo step (D-227, D-229: a selection's Delete).
-export function deleteCards(wid: string, list: Card[], edges: Edge[] = [], labels: { id: string }[] = []) {
+// A card's parts folded into it (D-225) or laid out again, on the plane it's shown on only (D-281): a fold changes its
+// height, which on another plane could put it over its neighbours.
+export function foldCard(wid: string, card: Card, folded: boolean) {
+  const r = spotRef(wid, card)
+  return tracked(folded ? 'fold parts' : 'unfold parts', [r], () => updateDoc(r, { folded: folded || deleteField(), ...stamp(card, Date.now()) }))
+}
+
+// The places of cards deleted everywhere (D-281).
+const placesOf = (wid: string, places: { planeId: string; cardId: string }[], ids: Set<string>) =>
+  places.filter((p) => ids.has(p.cardId)).map((p) => placeRef(wid, p.planeId, p.cardId))
+
+// Several cards and their links, and text with them, one undo step (D-227, D-229: a selection's Delete). Gone from every
+// plane they're on.
+export function deleteCards(wid: string, list: Card[], edges: Edge[] = [], labels: { id: string }[] = [], places: { planeId: string; cardId: string }[] = []) {
   const ids = new Set(list.map((c) => c.id))
   const refs = [
     ...list.map((c) => ref(wid, c.type, c.id)),
     ...edgesOn(edges, ids).map((e) => edgeRef(wid, e.id)),
+    ...placesOf(wid, places, ids),
     ...labels.map((l) => doc(collection(db(), 'workspaces', wid, 'labels'), l.id)),
   ]
   const n = list.length + labels.length
@@ -224,9 +247,10 @@ export function copyCards(wid: string, pieceId: string, list: Card[], edges: Edg
   return [...list.map((c) => made.get(c.id)!.id), ...texts.map((t) => t.id)]
 }
 
-// With its links (D-207): one undo step brings them all back.
-export function deleteCard(wid: string, card: Card, edges: Edge[] = []) {
-  const refs = [ref(wid, card.type, card.id), ...edgesOn(edges, new Set([card.id])).map((e) => edgeRef(wid, e.id))]
+// With its links (D-207) and its places on other planes (D-281): one undo step brings them all back.
+export function deleteCard(wid: string, card: Card, edges: Edge[] = [], places: { planeId: string; cardId: string }[] = []) {
+  const ids = new Set([card.id])
+  const refs = [ref(wid, card.type, card.id), ...edgesOn(edges, ids).map((e) => edgeRef(wid, e.id)), ...placesOf(wid, places, ids)]
   return tracked(`delete ${one(card.type)}`, refs, () => {
     const batch = writeBatch(db())
     refs.forEach((r) => batch.delete(r))

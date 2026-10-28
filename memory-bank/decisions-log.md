@@ -5031,3 +5031,39 @@ handles inside grow and shrink with it and go back to their screen size 120 ms a
   matrix and timeline. Settled screenshots identical (plane, table, matrix, kanban; light; reduced motion); card drag
   after a zoom, alt box select, pan, task drag and its panel unchanged.
 
+
+### D-281 · 2026-10-28 · Agreed, not built (brings D-139/D-140's cards on many planes back, on 1.5's planes; spec docs/specs/shared-cards.md)
+**One card on many planes: bring existing cards from other planes in, by search.** User: "planedeki cardlara başka
+planelerde oluşturulan cardları eklemek. Buna bütün cardlar dahil. Ya yeni card ekleyebiliyorsun da existing cardlardan
+search yapıp ekleyebiliyorsun". The user took every recommendation:
+- *The same card, not a copy:* one card, its own spot on each plane; moving here (off the plane it came from) offered too.
+  Data: the card's `pieceId`/x/y stay its home, every other plane a `places/{planeId}_{cardId}` doc (not `placements`:
+  1.0's docs still sit under that name, D-248). The home is never shown; taking a card off its home moves the home.
+- *Delete* on a card also elsewhere takes it off this plane; `delete everywhere` via right-click and the panel, hazard confirm.
+- *Parts and members come along* (a `part of` tree, a package's members), their layout kept.
+- *Extras:* a `⧉ N` mark, `≈ … [use that one]` while naming a new card, folding per plane, a `PLANES` panel section.
+- *Alternatives:* copies (⌘C/⌘V already; they drift apart, links split); move only (a card still on one plane); a map of
+  spots on the card doc (rules can't check a map's values, and undo restores the whole card).
+- *Not yet:* built in five sessions (the spec); ⌘V of the same cards across planes (⇧⌘V) left for later.
+
+### D-282 · 2026-10-28 · Accepted (D-281's session 1: the data layer)
+**Places, the data under one card on many planes.** Built as docs/specs/shared-cards.md's session 1 says:
+- *Data:* `places/{planeId}_{cardId}` `{ planeId, cardId, type, x, y, folded?, createdAt }`, loaded with the workspace
+  (one whose card or plane is gone skipped). `src/data/places.ts`: `cardsOn` gives a plane's cards with their spot there
+  (`on` set on placed ones; the same object while nothing changed, D-279), `bringIn` (parts and members along, layout
+  kept from the first card's home, clear of what's there; `move` moves the home instead), `takeOff` (off its home: the
+  home moves to the earliest other plane, its spot and fold with it), `planeGoes` for `deletePiece` (cards also elsewhere
+  stay, with their links). Moves and folds of a placed card write its place (`cards.ts` `spotRef`); deleting a card
+  takes its places. Export/import carry them (new ids; a place on the card's home, or whose card or plane didn't come
+  over, left out).
+- *Rules:* `validPlace`: keys, the id fixed by the two, `type`, x/y. Existence of the plane and card is not checked: a
+  batch's rules may read at most 20 documents, and placing a tree of parts or undoing a plane's delete writes more.
+- *Verified:* rules tests 429/0 (16 new: editor writes, moves, folds, takes off; wrong id, unknown type, no spot, a title,
+  a string fold denied; viewer denied). In headless Chrome through the app's own modules on the emulators (26 checks):
+  a feature brought with its part, the part's offset kept, clear of a card there; a package with its member; nothing
+  twice; `cardsOn` same objects; a move and a fold on P2 touch only the place; take off and ⌘Z; off its home moves the
+  home with spot and fold; a card on one plane only not taken off; move here; deleting P1 keeps the three cards also on
+  P2 (home moved) and their links, takes the card only there and its link, ⌘Z brings it all back exactly; delete
+  everywhere takes places; export → import keeps every place under new ids. The workspace page opens without errors.
+  `npm run build`.
+- *Not yet:* sessions 2–5 (nothing draws a placed card yet). Rules not deployed.

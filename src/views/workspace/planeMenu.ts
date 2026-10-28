@@ -3,6 +3,7 @@
 // copy, delete; one in a selection of several does it to all of them. A link: its label, turn it round, its kind (the
 // current one checked), remove. Text: edit, duplicate, copy, delete. Empty plane: a card of each type or text right
 // there, and paste. Editors only for the changes; anyone can open.
+import type { Place } from '../../data/places'
 import { addCard, copyCards, deleteCard, deleteCards, foldPackage, updateCard, type Card, type CardType, CARD_TYPES } from '../../data/cards'
 import { deleteEdge, reverseEdge, updateEdge, type Edge } from '../../data/edges'
 import { addLabel, deleteLabel, PARA_W, STICKY_W, type Label } from '../../data/labels'
@@ -31,6 +32,8 @@ type Ctx = {
   cards: Card[]
   labels: Label[]
   edges: Edge[]
+  // Cards on planes besides their home (D-281): deleting a card takes its places too.
+  places: Place[]
   // Who's writing (a sticky note is signed).
   me: { uid?: string; author: string }
   // Where the pointer is, in the plane's px.
@@ -66,7 +69,7 @@ function several(c: Ctx, n: number): MenuEntry[] {
             hint: '⌫',
             onSelect: () => {
               setSelection([])
-              void deleteCards(c.wid, picked, c.edges, texts)
+              void deleteCards(c.wid, picked, c.edges, texts, c.places)
             },
           },
         ]
@@ -101,7 +104,7 @@ export function cardItems(c: Ctx, id: string): MenuEntry[] {
     ...(c.editor
       ? [
           { key: 'dup', label: 'duplicate', glyph: '⊕', letter: 'd', hint: '⌘D', onSelect: () => setSelection(copyCards(c.wid, c.plane, [card], c.edges, by2())) },
-          { key: 'del', label: 'delete', glyph: '×', danger: true, hint: '⌫', onSelect: () => void deleteCard(c.wid, card, c.edges) },
+          { key: 'del', label: 'delete', glyph: '×', danger: true, hint: '⌫', onSelect: () => void deleteCard(c.wid, card, c.edges, c.places) },
         ]
       : []),
   ]
@@ -176,8 +179,8 @@ export function planeItems(on: 'card' | 'label' | 'link' | null, id: string | nu
 }
 
 // What the plane needs from the canvas to build it.
-export function planeCtx(wid: string, plane: string, editor: boolean, all: { cards: Card[]; labels: Label[]; edges: Edge[] }, me: Ctx['me'], at: [number, number]): Ctx {
+export function planeCtx(wid: string, plane: string, editor: boolean, all: { cards: Card[]; labels: Label[]; edges: Edge[]; places: Place[] }, me: Ctx['me'], at: [number, number]): Ctx {
   const cards = all.cards.filter((k) => k.pieceId === plane)
   const folds = foldsOf(cards, all.edges)
-  return { wid, plane, editor, cards, labels: all.labels.filter((l) => l.pieceId === plane), edges: all.edges, me, at, parts: (id) => folds.count.get(id) ?? 0, all: all.cards }
+  return { wid, plane, editor, cards, labels: all.labels.filter((l) => l.pieceId === plane), edges: all.edges, places: all.places, me, at, parts: (id) => folds.count.get(id) ?? 0, all: all.cards }
 }

@@ -1,6 +1,6 @@
 // A whole workspace as one file (D-080, D-246): a .zip holding `workspace.json`. Only the content travels: the canvas's
 // pieces (planes, matrices, tables, documents lists and documents, kanbans) and what's in them, a kanban's tasks (D-251), the cards and everything on them
-// (links, evidence, competitor features, matched features, packages), text, matrix and table cells, and the documents
+// (links, evidence, competitor features, matched features, packages), the other planes cards are on (D-281), text, matrix and table cells, and the documents
 // you can see with their content. Members, roles, invite codes, comment threads (D-159) and anything AI never do.
 // Version 2 (D-246); files from before it (version 1, North Star 1.0) are refused (D-248).
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
@@ -32,6 +32,7 @@ export const BUNDLE_COLLECTIONS = [
   'labels',
   'cells',
   'tasks',
+  'places',
 ] as const
 export type BundleCollection = (typeof BUNDLE_COLLECTIONS)[number]
 
@@ -483,6 +484,14 @@ function boxNames(v: unknown) {
     return n && col !== undefined && row !== undefined && (name.trim() || tone) ? [compact({ col, row, name, tone })] : []
   })
   return out.length ? out : undefined
+}
+
+// A card on a plane besides its home (D-281), without the two (their new ids are the importer's).
+export function cleanPlace(d: Raw, now: number) {
+  const x = num(d.x)
+  const y = num(d.y)
+  if (x === undefined || y === undefined) return null
+  return compact({ x, y, folded: yes(d.folded), createdAt: num(d.createdAt) ?? now })
 }
 
 // One of a kanban's tasks (D-251), without its kanban, its card or who made it; who it was given to stays behind (the
