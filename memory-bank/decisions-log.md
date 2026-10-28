@@ -5256,3 +5256,19 @@ unframed, pieces take more room than they need ("check kanban ... actually all o
   the production build loads a workspace.
 - *Rules:* `firestore.rules` changed (`open` on timelines): **not deployed yet**.
 - *Not yet:* a paged table's last page is still sized for a full page; a viewer's table keeps the `+` column's width.
+
+### D-290 · 2026-10-29 · Accepted (D-286's *Not yet*: one card on many planes closed; the user: "4 ü yapalım. Bir kart birden fazla olayını da kapatalım")
+**⇧⌘V brings the cards copied as the same cards; a card's thread says where the card is.**
+- *⇧⌘V* (`pasteSame`, selection.ts): the cards copied (⌘C, in this tab) come to the plane in focus as the same cards
+  (`bringIn`), with their parts and members, laid out as on the plane they were copied on (`bringIn`'s `layout`), at the
+  view's middle, selected; one undo step; the toast `Brought the same 2 cards here`. Those already here: `That card is
+  already on this plane`. Text isn't shared: with text copied too the toast adds `text isn't shared: ⌘V copies it`. ⌘V
+  still copies. The right-click on the plane offers `the same card here ⇧⌘V` next to `paste it here`, round the pointer.
+- *Threads:* a card's thread is where the card is (`threadSpace`, CanvasView): the plane in focus when the card is on it,
+  else the plane the thread was started on while the card is still there, else the card's home. The threads list's row
+  says that plane, `+N` when the card is on more (`on 02 Rivals +1`), nothing when it's here; "go there" goes there.
+- *Verified* on the emulators in headless Chrome, in a worktree with only these changes (another session was editing
+  the same files): ⌘C on Pazar, ⇧⌘V on Rivals brought the feature with its part (places, 150 px apart as on Pazar),
+  selected, the toast; again: `already on this plane`; ⌘V made one copy; the right-click's `the same card here` brought
+  it round the pointer on Ops; the card taken off Pazar (its home to Rivals): from Pazar the row reads `on 02 Rivals +1`,
+  from Ops (where the card is too) no other plane. `npm run build`.

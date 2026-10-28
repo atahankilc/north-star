@@ -821,3 +821,9 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   beside it on black; dock dropdowns plain text (`Menu` `plain`). Headless dark/light checks, rules tests 430/0, the
   production build loads. Rules change **not deployed**.
 
+
+## Done (2026-10-29): one card on many planes, the leftovers (D-290)
+- ⇧⌘V and the right-click's `the same card here` bring the cards copied as the same cards (laid out as where copied);
+  a card's thread in the threads list says where the card is (`+N`) and goes there. Checked in a worktree holding only
+  these changes, since another session (north-star-69, D-289) was editing CanvasView and others at the same time;
+  committed with only this session's hunks staged.

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-29 (speed: D-287 pushed and live; D-288 frames and library chunks committed, not pushed)_
+_Last updated: 2026-10-29 (D-288 speed leftovers, D-289 small details, D-290 one card on many planes closed; not pushed)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -24,6 +24,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## In progress
 - Speed: D-287 pushed and live (Pages deployed 2026-10-29); D-288 (frames, library chunks) committed, **not pushed**.
+- One card on many planes closed (D-281–D-286, D-290: ⇧⌘V, threads say where the card is). D-290 committed, **not pushed**.
 - Small details (D-289): unframed on black and sized to contents, timeline unframes and lost `shows`, focus on black,
   plain dock dropdowns. Committed, **not pushed**; `firestore.rules` (`open` on timelines) **not deployed**.
 

@@ -158,12 +158,13 @@ feature comes back as a piece, and check them with the user then.
   remove. Not yet: bend points, links to competitor features.
 - Parts (D-225, D-226): a competitor's features are small cards inside it, shown as it grows on hover (a strip of cells
   closed), open while selected; a folded feature, customer, problem or idea holds its parts as a tree inside it.
-- One card on many planes (D-281; built D-282, D-283, D-284, D-285, D-286;
+- One card on many planes (D-281; built D-282, D-283, D-284, D-285, D-286, D-290;
   docs/specs/shared-cards.md): the same card brought in by search (`existing card…` in the `+` and the right-click: the
   menu turns into the list where it was; ↵ bring, ⇧↵ more, ⌥↵ move here), its own spot per plane (`places/{planeId}_{cardId}`), parts and members along; Delete takes it off
   this plane when it's elsewhere too (a toast says where it still is; `delete everywhere` through the hazard confirm); `⧉ N` on the card;
   a `PLANES` panel section (go there, `×` off one, `+ place on`); naming a new card offers `≈ … [use that one]`; folding
-  per plane; matrix, table, kanban, finder and comments count a card on every plane it's on (`isOnPlane`, D-286).
+  per plane; matrix, table, kanban, finder and comments count a card on every plane it's on (`isOnPlane`, D-286); ⇧⌘V
+  brings the cards copied as the same cards, and a card's thread is where the card is (D-290).
 - Several at once (D-227, D-229, D-230): shift+click, alt+drag a box, text too; drag together, arrows, ⌘C/⌘V/⌘D, Delete,
   Escape; the panel's `N selected` lines up, spaces out, tags all; others see it (`sel` + `more`), a follower takes it;
   a pan keeps it, only a click on the plane lets go.

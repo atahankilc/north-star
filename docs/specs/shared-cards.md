@@ -1,6 +1,6 @@
 # Spec: one card on many planes
 
-Status: **built (D-281, 2026-10-28): all five sessions done (D-282–D-286).** Split into sessions; every session must be able to start from this
+Status: **built (D-281, 2026-10-28): all five sessions done (D-282–D-286); the leftovers (⇧⌘V, threads) D-290.** Split into sessions; every session must be able to start from this
 file alone. The user: "planedeki cardlara başka planelerde oluşturulan cardları eklemek. Buna bütün cardlar dahil. Ya yeni
 card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
 
@@ -28,7 +28,7 @@ card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
 - **Extras in the first version:** a `⧉ N` mark on cards on more than one plane; `≈ … [use that one]` while naming a new
   card; folding per plane; a `PLANES` section in the card's panel.
 - Only cards (the five types + packages). Not text, sticky notes, competitor features (those live inside their
-  competitor and come with it). ⌘C/⌘V stays a copy.
+  competitor and come with it). ⌘C/⌘V stays a copy; ⇧⌘V brings the same cards (D-290).
 
 ## Data
 
