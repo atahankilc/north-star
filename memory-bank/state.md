@@ -40,7 +40,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Known issues
 - Emulators only: after a Storage URL fetch, a tab's next Firestore write can queue ~55 s in Chrome (HTTP/1.1 connection limit).
 - Emulators only: the 6th page load in one Chrome tab stalls ~60 s (connections per host); use a new tab per few loads.
-- Emulators only: on the long-running Firestore emulator (8080) a workspace's live updates can stop; seed a fresh one.
+- Emulators only: a Firestore emulator left running for days can stop sending one workspace's live updates; restart it.
 - Two live workspaces hold reports written with made-up `createdAt` (2026-10-19 12:00:00.0xx), so they sort above
   reports made that morning. Data, not code.
 
@@ -58,8 +58,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Test data: click Alice, then create a workspace (there is no example workspace). Seed script: sign in to the auth
   emulator as `test-alice` with the firebase client in node, write a workspace + pieces + items, open `/workspaces/<wid>`
   after clicking Alice.
-- Emulators: a firestore one left on 8080 (its CLI gone) keeps its old rules: `PUT 127.0.0.1:8080/emulator/v1/projects/demo-north-star:securityRules`
-  loads them, `DELETE …/documents` clears data, start the rest `--only auth,database,storage`; stop yours with `kill -INT`.
+- Emulators: start them all with `npm run emulators` (or `--only auth,firestore,database,storage`) and stop yours with
+  `kill -INT`. One left behind with its CLI gone ignores `-INT` (stopped with `kill` on 2026-10-29); while one runs on
+  8080 it keeps old rules: `PUT 127.0.0.1:8080/emulator/v1/projects/demo-north-star:securityRules` loads them.
   Headless: items draw twice (canvas picture + focus), take the last `[data-task]`; dev mounts twice, never clear on unmount.
 - Canvas speed: pieces' contents are memoised (keep their props stable); in focus a matrix's cells and heads and a table's
   rows are made only when they change; only what's on screen is drawn (`visible.ts`); a matrix too small to read is
