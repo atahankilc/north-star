@@ -49,6 +49,8 @@ function useLinger<T>(value: T | null, ms: number): [T | null, boolean] {
 type Props = {
   wid: string
   threads: WithId<Thread>[]
+  // Whether a thread is inside a plane (default: made there; D-281: also on a card brought there).
+  inside?: (t: WithId<Thread>, plane: string) => boolean
   titleOf: (t: Pick<Thread, 'on' | 'targetId'>) => string
   // Takes the board to a thread (on its plane, D-168) and opens it.
   onGo: (t: WithId<Thread>) => void
@@ -87,12 +89,12 @@ export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
   )
 }
 
-export function ThreadInbox({ wid, threads: all, titleOf, onGo, whereOf, here, goneOf, scopeName, isOwner, onShow }: Props) {
+export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf, here, goneOf, scopeName, isOwner, onShow }: Props) {
   const listOpen = useThreadView((s) => s.inbox)
   // Only what's inside a plane when its console opened the panel (D-193, D-195); the plane's own conversation isn't
   // inside it, it's on the canvas.
   const scope = useThreadView((s) => s.scope)
-  const threads = useMemo(() => (scope ? all.filter((t) => t.planeId === scope) : all), [all, scope])
+  const threads = useMemo(() => (scope ? all.filter((t) => (inside ? inside(t, scope) : t.planeId === scope)) : all), [all, scope, inside])
   const openId = useThreadView((s) => s.openId)
   const draft = useThreadView((s) => s.draft)
   const current = all.find((t) => t.id === openId) ?? null

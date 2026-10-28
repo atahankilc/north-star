@@ -2,7 +2,7 @@
 // hand (a card, or just a typed name). No rule is required: no rules at all is every card on every plane. A rule is a
 // field, `is` or `is not`, and the values it takes (any of them): a plane, a card type, a status, a tag; or a few words
 // the title holds. Generic on purpose, so a table (and later a matrix's axes) can show any slice of the workspace.
-import type { Card } from './cards'
+import { isOnPlane, type Card } from './cards'
 
 export const RULE_FIELDS = ['plane', 'type', 'status', 'tag', 'title'] as const
 export type RuleField = (typeof RULE_FIELDS)[number]
@@ -43,7 +43,8 @@ function meets(c: Card, r: Rule) {
   let hit: boolean
   switch (r.field) {
     case 'plane':
-      hit = v.includes(c.pieceId)
+      // On any of them: its home or one it was brought to (D-281).
+      hit = v.some((p) => isOnPlane(c, p))
       break
     case 'type':
       hit = v.includes(c.type)

@@ -5138,3 +5138,27 @@ plane.** Built as docs/specs/shared-cards.md's session 4 says:
   took it off with nothing left; `↓` Enter the same; `Zebra Labs` offered nothing and Enter kept it; `01 Pazar` in PLANES
   went into Pazar's focus. `npm run build`.
 - *Not yet:* session 5 (matrix, table, kanban, finder, comments and the panel's own lists counting placed cards).
+
+### D-286 · 2026-10-28 · Accepted (D-281's session 5: the rest of the app; the feature complete)
+**Everything that asks "the cards on this plane" counts the ones brought there.** Built as docs/specs/shared-cards.md's
+session 5 says:
+- *How:* a card carries `planes` (every plane it's on, its home first) when that's more than its home, set where the
+  workspace's cards are built (`workspaceData`; cards on one plane stay the same objects); `isOnPlane(card, plane)`
+  (cards.ts) answers it without passing places around.
+- *Where:* a matrix's one-plane axis (`entriesOf`, and its setup's counts); the table's `plane is` rule (`meets`: on any
+  of the planes; `is not` the rest) and its plane column (every plane, home first); a kanban stuck to a plane, its cards
+  (`heldCards`) and its tasks (`shownTasks`), the timeline through it; the panel's `≈ our` features and `in package` (on
+  the plane looked at) and a package's holds picker; making a card from the panel (`make`, Tab's next) on the plane looked
+  at, under the card's spot there. The finder lists a card under every plane it's on, at its spot there.
+- *Comments:* a card's chip was already drawn wherever the card is; now `threadIn` makes a card's thread inside every
+  plane the card is on, for the plane's `[💬 N inside]` and the threads list's `inside "<plane>"`; its pin is its spot on
+  the plane in focus, so "go there" from a plane the card is on stays there. A new comment's `planeId` is the plane it's
+  made on (D-283). The list's row still says where it was started (`on 01 Pazar ↗`).
+- *Verified:* through the app's modules in headless Chrome (cards with `planes`): features on Rivals = the one at home
+  there + the brought one; ideas on Rivals = only the brought one; `plane is Rivals` = B, F, I and `is not` = X; a card
+  kanban stuck to Rivals holds the brought feature; a task kanban stuck to Rivals shows the brought card's task and not
+  the one of a card only on Pazar; `threadIn` true for Rivals, false for a third plane. On the emulators: the finder found
+  "Parent feature" under 01 Pazar and 02 Rivals; the threads list `INSIDE "02 Rivals"` showed the thread made on Pazar,
+  its chip under the card on Rivals (screenshot). `npm run build`.
+- *Not yet* (the feature's leftovers): ⌘V of the same cards across planes (⇧⌘V); a thread's row saying where the card is
+  as well as where it was started.

@@ -9,7 +9,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { CARD_TYPES, type Card, type CardType } from '../../data/cards'
+import { CARD_TYPES, isOnPlane, type Card, type CardType } from '../../data/cards'
 import { kindOfPiece } from '../../data/pieces'
 import {
   CELL_KINDS,
@@ -140,7 +140,7 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
   const hidden = axis.hide?.length ?? 0
   const byId = new Map(cards.map((c) => [c.id, c]))
   const on = new Set([...entriesOf(axis, cards).map((e) => e.key)])
-  const ofType = (t: string) => cards.filter((c) => c.type === t && (!axis.plane || c.pieceId === axis.plane)).length
+  const ofType = (t: string) => cards.filter((c) => c.type === t && (!axis.plane || isOnPlane(c, axis.plane))).length
   const drop = (item: AxisItem) => (onRemoveItem ? onRemoveItem(item) : onChange({ ...axis, items: axis.items.filter((i) => i !== item) }))
   return (
     <>

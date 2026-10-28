@@ -106,7 +106,8 @@ export function useFieldText(): FieldText {
         case 'type':
           return c.type
         case 'plane':
-          return planeName.get(c.pieceId) ?? ''
+          // Every plane it's on, its home first (D-281).
+          return (c.planes ?? [c.pieceId]).map((p) => planeName.get(p) ?? '').filter(Boolean).join(', ')
         case 'status':
           return statusOf(c) ?? ''
         case 'tags':

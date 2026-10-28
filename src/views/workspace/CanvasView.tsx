@@ -21,7 +21,7 @@ import { FocusedPlane } from './FocusedPlane'
 import { ViewMenu } from './ViewMenu'
 import { planeCtx, planeItems } from './planeMenu'
 import { PlaneDockExtras } from './FilterDock'
-import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
+import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadIn, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu } from './ContextMenu'
 import { BringCards } from './BringCards'
 import { isNew, useReads } from '../../data/threads'
@@ -344,9 +344,10 @@ export function CanvasView() {
 
   // Comment threads (D-192, D-193): where each one's chip is (a component's bottom-right corner), in its space's px;
   // what it's on, in words.
-  const pinOf = (t: Pick<Thread, 'on' | 'targetId' | 'x' | 'y'>): { at: [number, number]; gone: boolean } => {
+  const pinOf = (t: Pick<Thread, 'on' | 'targetId' | 'x' | 'y'> & { planeId?: string }): { at: [number, number]; gone: boolean } => {
     if (t.on === 'card') {
-      const c = cards.find((x) => x.id === t.targetId)
+      // Its spot on the plane in focus when it's there (brought or not, D-281), else where the thread was made.
+      const c = [focusId, t.planeId].flatMap((sp) => (sp ? (cardsOf(sp).find((x) => x.id === t.targetId) ?? []) : []))[0] ?? cards.find((x) => x.id === t.targetId)
       return c ? { at: [c.x + CARD.w, c.y + CARD.h], gone: false } : { at: [t.x, t.y], gone: true }
     }
     if (t.on === 'label') {
@@ -369,6 +370,8 @@ export function CanvasView() {
     if (t.on === 'task') return { at: [t.x, t.y], gone: !tasks.some((x) => x.id === t.targetId) }
     return { at: [t.x, t.y], gone: false }
   }
+  // A thread inside a plane, for the threads list's `inside "<plane>"` (D-281: a card's, on a card brought there too).
+  const insideOf = useCallback((t: WithId<Thread>, plane: string) => threadIn(t, plane, cards), [cards])
   const spaceName = (sp: string) => {
     const p = pieces.find((x) => x.id === sp)
     return sp === CANVAS ? 'the canvas' : p?.name || `a ${p ? KIND_NAME[kindOfPiece(p)] : 'plane'}`
@@ -529,7 +532,8 @@ export function CanvasView() {
 
   // From the threads panel: to its space, the pin in the middle, open.
   const goTo = (t: WithId<Thread>) => {
-    const sp = t.planeId
+    // A card's thread from a plane the card is on too: stays there (D-281).
+    const sp = t.on === 'card' && focusId && cardsOf(focusId).some((c) => c.id === t.targetId) ? focusId : t.planeId
     openThread(t.id)
     // A task (D-260): picked, so its kanban (its focus, gone into first if need be) shows it framed.
     // Going into its kanban first, the pick waits for the kanban to be live there (leaving a space lets go of picks).
@@ -1016,7 +1020,7 @@ export function CanvasView() {
           }}
         />
       )}
-      <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
+      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {deletingCards && (
         <HazardConfirm
@@ -1456,11 +1460,11 @@ function PieceBox({ piece, shown, live, zoom, selected, editing, editor, onFocus
 
   // Conversations (D-193, D-195): the one on the plane itself has its own chip under its corner, like any component's;
   // the ones on what's inside it are counted in its console, apart.
-  const { threads } = useWs()
+  const { threads, cards: every } = useWs()
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
   const own = threadOn(threads, piece.id)
-  const mine = threads.filter((t) => !t.resolved && t.planeId === piece.id)
+  const mine = threads.filter((t) => !t.resolved && threadIn(t, piece.id, every))
   const freshOnes = mine.filter((t) => isNew(t, seen, t.id, me))
   const comments = {
     count: mine.length,

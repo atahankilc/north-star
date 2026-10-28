@@ -139,7 +139,7 @@ feature comes back as a piece, and check them with the user then.
 - Cards (D-187, D-205): in their own collections with `pieceId`, x/y in plane px, 200 × 100 (8 × 4 marks). Inside: type
   edge and label, status/regions/priority with evidence cells, Geist title ≤ 3 lines, facts, tag chips; smaller on
   screen, the title alone in whole words, then bars (D-152, D-153). On the canvas a plane shows a fitted picture; in
-  focus click selects, drag moves (snapped, alt free), Delete removes. Deleting a plane takes its cards, links and text.
+  focus click selects, drag moves (snapped, alt free), Delete removes. Deleting a plane takes its cards, links and text (cards also on another plane stay there, D-282).
 - Made and named (D-250): `+` in focus makes a card at the view's middle with its panel open for the title (never typed
   on the card, D-221); Enter keeps it (Tab makes the next of its type beside it), Escape or nothing typed takes it away;
   making and naming are one undo step; paragraphs and sticky notes keep ⌘Enter. Wizards: Enter next, last makes it.
@@ -152,12 +152,12 @@ feature comes back as a piece, and check them with the user then.
   remove. Not yet: bend points, links to competitor features.
 - Parts (D-225, D-226): a competitor's features are small cards inside it, shown as it grows on hover (a strip of cells
   closed), open while selected; a folded feature, customer, problem or idea holds its parts as a tree inside it.
-- One card on many planes (D-281; data and rules D-282, drawn and moved on planes D-283, brought in D-284, panel D-285;
+- One card on many planes (D-281; built D-282, D-283, D-284, D-285, D-286;
   docs/specs/shared-cards.md): the same card brought in by search (`existing card…` in the `+` and the right-click: the
   menu turns into the list where it was; ↵ bring, ⇧↵ more, ⌥↵ move here), its own spot per plane (`places/{planeId}_{cardId}`), parts and members along; Delete takes it off
   this plane when it's elsewhere too (a toast says where it still is; `delete everywhere` through the hazard confirm); `⧉ N` on the card;
   a `PLANES` panel section (go there, `×` off one, `+ place on`); naming a new card offers `≈ … [use that one]`; folding
-  per plane.
+  per plane; matrix, table, kanban, finder and comments count a card on every plane it's on (`isOnPlane`, D-286).
 - Several at once (D-227, D-229, D-230): shift+click, alt+drag a box, text too; drag together, arrows, ⌘C/⌘V/⌘D, Delete,
   Escape; the panel's `N selected` lines up, spaces out, tags all; others see it (`sel` + `more`), a follower takes it;
   a pan keeps it, only a click on the plane lets go.

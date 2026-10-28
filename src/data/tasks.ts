@@ -10,7 +10,7 @@
 // stay, unused, for if it holds tasks again.
 // Shapes mirror firestore.rules' validKanban and validTask; change both together.
 import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
-import type { AnyType, Card } from './cards'
+import { isOnPlane, type AnyType, type Card } from './cards'
 import type { Evidence } from './evidence'
 import { db, firebase } from './firebase'
 import { absent, tracked } from './history'
@@ -245,10 +245,15 @@ export function setEveryPlane(wid: string, pieceId: string, every: boolean) {
 
 // What a kanban shows (D-255): stuck to a plane and not set to every plane, the tasks for that plane's cards and those
 // for no card (or for one that's gone); otherwise all of them.
-export function shownTasks(tasks: Task[], piece: { stuckTo?: string; kanban?: KanbanSetup }, cards: Pick<Card, 'id' | 'pieceId'>[]) {
-  if (!piece.stuckTo || piece.kanban?.everyPlane) return tasks
-  const plane = new Map(cards.map((c) => [c.id, c.pieceId]))
-  return tasks.filter((t) => !t.cardId || !plane.has(t.cardId) || plane.get(t.cardId) === piece.stuckTo)
+// A card brought to that plane from another counts as its (D-281).
+export function shownTasks(tasks: Task[], piece: { stuckTo?: string; kanban?: KanbanSetup }, cards: Pick<Card, 'id' | 'pieceId' | 'planes'>[]) {
+  const plane = piece.stuckTo
+  if (!plane || piece.kanban?.everyPlane) return tasks
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  return tasks.filter((t) => {
+    const c = t.cardId ? byId.get(t.cardId) : undefined
+    return !c || isOnPlane(c, plane)
+  })
 }
 
 // A column taken away: its tasks go to the end of the one before it (or after, for the first): one undo step. The last

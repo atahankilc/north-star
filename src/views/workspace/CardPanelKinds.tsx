@@ -2,7 +2,8 @@
 // inside it, by category, a row opening in place), a feature's parent, parts (a tree of `part of`), what it's judged on, what it
 // rests on (and how sure that makes it) and the features of theirs that match it.
 import { useRef, useState } from 'react'
-import { cardRef, updateCard, type Card } from '../../data/cards'
+import { cardRef, isOnPlane, updateCard, type Card } from '../../data/cards'
+import { planeOf } from '../../data/places'
 import {
   addCompetitorFeature,
   AVAILABILITIES,
@@ -192,7 +193,8 @@ function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Ca
   const [ours, setOurs] = useState('')
   const about = useRef<HTMLTextAreaElement>(null)
   useAutoGrow(about, f.description ?? '')
-  const features = cards.filter((c) => c.type === 'feature' && c.pieceId === card.pieceId)
+  // Ours on the plane it's looked at on, brought ones too (D-281).
+  const features = cards.filter((c) => c.type === 'feature' && isOnPlane(c, planeOf(card)))
   const add = () => (f.name.trim() ? onDone({ ...f, name: f.name.trim(), category: f.category?.trim() || undefined }, ours || null) : undefined)
   const keys = (e: React.KeyboardEvent) => {
     e.stopPropagation()
@@ -241,7 +243,7 @@ function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Ca
 function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: { f: CompetitorFeature; card: Card; cards: Card[]; ours?: Card; editor: boolean; categories: string[]; onClose: () => void }) {
   const { wid, comparisons } = useWs()
   const set = (fields: Partial<CompetitorFeature>) => void updateCompetitorFeature(wid, f.id, fields)
-  const features = cards.filter((c) => c.type === 'feature' && c.pieceId === card.pieceId)
+  const features = cards.filter((c) => c.type === 'feature' && isOnPlane(c, planeOf(card)))
   return (
     <div className={styles.cfOpen}>
       <div className={styles.cfHead}>
@@ -574,7 +576,7 @@ export const hasMatches = (card: Card, comparisons: { featureId: string; competi
 export function InPackages({ card, cards }: { card: Card; cards: Card[] }) {
   const { edges } = useWs()
   const around = cards
-    .filter((p) => p.type === 'package' && p.pieceId === card.pieceId)
+    .filter((p) => p.type === 'package' && isOnPlane(p, planeOf(card)))
     .map((p) => ({ p, depth: packageTree(p, cards, edges).find((r) => r.card.id === card.id)?.depth }))
     .filter((x): x is { p: Card; depth: number } => x.depth !== undefined)
     .sort((a, b) => a.depth - b.depth)

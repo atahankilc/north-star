@@ -26,6 +26,7 @@ import {
   type NewThread,
 } from '../../data/threads'
 import { useHistory } from '../../data/history'
+import { isOnPlane, type Card } from '../../data/cards'
 import { ago } from '../../ui/ago'
 import styles from './Threads.module.css'
 
@@ -68,6 +69,13 @@ export function CommentIcon({ size = 16 }: { size?: number }) {
       <rect x="10" y="6" width="1.75" height="1.75" fill="currentColor" />
     </svg>
   )
+}
+
+// Whether a thread is inside a plane: made there, or on a card that's on it, brought from another plane too (D-281).
+export const threadIn = (t: Pick<Thread, 'planeId' | 'on' | 'targetId'>, plane: string, cards: Pick<Card, 'id' | 'pieceId' | 'planes'>[]) => {
+  if (t.planeId === plane) return true
+  const c = t.on === 'card' ? cards.find((x) => x.id === t.targetId) : undefined
+  return !!c && isOnPlane(c, plane)
 }
 
 // The conversation on a component (D-193): its newest unresolved thread. One at a time: commenting again opens it.

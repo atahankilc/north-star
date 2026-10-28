@@ -775,3 +775,19 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Then, asked and approved (D-280): zoom in a focus settles like the canvas's. Prod, 60 wheel steps: table main thread
   1924 → 461 ms (style 971 → 48, no dropped frames), matrix 1089 → 217, plane 312 → 123, kanban 304 → 123. L's 12 →
   17.2 px while zooming, 11.98 settled, at once on a press; settled screenshots identical; interactions as above.
+
+## Done (2026-10-28): one card on many planes (D-281–D-286)
+- Asked for: cards from other planes added to a plane, all kinds of card, by search as well as new ones; the gaps and
+  edge cases found first. Planned with the user (D-281, docs/specs/shared-cards.md): the same card, not a copy; Delete
+  takes it off this plane when it's elsewhere too; parts and members come along; `⧉ N`, `use that one`, folding per plane,
+  a PLANES section.
+- Built in five sessions, each verified in headless Chrome on the emulators and committed:
+  - D-282 data and rules: `places/{planeId}_{cardId}`, `src/data/places.ts`, deletes and a plane's delete keeping shared
+    cards, export/import; rules tests 429/0; 26 checks through the app's modules. Rules deployed 2026-10-28.
+  - D-283 planes draw and move placed cards; Delete / `take off this plane` / `delete everywhere` (hazard confirm); a pan
+    redraws no card (180 components over 60 steps on a plane with placed cards and on one without). 22 checks.
+  - D-284 `existing card…` in the `+` and the right-click: the list where the menu was, ↵ / ⇧↵ / ⌥↵. 20 checks.
+  - D-285 `⧉ N`, the panel's PLANES (go there, ×, `+ place on`), `use that one` while naming. 23 checks.
+  - D-286 matrix, table, kanban, tasks, finder, comments, the panel's lists via `card.planes` / `isOnPlane`. 12 checks.
+- Testing note: from a workspace tab the emulators can take tens of seconds to receive a write (state.md's known
+  issue); the checks wait for each write, and a ⌘Z pressed before a write lands undoes it as soon as it does.

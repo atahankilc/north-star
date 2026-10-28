@@ -131,7 +131,7 @@ function Panel() {
     if (!(found instanceof RegExp)) return []
     const re = found
     const all = findGroups(
-      { pieces: ws.pieces, cards: ws.cards, labels: ws.labels, cells: ws.cells, tasks: ws.tasks, documents: ws.documents, bodies, workspace: ws.workspace, me: user?.id, fieldText, room: size, held },
+      { pieces: ws.pieces, cards: ws.cards, places: ws.places, labels: ws.labels, cells: ws.cells, tasks: ws.tasks, documents: ws.documents, bodies, workspace: ws.workspace, me: user?.id, fieldText, room: size, held },
       re,
       here,
     )

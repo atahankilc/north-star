@@ -80,9 +80,19 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
     const ids = new Set(cards.map((c) => c.id))
     return placeDocs.data.filter((p) => planes.has(p.planeId) && ids.has(p.cardId))
   }, [placeDocs.data, pieces.data, cards])
+  // Each card says the planes it's on when that's more than its home (D-281); the others stay the same objects.
+  const placed = useMemo(() => {
+    if (!places.length) return cards
+    const on = new Map<string, Place[]>()
+    for (const p of places) on.set(p.cardId, [...(on.get(p.cardId) ?? []), p])
+    return cards.map((c) => {
+      const ps = on.get(c.id)?.filter((p) => p.planeId !== c.pieceId)
+      return ps?.length ? { ...c, planes: [c.pieceId, ...ps.sort((a, b) => a.createdAt - b.createdAt).map((p) => p.planeId)] } : c
+    })
+  }, [cards, places])
   const all = [pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs]
   return {
-    data: { pieces: pieces.data, cards, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places },
+    data: { pieces: pieces.data, cards: placed, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places },
     isLoading: all.some((l) => l.isLoading),
     error: all.find((l) => l.error)?.error ?? null,
   }

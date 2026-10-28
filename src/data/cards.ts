@@ -63,8 +63,12 @@ export const FEATURE_IMPACTS = ['low', 'medium', 'high']
 export const FEATURE_EFFORTS = ['S', 'M', 'L']
 
 // `on`: set when the card is shown on a plane that isn't its home (D-281, `cardsOn`); x/y and `folded` are then its
-// place's there, and its spot is written there.
-export type Card = { id: string; type: AnyType; pieceId: string; title: string; x: number; y: number; on?: string } & CardFields
+// place's there, and its spot is written there. `planes`: every plane it's on, its home first, when that's more than its
+// home (set as the workspace loads).
+export type Card = { id: string; type: AnyType; pieceId: string; title: string; x: number; y: number; on?: string; planes?: string[] } & CardFields
+
+// Whether a card is on a plane: its home or one it was brought to (D-281).
+export const isOnPlane = (c: Pick<Card, 'pieceId' | 'planes'>, plane: string) => c.pieceId === plane || !!c.planes?.includes(plane)
 
 const ref = (wid: string, type: AnyType, id?: string) =>
   id ? doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]), id) : doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]))

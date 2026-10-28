@@ -105,6 +105,8 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         criteria?[{id, text}] (≤ 8, D-133), folded? (its parts folded into it, D-164, D-225)
   competitors/{id}      pieceId, name, x, y, description?, audience?, pricing?, url?, regions[]? (D-145), notes?, tags[]?
   packages/{id}         pieceId, title, x, y, body?, tags[]?, memberIds (≤ 60), impact?, effort?, folded? (D-141, D-239)
+  places/{id}           planeId, cardId, type, x, y (its spot there), folded?, createdAt: a card on a plane besides its home
+                        (`pieceId`); the same card, fields and links shared (id = planeId_cardId; D-281, D-282)
   competitorFeatures/{id}  competitorId, name, description?, category?, availability? (free|paid|enterprise|beta), url? (D-164)
   comparisons/{id}      featureId, competitorId, competitorFeatureId? (their feature matching ours, D-164),
                         criteria? {criterionId: met|part|no} (D-133) (id = featureId_competitorId)

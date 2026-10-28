@@ -6,7 +6,7 @@
 // Rows (D-269): another field across the columns, `no value` on top, so the kanban becomes a grid of boxes (a column ×
 // a row), dropping into one setting both fields. A card shows only when both fields apply to it.
 import type { AnyType, Card, CardFields } from '../../data/cards'
-import { FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, VALIDATIONS } from '../../data/cards'
+import { FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, isOnPlane, VALIDATIONS } from '../../data/cards'
 import type { Edge } from '../../data/edges'
 import { rowsOf, type Source } from '../../data/source'
 import type { CardField, KanbanSetup } from '../../data/tasks'
@@ -93,7 +93,7 @@ export function heldCards(piece: Pick<Piece, 'stuckTo'> & { kanban?: KanbanSetup
   const source: Source = k?.source ?? { rules: [], items: [] }
   return rowsOf(source, cards)
     .flatMap((r) => (r.card && appliesTo(field, r.card.type) && (!row || appliesTo(row, r.card.type)) ? [r.card] : []))
-    .filter((c) => !piece.stuckTo || k?.everyPlane || c.pieceId === piece.stuckTo)
+    .filter((c) => !piece.stuckTo || k?.everyPlane || isOnPlane(c, piece.stuckTo))
 }
 
 // Its rows' field (D-269): none, or one that isn't its columns'.

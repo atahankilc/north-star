@@ -1,6 +1,6 @@
 # Spec: one card on many planes
 
-Status: **agreed (D-281, 2026-10-28); sessions 1–4 done (D-282–D-285).** Split into sessions; every session must be able to start from this
+Status: **built (D-281, 2026-10-28): all five sessions done (D-282–D-286).** Split into sessions; every session must be able to start from this
 file alone. The user: "planedeki cardlara başka planelerde oluşturulan cardları eklemek. Buna bütün cardlar dahil. Ya yeni
 card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
 
@@ -120,9 +120,16 @@ card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
   from `factsOf(…, planes)` in the card's foot. Under the new card's title field up to three alike (its type, title
   holding what's typed, two letters on, not on this plane), `↓` into them, Enter or a click; `discardCard` + `bringIn`.
 
-## Session 5: the rest of the app · not started
+## Session 5: the rest of the app · **done (D-286, 2026-10-28)**
 
 - Edge cases 4, 5, 6, 7: comments, matrix, table, kanban, timeline, finder, packages, panel kinds.
+- Built: a card carries `planes` (every plane it's on, home first, only when more than its home; set in
+  `workspaceData`), and `isOnPlane(card, plane)` (cards.ts) answers "on this plane" everywhere: a matrix's one-plane
+  axis, the table's `plane is` rule, a kanban stuck to a plane (its cards, its tasks), the panel's `≈ our` features and
+  `in package`, its holds picker. The table's plane column lists every plane. The finder lists a card under each plane
+  it's on, at its spot there (`cardsOn`). Threads: `threadIn` (a card's thread is inside every plane the card is on) for
+  a plane's `[💬 N inside]` and the threads list's `inside "<plane>"`; a card's pin is its spot on the plane in focus,
+  and "go there" stays on it. Making a card from the panel (`make`, Tab's next) puts it on the plane looked at.
 
 ## Found along the way
 

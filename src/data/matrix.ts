@@ -14,7 +14,7 @@
 // D-133). Each is a row (or column) of its own under the card, `card~criterion`, its cells ordinary cells; the card's
 // own cells then read from them (rollUp), folded as one small square each. Shown open or folded per card, shared.
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
-import { CARD_TYPES, type AnyType, type Card, type CardType } from './cards'
+import { CARD_TYPES, isOnPlane, type AnyType, type Card, type CardType } from './cards'
 import { db } from './firebase'
 import { tracked } from './history'
 import { pieceRef } from './pieces'
@@ -186,7 +186,7 @@ const byTitle = (a: Card, b: Card) => (a.title ? (b.title ? a.title.localeCompar
 // type already brings is shown once; a card that's gone is left out (its cells stay, and come back with ⌘Z).
 export function entriesOf(a: Axis, cards: Card[]): Entry[] {
   const hidden = new Set(a.hide ?? [])
-  const auto = a.type ? cards.filter((c) => c.type === a.type && (!a.plane || c.pieceId === a.plane) && !hidden.has(c.id)).sort(byTitle) : []
+  const auto = a.type ? cards.filter((c) => c.type === a.type && (!a.plane || isOnPlane(c, a.plane)) && !hidden.has(c.id)).sort(byTitle) : []
   const seen = new Set(auto.map((c) => c.id))
   const byId = new Map(cards.map((c) => [c.id, c]))
   const out: Entry[] = auto.map((c) => ({ key: c.id, name: c.title, card: c, auto: true }))

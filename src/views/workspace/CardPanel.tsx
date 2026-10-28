@@ -8,6 +8,7 @@ import {
   addCard,
   CARD,
   cardBounds,
+  isOnPlane,
   copyCards,
   deleteCard,
   spotRef,
@@ -36,7 +37,7 @@ import { packageTree } from './cardInside'
 import { labelBox } from './TextItems'
 import { kindOf, labelRef, moveMany, type Label } from '../../data/labels'
 import { clipboard, deleteHere, onPlane, packageThese, setSelection } from './selection'
-import { bringIn, cardsOn, elsewhere, onPlane as isOn, planeOf, planesOf, takeOff } from '../../data/places'
+import { bringIn, cardsOn, elsewhere, onPlane as isOn, planeOf, planesOf, takeOff, type Place } from '../../data/places'
 import { useGoTo } from './goTo'
 import { useHistory } from '../../data/history'
 import { GRID, snap } from '../../data/grid'
@@ -544,7 +545,7 @@ function Holds({ n, card, cards, editor }: P) {
       {picking && (
         <CardPicker
           card={card}
-          cards={cards.filter((c) => c.pieceId === card.pieceId)}
+          cards={cards.filter((c) => isOnPlane(c, planeOf(card)))}
           types={['customer', 'problem', 'competitor', 'idea', 'feature', 'package']}
           exclude={new Set([card.id, ...around, ...tree.map((r) => r.card.id)])}
           make={false}
@@ -641,7 +642,7 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
     if (keep && t !== card.title) void retitleCard(wid, card, t, fresh)
     else setDraft(card.title)
     if (then === 'shut') useCanvasView.setState({ panelShut: card.id })
-    if (then === 'next' && card.type !== 'package') void makeNext(wid, card, cards)
+    if (then === 'next' && card.type !== 'package') void makeNext(wid, card, cards, places)
   }
   return (
     <>
@@ -697,9 +698,9 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
 }
 
 // The next card of its type, a grid step right of this one (or the first clear spot past it), its title ready.
-async function makeNext(wid: string, card: Card, cards: Card[]) {
+async function makeNext(wid: string, card: Card, cards: Card[], places: Place[]) {
   const at: [number, number] = [card.x + CARD.w + GRID + CARD.w / 2, card.y + CARD.h / 2]
-  const id = await addCard(wid, card.pieceId, card.type as CardType, at, cards.filter((c) => c.pieceId === card.pieceId))
+  const id = await addCard(wid, planeOf(card), card.type as CardType, at, cardsOn(cards, places, planeOf(card)))
   useCanvasView.setState({ cardSelected: id, cardEditing: id, fresh: id, cardMulti: [] })
 }
 
@@ -924,8 +925,9 @@ export function CardPicker({
   const makeType = !makes || types?.[0] === 'package' ? undefined : types?.[0]
   const make = async () => {
     if (!makeType || !q.trim()) return
-    const id = await addCard(wid, card.pieceId, makeType, [card.x + CARD.w / 2, card.y + CARD.h * 2], cards)
-    const made: Card = { id, type: makeType, pieceId: card.pieceId, title: q.trim(), x: 0, y: 0 }
+    // On the plane it's looked at on, under its spot there (D-281).
+    const id = await addCard(wid, planeOf(card), makeType, [card.x + CARD.w / 2, card.y + CARD.h * 2], cards)
+    const made: Card = { id, type: makeType, pieceId: planeOf(card), title: q.trim(), x: 0, y: 0 }
     await retitleCard(wid, made, q.trim(), true)
     onPick(made)
   }

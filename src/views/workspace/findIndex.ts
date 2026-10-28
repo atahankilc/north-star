@@ -20,6 +20,7 @@ import { landing, matchesIn, MOST, type FindItem, type FindTarget } from './find
 import type { ReactNode } from 'react'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import type { Place } from './goTo'
+import { cardsOn, type Place as CardPlace } from '../../data/places'
 
 // Where a row goes: a place on the canvas or in a plane (go to's, D-196), lit there; a match in a table, matrix or list
 // (into its focus, landing on `view`); in a document on its own (its focus); in a document open beside a list.
@@ -36,6 +37,8 @@ export type Group = { space: string; title: string; glyph: ReactNode; rows: Row[
 type Data = {
   pieces: WithId<Piece>[]
   cards: Card[]
+  // Cards brought to planes besides their home (D-281).
+  places: CardPlace[]
   labels: Label[]
   cells: Cell[]
   tasks: Task[]
@@ -105,7 +108,7 @@ function pageRows(id: string, text: string, re: RegExp, dest: (k: number) => Des
 
 // Every space's matches, in reading order; the one you're in (`here`) first.
 export function findGroups(data: Data, re: RegExp, here: string): Group[] {
-  const { pieces, cards, labels, cells, tasks, documents, bodies, workspace, me, fieldText, room, held } = data
+  const { pieces, cards, places, labels, cells, tasks, documents, bodies, workspace, me, fieldText, room, held } = data
   const groups: Group[] = []
   const textRows = (space: string): Row[] =>
     labels
@@ -131,7 +134,8 @@ export function findGroups(data: Data, re: RegExp, here: string): Group[] {
     const title = `${name} · ${KIND_NAME[kind]}`
     let rows: Row[] = []
     if (kind === 'plane') {
-      const own = cards.filter((c) => c.pieceId === p.id).sort(readingOrder)
+      // Brought from other planes too, at their spot here (D-281).
+      const own = cardsOn(cards, places, p.id).sort(readingOrder)
       rows = [
         ...own.flatMap((c): Row[] => {
           if (!c.title || !matchesIn(c.title, re, 1).length) return []
