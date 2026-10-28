@@ -241,6 +241,10 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     // Where you're looking, in edit mode, to be moved where you want it.
     setEditing(id, true)
   }
+  const bringHere = () => {
+    const r = document.querySelector('[aria-label="Add to the plane"]')?.getBoundingClientRect()
+    if (plane && r) useCanvasView.setState({ bringing: { plane, at: null, screen: [r.right + 8, r.top] } })
+  }
   const addHere = async (type: CardType) => {
     const { planeCam: c, size } = useCanvasView.getState()
     if (!plane || !c) return
@@ -266,6 +270,8 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
             ? [
                 { key: 'cards', heading: 'card' },
                 ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
+                // One already on another plane (D-281): the menu turns into the list of them, opening where it did.
+                { key: 'existing', label: 'existing card…', glyph: '⧉', letter: 'e', hint: 'from another plane', onSelect: () => bringHere() },
                 // A package (D-240): picked from the plane's cards, as a section is drawn.
                 { key: 'package', label: 'package', glyph: '▣', letter: 'k', tone: TYPE_ACCENT.package, hint: 'select', onSelect: () => useCanvasView.setState({ packing: plane, drawing: null }) },
                 ...text,

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-28 (one card on many planes: planned D-281, data + rules D-282, planes D-283)_
+_Last updated: 2026-10-28 (one card on many planes: planned D-281, data + rules D-282, planes D-283, bringing in D-284)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -23,11 +23,11 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
-- Nothing open. The last work (D-277, ink and lines) is merged and pushed.
+- One card on many planes (D-281), docs/specs/shared-cards.md: sessions 1 (data, rules, deployed), 2 (planes draw and
+  move placed cards, Delete takes off) and 3 (`existing card…`) done and committed, not pushed (D-282–D-284); session 4
+  next (the panel's PLANES section, `⧉ N`, `use that one`), then 5 (matrix, table, kanban, finder, comments).
 
 ## Next steps (not started; ask the user which first)
-- **In progress:** one card on many planes (D-281), docs/specs/shared-cards.md: sessions 1 (data, rules, deployed) and
-  2 (planes draw and move placed cards, Delete takes off) done (D-282, D-283); session 3 next (bringing cards in).
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): link bend points (D-155), links to a
   competitor's features and dropping a link on a small card.
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.

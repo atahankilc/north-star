@@ -7,3 +7,9 @@
   border: 1px solid var(--line-hover);
   background: var(--bg);
 }
+
+/* A list of things to pick from (D-281: cards from other planes), with their planes on the right: room for both. */
+.menu[data-wide] {
+  width: 400px;
+  max-width: calc(100vw - 16px);
+}

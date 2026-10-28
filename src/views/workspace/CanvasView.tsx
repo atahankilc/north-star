@@ -23,6 +23,7 @@ import { planeCtx, planeItems } from './planeMenu'
 import { PlaneDockExtras } from './FilterDock'
 import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu } from './ContextMenu'
+import { BringCards } from './BringCards'
 import { isNew, useReads } from '../../data/threads'
 import { ThreadInbox } from './ThreadInbox'
 import { CARD } from '../../data/cards'
@@ -402,7 +403,7 @@ export function CanvasView() {
     if (focusId && !useCanvasView.getState().focusArrived) return
     const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-target]')?.dataset.target
     // Inside a focused plane (D-237): what can be done with what's under the pointer, or added where it is.
-    const inPlane = focused && !isBare(focused) ? planeCtx(wid, focused.id, editor, { cards, labels, edges, places, pieces }, { uid: user?.id, author: user?.name || user?.email || 'someone' }, planeToSpace(e.clientX, e.clientY)) : null
+    const inPlane = focused && !isBare(focused) ? planeCtx(wid, focused.id, editor, { cards, labels, edges, places, pieces }, { uid: user?.id, author: user?.name || user?.email || 'someone' }, planeToSpace(e.clientX, e.clientY), [e.clientX, e.clientY]) : null
     if (!hit) {
       const items = inPlane ? planeItems(null, null, inPlane) : []
       const r0 = root.current!.getBoundingClientRect()
@@ -976,6 +977,8 @@ export function CanvasView() {
       {!focused && <TaskPanel editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />
       {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
+      {/* Cards from other planes to bring here (D-281), where the `+` or the right-click menu was. */}
+      {focused && !isBare(focused) && <BringCards here={focused.id} origin={root.current?.getBoundingClientRect() ?? { left: 0, top: 0 }} />}
       {/* A document being dragged out of its list, and the question before a private one goes on the canvas (D-232). */}
       {dragging && <DragGhost doc={documents.find((d) => d.id === dragging.docId)} at={dragging} root={root} />}
       <DocPlaceHere wid={wid} toScreen={focusId ? null : toScreen} others={shown.map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h }))} members={membersOf(workspace.roles)} onPlaced={placedDoc} />

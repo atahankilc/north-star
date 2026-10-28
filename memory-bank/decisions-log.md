@@ -5093,3 +5093,25 @@ Built as docs/specs/shared-cards.md's session 2 says:
   no card. Writes from a workspace tab reach the emulator late (state.md's known issue): the check waits for each.
   `npm run build`.
 - *Not yet:* sessions 3–5 (bringing cards in from the UI, the panel's PLANES and `⧉ N`, the rest of the app).
+
+### D-284 · 2026-10-28 · Accepted (D-281's session 3: bringing cards in)
+**`existing card…` in the `+` and in the right-click's `add a card here` turns the menu into the list of cards on other
+planes, where it was.** Built as docs/specs/shared-cards.md's session 3 says:
+- *The list* (`BringCards.tsx`): every card not on this plane, `# customers … # packages` in the chain's order, by
+  title; a row `› ▌ Parent feature   +1 part · 01 PAZAR` (type colour, what comes along, the planes it's on, caps);
+  typed, it narrows by title, type, tags and plane names. Opened beside the `+` (as its menu was) or where the
+  right-click menu was, through `ContextMenu` with its own prompt (`> bring a card from another plane…`), 400 px wide,
+  the foot `6 cards · ↵ bring · ⇧↵ more · ⌥↵ move here`. Closes on Escape (focus stays), a click outside, the wheel, or
+  a change of plane.
+- *Enter* brings the card with its parts or members to the view's middle (from the `+`) or round the pointer (from the
+  right-click), clear of what's there, selected; the view glides only when it lands off screen. *⇧Enter* brings it and
+  keeps the list open (the card leaves the list). *⌥Enter* moves its home here instead.
+- *Menu:* `MenuPanel`'s `onSelect` gets `{ shift, alt }` (Enter on the field or an item, or a click) and may return
+  `'keep'`; items may carry `words` to be found by; a `keys` line for the foot. Other menus unchanged.
+- *Data:* `bringIn` says at once what came and the box it lands in; the write goes on behind (`written`).
+- *Verified* in headless Chrome on the emulators (20 checks): `+` → `e` → Enter opens it; the order; a card already here
+  left out; `+1 part`, `+1 inside`, `01 PAZAR`; the foot; `crm` finds Crewly by its tag; Escape closes, focus kept; Enter
+  brought a feature with its part 150 px under it near the view's middle, clear of the card there, selected; ⇧Enter kept
+  the list and the card left it; ⌥Enter moved a competitor's home; the right-click's list opened at the pointer and a
+  package came with its member round it; one ⌘Z took both off; all drawn on the plane. `npm run build`.
+- *Not yet:* sessions 4–5 (the panel's PLANES, `⧉ N`, `use that one`; the rest of the app).

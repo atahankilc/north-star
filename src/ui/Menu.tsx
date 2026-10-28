@@ -11,7 +11,9 @@ export type MenuEntry =
   | {
       key: string
       label: ReactNode
-      onSelect: () => void
+      // Picked by a click or Enter, with whether shift or alt was held; `'keep'` keeps the menu open (D-281: ⇧↵ brings a
+      // card and goes on picking).
+      onSelect: (how: { shift: boolean; alt: boolean }) => unknown
       // A checkbox item: shows [x] / [ ] and keeps the menu open.
       checked?: boolean
       // Colour of the check or the glyph.
@@ -31,6 +33,8 @@ export type MenuEntry =
       fold?: { open: boolean; count: number; onToggle: () => void }
       // Folded away under the item before it: shown only while searching (D-200).
       folded?: boolean
+      // More words it's found by besides its label (a card's tags, its planes).
+      words?: string
     }
   | { key: string; heading: string }
 
@@ -84,7 +88,7 @@ function Lit({ label, q }: { label: ReactNode; q: string }) {
 function find(items: MenuEntry[], q: string): Item[] {
   const all = items.filter((i): i is Item => !('heading' in i))
   const keyed = q.length === 1 ? all.filter((i) => i.letter === q) : []
-  return [...keyed, ...all.filter((i) => !keyed.includes(i) && text(i.label).toLowerCase().includes(q))]
+  return [...keyed, ...all.filter((i) => !keyed.includes(i) && `${text(i.label)} ${i.words ?? ''}`.toLowerCase().includes(q))]
 }
 
 type PanelProps = {
@@ -96,10 +100,12 @@ type PanelProps = {
   // Closes the menu; `refocus` = give focus back to what opened it.
   onClose: (refocus?: boolean) => void
   id?: string
+  // What the keys do, in the foot after the count (the default: `↵ picks the first` while searching).
+  keys?: string
 }
 
 // The list with its `>` line and foot (D-222): a dropdown's panel, or the right-click menu's.
-export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…', noun = 'things', onClose, id }: PanelProps) {
+export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…', noun = 'things', onClose, id, keys }: PanelProps) {
   const [query, setQuery] = useState('')
   const field = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLDivElement>(null)
@@ -113,10 +119,13 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
     requestAnimationFrame(() => (field.current ?? list.current?.querySelector<HTMLElement>('[role^=menuitem]'))?.focus())
   }, [])
 
-  const pick = (item: Item) => {
-    item.onSelect()
-    if (item.checked === undefined) onClose()
+  const pick = (item: Item | undefined, e: { shiftKey: boolean; altKey: boolean }) => {
+    if (!item) return
+    const kept = item.onSelect({ shift: e.shiftKey, alt: e.altKey }) === 'keep'
+    if (item.checked === undefined && !kept) onClose()
   }
+  const firstItem = () => shown.find((i): i is Item => !('heading' in i))
+  const itemOf = (el: Element | null) => shown.find((i): i is Item => !('heading' in i) && i.key === (el as HTMLElement | null)?.dataset.key)
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const all = [...(list.current?.querySelectorAll<HTMLElement>('[role^=menuitem]') ?? [])]
@@ -129,7 +138,9 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
     if (e.key === 'ArrowUp' && at === 0 && field.current) (e.preventDefault(), field.current.focus())
     else if (e.key === 'ArrowDown') (e.preventDefault(), go(inField ? 0 : at + 1))
     else if (e.key === 'ArrowUp') (e.preventDefault(), go(at - 1))
-    else if (e.key === 'Enter' && inField) (e.preventDefault(), all[0]?.click())
+    else if (e.key === 'Enter' && inField) (e.preventDefault(), pick(firstItem(), e))
+    // Enter on an item, heard here rather than as its click: the click wouldn't say whether shift or alt was held.
+    else if (e.key === 'Enter' && at >= 0) (e.preventDefault(), pick(itemOf(all[at]), e))
     else if (e.key === 'Home' && !inField) (e.preventDefault(), go(0))
     else if (e.key === 'End' && !inField) (e.preventDefault(), go(all.length - 1))
     else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !inField) {
@@ -184,7 +195,7 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
               aria-expanded={item.fold?.open}
               tabIndex={-1}
               style={item.tone ? { ['--tone' as string]: item.tone } : undefined}
-              onClick={() => pick(item)}
+              onClick={(e) => pick(item, e)}
             >
               <span className={styles.cursor} aria-hidden>
                 ›
@@ -233,7 +244,11 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
       </div>
       {items.length > 0 && (
         <div className={styles.foot} aria-hidden>
-          {q ? (count ? `${count} found · ↵ picks the first` : '') : `${count} ${count === 1 ? noun.replace(/s$/, '') : noun} · type to find${keyed ? ' · a letter goes first' : ''}`}
+          {q
+            ? count
+              ? `${count} found · ${keys ?? '↵ picks the first'}`
+              : ''
+            : `${count} ${count === 1 ? noun.replace(/s$/, '') : noun} · ${keys ?? `type to find${keyed ? ' · a letter goes first' : ''}`}`}
         </div>
       )}
     </div>

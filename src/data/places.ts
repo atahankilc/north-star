@@ -148,10 +148,11 @@ function commit(ops: Op[]) {
 const plural = (n: number) => (n === 1 ? 'a card' : `${n} cards`)
 
 // Cards (`picked`, with their parts and members) brought to `plane` at `at`, one undo step; `move` takes those at home
-// where the first one is off that plane (their home moves here; others are only brought). Returns what's now here.
-export async function bringIn(wid: string, plane: string, picked: Card[], all: { cards: Card[]; places: Place[]; edges: Edge[] }, at: [number, number], move = false) {
+// where the first one is off that plane (their home moves here; others are only brought). Says at once what's coming
+// and the box it lands in (plane px), to select and glide to before the write is confirmed (`written`).
+export function bringIn(wid: string, plane: string, picked: Card[], all: { cards: Card[]; places: Place[]; edges: Edge[] }, at: [number, number], move = false) {
   const list = withParts(picked, all.cards, all.edges).filter((c) => !onPlane(c, all.places, plane))
-  if (!list.length) return []
+  if (!list.length) return { ids: [], box: null, written: Promise.resolve() }
   const spots = landing(list, all.cards, all.places, plane, at)
   const from = list[0].pieceId
   const now = Date.now()
@@ -160,9 +161,15 @@ export async function bringIn(wid: string, plane: string, picked: Card[], all: {
     if (move && c.pieceId === from) return { ref: cardRef(wid, c.type, c.id), data: { pieceId: plane, x: s.x, y: s.y, updatedAt: now } }
     return { ref: placeRef(wid, plane, c.id), set: true, data: { planeId: plane, cardId: c.id, type: c.type, x: s.x, y: s.y, ...(s.folded ? { folded: true } : {}), createdAt: now } }
   })
-  const before = (await Promise.all(ops.map((o) => (o.set ? absent([o.ref]) : snapshotWith(o.ref, {}))))).flat()
-  await tracked(`${move ? 'move' : 'bring'} ${plural(list.length)} here`, ops.map((o) => o.ref), commit(ops), { before })
-  return list.map((c) => c.id)
+  const written = (async () => {
+    const before = (await Promise.all(ops.map((o) => (o.set ? absent([o.ref]) : snapshotWith(o.ref, {}))))).flat()
+    await tracked(`${move ? 'move' : 'bring'} ${plural(list.length)} here`, ops.map((o) => o.ref), commit(ops), { before })
+  })()
+  const xs = [...spots.values()]
+  const x = Math.min(...xs.map((s) => s.x))
+  const y = Math.min(...xs.map((s) => s.y))
+  const box = { x, y, w: Math.max(...xs.map((s) => s.x)) + CARD.w - x, h: Math.max(...xs.map((s) => s.y)) + CARD.h - y }
+  return { ids: list.map((c) => c.id), box, written }
 }
 
 // Moving a card's home to another plane it's on (the earliest it came to): its spot and fold there become the card's,

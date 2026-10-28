@@ -1,6 +1,6 @@
 # Spec: one card on many planes
 
-Status: **agreed (D-281, 2026-10-28); sessions 1–2 done (D-282, D-283).** Split into sessions; every session must be able to start from this
+Status: **agreed (D-281, 2026-10-28); sessions 1–3 done (D-282, D-283, D-284).** Split into sessions; every session must be able to start from this
 file alone. The user: "planedeki cardlara başka planelerde oluşturulan cardları eklemek. Buna bütün cardlar dahil. Ya yeni
 card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
 
@@ -96,12 +96,17 @@ card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
   second panel for a placed card. Left for session 5: the `pieceId` filters in CardPanelKinds, CardPanel's making
   (543, 649), matrix, table, kanbanCards, findIndex, source.ts.
 
-## Session 3: bringing cards in · not started
+## Session 3: bringing cards in · **done (D-284, 2026-10-28)**
 
 - `+` in focus: `existing card…` (letter `e`) under the five types; the same in the right-click's `add a card here`.
 - A D-222 prompt: `>` narrows by title (then tags), `# customers …` sections, rows `› ▦ Crewly   02 RIVALS` (the planes
   it's on, faint), `with 4 parts` when it brings some; cards already here left out. Enter places, ⇧Enter places and keeps
   it open, ⌥Enter moves here (hint in the foot). Lands at the view's middle, clear; glided to, selected; arrives cell by cell.
+- Built: `BringCards.tsx` (the list, through `ContextMenu` with a prompt of its own, 400 px wide), opened by
+  `useCanvasView.bringing` from the `+` (beside it) or the right-click (where its menu was, the cards landing round the
+  pointer); rows `▌ title   +1 part · 01 PAZAR`, found by title, type, tags and plane names. `MenuPanel` learned
+  `onSelect({ shift, alt })` returning `'keep'`, `words`, and a `keys` foot. `bringIn` says at once what came and its box,
+  the write going on behind (`written`). The view glides only when what came lands off screen.
 
 ## Session 4: the panel and the marks · not started
 

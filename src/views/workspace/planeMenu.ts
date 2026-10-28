@@ -38,8 +38,9 @@ type Ctx = {
   pieces: { id: string; name?: string }[]
   // Who's writing (a sticky note is signed).
   me: { uid?: string; author: string }
-  // Where the pointer is, in the plane's px.
+  // Where the pointer is, in the plane's px, and on the screen (client px).
   at: [number, number]
+  screen: [number, number]
   // How many parts a card has (folding).
   parts: (id: string) => number
   // Every card of the workspace (a package is named after how many there are).
@@ -183,6 +184,8 @@ export function emptyItems(c: Ctx): MenuEntry[] {
     ...(paste ? [{ key: 'paste', label: `paste ${paste > 1 ? `${paste} things` : 'it'} here`, glyph: '⧉', letter: 'v', hint: '⌘V', onSelect: pasteHere }] : []),
     { key: 'cards', heading: 'add a card here' },
     ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: TONE[t], onSelect: () => void card(t) })),
+    // One already on another plane (D-281): the menu turns into the list of them, where it was.
+    { key: 'existing', label: 'existing card…', glyph: '⧉', letter: 'e', hint: 'from another plane', onSelect: () => useCanvasView.setState({ bringing: { plane: c.plane, at: c.at, screen: c.screen } }) },
     { key: 'text', heading: 'text here' },
     { key: 'heading', label: 'heading', glyph: TEXT_GLYPH.heading, letter: 'h', onSelect: () => void text('heading') },
     { key: 'paragraph', label: 'paragraph', glyph: TEXT_GLYPH.paragraph, letter: 'a', onSelect: () => void text('paragraph') },
@@ -197,8 +200,8 @@ export function planeItems(on: 'card' | 'label' | 'link' | null, id: string | nu
 }
 
 // What the plane needs from the canvas to build it.
-export function planeCtx(wid: string, plane: string, editor: boolean, all: { cards: Card[]; labels: Label[]; edges: Edge[]; places: Place[]; pieces: Ctx['pieces'] }, me: Ctx['me'], at: [number, number]): Ctx {
+export function planeCtx(wid: string, plane: string, editor: boolean, all: { cards: Card[]; labels: Label[]; edges: Edge[]; places: Place[]; pieces: Ctx['pieces'] }, me: Ctx['me'], at: [number, number], screen: [number, number] = [0, 0]): Ctx {
   const cards = cardsOn(all.cards, all.places, plane)
   const folds = foldsOf(cards, all.edges)
-  return { wid, plane, editor, cards, labels: all.labels.filter((l) => l.pieceId === plane), edges: all.edges, places: all.places, pieces: all.pieces, me, at, parts: (id) => folds.count.get(id) ?? 0, all: all.cards }
+  return { wid, plane, editor, cards, labels: all.labels.filter((l) => l.pieceId === plane), edges: all.edges, places: all.places, pieces: all.pieces, me, at, screen, parts: (id) => folds.count.get(id) ?? 0, all: all.cards }
 }
