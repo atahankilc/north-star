@@ -1,10 +1,10 @@
 // Things selected together on a focused plane (D-227, D-229; the old board's D-108/D-124): cards and text. Shift+click
 // puts one in or out, alt+drag on the plane draws a box; two or more are `cardMulti` (one is `cardSelected` or
-// `labelSelected`). The selection moves together, nudges with the arrows, copies (⌘C, ⌘V, ⌘D: in this tab), deletes
-// with Delete, lets go with Escape.
+// `labelSelected`). The selection moves together, nudges with the arrows, copies (⌘C, ⌘V, ⌘D: in this tab; ⇧⌘V brings
+// the same cards instead, D-290), deletes with Delete, lets go with Escape.
 import { useCanvasView } from '../../state/canvasView'
 import { addPackage, type Card } from '../../data/cards'
-import { elsewhere, removeHere, type Place } from '../../data/places'
+import { bringIn, elsewhere, planeOf, removeHere, type Place } from '../../data/places'
 import { useHistory } from '../../data/history'
 import type { Edge } from '../../data/edges'
 import type { Label } from '../../data/labels'
@@ -155,4 +155,21 @@ export function deleteHere(wid: string, plane: string, list: Card[], all: { edge
   const still = where.length > 2 ? `${where.slice(0, 2).join(', ')} +${where.length - 2}` : where.join(', ')
   const what = off.length === 1 ? `"${off[0].title || `this ${off[0].type}`}"` : `${off.length} cards`
   useHistory.getState().say(`Took ${what} off this plane · still on ${still}`)
+}
+
+// ⇧⌘V (D-290): the cards copied come here as the same cards, not copies (with their parts and members, laid out as on the
+// plane they were copied on), at `at` or the view's middle, selected; one undo step. Those already here stay as they
+// are; text isn't shared, so ⌘V is for that.
+export function pasteSame(wid: string, plane: string, all: { cards: Card[]; places: Place[]; edges: Edge[] }, at?: [number, number]) {
+  const say = useHistory.getState().say
+  const picked = clipboard.cards.flatMap((c) => all.cards.find((x) => x.id === c.id) ?? [])
+  if (!picked.length) return clipboard.labels.length ? say("Text isn't shared between planes: ⌘V copies it") : undefined
+  const { planeCam: c, size } = useCanvasView.getState()
+  const where = at ?? (c ? ([(size.w / 2 - c.ox) / c.zoom, (size.h / 2 - c.oy) / c.zoom] as [number, number]) : null)
+  if (!where) return
+  const { ids } = bringIn(wid, plane, picked, all, where, false, planeOf(clipboard.cards[0]))
+  if (!ids.length) return say(picked.length > 1 ? 'Those cards are already on this plane' : 'That card is already on this plane')
+  setSelection(picked.filter((x) => ids.includes(x.id)).map((x) => x.id))
+  const n = ids.length
+  say(`Brought ${n === 1 ? 'the same card' : `the same ${n} cards`} here${clipboard.labels.length ? " · text isn't shared: ⌘V copies it" : ''}`)
 }

@@ -44,7 +44,7 @@ import { CANVAS, deleteLabel, type Label } from '../../data/labels'
 import { PlaneCards } from './PlaneCards'
 import { LensCardPanel } from './CardPanel'
 import { DockAction, FocusDock } from './FocusDock'
-import { deleteCards, type Card } from '../../data/cards'
+import { deleteCards, isOnPlane, type Card } from '../../data/cards'
 import { deleteEdge } from '../../data/edges'
 import { GRID } from '../../data/grid'
 import { goToPlace, useGoTo, type Place } from './goTo'
@@ -374,6 +374,21 @@ export function CanvasView() {
     if (t.on === 'task') return { at: [t.x, t.y], gone: !tasks.some((x) => x.id === t.targetId) }
     return { at: [t.x, t.y], gone: false }
   }
+  // Where a thread is: a card's where the card is (D-290): the plane in focus when it's there, else the one the thread was
+  // started on while it's still there, else its home. Another thread where it was started.
+  const threadSpace = (t: Pick<Thread, 'on' | 'targetId' | 'planeId'>): string => {
+    const c = t.on === 'card' ? cards.find((x) => x.id === t.targetId) : undefined
+    if (!c) return t.planeId ?? CANVAS
+    if (focusId && isOnPlane(c, focusId)) return focusId
+    return isOnPlane(c, t.planeId) ? t.planeId : c.pieceId
+  }
+  // What the threads list says of it: that plane, `+N` when the card is on others too.
+  const whereOf = (t: WithId<Thread>) => {
+    const sp = threadSpace(t)
+    const c = t.on === 'card' ? cards.find((x) => x.id === t.targetId) : undefined
+    const more = c?.planes && sp !== space ? c.planes.length - 1 : 0
+    return `${spaceName(sp)}${more ? ` +${more}` : ''}`
+  }
   // A thread inside a plane, for the threads list's `inside "<plane>"` (D-281: a card's, on a card brought there too).
   const insideOf = useCallback((t: WithId<Thread>, plane: string) => threadIn(t, plane, cards), [cards])
   const spaceName = (sp: string) => {
@@ -536,8 +551,8 @@ export function CanvasView() {
 
   // From the threads panel: to its space, the pin in the middle, open.
   const goTo = (t: WithId<Thread>) => {
-    // A card's thread from a plane the card is on too: stays there (D-281).
-    const sp = t.on === 'card' && focusId && cardsOf(focusId).some((c) => c.id === t.targetId) ? focusId : t.planeId
+    // A card's thread goes where the card is (D-281, D-290).
+    const sp = threadSpace(t)
     openThread(t.id)
     // A task (D-260): picked, so its kanban (its focus, gone into first if need be) shows it framed.
     // Going into its kanban first, the pick waits for the kanban to be live there (leaving a space lets go of picks).
@@ -1028,7 +1043,7 @@ export function CanvasView() {
           }}
         />
       )}
-      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
+      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={whereOf} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {deletingCards && (
         <HazardConfirm

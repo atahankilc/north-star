@@ -13,7 +13,7 @@ import type { MenuEntry } from '../../ui/Menu'
 import { TEXT_GLYPH } from './glyphs'
 import { linkTone } from './PlaneLinks'
 import { LINK_GROUPS } from './planeFilter'
-import { clipboard, deleteHere, onPlane, packageThese, selectedIds, setSelection } from './selection'
+import { clipboard, deleteHere, onPlane, packageThese, pasteSame, selectedIds, setSelection } from './selection'
 import { foldsOf } from './cardInside'
 
 const CARD_LETTER: Record<CardType, string> = { customer: 'c', problem: 'r', competitor: 'o', idea: 'i', feature: 'f' }
@@ -182,6 +182,10 @@ export function emptyItems(c: Ctx): MenuEntry[] {
   }
   return [
     ...(paste ? [{ key: 'paste', label: `paste ${paste > 1 ? `${paste} things` : 'it'} here`, glyph: '⧉', letter: 'v', hint: '⌘V', onSelect: pasteHere }] : []),
+    // The same cards rather than copies (D-290), round the pointer.
+    ...(clipboard.cards.length
+      ? [{ key: 'same', label: `the same ${clipboard.cards.length > 1 ? `${clipboard.cards.length} cards` : 'card'} here`, glyph: '⧉', hint: '⇧⌘V', onSelect: () => pasteSame(c.wid, c.plane, { cards: c.all, places: c.places, edges: c.edges }, [x, y]) }]
+      : []),
     { key: 'cards', heading: 'add a card here' },
     ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: TONE[t], onSelect: () => void card(t) })),
     // One already on another plane (D-281): the menu turns into the list of them, where it was.

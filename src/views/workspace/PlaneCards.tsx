@@ -15,7 +15,7 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, copyCards, foldCard, foldPackage, moveCard, moveCards, spotRef, type AnyType, type Card } from '../../data/cards'
 import { planeOf } from '../../data/places'
-import { clipboard, deleteHere, heldAt, landed, onPlane, othersThan, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
+import { clipboard, deleteHere, heldAt, landed, onPlane, othersThan, pasteSame, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
 import { clearGuides, guide, showGuides, toggleGuides, toggleSnap, useGuides } from './guides'
 import { groupOf, keep, useFilter } from './planeFilter'
 import { useSearchParams } from 'react-router-dom'
@@ -345,6 +345,8 @@ function GuideLines({ zoom }: { zoom: number }) {
 // duplicate within this tab (pasted a step further each time, with the links between the cards, selected).
 function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Label[], edges: import('../../data/edges').Edge[]) {
   const { wid, places, pieces } = useWs()
+  // Every card, read when pasting the same ones (D-290).
+  const wsNow = useWsNow()
   const now = useRef({ cards, labels, edges, editor, places, pieces })
   now.current = { cards, labels, edges, editor, places, pieces }
   useEffect(() => {
@@ -392,6 +394,8 @@ function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Lab
       }
       if (!mod) return
       const key = e.key.toLowerCase()
+      // ⇧⌘V: the same cards, not copies (D-290).
+      if (key === 'v' && editor && e.shiftKey) return plane && clipboard.cards.length + clipboard.labels.length ? (stop(), pasteSame(wid, plane, { cards: wsNow().cards, places, edges })) : undefined
       if (key === 'v' && editor) return paste()
       if (!picked.length && !texts.length) return
       if (key === 'c') {

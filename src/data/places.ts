@@ -89,10 +89,9 @@ export function withParts(picked: Card[], cards: Card[], edges: Edge[]): Card[] 
 const overlaps = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   a.x < b.x + CARD.w + GRID && b.x < a.x + CARD.w + GRID && a.y < b.y + CARD.h + GRID && b.y < a.y + CARD.h + GRID
 
-// Where brought cards land on `plane`: laid out as they are on the first one's home (those not there in a row under
-// them), centred on `at`, on the grid, the whole group moved right past any card it would cover.
-export function landing(list: Card[], cards: Card[], places: Place[], plane: string, at: [number, number]): Map<string, { x: number; y: number; folded?: boolean }> {
-  const from = list[0]?.pieceId
+// Where brought cards land on `plane`: laid out as they are on `from` (the first one's home unless said; those not there
+// in a row under them), centred on `at`, on the grid, the whole group moved right past any card it would cover.
+export function landing(list: Card[], cards: Card[], places: Place[], plane: string, at: [number, number], from = list[0]?.pieceId): Map<string, { x: number; y: number; folded?: boolean }> {
   const there = new Map(cardsOn(cards, places, from).map((c) => [c.id, c]))
   const spots = new Map<string, { x: number; y: number; folded?: boolean }>()
   for (const c of list) {
@@ -148,12 +147,13 @@ function commit(ops: Op[]) {
 const plural = (n: number) => (n === 1 ? 'a card' : `${n} cards`)
 
 // Cards (`picked`, with their parts and members) brought to `plane` at `at`, one undo step; `move` takes those at home
-// where the first one is off that plane (their home moves here; others are only brought). Says at once what's coming
-// and the box it lands in (plane px), to select and glide to before the write is confirmed (`written`).
-export function bringIn(wid: string, plane: string, picked: Card[], all: { cards: Card[]; places: Place[]; edges: Edge[] }, at: [number, number], move = false) {
+// where the first one is off that plane (their home moves here; others are only brought). Laid out as on `layout` (the
+// plane they were copied on, ⇧⌘V; else the first one's home). Says at once what's coming and the box it lands in (plane
+// px), to select and glide to before the write is confirmed (`written`).
+export function bringIn(wid: string, plane: string, picked: Card[], all: { cards: Card[]; places: Place[]; edges: Edge[] }, at: [number, number], move = false, layout?: string) {
   const list = withParts(picked, all.cards, all.edges).filter((c) => !onPlane(c, all.places, plane))
-  if (!list.length) return { ids: [], box: null, written: Promise.resolve() }
-  const spots = landing(list, all.cards, all.places, plane, at)
+  if (!list.length) return { ids: [] as string[], box: null, written: Promise.resolve() }
+  const spots = landing(list, all.cards, all.places, plane, at, layout ?? list[0].pieceId)
   const from = list[0].pieceId
   const now = Date.now()
   const ops: Op[] = list.map((c) => {
