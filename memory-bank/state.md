@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-28 (one card on many planes built, D-281–D-286; committed, not pushed)_
+_Last updated: 2026-10-28 (one card on many planes built, D-281–D-286; pushed, live)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -23,8 +23,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
-- One card on many planes (D-281–D-286, docs/specs/shared-cards.md): all five sessions built and committed on `main`,
-  **not pushed** (pushing redeploys Pages; the rules with `places` are deployed). History: state-history.md.
+- Nothing open. The last work, one card on many planes (D-281–D-286), is pushed and live (Pages deployed 2026-10-28).
 
 ## Next steps (not started; ask the user which first)
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): link bend points (D-155), links to a
