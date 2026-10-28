@@ -7,13 +7,22 @@ import { db } from './firebase'
 import { absent, snapshotWith, tracked } from './history'
 import { GRID, snap } from './grid'
 import { CARD, cardRef, placeRef, type AnyType, type Card } from './cards'
-import type { Edge } from './edges'
+import { edgeRef, edgesOn, type Edge } from './edges'
+import { labelRef } from './labels'
 
 export type Place = { id: string; planeId: string; cardId: string; type: AnyType; x: number; y: number; folded?: boolean; createdAt: number }
 
 // The cards on a plane, each with its spot there (`on` set for those not at home). A card shown through a place is kept
 // as the same object while neither it nor its place changed, so what's drawn from it stays memoised (D-279).
 const shown = new Map<string, { base: Card; place: Place; card: Card }>()
+function placed(base: Card, p: Place): Card {
+  const was = shown.get(p.id)
+  if (was && was.base === base && was.place.x === p.x && was.place.y === p.y && was.place.folded === p.folded) return was.card
+  const card: Card = { ...base, x: p.x, y: p.y, folded: p.folded, on: p.planeId }
+  shown.set(p.id, { base, place: p, card })
+  return card
+}
+
 export function cardsOn(cards: Card[], places: Place[], plane: string): Card[] {
   const out = cards.filter((c) => c.pieceId === plane)
   const here = places.filter((p) => p.planeId === plane)
@@ -21,18 +30,34 @@ export function cardsOn(cards: Card[], places: Place[], plane: string): Card[] {
   const byId = new Map(cards.map((c) => [c.id, c]))
   for (const p of here) {
     const base = byId.get(p.cardId)
-    if (!base || base.pieceId === plane) continue
-    const was = shown.get(p.id)
-    if (was && was.base === base && was.place.x === p.x && was.place.y === p.y && was.place.folded === p.folded) {
-      out.push(was.card)
-      continue
-    }
-    const card: Card = { ...base, x: p.x, y: p.y, folded: p.folded, on: plane }
-    shown.set(p.id, { base, place: p, card })
-    out.push(card)
+    if (base && base.pieceId !== plane) out.push(placed(base, p))
   }
   return out
 }
+
+// Every plane's cards at once, as `cardsOn` gives them, by plane id.
+export function cardsByPlane(cards: Card[], places: Place[]): Map<string, Card[]> {
+  const out = new Map<string, Card[]>()
+  const add = (plane: string, c: Card) => {
+    const at = out.get(plane)
+    if (at) at.push(c)
+    else out.set(plane, [c])
+  }
+  for (const c of cards) add(c.pieceId, c)
+  if (!places.length) return out
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  for (const p of places) {
+    const base = byId.get(p.cardId)
+    if (base && base.pieceId !== p.planeId) add(p.planeId, placed(base, p))
+  }
+  return out
+}
+
+// The plane a card is drawn on: where its place is, else its home.
+export const planeOf = (card: Card) => card.on ?? card.pieceId
+
+// The other planes a card shown on `plane` is on.
+export const elsewhere = (card: Pick<Card, 'id' | 'pieceId'>, places: Place[], plane: string) => planesOf(card, places).filter((p) => p !== plane)
 
 // Every plane a card is on: its home first, then the others in the order it came to them.
 export function planesOf(card: Pick<Card, 'id' | 'pieceId'>, places: Place[]): string[] {
@@ -163,6 +188,26 @@ export async function takeOff(wid: string, plane: string, list: Card[], places: 
   if (!n) return 0
   await tracked(`take ${plural(n)} off this plane`, ops.map((o) => o.ref), commit(ops))
   return n
+}
+
+// Delete on a plane (the user, D-281): cards also on another plane come off this one, the others are deleted with their
+// links, text too; one undo step. Returns the cards taken off.
+export async function removeHere(wid: string, plane: string, list: Card[], all: { edges: Edge[]; places: Place[] }, labels: { id: string }[] = []) {
+  const off = list.filter((c) => elsewhere(c, all.places, plane).length)
+  const gone = list.filter((c) => !off.includes(c))
+  const ids = new Set(gone.map((c) => c.id))
+  const ops: Op[] = [
+    ...off.flatMap((c) => (c.pieceId === plane ? (rehome(wid, c, all.places, plane) ?? []) : [{ ref: placeRef(wid, plane, c.id), data: null }])),
+    ...gone.map((c) => ({ ref: cardRef(wid, c.type, c.id), data: null })),
+    ...edgesOn(all.edges, ids).map((e) => ({ ref: edgeRef(wid, e.id), data: null })),
+    ...all.places.filter((p) => ids.has(p.cardId)).map((p) => ({ ref: placeRef(wid, p.planeId, p.cardId), data: null })),
+    ...labels.map((l) => ({ ref: labelRef(wid, l.id), data: null })),
+  ]
+  if (!ops.length) return off
+  const n = list.length + labels.length
+  const what = !gone.length && !labels.length ? `take ${plural(off.length)} off this plane` : off.length ? `remove ${n} things` : `delete ${n > 1 ? `${n} things` : gone.length ? 'a card' : 'text'}`
+  await tracked(what, ops.map((o) => o.ref), commit(ops))
+  return off
 }
 
 // A plane's delete (pieces.ts): its cards also on another plane stay there (their home moves, D-281); its places go.

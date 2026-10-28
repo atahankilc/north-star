@@ -31,7 +31,8 @@ import { isReducedMotion } from '../../state/motion'
 import { isOwnerOf } from '../../data/workspaces'
 import type { Thread } from '../../data/model'
 import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePresenceReport } from './collab'
-import { heldAt } from './selection'
+import { deleteHere, heldAt } from './selection'
+import { cardsByPlane, elsewhere } from '../../data/places'
 import { runCells } from '../../ui/Appear'
 import { EVERY_HANDLE, Landing, Marks, ZOOM_SETTLE_MS } from '../../ui/Marks'
 import { DrawSection } from './DrawSection'
@@ -41,7 +42,7 @@ import { CANVAS, deleteLabel, type Label } from '../../data/labels'
 import { PlaneCards } from './PlaneCards'
 import { LensCardPanel } from './CardPanel'
 import { DockAction, FocusDock } from './FocusDock'
-import { deleteCard, type Card } from '../../data/cards'
+import { deleteCards, type Card } from '../../data/cards'
 import { deleteEdge } from '../../data/edges'
 import { GRID } from '../../data/grid'
 import { goToPlace, useGoTo, type Place } from './goTo'
@@ -93,6 +94,8 @@ export function CanvasView() {
   const editing = useCanvasView((s) => s.editing)
   const confirmingId = useCanvasView((s) => s.confirming)
   const confirming = pieces.find((p) => p.id === confirmingId) ?? null
+  // Cards also on other planes, deleted everywhere (D-281).
+  const deletingCards = useCanvasView((s) => s.deleting)
   const root = useRef<HTMLDivElement>(null)
   const lens = useRef<HTMLDivElement>(null)
   // The plane in focus (D-184), in the address so back leaves it and a reload stays in it.
@@ -114,8 +117,8 @@ export function CanvasView() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const shown = useMemo(() => shownPieces(pieces, cards), [pieces, cards, openSizes])
   // Each space's cards and text, kept the same lists until they change: what's in a piece isn't drawn again as the
-  // camera moves (the pieces' contents are memoised, below).
-  const cardsBy = useMemo(() => groupBy(cards, (c) => c.pieceId), [cards])
+  // camera moves (the pieces' contents are memoised, below). A plane's cards include those brought from others (D-281).
+  const cardsBy = useMemo(() => cardsByPlane(cards, places), [cards, places])
   const labelsBy = useMemo(() => groupBy(labels, (l) => l.pieceId), [labels])
   const cardsOf = (id: string) => cardsBy.get(id) ?? NONE
   const labelsOf = (id: string) => labelsBy.get(id) ?? NONE
@@ -399,7 +402,7 @@ export function CanvasView() {
     if (focusId && !useCanvasView.getState().focusArrived) return
     const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-target]')?.dataset.target
     // Inside a focused plane (D-237): what can be done with what's under the pointer, or added where it is.
-    const inPlane = focused && !isBare(focused) ? planeCtx(wid, focused.id, editor, { cards, labels, edges, places }, { uid: user?.id, author: user?.name || user?.email || 'someone' }, planeToSpace(e.clientX, e.clientY)) : null
+    const inPlane = focused && !isBare(focused) ? planeCtx(wid, focused.id, editor, { cards, labels, edges, places, pieces }, { uid: user?.id, author: user?.name || user?.email || 'someone' }, planeToSpace(e.clientX, e.clientY)) : null
     if (!hit) {
       const items = inPlane ? planeItems(null, null, inPlane) : []
       const r0 = root.current!.getBoundingClientRect()
@@ -730,7 +733,7 @@ export function CanvasView() {
         if ((e.key === 'Delete' || e.key === 'Backspace') && card && editor) {
           e.preventDefault()
           useCanvasView.setState({ cardSelected: null })
-          void deleteCard(wid, card, edgesRef.current, placesRef.current)
+          deleteHere(wid, card.on ?? card.pieceId, [card], { edges: edgesRef.current, places: placesRef.current, pieces: piecesRef.current })
         }
         return
       }
@@ -1012,6 +1015,22 @@ export function CanvasView() {
       )}
       <ThreadInbox wid={wid} threads={threads} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={(t) => spaceName(t.planeId ?? CANVAS)} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
       <Follow focusId={focusId} focusTo={focusTo} />
+      {deletingCards && (
+        <HazardConfirm
+          title={deletingCards.ids.length > 1 ? `delete ${deletingCards.ids.length} cards everywhere?` : `delete "${cards.find((c) => c.id === deletingCards.ids[0])?.title || 'this card'}" everywhere?`}
+          lines={[
+            `${deletingCards.ids.length > 1 ? 'They go' : 'It goes'} from every plane ${deletingCards.ids.length > 1 ? "they're" : "it's"} on, with ${deletingCards.ids.length > 1 ? 'their' : 'its'} links.`,
+            `To take ${deletingCards.ids.length > 1 ? 'them' : 'it'} off this plane only: ⌫.`,
+            `${UNDO_HINT} brings it back.`,
+          ]}
+          confirm="delete everywhere"
+          onCancel={() => useCanvasView.setState({ deleting: null })}
+          onConfirm={() => {
+            useCanvasView.setState({ deleting: null, cardSelected: null, cardMulti: [] })
+            void deleteCards(wid, cards.filter((c) => deletingCards.ids.includes(c.id)), edges, [], places)
+          }}
+        />
+      )}
       {confirming && (
         <HazardConfirm
           title={`delete ${confirming.name ? `"${confirming.name}"` : `this ${KIND_NAME[kindOfPiece(confirming)]}`}?`}
@@ -1025,6 +1044,7 @@ export function CanvasView() {
                   : isBare(confirming)
                   ? `The ${KIND_NAME[kindOfPiece(confirming)]} and its cells go; the cards in it stay.`
                   : 'The plane and everything on it goes.',
+            ...(isBare(confirming) ? [] : sharedOnOf(cards, places, confirming)),
             `${UNDO_HINT} brings it back.`,
           ]}
           confirm="delete"
@@ -1038,6 +1058,12 @@ export function CanvasView() {
       )}
     </div>
   )
+}
+
+// A plane's delete keeps its cards that are also on other planes (D-281): says how many.
+function sharedOnOf(cards: Card[], places: import('../../data/places').Place[], plane: { id: string }) {
+  const n = cards.filter((c) => c.pieceId === plane.id && elsewhere(c, places, plane.id).length).length
+  return n ? [`${n === 1 ? 'One card' : `${n} cards`} on it ${n === 1 ? 'is' : 'are'} on other planes too and ${n === 1 ? 'stays' : 'stay'} there.`] : []
 }
 
 // The focus's own view set, gliding there unless `instant`.

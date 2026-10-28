@@ -7,10 +7,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   addCard,
   CARD,
-  cardRef,
   copyCards,
   deleteCard,
-  deleteCards,
+  spotRef,
   discardCard,
   updateCards,
   FEATURE_EFFORTS,
@@ -35,7 +34,8 @@ import { factsOf } from './cardFacts'
 import { packageTree } from './cardInside'
 import { labelBox } from './TextItems'
 import { kindOf, labelRef, moveMany, type Label } from '../../data/labels'
-import { clipboard, onPlane, packageThese, setSelection } from './selection'
+import { clipboard, deleteHere, onPlane, packageThese, setSelection } from './selection'
+import { elsewhere, onPlane as isOn, planeOf } from '../../data/places'
 import { GRID, snap } from '../../data/grid'
 import { useWs } from './context'
 import { linkTone } from './PlaneLinks'
@@ -123,6 +123,7 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
   const texts = labels.filter((l) => multi.includes(l.id))
   const count = many.length + texts.length
   const plane = new URLSearchParams(location.search).get('focus')
+  const shared = many.filter((c) => plane && elsewhere(c, places, plane).length)
   const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
   const card = cards.find((c) => c.id === id)
   // Enter shut it on a card just made (D-250); the card stays selected.
@@ -131,7 +132,7 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
   // A card the panel would cover glides left, clear of it (48 px). Only on its own plane in focus: picked from a matrix's
   // or a table's head, the view is the lens's.
   useEffect(() => {
-    if (!card || card.pieceId !== plane) return
+    if (!card || planeOf(card) !== plane) return
     const { planeCam: c, size } = useCanvasView.getState()
     if (!c) return
     const area = size.w - right
@@ -156,14 +157,14 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
             <>
               <PanelAction label="copy" title="⌘C" onClick={() => Object.assign(clipboard, { cards: many, labels: texts, edges, pasted: 0 })} />
               {editor && plane && <PanelAction label="duplicate" title="⌘D" onClick={() => setSelection(copyCards(wid, plane, many, edges, [2 * GRID, 2 * GRID], texts))} />}
-              {editor && (
+              {editor && plane && (
                 <PanelAction
-                  label="delete"
-                  danger
+                  label={shared.length ? (shared.length === count ? 'take off this plane' : 'remove') : 'delete'}
+                  danger={!shared.length}
                   title="Delete or Backspace"
                   onClick={() => {
                     setSelection([])
-                    void deleteCards(wid, many, edges, texts, places)
+                    deleteHere(wid, plane, many, { edges, places, pieces: ws.pieces }, texts)
                   }}
                 />
               )}
@@ -190,20 +191,24 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
                 onClick={() => {
                   const t = threadOn(threads, card.id)
                   if (t) openThread(t.id)
-                  else startComment({ on: 'card', targetId: card.id, planeId: card.pieceId, at: [card.x + CARD.w, card.y + CARD.h] })
+                  else startComment({ on: 'card', targetId: card.id, planeId: planeOf(card), at: [card.x + CARD.w, card.y + CARD.h] })
                 }}
               />
-              {editor && (
-                <PanelAction
-                  label="delete"
-                  danger
-                  title="Delete or Backspace"
-                  onClick={() => {
-                    close()
-                    void deleteCard(wid, card, edges, places)
-                  }}
-                />
-              )}
+              {editor &&
+                // One also on other planes is deleted from all of them only through the hazard confirm (D-281).
+                (elsewhere(card, places, planeOf(card)).length ? (
+                  <PanelAction label="delete everywhere" danger onClick={() => useCanvasView.setState({ deleting: { ids: [card.id], plane: planeOf(card) } })} />
+                ) : (
+                  <PanelAction
+                    label="delete"
+                    danger
+                    title="Delete or Backspace"
+                    onClick={() => {
+                      close()
+                      void deleteCard(wid, card, edges, places)
+                    }}
+                  />
+                ))}
             </>
           }
         >
@@ -222,7 +227,7 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
 const NONE: Card[] = []
 const CELL_SEL = /^t?cell\|[^|]+\|([^|]+)\|([^|]+)$/
 export function LensCardPanel({ space, editor }: { space: string | null; editor: boolean }) {
-  const { cards } = useWs()
+  const { cards, places } = useWs()
   const sel = useCanvasView((s) => (s.cardMulti.length ? null : s.cardSelected))
   // The card whose panel is open, as the selection moved on to cells.
   const open = useRef<string | null>(null)
@@ -231,7 +236,8 @@ export function LensCardPanel({ space, editor }: { space: string | null; editor:
   const card = sel ? cards.find((x) => x.id === sel) : undefined
   if (card) {
     open.current = card.id
-    if (card.pieceId !== space) shown = card.id
+    // Not on the plane in focus (which opens its own); a card brought there from another is on it too (D-281).
+    if (!space || !isOn(card, places, space)) shown = card.id
   } else {
     const m = sel?.match(CELL_SEL)
     const ends = m ? [m[1], m[2]].filter((k) => cards.some((x) => x.id === k)) : []
@@ -258,7 +264,7 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
     .join(' · ')
   // Everything selected with its box: cards their size, text as it's laid out (D-229).
   const items = [
-    ...cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h })),
+    ...cards.map((c) => ({ id: c.id, ref: spotRef(wid, c), x: c.x, y: c.y, w: CARD.w, h: CARD.h })),
     ...texts.map((x) => ({ id: x.id, ref: labelRef(wid, x.id), ...labelBox(x) })),
   ]
   type Item = (typeof items)[number]

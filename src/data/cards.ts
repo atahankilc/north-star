@@ -73,7 +73,7 @@ const ref = (wid: string, type: AnyType, id?: string) =>
 export const placeRef = (wid: string, plane: string, cardId: string) => doc(collection(db(), 'workspaces', wid, 'places'), `${plane}_${cardId}`)
 
 // Where a card's spot on the plane it's shown on is stored: the card itself on its home, its place elsewhere.
-const spotRef = (wid: string, card: Card) => (card.on ? placeRef(wid, card.on, card.id) : ref(wid, card.type, card.id))
+export const spotRef = (wid: string, card: Card) => (card.on ? placeRef(wid, card.on, card.id) : ref(wid, card.type, card.id))
 // A place has no `updatedAt`.
 const stamp = (card: Card, now: number) => (card.on ? {} : { updatedAt: now })
 

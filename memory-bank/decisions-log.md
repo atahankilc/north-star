@@ -5067,3 +5067,29 @@ search yapıp ekleyebiliyorsun". The user took every recommendation:
   everywhere takes places; export → import keeps every place under new ids. The workspace page opens without errors.
   `npm run build`.
 - *Not yet:* sessions 2–5 (nothing draws a placed card yet). Rules not deployed.
+
+### D-283 · 2026-10-28 · Accepted (D-281's session 2: planes draw and move placed cards)
+**A plane shows the cards brought from other planes as its own; Delete takes a shared card off this plane only.**
+Built as docs/specs/shared-cards.md's session 2 says:
+- *Drawing:* CanvasView's per-plane lists come from `cardsByPlane` (places.ts), so a plane's picture, its focus,
+  fit, guides and box select take placed cards; `planeCtx`, the layout's fit and `+`, the finder's preview and Beside's
+  glide go through `cardsOn`. Others' selections by `planeOf`. LensCardPanel no longer opens a second panel for a
+  card placed on the plane in focus.
+- *Writing:* a drag, a group move, line up / space out and a fold of a placed card write its place (`spotRef`;
+  `moveMany` leaves `updatedAt` off a place); `foldCard` replaces the folded `updateCard`. A package is made at home on
+  the plane it's made on.
+- *Delete (the user's rule):* `deleteHere` (selection.ts): cards also on another plane come off this one, the rest are
+  deleted with their links, text too, one undo step; the toast says `Took "Shared idea" off this plane · still on 01
+  Pazar`. The right-click on a shared card: `take off this plane` (⌫, not red) and `delete everywhere` (red, through
+  the hazard confirm, `useCanvasView.deleting`); several: `take N off this plane` / `remove N` + `delete everywhere`;
+  the panel: `delete everywhere` for a shared card, its several's button the same as Delete. A plane's delete confirm
+  says `3 cards on it are on other planes too and stay there.`
+- *Verified* in headless Chrome on the emulators (dev, 1400 × 900): the canvas draws F, its part and an idea on both
+  planes; a drag on Rivals moved the place +100, +50 and not the card; Delete on a shared idea took it off with the
+  toast above, ⌘Z back; Delete on a card only there deleted it and its link, ⌘Z back; the menu's items; `fold 1 part`
+  folded only the place; `delete everywhere` asks (screenshot), cancel leaves it; shift-select of a shared and an only-
+  here card, Delete: one off, one gone, one ⌘Z for both; the plane delete's line. Pan, 60 steps, React components
+  rendered (DevTools' way, bailed-out subtrees skipped): Rivals (placed cards) 180, Pazar (none) 180, the shells only,
+  no card. Writes from a workspace tab reach the emulator late (state.md's known issue): the check waits for each.
+  `npm run build`.
+- *Not yet:* sessions 3–5 (bringing cards in from the UI, the panel's PLANES and `⧉ N`, the rest of the app).

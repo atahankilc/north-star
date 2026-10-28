@@ -48,7 +48,8 @@ resized, renamed or deleted. A matrix, table or documents piece can be **unframe
 1. **Plane** (D-180). Where the cards live: customers, problems, competitors (their features inside them), ideas,
    features and packages, linked to each other (D-187, D-207, D-225, D-239). Text, sections and sticky notes go on it
    or straight on the canvas (D-188). In focus: multi-select, alignment guides, filters, right-click (D-227–D-237).
-   A card's panel opens on the right (D-219, D-221).
+   A card's panel opens on the right (D-219, D-221). One card can be on several planes, at its own spot on each, the same
+   card everywhere (D-281): Delete on a plane takes it off that one while it's on another; delete everywhere asks first.
 2. **Matrix** (D-204). Rows and columns are every card of a type (one plane or all), typed names or single cards;
    cells a scale of your own steps, a number or a text, with notes, `not relevant` and how sure; a reading for each
    row and column. Features × competitors is one of its templates; problems × customers, ideas × criteria and a blank

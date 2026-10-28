@@ -13,8 +13,9 @@
 // (`[−] 3 parts`), their cards shrinking into its rows, and grows back out on `[+]`.
 // The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { CARD, cardRef, copyCards, deleteCards, foldPackage, moveCard, moveCards, updateCard, type AnyType, type Card } from '../../data/cards'
-import { clipboard, heldAt, landed, onPlane, othersThan, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
+import { CARD, copyCards, foldCard, foldPackage, moveCard, moveCards, spotRef, type AnyType, type Card } from '../../data/cards'
+import { planeOf } from '../../data/places'
+import { clipboard, deleteHere, heldAt, landed, onPlane, othersThan, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
 import { clearGuides, guide, showGuides, toggleGuides, toggleSnap, useGuides } from './guides'
 import { groupOf, keep, useFilter } from './planeFilter'
 import { useSearchParams } from 'react-router-dom'
@@ -200,7 +201,7 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
   // pointed at or selected, and the selected link).
   // The canvas's picture of the plane shows it as its filter says too.
   const [params] = useSearchParams()
-  const filter = useFilter(live ? params.get('focus') : (cards[0]?.pieceId ?? labels[0]?.pieceId ?? null))
+  const filter = useFilter(live ? params.get('focus') : ((cards[0] && planeOf(cards[0])) ?? labels[0]?.pieceId ?? null))
   const kept = useMemo(() => keep(cards, edges, filter), [cards, edges, filter])
   const shown = cards.filter((c) => kept.has(c.id))
   const lit = useCanvasView((s) => (live ? [s.cardHovered, s.cardSelected, ...s.cardMulti, s.linking?.from].filter(Boolean).join(' ') : ''))
@@ -232,7 +233,7 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
       if (b.x < f.x + f.w && b.x + b.w > f.x && b.y < f.y + f.h && b.y + b.h > f.y) outsiders.add(c.id)
     }
   }
-  const carry = cards.map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
+  const carry = cards.map((c) => ({ id: c.id, ref: spotRef(wid, c), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
   // The cards there when this opened are just there in focus (the plane's own picture was already showing them); on the
   // canvas they build up with the page. Any card after that builds up as it arrives.
   const [first] = useState(() => new Set(cards.map((c) => c.id)))
@@ -253,7 +254,7 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
     const all = new Set(ids)
     for (const id of ids) for (const r of folds.rows.get(id) ?? []) all.add(r.card.id)
     return [
-      ...cards.filter((c) => all.has(c.id)).map((c) => ({ id: c.id, ref: cardRef(wid, c.type, c.id), x: c.x, y: c.y })),
+      ...cards.filter((c) => all.has(c.id)).map((c) => ({ id: c.id, ref: spotRef(wid, c), x: c.x, y: c.y })),
       ...labels.filter((l) => all.has(l.id)).map((l) => ({ id: l.id, ref: labelRef(wid, l.id), x: l.x, y: l.y })),
     ]
   }
@@ -337,15 +338,15 @@ function GuideLines({ zoom }: { zoom: number }) {
 // several, Delete takes them all away, the arrows nudge a grid step (shift: four), ⌘C / ⌘V / ⌘D copy, paste and
 // duplicate within this tab (pasted a step further each time, with the links between the cards, selected).
 function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Label[], edges: import('../../data/edges').Edge[]) {
-  const { wid, places } = useWs()
-  const now = useRef({ cards, labels, edges, editor, places })
-  now.current = { cards, labels, edges, editor, places }
+  const { wid, places, pieces } = useWs()
+  const now = useRef({ cards, labels, edges, editor, places, pieces })
+  now.current = { cards, labels, edges, editor, places, pieces }
   useEffect(() => {
     if (!live) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t?.closest('input, textarea, [contenteditable], [role=dialog], [role=menu], [role=listbox]')) return
-      const { cards, labels, edges, editor, places } = now.current
+      const { cards, labels, edges, editor, places, pieces } = now.current
       const { cardMulti } = useCanvasView.getState()
       const ids = selectedIds()
       const picked = cards.filter((c) => ids.includes(c.id))
@@ -370,7 +371,8 @@ function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Lab
       if ((e.key === 'Delete' || e.key === 'Backspace') && cardMulti.length && editor) {
         stop()
         setSelection([])
-        return void deleteCards(wid, picked, edges, texts, places)
+        const plane = new URLSearchParams(location.search).get('focus')
+        return plane ? deleteHere(wid, plane, picked, { edges, places, pieces }, texts) : undefined
       }
       const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key] as [number, number] | undefined
       if (step && ids.length && editor && !mod) {
@@ -442,7 +444,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
   const { wid, threads } = useWs()
   const selected = useCanvasView((s) => live && (s.cardSelected === card.id || s.cardMulti.includes(card.id)))
   const hovered = useCanvasView((s) => live && s.cardHovered === card.id)
-  const peers = usePeersOn(card.id, card.pieceId)
+  const peers = usePeersOn(card.id, planeOf(card))
   const [pressed, setPressed] = useState(false)
   // Its members carry it: `place` already follows them while they're dragged.
   const [x, y] = [place.x, place.y]
@@ -536,7 +538,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
       })
   }, [held, card.id])
   const hovered = useCanvasView((s) => live && s.cardHovered === card.id)
-  const peers = usePeersOn(card.id, card.pieceId)
+  const peers = usePeersOn(card.id, planeOf(card))
   const target = useCanvasView((s) => live && s.linking?.over === card.id)
   const linkingFrom = useCanvasView((s) => live && s.linking?.from === card.id)
 
@@ -784,7 +786,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
             title={card.type === 'package' ? 'Lay what it holds out on the plane' : card.folded ? 'Unfold its parts onto the plane' : 'Fold its parts into it'}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() =>
-              void (card.type === 'package' ? foldPackage(wid, card, null) : updateCard(wid, card, { folded: card.folded ? undefined : true }, card.folded ? 'unfold' : 'fold'))
+              void (card.type === 'package' ? foldPackage(wid, card, null) : foldCard(wid, card, !card.folded))
             }
           >
             {card.type === 'package' ? `[+] ${parts} inside` : `[${card.folded ? '+' : '−'}] ${parts} part${parts === 1 ? '' : 's'}`}

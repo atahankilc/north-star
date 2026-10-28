@@ -1,10 +1,10 @@
 // The right-click menu inside a focused plane (D-237; the old board's D-117), after D-193's `comment`: what can be done
 // with what's under the pointer, or added where it is. A card: open (its panel), fold or unfold its parts, duplicate,
-// copy, delete; one in a selection of several does it to all of them. A link: its label, turn it round, its kind (the
+// copy, delete (one also on other planes: take off this plane, or delete everywhere, D-281); one in a selection of several does it to all of them. A link: its label, turn it round, its kind (the
 // current one checked), remove. Text: edit, duplicate, copy, delete. Empty plane: a card of each type or text right
 // there, and paste. Editors only for the changes; anyone can open.
-import type { Place } from '../../data/places'
-import { addCard, copyCards, deleteCard, deleteCards, foldPackage, updateCard, type Card, type CardType, CARD_TYPES } from '../../data/cards'
+import { cardsOn, elsewhere, type Place } from '../../data/places'
+import { addCard, copyCards, foldCard, foldPackage, type Card, type CardType, CARD_TYPES } from '../../data/cards'
 import { deleteEdge, reverseEdge, updateEdge, type Edge } from '../../data/edges'
 import { addLabel, deleteLabel, PARA_W, STICKY_W, type Label } from '../../data/labels'
 import { snap, GRID } from '../../data/grid'
@@ -13,7 +13,7 @@ import type { MenuEntry } from '../../ui/Menu'
 import { TEXT_GLYPH } from './glyphs'
 import { linkTone } from './PlaneLinks'
 import { LINK_GROUPS } from './planeFilter'
-import { clipboard, onPlane, packageThese, selectedIds, setSelection } from './selection'
+import { clipboard, deleteHere, onPlane, packageThese, selectedIds, setSelection } from './selection'
 import { foldsOf } from './cardInside'
 
 const CARD_LETTER: Record<CardType, string> = { customer: 'c', problem: 'r', competitor: 'o', idea: 'i', feature: 'f' }
@@ -32,8 +32,10 @@ type Ctx = {
   cards: Card[]
   labels: Label[]
   edges: Edge[]
-  // Cards on planes besides their home (D-281): deleting a card takes its places too.
+  // Cards on planes besides their home (D-281): Delete takes those off this plane; delete everywhere takes their places.
   places: Place[]
+  // The pieces, for the planes' names a card is still on.
+  pieces: { id: string; name?: string }[]
   // Who's writing (a sticky note is signed).
   me: { uid?: string; author: string }
   // Where the pointer is, in the plane's px.
@@ -46,12 +48,22 @@ type Ctx = {
 
 const by2 = (): [number, number] => [2 * GRID, 2 * GRID]
 
+// Cards also on other planes, deleted from all of them: through the hazard confirm (D-281).
+const everywhere = (c: Ctx, list: Card[]): MenuEntry => ({
+  key: 'everywhere',
+  label: 'delete everywhere',
+  glyph: '×',
+  danger: true,
+  onSelect: () => useCanvasView.setState({ deleting: { ids: list.map((x) => x.id), plane: c.plane } }),
+})
+
 // What's done to a selection of several when the thing right-clicked is in it.
 function several(c: Ctx, n: number): MenuEntry[] {
   const ids = selectedIds()
   const picked = c.cards.filter((x) => ids.includes(x.id))
   const texts = c.labels.filter((x) => ids.includes(x.id))
   const packable = picked
+  const shared = picked.filter((x) => elsewhere(x, c.places, c.plane).length)
   return [
     { key: 'sel', heading: `${n} selected` },
     { key: 'copy', label: 'copy them', glyph: '⧉', hint: '⌘C', onSelect: () => Object.assign(clipboard, { cards: picked, labels: texts, edges: c.edges, pasted: 0 }) },
@@ -63,15 +75,16 @@ function several(c: Ctx, n: number): MenuEntry[] {
           { key: 'dup', label: 'duplicate them', glyph: '⊕', letter: 'd', hint: '⌘D', onSelect: () => setSelection(copyCards(c.wid, c.plane, picked, c.edges, by2(), texts)) },
           {
             key: 'del',
-            label: `delete ${n}`,
+            label: shared.length ? (shared.length === n ? `take ${n} off this plane` : `remove ${n}`) : `delete ${n}`,
             glyph: '×',
-            danger: true,
+            danger: !shared.length,
             hint: '⌫',
             onSelect: () => {
               setSelection([])
-              void deleteCards(c.wid, picked, c.edges, texts, c.places)
+              deleteHere(c.wid, c.plane, picked, c, texts)
             },
           },
+          ...(shared.length ? [everywhere(c, picked)] : []),
         ]
       : []),
   ]
@@ -98,13 +111,18 @@ export function cardItems(c: Ctx, id: string): MenuEntry[] {
           },
         ]
       : c.editor && parts
-      ? [{ key: 'fold', label: card.folded ? `unfold ${parts} part${parts > 1 ? 's' : ''}` : `fold ${parts} part${parts > 1 ? 's' : ''}`, glyph: card.folded ? '+' : '−', onSelect: () => void updateCard(c.wid, card, { folded: card.folded ? undefined : true }, card.folded ? 'unfold' : 'fold') }]
+      ? [{ key: 'fold', label: card.folded ? `unfold ${parts} part${parts > 1 ? 's' : ''}` : `fold ${parts} part${parts > 1 ? 's' : ''}`, glyph: card.folded ? '+' : '−', onSelect: () => void foldCard(c.wid, card, !card.folded) }]
       : []),
     { key: 'copy', label: 'copy', glyph: '⧉', hint: '⌘C', onSelect: () => Object.assign(clipboard, { cards: [card], labels: [], edges: c.edges, pasted: 0 }) },
     ...(c.editor
       ? [
           { key: 'dup', label: 'duplicate', glyph: '⊕', letter: 'd', hint: '⌘D', onSelect: () => setSelection(copyCards(c.wid, c.plane, [card], c.edges, by2())) },
-          { key: 'del', label: 'delete', glyph: '×', danger: true, hint: '⌫', onSelect: () => void deleteCard(c.wid, card, c.edges, c.places) },
+          ...(elsewhere(card, c.places, c.plane).length
+            ? [
+                { key: 'off', label: 'take off this plane', glyph: '×', hint: '⌫', onSelect: () => deleteHere(c.wid, c.plane, [card], c) },
+                everywhere(c, [card]),
+              ]
+            : [{ key: 'del', label: 'delete', glyph: '×', danger: true, hint: '⌫', onSelect: () => deleteHere(c.wid, c.plane, [card], c) }]),
         ]
       : []),
   ]
@@ -144,7 +162,7 @@ export function linkItems(c: Ctx, id: string): MenuEntry[] {
 export function emptyItems(c: Ctx): MenuEntry[] {
   if (!c.editor) return []
   const [x, y] = c.at
-  const others = c.cards.filter((k) => k.pieceId === c.plane)
+  const others = c.cards
   const card = async (type: CardType) => {
     const id = await addCard(c.wid, c.plane, type, [x + 100, y + 50], others)
     useCanvasView.setState({ cardSelected: id, cardEditing: id, fresh: id, cardMulti: [] })
@@ -179,8 +197,8 @@ export function planeItems(on: 'card' | 'label' | 'link' | null, id: string | nu
 }
 
 // What the plane needs from the canvas to build it.
-export function planeCtx(wid: string, plane: string, editor: boolean, all: { cards: Card[]; labels: Label[]; edges: Edge[]; places: Place[] }, me: Ctx['me'], at: [number, number]): Ctx {
-  const cards = all.cards.filter((k) => k.pieceId === plane)
+export function planeCtx(wid: string, plane: string, editor: boolean, all: { cards: Card[]; labels: Label[]; edges: Edge[]; places: Place[]; pieces: Ctx['pieces'] }, me: Ctx['me'], at: [number, number]): Ctx {
+  const cards = cardsOn(all.cards, all.places, plane)
   const folds = foldsOf(cards, all.edges)
-  return { wid, plane, editor, cards, labels: all.labels.filter((l) => l.pieceId === plane), edges: all.edges, places: all.places, me, at, parts: (id) => folds.count.get(id) ?? 0, all: all.cards }
+  return { wid, plane, editor, cards, labels: all.labels.filter((l) => l.pieceId === plane), edges: all.edges, places: all.places, pieces: all.pieces, me, at, parts: (id) => folds.count.get(id) ?? 0, all: all.cards }
 }

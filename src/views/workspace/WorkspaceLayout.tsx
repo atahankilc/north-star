@@ -18,6 +18,7 @@ import { tableBounds, useTableUi } from './Table'
 import { shownPieces } from './shownBox'
 import type { TableSetup } from '../../data/table'
 import { addCard, CARD_TYPES, type CardType } from '../../data/cards'
+import { cardsOn } from '../../data/places'
 import { addLabel, CANVAS, PARA_W, STICKY_H, STICKY_W, TITLE_W } from '../../data/labels'
 import { snap } from '../../data/grid'
 import { labelBox, useAuthor } from './TextItems'
@@ -142,7 +143,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
 // The side nav's fit (D-186), under the `+`; `0` does the same: everything on the canvas in view, or in focus the plane's
 // contents centred and fitted.
 function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
-  const { pieces, cards, edges, labels, documents } = useWs()
+  const { pieces, cards, edges, labels, documents, places } = useWs()
   const { user } = useAuth()
   const focused = plane !== null
   const matrix = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'matrix')
@@ -165,7 +166,7 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
             : one
               ? // A document: at 100 %, its top near the top.
                 setPlaneCam(documentHome(one, useCanvasView.getState().size.w))
-              : fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? docsBounds(docs) : spaceBounds(cards.filter((c) => c.pieceId === plane), edges, labels.filter((l) => l.pieceId === plane), [], plane ?? undefined))
+              : fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? docsBounds(docs) : spaceBounds(plane ? cardsOn(cards, places, plane) : [], edges, labels.filter((l) => l.pieceId === plane), [], plane ?? undefined))
           : fitCanvas(wid, [...shownPieces(pieces, cards), ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
       }
     >
@@ -201,7 +202,7 @@ const CARD_LETTER: Record<CardType, string> = { customer: 'c', problem: 'r', com
 // sticky note in the middle, typed at once; a section drawn with the crosshair; the project title (on the canvas, one).
 // Viewers make nothing (D-098).
 function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
-  const { pieces, cards, labels } = useWs()
+  const { pieces, cards, labels, places } = useWs()
   const me = useAuthor()
   const hasTitle = labels.some((l) => l.kind === 'title')
   // The middle of the screen in the open space's px.
@@ -244,7 +245,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     const { planeCam: c, size } = useCanvasView.getState()
     if (!plane || !c) return
     const at: [number, number] = [(size.w / 2 - c.ox) / c.zoom, (size.h / 2 - c.oy) / c.zoom]
-    const id = await addCard(wid, plane, type, at, cards.filter((x) => x.pieceId === plane))
+    const id = await addCard(wid, plane, type, at, cardsOn(cards, places, plane))
     useCanvasView.setState({ cardSelected: id, cardEditing: id, fresh: id })
   }
   return (

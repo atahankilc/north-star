@@ -1,6 +1,6 @@
 # Spec: one card on many planes
 
-Status: **agreed (D-281, 2026-10-28); session 1 done (D-282).** Split into sessions; every session must be able to start from this
+Status: **agreed (D-281, 2026-10-28); sessions 1–2 done (D-282, D-283).** Split into sessions; every session must be able to start from this
 file alone. The user: "planedeki cardlara başka planelerde oluşturulan cardları eklemek. Buna bütün cardlar dahil. Ya yeni
 card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
 
@@ -83,11 +83,18 @@ card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
   the views), and Delete still deletes everywhere; folding a feature still calls `updateCard(…{ folded })`, switch it
   to `foldCard`.
 
-## Session 2: planes draw and move placed cards · not started
+## Session 2: planes draw and move placed cards · **done (D-283, 2026-10-28)**
 
 - Plane drawing, focus, canvas picture, fit, drag/select/box/arrows/guides through `cardsOn`/`moveOn`; folding per plane;
   Delete per the user's rule (toast), right-click `take off this plane` / `delete everywhere`.
 - Measure a pan and a drag as D-279 did: no new redraws.
+- Built: CanvasView's per-plane lists from `cardsByPlane`; `planeCtx`, fit, `+`, the finder's preview, Beside's glide
+  through `cardsOn`; group moves (`moveMany`, `spotRef`) and folds write the place; `deleteHere` (selection.ts) for
+  Delete, the menu and the panel's several; the menu's `take off this plane` / `delete everywhere`, the panel's
+  `delete everywhere` and the hazard confirm (`useCanvasView.deleting`); the plane delete's confirm counts what stays;
+  a package is made at home on the plane it's made on; others' selections by `planeOf`; LensCardPanel doesn't open a
+  second panel for a placed card. Left for session 5: the `pieceId` filters in CardPanelKinds, CardPanel's making
+  (543, 649), matrix, table, kanbanCards, findIndex, source.ts.
 
 ## Session 3: bringing cards in · not started
 

@@ -10,6 +10,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as Reac
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { CARD, type Card } from '../../data/cards'
+import { cardsOn } from '../../data/places'
 import type { Task } from '../../data/tasks'
 import { KIND_NAME, kindOfPiece } from '../../data/pieces'
 import { fitInto, glide, setSplit, stopGlide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
@@ -119,7 +120,7 @@ export function Beside({ plane, open, editor, esc, matrixSetupPane, onClose }: P
 type PaneProps = { piece: WithId<Piece>; plane: WithId<Piece>; box: Bounds; editor: boolean; first: boolean; esc: EscNext; matrixSetupHere: boolean; onClose: () => void }
 
 function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose }: PaneProps) {
-  const { cards, tasks, pieces } = useWs()
+  const { cards, tasks, pieces, places } = useWs()
   const kind = kindOfPiece(piece)
   const el = useRef<HTMLDivElement>(null)
   const content = kind === 'matrix' ? matrixBounds(piece, cards) : kind === 'kanban' ? kanbanBounds(piece, tasks) : kind === 'timeline' ? timelineBounds(piece, pieces, tasks, cards, T.besideDays) : tableBounds(piece, cards)
@@ -203,8 +204,10 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
     if (card) glideTo(card, true)
   }
   // `panel`: the task's panel covers the right of the plane's part; the card goes to the middle of what's left.
-  const glideTo = (card: Card, panel = false) => {
-    if (card.pieceId !== plane.id) return
+  const glideTo = (picked: Card, panel = false) => {
+    // Its spot on this plane, where it was brought from another too (D-281).
+    const card = cardsOn(cards, places, plane.id).find((c) => c.id === picked.id)
+    if (!card) return
     const { planeCam: c, size, split } = useCanvasView.getState()
     if (!c) return
     const part = size.w * split

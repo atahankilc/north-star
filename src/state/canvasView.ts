@@ -15,6 +15,8 @@ type State = {
   editing: string[]
   // The plane whose delete is being confirmed (D-182).
   confirming: string | null
+  // Cards also on other planes whose delete everywhere is being confirmed (D-281), on the plane it was asked on.
+  deleting: { ids: string[]; plane: string } | null
   // The focus transition (D-184, D-185): spread in from the plane (the console's `[focus]`, not a reload), arrived (its
   // console shows), drawing back out.
   focusSpread: boolean
@@ -101,7 +103,7 @@ export function planeArea() {
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, deleting: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
 
 // A panel Enter shut opens again once the card is let go or another is picked.
 useCanvasView.subscribe((s, was) => {

@@ -4,6 +4,8 @@
 // with Delete, lets go with Escape.
 import { useCanvasView } from '../../state/canvasView'
 import { addPackage, type Card } from '../../data/cards'
+import { elsewhere, removeHere, type Place } from '../../data/places'
+import { useHistory } from '../../data/history'
 import type { Edge } from '../../data/edges'
 import type { Label } from '../../data/labels'
 import { moveMany } from '../../data/labels'
@@ -136,7 +138,21 @@ export const clipboard: { cards: Card[]; labels: Label[]; edges: Edge[]; pasted:
 
 // A package of these cards on their plane (D-239), named after how many the workspace has; it shows unfolded, a frame
 // round them. Returns its id, to select it.
+// At home on the plane it's made on, whichever planes its members are on (D-281).
 export function packageThese(wid: string, members: Card[], all: Card[]) {
   const n = all.filter((c) => c.type === 'package').length + 1
-  return addPackage(wid, members[0].pieceId, members, [Math.min(...members.map((m) => m.x)), Math.min(...members.map((m) => m.y))], n)
+  return addPackage(wid, members[0].on ?? members[0].pieceId, members, [Math.min(...members.map((m) => m.x)), Math.min(...members.map((m) => m.y))], n)
+}
+
+// Delete on a plane (D-281): what's also on another plane comes off this one, saying where it still is; the rest is
+// deleted. One undo step.
+export function deleteHere(wid: string, plane: string, list: Card[], all: { edges: Edge[]; places: Place[]; pieces: { id: string; name?: string }[] }, labels: Label[] = []) {
+  const off = list.filter((c) => elsewhere(c, all.places, plane).length)
+  void removeHere(wid, plane, list, all, labels)
+  if (!off.length) return
+  const name = (id: string) => all.pieces.find((p) => p.id === id)?.name?.trim() || 'another plane'
+  const where = [...new Set(off.flatMap((c) => elsewhere(c, all.places, plane)))].map(name)
+  const still = where.length > 2 ? `${where.slice(0, 2).join(', ')} +${where.length - 2}` : where.join(', ')
+  const what = off.length === 1 ? `"${off[0].title || `this ${off[0].type}`}"` : `${off.length} cards`
+  useHistory.getState().say(`Took ${what} off this plane · still on ${still}`)
 }

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-28 (one card on many planes: planned D-281, session 1 data + rules D-282)_
+_Last updated: 2026-10-28 (one card on many planes: planned D-281, data + rules D-282, planes D-283)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -16,7 +16,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. `refactor/north-star-1.5` was merged
   into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
-- Rules: Firestore rules + indexes and RTDB deployed 2026-10-27 (latest change D-271); rules tests 413/0. Until Blaze,
+- Rules: Firestore rules + indexes and RTDB deployed 2026-10-28 (latest change D-282, `places`); rules tests 429/0. Until Blaze,
   deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger) and Storage
   (documents' files, D-232; `storage.rules` allow nothing yet). The assistant's client code went with 1.0 (D-248); only
@@ -26,8 +26,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Nothing open. The last work (D-277, ink and lines) is merged and pushed.
 
 ## Next steps (not started; ask the user which first)
-- **In progress:** one card on many planes (D-281), docs/specs/shared-cards.md: session 1 (data, rules) done (D-282,
-  rules not deployed); session 2 next (planes draw and move placed cards).
+- **In progress:** one card on many planes (D-281), docs/specs/shared-cards.md: sessions 1 (data, rules, deployed) and
+  2 (planes draw and move placed cards, Delete takes off) done (D-282, D-283); session 3 next (bringing cards in).
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): link bend points (D-155), links to a
   competitor's features and dropping a link on a small card.
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.

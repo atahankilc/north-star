@@ -3,6 +3,7 @@
 // cards and text; a document scrolled to the match), still (nothing in it live), each match lit and the picked one
 // solid; on the canvas, a copy of the canvas as it is, at the camera go to will take it to.
 import { memo, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { cardsOn } from '../../data/places'
 import { CANVAS } from '../../data/labels'
 import { kindOfPiece } from '../../data/pieces'
 import { useAuth } from '../../data/auth'
@@ -116,7 +117,7 @@ const destKey = (d: Dest) => (d.kind === 'place' ? `place:${d.place.space}:${d.p
 type Measure = { lens: React.RefObject<HTMLDivElement | null>; scale: React.RefObject<number>; refocus: React.RefObject<() => void> }
 
 function Shown({ dest, lens, scale, refocus }: { dest: Dest } & Measure) {
-  const { cards, labels } = useWs()
+  const { cards, labels, places } = useWs()
   if (dest.kind === 'place') {
     const { zoom, at, to } = aim(dest.place)
     const view: PlaneCam = { zoom, ox: to[0] - at[0] * zoom, oy: to[1] - at[1] * zoom }
@@ -126,7 +127,7 @@ function Shown({ dest, lens, scale, refocus }: { dest: Dest } & Measure) {
     const marks = { '--mark': `${step}px`, '--mx': `${view.ox - step / 2}px`, '--my': `${view.oy - step / 2}px` } as CSSProperties
     return (
       <div className={styles.plane} data-marks style={marks}>
-        <PlaneCards cards={cards.filter((c) => c.pieceId === dest.place.space)} labels={labels.filter((l) => l.pieceId === dest.place.space)} view={view} live={false} editor={false} />
+        <PlaneCards cards={cardsOn(cards, places, dest.place.space)} labels={labels.filter((l) => l.pieceId === dest.place.space)} view={view} live={false} editor={false} />
       </div>
     )
   }
