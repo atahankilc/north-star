@@ -269,7 +269,7 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
         {kind === 'kanban' && <KanbanFilterDock piece={piece} />}
         {kind === 'kanban' && <KanbanLanes piece={piece} editor={editor} />}
         {kind === 'kanban' && <KanbanDockTools piece={piece} editor={editor} />}
-        {kind === 'timeline' && <TimelineDockTools piece={piece} editor={editor} beside />}
+        {kind === 'timeline' && <TimelineDockTools piece={piece} editor={editor} />}
         {editor && kind !== 'timeline' && (
           <DockAction
             label="setup"

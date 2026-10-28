@@ -74,9 +74,9 @@ feature comes back as a piece, and check them with the user then.
   section` lines, rows `› [p] ▦ label  hint`, a letter puts its item first, a counting foot; Select: `•` current, the
   `>` line past 7 options.
 - One look and behaviour across the canvas (consistency.md; agreed D-263–D-267, built D-270, D-272–D-277):
-  - Surface (D-263, D-274): pieces graphite (`--piece*`, white in light) with a 2 px band in their kind's colour on
-    top; inside a piece, its focus or a pane beside it, `--bg`/`--bg-raised`/`--grid-mark` map to that surface, the
-    HUD's shades too (`html[data-in-focus]`).
+  - Surface (D-263, D-274, D-289): pieces graphite (`--piece*`, white in light) with a 2 px band in their kind's colour
+    on top; inside a framed piece `--bg`/`--bg-raised`/`--grid-mark` map to that surface. In focus, beside it and
+    unframed the page's black (`--bg`), what's held still `--piece-card`.
   - Console (D-264, D-275): where it is, shown only while pointed at (cells in 170 / out 90 ms), in edit mode, with its
     setup open or the keyboard in it; fresh comments keep a small tab; grows as the canvas zooms out (`--cs`, ≤ 1.4 ×);
     on touch a first tap shows it, a second focuses.
@@ -91,8 +91,9 @@ feature comes back as a piece, and check them with the user then.
     leading number, kanban columns, panel sections); containers edged, the name cut in (16 lead, 8 clear), held things
     banded; text's shade line by line (`src/ui/Ink.tsx`); lines: straight holds, fading opens, dashed separates rows, a
     magenta lead starts something numbered.
-  - Framed = a window, unframed = ink (D-267, D-276): rows on hugging shades, the name a small line
-    (`04 ── RIVALS · TABLE`), the console hanging under; framing turns cell by cell in 320 ms.
+  - Framed = a window, unframed = ink (D-267, D-276, D-289): on a black page feathered at its edge, rows on hugging
+    shades, the name a small line (`04 ── RIVALS · TABLE`), the console hanging under; framing turns cell by cell in
+    320 ms. Dropdowns in a console or dock are plain text like the link `Select` (`Menu`'s `plain`).
 
 ## Motion and backdrop
 - One entrance everywhere: cell-by-cell build-up in random order, all at once from `revealed`; components 320 ms,
@@ -212,8 +213,9 @@ feature comes back as a piece, and check them with the user then.
   the middle while the page builds behind it, no ink; in focus heads stick when panned past, what you add is glided to,
   a drag from a cell pans; live: click, again steps, 1–9, arrows, Backspace, `-`, Enter; `[setup]` (a tabbed panel) in
   the dock.
-- Unframed (D-228): edit mode's `[unframe]` lays it on the canvas at its own size, live there, `[frame]` back (`open`,
-  shared); its box its contents' (`shownBox.ts`), the stored w/h the window's; it only moves.
+- Unframed (D-228, D-289): matrix, table, documents, document, kanban, timeline; edit mode's `[unframe]` lays it on the
+  canvas at its own size, live there, `[frame]` back (`open`, shared); its box exactly its contents' (`shownBox.ts`,
+  measured ones in `sizes.ts`), the stored w/h the window's; it only moves.
 - Sticking (D-210, D-215): moved within 48 screen px of a plane's edge it snaps one step out and is linked (`stuckTo`; alt
   free): a table's rule becomes `plane is …`, a matrix's typed axes the plane. Shown quietly (faint `· ›` touching, a
   thin line apart, under the pieces); the console's `⇆ 01 Pazar ▾` links and unlinks; the plane carries it.
@@ -243,8 +245,9 @@ feature comes back as a piece, and check them with the user then.
 - Together (D-260, D-261): picked tasks are your presence selection, a held one a ghost in your colour (`drag`);
   comments on tasks; `☐` by your square counts tasks given to you since you last looked (`givenAt`/`givenBy`,
   `threadReads.tasks`); the finder finds tasks.
-- Timeline (D-262): a piece showing kanbans' tasks on two weeks of days (rows by kanban, person or card; a drag sets the
-  due day; late on today magenta; a no-day tray), stuck to a kanban and beside it; a kanban's `SOON` band.
+- Timeline (D-262, D-289): a piece showing the tasks of the kanban it's linked to (else every kanban; no `shows`) on two
+  weeks of days (rows by kanban, person or card; a drag sets the due day; late on today magenta; a no-day tray), stuck
+  to a kanban and beside it; a kanban's `SOON` band.
 - Cards on a kanban (D-253, D-268, D-269): it holds tasks or cards (`holds`); cards from a source (the table's rules);
   columns one field's values (status, impact, effort, priority), rows another's, `no value` first; a drop sets the
   fields (one undo step); boxes can be named (`good` green, `bad` magenta).

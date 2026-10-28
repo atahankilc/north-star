@@ -137,7 +137,8 @@
   --mark-spring: cubic-bezier(0.3, 1.8, 0.5, 1);
 
   /* A piece's surface (D-263): graphite, a step off the page, so a piece reads as a window on the canvas, not a hole in
-     it. Inside one, `--bg`, `--bg-raised` and `--grid-mark` take these (CanvasView.module.css `.surface`). */
+     it. Inside one on the canvas, `--bg`, `--bg-raised` and `--grid-mark` take these (CanvasView.module.css `.piece`); in
+     its focus, beside it and unframed only `--bg-raised` and `--grid-mark` do, on the page's black (D-289). */
   --piece: #121315;
   --piece-head: #17181b;
   --piece-card: #1d1e22;

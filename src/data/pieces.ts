@@ -54,8 +54,9 @@ export const hostKind = (p: Pick<Piece, 'kind'>): PieceKind | null => (p.kind ==
 // What others stick to: a plane, a kanban.
 export const isHost = (p: Pick<Piece, 'kind'>) => kindOfPiece(p) === 'plane' || p.kind === 'kanban'
 
-// What can be taken out of its window onto the canvas (D-228): a lens, the documents list, a document (D-234), a kanban (D-251).
-export const canOpen = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'documents' || p.kind === 'document' || p.kind === 'kanban'
+// What can be taken out of its window onto the canvas (D-228): a lens, the documents list, a document (D-234), a kanban
+// (D-251), a timeline (D-289).
+export const canOpen = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'documents' || p.kind === 'document' || p.kind === 'kanban' || p.kind === 'timeline'
 
 // firestore.rules' validPiece allows 80.
 export const PIECE_NAME_MAX = 80

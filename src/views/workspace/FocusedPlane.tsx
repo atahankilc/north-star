@@ -59,12 +59,9 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
   const cam = useCanvasView((s) => s.planeCam) ?? home
   useLayoutEffect(() => {
     useCanvasView.setState({ planeCam: home, planeHome: home })
-    // The HUD's shades take the piece's surface while it's the screen (D-263).
-    document.documentElement.dataset.inFocus = ''
     return () => {
       stopGlide()
       useCanvasView.setState({ planeCam: null, planeHome: null })
-      delete document.documentElement.dataset.inFocus
     }
     // On mount only.
     // eslint-disable-next-line react-hooks/exhaustive-deps

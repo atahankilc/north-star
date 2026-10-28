@@ -48,16 +48,15 @@ export const BOX_NAME_MAX = 40
 // The cards' fields a kanban's columns can come from (D-268): never type (dragging doesn't change a card's type).
 export const CARD_FIELDS = ['status', 'impact', 'effort', 'priority'] as const
 export type CardField = (typeof CARD_FIELDS)[number]
-// A timeline (D-262): the kanbans it shows (none picked: the one it's stuck to, else every kanban), and its rows.
+// A timeline (D-262): its rows. The kanbans it shows are the one it's linked to, else every kanban (D-289); `kanbans`, a
+// list once picked by hand (its `shows ▾`, gone), is still read from old data and exports but never used.
 export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
 export type TimelineRows = (typeof TIMELINE_ROWS)[number]
 export type TimelineSetup = { kanbans?: string[]; rows?: TimelineRows }
 
-// Which kanbans a timeline shows.
-export function timelineKanbans<P extends { id: string; kind: string; stuckTo?: string; timeline?: TimelineSetup }>(t: P, pieces: P[]): P[] {
+// Which kanbans a timeline shows (D-289): the one it's linked to (its console's `link ▾`), else every kanban.
+export function timelineKanbans<P extends { id: string; kind: string; stuckTo?: string }>(t: P, pieces: P[]): P[] {
   const kanbans = pieces.filter((p) => p.kind === 'kanban')
-  const picked = (t.timeline?.kanbans ?? []).flatMap((id) => kanbans.filter((k) => k.id === id))
-  if (picked.length) return picked
   const host = kanbans.find((k) => k.id === t.stuckTo)
   return host ? [host] : kanbans
 }

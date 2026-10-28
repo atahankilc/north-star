@@ -54,6 +54,7 @@ import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, heldCards, isPriorities, rowFieldOf } from './kanbanCards'
+import { useKanbanSizes } from './sizes'
 import styles from './Kanban.module.css'
 
 // Its parts in its own px: a column's width and the gap between, its head, the gap under a task, the `+ column` head's
@@ -84,8 +85,9 @@ function soonFolded(id: string) {
 const NO_SETUP = emptyKanban()
 export const kanbanOf = (p: Pick<Piece, 'kanban'>): KanbanSetup => p.kanban ?? NO_SETUP
 
-// How big each kanban came out, measured as it's drawn (its tasks are as tall as their text): what fit frames.
-export const useKanbanSizes = create<Record<string, { w: number; h: number }>>(() => ({}))
+// How big each kanban came out, measured as it's drawn (its tasks are as tall as their text): what fit frames, and its
+// box unframed (shownBox.ts).
+export { useKanbanSizes }
 const useSizes = useKanbanSizes
 
 const hasMeta = (t: Task) => !!(t.cardId || t.due || t.checks?.length || t.assignee)
@@ -693,7 +695,7 @@ export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: b
       { key: 'none', label: 'no rows', checked: !row, onSelect: () => editor && row && void setKanbanSetup(wid, piece.id, { rowField: undefined }, 'no rows on a kanban') },
       ...fields.map((f) => ({ key: f, label: `by ${FIELD_NAME[f]}`, checked: row === f, onSelect: () => editor && row !== f && void setKanbanSetup(wid, piece.id, { rowField: f }, `a kanban’s rows by ${FIELD_NAME[f]}`) })),
     ]
-    return <Menu label="rows" up summary={row ? FIELD_NAME[row] : 'none'} active={!!row} items={cardItems} ariaLabel="Rows" noun="fields" />
+    return <Menu label="rows" up plain summary={row ? FIELD_NAME[row] : 'none'} active={!!row} items={cardItems} ariaLabel="Rows" noun="fields" />
   }
   const rows = kanbanOf(piece).rows
   const NAME: Record<KanbanRows, string> = { assignee: 'given to', card: 'card' }
@@ -701,7 +703,7 @@ export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: b
     { key: 'none', label: 'no lanes', checked: !rows, onSelect: () => editor && rows && void setKanbanRows(wid, piece.id, undefined) },
     ...KANBAN_ROWS.map((r) => ({ key: r, label: `by ${NAME[r]}`, checked: rows === r, onSelect: () => editor && rows !== r && void setKanbanRows(wid, piece.id, r) })),
   ]
-  return <Menu label="lanes" up summary={rows ? NAME[rows] : 'none'} active={!!rows} items={items} ariaLabel="Lanes" noun="ways" />
+  return <Menu label="lanes" up plain summary={rows ? NAME[rows] : 'none'} active={!!rows} items={items} ariaLabel="Lanes" noun="ways" />
 }
 
 // A task with the place a held one would land just above it (`slot`: its height, 0 none). Memoised on what it shows

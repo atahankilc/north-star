@@ -58,6 +58,9 @@ type Props = {
   icon?: boolean
   // That icon grey like the side nav's fit, not magenta (go to, D-196).
   quiet?: boolean
+  // Plain text, `lanes none ▾`, no frame or fill: in a console or a dock, beside its bracketed actions and the link
+  // dropdown (a Select), which it looks like (D-289).
+  plain?: boolean
   // A filter that's narrowing what you see: the trigger stays lit.
   active?: boolean
   ariaLabel: string
@@ -255,7 +258,7 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
   )
 }
 
-export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, active, ariaLabel, empty, prompt, noun }: Props) {
+export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, plain, active, ariaLabel, empty, prompt, noun }: Props) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
@@ -281,7 +284,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
     <div ref={root} className={styles.root}>
       <button
         ref={trigger}
-        className={icon ? styles.icon : primary ? styles.primary : styles.trigger}
+        className={icon ? styles.icon : primary ? styles.primary : plain ? styles.plain : styles.trigger}
         aria-haspopup="menu"
         aria-expanded={open}
         data-active={active || undefined}

@@ -1,13 +1,13 @@
 // A timeline (D-262): a piece on the canvas (`+ → timeline`) showing kanbans' tasks on a row of days, by due day. Drawn
 // in its own px through a view, like a kanban (D-251): a picture on the canvas, live in its focus or beside the kanban
-// it's stuck to. Which kanbans: those picked (`shows ▾`), else the one it's stuck to, else every kanban. Rows: one per
+// it's stuck to. Which kanbans: the one it's linked to, else every kanban (D-289). Rows: one per
 // kanban, or by who a task is given to, or by the card it's for (rows.ts, as a kanban's lanes). Two weeks from Monday,
 // `‹ today ›` stepping a week (yours, per tab); today a cyan line, weekends a shade darker. A task sits on its day as a
 // sheet in its card's colour; past its day and not finished it sits on today in magenta, `← 25` saying when it was due;
 // finished, faint with a green `✓`. Tasks with no day wait in a tray under the rows. Dragging a task (or one from the
 // tray) onto a day gives it that day; onto another row (by person or card) gives it that person or card too; rows by
 // kanban keep it on its kanban. A click opens its panel (TaskPanel). Its own filter (the kanban's strip, its tasks).
-import { memo, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -23,6 +23,7 @@ import { passes, useKanbanFilter } from './kanbanFilter'
 import { TYPE_ACCENT } from './PlaneCards'
 import { taskRows, type Lane } from './rows'
 import { Landing, Marks, useSettledZoom, zsIn } from '../../ui/Marks'
+import { useOpenSize } from './sizes'
 import styles from './Timeline.module.css'
 
 // Its parts in its own px: the rows' names, a day, the days' head, a task, the gap between, a row's padding, the tray;
@@ -103,16 +104,17 @@ export function timelineBounds(piece: WithId<Piece>, all: WithId<Piece>[], tasks
 // would land (a row and a day).
 type Drag = { id: string; from: [number, number]; grab: [number, number]; at: [number, number]; moving: boolean; over: { row: string; day: number } | null }
 
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onTask?: (t: Task) => void; span?: number }
+// `onCanvas`: unframed (D-289, as a kanban, D-228), live on the canvas at its own size; its box is the days' (shownBox.ts).
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onTask?: (t: Task) => void; span?: number }
 
 // Its view moves only the world's transform: the days are drawn again when the zoom changes, never as the view pans.
-export function TimelineView({ piece, view, live, editor, onTask, span = T.days }: Props) {
+export function TimelineView({ piece, view, live, editor, onCanvas = false, onTask, span = T.days }: Props) {
   // Marks, chips and handles at screen size take the zoom once it settles (D-278), so a wheel step restyles none of them.
   const settled = useSettledZoom(view.zoom, live)
   return (
-    <div className={styles.layer} data-live={live || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, !live) }}>
-        <Days piece={piece} zoom={settled} live={live} editor={editor} onTask={onTask} span={span} />
+    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
+      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
+        <Days piece={piece} zoom={settled} live={live} editor={editor} onCanvas={onCanvas} onTask={onTask} span={span} />
       </div>
     </div>
   )
@@ -120,7 +122,7 @@ export function TimelineView({ piece, view, live, editor, onTask, span = T.days 
 
 type DaysProps = Omit<Props, 'view'> & { zoom: number }
 
-const Days = memo(function Days({ piece, zoom, live, editor, onTask, span = T.days }: DaysProps) {
+const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, span = T.days }: DaysProps) {
   const { wid, pieces, tasks, cards } = useWs()
   const { user } = useAuth()
   const week = useWeeks((s) => s[piece.id] ?? 0)
@@ -132,6 +134,12 @@ const Days = memo(function Days({ piece, zoom, live, editor, onTask, span = T.da
   }, [piece, pieces, tasks, cards, week, filter, user?.id, me, span])
   const selected = useKanbanUi((s) => s.selected?.task ?? null)
   const board = useRef<HTMLDivElement>(null)
+  // Unframed, how big it came out: its box on the canvas (shownBox.ts). Written only when it changes.
+  useLayoutEffect(() => {
+    if (!onCanvas) return
+    const was = useOpenSize.getState()[piece.id]
+    if (!was || was.w !== layout.w || was.h !== layout.h) useOpenSize.setState({ [piece.id]: { w: layout.w, h: layout.h } })
+  }, [onCanvas, piece.id, layout.w, layout.h])
   const [drag, setDrag] = useState<Drag | null>(null)
   const dragRef = useRef(drag)
   dragRef.current = drag
@@ -294,9 +302,8 @@ const Days = memo(function Days({ piece, zoom, live, editor, onTask, span = T.da
   )
 })
 
-// Its tools in its dock (its focus, beside its kanban): its filter, which kanbans, its rows, the weeks.
-// `beside`: in its pane beside its kanban, where it shows that kanban: no `shows`.
-export function TimelineDockTools({ piece, editor, beside = false }: { piece: WithId<Piece>; editor: boolean; beside?: boolean }) {
+// Its tools in its dock (its focus, beside its kanban): its filter, its rows, the weeks.
+export function TimelineDockTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const { pieces, tasks } = useWs()
   const kanbans = timelineKanbans(piece, pieces)
   const pool = useMemo(() => tasks.filter((t) => kanbans.some((k) => k.id === t.pieceId)), [tasks, kanbans])
@@ -305,7 +312,6 @@ export function TimelineDockTools({ piece, editor, beside = false }: { piece: Wi
   return (
     <>
       <KanbanFilterDock piece={piece} pool={pool} />
-      {!beside && <TimelineShows piece={piece} editor={editor} />}
       <TimelineRowsMenu piece={piece} editor={editor} />
       <DockAction label="‹" title="the week before" onClick={() => step(-1)} />
       <DockAction label="today" pressed={week === 0} title="back to this week" onClick={() => step(0)} />
@@ -314,21 +320,23 @@ export function TimelineDockTools({ piece, editor, beside = false }: { piece: Wi
   )
 }
 
-// Which kanbans it shows (shared): every kanban, or those ticked; stuck to a kanban with none ticked, that one.
-export function TimelineShows({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
-  const { wid, pieces } = useWs()
-  const kanbans = pieces.filter((p) => p.kind === 'kanban')
-  const picked = piece.timeline?.kanbans ?? []
-  const shown = timelineKanbans(piece, pieces)
-  const host = kanbans.find((k) => k.id === piece.stuckTo)
-  const set = (next: string[]) => editor && void setTimeline(wid, piece.id, { kanbans: next }, 'change what a timeline shows')
-  const items: MenuEntry[] = [
-    { key: 'auto', label: host ? `the one it's stuck to (${host.name || 'kanban'})` : 'every kanban', checked: !picked.length, onSelect: () => set([]) },
-    ...(kanbans.length ? [{ key: 'h', heading: 'these' }] : []),
-    ...kanbans.map((k) => ({ key: k.id, label: k.name || 'kanban', checked: picked.includes(k.id), onSelect: () => set(picked.includes(k.id) ? picked.filter((x) => x !== k.id) : [...picked, k.id]) })),
-  ]
-  const summary = !shown.length ? 'no kanban' : shown.length === kanbans.length && kanbans.length > 1 ? 'every kanban' : shown.map((k) => k.name || 'kanban').join(', ')
-  return <Menu label="shows" up summary={summary} active={picked.length > 0} items={items} ariaLabel="Which kanbans it shows" empty="No kanban yet" noun="kanbans" />
+// Its weeks on the canvas, unframed (D-289): `‹ today ›` in its console, as in its dock.
+export function TimelineWeeks({ piece, toolClass }: { piece: WithId<Piece>; toolClass: string }) {
+  const week = useWeeks((s) => s[piece.id] ?? 0)
+  const step = (by: number) => useWeeks.setState({ [piece.id]: by === 0 ? 0 : week + by })
+  return (
+    <>
+      <button className={toolClass} title="the week before" aria-label="The week before" onClick={() => step(-1)}>
+        ‹
+      </button>
+      <button className={toolClass} aria-pressed={week === 0} title="back to this week" onClick={() => step(0)}>
+        today
+      </button>
+      <button className={toolClass} title="the week after" aria-label="The week after" onClick={() => step(1)}>
+        ›
+      </button>
+    </>
+  )
 }
 
 const ROW_NAME: Record<TimelineRows, string> = { kanban: 'kanban', assignee: 'given to', card: 'card' }
@@ -338,5 +346,5 @@ function TimelineRowsMenu({ piece, editor }: { piece: WithId<Piece>; editor: boo
   const { wid } = useWs()
   const rows = piece.timeline?.rows ?? 'kanban'
   const items: MenuEntry[] = TIMELINE_ROWS.map((r) => ({ key: r, label: `by ${ROW_NAME[r]}`, checked: rows === r, onSelect: () => editor && rows !== r && void setTimeline(wid, piece.id, { rows: r === 'kanban' ? undefined : r }, 'change a timeline’s rows') }))
-  return <Menu label="rows" up summary={ROW_NAME[rows]} items={items} ariaLabel="Rows" noun="ways" />
+  return <Menu label="rows" up plain summary={ROW_NAME[rows]} items={items} ariaLabel="Rows" noun="ways" />
 }

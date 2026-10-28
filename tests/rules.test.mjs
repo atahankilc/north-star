@@ -275,6 +275,7 @@ await allow('a kanban stuck to a plane (D-255)', () => addDoc(sub(bob.fs, 'piece
 await allow('a stuck kanban showing every task', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, everyPlane: true }, stuckTo: 'p1' }))
 await allow('a timeline on the canvas (D-262)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline' }))
 await allow('a timeline showing two kanbans, rows by who, stuck to a kanban', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline', timeline: { kanbans: ['kb1', 'kb2'], rows: 'assignee' }, stuckTo: 'kb1' }))
+await allow('a timeline opened onto the canvas (D-289)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline', open: true }))
 await deny('a timeline with rows by something unknown', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline', timeline: { rows: 'weather' } }))
 await deny('a plane with a timeline setup', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, timeline: {} }))
 await allow('a kanban in lanes by who (D-258)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, rows: 'assignee' } }))

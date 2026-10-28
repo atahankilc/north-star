@@ -76,6 +76,65 @@
   transform: rotate(180deg);
 }
 
+/* Plain (D-289): in a console or a dock, text like the link dropdown beside it (Select's trigger), `lanes none ▾`; no
+   frame, no fill, the console's size. */
+.plain {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6em;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.plain:hover,
+.plain[aria-expanded='true'] {
+  color: var(--fg-strong);
+}
+
+.plain:focus-visible {
+  outline: 1px solid var(--fg-dim);
+  outline-offset: 2px;
+}
+
+.plain .label {
+  color: inherit;
+  font-size: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.plain .summary {
+  max-width: 20ch;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  line-height: inherit;
+  vertical-align: bottom;
+}
+
+.plain[data-active='true'] .summary {
+  color: var(--accent-cyan);
+}
+
+.plain .caret {
+  margin: 0;
+}
+
+.plain:hover .caret {
+  color: var(--fg-dim);
+}
+
+.plain[aria-expanded='true'] .caret {
+  color: var(--fg);
+  transform: rotate(180deg);
+}
+
 /* SHOW's summary: one square per type, in its colour; hidden types go dark. */
 .swatch {
   display: inline-block;

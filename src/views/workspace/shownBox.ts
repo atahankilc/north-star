@@ -5,10 +5,12 @@
 import type { Card } from '../../data/cards'
 import { GRID } from '../../data/grid'
 import type { Piece } from '../../data/model'
-import { create } from 'zustand'
 import { canOpen, kindOfPiece, type Box } from '../../data/pieces'
 import { matrixBounds } from './Matrix'
 import { tableBounds } from './Table'
+import { useKanbanSizes, useOpenSize } from './sizes'
+
+export { useOpenSize }
 
 // The margin round an open piece's contents, and under them, where its console is.
 export const OPEN_PAD = GRID
@@ -16,14 +18,13 @@ export const OPEN_FOOT = 2 * GRID
 
 export const isOpen = (p: Pick<Piece, 'kind' | 'open'>) => canOpen(p) && !!p.open
 
-// How big an open documents list or document (D-234) came out, measured as it's drawn: its contents aren't known
-// from the data (rows of text, a document's length). Until it's measured, its window's size.
-export const useOpenSize = create<Record<string, { w: number; h: number }>>(() => ({}))
-
 export function shownBox(p: Piece, cards: Card[]): Box {
   if (!isOpen(p)) return { x: p.x, y: p.y, w: p.w, h: p.h }
   const kind = kindOfPiece(p)
-  const b = kind === 'matrix' ? matrixBounds(p, cards) : kind === 'table' ? tableBounds(p, cards) : (useOpenSize.getState()[(p as Piece & { id?: string }).id ?? ''] ?? { w: p.w - 2 * OPEN_PAD, h: p.h - OPEN_PAD - OPEN_FOOT })
+  // The rest as big as they came out when drawn (sizes.ts); until then, their window's size.
+  const id = (p as Piece & { id?: string }).id ?? ''
+  const drawn = kind === 'kanban' ? useKanbanSizes.getState()[id] : useOpenSize.getState()[id]
+  const b = kind === 'matrix' ? matrixBounds(p, cards) : kind === 'table' ? tableBounds(p, cards) : (drawn ?? { w: p.w - 2 * OPEN_PAD, h: p.h - OPEN_PAD - OPEN_FOOT })
   return { x: p.x, y: p.y, w: Math.ceil(b.w) + 2 * OPEN_PAD, h: Math.ceil(b.h) + OPEN_PAD + OPEN_FOOT }
 }
 

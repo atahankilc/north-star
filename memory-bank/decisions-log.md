@@ -4602,8 +4602,8 @@ kanban gets a "soon" band over its columns.**
 User: on a local preview of three ways (a switch on the kanban, recommended; a new piece; a ruler of days under the
 columns), picked "B: a new piece".
 - *The piece:* `kind: 'timeline'`, a window on the canvas (fitted in it, as a matrix), live in its focus. Its setup
-  (`timeline`): `kanbans` (those ticked in `shows ▾`, in its console and dock), else the kanban it's stuck to, else every
-  kanban; `rows`: by kanban (default), by who it's given to, by the card it's for (rows.ts).
+  (`timeline`): the kanban it's stuck to, else every kanban (D-289: the hand-picked `kanbans` and its `shows ▾` gone;
+  old data's list is ignored); `rows`: by kanban (default), by who it's given to, by the card it's for (rows.ts).
 - *Inside:* two weeks from Monday (`‹ today ›` steps a week, yours per tab), a day 150 px, weekends a shade darker, today
   a cyan line; a task a sheet on its day in its card's colour (`P1` before its title); past its day and not finished it
   sits on today, magenta, `← 25`; finished faint with a green `✓`; `N →` / `← N` for tasks outside the two weeks; tasks
@@ -4613,7 +4613,7 @@ columns), picked "B: a new piece".
 - *Sticking:* a timeline sticks to a kanban as a lens to a plane (D-210): `hostKind` (lens and kanban → plane, timeline
   → kanban), `isHost` (plane, kanban); a kanban is both stuck and a host, so its move carries its timelines
   (`placeLens` takes followers). In the kanban's focus, `[⇆ timeline · name]` in its dock opens it beside (D-211), one
-  week there (half the screen), its dock without `shows`; a task picked there is picked on the kanban.
+  week there (half the screen); a task picked there is picked on the kanban.
 - *Soon (on the kanban):* over the columns, unfinished tasks due by Sunday as pills: `was 25 oct` magenta, `today` cyan,
   `thu`; a pill picks its task; `▾ SOON` folds to `1 past · 1 today · 2 this week` (yours, per kanban per browser);
   nothing due, no band.
@@ -4695,7 +4695,7 @@ it, D-214, used by going in), unframed is open and live (its own size, used righ
 et".
 - *Framed:* D-263's surface, band and shadow, the name in the edge, the console. A scale readout (`· 82%`) was turned
   down ("ölçek olmadan").
-- *Unframed:* no fill, edge, band or shadow; under each row a shade hugging it (page at 80 %, feathered 16/10 at 72 %);
+- *Unframed:* no edge, band or shadow; on the page's black since D-289 (it was no fill); under each row a shade hugging it (page at 80 %, feathered 16/10 at 72 %);
   its name a heading's small line (`04 ── RIVALS · TABLE`, mono 11 screen px, the number magenta, 8 px over it); its
   console the same, on the same hover rule, hanging 10 px under the contents' right end.
 - *Between:* the window breaks cell by cell (320 ms) while the contents grow to their own size; framing the reverse.
@@ -4891,19 +4891,19 @@ The user asked for session 4 of the consistency plan.
   `--piece-card` `#1d1e22`, `--piece-edge` `#2f3136`, `--piece-mark` `#3b3e44`, `--piece-hi` (1 px top light),
   `--piece-shadow`, `--piece-band` 2 px, `--piece-card-edge` (transparent; `#e6e6e8` in light, where the surface is as
   white as what's held on it). Light: `#fff`, `#f7f7f8`, `#fff`, `#d4d5d8`, `#c9cbd0`, a soft shadow.
-- *How it reaches everything:* a framed piece (`.piece:not([data-open])`), a piece in focus (`.focused`) and a pane
-  beside one (`.pane`) set `--bg` → `--piece`, `--bg-raised` → `--piece-card`, `--grid-mark` → `--piece-mark` for what's
+- *How it reaches everything:* a framed piece (`.piece:not([data-open])`) sets `--bg` → `--piece`, `--bg-raised` → `--piece-card`, `--grid-mark` → `--piece-mark` for what's
   inside them, so the cards, tasks, sheets, heads, the matrix's paper and bands, text's shades and bars, the name's
   notch and the console all sit on the surface without each file changing (`CellDots` reads them from its canvas's
-  computed style). The focus dock takes `--piece` and `--piece-edge`.
+  computed style). Since D-289 a piece in focus (`.focused`), a pane beside one (`.pane`) and an unframed piece keep the
+  page's `--bg` (black) and take only `--bg-raised` and `--grid-mark`; the focus dock takes `--bg` and `--piece-edge`.
 - *The piece:* `--piece` fill, `--piece-edge` edge, the shadow and top light; `::after` the band, 2 px over the top
   edge in `--kind` (plane `--fg`, matrix `--link-solves`, table `--link-part`, kanban `--link-draws`, documents and
   document `--link-depends`, timeline `--link-competes`); the name's notch cuts it. Unframed pieces keep none of it
   (D-267 is session 6).
 - *Held things in light theme:* plane cards, packages' bands, tasks and card sheets, timeline sheets, matrix card heads
   get `0 0 0 1px var(--piece-card-edge)` with their type edge (the preview's).
-- *The HUD in focus:* `html[data-in-focus]` (set by `FocusedPlane`) turns the bar's top fade and the side nav's shade
-  to `--piece`, so they don't lay a strip of page colour over the surface.
+- *The HUD in focus:* was `html[data-in-focus]` turning the HUD's shades to `--piece`; gone with D-289 (the focus is
+  the page's black again).
 - *Not changed:* `--piece-head` has no user yet (no piece has a separate head row's fill); the plane console, name and
   marks look are sessions 5–6.
 - *Verified:* headless on the emulators, dark and light: the canvas (six pieces graphite / white with their bands, the
@@ -5220,3 +5220,39 @@ session 5 says:
   D-284's. `npm run build`.
 - *Found:* on the long-running Firestore emulator (8080) one workspace's live updates stopped (writes never reached a
   watching tab); a fresh workspace on the same emulator was fine (86 ms).
+
+### D-289 · 2026-10-29 · Accepted (changes D-262's `shows`, D-267's unframed fill, D-274's focus surface; the user's list of small details)
+**Unframed pieces sit on a black page and are only as big as what they show; a piece in focus is on black; the timeline
+unframes and loses `shows ▾`; dropdowns in a console or dock are plain text.**
+The user, six points: unframed pieces have no background ("sometimes it can be hard to see the components inside, so
+please make them have a black background"); the timeline's `shows` dropdown isn't needed ("I can link components if I
+want ... there is also an individual link button"); the dropdown with a search in a console has a black fill and a border
+("It should look like how link dropdown is looking"); the timeline has no unframed look ("lets add it like the others");
+unframed, pieces take more room than they need ("check kanban ... actually all of them"); framed pieces are lighter
+(graphite) on the canvas, but "their bg should switch to black when they are focused".
+- *Unframed on black:* `.piece[data-open]` fills with the page's `--bg` (black; `#f5f5f5` in light), its edge feathered
+  (`0 0 14px 8px`, never a box); what it holds takes `--bg-raised: --piece-card` and `--grid-mark: --piece-mark`
+  (cards and tasks on #0b0b0b vanished on black). The document's own feathered paper (`openPaper`) went: the piece is
+  the paper now. The rows' hugging shades stay.
+- *Unframed size:* a kanban's box was its window's (shownBox only knew matrix, table, documents); it now reads the
+  kanban's measured board (`useKanbanSizes`, which fit already used); the timeline writes its days' size (`useOpenSize`);
+  an empty table no longer reserves a row (`tableBounds`). Both stores live in a leaf module `sizes.ts` (no import
+  cycle: one crashed the split build, D-287). CanvasView redraws only when an unframed kanban's size changes. Measured
+  (headless, every kind unframed): each box is its contents plus the 25 px margin and 50 px foot, nothing more.
+- *Timeline unframed:* `canOpen` and the rules' `open` take `timeline`; on the canvas it's live at its own size, its
+  console `link ▾ [‹] [today] [›] [focus] [edit]` (its filter and rows stay in its focus), `[unframe]`/`[frame]` in edit
+  mode, the same cell-by-cell morph.
+- *`shows` gone:* `timelineKanbans` = the kanban it's linked to (its console's `link ▾`), else every kanban. The
+  `timeline.kanbans` field stays readable (rules, export) and is ignored.
+- *Plain dropdowns:* `Menu`'s `plain` look, `label value ▾` in text like the link `Select` (no frame, fill or rule;
+  active value cyan), for the dropdowns in a dock: a plane's `view`, a kanban's `lanes`/`rows`, a timeline's `rows`. The
+  filter strips over a dock keep framed dropdowns (a row of filters, not a console). No console on the canvas has a
+  `Menu` now (`shows` was the only one).
+- *Focus on black:* `.focused` and `.pane` no longer set `--bg` → `--piece`; the focus dock's fill is `--bg`; the HUD's
+  `html[data-in-focus]` rule and its marker went. On the canvas framed pieces stay graphite (D-263).
+- *Verified:* headless on the emulators, dark and light: every kind unframed (sizes measured as above, the page black
+  under them, stars kept out), a plane, a kanban and a timeline in focus (black, docks plain), the timeline unframed and
+  framed again from its console with no errors; rules tests 430/0 (a new one: a timeline opened onto the canvas);
+  the production build loads a workspace.
+- *Rules:* `firestore.rules` changed (`open` on timelines): **not deployed yet**.
+- *Not yet:* a paged table's last page is still sized for a full page; a viewer's table keeps the `+` column's width.

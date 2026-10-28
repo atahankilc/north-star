@@ -88,11 +88,13 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - *Two bands.* Held things carry theirs on the left (a card's, a task's, a row's type colour); containers on top (a
   piece's kind, D-263).
 - *Framed and unframed (D-267).* Framed is a window (the surface, its band, shadow, the name in its edge, the console).
-  Unframed is ink on the canvas: no fill, edge, band or shadow; under each row (a matrix's heads and cells, a table's
+  Unframed is ink on the canvas: no edge, band or shadow, on the page's black (D-289; `--bg`, feathered `0 0 14px 8px`,
+  what it holds on `--piece-card`) and exactly as big as its contents; under each row (a matrix's heads and cells, a table's
   rows, a kanban's heads and tasks, a list's rows and sheets) a shade that hugs it (page colour at 80 %, feathered
   `0 0 16px 10px` at 72 %), as under text; its name a heading's small line 8 px over its contents
   (`04 ── RIVALS · TABLE`, mono 11 px on the screen, caps, tracked .14em, the number magenta); its console the same, on
-  the same hover rule, hanging 10 px under the contents' right end. A single document keeps its feathered page.
+  the same hover rule, hanging 10 px under the contents' right end. A dropdown in a console or dock is plain text, like
+  the link `Select` (`label value ▾`, no frame or fill).
   Going between: the window breaks (or builds) cell by cell while the contents grow from fitted to their own size (or
   shrink back), 320 ms, eased both ends; nothing else moves.
 - *Ink (D-277).* Text on the canvas (headings and their small lines, paragraphs, the project title, section names) sits
@@ -182,7 +184,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Surface (D-263, D-274): every piece (plane, matrix, table, kanban, timeline, documents, document) is graphite
   `--piece` (white in light), `--piece-edge`, a deep shadow, a 1 px light on top and a 2 px band along the top in its
   kind's colour (plane fg, matrix violet, table sky, kanban gold, documents moss, timeline orange); what it holds sits a
-  step lighter (`--piece-card`); in focus and beside, the screen is that surface, the HUD's shades too.
+  step lighter (`--piece-card`); in focus and beside, the screen is the page's black (D-289), what's held still
+  `--piece-card`.
 - Name (D-223, D-276): in the top edge (see *Names and lines*), 13 px × zoom on screen (11–15), `--fg` caps weight 500,
   the kind faint after it (`PAZAR · PLANE`; unnamed, the kind alone in `--fg-faint`); tight, the kind goes first, then
   the name takes a `…`; hovered, all of it. Edit mode: a cyan-framed field, a cyan `>` and `17/80`.

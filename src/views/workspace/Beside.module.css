@@ -1,7 +1,7 @@
-/* What's opened beside a plane in its focus (D-211): panes on the right of the screen, each its own area on the
-   pieces' surface (D-263) (no `+` marks: they're not planes), split from the plane by a line that drags. */
+/* What's opened beside a plane in its focus (D-211): panes on the right of the screen, each its own area on the page's
+   black like the focus (D-289), what it holds on the pieces' raised shade (no `+` marks: they're not planes), split
+   from the plane by a line that drags. */
 .pane {
-  --bg: var(--piece);
   --bg-raised: var(--piece-card);
   position: absolute;
   z-index: 2;

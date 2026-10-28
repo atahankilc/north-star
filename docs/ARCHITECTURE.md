@@ -97,7 +97,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         kanban = {cols[{id, name, done?, limit?}] (1–12), everyPlane? (D-255), rows? (assignee|card, D-258),
                         holds? ('cards'), source? (a table's rows), colField? (status|impact|effort|priority) (D-268),
                         rowField?, names?[{col, row, name ≤ 40, tone? (good|bad)}] (≤ 40) (D-269)}
-                        timeline = {kanbans?[] (≤ 20), rows? (kanban|assignee|card)} (D-262)
+                        timeline = {rows? (kanban|assignee|card)} (D-262); kanbans?[] (≤ 20) still allowed, ignored (D-289)
   customers/{id}        pieceId (its plane), title, x, y (plane px), body?, tags[]?, validation? (D-137)
   problems/{id}         the same
   ideas/{id}            the same

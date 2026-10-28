@@ -104,7 +104,7 @@ One component, `src/ui/Marks.tsx` (+ `Marks.module.css`, tokens `--mark-*`), fou
 
 ### Framed and unframed (D-267, option A)
 - **Framed = a window:** D-263's surface, band, shadow, name in the edge, the console. No scale readout.
-- **Unframed = ink on the canvas:** no fill, edge, band, shadow. Under each row a shade that hugs it (page colour at
+- **Unframed = ink on the canvas:** no edge, band, shadow; on the page's black since D-289 (it had no fill). Under each row a shade that hugs it (page colour at
   80 %, feathered `0 0 16px 10px` at 72 %), as text's. Its name is a heading's small line: `04 ── RIVALS · TABLE`, mono
   11 screen px, caps, tracked `.14em`, the number magenta, 8 px over its contents. Its console is the same console on
   the same hover rule, hanging 10 px under the contents' right end.
@@ -151,7 +151,7 @@ the transition both ways).
 - Session 6 (D-276): a single document unframed keeps its feathered page (it's a page of text, not rows). A name's
   leading number is taken apart only when it's 1–4 digits and then a space or a dash (`2024 plan` reads as `2024`).
 - Session 4 (D-274): `--piece-head` has no user yet. In focus the HUD's shades were page-coloured strips over the
-  surface: `html[data-in-focus]` turns them to `--piece`.
+  surface: `html[data-in-focus]` turned them to `--piece` (gone with D-289: focus is on the page's black).
 - Session 1 (D-270): the tier rule read literally gave a one-line paragraph S and a section M; built as the kind's tier,
   a step down when small on screen (L < 120 px, M < 24 px). Sessions 2–3: give each kind its tier the same way.
 - A section's own drag now shrinks with what it holds and lands on its L's (D-273).

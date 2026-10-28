@@ -29,8 +29,9 @@
 
 /* A plane on the canvas (D-180): a framed box, its name set into the top edge like a section's (D-157). Everything on the
    canvas has its own background; a piece's is graphite (D-263), solid (no backdrop through it), lifted off the page by a
-   shadow and a hairline of light on top, a 2 px band in its kind's colour along the top edge. Inside it (and in a
-   piece's focus `.focused`, and a pane beside it) the page's tokens take the surface's, so what it holds sits on it. */
+   shadow and a hairline of light on top, a 2 px band in its kind's colour along the top edge. Inside it the page's tokens
+   take the surface's, so what it holds sits on it. In its focus (and a pane beside it) the screen is the page's black
+   again, what it holds still graphite (D-289). */
 .piece:not([data-open='true']) {
   --bg: var(--piece);
   --bg-raised: var(--piece-card);
@@ -415,9 +416,9 @@
 }
 
 /* A plane in focus (D-184, D-185): the whole screen, solid, carrying the plane's `+` marks on its own grid (--mx, --my)
-   at the canvas's zoom (--mark), so they never move. The ink transition cuts it with a clip-path. */
+   at the canvas's zoom (--mark), so they never move. The ink transition cuts it with a clip-path. On the page's black
+   (D-289: graphite only on the canvas, where it sets a piece off), what it holds on the pieces' raised shade. */
 .focused {
-  --bg: var(--piece);
   --bg-raised: var(--piece-card);
   --grid-mark: var(--piece-mark);
   position: absolute;
@@ -472,12 +473,16 @@
   color: var(--accent-magenta);
 }
 
-/* A matrix or table opened onto the canvas (D-228): no edge, no fill, its contents a margin in from the corner, its name
-   and console in that margin. Its view stays at 1 under the canvas's zoom; what's at screen size in it reads `--z`. */
+/* A matrix or table opened onto the canvas (D-228): no edge, its contents a margin in from the corner, its name and
+   console in that margin. Its view stays at 1 under the canvas's zoom; what's at screen size in it reads `--z`. On the
+   page's black (D-289), its edge feathered out a little, never a box, so the backdrop stays out from under what's in it;
+   what it holds on the pieces' raised shade, as in focus. */
 .piece[data-open='true'] {
+  --bg-raised: var(--piece-card);
+  --grid-mark: var(--piece-mark);
   border-color: transparent;
-  background: none;
-  box-shadow: none;
+  background: var(--bg);
+  box-shadow: 0 0 14px 8px var(--bg);
 }
 
 .piece[data-open='true']::after {
@@ -532,14 +537,6 @@
   top: 0;
   left: 0;
   transform-origin: 0 0;
-}
-
-/* The page under an open one's contents: solid, its edge feathered out a little, never a box. */
-.openPaper {
-  position: absolute;
-  background: var(--bg);
-  box-shadow: 0 0 14px 10px var(--bg);
-  pointer-events: none;
 }
 
 /* Files held over the canvas (D-232): its edge lit cyan, as a panel's is for a drop. */

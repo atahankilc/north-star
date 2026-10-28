@@ -182,8 +182,8 @@ service cloud.firestore {
         && (!('timeline' in d) || (d.kind == 'timeline' && validTimeline(d.timeline)))
         // Stuck to a plane's edge (D-210): a matrix or a table.
         && (!('stuckTo' in d) || (d.kind in ['matrix', 'table', 'kanban', 'timeline'] && isText(d.stuckTo, 128)))
-        // Opened onto the canvas (D-228): a matrix or a table; a documents list or a document (D-234).
-        && (!('open' in d) || (d.kind in ['matrix', 'table', 'documents', 'document', 'kanban'] && d.open is bool))
+        // Opened onto the canvas (D-228): a matrix or a table; a documents list or a document (D-234), a kanban (D-251), a timeline (D-289).
+        && (!('open' in d) || (d.kind in ['matrix', 'table', 'documents', 'document', 'kanban', 'timeline'] && d.open is bool))
         && d.createdAt is number
         && d.updatedAt is number;
     }

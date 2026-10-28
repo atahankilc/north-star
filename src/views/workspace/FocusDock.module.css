@@ -11,8 +11,8 @@
   padding: 7px var(--space-4) 9px;
   border: 1px solid var(--piece-edge);
   border-bottom: 0;
-  /* On the piece in focus: its surface (D-263). */
-  background: var(--piece);
+  /* On the piece in focus: the screen's black (D-289). */
+  background: var(--bg);
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);

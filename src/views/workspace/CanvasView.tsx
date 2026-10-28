@@ -54,13 +54,13 @@ import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { TableSetupPanel } from './TableSetup'
 import { KanbanSetupPanel } from './KanbanSetup'
 import { Beside, type EscNext } from './Beside'
-import { isOpen, OPEN_FOOT, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
+import { isOpen, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
 import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Doc } from '../../data/documents'
 import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from './DocumentPiece'
 import { clearFound, useFind } from './find'
-import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView, selectTask, useKanbanUi } from './Kanban'
-import { timelineBounds, TimelineDockTools, TimelineShows, TimelineView } from './Timeline'
+import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView, selectTask, useKanbanSizes, useKanbanUi } from './Kanban'
+import { timelineBounds, TimelineDockTools, TimelineView, TimelineWeeks } from './Timeline'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { TaskPanel } from './TaskPanel'
 import { usePlaneFilter } from './planeFilter'
@@ -114,10 +114,12 @@ export function CanvasView() {
   const piecesRef = useRef(pieces)
   piecesRef.current = pieces
   // As they're drawn: one opened onto the canvas as big as its contents (D-228).
-  // An open documents list or document (D-234) is as big as it came out when drawn.
+  // An open documents list, document (D-234), kanban or timeline (D-289) is as big as it came out when drawn.
   const openSizes = useOpenSize()
+  // Only the unframed kanbans' sizes: a framed one growing (a task added) draws nothing here.
+  const kanbanSizes = useKanbanSizes((s) => pieces.filter((p) => p.kind === 'kanban' && isOpen(p)).map((p) => `${s[p.id]?.w}×${s[p.id]?.h}`).join())
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const shown = useMemo(() => shownPieces(pieces, cards), [pieces, cards, openSizes])
+  const shown = useMemo(() => shownPieces(pieces, cards), [pieces, cards, openSizes, kanbanSizes])
   // Each space's cards and text, kept the same lists until they change: what's in a piece isn't drawn again as the
   // camera moves (the pieces' contents are memoised, below). A plane's cards include those brought from others (D-281).
   // A space whose things didn't change keeps its list, so a change on one plane draws only that one.
@@ -1611,11 +1613,10 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       <ThreadChip wid={wid} thread={own} zoom={zoom} />
       {/* What's in it, a picture here: the pointer goes through to the canvas (D-186, D-187). Open on the canvas (D-228),
           live: not in edit mode (a press moves it) or while a plane's in focus. */}
-      {/* Open, the page under its contents, feathered: the backdrop stays out from under its text (D-009). */}
+      {/* Open, the piece itself is the page under its contents, feathered: the backdrop stays out from under its text
+          (D-009, D-289). */}
       {/* The window it's leaving or going into (D-267), breaking or building cell by cell under what's in it. */}
       {morph && <span ref={ghost} className={styles.ghostWindow} style={{ width: piece.w, height: piece.h }} aria-hidden />}
-      {/* A document unframed is a page of text: its paper stays; the rest are rows, each on its own shade (D-267). */}
-      {open && content && kind === 'document' && <span className={styles.openPaper} style={{ left: OPEN_PAD, top: OPEN_PAD, width: box.w - 2 * OPEN_PAD, height: box.h - OPEN_PAD - OPEN_FOOT }} aria-hidden />}
       {bare && focusing ? null : open ? (
         // In focus (and on its way there and back) its copy here is hidden: nothing drawn in it meanwhile.
         // Open on the canvas (D-228), live: at its own size a margin in, under the canvas's zoom (its view stays at 1, so
@@ -1630,6 +1631,8 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
             <DocsList piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas onOpen={onFocus} />
           ) : kind === 'kanban' ? (
             <Kanban piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas />
+          ) : kind === 'timeline' ? (
+            <Timeline piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas />
           ) : (
             <DocOne piece={piece} view={openView} live={live && !editing} onCanvas onMore={onFocus} />
           )}
@@ -1645,7 +1648,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       ) : kind === 'kanban' ? (
         <Kanban piece={piece} view={framedView} live={false} editor={editor} />
       ) : kind === 'timeline' ? (
-        <Timeline piece={piece} view={inner} live={false} editor={editor} />
+        <Timeline piece={piece} view={framedView} live={false} editor={editor} />
       ) : (
         <Cards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       )}
@@ -1667,8 +1670,6 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
           // console is only `[focus] [edit]`.
           kind === 'documents' ? (
             open ? <DocumentsTools piece={piece} editor={editor} toolClass={styles.tool} /> : undefined
-          ) : kind === 'timeline' ? (
-            <TimelineShows piece={piece} editor={editor} />
           ) : kind === 'document' ? undefined : open ? (
             <OpenTools piece={piece} editor={editor} />
           ) : undefined
@@ -1877,6 +1878,8 @@ function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean })
       : kind === 'kanban'
         ? useKanbanUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
         : useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
+  // A timeline's weeks (D-289); its filter and rows are in its focus.
+  if (kind === 'timeline') return <TimelineWeeks piece={piece} toolClass={styles.tool} />
   return (
     <>
       {kind === 'table' && <TablePager piece={piece} editor={editor} />}

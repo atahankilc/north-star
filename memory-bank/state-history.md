@@ -813,3 +813,11 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   three.js, Firebase and React in content-named chunks of their own, so a deploy keeps them cached. Heading retyped
   elsewhere 95 → 51 components, a card renamed 186 → 145. Screenshots identical to the build before D-287; split and
   behaviour checks pass. Measured on a fresh workspace: the old one's live updates had stopped on the 8080 emulator.
+
+## Done (2026-10-29): small details, unframed and focus surfaces (D-289)
+- Unframed pieces on the page's black (feathered), held things on `--piece-card`; their boxes exactly their contents
+  (a kanban read its window's size; `sizes.ts` holds the measured stores); the timeline unframes (rules: `open` on
+  timelines) and lost `shows ▾` (the linked kanban, else every kanban); a plane, kanban or timeline in focus and a pane
+  beside it on black; dock dropdowns plain text (`Menu` `plain`). Headless dark/light checks, rules tests 430/0, the
+  production build loads. Rules change **not deployed**.
+

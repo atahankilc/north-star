@@ -40,8 +40,9 @@ export function tableBounds(piece: Pick<Piece, 'table'>, cards: Card[]): Bounds 
   const setup = tableOf(piece)
   const w = nameWidth(setup) + setup.cols.reduce((s, c) => s + widthOf(c), 0) + T.add
   const n = rowsOf(setup.rows, cards, !setup.manual).length
-  // A page's worth when it's paged (D-213): fit frames the page.
-  return { x: 0, y: 0, w, h: T.head + Math.max(setup.pageSize ? Math.min(n, setup.pageSize) : n, 1) * T.row + T.add }
+  // A page's worth when it's paged (D-213): fit frames the page. No rows: its head and `+ row` (its note sits beside
+  // that), as it's drawn, so unframed it takes no more room than it shows (D-289).
+  return { x: 0, y: 0, w, h: T.head + (setup.pageSize ? Math.min(n, setup.pageSize) : n) * T.row + T.add }
 }
 
 // The table whose setup is open (from the focus dock's or its pane's `[setup]`, D-211); a typed row being named; the page

@@ -24,6 +24,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## In progress
 - Speed: D-287 pushed and live (Pages deployed 2026-10-29); D-288 (frames, library chunks) committed, **not pushed**.
+- Small details (D-289): unframed on black and sized to contents, timeline unframes and lost `shows`, focus on black,
+  plain dock dropdowns. Committed, **not pushed**; `firestore.rules` (`open` on timelines) **not deployed**.
 
 ## Next steps (not started; ask the user which first)
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): link bend points (D-155), links to a

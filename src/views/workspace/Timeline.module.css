@@ -11,6 +11,11 @@
   pointer-events: auto;
 }
 
+/* Unframed (D-289, as a kanban, D-228): nothing cut at its edge; it sits on the unframed piece's black page. */
+.layer[data-on-canvas='true'] {
+  overflow: visible;
+}
+
 .world {
   position: absolute;
   top: 0;
