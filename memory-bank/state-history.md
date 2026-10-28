@@ -807,3 +807,9 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Code split: main 2.22 MB + workspace 467 KB; a deploy simulated with two builds (the chunk renamed) on a small server.
 - A crash found on the way: the landing in the split build (`SCALES` read before defined: matrix ↔ pieces ↔ table
   cycle); fixed by `src/data/scales.ts`.
+
+## Done (2026-10-29): frames and library chunks (D-288)
+- D-287's leftovers: `PieceBox` memoised (its console count read every card: every frame drew on any card change);
+  three.js, Firebase and React in content-named chunks of their own, so a deploy keeps them cached. Heading retyped
+  elsewhere 95 → 51 components, a card renamed 186 → 145. Screenshots identical to the build before D-287; split and
+  behaviour checks pass. Measured on a fresh workspace: the old one's live updates had stopped on the 8080 emulator.

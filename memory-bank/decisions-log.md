@@ -5201,3 +5201,22 @@ session 5 says:
 - *Found:* on the emulators Chrome stalls the 6th page load in one tab ~60 s (connections per host), the old build too.
 - *Not yet:* each piece's frame still draws on any change (CanvasView reads the cards; PieceBox isn't memoised); three.js
   and Firebase stay in the main chunk (the landing needs both).
+
+### D-288 · 2026-10-29 · Accepted (D-287's *Not yet*; the user: "şimdi geri kalanları hallet")
+**A piece's frame draws only when it changed; the libraries are files of their own that survive a deploy.**
+- *Frames:* `PieceBox` is memoised on what it shows (`alikeProps`), its `onFocus` reading a ref. Its `[💬 N inside]`
+  count reads the plane's own cards (its `cards` prop, brought ones too) instead of every card: listening to every card
+  drew every frame on any card's change. Measured (dev, one write from outside): a heading retyped on another plane
+  95 → 51 components, a card renamed 186 → 145, a feature 255 → 159; no other plane's frame draws.
+- *Libraries:* `vite.config.ts` puts three.js (+ @react-three), Firebase and React (+ react-dom, the router, motion,
+  zustand) in chunks of their own (Rolldown `codeSplitting.groups`), named by their contents: a deploy that changes the
+  app renames only the app's files (checked: a word changed on the landing, the three library files kept their names).
+  The landing still needs all three at once, so the first load is the same size (the app's own entry 137 KB, 50 KB gzip;
+  React 123, Firebase 230, three 246 KB gzip; the workspace 148 KB); a returning visitor after a deploy downloads ~200
+  KB instead of ~800.
+- *Verified:* production screenshots pixel-identical to the build before D-287 (canvas, a plane in focus, the table, the
+  matrix); the split check (fetched ahead, a deep link, the list, a deploy in between: one reload onto the new version);
+  D-287's behaviour check (a rename shows everywhere and the old name nowhere, picks, a task dragged, a link drawn) and
+  D-284's. `npm run build`.
+- *Found:* on the long-running Firestore emulator (8080) one workspace's live updates stopped (writes never reached a
+  watching tab); a fresh workspace on the same emulator was fine (86 ms).

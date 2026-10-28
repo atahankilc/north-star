@@ -33,6 +33,7 @@ import { isOwnerOf } from '../../data/workspaces'
 import type { Thread } from '../../data/model'
 import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePresenceReport } from './collab'
 import { deleteHere, heldAt } from './selection'
+import { alikeProps } from './kept'
 import { cardsByPlane, elsewhere } from '../../data/places'
 import { runCells } from '../../ui/Appear'
 import { EVERY_HANDLE, Landing, Marks, ZOOM_SETTLE_MS } from '../../ui/Marks'
@@ -567,6 +568,8 @@ export function CanvasView() {
     const { w, h } = useCanvasView.getState().size
     return { x: onPixel(w / 2 + c.x) + p.x * c.zoom, y: onPixel(h / 2 + c.y) + p.y * c.zoom, w: p.w * c.zoom, h: p.h * c.zoom, zoom: c.zoom }
   }
+  // Read when a piece asks: the pieces are memoised on what they show and keep the handler they were drawn with.
+  const focusRef = useRef((_: WithId<Piece>) => {})
   const focus = (p: WithId<Piece>) => {
     // A cell or a setup of something open on the canvas (D-228) lets go: focus is a view of its own.
     useCanvasView.setState({ focusSpread: true, focusArrived: false, focusLeaving: false, selected: null, cardSelected: null })
@@ -578,6 +581,8 @@ export function CanvasView() {
     closeDocs()
     setParams({ focus: p.id })
   }
+  focusRef.current = focus
+
   const unfocus = () => {
     if (!focused || useCanvasView.getState().focusLeaving) return
     useCanvasView.setState({ focusLeaving: true })
@@ -848,7 +853,7 @@ export function CanvasView() {
             selected={p.id === selected}
             editing={editor && editing.includes(p.id)}
             editor={editor}
-            onFocus={() => focus(p)}
+            onFocus={() => focusRef.current(p)}
             focusing={p.id === focusId}
             cards={cardsOf(p.id)}
             labels={labelsOf(p.id)}
@@ -1343,7 +1348,11 @@ const KIND_TONE: Record<string, string> = {
   timeline: 'var(--link-competes)',
 }
 
-function PieceBox({ piece, shown, live, zoom, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers, host }: BoxProps) {
+// A piece on the canvas, memoised on what it shows (its handler reads a ref, its lists compared by what's in them): a
+// change in one piece, or a card on one plane, doesn't draw the others (D-287's *Not yet*).
+const PieceBox = memo(PieceBoxOf, alikeProps)
+
+function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFocus, focusing, cards, labels, content, planes, followers, host }: BoxProps) {
   const peers = usePeersOn(piece.id, CANVAS)
   const { wid } = useWs()
   const kind = kindOfPiece(piece)
@@ -1463,11 +1472,13 @@ function PieceBox({ piece, shown, live, zoom, selected, editing, editor, onFocus
 
   // Conversations (D-193, D-195): the one on the plane itself has its own chip under its corner, like any component's;
   // the ones on what's inside it are counted in its console, apart.
-  const { threads, cards: every } = useWs()
+  const { threads } = useWs()
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
   const own = threadOn(threads, piece.id)
-  const mine = threads.filter((t) => !t.resolved && threadIn(t, piece.id, every))
+  // Its own cards (brought ones too) say which cards' threads are inside it (D-286): not every card, so a card elsewhere
+  // changing doesn't draw this piece.
+  const mine = threads.filter((t) => !t.resolved && threadIn(t, piece.id, cards))
   const freshOnes = mine.filter((t) => isNew(t, seen, t.id, me))
   const comments = {
     count: mine.length,

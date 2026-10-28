@@ -17,4 +17,20 @@ export default defineConfig({
   plugins: [react()],
   // This app's own port, so it never lands on another project's 5173; strict, so it fails rather than moving.
   server: { port: 5288, strictPort: true },
+  // The libraries every page needs at once in files of their own, named by what's in them: a deploy changes only the
+  // app's own files, so a visitor keeps the libraries from before (D-288). The rest stays with what imports it (the
+  // workspace's chunk, D-287).
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'three', test: /node_modules[\\/](three|@react-three)[\\/]/, priority: 3 },
+            { name: 'firebase', test: /node_modules[\\/](firebase|@firebase|idb)[\\/]/, priority: 2 },
+            { name: 'react', test: /node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler|motion|motion-dom|motion-utils|framer-motion|zustand)[\\/]/, priority: 1 },
+          ],
+        },
+      },
+    },
+  },
 })

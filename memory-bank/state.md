@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-29 (a write draws what it changed, and the workspace's code split, D-287; committed, not pushed)_
+_Last updated: 2026-10-29 (speed: D-287 pushed and live; D-288 frames and library chunks committed, not pushed)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -23,7 +23,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
-- Speed (D-287): a write draws what it changed; the workspace's code its own chunk. Committed, **not pushed**.
+- Speed: D-287 pushed and live (Pages deployed 2026-10-29); D-288 (frames, library chunks) committed, **not pushed**.
 
 ## Next steps (not started; ask the user which first)
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): link bend points (D-155), links to a
@@ -32,7 +32,6 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The assistant back as a piece (its rules are in decisions-1.0.md; check them with the user first). Then the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
-- Speed leftovers (D-287's *Not yet*): each piece's frame still draws on any change (PieceBox not memoised).
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers
@@ -41,6 +40,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Known issues
 - Emulators only: after a Storage URL fetch, a tab's next Firestore write can queue ~55 s in Chrome (HTTP/1.1 connection limit).
 - Emulators only: the 6th page load in one Chrome tab stalls ~60 s (connections per host); use a new tab per few loads.
+- Emulators only: on the long-running Firestore emulator (8080) a workspace's live updates can stop; seed a fresh one.
 - Two live workspaces hold reports written with made-up `createdAt` (2026-10-19 12:00:00.0xx), so they sort above
   reports made that morning. Data, not code.
 
