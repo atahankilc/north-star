@@ -5162,3 +5162,42 @@ session 5 says:
   its chip under the card on Rivals (screenshot). `npm run build`.
 - *Not yet* (the feature's leftovers): ⌘V of the same cards across planes (⇧⌘V); a thread's row saying where the card is
   as well as where it was started.
+
+### D-287 · 2026-10-29 · Accepted (D-279's *Not yet*: one write drew every piece; the bundle one chunk. The user: "4 ü yapalım")
+**A change draws what it changed; the workspace's code is its own chunk.** Nothing visible changes.
+- *Why:* measured on the emulators (3 planes × 25 cards + links + text, a matrix of features × competitors, a table of
+  every card, a kanban with 12 tasks, a timeline; dev, React components rendered the DevTools way): one write from
+  someone else drew 918 components on the canvas, 1110 in a plane's focus, an idea renamed or a heading retyped on another
+  plane alike (393 / 585). Three causes: every snapshot made a new object for every doc in its collection; the context
+  value changed with any data (every `useWs()` reader drew again: each card reads `wid`); lists were built again whole
+  (per-plane cards, a matrix's heads and cells, a table's rows, a kanban's tasks).
+- *How:*
+  - `useQuery` (hooks.ts) keeps an unchanged doc's object (`docChanges()`); `toCards` keeps its card (WeakMap); the derived
+    lists (`useSame` in workspaceData: places, labels, threads, cards with `planes`) and the data object are kept while
+    the same; CanvasView keeps each plane's lists (`keepLists`).
+  - `useWs()` (context.ts) reads from a store and notes the fields a component reads; it draws again only when one of
+    those changes. A field read later (a handler) is the current one. `useWsNow()` reads without listening (a card's link
+    drag reads every card and link only then).
+  - Memoised on what they show: a plane's cards (`CardBox`, props compared two levels down), a table's rows (`RowName`,
+    `RowCells`, names then cells as before so the page's order is the same), a matrix's heads (`Head`, `alikeProps`), a
+    kanban's tasks (`Slotted`). Their handlers read a ref (`acts`, `headActs`, `taskActs`), so two handlers do the same.
+    A matrix's and a table's rows are kept while each is the same (`useKept`, kept.ts).
+  - Code split: the workspace route is `lazy` (`src/app/chunks.ts`); while it loads the curtain holds (D-025); signed in,
+    it's fetched when the page is idle. Pages drops old chunks on deploy: a tab that can't load the chunk reloads once (not
+    again within a minute). A failed fetch ahead only waits.
+  - `SCALES` and `newId` moved to `src/data/scales.ts` (no run-time imports): `matrix.ts`, `pieces.ts` and `table.ts`
+    import each other, and with the split `table.ts` ran before `SCALES` existed (the landing crashed in the build).
+- *Measured (dev, components on one write; before → after):* canvas: an idea renamed 918 → 194, a feature renamed 918 →
+  208, a heading on another plane 393 → 95; in a plane's focus 1110 → 243, 1110 → 257, 585 → 109. What's left is each
+  piece's frame and the HUD (CanvasView draws again). Production, script per write (backdrop off, median of three):
+  8 → 5 ms, 9 → 5, 4 → 3; in focus 11 → 6, 8 → 5. Bundle: 2.69 MB (778 KB gzip) → main 2.22 MB (649 KB) + the workspace
+  467 KB (148 KB).
+- *Verified:* screenshots of the production builds before and after pixel-identical (canvas, a plane in focus, the table,
+  the matrix); a feature renamed from outside shows on its card, its table row, its matrix head and its three tasks, a
+  second rename too, the old name nowhere; a table row's name and a matrix head pick their card; a task dragged to the
+  next column; a link drawn from a card's handle; D-284/D-285's checks pass again. Split (production builds, a server
+  that can drop files): fetched ahead once signed in, a deep link opens, the list opens one, and after a "deploy" (the old
+  chunk gone) opening a workspace reloads once onto the new version and opens. `npm run build`.
+- *Found:* on the emulators Chrome stalls the 6th page load in one tab ~60 s (connections per host), the old build too.
+- *Not yet:* each piece's frame still draws on any change (CanvasView reads the cards; PieceBox isn't memoised); three.js
+  and Firebase stay in the main chunk (the landing needs both).

@@ -52,6 +52,7 @@ import {
 import { fitInto, glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { AutosaveField } from '../../ui/AutosaveField'
 import { useWs } from './context'
+import { alikeProps, useKept } from './kept'
 import { useSeen, within } from './visible'
 import { useTheme } from '../../state/theme'
 import { TYPE_ACCENT } from './PlaneCards'
@@ -148,8 +149,9 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   // Marks and chips at screen size take the zoom once it settles (D-278): a wheel step restyles none of them.
   const settled = useSettledZoom(view.zoom, live)
   const setup = setupOf(piece)
-  const rows = useMemo(() => entriesOf(setup.rows, cards), [setup.rows, cards])
-  const cols = useMemo(() => entriesOf(setup.cols, cards), [setup.cols, cards])
+  // Kept while each is the same (kept.ts): a card changing elsewhere draws nothing here, one in it only its row.
+  const rows = useKept(useMemo(() => entriesOf(setup.rows, cards), [setup.rows, cards]))
+  const cols = useKept(useMemo(() => entriesOf(setup.cols, cards), [setup.cols, cards]))
   const mine = useMemo(() => cells.filter((c) => c.matrixId === piece.id), [cells, piece.id])
   const byKey = useMemo(() => new Map(mine.map((c) => [`${c.row}|${c.col}`, c])), [mine])
   const at = (row: string, col: string) => byKey.get(`${row}|${col}`)
@@ -370,12 +372,22 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows, cols, byKey, setup],
   )
+  // What a head does, read when it's done: the heads are memoised on what they show, never on a new handler.
+  const headActs = useRef<{ rename: (which: 'rows' | 'cols', e: Entry, name: string) => void; remove: typeof remove; pick: typeof pick; fold: typeof fold; own?: (e: ReactPointerEvent) => void }>(null!)
+  headActs.current = {
+    rename: (which, e, name) => (e.sub ? renameSub(e, name) : void renameEntry(wid, piece.id, setup, which, e.item!.id, name)),
+    remove,
+    pick,
+    fold,
+    own,
+  }
+  const pressHead = own && ((e: ReactPointerEvent) => headActs.current.own?.(e))
   const rowHeads = useMemo(
     () =>
       rows.map((r, i) => (
         <Head key={r.key} entry={r} which="rows" style={box(0, L.rowY(i), M.head, M.row)} at={i} hot={hotStore} lit={selected?.r === i} chosen={!!r.card && !r.parent && picked === r.card.id} live={live} editor={editor} naming={naming === r.item?.id}
-          onRename={(name) => (r.sub ? renameSub(r, name) : void renameEntry(wid, piece.id, setup, 'rows', r.item!.id, name))} onRemove={() => remove('rows', r)} onPress={own} onPick={live && r.card ? () => pick(r.card!) : undefined}
-          open={r.subs ? { shown: !!setup.rows.open?.includes(r.key), open: r.subs.filter((k) => openOf('rows', k)).length, toggle: (v) => fold('rows', r, v) } : undefined}
+          onRename={(name) => headActs.current.rename('rows', r, name)} onRemove={() => headActs.current.remove('rows', r)} onPress={pressHead} onPick={live && r.card ? () => headActs.current.pick(r.card!) : undefined}
+          open={r.subs ? { shown: !!setup.rows.open?.includes(r.key), open: r.subs.filter((k) => openOf('rows', k)).length, toggle: (v) => headActs.current.fold('rows', r, v) } : undefined}
           isOpen={r.sub ? openOf('rows', r.key) : undefined}>
           {heads && <Totals setup={setup} reading={readingOf(setup, rowCells(r))} />}
         </Head>
@@ -387,8 +399,8 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
     () =>
       cols.map((c, i) => (
         <Head key={c.key} entry={c} which="cols" style={box(L.colX(i), 0, M.cell, M.top)} at={i} hot={hotStore} lit={selected?.c === i} chosen={!!c.card && !c.parent && picked === c.card.id} live={live} editor={editor} naming={naming === c.item?.id}
-          onRename={(name) => (c.sub ? renameSub(c, name) : void renameEntry(wid, piece.id, setup, 'cols', c.item!.id, name))} onRemove={() => remove('cols', c)} onPress={own} onPick={live && c.card ? () => pick(c.card!) : undefined}
-          open={c.subs ? { shown: !!setup.cols.open?.includes(c.key), open: c.subs.filter((k) => openOf('cols', k)).length, toggle: (v) => fold('cols', c, v) } : undefined}
+          onRename={(name) => headActs.current.rename('cols', c, name)} onRemove={() => headActs.current.remove('cols', c)} onPress={pressHead} onPick={live && c.card ? () => headActs.current.pick(c.card!) : undefined}
+          open={c.subs ? { shown: !!setup.cols.open?.includes(c.key), open: c.subs.filter((k) => openOf('cols', k)).length, toggle: (v) => headActs.current.fold('cols', c, v) } : undefined}
           isOpen={c.sub ? openOf('cols', c.key) : undefined}>
           {heads && <Totals setup={setup} reading={readingOf(setup, colCells(c))} />}
         </Head>
@@ -524,7 +536,8 @@ type HeadProps = {
 // mono over a dashed rule (a double-click renames it). Its totals under the name (a column's) or at its end (a row's).
 // What a card unfolded into (D-249) is a step in under it, numbered, in mono, `◇` when nobody meets it; renamed by a
 // double-click (on the card), never taken out here; a click opens the card's panel.
-function Head({ entry, which, style, at, hot: hotStore, lit, chosen, live, editor, naming, onRename, onRemove, onPress, onPick, open: unfold, isOpen, children }: HeadProps) {
+// Memoised on what it shows (its handlers only read the matrix's ref): a card renamed draws its own head only.
+const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, chosen, live, editor, naming, onRename, onRemove, onPress, onPick, open: unfold, isOpen, children }: HeadProps) {
   const hot = hotStore((s) => !!s.at && (which === 'rows' ? s.at.r : s.at.c) === at) || lit || chosen
   const [editing, setEditing] = useState(false)
   const sub = !!entry.sub
@@ -615,7 +628,7 @@ function Head({ entry, which, style, at, hot: hotStore, lit, chosen, live, edito
       )}
     </div>
   )
-}
+}, alikeProps)
 
 // A row or a column summed up (D-212), the ones left out (—) aside. A scale's: as squares (one per cell, in its step's
 // colour, an outline when unset), a number (`3/5`) or a line of the steps' shares; numbers' average; texts written.

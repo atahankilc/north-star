@@ -42,6 +42,7 @@ import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasVie
 import { findGo, landing } from './find'
 import type { Card } from '../../data/cards'
 import { useWs } from './context'
+import { alikeProps } from './kept'
 import { DockAction } from './FocusDock'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import { loadFolds, saveFolds, taskRows, type Lane } from './rows'
@@ -486,6 +487,9 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
   const vars = { ['--col' as string]: `${K.col}px`, ['--gap' as string]: `${K.gap}px`, ['--head' as string]: `${K.head}px`, ['--card-gap' as string]: `${K.cardGap}px` } as CSSProperties
   const taskIds = useMemo(() => new Set(tasks.map((t) => t.id)), [tasks])
   const isPicked = (id: string) => (many ? many.includes(id) : selected === id)
+  // What a task does, read when it's done: the tasks are memoised on what they show, never on a new handler.
+  const taskActs = useRef({ press, pick, learn: (t: Task) => void (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) })
+  taskActs.current = { press, pick, learn: (t: Task) => void (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) }
 
   return (
     <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'kanban'} data-dragging={held ? true : undefined} data-lanes={field ? true : undefined} onPointerDown={boxPress}>
@@ -569,9 +573,9 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
                                   )}
                                 </>
                               }
-                              learn={live && editor && !many && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) : undefined}
-                              onPointerDown={press(t)}
-                              onClick={live && !editor ? (e: React.MouseEvent) => void (!e.shiftKey && pick(t)) : undefined}
+                              learn={live && editor && !many && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => taskActs.current.learn(t) : undefined}
+                              onPointerDown={(e) => taskActs.current.press(t)(e)}
+                              onClick={live && !editor ? (e: React.MouseEvent) => void (!e.shiftKey && taskActs.current.pick(t)) : undefined}
                             />
                           </Slotted>
                         ))}
@@ -700,15 +704,16 @@ export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: b
   return <Menu label="lanes" up summary={rows ? NAME[rows] : 'none'} active={!!rows} items={items} ariaLabel="Lanes" noun="ways" />
 }
 
-// A task with the place a held one would land just above it (`slot`: its height, 0 none).
-function Slotted({ slot, tone, children }: { slot: number; tone?: string; children: ReactNode }) {
+// A task with the place a held one would land just above it (`slot`: its height, 0 none). Memoised on what it shows
+// (the task's handlers only read the board's ref): a card renamed draws its tasks only.
+const Slotted = memo(function Slotted({ slot, tone, children }: { slot: number; tone?: string; children: ReactNode }) {
   return (
     <>
       {slot > 0 && <Gap h={slot} tone={tone} />}
       {children}
     </>
   )
-}
+}, (a, b) => alikeProps(a, b, 5))
 
 // Where a held task or card lands (D-265): a gap opens as tall as it, its L's on the gap's corners at full size.
 export function Gap({ h, tone }: { h: number; tone?: string }) {

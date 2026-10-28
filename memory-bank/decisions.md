@@ -120,6 +120,10 @@ feature comes back as a piece, and check them with the user then.
   it stops (D-278, D-280). A
   pan, on the canvas or in a focus, redraws and restyles nothing inside the world; per-step values never go on an
   element that holds the contents (D-279).
+- A write draws what it changed (D-287): unchanged docs and cards keep their objects; `useWs()` redraws a component only
+  when a field it read changes (`useWsNow()` for handlers); cards, table rows, matrix heads and kanban tasks are memoised
+  on what they show, their handlers through a ref. The workspace's code is its own chunk (fetched ahead, one reload after
+  a deploy).
 - Piece names (D-223): in the top edge of every piece, 13 px × zoom on screen (11–15), `--fg` caps weight 500, the kind
   faint after it (`PAZAR · PLANE`); the kind gives way first, then `…`, all of it on hover. Edit mode: a cyan-framed
   field, a `>` and `17/80`.

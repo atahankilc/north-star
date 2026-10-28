@@ -55,7 +55,7 @@ import { PeopleHere } from '../../ui/PeopleHere'
 import { Note, Row, Section, type WorkspacePage } from '../../ui/Settings'
 import { Toast } from '../../ui/Toast'
 import { CanvasView } from './CanvasView'
-import { useWs, WorkspaceContext, type WorkspaceCtx } from './context'
+import { useWorkspaceStore, useWs, WorkspaceContext, type WorkspaceCtx } from './context'
 import { PeopleSettings } from './PeopleSettings'
 import { exportWorkspace } from '../../data/exportWorkspace'
 import { download, fileSlug, zipBundle } from '../../io/bundle'
@@ -81,6 +81,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   const { data, isLoading } = useWorkspaceData(wid)
   useHoldCurtain('canvas', isLoading)
   const ctx = useMemo<WorkspaceCtx>(() => ({ ...data, wid, workspace }), [data, wid, workspace])
+  const store = useWorkspaceStore(ctx)
   const isOwner = isOwnerOf(workspace, user?.id)
   const editor = canEditIn(workspace, user?.id)
   // Only owners may list who's asking (D-098); any of them settles a request.
@@ -103,7 +104,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   const focused = focusId ? data.pieces.find((p) => p.id === focusId) : undefined
 
   return (
-    <WorkspaceContext.Provider value={ctx}>
+    <WorkspaceContext.Provider value={store}>
       <div className={styles.app} data-app>
         <Hud
           crumbs={[

@@ -18,6 +18,7 @@ import { CARD_TYPES, isOnPlane, type AnyType, type Card, type CardType } from '.
 import { db } from './firebase'
 import { tracked } from './history'
 import { pieceRef } from './pieces'
+import { newId, SCALES } from './scales'
 
 export type AxisItem = { id: string; name?: string; cardType?: AnyType; cardId?: string }
 
@@ -108,21 +109,9 @@ export const NOTES_MAX = 20000
 export const GLYPH_MAX = 4
 export const LABEL_MAX = 40
 
-export const newId = () => Math.random().toString(36).slice(2, 8)
-
-const step = (glyph: string, label: string, tone: Tone): Step => ({ id: label.toLowerCase().replace(/[^a-z0-9]+/g, '-'), glyph, label, tone })
-
-// Scales to start from; every step can be renamed, recoloured, added or taken out after.
-export const SCALES: { key: string; name: string; steps: Step[] }[] = [
-  { key: 'coverage', name: 'coverage', steps: [step('○', 'none', 'dim'), step('◐', 'partial', 'yellow'), step('●', 'full', 'cyan'), step('★', 'better', 'magenta')] },
-  { key: 'yes-no', name: 'yes / no', steps: [step('✕', 'no', 'dim'), step('✓', 'yes', 'green')] },
-  { key: 'level', name: 'low → high', steps: [step('▁', 'low', 'dim'), step('▄', 'medium', 'yellow'), step('█', 'high', 'magenta')] },
-  {
-    key: 'five',
-    name: '1 – 5',
-    steps: [step('1', 'one', 'dim'), step('2', 'two', 'dim'), step('3', 'three', 'yellow'), step('4', 'four', 'cyan'), step('5', 'five', 'magenta')],
-  },
-]
+// In scales.ts, which imports nothing at run time: pieces.ts, table.ts and this one import each other, and a table's
+// default steps are read as table.ts loads, whichever of them the app loads first.
+export { newId, SCALES } from './scales'
 
 const axis = (type?: CardType, noun?: string, names: string[] = []): Axis => ({
   ...(type ? { type } : {}),

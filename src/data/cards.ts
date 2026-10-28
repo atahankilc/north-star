@@ -265,9 +265,14 @@ export function deleteCard(wid: string, card: Card, edges: Edge[] = [], places: 
 // Docs from any of the card collections, as cards; one without a plane (`pieceId`) isn't the app's and is left out.
 type CardDoc = { id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number; body?: string } & CardFields
 
+// A doc that didn't change (the same object, hooks.ts) gives the same card, so what's drawn from it stays memoised.
+const made = new WeakMap<CardDoc, Card>()
+
 export function toCards(type: AnyType, docs: CardDoc[]): Card[] {
-  return docs.flatMap((d) =>
-    d.pieceId
+  return docs.flatMap((d) => {
+    const kept = made.get(d)
+    if (kept) return [kept]
+    const out: Card[] = d.pieceId
       ? [
           {
             id: d.id,
@@ -293,8 +298,10 @@ export function toCards(type: AnyType, docs: CardDoc[]): Card[] {
             memberIds: d.memberIds,
           },
         ]
-      : [],
-  )
+      : []
+    if (out[0]) made.set(d, out[0])
+    return out
+  })
 }
 
 export const cardRef = ref

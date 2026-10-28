@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-28 (one card on many planes built, D-281–D-286; pushed, live)_
+_Last updated: 2026-10-29 (a write draws what it changed, and the workspace's code split, D-287; committed, not pushed)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -23,7 +23,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
-- Nothing open. The last work, one card on many planes (D-281–D-286), is pushed and live (Pages deployed 2026-10-28).
+- Speed (D-287): a write draws what it changed; the workspace's code its own chunk. Committed, **not pushed**.
 
 ## Next steps (not started; ask the user which first)
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): link bend points (D-155), links to a
@@ -32,8 +32,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The assistant back as a piece (its rules are in decisions-1.0.md; check them with the user first). Then the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
-- Speed, measured, not done (D-279's *Not yet*, numbers in state-history): one write draws every piece (`useWs` one context, new arrays per snapshot); code-split the workspace
-  route (Pages drops old chunks on deploy: needs a reload on a failed chunk).
+- Speed leftovers (D-287's *Not yet*): each piece's frame still draws on any change (PieceBox not memoised).
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers
@@ -41,7 +40,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## Known issues
 - Emulators only: after a Storage URL fetch, a tab's next Firestore write can queue ~55 s in Chrome (HTTP/1.1 connection limit).
-- The bundle is one 2.7 MB chunk (three + firebase + the canvas). Code-split pieces later.
+- Emulators only: the 6th page load in one Chrome tab stalls ~60 s (connections per host); use a new tab per few loads.
 - Two live workspaces hold reports written with made-up `createdAt` (2026-10-19 12:00:00.0xx), so they sort above
   reports made that morning. Data, not code.
 
@@ -71,5 +70,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   A pan redraws nothing (D-279): a space's view goes to a thin shell moving the world, its contents memoised on the
   zoom (`PlaneInside`, `TaskBoard`, `CardBoard`, `Days`); CanvasView never reads the camera (`World`); nothing written
   per step (`--mark`, `--zs`…) on an element holding the contents. How it was measured: state-history D-279.
+  A write draws what it changed (D-287): read what you show from `useWs()` (each field read is listened to), use
+  `useWsNow()` in handlers; keep row/head/task components memoised with handlers through a ref, lists via `useKept`.
+  Measuring a write: state-history D-287.
 - Dev hooks: `window.__kanbanUi` (D-260), `__sceneTime`, `__backdrop`, `__curtain`, `__sweep`, `__advance`.
 - Chrome extension screenshots are scaled: viewport 2560 px vs 1568 px frame, so clientX/Y needs ×(innerWidth/1568).

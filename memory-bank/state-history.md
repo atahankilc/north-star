@@ -791,3 +791,19 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   - D-286 matrix, table, kanban, tasks, finder, comments, the panel's lists via `card.planes` / `isOnPlane`. 12 checks.
 - Testing note: from a workspace tab the emulators can take tens of seconds to receive a write (state.md's known
   issue); the checks wait for each write, and a ⌘Z pressed before a write lands undoes it as soon as it does.
+
+## Done (2026-10-29): a write draws what it changed; the workspace's code split (D-287)
+- Asked for: D-279's *Not yet* (one write drew every piece; the one-chunk bundle). Measured first, each layer after.
+- How it was measured: emulators, a workspace of 3 planes × 25 cards + links + 4 headings each, a matrix (features ×
+  competitors), a table (every card), a kanban (12 tasks), a timeline; one write from outside the tab (the emulator's REST
+  API as owner) — an idea renamed, a feature renamed, a heading retyped on plane 3 — on the canvas and in plane 1's focus.
+  Dev: components rendered per commit, counted as React DevTools does (`__REACT_DEVTOOLS_GLOBAL_HOOK__`, skipping
+  bailed-out subtrees). Production (`vite build` with `VITE_USE_EMULATORS=true`, `vite preview`): CDP ScriptDuration
+  between the write and the new text in the page, backdrop off (`north-star.background` = off), three runs.
+- Steps and counts (canvas, idea renamed): 918; stable docs/cards/lists alone 918 (every card read `useWs()`); selective
+  `useWs` 842; `useWsNow` in the card 742; matrix/table rows kept 622; `CardBox` memo 551; table rows memo 210; heads
+  memo 210 (feature: 330 → 215); kanban tasks memo 186. Final (after the table's two-part rows): 194 / 208 / 95, focus
+  243 / 257 / 109.
+- Code split: main 2.22 MB + workspace 467 KB; a deploy simulated with two builds (the chunk renamed) on a small server.
+- A crash found on the way: the landing in the split build (`SCALES` read before defined: matrix ↔ pieces ↔ table
+  cycle); fixed by `src/data/scales.ts`.

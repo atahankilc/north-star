@@ -119,8 +119,11 @@ export function CanvasView() {
   const shown = useMemo(() => shownPieces(pieces, cards), [pieces, cards, openSizes])
   // Each space's cards and text, kept the same lists until they change: what's in a piece isn't drawn again as the
   // camera moves (the pieces' contents are memoised, below). A plane's cards include those brought from others (D-281).
-  const cardsBy = useMemo(() => cardsByPlane(cards, places), [cards, places])
-  const labelsBy = useMemo(() => groupBy(labels, (l) => l.pieceId), [labels])
+  // A space whose things didn't change keeps its list, so a change on one plane draws only that one.
+  const lastCards = useRef(new Map<string, Card[]>())
+  const lastLabels = useRef(new Map<string, Label[]>())
+  const cardsBy = useMemo(() => (lastCards.current = keepLists(lastCards.current, cardsByPlane(cards, places))), [cards, places])
+  const labelsBy = useMemo(() => (lastLabels.current = keepLists(lastLabels.current, groupBy(labels, (l) => l.pieceId))), [labels])
   const cardsOf = (id: string) => cardsBy.get(id) ?? NONE
   const labelsOf = (id: string) => labelsBy.get(id) ?? NONE
   const canvasLabels = labelsOf(CANVAS)
@@ -1884,6 +1887,15 @@ const OPEN_VIEW: PlaneCam = { ox: OPEN_PAD, oy: OPEN_PAD, zoom: 1 }
 const MORPH_MS = 320
 const easeBoth = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
 const between = (a: PlaneCam, b: PlaneCam, t: number): PlaneCam => ({ ox: a.ox + (b.ox - a.ox) * t, oy: a.oy + (b.oy - a.oy) * t, zoom: a.zoom + (b.zoom - a.zoom) * t })
+
+// Each list from before that holds the same things in the same order, in place of the new one.
+function keepLists<T>(was: Map<string, T[]>, now: Map<string, T[]>) {
+  for (const [k, list] of now) {
+    const old = was.get(k)
+    if (old && old.length === list.length && list.every((x, i) => x === old[i])) now.set(k, old)
+  }
+  return now
+}
 
 function groupBy<T>(list: T[], key: (t: T) => string) {
   const out = new Map<string, T[]>()

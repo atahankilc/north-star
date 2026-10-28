@@ -26,15 +26,30 @@ function useSnapshot<T>(subscribe: ((set: (v: T) => void, fail: (e: Error) => vo
   return state
 }
 
+// A doc that didn't change keeps its object from the snapshot before, so what's drawn from it stays memoised: one card's
+// title changing makes one new object, not one per doc in its collection.
 export function useQuery<T>(q: Query | null, key: string): Live<WithId<T>[]> {
   return useSnapshot<WithId<T>[]>(
     q &&
-      ((set, fail) =>
-        onSnapshot(
+      ((set, fail) => {
+        let last = new Map<string, WithId<T>>()
+        return onSnapshot(
           q,
-          (snap) => set(snap.docs.map((d) => ({ ...(d.data() as T), id: d.id }))),
+          (snap) => {
+            const changed = new Set(snap.docChanges().map((c) => c.doc.id))
+            const next = new Map<string, WithId<T>>()
+            const list = snap.docs.map((d) => {
+              const kept = last.get(d.id)
+              const v = kept && !changed.has(d.id) ? kept : { ...(d.data() as T), id: d.id }
+              next.set(d.id, v)
+              return v
+            })
+            last = next
+            set(list)
+          },
           fail,
-        )),
+        )
+      }),
     [],
     [key],
   )

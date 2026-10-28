@@ -36,7 +36,7 @@ import { isReducedMotion } from '../../state/motion'
 import { runCells } from '../../ui/Appear'
 import type { PlaneCam } from '../../state/canvasView'
 import { useCanvasView } from '../../state/canvasView'
-import { useWs } from './context'
+import { useWs, useWsNow } from './context'
 import { useStill } from './still'
 import { factsOf, useTaskTally, type Facts, type Proof } from './cardFacts'
 import { createEdge, defaultKind } from '../../data/edges'
@@ -438,10 +438,25 @@ type BoxProps = {
   counts?: Map<string, number>
 }
 
-function CardBox(props: BoxProps) {
+function CardBoxOf(props: BoxProps) {
   if (props.place && props.card.type === 'package' && !props.card.folded) return <PackageFrame {...props} place={props.place} />
   return <CardBody {...props} />
 }
+
+// The same value: the same thing, or lists and plain objects holding the same (two levels down: a card's facts hold its
+// tasks' counts). The plane builds its cards' props again on every change; a card whose props hold the same doesn't draw.
+function same(a: unknown, b: unknown, depth = 2): boolean {
+  if (a === b) return true
+  if (!depth || !a || !b || typeof a !== 'object' || typeof b !== 'object') return false
+  if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every((x, i) => same(x, b[i], depth - 1))
+  if (Object.getPrototypeOf(a) !== Object.prototype || Object.getPrototypeOf(b) !== Object.prototype) return false
+  const ka = Object.keys(a)
+  return ka.length === Object.keys(b).length && ka.every((k) => same((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k], depth - 1))
+}
+const sameProps = (a: BoxProps, b: BoxProps) => (Object.keys(a) as (keyof BoxProps)[]).every((k) => same(a[k], b[k])) && Object.keys(a).length === Object.keys(b).length
+
+// One card on a plane: drawn again only when what it shows changed (one card's title changing draws that card).
+const CardBox = memo(CardBoxOf, sameProps)
 
 // An unfolded package (D-239): no card, a frame round its members and a band over it that is the package (its name,
 // rating, a cell per member, `[−]` to fold them in). The band takes the pointer (select, drag them all, its `›`); the
@@ -505,7 +520,9 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
 }
 
 function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open, counts, dim }: BoxProps) {
-  const { wid, threads, cards, edges } = useWs()
+  const { wid, threads } = useWs()
+  // Every card and link only when a link is drawn from it: read then, so a card doesn't draw again when another changes.
+  const now = useWsNow()
   const face = useRef<HTMLDivElement>(null)
   const revealed = useRevealed()
   useLayoutEffect(() => {
@@ -618,6 +635,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
       window.removeEventListener('pointercancel', up)
       const over = ev.type === 'pointerup' ? overAt(ev) : null
       useCanvasView.setState({ linking: null })
+      const { cards, edges } = now()
       const other = over && cards.find((c) => c.id === over)
       if (!other) return
       // One link between two cards from the handle: an existing one is selected instead.

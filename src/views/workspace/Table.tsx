@@ -4,7 +4,7 @@
 // on, a check flips), arrows move, 1–9 set a step, Backspace clears, Enter or a double-click types a number or a text;
 // a column's head sorts it (up, down, off); a row's name is a card's title or a typed name (double-click to change),
 // `×` takes the row out. The rules and columns are set up from the focus dock's `[setup]` (TableSetupPanel).
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -16,6 +16,7 @@ import { kindOfPiece } from '../../data/pieces'
 import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { Select } from '../../ui/Select'
 import { useWs } from './context'
+import { useKept } from './kept'
 import { useSeen, within } from './visible'
 import { TYPE_ACCENT } from './PlaneCards'
 import type { FindItem } from './find'
@@ -194,7 +195,8 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   // The page shown (D-213); the rest wait on their pages.
   const myPage = useTableUi((s) => s.pages[piece.id])
   const page = pagesOf(setup, all.length, pageAt ?? myPage)
-  const rows = useMemo(() => all.slice(page.from, page.to), [all, page.from, page.to])
+  // Kept while each is the same (kept.ts): a card changing elsewhere draws nothing here, one in it only its row.
+  const rows = useKept(useMemo(() => all.slice(page.from, page.to), [all, page.from, page.to]))
 
   const cols = setup.cols
   // A column's right edge being dragged: its width shown while it moves, written once let go.
@@ -371,66 +373,65 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [seenRows, cols, setup, sr, live, editor, lit, nameW, widths],
   )
+  // Each row's own cells, the same map while they are: a cell written draws its row only.
+  const lastRowCells = useRef(new Map<string, Map<string, Cell>>())
+  const rowCells = useMemo(() => {
+    const now = new Map<string, Map<string, Cell>>()
+    for (const c of mine) {
+      const m = now.get(c.row) ?? new Map<string, Cell>()
+      m.set(c.col, c)
+      now.set(c.row, m)
+    }
+    for (const [k, m] of now) {
+      const was = lastRowCells.current.get(k)
+      if (was && was.size === m.size && [...m].every(([col, c]) => was.get(col) === c)) now.set(k, was)
+    }
+    lastRowCells.current = now
+    return now
+  }, [mine])
+  // Where the columns are, the same object while their widths are.
+  const geo = useMemo(() => ({ xs, ws, nameW }), [widths, nameW]) // eslint-disable-line react-hooks/exhaustive-deps
+  // What a row does, read when it's done: the rows are memoised and never take a new handler.
+  const acts = useRef<RowActs>(null!)
+  acts.current = {
+    own,
+    press,
+    type: (ri, ci, key) => (select(ri, ci), setTyping(key)),
+    typed: (row, col, value) => {
+      setTyping(null)
+      if (value !== null) write(row, col, value)
+    },
+    rename: (r, name) => {
+      if (r.card) void retitleCard(wid, r.card, name)
+      else if (r.item) void renameRow(wid, piece.id, setup, r.item.id, name)
+    },
+    remove: (r) => void removeRow(wid, piece.id, setup, r, mine),
+    pick,
+  }
   const rowsShown = useMemo(
     () => (
       <>
+        {/* The names, then the cells, as one pass drew them before: the same order on the page. */}
         {seenRows.map(([r, ri]) => (
-          <NameCell
+          <RowName key={r.key} row={r} ri={ri} nameW={geo.nameW} naming={naming === r.item?.id} live={live} editor={editor} acts={acts} />
+        ))}
+        {seenRows.map(([r, ri]) => (
+          <RowCells
             key={r.key}
+            pieceId={piece.id}
             row={r}
-            style={box(0, T.head + ri * T.row, nameW, T.row)}
+            ri={ri}
+            cols={cols}
+            geo={geo}
+            cells={rowCells.get(r.key)}
+            selCol={sr === ri ? sc : undefined}
+            typingCol={typing?.startsWith(selKey(piece.id, r.key, '')) ? typing.slice(selKey(piece.id, r.key, '').length) : null}
             live={live}
             editor={editor}
-            naming={naming === r.item?.id}
-            onPress={own}
-            onRename={(name) => {
-              if (r.card) void retitleCard(wid, r.card, name)
-              else if (r.item) void renameRow(wid, piece.id, setup, r.item.id, name)
-            }}
-            onRemove={() => void removeRow(wid, piece.id, setup, r, mine)}
-            onPick={r.card ? () => pick(r.card!) : undefined}
+            fieldText={fieldText}
+            acts={acts}
           />
         ))}
-
-        {seenRows.map(([r, ri]) =>
-          cols.map((c, ci) => {
-            const key = selKey(piece.id, r.key, c.id)
-            const style = box(xs[ci], T.head + ri * T.row, ws[ci], T.row)
-            const isSel = selected?.r === ri && selected.c === ci
-            if (c.field) {
-              const text = fieldText(r, c.field)
-              const tone = c.field === 'type' && r.card ? TYPE_ACCENT[r.card.type] : undefined
-              return (
-                <button key={key} className={styles.cell} data-field={c.field} data-cell={key} data-find={key} data-find-box data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
-                  tabIndex={live ? 0 : -1} onClick={live ? () => press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
-                  {text ? <span className={styles.text}>{text}</span> : <span className={styles.unset}>·</span>}
-                  <Marks tier="s" live={live} selected={isSel} />
-                </button>
-              )
-            }
-            return (
-              <OwnCell
-                key={key}
-                id={key}
-                col={c}
-                cell={at(r.key, c.id)}
-                style={style}
-                label={`${r.name || 'untitled'}, ${colName(c)}`}
-                selected={isSel}
-                live={live}
-                typing={typing === key}
-                // A cell lets the press through (D-217): its view pans once it moves 5 px, a click still selects.
-                onPress={typing === key ? own : undefined}
-                onClick={() => press(ri, ci)}
-                onType={editor && (c.kind === 'number' || c.kind === 'text') ? () => (select(ri, ci), setTyping(key)) : undefined}
-                onTyped={(value) => {
-                  setTyping(null)
-                  if (value !== null) write(r.key, c.id, value)
-                }}
-              />
-            )
-          }),
-        )}
 
         {live && editor && (
           <>
@@ -460,7 +461,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
       </>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [seenRows, cols, byKey, mine, setup, sr, sc, typing, naming, live, editor, fieldText, onCard, nameW, widths, piece.id, wid],
+    [seenRows, cols, geo, rowCells, setup, sr, sc, typing, naming, live, editor, fieldText, nameW, widths, piece.id, wid],
   )
 
 
@@ -541,6 +542,95 @@ function WidthGrip({ x, height, zoom, sizing, onMove, onDone, onReset }: GripPro
     </div>
   )
 }
+
+type RowActs = {
+  own?: (e: ReactPointerEvent) => void
+  press: (ri: number, ci: number) => void
+  type: (ri: number, ci: number, key: string) => void
+  typed: (row: string, col: string, value: Cell['value'] | null) => void
+  rename: (r: Row, name: string) => void
+  remove: (r: Row) => void
+  pick: (card: Card) => void
+}
+
+type RowProps = {
+  pieceId: string
+  row: Row
+  ri: number
+  cols: Column[]
+  geo: { xs: number[]; ws: number[]; nameW: number }
+  cells: Map<string, Cell> | undefined
+  // The selected cell's column when it's in this row; the column being typed in.
+  selCol: number | undefined
+  typingCol: string | null
+  live: boolean
+  editor: boolean
+  fieldText: FieldText
+  acts: { current: RowActs }
+}
+
+const box = (x: number, y: number, w: number, h: number): CSSProperties => ({ left: x, top: y, width: w, height: h })
+
+// A row's name and a row's cells, each memoised, so a card renamed or a cell written draws its row only, not the table.
+const RowName = memo(function RowName({ row: r, ri, nameW, naming, live, editor, acts }: { row: Row; ri: number; nameW: number; naming: boolean; live: boolean; editor: boolean; acts: { current: RowActs } }) {
+  return (
+    <NameCell
+      row={r}
+      style={box(0, T.head + ri * T.row, nameW, T.row)}
+      live={live}
+      editor={editor}
+      naming={naming}
+      onPress={acts.current.own}
+      onRename={(name) => acts.current.rename(r, name)}
+      onRemove={() => acts.current.remove(r)}
+      onPick={r.card ? () => acts.current.pick(r.card!) : undefined}
+    />
+  )
+})
+
+const RowCells = memo(function RowCells({ pieceId, row: r, ri, cols, geo, cells, selCol, typingCol, live, editor, fieldText, acts }: RowProps) {
+  const { xs, ws } = geo
+  const own = acts.current.own
+  return (
+    <>
+      {cols.map((c, ci) => {
+        const key = selKey(pieceId, r.key, c.id)
+        const style = box(xs[ci], T.head + ri * T.row, ws[ci], T.row)
+        const isSel = selCol === ci
+        if (c.field) {
+          const text = fieldText(r, c.field)
+          const tone = c.field === 'type' && r.card ? TYPE_ACCENT[r.card.type] : undefined
+          return (
+            <button key={key} className={styles.cell} data-field={c.field} data-cell={key} data-find={key} data-find-box data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
+              tabIndex={live ? 0 : -1} onClick={live ? () => acts.current.press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
+              {text ? <span className={styles.text}>{text}</span> : <span className={styles.unset}>·</span>}
+              <Marks tier="s" live={live} selected={isSel} />
+            </button>
+          )
+        }
+        const typing = typingCol === c.id
+        return (
+          <OwnCell
+            key={key}
+            id={key}
+            col={c}
+            cell={cells?.get(c.id)}
+            style={style}
+            label={`${r.name || 'untitled'}, ${colName(c)}`}
+            selected={isSel}
+            live={live}
+            typing={typing}
+            // A cell lets the press through (D-217): its view pans once it moves 5 px, a click still selects.
+            onPress={typing ? own : undefined}
+            onClick={() => acts.current.press(ri, ci)}
+            onType={editor && (c.kind === 'number' || c.kind === 'text') ? () => acts.current.type(ri, ci, key) : undefined}
+            onTyped={(value) => acts.current.typed(r.key, c.id, value)}
+          />
+        )
+      })}
+    </>
+  )
+})
 
 type NameProps = {
   row: Row
