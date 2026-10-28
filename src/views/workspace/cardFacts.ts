@@ -12,13 +12,14 @@ import { useWs } from './context'
 
 export type Proof = { supports: number; contradicts: number; clash: boolean }
 // `clash`: the status and the evidence disagree (also with no evidence at all), the head in magenta.
-export type Facts = { head?: string; clash?: boolean; proof?: Proof; meta: string; sure?: string; tasks?: { done: number; all: number } }
+// `planes`: how many planes it's on, when more than one (D-281).
+export type Facts = { head?: string; clash?: boolean; proof?: Proof; meta: string; sure?: string; tasks?: { done: number; all: number }; planes?: number }
 
 // Where it operates: `US · Germany +1` (D-145).
 const regionText = (regions: string[] | undefined) =>
   regions?.length ? regions.slice(0, 2).join(' · ') + (regions.length > 2 ? ` +${regions.length - 2}` : '') : undefined
 
-export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'competitorFeatures' | 'edges'>, tasks?: Map<string, { done: number; all: number }>): Map<string, Facts> {
+export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'competitorFeatures' | 'edges'>, tasks?: Map<string, { done: number; all: number }>, planes?: Map<string, number>): Map<string, Facts> {
   const { edges } = data
   const count = (id: string, kind: string, dir: 'from' | 'to') => edges.filter((e) => e.kind === kind && (dir === 'from' ? e.fromId : e.toId) === id).length
   const linkedTo = (id: string, other: string) =>
@@ -89,6 +90,8 @@ export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'c
     }
     const t2 = tasks?.get(c.id)
     if (t2) out.get(c.id)!.tasks = t2
+    const on = planes?.get(c.id)
+    if (on && on > 1) out.get(c.id)!.planes = on
   }
   return out
 }

@@ -5115,3 +5115,26 @@ planes, where it was.** Built as docs/specs/shared-cards.md's session 3 says:
   the list and the card left it; ⌥Enter moved a competitor's home; the right-click's list opened at the pointer and a
   package came with its member round it; one ⌘Z took both off; all drawn on the plane. `npm run build`.
 - *Not yet:* sessions 4–5 (the panel's PLANES, `⧉ N`, `use that one`; the rest of the app).
+
+### D-285 · 2026-10-28 · Accepted (D-281's session 4: the panel and the marks)
+**A card says it's on several planes, its panel lists them, and naming a new card offers the same one from another
+plane.** Built as docs/specs/shared-cards.md's session 4 says:
+- *`⧉ N`* at the end of a card's foot when it's on more than one plane, the number magenta (D-276), titled `On 2
+  planes: the same card on each`; `factsOf` takes how many planes each card is on.
+- *PLANES* in the card's panel, after the links (numbered with the rest): a row per plane in the link rows' look, its
+  leading number magenta, `here` on the one in focus, `×` on hover while it's on two or more (off that plane; off the one
+  in focus lets go of it). A name goes there: the one in focus glides to the card, another goes into that plane's focus
+  and glides to it (`useGoTo`). `+ place on` lists the other planes; one picked brings the card (with its parts or
+  members) right of that plane's cards, the toast `Brought "Parent feature" to 03 Ops`. The head counts them when two or
+  more.
+- *`use that one`* (D-250's naming): under the new card's title field, up to three cards of its type on other planes
+  whose title holds what's typed (two letters on): `≈ Crewly  01 PAZAR  [use that one]` (cyan). `↓` goes into them,
+  Enter or a click brings that card where the new one was, selected, and the new one goes as if never made: one undo
+  step, the bringing. Nothing alike: Enter keeps the new card as before.
+- *Verified* in headless Chrome on the emulators (23 checks): `⧉ 2` with the number in the magenta token, none on a card
+  on one plane; PLANES with both and `here`, counted, `place on` → `03 Ops` brought the feature with its part and said
+  so, three rows then, `×` took it off Ops only; naming a competitor `crew` offered Crewly from `01 PAZAR`, a click
+  brought it, the new competitor gone, Crewly selected, the last step `bring a card here` and no `add a competitor`, ⌘Z
+  took it off with nothing left; `↓` Enter the same; `Zebra Labs` offered nothing and Enter kept it; `01 Pazar` in PLANES
+  went into Pazar's focus. `npm run build`.
+- *Not yet:* session 5 (matrix, table, kanban, finder, comments and the panel's own lists counting placed cards).

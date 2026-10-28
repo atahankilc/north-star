@@ -1,6 +1,6 @@
 # Spec: one card on many planes
 
-Status: **agreed (D-281, 2026-10-28); sessions 1–3 done (D-282, D-283, D-284).** Split into sessions; every session must be able to start from this
+Status: **agreed (D-281, 2026-10-28); sessions 1–4 done (D-282–D-285).** Split into sessions; every session must be able to start from this
 file alone. The user: "planedeki cardlara başka planelerde oluşturulan cardları eklemek. Buna bütün cardlar dahil. Ya yeni
 card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
 
@@ -108,12 +108,17 @@ card ekleyebiliyorsun da existing cardlardan search yapıp ekleyebiliyorsun".
   `onSelect({ shift, alt })` returning `'keep'`, `words`, and a `keys` foot. `bringIn` says at once what came and its box,
   the write going on behind (`written`). The view glides only when what came lands off screen.
 
-## Session 4: the panel and the marks · not started
+## Session 4: the panel and the marks · **done (D-285, 2026-10-28)**
 
 - `PLANES` section: `01 Pazar · 02 Rivals` (a click goes there, into its focus), `[+ place on ▾]`, `[take off this plane]`.
 - `⧉ N` at the end of the card's facts line when on more than one plane (number magenta, D-276).
 - Naming a new card (D-250): titles matching other planes' cards of that type show under the field as
   `≈ Crewly · 02 RIVALS [use that one]`; picking it places that card here instead and drops the new one (one undo step).
+- Built: `PlanesSection` (CardPanel.tsx) after the links, rows in the link rows' look (`01` magenta, `here`, `×` on
+  hover while on two or more), `+ place on` lists the other planes and brings it right of their cards (with its parts;
+  toast `Brought "…" to 03 Ops`), a name goes there through `useGoTo` (into that plane's focus, gliding to it). `⧉ N`
+  from `factsOf(…, planes)` in the card's foot. Under the new card's title field up to three alike (its type, title
+  holding what's typed, two letters on, not on this plane), `↓` into them, Enter or a click; `discardCard` + `bringIn`.
 
 ## Session 5: the rest of the app · not started
 

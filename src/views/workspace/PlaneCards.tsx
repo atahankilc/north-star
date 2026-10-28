@@ -147,9 +147,15 @@ const Inside = memo(PlaneInside)
 const Panel = memo(CardPanel)
 
 function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: InsideProps) {
-  const { wid, evidence, competitorFeatures, comparisons, edges } = useWs()
+  const { wid, evidence, competitorFeatures, comparisons, edges, places } = useWs()
   const tally = useTaskTally()
-  const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }, tally), [cards, evidence, competitorFeatures, edges, tally])
+  // How many planes each card is on (D-281): its home and its places.
+  const spread = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const p of places) m.set(p.cardId, (m.get(p.cardId) ?? 1) + 1)
+    return m
+  }, [places])
+  const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }, tally, spread), [cards, evidence, competitorFeatures, edges, tally, spread])
   // Links follow cards being dragged, and carried by a section.
   const cardsLive = useCanvasView((s) => (live ? s.cardsLive : NO_LIVE))
   const shift = useCanvasView((s) => (live ? s.dragShift : null))
@@ -777,6 +783,12 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
         {facts?.tasks && (
           <span className={styles.tasks} data-all={facts.tasks.done === facts.tasks.all || undefined} title={`${facts.tasks.done} of ${facts.tasks.all} tasks finished`}>
             {facts.tasks.done === facts.tasks.all ? '☑' : '☐'} {facts.tasks.done}/{facts.tasks.all}
+          </span>
+        )}
+        {/* On other planes too (D-281): what's changed here changes there. */}
+        {facts?.planes && (
+          <span className={styles.planes} title={`On ${facts.planes} planes: the same card on each`}>
+            ⧉ <b>{facts.planes}</b>
           </span>
         )}
         {parts > 0 && (

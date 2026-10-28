@@ -365,6 +365,21 @@
   white-space: nowrap;
 }
 
+/* On several planes (D-281): `⧉ 2`, the number magenta as numbers are (D-276). */
+.planes {
+  flex: none;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--small);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.planes b {
+  color: var(--accent-magenta);
+  font-weight: inherit;
+}
+
 .tasks[data-all='true'] {
   color: var(--accent-green);
 }

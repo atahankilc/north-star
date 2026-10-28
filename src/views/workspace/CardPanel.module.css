@@ -589,3 +589,66 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* A plane's leading number in the planes section (D-281), magenta as numbers are (D-276). */
+.planeNum {
+  color: var(--accent-magenta);
+}
+
+/* Naming a new card (D-281): the same card on another plane, under the title field; `[use that one]` brings it here
+   instead. */
+.same {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.sameRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sameMark {
+  flex: none;
+  color: var(--accent-cyan);
+}
+
+.sameTitle {
+  overflow: hidden;
+  min-width: 0;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sameUse {
+  flex: none;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-cyan);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sameUse::before {
+  content: '[';
+  color: var(--fg-faint);
+}
+
+.sameUse::after {
+  content: ']';
+  color: var(--fg-faint);
+}
+
+.sameUse:hover,
+.sameUse:focus-visible {
+  outline: none;
+  color: var(--fg-strong);
+}

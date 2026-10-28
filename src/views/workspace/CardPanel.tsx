@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   addCard,
   CARD,
+  cardBounds,
   copyCards,
   deleteCard,
   spotRef,
@@ -35,7 +36,9 @@ import { packageTree } from './cardInside'
 import { labelBox } from './TextItems'
 import { kindOf, labelRef, moveMany, type Label } from '../../data/labels'
 import { clipboard, deleteHere, onPlane, packageThese, setSelection } from './selection'
-import { elsewhere, onPlane as isOn, planeOf } from '../../data/places'
+import { bringIn, cardsOn, elsewhere, onPlane as isOn, planeOf, planesOf, takeOff } from '../../data/places'
+import { useGoTo } from './goTo'
+import { useHistory } from '../../data/history'
 import { GRID, snap } from '../../data/grid'
 import { useWs } from './context'
 import { linkTone } from './PlaneLinks'
@@ -465,6 +468,7 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
   const rest = take(() => true)
   sections.push(
     <LinkSection key="links" n={next()} name={card.type === 'customer' ? 'links' : 'other links'} {...p} links={rest} add={{ label: 'link', types: null, kind: null, from: 'me' }} />,
+    <PlanesSection key="planes" n={next()} {...p} />,
     <TasksSection key="tasks" n={next()} card={card} editor={editor} />,
     <TagsSection key="tags" n={next()} {...p} />,
     <NotesSection key="notes" n={next()} {...p} />,
@@ -579,7 +583,8 @@ function PlanSection({ n, card, editor }: P) {
 // selected; Tab makes it and starts the next of its type beside it; Escape, or Enter or leaving with nothing typed,
 // takes it away as if never made.
 function Title({ card, editor }: { card: Card; editor: boolean }) {
-  const { wid, cards } = useWs()
+  const { wid, cards, places, edges, pieces } = useWs()
+  const same = useRef<HTMLDivElement>(null)
   const [typing, setTyping] = useState(false)
   const opening = useCanvasView((s) => s.cardEditing === card.id)
   const fresh = useCanvasView((s) => s.fresh === card.id)
@@ -604,6 +609,23 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
         {card.title || PLACEHOLDER[card.type]}
       </span>
     )
+  // Naming a new card (D-250): cards of its type on other planes whose title holds what's typed (D-281), to bring here
+  // instead of making a second one.
+  const q = draft.trim().toLowerCase()
+  const plane = planeOf(card)
+  const alike =
+    fresh && q.length >= 2 ? cards.filter((c) => c.type === card.type && c.id !== card.id && c.title.toLowerCase().includes(q) && !isOn(c, places, plane)).slice(0, 3) : []
+  const nameOf = (id: string) => (pieces.find((p) => p.id === id)?.name?.trim() || 'plane').toUpperCase()
+  // That one comes here where the new card was, and the new card goes as if never made: one undo step, the bringing.
+  const useThat = (c: Card) => {
+    if (over.current) return
+    over.current = true
+    setTyping(false)
+    useCanvasView.setState({ fresh: null })
+    void discardCard(wid, card)
+    bringIn(wid, plane, [c], { cards: cards.filter((x) => x.id !== card.id), places, edges }, [card.x + CARD.w / 2, card.y + CARD.h / 2])
+    useCanvasView.setState({ cardSelected: c.id, cardMulti: [] })
+  }
   const done = (keep: boolean, then?: 'shut' | 'next') => {
     if (over.current) return
     over.current = true
@@ -622,24 +644,55 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
     if (then === 'next' && card.type !== 'package') void makeNext(wid, card, cards)
   }
   return (
-    <textarea
-      ref={field}
-      className={`${styles.title} ${styles.titleField}`}
-      value={draft}
-      rows={1}
-      maxLength={TITLE_MAX}
-      placeholder={PLACEHOLDER[card.type]}
-      aria-label="Title"
-      autoFocus
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => done(true)}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), done(true, fresh ? 'shut' : undefined))
-        if (e.key === 'Tab' && fresh && !e.shiftKey) (e.preventDefault(), draft.trim() && done(true, 'next'))
-        if (e.key === 'Escape') done(false)
-      }}
-    />
+    <>
+      <textarea
+        ref={field}
+        className={`${styles.title} ${styles.titleField}`}
+        value={draft}
+        rows={1}
+        maxLength={TITLE_MAX}
+        placeholder={PLACEHOLDER[card.type]}
+        aria-label="Title"
+        autoFocus
+        onChange={(e) => setDraft(e.target.value)}
+        // Going down to `use that one` isn't leaving.
+        onBlur={(e) => !same.current?.contains(e.relatedTarget) && done(true)}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), done(true, fresh ? 'shut' : undefined))
+          if (e.key === 'Tab' && fresh && !e.shiftKey) (e.preventDefault(), draft.trim() && done(true, 'next'))
+          if (e.key === 'Escape') done(false)
+          if (e.key === 'ArrowDown' && alike.length) (e.preventDefault(), same.current?.querySelector('button')?.focus())
+        }}
+      />
+      {alike.length > 0 && (
+        <div ref={same} className={styles.same} aria-label="The same card on another plane">
+          {alike.map((c) => (
+            <div key={c.id} className={styles.sameRow}>
+              <span className={styles.sameMark} aria-hidden>
+                ≈
+              </span>
+              <span className={styles.sameTitle}>{c.title}</span>
+              <span className={styles.type}>{planesOf(c, places).map(nameOf).join(', ')}</span>
+              <button
+                className={styles.sameUse}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => useThat(c)}
+                onBlur={(e) => !same.current?.contains(e.relatedTarget) && e.relatedTarget !== field.current && done(true)}
+                onKeyDown={(e) => {
+                  e.stopPropagation()
+                  if (e.key === 'Escape' || (e.key === 'ArrowUp' && e.currentTarget === same.current?.querySelector('button'))) (e.preventDefault(), field.current?.focus())
+                  else if (e.key === 'ArrowUp') (e.preventDefault(), (e.currentTarget.parentElement?.previousElementSibling?.querySelector('button') as HTMLElement | null)?.focus())
+                  else if (e.key === 'ArrowDown') (e.preventDefault(), (e.currentTarget.parentElement?.nextElementSibling?.querySelector('button') as HTMLElement | null)?.focus())
+                }}
+              >
+                use that one
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   )
 }
 
@@ -932,6 +985,72 @@ export function goToCard(c: Card) {
   if (sx0 >= 48 && sx1 <= room - 48 && sy0 >= 56 && sy1 <= size.h - 56) return
   const cx = room / 2
   glide(v, { ...v, ox: cx - (b.x + b.w / 2) * v.zoom, oy: size.h / 2 - (b.y + b.h / 2) * v.zoom }, 420, (to) => useCanvasView.setState({ planeCam: to }))
+}
+
+// A piece's name with its leading number apart, magenta (D-266, D-276): `01 Pazar`.
+function PlaneName({ name }: { name: string }) {
+  const m = /^(\d{1,4})(?:[\s.·:—–-]+(.*))?$/.exec(name.trim())
+  if (!m) return <>{name}</>
+  return (
+    <>
+      <span className={styles.planeNum}>{m[1]}</span> {m[2] ?? ''}
+    </>
+  )
+}
+
+// The planes it's on (D-281): the same card on each. A name goes there (into its focus, gliding to the card), `here`
+// marks the one in focus, `×` takes it off one (while it's on another); `+ place on` brings it to another plane, right of
+// what's there, with its parts or members.
+function PlanesSection({ n, card, editor }: P) {
+  const { wid, cards, places, pieces, edges } = useWs()
+  const [picking, setPicking] = useState(false)
+  const focus = new URLSearchParams(location.search).get('focus')
+  const on = planesOf(card, places)
+  const name = (id: string) => pieces.find((p) => p.id === id)?.name?.trim() || 'plane'
+  const others = pieces.filter((p) => p.kind === 'plane' && !on.includes(p.id))
+  const go = (plane: string) => {
+    const there = cardsOn(cards, places, plane).find((c) => c.id === card.id)
+    if (!there) return
+    if (plane === focus) return goToCard(there)
+    useGoTo.setState({ asked: { id: card.id, space: plane, label: card.title, glyph: '', box: { x: there.x, y: there.y, w: CARD.w, h: CARD.h }, whole: true } })
+  }
+  const off = (plane: string) => {
+    if (plane === focus) useCanvasView.setState({ cardSelected: null })
+    void takeOff(wid, plane, [card], places)
+  }
+  const placeOn = (plane: string) => {
+    setPicking(false)
+    const b = cardBounds(cardsOn(cards, places, plane))
+    const at: [number, number] = b ? [b.x + b.w + GRID + CARD.w / 2, b.y + CARD.h / 2] : [CARD.w / 2, CARD.h / 2]
+    const base = cards.find((c) => c.id === card.id) ?? card
+    if (bringIn(wid, plane, [base], { cards, places, edges }, at).ids.length) useHistory.getState().say(`Brought "${card.title || `this ${card.type}`}" to ${name(plane)}`)
+  }
+  return (
+    <PanelSection n={n} name="planes" count={on.length > 1 ? on.length : undefined} add={editor && others.length ? { label: 'place on', onClick: () => setPicking((v) => !v) } : undefined}>
+      {on.map((id) => (
+        <div key={id} className={styles.link} style={{ ['--tone' as string]: 'var(--fg)' }}>
+          <span className={styles.swatch} aria-hidden />
+          <button className={styles.to} onClick={() => go(id)} title={id === focus ? 'Show it' : 'Go there'}>
+            <PlaneName name={name(id)} />
+          </button>
+          {id === focus && <span className={styles.type}>here</span>}
+          {editor && on.length > 1 && (
+            <button className={styles.x} title="Take it off this plane (it stays on the others)" onClick={() => off(id)}>
+              ×
+            </button>
+          )}
+        </div>
+      ))}
+      {picking &&
+        others.map((p) => (
+          <div key={p.id} className={styles.link}>
+            <button className={styles.inlineAdd} onClick={() => placeOn(p.id)}>
+              <PlaneName name={name(p.id)} />
+            </button>
+          </div>
+        ))}
+    </PanelSection>
+  )
 }
 
 // Tags (D-056): chips, `×` on hover; `+ tag` types one (Enter adds, a leading `#` dropped).
