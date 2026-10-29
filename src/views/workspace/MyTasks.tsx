@@ -59,7 +59,7 @@ export function MyTasks() {
       glyph: isNew(t, since) ? <span className={styles.new}>●</span> : '☐',
       tone: late ? 'var(--accent-magenta)' : undefined,
       hint: [several ? p.name || 'kanban' : '', colOf(t)?.name, t.due && `${late ? 'was due ' : ''}${dueText(t.due)}`].filter(Boolean).join(' · '),
-      onSelect: () => goToTask(p, tasks, t),
+      onSelect: () => goToTask(p, tasks, t, pieces),
     }
   }
   const newOnes = sorted.filter((t) => isNew(t, since))

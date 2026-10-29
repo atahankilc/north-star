@@ -878,7 +878,7 @@ export function CanvasView() {
             labels={labelsOf(p.id)}
             content={contentOf(p)}
             planes={sticks(p) ? hostsBox.filter((x) => x.id !== p.id && x.kind === hostKind(p)) : []}
-            followers={isHost(p) ? shown.filter((f) => f.stuckTo === p.id && sticks(f)) : []}
+            followers={isHost(p) ? stuckChain(shown, p.id) : []}
             host={sticks(p) && p.stuckTo ? (hostsBox.find((x) => x.id === p.stuckTo) ?? null) : null}
           />
         ))}
@@ -1197,7 +1197,8 @@ type BoxProps = {
   content: Bounds | null
   // A matrix or a table: the planes it can stick to (D-210).
   planes: (Box & { id: string })[]
-  // A plane: what's stuck to it, moved with it (as drawn).
+  // A plane: what's stuck to it, moved with it (as drawn), and what's stuck to those (a kanban's timeline, D-298): each
+  // after the one it's stuck to.
   followers: WithId<Piece>[]
   // A matrix or a table: the plane it's linked to (D-215), named first in its edge.
   host: (Box & { id: string; name?: string }) | null
@@ -1449,9 +1450,21 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
     const lens = sticks(piece) && handle === 'move'
     const linked: string | null = piece.stuckTo && planes.some((p) => p.id === piece.stuckTo) ? piece.stuckTo : null
     let stick = linked
-    const carried = followers.map((f) => ({ id: f.id, from: { x: f.x, y: f.y, w: f.w, h: f.h }, side: touchSide(f, from) }))
-    const followed = (b: Box) =>
-      carried.map((f) => ({ id: f.id, from: f.from, to: f.side ? followTo(f.from, f.side, from, b) : { ...f.from, x: f.from.x + b.x - from.x, y: f.from.y + b.y - from.y } }))
+    // Each follows the one it's stuck to: this piece, or a follower before it (D-298: a plane's kanban's timeline).
+    const fromOf = new Map<string, Box>([[piece.id, from], ...followers.map((f) => [f.id, { x: f.x, y: f.y, w: f.w, h: f.h }] as [string, Box])])
+    const carried = followers.map((f) => {
+      const host = f.stuckTo ?? piece.id
+      return { id: f.id, host, from: fromOf.get(f.id)!, side: touchSide(f, fromOf.get(host) ?? from) }
+    })
+    const followed = (b: Box) => {
+      const tos = new Map<string, Box>([[piece.id, b]])
+      return carried.map((f) => {
+        const [hf, ht] = [fromOf.get(f.host) ?? from, tos.get(f.host) ?? b]
+        const to = f.side ? followTo(f.from, f.side, hf, ht) : { ...f.from, x: f.from.x + ht.x - hf.x, y: f.from.y + ht.y - hf.y }
+        tos.set(f.id, to)
+        return { id: f.id, from: f.from, to }
+      })
+    }
     // On the window, not captured: a press that doesn't move stays a click.
     const move = (ev: PointerEvent) => {
       const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
@@ -1926,6 +1939,16 @@ const OPEN_VIEW: PlaneCam = { ox: OPEN_PAD, oy: OPEN_PAD, zoom: 1 }
 const MORPH_MS = 320
 const easeBoth = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
 const between = (a: PlaneCam, b: PlaneCam, t: number): PlaneCam => ({ ox: a.ox + (b.ox - a.ox) * t, oy: a.oy + (b.oy - a.oy) * t, zoom: a.zoom + (b.zoom - a.zoom) * t })
+
+// What's stuck to a piece, and what's stuck to those, all the way down (D-298), each after the one it's stuck to.
+function stuckChain(shown: WithId<Piece>[], id: string): WithId<Piece>[] {
+  const out: WithId<Piece>[] = []
+  const hosts = [id]
+  for (let i = 0; i < hosts.length; i++)
+    for (const f of shown)
+      if (f.stuckTo === hosts[i] && sticks(f) && !hosts.includes(f.id)) (out.push(f), hosts.push(f.id))
+  return out
+}
 
 // Each list from before that holds the same things in the same order, in place of the new one.
 function keepLists<T>(was: Map<string, T[]>, now: Map<string, T[]>) {

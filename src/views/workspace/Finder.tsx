@@ -186,7 +186,7 @@ function Panel() {
     const d = row.dest
     if (d.kind === 'place') return findGo({ ...(d.target ?? { kind: 'space', space: d.place.space, k: 0 }), place: d.place })
     // A kanban's task (D-261): its kanban's focus, the task picked.
-    if (d.kind === 'lens' && kindOfPiece(d.piece) === 'kanban' && d.target.key?.startsWith('task:')) return goToTask(d.piece, ws.tasks, { id: d.target.key.slice(5) })
+    if (d.kind === 'lens' && kindOfPiece(d.piece) === 'kanban' && d.target.key?.startsWith('task:')) return goToTask(d.piece, ws.tasks, { id: d.target.key.slice(5) }, ws.pieces)
     if (d.kind === 'lens') {
       const page = d.page
       if (page !== undefined) {

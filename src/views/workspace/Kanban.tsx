@@ -38,8 +38,10 @@ import { passes, useKanbanFilter } from './kanbanFilter'
 import { addTask, CARD_FIELDS, setKanbanSetup, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
 import { newId } from '../../data/matrix'
 import { useAuth } from '../../data/auth'
-import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
-import { findGo, landing } from './find'
+import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
+import { isReducedMotion } from '../../state/motion'
+import { timelineKanbans } from '../../data/tasks'
+import { closeFinder, findGo, landing } from './find'
 import type { Card } from '../../data/cards'
 import { useWs } from './context'
 import { alikeProps } from './kept'
@@ -119,12 +121,35 @@ export function taskBox(piece: WithId<Piece>, tasks: Task[], id: string): Bounds
 }
 
 // Going to a task (D-261: from your tasks, the finder): into its kanban's focus, landing on it, the task picked once the
-// kanban is live (`pending`); already there, picked at once and brought into view.
-export function goToTask(piece: WithId<Piece>, tasks: Task[], task: Pick<Task, 'id'>) {
+// kanban is live (`pending`); already there, picked at once and brought into view. In the focus of a timeline showing it
+// (D-298), it stays there: the task picked on the timeline, the view moved to it if it's off the screen.
+export function goToTask(piece: WithId<Piece>, tasks: Task[], task: Pick<Task, 'id'>, pieces: WithId<Piece>[] = []) {
+  const focus = new URLSearchParams(location.search).get('focus')
+  const here = focus ? pieces.find((p) => p.id === focus) : undefined
+  if (here?.kind === 'timeline' && timelineKanbans(here, pieces).some((k) => k.id === piece.id) && showOnTimeline(piece.id, task.id)) return
   useKanbanUi.setState({ pending: { piece: piece.id, task: task.id } })
   const content = kanbanBounds(piece, tasks)
   const view = landing(content, taskBox(piece, tasks, task.id) ?? content, useCanvasView.getState().size)
   findGo({ kind: 'lens', space: piece.id, key: `task:${task.id}`, k: 0, focus: piece.id, view })
+}
+
+// A task on the timeline in focus (D-298): picked there, glided to when it's off the screen. False when the timeline
+// doesn't draw it (another week, filtered out, done).
+function showOnTimeline(kanban: string, task: string): boolean {
+  // On the live timeline only: the kanban drawn on the canvas has its tasks too.
+  const el = document.querySelector<HTMLElement>(`[data-timeline][data-live] [data-task="${task}"]`)
+  const c = useCanvasView.getState().planeCam
+  if (!el || !c) return false
+  // The finder goes, as when it goes elsewhere.
+  closeFinder()
+  selectTask(kanban, task)
+  const { size } = useCanvasView.getState()
+  const r = el.getBoundingClientRect()
+  if (r.left >= 48 && r.right <= size.w - 48 && r.top >= 56 && r.bottom <= size.h - 56) return true
+  const to = { ...c, ox: c.ox + size.w / 2 - (r.left + r.width / 2), oy: c.oy + size.h / 2 - (r.top + r.height / 2) }
+  if (isReducedMotion()) useCanvasView.setState({ planeCam: to })
+  else glide(c, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
+  return true
 }
 
 // The task whose panel is open (its kanban's id with it), the column `+ add a task` is typing into, the column being

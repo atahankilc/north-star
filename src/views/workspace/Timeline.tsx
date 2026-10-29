@@ -112,7 +112,7 @@ export function TimelineView({ piece, view, live, editor, onCanvas = false, onTa
   // Marks, chips and handles at screen size take the zoom once it settles (D-278), so a wheel step restyles none of them.
   const settled = useSettledZoom(view.zoom, live)
   return (
-    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
+    <div className={styles.layer} data-timeline data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
       <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
         <Days piece={piece} zoom={settled} live={live} editor={editor} onCanvas={onCanvas} onTask={onTask} span={span} />
       </div>
