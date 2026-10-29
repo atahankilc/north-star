@@ -20,9 +20,10 @@
     translate 180ms var(--ease-out);
 }
 
+/* Picked up it eases to 0.8 as a card does, so a section and what it holds shrink as one (D-291). */
 [data-carried='true']:is(.heading, .para, .sticky, .title, .section) {
   z-index: 25;
-  transition: none;
+  transition: scale 160ms var(--ease-out);
 }
 
 /* Out of focus a plane's text is a picture; the canvas's own is always live. */

@@ -271,11 +271,13 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
             ? [
                 { key: 'cards', heading: 'card' },
                 ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
-                // One already on another plane (D-281): the menu turns into the list of them, opening where it did.
-                { key: 'existing', label: 'existing card…', glyph: '⧉', letter: 'e', hint: 'from another plane', onSelect: () => bringHere() },
                 // A package (D-240): picked from the plane's cards, as a section is drawn.
                 { key: 'package', label: 'package', glyph: '▣', letter: 'k', tone: TYPE_ACCENT.package, hint: 'select', onSelect: () => useCanvasView.setState({ packing: plane, drawing: null }) },
                 ...text,
+                // One already on another plane (D-281), last under a rule (D-291): the menu turns into the list of them,
+                // opening where it did.
+                { key: 'rule', heading: '' },
+                { key: 'existing', label: 'existing card…', glyph: '⧉', letter: 'e', hint: 'from another plane', onSelect: () => bringHere() },
               ]
             : [
                 { key: 'canvas', heading: 'on the canvas' },

@@ -483,43 +483,62 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
     setPressed(true)
     // Its members and what they carry; the package itself has no place of its own while unfolded.
     const ids = members.map((m) => m.id)
-    startGroupDrag(e, zoom, members[0], () => setPressed(false), [...ids, ...onPlane.carried(ids)], heldAt(e, place.x, place.y, zoom))
+    startGroupDrag(e, zoom, members[0], () => setPressed(false), [...ids, ...onPlane.carried(ids)], heldAt(e, place.x, place.y, zoom), card.id)
   }
+  // Dragged by its band, or carried whole by what holds it (a package it's in, D-291): the frame and band go 0.8 round
+  // the point held with its members, as one; its marks where it lands only when it's the one dragged. A package inside
+  // it has no place of its own, so its members stand for it. `place` is already where they land, so the frame goes back
+  // by the snapped step and on by the free one.
+  const shift = useCanvasView((s) => {
+    const d = s.dragShift
+    if (!live || !d?.shrink) return null
+    const whole = members.some((m) => m.type !== 'package') && members.every((m) => m.type === 'package' || d.ids.includes(m.id))
+    return d.lead === card.id || whole ? d : null
+  })
+  const lead = shift?.lead === card.id
+  const carried =
+    shift?.free && shift.at
+      ? { translate: `${shift.free[0] - shift.dx}px ${shift.free[1] - shift.dy}px`, scale: `${CARRIED}`, transformOrigin: `${shift.at[0] - (x - shift.dx)}px ${shift.at[1] - (y - shift.dy)}px` }
+      : undefined
   const fold = () => void foldPackage(wid, card, [snap(place.x), snap(place.y)])
   return (
-    <div
-      className={styles.pkg}
-      style={{ left: x, top: y, width: place.w, height: place.h, ['--type' as string]: TYPE_ACCENT.package }}
-      data-selected={selected || undefined}
-      data-pressed={pressed || undefined}
-      data-target={`card:${card.id}`}
-    >
+    <>
       <div
-        className={styles.band}
-        onPointerDown={press}
-        onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
-        onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
+        className={styles.pkg}
+        style={{ left: x, top: y, width: place.w, height: place.h, ['--type' as string]: TYPE_ACCENT.package, ...carried }}
+        data-selected={selected || undefined}
+        data-pressed={pressed || undefined}
+        data-dragging={!!carried || undefined}
+        data-target={`card:${card.id}`}
       >
-        <span className={styles.kind}>package</span>
-        <span className={styles.bandName} data-empty={!card.title || undefined}>
-          {card.title || PLACEHOLDER.package}
-        </span>
-        {facts?.head && <span className={styles.bandFacts}>{facts.head}</span>}
-        <span className={styles.cells}>
-          {members.slice(0, 12).map((m) => (
-            <i key={m.id} data-on style={{ background: TYPE_ACCENT[m.type] }} />
-          ))}
-        </span>
-        {editor && (
-          <button className={styles.fold} onPointerDown={(e) => e.stopPropagation()} onClick={fold} title="Fold its members into it">
-            [−] {members.length}
-          </button>
-        )}
+        <div
+          className={styles.band}
+          onPointerDown={press}
+          onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
+          onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
+        >
+          <span className={styles.kind}>package</span>
+          <span className={styles.bandName} data-empty={!card.title || undefined}>
+            {card.title || PLACEHOLDER.package}
+          </span>
+          {facts?.head && <span className={styles.bandFacts}>{facts.head}</span>}
+          <span className={styles.cells}>
+            {members.slice(0, 12).map((m) => (
+              <i key={m.id} data-on style={{ background: TYPE_ACCENT[m.type] }} />
+            ))}
+          </span>
+          {editor && (
+            <button className={styles.fold} onPointerDown={(e) => e.stopPropagation()} onClick={fold} title="Fold its members into it">
+              [−] {members.length}
+            </button>
+          )}
+        </div>
+        <div className={styles.frame} />
+        {live && <Marks zoom={zoom} tier="l" short={Math.min(place.w, place.h)} hover={hovered} selected={selected} pressed={pressed} dragging={!!carried} peers={peers} />}
+        {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
       </div>
-      <div className={styles.frame} />
-      {live && <Marks zoom={zoom} tier="l" short={Math.min(place.w, place.h)} hover={hovered} selected={selected} pressed={pressed} peers={peers} />}
-      {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
-    </div>
+      {carried && lead && <Landing x={x} y={y} w={place.w} h={place.h} zoom={zoom} tier="l" tone={TYPE_ACCENT.package} />}
+    </>
   )
 }
 
@@ -713,7 +732,8 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
         )}
         {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
       </div>
-      {live && moving && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={TYPE_ACCENT[card.type]} />}
+      {/* Carried by what holds it (a section, a package), only that one's marks show where they land (D-291). */}
+      {live && moving && (drag || !shift?.lead) && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={TYPE_ACCENT[card.type]} />}
     </>
   )
 }

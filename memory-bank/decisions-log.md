@@ -5272,3 +5272,29 @@ unframed, pieces take more room than they need ("check kanban ... actually all o
   selected, the toast; again: `already on this plane`; ⌘V made one copy; the right-click's `the same card here` brought
   it round the pointer on Ops; the card taken off Pazar (its home to Rivals): from Pazar the row reads `on 02 Rivals +1`,
   from Ops (where the card is too) no other plane. `npm run build`.
+
+### D-291 · 2026-10-29 · Accepted (the user's list for the plane: "+ butonuna basınca çıkan existing cardları seçince çıkan dropdown scroll olmuyor…")
+**Plane details: the existing-card list scrolls, `existing card…` last under a rule, card faces a dark tone of their type,
+a paragraph's landing L's on the grid, a section or package dragged shrinks as one.**
+- *Scroll:* the right-click menu (`ContextMenu`, also the cards-to-bring list) closed on any wheel; now only on a wheel
+  outside it, so its list scrolls (the canvas and plane already skip `[role=menu]`).
+- *Order:* in the `+` (focus) and the plane's right-click, `existing card…` is the last item, under a plain rule. A
+  `MenuEntry` heading with empty text draws as that rule (`Menu.module.css .rule`, `role=separator`).
+- *Card faces:* the user's feedback: "arka plan da soldaki şeridin daha koyu bir tonu olabilir". `--card-tint` (16 %, light
+  9 %) of the type's colour over `--bg-raised` on plane cards, a competitor's feature rows (`.mini`), a package's band and a
+  matrix's card heads. Idea's colour is white, so its face is a lighter grey. Kanban sheets, table rows and timeline bars
+  are unchanged.
+- *Paragraph:* its marks had `pad` 7 like headings, so its landing L's were 7 px outside the box and never on the grid's
+  `+`. A paragraph's hairline is its left edge on the grid, so its marks go on its edges (`pad` 0) like a sticky's.
+- *Shrinking as one:* the scaling already shared one point; what looked separate was each carried item's own landing
+  L's, cards easing to 0.8 in 160 ms while text and sections jumped, and an unfolded package's frame and band not
+  shrinking. `dragShift.lead` (a section's own drag, a package's band drag via `startGroupDrag`'s `lead`) is what holds
+  the rest: only its `<Landing>` shows. The package's frame goes 0.8 round the point held with its members and has its
+  own landing L's. Carried text eases its scale in 160 ms like cards. A selection of several (no lead) is unchanged.
+  A package inside a package (the user: "içinde package olan bir package ı taşıyınca, içteki package küçülmüyor") shrinks
+  when all its members are carried (an inner package stands in through its members); the outer frame stays full size
+  while only the inner one is dragged.
+- *Verified:* headless Chrome on the emulators, mid-drag screenshots. A paragraph's L's on the `+` marks. A section with 4
+  cards, and an open package with 2 members, shrink together with one set of L's. The bring list scrolled 0 → 517 px and
+  stayed open. Faces checked in dark and light. `tsc` clean.
+- *Not yet:* kanban card sheets (cards mode) and table rows keep the plain face. Ask before tinting them too.

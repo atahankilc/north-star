@@ -61,8 +61,9 @@ type State = {
   landing: Record<string, [number, number]>
   // Things moving together while a section is dragged (D-188): their ids and how far, until the drop is written.
   // `shrink`: what a selection's drag (or a text's or section's own) carries goes 0.8 round the point held (`at`, space
-  // px) and follows the pointer (`free`, how far it's gone unsnapped), its marks where it lands (D-265).
-  dragShift: { ids: string[]; dx: number; dy: number; shrink?: boolean; free?: [number, number]; at?: [number, number] } | null
+  // px) and follows the pointer (`free`, how far it's gone unsnapped), its marks where it lands (D-265). `lead`: what
+  // holds the rest (a section, an unfolded package): only its marks show where it lands (D-291).
+  dragShift: { ids: string[]; dx: number; dy: number; shrink?: boolean; free?: [number, number]; at?: [number, number]; lead?: string } | null
   // A matrix or table being moved near a plane's edge (D-210): the plane, lit, and where it would stick.
   stickHint: { plane: string; box: { x: number; y: number; w: number; h: number } } | null
   // Pieces stuck to a plane being moved or resized (D-210): where each is meanwhile.

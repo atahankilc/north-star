@@ -1,5 +1,5 @@
 // The right-click menu (D-193): on a plane, a card or a piece of text, where the pointer is; the dropdowns' prompt look
-// (D-222), its `>` line saying what it's on. Only `comment` for now. A click outside, Escape, or the wheel closes it.
+// (D-222), its `>` line saying what it's on. Only `comment` for now. A click outside, Escape, or the wheel outside it closes it.
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Appear } from '../../ui/Appear'
 import { MenuPanel, type MenuEntry } from '../../ui/Menu'
@@ -19,11 +19,11 @@ export function ContextMenu({ at, items, what, onClose, prompt, keys, noun, empt
       onClose()
     }
     window.addEventListener('pointerdown', away, true)
-    window.addEventListener('wheel', onClose, true)
+    window.addEventListener('wheel', away, true)
     window.addEventListener('keydown', key, true)
     return () => {
       window.removeEventListener('pointerdown', away, true)
-      window.removeEventListener('wheel', onClose, true)
+      window.removeEventListener('wheel', away, true)
       window.removeEventListener('keydown', key, true)
     }
   }, [onClose])

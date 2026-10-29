@@ -78,7 +78,8 @@ export function heldAt(e: { clientX: number; clientY: number; currentTarget: Eve
 // A press on something selected with others: they all land by the same snapped step (alt: free), each 0.8 round the
 // point held following the pointer, its marks where it lands (D-265); let go, they move in one undo step and stay where
 // they were let go. `ids0`: what moves, when it isn't the selection (an unfolded package's band carries its members,
-// D-239); `at`: the point held, when the pressed thing isn't at `from`.
+// D-239); `at`: the point held, when the pressed thing isn't at `from`; `lead`: what holds them (that package), the
+// one whose marks show where they land (D-291).
 export function startGroupDrag(
   e: { clientX: number; clientY: number; currentTarget: EventTarget },
   zoom: number,
@@ -86,6 +87,7 @@ export function startGroupDrag(
   onEnd?: () => void,
   ids0?: string[],
   at: [number, number] = heldAt(e, from.x, from.y, zoom),
+  lead?: string,
 ) {
   const items = onPlane.items(ids0 ?? useCanvasView.getState().cardMulti)
   const ids = new Set(items.map((i) => i.id))
@@ -112,7 +114,7 @@ export function startGroupDrag(
       showGuides(g.lines)
     }
     d = [to[0] - from.x, to[1] - from.y]
-    useCanvasView.setState({ dragShift: { ids: items.map((i) => i.id), dx: d[0], dy: d[1], shrink: true, free: [dx / zoom, dy / zoom], at } })
+    useCanvasView.setState({ dragShift: { ids: items.map((i) => i.id), dx: d[0], dy: d[1], shrink: true, free: [dx / zoom, dy / zoom], at, lead } })
   }
   const up = () => {
     window.removeEventListener('pointermove', move)

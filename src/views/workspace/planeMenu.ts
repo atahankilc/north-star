@@ -188,12 +188,14 @@ export function emptyItems(c: Ctx): MenuEntry[] {
       : []),
     { key: 'cards', heading: 'add a card here' },
     ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: TONE[t], onSelect: () => void card(t) })),
-    // One already on another plane (D-281): the menu turns into the list of them, where it was.
-    { key: 'existing', label: 'existing card…', glyph: '⧉', letter: 'e', hint: 'from another plane', onSelect: () => useCanvasView.setState({ bringing: { plane: c.plane, at: c.at, screen: c.screen } }) },
     { key: 'text', heading: 'text here' },
     { key: 'heading', label: 'heading', glyph: TEXT_GLYPH.heading, letter: 'h', onSelect: () => void text('heading') },
     { key: 'paragraph', label: 'paragraph', glyph: TEXT_GLYPH.paragraph, letter: 'a', onSelect: () => void text('paragraph') },
     { key: 'sticky', label: 'sticky note', glyph: TEXT_GLYPH.sticky, letter: 'n', tone: 'var(--accent-yellow)', onSelect: () => void text('sticky') },
+    // One already on another plane (D-281), last under a rule as in the `+` (D-291): the menu turns into the list of
+    // them, where it was.
+    { key: 'rule', heading: '' },
+    { key: 'existing', label: 'existing card…', glyph: '⧉', letter: 'e', hint: 'from another plane', onSelect: () => useCanvasView.setState({ bringing: { plane: c.plane, at: c.at, screen: c.screen } }) },
   ]
 }
 

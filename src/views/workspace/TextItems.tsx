@@ -206,7 +206,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
         showGuides(g.lines)
       }
       d = [to[0] - l.x, to[1] - l.y]
-      const carry = { shrink: true, free: [dx / zoom, dy / zoom] as [number, number], at }
+      const carry = { shrink: true, free: [dx / zoom, dy / zoom] as [number, number], at, lead: l.id }
       useCanvasView.setState({ dragShift: { ids: held.map((x) => x.id), dx: d[0], dy: d[1], ...carry } })
     }
     const up = async () => {
@@ -308,8 +308,9 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     'data-caps': l.caps || undefined,
     'data-colored': !!l.color || undefined,
   }
-  // Text keeps its marks a little clear of its glyphs; a sticky note's and a section's go round their edges (D-265).
-  const pad = kind === 'sticky' || kind === 'section' ? 0 : 7
+  // Text keeps its marks a little clear of its glyphs; a sticky note's, a section's and a paragraph's go round their
+  // edges (D-265): a paragraph's hairline is its left edge, on the grid's marks, so where it lands is on them (D-291).
+  const pad = kind === 'sticky' || kind === 'section' || kind === 'paragraph' ? 0 : 7
   const tier = kind === 'section' ? 'l' : 'm'
   const near = labelBox(l)
   // Its handle (D-265): a paragraph's, sticky note's or the title's width at its right edge (a turned one's along its
@@ -342,7 +343,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const withLanding = (item: ReactNode) => (
     <>
       {item}
-      {live && carried && measured && <Landing x={left} y={top} w={measured[0]} h={measured[1]} zoom={zoom} tier={tier} tone={color} pad={pad} />}
+      {live && carried && measured && (!shift?.lead || shift.lead === l.id) && <Landing x={left} y={top} w={measured[0]} h={measured[1]} zoom={zoom} tier={tier} tone={color} pad={pad} />}
     </>
   )
   // Its own bar only while it's selected alone; with others, the right panel's `N selected` is theirs (D-229).

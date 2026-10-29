@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-29 (D-287–D-290 pushed and live: speed, small details, one card on many planes closed)_
+_Last updated: 2026-10-29 (D-291 plane details committed, not pushed; D-287–D-290 pushed and live)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -23,8 +23,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
-- Nothing open. Pushed and live 2026-10-29 (Pages deployed, rules deployed): speed D-287/D-288, small details D-289, one
-  card on many planes closed D-290. What was done: state-history.md.
+- Plane details D-291 (list scroll, card faces, drag L's): committed, **not pushed**. Before that, pushed and live
+  2026-10-29: D-287–D-290. What was done: state-history.md.
 
 ## Next steps (not started; ask the user which first)
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): link bend points (D-155), links to a

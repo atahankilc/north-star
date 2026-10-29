@@ -36,6 +36,7 @@
 }
 
 /* A card as on the board (D-152): flat, no grey edge, its type as the left edge and the label; 7 px round the inside.
+   Its face a dark tone of that edge (a pale one in light), so the type reads from the whole card (D-291).
    Dragged, it goes small under the pointer (`scale`, `translate` set inline); let go, it grows into its marks. */
 .card {
   --small: 8px;
@@ -45,7 +46,7 @@
   flex-direction: column;
   padding: 7px 7px 7px 11px;
   overflow: hidden;
-  background: var(--bg-raised);
+  background: color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised));
   box-shadow: inset 4px 0 0 var(--type), 0 0 0 1px var(--piece-card-edge);
   transition:
     scale 180ms var(--ease-out),
@@ -277,7 +278,7 @@
   margin-bottom: 3px;
   padding: 0 6px 0 8px;
   border: 0;
-  background: color-mix(in srgb, var(--fg) 5%, var(--bg-raised));
+  background: color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised));
   box-shadow: inset 2px 0 0 var(--type);
   color: var(--fg);
   font-family: var(--font-display);
@@ -291,7 +292,7 @@
 }
 
 .mini:hover {
-  background: color-mix(in srgb, var(--fg) 10%, var(--bg-raised));
+  background: color-mix(in srgb, var(--fg) 6%, color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised)));
 }
 
 .miniName {
@@ -419,6 +420,14 @@
   position: absolute;
   z-index: -1;
   pointer-events: none;
+  transition:
+    scale 180ms var(--ease-out),
+    translate 180ms var(--ease-out);
+}
+
+/* Dragged by its band, it goes small with its members as cards do (D-291). */
+.pkg[data-dragging='true'] {
+  transition: scale 160ms var(--ease-out);
 }
 
 .frame {
@@ -438,7 +447,7 @@
   gap: 8px;
   height: 25px;
   padding: 0 8px 0 13px;
-  background: var(--bg-raised);
+  background: color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised));
   box-shadow: inset 4px 0 0 var(--type), 0 0 0 1px var(--piece-card-edge);
   color: var(--fg-dim);
   font-family: var(--font-mono);

@@ -328,6 +328,12 @@
   content: '# ';
 }
 
+/* A rule: what's under it is apart from the rest (the `+`'s `existing card…`). */
+.rule {
+  margin: var(--space-1) var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
 .item {
   display: flex;
   align-items: baseline;

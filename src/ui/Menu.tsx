@@ -36,6 +36,7 @@ export type MenuEntry =
       // More words it's found by besides its label (a card's tags, its planes).
       words?: string
     }
+  // A `# section` line; an empty heading is a plain rule, setting apart what's under it.
   | { key: string; heading: string }
 
 type Item = Exclude<MenuEntry, { heading: string }>
@@ -181,9 +182,13 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
         {items.length > 0 && count === 0 && <p className={styles.empty}>no match · esc closes</p>}
         {shown.map((item, i) =>
           'heading' in item ? (
-            <div key={item.key} className={styles.heading} role="presentation">
-              {item.heading}
-            </div>
+            item.heading ? (
+              <div key={item.key} className={styles.heading} role="presentation">
+                {item.heading}
+              </div>
+            ) : (
+              <div key={item.key} className={styles.rule} role="separator" />
+            )
           ) : (
             <button
               key={item.key}

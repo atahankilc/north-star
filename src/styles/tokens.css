@@ -149,6 +149,8 @@
   --piece-band: 2px;
   /* What's held on a piece (cards, tasks, sheets): an edge only where the surface is as light as they are. */
   --piece-card-edge: transparent;
+  /* A card's face: this much of its type's colour over the surface, a dark tone of its left edge (D-291). */
+  --card-tint: 16%;
 }
 
 /* Light theme (D-069), set on <html> by src/state/theme.ts. Mirror any change in palettes.light (tokens.ts). */
@@ -164,6 +166,7 @@
   --piece-hi: transparent;
   --piece-shadow: 0 14px 40px -14px rgba(0, 0, 0, 0.22);
   --piece-card-edge: #e6e6e8;
+  --card-tint: 9%;
   --line: #d9d9d9;
   --fg-dim: #6b6b6b;
   --fg-muted: #555555;

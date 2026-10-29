@@ -70,7 +70,7 @@ feature comes back as a piece, and check them with the user then.
   people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge; its `+` an unframed drawn
   20 px magenta `+`, its menu opening right (D-178).
-- Menus, pickers and right-click are a **prompt** (D-222): a `>` line narrowing the list (Enter picks the first), `#
+- Menus, pickers and right-click are a **prompt** (D-222; an empty heading is a plain rule, D-291): a `>` line narrowing the list (Enter picks the first), `#
   section` lines, rows `› [p] ▦ label  hint`, a letter puts its item first, a counting foot; Select: `•` current, the
   `>` line past 7 options.
 - One look and behaviour across the canvas (consistency.md; agreed D-263–D-267, built D-270, D-272–D-277):
@@ -142,6 +142,9 @@ feature comes back as a piece, and check them with the user then.
   height, magenta corner marks, kind + `[×] esc`, a Geist title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
 
 ## Cards and links on planes
+- Plane details (D-291): a card's face is `--card-tint` of its type's colour (16 %, light 9 %); `existing card…` last under
+  a rule; a section or unfolded package dragged shrinks with what it holds as one, only its landing L's shown; a
+  paragraph's L's on its edges.
 - Cards (D-187, D-205): in their own collections with `pieceId`, x/y in plane px, 200 × 100 (8 × 4 marks). Inside: type
   edge and label, status/regions/priority with evidence cells, Geist title ≤ 3 lines, facts, tag chips; smaller on
   screen, the title alone in whole words, then bars (D-152, D-153). On the canvas a plane shows a fitted picture; in

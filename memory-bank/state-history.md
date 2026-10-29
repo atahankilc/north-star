@@ -827,3 +827,8 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   a card's thread in the threads list says where the card is (`+N`) and goes there. Checked in a worktree holding only
   these changes, since another session (north-star-69, D-289) was editing CanvasView and others at the same time;
   committed with only this session's hunks staged.
+
+## Done (2026-10-29): plane details (D-291)
+- The cards-to-bring list scrolls (the right-click menu closed on any wheel). `existing card…` is last under a rule.
+  Card faces are a dark tone of their type. A paragraph's landing L's are on the grid. A section or open package shrinks
+  as one while dragged. Checked headless on the emulators with mid-drag screenshots, dark and light.
