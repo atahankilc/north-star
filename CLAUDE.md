@@ -52,4 +52,5 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 - Onboarding (D-315): every new user-facing feature, or a real change to one, ships in the same change with its
   lesson in `src/onboarding/lessons.ts` (words, trigger, scene; a changed feature bumps its lesson's version) and a
   line in `src/onboarding/releases.ts`; `npm run check:lessons` must pass. Until onboarding is built, add or change
-  the lesson in `docs/specs/onboarding-lessons.md` instead.
+  the lesson in `docs/specs/onboarding-lessons.md` instead. Not the agent (D-312) while it's being built: its lessons
+  and demos are written once its UI is done, since a lesson's demo is drawn from the finished components.

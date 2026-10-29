@@ -5784,6 +5784,7 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
   dev-only switch and the user picks in the morning (Q-028).
 - *Q-027, answered the same day* ("Q-027'yi CLAUDE.md'ye ekle"): a hard rule in CLAUDE.md: every new user-facing
   feature, or a real change to one, ships with its lesson in `lessons.ts` and a line in `releases.ts`,
-  `check:lessons` passing; until onboarding is built, in onboarding-lessons.md.
+  `check:lessons` passing; until onboarding is built, in onboarding-lessons.md. The agent is left out while it's being
+  built ("Agent daha hazır değilken nasıl olcak bu?"): its demos need its finished UI, so its lessons come after.
 - *Open:* Q-028 (the look): every option built, the user picks in the morning.
 - *Not yet:* everything: onboarding-run.md's steps O0–O16.

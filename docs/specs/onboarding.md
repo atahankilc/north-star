@@ -404,7 +404,8 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
   Star before see the welcome and every lesson too. What's new is only for releases after onboarding ships.
 - **Q-027 · answered 2026-10-29: in CLAUDE.md's hard rules** (the user had it added): every new user-facing feature
   ships with its lesson in `lessons.ts` and a line in `releases.ts`, `check:lessons` passing; until onboarding is
-  built, in onboarding-lessons.md.
+  built, in onboarding-lessons.md. **Not the agent while it's being built**: a lesson's demo is drawn from the
+  finished components, so the agent's lessons come once its UI is done.
 - **Q-028 · the look: decided by the user in the morning, from the real thing.** The user (2026-10-29, away for the
   night): "build every option for each if needed, I don't care". So the run **builds all 2–3 options** of each frame
   (the welcome modal, the lesson card, the kind guide, the `?` guide) as real components, switchable live with a
