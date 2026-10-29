@@ -15,6 +15,7 @@
     "build:functions": "npm --prefix functions run build",
     "deploy:functions": "firebase deploy --only functions --project north-star-db",
     "check:memory": "node scripts/check-memory.mjs",
+    "check:lessons": "node scripts/check-lessons.mjs",
     "test": "vitest run"
   },
   "dependencies": {

@@ -121,11 +121,31 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-Not started. First step: O0. (Plan written 2026-10-29 by workspace-sections-canvas; agreed with north-star-b2: S3's
-`onTracked`, S2's vitest, §1.2's order.)
+2026-10-29 ~05:20, lead workspace-sections-canvas: O0 and O1 committed. O2 committed; O4 (look options preview) in review. Next: commit O2 (it imports O1's seenMerge types: fine now), then O3 (events +
+queue) once S3's `onTracked` lands or from the stores, and O5 (the coach surfaces, every look) after O4 passes.
+b2 agreed: firebase.ts, vite.config.ts and package.json are free; it pings when S3 (`onTracked`) lands. The uncommitted
+2-line hunk in tests/rules.test.mjs (and CanvasView/WorkspaceLayout/canvasView.ts) is a third session's, not b2's:
+commit only our own hunk there. Emulators already run (someone's): never stop them; rules tests run as a copy of the
+file on a separate project id (`demo-onboarding-*`, rules loaded by REST), not `npm run test:rules`.
 
 ### Done
 _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
+- O0 · d37ea15 · the approach holds: real FocusedPlane + PlaneCards in demo.html, `firebase` null there, a network-off
+  Firestore in db() only because PlaneCards builds spotRefs while drawing; 0 Firebase requests (dev + production
+  build), no errors, dark/light, reduced motion still · reviewer: 2 rounds (heartbeat comment, a rest before the
+  press, a fixture that reads real, shorter customer names); checked D-288's chunks: the app's entry and workspace
+  chunk split in two but are still fetched ahead in parallel · ideas: in Ideas.
+- O1 · 3e2b9aa · seen-state (src/data/onboarding.ts, seenMerge, progress, audience), rules for
+  users/{uid}/private/onboarding + 28 rules tests (485/0 on a separate project; storage not exercised: no emulator)
+  · reviewer: 3 rounds (early writes beating settings, two tabs, cache-miss = unavailable, stop order, a merge the
+  same both ways round: 20 000 random pairs) · not deployed.
+- O2 · (this commit) · lessons.ts: all 66 entries (1 welcome, the kind guide's 18 rows, 55 lessons, 5 nudges, 4 empty
+  states) with EVENTS, PAYLOADS, ANCHORS, `within` (the busy source a lesson lives on), `after` (waits only while the
+  named lesson is queued or showing), per-page roles/audience/kinds, `{owner}`/`{peer}`/`{piece}`; releases.ts only
+  `launch`, the sample in releases.sample.ts; check-lessons.mjs (limits, roles, cycles, payloads, placeholders, D-numbers,
+  the `+` menu vs the kind guide, same-event pairs ordered, a ratchet of pending scenes/anchors/events) · reviewer: 3
+  rounds (lessons that could never show, same-event pairs, a clean checkout, words matching the app, viewer pages,
+  shared-delete and join-request pages) · onboarding.md §3.1/§5.4/§5.5/§7 and onboarding-lessons.md kept in step.
 
 ### Stuck
 _(none)_
@@ -137,3 +157,18 @@ _(none)_
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
+- O1: `roleHere`/`canEditHere` in src/onboarding/audience.ts copy `roleOf`/`canEditIn` (src/data/workspaces.ts, which
+  loads Firestore): move them into a pure module under src/model once the agent run's model split is committed.
+- O1: the rules bound `seen`/`armed` counts, not their values' sizes (rules can't loop); only your own doc is at stake.
+- O2: features with no lesson yet: deck lanes, column limits and labels (D-256), tags and the TAG filter (D-056),
+  `linked · N` (D-235).
+- O0: PlaneCards builds every card's spotRef while drawing (`carry`): make it lazy at drag start (O6's pass), then
+  drop the demo-only Firestore in db().
+- O0/O7: scenes should drive real pointer events on `data-target="card:<id>"` so the press marks, 0.8 lift and landing
+  L's play; the drop's refused write needs the ops layer's memory backend or a stage hook that `set()`s on drop.
+- O0: the demo page preloads the three and firebase chunks (shared helpers); fine while same-origin cached.
+- O0 (app, not onboarding): a competitor card says "2 features" twice (the closed strip and the meta line).
+- O4 (spec): scenes are 16:10 but the lesson card and kind guide asked for 4:3; the glued kind guide needs a min height
+  (~330 px) when typing narrows the menu; the `+` menu (~450 px) runs off a 768 px screen; lesson placement tries
+  right, left, above, then the middle-bottom card; `# keys` folds; "✓ done" holds ~1.2 s and the next lesson waits.
+- O2: after the run, a `check:lessons --final` that fails while scripts/lessons-pending.json isn't empty.

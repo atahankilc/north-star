@@ -71,6 +71,8 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
 2. **One at a time.** A lesson never opens while another lesson, the welcome, what's new, a wizard, the hazard
    confirm, Settings, the finder, a menu (except the kind guide, which is part of the `+` menu), a drag, a focus
    transition, typing, or following someone is going on. It waits in a queue (§5.4) and shows when the person is free.
+   A lesson *about* one of those surfaces says so (`within`: `wizard`, `finder`, `menu`, `setup`, `settings`,
+   `threads`, `following`, `typing`) and shows on it: that one busy source (and typing inside it) doesn't hold it back.
 3. **Short.** ≤ 4 pages a lesson (the welcome 4), a title ≤ 6 words, a body ≤ 25 words, one demo or none. Keys are
    written as the app writes them (`⌘F`, `esc`, `0`). Lowercase actions, uppercase labels, the app's two voices.
 4. **Next to what it explains, never over it.** An anchored lesson sits beside its anchor (`src/ui/floating.ts`), and
@@ -234,21 +236,40 @@ scripts/check-lessons.mjs    the lint (§8)
   (`document.activeElement` editable), a menu/prompt/wizard/setup/hazard/Settings/finder/thread panel open, following,
   the camera gliding, the curtain not revealed. Read from the existing stores (inventory §0), polled on change.
 - A lesson triggered by an action waits ≤ 10 s for "not busy" (+ 400 ms calm), else it stays armed for the next
-  time the trigger fires. Only one queued at a time per area; a newer trigger of the same lesson replaces it.
+  time the trigger fires. One queued per lesson (a newer trigger replaces it); a lesson waiting on `after` doesn't count toward anything.
 - **Retire on done**: when a lesson's `doneWhen` event fires before it shows (or while showing), it's marked seen
   (shown or not, except the welcome, the kind guide and what's new).
 - **Cooldown**: after a lesson closes, the next *automatic* one waits 20 s (an action-triggered one waits only for calm).
+- **`within`**: a lesson about a busy surface (a wizard, the finder, a menu, setup, Settings, the threads panel,
+  following, typing) ignores that one busy source (lessons.ts `WITHIN`); every other one still holds it.
+- **`after`**: while a lesson it names is queued or showing, this one's trigger stays queued until that one closes (or
+  is retired), then this one shows after the calm/cooldown. One that isn't due doesn't hold it (else a lesson with a
+  second trigger, e.g. `matrix-keys` from a cell picked unframed, would wait for a focus that never comes). When one
+  event triggers two lessons (`focus-in {kind: table}` → `focus-lens` + `table-keys`), lessons.ts gives the specific
+  one an `after` naming the general one, so they come one after the other, never stacked; `empty-canvas` waits for
+  `welcome` on the same `canvas-open` the same way.
+  A lesson dropped after the 10 s busy wait stays armed for its next trigger and no longer holds the ones that name
+  it in `after`, so they may show first (harmless). `check:lessons` fails on two lessons for a shared role that one
+  event can trigger together unless `after` or `unless` orders them (directly or through a chain).
 - `tipsOff`: nothing opens by itself; `?` still works; what's new still marks a dot on `?` instead of opening.
 
 ### 5.5 Events (events.ts), mostly without touching views
 | Source | Events |
 |---|---|
-| Workspace open + curtain revealed | `canvas-open` (→ welcome / what's new) |
-| `useCanvasView` subscribe | `focus-in {kind}`, `focus-out`, `edit-on {kind}`, `card-selected`, `cards-multi`, `link-selected`, `linking`, `drawing-section`, `packing`, `bringing`, `to-canvas`, `confirming`, `beside-open` |
-| `onTracked(fn)` in history.ts (**the agent run adds it in its S3**, with structured op names and `actor: 'agent'` for the agent's writes, which never trigger lessons; until S3 is committed, derive these from the workspace store: a new piece/card/label/edge id appearing that this tab wrote) | `piece-made {kind}`, `card-made {type}`, `text-made {kind}`, `link-made`, `task-made`, `package-made`, `stuck`, `unstuck`, `unframed`, `framed`, `brought`, `canvas-made`, `moved-canvas`, `evidence-added`, `doc-uploaded`, `undo` |
-| Other stores | `wizard {kind}`, `setup-open {kind}`, `finder-open`, `threads-open`, `thread-open`, `side-view`, `following`, `filter-open`, `doc-reader`, `settings-open {page}` |
-| URL | `canvas` switch, `?beside=` |
-| One-line hooks (only where no store has it) | `plus-open` (+ the hovered row for the kind guide), `context-menu {on}`, `menu-open` (any prompt) |
+| Workspace open + curtain revealed | `canvas-open {first, empty}` (→ welcome / what's new; `first`: this person's first canvas, `empty`: no pieces) |
+| `useCanvasView` subscribe | `focus-in {kind, empty}`, `focus-out`, `edit-on {kind}`, `edit-off {kind}`, `card-selected {kind}`, `cards-multi`, `link-selected`, `linking`, `drawing-section`, `packing`, `bringing`, `to-canvas`, `confirming`, `beside-open` |
+| `onTracked(fn)` in history.ts (**the agent run adds it in its S3**, with structured op names and `actor: 'agent'` for the agent's writes, which never trigger lessons; until S3 is committed, derive these from the workspace store: a new piece/card/label/edge id appearing that this tab wrote) | `piece-made {kind, holds}`, `card-made {kind}`, `text-made {kind}`, `link-made {kind}`, `task-made`, `package-made`, `stuck {kind}`, `unstuck {kind}`, `unframed {kind}`, `framed {kind}`, `brought`, `canvas-made`, `moved-canvas`, `evidence-added`, `doc-uploaded`, `undo` |
+| Other stores | `wizard {kind}`, `setup-open {kind}`, `finder-open {headings}`, `threads-open`, `thread-open`, `side-view`, `following`, `filter-open {kind}`, `doc-reader`, `settings-open {page}` |
+| URL | `canvas-switch` (`?canvas=` changed), `?beside=` (`beside-open`) |
+| One-line hooks (only where no store has it) | `plus-open {plane}` (+ the hovered row for the kind guide), `context-menu {kind}`, `menu-open` (any prompt) |
+| Workspaces page | `workspaces-open {empty}` (the list loaded), `ws-made` (one created or imported), `join-requested` (a code sent) |
+| `useCanvasView` (more) | `console-shown {kind}` (a piece's console first drawn for this person), `piece-moved {kind, editing}` (a piece's drag ended), `card-moved {focus}` (a card's drag ended), `cell-picked {kind, framed}` (a matrix/table cell picked), `axis-unfold` (a feature axis's `unfold`), `parts-folded` (a folded parts tree first drawn) |
+| Writes (more) | `deleted {confirmed, shared}` (the hazard confirm's delete went through), `status-set` (a card's status changed), `task-for-card` (a task given a card), `filter-set {kind}` (a filter value picked, e.g. FOR) |
+| Workspace data and presence | `task-given {byOther}` (a task newly given to you, `givenBy` someone else), `peer-joined` (another person first in `presence/{wid}`), `edit-refused` (the viewer's "You're a viewer" toast) |
+| The coach itself | `sidenav-rest` (the pointer rests ≥ 600 ms on the side nav), `guide-open` (`?` opened), `crumb-open` (the breadcrumb's canvas prompt opened), `idle {pieces, cards, seen, decks, peerFor}` (≥ 3 min here and 10 s without input, §4.5; counts for nudges) |
+
+Every event's payload keys are in lessons.ts `PAYLOADS` (the lint checks each `when` against them); "what kind of
+thing" is always `kind` (a piece kind, card type, text kind, link kind or filter).
 
 ### 5.6 Mounting
 `<Coach />` once inside `WorkspaceContext.Provider` in WorkspaceLayout.tsx (one line) and once on the workspaces
@@ -363,7 +384,8 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
   release is written from state-history.md (D-293 → the newest) in a test fixture, **not** in the shipped list.
 - On `canvas-open`: releases newer than `lastRelease` → what's new (§4.4), then `lastRelease` = newest.
 - New people: `lastRelease` = newest at once (they get the welcome instead).
-- Each lesson has `since: '<release id>'`: a release that changes a feature bumps its lesson's version and arms it.
+- Each lesson has `since: 'D-xxx, …'`: the decisions that made the feature as it is now (each a `### D-xxx` in
+  decisions-log.md, linted). A release that changes a feature bumps its lesson's `v` and arms it.
 
 ---
 
