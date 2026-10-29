@@ -121,12 +121,20 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 afternoon (the user is here; resumed after a network pause and two usage-limit stops): O0–O8 committed,
-the look pick (D-316). O9 (the `+` kind guide's 18 scenes, 13 piece-lesson scenes) built and fixed once, waiting for
-its 2nd review now that O8 is in. Then O10 onward. The shared emulators were restarted (with the user's OK) and now
-run from this session; the emulators' firebase-debug.log had grown to 117 GB and was emptied (the user's OK).
-Agreed with b2: `onTracked` actor, `agentDriving()`, S13's grown-`before` merges handled (6829f5a).
-Never `git add`/`git mv` from builders (shared index).
+2026-10-29 evening: STOPPED on the usage limit. Committed: O0–O8 (last 39f23f3), D-316 looks, guards, 6829f5a.
+**O9 is uncommitted in the tree** (its 31 scenes + beside-pick, fixtures/kit.ts, lines in sceneList.ts / Demo.tsx
+BUILT / lessons-pending.json, lessons.ts `stuck` p2 → beside-pick, onboarding-lessons.md): its builder was mid fix
+round 2 (6 items: kind-existing broken in a frame → click the row + an in-frame end-frame comparison in
+check-scenes.mjs; the unframe lesson over the side nav → sidenav/HUD corners as obstacles in Lesson.tsx; framing of
+edit-move-resize, stick/stick-follow, plane-inside, beside/beside-pick). Some of those edits may be half-done: check
+`git diff` of Lesson.tsx, check-scenes.mjs and those scenes before resuming. **O10 (planes and cards)** had just
+started: any new scene files / fixtures/o10.ts / EmptyHint edits in the tree are its, unreviewed.
+**To resume:** a fresh O9 builder finishes the 6 items (brief: the reviewer's round-2 list above), then the O9
+reviewer's last round (3), commit O9 (only its files), then O10 again (or continue its files). The shared emulators run
+from this session (restart them if gone: `npx firebase emulators:start --only auth,firestore,database --project
+demo-north-star`); watch firebase-debug.log's size.
+Agreed with b2: `onTracked` actor, `agentDriving()`, S13's grown-`before` merges handled; the agent's lessons wait for
+its final UI. Never `git add`/`git mv` from builders (shared index).
 
 ### Done
 _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
@@ -213,6 +221,8 @@ _(none)_
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
+- The agent's lessons (D-315: once its UI is done): b2 says the UI changes again in S15/S16 and the user wants to
+  redesign it, so they wait; b2 tells us when it's final.
 - (Done after S9) learn.ts sends nothing while `agentDriving()` (src/agent/driving.ts) is true; agent writes carry
   `actor: 'agent'` (b2: a must in agent-run.md, with a test).
 - O12: the `deck` lesson's page 1 (E+) says "`+ add a task` types one; Enter keeps typing the next" but deck-drag shows
