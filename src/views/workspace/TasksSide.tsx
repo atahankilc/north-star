@@ -263,16 +263,20 @@ function Board({ box, deck, editor, onTask, onCard, esc, dock, close }: PartProp
 // A deck's days: the timeline linked to it, else one of its own here (rows by who). Every deck's (`deck` null): the
 // timeline stuck to `plane` when there's one (a plane with no deck, D-300), else one of its own (rows by deck).
 function Days({ box, deck, plane, editor, onTask, dock }: PartProps & { deck: WithId<Piece> | null; plane: WithId<Piece> | null }) {
-  const { pieces, tasks, cards } = useWs()
+  const { pieces, tasks, cards, canvas, spots } = useWs()
   // A deck's timeline, linked to it or through its plane; a plane's, linked to it (a plane with no deck).
   const linked = deck ? timelineOf(deck.id, pieces) : plane ? pieces.find((p) => p.kind === 'timeline' && p.stuckTo === plane.id) : undefined
   // Not stored: a timeline with no piece, its weeks and filter kept under its own key.
+  // ALL · DAYS keeps to this canvas's decks, as the tabs do (`only`).
+  const onCanvas = useMemo(() => piecesOn(canvas, pieces, spots).filter((p) => p.kind === 'kanban').map((p) => p.id), [canvas, pieces, spots])
+  const onKey = onCanvas.join()
   const own = useMemo(
-    () => ({ id: deck ? `tasks-side:${deck.id}` : 'tasks-side:all', kind: 'timeline', x: 0, y: 0, w: 0, h: 0, createdAt: 0, updatedAt: 0, ...(deck ? { stuckTo: deck.id, timeline: { rows: 'assignee' } } : {}) }) as WithId<Piece>,
-    [deck?.id],
+    () => ({ id: deck ? `tasks-side:${deck.id}` : 'tasks-side:all', kind: 'timeline', x: 0, y: 0, w: 0, h: 0, createdAt: 0, updatedAt: 0, ...(deck ? { stuckTo: deck.id, timeline: { rows: 'assignee' } } : { only: onCanvas }) }) as WithId<Piece>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [deck?.id, onKey],
   )
   const piece = linked ?? own
-  const pool = useMemo(() => tasks.filter((t) => (deck ? t.pieceId === deck.id : pieces.some((p) => p.id === t.pieceId && p.kind === 'kanban'))), [tasks, pieces, deck])
+  const pool = useMemo(() => tasks.filter((t) => (deck ? t.pieceId === deck.id : onCanvas.includes(t.pieceId))), [tasks, onCanvas, deck])
   const { el, view, pan } = usePaneView(timelineBounds(piece, pieces, tasks, cards, T.besideDays), box, true)
   return (
     <div ref={el} className={styles.part} style={{ left: box.x, top: box.y, width: box.w, height: box.h }} onPointerDown={pan}>

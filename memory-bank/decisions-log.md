@@ -5754,8 +5754,14 @@ board; a timeline couldn't make a task for a card.
   its part of the screen with the side view open, and a focus's dock stays inside its part (scrolling sideways).
   Checked headless: the card deck's tab, strip and 2 cards; the side days' board 324–756 in 96–1000; a focused
   timeline 367–633 of 1000 in the left part.
-- *Not yet:* Beside.tsx still holds its deck/timeline pane code, unused now; the canvas isn't shifted again while the
-  side view's line is dragged.
+- *Then (the user: "kalanları da hallet"):* Beside.tsx keeps matrices and tables only (its deck and timeline panes,
+  unused since this, gone). ALL · DAYS keeps to the decks of the canvas shown, as the tabs do (`only` on its unstored
+  timeline; a timeline piece linked to nothing still shows every deck). The canvas following the side view's dragged
+  line was already so (the shift reads the left part's share): checked, the line moved 200 px moved a plane 100 px.
+  Rules tests, never run for D-300/D-314 (the emulator ports were another session's), run on private emulators (a
+  copy of firebase.json on other ports, outside the repo): 457 passed, 0 failed, the presence `tasks` ones in them.
+  Checked headless: ALL · DAYS on the main canvas Roadmap and Sprint 3 only, on "Engineering" its own task only; a
+  table stuck to Pazar still opens beside it (`table · Rivals | all 2 ▾ setup close`), `t` then closes it.
 
 ### D-315 · 2026-10-29 · Accepted (plan only; the user: "yeni biri geldiğinde bi anda bilgi bombardımanına tutmak istemiyorum … kimin ne zaman onboarding olduğunu, sıfırdan ise bütün ekranların, önceden kullanıyor ise de yeni versiyonla nelerin geldiği anlatılmalı … step by step introduction … animasyonlar … componentler elimizde var, bunları kullanarak mock data ile animasyon oluşturabiliriz sonsuz döngüde … ai dışındaki her şeyi kapsasın … senden sonraki agent yapıcak")
 **Onboarding: plan written** (docs/specs/onboarding.md, onboarding-lessons.md, onboarding-run.md; reference:

@@ -16,7 +16,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. `refactor/north-star-1.5` was merged
   into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
-- Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 427/0. Until Blaze,
+- Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 457/0 (2026-10-29, private emulators: the usual ports were in use). Until Blaze,
   deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger) and Storage
   (documents' files, D-232; `storage.rules` allow nothing yet). The assistant's client code went with 1.0 (D-248); only

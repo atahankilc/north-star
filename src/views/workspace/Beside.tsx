@@ -4,14 +4,13 @@
 // (the wheel zooms it round the pointer, a drag on empty space pans it), its own dock (the focus dock, named:
 // `TABLE · name | [setup] [close]`), its setup
 // opening inside it. The line between the plane and the panes drags (kept per browser). A card's row in a table clicked
-// takes the plane to that card; a card selected on the plane lights its row. A kanban (D-255) opens here too: a task
-// picked glides the plane to its card (the task's panel opens, over the plane's part).
+// takes the plane to that card; a card selected on the plane lights its row. Matrices and tables only: decks and
+// timelines open in the tasks side view (D-300, D-314).
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { CARD, type Card } from '../../data/cards'
 import { cardsOn, type Place } from '../../data/places'
-import type { Task } from '../../data/tasks'
 import { KIND_NAME, kindOfPiece } from '../../data/pieces'
 import { fitInto, glide, setSplit, stopGlide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
@@ -20,10 +19,6 @@ import { useWs } from './context'
 import { matrixBounds, MatrixView, toggleMatrixSetup, useMatrixUi } from './Matrix'
 import { MatrixSetupPanel } from './MatrixSetup'
 import { tableBounds, TablePager, TableView, useTableUi } from './Table'
-import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView, useKanbanUi } from './Kanban'
-import { KanbanSetupPanel } from './KanbanSetup'
-import { KanbanFilterDock } from './KanbanFilterDock'
-import { T, timelineBounds, TimelineDockTools, TimelineView } from './Timeline'
 import { DockAction, FocusDock } from './FocusDock'
 import { TableSetupPanel } from './TableSetup'
 import styles from './Beside.module.css'
@@ -216,36 +211,23 @@ export function glidePlaneTo(picked: Pick<Card, 'id'>, plane: string, cards: Car
 }
 
 function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose }: PaneProps) {
-  const { cards, tasks, pieces, places } = useWs()
+  const { cards, places } = useWs()
   const kind = kindOfPiece(piece)
-  const content = kind === 'matrix' ? matrixBounds(piece, cards) : kind === 'kanban' ? kanbanBounds(piece, tasks) : kind === 'timeline' ? timelineBounds(piece, pieces, tasks, cards, T.besideDays) : tableBounds(piece, cards)
-  // A timeline fills its pane at its own size (D-304), from the top left.
-  const { el, view, setView, pan } = usePaneView(content, box, kind === 'timeline')
+  const content = kind === 'matrix' ? matrixBounds(piece, cards) : tableBounds(piece, cards)
+  const { el, view, setView, pan } = usePaneView(content, box)
 
   // A card's row picked: the card selected, and the plane's view glides to put it in the middle of the plane's part.
   const toCard = (card: Card) => {
     useCanvasView.setState({ cardSelected: card.id, labelSelected: null })
     glidePlaneTo(card, plane.id, cards, places)
   }
-  // A task picked: the plane glides to its card (on this plane), not selecting it (the task's panel stays open).
-  const toTask = (t: Task) => {
-    const card = t.cardId ? cards.find((c) => c.id === t.cardId) : undefined
-    if (card) glidePlaneTo(card, plane.id, cards, places, true)
-  }
 
   const tableSetup = useTableUi((s) => s.setup === piece.id)
   // Read as on / off, so a wider setup state (a tab open) still reads right. A matrix's setup is one switch for all (its
   // own store): it shows in one matrix pane only, the one CanvasView names.
   const matrixSetup = useMatrixUi((s) => !!s.setup) && matrixSetupHere
-  // A kanban's (D-268).
-  const kanbanSetup = useKanbanUi((s) => s.setup === piece.id)
-  const setupOpen = kind === 'table' ? tableSetup : kind === 'kanban' ? kanbanSetup : matrixSetup
-  const toggleSetup = () =>
-    kind === 'table'
-      ? useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
-      : kind === 'kanban'
-        ? useKanbanUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
-        : toggleMatrixSetup()
+  const setupOpen = kind === 'table' ? tableSetup : matrixSetup
+  const toggleSetup = () => (kind === 'table' ? useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id })) : toggleMatrixSetup())
   const escHere = (what: 'setup' | 'close') => (esc !== 'unfocus' && esc.what === what && esc.id === piece.id ? 'esc' : undefined)
 
   return (
@@ -259,17 +241,11 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
     >
       {kind === 'matrix' ? (
         <MatrixView piece={piece} view={view} live editor={editor} />
-      ) : kind === 'kanban' ? (
-        <KanbanView piece={piece} view={view} live editor={editor} onTask={toTask} onCard={toCard} />
-      ) : kind === 'timeline' ? (
-        // Beside its kanban (D-262): a task picked here is picked on the kanban too.
-        <TimelineView piece={piece} view={view} live editor={editor} span={T.besideDays} />
       ) : (
         <TableView piece={piece} view={view} live editor={editor} onCard={toCard} onView={setView} />
       )}
       {kind === 'table' && tableSetup && editor && <TableSetupPanel piece={piece} />}
       {kind === 'matrix' && matrixSetup && editor && <MatrixSetupPanel piece={piece} />}
-      {kind === 'kanban' && kanbanSetup && editor && <KanbanSetupPanel piece={piece} />}
       {/* Its dock: the focus dock itself, at the bottom middle of its part, named (D-189, D-211). */}
       <FocusDock
         label={`${KIND_NAME[kind]} beside`}
@@ -281,16 +257,12 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
         }
       >
         {kind === 'table' && <TablePager piece={piece} editor={editor} />}
-        {kind === 'kanban' && <KanbanFilterDock piece={piece} />}
-        {kind === 'kanban' && <KanbanLanes piece={piece} editor={editor} />}
-        {kind === 'kanban' && <KanbanDockTools piece={piece} editor={editor} />}
-        {kind === 'timeline' && <TimelineDockTools piece={piece} editor={editor} />}
-        {editor && kind !== 'timeline' && (
+        {editor && (
           <DockAction
             label="setup"
             pressed={setupOpen}
             keyHint={escHere('setup')}
-            title={kind === 'table' ? 'where its rows come from, its columns' : kind === 'kanban' ? 'what it holds: tasks, or cards by a field' : 'its rows, columns and cells'}
+            title={kind === 'table' ? 'where its rows come from, its columns' : 'its rows, columns and cells'}
             onClick={toggleSetup}
           />
         )}
