@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S5 next (text: labels, sections, stickies, title; packages' remaining ops). S1–S4 done.
+S6 next (pieces, canvases, spots: explicit canvasId R1, cascades from the snapshot R5, followers + stick as ops R7, `resize`). S1–S5 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -129,6 +129,13 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   S15 · reviewer: 2 fix rounds (overlay stale after undo and hiding collaborators' writes; a delete failing whole when
   one id was gone; test gaps; refused UI writes rejecting into unhandled rejections), then pass with real-UI and
   collaborator repros · left: `dropCriterionScores` (S7), `planeGoes`/`runOps` (S6).
+- S5 · see `git log --grep "Agent S5"` · `src/ops/text.ts`: create_text (5 kinds; where = x/y, near, in_section, clear
+  spot; section `around`; canvas from args/ctx, R1), update_text (model schema without w/h/x/y), arrange (text, cards,
+  places, pieces, spots; carries section contents (`sectionHolds`, src/model/textPlace.ts), folded parts and package
+  members (`carriedWith`)), delete for text; data/labels.ts wrapped (addLabel, updateLabel, deleteLabel, moveMany) ·
+  reviewer: 1 fix round (arrange didn't carry package members/parts; update_text and arrange both moved text), then
+  pass with real-UI checks (section drag with a plane, turns, sticky fold/resize, box-select drag, ⌘D/⌘V, second
+  canvas) · left: line-up/space-out layouts (S9), stuck pieces (S6), workspace name/description untracked.
 
 ### Stuck
 _(none)_
@@ -174,3 +181,7 @@ _(the reviewers' and builders' "could be better", not done yet)_
 - Existing, not the run's: `places.ts` `commit`/`runOps` awaits each 450-batch in turn, so inside `tracked()` a write
   of > 450 docs records "after" before later batches land (ops' `apply` sends all at once). The S3 builder thought
   `bundle.ts` `cleanTask` drops a task's `start` (D-304), so export/import may lose start dates: check in S8.
+- S5 reviewer: TextItems' section drag should call `sectionHolds` (one code path, R7) once TextItems is quiet; when S9
+  adds layouts, extend `arrange` with `layout` (`near`/`align-*`/`spread-*`/`grid`) + `where` (agent.md §4.4), not new
+  ops; `moveMany` refused by validate resolves null, so a caller's `.catch(() => landed(...))` wouldn't run (can't
+  happen today).

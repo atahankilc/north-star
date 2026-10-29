@@ -85,10 +85,12 @@ import { createEdge, deleteEdge, reverseEdge, updateEdge } from '../../src/data/
 import { addEvidence, removeEvidence, updateEvidence } from '../../src/data/evidence'
 import { addCompetitorFeature, matchOurs, removeCompetitorFeature } from '../../src/data/competitorFeatures'
 import { bringIn, cardsOn, removeHere, takeOff } from '../../src/data/places'
+import { addLabel, deleteLabel, discardLabel, labelRef, moveMany, updateLabel } from '../../src/data/labels'
+import { cardRef } from '../../src/data/cards'
 import { apply, recentCount, uiCtx } from '../../src/ops/firestore'
 import { buildBatch } from '../../src/ops/registry'
 import { counterIds } from '../../src/ops/newId'
-import { ALICE, fixtureDocs, ID, WID, WORKSPACE, wsFrom } from './fixtures/ws'
+import { ALICE, fixtureDocs, ID, SEC, T, WID, WORKSPACE, wsFrom } from './fixtures/ws'
 
 const path = (coll: string, id: string) => `workspaces/${WID}/${coll}/${id}`
 
@@ -360,6 +362,125 @@ describe('data/ functions as ops', () => {
       fake.data.set(path('problems', ID.menu), { ...fake.data.get(path('problems', ID.menu))!, title: 'Theirs' })
       echo()
       expect(uiCtx(WID)!.ws.cards.find((c) => c.id === ID.menu)!.title).toBe('Theirs')
+    })
+  })
+
+  describe('text (S5)', () => {
+    const lab = (id: string) => ws().labels.find((l) => l.id === id)!
+
+    it("addLabel + its first text (fresh, mergeAlways) are one step even before the echo; canvas text takes the shown canvas", async () => {
+      const id = await addLabel(WID, { pieceId: 'canvas', text: '', size: 'heading', x: 100, y: 100 })
+      expect(fake.data.get(path('labels', id))).toMatchObject({ pieceId: 'canvas', text: '', size: 'heading', x: 100, y: 100 })
+      expect(fake.data.get(path('labels', id))).not.toHaveProperty('canvasId')
+      const made = { id, pieceId: 'canvas', text: '', size: 'heading' as const, x: 100, y: 100, createdAt: 0 }
+      await updateLabel(WID, made, { text: 'Market', kicker: '03' }, 'text', true)
+      expect(fake.data.get(path('labels', id))).toMatchObject({ text: 'Market', kicker: '03' })
+      expect(useHistory.getState().past.map((s) => [s.label, s.key])).toEqual([['add a heading', `label:text:${id}`]])
+      await undo()
+      await settle()
+      expect(fake.data.has(path('labels', id))).toBe(false)
+    })
+
+    it('a sticky note from the + keeps its fields; discardLabel takes it and its step away', async () => {
+      const id = await addLabel(WID, { pieceId: ID.planeA, text: '', kind: 'sticky', w: 150, color: 'yellow', uid: 'u-alice', author: 'Alice', x: 50, y: 400 })
+      const { createdAt: _c, updatedAt: _u, ...d } = fake.data.get(path('labels', id))!
+      expect(d).toEqual({ pieceId: ID.planeA, text: '', kind: 'sticky', w: 150, color: 'yellow', uid: 'u-alice', author: 'Alice', x: 50, y: 400 })
+      await discardLabel(WID, { id })
+      expect(fake.data.has(path('labels', id))).toBe(false)
+      expect(useHistory.getState().past).toEqual([])
+    })
+
+    it('typing merges into one step; the bar is a step of its own; undefined takes a field away', async () => {
+      const before = structuredClone(fake.data.get(path('labels', ID.note)))
+      await updateLabel(WID, lab(ID.note), { text: 'Ask Anna' }, 'text')
+      await updateLabel(WID, lab(ID.note), { text: 'Ask Anna about Mondays' }, 'text')
+      await updateLabel(WID, lab(ID.note), { scale: 'small', folded: undefined })
+      expect(fake.data.get(path('labels', ID.note))).toMatchObject({ text: 'Ask Anna about Mondays', scale: 'small' })
+      expect(useHistory.getState().past.map((s) => s.label)).toEqual(['change a sticky note', 'change a sticky note'])
+      await undo()
+      await undo()
+      await settle()
+      expect(fake.data.get(path('labels', ID.note))).toEqual(before)
+    })
+
+    it('deleteLabel: the text alone, one step, ⌘Z brings it back', async () => {
+      const before = new Map(fake.data)
+      await deleteLabel(WID, lab(ID.note))
+      expect(fake.data.has(path('labels', ID.note))).toBe(false)
+      expect(useHistory.getState().past.map((s) => s.label)).toEqual(['delete a sticky note'])
+      await undo()
+      await settle()
+      expect(new Map(fake.data)).toEqual(before)
+    })
+
+    it('moveMany as a section drag passes it (text, a card, a place): one step with its label; ⌘Z puts all back', async () => {
+      fake.data.set(path('labels', SEC.plane), { pieceId: ID.planeA, text: 'Ideas', kind: 'section', x: 525, y: 0, w: 450, h: 375, createdAt: T, updatedAt: T })
+      echo()
+      const before = new Map(fake.data)
+      const placeRef = { path: path('places', `${ID.planeB}_${ID.anna}`), id: `${ID.planeB}_${ID.anna}`, parent: { id: 'places' } }
+      await moveMany('move a section and what is in it', [
+        { ref: labelRef(WID, SEC.plane), from: { x: 525, y: 0 }, to: { x: 575, y: 100 } },
+        { ref: labelRef(WID, ID.note), from: { x: 600, y: 50 }, to: { x: 650, y: 150 } },
+        { ref: cardRef(WID, 'idea', ID.preorder), from: { x: 550, y: 225 }, to: { x: 600, y: 325 } },
+        { ref: placeRef as never, from: { x: 50, y: 300 }, to: { x: 75, y: 300 } },
+      ])
+      expect(fake.data.get(path('labels', ID.note))).toMatchObject({ x: 650, y: 150 })
+      expect(fake.data.get(path('ideas', ID.preorder))).toMatchObject({ x: 600, y: 325 })
+      expect(fake.data.get(path('places', `${ID.planeB}_${ID.anna}`))).toEqual({ ...before.get(path('places', `${ID.planeB}_${ID.anna}`)), x: 75 })
+      expect(useHistory.getState().past.map((s) => s.label)).toEqual(['move a section and what is in it'])
+      expect(fake.commits.n).toBe(1)
+      await undo()
+      await settle()
+      expect(new Map(fake.data)).toEqual(before)
+    })
+
+    it('moveMany with a piece and a piece spot: each written where it is (doc, spot), one step, ⌘Z', async () => {
+      fake.data.set(path('canvases', 'canv0000000000000002'), { name: 'Engineering', order: 1, createdAt: T })
+      fake.data.set(path('pieceSpots', `canv0000000000000002_${ID.planeB}`), { canvasId: 'canv0000000000000002', pieceId: ID.planeB, x: 0, y: 0, createdAt: T })
+      echo()
+      const before = new Map(fake.data)
+      const r = (coll: string, id: string) => ({ path: path(coll, id), id, parent: { id: coll } }) as never
+      await moveMany('move a section and what is in it', [
+        { ref: r('pieces', ID.planeA), from: { x: 0, y: 0 }, to: { x: 50, y: 25 } },
+        { ref: r('pieceSpots', `canv0000000000000002_${ID.planeB}`), from: { x: 0, y: 0 }, to: { x: 75, y: 0 } },
+      ])
+      expect(fake.data.get(path('pieces', ID.planeA))).toMatchObject({ x: 50, y: 25 })
+      expect(fake.data.get(path('pieces', ID.planeA))!.updatedAt).toBeGreaterThan(T)
+      expect(fake.data.get(path('pieceSpots', `canv0000000000000002_${ID.planeB}`))).toEqual({ canvasId: 'canv0000000000000002', pieceId: ID.planeB, x: 75, y: 0, createdAt: T })
+      expect(fake.data.get(path('pieces', ID.planeB))).toMatchObject({ x: 1100, y: 0 })
+      expect(useHistory.getState().past.map((s) => s.label)).toEqual(['move a section and what is in it'])
+      await undo()
+      await settle()
+      expect(new Map(fake.data)).toEqual(before)
+    })
+
+    it('arrange of a package through apply brings its members; one ⌘Z puts them back', async () => {
+      const before = new Map(fake.data)
+      const ctx = { ws: ws(), actor: ALICE, now: Date.now(), newId: counterIds('n') }
+      const a = await apply(WID, buildBatch(ctx, [{ op: 'arrange', args: { items: [ID.pkg], by: [100, 0] } }]))
+      await a.written
+      expect(fake.data.get(path('features', ID.qr))).toMatchObject({ x: 400 })
+      expect(fake.data.get(path('features', ID.loyalty))).toMatchObject({ x: 650 })
+      expect(useHistory.getState().past.map((s) => s.label)).toEqual(['move a package'])
+      await undo()
+      await settle()
+      expect(new Map(fake.data)).toEqual(before)
+    })
+
+    it('arrange through apply: the op works out what the section carries; one undo step', async () => {
+      fake.data.set(path('labels', SEC.plane), { pieceId: ID.planeA, text: 'Ideas', kind: 'section', x: 525, y: 0, w: 450, h: 375, createdAt: T, updatedAt: T })
+      echo()
+      const before = new Map(fake.data)
+      const ctx = { ws: ws(), actor: ALICE, now: Date.now(), newId: counterIds('n') }
+      const plans = buildBatch(ctx, [{ op: 'arrange', args: { items: [SEC.plane], by: [0, 50] } }])
+      const a = await apply(WID, plans)
+      await a.written
+      expect(fake.data.get(path('ideas', ID.preorder))).toMatchObject({ y: 275 })
+      expect(fake.data.get(path('labels', ID.note))).toMatchObject({ y: 100 })
+      expect(useHistory.getState().past.map((s) => s.label)).toEqual(['move a section and what is in it'])
+      await undo()
+      await settle()
+      expect(new Map(fake.data)).toEqual(before)
     })
   })
 })

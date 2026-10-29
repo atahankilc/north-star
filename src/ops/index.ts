@@ -18,3 +18,5 @@ export { createEvidence, updateEvidence, type CreateEvidenceArgs, type UpdateEvi
 export { createCompetitorFeature, updateCompetitorFeature, type CreateFeatureArgs, type UpdateFeatureArgs } from './features'
 export { placeOn, placeOnPlan, takeOff, takeOffPlan, type PlaceOnArgs, type TakeOffArgs } from './places'
 export { OPS, REGISTRY, build, buildBatch, type OpDef, type ArgSchema, type Step } from './registry'
+// Text ops (S5): create_text, update_text, arrange (a section carries what's inside it); delete takes text too.
+export { createText, updateText, arrange, TEXT_KINDS, TEXT_NAMES, type CreateTextArgs, type UpdateTextArgs, type ArrangeArgs, type TextStyle } from './text'

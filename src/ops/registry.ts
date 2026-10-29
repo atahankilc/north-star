@@ -8,6 +8,15 @@
 //   delete op that works out the matrix cells it takes itself (today the component passes them and a batch callback).
 // - places.ts' planeGoes and runOps (what a plane's delete does to its cards and places): S6, with pieces.ts'
 //   deletePiece; places.ts' rehome already writes what ops' rehome (cards.ts) plans, through it.
+//
+// S5 (text.ts): every write in data/labels.ts is a wrapper (addLabel → create_text, updateLabel → update_text,
+// deleteLabel → delete, moveMany → arrange). Left: arrange's layouts (line up, space out: CardPanel's maths);
+// pieces moved by arrange don't bring what's stuck to them (pieces.ts' placeAll, S6). The workspace's name and
+// description (the project title's words, workspaces.ts) stay untracked writes, not ops. update_text's builder takes
+// w, h, x, y (the UI's resize and drag go through it) but the model's schema leaves them out: moving is arrange, sizing
+// will be a resize op (S6). arrange carries folded parts, package members and section contents
+// (model/cardInside.ts' carriedWith, model/textPlace.ts' sectionHolds); the UI's moveMany passes exact spots with
+// carry: false, having found them itself.
 import { CARD_TYPES } from '../model/cards'
 import { VALIDATIONS, FEATURE_PRIORITIES, FEATURE_STATUSES, FEATURE_IMPACTS, FEATURE_EFFORTS } from '../model/cards'
 import { EVIDENCE_KINDS, AVAILABILITIES } from '../model/shapes'
@@ -17,6 +26,8 @@ import { EDGE_KINDS, link, unlink, updateLink } from './edges'
 import { createEvidence, updateEvidence } from './evidence'
 import { createCompetitorFeature, updateCompetitorFeature } from './features'
 import { placeOn, takeOff } from './places'
+import { arrange, createText, HEADING_SIZES, TEXT_KINDS, TEXT_SCALES, updateText } from './text'
+import { LABEL_COLORS } from '../model/labels'
 import type { OpCtx, Plan } from './types'
 import { refuse } from './util'
 
@@ -25,7 +36,7 @@ export type ArgSchema = { type?: string | string[]; anyOf?: ArgSchema[]; descrip
 
 export type OpDef = {
   name: string
-  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'any'
+  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'any'
   summary: string
   args: ArgSchema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,6 +72,29 @@ const cardFields = obj(
   [],
   'fields to set; null takes one away',
 )
+// How text is set (update_text: null takes one away).
+const nb = (description: string): ArgSchema => ({ type: ['boolean', 'null'], description })
+const textStyle = (nullable: boolean): Record<string, ArgSchema> => {
+  const e = (values: readonly (string | number)[], description: string): ArgSchema =>
+    nullable ? { anyOf: [{ type: typeof values[0] === 'number' ? 'number' : 'string', enum: values }, { type: 'null' }], description } : { type: typeof values[0] === 'number' ? 'number' : 'string', enum: values, description }
+  const t = (type: string, description: string): ArgSchema => ({ type: nullable ? [type, 'null'] : type, description })
+  return {
+    text: s('its words (a section: its name); not for the project title, which shows the workspace name'),
+    kicker: t('string', 'heading: a small line over it; section: the number before its name (`02`)'),
+    size: e(HEADING_SIZES, 'heading or section name: heading = H1, subheading = H2, minor = H3'),
+    scale: e(TEXT_SCALES, 'paragraph or sticky note: text size'),
+    color: e(LABEL_COLORS, 'its colour (a sticky note: its paper; not ink)'),
+    bold: nullable ? nb('not for sticky notes') : b('not for sticky notes'),
+    italic: nullable ? nb('not for sticky notes') : b('not for sticky notes'),
+    caps: nullable ? nb('capitals; not for sticky notes') : b('capitals; not for sticky notes'),
+    rotate: e([90, -90], 'heading or paragraph: turned a quarter (90 reads upwards)'),
+    side: e(['left'], "section: its name up the left edge instead of the top"),
+    folded: nullable ? nb('sticky note: held at its first height') : b('sticky note: held at its first height'),
+    w: t('number', 'paragraph, sticky note, title: its width; section: its width (px)'),
+    h: t('number', 'section: its height (px)'),
+  }
+}
+
 const evidenceArgs = { kind: { type: 'string', enum: EVIDENCE_KINDS }, text: s('what was learned, a sentence or a quote'), stance: { type: 'string', enum: ['supports', 'contradicts'] }, source: s('who or where'), url: s(), date: s('YYYY-MM-DD') }
 const featureFields = { name: s(), description: s(), category: s(), availability: { type: 'string', enum: AVAILABILITIES }, url: s() }
 
@@ -102,7 +136,7 @@ export const OPS: OpDef[] = [
   {
     name: 'delete',
     kind: 'any',
-    summary: 'Delete cards (with their links, places, evidence, competitor features and matches), links, evidence, competitor features, matches or text. On a plane, cards also elsewhere only come off it.',
+    summary: 'Delete cards (with their links, places, evidence, competitor features and matches), links, evidence, competitor features, matches or text (a section alone: what it holds stays). On a plane, cards also elsewhere only come off it.',
     args: obj({ ids: ids('what to delete'), plane: s('delete here only: cards on other planes stay there'), everywhere: b('delete cards from every plane') }, ['ids']),
     build: deleteThings,
   },
@@ -155,6 +189,53 @@ export const OPS: OpDef[] = [
     summary: "Change a competitor's feature, or which of ours it matches (ours: null for none).",
     args: obj({ feature: s(), fields: obj(featureFields), ours: orNull('our feature it matches; null: none') }, ['feature']),
     build: updateCompetitorFeature,
+  },
+  {
+    name: 'create_text',
+    kind: 'text',
+    summary: 'Write text on a plane or the canvas: a heading (H1–H3), paragraph, sticky note, section (round things) or the project title (canvas only, one per workspace).',
+    args: obj(
+      {
+        kind: { type: 'string', enum: TEXT_KINDS },
+        plane: s('the plane it goes on; left out: the canvas'),
+        canvas: s('on the canvas: which one (left out: the one shown)'),
+        ...textStyle(false),
+        where: {
+          anyOf: [obj({ near: s('right of this text, card (on its plane) or piece (on the canvas), two grid steps (50 px) clear, its top level with it') }, ['near']), obj({ in_section: s('inside this section, under what it holds') }, ['in_section'])],
+          description: 'left out: a clear spot (a plane: the first from its top-left; the canvas: under everything)',
+        },
+        around: ids('section only: the text, cards or pieces it goes round (its box fitted to them)'),
+        handle,
+      },
+      ['kind'],
+    ),
+    build: createText,
+  },
+  {
+    name: 'update_text',
+    kind: 'text',
+    summary: 'Change text: its words or how it is set (size, scale, colour, bold, italic, caps, turn, side, fold). To move it: arrange.',
+    // w, h, x, y stay out of the model's schema (the builder takes them, for the UI's resize and drag): moving is
+    // arrange, sizing a resize op (S6).
+    args: obj({ id: s('the text'), ...Object.fromEntries(Object.entries(textStyle(true)).filter(([k]) => k !== 'w' && k !== 'h')) }, ['id']),
+    build: updateText,
+  },
+  {
+    name: 'arrange',
+    kind: 'any',
+    summary:
+      "Move text, cards and pieces by [dx, dy] in their space's px (a plane's or the canvas's). A section carries what's wholly inside it, a folded card its parts, a package its members. A card's spot on a plane other than its home needs that plane.",
+    args: obj(
+      {
+        items: ids('what moves'),
+        by: { type: 'array', items: n(), description: '[dx, dy] in their space px' },
+        plane: s("the plane the cards are shown on: needed for a card's place on a plane that isn't its home (left out: each card's home)"),
+        canvas: s('the canvas the pieces are on (left out: the one shown)'),
+        carry: b("false: a section moves without what's inside it"),
+      },
+      ['items', 'by'],
+    ),
+    build: arrange,
   },
   {
     name: 'place_on',

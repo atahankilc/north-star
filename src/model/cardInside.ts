@@ -169,3 +169,25 @@ export function packageTree(pkg: Card, cards: Card[], edges: Edge[]): Entry[] {
   const { byId, kids } = partsOf(cards, edges)
   return treeIn(pkg, byId, kids)
 }
+
+// What moves with a card on its plane (PlaneCards' `carriedBy` and a package's band, D-164, D-239; S5, R7 for the
+// ops' arrange): a folded card or folded package brings everything folded into it, all the way down; an unfolded
+// package (dragged by its band) brings its members on this plane and what they carry. `folds` from foldsOf on the
+// plane's cards (each at its spot there). The ids, each once, the card itself left out.
+export function carriedWith(folds: Folds, cards: Card[], id: string): string[] {
+  const out = new Set<string>()
+  const walk = (i: string, depth: number) => {
+    for (const r of folds.rows.get(i) ?? []) if (depth < 8 && r.card.id !== id && !out.has(r.card.id)) (out.add(r.card.id), walk(r.card.id, depth + 1))
+  }
+  const card = cards.find((c) => c.id === id)
+  if (card?.type === 'package' && !card.folded && !folds.hidden.has(id)) {
+    const here = new Set(cards.map((c) => c.id))
+    for (const m of folds.members.get(id) ?? []) {
+      if (m.id === id || !here.has(m.id) || folds.hidden.has(m.id)) continue
+      out.add(m.id)
+      walk(m.id, 0)
+    }
+  } else walk(id, 0)
+  out.delete(id)
+  return [...out]
+}

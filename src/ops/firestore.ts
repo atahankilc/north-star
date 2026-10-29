@@ -22,8 +22,10 @@ export const forFirestore = (o: Record<string, unknown>): Record<string, unknown
 
 // The signed-in person and their role here (when the caller doesn't say).
 function signedIn(ws: WorkspaceCtx): OpActor {
-  const uid = firebase?.auth.currentUser?.uid ?? ''
-  return { uid, role: ws.workspace.roles?.[uid] ?? 'viewer' }
+  const user = firebase?.auth.currentUser
+  const uid = user?.uid ?? ''
+  const name = user?.displayName || user?.email || undefined
+  return { uid, role: ws.workspace.roles?.[uid] ?? 'viewer', ...(name ? { name } : {}) }
 }
 
 export type ApplyOpts = {

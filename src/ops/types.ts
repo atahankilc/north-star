@@ -41,7 +41,8 @@ export type Plan = {
 }
 
 // Who's acting: the signed-in person (uid and role in this workspace), `agent` when the agent acts for them.
-export type OpActor = { uid: string; role: Role; agent?: boolean }
+// `name`: how they're shown (a sticky note's signed line), when known.
+export type OpActor = { uid: string; role: Role; agent?: boolean; name?: string }
 
 export type OpCtx = {
   ws: WorkspaceCtx

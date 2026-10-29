@@ -2,7 +2,8 @@
 // same writes data/cards.ts made before it wrapped them. Every cascade is read from the snapshot (R5), never passed in.
 import { CARD, CARD_TYPES, TITLE_MAX, type AnyType, type Card, type CardFields, type CardType } from '../model/cards'
 import { defaultKind, type Edge, type EdgeKind } from '../model/edges'
-import { CANVAS, type Label } from '../model/labels'
+import { CANVAS, kindOf, type Label } from '../model/labels'
+import { TEXT_NAMES } from './text'
 import { MAIN } from '../model/canvases'
 import { GRID, snap } from '../model/grid'
 import { cardsOn, clearSpot, elsewhere, freeSpot, placeId, type Place } from '../model/placement'
@@ -231,7 +232,7 @@ export function deleteThings(ctx: OpCtx, args: DeleteArgs): Plan {
     const label = ws.labels.find((l) => l.id === id)
     if (label) {
       labels.push(label)
-      kinds.add('text')
+      kinds.add(kindOf(label))
       continue
     }
     if (ws.edges.some((e) => e.id === id)) {
@@ -262,7 +263,7 @@ export function deleteThings(ctx: OpCtx, args: DeleteArgs): Plan {
     }
     refuse(op, `there is nothing with the id ${id} that delete can take away`, 'use the id of a card, link, piece of evidence, competitor feature, match or text (pieces, tasks and the rest come later)')
   }
-  if (kinds.size === 1) kind = [...kinds][0] === 'text' ? undefined : [...kinds][0]
+  if (kinds.size === 1) kind = [...kinds][0]
 
   const plane = args.everywhere ? undefined : args.plane
   const off = plane ? cards.filter((c) => elsewhere(c, ws.places, plane).length) : []
@@ -275,8 +276,9 @@ export function deleteThings(ctx: OpCtx, args: DeleteArgs): Plan {
   const n = cards.length + labels.length
   let label: string
   if (!cards.length && !labels.length) label = args.ids.length === 1 ? single : `delete ${args.ids.length} things`
-  else if (plane) label = !gone.length && !labels.length ? `take ${plural(off.length)} off this plane` : off.length ? `remove ${n} things` : `delete ${n > 1 ? `${n} things` : gone.length ? 'a card' : 'text'}`
+  else if (plane) label = !gone.length && !labels.length ? `take ${plural(off.length)} off this plane` : off.length ? `remove ${n} things` : `delete ${n > 1 ? `${n} things` : gone.length ? 'a card' : TEXT_NAMES[kindOf(labels[0])]}`
   else if (cards.length === 1 && !labels.length && args.ids.length === 1) label = `delete ${one(cards[0].type)}`
+  else if (labels.length === 1 && !cards.length && args.ids.length === 1) label = `delete ${TEXT_NAMES[kindOf(labels[0])]}`
   else label = `delete ${n} ${labels.length ? 'things' : 'cards'}`
   return { op, label, writes: once(writes), ids: {}, meta: { ...(kind ? { kind } : {}) } }
 }

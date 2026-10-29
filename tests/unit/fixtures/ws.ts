@@ -126,3 +126,20 @@ export function wsFrom(docs: Docs, workspace: RawDoc = { ...WORKSPACE }): Worksp
 }
 
 export const fixtureWs = () => wsFrom(fixtureDocs())
+
+// S5: the fixture with sections and a second canvas (text ops).
+export const SEC = { plane: 'labl0000000000000010', canvas: 'labl0000000000000011', canvas2: 'canv0000000000000002' }
+
+// The fixture with a section on the first plane round the sticky note and the pre-order idea, one on the canvas round
+// the heading and the first plane, and a second canvas the second plane is also on (a spot).
+export function textWs(): WorkspaceCtx {
+  const d = fixtureDocs()
+  d.labels.push(
+    { id: SEC.plane, pieceId: ID.planeA, text: 'Ideas', kind: 'section', x: 525, y: 0, w: 450, h: 375, createdAt: T, updatedAt: T },
+    { id: SEC.canvas, pieceId: 'canvas', text: 'Discovery', kind: 'section', x: -50, y: -300, w: 1100, h: 950, createdAt: T, updatedAt: T },
+  )
+  d.canvases.push({ id: SEC.canvas2, name: 'Engineering', order: 1, createdAt: T })
+  d.pieceSpots.push({ id: `${SEC.canvas2}_${ID.planeB}`, canvasId: SEC.canvas2, pieceId: ID.planeB, x: 0, y: 0, createdAt: T })
+  return wsFrom(d)
+}
+
