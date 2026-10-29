@@ -5689,3 +5689,25 @@ shows anyway.**
   oldest first, the newer one taking the overlap; with the screen's middle inside one 8000 px plane (nearClear found
   nothing clear) a plane added from `+` landed on it, on top, in edit mode, and dragging it moved it (the big one
   stayed); tsc.
+
+### D-312 · 2026-10-29 · Accepted (answers Q-019, Q-020, Q-021, Q-023, Q-024; the user: "openAı kullanılcak ilk başta, sonradan başka sağlayıcılar eklenebilir. Modeli kullanıcı kendisi seçicek. Şimdilik bizim provide etme gibi bir şeyimiz yok, herkes kendi api key i ile istediğini yapmakta özgür. Değişiklikler önüzleme ile gösterilcek. Şu anda acayip bir component çeşitliliğimiz var, o yüzden önüzlemenin kaliteli olması lazım … Önceki gibi sağ alt köşede duramıyoru mu? Bilgi tabanının kapsamı ne olabiliyorsa o olcak … Her şeyi yapabilsinden kastım agentic workflowlar tamamen entegre edilsin, bir kullanıcı ne yapabiliyosa aynısını yapabilsin üstüne de çok işe yarayacak toollar ekleyelim ki insanlar cidden kullansın")
+**The agent: plan accepted** (docs/specs/agent.md; research and 1.0's post-mortem there). Not started.
+- *Decision:* the agent comes back built as in agent.md: the loop in the browser, running as the signed-in person
+  through a new `src/ops/` layer the UI uses too (plan → validate → apply, one undo step); a cached workspace map +
+  read tools (search, query, get, view, neighbours) instead of a vector DB; the app places things, never the model.
+  OpenAI's Responses API first behind a thin adapter, other providers later; **the person picks the model**; **own
+  keys only**, we provide nothing (D-079's workspace key stays parked; so the agent needs no Blaze). **Every change is
+  previewed first**: the real components draw an in-memory result (`project`, the same code as apply) with diff marks
+  on every kind, a change list with ticks and a stepper, the app locked, then one click and one undo step. It lives
+  **in the screen's bottom-right corner** as 1.0's did, growing into a column the app narrows beside. The knowledge
+  base is as wide as it can be (agent.md §4.9: workspace, comments, documents, agent notes, past chats, a change log,
+  method guides, the web, files once Storage is live). "Everything" = full agentic workflows (plan → run → preview →
+  ask → report), every content action a person has (an action inventory as the gate), plus skills (§4.10). Phases 1–10
+  with gates (§6), behaviour and code rules (§7), an eval set built before any UI (§8).
+- *Why:* 1.0's assistant behaved badly mainly because of a cheap model on low reasoning, one 28-op write tool, a
+  self-contradicting prompt, no search and never being measured (agent.md §1).
+- *Alternatives:* 1.0 with a better prompt; RAG over every item; a server agent (bypasses the rules, no undo, needs
+  Blaze); a workspace key we provide; the agent in a right panel or as a piece (the user chose the corner).
+- *Q-022, answered the same day:* the agent never reads the person's other workspaces ("diğer workspace'ler hayır");
+  PDFs and images come last, once Storage is live ("PDF'ler en sona kalsın").
+- *Not yet:* everything: agent.md's phases.

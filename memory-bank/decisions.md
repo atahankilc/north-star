@@ -294,6 +294,13 @@ feature comes back as a piece, and check them with the user then.
   thread are two halves, each building and breaking cell by cell; a chip opens only the thread, `[all threads]` the
   list; it says what it shows (`whole workspace` or `inside "<plane>"`); `[on the canvas ↗]` goes there.
 
+## Agent (planned, docs/specs/agent.md)
+- The agent (D-312, not started): browser loop as the signed-in person over a shared `src/ops/` layer; map + read
+  tools, no vector DB; OpenAI first, the person picks the model, own keys only (no Blaze); every change previewed on
+  the real components, one undo step; in the bottom-right corner growing into a column; knowledge base as wide as it
+  can be, never other workspaces, PDFs/images last;
+  full workflows with parity to a person plus skills; phases gated by evals built before the UI.
+
 ## Settings
 - A modal from the gear or your square: YOU (account, display), WORKSPACE (general: name and "building" description;
   people; export); framed sections, rows with name + hint, notes at the foot; 960 × 720. The assistant's keys and usage

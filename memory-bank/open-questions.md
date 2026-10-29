@@ -5,4 +5,6 @@ Once answered → move to [decisions.md](decisions.md).
 
 ---
 
-_No open questions right now. Q-016–Q-018 were answered by D-139._
+_Q-016–Q-018 were answered by D-139._
+
+The agent's questions Q-019–Q-024 were answered by D-312.

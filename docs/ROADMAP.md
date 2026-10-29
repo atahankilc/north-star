@@ -24,7 +24,7 @@ old reports move to documents. Its specs stay as reference for when a feature co
 
 ## Next
 - Documents' files (images, PDFs) and the workspace key: both need the Blaze plan (D-232, D-079).
-- The assistant back, as a piece.
+- The agent back: plan and phases in [specs/agent.md](specs/agent.md) (D-312; next: Phase 1, the ops layer).
 
 ## Later
 - Templates (Lean Canvas, SWOT, positioning map), version history, collaborative text (Yjs).

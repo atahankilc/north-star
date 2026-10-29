@@ -41,7 +41,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311), committed, not pushed;
   rules deployed.
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
-- The assistant back as a piece (its rules are in decisions-1.0.md; check them with the user first). Then the
+- The agent back: plan accepted (D-312, docs/specs/agent.md): OpenAI, own keys, the person's model, previews, the
+  bottom-right corner. Next: Phase 1 (the ops layer, no AI; first the action inventory). 1.0's rules: decisions-1.0.md.
+- Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
