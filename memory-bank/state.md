@@ -23,18 +23,14 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
-- D-297 (focus fits as the ink spreads, its colour eases in and out): code committed with D-293, its memory-bank lines
-  follow D-294–D-296's. D-293 (screen-sized things hidden while zooming, names stay) committed, not pushed. Pushed and
-  live 2026-10-29: D-287–D-292. What was done: state-history.md.
-- Fix (2026-10-29): a framed table's (any non-plane's) focus going in and out no longer shows past its window: its cut
-  eases between the window and the screen (FocusedPlane's `hold`, a `.held` wrapper). Checked headless, committed, not pushed.
-
-- D-299 (panels' card pickers as the prompt: every card, scrolling, suggestions first): done, checked headless,
-  committed.
+- Committed, **not pushed** (2026-10-29): D-293 hidden while zooming and D-297 focus in/out together (efd34b4), D-294
+  card faces on kanbans and tables (0c9178f), D-295 readable text on tinted cards (1c78097), D-296 dropped plans
+  (memory only), D-298 timeline leftovers (06e11c7), D-299 card pickers as the prompt (80441e7), a framed table's focus
+  kept inside its window (f14b321). D-291/D-292 and before: pushed and live. What was done: state-history.md.
+- Uncommitted code in the tree from another session (`setFitter` in CanvasView/canvasView.ts, WorkspaceLayout.tsx): not
+  part of the above.
 
 ## Next steps (not started; ask the user which first)
-- Plane parity with the old board, left over (D-207's and D-225's *Not yet*): links to a competitor's features and
-  dropping a link on a small card (bend points dropped, D-292).
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
 - The assistant back as a piece (its rules are in decisions-1.0.md; check them with the user first). Then the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,

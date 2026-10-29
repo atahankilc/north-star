@@ -12,8 +12,9 @@ and how well". North Star keeps all of it in one connected graph.
 
 ## 2. Core principle
 
-**Everything can link to everything.** Ideas, our features, competitors and competitor features
-are nodes in a single graph. Each view is a different lens on that same graph.
+**Everything is one graph.** Customers, problems, competitors, ideas and our features are cards linked to each other;
+a competitor's features live inside it and are matched to ours (`≈ our`), not linked (D-296). Each view is a different
+lens on that same graph.
 
 ## 3. Entities
 
@@ -78,8 +79,8 @@ Overview (D-144), Reports (D-090, D-103; now documents), the assistant (D-074–
 1. Brain-dump: put cards on a plane quickly (Enter makes one, Tab the next, D-250)
 2. Structure: link, tag, name areas with headings and sections, group cards into packages
 3. Research: add competitors and break their products into features
-4. Link: ideas ↔ competitor features
-5. Plan: add features and link them to the ideas and competitor features they come from
+4. Link: ideas ↔ problems and competitors
+5. Plan: add features, link them to the ideas they come from, match them to competitors' features
 6. Compare: fill in a matrix; prioritise on a kanban holding cards (D-271)
 7. Decide: use gaps and differences to pick what to build
 8. Collaborate: invite people, see live cursors, follow someone, comment, give tasks

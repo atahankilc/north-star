@@ -5327,6 +5327,72 @@ fit glide left comment chips huge, then they snapped small.
   style and a few ms of paint on the first frame. A Marks span carries `data-screen-sized` only when drawn (not on
   every card); `will-change` on them didn't help. *Not yet:* if it's still felt, measure on the user's machine.
 
+### D-294 · 2026-10-29 · Accepted (D-291's *Not yet*; the user: "kanban ve tablo kartlarını da aynı şekilde boya. Headingi de tam oturt")
+**Kanban card sheets and a table's card names get D-291's face; a heading's landing L's sit on the grid all round.**
+- *Faces:* a card on a kanban (`.task[data-ccard]`, cards mode, D-268) and a table's name cell for a card
+  (`.name[data-card]`) use `--card-tint` of the type, as on a plane. A task sheet (even one for a card, edged in its
+  colour) keeps the plain sheet, so tasks don't read as cards.
+- *Headings:* their marks went 7 px out, so they never sat on the `+` marks. Now every text's marks are on its edges
+  (`pad` 0; only the project title keeps 7). Where a heading or paragraph lands, its box is rounded up to the next
+  25 px step (`onGrid`), so all four L's sit on the grid's marks. The top-left was already snapped. Its size comes from
+  its text, so only where it lands is rounded, not the item itself.
+- *Verified:* headless Chrome on the emulators. A cards kanban and an every-card table on the canvas show tinted sheets
+  and name cells. A heading dragged mid-way shows its L's on the grid's marks. `tsc` clean.
+
+### D-295 · 2026-10-29 · Accepted (D-291's tint made some text hard to read; the user: "card içindeki gri yazılar, yada competitor cardındaki featurelar, ayda tagler, vesaire… hepsini kontrol etmeni istiyorum")
+**On a tinted card the greys and the type's colour lean to the ink, so every line reads (WCAG ≥ 4.5, dark and light).**
+- *Measured:* headless Chrome on the emulators. Every text in plane cards, a competitor's feature rows, a package's
+  band, kanban card sheets, table card names and matrix card heads: its shown colour (opacity included) against the
+  background behind it, with and without the tint. Before: `--fg-dim` (status, facts, regions) 2.0 in dark (3.1 even
+  untinted), `--fg-faint` (a competitor's category counts) 1.3, type labels 3.3–4.2, kanban `◆ low` 1.4, its facts 2.2.
+- *Inside `.card`, `.band` and `.task[data-ccard]`:* `--fg-dim` = `--fg` 70 %, `--fg-faint` 62 %, `--placeholder` 52 %
+  over the face (transparent mixes, so both themes). The type label (`--type-ink`) and `[+]` are the type 75 % with the
+  ink. A clash `!` and a kanban card's `P1` are magenta 60 % with the ink. A competitor's feature rows (`.mini`) are
+  `--fg` 7 % over the face (12 % on hover), so they stand apart from it.
+- *After:* everything ≥ 4.5 in both themes. An empty card's placeholder ("What hurts?") is 4.2 dark and 3.5 light, a
+  hint kept lighter on purpose. Tag chips were already 14–17.
+- *Not yet:* a table's `untitled …` name placeholder is still faint (1.8 dark). Table.module.css was left to the table
+  fixes another session was about to start.
+
+### D-296 · 2026-10-29 · Accepted (D-207's, D-225's and the table's *Not yet* dropped; the user: "2 yi dropla", "1 çok önemli değil droplayabilirsin")
+**No links to a competitor's features, and no dropping a link on a small card: not wanted.** Planes' last leftovers from
+1.0's board, listed as "not yet" since D-207/D-225, are dropped rather than built. A competitor's features stay inside
+it (D-225) and meet ours through the match (`≈ our`, D-221) and a matrix (D-204, D-249), not through links. Links join
+cards, as now.
+- *Docs:* PRODUCT.md's "everything can link to everything" and its flow say a competitor's features are matched, not
+  linked; ROADMAP.md and the plan drop the line.
+- *Also dropped (not important):* the table's small leftovers: a paged table's last page sized for a full page (D-224),
+  arrows not stepping onto the next page (D-213), a viewer's table keeping the `+` column's width (D-291), the faint
+  `untitled …` name (D-295's note).
+- *Not to propose again:* decisions.md, Rejected.
+
+### D-297 · 2026-10-29 · Accepted (changes D-185's "nothing zooms" on the way in; the user: "focustan çıkınca renkler bi anda değişiyor… animasyonla gelsin" and "focus in de ilk önce focus animasyonunun bitmesi bekleniyor, sonra ortalama işlemi yapılıyor. Bunu aynı anda yapamaz mıyız?")
+**Going into focus, the view fits while the ink spreads, and the page's colour turns with the ink both ways.**
+- *Fit:* `FocusedPlane`'s `onSpread` (once only a matrix's) now runs `arrive` for every piece as the ink starts: the
+  view glides to its fit, or the place the finder or a go-to picked, as going out already glided home; `onArrived`
+  doesn't go again (`arrivedEarly`). Without the ink (a reload, reduced motion) it's as before.
+- *Colour:* in focus `--bg` is the page's black, on the canvas a piece's graphite (D-289), so leaving snapped. `.focused`
+  starts with `data-shade='piece'` (`--bg: var(--piece)`) and drops it the next frame; leaving sets it again. `--bg` is
+  a registered colour (tokens.css), so it eases (`--shade-ms`: 820 in, 700 out, 420 a matrix) and everything inside on
+  `--bg` follows. Reduced motion: no transition.
+- *Verified:* headless Chrome on the emulators, sampled per frame: going in, `--bg` rgb(18,19,21) → 0 over ~850 ms and
+  the zoom 0.32 → 1.0 by ~450 ms (was: after the ink); going out the reverse. `npm run build` clean.
+
+### D-298 · 2026-10-29 · Accepted (D-262's *Not yet*; the user: "4 ü yap")
+**A plane carries what's stuck to it all the way down; going to a task from a timeline stays on the timeline.**
+- *Moving:* a plane dragged (or resized) carries what's stuck to it and what's stuck to those (`stuckChain`,
+  CanvasView): its kanban and that kanban's timeline, each following the one it's stuck to as before (on its edge when
+  touching, by the same move when apart); one undo step. A kanban moved still carries its timeline.
+- *Going to a task* (the finder, your tasks, `goToTask`): in the focus of a timeline that shows the task's kanban and
+  draws the task (`[data-timeline][data-live]`), it stays there: the task picked (its panel), the view glided to it when
+  it's off the screen, the finder closed. A task the timeline doesn't draw (another two weeks, filtered out), or of a
+  kanban it doesn't show, goes to its kanban as before; from anywhere else, as before.
+- *Verified* in headless Chrome on the emulators, in a worktree with only these changes: a plane dragged in edit mode
+  moved its kanban and the kanban's timeline by the same amount, a kanban stuck to nothing stayed, one ⌘Z put all
+  three back; from the timeline's focus the finder's "Write the offer" stayed on the timeline, picked, the finder
+  closed (screenshot); a finished task with a day stayed too (the timeline draws it); one due next month went to the
+  kanban, picked; one of another kanban went to that kanban; from the canvas, to the kanban. `npm run build`.
+
 ### D-299 · 2026-10-29 · Accepted (the user: "for kısmında package ekliyeceğimde sadece bikaç tane gösterliyor, ne scroll var ne öneri var. Benim adını önceden bilip yazmam gerekiyor"; then "1 ve 2'yi yap, başla. 3 ü de not düş")
 **Picking a card in a panel is the prompt: every card, scrolling, suggestions first.**
 - *Why:* `CardPicker` (every picker in a card's or a task's panel: `for`, solves, parts, part of, holds, rests on, a

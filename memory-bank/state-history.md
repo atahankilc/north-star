@@ -841,4 +841,27 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Each world sets `data-zooming` while its zoom isn't the shown one; `[data-zooming] [data-screen-sized]` is hidden in
   `global.css` (marks, handles, consoles, comment chips, text's and links' bars, a matrix cell's bar, bond lines,
   guides; piece names stay). Checked in headless Chrome on the emulators (canvas and focus: hidden 40 ms into a wheel,
-  back 400 ms later); build clean. Marks carry the mark only when drawn (lighter at a zoom's start).
+  back 400 ms later); build clean. Not committed.
+
+## Done (2026-10-29): card faces on kanbans and tables, headings on the grid (D-294)
+- Kanban card sheets and a table's card names are tinted like plane cards (tasks aren't). Headings' L's are on their
+  edges, and where one lands is rounded up to the grid. Checked headless on the emulators.
+
+## Done (2026-10-29): readable text on tinted cards (D-295)
+- Greys, type labels and the clash `!` lean to the ink inside tinted cards and kanban card sheets; a competitor's
+  feature rows stand apart. Measured with a contrast script in headless Chrome, dark and light: everything ≥ 4.5 but
+  an empty card's placeholder.
+
+## Done (2026-10-29): competitor-feature links dropped (D-296)
+- At the user's word: links to a competitor's features and dropping a link on a small card won't be built; a
+  competitor's features meet ours through the match. Plan, Rejected, PRODUCT.md and ROADMAP.md updated; no code.
+  The table's small leftovers (last page's height, arrows across pages, a viewer's `+` column, the faint name) dropped too.
+
+## Done (2026-10-29): focus in/out together (D-297)
+- The view glides to its fit as the ink starts (not after); `.focused`'s `--bg` eases graphite ↔ black with the ink.
+  Sampled per frame headless on the emulators. D-293's hide made lighter (Marks marked only when drawn). Not committed.
+
+## Done (2026-10-29): a plane carries its kanban's timeline; go there stays on the timeline (D-298)
+- `stuckChain` (CanvasView) for what a plane carries; `goToTask` stays on a timeline's focus that draws the task
+  (`showOnTimeline`, the finder closed). Checked in a worktree (other sessions had uncommitted changes in CanvasView);
+  committed with only this session's hunks.

@@ -130,8 +130,9 @@ feature comes back as a piece, and check them with the user then.
   faint after it (`PAZAR · PLANE`); the kind gives way first, then `…`, all of it on hover. Edit mode: a cyan-framed
   field, a `>` and `17/80`.
 - Focus (D-184, D-185, D-189): `[focus]` or a double-click (D-198) makes a plane the view (`?focus=<id>`); the plane
-  spreads like ink, cell by cell on the 9 px grid (820 ms in, 700 out, Esc or `[unfocus]`), nothing zooms, its `+` marks
-  never move; reduced motion: no transition. In focus: the focus dock, a tab on the bottom edge's middle, `[unfocus]
+  spreads like ink, cell by cell on the 9 px grid (820 ms in, 700 out, Esc or `[unfocus]`), its view gliding to its fit
+  as the ink spreads and home as it draws back, the page easing graphite ↔ black with it (D-297); reduced motion: no
+  transition. In focus: the focus dock, a tab on the bottom edge's middle, `[unfocus]
   esc` last; the breadcrumb ends with the plane's name; no `+`; the plane's own view (`planeCam`), fitted on arrival
   (D-186). The right of the screen stays free, except what's beside it (D-211) and the right panel.
 - Finder (D-196, D-200, D-201, D-236): ⌘F or the side nav's compass, a prompt in the middle. Empty, the places: planes
@@ -142,9 +143,10 @@ feature comes back as a piece, and check them with the user then.
   height, magenta corner marks, kind + `[×] esc`, a Geist title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
 
 ## Cards and links on planes
-- Plane details (D-291): a card's face is `--card-tint` of its type's colour (16 %, light 9 %); `existing card…` last under
-  a rule; a section or unfolded package dragged shrinks with what it holds as one, only its landing L's shown; a
-  paragraph's L's on its edges.
+- Plane details (D-291, D-294): a card's face is `--card-tint` of its type's colour (16 %, light 9 %), on kanbans and a
+  table's card names too (not tasks); `existing card…` last under a rule; a section or unfolded package dragged shrinks
+  with what it holds as one, only its landing L's shown; text's L's on its edges, a heading's or paragraph's landing
+  rounded up to the grid. Inside a tinted face the greys and the type's colour lean to the ink, every line ≥ 4.5 (D-295).
 - Cards (D-187, D-205): in their own collections with `pieceId`, x/y in plane px, 200 × 100 (8 × 4 marks). Inside: type
   edge and label, status/regions/priority with evidence cells, Geist title ≤ 3 lines, facts, tag chips; smaller on
   screen, the title alone in whole words, then bars (D-152, D-153). On the canvas a plane shows a fitted picture; in
@@ -159,7 +161,7 @@ feature comes back as a piece, and check them with the user then.
   (a task's: its kanban's cards, its plane's; a card's: nearest), every card by type with its planes, scrolling (D-299).
 - Links (D-207): `edges` drawn when both cards are on the plane; straight, arrowhead, kind colours, a chip (its own
   label in focus), side by side; drawn from a hovered card's `›` with its label ready; a bar: kind, label, reverse,
-  remove. Always straight (no bend points, D-292). Not yet: links to competitor features.
+  remove. Always straight (no bend points, D-292); cards only (a competitor's features are matched, not linked, D-296).
 - Parts (D-225, D-226): a competitor's features are small cards inside it, shown as it grows on hover (a strip of cells
   closed), open while selected; a folded feature, customer, problem or idea holds its parts as a tree inside it.
 - One card on many planes (D-281; built D-282, D-283, D-284, D-285, D-286, D-290;
@@ -250,9 +252,10 @@ feature comes back as a piece, and check them with the user then.
 - Together (D-260, D-261): picked tasks are your presence selection, a held one a ghost in your colour (`drag`);
   comments on tasks; `☐` by your square counts tasks given to you since you last looked (`givenAt`/`givenBy`,
   `threadReads.tasks`); the finder finds tasks.
-- Timeline (D-262, D-289): a piece showing the tasks of the kanban it's linked to (else every kanban; no `shows`) on two
-  weeks of days (rows by kanban, person or card; a drag sets the due day; late on today magenta; a no-day tray), stuck
-  to a kanban and beside it; a kanban's `SOON` band.
+- Timeline (D-262, D-289, D-298): a piece showing the tasks of the kanban it's linked to (else every kanban; no `shows`)
+  on two weeks of days (rows by kanban, person or card; a drag sets the due day; late on today magenta; a no-day tray),
+  stuck to a kanban and beside it; a kanban's `SOON` band. A plane carries its kanban and that kanban's timeline; going
+  to a task from a timeline's focus that draws it stays there.
 - Cards on a kanban (D-253, D-268, D-269): it holds tasks or cards (`holds`); cards from a source (the table's rules);
   columns one field's values (status, impact, effort, priority), rows another's, `no value` first; a drop sets the
   fields (one undo step); boxes can be named (`good` green, `bad` magenta).
@@ -312,6 +315,9 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Reports as a centred column; `show more` paging; a report opening by itself (D-093, D-102, D-106).
 - Links routed by the app as right-angle elbows with lanes: lines shifted as others showed and hid, shape not the user's (D-155).
 - Bend points on links, the user's own (1.0's D-155): not wanted, links stay straight (D-292).
+- Links to a competitor's features; dropping a link on a small card (D-207/D-225's *Not yet*): not wanted (D-296).
+- The table's paging and spacing leftovers (last page's height, arrows onto the next page, a viewer's `+` column, the
+  faint `untitled`): not important (D-296).
 - Competitor features as squares, spines or a strip beside the card; parts as nested dots, a tree or a frame; a separate competitor page (D-164).
 - A real blur behind the open feature list (drew the board twice a frame and lagged) (D-173).
 - Melting drips (ASCII running down the screen and from under the box) in the delete confirm: too much (D-182).
