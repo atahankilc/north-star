@@ -19,9 +19,10 @@ import { runTurn, type LoopEvent } from '../loop'
 import { devStubWanted, makeModel, SUGGESTED } from '../models'
 import { initialWorkflow, reportOf, step as wfStep, type Effect, type Report, type WorkflowEvent, type WorkflowState } from '../workflow'
 import { browserApply, lockPreview, lockTurn, releaseAgentLocks, undoAgentStep, unlockPreview, unlockTurn } from '../browser'
-import { accept as acceptChanges, discard as discardChanges, emptyChangeset, pendingCount, type Changeset } from '../changeset'
+import { accept as acceptChanges, discard as discardChanges, emptyChangeset, pendingCount, untick as untickChange, type Changeset, type ChangeItem } from '../changeset'
+import { closePreview, goOf, openPreview, previewState, setCurrent, updatePreview } from '../preview'
 import { makeIds, type Ids } from '../read'
-import { agentUi } from '../ui'
+import { agentUi, leaveGoneCanvas } from '../ui'
 import { recordTurn } from '../usage'
 import { systemPrompt } from '../prompt'
 import { freshWs } from '../../ops'
@@ -37,13 +38,15 @@ export { plainError, KEY_REFUSED, NO_KEY } from './errors'
 
 export type StepLine = { id: string; label: string; running: boolean; ok?: boolean; ms?: number; say?: string }
 
-export type ChangeLine = { id: string; line: string; where: string; delete: boolean; why?: string }
+// `on`: ticked; off, either the person unticked it (`off`) or it needs one that is (`needs`: those items).
+export type ChangeLine = { id: string; line: string; where: string; delete: boolean; why?: string; on: boolean; needs?: string[]; needsWords?: string[]; kind: string; op: string; sign: '+' | '~' | '−' }
 
 export type Entry =
   | { id: string; kind: 'user'; text: string }
   | { id: string; kind: 'agent'; text: string; live: string; steps: StepLine[]; usage: Usage; running: boolean; ms?: number; end?: TurnEnd; error?: string; errorSettings?: boolean; model: string }
   // The pending changes (S14's simple list; S15's preview replaces it): `pending` until applied or discarded.
-  | { id: string; kind: 'changes'; items: ChangeLine[]; warnings: string[]; state: 'pending' | 'applying' | 'applied' | 'undone' | 'discarded' | 'revising'; said?: string }
+  // The preview (S15): every item proposed, ticked or not, until applied or discarded.
+  | { id: string; kind: 'changes'; items: ChangeLine[]; warnings: string[]; state: 'pending' | 'applying' | 'applied' | 'undone' | 'discarded' | 'revising'; said?: string; note?: string }
   // After an accept or discard: the workflow's report, and where the changes were (`Segments`), for the status line.
   | { id: string; kind: 'report'; report: Report; wheres: string[]; count: number }
   | { id: string; kind: 'note'; text: string; tone?: 'error'; settings?: boolean }
@@ -68,7 +71,9 @@ export const READ_ONLY = "## You only read here\nThe person is a viewer in this 
 
 // ---- Per chat, outside React: the model's history, the chat's ids, the pending changes, the running turn's abort.
 
-type Runtime = { history: ModelMessage[]; ids: Ids; changes: Changeset; abort: AbortController | null; last: AgentWs | null }
+// `base`: the changes as the preview opened (unticking works from it, so a tick put back brings its item back); `off`:
+// the items the person unticked.
+type Runtime = { history: ModelMessage[]; ids: Ids; changes: Changeset; abort: AbortController | null; last: AgentWs | null; base: Changeset | null; off: Set<string> }
 
 const runtimes = new Map<string, Runtime>()
 const chats = new Map<string, Chat>()
@@ -78,13 +83,13 @@ const uid = (p: string) => `${p}${Date.now().toString(36)}${(++n).toString(36)}`
 
 const newChat = (wid: string): Chat => {
   const c: Chat = { id: uid('chat'), wid, model: '', entries: [], wf: initialWorkflow() }
-  runtimes.set(c.id, { history: [], ids: makeIds(), changes: emptyChangeset(), abort: null, last: null })
+  runtimes.set(c.id, { history: [], ids: makeIds(), changes: emptyChangeset(), abort: null, last: null, base: null, off: new Set() })
   return c
 }
 
 const rtOf = (c: Chat): Runtime => {
   let r = runtimes.get(c.id)
-  if (!r) runtimes.set(c.id, (r = { history: [], ids: makeIds(), changes: emptyChangeset(), abort: null, last: null }))
+  if (!r) runtimes.set(c.id, (r = { history: [], ids: makeIds(), changes: emptyChangeset(), abort: null, last: null, base: null, off: new Set() }))
   return r
 }
 
@@ -193,7 +198,54 @@ function dispatch(ev: WorkflowEvent) {
 
 const lastChanges = (c: Chat) => [...c.entries].reverse().find((e): e is Extract<Entry, { kind: 'changes' }> => e.kind === 'changes' && (e.state === 'pending' || e.state === 'applying' || e.state === 'revising'))
 
-const linesOf = (cs: Changeset): ChangeLine[] => cs.items.map((i) => ({ id: i.id, line: i.line, where: i.where, delete: i.delete, ...(i.why ? { why: i.why } : {}) }))
+// An item in a few words, for a note about it: what it does (`link "Stalls run out…" → "Weekend…"`), not its id.
+export const wordsOfItem = (i: Pick<ChangeItem, 'line' | 'label'>) => {
+  const w = i.line.split(': ').slice(1).join(': ') || i.label
+  return w.length > 60 ? `${w.slice(0, 59)}…` : w
+}
+const lineOf = (i: ChangeItem, on: boolean, needs?: string[], all?: ChangeItem[]): ChangeLine => ({
+  id: i.id,
+  line: i.line,
+  where: i.where,
+  delete: i.delete,
+  kind: i.kind,
+  op: i.op,
+  sign: i.sign ?? (i.delete ? '−' : '~'),
+  on,
+  ...(i.why ? { why: i.why } : {}),
+  ...(needs?.length ? { needs, needsWords: needs.map((n) => { const x = all?.find((y) => y.id === n); return x ? wordsOfItem(x) : n }) } : {}),
+})
+const linesOf = (cs: Changeset): ChangeLine[] => cs.items.map((i) => lineOf(i, true))
+
+// Every item of the preview's base, ticked or not: an item still in the changes is on; one the person unticked is off;
+// one that came off with it says which unticked items it needs.
+function previewLines(rt: Runtime): ChangeLine[] {
+  const base = rt.base ?? rt.changes
+  const on = new Set(rt.changes.items.map((i) => i.id))
+  return base.items.map((i) => {
+    if (on.has(i.id)) return lineOf(rt.changes.items.find((x) => x.id === i.id) ?? i, true)
+    if (rt.off.has(i.id)) return lineOf(i, false)
+    const needs = needsOf(base.items, i, rt.off)
+    return lineOf(i, false, needs.length ? needs : undefined, base.items)
+  })
+}
+
+// The unticked items an item depends on, however far.
+function needsOf(items: ChangeItem[], i: ChangeItem, off: Set<string>): string[] {
+  const seen = new Set<string>()
+  const out = new Set<string>()
+  const walk = (x: ChangeItem) => {
+    for (const d of x.dependsOn) {
+      if (seen.has(d)) continue
+      seen.add(d)
+      if (off.has(d)) out.add(d)
+      const y = items.find((z) => z.id === d)
+      if (y) walk(y)
+    }
+  }
+  walk(i)
+  return [...out]
+}
 
 function run(chatId: string, e: Effect) {
   const chat = get().chat
@@ -211,18 +263,28 @@ function run(chatId: string, e: Effect) {
     case 'abort':
       return rt.abort?.abort()
     case 'preview': {
-      // S15 switches the store to the previewed copy; S14 lists the changes and locks the app while they wait.
+      // The store overlaid with the changes (S15, preview.ts), the app locked while it's open, the list in the chat.
       lockPreview()
       unlockTurn()
+      rt.base = rt.changes
+      rt.off = new Set()
+      openPreview(rt.changes)
       const was = lastChanges(chat)
-      const entry: Entry = { id: uid('chg'), kind: 'changes', items: linesOf(rt.changes), warnings: rt.changes.warnings.slice(0, 3), state: 'pending' }
+      const entry: Entry = { id: uid('chg'), kind: 'changes', items: previewLines(rt), warnings: rt.changes.warnings.slice(0, 3), state: 'pending' }
       setChat((c) => ({ ...c, entries: [...c.entries.filter((x) => x !== was), entry] }))
       return
     }
     case 'close_preview': {
+      closePreview()
       unlockPreview()
+      // Discarded (or revising): a canvas only the preview had is gone; applied, it's real by now (or soon: then the
+      // layout's own check sends it to the first canvas until the listener brings it).
+      if (get().chat.wf.phase !== 'applied') leaveGoneCanvas()
       const was = lastChanges(chat)
       if (was && was.state === 'pending' && get().chat.wf.phase === 'running') patchEntry(was.id, (x) => ({ ...x, state: 'revising' }) as Entry)
+      // Revising: the agent works from what's ticked now (unticked items are gone from the changes).
+      rt.base = null
+      rt.off = new Set()
       return
     }
     case 'accept':
@@ -236,7 +298,7 @@ function run(chatId: string, e: Effect) {
     case 'report': {
       // Where the changes were, from the list that was just applied (`Segments · plane` → `Segments`).
       const list = [...get().chat.entries].reverse().find((x): x is Extract<Entry, { kind: 'changes' }> => x.kind === 'changes')
-      const items = list?.state === 'applied' ? list.items : []
+      const items = list?.state === 'applied' ? list.items.filter((i) => i.on) : []
       const wheres = [...new Set(items.map((i) => i.where.replace(/ · [a-z ]+$/, '')))]
       return push({ id: uid('rep'), kind: 'report', report: e.report, wheres, count: e.report.done.length })
     }
@@ -328,7 +390,13 @@ async function accept(chat: Chat) {
     dispatch({ type: 'applied', report: reportOf({ applied: r.applied.map((i) => ({ line: i.line, where: i.where })), notDone: r.notDone.map((i) => ({ line: i.line })), step: r.step }) })
     return
   }
-  if (was) patchEntry(was.id, (x) => ({ ...x, state: 'pending', items: linesOf(r.cs), said: r.said }) as Entry)
+  if (r.stale) {
+    // What still works is the new base: the preview shows it, with why the rest came off.
+    rt.base = r.cs
+    rt.off = new Set()
+    updatePreview(r.cs)
+  }
+  if (was) patchEntry(was.id, (x) => ({ ...x, state: 'pending', items: r.stale ? linesOf(r.cs) : previewLines(rt), said: r.said }) as Entry)
   dispatch({ type: 'apply_failed', error: r.said })
   if (r.stale) dispatch({ type: 'untick', pending: pendingCount(r.cs) })
 }
@@ -383,6 +451,44 @@ export const agentActions = {
     dispatch({ type: 'send', text: t })
   },
   stop: () => dispatch({ type: 'stop' }),
+  // A tick in the preview: off takes the item and what needs it off, on brings it back (and what came off only with
+  // it); the preview is worked out again from its base on the workspace as it is now.
+  tick(item: string, on: boolean) {
+    const chat = get().chat
+    if (chat.wf.phase !== 'previewing') return
+    const rt = rtOf(chat)
+    const base = rt.base ?? rt.changes
+    if (!base.items.some((i) => i.id === item)) return
+    const off = new Set(rt.off)
+    if (on) off.delete(item)
+    else off.add(item)
+    const live = freshWs(chat.wid) as AgentWs | null
+    if (!live) return
+    const ctx = { live, actor: actorOf(live), now: Date.now(), ids: rt.ids }
+    let cs = base
+    for (const id of off) if (cs.items.some((i) => i.id === id)) cs = untickChange(cs, id, ctx).cs
+    rt.off = off
+    rt.changes = cs
+    updatePreview(cs)
+    const lines = previewLines(rt)
+    const also = !on ? base.items.filter((i) => lines.some((l) => l.id === i.id && l.needs?.includes(item))) : []
+    const off1 = base.items.find((i) => i.id === item)!
+    const was = lastChanges(get().chat)
+    const note = also.length ? `${also.map((i) => wordsOfItem(i)).join('; ')} ${also.length === 1 ? 'came off too: it needs' : 'came off too: they need'} ${wordsOfItem(off1)}` : undefined
+    if (was) patchEntry(was.id, (x) => ({ ...x, items: lines, warnings: cs.warnings.slice(0, 3), note }) as Entry)
+    dispatch({ type: 'untick', pending: pendingCount(cs) })
+  },
+  // The stepper: glides to an item's change (into a focus or another canvas), its marks lit.
+  goToItem(item: string) {
+    const chat = get().chat
+    const rt = rtOf(chat)
+    const i = (rt.base ?? rt.changes).items.find((x) => x.id === item)
+    const st = previewState()
+    setCurrent(item)
+    if (!i || !st) return
+    const go = goOf(i, st.ws)
+    if (go) void agentUi.show(go.id, { ...(go.plane ? { plane: go.plane } : {}), ...(go.canvas ? { canvas: go.canvas } : {}), ...(go.focus ? { focus: true } : {}) }).catch(() => {})
+  },
   accept: () => dispatch({ type: 'accept' }),
   discard: () => dispatch({ type: 'discard' }),
   undo: () => dispatch({ type: 'undo' }),
@@ -401,6 +507,7 @@ export const agentActions = {
 // Stops the current chat's turn, drops what it had pending and releases every lock (a workspace change, an unmount, a
 // new chat).
 function leave() {
+  closePreview()
   const chat = get().chat
   if (chat.wf.phase !== 'idle') dispatch({ type: 'reset' })
   rtOf(chat).abort?.abort()
@@ -410,4 +517,4 @@ function leave() {
 }
 
 // For dev checks and the screenshots: the store (dev builds only).
-if (import.meta.env.DEV) (window as unknown as { __agent: unknown }).__agent = { useAgent, agentActions }
+if (import.meta.env.DEV) (window as unknown as { __agent: unknown }).__agent = { useAgent, agentActions, previewState }

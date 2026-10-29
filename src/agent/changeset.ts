@@ -35,6 +35,9 @@ import { norm, q } from './read/text'
 import type { Ids } from './read/ids'
 import type { Applied, ApplyAs } from './contract'
 import { ID_KEYS } from './idKeys'
+import { entriesOf, type MatrixSetup } from '../model/matrix'
+import { colName, type Column, type TableSetup } from '../model/table'
+import { tableRows } from '../model/lens'
 
 // Handles are read under id keys, and `handle` itself (buildBatch's own default) is never resolved.
 const HANDLE_KEYS: ReadonlySet<string> = ID_KEYS
@@ -69,6 +72,8 @@ export type ChangeItem = {
   dependsOn: string[]
   // It takes something away; `why`: the agent's reason, shown beside it.
   delete: boolean
+  // The mark the preview gives it, the same as its things' marks: `+` makes, `−` takes away, `~` changes.
+  sign: '+' | '~' | '−'
   why?: string
 }
 
@@ -218,7 +223,7 @@ function whereOf(n: Named, kind: Change['kind'], item: Record<string, unknown>):
     case 'evidence':
     case 'competitorFeatures':
     case 'comparisons': {
-      const card = s('fromId') ?? s('cardId') ?? s('competitorId') ?? s('featureId')
+      const card = s('fromId') ?? s('nodeId') ?? s('cardId') ?? s('competitorId') ?? s('featureId')
       return pieceWhere(n, cardOf(n, card)?.pieceId)
     }
     case 'pieces': {
@@ -239,10 +244,14 @@ function whereOf(n: Named, kind: Change['kind'], item: Record<string, unknown>):
 const verb: Record<Change['change'], string> = { added: 'new', changed: 'changed', moved: 'moved', removed: 'deleted' }
 
 // One changed doc in words, in the workspace that has it (after, or before for a removal).
-function wordsOf(n: Named, ids: Ids | undefined, id: string, ch: Change, item: Record<string, unknown>): string | null {
+function wordsOf(n: Named, ids: Ids | undefined, id: string, ch: Change, item: Record<string, unknown>, nb?: Named): string | null {
   const sid = (kind: Parameters<Ids['short']>[0]) => (ids && ch.change !== 'removed' ? `${ids.short(kind, id)} ` : '')
   // Spots and sizes in words: "moved", "resized" (never bare x, y, w, h).
-  const said = [...new Set((ch.fields ?? []).filter((f) => !['updatedAt', 'createdAt'].includes(f)).map((f) => (f === 'x' || f === 'y' ? 'moved' : f === 'w' || f === 'h' ? 'resized' : f)))]
+  // In words: a link's two ends swapped "turned round", a canvas or plane by name of what it is, never a field's id.
+  const fs = (ch.fields ?? []).filter((f) => !['updatedAt', 'createdAt'].includes(f))
+  const turned = fs.includes('fromId') && fs.includes('toId')
+  const FIELD: Record<string, string> = { canvasId: 'to another canvas', pieceId: 'to another plane', col: 'column', fromType: '', toType: '', ...(turned ? { fromId: 'turned round', toId: '' } : {}) }
+  const said = [...new Set(fs.map((f) => (f === 'x' || f === 'y' ? 'moved' : f === 'w' || f === 'h' ? 'resized' : (FIELD[f] ?? f))).filter(Boolean))]
   const fields = ch.change === 'changed' && said.length ? `: ${said.slice(0, 5).join(', ')}` : ''
   const v = verb[ch.change]
   if (Object.values(CARD_COLLECTION).includes(ch.kind as never)) {
@@ -255,7 +264,7 @@ function wordsOf(n: Named, ids: Ids | undefined, id: string, ch: Change, item: R
       return `${ch.change === 'added' ? 'new link' : ch.change === 'removed' ? 'link removed' : 'link changed'} ${e.kind ?? ''}: ${cardName(n, e.fromId)} → ${cardName(n, e.toId)}${fields}`
     }
     case 'evidence':
-      return `${v} evidence on ${cardName(n, item.cardId as string)}: ${q(String(item.text ?? ''), 60)}`
+      return `${v} evidence on ${cardName(n, (item.nodeId ?? item.cardId) as string)}: ${q(String(item.text ?? ''), 60)}`
     case 'tasks':
       return `${v} task ${sid('task')}${q(String(item.title ?? ''), 50)}${fields}`
     case 'labels': {
@@ -264,13 +273,20 @@ function wordsOf(n: Named, ids: Ids | undefined, id: string, ch: Change, item: R
     }
     case 'pieces': {
       const p = n.d.pieces.get(id)
+      const setup = ch.change === 'changed' && nb && ch.was ? setupWords(ch.was as never, item as never, nb.ws, n.ws) : []
+      if (setup.length) return setup.join('; ')
       return `${v} ${p ? KIND_NAME[kindOfPiece(p)] : 'piece'} ${sid('piece')}${q(p ? n.d.pieceName(p) : String(item.name ?? ''), 50)}${fields}`
     }
     case 'cells': {
       const row = String(item.row ?? id.split('_')[1])
       const col = String(item.col ?? id.split('_')[2])
-      const nm = (x: string) => cardOf(n, x)?.title ?? x
-      return `${ch.change === 'removed' ? 'cell cleared' : 'cell'} ${q(nm(row), 30)} × ${q(nm(col), 30)}${item.value !== undefined ? ` = ${JSON.stringify(item.value)}` : ''}`
+      const piece = n.d.pieces.get(String(item.matrixId ?? id.split('_')[0]))
+      const table = piece?.kind === 'table' ? piece.table : undefined
+      // A table's rows and columns by name (a card's title, a typed row's name, a column's head), never their ids.
+      const rowName = (x: string) => cardOf(n, x)?.title ?? table?.rows.items.find((i) => i.id === x)?.name ?? piece?.matrix?.rows.items.find((i) => i.id === x)?.name ?? x
+      const colNm = (x: string) => (table ? (table.cols.find((c: Column) => c.id === x) ? colName(table.cols.find((c: Column) => c.id === x)!) : x) : (cardOf(n, x)?.title ?? piece?.matrix?.cols.items.find((i) => i.id === x)?.name ?? x))
+      const what = table ? 'table cell' : 'cell'
+      return `${ch.change === 'removed' ? `${what} cleared` : what} ${q(rowName(row), 30)} × ${q(colNm(col), 30)}${item.value !== undefined ? ` = ${JSON.stringify(item.value)}` : ''}`
     }
     case 'places': {
       const p = item as { planeId?: string; cardId?: string }
@@ -299,6 +315,46 @@ function writtenBy(plan: Plan, before: DocStore): { ids: string[]; made: string[
   return { ids, made: [...made].filter((x) => ids.includes(x) || Object.values(plan.ids).includes(x)) }
 }
 
+// The ops that make something (their items read `+`).
+const MAKES = /^(create_|link$|duplicate$|axis_add$|place_on$)/
+
+// Plain English for the ops' own labels: "arrange 1 things" → "arrange 1 thing", "resize a documents" → "resize a
+// documents list".
+const plainer = (line: string) => line.replace(/\b1 things\b/g, '1 thing').replace(/\ba documents\b(?! list)/g, 'a documents list')
+
+// A matrix's or table's setup change in words: the rows and columns that come or go (`+ column "Tourists"`, `− row
+// "…"`), a table's rules (`rule: type is feature or idea`), how many rows join or leave by them.
+function setupWords(was: { matrix?: MatrixSetup; table?: TableSetup }, now: { matrix?: MatrixSetup; table?: TableSetup }, wasWs: WorkspaceCtx, nowWs: WorkspaceCtx): string[] {
+  const out: string[] = []
+  const nameOfPlane = (v: string) => nowWs.pieces.find((p) => p.id === v)?.name ?? v
+  if (was.matrix && now.matrix) {
+    for (const which of ['rows', 'cols'] as const) {
+      const a = entriesOf(was.matrix[which], wasWs.cards)
+      const b = entriesOf(now.matrix[which], nowWs.cards)
+      const one = which === 'rows' ? 'row' : 'column'
+      for (const e of b) if (!a.some((x) => x.key === e.key)) out.push(`+ ${one} ${q(e.name || 'unnamed', 40)}`)
+      for (const e of a) if (!b.some((x) => x.key === e.key)) out.push(`− ${one} ${q(e.name || 'unnamed', 40)}`)
+    }
+  }
+  if (was.table && now.table) {
+    for (const c of now.table.cols) if (!was.table.cols.some((x) => x.id === c.id)) out.push(`+ column ${q(colName(c), 40)}`)
+    for (const c of was.table.cols) if (!now.table.cols.some((x) => x.id === c.id)) out.push(`− column ${q(colName(c), 40)}`)
+    for (const i of now.table.rows.items) if (!was.table.rows.items.some((x) => x.id === i.id)) out.push(`+ row ${q(i.name ?? nowWs.cards.find((c) => c.id === i.cardId)?.title ?? 'unnamed', 40)}`)
+    for (const i of was.table.rows.items) if (!now.table.rows.items.some((x) => x.id === i.id)) out.push(`− row ${q(i.name ?? wasWs.cards.find((c) => c.id === i.cardId)?.title ?? 'unnamed', 40)}`)
+    if (JSON.stringify(was.table.rows.rules) !== JSON.stringify(now.table.rows.rules)) {
+      const rules = now.table.rows.rules.map((r) => `${r.field} ${r.not ? 'is not' : 'is'} ${r.values.map((v) => (r.field === 'plane' ? nameOfPlane(v) : v)).join(' or ')}`)
+      out.push(rules.length ? `rule: ${rules.join(' and ')}` : 'rules: none (every card)')
+      const a = new Set(tableRows(was.table, wasWs.cards).map((r) => r.key))
+      const b = new Set(tableRows(now.table, nowWs.cards).map((r) => r.key))
+      const join = [...b].filter((k) => !a.has(k)).length
+      const leave = [...a].filter((k) => !b.has(k)).length
+      if (join) out.push(`${join} row${join === 1 ? '' : 's'} join`)
+      if (leave) out.push(`${leave} row${leave === 1 ? '' : 's'} leave`)
+    }
+  }
+  return out
+}
+
 // The order a doc's change is worth naming first: what the person thinks of (cards, text, tasks, pieces) before what
 // comes with it (places, spots, cells).
 const RANK: Partial<Record<string, number>> = { places: 5, pieceSpots: 5, cells: 3, edges: 2, evidence: 2 }
@@ -325,10 +381,12 @@ function itemsOf(groups: Group[], built: Built[], live: WorkspaceCtx, ids: Ids |
         .map(([id, ch]) => {
           const n = ch.change === 'removed' ? nb : na
           const item = (ch.change === 'removed' ? ch.was : itemIn(after, ch.kind, id)) as Record<string, unknown> | undefined
-          return item ? { words: wordsOf(n, ids, id, ch, { ...item, id }), where: whereOf(n, ch.kind, { ...item, id }) } : null
+          return item ? { words: wordsOf(n, ids, id, ch, { ...item, id }, nb), where: whereOf(n, ch.kind, { ...item, id }), kind: ch.kind, change: ch.change } : null
         })
-        .filter((x): x is { words: string | null; where: string } => !!x)
-      const words = parts.flatMap((p) => (p.words ? [p.words] : []))
+        .filter((x): x is { words: string | null; where: string; kind: Change['kind']; change: Change['change'] } => !!x)
+      // A card on another plane is said by its place ("… also on Bets · plane"), not by the planes its card now counts.
+      const placed = parts.some((p) => p.kind === 'places')
+      const words = parts.flatMap((p) => (p.words && !(placed && p.change === 'changed' && /: planes$/.test(p.words)) ? [p.words] : []))
       const del = DELETE_OPS.has(s.op) || plan.writes.some((w) => w.del && w.coll !== 'places' && w.coll !== 'pieceSpots')
       const was = keep.get(s.item)
       items.push({
@@ -337,8 +395,10 @@ function itemsOf(groups: Group[], built: Built[], live: WorkspaceCtx, ids: Ids |
         op: s.op,
         kind: REGISTRY.get(s.op)?.kind ?? 'any',
         label: plan.label,
-        line: `${plan.label}${words.length ? `: ${words.slice(0, 3).join('; ')}${words.length > 3 ? `; and ${words.length - 3} more` : ''}` : ' (nothing to change)'}`,
-        where: parts.find((p) => p.where)?.where ?? was?.where ?? 'the workspace',
+        line: plainer(`${plan.label}${words.length ? `: ${words.slice(0, 3).join('; ')}${words.length > 3 ? `; and ${words.length - 3} more` : ''}` : ' (nothing to change)'}`),
+        // A card placed on another plane is listed under the plane it lands on.
+        where: (parts.find((p) => p.kind === 'places' && p.change !== 'removed' && p.where) ?? parts.find((p) => p.where))?.where ?? was?.where ?? 'the workspace',
+        sign: del ? '−' : MAKES.test(s.op) || (parts.length > 0 && parts.every((p) => p.change === 'added')) ? '+' : '~',
         ids: wrote,
         made,
         dependsOn,

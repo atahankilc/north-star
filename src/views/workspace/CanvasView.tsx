@@ -5,6 +5,7 @@
 // and off from its console; in edit mode it takes the drag, it's selected, and Delete takes it away. Escape or a click on
 // empty space lets go of the selection. `0` (or the side nav's fit) frames everything, or in focus the plane's contents.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { previewOpen } from '../../agent/preview'
 import { flushSync } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
@@ -554,7 +555,7 @@ export function CanvasView() {
                 : []),
             ]
           : []),
-      ],
+      ].filter((i) => i.key !== 'comment' || !previewOpen()), // no comments while the agent's preview is open (S15)
     })
   }
   // What can be done with a document from its list's right-click (D-232).

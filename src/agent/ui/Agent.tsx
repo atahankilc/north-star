@@ -26,6 +26,7 @@ import { useAgentSettings } from './settings'
 import { firstAsks } from './suggest'
 import { agentUi } from '../ui'
 import { AgentGhost } from './AgentGhost'
+import { PreviewMarks } from './PreviewMarks'
 import styles from './Agent.module.css'
 
 const WIDTH_STORE = 'northstar.agent.width'
@@ -80,6 +81,7 @@ export function Agent() {
     <>
       <AnimatePresence>{mode === 'column' ? <Column key="column" /> : <Box key="box" />}</AnimatePresence>
       <AgentGhost />
+      <PreviewMarks />
     </>
   )
 }
@@ -303,7 +305,7 @@ function Column() {
             className={styles.input}
             rows={1}
             value={text}
-            placeholder={phase === 'previewing' ? '↵ applies · or tell it what to change…' : phase === 'asking' ? 'answer, or say go…' : `ask about ${ask}…`}
+            placeholder={phase === 'previewing' ? 'change something… (↵ on empty applies)' : phase === 'asking' ? 'answer, or say go…' : `ask about ${ask}…`}
             aria-label="Ask the agent"
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onInputKey}
@@ -620,33 +622,75 @@ function Answer({ text }: { text: string }) {
   )
 }
 
-// ---- The pending changes (S14's simple list; S15's preview replaces it)
+// ---- The preview (S15, agent.md §4.5): `01 CHANGES ──`, grouped by where (`Segments · plane: 4 new cards, 3 links`),
+// each change a row with its tick (off takes what needs it off too, with a short note), deletes struck with the agent's
+// reason, the stepper `‹ 3 / 9 ›` (←/→ or j/k while the preview has the keyboard) gliding to each change, and the foot
+// `[apply ↵] [discard esc]`; `> change something…` is the column's prompt below it.
+
+const NOUN: Record<string, string> = { card: 'card', link: 'link', text: 'text', task: 'task', piece: 'piece', canvas: 'canvas', place: 'place', evidence: 'evidence', feature: 'feature', package: 'package', lens: 'cell', matrix: 'matrix', table: 'table', deck: 'deck', timeline: 'timeline' }
+const verbOf = (i: ChangeLine) => (i.sign === '−' ? 'deleted' : i.sign === '+' ? 'new' : 'changed')
+// `4 new cards, 3 new links, 1 changed task`, in the order first met.
+function counted(items: ChangeLine[]): string {
+  const n = new Map<string, number>()
+  for (const i of items) {
+    const noun = i.op === 'axis_add' || i.op === 'axis_remove' ? 'head' : i.op === 'update_cell' ? 'cell' : i.op === 'move_task' ? 'task' : (NOUN[i.kind] ?? 'change')
+    const k = i.op === 'arrange' ? 'move' : i.op === 'delete' ? 'deletion' : i.op === 'resize' ? 'resize' : i.op === 'rename' ? 'rename' : `${verbOf(i)} ${noun}`
+    n.set(k, (n.get(k) ?? 0) + 1)
+  }
+  return [...n].map(([k, c]) => (c === 1 ? `1 ${k}` : `${c} ${k.replace(/(?<!s)$/, k.endsWith('evidence') ? '' : 's')}`)).join(', ')
+}
 
 function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
-  const groups = byWhereLines(entry.items)
   const live = entry.state === 'pending'
+  const items = live ? entry.items : entry.items.filter((i) => i.on)
+  const groups = byWhereLines(items)
+  const on = useMemo(() => entry.items.filter((i) => i.on), [entry.items])
+  const [at, setAt] = useState(-1)
   const apply = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     if (live) apply.current?.focus({ preventScroll: true })
   }, [live])
+  // An item unticked under the stepper: it stays on the same number (or the last one).
+  useEffect(() => {
+    if (at >= on.length) setAt(on.length - 1)
+  }, [on.length, at])
+  const go = (k: number) => {
+    if (!on.length) return
+    const n = (k + on.length) % on.length
+    setAt(n)
+    agentActions.goToItem(on[n].id)
+  }
+  const onKey = (e: ReactKeyboardEvent<HTMLElement>) => {
+    if (!live || isTyping(e.target)) return
+    if (e.key === 'ArrowRight' || e.key === 'j') (e.preventDefault(), go(at + 1))
+    else if (e.key === 'ArrowLeft' || e.key === 'k') (e.preventDefault(), go(at < 0 ? on.length - 1 : at - 1))
+  }
+  const current = live && at >= 0 ? on[at]?.id : undefined
   return (
-    <section className={styles.changes} data-state={entry.state}>
+    <section className={styles.changes} data-state={entry.state} onKeyDown={onKey} aria-label="The changes">
       <h3 className={styles.rule}>
-        <span className={styles.n}>{String(entry.items.length).padStart(2, '0')}</span>
-        <span>{entry.items.length === 1 ? 'change' : 'changes'}</span>
+        <span className={styles.n}>01</span>
+        <span>{live ? 'changes' : on.length === 1 ? 'change' : 'changes'}</span>
         <span className={styles.ruleLine} data-tone="magenta" aria-hidden />
-        <span className={styles.changesState}>{STATE_WORDS[entry.state]}</span>
+        <span className={styles.changesState}>
+          {live && on.length !== entry.items.length ? `${on.length} of ${entry.items.length} · ` : `${on.length} · `}
+          {STATE_WORDS[entry.state]}
+        </span>
       </h3>
-      {groups.map(([where, items]) => (
+      {groups.map(([where, list]) => (
         <div key={where} className={styles.where}>
-          <div className={styles.whereName}>{where}</div>
+          <div className={styles.whereName}>
+            {where}
+            <span className={styles.whereCount}>: {counted(list.filter((i) => i.on))}</span>
+          </div>
           <ul className={styles.items}>
-            {items.map((i) => (
-              <ChangeRow key={i.id} i={i} />
+            {list.map((i) => (
+              <ChangeRow key={i.id} i={i} live={live} current={i.id === current} onGo={() => go(on.findIndex((x) => x.id === i.id))} />
             ))}
           </ul>
         </div>
       ))}
+      {entry.note && <p className={styles.changesNote}>{entry.note}</p>}
       {entry.warnings.length > 0 && (
         <ul className={styles.warnings}>
           {entry.warnings.map((w, j) => (
@@ -656,17 +700,44 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
       )}
       {entry.said && <p className={styles.note} data-tone="error">{entry.said}</p>}
       {live && (
-        <div className={styles.changesFoot}>
-          <button ref={apply} className={styles.action} data-tone="primary" onClick={() => agentActions.accept()}>
-            apply ↵
-          </button>
-          <button className={styles.action} data-tone="danger" onClick={() => agentActions.discard()}>
-            discard esc
-          </button>
-          <span className={styles.changesHint}>one undo step · or type what to change</span>
-        </div>
+        <>
+          <div className={styles.stepper}>
+            <button className={styles.stepBtn} onClick={() => go(at < 0 ? on.length - 1 : at - 1)} disabled={!on.length} aria-label="The change before">
+              ‹
+            </button>
+            <span className={styles.stepAt} aria-live="polite">
+              <span className={styles.n}>{at >= 0 ? at + 1 : '–'}</span> / {on.length}
+            </span>
+            <button className={styles.stepBtn} onClick={() => go(at + 1)} disabled={!on.length} aria-label="The next change">
+              ›
+            </button>
+            <span className={styles.changesHint}>{at >= 0 && on[at] ? on[at].where : '← → goes to each one'}</span>
+          </div>
+          <div className={styles.changesFoot}>
+            <button ref={apply} className={styles.action} data-tone="primary" onClick={() => agentActions.accept()}>
+              apply ↵
+            </button>
+            <button className={styles.action} data-tone="danger" onClick={() => agentActions.discard()}>
+              discard esc
+            </button>
+            <span className={styles.changesHint}>{on.length ? 'one undo step · the app waits till then' : 'nothing ticked: apply closes it'}</span>
+          </div>
+        </>
       )}
     </section>
+  )
+}
+
+// A removed item: only its verb struck (`delete a card`), what it names left readable.
+function ItemText({ line, struck }: { line: string; struck: boolean }) {
+  if (!struck) return <span className={styles.itemText}>{line}</span>
+  const at = line.indexOf(': ')
+  if (at < 0) return <span className={styles.itemText} data-struck>{line}</span>
+  return (
+    <span className={styles.itemText}>
+      <span data-struck>{line.slice(0, at)}</span>
+      {line.slice(at)}
+    </span>
   )
 }
 
@@ -679,15 +750,29 @@ const STATE_WORDS: Record<Extract<Entry, { kind: 'changes' }>['state'], string> 
   revising: 'being revised…',
 }
 
-function ChangeRow({ i }: { i: ChangeLine }) {
+function ChangeRow({ i, live, current, onGo }: { i: ChangeLine; live: boolean; current: boolean; onGo: () => void }) {
   return (
-    <li className={styles.item} data-delete={i.delete || undefined}>
+    <li className={styles.item} data-delete={i.delete || undefined} data-off={!i.on || undefined} data-current={current || undefined}>
+      {live && (
+        <button
+          className={styles.tick}
+          role="checkbox"
+          aria-checked={i.on}
+          aria-label={`${i.on ? 'untick' : 'tick'}: ${i.line}`}
+          title={i.needs ? `off: it needs ${i.needs.join(', ')}` : i.on ? 'untick: leave this change out' : 'tick: put it back'}
+          onClick={() => agentActions.tick(i.id, !i.on)}
+          disabled={!i.on && !!i.needs}
+        >
+          [{i.on ? '×' : ' '}]
+        </button>
+      )}
       <span className={styles.itemMark} aria-hidden>
-        {i.delete ? '−' : '+'}
+        {i.sign}
       </span>
-      <span className={styles.itemLine}>
-        {i.line}
+      <span className={styles.itemLine} onClick={live && i.on ? onGo : undefined} data-go={(live && i.on) || undefined}>
+        <ItemText line={i.line} struck={i.delete} />
         {i.why && <span className={styles.why}> — {i.why}</span>}
+        {i.needs && <span className={styles.needs}> · off: it needs {(i.needsWords ?? i.needs).join('; ')}</span>}
       </span>
     </li>
   )
@@ -708,7 +793,7 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
       </p>
     )
   }
-  const what = [`${entry.count} change${entry.count === 1 ? '' : 's'}`, ...entry.wheres.slice(0, 3), ...(r.notDone.length ? [`${r.notDone.length} not done`] : [])]
+  const what = [`${entry.count} change${entry.count === 1 ? '' : 's'}`, ...entry.wheres.slice(0, 3), ...(r.notDone.length ? [`${r.notDone.length} left out`] : [])]
   return (
     <div className={styles.status} data-undone={shown.undone || undefined}>
       <span className={styles.statusMark} aria-hidden>

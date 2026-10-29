@@ -117,6 +117,70 @@ closed and open.</p>
 <p class="cap">Reduced motion was checked in the browser: the column appears at once (no cell build), spinners hold still as <code>…</code>, the caret
 doesn't blink, the marks don't glide. Keyboard: what had focus before the agent opened gets it back on ⌘J, Esc or <code>[×]</code>; after
 <code>[stop]</code> the keyboard is back in the prompt; <code>/</code> does nothing while a list or menu is open.</p>
+
+<h1>S15 · the preview (agent.md §4.5)</h1>
+<p class="cap">The real app drawing the projected workspace (the store's overlay), with one layer of marks: added cyan <code>+</code> (built cell by cell), changed lit yellow (<code>was → now</code> on hover), removed faint, struck, magenta <code>−</code> (the agent's reason on hover), moved a dashed ghost and a line. Each batch comes from the dev stub (<code>?agentStub=1</code>, <code>preview demo: &lt;kind&gt;</code>) on the Pazar fixture; nothing was written (each was discarded) except the flow. Documents: skipped, no op writes documents yet.</p>
+
+<h2><b>15</b> cards on a plane</h2>
+<p class="cap">In <i>Segments</i>' focus: two new cards built cell by cell with a cyan <code>+</code>; the problem whose status and tags change lit yellow (<code>~ tags, status, evidence +</code>; hover: <code>status: testing → validated</code>); a card moved by arrange or by the new package with a dashed ghost where it was and a line to it; the deleted customer faint and struck with a magenta <code>− deleted</code> (hover: the agent's reason). The stepper is on item 1.</p>
+<div class="pair"><figure><img src="S15-01-cards-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-01-cards-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>16</b> links</h2>
+<p class="cap">Links are drawn by the mark layer between their two cards, cut at the cards' edges (never over a title): two new ones cyan <code>+</code>, the removed one dashed magenta <code>− deleted</code>, the one turned round yellow <code>⇄ turned round</code>. Each chip goes in a gap along its line, or a step off it into the gap between rows, never on a card. Links whose kind the plane hides (<code>for</code>/<code>relates</code>, D-128) are drawn too.</p>
+<div class="pair"><figure><img src="S15-02-links-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-02-links-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>17</b> text, sections, stickies</h2>
+<p class="cap">A new H2 and sticky note, a new section drawn round three problems (its frame is the app's own, marked <code>+</code>), a sticky's words changed (<code>~ text</code>), a second sticky deleted (faint, struck).</p>
+<div class="pair"><figure><img src="S15-03-text-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-03-text-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>18</b> matrix</h2>
+<p class="cap">The stepper goes into the matrix's focus: a row brought back and a typed column (<i>Tourists</i>) as new heads, three cells lit, the row taken out still drawn, struck and faint. Small things (heads, cells, rows, tasks, bars) get one glyph (<code>+ ~ −</code>) inside their own top-right corner; the words are on hover. The panel says what changed: <code>+ row "…"</code>, <code>+ column "Tourists"</code>, <code>take out a row: − row "…"</code>.</p>
+<div class="pair"><figure><img src="S15-04-matrix-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-04-matrix-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>19</b> table</h2>
+<p class="cap">On the <i>Build</i> canvas, in the table's focus: a new column head (<code>owner</code>), and the rows that join by the new rule lit, with one chip for all of them (<code>+ 31 rows join</code>) inside the first row's box. Two table cells are lit. The panel reads <code>+ column "owner"</code>, <code>+ row "Stall onboarding kit"</code>, <code>rule: type is feature or idea; 30 rows join</code>, <code>table cell "Bread chat" × "cost" = 1200</code>. <em>The group chip still covers the end of a long row name.</em></p>
+<div class="pair"><figure><img src="S15-05-table-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-05-table-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>20</b> deck of tasks</h2>
+<p class="cap">In the deck's focus: two new tasks (<code>+</code>), one moved to <i>doing</i> (<code>↦ doing</code>, a ghost where it was drawn when the preview opened), one with its due day and priority changed, one deleted with the reason.</p>
+<div class="pair"><figure><img src="S15-06-deck-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-06-deck-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>21</b> timeline</h2>
+<p class="cap">In the timeline's focus: three tasks with new days lit (<code>~ due, start</code>), the one that had no day shows a dashed ghost in the no-day tray and a line to its new bar; a new bar <i>Pilot week two</i> <code>+</code>. A ghost of an old span shows only when that bar was on screen as the preview opened.</p>
+<div class="pair"><figure><img src="S15-07-timeline-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-07-timeline-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>22</b> pieces</h2>
+<p class="cap">The stepper on item 2: the deck moved under the documents list (<code>↦ moved</code>, a dashed ghost where it was and a line to it), the list resized (<code>~ size</code>), the new table stuck to <i>Segments</i> marked <code>+</code>. The panel reads <code>arrange 1 thing</code>, <code>resize a documents list</code>. <em>Not ours: the new table lands over the next plane (create_piece's placement).</em></p>
+<div class="pair"><figure><img src="S15-08-pieces-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-08-pieces-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>23</b> canvases</h2>
+<p class="cap">The breadcrumb's canvas prompt lists the new canvas <i>Launch</i> with a <code>+</code> (the marks sit over the menus now). On <i>Discovery</i>, the deck going to <i>Launch</i> leaves a dashed box where it was (<code>↦ to Launch</code>). The stepper's item 2 goes to <i>Launch</i>, a canvas only the preview has (the layout accepts it while the preview is open), where the deck shows with <code>↦ from Discovery</code>. <em>The breadcrumb's canvas name is empty on the new canvas.</em></p>
+<div class="pair"><figure><img src="S15-09-canvases-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-09-canvases-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S15-09b-canvases-new-dark.png" alt=""><figcaption>dark, on Launch</figcaption></figure><figure><img src="S15-09b-canvases-new-light.png" alt=""><figcaption>light, on Launch</figcaption></figure></div>
+
+<h2><b>24</b> places (one card on several planes)</h2>
+<p class="cap">Two customers placed on <i>Bets</i> too. On <i>Bets</i> each gets one chip, <code>+ ⧉ also here</code> (the planes count is in its hover); on <i>Segments</i> the chip reads <code>~ ⧉ 1 → 2</code>. The change is listed under <i>Bets · plane</i>, and the stepper names that plane.</p>
+<div class="pair"><figure><img src="S15-10-places-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-10-places-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>25</b> the flow: the change list</h2>
+<p class="cap"><code>01 CHANGES ──</code> grouped by where (<code>SEGMENTS · PLANE: 2 new cards, 1 new link, …</code>), each row <code>[×]</code> ticked, <code>+ ~ −</code> marks, the delete struck with its reason, the stepper <code>‹ – / 9 ›</code>, <code>[apply ↵] [discard esc]</code>, and the prompt <code>&gt; change something…</code> under it.</p>
+<div class="pair"><figure><img src="S15-20-flow-list-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-20-flow-list-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S15-20-flow-list-dark-reduced.png" alt=""><figcaption>dark, reduced motion (no glide, no cell build)</figcaption></figure></div>
+
+<h2><b>26</b> the flow: stepper on item 3</h2>
+<p class="cap"><code>›</code> three times (or → / j): the camera glides to each change (into the plane's focus), the row gets a cyan bar and its marks stand further out.</p>
+<div class="pair"><figure><img src="S15-21-flow-step3-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-21-flow-step3-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S15-21-flow-step3-dark-reduced.png" alt=""><figcaption>dark, reduced motion (no glide, no cell build)</figcaption></figure></div>
+
+<h2><b>27</b> the flow: untick</h2>
+<p class="cap">The new customer unticked: the link that needs it comes off too, said in the items' words (<code>· off: it needs new customer c150 "Weekend flower sellers"</code>, and a note under the list), <code>7 of 9</code>. The preview is worked out again (the customer and the link are gone from the plane); a tick puts both back. On removed rows only the verb is struck.</p>
+<div class="pair"><figure><img src="S15-22-flow-untick-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-22-flow-untick-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S15-22-flow-untick-dark-reduced.png" alt=""><figcaption>dark, reduced motion (no glide, no cell build)</figcaption></figure></div>
+
+<h2><b>28</b> the flow: applied</h2>
+<p class="cap"><code>[apply ↵]</code>: one undo step as the agent; the marks go, the plane shows exactly what was previewed (now real), the status line has <code>[undo]</code>.</p>
+<div class="pair"><figure><img src="S15-23-flow-applied-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-23-flow-applied-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S15-23-flow-applied-dark-reduced.png" alt=""><figcaption>dark, reduced motion (no glide, no cell build)</figcaption></figure></div>
 </main>
 </body>
 </html>

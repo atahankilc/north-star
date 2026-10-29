@@ -1,0 +1,264 @@
+/* The preview's marks (S15, D-312; agent.md §4.5 point 4): one look for every kind. Added cyan `+`, changed lit yellow
+   (`was …` on hover), removed magenta `−` struck and faint, moved a dashed ghost and a line. The L's are the Marks'
+   (D-265), their sizes the tokens' tiers. Tokens only; light values come from [data-theme='light']. */
+
+.layer {
+  position: fixed;
+  /* Over the app's menus too (the canvas prompt, a menu layer at z 60, lists a new canvas): a mark is drawn only on what's really seen
+     (PreviewMarks' five-point check), so nothing over a covered thing; clipped to the app's box, never on the column. */
+  z-index: 61;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lines {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.mark {
+  position: absolute;
+  --c: var(--accent-cyan);
+  --len: var(--mark-m-len);
+  --th: var(--mark-m-th);
+  --out: var(--mark-m-sel);
+}
+
+.mark[data-tier='s'] {
+  --len: var(--mark-s-len);
+  --th: var(--mark-s-th);
+  --out: var(--mark-s-sel);
+}
+
+.mark[data-tier='l'] {
+  --len: var(--mark-l-len);
+  --th: var(--mark-l-th);
+  --out: var(--mark-l-sel);
+}
+
+.mark[data-change='changed'] {
+  --c: var(--accent-yellow);
+  /* Lit: a thin wash of the colour over its face, never over its text's contrast (8 %). */
+  background: color-mix(in srgb, var(--accent-yellow) 8%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--accent-yellow) 55%, transparent);
+  outline-offset: var(--out);
+}
+
+.mark[data-change='removed'] {
+  --c: var(--accent-magenta);
+}
+
+.mark[data-change='moved'] {
+  --c: var(--accent-cyan);
+}
+
+/* A thing gone to another canvas: only a dashed box where it was. */
+.mark[data-change='away'] {
+  --c: var(--accent-cyan);
+  border: 1px dashed color-mix(in srgb, var(--accent-cyan) 60%, transparent);
+}
+
+.mark[data-change='away'] i {
+  display: none;
+}
+
+.mark i {
+  position: absolute;
+  width: var(--len);
+  height: var(--len);
+  border: 0 solid var(--c);
+}
+
+.mark i:nth-child(1) {
+  top: calc(-1 * var(--out) - var(--th));
+  left: calc(-1 * var(--out) - var(--th));
+  border-width: var(--th) 0 0 var(--th);
+}
+
+.mark i:nth-child(2) {
+  top: calc(-1 * var(--out) - var(--th));
+  right: calc(-1 * var(--out) - var(--th));
+  border-width: var(--th) var(--th) 0 0;
+}
+
+.mark i:nth-child(3) {
+  bottom: calc(-1 * var(--out) - var(--th));
+  right: calc(-1 * var(--out) - var(--th));
+  border-width: 0 var(--th) var(--th) 0;
+}
+
+.mark i:nth-child(4) {
+  bottom: calc(-1 * var(--out) - var(--th));
+  left: calc(-1 * var(--out) - var(--th));
+  border-width: 0 0 var(--th) var(--th);
+}
+
+/* The stepper's item: its L's further out and thicker. */
+.mark[data-current] {
+  --th: calc(var(--mark-m-th) + 1px);
+  --out: var(--mark-m-hover);
+}
+
+.mark[data-current][data-tier='s'] {
+  --out: var(--mark-s-hover);
+}
+
+.mark[data-current][data-tier='l'] {
+  --out: var(--mark-l-hover);
+}
+
+/* Struck: one magenta line through it, corner to corner of its middle band. */
+.strike {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0;
+  border-top: 2px solid var(--accent-magenta);
+}
+
+/* The chips, placed by PreviewMarks (outside the top edge at the right end, stacked up when two would meet): the
+   page's colour with a band in the mark's, mono. */
+.tag,
+.badge,
+.linkTag {
+  position: absolute;
+  --c: var(--accent-cyan);
+  background: var(--bg);
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.tag[data-change='changed'],
+.badge[data-change='changed'],
+.linkTag[data-change='changed'],
+.linkTag[data-change='moved'] {
+  --c: var(--accent-yellow);
+}
+
+.tag[data-change='removed'],
+.badge[data-change='removed'],
+.linkTag[data-change='removed'] {
+  --c: var(--accent-magenta);
+}
+
+.tag {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 280px;
+  height: 17px;
+  padding: 0 var(--space-1) 0 0;
+  border: 1px solid var(--c);
+  line-height: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag::before {
+  content: '';
+  align-self: stretch;
+  flex: none;
+  width: 6px;
+  background: var(--c);
+}
+
+/* A small thing's glyph, inside its own top-right corner (its words on hover). */
+.badge {
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  background: var(--c);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.tag[data-current],
+.linkTag[data-current] {
+  box-shadow: 0 0 0 1px var(--c);
+}
+
+/* Where it was: dashed and faint. */
+.ghost {
+  position: absolute;
+  border: 1px dashed color-mix(in srgb, var(--accent-cyan) 55%, transparent);
+  background: var(--wash-cyan);
+}
+
+.trail {
+  stroke: var(--accent-cyan);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  opacity: 0.7;
+}
+
+/* A link: its line traced over, cyan new, magenta (dashed) removed, yellow changed. */
+.link {
+  stroke: var(--accent-cyan);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.link[data-change='removed'] {
+  stroke: var(--accent-magenta);
+  stroke-dasharray: 6 5;
+}
+
+.link[data-change='changed'],
+.link[data-change='moved'] {
+  stroke: var(--accent-yellow);
+}
+
+.link[data-current] {
+  stroke-width: 5;
+}
+
+.linkTag {
+  height: 17px;
+  padding: 0 4px;
+  border: 1px solid var(--c);
+  line-height: 15px;
+}
+
+/* `was …` on hover: a small terminal box by the pointer. */
+.was {
+  position: absolute;
+  max-width: 300px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  background: var(--menu);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.was p {
+  margin: 0;
+}
+
+.wasHead {
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+}
+
+.why {
+  color: var(--fg-strong);
+}
+
+.wasMark {
+  color: var(--accent-magenta);
+}
+
+/* On the elements themselves (set once per element while the preview is open): removed ones faint. */
+:global([data-preview='removed']) {
+  opacity: 0.4;
+}

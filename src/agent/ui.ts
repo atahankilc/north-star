@@ -14,8 +14,8 @@
 // Each call is async (it waits for the view to get there), queued behind the one before (one at a time, a failure not
 // stopping the next), and counted by agentDriving (driving.ts) from being asked until half a second after it settles,
 // for onboarding. Dev only: `window.__agentUi` holds the facade once this module is loaded.
-import { getWs } from '../state/wsStore'
-import { useCanvasView } from '../state/canvasView'
+import { getRealWs, getWs } from '../state/wsStore'
+import { glide, useCanvasView } from '../state/canvasView'
 import { canvasParams } from '../app/paths'
 import { clearFound, findGo } from '../views/workspace/find'
 import { goToCard } from '../views/workspace/CardPanel'
@@ -27,7 +27,7 @@ import { labelBox } from '../model/labelBox'
 import { canvasOf, MAIN } from '../model/canvases'
 import { piecesShown } from '../model/textPlace'
 import { cardsOn } from '../model/placement'
-import { isOnPlane } from '../model/cards'
+import { CARD, isOnPlane } from '../model/cards'
 import { kindOfPiece, sticks } from '../model/pieces'
 import type { WorkspaceCtx } from '../state/wsStore'
 import { agentDriving, queued } from './driving'
@@ -273,6 +273,58 @@ async function showBesideNow(id: string) {
   await until(() => (params().get('beside') ?? '').split(',').includes(id) && useCanvasView.getState().beside > 0, `${id} beside ${host}`)
 }
 
+// ---- Show (the preview's stepper, S15): goes to a thing without picking it (no selection to send to others, no panel)
+
+// `plane`: a card on that plane (a place the preview adds); `canvas`: a piece on that canvas (a spot it adds).
+async function showNow(id: string, o: { plane?: string; canvas?: string; focus?: boolean } = {}) {
+  const w = ws()
+  if (o.focus && pieceOf(id)) {
+    const c = canvasOfPiece(id)
+    if (c !== w.canvas) await toCanvas(c)
+    return focusOn(id)
+  }
+  // A task: into its deck's focus, not picked (picking opens its panel and is sent to others).
+  const task = w.tasks.find((t) => t.id === id)
+  if (task && pieceOf(task.pieceId)) {
+    const c = canvasOfPiece(task.pieceId)
+    if (c !== w.canvas) await toCanvas(c)
+    return focusOn(task.pieceId)
+  }
+  const card = w.cards.find((c) => c.id === id)
+  if (card) {
+    const f = focusNow()
+    const plane = o.plane ?? (f && isOnPlane(card, f) ? f : card.pieceId)
+    await focusOn(plane)
+    const shown = cardsOn(ws().cards, ws().places, plane).find((c) => c.id === id) ?? card
+    const { planeCam: v, size, beside, split } = useCanvasView.getState()
+    if (!v) return
+    const area = beside ? Math.round(size.w * split) : size.w
+    const b = { x: shown.x, y: shown.y, w: CARD.w, h: CARD.h }
+    const [sx0, sy0] = [v.ox + b.x * v.zoom, v.oy + b.y * v.zoom]
+    if (sx0 >= 48 && sx0 + b.w * v.zoom <= area - 48 && sy0 >= 56 && sy0 + b.h * v.zoom <= size.h - 56) return
+    glide(v, { ...v, ox: area / 2 - (b.x + b.w / 2) * v.zoom, oy: size.h / 2 - (b.y + b.h / 2) * v.zoom }, 420, (to) => useCanvasView.setState({ planeCam: to }))
+    return
+  }
+  const piece = pieceOf(id)
+  if (piece && o.canvas) {
+    if (o.canvas !== ws().canvas) await toCanvas(o.canvas)
+    else await focusOn(null)
+    const p = shownHere(id) ?? piece
+    findGo({ kind: 'space', space: CANVAS, k: 0, place: placeOf(id, CANVAS, { x: p.x, y: p.y, w: p.w, h: p.h }, true, p.name ?? '') })
+    await until(() => !focusNow(), 'the canvas')
+    return
+  }
+  return goToNow(id)
+}
+
+// After the preview closes: off a canvas only the preview had (`?canvas=` of it), back to the first.
+export function leaveGoneCanvas() {
+  const c = params().get('canvas')
+  const real = getRealWs()
+  if (!c || !real || c === MAIN || real.canvases.some((x) => x.id === c)) return
+  push(canvasParams(MAIN))
+}
+
 // ---- What's on screen
 
 function currentView(): View {
@@ -297,13 +349,19 @@ function currentView(): View {
 
 // ---- The facade
 
-export const goTo = (id: string) => queued(() => goToNow(id))
-export const focus = (planeId: string | null) => queued(() => focusOn(planeId))
-export const select = (ids: string[]) => queued(() => selectNow(ids))
-export const openPanel = (id: string) => queued(() => openPanelNow(id))
-export const showBeside = (pieceId: string) => queued(() => showBesideNow(pieceId))
+// Refused while the hazard confirm is open (a delete waiting for its answer): moving the view under it would hide what
+// it asks about. The preview's lock doesn't stop the facade: it only moves the view, and the stepper uses it.
+const confirmOpen = () => typeof document !== 'undefined' && !!document.querySelector('[role="alertdialog"]')
+const guard = <T>(fn: () => Promise<T>) => () => (confirmOpen() ? Promise.reject(new Error('agent ui: a confirm is open: answer it first')) : fn())
+
+export const goTo = (id: string) => queued(guard(() => goToNow(id)))
+export const focus = (planeId: string | null) => queued(guard(() => focusOn(planeId)))
+export const select = (ids: string[]) => queued(guard(() => selectNow(ids)))
+export const openPanel = (id: string) => queued(guard(() => openPanelNow(id)))
+export const showBeside = (pieceId: string) => queued(guard(() => showBesideNow(pieceId)))
+export const show = (id: string, o: { plane?: string; canvas?: string; focus?: boolean } = {}) => queued(guard(() => showNow(id, o)))
 export { currentView }
 
-export const agentUi = { goTo, focus, select, openPanel, showBeside, currentView, agentDriving }
+export const agentUi = { goTo, focus, select, openPanel, showBeside, show, currentView, agentDriving }
 
 if (import.meta.env.DEV) (window as unknown as { __agentUi: typeof agentUi }).__agentUi = agentUi

@@ -3,7 +3,7 @@
 import { deleteField, doc, writeBatch, type DocumentReference } from 'firebase/firestore'
 import { db, firebase } from '../data/firebase'
 import { tracked, useHistory, writable } from '../data/history'
-import { getWs, subscribeWs, type WorkspaceCtx } from '../state/wsStore'
+import { getRealWs, subscribeWs, type WorkspaceCtx } from '../state/wsStore'
 import { validate } from './validate'
 import { projectLoose } from './project'
 import { docAt, toDocs, type DocStore } from './docs'
@@ -61,7 +61,7 @@ let count = 0
 // doc written, its key unique (so it never merges with typing or another apply). Resolves once the step is recorded
 // and the writes are issued locally (the listeners already show them); `written` waits for the server.
 export async function apply(wid: string, plans: Plan[], opts: ApplyOpts = {}): Promise<Applied> {
-  const ws = opts.ws ?? getWs()
+  const ws = opts.ws ?? getRealWs()
   if (!ws || ws.wid !== wid) throw new Error(`apply: no snapshot of workspace ${wid}`)
   const verdict = validate(plans, ws, opts.by ?? signedIn(ws))
   if (!verdict.ok) throw new OpsRefused(verdict.errors)
@@ -137,10 +137,11 @@ export async function apply(wid: string, plans: Plan[], opts: ApplyOpts = {}): P
 // ---- The UI's writes through ops (S4): data/ functions build plans with these and apply them, keeping their old
 // signatures, labels, undo keys and toasts.
 
-// The workspace `wid` as the listeners last gave it (getWs()), null when another one (or none) is shown. The one seam
-// for "the workspace as it is now": the agent's ctx and S15's preview read this, never the UI's overlay below.
+// The workspace `wid` as the listeners last gave it (getRealWs(): never the agent's preview, which overlays the store
+// while it's open, S15), null when another one (or none) is shown. The one seam for "the workspace as it is now": the
+// agent's ctx and S15's preview read this, never the UI's overlay below.
 export function freshWs(wid: string): WorkspaceCtx | null {
-  const live = getWs()
+  const live = getRealWs()
   return live && live.wid === wid ? live : null
 }
 
@@ -211,7 +212,7 @@ function retire(wid: string) {
 
 function watch() {
   unwatch ??= subscribeWs(() => {
-    const live = getWs()
+    const live = getRealWs()
     if (live) retire(live.wid)
     else forgetRecent()
   })

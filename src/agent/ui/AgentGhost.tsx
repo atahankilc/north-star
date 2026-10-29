@@ -53,7 +53,9 @@ export function AgentGhost() {
     return () => clearTimeout(t)
   }, [running, touch])
 
-  if (!touch || !at) return null
+  // The preview's own marks say where things change; the agent's look-marks would only cover them.
+  const previewing = useAgent((s) => s.chat.wf.phase === 'previewing')
+  if (!touch || !at || previewing) return null
   return (
     <div className={styles.ghost} style={{ left: at.x, top: at.y, width: at.w, height: at.h }} data-kind={touch.kind} aria-hidden>
       <i />

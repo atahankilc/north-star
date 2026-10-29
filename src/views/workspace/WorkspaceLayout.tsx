@@ -1,6 +1,6 @@
 // /workspaces/:wid: loads one workspace and its canvas (D-036, D-174). There are no pages: the old views are archived
 // (src/archive/, D-177) and come back as pieces on the canvas.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { canvasPath, WORKSPACES } from '../../app/paths'
 import { useAuth } from '../../data/auth'
@@ -37,6 +37,7 @@ import { PeopleHere } from '../../ui/PeopleHere'
 import { Note, Row, Section, type WorkspacePage } from '../../ui/Settings'
 import { Toast } from '../../ui/Toast'
 import { CanvasView } from './CanvasView'
+import { previewCanvasName, previewHasCanvas, subscribePreview } from '../../agent/preview'
 import { useWorkspaceStore, WorkspaceContext, type WorkspaceCtx } from './context'
 import { PeopleSettings } from './PeopleSettings'
 import { SideNav } from './SideNav'
@@ -71,9 +72,11 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   const focused = focusId ? data.pieces.find((p) => p.id === focusId) : undefined
   // The canvas (D-302): the focused piece's, else `?canvas=` when it's one of them, else the first.
   const asked = params.get('canvas')
+  // A canvas the agent's preview adds can be shown while the preview is open (S15); drawn again when that changes.
+  const previewCanvas = useSyncExternalStore(subscribePreview, () => (asked ? previewHasCanvas(asked) : false))
   // A piece on the canvas asked for through a spot (D-302's session 3) stays on it.
   const sharedHere = !!focused && !!asked && data.spots.some((s) => s.pieceId === focused.id && s.canvasId === asked)
-  const canvas = focused && !sharedHere ? canvasOf(focused) : asked && (isLoading || data.canvases.some((c) => c.id === asked)) ? asked : MAIN
+  const canvas = focused && !sharedHere ? canvasOf(focused) : asked && (isLoading || data.canvases.some((c) => c.id === asked) || previewCanvas) ? asked : MAIN
   const shown = useShownCanvas(wid, canvas)
   const ctx = useMemo<WorkspaceCtx>(() => ({ ...data, wid, workspace, canvas: shown }), [data, wid, workspace, shown])
   const store = useWorkspaceStore(ctx)
@@ -96,7 +99,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   useEditKeys(wid)
   // With one canvas the workspace's name opens the canvases (D-302); with more, the canvas's own crumb does.
   const several = data.canvases.length > 1
-  const canvasName = data.canvases.find((c) => c.id === shown)?.name ?? ''
+  const canvasName = data.canvases.find((c) => c.id === shown)?.name ?? previewCanvasName(shown) ?? ''
 
   return (
     <WorkspaceContext.Provider value={store}>

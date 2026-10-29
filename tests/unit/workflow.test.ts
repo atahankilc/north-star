@@ -45,7 +45,9 @@ describe('the workflow', () => {
     const p = run([{ type: 'send', text: 'add three ideas' }, end('Here they are.', 3)])
     const r = run([{ type: 'send', text: "don't add the third" }], p.s)
     expect([r.s.phase, r.s.revising, r.s.pending]).toEqual(['running', true, 3])
-    expect(r.effects).toEqual([{ type: 'close_preview' }, { type: 'run', text: "don't add the third", turn: 2, revising: true }])
+    // S15: the turn's lock goes on right after the preview closes (closing it lets go of the preview's lock), so the
+    // person is never unlocked while the agent revises.
+    expect(r.effects).toEqual([{ type: 'close_preview' }, { type: 'lock' }, { type: 'run', text: "don't add the third", turn: 2, revising: true }])
     const again = run([end('Dropped it.', 2)], r.s)
     expect([again.s.phase, again.s.pending]).toEqual(['previewing', 2])
   })

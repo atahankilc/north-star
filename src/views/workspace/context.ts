@@ -10,7 +10,8 @@ export const WorkspaceContext = createContext<Store | null>(null)
 // Set while rendering: the new value is there at once for what draws in the same pass; the others hear of it after.
 export function useWorkspaceStore(value: WorkspaceCtx): Store {
   const [store] = useState(() => makeStore(value))
-  if (store.get() !== value) store.set(value)
+  // Compared with the real value: with an overlay on (the agent's preview) get() is the overlaid one.
+  if (store.real() !== value) store.set(value)
   // On top of getWs()'s stack while mounted; an unmount takes this store off it, the one under it current again.
   useLayoutEffect(() => registerStore(store), [store])
   useLayoutEffect(() => store.tell(), [store, value])

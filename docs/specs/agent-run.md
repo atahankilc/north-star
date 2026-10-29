@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S15 next (the preview §4.5: store swap to the changeset's projected ws + diff marks on every kind, change list with ticks, stepper gliding to each, app locked; one shot per kind; applied = previewed). S1–S14 done.
+S16 next (memory: saved chats `agentChats/`, the agent notes document, a change log; their rules in firestore.rules + rules tests, NOT deployed; screenshots of the new parts). S1–S15 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -214,6 +214,19 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   parts × dark/light, index.html) · reviewer: 1 fix round (marks over names and on wrong targets, undo label,
   keyboard not handed back, Settings double selection, stub in usage, viewer raw text; design: Geist asks, numbered
   turns, ledger list, status lines), then pass (design B/B+).
+- S15 · see `git log --grep "Agent S15"` · the preview: wsStore `overlay(fn)` (off by default; real kept updating;
+  `getRealWs`; apply/freshWs read the real one; serves onboarding's demos too), `src/agent/preview.ts` (the drawn copy
+  = the changeset's projection + removed docs kept for drawing; marks from existing data attributes; where each
+  change is), `PreviewMarks` (one layer clipped to the app: `+` built cell by cell, `~` was → now, `−` struck with
+  the reason, moved ghost + line; links drawn from the cards' boxes, masked over cards, hidden kinds too; chips inside
+  small items or beside cards, never over text; measured only while something moves), the panel (grouped ledger in
+  words, ticks with dependants, stepper ‹ n/N › gliding into focus/other canvases, apply/discard, a revise note that
+  keeps the turn locked), PREVIEW_LOCK, no comments during a preview, a preview-only canvas shown and named ·
+  reviewer: 2 fix rounds (a new canvas couldn't be shown; chips over text; link strokes over cards; hidden link kinds;
+  panel words; struck rows; revising unlocked; comments; per-frame cost) then the lead checked round 2's shots ·
+  applied = previewed on every kind (unit test + emulator eval); screenshots S15-01…10 (+09b) per kind and the flow
+  20–23, dark/light/reduced. Left: removed items still count in totals/limits while previewing; timeline old-span
+  ghost only if the bar was on screen; documents have no preview yet.
 
 ### Stuck
 _(none)_
@@ -324,3 +337,5 @@ _(the reviewers' and builders' "could be better", not done yet)_
   so ask and find feel like one family, a blinking `>` caret while it works; the column's resize edge usable from the
   keyboard; wizards (centred on the whole screen) sit partly under an open column; the box doesn't close on a canvas
   click.
+- S15 reviewer: create_piece placed a new table over the next plane (S6 placement: pieces should land clear like
+  cards now do); documents have no preview because no op writes documents yet (S16's agent notes will be the first).

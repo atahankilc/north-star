@@ -691,6 +691,105 @@
   list-style: none;
 }
 
+.whereCount {
+  color: var(--fg-muted);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* The tick: `[×]` on, `[ ]` off (the person's own); an item off because it needs one that is can't be ticked alone. */
+.tick {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-cyan);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tick:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+.tick:focus-visible {
+  outline: 1px solid var(--accent-cyan);
+}
+
+.item[data-off] .itemLine,
+.item[data-off] .itemMark {
+  color: var(--fg-dim);
+}
+
+.item[data-off] .tick:not(:disabled) {
+  color: var(--fg-muted);
+}
+
+/* Deletes struck, the agent's reason beside them plain. */
+.item[data-delete] [data-struck] {
+  text-decoration: line-through;
+  text-decoration-color: var(--accent-magenta);
+}
+
+.itemLine[data-go] {
+  cursor: pointer;
+}
+
+.itemLine[data-go]:hover .itemText {
+  color: var(--fg-strong);
+}
+
+/* The stepper's change: a cyan bar on its left, as a prompt row's. */
+.item[data-current] {
+  box-shadow: inset 2px 0 0 var(--accent-cyan);
+  padding-left: var(--space-1);
+  background: var(--wash-2);
+}
+
+.needs {
+  color: var(--fg-dim);
+}
+
+.changesNote {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+.stepper {
+  display: flex;
+  align-items: baseline;
+  gap: 1ch;
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--line);
+}
+
+.stepBtn {
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.stepBtn:hover:not(:disabled),
+.stepBtn:focus-visible {
+  border-color: var(--accent-cyan);
+  color: var(--fg-strong);
+  outline: none;
+}
+
+.stepBtn:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+.stepAt {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
 .changesFoot {
   display: flex;
   flex-wrap: wrap;

@@ -98,8 +98,9 @@ export function step(s: WorkflowState, e: WorkflowEvent): { state: WorkflowState
       const turn = s.turn + 1
       return {
         state: { phase: 'running', turn, pending: revising ? s.pending : 0, ...(revising ? { revising: true } : {}) },
-        // A note during the preview: the preview closes while the agent revises (the changeset stays), the lock stays.
-        effects: [...(s.phase === 'previewing' ? [{ type: 'close_preview' as const }] : [{ type: 'lock' as const }]), { type: 'run', text: e.text, turn, revising }],
+        // A note during the preview: the preview closes while the agent revises (the changeset stays), and the turn's own
+        // lock goes on after it (closing the preview lets go of the preview's lock), so the person is never unlocked.
+        effects: [...(s.phase === 'previewing' ? [{ type: 'close_preview' as const }] : []), { type: 'lock' as const }, { type: 'run', text: e.text, turn, revising }],
       }
     }
     case 'turn_end': {
