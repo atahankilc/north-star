@@ -44,8 +44,9 @@ export function piecesShown<P extends { id: string; canvasId?: string; x: number
 // Right of a thing, two grid steps clear, its top level with the thing's.
 export const rightOf = (b: Box): { x: number; y: number } => ({ x: snap(b.x + b.w + 2 * GRID), y: snap(b.y) })
 
-// Moved down a grid step at a time past what it would cover (at most `limit` px down).
-function downPast(at: { x: number; y: number }, size: { w: number; h: number }, others: Box[], limit = 100000) {
+// Moved down past what it would cover (at most `limit` px down): create_text's `near` (S9: several made beside the
+// same thing in one batch go one under the other, each seeing the ones before).
+export function downPast(at: { x: number; y: number }, size: { w: number; h: number }, others: Box[], limit = 100000) {
   const spot = { ...at }
   for (let hit = others.find((o) => overlap({ ...spot, w: size.w, h: size.h }, o)); hit && spot.y - at.y < limit; hit = others.find((o) => overlap({ ...spot, w: size.w, h: size.h }, o)))
     spot.y = snap(hit.y + hit.h + GRID)

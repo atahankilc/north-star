@@ -351,17 +351,17 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 | 1.0 reports move | `documents.ts:moveReports` | Automatic, once. |
 | Display (theme, motion, background) | localStorage, `src/ui/Settings.tsx` | Yours, per browser. |
 
-**View state → UI tools (§4.4: never write data):**
+**View state → UI tools (§4.4: never write data; S9: `src/agent/ui.ts`, async, one call at a time (queued), counted by `agentDriving()` from asked to 500 ms after it settles):**
 
 | Person's action (where) | UI tool |
 |---|---|
-| Finder ⌘F / compass, Enter or double-click (Finder.tsx); a link row or `PLANES` row in a panel (CardPanel.tsx:874, :1069); `[on the canvas ↗]` in threads (CanvasView.tsx:629 `goTo`); a timeline task's go | `go_to(id)` |
-| Canvas switch in the breadcrumb, ⌥1–⌥9 (CanvasSwitch.tsx:26) | `go_to(canvas)` |
+| Finder ⌘F / compass, Enter or double-click (Finder.tsx); a link row or `PLANES` row in a panel (CardPanel.tsx:874, :1069); `[on the canvas ↗]` in threads (CanvasView.tsx:629 `goTo`); a timeline task's go | `go_to(id)`: `goTo` (a card: its plane's focus, picked, in view, its panel open; text or a piece: glided there, its canvas first; a task: its deck, picked, its panel open) |
+| Canvas switch in the breadcrumb, ⌥1–⌥9 (CanvasSwitch.tsx:26) | `go_to(canvas)`: `goTo` (the address's `?canvas=`) |
 | Pan, zoom, fit `0` (CanvasView.tsx:852) | `go_to` (the app frames it; never coordinates) |
-| `[focus]`, double-click a plane, `[unfocus]` / Esc (CanvasView.tsx:931, FocusDock.tsx) | `focus(plane)` / `focus(null)` |
-| Click, shift+click, alt+box, Escape (selection.ts), deck task picks (Kanban.tsx:484), matrix/table cell picks | `select(ids)` |
-| Right-click `open` (planeMenu.ts:101), a matrix/table head click (D-247), a task click, `+` threads list | `open_panel(id)` |
-| Plane dock `[⇆ kind · name]` (D-211), documents `open beside` (CanvasView.tsx:556), tasks side view `t` and its icon, `[days ›]`, a plane's `⇆ deck` (TasksSide.tsx) | `show_beside(piece)` |
+| `[focus]`, double-click a plane, `[unfocus]` / Esc (CanvasView.tsx:931, FocusDock.tsx) | `focus(plane)` / `focus(null)`: `focus` (the finder's `findGo`, with the ink; out as `[unfocus]`) |
+| Click, shift+click, alt+box, Escape (selection.ts), deck task picks (Kanban.tsx:484), matrix/table cell picks | `select(ids)`: `select` (cards and text in their plane's focus; one piece on the canvas; tasks of one deck) |
+| Right-click `open` (planeMenu.ts:101), a matrix/table head click (D-247), a task click, `+` threads list | `open_panel(id)`: `openPanel` (a card's or a task's) |
+| Plane dock `[⇆ kind · name]` (D-211), documents `open beside` (CanvasView.tsx:556), tasks side view `t` and its icon, `[days ›]`, a plane's `⇆ deck` (TasksSide.tsx) | `show_beside(piece)`: `showBeside` (a stuck matrix or table: `beside=` in its plane's focus; a deck or timeline: the tasks side view; documents beside their list: not yet) |
 | `[filter]` on a plane (FilterDock.tsx) or a deck (KanbanFilterDock.tsx): passing, per tab (D-308) | none: the agent reads with `query` instead |
 | `[view ▾]`: snap `g`, guides `a`, comments `c` (ViewMenu.tsx:16–21) | none |
 | Edit mode on/off (console `[edit]`, `[done]`) | none: ops don't need edit mode |
@@ -418,7 +418,7 @@ data keep calling it (D-301).
 | `axis_add` | `(matrix or table, rows or cols, card or name or column: {field} or {name, kind, unit?, steps?}) → $id`: a hidden card of the type (or rules) comes back |
 | `axis_remove` | `(matrix or table, rows or cols, entry: key or name)`: a card the type or rules bring is hidden (cells kept); one added by hand, or a table column, goes with its cells |
 | `axis_update` | `(matrix or table, rows or cols, entry, {name?; columns: kind?, unit?, steps?, width?, move?: left or right})` |
-| `arrange` | `(items, layout: near or align-left/centre/right/top/middle/bottom or spread-x/y or grid or by:[dx,dy], where?)`: positions only; carries folded parts, package members, section contents, stuck pieces |
+| `arrange` | `(items, layout?: grid, row, column (both wrap in a section), cluster (group_by: type, tag, status or [{name, items}]; headings? → `$heading1`…), align-left/centre/right/top/middle/bottom, spread-x/y; where?: {near, side?} or {in_section} (it grows; refused if growing would cover what's outside) or {at: 'clear'}; or by:[dx,dy])`: positions only, one space; on the grid, apart, never on what stays nor inside a section not named (pushed to the nearest clear spot); a member of an unfolded package only with its package; carries folded parts, package members, section contents, stuck pieces (S9: src/ops/arrange.ts, src/model/layout.ts) |
 | `create_canvas` | `(name) → $id` |
 | `create_card` | `(type, plane, title, fields?, links?, parts?, evidence?, near?) → $id` (one undo step with its name) |
 | `create_competitor_feature` | `(competitor, {name, description?, category?, availability?, url?}, ours?) → $id` |

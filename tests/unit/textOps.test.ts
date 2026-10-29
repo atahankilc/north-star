@@ -60,11 +60,11 @@ describe('create_text', () => {
     for (const l of ctx.ws.labels.filter((l) => l.pieceId === ID.planeA && l.kind !== 'section')) expect(overlap(box, labelBox(l))).toBe(false)
   })
 
-  it('a sticky note near a card: right of it, yellow, signed by the actor; a long text is cut to 4000', () => {
+  it('a sticky note near a card: right of it (moved down past the note and the idea there, S9), yellow, signed by the actor; a long text is cut to 4000', () => {
     const ctx = ctxOf()
     const plan = createText(ctx, { kind: 'sticky', plane: ID.planeA, text: 'x'.repeat(5000), author: 'Alice', where: { near: ID.barista } })
     const s = label(run(ctx, [plan]), plan.ids.$new)
-    expect(s).toMatchObject({ kind: 'sticky', color: 'yellow', uid: ALICE.uid, author: 'Alice', w: 150, x: 300 + CARD.w + 50, y: 50 })
+    expect(s).toMatchObject({ kind: 'sticky', color: 'yellow', uid: ALICE.uid, author: 'Alice', w: 150, x: 300 + CARD.w + 50, y: 350 })
     expect(s.text.length).toBe(4000)
     // The agent: signed with the actor's name.
     const named = { ...ctx, actor: { ...ALICE, name: 'Alice K' } }

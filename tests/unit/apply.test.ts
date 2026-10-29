@@ -76,6 +76,8 @@ import { DELETE } from '../../src/ops/types'
 import { wsFrom } from './fixtures/ws'
 import { OpsRefused, type Plan } from '../../src/ops/types'
 import { project } from '../../src/ops/project'
+import { arrangeAny } from '../../src/ops/arrange'
+import { counterIds } from '../../src/ops/newId'
 import type { Docs, RawDoc } from '../../src/model/fromDocs'
 import { ALICE, CAROL, fixtureDocs, fixtureWs, ID, T, WID, WORKSPACE } from './fixtures/ws'
 
@@ -262,5 +264,32 @@ describe('apply', () => {
       ['rename an idea', undefined],
       ['move an idea', { kind: 'card', ids: [ID.preorder] }],
     ])
+  })
+  it('an arrange by layout (S9): moves, carried members, headings made and a section grown are one step; undo puts all back', async () => {
+    const ctx = { ws: fixtureWs(), actor: ALICE, now: T + 9, newId: counterIds('lay') }
+    const ps = [
+      arrangeAny(ctx, { items: [ID.anna, ID.barista, ID.queue, ID.menu, ID.preorder], layout: 'cluster', headings: true, where: { at: 'clear' } }),
+      arrangeAny(ctx, { items: [ID.pkg, ID.orderly], layout: 'column' }),
+    ]
+    expect(ps[0].meta?.ids?.length).toBe(3)
+    const before = new Map(fake.data)
+    const res = await apply(WID, ps, { ws: fixtureWs(), by: ALICE, actor: 'agent' })
+    await res.written
+    expect(listened()).toEqual(project(fixtureWs(), ps))
+    expect(useHistory.getState().past).toHaveLength(1)
+    await undo()
+    await Promise.resolve()
+    expect(new Map(fake.data)).toEqual(before)
+  })
+  it('plans that write nothing (an arrange with nothing to move) record no step', async () => {
+    const ctx = { ws: fixtureWs(), actor: ALICE, now: T + 9, newId: counterIds('lay') }
+    // Anna alone in a row where she is: nothing moves.
+    const plan = arrangeAny(ctx, { items: [ID.anna], layout: 'row' })
+    expect(plan.writes).toEqual([])
+    const res = await apply(WID, [plan], { ws: fixtureWs(), by: ALICE })
+    await res.written
+    expect(res.step).toBeNull()
+    expect(useHistory.getState().past).toHaveLength(0)
+    expect(fake.commits.n).toBe(0)
   })
 })

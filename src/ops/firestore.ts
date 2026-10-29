@@ -70,6 +70,8 @@ export async function apply(wid: string, plans: Plan[], opts: ApplyOpts = {}): P
 
   // Each doc once, in the order first written.
   const writes = plans.flatMap((p) => p.writes)
+  // Nothing to write (an arrange where everything already is): no step, nothing to undo (S9).
+  if (!writes.length) return { ids, step: null, written: Promise.resolve() }
   const refs = new Map<string, DocumentReference>()
   const docIds: string[] = []
   for (const w of writes) {

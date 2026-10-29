@@ -8,7 +8,7 @@ import { carriedWith, foldsOf } from '../model/cardInside'
 import { CANVAS, kindOf, LABEL_COLORS, PARA_W, STICKY_W, TITLE_W, textMax, type Label, type LabelColor, type TextKind, type TextScale } from '../model/labels'
 import { labelBox } from '../model/labelBox'
 import { canvasOf, MAIN } from '../model/canvases'
-import { around, cardBoxes, clearSpotFor, inSection, piecesShown, rightOf, sectionHolds, type Box, type Boxed } from '../model/textPlace'
+import { around, cardBoxes, clearSpotFor, downPast, inSection, piecesShown, rightOf, sectionHolds, type Box, type Boxed } from '../model/textPlace'
 import { followerMoves, STICK_REACH, stickTarget, stuckChain } from '../model/pieceMoves'
 import { hostKinds, KIND_NAME, kindOfPiece, sticks } from '../model/pieces'
 import { boundTo } from './stick'
@@ -197,7 +197,7 @@ export function createText(ctx: OpCtx, args: CreateTextArgs): Plan {
     if (w && 'x' in w) {
       if (typeof w.x !== 'number' || typeof w.y !== 'number' || !Number.isFinite(w.x) || !Number.isFinite(w.y)) refuse(op, 'x and y must be numbers', "give where's x and y in its space's px")
       spot = { x: w.x, y: w.y }
-    } else if (w && 'near' in w) spot = rightOf(boxIn(ctx, op, s, w.near))
+    } else if (w && 'near' in w) spot = downPast(rightOf(boxIn(ctx, op, s, w.near)), size, [...labels.filter((l) => l.kind !== 'section').map(labelBox), ...others])
     else if (w && 'in_section' in w) {
       const sec = ctx.ws.labels.find((l) => l.id === w.in_section && inSpace(s)(l))
       if (!sec || sec.kind !== 'section') refuse(op, `${String(w.in_section)} isn't a section on ${s.plane ? `plane ${s.plane}` : 'that canvas'}`, 'name a section in the same space, or leave where out')

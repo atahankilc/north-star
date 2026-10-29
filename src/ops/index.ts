@@ -35,3 +35,6 @@ export { axisAdd, axisRemove, axisUpdate, updateCell, criterionCascade, type Axi
 // update_timeline; create_piece takes a typed deck; delete takes tasks and deck columns; create_evidence from_task.
 export { createTask, updateTask, moveTask, deleteTasksPlan, deckIn, columnIn, ordersIn, type CreateTaskArgs, type UpdateTaskArgs, type MoveTaskArgs, type TaskInput, type TaskMoveSpec } from './tasks'
 export { updateDeck, createDeckColumn, updateDeckColumn, moveDeckColumn, deleteColumnPlan, columnById, deckSetupFrom, movesTo, updateTimeline, DECK_TEMPLATES, type UpdateDeckArgs, type DeckSpec, type CreateDeckColumnArgs, type UpdateDeckColumnArgs, type MoveDeckColumnArgs, type UpdateTimelineArgs } from './deck'
+// Layouts by meaning (S9, R10): arrange with layout/where (the registry's arrange); the geometry in src/model/layout.ts.
+export { arrangeAny, GROUP_KEYS, type LayoutArgs, type Where, type GroupBy } from './arrange'
+export { LAYOUTS, SIDES, alignTo, spreadTo, type Layout, type Side } from '../model/layout'

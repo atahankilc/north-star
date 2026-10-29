@@ -8,8 +8,8 @@
 // planeGoes and runOps (the plane delete is pieces.ts' pieceCascade).
 //
 // S5 (text.ts): every write in data/labels.ts is a wrapper (addLabel → create_text, updateLabel → update_text,
-// deleteLabel → delete, moveMany → arrange). Left: arrange's layouts (line up, space out: CardPanel's maths);
-// pieces moved by arrange don't bring what's stuck to them (pieces.ts' placeAll, S6). The workspace's name and
+// deleteLabel → delete, moveMany → arrange). arrange's layouts (line up, space out: CardPanel's maths; grid, row,
+// column, cluster, near; where) came with S9 (arrange.ts, model/layout.ts). The workspace's name and
 // description (the project title's words, workspaces.ts) stay untracked writes, not ops. update_text's builder takes
 // w, h, x, y (the UI's resize and drag go through it) but the model's schema leaves them out: moving is arrange, sizing
 // is the resize op (S6). arrange carries folded parts, package members and section contents
@@ -24,9 +24,10 @@ import { EDGE_KINDS, link, unlink, updateLink } from './edges'
 import { createEvidence, updateEvidence } from './evidence'
 import { createCompetitorFeature, updateCompetitorFeature } from './features'
 import { placeOn, takeOff } from './places'
-import { arrange, createText, HEADING_SIZES, TEXT_KINDS, TEXT_SCALES, updateText } from './text'
+import { createText, HEADING_SIZES, TEXT_KINDS, TEXT_SCALES, updateText } from './text'
 import { createCanvas, createPiece, moveCanvas, moveToCanvas, PIECE_KINDS, piecesOff, piecesOnPlan, rename, resize, updatePiece } from './pieces'
 import { deleteAny } from './delete'
+import { arrangeAny, GROUP_KEYS, LAYOUTS, SIDES } from './arrange'
 import { MATRIX_TEMPLATES, SCALE_KEYS, updateMatrix } from './matrix'
 import { TABLE_TEMPLATES, updateTable } from './table'
 import { axisAdd, axisRemove, axisUpdate, updateCell } from './lens'
@@ -337,7 +338,7 @@ export const OPS: OpDef[] = [
         canvas: s('on the canvas: which one (left out: the one shown)'),
         ...textStyle(false),
         where: {
-          anyOf: [obj({ near: s('right of this text, card (on its plane) or piece (on the canvas), two grid steps (50 px) clear, its top level with it') }, ['near']), obj({ in_section: s('inside this section, under what it holds') }, ['in_section'])],
+          anyOf: [obj({ near: s('right of this text, card (on its plane) or piece (on the canvas), two grid steps (50 px) clear, its top level with it, moved down past what is there') }, ['near']), obj({ in_section: s('inside this section, under what it holds') }, ['in_section'])],
           description: 'left out: a clear spot (a plane: the first from its top-left; the canvas: under everything)',
         },
         around: ids('section only: the text, cards or pieces it goes round (its box fitted to them)'),
@@ -360,19 +361,34 @@ export const OPS: OpDef[] = [
     name: 'arrange',
     kind: 'any',
     summary:
-      "Move text, cards and pieces by [dx, dy] in their space's px (a plane's or the canvas's). A section carries what's wholly inside it, a folded card its parts, a package its members, a plane or deck what's stuck to it. A card's spot on a plane other than its home needs that plane. stick: a matrix, table, deck or timeline dropped near a plane's edge sticks to it.",
+      "Lay out text, cards and pieces of one space (a plane, or a canvas) by meaning: never coordinates. layout: grid, row, column (in a section rows and columns wrap), cluster (groups by type, tag, status or given groups, optionally with headings, named by handle: <handle>_heading1…), align-left/centre/right/top/middle/bottom, spread-x/y. where: beside a thing (near, side), inside a section (it grows to hold them; refused when that would cover things outside it), the nearest clear area, or left out: where they are. The app keeps them on the grid, apart, and clear of everything else; other sections are never entered. A member of an unfolded package moves only with its package. A section carries what's wholly inside it, a folded card its parts, a package its members, a plane or deck what's stuck to it. Or move by [dx, dy] (by). A card's spot on a plane other than its home needs that plane.",
     args: obj(
       {
-        items: ids('what moves'),
-        by: { type: 'array', items: n(), description: '[dx, dy] in their space px' },
+        items: ids('what moves (one space: a plane\'s cards and text, or a canvas\'s pieces and text)'),
+        layout: { type: 'string', enum: LAYOUTS, description: 'how they go together; left out with where: grid' },
+        where: {
+          anyOf: [
+            obj({ near: s('a thing that stays, in the same space'), side: { type: 'string', enum: SIDES, description: 'left out: the first side with room (right, below, left, above)' } }, ['near']),
+            obj({ in_section: s('a section in the same space: the block goes inside, under what it holds; the section grows to fit') }, ['in_section']),
+            obj({ at: { type: 'string', enum: ['clear'], description: 'the first clear area (a plane: from its top-left; a canvas: under everything)' } }, ['at']),
+          ],
+          description: 'where the block goes; left out: where they are now, pushed clear if it would land on something',
+        },
+        group_by: {
+          anyOf: [{ type: 'string', enum: GROUP_KEYS }, { type: 'array', items: obj({ name: s(), items: ids('its things') }, ['name', 'items']) }],
+          description: 'cluster only: by card type (default), first tag, status, or the groups given',
+        },
+        headings: b('cluster only: an H3 over each group, made in the same step'),
+        handle: s('cluster headings: their handles are <handle>_heading1… (in a batch without one: $<step>_heading1…; called alone: $heading1…)'),
+        by: { type: 'array', items: n(), description: '[dx, dy] in their space px (instead of layout)' },
         plane: s("the plane the cards are shown on: needed for a card's place on a plane that isn't its home (left out: each card's home)"),
         canvas: s('the canvas the pieces are on (left out: the one shown)'),
         carry: b("false: a section moves without what's inside it, a plane without what's stuck to it"),
-        stick: b("a matrix, table, deck or timeline ending within 48 px of a plane's edge (a timeline: a deck's too) snaps there and sticks to it"),
+        stick: b("with by: a matrix, table, deck or timeline ending within 48 px of a plane's edge (a timeline: a deck's too) snaps there and sticks to it"),
       },
-      ['items', 'by'],
+      ['items'],
     ),
-    build: arrange,
+    build: arrangeAny,
   },
   {
     name: 'place_on',

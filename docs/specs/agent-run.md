@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S9 next (`arrange` layouts R10 + the UI facade `src/agent/ui.ts` R11). S1–S8 done: every content write goes through src/ops.
+S10 next (read layer: short ids, map, search, query, get, view per kind, neighbours; golden files on 3 fixtures; map ≤ 15k tokens). S1–S9 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -161,6 +161,14 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   it) · reviewer: 3 fix rounds (assignee check refused former members' lanes; a stale column list lost a rename when a
   collaborator deleted a column, middle then last; a description) · real UI: deck, lanes, several tasks, limits,
   finished, side view, timeline edges/bars/tray/draw, switch to cards, all one step and undone.
+- S9 · see `git log --grep "Agent S9"` · `src/model/layout.ts` + `src/ops/arrange.ts`: arrange layouts grid, row,
+  column, cluster (by type/tag/status/groups, `headings` → `$heading1…`), align-*/spread-* (the panel's maths), where
+  near/side, in_section (grows it, refuses if growing would cover others), at:'clear'; snapped, never overlapping what
+  stays, unnamed sections solid; creates near one thing don't stack; apply records no step for empty plans.
+  `src/agent/ui.ts` facade (goTo, focus, select, openPanel, showBeside, currentView; queued; no data writes) +
+  `src/agent/driving.ts` `agentDriving()` for onboarding · reviewer: 1 fix round (in_section swallowing, blocks
+  landing in unnamed sections, a lone package member, facade calls racing), then pass: adversarial overlap cases,
+  back-to-back facade calls end in the last call's view, live cluster beside a section.
 
 ### Stuck
 _(none)_
@@ -225,3 +233,13 @@ _(the reviewers' and builders' "could be better", not done yet)_
   (UI-only `moves`, `setup`, `parts`, `order`, exact `to` spots would skip the typed checks); keep UI-only args behind
   the wrappers. S10: expose members (name/email → uid) so assignees and mentions resolve, and fill `assigneeName`.
 - Import could remap a task's `learned` to the new evidence id instead of dropping it (S8 keeps only `'skip'`).
+- **S14 note (audit session north-star-f8, D-317):** presence peers are now filtered to workspace members and photos
+  to googleusercontent.com (`usePresenceMembers`, `safePhoto`). The agent as a participant can't be a fake uid: show it
+  as part of the person's own presence node (e.g. `agent: {at, sel, state}` under their uid, drawn as the agent's
+  square/cursor for everyone) or draw it only locally; rules for that field + a test.
+- **S12/S13 must:** every apply the agent makes passes `actor: 'agent'` (onboarding skips those steps); add a test that
+  the change tool's apply records `meta.actor === 'agent'`.
+- S9 reviewer, layout quality: a 40-item cluster on a normal plane becomes one column of 2-wide groups (~4000 px
+  tall); let groups sit side by side past the plane's width or pack more columns per group. The facade has no guard
+  for an open hazard confirm or (later) the preview lock: add one in S15. `window.__agentUi` registers only once
+  something imports src/agent/ui.ts (S14 will).
