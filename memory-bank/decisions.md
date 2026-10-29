@@ -107,7 +107,7 @@ feature comes back as a piece, and check them with the user then.
 ## Canvas and pieces
 - A workspace has one or more canvases (D-302, docs/specs/canvases.md; session 1 built D-305: `canvases/`, `canvasId` on
   pieces and canvas text, `?canvas=`, the breadcrumb's prompt, a camera each, finder `here | this canvas | everywhere`;
-  items shared; moving and sharing pieces not yet). Each canvas (`/workspaces/<id>`, D-174): backdrop at full strength, no pages, no view tabs; 1.0's views
+  items shared; pieces moved with what's stuck to them, D-306; sharing a piece not yet). Each canvas (`/workspaces/<id>`, D-174): backdrop at full strength, no pages, no view tabs; 1.0's views
   come back as pieces (D-177, D-248). Settings keep you, general, people and export.
 - Pieces (D-176): `pieces/{id}`, x/y/w/h in canvas px, a name. The side nav's `+` puts one at the screen's middle or the
   nearest clear spot, in edit mode (D-238). Drag pans, the wheel zooms round the pointer (0.1–4); over a plane too,

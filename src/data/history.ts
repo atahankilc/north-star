@@ -24,10 +24,13 @@ type History = {
   past: Step[]
   future: Step[]
   // Last thing done, undone or redone, for the toast.
-  notice: { text: string; at: number } | null
+  // `action`: one thing to do from it, a button on the toast (`go there`, D-302's session 2).
+  notice: { text: string; at: number; action?: Action } | null
   reset: (wid: string) => void
-  say: (text: string) => void
+  say: (text: string, action?: Action) => void
 }
+
+export type Action = { label: string; run: () => void }
 
 export const useHistory = create<History>((set, get) => ({
   wid: null,
@@ -37,7 +40,7 @@ export const useHistory = create<History>((set, get) => ({
   reset: (wid) => {
     if (get().wid !== wid) set({ wid, past: [], future: [], notice: null })
   },
-  say: (text) => set({ notice: { text, at: Date.now() } }),
+  say: (text, action) => set({ notice: { text, at: Date.now(), action } }),
 }))
 
 async function read(ref: DocumentReference): Promise<DocumentData | null> {

@@ -23,6 +23,7 @@ import { planeCtx, planeItems } from './planeMenu'
 import { PlaneDockExtras } from './FilterDock'
 import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadIn, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu } from './ContextMenu'
+import { MoveToCanvas } from './MoveToCanvas'
 import { BringCards } from './BringCards'
 import { isNew, useReads } from '../../data/threads'
 import { ThreadInbox } from './ThreadInbox'
@@ -495,6 +496,19 @@ export function CanvasView() {
           },
         },
         ...own.slice(1),
+        // To another canvas (D-302's session 2): a piece, or the canvas's own text (a section with what it holds).
+        ...(editor && !focused && (piece || label?.pieceId === CANVAS)
+          ? [
+              {
+                key: 'move',
+                label: 'move to canvas…',
+                glyph: '→',
+                letter: 'm',
+                onSelect: () =>
+                  useCanvasView.setState({ toCanvas: { pieces: piece ? movingWith(piece.id) : [], labels: label ? [label.id] : [], screen: [e.clientX, e.clientY] } }),
+              },
+            ]
+          : []),
       ],
     })
   }
@@ -1049,6 +1063,7 @@ export function CanvasView() {
       {!focused && <TaskPanel editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />
       {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
+      <MoveToCanvas />
       {/* Cards from other planes to bring here (D-281), where the `+` or the right-click menu was. */}
       {focused && !isBare(focused) && <BringCards here={focused.id} origin={root.current?.getBoundingClientRect() ?? { left: 0, top: 0 }} />}
       {/* A document being dragged out of its list, and the question before a private one goes on the canvas (D-232). */}
@@ -1718,6 +1733,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
         noun={KIND_NAME[kind]}
         onEdit={editor ? () => setEditing(piece.id, !editing) : undefined}
         onDelete={() => useCanvasView.setState({ confirming: piece.id })}
+        onMove={editor ? (at) => useCanvasView.setState({ toCanvas: { pieces: movingWith(piece.id), labels: [], screen: at } }) : undefined}
         onFocus={onFocus}
         comments={comments}
         link={sticks(piece) ? { at: host?.id ?? null, planes, editor, onChange: (plane) => void linkLens(wid, piece, plane) } : undefined}
@@ -1800,6 +1816,8 @@ type ConsoleProps = {
   onFocus: () => void
   onEdit?: () => void
   onDelete?: () => void
+  // To another canvas (D-302's session 2), in edit mode: `[move to…]` opens the canvases under it.
+  onMove?: (at: [number, number]) => void
   className?: string
   // A matrix's or table's link to a plane (D-215): a dropdown, `link ▾` or `⇆ 01 Pazar ▾`, to pick a plane or unlink.
   link?: { at: string | null; planes: (Box & { id: string; name?: string })[]; editor: boolean; onChange: (plane: string | null) => void }
@@ -1813,11 +1831,18 @@ type ConsoleProps = {
 
 const UNLINKED = 'none'
 
+// What moves to another canvas with a piece asked for (D-302's session 2): every piece in edit mode when it's one of
+// them, else it alone; what's stuck to them comes along (MoveToCanvas).
+const movingWith = (id: string) => {
+  const { editing } = useCanvasView.getState()
+  return editing.includes(id) ? editing : [id]
+}
+
 // A console's size on the screen (D-264): 11 px at 100 % and over, growing as the canvas zooms out, 1.4 times at most
 // (70 %: 13.1 px; 50 % and under: 15.4 px). In the canvas's px, so its zoom's divided back out.
 const consoleScale = (zoom: number) => Math.min(1.4, Math.max(1, zoom ** -0.5)) / zoom
 
-function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, className, link, open, extra, shown = true }: ConsoleProps) {
+function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, onMove, className, link, open, extra, shown = true }: ConsoleProps) {
   // Shown only while the piece is pointed at (D-264), in edit mode, or with the keyboard in it: built cell by cell as it
   // comes (170 ms), broken as it goes (90 ms). Something new in its comments stays meanwhile, a small magenta tab.
   const ref = useRef<HTMLDivElement>(null)
@@ -1865,6 +1890,18 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
           {open && (
             <button className={styles.tool} title={open.on ? 'back into its window' : 'out of its window onto the canvas, live there'} onClick={open.onToggle}>
               {open.on ? 'frame' : 'unframe'}
+            </button>
+          )}
+          {onMove && (
+            <button
+              className={styles.tool}
+              title={`move the ${noun} to another canvas`}
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect()
+                onMove([r.left, r.bottom + 6])
+              }}
+            >
+              move to…
             </button>
           )}
           {onDelete && (

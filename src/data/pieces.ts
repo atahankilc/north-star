@@ -70,9 +70,9 @@ const overlaps = (a: Box, b: Box) => a.x < b.x + b.w + GAP && b.x < a.x + a.w + 
 // for (the middle of the screen), or the nearest clear place round it within about its own size, so it's still in
 // view; with none clear there, on top of what's there (it starts in edit mode, to be moved). Steps of the grid, nearest
 // first.
-// Only what's on the canvas shown is in the way (D-302).
-function nearClear(box: Box, all: Box[]): Pick<Box, 'x' | 'y'> {
-  const others = (all as (Box & { canvasId?: string })[]).filter(onCanvas(canvasHere()))
+// Only what's on the canvas shown is in the way (D-302), or on `canvas` (moved there, D-302's session 2).
+export function nearClear(box: Box, all: Box[], canvas = canvasHere()): Pick<Box, 'x' | 'y'> {
+  const others = (all as (Box & { canvasId?: string })[]).filter(onCanvas(canvas))
   const free = (b: Box) => !others.some((o) => overlaps(b, o))
   if (free(box)) return { x: box.x, y: box.y }
   const step = 4 * GRID

@@ -20,6 +20,9 @@ type State = {
   // The list of cards on other planes to bring to this one (D-281), open where the menu was (`screen`, client px);
   // `at`: where they land in the plane's px (a right-click's spot), else the middle of the view.
   bringing: { plane: string; at: [number, number] | null; screen: [number, number] } | null
+  // Pieces (and the canvas's text) to move to another canvas (D-302's session 2): the list of canvases open where it was
+  // asked for (`screen`, client px).
+  toCanvas: { pieces: string[]; labels: string[]; screen: [number, number] } | null
   // The focus transition (D-184, D-185): spread in from the plane (the console's `[focus]`, not a reload), arrived (its
   // console shows), drawing back out.
   focusSpread: boolean
@@ -107,7 +110,7 @@ export function planeArea() {
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, deleting: null, bringing: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, deleting: null, bringing: null, toCanvas: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
 
 // A panel Enter shut opens again once the card is let go or another is picked.
 useCanvasView.subscribe((s, was) => {

@@ -5549,3 +5549,24 @@ on a plane has none. `?canvas=<id>` (`canvasParams`/`canvasPath` in paths.ts); a
   `canvasId`; rename to Build; delete through the confirm took its plane and went back to `Solo`; ⌘Z brought both back.
 - *Not yet:* sessions 2–4 (moving and sharing pieces, pickers grouped by canvas, a thread's go-to across canvases,
   following across canvases, ⌘1–⌘9, export/import of canvases).
+
+### D-306 · 2026-10-29 · Accepted (D-302's session 2; the user: "2. oturuma başla")
+**Pieces move to another canvas** (docs/specs/canvases.md, session 2). A piece's right-click on the canvas has
+`[m] → move to canvas…`, and its edit console `[move to…]` (before `[delete]`); the canvas's own text too (right-click).
+The prompt (D-222) opens where it was asked: `# canvases` with the others (`[1] → Engineering`), a rule, `+ new canvas`;
+a name typed that nobody has offers `+ new canvas "…"`, made and moved to in one go (src/views/workspace/MoveToCanvas.tsx).
+- *What goes:* every piece in edit mode when the one asked for is one of them, else it alone; what's stuck to them, all
+  the way down (`withStuck`: a plane's deck and that deck's timeline, D-298); a section takes the pieces and text wholly
+  inside it. A plane's cards, text and links are the plane's, so they go with it untouched; a piece stuck to one that
+  stays lets go (`stuckTo` removed).
+- *Where:* all by one offset, at the same spot or the nearest clear place on that canvas (`nearClear(…, canvas)`).
+- *How it looks:* they break cell by cell where they were (200 ms; reduced motion: at once; shown again if the write
+  is refused), then the toast says `Moved "Pazar" and 1 more with it to Engineering [go there]` (6 s; the toast takes
+  an action now, `say(text, action)`); `go there` puts that canvas's camera on where they landed, at your zoom, and goes.
+- *Undo:* one step (`move 2 things to Engineering`); a new canvas made from here is a step of its own before it.
+- *Verified:* `tsc -b`, `npm run build`; headless Chrome on the emulators: right-click Pazar (a deck stuck to it) →
+  Engineering moved both, its card stayed the plane's, the toast read as above, `[go there]` showed Pazar, Tasks and
+  its idea at `?canvas=…`; the section `Later` → typed `Later stuff` ↵ made the canvas and moved the section, its
+  heading and the plane inside (`and 2 more`); ⌘Z ⌘Z took the move and the new canvas back; Rakipler's edit console
+  `[move to…]` → Engineering moved it; a screenshot caught the plane breaking cell by cell.
+- *Not yet:* sharing a piece on several canvases (session 3); text over a plane doesn't follow it (only a section's).

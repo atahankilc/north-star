@@ -877,3 +877,8 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   edges, drawn `+`, lanes in px, late hatched), filling focus / panes / its window at its own size, go to via
   `stripReveal.ts`. Verified in headless Chrome on the emulators with a seeded workspace (two decks, 14 tasks): wheel,
   pinch, scales, edge resize, move, draw, tray drop, beside a deck, the canvas picture; details in D-304.
+
+## Done (2026-10-29): pieces move to another canvas (D-306, D-302's session 2)
+- `move to canvas…` on a piece's right-click and `[move to…]` in its edit console (and the canvas's text): the other
+  canvases or a new one; what's stuck comes along, a section takes what it holds; cell-by-cell leaving, a toast with
+  `[go there]`, one undo step. Verified in headless Chrome on the emulators (details in D-306).

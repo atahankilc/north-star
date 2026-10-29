@@ -30,3 +30,32 @@ html[data-motion='reduced'] .toast {
   transform: translate(-50%, 0);
   transition: none;
 }
+
+/* Something to do from it (D-302's session 2): a bracketed action, cyan, the one part that takes a click. */
+.action {
+  margin-left: var(--space-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-cyan);
+  font: inherit;
+  cursor: pointer;
+}
+
+.action::before {
+  content: '[';
+  color: var(--fg-faint);
+}
+
+.action::after {
+  content: ']';
+  color: var(--fg-faint);
+}
+
+.toast[data-visible='true'] .action {
+  pointer-events: auto;
+}
+
+.action:hover {
+  color: var(--fg-strong);
+}

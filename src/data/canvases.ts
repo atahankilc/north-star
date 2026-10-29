@@ -13,6 +13,7 @@ import { taskRef, type Task } from './tasks'
 import type { Place } from './places'
 import type { WithId } from './hooks'
 import type { Piece } from './model'
+import { KIND_NAME, kindOfPiece, nearClear, pieceRef, type Box } from './pieces'
 
 export const MAIN = 'main'
 export const CANVAS_NAME_MAX = 60
@@ -136,4 +137,42 @@ export function deleteCanvas(wid: string, canvas: string, all: CanvasContent) {
       await batch.commit()
     }
   })
+}
+
+// What goes along when pieces move to another canvas (D-302's session 2): what's stuck to them, all the way down (a
+// plane's deck, that deck's timeline, D-298). A plane's cards, text and links are the plane's already.
+export function withStuck(ids: string[], pieces: WithId<Piece>[]): WithId<Piece>[] {
+  const going = new Set(ids)
+  for (let grew = true; grew; ) {
+    grew = false
+    for (const p of pieces) if (p.stuckTo && going.has(p.stuckTo) && !going.has(p.id)) (going.add(p.id), (grew = true))
+  }
+  return pieces.filter((p) => going.has(p.id))
+}
+
+// Pieces and the canvas's text moved to the canvas `to`, all by one step: where they were, or the nearest clear place
+// there round it (`boxes`: how big each is as drawn; `all`: every piece, what's in the way there). A piece stuck to one
+// that stays lets go. One undo step; returns where they went (to look there).
+export async function moveToCanvas(wid: string, to: Canvas, pieces: WithId<Piece>[], labels: Label[], boxes: Box[], all: WithId<Piece>[]) {
+  const x0 = Math.min(...boxes.map((b) => b.x))
+  const y0 = Math.min(...boxes.map((b) => b.y))
+  const bounds = { x: x0, y: y0, w: Math.max(...boxes.map((b) => b.x + b.w)) - x0, h: Math.max(...boxes.map((b) => b.y + b.h)) - y0 }
+  const at = nearClear(bounds, all, to.id)
+  const dx = at.x - bounds.x
+  const dy = at.y - bounds.y
+  const canvasId = to.id === MAIN ? deleteField() : to.id
+  const moved = new Set(pieces.map((p) => p.id))
+  const now = Date.now()
+  const ops = [
+    ...pieces.map((p) => ({ ref: pieceRef(wid, p.id), data: { canvasId, x: p.x + dx, y: p.y + dy, ...(p.stuckTo && !moved.has(p.stuckTo) ? { stuckTo: deleteField() } : {}), updatedAt: now } })),
+    ...labels.map((l) => ({ ref: labelRef(wid, l.id), data: { canvasId, x: l.x + dx, y: l.y + dy, updatedAt: now } })),
+  ]
+  const n = pieces.length + labels.length
+  const what = n > 1 ? `${n} things` : pieces.length ? `a ${KIND_NAME[kindOfPiece(pieces[0])]}` : 'text'
+  await tracked(`move ${what} to ${to.name}`, ops.map((o) => o.ref), () => {
+    const batch = writeBatch(db())
+    for (const o of ops) batch.update(o.ref, o.data)
+    return batch.commit()
+  })
+  return { ...bounds, x: at.x, y: at.y }
 }
