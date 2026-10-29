@@ -26,14 +26,106 @@
   right: 0;
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: var(--space-4);
   height: 40px;
   padding: var(--space-3) var(--space-4) 0;
-  overflow-x: auto;
   border-bottom: 1px solid var(--line);
-  scrollbar-width: none;
   white-space: nowrap;
 }
+
+/* The decks, scrolling sideways when there are many. */
+.decks {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+/* Across the decks, in the corner: MINE and ALL · DAYS as framed chips (D-300). */
+.corner {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-2);
+}
+
+.chip {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--line-hover);
+  background: none;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.chip em {
+  color: var(--fg-faint);
+  font-style: normal;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  color: var(--fg);
+}
+
+.chip[aria-selected='true'] {
+  border-color: var(--accent-cyan);
+  color: var(--fg-strong);
+}
+
+/* A deck linked to a plane (D-210): only its cards' tasks. */
+.link {
+  color: var(--accent-cyan);
+}
+
+/* Opened from a plane's dock: whose linked deck this is. */
+.strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--line);
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.strip b {
+  color: var(--fg-strong);
+  font-weight: 400;
+}
+
+.stripAll {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-cyan);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: lowercase;
+  cursor: pointer;
+}
+
+.stripAll:hover,
+.stripAll:focus-visible {
+  color: var(--fg-strong);
+}
+
+/* The line between the deck and its days (beside's line, from the column's top down). */
+.innerLine {
+  bottom: 0;
+}
+
 
 .tab {
   display: inline-flex;
@@ -149,7 +241,8 @@
 }
 
 .row:hover .title,
-.row:focus-visible .title {
+.row:focus-visible .title,
+.row[aria-pressed='true'] .title {
   color: var(--accent-cyan);
 }
 

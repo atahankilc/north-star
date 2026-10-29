@@ -1,38 +1,14 @@
-/* Tasks given to you (D-261), by your square: the threads button's size and look (Threads.module.css .inboxButton). */
-.at {
-  position: relative;
-  display: inline-flex;
-}
-
+/* The tasks side view's button in the side nav (D-300): the fit button's look (WorkspaceLayout.module.css .fit), its
+   count over its top right corner. */
 .button {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font-family: var(--font-mono);
-  font-size: var(--text-md);
-  cursor: pointer;
-}
-
-.button:hover {
-  color: var(--fg-strong);
-}
-
-.button[aria-pressed='true'] {
-  color: var(--accent-cyan);
 }
 
 /* New since you last looked: magenta, as a mention's (D-166). */
 .badge {
   position: absolute;
-  top: -7px;
-  right: -7px;
+  top: -6px;
+  right: -8px;
   min-width: 16px;
   height: 16px;
   padding: 0 3px;
@@ -42,13 +18,4 @@
   font-weight: 600;
   line-height: 16px;
   text-align: center;
-}
-
-/* Nothing new: how many, faint. */
-.count {
-  position: absolute;
-  top: -5px;
-  right: -6px;
-  color: var(--fg-faint);
-  font-size: 10px;
 }

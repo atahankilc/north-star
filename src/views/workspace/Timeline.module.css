@@ -515,16 +515,16 @@
   background: var(--wash-cyan);
 }
 
-.name {
+/* A new task's card prompt (D-300): on the screen under the days drawn (`pickAt` marks where), over every panel. */
+.pick {
+  position: fixed;
+  z-index: 12;
+}
+
+.pickAt {
   position: absolute;
-  z-index: 6;
   height: var(--bar);
-  padding: 0 8px;
-  border: 1px solid var(--accent-cyan);
-  outline: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font: 13px var(--font-display);
+  pointer-events: none;
 }
 
 /* Tasks past the screen's edges, per row. */

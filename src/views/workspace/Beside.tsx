@@ -122,12 +122,13 @@ type PaneProps = { piece: WithId<Piece>; plane: WithId<Piece>; box: Bounds; edit
 // A pane's own view (D-211): fitted to its box (again when the box changes), the wheel zooming round the pointer, a drag on
 // its empty space panning (a press on a cell is the cell's until it moves 5 px, D-217). Beside a plane and in the tasks
 // side view (D-300).
-// `top`: it sits at the top left, at most its own size (the tasks side view's boards and days).
-export function usePaneView(content: Bounds, box: Bounds, top = false) {
+// `top`: it sits at the top left, at most its own size (the tasks side view's boards and days); `floor`: never smaller
+// than this (a board stays readable, the rest panned to).
+export function usePaneView(content: Bounds, box: Bounds, top = false, floor = 0) {
   const el = useRef<HTMLDivElement>(null)
   const fitted = (): PlaneCam => {
     const fit = fitInto(content, box.w, box.h, PAD)
-    const zoom = top ? Math.min(1, fit.zoom) : fit.zoom
+    const zoom = top ? Math.max(floor, Math.min(1, fit.zoom)) : fit.zoom
     if (top) return { ox: PAD - content.x * zoom, oy: PAD - content.y * zoom, zoom }
     return { ox: box.w / 2 - fit.cx * zoom, oy: box.h / 2 - fit.cy * zoom, zoom }
   }

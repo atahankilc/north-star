@@ -52,6 +52,17 @@
   text-transform: uppercase;
 }
 
+/* More along the top, before `[×]` (D-300: `[full]`, `‹ back`). */
+.tools {
+  display: flex;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.tools + .close {
+  margin-left: 0;
+}
+
 .close {
   margin-left: auto;
   padding: 0;

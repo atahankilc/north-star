@@ -151,3 +151,18 @@
 .cell[data-filled='true'] {
   background: var(--fg);
 }
+
+/* `[full]` / `‹ back` along its top inside the tasks side view (D-300): a small action like the panel's `[×]`. */
+.tool {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tool:hover,
+.tool:focus-visible {
+  color: var(--accent-cyan);
+}

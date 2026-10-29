@@ -29,7 +29,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   card faces on kanbans and tables (0c9178f), D-295 readable text on tinted cards (1c78097), D-296 dropped plans
   (memory only), D-298 timeline leftovers (06e11c7), D-299 card pickers as the prompt (80441e7), a framed table's focus
   kept inside its window (f14b321). D-291/D-292 and before: pushed and live. What was done: state-history.md.
-- D-300 (tasks side view, a deck never hides tasks), D-301 (deck), D-303 (no `this plane only`): committed, not pushed.
+- D-300/D-301/D-303/D-314 (decks and days in one side view, plane → deck → days; timelines always of something):
+  committed, not pushed.
 - **Before pushing D-300's follow-up:** deploy the RTDB rules (presence `tasks`): `npx firebase deploy --only database
   --project north-star-db`. Not done yet (needs the user).
 - D-304, the timeline as a strip (tasks' `start`, sideways without end, scales, overview): committed (414e24b), not

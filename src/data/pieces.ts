@@ -50,8 +50,8 @@ export const isLens = (p: Pick<Piece, 'kind'>) => p.kind === 'matrix' || p.kind 
 
 // What sticks to something (D-210): a lens or a kanban to a plane (D-255), a timeline to a kanban (D-262).
 export const sticks = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'kanban' || p.kind === 'timeline'
-// What it sticks to.
-export const hostKind = (p: Pick<Piece, 'kind'>): PieceKind | null => (p.kind === 'timeline' ? 'kanban' : sticks(p) ? 'plane' : null)
+// What it sticks to: a plane; a timeline to a deck or a plane (D-262, D-300: a plane's deck's days, once it has one).
+export const hostKinds = (p: Pick<Piece, 'kind'>): PieceKind[] => (p.kind === 'timeline' ? ['kanban', 'plane'] : sticks(p) ? ['plane'] : [])
 // What others stick to: a plane, a kanban.
 export const isHost = (p: Pick<Piece, 'kind'>) => kindOfPiece(p) === 'plane' || p.kind === 'kanban'
 

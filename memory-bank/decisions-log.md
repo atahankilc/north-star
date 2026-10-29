@@ -5702,3 +5702,46 @@ it still is); right-click `take it off this canvas` still does that at once. A p
 - *Verified:* headless Chrome on the emulators: Pazar on Marketing and Engineering, Delete in edit mode showed the
   lines and buttons above with `only from here` focused; Enter took it off Marketing (its home moved to Engineering,
   the toast `still on Engineering`); ⌘Z back; Delete → `delete everywhere` removed the piece and its spot.
+
+### D-314 · 2026-10-29 · Accepted (D-300 reworked; the user's list, then from a preview: "1 -> A, 2 -> columns over a time bar, 3 -> A, 4 -> A ama ayrıca tam ekran yapma özelliği de olsun … geri dönme buttonu, 5 -> … prompt open ilerleyelim")
+**Decks and their days open in one side view, left to right: plane → deck → days.** What the user asked: the deck
+icon read as an empty square; MINE sat badly between decks and ALL DAYS; ALL DAYS, a deck's days and timeline pieces
+were three confusing things; a plane's linked deck opened in a different pane than the side view; the side view
+blinked going in and out of a focus; a task's panel took the plane's place; picking a task on days jumped to the
+board; a timeline couldn't make a task for a card.
+- *Side nav:* the side view's button moved from by your square (`☐`, gone) to the side nav's tools after `+`, fit and
+  the compass: columns over a time bar, the magenta count of tasks given to you, cyan while open; shown only while the
+  canvas has a deck or a timeline (`TasksButton` in MyTasks.tsx).
+- *Tabs:* decks only (this canvas's, `⇆` on a linked one); `MINE · 3 ●1` and `ALL · DAYS` as chips in the top right
+  corner. A MINE row picks its task (panel here), nothing else moves.
+- *1 A, three columns:* a deck's `[days ›]` adds its days as a column right of it, the left part narrowing to its own
+  share (`splitDays`, a third to start; both lines drag; the canvas glides to keep its middle), `[‹ close]` takes them
+  away; below 1300 px the days slide over the deck (`‹ back to the board`). In a deck's own focus only its days show.
+  Decks and timelines never open beside a plane any more (matrices and tables still do): a plane's dock `⇆ deck`
+  opens the side view on it with `⇆ LINKED TO 01 PAZAR · ITS CARDS ONLY [all decks]` under the tabs; `⇆ timeline`
+  opens its deck with its days (or, a plane with no deck, ALL · DAYS of that plane). Escape: a task's panel, the days,
+  the side view, then the focus. Presence carries `<tab>` or `<deck> days` for followers.
+- *Flicker:* one side view drawn above any focus (z 5), never inside it (a180666).
+- *3 A, a timeline is always the days of something:* linked to a deck, that deck; linked to a plane (timelines stick
+  to planes now, `hostKinds`), the plane's deck when it has one (first in reading order; one linked later too, read
+  in `timelineKanbans`, nothing written, so unlinking the deck turns it back), else every deck but only the tasks for
+  that plane's cards (`cardsOnly`, no card-less tasks); linked to nothing, every deck (ALL · DAYS is the same with no
+  piece). A deck's days use its timeline (`timelineOf`, through its plane too), else rows by who.
+- *4 A:* with the side view open a task's panel opens inside it, over its right 330 px (`SidePanel` got `width` and
+  `tools`): `[full]` fills the side view, `‹ back` narrows it again; `[show on board]` `[show on days]` in its foot go
+  there on purpose. Cards' panels keep the plane's part.
+- *5:* drawing days on a timeline opens the card prompt (D-299's `CardPicker`, portaled under the days drawn, over
+  every panel): `# suggested` the cards of its deck's plane (`on 01 Pazar`), then every card by type; a card makes a
+  task named after it, for it; what's typed, last, `“…” A TASK WITH NO CARD`. Also: no `+` over the rows' names (it sat
+  off the strip and went as the pointer reached it).
+- *Verified* in headless Chrome on the emulators (1600 × 1000 and 1200 × 900): the icon in the side nav, `☐` gone;
+  tabs and corner chips; `[days ›]` → left part 0.33, side view 533–1600, back to 0.50 on close; narrow: days over the
+  deck with `‹ back to the board`; a board task's panel 1270–1600 inside it, `[full]` 533–1600, `‹ back`; Escape:
+  panel, days, side view; from Pazar's dock the strip and `[all decks]`; deck focus `⇆ timeline` → days only; a
+  timeline stuck to Pazar (which has Roadmap) opened Roadmap's days and showed in Roadmap's focus dock; Ops (no deck)
+  showed only `t10`, its card's task; the prompt in a timeline's focus and in the side view, a card picked made
+  "Small shops" for c1 on Roadmap with its days, typing offered `“Buy stamps” A TASK WITH NO CARD`; following Bob saw
+  Alice's Sprint 3 then its days (Deck, Days columns) then closed; the canvas kept its middle; no frame without the
+  side view going in or out of a focus. `tsc -b` clean.
+- *Not yet:* the ◆ names (a late ◆'s name sits after its hatch, at today; asked, not answered); Beside.tsx still holds
+  its deck/timeline pane code, unused now.

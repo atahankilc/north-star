@@ -162,13 +162,14 @@ export function Follow({ focusId, focusTo }: FollowProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theirSpace, focusId, leaving, away])
 
-  // Their tasks side view (D-300): open on their tab (a deck's board or days), or closed, as theirs is.
+  // Their tasks side view (D-300): open on their tab (a deck, with its days or not; MINE; every deck's days), or closed,
+  // as theirs is.
   const theirSide = leader ? (leader.tasks ?? '') : null
   useEffect(() => {
     if (theirSide === null) return
     if (!theirSide) return void useTasksSide.setState({ open: false })
     const [tab, days] = theirSide.split(' ')
-    useTasksSide.setState((s) => ({ open: true, tab, views: days ? { ...s.views, [tab]: 'days' } : s.views[tab] === 'days' ? { ...s.views, [tab]: 'board' } : s.views }))
+    useTasksSide.setState({ open: true, linked: null, tab, days: !!days })
   }, [theirSide])
 
   // Their selection becomes yours, several too (D-230).

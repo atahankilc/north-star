@@ -255,8 +255,13 @@ feature comes back as a piece, and check them with the user then.
 - Tasks and cards (D-254): a card's panel lists its tasks and adds one; the facts line ends `☐ 2/5`; a card still being
   tested offers `+ test it`, and its finished task `+ log what it taught` → evidence.
 - Tasks never hidden (D-300): a deck with tasks switched to cards asks first (a new deck for the cards, or move them);
-  one hiding them says `☐ N tasks from before`. A tasks side view from anywhere (`☐` or `t`; beside's split, one or the
-  other): a tab per task deck (board or days), MINE, ALL DAYS; remembered per workspace and browser.
+  one hiding them says `☐ N tasks from before`.
+- Decks and days (D-300, D-314): one side view from anywhere (the side nav's columns-over-a-bar icon, shown with a deck
+  or timeline on the canvas, or `t`), left to right plane → deck → days (`[days ›]` a third column; under 1300 px over
+  the deck); tabs the canvas's decks, `MINE` and `ALL · DAYS` in the corner; a plane's `⇆ deck` opens it there with a
+  `LINKED TO` strip; a task's panel inside it (`[full]`, `‹ back`, `[show on board|days]`); never beside a plane.
+- A timeline is always the days of something (D-314): its deck; its plane's deck (stuck to a plane, read, not written);
+  a plane with no deck, every deck's tasks for its cards; nothing, every deck. Drawing days opens the card prompt.
 - Stuck to a plane (D-255, D-303): only that plane's tasks until unlinked (no switch, no note: the link shows it),
   beside it in its focus.
 - More (D-256, D-258): `[filter]` (GIVEN TO, DUE, FOR, LABEL; only while open, D-308); `#labels`, `P1`–`P3`; column limits (`4/3`

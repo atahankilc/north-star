@@ -11,6 +11,7 @@
 // first or due day, the ◆'s `⟵` gives it a first day; a press on an empty day's `+` and a drag across days makes a new
 // task there; a tray task dropped on a day gets it as its due day. A click opens its panel (TaskPanel).
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -25,6 +26,9 @@ import { kanbanOf, selectTask, useKanbanUi } from './Kanban'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { passes, useKanbanFilter } from './kanbanFilter'
 import { TYPE_ACCENT } from './PlaneCards'
+import { CardPicker } from './CardPanel'
+import { cardsOn } from '../../data/places'
+import type { Card } from '../../data/cards'
 import { taskRows, type Lane } from './rows'
 import { Landing, Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import { OPEN_PAD } from './shownBox'
@@ -562,6 +566,9 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
       if (!(e.target as HTMLElement).closest('[data-ghost]') && ghost) setGhost(null)
       return
     }
+    // Over the rows' names, no day: no `+` (it would sit off the strip, and go as the pointer reached it).
+    const strip = timeLayer.current?.getBoundingClientRect()
+    if (!strip || e.clientX < strip.left) return ghost && setGhost(null)
     const r = rowAt(e.clientY)
     if (!r) return setGhost(null)
     const day = Math.floor(dayAt(e.clientX))
@@ -592,19 +599,23 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
   }
-  // Named: a new task on its deck (the row's, the one it's linked to, else the first), in its first column, with those
-  // days and the row's person or card. Escape or nothing typed: nothing.
-  const make = (title: string) => {
+  // Its deck: the row's (rows by deck), the one it's linked to, else the first.
+  const deckFor = (row: string) => {
+    const kanbans = timelineKanbans(piece, now().pieces)
+    return (mode === 'kanban' ? kanbans.find((k) => k.id === row) : undefined) ?? kanbans.find((k) => k.id === piece.stuckTo) ?? kanbans[0]
+  }
+  // Picked (D-300): a card (the task named after it, for it) or what was typed (a task with no card): a new task on its
+  // deck, in its first column, with those days and the row's person or card. Escape: nothing.
+  const make = (title: string, card?: Card) => {
     const d = draft
     setDraft(null)
     if (!d || !title.trim() || !user) return
-    const { pieces: all, tasks: every } = now()
-    const kanbans = timelineKanbans(piece, all)
-    const deck = (mode === 'kanban' ? kanbans.find((k) => k.id === d.row) : undefined) ?? kanbans.find((k) => k.id === piece.stuckTo) ?? kanbans[0]
+    const { tasks: every } = now()
+    const deck = deckFor(d.row)
     const col = deck ? kanbanOf(deck).cols.find((c) => !c.done) ?? kanbanOf(deck).cols[0] : undefined
     if (!deck || !col) return
     const last = tasksIn(every.filter((t) => t.pieceId === deck.id), col.id).at(-1)?.order
-    const fields: TaskFields = { due: iso(d.e), ...(d.s < d.e && { start: iso(d.s) }), ...(field ? field.set(d.row) ?? {} : {}) }
+    const fields: TaskFields = { due: iso(d.e), ...(d.s < d.e && { start: iso(d.s) }), ...(field ? field.set(d.row) ?? {} : {}), ...(card && { cardId: card.id, cardType: card.type }) }
     const clean = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== undefined)) as TaskFields
     const id = addTask(wid, deck.id, col.id, orderBetween(last, undefined), title, user.id, clean)
     selectTask(deck.id, id)
@@ -826,7 +837,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
                       <span className={styles.readout} style={{ left: x, top: y }}>
                         {short(draft.s)} → {short(draft.e)} · {draft.e - draft.s + 1} days
                       </span>
-                      {draft.naming && <DraftName left={x} top={y} width={Math.max(240, dw)} onDone={make} />}
+                      {draft.naming && <DraftPick left={x} top={y} width={Math.max(320, dw)} plane={deckFor(draft.row)?.stuckTo ?? piece.stuckTo} onCard={(c) => make(c.title || `untitled ${c.type}`, c)} onText={(t) => make(t)} onCancel={() => make('')} />}
                     </>
                   )
                 })()}
@@ -934,30 +945,55 @@ function Edges({ piece, layout, ppd, shown }: { piece: WithId<Piece>; layout: La
 }
 
 // A new task's name, typed where it was drawn: Enter keeps it, Escape (or leaving it empty) takes it away.
-function DraftName({ left, top, width, onDone }: { left: number; top: number; width: number; onDone: (title: string) => void }) {
+// A new task's what (D-300): the card prompt, the cards of its deck's plane suggested first (`# suggested · on Pazar`), then
+// every card by type; what's typed, last, makes it a task with no card. Escape or a press away: nothing.
+function DraftPick({ left, top, width, plane, onCard, onText, onCancel }: { left: number; top: number; width: number; plane?: string; onCard: (c: Card) => void; onText: (title: string) => void; onCancel: () => void }) {
+  const { cards, places, pieces } = useWs()
   const done = useRef(false)
-  const finish = (title: string) => {
+  const once = <A,>(f: (a: A) => void) => (a: A) => {
     if (done.current) return
     done.current = true
-    onDone(title)
+    f(a)
   }
+  const on = pieces.find((p) => p.id === plane)
+  const suggest = useMemo(() => (on ? cardsOn(cards, places, on.id).slice(0, 6).map((c) => ({ id: c.id, why: `on ${on.name || 'its plane'}` })) : undefined), [cards, places, on])
+  // Where the days were drawn, on the screen: the prompt opens under it, over everything (nothing round the strip cuts
+  // it), kept on the screen.
+  const anchor = useRef<HTMLSpanElement>(null)
+  const [at, setAt] = useState<{ x: number; y: number; w: number } | null>(null)
+  useLayoutEffect(() => {
+    const r = anchor.current?.getBoundingClientRect()
+    if (!r) return
+    const w = Math.max(320, Math.min(420, r.width))
+    setAt({ x: Math.max(8, Math.min(innerWidth - w - 8, r.left)), y: Math.min(r.bottom + 4, innerHeight - 380), w })
+  }, [])
   return (
-    <input
-      className={styles.name}
-      style={{ left, top, width }}
-      autoFocus
-      placeholder="what is it?   ↵ keep · esc away"
-      maxLength={200}
-      onPointerDown={(e) => e.stopPropagation()}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter') finish(e.currentTarget.value)
-        if (e.key === 'Escape') finish('')
-      }}
-      onBlur={(e) => finish(e.currentTarget.value)}
-    />
+    <>
+      <span ref={anchor} className={styles.pickAt} style={{ left, top, width }} aria-hidden />
+      {at &&
+        createPortal(
+          <div className={styles.pick} style={{ left: at.x, top: at.y, width: at.w }} onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+            <CardPicker
+              card={NO_CARD}
+              cards={cards}
+              types={null}
+              exclude={NONE}
+              make={false}
+              suggest={suggest}
+              prompt="a card it's for, or type a task…"
+              orTyped={(typed) => ({ key: '+text', label: `“${typed}”`, glyph: '☐', hint: 'A TASK WITH NO CARD', onSelect: () => once(onText)(typed) })}
+              onPick={once(onCard)}
+              onClose={() => once(onCancel)(undefined)}
+            />
+          </div>,
+          document.body,
+        )}
+    </>
   )
 }
+
+const NO_CARD = { id: '', type: 'idea', pieceId: '', title: '', x: 0, y: 0 } as Card
+const NONE = new Set<string>()
 
 // Its tools in its dock (its focus, beside its deck): its filter, its rows, its scale and days.
 export function TimelineDockTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {

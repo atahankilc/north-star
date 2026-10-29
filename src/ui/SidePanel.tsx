@@ -20,18 +20,22 @@ type Props = {
   actions?: ReactNode
   // From the screen's right edge: the part of the screen right of the space it belongs to (what's open beside a plane).
   right?: number
+  // Its width when not the usual 400 (a task's inside the tasks side view, D-300: narrower, or all of it).
+  width?: number
+  // More along the top, before `[×]` (that side view's `[full]`, `‹ back`).
+  tools?: ReactNode
   children?: ReactNode
 }
 
 // How wide it is at most: what it sits in may scroll its view to keep the thing it's for clear of it.
 export const SIDE_PANEL_W = 400
 
-export function SidePanel({ kind, tone, title, label, onClose, actions, right = 0, children }: Props) {
+export function SidePanel({ kind, tone, title, label, onClose, actions, right = 0, width, tools, children }: Props) {
   return createPortal(
     <Appear
       as="aside"
       className={styles.panel}
-      style={{ right, ['--tone' as string]: tone ?? 'var(--accent-magenta)' }}
+      style={{ right, ...(width ? { width } : {}), ['--tone' as string]: tone ?? 'var(--accent-magenta)' }}
       // A dialog to the canvas: its wheel scrolls it, a press here doesn't pan, right-click is the browser's.
       role="dialog"
       aria-label={label}
@@ -40,6 +44,7 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
     >
       <header className={styles.top}>
         <span className={styles.kind}>{kind}</span>
+        {tools && <span className={styles.tools}>{tools}</span>}
         <button className={styles.close} onClick={onClose} title="Close (Esc)">
           <span className={styles.br}>[</span>×<span className={styles.br}>]</span> esc
         </button>

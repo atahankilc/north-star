@@ -55,11 +55,29 @@ export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
 export type TimelineRows = (typeof TIMELINE_ROWS)[number]
 export type TimelineSetup = { kanbans?: string[]; rows?: TimelineRows }
 
-// Which kanbans a timeline shows (D-289): the one it's linked to (its console's `link ▾`), else every kanban.
-export function timelineKanbans<P extends { id: string; kind: string; stuckTo?: string }>(t: P, pieces: P[]): P[] {
+// Which decks a timeline shows (D-289, D-300): always the days of something. Linked to a deck, that deck. Linked to a
+// plane, the deck linked to that plane when it has one (the first in reading order; one linked later too: read here,
+// nothing written), else every deck, only the tasks for that plane's cards (each deck given the plane, `cardsOnly`: no
+// task for no card). Linked to nothing, every deck.
+export function timelineKanbans<P extends { id: string; kind: string; stuckTo?: string; x?: number; y?: number }>(t: P, pieces: P[]): P[] {
   const kanbans = pieces.filter((p) => p.kind === 'kanban')
-  const host = kanbans.find((k) => k.id === t.stuckTo)
-  return host ? [host] : kanbans
+  const host = pieces.find((p) => p.id === t.stuckTo)
+  if (!host) return kanbans
+  if (host.kind === 'kanban') return [host]
+  if (host.kind !== 'plane') return kanbans
+  const deck = kanbans.filter((k) => k.stuckTo === host.id).sort((a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0))[0]
+  return deck ? [deck] : kanbans.map((k) => ({ ...k, stuckTo: host.id, cardsOnly: true }))
+}
+
+// A deck's timeline (D-300): the one whose days are this deck's, linked to it or to its plane.
+export function timelineOf<P extends { id: string; kind: string; stuckTo?: string; x?: number; y?: number }>(deck: string, pieces: P[]): P | undefined {
+  const it = pieces.find((p) => p.id === deck)
+  // The deck itself back, not every deck given a plane (a plane with no deck's).
+  return it && pieces.find((p) => {
+    if (p.kind !== 'timeline' || !p.stuckTo) return false
+    const shows = timelineKanbans(p, pieces)
+    return shows.length === 1 && shows[0] === it
+  })
 }
 
 // Its setup, merged (shared): one undo step.
@@ -260,13 +278,13 @@ export function moveTasksAway(wid: string, moves: TaskMove[], pieceId: string, p
 // What a kanban shows (D-255): stuck to a plane, the tasks for that plane's cards and those for no card (or for one
 // that's gone), until it's unlinked (D-303: an old `everyPlane` is ignored); otherwise all of them.
 // A card brought to that plane from another counts as its (D-281).
-export function shownTasks(tasks: Task[], piece: { stuckTo?: string; kanban?: KanbanSetup }, cards: Pick<Card, 'id' | 'pieceId' | 'planes'>[]) {
+export function shownTasks(tasks: Task[], piece: { stuckTo?: string; kanban?: KanbanSetup; cardsOnly?: boolean }, cards: Pick<Card, 'id' | 'pieceId' | 'planes'>[]) {
   const plane = piece.stuckTo
   if (!plane) return tasks
   const byId = new Map(cards.map((c) => [c.id, c]))
   return tasks.filter((t) => {
     const c = t.cardId ? byId.get(t.cardId) : undefined
-    return !c || isOnPlane(c, plane)
+    return c ? isOnPlane(c, plane) : !piece.cardsOnly
   })
 }
 

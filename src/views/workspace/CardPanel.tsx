@@ -911,6 +911,8 @@ export function CardPicker({
   onClose,
   make: makes = true,
   suggest,
+  orTyped,
+  prompt,
 }: {
   card: Card
   cards: Card[]
@@ -922,6 +924,10 @@ export function CardPicker({
   make?: boolean
   // Shown first, with why (the task picker's: what this kanban's tasks are for…); else the nearest on this card's plane.
   suggest?: { id: string; why: string }[]
+  // What's typed can be, last, instead of a card (a timeline's new task with no card, D-300).
+  orTyped?: (typed: string) => MenuEntry
+  // Its prompt's words.
+  prompt?: string
 }) {
   const { wid, cards: all, places, pieces, edges, canvases, canvas } = useWs()
   const root = useRef<HTMLDivElement>(null)
@@ -980,13 +986,13 @@ export function CardPicker({
     // `onPick` is read when picked.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, all, edges, exclude, types, places, pieces, suggest, card.id, card.x, card.y])
-  const more = makeType ? (typed: string): MenuEntry[] => [{ key: '+new', label: `“${typed}”`, glyph: '+', tone: TONE[makeType], hint: `NEW ${makeType.toUpperCase()}`, onSelect: () => void make(typed) }] : undefined
+  const more = makeType ? (typed: string): MenuEntry[] => [{ key: '+new', label: `“${typed}”`, glyph: '+', tone: TONE[makeType], hint: `NEW ${makeType.toUpperCase()}`, onSelect: () => void make(typed) }] : orTyped ? (typed: string) => [orTyped(typed)] : undefined
   return (
     <div ref={root} className={styles.picker}>
       <MenuPanel
         items={items}
         ariaLabel={types ? `Pick a ${types.join(' or ')}` : 'Pick a card'}
-        prompt={types && types.length < 3 ? `find ${types.map((t) => PICK_MANY[t]).join(', ')}…` : 'find a card…'}
+        prompt={prompt ?? (types && types.length < 3 ? `find ${types.map((t) => PICK_MANY[t]).join(', ')}…` : 'find a card…')}
         noun="cards"
         empty={types ? `No ${types.map((t) => PICK_MANY[t]).join(' or ')} to pick yet` : 'No cards to pick yet'}
         keys={makeType ? '↵ picks the first · or makes it' : undefined}

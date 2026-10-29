@@ -3,6 +3,9 @@
 // undoable; viewers only read. The card it's for opens that card's own panel (LensCardPanel), in place of this one; a
 // card's panel opens tasks here the same way (D-254), so it's mounted wherever a card's panel can be: a piece's focus and
 // the canvas. Escape closes it. Finished, a task for a card still being tested offers to log what it taught there (D-254).
+// With the tasks side view open (D-300) it opens inside that, over its right part (the board or days still seen on its
+// left), never over a plane's part where cards' panels go: `[full]` fills the side view, `‹ back` makes it narrow again;
+// `[show on board]` and `[show on days]` take you to it there, on purpose (nothing switches by itself).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { isOnPlane, type Card } from '../../data/cards'
@@ -17,10 +20,17 @@ import { CardPicker, EvidenceForm, Pills, PLACEHOLDER, useCommit } from './CardP
 import { useWs } from './context'
 import { dueText, kanbanOf, selectTask, useKanbanUi } from './Kanban'
 import { TYPE_ACCENT } from './PlaneCards'
+import { useTasksSide } from './sideState'
 import styles from './CardPanel.module.css'
 import own from './TaskPanel.module.css'
 
 const TONE = 'var(--accent-cyan)'
+
+// A task's panel in the tasks side view (D-300): its width there, unless it fills it.
+const SIDE_TASK_W = 330
+
+// The side view open on a deck, its days or not (the task stays picked, lit there).
+const showIn = (deck: string, days: boolean) => useTasksSide.setState({ open: true, linked: null, tab: deck, days })
 
 export function TaskPanel({ editor }: { editor: boolean }) {
   const { wid, tasks, pieces } = useWs()
@@ -33,7 +43,17 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   const piece = task ? pieces.find((p) => p.id === task.pieceId) : undefined
   const close = () => selectTask('', null)
   // Beside a plane, over the plane's part of the screen (as a card's, D-211).
-  const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
+  const beside = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
+  // Inside the tasks side view (D-300): flush with its right edge, narrow or filling it.
+  const inSide = useTasksSide((s) => s.open)
+  const full = useTasksSide((s) => s.taskFull)
+  const right = inSide ? 0 : beside
+  const width = inSide ? (full ? beside : Math.min(SIDE_TASK_W, beside)) : undefined
+  const tools = inSide && (
+    <button className={own.tool} onClick={() => useTasksSide.setState({ taskFull: !full })} title={full ? 'narrow again, the board beside it' : 'fill the side view'}>
+      {full ? '‹ back' : '[full]'}
+    </button>
+  )
   // A card picked closes it (its panel takes the place). Going into a space or out of one lets go (CanvasView's focus
   // and unfocus), not this panel going: it's mounted per space, and remounted in development.
   const card = useCanvasView((s) => s.cardSelected)
@@ -65,6 +85,8 @@ export function TaskPanel({ editor }: { editor: boolean }) {
           label={`${many.length} tasks selected`}
           title={`${many.length} selected`}
           right={right}
+          width={width}
+          tools={tools}
           onClose={close}
           actions={
             editor && (
@@ -92,19 +114,26 @@ export function TaskPanel({ editor }: { editor: boolean }) {
           label={`task ${task.title}`}
           title={<Title key={task.id} task={task} editor={editor} />}
           right={right}
+          width={width}
+          tools={tools}
           onClose={close}
           actions={
-            editor && (
-              <PanelAction
-                label="delete"
-                danger
-                title="Delete or Backspace"
-                onClick={() => {
-                  close()
-                  void deleteTask(wid, task)
-                }}
-              />
-            )
+            <>
+              {/* Where it is, on purpose (D-300): its deck's board, or the deck with its days open. */}
+              <PanelAction label="show on board" title="its deck's board in the side view, the task lit" onClick={() => showIn(piece.id, false)} />
+              <PanelAction label="show on days" title="its deck's days in the side view, the task lit" onClick={() => showIn(piece.id, true)} />
+              {editor && (
+                <PanelAction
+                  label="delete"
+                  danger
+                  title="Delete or Backspace"
+                  onClick={() => {
+                    close()
+                    void deleteTask(wid, task)
+                  }}
+                />
+              )}
+            </>
           }
         >
           <Inside key={task.id} task={task} cols={kanbanOf(piece).cols} editor={editor} />
