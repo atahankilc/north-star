@@ -87,6 +87,8 @@ import { addCompetitorFeature, matchOurs, removeCompetitorFeature } from '../../
 import { bringIn, cardsOn, removeHere, takeOff } from '../../src/data/places'
 import { addLabel, deleteLabel, discardLabel, labelRef, moveMany, updateLabel } from '../../src/data/labels'
 import { cardRef } from '../../src/data/cards'
+import { addPiece, deletePiece, linkLens, openPiece, placePiece, renamePiece, setDocumentsSetup } from '../../src/data/pieces'
+import { addCanvas, alsoOnCanvas, deleteCanvas, moveCanvas, moveToCanvas, renameCanvas, setCanvasHere, takeOffCanvas } from '../../src/data/canvases'
 import { apply, recentCount, uiCtx } from '../../src/ops/firestore'
 import { buildBatch } from '../../src/ops/registry'
 import { counterIds } from '../../src/ops/newId'
@@ -484,3 +486,127 @@ describe('data/ functions as ops', () => {
     })
   })
 })
+
+// ---- S6: data/pieces.ts and data/canvases.ts over ops.
+describe('pieces and canvases as ops (S6)', () => {
+  beforeEach(seed)
+  const piece = (id: string) => ws().pieces.find((p) => p.id === id)!
+
+  it('deletePiece reads its own cascade (whatever lists are passed): one undo step, one ⌘Z brings everything back', async () => {
+    const before = new Map(fake.data)
+    await deletePiece(WID, ID.planeA, [], [], [], 'plane')
+    expect(fake.data.has(path('pieces', ID.planeA))).toBe(false)
+    for (const id of [ID.barista, ID.preorder]) expect(fake.data.has(path(id.startsWith('cust') ? 'customers' : 'ideas', id))).toBe(false)
+    expect(fake.data.has(path('problems', ID.queue))).toBe(false)
+    expect(fake.data.has(path('edges', ID.e1))).toBe(false)
+    expect(fake.data.has(path('labels', ID.note))).toBe(false)
+    // Anna stays, at home on the market plane.
+    expect(fake.data.get(path('customers', ID.anna))).toMatchObject({ pieceId: ID.planeB, x: 50, y: 300 })
+    expect(fake.data.has(path('places', `${ID.planeB}_${ID.anna}`))).toBe(false)
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['delete a plane'])
+    await undo()
+    await settle()
+    expect(new Map(fake.data)).toEqual(before)
+  })
+
+  it('deletePiece of a matrix takes its cells, of a deck its tasks', async () => {
+    await deletePiece(WID, ID.matrix, [], [], [], 'matrix')
+    expect([...fake.data.keys()].some((k) => k.includes('/cells/'))).toBe(false)
+    echo()
+    await deletePiece(WID, ID.deck, [], [], [], 'kanban')
+    expect([...fake.data.keys()].some((k) => k.includes('/tasks/'))).toBe(false)
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['delete a matrix', 'delete a deck'])
+  })
+
+  it('arrange of a plane through apply carries what is stuck to it; one ⌘Z puts all back', async () => {
+    // The deck touching the plane's bottom edge.
+    fake.data.set(path('pieces', ID.deck), { ...fake.data.get(path('pieces', ID.deck))!, y: 625 })
+    echo()
+    const before = new Map(fake.data)
+    const ctx = { ws: ws(), actor: ALICE, now: Date.now(), newId: counterIds('n') }
+    const a = await apply(WID, buildBatch(ctx, [{ op: 'arrange', args: { items: [ID.planeA], by: [200, 100] } }]))
+    await a.written
+    expect(fake.data.get(path('pieces', ID.planeA))).toMatchObject({ x: 200, y: 100 })
+    expect(fake.data.get(path('pieces', ID.deck))).toMatchObject({ x: 200, y: 725 })
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['move a plane'])
+    await undo()
+    await settle()
+    expect(new Map(fake.data)).toEqual(before)
+  })
+
+  it('placePiece (the drag) writes the boxes it is given, followers too, in one step; a resize says so', async () => {
+    const a = piece(ID.planeA)
+    await placePiece(WID, ID.planeA, a, { ...a, x: 100 }, 'plane', [{ id: ID.deck, from: piece(ID.deck), to: { ...piece(ID.deck), x: 100 } }])
+    expect(fake.data.get(path('pieces', ID.deck))).toMatchObject({ x: 100, y: 700 })
+    echo()
+    await placePiece(WID, ID.planeA, piece(ID.planeA), { ...piece(ID.planeA), w: 1000 }, 'plane')
+    expect(fake.data.get(path('pieces', ID.planeA))).toMatchObject({ x: 100, w: 1000 })
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['move a plane', 'resize a plane'])
+  })
+
+  it('addPiece makes it on the canvas shown and returns its id; rename merges typing; link and open', async () => {
+    const id = await addPiece(WID, 'matrix', [5000, 0], [], undefined, 'Rivals 2')
+    expect(fake.data.get(path('pieces', id))).toMatchObject({ kind: 'matrix', name: 'Rivals 2', w: 800, h: 500 })
+    expect(fake.data.get(path('pieces', id))!.canvasId).toBeUndefined()
+    echo()
+    await renamePiece(WID, id, 'Ri', 'matrix')
+    await renamePiece(WID, id, 'Rivals', 'matrix')
+    echo()
+    await linkLens(WID, piece(id), ID.planeB)
+    echo()
+    await openPiece(WID, piece(id), true)
+    expect(fake.data.get(path('pieces', id))).toMatchObject({ name: 'Rivals', stuckTo: ID.planeB, open: true })
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['add a matrix', 'rename a matrix', 'stick a matrix', 'open a matrix'])
+  })
+
+  it('setDocumentsSetup merges into the list setup', async () => {
+    fake.data.set(path('pieces', 'docs0000000000000001'), { kind: 'documents', x: 4000, y: 0, w: 800, h: 450, documents: { view: 'table', pageSize: 10 }, createdAt: T, updatedAt: T })
+    echo()
+    await setDocumentsSetup(WID, piece('docs0000000000000001'), { view: 'shelf', pageSize: undefined })
+    expect(fake.data.get(path('pieces', 'docs0000000000000001'))!.documents).toEqual({ view: 'shelf' })
+  })
+
+  it('canvases: add (main gets its doc), rename, move, put a plane on it too, take it off, delete it; main is never deleted', async () => {
+    const c = await addCanvas(WID, 'Engineering', ws().canvases)
+    expect(fake.data.get(path('canvases', c))).toMatchObject({ name: 'Engineering', order: 1, createdBy: 'u-alice' })
+    expect(fake.data.get(path('canvases', 'main'))).toMatchObject({ name: 'Main', order: 0 })
+    echo()
+    await renameCanvas(WID, ws().canvases.find((x) => x.id === c)!, 'Eng')
+    echo()
+    await moveCanvas(WID, ws().canvases, c, -1)
+    echo()
+    expect(ws().canvases.map((x) => x.id)).toEqual([c, 'main'])
+    const landed = await alsoOnCanvas(WID, ws().canvases.find((x) => x.id === c)!, [piece(ID.planeA)], [piece(ID.planeA)])
+    expect(landed).not.toBeNull()
+    // planeA with its deck.
+    expect(fake.data.has(path('pieceSpots', `${c}_${ID.planeA}`))).toBe(true)
+    expect(fake.data.has(path('pieceSpots', `${c}_${ID.deck}`))).toBe(false)
+    echo()
+    expect(await takeOffCanvas(WID, piece(ID.planeA), c)).toEqual(['main'])
+    expect(fake.data.has(path('pieceSpots', `${c}_${ID.planeA}`))).toBe(false)
+    echo()
+    expect(await takeOffCanvas(WID, piece(ID.planeA), 'main')).toBeNull()
+    await deleteCanvas(WID, 'main')
+    expect(fake.data.has(path('canvases', 'main'))).toBe(true)
+    expect(useHistory.getState().notice?.text ?? '').toMatch(/never deleted/)
+    const before = new Map(fake.data)
+    await deleteCanvas(WID, c)
+    expect(fake.data.has(path('canvases', c))).toBe(false)
+    await undo()
+    await settle()
+    expect(new Map(fake.data)).toEqual(before)
+  })
+
+  it('moveToCanvas moves what it is given (by the boxes given) and lets go of a host that stays', async () => {
+    const c = await addCanvas(WID, 'Ops', ws().canvases)
+    echo()
+    setCanvasHere('main')
+    const to = ws().canvases.find((x) => x.id === c)!
+    const landed = await moveToCanvas(WID, to, [piece(ID.deck)], [], [piece(ID.deck)], [], [])
+    expect(landed).toMatchObject({ w: 900, h: 500 })
+    expect(fake.data.get(path('pieces', ID.deck))).toMatchObject({ canvasId: c })
+    expect(fake.data.get(path('pieces', ID.deck))!.stuckTo).toBeUndefined()
+    expect(useHistory.getState().past.at(-1)!.label).toBe('move a deck to Ops')
+  })
+})
+

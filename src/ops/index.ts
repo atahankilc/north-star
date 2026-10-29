@@ -20,3 +20,9 @@ export { placeOn, placeOnPlan, takeOff, takeOffPlan, type PlaceOnArgs, type Take
 export { OPS, REGISTRY, build, buildBatch, type OpDef, type ArgSchema, type Step } from './registry'
 // Text ops (S5): create_text, update_text, arrange (a section carries what's inside it); delete takes text too.
 export { createText, updateText, arrange, TEXT_KINDS, TEXT_NAMES, type CreateTextArgs, type UpdateTextArgs, type ArrangeArgs, type TextStyle } from './text'
+// Piece and canvas ops (S6): create_piece, update_piece, rename, resize, create_canvas, move_canvas, move_to_canvas,
+// place_on/take_off for pieces, delete for pieces and canvases (one `delete`, delete.ts).
+export { createPiece, updatePiece, rename, resize, place, createCanvas, moveCanvas, moveToCanvas, moveToCanvasPlan, piecesOnPlan, piecesOff, deletePieces, pieceCascade, deleteCanvasWrites, PIECE_KINDS } from './pieces'
+export type { CreatePieceArgs, UpdatePieceArgs, RenameArgs, PlaceArgs, ResizeArgs, CreateCanvasArgs, MoveCanvasArgs, MoveToCanvasArgs, PiecesOnArgs, PieceOffArgs, DeletePiecesArgs } from './pieces'
+export { deleteAny, type DeleteAnyArgs } from './delete'
+export { boundTo } from './stick'

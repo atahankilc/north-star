@@ -261,7 +261,7 @@ export function deleteThings(ctx: OpCtx, args: DeleteArgs): Plan {
       single = 'unmatch'
       continue
     }
-    refuse(op, `there is nothing with the id ${id} that delete can take away`, 'use the id of a card, link, piece of evidence, competitor feature, match or text (pieces, tasks and the rest come later)')
+    refuse(op, `there is nothing with the id ${id} that delete can take away`, 'use the id of a card, link, piece of evidence, competitor feature, match, text, piece or canvas (tasks and the rest come later)')
   }
   if (kinds.size === 1) kind = [...kinds][0]
 

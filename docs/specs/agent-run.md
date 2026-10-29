@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S6 next (pieces, canvases, spots: explicit canvasId R1, cascades from the snapshot R5, followers + stick as ops R7, `resize`). S1–S5 done.
+S7 next (matrix, table: entries, cells, rules, columns; per-kind setup templates; `dropCriterionScores`). S1–S6 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -136,6 +136,14 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   reviewer: 1 fix round (arrange didn't carry package members/parts; update_text and arrange both moved text), then
   pass with real-UI checks (section drag with a plane, turns, sticky fold/resize, box-select drag, ⌘D/⌘V, second
   canvas) · left: line-up/space-out layouts (S9), stuck pieces (S6), workspace name/description untracked.
+- S6 · see `git log --grep "Agent S6"` · `src/ops/{pieces,delete,stick}.ts`, `src/model/pieceMoves.ts`
+  (followerMoves/stuckChain from CanvasView's press): create_piece (`deck` → `kanban`, canvas required R1, stuck_to,
+  setup), update_piece, rename (piece/canvas), resize (pieces + text widths, followers), arrange carries stuck pieces
+  and `stick`, delete for pieces (cascade from the snapshot R5; cards also elsewhere re-home; D-313 scope) and canvases,
+  create/move canvas, move_to_canvas, place_on/take_off for pieces; data/{pieces,canvases} wrapped, places.ts'
+  planeGoes/runOps/commit gone · reviewer: pass first round (real UI: stick by drag, plane move with deck + matrix =
+  one step, resize keeps followers on edges, plane delete re-homes a shared card, D-313 confirm, canvas delete, all
+  undone by one ⌘Z) · left: `placeDocument` with sharing (documents aren't ops yet).
 
 ### Stuck
 _(none)_
@@ -149,6 +157,8 @@ _(questions, choices made on their behalf, anything that needs a key or a design
   hooks to history.ts, presence.ts, WorkspaceLayout.tsx after ours land (onboarding-run.md §1.2).
 - Op names (agent-actions.md): the model sees `deck`, never `kanban` (D-301); workspace name/description and comments
   are untracked today (no undo), so they can't join a preview's single undo step until they are.
+- Chosen in S6: deleting a plane also removes its deleted cards' evidence, competitor features and comparisons (same as
+  S4's card delete); an agent `arrange` of a section holding a plane also brings the plane's stuck pieces.
 - Chosen in S4 (easy to undo): deleting a card now also removes its evidence, competitor features and comparisons
   (today's deleteCard left them as invisible orphans); matrix cells and tasks pointing at it stay (skipped, D-141).
 
@@ -185,3 +195,6 @@ _(the reviewers' and builders' "could be better", not done yet)_
   adds layouts, extend `arrange` with `layout` (`near`/`align-*`/`spread-*`/`grid`) + `where` (agent.md §4.4), not new
   ops; `moveMany` refused by validate resolves null, so a caller's `.catch(() => landed(...))` wouldn't run (can't
   happen today).
+- **S7/S8 (S6 reviewer):** give the model per-kind setup templates or a typed schema per kind (matrix axes by type/plane,
+  table rules, deck `holds` + source) instead of a free-form `setup`; `create_piece` with `stuck_to` should pick a free
+  side; `stuck_to` should refuse a host on another canvas; expose `where.at`; `resize` summary: grows right and down.

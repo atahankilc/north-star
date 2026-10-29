@@ -173,14 +173,17 @@ describe('arrange', () => {
     expect(arrange(ctx, { items: [SEC.plane], by: [50, 0], carry: false }).writes.map((w) => w.id)).toEqual([SEC.plane])
   })
 
-  it('a section on the canvas carries its text and the pieces inside it (their spot), not the others', () => {
+  it('a section on the canvas carries its text and the pieces inside it (their spot), and what is stuck to those (S6)', () => {
     const ctx = ctxOf()
     const plan = arrange(ctx, { to: [{ id: SEC.canvas, x: -50, y: -100 }] })
     const ws = run(ctx, [plan])
     expect(label(ws, ID.heading)).toMatchObject({ x: 0, y: 0 })
     expect(ws.pieces.find((p) => p.id === ID.planeA)).toMatchObject({ x: 0, y: 200 })
-    expect(ws.pieces.find((p) => p.id === ID.deck)).toMatchObject({ x: 0, y: 700 })
-    expect(plan.writes.map((w) => w.coll).sort()).toEqual(['labels', 'labels', 'pieces'])
+    // The deck isn't inside the section, but it's stuck to the plane: it follows the plane (S6, D-210).
+    expect(ws.pieces.find((p) => p.id === ID.deck)).toMatchObject({ x: 0, y: 900 })
+    // Not stuck, not inside: stays.
+    expect(ws.pieces.find((p) => p.id === ID.matrix)).toMatchObject({ x: 1100, y: 700 })
+    expect(plan.writes.map((w) => w.coll).sort()).toEqual(['labels', 'labels', 'pieces', 'pieces'])
   })
 
   it("moves a card's place on another plane, a piece's spot on another canvas; refuses what is not there", () => {

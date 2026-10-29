@@ -6,27 +6,28 @@
 // What S4 left for later steps (still plain tracked() writes in data/):
 // - competitorFeatures.ts' dropCriterionScores (a criterion taken off a feature, with its scores): S7, as a criterion
 //   delete op that works out the matrix cells it takes itself (today the component passes them and a batch callback).
-// - places.ts' planeGoes and runOps (what a plane's delete does to its cards and places): S6, with pieces.ts'
-//   deletePiece; places.ts' rehome already writes what ops' rehome (cards.ts) plans, through it.
+// - (S6 did places.ts' planeGoes and runOps: the plane delete is pieces.ts' pieceCascade now.)
 //
 // S5 (text.ts): every write in data/labels.ts is a wrapper (addLabel → create_text, updateLabel → update_text,
 // deleteLabel → delete, moveMany → arrange). Left: arrange's layouts (line up, space out: CardPanel's maths);
 // pieces moved by arrange don't bring what's stuck to them (pieces.ts' placeAll, S6). The workspace's name and
 // description (the project title's words, workspaces.ts) stay untracked writes, not ops. update_text's builder takes
 // w, h, x, y (the UI's resize and drag go through it) but the model's schema leaves them out: moving is arrange, sizing
-// will be a resize op (S6). arrange carries folded parts, package members and section contents
+// is the resize op (S6). arrange carries folded parts, package members and section contents
 // (model/cardInside.ts' carriedWith, model/textPlace.ts' sectionHolds); the UI's moveMany passes exact spots with
 // carry: false, having found them itself.
 import { CARD_TYPES } from '../model/cards'
 import { VALIDATIONS, FEATURE_PRIORITIES, FEATURE_STATUSES, FEATURE_IMPACTS, FEATURE_EFFORTS } from '../model/cards'
 import { EVIDENCE_KINDS, AVAILABILITIES } from '../model/shapes'
 import { project } from './project'
-import { createCard, createPackage, deleteThings, duplicate, updateCard } from './cards'
+import { createCard, createPackage, duplicate, updateCard } from './cards'
 import { EDGE_KINDS, link, unlink, updateLink } from './edges'
 import { createEvidence, updateEvidence } from './evidence'
 import { createCompetitorFeature, updateCompetitorFeature } from './features'
 import { placeOn, takeOff } from './places'
 import { arrange, createText, HEADING_SIZES, TEXT_KINDS, TEXT_SCALES, updateText } from './text'
+import { createCanvas, createPiece, moveCanvas, moveToCanvas, PIECE_KINDS, piecesOff, piecesOnPlan, rename, resize, updatePiece } from './pieces'
+import { deleteAny } from './delete'
 import { LABEL_COLORS } from '../model/labels'
 import type { OpCtx, Plan } from './types'
 import { refuse } from './util'
@@ -36,7 +37,7 @@ export type ArgSchema = { type?: string | string[]; anyOf?: ArgSchema[]; descrip
 
 export type OpDef = {
   name: string
-  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'any'
+  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'piece' | 'canvas' | 'any'
   summary: string
   args: ArgSchema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -136,9 +137,19 @@ export const OPS: OpDef[] = [
   {
     name: 'delete',
     kind: 'any',
-    summary: 'Delete cards (with their links, places, evidence, competitor features and matches), links, evidence, competitor features, matches or text (a section alone: what it holds stays). On a plane, cards also elsewhere only come off it.',
-    args: obj({ ids: ids('what to delete'), plane: s('delete here only: cards on other planes stay there'), everywhere: b('delete cards from every plane') }, ['ids']),
-    build: deleteThings,
+    summary:
+      'Delete cards (with their links, places, evidence, competitor features and matches), links, evidence, competitor features, matches, text (a section alone: what it holds stays), pieces (a plane with its cards, text and links, though a card also on another plane stays there; a matrix or table with its cells; a deck with its tasks) or canvases (with everything on them; never the first). On a plane, cards also elsewhere only come off it. A piece on several canvases needs scope.',
+    args: obj(
+      {
+        ids: ids('what to delete'),
+        plane: s('delete here only: cards on other planes stay there'),
+        everywhere: b('delete cards from every plane, pieces from every canvas'),
+        scope: { type: 'string', enum: ['here', 'everywhere'], description: 'a piece on several canvases: here takes it off canvas only, everywhere deletes it' },
+        canvas: s('with scope here: the canvas it comes off'),
+      },
+      ['ids'],
+    ),
+    build: deleteAny,
   },
   {
     name: 'duplicate',
@@ -224,14 +235,15 @@ export const OPS: OpDef[] = [
     name: 'arrange',
     kind: 'any',
     summary:
-      "Move text, cards and pieces by [dx, dy] in their space's px (a plane's or the canvas's). A section carries what's wholly inside it, a folded card its parts, a package its members. A card's spot on a plane other than its home needs that plane.",
+      "Move text, cards and pieces by [dx, dy] in their space's px (a plane's or the canvas's). A section carries what's wholly inside it, a folded card its parts, a package its members, a plane or deck what's stuck to it. A card's spot on a plane other than its home needs that plane. stick: a matrix, table, deck or timeline dropped near a plane's edge sticks to it.",
     args: obj(
       {
         items: ids('what moves'),
         by: { type: 'array', items: n(), description: '[dx, dy] in their space px' },
         plane: s("the plane the cards are shown on: needed for a card's place on a plane that isn't its home (left out: each card's home)"),
         canvas: s('the canvas the pieces are on (left out: the one shown)'),
-        carry: b("false: a section moves without what's inside it"),
+        carry: b("false: a section moves without what's inside it, a plane without what's stuck to it"),
+        stick: b("a matrix, table, deck or timeline ending within 48 px of a plane's edge (a timeline: a deck's too) snaps there and sticks to it"),
       },
       ['items', 'by'],
     ),
@@ -240,16 +252,68 @@ export const OPS: OpDef[] = [
   {
     name: 'place_on',
     kind: 'place',
-    summary: 'Show the same cards on another plane too (with their parts and members); move: their home moves there.',
-    args: obj({ cards: ids('the cards'), plane: s(), move: b() }, ['cards', 'plane']),
-    build: placeOn,
+    summary: 'Show the same cards on another plane too (cards + plane; with their parts and members; move: their home moves there), or the same pieces on another canvas too (pieces + canvas; with what is stuck to them).',
+    args: obj({ cards: ids('the cards'), plane: s(), move: b(), pieces: ids('the pieces'), canvas: s('the canvas they go on too'), from: s('the canvas the pieces are shown on (left out: the one shown)') }),
+    build: (ctx: OpCtx, args: { pieces?: string[]; canvas?: string; from?: string; cards?: string[] }) => (args.pieces || args.canvas ? piecesOnPlan(ctx, args as Parameters<typeof piecesOnPlan>[1]).plan : placeOn(ctx, args as Parameters<typeof placeOn>[1])),
   },
   {
     name: 'take_off',
     kind: 'place',
-    summary: "Take cards off one plane; they stay on the others (a card on no other plane isn't touched).",
-    args: obj({ cards: ids('the cards'), plane: s() }, ['cards', 'plane']),
-    build: takeOff,
+    summary: "Take cards off one plane (cards + plane), or pieces off one canvas (pieces + canvas); they stay on the others (a card on no other plane isn't touched; a piece on no other canvas is refused: delete it).",
+    args: obj({ cards: ids('the cards'), plane: s(), pieces: ids('the pieces'), canvas: s() }),
+    build: (ctx: OpCtx, args: { pieces?: string[]; canvas?: string }) => (args.pieces || args.canvas ? piecesOff(ctx, args as Parameters<typeof piecesOff>[1]) : takeOff(ctx, args as Parameters<typeof takeOff>[1])),
+  },
+  {
+    name: 'create_piece',
+    kind: 'piece',
+    summary: 'Put a piece on a canvas: a plane (cards go on it), a deck (tasks), a matrix, a table, a timeline, a documents list, or one document. Optionally stuck to a plane (a timeline: a deck or a plane).',
+    args: obj(
+      {
+        kind: { type: 'string', enum: PIECE_KINDS },
+        name: s(),
+        canvas: s('the canvas it goes on (main for the first)'),
+        setup: { type: 'object', description: "matrix, table, deck, timeline or documents list: its setup as the piece stores it; left out, a blank one" },
+        doc: s('document only: the shared document it shows'),
+        stuck_to: s('matrix, table, deck: the plane it sticks to; timeline: a deck or a plane'),
+        where: obj({ near: s('right of this piece') }, ['near'], 'left out: beside what it sticks to, else under everything on the canvas'),
+        handle,
+      },
+      ['kind', 'canvas'],
+    ),
+    build: createPiece,
+  },
+  {
+    name: 'update_piece',
+    kind: 'piece',
+    summary: "Change a piece: its name, framed (false lays a matrix, table, deck, timeline or documents out of its window onto the canvas), what it's stuck to (null lets go), a documents list's view.",
+    args: obj(
+      {
+        id: s('the piece'),
+        name: orNull('null or empty takes it away (it shows its kind)'),
+        framed: b(),
+        stuck_to: orNull('a plane (a timeline: a deck or a plane); null lets go'),
+        documents: obj({ view: { type: 'string', enum: ['table', 'shelf'] }, pageSize: n(), kinds: { type: 'array', items: s() }, sort: obj({ col: s(), desc: b() }) }, [], 'documents list only'),
+      },
+      ['id'],
+    ),
+    build: updatePiece,
+  },
+  { name: 'rename', kind: 'any', summary: "Rename a piece or a canvas (a card's title: update_card; text: update_text).", args: obj({ id: s(), name: s() }, ['id', 'name']), build: rename },
+  {
+    name: 'resize',
+    kind: 'any',
+    summary: "Resize a piece (at least 325 × 200; framed only; what's stuck to it follows) or text: a paragraph's, sticky note's or the title's width, a section's width and height.",
+    args: obj({ id: s(), w: n('px'), h: n('px; a piece or a section only') }, ['id', 'w']),
+    build: resize,
+  },
+  { name: 'create_canvas', kind: 'canvas', summary: 'Make a canvas (after the others).', args: obj({ name: s(), handle }, ['name']), build: createCanvas },
+  { name: 'move_canvas', kind: 'canvas', summary: 'Move a canvas one place up or down in the list.', args: obj({ canvas: s(), by: { type: 'string', enum: ['up', 'down'] } }, ['canvas', 'by']), build: moveCanvas },
+  {
+    name: 'move_to_canvas',
+    kind: 'canvas',
+    summary: "Move pieces and the canvas's text to another canvas, with what's stuck to them and what their sections hold; they land where they were or the nearest clear place.",
+    args: obj({ items: ids('pieces and text on the canvas'), canvas: s('where they go'), from: s('the canvas they are on (left out: the one shown)') }, ['items', 'canvas']),
+    build: moveToCanvas,
   },
 ]
 
@@ -290,3 +354,11 @@ export function buildBatch(ctx: OpCtx, steps: Step[]): Plan[] {
   })
   return plans
 }
+
+// S6 (pieces.ts, delete.ts, stick.ts): every write in data/pieces.ts and data/canvases.ts is a wrapper (addPiece and
+// placeDocument → create_piece, placePiece/placeLens → arrange or resize through pieces.ts' place, linkLens/openPiece/
+// setDocumentsSetup/renamePiece → update_piece, deletePiece/deleteCanvas → delete, addCanvas → create_canvas,
+// renameCanvas → rename, moveCanvas → move_canvas, moveToCanvas → move_to_canvas, alsoOnCanvas → place_on,
+// takeOffCanvas → take_off). Left: placeDocument sharing the document in the same step (documents aren't an ops
+// collection yet: a plain tracked() batch, as before). The UI's drag still passes exact boxes for what follows a plane
+// (it draws them while dragging); arrange and resize work them out themselves (model/pieceMoves.ts' followerMoves).

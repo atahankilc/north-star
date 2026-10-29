@@ -9,6 +9,9 @@ import { CANVAS, kindOf, LABEL_COLORS, PARA_W, STICKY_W, TITLE_W, textMax, type 
 import { labelBox } from '../model/labelBox'
 import { canvasOf, MAIN } from '../model/canvases'
 import { around, cardBoxes, clearSpotFor, inSection, piecesShown, rightOf, sectionHolds, type Box, type Boxed } from '../model/textPlace'
+import { followerMoves, STICK_REACH, stickTarget, stuckChain } from '../model/pieceMoves'
+import { hostKinds, KIND_NAME, kindOfPiece, sticks } from '../model/pieces'
+import { boundTo } from './stick'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { a, cardColl, find, handleOf, refuse } from './util'
 
@@ -252,8 +255,12 @@ export type ArrangeArgs = {
   by?: [number, number]
   // Exact spots (the app's own moves), each with the plane or canvas it's on when not the one above.
   to?: { id: string; x: number; y: number; plane?: string; canvas?: string }[]
-  // A section carries what's wholly inside it, by the same distance (true unless false: the UI passes what it found).
+  // A section carries what's wholly inside it, a plane or deck what's stuck to it (S6), by the same distance (true unless
+  // false: the UI passes what it found).
   carry?: boolean
+  // A matrix, table, deck or timeline dropped within reach of a plane's edge (a timeline's: a deck's too) snaps one grid
+  // step out from it and sticks there (D-210); dropped elsewhere it stays as it was.
+  stick?: boolean
 }
 
 type Move = { id: string; x: number; y: number; plane?: string; canvas?: string }
@@ -332,13 +339,27 @@ export function arrange(ctx: OpCtx, args: ArrangeArgs): Plan {
     }
   }
   // The list grows as things are carried: what a section holds brings its own folded parts and package members too.
+  let stuck = ''
   for (let i = 0; i < moves.length; i++) {
     const m = moves[i]
+    const piece = i < given && args.stick ? ctx.ws.pieces.find((p) => p.id === m.id) : undefined
+    if (piece && sticks(piece)) {
+      const canvas = m.canvas ?? ctx.ws.canvas ?? MAIN
+      const shown = piecesShown(canvas, ctx.ws.pieces, ctx.ws.spots)
+      const followers = new Set(stuckChain(shown, piece.id).map((f) => f.id))
+      const kinds = hostKinds(piece)
+      const hosts = shown.filter((x) => x.id !== piece.id && !followers.has(x.id) && kinds.includes(kindOfPiece(x)))
+      const t = stickTarget({ x: m.x, y: m.y, w: piece.w, h: piece.h }, hosts, STICK_REACH)
+      if (t) {
+        ;[m.x, m.y] = [t.box.x, t.box.y]
+        if (t.plane !== piece.stuckTo) (out.push({ coll: 'pieces', id: piece.id, patch: { stuckTo: t.plane, ...boundTo(piece, t.plane), updatedAt: ctx.now } }), (stuck = KIND_NAME[kindOfPiece(piece)]))
+      }
+    }
     const { write, from, space } = moveWrite(ctx, op, m)
     out.push(write)
     const l = ctx.ws.labels.find((x) => x.id === m.id)
     const card = l ? undefined : ctx.ws.cards.find((c) => c.id === m.id)
-    if (i < given) kinds.add(l ? kindOf(l) : card ? (card.type === 'package' ? 'package' : 'card') : 'piece')
+    if (i < given) kinds.add(l ? kindOf(l) : card ? (card.type === 'package' ? 'package' : 'card') : kindOfPiece(ctx.ws.pieces.find((p) => p.id === m.id)!))
     if (args.carry === false) continue
     const [dx, dy] = [m.x - from.x, m.y - from.y]
     // A section carries what's wholly inside it where it was (R7); a card what's folded into it, a package its members.
@@ -348,13 +369,28 @@ export function arrange(ctx: OpCtx, args: ArrangeArgs): Plan {
     } else if (card && space.plane) {
       const f = foldsFor(space.plane)
       bring(carriedWith(f.folds, f.cards, card.id), space, dx, dy)
+    } else if (!l && !card && !space.plane) {
+      // A plane (or a deck) brings what's stuck to it (D-210, D-298): on its edge, or as its corner moves (R7).
+      const pc = ctx.ws.pieces.find((p) => p.id === m.id)!
+      const shown = piecesShown(space.canvas, ctx.ws.pieces, ctx.ws.spots)
+      const box = { x: from.x, y: from.y, w: pc.w, h: pc.h }
+      for (const f of followerMoves(shown, pc.id, box, { ...box, x: m.x, y: m.y })) {
+        if (listed.has(f.id)) continue
+        listed.add(f.id)
+        moves.push({ id: f.id, x: f.to.x, y: f.to.y, canvas: space.canvas })
+        carried++
+      }
     }
   }
   const n = moves.length
   const one = given === 1 ? ctx.ws.labels.find((x) => x.id === moves[0].id) : undefined
   const pkg = given === 1 ? ctx.ws.cards.find((c) => c.id === moves[0].id && c.type === 'package') : undefined
-  const label =
-    one?.kind === 'section' && carried
+  const piece1 = given === 1 ? ctx.ws.pieces.find((p) => p.id === moves[0].id) : undefined
+  const label = stuck
+    ? `stick a ${stuck}`
+    : piece1
+      ? `move a ${KIND_NAME[kindOfPiece(piece1)]}`
+      : one?.kind === 'section' && carried
       ? 'move a section and what is in it'
       : one
         ? `move ${one.kind === 'title' ? 'the title' : `a ${kindOf(one)}`}`
@@ -363,7 +399,14 @@ export function arrange(ctx: OpCtx, args: ArrangeArgs): Plan {
           : given === 1 && ctx.ws.cards.some((c) => c.id === moves[0].id)
             ? `move a card${carried ? ' and its parts' : ''}`
             : `move ${n} things`
-  return { op, label, writes: out, ids: {}, meta: { ...(kinds.size === 1 ? { kind: [...kinds][0] } : {}) } }
+  // A piece's spot and its sticking, on its own canvas, are one doc: one patch.
+  const merged: Write[] = []
+  for (const w of out) {
+    const same = w.patch && merged.find((x) => x.patch && x.coll === w.coll && x.id === w.id)
+    if (same) Object.assign(same.patch!, w.patch)
+    else merged.push(w.patch ? { ...w, patch: { ...w.patch } } : w)
+  }
+  return { op, label, writes: merged, ids: {}, meta: { ...(kinds.size === 1 ? { kind: [...kinds][0] } : {}) } }
 }
 
 export type { Label }
