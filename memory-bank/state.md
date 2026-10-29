@@ -16,7 +16,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. `refactor/north-star-1.5` was merged
   into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
-- Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (latest change D-292, no `bends` check); rules tests 427/0. Until Blaze,
+- Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 427/0. Until Blaze,
   deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger) and Storage
   (documents' files, D-232; `storage.rules` allow nothing yet). The assistant's client code went with 1.0 (D-248); only
@@ -31,8 +31,6 @@ something is finished, add its entry to state-history.md and leave at most one l
   kept inside its window (f14b321). D-291/D-292 and before: pushed and live. What was done: state-history.md.
 - D-300/D-301/D-303/D-314 (decks and days in one side view, plane → deck → days; timelines always of something):
   committed, not pushed.
-- **Before pushing D-300's follow-up:** deploy the RTDB rules (presence `tasks`): `npx firebase deploy --only database
-  --project north-star-db`. Not done yet (needs the user).
 - D-304, the timeline as a strip (tasks' `start`, sideways without end, scales, overview): committed (414e24b), not
   pushed; its rule is already deployed. Its preview of four is docs/specs/timeline-preview/ (B, C, D not built).
 - Uncommitted code in the tree from another session (`setFitter` in CanvasView/canvasView.ts, WorkspaceLayout.tsx): not

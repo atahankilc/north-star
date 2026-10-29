@@ -5455,9 +5455,8 @@ cards, as now.
   middle at screen x 400; Bob following Alice: closed, then Sprint 3, then its days, then closed, as she did; the dock
   inside at 50 % and 30 %. The RTDB rule was tested by hand on the emulator (accepted `deck1 days`, refused 141
   characters and an unknown field); `test:rules` couldn't run (the emulator ports were another session's).
-- *Not yet:* the RTDB rules aren't deployed (needs `npx firebase deploy --only database --project north-star-db`
-  before this code is pushed, or a follower's leader can't write presence); the canvas isn't shifted again when the
-  line is dragged while it's open.
+- *Deployed:* the RTDB rules (presence `tasks`), by the user, 2026-10-29.
+- *Not yet:* the canvas isn't shifted again when the line is dragged while it's open.
 
 ### D-301 · 2026-10-29 · Accepted (the user: "biz kanban diyoruz ama buna task planner desek olur mu?", then, offered flow, ledger, stages and deck: "Deck diyelim ozman")
 **The kanban piece is called a deck on screen.** Everything the user reads says deck: the `+` menu's `deck…` (letter
