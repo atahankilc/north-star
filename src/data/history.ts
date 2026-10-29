@@ -60,6 +60,12 @@ async function read(ref: DocumentReference): Promise<DocumentData | null> {
 // put back merged, so an undo never touches its people, roles or codes.
 const isWorkspaceDoc = (ref: DocumentReference) => ref.path.split('/').length === 2
 
+// Refs read as `snapshot` does, except those known not to exist yet.
+async function snapshotBut(refs: DocumentReference[], absent: DocumentReference[]): Promise<Snapshot> {
+  const none = new Set(absent.map((r) => r.path))
+  return Promise.all(refs.map(async (ref) => ({ ref, data: none.has(ref.path) ? null : await read(ref) })))
+}
+
 const snapshot = (refs: DocumentReference[]) => Promise.all(refs.map(async (ref) => ({ ref, data: await read(ref) })))
 
 // Issues the batches without waiting for the server (they apply locally at once), so undo works offline too.
@@ -79,11 +85,30 @@ function restore(snap: Snapshot): Promise<unknown> {
 type Options = {
   // Pass what's known instead of reading it (e.g. `null` for a document about to be created).
   before?: Snapshot
+  // Without `before`: these refs are known not to exist yet (made by this write), the others are read as usual, in
+  // turn, after the writes queued before this one (the ops' apply, S3).
+  absent?: DocumentReference[]
   key?: string
   // Wait for the server before reading the result: for writes that are several dependent steps (cascading deletes).
   settle?: boolean
   // Merge into the previous step with the same key however long ago it was (e.g. a label's first text into its creation).
   mergeAlways?: boolean
+  // What it was, for whoever listens (`onTracked`): onboarding's checks, the agent's "what changed".
+  meta?: TrackedMeta
+}
+
+// What a recorded write was (S3, D-312), for ops (src/ops/firestore.ts): `op` its ops' names comma-joined and `ops` the
+// list, `ids` every doc it wrote (made, changed, deleted) and `created` the ones it made, `actor` who did it. A UI write
+// says what it passes (`kind`, `ids`).
+export type TrackedMeta = { kind?: string; ids?: string[]; op?: string; ops?: string[]; created?: string[]; actor?: 'person' | 'agent' }
+
+// Told after every tracked write is recorded (its step pushed or merged), UI writes and ops alike: when the write is
+// recorded locally, before the server confirms it (a write the server then refuses was still told). `meta` is what the
+// write passed (undefined when it passed none). Returns the function that stops it.
+const trackedListeners = new Set<(label: string, meta?: TrackedMeta) => void>()
+export function onTracked(fn: (label: string, meta?: TrackedMeta) => void): () => void {
+  trackedListeners.add(fn)
+  return () => void trackedListeners.delete(fn)
 }
 
 // Tracked writes, undo and redo run one at a time, so snapshots and the stack never interleave. Firestore applies
@@ -119,7 +144,7 @@ export function tracked(label: string, refs: DocumentReference[], write: () => P
 }
 
 async function record(label: string, refs: DocumentReference[], write: () => Promise<unknown>, opts: Options) {
-  const before = opts.before ?? (await snapshot(refs))
+  const before = opts.before ?? (opts.absent ? await snapshotBut(refs, opts.absent) : await snapshot(refs))
   const pending = write()
   if (opts.settle) await pending
   const after = await snapshot(refs)
@@ -133,6 +158,13 @@ async function record(label: string, refs: DocumentReference[], write: () => Pro
   } else {
     step = { label, before, after, key: opts.key, at: now }
     useHistory.setState({ past: [...past, step].slice(-MAX_STEPS), future: [] })
+  }
+  for (const fn of [...trackedListeners]) {
+    try {
+      fn(label, opts.meta)
+    } catch {
+      // A listener's mistake never breaks the write.
+    }
   }
   // A write the server refuses never happened: forget it, and let the caller see the error.
   pending.catch(() => useHistory.setState((h) => ({ past: h.past.filter((p) => p !== step) })))

@@ -4,8 +4,8 @@
 // notes and H3s aren't places (D-116). The workspace view's goTo.ts gives each its glyph and glides there.
 import type { Piece, PieceKind } from '../data/model'
 import type { WithId } from '../data/hooks'
-import { CANVAS, kindOf, type Label } from '../data/labels'
-import { kindOfPiece } from '../data/pieces'
+import { CANVAS, kindOf, type Label } from './labels'
+import { kindOfPiece } from './pieces'
 import { labelBox } from './labelBox'
 
 export type Box = { x: number; y: number; w: number; h: number }

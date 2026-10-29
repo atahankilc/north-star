@@ -5,8 +5,9 @@ import { collection, deleteDoc, deleteField, doc, FieldPath, updateDoc, writeBat
 import { db } from './firebase'
 import { tracked } from './history'
 
-export const AVAILABILITIES = ['free', 'paid', 'enterprise', 'beta'] as const
-export type Availability = (typeof AVAILABILITIES)[number]
+export { AVAILABILITIES, CRITERION_SCORES } from '../model/shapes'
+export type { Availability, CriterionScore } from '../model/shapes'
+import type { Availability, CriterionScore } from '../model/shapes'
 
 export type CompetitorFeature = {
   id: string
@@ -20,8 +21,6 @@ export type CompetitorFeature = {
   createdAt: number
 }
 
-export type CriterionScore = 'met' | 'part' | 'no'
-export const CRITERION_SCORES: CriterionScore[] = ['met', 'part', 'no']
 
 // One feature of ours against one competitor (the old matrix's cell, D-040): which of theirs matches it, and how they do
 // on each of its must-haves (D-133; missing = not assessed).

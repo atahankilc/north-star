@@ -15,25 +15,20 @@ import type { WithId } from './hooks'
 import type { Piece } from './model'
 import { KIND_NAME, kindOfPiece, nearClear, pieceRef, type Box } from './pieces'
 
-export const MAIN = 'main'
-export const CANVAS_NAME_MAX = 60
-// The first canvas's name until someone gives it one.
-export const MAIN_NAME = 'Main'
-
-export type Canvas = { id: string; name: string; order: number; createdAt: number; createdBy?: string }
+// The names, the implied first canvas and the list in order live in src/model/canvases.ts, without Firebase (S3).
+export { MAIN, CANVAS_NAME_MAX, MAIN_NAME, canvasOf, canvasList } from '../model/canvases'
+export type { Canvas, Spot } from '../model/canvases'
+import { CANVAS_NAME_MAX, MAIN, MAIN_NAME, canvasOf, type Canvas, type Spot } from '../model/canvases'
 
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'canvases')
 export const canvasRef = (wid: string, id: string) => doc(col(wid), id)
 
-// Which canvas a piece or the canvas's text is on.
-export const canvasOf = (x: { canvasId?: string }) => x.canvasId || MAIN
 export const onCanvas = (canvas: string) => (x: { canvasId?: string }) => canvasOf(x) === canvas
 // Text on the canvas `canvas` (not on a plane, which goes with its plane).
 export const canvasTextOn = (canvas: string) => (l: Pick<Label, 'pieceId' | 'canvasId'>) => l.pieceId === CANVAS && canvasOf(l) === canvas
 
 // ---- One piece on several canvases (D-302's session 3): its home is its own `canvasId` and x/y; every other canvas it's
 // on is a `pieceSpots/{canvasId}_{pieceId}` doc with its spot there. Size, frame, name and contents stay the piece's.
-export type Spot = { id: string; canvasId: string; pieceId: string; x: number; y: number; createdAt: number }
 export const spotRef = (wid: string, canvas: string, piece: string) => doc(db(), 'workspaces', wid, 'pieceSpots', `${canvas}_${piece}`)
 
 // The pieces on `canvas`, each with its spot there (`spot` set for those not at home). One shown through a spot is the
@@ -72,13 +67,6 @@ export function setShownHere(shown: (Box & { id: string; spot?: string })[]) {
 export const shownHere = () => drawn
 export const spotted = (id: string) => throughSpot.has(id)
 export const posRef = (wid: string, id: string) => (throughSpot.has(id) ? spotRef(wid, here, id) : doc(db(), 'workspaces', wid, 'pieces', id))
-
-// The canvases in order, `main` first even without its doc.
-export function canvasList(docs: WithId<Omit<Canvas, 'id'>>[]): Canvas[] {
-  const list = docs.filter((c) => typeof c.name === 'string').slice()
-  if (!list.some((c) => c.id === MAIN)) list.push({ id: MAIN, name: MAIN_NAME, order: 0, createdAt: 0 })
-  return list.sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
-}
 
 // The canvas new things go on: the one shown, set by the workspace's layout. A piece or the canvas's text made there
 // carries it; on `main` nothing (old workspaces keep their shape).

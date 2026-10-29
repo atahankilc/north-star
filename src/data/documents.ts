@@ -15,8 +15,9 @@ import { db, useEmulators } from './firebase'
 import { absent, tracked } from './history'
 import { useDoc, useQuery, type WithId } from './hooks'
 
-export const DOC_KINDS = ['markdown', 'image', 'pdf', 'report'] as const
-export type DocKind = (typeof DOC_KINDS)[number]
+export { DOC_KINDS, DOC_COLS, DOC_LIMITS } from '../model/shapes'
+export type { DocKind, DocCol } from '../model/shapes'
+import { DOC_LIMITS, type DocCol, type DocKind } from '../model/shapes'
 
 // Where it came from: uploaded by someone, written by the assistant, or an old report moved over.
 export type DocOrigin = 'upload' | 'assistant' | 'moved'
@@ -82,12 +83,8 @@ export type DocumentsSetup = {
   sort?: { col: DocCol; desc?: boolean }
   pageSize?: number
 }
-export const DOC_COLS = ['kind', 'title', 'by', 'size', 'added'] as const
-export type DocCol = (typeof DOC_COLS)[number]
 export const emptyDocuments = (): DocumentsSetup => ({ view: 'table', pageSize: 10 })
 
-// firestore.rules checks these.
-export const DOC_LIMITS = { title: 300, excerpt: 400, text: 900_000 }
 export const FILE_MAX_BYTES = 10 * 1024 * 1024
 
 // Storage needs the Blaze plan (D-083): images and PDFs are taken only on the emulators until it's live.

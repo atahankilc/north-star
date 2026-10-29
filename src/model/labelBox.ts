@@ -1,6 +1,6 @@
 // Where a piece of text sits in its space's px (D-188, D-194, D-257): for what a section holds, what fit frames and go to.
 // Moved out of the workspace view TextItems.tsx (R8), which draws it.
-import { HEADING_PX, kindOf, PARA_PX, PARA_W, STICKY_H, STICKY_PX, STICKY_W, TITLE_W, type Label, type LabelSize } from '../data/labels'
+import { HEADING_PX, kindOf, PARA_PX, PARA_W, STICKY_H, STICKY_PX, STICKY_W, TITLE_W, type Label, type LabelSize } from './labels'
 
 // Down from a sticky note's top to its text: the glue band holding the signed line, then a gap (D-257).
 export const STICKY_TEXT_TOP = 17.64

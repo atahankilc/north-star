@@ -3,8 +3,9 @@
 // given to you, to a member, or to nobody; DUE keeps tasks past their day (not finished), due today, this week (to
 // Sunday), or with no day; FOR keeps tasks for a type of card, a card, or no card; LABEL keeps tasks with one of the
 // labels. Within one, any of the picks; across them, all. Nothing picked, everything.
-import type { AnyType } from '../data/cards'
-import { today, type Task } from '../data/tasks'
+import type { AnyType } from './cards'
+import { today } from './tasks'
+import type { Task } from '../data/tasks'
 
 export type DueKey = 'past' | 'today' | 'week' | 'none'
 // `who`: 'me', 'nobody' or a member's uid; `for`: 'type:<card type>', a card's id, or 'none'.

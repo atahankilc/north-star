@@ -15,12 +15,10 @@ import { newId, SCALES } from './scales'
 import { pieceRef } from './pieces'
 import type { Row, Rule, Source } from './source'
 
-// A card's own fields, shown as they are.
-export const FIELDS = ['type', 'plane', 'status', 'tags', 'regions', 'priority', 'impact', 'effort', 'evidence'] as const
-export type Field = (typeof FIELDS)[number]
-
-export const OWN_KINDS = ['scale', 'number', 'text', 'check'] as const
-export type OwnKind = (typeof OWN_KINDS)[number]
+// The fixed lists live in src/model/shapes.ts, without Firebase (S3).
+export { FIELDS, OWN_KINDS, COL_W } from '../model/shapes'
+export type { Field, OwnKind } from '../model/shapes'
+import { COL_W, type Field, type OwnKind } from '../model/shapes'
 
 export type Column = {
   id: string
@@ -53,8 +51,6 @@ export const MAX_COLS = 30
 export const COL_NAME_MAX = 40
 export const CHECKED = 'yes'
 export const NAME_COL = 'name'
-// How narrow and how wide a column may be dragged, in the table's px.
-export const COL_W = { min: 48, max: 640 }
 
 // The page sizes the dock offers (D-213).
 export const PAGE_SIZES = [10, 25, 50, 100]

@@ -1,3 +1,2 @@
-// The canvas's grid (D-182): 25 px steps, a plane's `+` marks, where pieces and cards snap.
-export const GRID = 25
-export const snap = (v: number) => Math.round(v / GRID) * GRID
+// Moved to src/model/ (pure, no Firebase: S3, D-312); kept here so callers import it as before.
+export * from '../model/grid'

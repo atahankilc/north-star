@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { Card } from '../data/cards'
+import type { Card } from './cards'
 import { confidenceFor, confidenceOf, scoreOf, suggestedOrder } from './cardFacts'
-import type { Edge } from '../data/edges'
+import type { Edge } from './edges'
 
 let n = 0
 const card = (type: Card['type'], fields: Partial<Card> = {}): Card => ({ id: `c${++n}`, type, pieceId: 'p', title: `${type} ${n}`, x: 0, y: 0, ...fields })

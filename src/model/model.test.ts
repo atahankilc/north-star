@@ -6,8 +6,8 @@ import { placesIn, shownPlaces } from './goTo'
 import { matchesIn, pageText, snippet } from './findIndex'
 import { foldsOf } from './cardInside'
 import { NO_VALUE, valueOf } from './kanbanCards'
-import type { Card } from '../data/cards'
-import type { Label } from '../data/labels'
+import type { Card } from './cards'
+import type { Label } from './labels'
 import type { Task } from '../data/tasks'
 
 // The pure helpers moved out of the views (R8) load and run in node.

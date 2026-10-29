@@ -2,7 +2,7 @@
 // cards on its planes (D-187), the text written anywhere (D-188), the matrices' cells (D-204), what hangs off the cards,
 // the comment threads and the documents you may see.
 import { useMemo, useRef } from 'react'
-import { CARD_COLLECTION, toCards, type Card, type CardFields } from './cards'
+import { CARD_COLLECTION, type Card, type CardFields } from './cards'
 import type { WithId } from './hooks'
 import { useWorkspaceCollection } from './hooks'
 import type { Label } from './labels'
@@ -15,7 +15,8 @@ import { useAuth } from './auth'
 import { useDocuments, type Doc } from './documents'
 import type { Task } from './tasks'
 import type { Place } from './places'
-import { canvasList, canvasOf, type Canvas, type Spot } from './canvases'
+import type { Canvas, Spot } from './canvases'
+import { canvasesFrom, cardsFrom, labelsFrom, piecesFrom, placedFrom, placesFrom, spotsFrom, threadsFrom, type RawDoc } from '../model/fromDocs'
 
 export type WorkspaceData = {
   // The workspace's canvases in order, `main` first even without its doc (D-302).
@@ -58,52 +59,15 @@ function useSame<T>(list: T[]): T[] {
   return kept.current
 }
 
-// A piece on more than its own canvas (D-302's session 3) with them: the same object while it and they are the same.
-const withCanvases = new WeakMap<object, { key: string; piece: WithId<Piece> }>()
-function onCanvases(p: WithId<Piece>, canvases: string[]): WithId<Piece> {
-  const key = canvases.join(' ')
-  const was = withCanvases.get(p)
-  if (was?.key === key) return was.piece
-  const piece = { ...p, canvases }
-  withCanvases.set(p, { key, piece })
-  return piece
-}
-
-// A card on more than its home (D-281) with its planes: the same object while it and its planes are the same.
-const withPlanes = new WeakMap<Card, { key: string; card: Card }>()
-function planesOn(c: Card, planes: string[]): Card {
-  const key = planes.join(' ')
-  const was = withPlanes.get(c)
-  if (was?.key === key) return was.card
-  const card = { ...c, planes }
-  withPlanes.set(c, { key, card })
-  return card
-}
-
 export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading: boolean; error: Error | null } {
   const pieces = useWorkspaceCollection<Piece>(wid, 'pieces')
   const canvasDocs = useWorkspaceCollection<Omit<Canvas, 'id'>>(wid, 'canvases')
-  const canvases = useMemo(() => canvasList(canvasDocs.data), [canvasDocs.data])
+  // Each step is src/model/fromDocs.ts' (the ops' project runs the same ones, S3).
+  const canvases = useMemo(() => canvasesFrom(canvasDocs.data as RawDoc[]), [canvasDocs.data])
   const spotDocs = useWorkspaceCollection<Omit<Spot, 'id'>>(wid, 'pieceSpots')
-  const spots = useSame(
-    useMemo(() => {
-      const ids = new Set(pieces.data.map((p) => p.id))
-      const names = new Set(canvases.map((c) => c.id))
-      return spotDocs.data.filter((s) => ids.has(s.pieceId) && names.has(s.canvasId))
-    }, [spotDocs.data, pieces.data, canvases]),
-  )
+  const spots = useSame(useMemo(() => spotsFrom(spotDocs.data as RawDoc[], pieces.data, canvases), [spotDocs.data, pieces.data, canvases]))
   // Each piece says the canvases it's on when that's more than its own; the others stay the same objects.
-  const shared = useSame(
-    useMemo(() => {
-      if (!spots.length) return pieces.data
-      const on = new Map<string, Spot[]>()
-      for (const s of spots) on.set(s.pieceId, [...(on.get(s.pieceId) ?? []), s])
-      return pieces.data.map((p) => {
-        const ss = on.get(p.id)?.filter((s) => s.canvasId !== canvasOf(p))
-        return ss?.length ? onCanvases(p, [canvasOf(p), ...ss.sort((a, b) => a.createdAt - b.createdAt).map((s) => s.canvasId)]) : p
-      })
-    }, [pieces.data, spots]),
-  )
+  const shared = useSame(useMemo(() => piecesFrom(pieces.data as unknown as RawDoc[], spots), [pieces.data, spots]))
   const customers = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.customer)
   const problems = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.problem)
   const competitors = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.competitor)
@@ -112,7 +76,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   // Packages (D-239).
   const packages = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.package)
   const labelDocs = useWorkspaceCollection<Omit<Label, 'id'>>(wid, 'labels')
-  const labels = useSame(useMemo(() => labelDocs.data.filter((l) => l.pieceId) as Label[], [labelDocs.data]))
+  const labels = useSame(useMemo(() => labelsFrom(labelDocs.data as RawDoc[]), [labelDocs.data]))
   const cells = useWorkspaceCollection<Cell>(wid, 'cells')
   const evidence = useWorkspaceCollection<Omit<Evidence, 'id'>>(wid, 'evidence')
   const competitorFeatures = useWorkspaceCollection<Omit<CompetitorFeature, 'id'>>(wid, 'competitorFeatures')
@@ -121,39 +85,24 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const threadDocs = useWorkspaceCollection<Thread>(wid, 'threads')
   const tasks = useWorkspaceCollection<Omit<Task, 'id'>>(wid, 'tasks')
   const placeDocs = useWorkspaceCollection<Omit<Place, 'id'>>(wid, 'places')
-  const threads = useSame(useMemo(() => threadDocs.data.filter((t) => t.planeId), [threadDocs.data]))
+  const threads = useSame(useMemo(() => threadsFrom(threadDocs.data as unknown as RawDoc[]), [threadDocs.data]))
   const { user } = useAuth()
   const documents = useDocuments(wid, user?.id)
   const cards = useMemo(
-    () => [
-      ...toCards('customer', customers.data),
-      ...toCards('problem', problems.data),
-      ...toCards('competitor', competitors.data),
-      ...toCards('idea', ideas.data),
-      ...toCards('feature', features.data),
-      ...toCards('package', packages.data),
-    ],
+    () =>
+      cardsFrom({
+        customer: customers.data as RawDoc[],
+        problem: problems.data as RawDoc[],
+        competitor: competitors.data as RawDoc[],
+        idea: ideas.data as RawDoc[],
+        feature: features.data as RawDoc[],
+        package: packages.data as RawDoc[],
+      }),
     [customers.data, problems.data, competitors.data, ideas.data, features.data, packages.data],
   )
-  const places = useSame(
-    useMemo(() => {
-      const planes = new Set(pieces.data.filter((p) => p.kind === 'plane').map((p) => p.id))
-      const ids = new Set(cards.map((c) => c.id))
-      return placeDocs.data.filter((p) => planes.has(p.planeId) && ids.has(p.cardId))
-    }, [placeDocs.data, pieces.data, cards]),
-  )
+  const places = useSame(useMemo(() => placesFrom(placeDocs.data as RawDoc[], pieces.data, cards), [placeDocs.data, pieces.data, cards]))
   // Each card says the planes it's on when that's more than its home (D-281); the others stay the same objects.
-  const placed = useSame(
-    useMemo(() => {
-      if (!places.length) return cards
-      const on = new Map<string, Place[]>()
-      for (const p of places) on.set(p.cardId, [...(on.get(p.cardId) ?? []), p])
-      return cards.map((c) => {
-        const ps = on.get(c.id)?.filter((p) => p.planeId !== c.pieceId)
-        return ps?.length ? planesOn(c, [c.pieceId, ...ps.sort((a, b) => a.createdAt - b.createdAt).map((p) => p.planeId)]) : c
-      })
-    }, [cards, places]),
-  )
+  const placed = useSame(useMemo(() => placedFrom(cards, places), [cards, places]))
   const all = [canvasDocs, spotDocs, pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs]
   // The same object while nothing in it changed (the workspace's context is built from it).
   const data = useMemo(

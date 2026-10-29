@@ -2,9 +2,9 @@
 // (a status, a competitor's regions, a feature's priority), its evidence as cells, and the facts line. Counts that come
 // from links (D-207): how many solve a problem, compete, are tagged for a customer; a card's customers by name. Its
 // tasks on any kanban, finished and all (D-254), kept apart so the line's cut never hides them.
-import type { Card } from '../data/cards'
+import type { Card } from './cards'
 import type { WorkspaceData } from '../data/workspaceData'
-import { FOR, type Edge } from '../data/edges'
+import { FOR, type Edge } from './edges'
 import { packageTree } from './cardInside'
 
 export type Proof = { supports: number; contradicts: number; clash: boolean }

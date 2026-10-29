@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S3 next (`src/ops/` core). First its must-dos in Ideas: the data-free model split + import guard, `onTracked` for onboarding, the actor. S1, S2 done.
+S4 next (cards, edges, evidence, competitor features, places → ops; builders + registry, see Ideas "S4 shape"). S1–S3 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -113,6 +113,14 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   labelBox; old view paths re-export; goTo's glyph → a `mark`) · reviewer: pass (diffed every moved body vs HEAD, all
   exports kept, StrictMode and workspace switching, headless smoke: focus plane/matrix/deck, finder, a plane filter, no
   errors); then the registry became a stack · ideas: in Ideas (model still loads Firebase; actor; tests shallow).
+- S3 · see `git log --grep "Agent S3"` · `src/model/` data-free (cards, edges, labels, pieces, canvases, tasks, shapes,
+  clean (bundle's clean*), fromDocs (the listeners' doc → item steps); data/ re-exports) + a purity guard test;
+  `src/ops/`: types (Write set/patch/del/merge, Plan, OpCtx), autoId, validate (shapes + refs + role; only what the
+  plan brings in), project (on docs via fromDocs), diff, apply (one tracked() step, unique key, `absent` refs, batches
+  at once); history.ts `onTracked` + `meta`/`absent` options · reviewer: 1 fix round (validate refused innocent
+  patches on docs with old dangling refs: 27/67 in a seeded workspace; apply's before from the snapshot could make undo
+  delete an existing doc), then pass: 0/66 and 0/30 refused, real ⌘Z restores a mixed apply, 31 UI-written docs of
+  every kind validate · ideas: "S4 shape", S15 diff mapping.
 
 ### Stuck
 _(none)_
@@ -144,3 +152,13 @@ _(the reviewers' and builders' "could be better", not done yet)_
   inside a subscribe callback fired mid-render.
 - `subscribeWs` fires on any change; the agent's read layer may want a selector/diff form (S10).
 - Tests are shallow: S3 should add a shared fixture workspace snapshot used by model, ops and read tests.
+- **S4 shape (S3 reviewer):** ops as pure builders `(ctx: OpCtx, args) => Plan` with `$handles`; one
+  `src/ops/registry.ts` (`{ name, args schema, build, kind }`) shared by the agent's tools, validate's op names and
+  onboarding; op builders list in `Plan.ids` only ids they really create (else undo deletes it); delete ops cascade exactly like today's data/ functions (card → edges, places, evidence, competitor
+  features, comparisons; deck → tasks; matrix → cells), ideally the data/ functions then call the same builders
+  through `apply` (one code path); `create_task`/`move_task` run `orderBetween` inside; always pass `by` (no auth
+  fallback).
+- S15: `diff` must map places and spots back to their card or piece; the store swap via wsStore's `set` + `tell`.
+- Existing, not the run's: `places.ts` `commit`/`runOps` awaits each 450-batch in turn, so inside `tracked()` a write
+  of > 450 docs records "after" before later batches land (ops' `apply` sends all at once). The S3 builder thought
+  `bundle.ts` `cleanTask` drops a task's `start` (D-304), so export/import may lose start dates: check in S8.

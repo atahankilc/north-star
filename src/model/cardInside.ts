@@ -1,10 +1,10 @@
 // What a card holds inside it (D-225): a competitor's features, shown in the card as it grows on hover; a feature's
 // parts, folded into it as a small tree while it's folded. Sizes in plane px, shared by the card's look, its box for
 // links and corner marks, and where a folded part's card tucks into its row.
-import { CARD, type Card } from '../data/cards'
-import { GRID } from '../data/grid'
+import { CARD, type Card } from './cards'
+import { GRID } from './grid'
 import type { CompetitorFeature } from '../data/competitorFeatures'
-import type { Edge } from '../data/edges'
+import type { Edge } from './edges'
 
 // Where the list inside a card starts: under its type line and a title kept to two lines.
 export const INNER_TOP = 56

@@ -7,6 +7,9 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts', 'tests/unit/**/*.test.ts'],
     // Firebase stays unconfigured (data/firebase.ts's `firebase` is null): nothing in a unit test reaches a project.
+    // src/model/ and src/ops/ don't need this (they never load Firebase: tests/unit/purity.test.ts); it stays as the net
+    // under tests of the Firestore adapter (src/ops/firestore.ts → data/history.ts → data/firebase.ts), which mock
+    // Firebase anyway, so a forgotten mock can never reach the real project in .env.local.
     env: { VITE_FIREBASE_API_KEY: '', VITE_FIREBASE_PROJECT_ID: '', VITE_USE_EMULATORS: 'false' },
   },
 })

@@ -5,10 +5,10 @@
 //
 // Rows (D-269): another field across the columns, `no value` on top, so the kanban becomes a grid of boxes (a column ×
 // a row), dropping into one setting both fields. A card shows only when both fields apply to it.
-import type { AnyType, Card, CardFields } from '../data/cards'
-import { FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, isOnPlane, VALIDATIONS } from '../data/cards'
-import type { Edge } from '../data/edges'
-import { rowsOf, type Source } from '../data/source'
+import type { AnyType, Card, CardFields } from './cards'
+import { FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, isOnPlane, VALIDATIONS } from './cards'
+import type { Edge } from './edges'
+import { rowsOf, type Source } from './source'
 import type { CardField, KanbanSetup } from '../data/tasks'
 import type { Piece } from '../data/model'
 import { confidenceFor, scoreOf } from './cardFacts'

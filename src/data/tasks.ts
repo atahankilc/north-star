@@ -46,9 +46,10 @@ export type KanbanSetup = {
 export type BoxName = { col: string; row: string; name: string; tone?: 'good' | 'bad' }
 export const BOX_NAMES_MAX = 40
 export const BOX_NAME_MAX = 40
-// The cards' fields a kanban's columns can come from (D-268): never type (dragging doesn't change a card's type).
-export const CARD_FIELDS = ['status', 'impact', 'effort', 'priority'] as const
-export type CardField = (typeof CARD_FIELDS)[number]
+// The cards' fields a kanban's columns can come from (D-268): src/model/shapes.ts (S3).
+export { CARD_FIELDS } from '../model/shapes'
+export type { CardField } from '../model/shapes'
+import type { CardField } from '../model/shapes'
 // A timeline (D-262): its rows. The kanbans it shows are the one it's linked to, else every kanban (D-289); `kanbans`, a
 // list once picked by hand (its `shows ▾`, gone), is still read from old data and exports but never used.
 export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
@@ -148,24 +149,9 @@ export const emptyKanban = (): KanbanSetup => ({
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'tasks')
 export const taskRef = (wid: string, id: string) => doc(col(wid), id)
 
-// A column's tasks, in order.
-export const tasksIn = (tasks: Task[], column: string) => tasks.filter((t) => t.col === column).sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
-
-// The order that puts a task between two others (either may be missing: the start or the end of a column).
-export function orderBetween(before?: number, after?: number) {
-  if (before === undefined && after === undefined) return 1
-  if (before === undefined) return after! - 1
-  if (after === undefined) return before + 1
-  return (before + after) / 2
-}
-
-// Today, as a due day is written: the browser's own day.
-export function today(now = new Date()) {
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`
-}
-// Past its due day and not finished.
-export const overdue = (t: Pick<Task, 'due'>, finished: boolean) => !!t.due && !finished && t.due < today()
+// tasksIn, orderBetween, today, overdue live in src/model/tasks.ts, without Firebase (S3).
+export { tasksIn, orderBetween, today, overdue } from '../model/tasks'
+import { tasksIn } from '../model/tasks'
 
 // Given to someone (D-261): when, and by whom; given to nobody, neither. Added to any write that sets `assignee`.
 function given(fields: TaskFields): Record<string, unknown> {

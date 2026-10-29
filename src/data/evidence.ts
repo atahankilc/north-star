@@ -5,8 +5,9 @@ import { db } from './firebase'
 import { absent, tracked } from './history'
 import type { Validation } from './cards'
 
-export const EVIDENCE_KINDS = ['interview', 'quote', 'data', 'observation', 'link'] as const
-export type EvidenceKind = (typeof EVIDENCE_KINDS)[number]
+export { EVIDENCE_KINDS } from '../model/shapes'
+export type { EvidenceKind } from '../model/shapes'
+import type { EvidenceKind } from '../model/shapes'
 export type Stance = 'supports' | 'contradicts'
 
 export type Evidence = {

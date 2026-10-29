@@ -3,9 +3,9 @@
 // tagged for them; TAG keeps cards with one of the tags; REGION narrows competitors only (a place counts inside the
 // bigger ones); LINKS hides kinds of link, `for`, `relates` and `competes` hidden to start with (D-128, D-135), a hidden
 // kind still showing on the hovered or selected card.
-import type { AnyType, Card } from '../data/cards'
-import { FOR, type Edge } from '../data/edges'
-import { inRegions } from '../data/regions'
+import type { AnyType, Card } from './cards'
+import { FOR, type Edge } from './edges'
+import { inRegions } from './regions'
 
 export type LinkGroup = 'solves' | 'part' | 'competes' | 'clashes' | 'draws' | 'depends' | 'plain' | 'for'
 

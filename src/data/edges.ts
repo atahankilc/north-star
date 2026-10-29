@@ -3,27 +3,15 @@
 import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, type DocumentReference } from 'firebase/firestore'
 import { db } from './firebase'
 import { absent, tracked } from './history'
-import type { AnyType } from './cards'
+import type { AnyType } from '../model/cards'
 
-// A customer tag (D-044): item → customer.
-export const FOR = 'for'
-
-export type EdgeKind = 'relates' | 'depends-on' | 'contradicts' | 'part-of' | 'inspired-by' | 'solves' | 'competes-with' | typeof FOR | (string & {})
-
-// Always straight: bend points (1.0's D-155) are gone (D-292).
-export type Edge = { id: string; fromId: string; fromType: string; toId: string; toType: string; kind: EdgeKind; label?: string }
+// What a link is lives in src/model/edges.ts, without Firebase (S3).
+export { FOR, defaultKind, linked, edgesOn } from '../model/edges'
+export type { EdgeKind, Edge } from '../model/edges'
+import { FOR, type Edge, type EdgeKind } from '../model/edges'
 
 const edgesOf = (wid: string) => collection(db(), 'workspaces', wid, 'edges')
 export const edgeRef = (wid: string, id: string): DocumentReference => doc(edgesOf(wid), id)
-
-// The kind a link gets when drawn from one card to another (the old board's defaultKind); changed in its bar.
-export function defaultKind(from: AnyType, to: AnyType): EdgeKind {
-  if (to === 'customer' && from !== 'customer') return FOR
-  if (from === 'idea' && to === 'problem') return 'solves'
-  if (from === 'competitor' && (to === 'problem' || to === 'idea')) return 'competes-with'
-  if (from === 'feature' && to === 'idea') return 'inspired-by'
-  return 'relates'
-}
 
 // Returns the new link's id at once (the write goes on behind), so it can be selected straight away (D-154).
 export function createEdge(wid: string, from: { id: string; type: AnyType }, to: { id: string; type: AnyType }, kind: EdgeKind): string {
@@ -56,8 +44,3 @@ export function reverseEdge(wid: string, e: Edge) {
 export function deleteEdge(wid: string, id: string) {
   return tracked('unlink', [edgeRef(wid, id)], () => deleteDoc(edgeRef(wid, id)))
 }
-
-export const linked = (edges: Edge[], a: string, b: string) => edges.some((e) => (e.fromId === a && e.toId === b) || (e.fromId === b && e.toId === a))
-
-// The links a card's deletion takes with it.
-export const edgesOn = (edges: Edge[], ids: Set<string>) => edges.filter((e) => ids.has(e.fromId) || ids.has(e.toId))

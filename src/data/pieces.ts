@@ -10,7 +10,7 @@ import { emptyTable, type TableSetup } from './table'
 import { docRef, emptyDocuments, type Doc, type DocumentsSetup } from './documents'
 import { emptyKanban, taskRef, type KanbanSetup, type Task } from './tasks'
 import { db } from './firebase'
-import { GRID, snap } from './grid'
+import { GRID, snap } from '../model/grid'
 import { absent, snapshotWith, tracked } from './history'
 import type { Piece, PieceKind } from './model'
 import { canvasField, canvasHere, onCanvas, posRef, shownHere, spotRef, spotted, type Spot } from './canvases'
@@ -18,49 +18,12 @@ import { canvasField, canvasHere, onCanvas, posRef, shownHere, spotRef, spotted,
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'pieces')
 export const pieceRef = (wid: string, id: string) => doc(col(wid), id)
 
-// A new piece's size in canvas pixels at zoom 1.
-export const PIECE_SIZE: Record<PieceKind, { w: number; h: number }> = {
-  plane: { w: 960, h: 600 },
-  matrix: { w: 800, h: 500 },
-  table: { w: 800, h: 400 },
-  documents: { w: 800, h: 450 },
-  document: { w: 650, h: 500 },
-  kanban: { w: 900, h: 500 },
-  timeline: { w: 1000, h: 420 },
-}
-
-// The smallest a piece resizes to (D-180): room for its name and its console. Whole steps of the grid.
-export const PIECE_MIN = { w: 325, h: 200 }
+// What a piece is lives in src/model/pieces.ts, without Firebase (S3).
+export { PIECE_SIZE, PIECE_MIN, KIND_NAME, kindOfPiece, isBare, isLens, sticks, hostKinds, isHost, canOpen, PIECE_NAME_MAX } from '../model/pieces'
+import { KIND_NAME, PIECE_MIN, PIECE_NAME_MAX, PIECE_SIZE, kindOfPiece } from '../model/pieces'
 
 // Pieces sit on the canvas's 25 px grid (D-182), the step of a plane's `+` marks, so marks of planes side by side line up.
 export { GRID, snap }
-
-export const KIND_NAME: Record<PieceKind, string> = { plane: 'plane', matrix: 'matrix', table: 'table', documents: 'documents', document: 'document', kanban: 'deck', timeline: 'timeline' }
-
-// What a piece is.
-const KINDS: PieceKind[] = ['matrix', 'table', 'documents', 'document', 'kanban', 'timeline']
-export const kindOfPiece = (p: Pick<Piece, 'kind'>): PieceKind => (KINDS.includes(p.kind) ? p.kind : 'plane')
-
-// Not a plane (D-206, D-209, D-232): just its contents on the canvas, at their own size, with a focus of its own (no
-// ink, no marks).
-export const isBare = (p: Pick<Piece, 'kind'>) => kindOfPiece(p) !== 'plane'
-
-// A lens on the cards (D-209): a matrix or a table, which sticks to a plane (D-210) and opens onto the canvas (D-228).
-export const isLens = (p: Pick<Piece, 'kind'>) => p.kind === 'matrix' || p.kind === 'table'
-
-// What sticks to something (D-210): a lens or a kanban to a plane (D-255), a timeline to a kanban (D-262).
-export const sticks = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'kanban' || p.kind === 'timeline'
-// What it sticks to: a plane; a timeline to a deck or a plane (D-262, D-300: a plane's deck's days, once it has one).
-export const hostKinds = (p: Pick<Piece, 'kind'>): PieceKind[] => (p.kind === 'timeline' ? ['kanban', 'plane'] : sticks(p) ? ['plane'] : [])
-// What others stick to: a plane, a kanban.
-export const isHost = (p: Pick<Piece, 'kind'>) => kindOfPiece(p) === 'plane' || p.kind === 'kanban'
-
-// What can be taken out of its window onto the canvas (D-228): a lens, the documents list, a document (D-234), a kanban
-// (D-251), a timeline (D-289).
-export const canOpen = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'documents' || p.kind === 'document' || p.kind === 'kanban' || p.kind === 'timeline'
-
-// firestore.rules' validPiece allows 80.
-export const PIECE_NAME_MAX = 80
 
 export type Box = Pick<Piece, 'x' | 'y' | 'w' | 'h'>
 const GAP = 3 * GRID

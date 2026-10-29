@@ -37,12 +37,10 @@ export type Axis = {
   open?: string[]
 }
 
-// What a card can unfold into; only a feature's criteria for now (later its parts, a competitor's features).
-export const UNFOLDS = ['criteria'] as const
-export type Unfold = (typeof UNFOLDS)[number]
-
-export const TONES = ['dim', 'fg', 'cyan', 'yellow', 'magenta', 'green', 'blue'] as const
-export type Tone = (typeof TONES)[number]
+// The fixed lists live in src/model/shapes.ts, without Firebase (S3).
+export { UNFOLDS, TONES, CELL_KINDS, TOTALS_AT, TOTALS_AS, CONFIDENCES } from '../model/shapes'
+export type { Unfold, Tone, CellKind, TotalsAt, TotalsAs, Confidence } from '../model/shapes'
+import type { CellKind, Confidence, Tone, TotalsAs, TotalsAt, Unfold } from '../model/shapes'
 export const TONE_VAR: Record<Tone, string> = {
   dim: 'var(--fg-dim)',
   fg: 'var(--fg)',
@@ -56,8 +54,6 @@ export const TONE_VAR: Record<Tone, string> = {
 // Low to high: the order keys 1–9 pick them in and the readings stack them in.
 export type Step = { id: string; glyph: string; label: string; tone: Tone }
 
-export const CELL_KINDS = ['scale', 'number', 'text'] as const
-export type CellKind = (typeof CELL_KINDS)[number]
 
 export type MatrixSetup = {
   rows: Axis
@@ -77,13 +73,6 @@ export type MatrixSetup = {
   marks?: boolean
 }
 
-export const TOTALS_AT = ['head', 'end', 'both'] as const
-export type TotalsAt = (typeof TOTALS_AT)[number]
-export const TOTALS_AS = ['squares', 'number', 'bar'] as const
-export type TotalsAs = (typeof TOTALS_AS)[number]
-
-export const CONFIDENCES = ['documented', 'inferred', 'guess'] as const
-export type Confidence = (typeof CONFIDENCES)[number]
 // `documented` needs no mark (D-136).
 export const CONFIDENCE_MARK: Record<Confidence, string> = { documented: '', inferred: '~', guess: '?' }
 

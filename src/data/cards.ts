@@ -4,73 +4,15 @@
 import { collection, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from './firebase'
 import { absent, discardNew, snapshotWith, tracked } from './history'
-import { GRID, snap } from './grid'
+import { GRID, snap } from '../model/grid'
 import { edgeRef, edgesOn, type Edge } from './edges'
 import { CANVAS } from './labels'
 import { canvasField } from './canvases'
 
-export const CARD_TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
-export type CardType = (typeof CARD_TYPES)[number]
-// A package (D-239, the old board's D-141): a slice of the chain as one card, made from a selection, never from `+`.
-// Every card on a plane is one of these.
-export type AnyType = CardType | 'package'
-export const ALL_TYPES: AnyType[] = [...CARD_TYPES, 'package']
-
-export const CARD_COLLECTION: Record<AnyType, string> = {
-  package: 'packages',
-  customer: 'customers',
-  problem: 'problems',
-  competitor: 'competitors',
-  idea: 'ideas',
-  feature: 'features',
-}
-
-// Every card is the same rectangle (D-055): 8 × 4 grid steps, so a snapped card has a mark on each corner.
-export const CARD = { w: 8 * GRID, h: 4 * GRID }
-
-// firestore.rules' validCard and validCompetitor allow 200.
-export const TITLE_MAX = 200
-
-// What the card shows besides its title (D-152, D-205): set from the side panel, which isn't back yet, so for now only
-// read. A customer, problem or idea has a status (D-137); a competitor its regions (D-145); a feature its priority,
-// status, impact and effort (D-138); all of them tags (D-056).
-export type Validation = 'hypothesis' | 'testing' | 'validated' | 'invalidated'
-export type CardFields = {
-  tags?: string[]
-  validation?: Validation
-  regions?: string[]
-  priority?: string
-  status?: string
-  impact?: string
-  effort?: string
-  // Its notes (D-219): a competitor's `notes`, every other card's `body`.
-  notes?: string
-  // A competitor's profile (D-219): what it does, for whom, its price, its site.
-  description?: string
-  audience?: string
-  pricing?: string
-  url?: string
-  // A feature's must-haves (D-133), which a matrix scores.
-  criteria?: { id: string; text: string }[]
-  // A feature's parts folded into it as names beside it (D-164, D-225), or a package's members (D-239); only `true`.
-  folded?: boolean
-  // A package's members (D-239): cards on its plane, by id; ones gone are skipped, never cleaned up (D-141).
-  memberIds?: string[]
-}
-
-export const VALIDATIONS: Validation[] = ['hypothesis', 'testing', 'validated', 'invalidated']
-export const FEATURE_PRIORITIES = ['P1', 'P2', 'P3']
-export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped']
-export const FEATURE_IMPACTS = ['low', 'medium', 'high']
-export const FEATURE_EFFORTS = ['S', 'M', 'L']
-
-// `on`: set when the card is shown on a plane that isn't its home (D-281, `cardsOn`); x/y and `folded` are then its
-// place's there, and its spot is written there. `planes`: every plane it's on, its home first, when that's more than its
-// home (set as the workspace loads).
-export type Card = { id: string; type: AnyType; pieceId: string; title: string; x: number; y: number; on?: string; planes?: string[] } & CardFields
-
-// Whether a card is on a plane: its home or one it was brought to (D-281).
-export const isOnPlane = (c: Pick<Card, 'pieceId' | 'planes'>, plane: string) => c.pieceId === plane || !!c.planes?.includes(plane)
+// What a card is (its types, fields, the doc → card conversion) lives in src/model/cards.ts, without Firebase (S3).
+export { CARD_TYPES, ALL_TYPES, CARD_COLLECTION, CARD, TITLE_MAX, VALIDATIONS, FEATURE_PRIORITIES, FEATURE_STATUSES, FEATURE_IMPACTS, FEATURE_EFFORTS, isOnPlane, toCards, cardDoc } from '../model/cards'
+export type { CardType, AnyType, Validation, CardFields, Card } from '../model/cards'
+import { CARD, CARD_COLLECTION, TITLE_MAX, titleField, type AnyType, type Card, type CardFields, type CardType } from '../model/cards'
 
 const ref = (wid: string, type: AnyType, id?: string) =>
   id ? doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]), id) : doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]))
@@ -85,8 +27,6 @@ const stamp = (card: Card, now: number) => (card.on ? {} : { updatedAt: now })
 
 // For undo's labels: `an idea`, `a feature`.
 const one = (type: AnyType) => `${type === 'idea' ? 'an' : 'a'} ${type}`
-
-const titleField = (type: AnyType) => (type === 'competitor' ? 'name' : 'title')
 
 const overlaps = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   a.x < b.x + CARD.w + GRID && b.x < a.x + CARD.w + GRID && a.y < b.y + CARD.h + GRID && b.y < a.y + CARD.h + GRID
@@ -262,48 +202,6 @@ export function deleteCard(wid: string, card: Card, edges: Edge[] = [], places: 
     const batch = writeBatch(db())
     refs.forEach((r) => batch.delete(r))
     return batch.commit()
-  })
-}
-
-// Docs from any of the card collections, as cards; one without a plane (`pieceId`) isn't the app's and is left out.
-type CardDoc = { id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number; body?: string } & CardFields
-
-// A doc that didn't change (the same object, hooks.ts) gives the same card, so what's drawn from it stays memoised.
-const made = new WeakMap<CardDoc, Card>()
-
-export function toCards(type: AnyType, docs: CardDoc[]): Card[] {
-  return docs.flatMap((d) => {
-    const kept = made.get(d)
-    if (kept) return [kept]
-    const out: Card[] = d.pieceId
-      ? [
-          {
-            id: d.id,
-            type,
-            pieceId: d.pieceId,
-            title: (type === 'competitor' ? d.name : d.title) ?? '',
-            x: d.x ?? 0,
-            y: d.y ?? 0,
-            tags: d.tags,
-            validation: d.validation,
-            regions: d.regions,
-            priority: d.priority,
-            status: d.status,
-            impact: d.impact,
-            effort: d.effort,
-            notes: type === 'competitor' ? d.notes : d.body,
-            description: d.description,
-            audience: d.audience,
-            pricing: d.pricing,
-            url: d.url,
-            criteria: d.criteria,
-            folded: d.folded,
-            memberIds: d.memberIds,
-          },
-        ]
-      : []
-    if (out[0]) made.set(d, out[0])
-    return out
   })
 }
 
