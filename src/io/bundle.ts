@@ -1,6 +1,7 @@
 // A whole workspace as one file (D-080, D-246): a .zip holding `workspace.json`. Only the content travels: the canvas's
 // pieces (planes, matrices, tables, documents lists and documents, kanbans) and what's in them, a kanban's tasks (D-251), the cards and everything on them
-// (links, evidence, competitor features, matched features, packages), the other planes cards are on (D-281), text, matrix and table cells, and the documents
+// (links, evidence, competitor features, matched features, packages), the other planes cards are on (D-281), the canvases and the other canvases pieces
+// are on (D-302), text, matrix and table cells, and the documents
 // you can see with their content. Members, roles, invite codes, comment threads (D-159) and anything AI never do.
 // Version 2 (D-246); files from before it (version 1, North Star 1.0) are refused (D-248).
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
@@ -33,6 +34,9 @@ export const BUNDLE_COLLECTIONS = [
   'cells',
   'tasks',
   'places',
+  // The canvases (D-302) and the pieces on more than their own (its session 3); a file without them is all on the first.
+  'canvases',
+  'pieceSpots',
 ] as const
 export type BundleCollection = (typeof BUNDLE_COLLECTIONS)[number]
 

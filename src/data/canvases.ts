@@ -268,3 +268,12 @@ export async function takeOffCanvas(wid: string, piece: WithId<Piece>, canvas: s
   })
   return still
 }
+
+// A plane's name where cards are picked or listed (D-302's session 4): on another canvas than the one shown, that
+// canvas's name before it (`Engineering / 02 Build`); with one canvas, or here (through a spot too), the name alone.
+export function planeTitle(id: string, ws: { pieces: WithId<Piece>[]; canvases: Canvas[]; canvas: string }) {
+  const p = ws.pieces.find((x) => x.id === id)
+  const name = p?.name?.trim() || 'plane'
+  if (!p || ws.canvases.length < 2 || (p.canvases ?? [canvasOf(p)]).includes(ws.canvas)) return name
+  return `${ws.canvases.find((c) => c.id === canvasOf(p))?.name ?? 'another canvas'} / ${name}`
+}

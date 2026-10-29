@@ -1,6 +1,6 @@
 # Spec: several canvases in a workspace
 
-Status: **agreed (D-302, 2026-10-29); sessions 1 (D-305), 2 (D-306) and 3 (D-307) done.** Split into sessions; every session must be able to start from this
+Status: **agreed (D-302, 2026-10-29); all four sessions done (D-305, D-306, D-307, D-309).** Split into sessions; every session must be able to start from this
 file alone. The user: "bir marketin canvası farklı olabilir, bir engineering canvası … bu workspaceler kendi içlerinde de
 sectionlara ayrılabilse … default olarak bir section olur ancak başka bir section eklemek isteyen için"; then "canvaslar
 arası dokuman ya da sayfa/pano transferi olmalı … bir canvasdan diğerine component taşıma olsun … Finder'daki tabı 3'e
@@ -58,7 +58,7 @@ bölelim, burası, bütün canvas ve everywhere … adı canvas olsun, ve ortakl
   click is the prompt (D-222): the canvases in order (`•` current, `⧉` count of shared pieces as a hint), `# ──`,
   `+ new canvas`, `rename`, `reorder`, `delete`. A letter puts one first; Enter goes.
 - **Switching:** the backdrop stays; the old canvas breaks and the new one builds cell by cell (one entrance, D-034);
-  reduced motion: at once. ⌘1–⌘9 go to the nth canvas.
+  reduced motion: at once. ⌥1–⌥9 go to the nth canvas (D-309: the browser keeps ⌘1–⌘9).
 - **New canvas:** named in place (`>` field, Enter), then opened empty with the side nav's `+` lit.
 - **Delete a canvas** (editors; never the last): the hazard confirm (`4 pieces go, 2 stay on other canvases`); cards
   on its planes that are on planes elsewhere stay (D-282's rule); ⌘Z brings it back.
@@ -86,7 +86,7 @@ bölelim, burası, bütün canvas ve everywhere … adı canvas olsun, ve ortakl
    switching with the build-up, presence `canvas`, camera per canvas, finder's `this canvas` / `everywhere`.
 2. **done (D-306)** **Moving components:** `move to canvas`, with what it carries, toast, undo; several at once.
 3. **done (D-307)** **Shared components:** `pieceSpots`, `also on canvas`, `⧉ N`, delete here vs everywhere, `CANVASES` in the console.
-4. **Around it:** pickers and `PLANES` grouped by canvas, threads panel scope, following across canvases, ⌘1–⌘9,
+4. **done (D-309)** **Around it:** pickers and `PLANES` grouped by canvas, threads panel scope, following across canvases, ⌘1–⌘9,
    export/import.
 
 ## Found along the way

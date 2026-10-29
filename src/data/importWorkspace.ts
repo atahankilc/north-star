@@ -21,6 +21,7 @@ import {
 } from '../io/bundle'
 import { ALL_TYPES, CARD_COLLECTION, type AnyType } from './cards'
 import { CANVAS } from './labels'
+import { CANVAS_NAME_MAX, MAIN } from './canvases'
 import { SUB, subKey } from './matrix'
 import { db } from './firebase'
 import type { Workspace } from './model'
@@ -60,9 +61,49 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
 
   const put = (ref: DocumentReference, fields: object | null) => (fields ? writes.push([ref, fields]) : skipped++)
 
+  // The canvases (D-302): the first keeps its id (`main`), the others new ones; a name and their order. A piece or the
+  // canvas's text on one that didn't come over goes on the first.
+  const canvasIds = new Map<string, string>([[MAIN, MAIN]])
+  for (const d of bundle.canvases) {
+    const name = typeof d.name === 'string' ? d.name.trim().slice(0, CANVAS_NAME_MAX) : ''
+    const order = typeof d.order === 'number' && Number.isFinite(d.order) ? d.order : 0
+    if (!name || canvasIds.has(d.id) && d.id !== MAIN) {
+      skipped++
+      continue
+    }
+    const id = d.id === MAIN ? MAIN : doc(col('canvases')).id
+    canvasIds.set(d.id, id)
+    writes.push([doc(col('canvases'), id), { name, order, createdAt: typeof d.createdAt === 'number' ? d.createdAt : now }])
+  }
+  const onCanvas = (v: unknown) => {
+    const id = typeof v === 'string' ? canvasIds.get(v) : undefined
+    return id && id !== MAIN ? { canvasId: id } : {}
+  }
+
   // Kept by old id: a kanban's tasks go into the columns written (D-251).
   const cleanPieces = new Map(bundle.pieces.map((d) => [d.id, cleanPiece(d, now, ids)]))
-  for (const d of bundle.pieces) put(doc(col('pieces'), pieceIds.get(d.id)!), cleanPieces.get(d.id) ?? null)
+  for (const d of bundle.pieces) {
+    const fields = cleanPieces.get(d.id)
+    put(doc(col('pieces'), pieceIds.get(d.id)!), fields ? { ...fields, ...onCanvas(d.canvasId) } : null)
+  }
+
+  // A piece on other canvases (D-302's session 3): a canvas and a piece that came over, not its own; once per canvas.
+  const spotted = new Set<string>()
+  for (const d of bundle.pieceSpots) {
+    const piece = ids.piece(d.pieceId)
+    const canvas = typeof d.canvasId === 'string' ? canvasIds.get(d.canvasId) : undefined
+    const home = bundle.pieces.find((p) => p.id === d.pieceId)
+    const homeCanvas = (home && typeof home.canvasId === 'string' && canvasIds.get(home.canvasId)) || MAIN
+    const x = typeof d.x === 'number' && Number.isFinite(d.x) ? d.x : undefined
+    const y = typeof d.y === 'number' && Number.isFinite(d.y) ? d.y : undefined
+    const id = `${canvas}_${piece}`
+    if (!piece || !canvas || !cleanPieces.get(d.pieceId as string) || canvas === homeCanvas || x === undefined || y === undefined || spotted.has(id)) {
+      skipped++
+      continue
+    }
+    spotted.add(id)
+    writes.push([doc(col('pieceSpots'), id), { canvasId: canvas, pieceId: piece, x, y, createdAt: typeof d.createdAt === 'number' ? d.createdAt : now }])
+  }
 
   // Cards written, with their home: a place needs its card here, on another plane than that.
   const homes = new Map<string, string>()
@@ -148,7 +189,8 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
   for (const d of bundle.labels) {
     const fields = cleanLabel(d, now)
     const on = d.pieceId === CANVAS ? CANVAS : ids.piece(d.pieceId)
-    put(doc(col('labels')), fields && on ? { ...fields, pieceId: on } : null)
+    // On the canvas: which one (D-302).
+    put(doc(col('labels')), fields && on ? { ...fields, pieceId: on, ...(on === CANVAS ? onCanvas(d.canvasId) : {}) } : null)
   }
 
   // A matrix's or a table's cells (D-204, D-209): its piece came over; a row or column that's a card takes the card's new

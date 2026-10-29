@@ -886,3 +886,7 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 ## Done (2026-10-29): one piece on several canvases (D-307, D-302's session 3)
 - `pieceSpots/` + rules (457/0), `piecesOn`, `⧉ 2` in the name and the console's where-list, `also on canvas…`, Delete
   takes a shared piece off this canvas, `delete everywhere` through the confirm. Verified in headless Chrome (D-307).
+
+## Done (2026-10-29): canvases all round (D-309, D-302's session 4)
+- Plane names with their canvas in pickers and PLANES, threads going across canvases and `on this canvas`, following
+  onto someone's canvas, ⌥1–⌥9, canvases and spots in export/import. Verified in headless Chrome (D-309).

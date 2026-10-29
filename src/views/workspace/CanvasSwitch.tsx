@@ -45,7 +45,8 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
       label: c.name,
       glyph: c.id === canvas ? '•' : ' ',
       letter: i < 9 ? String(i + 1) : undefined,
-      hint: plural(pieces.filter(onCanvas(c.id)).length, 'piece'),
+      // ⌥1–⌥9 go there from anywhere (MoveToCanvas' CanvasKeys).
+      hint: `${plural(pieces.filter(onCanvas(c.id)).length, 'piece')}${i < 9 && canvases.length > 1 ? ` · ⌥${i + 1}` : ''}`,
       onSelect: () => c.id !== canvas && go(c.id),
     })),
     ...(editor

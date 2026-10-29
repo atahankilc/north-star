@@ -11,6 +11,7 @@ import { isReducedMotion } from '../../state/motion'
 import type { MenuEntry } from '../../ui/Menu'
 import { ContextMenu } from './ContextMenu'
 import { useWs } from './context'
+import { planeTitle } from '../../data/canvases'
 import { TYPE_ACCENT } from './PlaneCards'
 
 const ORDER: AnyType[] = [...CARD_TYPES, 'package']
@@ -37,12 +38,13 @@ export function BringCards({ here, origin }: { here: string; origin: { left: num
   useEffect(() => {
     if (open && open.plane !== here) close()
   }, [open, here])
-  const { wid, cards, places, edges, pieces } = useWs()
+  const { wid, cards, places, edges, pieces, canvases, canvas } = useWs()
   const plane = bringing?.plane
   const items = useMemo((): MenuEntry[] => {
     if (!plane) return []
     const here = new Set(cardsOn(cards, places, plane).map((c) => c.id))
-    const name = (id: string) => pieces.find((p) => p.id === id)?.name?.trim() || 'plane'
+    // On another canvas, with its name first (D-302's session 4).
+    const name = (id: string) => planeTitle(id, { pieces, canvases, canvas })
     // Only cards something comes along with need the walk: a part's parent, a package.
     const parents = new Set(edges.filter((e) => e.kind === 'part-of').map((e) => e.toId))
     const out: MenuEntry[] = []

@@ -15,6 +15,8 @@ import { useThemeAccent } from '../../state/theme'
 import { CANVAS } from '../../data/labels'
 import { firebase } from '../../data/firebase'
 import { useWs } from './context'
+import { useSearchParams } from 'react-router-dom'
+import { canvasParams } from '../../app/paths'
 import { useTasksSide } from './sideState'
 import styles from './collab.module.css'
 import type { PeerMark } from '../../ui/Marks'
@@ -139,17 +141,26 @@ type FollowProps = {
 // Following someone (D-067, D-170, D-191): their space, their cursor in your middle, their selection.
 export function Follow({ focusId, focusTo }: FollowProps) {
   const leader = usePresence((s) => s.peers.find((p) => p.uid === s.following) ?? null)
-  const { cards, labels, pieces, tasks } = useWs()
+  const { cards, labels, pieces, tasks, canvas, canvases } = useWs()
   const arrived = useCanvasView((s) => s.focusArrived)
   const leaving = useCanvasView((s) => s.focusLeaving)
   const theirSpace = leader ? (leader.plane ?? null) : undefined
+  // Their canvas (D-302's session 4): you go there with them, into the plane they focus there if they do.
+  const theirCanvas = leader ? (leader.canvas ?? 'main') : undefined
+  const away = theirCanvas !== undefined && theirCanvas !== canvas && canvases.some((c) => c.id === theirCanvas)
+  const [, setParams] = useSearchParams()
+  useEffect(() => {
+    if (!away || !theirCanvas) return
+    setParams(canvasParams(theirCanvas, theirSpace ? { focus: theirSpace } : {}))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [away, theirCanvas])
 
   // Their space: into the plane they focus, or back out to the canvas.
   useEffect(() => {
-    if (theirSpace === undefined || leaving) return
+    if (theirSpace === undefined || leaving || away) return
     if (theirSpace !== focusId && (theirSpace === null || pieces.some((p) => p.id === theirSpace))) focusTo(theirSpace)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theirSpace, focusId, leaving])
+  }, [theirSpace, focusId, leaving, away])
 
   // Their tasks side view (D-300): open on their tab (a deck's board or days), or closed, as theirs is.
   const theirSide = leader ? (leader.tasks ?? '') : null
@@ -182,7 +193,7 @@ export function Follow({ focusId, focusTo }: FollowProps) {
 
   // Their cursor kept in view, at your zoom (D-193): while it's in the middle of your screen nothing moves; once it
   // leaves that middle, the view glides (eased by time, not by frame) until it's centred again, like following in Figma.
-  const uid = leader && (leader.plane ?? null) === focusId && (!focusId || arrived) ? leader.uid : null
+  const uid = leader && !away && (leader.plane ?? null) === focusId && (!focusId || arrived) ? leader.uid : null
   const { wid } = useWs()
   useEffect(() => {
     if (!uid) return

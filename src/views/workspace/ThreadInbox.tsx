@@ -46,6 +46,9 @@ function useLinger<T>(value: T | null, ms: number): [T | null, boolean] {
   return on ? [value, false] : [kept.current, kept.current !== null]
 }
 
+// The threads panel's scope for the canvas shown (D-302's session 4), beside a plane's id (D-193).
+const THIS_CANVAS = '#canvas'
+
 type Props = {
   wid: string
   threads: WithId<Thread>[]
@@ -61,6 +64,8 @@ type Props = {
   goneOf?: (t: WithId<Thread>) => boolean
   // A scope's name (D-193): the plane whose console opened the panel.
   scopeName?: (id: string) => string
+  // With several canvases (D-302's session 4): the one shown, and whether a thread is on it (`on this canvas`).
+  canvasScope?: { name: string; has: (t: WithId<Thread>) => boolean }
   // The thread half (D-197): owners delete any thread; the target in its header shows it where it is.
   isOwner: boolean
   onShow: (t: WithId<Thread>) => void
@@ -89,12 +94,18 @@ export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
   )
 }
 
-export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf, here, goneOf, scopeName, isOwner, onShow }: Props) {
+export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf, here, goneOf, scopeName, canvasScope, isOwner, onShow }: Props) {
   const listOpen = useThreadView((s) => s.inbox)
   // Only what's inside a plane when its console opened the panel (D-193, D-195); the plane's own conversation isn't
   // inside it, it's on the canvas.
   const scope = useThreadView((s) => s.scope)
-  const threads = useMemo(() => (scope ? all.filter((t) => (inside ? inside(t, scope) : t.planeId === scope)) : all), [all, scope, inside])
+  const onCanvas = scope === THIS_CANVAS && !!canvasScope
+  const threads = useMemo(
+    () => (onCanvas ? all.filter(canvasScope!.has) : scope && scope !== THIS_CANVAS ? all.filter((t) => (inside ? inside(t, scope) : t.planeId === scope)) : all),
+    // `canvasScope.has` reads the canvas shown, which this is drawn again for.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [all, scope, inside, onCanvas, canvasScope?.name],
+  )
   const openId = useThreadView((s) => s.openId)
   const draft = useThreadView((s) => s.draft)
   const current = all.find((t) => t.id === openId) ?? null
@@ -225,8 +236,18 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
         </span>
       </header>
       {/* What you're looking at, always said (D-195): the whole workspace, or what's inside one plane. */}
-      <div className={styles.scope} data-scoped={scope ? true : undefined}>
-        {scope ? (
+      {/* With several canvases (D-302's session 4), the one shown too: `on this canvas`. */}
+      <div className={styles.scope} data-scoped={scope && (scope !== THIS_CANVAS || onCanvas) ? true : undefined}>
+        {onCanvas ? (
+          <>
+            <span>
+              on <b>{canvasScope!.name}</b>
+            </span>
+            <button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
+              whole workspace
+            </button>
+          </>
+        ) : scope && scope !== THIS_CANVAS ? (
           <>
             <span>
               inside <b>{scopeName?.(scope) ?? 'a plane'}</b>
@@ -236,7 +257,14 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
             </button>
           </>
         ) : (
-          <span>whole workspace</span>
+          <>
+            <span>whole workspace</span>
+            {canvasScope && (
+              <button className={styles.action} onClick={() => useThreadView.setState({ scope: THIS_CANVAS })}>
+                on this canvas
+              </button>
+            )}
+          </>
         )}
       </div>
       <nav className={styles.views} aria-label="Which threads">

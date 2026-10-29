@@ -3,6 +3,7 @@
 // that nobody has makes a new one to move them to. What's stuck to a piece goes with it, all the way down; a section
 // takes what's wholly inside it. They land where they were, or the nearest clear place there; the toast offers `[go
 // there]`. One undo step.
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { canvasPath } from '../../app/paths'
@@ -40,10 +41,11 @@ const inside = (b: Box, s: Box) => b.x >= s.x && b.y >= s.y && b.x + b.w <= s.x 
 export function MoveToCanvas() {
   const asked = useCanvasView((s) => s.toCanvas)
   const { canvas, canvases } = useWs()
-  if (!asked) return null
+  if (!asked) return <CanvasKeys />
   const close = () => useCanvasView.setState({ toCanvas: null })
   return createPortal(
     <div className={styles.layer}>
+      <CanvasKeys />
       {asked.where ? <WherePrompt key={`where ${asked.screen}`} asked={asked} onClose={close} /> : <Prompt key={`${asked.share} ${asked.screen}`} asked={asked} canvas={canvas} canvases={canvases} onClose={close} />}
     </div>,
     document.body,
@@ -163,4 +165,26 @@ function WherePrompt({ asked, onClose }: { asked: { pieces: string[]; screen: [n
     { key: 'delete', label: 'delete everywhere', glyph: '×', letter: 'x', danger: true, onSelect: () => useCanvasView.setState({ confirming: p.id }) },
   ]
   return <ContextMenu at={asked.screen} what="canvas" items={items} onClose={onClose} prompt={`where "${p.name || KIND_NAME[kindOfPiece(p)]}" is…`} />
+}
+
+// ⌥1–⌥9 go to the first nine canvases (D-302's session 4), anywhere in the workspace but a field being typed in. Not
+// ⌘1–⌘9: the browser keeps those for its tabs.
+function CanvasKeys() {
+  const { wid, canvas, canvases } = useWs()
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (canvases.length < 2) return
+    const onKey = (e: KeyboardEvent) => {
+      const n = /^Digit([1-9])$/.exec(e.code)?.[1]
+      if (!n || !e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return
+      if ((e.target as HTMLElement | null)?.closest('input, textarea, [contenteditable=true]')) return
+      const to = canvases[Number(n) - 1]
+      if (!to) return
+      e.preventDefault()
+      if (to.id !== canvas) navigate(canvasPath(wid, to.id))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [wid, canvas, canvases, navigate])
+  return null
 }

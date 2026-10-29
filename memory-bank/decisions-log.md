@@ -5632,6 +5632,29 @@ shows anyway.**
   both showed; out to the canvas all cards back; in again `[filter]` with nothing narrowing; a deck filtered to
   `nobody`, a task given to Alice written after showed; out and in, every task; no filter keys in localStorage; build.
 
+### D-309 · 2026-10-29 · Accepted (D-302's session 4; the user: "4. oturuma başla")
+**Canvases all round** (docs/specs/canvases.md, session 4, the last).
+- *Where a plane is named:* the card pickers (D-299), `existing card…` (D-281) and a card's `PLANES` section say a plane
+  on another canvas with that canvas first, `Engineering / Backend` (`planeTitle`); one here (through a spot too), or
+  with one canvas, by its name alone.
+- *Threads:* a thread on another canvas (its text, its plane, a card on a plane there) goes to that canvas first, then
+  on as before (`threadCanvas`, `waitingThread`); with two canvases or more the panel's line offers `on this canvas`
+  (`on Marketing` + `whole workspace`) beside `whole workspace` and a plane's `inside "…"`.
+- *Following:* you go to the canvas the person you follow is on (presence `canvas`), into the plane they focus there;
+  their cursor is followed only on the same canvas.
+- *Keys:* ⌥1–⌥9 go to the first nine canvases (not in a field); not ⌘1–⌘9 as the spec said: the browser keeps those
+  for its tabs. The breadcrumb's list says them (`2 pieces · ⌥2`).
+- *Export/import:* `canvases` and `pieceSpots` travel (bundle v2 stays; a file without them is all on the first);
+  import gives the canvases new ids (the first keeps `main`), pieces and the canvas's text their canvas, spots their
+  canvas and piece (one on its own canvas, or whose piece or canvas didn't come, is left out).
+- *Verified:* `tsc -b`, `npm run build`; headless Chrome on the emulators: the threads panel on Marketing read `whole
+  workspace [on this canvas]`, then `on Marketing … No open threads`; a thread on Engineering's heading → `on the canvas
+  ↗` went to `?canvas=eng`; ⌥1 back to Marketing; a card on Pazar and on Engineering's Backend listed `Pazar here ·
+  Engineering / Backend`; Alice following Bob (a second browser) went to Engineering when he pressed ⌥2 and saw him
+  `on Engineering, following`; exported and imported: the new workspace's canvases `main=Marketing`, Engineering under a
+  new id, Backend, the Roadmap heading and Pazar's spot on it.
+- *Not yet:* the export settings' note still says "everything on the canvas" (WorkspaceLayout, another session's area).
+
 ### D-310 · 2026-10-29 · Accepted (adds to D-238; the user: "yeni bir component koyarken direkt baktığım yere koyuyor ya, bazen başka bir componentin üzerindeyken yeni component koyma yapabiliyor ve bu durumda mesela yeni gelen component coktan var olanın arkasına düşebiliyor. Bu yüzden yeni gelen componenti oynatmak da imkansız oluyor", then "Direkt yeni eklenen en üste çıksın desek olmaz mı?")
 - *Decision:* pieces on a canvas are drawn oldest first (`createdAt`, then id), so the newest is always on top; one
   added over another (nearClear found no clear spot, D-238) is never under it and can be moved at once.

@@ -40,6 +40,7 @@ import { labelBox } from './TextItems'
 import { kindOf, labelRef, moveMany, type Label } from '../../data/labels'
 import { clipboard, deleteHere, onPlane, packageThese, setSelection } from './selection'
 import { bringIn, cardsOn, elsewhere, onPlane as isOn, planeOf, planesOf, takeOff, type Place } from '../../data/places'
+import { planeTitle } from '../../data/canvases'
 import { useGoTo } from './goTo'
 import { useHistory } from '../../data/history'
 import { GRID, snap } from '../../data/grid'
@@ -922,7 +923,7 @@ export function CardPicker({
   // Shown first, with why (the task picker's: what this kanban's tasks are for…); else the nearest on this card's plane.
   suggest?: { id: string; why: string }[]
 }) {
-  const { wid, cards: all, places, pieces, edges } = useWs()
+  const { wid, cards: all, places, pieces, edges, canvases, canvas } = useWs()
   const root = useRef<HTMLDivElement>(null)
   // A press outside closes it (the field keeps its focus while the list is scrolled).
   useEffect(() => {
@@ -943,7 +944,8 @@ export function CardPicker({
   const items = useMemo((): MenuEntry[] => {
     const open = cards.filter((c) => !exclude.has(c.id) && (!types || types.includes(c.type)))
     const byId = new Map(open.map((c) => [c.id, c]))
-    const name = (id: string) => pieces.find((p) => p.id === id)?.name?.trim() || 'plane'
+    // On another canvas, with its name first (D-302's session 4).
+    const name = (id: string) => planeTitle(id, { pieces, canvases, canvas })
     const row = (c: Card, key: string, hint: string, browse?: boolean): MenuEntry => {
       const on = planesOf(c, places).map(name)
       const where = on.length > 2 ? `${on.slice(0, 2).join(', ')} +${on.length - 2}` : on.join(', ')
@@ -1029,11 +1031,12 @@ function PlaneName({ name }: { name: string }) {
 // marks the one in focus, `×` takes it off one (while it's on another); `+ place on` brings it to another plane, right of
 // what's there, with its parts or members.
 function PlanesSection({ n, card, editor }: P) {
-  const { wid, cards, places, pieces, edges } = useWs()
+  const { wid, cards, places, pieces, edges, canvases, canvas } = useWs()
   const [picking, setPicking] = useState(false)
   const focus = new URLSearchParams(location.search).get('focus')
   const on = planesOf(card, places)
-  const name = (id: string) => pieces.find((p) => p.id === id)?.name?.trim() || 'plane'
+  // On another canvas, with its name first (D-302's session 4).
+  const name = (id: string) => planeTitle(id, { pieces, canvases, canvas })
   const others = pieces.filter((p) => p.kind === 'plane' && !on.includes(p.id))
   const go = (plane: string) => {
     const there = cardsOn(cards, places, plane).find((c) => c.id === card.id)

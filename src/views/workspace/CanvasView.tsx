@@ -90,7 +90,7 @@ const onPixel = (v: number) => {
 }
 
 export function CanvasView() {
-  const { wid, workspace, pieces: everyPiece, cards, labels: everyLabel, threads, cells, edges, documents, tasks, places, canvas, spots } = useWs()
+  const { wid, workspace, pieces: everyPiece, cards, labels: everyLabel, threads, cells, edges, documents, tasks, places, canvas, spots, canvases } = useWs()
   // Only what's on the canvas shown (D-302): its pieces, and its own text with the planes' (theirs go with them).
   // Looked up by id (a thread's plane, a focus asked for), every piece.
   const wsNow = useWsNow()
@@ -609,6 +609,9 @@ export function CanvasView() {
 
   // From the threads panel: to its space, the pin in the middle, open.
   const goTo = (t: WithId<Thread>) => {
+    // On another canvas (D-302's session 4): that canvas first; this goes on from there (below).
+    const other = threadCanvas(t)
+    if (other !== canvas) return void ((waitingThread = t.id), setParams(canvasParams(other)))
     // A card's thread goes where the card is (D-281, D-290).
     const sp = threadSpace(t)
     openThread(t.id)
@@ -629,6 +632,31 @@ export function CanvasView() {
       glide(c, { ...c, x: -x * c.zoom, y: -y * c.zoom }, 420, (v) => setCam(wid, v))
     }
   }
+  // The canvas a thread is on (D-302's session 4): its space's, or for the canvas's own the text's or the plane's.
+  const threadCanvas = (t: WithId<Thread>): string => {
+    const sp = threadSpace(t)
+    const at = (id: string) => (pieces.some((p) => p.id === id) ? canvas : canvasOfId(id))
+    if (sp !== CANVAS) return at(sp)
+    if (t.on === 'plane') return at(t.targetId)
+    const l = t.on === 'label' ? everyLabel.find((x) => x.id === t.targetId) : undefined
+    return l ? canvasOf(l) : canvas
+  }
+  const canvasOfId = (id: string) => {
+    const p = everyPiece.find((x) => x.id === id)
+    return p ? canvasOf(p) : canvas
+  }
+  // Arrived on the canvas a thread asked for: on to it.
+  const goToRef = useRef(goTo)
+  goToRef.current = goTo
+  useEffect(() => {
+    const t = waitingThread && threads.find((x) => x.id === waitingThread)
+    waitingThread = null
+    if (!t) return
+    const raf = requestAnimationFrame(() => goToRef.current(t))
+    return () => cancelAnimationFrame(raf)
+    // Once, as this canvas is made.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const openId = useThreadView((s) => s.openId)
   const openThreadDoc = threads.find((t) => t.id === openId) ?? null
   // A thread left open on a thread that's gone (deleted by someone) closes.
@@ -1140,7 +1168,7 @@ export function CanvasView() {
           }}
         />
       )}
-      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={whereOf} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${everyPiece.find((p) => p.id === id)?.name || 'plane'}"`} />
+      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={whereOf} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${everyPiece.find((p) => p.id === id)?.name || 'plane'}"`} canvasScope={canvases.length > 1 ? { name: canvases.find((c) => c.id === canvas)?.name ?? '', has: (t) => threadCanvas(t) === canvas } : undefined} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {deletingCards && (
         <HazardConfirm
@@ -1886,6 +1914,9 @@ const under = (e: React.MouseEvent): [number, number] => {
   const r = e.currentTarget.getBoundingClientRect()
   return [r.left, r.bottom + 6]
 }
+
+// A thread asked for from another canvas (D-302's session 4), gone to once its canvas is made.
+let waitingThread: string | null = null
 
 // A piece's delete, as the canvas shown asks it (CanvasView sets it): off this canvas or the hazard confirm.
 let askDeleteHere: (id: string) => void = () => {}
