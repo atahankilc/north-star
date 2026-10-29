@@ -437,8 +437,8 @@ function ExportSection({ wid, workspace }: { wid: string; workspace: WorkspaceCt
         note={
           <>
             <p>
-              The .zip holds everything on the canvas: planes and their cards, links, evidence, competitor features, packages,
-              text, matrices and tables with their cells, and the documents you can see. Import it from the workspaces page to
+              The .zip holds everything on every canvas (and the canvases themselves): planes and their cards, links,
+              evidence, competitor features, packages, text, matrices and tables with their cells, and the documents you can see. Import it from the workspaces page to
               make a copy you own. Members, invite codes and comment threads stay here.
             </p>
             {packed && <p>{packed}</p>}

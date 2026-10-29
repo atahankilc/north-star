@@ -5608,8 +5608,8 @@ table's cells, a deck's tasks are the same everywhere.
   focusing it there kept `?canvas=eng` in and out; take off from Engineering left it on Marketing with the toast, ⌘Z
   brought the spot back; on Marketing its console read `[⧉ 2] [focus] [edit]`, `⧉ 2` listed both canvases; Delete in
   edit mode moved its home to Engineering, ⌘Z back; `delete everywhere` removed the piece and its spot.
-- *Not yet:* a piece stuck to a shared plane isn't carried on the canvases it's only spotted on (it follows the plane
-  where they're both); export/import of spots (session 4).
+- *Not yet:* export/import of spots (session 4, done D-309). (A piece stuck to a shared plane follows it on every
+  canvas where both are, D-311.)
 
 ### D-308 · 2026-10-29 · Accepted (changes D-233's and D-256's keeping; the user: "filtreler şu anda kalıcı olarak apply ediliyor, biri mesela bir link ekleyip componentten çıkarsa o filtre orda kalmaya devam ediyor, yada sayfayı yenilediğinde … Sadece kullanıcı için olması mantıksız çünkü diğerlerin değişikliklerini falan kaçırabilir. Kalıcı olması da iyi değil … sadece o anlık mı yapsak", then, offered a preview of new filter looks and the lifespan: "beğenmedim önerilerini, şu anki gibi kalsın ama filtreler o anlık olsun", "önerilerini de uygula")
 **Filters are a passing look: a plane's or a deck's filter lasts only while it's open, and what's added after it's set
@@ -5654,6 +5654,28 @@ shows anyway.**
   `on Engineering, following`; exported and imported: the new workspace's canvases `main=Marketing`, Engineering under a
   new id, Backend, the Roadmap heading and Pazar's spot on it.
 - *Not yet:* the export settings' note still says "everything on the canvas" (WorkspaceLayout, another session's area).
+
+### D-311 · 2026-10-29 · Accepted (the user: "bitti mi işin? doğruluğunda emin ol. Sonrada kalan işleri yap")
+**Canvases, checked again** (D-302's sessions 1–4, D-305–D-309): an independent read of the code found these, fixed.
+- A shared piece focused on the first canvas jumped to its own canvas (`?canvas=` was left out for `main`): with a focus
+  the canvas is always in the address now (`canvasParams`), so a piece shown through a spot stays where you are.
+- A section holding a piece shown through a spot couldn't be moved (the batch put `updatedAt` on the spot; the rules
+  refuse it): spots get none, like a card's places.
+- The first canvas (`main`) isn't offered for deletion: every workspace has it (deleted, it came back, implied and empty).
+- Deleting a workspace now takes its `canvases`, `pieceSpots` and `places` too (they were left, unreachable).
+- A new piece (`+`, the wizards, a document placed) keeps clear of everything drawn on the canvas shown, pieces shown
+  through a spot too (`setShownHere`); moving to a canvas keeps clear of what's shown there through spots.
+- `move to canvas…` on a piece that's here only through a spot says so ("its own canvas keeps it") instead of nothing.
+- Unsharing or deleting a document takes its pieces' spots too.
+- A canvas on its way out shows no focus from the next one (`focused` is only this canvas's; a focus is cleared only
+  when its piece is gone); a thread waiting for its canvas survives a mount done twice (dev); a finder match waiting
+  for its canvas is given up after 4 s; the breadcrumb's list counts pieces shown through spots.
+- The export settings' note says every canvas. D-307's *Not yet* was wrong: a piece stuck to a shared plane follows it
+  on every canvas where both are (the moves write each one's spot there).
+- *Verified:* headless Chrome on the emulators: the shared Backend focused on Marketing kept `canvas=main&focus=…` and
+  `Marketing / Backend`, back out to Marketing; the canvas list had no delete for Marketing and counted Backend; `+ →
+  plane` landed at 25,-700, clear of Backend's spot at 0,0; dragging the section moved its spot with it (125, 25).
+- *Not yet (small):* a deck stuck to a shared plane, the plane then taken off the deck's canvas, stays linked to it.
 
 ### D-310 · 2026-10-29 · Accepted (adds to D-238; the user: "yeni bir component koyarken direkt baktığım yere koyuyor ya, bazen başka bir componentin üzerindeyken yeni component koyma yapabiliyor ve bu durumda mesela yeni gelen component coktan var olanın arkasına düşebiliyor. Bu yüzden yeni gelen componenti oynatmak da imkansız oluyor", then "Direkt yeni eklenen en üste çıksın desek olmaz mı?")
 - *Decision:* pieces on a canvas are drawn oldest first (`createdAt`, then id), so the newest is always on top; one

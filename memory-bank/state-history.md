@@ -890,3 +890,8 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 ## Done (2026-10-29): canvases all round (D-309, D-302's session 4)
 - Plane names with their canvas in pickers and PLANES, threads going across canvases and `on this canvas`, following
   onto someone's canvas, ⌥1–⌥9, canvases and spots in export/import. Verified in headless Chrome (D-309).
+
+## Done (2026-10-29): canvases checked again (D-311)
+- An independent read of D-305–D-309 found 4 bugs and a few small ones (a shared piece's focus on `main`, a section
+  with a spot inside, deleting `main`, a workspace delete's leftovers; new pieces over spots…): fixed, checked in
+  headless Chrome (D-311).

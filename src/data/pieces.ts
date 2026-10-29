@@ -13,7 +13,7 @@ import { db } from './firebase'
 import { GRID, snap } from './grid'
 import { absent, snapshotWith, tracked } from './history'
 import type { Piece, PieceKind } from './model'
-import { canvasField, canvasHere, onCanvas, posRef, spotRef, spotted, type Spot } from './canvases'
+import { canvasField, canvasHere, onCanvas, posRef, shownHere, spotRef, spotted, type Spot } from './canvases'
 
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'pieces')
 export const pieceRef = (wid: string, id: string) => doc(col(wid), id)
@@ -72,7 +72,9 @@ const overlaps = (a: Box, b: Box) => a.x < b.x + b.w + GAP && b.x < a.x + a.w + 
 // first.
 // Only what's on the canvas shown is in the way (D-302), or on `canvas` (moved there, D-302's session 2).
 export function nearClear(box: Box, all: Box[], canvas = canvasHere()): Pick<Box, 'x' | 'y'> {
-  const others = (all as (Box & { canvasId?: string; spot?: string })[]).filter((o) => (o.spot ? o.spot === canvas : onCanvas(canvas)(o)))
+  // On the canvas shown, what's drawn there (through spots too, D-307); elsewhere, the list given.
+  const here = canvas === canvasHere() ? shownHere() : null
+  const others = here ?? (all as (Box & { canvasId?: string; spot?: string })[]).filter((o) => (o.spot ? o.spot === canvas : onCanvas(canvas)(o)))
   const free = (b: Box) => !others.some((o) => overlaps(b, o))
   if (free(box)) return { x: box.x, y: box.y }
   const step = 4 * GRID

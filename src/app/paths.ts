@@ -10,7 +10,8 @@ export function workspacePath(wid: string) {
 }
 
 // One of its canvases (D-302): `?canvas=<id>`, left out for the first (`main`, src/data/canvases.ts).
-export const canvasParams = (canvas: string, rest: Record<string, string> = {}): Record<string, string> => (canvas === 'main' ? rest : { canvas, ...rest })
+// With a focus it's said for `main` too: a piece shown there through a spot (D-302's session 3) stays there.
+export const canvasParams = (canvas: string, rest: Record<string, string> = {}): Record<string, string> => (canvas === 'main' && !rest.focus ? rest : { canvas, ...rest })
 export function canvasPath(wid: string, canvas: string) {
   return canvas === 'main' ? workspacePath(wid) : `${workspacePath(wid)}?canvas=${encodeURIComponent(canvas)}`
 }

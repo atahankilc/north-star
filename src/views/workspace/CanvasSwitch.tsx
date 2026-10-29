@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { canvasPath } from '../../app/paths'
 import { useAuth } from '../../data/auth'
-import { addCanvas, canvasGoes, CANVAS_NAME_MAX, deleteCanvas, moveCanvas, onCanvas, renameCanvas, type Canvas } from '../../data/canvases'
+import { addCanvas, canvasGoes, CANVAS_NAME_MAX, deleteCanvas, MAIN, moveCanvas, piecesOn, renameCanvas, type Canvas } from '../../data/canvases'
 import { canEditIn } from '../../data/workspaces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
@@ -21,7 +21,7 @@ const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
 type Mode = 'list' | 'new' | 'rename'
 
 export function CanvasCrumb({ label, current }: { label: string; current: boolean }) {
-  const { wid, workspace, canvas, canvases, pieces } = useWs()
+  const { wid, workspace, canvas, canvases, pieces, spots } = useWs()
   const now = useWsNow()
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
@@ -46,7 +46,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
       glyph: c.id === canvas ? '•' : ' ',
       letter: i < 9 ? String(i + 1) : undefined,
       // ⌥1–⌥9 go there from anywhere (MoveToCanvas' CanvasKeys).
-      hint: `${plural(pieces.filter(onCanvas(c.id)).length, 'piece')}${i < 9 && canvases.length > 1 ? ` · ⌥${i + 1}` : ''}`,
+      hint: `${plural(piecesOn(c.id, pieces, spots).length, 'piece')}${i < 9 && canvases.length > 1 ? ` · ⌥${i + 1}` : ''}`,
       onSelect: () => c.id !== canvas && go(c.id),
     })),
     ...(editor
@@ -56,7 +56,8 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
           { key: 'rename', label: `rename "${shown.name}"`, glyph: '✎', letter: 'r', onSelect: () => (setOpen((o) => o && { ...o, mode: 'rename' }), 'keep') },
           ...(canvases.length > 1 && canvases[0].id !== shown.id ? [{ key: 'up', label: 'move it up', glyph: '↑', onSelect: () => void moveCanvas(wid, canvases, shown.id, -1) }] : []),
           ...(canvases.length > 1 && canvases[canvases.length - 1].id !== shown.id ? [{ key: 'down', label: 'move it down', glyph: '↓', onSelect: () => void moveCanvas(wid, canvases, shown.id, 1) }] : []),
-          ...(canvases.length > 1 ? [{ key: 'delete', label: `delete "${shown.name}"`, glyph: '×', letter: 'x', danger: true, onSelect: () => setDeleting(shown) }] : []),
+          // Not the first (`main`): every workspace has it (D-302's review).
+          ...(canvases.length > 1 && shown.id !== MAIN ? [{ key: 'delete', label: `delete "${shown.name}"`, glyph: '×', letter: 'x', danger: true, onSelect: () => setDeleting(shown) }] : []),
         ]
       : []),
   ]

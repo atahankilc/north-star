@@ -112,8 +112,8 @@ export async function moveMany(label: string, moves: Move[]) {
     async () => {
       const batch = writeBatch(db())
       const now = Date.now()
-      // A card's place on another plane (D-281) has no `updatedAt`.
-      moves.forEach((m) => batch.update(m.ref, { x: m.to.x, y: m.to.y, ...m.extra, ...(m.ref.parent.id === 'places' ? {} : { updatedAt: now }) }))
+      // A card's place on another plane (D-281) and a piece's spot on another canvas (D-307) have no `updatedAt`.
+      moves.forEach((m) => batch.update(m.ref, { x: m.to.x, y: m.to.y, ...m.extra, ...(m.ref.parent.id === 'places' || m.ref.parent.id === 'pieceSpots' ? {} : { updatedAt: now }) }))
       await batch.commit()
     },
     { before },

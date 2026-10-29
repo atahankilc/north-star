@@ -60,7 +60,7 @@ bölelim, burası, bütün canvas ve everywhere … adı canvas olsun, ve ortakl
 - **Switching:** the backdrop stays; the old canvas breaks and the new one builds cell by cell (one entrance, D-034);
   reduced motion: at once. ⌥1–⌥9 go to the nth canvas (D-309: the browser keeps ⌘1–⌘9).
 - **New canvas:** named in place (`>` field, Enter), then opened empty with the side nav's `+` lit.
-- **Delete a canvas** (editors; never the last): the hazard confirm (`4 pieces go, 2 stay on other canvases`); cards
+- **Delete a canvas** (editors; never the last, never the first, `main`, D-311): the hazard confirm (`4 pieces go, 2 stay on other canvases`); cards
   on its planes that are on planes elsewhere stay (D-282's rule); ⌘Z brings it back.
 - **Moving and sharing a component:** a piece's right-click and its edit console: `move to canvas ▸` and `also on
   canvas ▸`, each the prompt list of the other canvases + `+ new canvas`. Several selected move together. A piece

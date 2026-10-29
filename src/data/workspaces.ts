@@ -254,7 +254,7 @@ async function deleteThread(wid: string, tid: string) {
 }
 
 // Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
-const WORKSPACE_COLLECTIONS = ['pieces', 'labels', 'customers', 'problems', 'competitors', 'ideas', 'features', 'packages', 'edges', 'competitorFeatures', 'comparisons', 'evidence', 'cells', 'tasks']
+const WORKSPACE_COLLECTIONS = ['pieces', 'labels', 'customers', 'problems', 'competitors', 'ideas', 'features', 'packages', 'edges', 'competitorFeatures', 'comparisons', 'evidence', 'cells', 'tasks', 'places', 'canvases', 'pieceSpots']
 const BATCH_LIMIT = 450
 // A report body's delete rule reads its summary (twice), and a batch's rules may read at most 20 documents, more and the
 // whole batch is refused: so reports go a few to a batch.

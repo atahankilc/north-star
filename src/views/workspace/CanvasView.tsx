@@ -42,7 +42,7 @@ import { DrawSection } from './DrawSection'
 import { labelBox, TextItems } from './TextItems'
 import { spaceBounds } from './spaceBounds'
 import { CANVAS, deleteLabel, type Label } from '../../data/labels'
-import { canvasOf, canvasTextOn, piecesOn, setSpotted, spotRef } from '../../data/canvases'
+import { canvasOf, canvasTextOn, piecesOn, setShownHere, spotRef } from '../../data/canvases'
 import { canvasParams } from '../../app/paths'
 import { PlaneCards } from './PlaneCards'
 import { LensCardPanel } from './CardPanel'
@@ -97,7 +97,6 @@ export function CanvasView() {
   // A piece shared from another canvas is here at its spot (D-302's session 3); its moves write that spot.
   // Drawn oldest first, so the newest is on top (D-310): one added over another is never under it.
   const pieces = useMemo(() => piecesOn(canvas, everyPiece, spots).sort((a, b) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1)), [everyPiece, canvas, spots])
-  setSpotted(pieces.filter((p) => p.spot).map((p) => p.id))
   const labels = useMemo(() => everyLabel.filter((l) => l.pieceId !== CANVAS || canvasTextOn(canvas)(l)), [everyLabel, canvas])
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
@@ -117,7 +116,8 @@ export function CanvasView() {
   const [params, setParams] = useSearchParams()
   const focusId = params.get('focus')
   // Where it is on this canvas when it's here (through a spot too, D-302's session 3).
-  const focused = focusId ? (pieces.find((p) => p.id === focusId) ?? everyPiece.find((p) => p.id === focusId) ?? null) : null
+  // On the way to another (D-302's review), the one leaving shows none.
+  const focused = focusId ? (pieces.find((p) => p.id === focusId) ?? null) : null
   const focusedBare = Boolean(focused && isBare(focused))
   const focusSpread = useCanvasView((s) => s.focusSpread)
   const focusArrived = useCanvasView((s) => s.focusArrived)
@@ -134,6 +134,8 @@ export function CanvasView() {
   const kanbanSizes = useKanbanSizes((s) => pieces.filter((p) => p.kind === 'kanban' && isOpen(p)).map((p) => `${s[p.id]?.w}×${s[p.id]?.h}`).join())
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const shown = useMemo(() => shownPieces(pieces, cards), [pieces, cards, openSizes, kanbanSizes])
+  // What a new piece keeps clear of, and which moves write a spot (D-307).
+  setShownHere(shown)
   // Each space's cards and text, kept the same lists until they change: what's in a piece isn't drawn again as the
   // camera moves (the pieces' contents are memoised, below). A plane's cards include those brought from others (D-281).
   // A space whose things didn't change keeps its list, so a change on one plane draws only that one.
@@ -555,6 +557,8 @@ export function CanvasView() {
     takeOffHere(wsNow(), p)
   }
   askDeleteHere = askDelete
+  // A document's pieces' spots on other canvases (D-307), going with them.
+  const spotsOf = (list: { id: string }[]) => spots.filter((s) => list.some((p) => p.id === s.pieceId)).map((s) => spotRef(wid, s.canvasId, s.pieceId))
   const deletingId = useDocUi((s) => s.deleting)
   const deletingDoc = documents.find((d) => d.id === deletingId) ?? null
   const unsharingId = useDocUi((s) => s.unsharing)
@@ -650,9 +654,8 @@ export function CanvasView() {
   goToRef.current = goTo
   useEffect(() => {
     const t = waitingThread && threads.find((x) => x.id === waitingThread)
-    waitingThread = null
-    if (!t) return
-    const raf = requestAnimationFrame(() => goToRef.current(t))
+    if (!t) return void (waitingThread = null)
+    const raf = requestAnimationFrame(() => ((waitingThread = null), goToRef.current(t)))
     return () => cancelAnimationFrame(raf)
     // Once, as this canvas is made.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -705,8 +708,9 @@ export function CanvasView() {
     }
   }, [focusId])
   useEffect(() => {
-    if (focusId && !focused && everyPiece.length > 0) setParams(canvasParams(canvas), { replace: true })
-  }, [focusId, focused, everyPiece.length, setParams, canvas])
+    // Gone (not just on another canvas, which is being gone to).
+    if (focusId && !focused && everyPiece.length > 0 && !everyPiece.some((p) => p.id === focusId)) setParams(canvasParams(canvas), { replace: true })
+  }, [focusId, focused, everyPiece, setParams, canvas])
 
   // The plane's part of the screen follows what's open beside it (D-211); its contents fit there again.
   // A document open beside its list (D-232) takes the right part the same way.
@@ -1149,7 +1153,7 @@ export function CanvasView() {
             if (!editor) return
             // A document in focus that goes off the canvas: back to the canvas first.
             if (focused && unsharingPieces.some((p) => p.id === focused.id)) unfocus()
-            void unshareDocument(wid, unsharingDoc.id, unsharingPieces.map((p) => pieceRef(wid, p.id)))
+            void unshareDocument(wid, unsharingDoc.id, [...unsharingPieces.map((p) => pieceRef(wid, p.id)), ...spotsOf(unsharingPieces)])
           }}
         />
       )}
@@ -1164,7 +1168,7 @@ export function CanvasView() {
           onCancel={() => useDocUi.setState({ deleting: null })}
           onConfirm={() => {
             useDocUi.setState((s) => ({ deleting: null, readers: s.readers.filter((x) => x !== deletingDoc.id) }))
-            void deleteDocument(wid, deletingDoc.id, piecesOfDoc(wid, everyPiece, deletingDoc.id))
+            void deleteDocument(wid, deletingDoc.id, [...piecesOfDoc(wid, everyPiece, deletingDoc.id), ...spotsOf(everyPiece.filter((p) => p.docId === deletingDoc.id))])
           }}
         />
       )}

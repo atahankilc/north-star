@@ -76,16 +76,17 @@ function Prompt({ asked, canvas, canvases, onClose }: { asked: { pieces: string[
       if (!landed) return useHistory.getState().say(`${n === 1 ? "It's" : "They're"} on ${target.name} already`)
       return useHistory.getState().say(`Put ${name} on ${target.name} too`, { label: 'go there', run: () => goThere(ws.wid, target.id, landed) })
     }
-    // A piece here only through a spot isn't moved from here: it's taken off (its own canvas keeps it).
+    // A piece here only through a spot isn't moved from here (its own canvas keeps it): taken off, not moved.
     const shown = stuck.filter((p) => !p.spot)
     // Written from the pieces as stored (an unframed one's drawn box is only for where it lands).
     const pieces = shown.map((p) => ws.pieces.find((x) => x.id === p.id)!)
     const texts = [...labels, ...text.filter((l) => !labels.includes(l) && sections.some((s) => inside(labelBox(l), s)))]
-    if (!pieces.length && !texts.length) return
+    if (!pieces.length && !texts.length) return stuck.length ? useHistory.getState().say(`${stuck.length === 1 ? "It's" : "They're"} only shown here: its own canvas keeps it. Take it off instead (⌫ in edit mode)`) : undefined
     const boxes = [...shown, ...texts.map(labelBox)]
     // They break cell by cell where they were (as a canvas does when you leave it), then go.
     const gone = await leave([...pieces.map((p) => `plane:${p.id}`), ...texts.map((l) => `label:${l.id}`)])
-    const landed = await moveToCanvas(ws.wid, target, pieces, texts, boxes, ws.pieces, ws.spots).catch(() => null)
+    // What's in the way there, through its spots too.
+    const landed = await moveToCanvas(ws.wid, target, pieces, texts, boxes, piecesOn(target.id, ws.pieces, ws.spots), ws.spots).catch(() => null)
     if (!landed) return gone.forEach((el) => (el.style.clipPath = ''))
     const moving = new Set([...pieces.map((p) => p.id), ...texts.map((l) => l.id)])
     useCanvasView.setState((s) => ({ editing: s.editing.filter((id) => !moving.has(id)), selected: s.selected && moving.has(s.selected) ? null : s.selected, labelSelected: s.labelSelected && moving.has(s.labelSelected) ? null : s.labelSelected }))

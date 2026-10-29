@@ -61,9 +61,15 @@ export function piecesOn(canvas: string, pieces: WithId<Piece>[], spots: Spot[])
 // The canvases a piece is on, its own first.
 export const canvasesOf = (p: { id: string; canvasId?: string }, spots: Spot[]) => [canvasOf(p), ...spots.filter((s) => s.pieceId === p.id && s.canvasId !== canvasOf(p)).sort((a, b) => a.createdAt - b.createdAt).map((s) => s.canvasId)]
 
-// Which pieces the canvas shown shows through a spot: their moves write the spot (pieces.ts' placeAll, a section's carry).
+// The canvas shown's pieces as drawn (CanvasView sets them): those through a spot have their moves written to it
+// (pieces.ts' placeAll, a section's carry), and all of them are what's in a new piece's way there (nearClear).
 let throughSpot = new Set<string>()
-export const setSpotted = (ids: Iterable<string>) => void (throughSpot = new Set(ids))
+let drawn: (Box & { id: string })[] | null = null
+export function setShownHere(shown: (Box & { id: string; spot?: string })[]) {
+  drawn = shown
+  throughSpot = new Set(shown.filter((p) => p.spot).map((p) => p.id))
+}
+export const shownHere = () => drawn
 export const spotted = (id: string) => throughSpot.has(id)
 export const posRef = (wid: string, id: string) => (throughSpot.has(id) ? spotRef(wid, here, id) : doc(db(), 'workspaces', wid, 'pieces', id))
 

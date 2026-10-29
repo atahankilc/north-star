@@ -44,7 +44,10 @@ const GO_MAX = 0.6
 const EDGE = 16
 
 // A match on another canvas (D-302), waiting for that canvas to be shown.
+// Given up after a few seconds (that canvas never came: deleted on the way).
 let waiting: Row | null = null
+let waitingSince = 0
+const WAIT_MS = 4000
 
 export function Finder() {
   const open = useFind((s) => s.open)
@@ -53,7 +56,8 @@ export function Finder() {
   // The canvas asked for is shown (and its pieces drawn): on to the match.
   useEffect(() => {
     const row = waiting
-    if (!row || row.dest.canvas !== canvas) return
+    if (row && performance.now() - waitingSince > WAIT_MS) waiting = null
+    if (!row || !waiting || row.dest.canvas !== canvas) return
     waiting = null
     const raf = requestAnimationFrame(() => goRow(row, now()))
     return () => cancelAnimationFrame(raf)
@@ -212,6 +216,7 @@ function Panel() {
     // On another canvas (D-302): that canvas first, then on from there (Finder, above).
     if (row.dest.canvas && row.dest.canvas !== ws.canvas) {
       waiting = row
+      waitingSince = performance.now()
       closeFinder()
       return navigate(canvasPath(ws.wid, row.dest.canvas))
     }
