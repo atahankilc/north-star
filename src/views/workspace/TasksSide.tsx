@@ -84,7 +84,7 @@ export function TasksSide({ editor, esc, plane }: Props) {
   if (!size.w) return null
   return (
     <>
-      <div className={pane.divider} style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="The tasks side view's width" />
+      <div className={pane.divider} style={{ left, zIndex: 6 }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="The tasks side view's width" />
       <aside className={styles.side} style={{ left, width }} aria-label="Tasks" onPointerDown={(e) => e.stopPropagation()}>
         <div className={styles.tabs} role="tablist" aria-label="Decks">
           {decks.map((d, i) => (

@@ -1020,7 +1020,6 @@ export function CanvasView() {
           {focusArrived && !focusLeaving && (
             <Beside plane={focused} open={besideOpen} editor={editor} esc={escNext} matrixSetupPane={matrixPane} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
           )}
-          {focusArrived && !focusLeaving && sideOpen && <TasksSide editor={editor} esc={escNext} plane={kindOfPiece(focused) === 'plane' ? focused : null} />}
           {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
           {focusedKanban && editor && kanbanSetup === focused.id && focusArrived && !focusLeaving && <KanbanSetupPanel piece={focused} />}
@@ -1095,8 +1094,8 @@ export function CanvasView() {
       {!focused && editor && canvasSetup && <CanvasSetup piece={canvasSetup} />}
       {/* And from one open on the canvas (D-228). */}
       {!focused && <LensCardPanel space={null} editor={editor} />}
-      {/* The tasks side view on the canvas (D-300). */}
-      {!focused && sideOpen && <TasksSide editor={editor} esc={null} plane={null} />}
+      {/* The tasks side view (D-300): one, over the canvas and any focus, so going in or out never redraws it. */}
+      {sideOpen && <TasksSide editor={editor} esc={focused ? escNext : null} plane={focused && focusArrived && !focusLeaving && kindOfPiece(focused) === 'plane' ? focused : null} />}
       {/* And a task picked on a kanban open on the canvas (D-251), or from a card's panel there (D-254). */}
       {!focused && <TaskPanel editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />
