@@ -28,9 +28,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   (memory only), D-298 timeline leftovers (06e11c7), D-299 card pickers as the prompt (80441e7), a framed table's focus
   kept inside its window (f14b321). D-291/D-292 and before: pushed and live. What was done: state-history.md.
 - D-300 (tasks side view, a deck never hides tasks), D-301 (deck), D-303 (no `this plane only`): committed, not pushed.
-- D-304, the timeline as a strip (tasks' `start`, sideways without end, scales, overview): built and checked headless,
-  **not committed** (Timeline.tsx/.module.css, stripReveal.ts, tasks.ts, TaskPanel, a line each in CanvasView, Beside,
-  Kanban; rules + tests). Its preview of four is docs/specs/timeline-preview/ (B, C, D not built).
+- D-304, the timeline as a strip (tasks' `start`, sideways without end, scales, overview): committed (414e24b), not
+  pushed; its rule is already deployed. Its preview of four is docs/specs/timeline-preview/ (B, C, D not built).
 - Uncommitted code in the tree from another session (`setFitter` in CanvasView/canvasView.ts, WorkspaceLayout.tsx): not
   part of the above.
 
