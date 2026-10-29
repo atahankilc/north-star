@@ -1,30 +1,9 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
-import type { WithId } from '../../data/hooks'
-import type { Workspace } from '../../data/model'
-import type { WorkspaceData } from '../../data/workspaceData'
+import { makeStore, registerStore, type Store, type WorkspaceCtx } from '../../state/wsStore'
 
-export type WorkspaceCtx = WorkspaceData & {
-  wid: string
-  workspace: WithId<Workspace>
-  // The canvas shown (D-302): `main` or a canvas's id.
-  canvas: string
-}
-
-// The workspace's data in a store rather than a context value, so a change draws only what reads the part that
-// changed: `useWs()` notes the fields a component reads, and it draws again when one of those changes (one card's title
-// draws that card and what lists cards, not every component under the workspace, D-279's *Not yet*).
-type Store = { get: () => WorkspaceCtx; subscribe: (on: () => void) => () => void; set: (v: WorkspaceCtx) => void; tell: () => void }
-
-function makeStore(first: WorkspaceCtx): Store {
-  let value = first
-  const subs = new Set<() => void>()
-  return {
-    get: () => value,
-    subscribe: (on) => (subs.add(on), () => void subs.delete(on)),
-    set: (v) => void (value = v),
-    tell: () => subs.forEach((on) => on()),
-  }
-}
+// The store and its type live in state/wsStore.ts (React-free, read outside React with `getWs()`, R9).
+export type { WorkspaceCtx }
+export { getWs, subscribeWs } from '../../state/wsStore'
 
 export const WorkspaceContext = createContext<Store | null>(null)
 
@@ -32,6 +11,8 @@ export const WorkspaceContext = createContext<Store | null>(null)
 export function useWorkspaceStore(value: WorkspaceCtx): Store {
   const [store] = useState(() => makeStore(value))
   if (store.get() !== value) store.set(value)
+  // On top of getWs()'s stack while mounted; an unmount takes this store off it, the one under it current again.
+  useLayoutEffect(() => registerStore(store), [store])
   useLayoutEffect(() => store.tell(), [store, value])
   return store
 }

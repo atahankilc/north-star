@@ -41,7 +41,6 @@ import {
   updateLabel,
   type Label,
   type LabelColor,
-  type LabelSize,
   type TextScale,
 } from '../../data/labels'
 import { DESCRIPTION_MAX, describeWorkspace, renameWorkspace } from '../../data/workspaces'
@@ -58,10 +57,10 @@ import { usePeersOn } from './collab'
 import { Landing, Marks, type Handle } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
+import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../model/labelBox'
+export { labelBox } from '../../model/labelBox'
 
 const DRAG_PX = 5
-// Down from a sticky note's top to its text: the glue band holding the signed line, then a gap (D-257).
-const STICKY_TEXT_TOP = 17.64
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
 const MIN_TEXT_PX = 6
 
@@ -77,11 +76,6 @@ export const COLOR_VAR: Record<LabelColor, string> = {
   blue: 'var(--accent-blue)',
 }
 
-type HeadingSize = Exclude<LabelSize, 'note'>
-// A heading's or a section name's size (a section never says `note`; if it did, H3).
-const headingSize = (l: Label): HeadingSize => (l.size === 'note' ? 'minor' : (l.size ?? 'heading'))
-// A heading's small line, a section's number: its size from the text it goes with.
-const kickPx = (px: number) => Math.max(8, px * 0.3)
 const secKickPx = (px: number) => Math.max(8, px * 0.42)
 // Caps read better a little apart; big text a little tighter.
 const tracking = (l: Label, size: HeadingSize) => (l.caps ? '0.04em' : size === 'heading' ? '-0.03em' : '-0.02em')
@@ -93,26 +87,6 @@ function kickerParts(kicker: string | undefined): { num: string; rest: string } 
   if (!k) return null
   const m = /^(\d{1,4})(?:[\s.·:—–-]+(.*))?$/.exec(k)
   return m ? { num: m[1], rest: (m[2] ?? '').toUpperCase() } : { num: '', rest: k.toUpperCase() }
-}
-
-// Roughly where it sits, for what a section holds and what fit frames. A turned one's sides swap.
-export function labelBox(l: Label) {
-  const k = kindOf(l)
-  const lines = Math.max(1, l.text.split('\n').length)
-  if (k === 'section') return { x: l.x, y: l.y, w: l.w ?? 400, h: l.h ?? 300 }
-  if (k === 'sticky') {
-    const w = l.w ?? STICKY_W.initial
-    return { x: l.x, y: l.y, w, h: l.folded ? STICKY_H : Math.max(STICKY_H, STICKY_TEXT_TOP + lines * STICKY_PX[l.scale ?? 'medium'] * 1.45 + 7.2) }
-  }
-  if (k === 'title') return { x: l.x, y: l.y, w: l.w ?? TITLE_W.initial, h: 340 }
-  let w: number
-  let h: number
-  if (k === 'paragraph') [w, h] = [l.w ?? PARA_W.initial, lines * PARA_PX[l.scale ?? 'large'] * 1.55 + 8]
-  else {
-    const px = HEADING_PX[headingSize(l)]
-    ;[w, h] = [Math.max(4, l.text.length) * px * 0.55, px * 1.3 + (l.kicker ? kickPx(px) * 1.6 : 0)]
-  }
-  return l.rotate ? { x: l.x, y: l.y, w: h, h: w } : { x: l.x, y: l.y, w, h }
 }
 
 // Where a heading or paragraph lands, its L's on the grid's marks all round (D-294): its size up to the next step (alt

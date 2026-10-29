@@ -14,7 +14,8 @@
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes,database,storage --project north-star-db",
     "build:functions": "npm --prefix functions run build",
     "deploy:functions": "firebase deploy --only functions --project north-star-db",
-    "check:memory": "node scripts/check-memory.mjs"
+    "check:memory": "node scripts/check-memory.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
@@ -38,6 +39,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "firebase-tools": "^15.34.0",
     "typescript": "~5.9",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
   }
 }

@@ -11,6 +11,10 @@ import { create } from 'zustand'
 import { fitInto, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import type { Place } from './goTo'
+import { matchesIn, MOST } from '../../model/findIndex'
+
+// Where a regular expression matches in a text: src/model/findIndex.ts (R8).
+export { matchesIn, MOST }
 
 export type FindOpts = { caseSensitive: boolean; words: boolean; regex: boolean }
 // `here`: the space you're in, the rest of its canvas folded; `canvas`: all of the canvas shown; `everywhere`: every
@@ -73,23 +77,6 @@ export function useMatcher() {
   const query = useFind((s) => s.query)
   const opts = useFind((s) => s.opts)
   return useMemo(() => matcherOf(query, opts), [query, opts])
-}
-
-// More than this and the rest aren't counted (a regular expression matching everything).
-export const MOST = 5000
-
-// Where `re` matches in `text`: [from, to] each; an empty match is stepped over.
-export function matchesIn(text: string, re: RegExp, most = MOST): [number, number][] {
-  const out: [number, number][] = []
-  re.lastIndex = 0
-  for (let m = re.exec(text); m && out.length < most; m = re.exec(text)) {
-    if (m[0].length === 0) {
-      re.lastIndex++
-      continue
-    }
-    out.push([m.index, m.index + m[0].length])
-  }
-  return out
 }
 
 // The matches on the page under `root`, as ranges, one text node at a time; not in what's marked `data-find-skip`

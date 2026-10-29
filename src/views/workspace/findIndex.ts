@@ -17,10 +17,14 @@ import { documentsBounds, documentsFindItems, documentsOf, listed } from './Docu
 import { kanbanBounds, kanbanOf, taskBox } from './Kanban'
 import { tasksIn, type Task } from '../../data/tasks'
 import { landing, matchesIn, MOST, type FindItem, type FindTarget } from './find'
+import { pageText, snippet } from '../../model/findIndex'
 import type { ReactNode } from 'react'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import type { Place } from './goTo'
 import { cardsOn, type Place as CardPlace } from '../../data/places'
+
+// A text cut round a match, a document's text as read: src/model/findIndex.ts (R8).
+export { pageText, snippet } from '../../model/findIndex'
 
 // Where a row goes: a place on the canvas or in a plane (go to's, D-196), lit there; a match in a table, matrix or list
 // (into its focus, landing on `view`); in a document on its own (its focus); in a document open beside a list.
@@ -55,43 +59,6 @@ type Data = {
 }
 
 const readingOrder = (a: { x: number; y: number }, b: { x: number; y: number }) => a.y - b.y || a.x - b.x
-
-// A long text cut round its first match, so the row shows it.
-export function snippet(text: string, re: RegExp) {
-  const flat = text.replace(/\s+/g, ' ').trim()
-  const m = matchesIn(flat, re, 1)[0]
-  if (!m || flat.length <= 90) return flat
-  const from = Math.max(0, m[0] - 32)
-  return `${from ? '…' : ''}${flat.slice(from, from + 96)}${from + 96 < flat.length ? '…' : ''}`
-}
-
-// A document's text as its page reads it, in order: its title, then its Markdown without the marks (or a report's
-// answer, questions, points, what it means, open questions and sources).
-export function pageText(d: Doc, body: DocBody | undefined) {
-  if (!body) return d.title
-  if (d.kind === 'report') {
-    const s = body.sections ?? []
-    return [
-      d.title,
-      body.answer ?? '',
-      ...s.flatMap((x, i) => [`${String(i + 1).padStart(2, '0')}${x.question}`, ...x.points.map((p) => p.text)]),
-      ...(body.implications?.length ? ['What it means for us', ...body.implications.map((x) => x.text)] : []),
-      ...(body.openQuestions?.length ? ['Open questions', ...body.openQuestions] : []),
-      ...(body.sources?.length ? ['Sources', ...body.sources.map((x, i) => `${i + 1} ${x.title}`)] : []),
-    ].join('\n')
-  }
-  let text = body.text ?? ''
-  const m = /^\s*#{1,6}\s+(.+?)\s*#*\s*(\n|$)/.exec(text)
-  if (m && m[1].trim() === d.title.trim()) text = text.slice(m[0].length)
-  const plain = text
-    .replace(/```[^\n]*\n?/g, '')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
-    .replace(/^\s*([-*+>]|\d+[.)])\s+(\[[ xX]\]\s+)?/gm, '')
-    .replace(/[*_`~|]/g, '')
-  return `${d.title}\n${plain}`
-}
 
 // The k-th match of `re` in a page's text, one row each, with the words round it.
 function pageRows(id: string, text: string, re: RegExp, dest: (k: number) => Dest, hint: string): Row[] {

@@ -5,15 +5,17 @@
 // D-201): the view glides there; a place inside a plane, from the canvas, first takes the plane into focus (the ink), then glides.
 // A plane, a section or the title is framed whole (never past 100%); a heading lands near the top at 100%, so what's
 // under it is in sight.
+// Which places there are and in what order: src/model/goTo.ts (R8); here each gets its glyph, and the view glides there.
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { CANVAS, kindOf, type Label } from '../../data/labels'
+import type { Label } from '../../data/labels'
 import { camOf, fitInto, glide, setCam, useCanvasView, type Bounds } from '../../state/canvasView'
 import { create } from 'zustand'
-import { labelBox } from './TextItems'
-import { kindOfPiece } from '../../data/pieces'
 import type { ReactNode } from 'react'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
+import { placesIn as placesAt, type PlaceMark } from '../../model/goTo'
+
+export { shownPlaces, type PlaceAt, type PlaceMark } from '../../model/goTo'
 
 // `space`: where it is, the canvas or a plane's id; `inside`: a plane's, listed under it on the canvas.
 export type Place = { id: string; space: string; label: string; glyph: ReactNode; box: Bounds; whole: boolean; inside?: boolean }
@@ -24,41 +26,14 @@ export const useGoTo = create<{ asked: Place | null; pending: Place | null; open
 
 export const toggleOpen = (plane: string) => useGoTo.setState((s) => ({ open: s.open.includes(plane) ? s.open.filter((x) => x !== plane) : [...s.open, plane] }))
 
-// What the list shows: a plane's places only while it's open.
-export const shownPlaces = (places: Place[], open: string[]) => places.filter((p) => !p.inside || open.includes(p.space))
-
 // Where a heading's top lands, as a share of the screen's height.
 const HEADING_TOP = 0.28
 const PAD = 96
 
-const readingOrder = (a: Place, b: Place) => a.box.y - b.box.y || a.box.x - b.box.x
-
-// The text places written in one space.
-function textIn(space: string, labels: Label[], workspaceName: string): Place[] {
-  return labels
-    .filter((l) => l.pieceId === space)
-    .flatMap((l): Place[] => {
-      const k = kindOf(l)
-      const name = l.text.trim()
-      const at = { id: l.id, space, box: labelBox(l) }
-      if (k === 'title') return [{ ...at, label: workspaceName || 'project title', glyph: TEXT_GLYPH.title, whole: true }]
-      if (k === 'section' && name) return [{ ...at, label: name, glyph: TEXT_GLYPH.section, whole: true }]
-      if (k === 'heading' && name && l.size !== 'minor') return [{ ...at, label: name, glyph: TEXT_GLYPH.heading, whole: false }]
-      return []
-    })
-    .sort(readingOrder)
-}
+const glyphOf = (m: PlaceMark): ReactNode => ('piece' in m ? PIECE_GLYPH[m.piece] : TEXT_GLYPH[m.text])
 
 export function placesIn(space: string, pieces: WithId<Piece>[], labels: Label[], workspaceName: string): Place[] {
-  if (space !== CANVAS) return textIn(space, labels, workspaceName)
-  const ids = new Set(pieces.map((p) => p.id))
-  const planes: Place[] = pieces.map((p) => {
-    const kind = kindOfPiece(p)
-    return { id: p.id, space: CANVAS, label: p.name || kind, glyph: PIECE_GLYPH[kind], box: p, whole: true }
-  })
-  return [...planes, ...textIn(CANVAS, labels, workspaceName)]
-    .sort(readingOrder)
-    .flatMap((p) => (ids.has(p.id) ? [p, ...textIn(p.id, labels, workspaceName).map((q) => ({ ...q, inside: true }))] : [p]))
+  return placesAt(space, pieces, labels, workspaceName).map(({ mark, ...p }) => ({ ...p, glyph: glyphOf(mark) }))
 }
 
 // The zoom, and which point of the space goes where on screen (the finder's preview shows the same, D-236).

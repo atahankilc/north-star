@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S2 next (vitest; `getWs()`; pure helpers to `src/model/`). S1 done.
+S3 next (`src/ops/` core). First its must-dos in Ideas: the data-free model split + import guard, `onTracked` for onboarding, the actor. S1, S2 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -108,6 +108,11 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   `create_*`/`update_*`/`delete` + named exceptions; `deck` to the model), 22 gaps, who-may/tracked per group ·
   reviewer: 1 fix round (a missing join-request write, presence session, canvas text has no duplicate/paste, 4 line
   numbers), then pass; reran the exported-function grep and the ops-vs-rows diff · ideas: its "Notes for S3–S8".
+- S2 · see `git log --grep "Agent S2"` · vitest (`npm test`, 13 tests), `src/state/wsStore.ts` (`getWs`, `subscribeWs`,
+  a stack of stores), `src/model/` (cardFacts, cardInside, kanbanCards, planeFilter, kanbanFilter, goTo, findIndex,
+  labelBox; old view paths re-export; goTo's glyph → a `mark`) · reviewer: pass (diffed every moved body vs HEAD, all
+  exports kept, StrictMode and workspace switching, headless smoke: focus plane/matrix/deck, finder, a plane filter, no
+  errors); then the registry became a stack · ideas: in Ideas (model still loads Firebase; actor; tests shallow).
 
 ### Stuck
 _(none)_
@@ -115,7 +120,10 @@ _(none)_
 ### For the user (in the morning)
 _(questions, choices made on their behalf, anything that needs a key or a design session)_
 - decisions-log.md has another session's uncommitted edits, so the run doesn't add D-numbers to it; every step commits
-  under D-312 and the phases' own D-numbers are left for a day session.
+  under D-312 and the phases' own D-numbers are left for a day session. D-312's own full entry is still uncommitted in
+  decisions-log.md (written by the planning session, not this run); it needs committing by whoever owns it.
+- Onboarding (D-315, its own lead later) will use this run's vitest, `getWs()` and S3's `onTracked`; it adds one-line
+  hooks to history.ts, presence.ts, WorkspaceLayout.tsx after ours land (onboarding-run.md §1.2).
 - Op names (agent-actions.md): the model sees `deck`, never `kanban` (D-301); workspace name/description and comments
   are untracked today (no undo), so they can't join a preview's single undo step until they are.
 
@@ -123,3 +131,16 @@ _(questions, choices made on their behalf, anything that needs a key or a design
 _(the reviewers' and builders' "could be better", not done yet)_
 - S15's store swap is also what onboarding's demos need (session workspace-sections-canvas, docs/specs/onboarding.md,
   "Needs from the store swap"): read it before S15 and build one seam for both.
+- **S3 must add (promised to onboarding):** in history.ts `onTracked(fn: (label: string, meta?: { kind?: string; ids?:
+  string[]; op?: string; actor?: 'person' | 'agent' }) => void): () => void`, fired after a write is recorded, for UI
+  writes and ops alike; ops pass their op name, agent writes `actor: 'agent'`. Ops take the actor uid as an argument,
+  never `auth.currentUser`; `useWorkspaceData` stays outside the store.
+- **S3 should first (S2 reviewer):** `src/model/` still imports values from `data/cards|labels|pieces|tasks|edges|source`,
+  which load Firebase and zustand (why vitest.config blanks the Firebase env). Move pure constants/helpers (`CARD`,
+  `GRID`, `FOR`, `kindOf`, `kindOfPiece`, `isOnPlane`, `rowsOf`, `today`, `KIND_NAME`…) into data-free modules, and add
+  a unit test that fails if `src/model` or `src/ops` import firebase/react/zustand/views.
+- S3: `getWs()` carries no actor; ops need uid, role, `editLocked` (a `getMe()` or fields on the store's value).
+- `store.set` runs during render, so `getWs()` can see a value React later drops: harmless for reads; ops must not act
+  inside a subscribe callback fired mid-render.
+- `subscribeWs` fires on any change; the agent's read layer may want a selector/diff form (S10).
+- Tests are shallow: S3 should add a shared fixture workspace snapshot used by model, ops and read tests.
