@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S8 next (tasks, deck columns, timeline; logLearned → create_evidence; cleanTask `start` check). S1–S7 done.
+S9 next (`arrange` layouts R10 + the UI facade `src/agent/ui.ts` R11). S1–S8 done: every content write goes through src/ops.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -153,6 +153,14 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   collaborator's column and its cells: reproduced, fixed; axisFrom skipped asked-for cards; "1,234"; then a docs
   search-and-replace broke 5 drag rows, put back by the lead) · real UI: wizards, keys, notes merging, totals,
   setup edits, criteria, all one step each and undone exactly.
+- S8 · see `git log --grep "Agent S8"` · `src/ops/{tasks,deck}.ts`: create_task (deck/column by id or name,
+  before/after → orderBetween in the op, givenAt/givenBy as before), update_task (days move each other along like the
+  panel), move_task (a list = one step), delete for tasks and deck columns (tasks to the column before), typed deck
+  setup, update_deck with D-300 `tasks_to` (deck id or `new_deck`), deck column ops, update_timeline, create_evidence
+  `from_task` (logLearned); every write in data/tasks.ts wrapped; `cleanTask` kept `start` now (export/import lost
+  it) · reviewer: 3 fix rounds (assignee check refused former members' lanes; a stale column list lost a rename when a
+  collaborator deleted a column, middle then last; a description) · real UI: deck, lanes, several tasks, limits,
+  finished, side view, timeline edges/bars/tray/draw, switch to cards, all one step and undone.
 
 ### Stuck
 _(none)_
@@ -166,6 +174,9 @@ _(questions, choices made on their behalf, anything that needs a key or a design
   hooks to history.ts, presence.ts, WorkspaceLayout.tsx after ours land (onboarding-run.md §1.2).
 - Op names (agent-actions.md): the model sees `deck`, never `kanban` (D-301); workspace name/description and comments
   are untracked today (no undo), so they can't join a preview's single undo step until they are.
+- Chosen in S8 (easy to undo): the agent's `update_deck tasks_to: 'new_deck'` moves the TASKS to a new deck and the
+  current one holds cards (the UI's "[make a new deck for cards]" does the reverse via create_piece); a task can be
+  given to a member or to anyone a task is already given to.
 - Chosen in S6: deleting a plane also removes its deleted cards' evidence, competitor features and comparisons (same as
   S4's card delete); an agent `arrange` of a section holding a plane also brings the plane's stuck pieces.
 - Chosen in S4 (easy to undo): deleting a card now also removes its evidence, competitor features and comparisons
@@ -210,3 +221,7 @@ _(the reviewers' and builders' "could be better", not done yet)_
 - S7 reviewer: `oneChange`'s add compares ids only, so a collaborator's removal of Y while my stale list edits X and
   still holds Y brings Y back and drops my X edit (nothing deleted); checking the rest is `same` in the add branch
   closes it. Whole-list writes of rule edits / bring back can still lose a concurrent edit (as before S7).
+- **S13 must (S8 reviewer):** the agent's `change` tool must strip or refuse args an op's schema doesn't declare
+  (UI-only `moves`, `setup`, `parts`, `order`, exact `to` spots would skip the typed checks); keep UI-only args behind
+  the wrappers. S10: expose members (name/email → uid) so assignees and mentions resolve, and fill `assigneeName`.
+- Import could remap a task's `learned` to the new evidence id instead of dropping it (S8 keeps only `'skip'`).

@@ -11,6 +11,7 @@ import { TEMPLATES as MATRIX_TEMPLATES_ALL } from '../model/matrix'
 import { TEMPLATES as TABLE_TEMPLATES_ALL } from '../model/table'
 import { matrixSetupFrom, type MatrixSpec } from './matrix'
 import { tableSetupFrom, type TableSpec } from './table'
+import { deckSetupFrom, type DeckSpec } from './deck'
 import { kindOf, type Label } from '../model/labels'
 import { labelBox } from '../model/labelBox'
 import { clearSpotFor, piecesShown, sectionHolds, type Box } from '../model/textPlace'
@@ -97,6 +98,8 @@ export type CreatePieceArgs = {
   // tableSetupFrom), converted to the stored setup; instead of setup.
   matrix?: MatrixSpec
   table?: TableSpec
+  // A deck's setup from typed arguments (S8: src/ops/deck.ts' deckSetupFrom): holds, columns, cards, lanes…
+  deck?: DeckSpec
   // A document piece: the document it shows (shared: a private one is shared first, by a person).
   doc?: string
   size?: { w: number; h: number }
@@ -158,8 +161,10 @@ export function createPiece(ctx: OpCtx, args: CreatePieceArgs): Plan {
 
   if (args.matrix !== undefined && kind !== 'matrix') refuse(op, `${a(KIND_NAME[kind])} has no matrix setup`, 'say kind: matrix, or leave matrix out')
   if (args.table !== undefined && kind !== 'table') refuse(op, `${a(KIND_NAME[kind])} has no table setup`, 'say kind: table, or leave table out')
-  if ((args.matrix !== undefined || args.table !== undefined) && args.setup !== undefined) refuse(op, `setup and ${kind} both say how it's set up`, `give ${kind} (typed) and leave setup out`)
-  const typed = args.matrix !== undefined ? matrixSetupFrom(ctx, op, args.matrix) : args.table !== undefined ? tableSetupFrom(ctx, op, args.table) : undefined
+  if (args.deck !== undefined && kind !== 'kanban') refuse(op, `${a(KIND_NAME[kind])} has no deck setup`, 'say kind: deck, or leave deck out')
+  if ((args.matrix !== undefined || args.table !== undefined || args.deck !== undefined) && args.setup !== undefined) refuse(op, `setup and ${KIND_NAME[kind]} both say how it's set up`, `give ${KIND_NAME[kind]} (typed) and leave setup out`)
+  const typed =
+    args.matrix !== undefined ? matrixSetupFrom(ctx, op, args.matrix) : args.table !== undefined ? tableSetupFrom(ctx, op, args.table) : args.deck !== undefined ? deckSetupFrom(ctx, op, args.deck) : undefined
   const setup = key ? (typed ? (typed as unknown as Record<string, unknown>) : args.setup ? structuredClone(args.setup) : startSetup(ctx, kind)) : undefined
   const name = typeof args.name === 'string' ? args.name.trim().slice(0, PIECE_NAME_MAX) : ''
   const now = ctx.now

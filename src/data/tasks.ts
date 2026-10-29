@@ -10,15 +10,21 @@
 // table's rules, D-209), its columns a field's values (`colField`; src/views/workspace/kanbanCards.ts); its own `cols`
 // stay, unused, for if it holds tasks again.
 // Shapes mirror firestore.rules' validKanban and validTask; change both together.
-import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+// Every write is an op (S8, D-312: src/ops/tasks.ts' create_task / update_task / move_task, src/ops/deck.ts' update_deck,
+// the column ops and update_timeline, delete, create_evidence from_task) behind the same signature: lists passed in
+// (columns, tasks) are read from the workspace instead (R5), orders and moves the UI worked out are passed through.
 import { isOnPlane, type AnyType, type Card } from './cards'
 import type { Evidence } from './evidence'
-import { db, firebase } from './firebase'
-import { absent, tracked } from './history'
 import { newId } from './matrix'
 import type { Piece } from './model'
-import { pieceRef } from './pieces'
 import type { Source } from './source'
+import { applyUi, runUi, sayRefused, uiCtx } from '../ops/firestore'
+import { createTask, moveTask as moveTaskOp, updateTask as updateTaskOp, type TaskInput } from '../ops/tasks'
+import { createDeckColumn, deleteColumnPlan, moveDeckColumn, updateDeck, updateDeckColumn, updateTimeline } from '../ops/deck'
+import { createEvidence } from '../ops/evidence'
+import { deleteAny } from '../ops/delete'
+import { editorChange } from '../model/lens'
+import type { OpCtx, Plan } from '../ops/types'
 
 export type KanbanCol = {
   id: string
@@ -85,10 +91,7 @@ export function timelineOf<P extends { id: string; kind: string; stuckTo?: strin
 
 // Its setup, merged (shared): one undo step.
 export function setTimeline(wid: string, pieceId: string, patch: TimelineSetup, what: string) {
-  const ref = pieceRef(wid, pieceId)
-  const data: Record<string, unknown> = { updatedAt: Date.now() }
-  for (const [k, v] of Object.entries(patch)) data[`timeline.${k}`] = v === undefined || (Array.isArray(v) && !v.length) ? deleteField() : v
-  return tracked(what, [ref], () => updateDoc(ref, data))
+  return runUi(wid, (ctx) => [updateTimeline(ctx, { id: pieceId, setup: patch, label: what })], { label: what })
 }
 
 export const KANBAN_ROWS = ['assignee', 'card'] as const
@@ -146,121 +149,120 @@ export const emptyKanban = (): KanbanSetup => ({
   ],
 })
 
-const col = (wid: string) => collection(db(), 'workspaces', wid, 'tasks')
-export const taskRef = (wid: string, id: string) => doc(col(wid), id)
-
 // tasksIn, orderBetween, today, overdue live in src/model/tasks.ts, without Firebase (S3).
 export { tasksIn, orderBetween, today, overdue } from '../model/tasks'
-import { tasksIn } from '../model/tasks'
 
-// Given to someone (D-261): when, and by whom; given to nobody, neither. Added to any write that sets `assignee`.
-function given(fields: TaskFields): Record<string, unknown> {
-  if (!('assignee' in fields)) return {}
-  if (fields.assignee === undefined) return { givenAt: deleteField(), givenBy: deleteField() }
-  return { givenAt: Date.now(), givenBy: firebase?.auth.currentUser?.uid ?? '' }
+// The UI's fields as the ops say them: a card by `card` (its type comes with it), `undefined` taking one away.
+function inputOf(fields: TaskFields = {}): TaskInput {
+  const { cardId, cardType: _t, ...rest } = fields
+  return { ...rest, ...('cardId' in fields ? { card: cardId ?? null } : {}) } as TaskInput
 }
 
 // A new task at the end of a column, its title typed (and from a card's panel, the card it's for): one undo step;
-// returns its id.
-export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, uid: string, fields: Pick<TaskFields, 'cardId' | 'cardType' | 'assignee' | 'assigneeName' | 'start' | 'due'> = {}) {
-  const ref = doc(col(wid))
-  const now = Date.now()
-  const data = { pieceId, col: column, order, title: title.trim().slice(0, TASK_TITLE_MAX), ...fields, ...(fields.assignee ? { givenAt: now, givenBy: uid } : {}), uid, createdAt: now, updatedAt: now }
-  void tracked('add a task', [ref], () => setDoc(ref, data), { before: absent([ref]) })
-  return ref.id
+// returns its id at once ('' when nothing was made). `uid` is the signed-in person (the op's actor).
+export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, _uid: string, fields: Pick<TaskFields, 'cardId' | 'cardType' | 'assignee' | 'assigneeName' | 'start' | 'due'> = {}) {
+  const ctx = uiCtx(wid)
+  if (!ctx) return ''
+  try {
+    const plan = createTask(ctx, { deck: pieceId, column, order, title, ...inputOf(fields) })
+    void applyUi(wid, ctx, [plan], { label: 'add a task' })
+    return plan.ids.$new
+  } catch (e) {
+    sayRefused(e, 'add a task')
+    return ''
+  }
 }
 
 // Its fields, merged; `undefined` takes one away. Typing in one field merges into one undo step.
 export function updateTask(wid: string, task: Pick<Task, 'id'>, fields: TaskFields, what = 'edit a task') {
-  const ref = taskRef(wid, task.id)
-  const data: Record<string, unknown> = { updatedAt: Date.now(), ...given(fields) }
-  for (const [k, v] of Object.entries(fields)) data[k] = v === undefined ? deleteField() : v
   const keys = Object.keys(fields).sort().join(',')
-  return tracked(what, [ref], () => updateDoc(ref, data), { key: `task:${task.id}:${keys}` })
+  return runUi(wid, (ctx) => [updateTaskOp(ctx, { task: task.id, ...inputOf(fields), label: what })], { label: what, key: `task:${task.id}:${keys}` })
 }
 
 // Dropped in a column (its own or another), at `order`: one undo step.
 export function moveTask(wid: string, task: Pick<Task, 'id'>, column: string, order: number) {
-  const ref = taskRef(wid, task.id)
-  return tracked('move a task', [ref], () => updateDoc(ref, { col: column, order, updatedAt: Date.now() }))
+  return runUi(wid, (ctx) => [moveTaskOp(ctx, { moves: [{ id: task.id, col: column, order }], label: 'move a task' })], { label: 'move a task' })
 }
 
 export function deleteTask(wid: string, task: Pick<Task, 'id'>) {
-  const ref = taskRef(wid, task.id)
-  return tracked('delete a task', [ref], () => deleteDoc(ref))
+  return deleteTasks(wid, [task.id])
 }
 
 // Several tasks at once (D-258), each one undo step for all of them: moved (a column, an order, and a lane's fields), their
 // fields set, taken away.
 export type TaskMove = { id: string; col: string; order: number; fields?: TaskFields; pieceId?: string }
-const fieldsOf = (fields: TaskFields = {}) => Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v === undefined ? deleteField() : v]))
 export function moveTasks(wid: string, moves: TaskMove[], what = `move ${moves.length} tasks`) {
-  const refs = moves.map((m) => taskRef(wid, m.id))
-  const now = Date.now()
-  return tracked(what, refs, async () => {
-    const batch = writeBatch(db())
-    moves.forEach((m, i) => batch.update(refs[i], { col: m.col, order: m.order, ...fieldsOf(m.fields), ...given(m.fields ?? {}), updatedAt: now }))
-    await batch.commit()
-  })
+  return runUi(wid, (ctx) => [moveTaskOp(ctx, { moves: moves.map((m) => ({ ...m, fields: m.fields && inputOf(m.fields) })), label: what })], { label: what })
 }
 export function updateTasks(wid: string, ids: string[], fields: TaskFields, what: string) {
-  const refs = ids.map((id) => taskRef(wid, id))
-  const now = Date.now()
-  return tracked(what, refs, async () => {
-    const batch = writeBatch(db())
-    for (const r of refs) batch.update(r, { ...fieldsOf(fields), ...given(fields), updatedAt: now })
-    await batch.commit()
-  })
+  return runUi(wid, (ctx) => [updateTaskOp(ctx, { tasks: ids, ...inputOf(fields), label: what })], { label: what })
 }
 export function deleteTasks(wid: string, ids: string[]) {
-  const refs = ids.map((id) => taskRef(wid, id))
-  return tracked(ids.length > 1 ? `delete ${ids.length} tasks` : 'delete a task', refs, async () => {
-    const batch = writeBatch(db())
-    for (const r of refs) batch.delete(r)
-    await batch.commit()
-  })
+  const label = ids.length > 1 ? `delete ${ids.length} tasks` : 'delete a task'
+  // Those a collaborator took away a moment ago are left out, as before.
+  return runUi(wid, (ctx) => {
+    const there = ids.filter((id) => ctx.ws.tasks.some((t) => t.id === id))
+    return there.length ? [{ ...deleteAny(ctx, { ids: there }), label }] : []
+  }, { label })
 }
 
 // Its rows (D-258): shared, one undo step.
 export function setKanbanRows(wid: string, pieceId: string, rows: KanbanRows | undefined) {
-  const ref = pieceRef(wid, pieceId)
-  return tracked(rows ? `lanes by ${rows === 'assignee' ? 'who' : 'card'}` : 'no lanes', [ref], () => updateDoc(ref, { 'kanban.rows': rows ?? deleteField(), updatedAt: Date.now() }))
+  const label = rows ? `lanes by ${rows === 'assignee' ? 'who' : 'card'}` : 'no lanes'
+  return runUi(wid, (ctx) => [updateDeck(ctx, { id: pieceId, lanes: rows ?? null, label })], { label })
+}
+
+const sameCol = (a: KanbanCol, b: KanbanCol) => a.name === b.name && !!a.done === !!b.done && (a.limit ?? 0) === (b.limit ?? 0)
+
+// The columns as the deck's editor gives them, through the one column op when it's one change from what's there now
+// (someone else's new column left aside), else written whole.
+function colsPlan(ctx: OpCtx, pieceId: string, cols: KanbanCol[], what: string): Plan[] {
+  const d = ctx.ws.pieces.find((p) => p.id === pieceId)
+  const now = (d?.kanban as KanbanSetup | undefined)?.cols
+  // A column the editor holds that's gone now (a collaborator took it away) makes the list stale: written whole, as
+  // before (an add is only the columns there now plus one at the end).
+  const known = new Set(now?.map((c) => c.id))
+  const missing = cols.filter((c) => !known.has(c.id))
+  const isAdd = !!now && missing.length === 1 && cols.length === now.length + 1 && cols.at(-1)!.id === missing[0].id && now.every((c, i) => cols[i].id === c.id && sameCol(c, cols[i]))
+  const ch = now && (!missing.length || isAdd) ? editorChange(now, cols, sameCol) : null
+  if (ch && 'same' in ch) return []
+  if (ch && 'add' in ch) return [createDeckColumn(ctx, { deck: pieceId, id: ch.add.id, name: ch.add.name, ...(ch.add.limit ? { limit: ch.add.limit } : {}), ...(ch.add.done ? { done: true } : {}), label: what })]
+  if (ch && 'move' in ch) return [moveDeckColumn(ctx, { deck: pieceId, column: ch.move.id, by: 'right', label: what })]
+  if (ch && 'edit' in ch) {
+    const { edit: e, was: w } = ch
+    return [
+      updateDeckColumn(ctx, {
+        deck: pieceId,
+        column: e.id,
+        ...(e.name !== w.name ? { name: e.name } : {}),
+        ...((e.limit ?? 0) !== (w.limit ?? 0) ? { limit: e.limit || null } : {}),
+        ...(!!e.done !== !!w.done ? { done: !!e.done } : {}),
+        label: what,
+      }),
+    ]
+  }
+  return [updateDeck(ctx, { id: pieceId, setup: { cols }, label: what })]
 }
 
 // Its columns, all at once (renamed, added, moved, marked done): one undo step; a name typed merges.
 export function setKanbanCols(wid: string, pieceId: string, cols: KanbanCol[], what = 'change a deck', key?: string) {
-  const ref = pieceRef(wid, pieceId)
-  const clean = cols
-    .slice(0, KANBAN_COLS_MAX)
-    .map((c) => ({ id: c.id, name: c.name.slice(0, COL_NAME_MAX), ...(c.done ? { done: true } : {}), ...(c.limit ? { limit: Math.min(LIMIT_MAX, Math.max(1, Math.round(c.limit))) } : {}) }))
-  return tracked(what, [ref], () => updateDoc(ref, { 'kanban.cols': clean, updatedAt: Date.now() }), key ? { key } : {})
+  return runUi(wid, (ctx) => colsPlan(ctx, pieceId, cols, what), { label: what, ...(key ? { key } : {}) })
 }
 
 // What it holds and, for cards, which and by what (D-268), merged (shared): one undo step. Setting a field to undefined
 // takes it away.
 export function setKanbanSetup(wid: string, pieceId: string, patch: Partial<Pick<KanbanSetup, 'holds' | 'source' | 'colField' | 'rowField' | 'names'>>, what = 'change a deck', key?: string) {
-  const ref = pieceRef(wid, pieceId)
-  const data: Record<string, unknown> = { updatedAt: Date.now() }
-  for (const [k, v] of Object.entries(patch)) data[`kanban.${k}`] = v === undefined ? deleteField() : JSON.parse(JSON.stringify(v))
-  return tracked(what, [ref], () => updateDoc(ref, data), key ? { key } : {})
+  return runUi(wid, (ctx) => [updateDeck(ctx, { id: pieceId, setup: patch, label: what })], { label: what, ...(key ? { key } : {}) })
 }
 
 // A kanban's tasks moved to another (D-300), and the one they leave set to hold cards (`patch`) when it's switching:
 // one undo step, so switching a kanban with tasks on it to cards never leaves them hidden on it.
 export function moveTasksAway(wid: string, moves: TaskMove[], pieceId: string, patch: Partial<Pick<KanbanSetup, 'holds' | 'source' | 'colField'>> | null, what: string) {
-  const refs = moves.map((m) => taskRef(wid, m.id))
-  const piece = pieceRef(wid, pieceId)
-  const now = Date.now()
-  return tracked(what, patch ? [...refs, piece] : refs, async () => {
-    const batch = writeBatch(db())
-    moves.forEach((m, i) => batch.update(refs[i], { pieceId: m.pieceId, col: m.col, order: m.order, updatedAt: now }))
-    if (patch) {
-      const data: Record<string, unknown> = { updatedAt: now }
-      for (const [k, v] of Object.entries(patch)) data[`kanban.${k}`] = v === undefined ? deleteField() : JSON.parse(JSON.stringify(v))
-      batch.update(piece, data)
-    }
-    await batch.commit()
-  })
+  return runUi(
+    wid,
+    (ctx) => [updateDeck(ctx, { id: pieceId, ...(patch ? { setup: patch } : {}), moves: moves.map((m) => ({ id: m.id, pieceId: m.pieceId ?? pieceId, col: m.col, order: m.order })), label: what })],
+    { label: what },
+  )
 }
 
 // What a kanban shows (D-255): stuck to a plane, the tasks for that plane's cards and those for no card (or for one
@@ -277,29 +279,23 @@ export function shownTasks(tasks: Task[], piece: { stuckTo?: string; kanban?: Ka
 }
 
 // A column taken away: its tasks go to the end of the one before it (or after, for the first): one undo step. The last
-// column never goes.
-export function deleteColumn(wid: string, pieceId: string, cols: KanbanCol[], column: string, tasks: Task[]) {
-  const i = cols.findIndex((c) => c.id === column)
-  if (i < 0 || cols.length < 2) return Promise.resolve()
-  const to = cols[i > 0 ? i - 1 : 1].id
-  const moving = tasksIn(tasks, column)
-  const last = tasksIn(tasks, to).at(-1)?.order ?? 0
-  const ref = pieceRef(wid, pieceId)
-  const refs = moving.map((t) => taskRef(wid, t.id))
-  return tracked('delete a column', [ref, ...refs], async () => {
-    const batch = writeBatch(db())
-    const now = Date.now()
-    batch.update(ref, { 'kanban.cols': cols.filter((c) => c.id !== column), updatedAt: now })
-    moving.forEach((_t, k) => batch.update(refs[k], { col: to, order: last + k + 1, updatedAt: now }))
-    await batch.commit()
-  })
+// column never goes. The columns and tasks are read from the workspace (the lists passed are kept for the signature).
+export function deleteColumn(wid: string, pieceId: string, _cols: KanbanCol[], column: string, _tasks: Task[]) {
+  return runUi(
+    wid,
+    (ctx) => {
+      const d = ctx.ws.pieces.find((p) => p.id === pieceId) as (Piece & { id: string }) | undefined
+      const c = (d?.kanban as KanbanSetup | undefined)?.cols.find((x) => x.id === column)
+      if (!d || !c || (d.kanban as KanbanSetup).cols.length < 2) return []
+      return [deleteColumnPlan(ctx, d, c)]
+    },
+    { label: 'delete a column' },
+  )
 }
 
 // Its checklist, changed as a whole: one undo step (typing in one row merges).
 export function setChecks(wid: string, task: Pick<Task, 'id'>, checks: Check[], key?: string) {
-  const ref = taskRef(wid, task.id)
-  const clean = checks.slice(0, CHECKS_MAX).map((c) => ({ id: c.id, text: c.text.slice(0, CHECK_MAX), ...(c.done ? { done: true } : {}) }))
-  return tracked('change a checklist', [ref], () => updateDoc(ref, { checks: clean.length ? clean : deleteField(), updatedAt: Date.now() }), key ? { key } : {})
+  return runUi(wid, (ctx) => [updateTaskOp(ctx, { task: task.id, checks, label: 'change a checklist' })], { label: 'change a checklist', ...(key ? { key } : {}) })
 }
 
 export const newCheck = (text: string): Check => ({ id: newId(), text: text.slice(0, CHECK_MAX) })
@@ -331,15 +327,6 @@ export const untested = (c: Pick<Card, 'type' | 'validation'> | undefined) =>
 
 // What a finished task taught, logged on its card as evidence (D-137), the task marking it done: one undo step.
 export function logLearned(wid: string, task: Pick<Task, 'id'>, fields: Omit<Evidence, 'id' | 'createdAt'>) {
-  const ev = doc(collection(db(), 'workspaces', wid, 'evidence'))
-  const ref = taskRef(wid, task.id)
-  const now = Date.now()
-  const data: Record<string, unknown> = { ...fields, createdAt: now, updatedAt: now }
-  for (const k of Object.keys(data)) if (data[k] === undefined || data[k] === '') delete data[k]
-  return tracked('log what a task taught', [ev, ref], async () => {
-    const batch = writeBatch(db())
-    batch.set(ev, data)
-    batch.update(ref, { learned: ev.id, updatedAt: now })
-    await batch.commit()
-  })
+  const { nodeId, nodeType: _t, ...input } = fields
+  return runUi(wid, (ctx) => [createEvidence(ctx, { ...input, card: nodeId, from_task: task.id })], { label: 'log what a task taught' })
 }

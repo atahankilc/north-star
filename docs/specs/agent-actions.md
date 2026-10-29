@@ -241,9 +241,9 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 
 | UI action (where) | Today: data fn (file) | Op | Notes |
 |---|---|---|---|
-| `+ task` typed at a column's foot (Kanban.tsx:505, `add` :499) | `tasks.ts:addTask` | `create_task` | R4: sync id. R7: order and the lane's field set in the component. |
+| `+ task` typed at a column's foot (Kanban.tsx:505, `add` :499) | `tasks.ts:addTask` | `create_task` | R4: sync id (the plan's, S8). R7: the UI passes its order and the lane's field; the model says `before`/`after` (default the column's end), worked out in the op. |
 | A card's panel `+ task` / `+ test it` (CardTasks.tsx:54, `make` :48; `testIt` :56) | `tasks.ts:addTask` | `create_task` (`card`) | R7: which deck (last used), first column, order; the `Test:` title. |
-| Drag tasks between columns / lanes (Kanban.tsx:411) | `tasks.ts:moveTasks` | `move_task` | R7: order maths and lane patch (person/card) in the component. |
+| Drag tasks between columns / lanes (Kanban.tsx:411) | `tasks.ts:moveTasks` | `move_task` | One plan for several (one step). The UI passes its exact moves (`moves`); the model says `tasks`, `column`, `before`/`after`, `lane`, worked out in the op (`ordersBetween`). |
 | Task panel: column select (TaskPanel.tsx:263) | `tasks.ts:moveTask` | `move_task` | |
 | Several: move to a column (TaskPanel.tsx:190) | `tasks.ts:moveTasks` | `move_task` | |
 | Title (TaskPanel.tsx:152) | `tasks.ts:updateTask` | `update_task` | |
@@ -255,16 +255,16 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 | Checklist: add, tick, rename, remove (TaskPanel.tsx:545, `Checklist` :539) | `tasks.ts:setChecks` | `update_task` (`checks`) | |
 | Notes (TaskPanel.tsx:635) | `tasks.ts:updateTask` | `update_task` | |
 | `not now` (don't log) (TaskPanel.tsx:393) | `tasks.ts:updateTask` (`learned: skip`) | `update_task` | |
-| Log what it taught (TaskPanel.tsx:387) | `tasks.ts:logLearned` | `create_evidence` | See Evidence. |
+| Log what it taught (TaskPanel.tsx:387) | `tasks.ts:logLearned` | `create_evidence` (`from_task`) | One plan: the evidence and the task's `learned`. |
 | Delete: panel (TaskPanel.tsx:132) | `tasks.ts:deleteTask` | `delete` | |
 | Delete several: panel (TaskPanel.tsx:99), ⌫ on the deck (Kanban.tsx:348) | `tasks.ts:deleteTasks` | `delete` | |
-| Column: add, rename (double-click), move `‹ ›`, limit, mark finished `✓` (Kanban.tsx:488–553) | `tasks.ts:setKanbanCols` | `create_deck_column`, `rename`, `move_deck_column`, `update_deck_column` (limit, done) | R7: the whole columns array rewritten from the component. |
-| Column `×` with its tasks (Kanban.tsx:546) | `tasks.ts:deleteColumn` | `delete` | R5: tasks passed. |
+| Column: add, rename (double-click), move `‹ ›`, limit, mark finished `✓` (Kanban.tsx:488–553) | `tasks.ts:setKanbanCols` | `create_deck_column`, `update_deck_column` (name, limit, done; `rename` too), `move_deck_column` | S8: the editor's whole list becomes the one column op when it's one change (`editorChange`), else `update_deck`'s `setup.cols`. |
+| Column `×` with its tasks (Kanban.tsx:546) | `tasks.ts:deleteColumn` | `delete` | S8: the op reads the deck's tasks (to the end of the column before; the first's to the next); `deck` when two decks share the column id. |
 | `[LANES ▾]` by person / card / none (Kanban.tsx:726–727) | `tasks.ts:setKanbanRows` | `update_deck` (`lanes`) | |
 | Card deck: rows by a field / none (Kanban.tsx:718–719; setup KanbanSetup.tsx:130) | `tasks.ts:setKanbanSetup` (`rowField`) | `update_deck` | |
 | Setup: holds tasks/cards, which cards (rules), columns from, box names (KanbanSetup.tsx:44 via `KanbanEditor` :78) | `tasks.ts:setKanbanSetup` | `update_deck` | |
-| Switch to cards with tasks on it: `[move the tasks to ▾]` (KanbanSetup.tsx:162, `moveTo` :151) | `tasks.ts:moveTasksAway` | `update_deck` (`move_tasks_to: deck`) | R7: column matching by name and order in the component. |
-| … `[make a new deck for cards]` (KanbanSetup.tsx:170, `makeNew` :166) | `pieces.ts:addPiece` | `create_piece` (`kind: deck`, holds cards) | R7, R2: new deck then open its setup; R1. |
+| Switch to cards with tasks on it: `[move the tasks to ▾]` (KanbanSetup.tsx:162, `moveTo` :151) | `tasks.ts:moveTasksAway` | `update_deck` (`tasks_to: deck`) | The UI passes its moves; for the model the op matches columns by name and orders them (`movesTo`). Without `tasks_to` the switch is refused. |
+| … `[make a new deck for cards]` (KanbanSetup.tsx:170, `makeNew` :166) | `pieces.ts:addPiece` | `create_piece` (`kind: deck`, `deck: {holds: cards}`) | R7, R2: new deck then open its setup; R1. The model may instead say `update_deck` `tasks_to: 'new_deck'` (the tasks go to a new deck, this one holds cards). |
 | `[hold tasks again]` (KanbanSetup.tsx:211) | `tasks.ts:setKanbanSetup` (`holds`) | `update_deck` | |
 | Lane fold, `SOON` fold (Kanban.tsx:271; localStorage) | none | none (view) | Yours, per browser. |
 
@@ -422,16 +422,16 @@ data keep calling it (D-301).
 | `create_canvas` | `(name) → $id` |
 | `create_card` | `(type, plane, title, fields?, links?, parts?, evidence?, near?) → $id` (one undo step with its name) |
 | `create_competitor_feature` | `(competitor, {name, description?, category?, availability?, url?}, ours?) → $id` |
-| `create_deck_column` | `(deck, name, limit?, done?) → $id` |
+| `create_deck_column` | `(deck, name, limit?, done?)`: at the end; a column is no doc, its id is in the plan's `meta.ids` |
 | `create_document` | `(title, markdown) → $id` (later, §4.4's `write_document`) |
-| `create_evidence` | `(card, {kind, text, stance, source?, date?, url?}, from_task?) → $id`: with `from_task`, the task is marked learned (today's `logLearned`) |
+| `create_evidence` | `(card?, {kind, text, stance, source?, date?, url?}, from_task?) → $id`: with `from_task`, on the task's card unless said, the task marked learned (today's `logLearned`) |
 | `create_message` | `(thread, text, mentions?) → $id` (later; a reply) |
 | `create_package` | `(cards, name?) → $id` |
-| `create_piece` | `(kind: plane or matrix or table or deck or timeline or documents or document, name?, matrix?: {template?, rows?/cols?: {type?, plane?, cards?, names?, noun?, unfold?}, cell?, scale? or steps?, unit?, not_relevant?, confidence?, totals?, totals_at?, totals_as?, marks?}, table?: {template?, rules?, manual?, cards?, names?, columns?, sort?, page_size?}, setup? (deck, timeline, documents), stuck_to?, doc?, canvas, near?) → $id` |
+| `create_piece` | `(kind: plane or matrix or table or deck or timeline or documents or document, name?, matrix?: {template?, rows?/cols?: {type?, plane?, cards?, names?, noun?, unfold?}, cell?, scale? or steps?, unit?, not_relevant?, confidence?, totals?, totals_at?, totals_as?, marks?}, table?: {template?, rules?, manual?, cards?, names?, columns?, sort?, page_size?}, deck?: {template?, holds?, columns?, finished?, lanes?, rules?, cards?, col_field?, row_field?, names?}, setup? (timeline, documents), stuck_to?, doc?, canvas, near?) → $id` |
 | `create_task` | `(deck, title, column?, card?, assignee?, start?, due?, priority?, labels?, checks?, before? or after?) → $id` |
 | `create_text` | `(where: plane or canvas, {kind: heading or paragraph or sticky or section or title, text, size?, colour?}, near? or around?: ids) → $id` |
 | `create_thread` | `(on: id, text, mentions?) → $id` (later; §4.4's `comment`) |
-| `delete` | `(ids, everywhere?)`: see the rule; always asks |
+| `delete` | `(ids, everywhere?, deck?)`: see the rule; always asks; a deck column's tasks go to the column before |
 | `duplicate` | `(ids, to: plane, by?)`: copies, not the same cards (see §1 for what is copied) |
 | `link` | `(from, to, kind?, label?) → $id` |
 | `move_canvas` | `(canvas, up or down)` |
@@ -439,15 +439,15 @@ data keep calling it (D-301).
 | `move_task` | `(tasks, column, deck?, lane?, before? or after?)` |
 | `move_to_canvas` | `(pieces and text, canvas)`: with what's stuck and what a section holds |
 | `place_on` | `(cards, plane, move?, near?)` or `(pieces, canvas)`: the same thing in one more place, with parts, members, what's stuck |
-| `rename` | `(id, name)` |
+| `rename` | `(id, name, deck?)`: a piece, a canvas or a deck column |
 | `resize` | `(id, size)`: piece, section, paragraph/sticky/title width |
 | `take_off` | `(cards, plane)` or `(piece, canvas)`: off one place, still on the others |
 | `unlink` | `(link)` |
 | `update_card` | `(card, {title?, status/validation?, priority?, impact?, effort?, tags?, notes?, regions?, profile fields?, criteria?, members?, folded? (per plane)})` |
 | `update_cell` | `(matrix or table, row: key or name, col: key or name, {value?, note?, not_relevant?, confidence?} or clear)`: names are a card's title, a typed name, `Feature › criterion`, a column's name; unclear → refused with the candidates |
 | `update_competitor_feature` | `(feature, {name?, description?, category?, availability?, url?, ours?: feature or null})` |
-| `update_deck` | `(deck, {holds?, source?, colField?, rowField?, names?, lanes?, move_tasks_to?: deck or new_deck})`: D-300's question decided by the op |
-| `update_deck_column` | `(deck, column, {limit?, done?})` |
+| `update_deck` | `(deck, {holds?, rules?, cards?, col_field?, row_field?, names?, lanes?, tasks_to?: deck or new_deck})`: D-300's question decided by the op |
+| `update_deck_column` | `(deck, column, {name?, limit?, done?})` |
 | `update_document` | `(document, {shared})` |
 | `update_documents_list` | `(piece, {sort?, kinds?, pageSize?, view?})` |
 | `update_evidence` | `(evidence, fields)` |
@@ -456,10 +456,10 @@ data keep calling it (D-301).
 | `update_message` | `(thread, message, text)` (later) |
 | `update_piece` | `(piece, {stuck_to?, framed?})` |
 | `update_table` | `(table, {template?, name?, rules?, manual?, sort?, page_size?, bring_back?})` |
-| `update_task` | `(task, {title?, assignee?, start?, due?, priority?, labels?, card?, checks?, notes?, learned?})` |
+| `update_task` | `(task or tasks, {title?, assignee?, start?, due?, priority?, labels?, card?, checks?, notes?, learned?})`: null clears; a day past the other one moves it along |
 | `update_text` | `(text, {text?, kicker?, size?, scale?, bold?, italic?, caps?, rotate?, side?, colour?, folded?})` |
 | `update_thread` | `(thread, {resolved})` (later) |
-| `update_timeline` | `(timeline, {rows})` |
+| `update_timeline` | `(timeline, {rows: deck or assignee or card})` |
 | `update_workspace` | `({description})` (the name goes through `rename`) |
 
 46 ops (S7 merged the six matrix/table entry ops into `axis_add` / `axis_remove` / `axis_update`). Five are for later

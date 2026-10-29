@@ -402,10 +402,13 @@ export function cleanTask(d: Raw, now: number) {
     const text = str(c?.text, 200)
     return c && text ? [compact({ id: ownId(c.id), text, done: yes(c.done) })] : []
   })
-  const due = typeof d.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.due) ? d.due : undefined
+  const day = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)
+  const due = day(d.due)
+  // Its first day (D-304) travels too; `learned` only as `skip` (an evidence id would point into the old workspace).
+  const start = day(d.start)
   const labels = [...new Set(list(d.labels, 20).flatMap((l) => str(l, 40)?.trim() || []))]
   const priority = oneOf(d.priority, ['P1', 'P2', 'P3'] as const)
-  return compact({ order, title, notes: str(d.notes, 20000), due, checks: checks.length ? checks : undefined, labels: labels.length ? labels : undefined, priority, ...times(d, now) })
+  return compact({ order, title, notes: str(d.notes, 20000), start, due, checks: checks.length ? checks : undefined, labels: labels.length ? labels : undefined, priority, learned: d.learned === 'skip' ? ('skip' as const) : undefined, ...times(d, now) })
 }
 
 // One of a matrix's or a table's cells, without its matrix, row and column.

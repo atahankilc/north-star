@@ -34,6 +34,9 @@ import { CARD_TYPES as TYPES5 } from '../model/cards'
 import { CELL_KINDS, CONFIDENCES, FIELDS, OWN_KINDS, TONES, TOTALS_AS, TOTALS_AT } from '../model/shapes'
 import { RULE_FIELDS } from '../model/source'
 import { LABEL_COLORS } from '../model/labels'
+import { createTask, moveTask, PRIORITIES, updateTask } from './tasks'
+import { columnById, createDeckColumn, DECK_TEMPLATES, LANES, moveDeckColumn, TIMELINE_ROWS_SAID, updateDeck, updateDeckColumn, updateTimeline } from './deck'
+import { CARD_FIELDS } from '../model/shapes'
 import type { OpCtx, Plan } from './types'
 import { refuse } from './util'
 
@@ -42,7 +45,7 @@ export type ArgSchema = { type?: string | string[]; anyOf?: ArgSchema[]; descrip
 
 export type OpDef = {
   name: string
-  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'piece' | 'canvas' | 'matrix' | 'table' | 'lens' | 'any'
+  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'piece' | 'canvas' | 'matrix' | 'table' | 'lens' | 'task' | 'deck' | 'timeline' | 'any'
   summary: string
   args: ArgSchema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -186,6 +189,38 @@ const axisPatch = (side: string) =>
     `the ${side}`,
   )
 const axisArg = { type: 'string', enum: ['rows', 'cols'] } as ArgSchema
+// S8: tasks and decks.
+const day = (what: string, nullable: boolean): ArgSchema => ({ type: nullable ? ['string', 'null'] : 'string', description: `${what}, YYYY-MM-DD${nullable ? '; null takes it away' : ''}` })
+const taskFields = (nullable: boolean): Record<string, ArgSchema> => {
+  const t = (type: string, description: string): ArgSchema => ({ type: nullable ? [type, 'null'] : type, description })
+  return {
+    notes: t('string', 'longer notes'),
+    assignee: t('string', "a member's uid: who it's given to"),
+    assigneeName: t('string', "their name, shown on the task (left out: as other tasks show them)"),
+    start: day('its first day (a first day past the due day it keeps moves that along, and the other way)', nullable),
+    due: day('its due day', nullable),
+    card: t('string', 'the card it is for (its id)'),
+    priority: nullable ? { anyOf: [{ type: 'string', enum: PRIORITIES }, { type: 'null' }] } : { type: 'string', enum: PRIORITIES },
+    labels: { type: nullable ? ['array', 'null'] : 'array', items: s(), description: '#labels, ≤ 20' },
+    checks: { type: nullable ? ['array', 'null'] : 'array', items: { anyOf: [s('a step'), obj({ id: s('keep a step\'s id when rewriting the list'), text: s(), done: b() }, ['text'])] }, description: 'its checklist (the whole list), ≤ 50 steps' },
+  }
+}
+const deckSpec = obj(
+  {
+    template: { type: 'string', enum: DECK_TEMPLATES, description: 'tasks: todo · doing · done; features: features by status; priorities: features and packages, effort × impact, corners named' },
+    holds: { type: 'string', enum: ['tasks', 'cards'], description: 'tasks (default) or cards from the planes' },
+    columns: { type: 'array', items: { anyOf: [s('its name'), obj({ name: s(), limit: n('most tasks it should hold'), done: b('the finished column') }, ['name'])] }, description: 'tasks: its columns, left to right (left out: todo · doing · done)' },
+    finished: s('tasks: the finished column, by name'),
+    lanes: { type: 'string', enum: LANES, description: 'tasks: lanes across the columns by who a task is given to, or by card' },
+    rules: { type: 'array', items: ruleSpec, description: 'cards: which cards (every rule must hold)' },
+    cards: ids('cards: cards added by hand'),
+    col_field: { type: 'string', enum: CARD_FIELDS, description: "cards: the field its columns are the values of (status when left out)" },
+    row_field: { type: 'string', enum: CARD_FIELDS, description: 'cards: another field across the columns as rows' },
+    names: { type: 'array', items: obj({ col: s("the column field's value"), row: s("the row field's value (`-` for no value)"), name: s(), tone: { type: 'string', enum: ['good', 'bad'] } }, ['col', 'row']), description: 'cards: names for its boxes' },
+  },
+  [],
+  'deck only: its setup, typed (left out: todo · doing · done)',
+)
 const featureFields = { name: s(), description: s(), category: s(), availability: { type: 'string', enum: AVAILABILITIES }, url: s() }
 
 export const OPS: OpDef[] = [
@@ -227,7 +262,7 @@ export const OPS: OpDef[] = [
     name: 'delete',
     kind: 'any',
     summary:
-      'Delete cards (with their links, places, evidence, competitor features and matches), links, evidence, competitor features, matches, text (a section alone: what it holds stays), pieces (a plane with its cards, text and links, though a card also on another plane stays there; a matrix or table with its cells; a deck with its tasks) or canvases (with everything on them; never the first). On a plane, cards also elsewhere only come off it. A piece on several canvases needs scope.',
+      "Delete cards (with their links, places, evidence, competitor features and matches), links, evidence, competitor features, matches, text (a section alone: what it holds stays), pieces (a plane with its cards, text and links, though a card also on another plane stays there; a matrix or table with its cells; a deck with its tasks), canvases (with everything on them; never the first), tasks, or a deck's column (its tasks move to the end of the column before it; never the last). On a plane, cards also elsewhere only come off it. A piece on several canvases needs scope.",
     args: obj(
       {
         ids: ids('what to delete'),
@@ -235,6 +270,7 @@ export const OPS: OpDef[] = [
         everywhere: b('delete cards from every plane, pieces from every canvas'),
         scope: { type: 'string', enum: ['here', 'everywhere'], description: 'a piece on several canvases: here takes it off canvas only, everywhere deletes it' },
         canvas: s('with scope here: the canvas it comes off'),
+        deck: s("a deck column's id that several decks share: the deck it is on"),
       },
       ['ids'],
     ),
@@ -265,8 +301,8 @@ export const OPS: OpDef[] = [
   {
     name: 'create_evidence',
     kind: 'evidence',
-    summary: 'Add what was learned to a customer, problem or idea.',
-    args: obj({ card: s(), ...evidenceArgs, handle }, ['card', 'kind', 'text', 'stance']),
+    summary: 'Add what was learned to a customer, problem or idea. from_task: what a finished task taught (on its card unless card is said); the task is marked as logged.',
+    args: obj({ card: s('needed unless from_task is for a card'), ...evidenceArgs, from_task: s('the task it was learned from'), handle }, ['kind', 'text', 'stance']),
     build: createEvidence,
   },
   {
@@ -363,7 +399,8 @@ export const OPS: OpDef[] = [
         canvas: s('the canvas it goes on (main for the first)'),
         matrix: matrixSpec,
         table: tableSpec,
-        setup: { type: 'object', description: "deck, timeline or documents list: its setup as the piece stores it; left out, a blank one (a matrix or table: use matrix / table)" },
+        deck: deckSpec,
+        setup: { type: 'object', description: "timeline or documents list: its setup as the piece stores it; left out, a blank one (a matrix, table or deck: use matrix / table / deck)" },
         doc: s('document only: the shared document it shows'),
         stuck_to: s('matrix, table, deck: the plane it sticks to; timeline: a deck or a plane'),
         where: obj({ near: s('right of this piece') }, ['near'], 'left out: beside what it sticks to, else under everything on the canvas'),
@@ -389,7 +426,17 @@ export const OPS: OpDef[] = [
     ),
     build: updatePiece,
   },
-  { name: 'rename', kind: 'any', summary: "Rename a piece or a canvas (a card's title: update_card; text: update_text).", args: obj({ id: s(), name: s() }, ['id', 'name']), build: rename },
+  {
+    name: 'rename',
+    kind: 'any',
+    summary: "Rename a piece, a canvas or a deck's column (a card's title: update_card; text: update_text; a task: update_task).",
+    args: obj({ id: s(), name: s(), deck: s("a column's deck, when its id is on several") }, ['id', 'name']),
+    build: (ctx: OpCtx, args: { id: string; name: string; deck?: string }) => {
+      const onPiece = ctx.ws.pieces.some((p) => p.id === args.id) || ctx.ws.canvases.some((c) => c.id === args.id)
+      const col = !onPiece && typeof args.id === 'string' ? columnById(ctx, 'rename', args.id, args.deck) : null
+      return col ? { ...updateDeckColumn(ctx, { deck: col.deck.id, column: col.col.id, name: args.name }), op: 'rename' } : rename(ctx, args)
+    },
+  },
   {
     name: 'resize',
     kind: 'any',
@@ -485,6 +532,99 @@ export const OPS: OpDef[] = [
     ),
     build: updateCell,
   },
+  {
+    name: 'create_task',
+    kind: 'task',
+    summary: "Add a task to a deck (one that holds tasks): in a column (the first when left out), before or after another task (else at the end), with who it's given to, days, a card, a priority, labels, a checklist and notes.",
+    args: obj(
+      {
+        deck: s('the deck, by id or name'),
+        title: s(),
+        column: s('by id or name; left out, the first'),
+        ...taskFields(false),
+        before: s('a task in that column it goes before'),
+        after: s('a task in that column it goes after'),
+        handle,
+      },
+      ['deck', 'title'],
+    ),
+    build: createTask,
+  },
+  {
+    name: 'update_task',
+    kind: 'task',
+    summary: "Change a task, or several the same way: its title, notes, who it's given to, first and due days, card, priority, labels, checklist, or learned: 'skip' (nothing to log). null takes a field away. To log what it taught: create_evidence from_task.",
+    args: obj({ task: s(), tasks: ids('several, changed the same way'), title: s(), ...taskFields(true), learned: { anyOf: [{ type: 'string', enum: ['skip'] }, { type: 'null' }], description: "'skip': not logging what it taught" } }),
+    build: updateTask,
+  },
+  {
+    name: 'move_task',
+    kind: 'task',
+    summary: "Move tasks (one step for all, in the order given) to a column, before or after a task there (else at the end); deck: onto another deck that holds tasks; lane: into a lane (a member's uid or a card's id by the deck's lanes, none for nobody).",
+    args: obj(
+      {
+        task: s(),
+        tasks: ids('several, in the order they go'),
+        column: s('by id or name'),
+        deck: s('another deck (id or name); left out, their own'),
+        lane: s("the deck's lanes: a member's uid (by who) or a card id (by card); none: nobody / no card"),
+        before: s('a task they go before'),
+        after: s('a task they go after'),
+      },
+      [],
+    ),
+    build: moveTask,
+  },
+  {
+    name: 'update_deck',
+    kind: 'deck',
+    summary:
+      "Change a deck's setup: what it holds (tasks or cards; switching to cards with tasks on it needs tasks_to), which cards (rules, cards), the fields its columns and rows come from, its boxes' names, lanes. null takes rows, names or lanes away.",
+    args: obj(
+      {
+        id: s('the deck, by id or name'),
+        holds: { type: 'string', enum: ['tasks', 'cards'] },
+        rules: { type: 'array', items: ruleSpec, description: 'cards: which cards (replaces the rules)' },
+        cards: ids('cards: cards added by hand (replaces them)'),
+        col_field: { type: 'string', enum: CARD_FIELDS },
+        row_field: { anyOf: [{ type: 'string', enum: CARD_FIELDS }, { type: 'null' }], description: 'null: no rows' },
+        names: { type: ['array', 'null'], items: obj({ col: s(), row: s(), name: s(), tone: { type: 'string', enum: ['good', 'bad'] } }, ['col', 'row']), description: "cards: its boxes' names (replaces them)" },
+        lanes: { anyOf: [{ type: 'string', enum: LANES }, { type: 'null' }], description: 'tasks: lanes by who or by card; null: none' },
+        tasks_to: s("switching to cards with tasks on it: 'new_deck' (a new deck of tasks next to it, with its columns) or a deck's id or name (each into the column of the same name)"),
+        handle: s("with tasks_to 'new_deck': a $handle ($a…) for the new deck's id, for later ops in the batch (its name is always '<name> · tasks')"),
+      },
+      ['id'],
+    ),
+    build: updateDeck,
+  },
+  {
+    name: 'create_deck_column',
+    kind: 'deck',
+    summary: "Add a column at the end of a deck's columns (at most 12).",
+    args: obj({ deck: s('by id or name'), name: s(), limit: n('most tasks it should hold'), done: b('the finished column') }, ['deck', 'name']),
+    build: createDeckColumn,
+  },
+  {
+    name: 'update_deck_column',
+    kind: 'deck',
+    summary: "Change a deck's column: its name, its limit (null takes it away), whether it's the finished column.",
+    args: obj({ deck: s('by id or name'), column: s('by id or name'), name: s(), limit: { type: ['number', 'null'], description: '1–99; null: none' }, done: b() }, ['deck', 'column']),
+    build: updateDeckColumn,
+  },
+  {
+    name: 'move_deck_column',
+    kind: 'deck',
+    summary: "Move a deck's column one place left or right.",
+    args: obj({ deck: s('by id or name'), column: s('by id or name'), by: { type: 'string', enum: ['left', 'right'] } }, ['deck', 'column', 'by']),
+    build: moveDeckColumn,
+  },
+  {
+    name: 'update_timeline',
+    kind: 'timeline',
+    summary: "Change a timeline's rows: by deck, by who a task is given to, or by card. (A task's days: update_task start/due.)",
+    args: obj({ id: s('the timeline'), rows: { type: 'string', enum: TIMELINE_ROWS_SAID } }, ['id', 'rows']),
+    build: updateTimeline,
+  },
 ]
 
 export const REGISTRY: ReadonlyMap<string, OpDef> = new Map(OPS.map((o) => [o.name, o]))
@@ -541,3 +681,12 @@ export function buildBatch(ctx: OpCtx, steps: Step[]): Plan[] {
 // (templates, axes by type/plane/cards/names, rules, columns), converted to the stored setup. Rows and columns are
 // named by key or name (a card's title, a typed name, `Feature › criterion`, a column's name), ambiguous → refused with
 // the candidates. A criterion is update_card's `criteria` (taking one off cascades).
+
+// S8 (tasks.ts, deck.ts): every write in data/tasks.ts is a wrapper (addTask → create_task; updateTask/updateTasks/
+// setChecks → update_task; moveTask/moveTasks → move_task, one plan for several, the UI's exact orders and lane fields
+// passed as `moves`; deleteTask/deleteTasks/deleteColumn → delete; setKanbanCols → create_deck_column /
+// update_deck_column / move_deck_column when the editor's list is one change, else update_deck's raw `setup.cols`;
+// setKanbanRows/setKanbanSetup → update_deck; moveTasksAway → update_deck with `moves` (the UI's) or `tasks_to` (the
+// model's, worked out as KanbanSetup.tsx' moveTo did); setTimeline → update_timeline; logLearned → create_evidence
+// from_task). create_piece takes a typed `deck`. A column has no doc of its own: delete and rename find it by id (with
+// `deck` when two decks share the id), the model by name through the column ops.

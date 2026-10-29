@@ -30,7 +30,7 @@ const KEPT: Record<string, Record<string, 'string' | 'number' | 'strings'>> = {
   competitorFeatures: { competitorId: 'string' },
   comparisons: { featureId: 'string', competitorId: 'string', competitorFeatureId: 'string' },
   places: { planeId: 'string', cardId: 'string', type: 'string' },
-  tasks: { pieceId: 'string', col: 'string', cardId: 'string', cardType: 'string', uid: 'string', assignee: 'string', assigneeName: 'string', start: 'string', givenAt: 'number', givenBy: 'string', learned: 'string', updatedAt: 'number' },
+  tasks: { pieceId: 'string', col: 'string', cardId: 'string', cardType: 'string', uid: 'string', assignee: 'string', assigneeName: 'string', givenAt: 'number', givenBy: 'string', learned: 'string', updatedAt: 'number' },
   cells: { matrixId: 'string', row: 'string', col: 'string' },
 }
 

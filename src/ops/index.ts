@@ -31,3 +31,7 @@ export { boundTo } from './stick'
 export { updateMatrix, matrixSetupFrom, axisFrom, stepsFrom, tidy, MATRIX_TEMPLATES, SCALE_KEYS, type UpdateMatrixArgs, type MatrixSpec, type AxisSpec, type AxisPatch } from './matrix'
 export { updateTable, tableSetupFrom, rulesFrom, columnFrom, TABLE_TEMPLATES, type UpdateTableArgs, type TableSpec, type RuleSpec, type ColumnSpec } from './table'
 export { axisAdd, axisRemove, axisUpdate, updateCell, criterionCascade, type AxisAddArgs, type AxisRemoveArgs, type AxisUpdateArgs, type UpdateCellArgs } from './lens'
+// Task, deck and timeline ops (S8): create_task, update_task, move_task; update_deck (D-300's tasks_to), the column ops,
+// update_timeline; create_piece takes a typed deck; delete takes tasks and deck columns; create_evidence from_task.
+export { createTask, updateTask, moveTask, deleteTasksPlan, deckIn, columnIn, ordersIn, type CreateTaskArgs, type UpdateTaskArgs, type MoveTaskArgs, type TaskInput, type TaskMoveSpec } from './tasks'
+export { updateDeck, createDeckColumn, updateDeckColumn, moveDeckColumn, deleteColumnPlan, columnById, deckSetupFrom, movesTo, updateTimeline, DECK_TEMPLATES, type UpdateDeckArgs, type DeckSpec, type CreateDeckColumnArgs, type UpdateDeckColumnArgs, type MoveDeckColumnArgs, type UpdateTimelineArgs } from './deck'

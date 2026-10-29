@@ -19,3 +19,17 @@ export function today(now = new Date()) {
 }
 // Past its due day and not finished.
 export const overdue = (t: Pick<Task, 'due'>, finished: boolean) => !!t.due && !finished && t.due < today()
+
+// Orders for `n` tasks put between two (either may be missing), spread evenly, in the order given (Kanban.tsx's drop, S8).
+export function ordersBetween(lo: number | undefined, hi: number | undefined, n: number): number[] {
+  return Array.from({ length: n }, (_, i) =>
+    lo === undefined && hi === undefined ? i + 1 : lo === undefined ? hi! - (n - i) : hi === undefined ? lo + i + 1 : lo + ((hi - lo) * (i + 1)) / (n + 1),
+  )
+}
+
+// A day as tasks write it (`YYYY-MM-DD`), and one that's on the calendar.
+export function isDay(v: unknown): v is string {
+  if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
+  const d = new Date(`${v}T00:00:00Z`)
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v
+}

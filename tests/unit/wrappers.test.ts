@@ -96,6 +96,8 @@ import { ALICE, fixtureDocs, ID, LENS, lensDocs, SEC, T, WID, WORKSPACE, wsFrom 
 import { addCardEntry, addNamed, removeEntry, renameEntry, setCell, setOpen, setPart, setSetup, TEMPLATES as MATRIX_TEMPLATES, type MatrixSetup } from '../../src/data/matrix'
 import { addNamedRow, moveColumn, removeColumn, removeRow, renameRow, setColumnWidth, setTable, setTablePart, type TableSetup } from '../../src/data/table'
 import { dropCriterionScores } from '../../src/data/competitorFeatures'
+import { addTask, deleteColumn, deleteTask, deleteTasks, logLearned, moveTask, moveTasks, moveTasksAway, setChecks, setKanbanCols, setKanbanRows, setKanbanSetup, setTimeline, updateTask, updateTasks, type KanbanSetup } from '../../src/data/tasks'
+import { TASKS, taskDocs } from './fixtures/ws'
 
 const path = (coll: string, id: string) => `workspaces/${WID}/${coll}/${id}`
 
@@ -771,5 +773,170 @@ describe('matrices, tables and criteria as ops (S7)', () => {
     await undo()
     await settle()
     expect(new Map(fake.data)).toEqual(before)
+  })
+})
+
+describe('tasks, decks and timelines as ops (S8)', () => {
+  beforeEach(() => seed(taskDocs()))
+  const taskDoc = (id: string) => fake.data.get(path('tasks', id))
+  const deckDoc = (id: string) => fake.data.get(path('pieces', id))!.kanban as KanbanSetup
+  const labels = () => useHistory.getState().past.map((x) => x.label)
+
+  it('addTask returns its id at once, one step; given to someone, given by the signed-in person; ⌘Z takes it away', async () => {
+    const id = addTask(WID, ID.deck, 'doing', 2, 'Call the printer', 'u-alice', { assignee: 'u-bob', assigneeName: 'Bob', cardId: ID.qr, cardType: 'feature' })
+    expect(id).toBeTruthy()
+    await settle()
+    expect(taskDoc(id)).toMatchObject({ pieceId: ID.deck, col: 'doing', order: 2, title: 'Call the printer', assignee: 'u-bob', assigneeName: 'Bob', givenBy: 'u-alice', cardId: ID.qr, cardType: 'feature', uid: 'u-alice' })
+    expect(labels()).toEqual(['add a task'])
+    await undo()
+    await settle()
+    expect(taskDoc(id)).toBeUndefined()
+    // A deck holding cards: nothing made, said in the toast.
+    expect(addTask(WID, TASKS.cardsDeck, 'k1', 1, 'x', 'u-alice')).toBe('')
+    expect(useHistory.getState().notice?.text ?? '').toMatch(/holds cards/)
+  })
+
+  it('typing a title merges into one step; checklist typing in one row merges; other fields are their own steps; ⌘Z puts them back', async () => {
+    const before = structuredClone(taskDoc(TASKS.task3))
+    await updateTask(WID, { id: TASKS.task3 }, { title: 'Write the' }, 'rename a task')
+    echo()
+    await updateTask(WID, { id: TASKS.task3 }, { title: 'Write the deck' }, 'rename a task')
+    echo()
+    expect(labels()).toEqual(['rename a task'])
+    const checks = (text: string) => [{ id: 'ch1', text }, { id: 'ch2', text: 'slides', done: true }]
+    await setChecks(WID, { id: TASKS.task3 }, checks('outl'), `check:${TASKS.task3}:ch1`)
+    echo()
+    await setChecks(WID, { id: TASKS.task3 }, checks('outline v2'), `check:${TASKS.task3}:ch1`)
+    echo()
+    await updateTask(WID, { id: TASKS.task3 }, { due: '2026-11-12' }, 'set a due day')
+    echo()
+    await updateTask(WID, { id: TASKS.task3 }, { assignee: 'u-bob', assigneeName: 'Bob' }, 'give a task')
+    echo()
+    await updateTask(WID, { id: TASKS.task3 }, { priority: undefined }, 'clear a task’s priority')
+    echo()
+    expect(labels()).toEqual(['rename a task', 'change a checklist', 'set a due day', 'give a task', 'clear a task’s priority'])
+    expect(taskDoc(TASKS.task3)).toMatchObject({ title: 'Write the deck', due: '2026-11-12', assignee: 'u-bob', givenBy: 'u-alice', checks: checks('outline v2') })
+    expect(taskDoc(TASKS.task3)).not.toHaveProperty('priority')
+    for (let i = 0; i < 5; i++) await undo()
+    await settle()
+    expect(taskDoc(TASKS.task3)).toEqual(before)
+  })
+
+  it('moveTasks: several tasks, one step, one batch, their lane fields too; moveTask and updateTasks one step each', async () => {
+    fake.commits.batches = []
+    await moveTasks(WID, [{ id: ID.task1, col: 'doing', order: 2, fields: { assignee: 'u-bob', assigneeName: 'Bob' } }, { id: TASKS.task3, col: 'doing', order: 3 }], 'move 2 tasks')
+    expect(fake.commits.batches).toEqual([2])
+    expect([taskDoc(ID.task1), taskDoc(TASKS.task3)].map((t) => [t!.col, t!.order])).toEqual([['doing', 2], ['doing', 3]])
+    expect(taskDoc(ID.task1)).toMatchObject({ assignee: 'u-bob', givenBy: 'u-alice' })
+    echo()
+    await moveTask(WID, { id: ID.task1 }, 'done', 1)
+    echo()
+    await updateTasks(WID, [ID.task1, TASKS.task3], { due: undefined }, 'clear 2 tasks’ due day')
+    expect(taskDoc(ID.task1)).not.toHaveProperty('due')
+    expect(labels()).toEqual(['move 2 tasks', 'move a task', 'clear 2 tasks’ due day'])
+    await undo()
+    await undo()
+    await undo()
+    await settle()
+    expect(taskDoc(ID.task1)).toMatchObject({ col: 'todo', order: 1, due: '2026-11-05' })
+    expect(taskDoc(ID.task1)).not.toHaveProperty('assignee')
+  })
+
+  it('deleteColumn reads the tasks itself (only its deck’s), moves them to the column before: one step; ⌘Z brings the column and their places back', async () => {
+    const before = new Map(fake.data)
+    // The lists passed are ignored: the op reads the workspace.
+    await deleteColumn(WID, ID.deck, [], 'todo', [])
+    expect(deckDoc(ID.deck).cols.map((c) => c.id)).toEqual(['doing', 'done'])
+    expect([taskDoc(ID.task1), taskDoc(TASKS.task3)].map((t) => [t!.col, t!.order])).toEqual([['doing', 2], ['doing', 3]])
+    expect(taskDoc(TASKS.task4)!.col).toBe('review')
+    expect(labels()).toEqual(['delete a column'])
+    await undo()
+    await settle()
+    expect(new Map(fake.data)).toEqual(before)
+  })
+
+  it('setKanbanCols: an added column, a rename, a limit, a move each go through the one column op; a name typed with a key merges', async () => {
+    const cols = () => deckDoc(TASKS.ops).cols
+    await setKanbanCols(WID, TASKS.ops, [...cols(), { id: 'newc', name: 'new column' }], 'add a column')
+    echo()
+    expect(cols().at(-1)).toEqual({ id: 'newc', name: 'new column' })
+    await setKanbanCols(WID, TASKS.ops, cols().map((c) => (c.id === 'newc' ? { ...c, name: 'blo' } : c)), 'rename a column', 'col:newc')
+    echo()
+    await setKanbanCols(WID, TASKS.ops, cols().map((c) => (c.id === 'newc' ? { ...c, name: 'blocked' } : c)), 'rename a column', 'col:newc')
+    echo()
+    await setKanbanCols(WID, TASKS.ops, cols().map((c) => (c.id === 'review' ? { ...c, limit: undefined } : c)), 'take a column’s limit away')
+    echo()
+    const c = cols()
+    await setKanbanCols(WID, TASKS.ops, [c[1], c[0], ...c.slice(2)], 'move a column')
+    echo()
+    expect(cols().map((x) => [x.id, x.name, x.limit ?? null])).toEqual([['review', 'review', null], ['todo', 'Todo', null], ['shipped', 'shipped', null], ['newc', 'blocked', null]])
+    expect(labels()).toEqual(['add a column', 'rename a column', 'take a column’s limit away', 'move a column'])
+  })
+
+  it('setKanbanCols with a stale list (a column someone took away since): written whole, the rename kept, not read as an add', async () => {
+    // The editor still holds `review`, which a collaborator deleted; it renames `todo`.
+    const stale = structuredClone(deckDoc(TASKS.ops).cols)
+    const now = stale.filter((c) => c.id !== 'review')
+    fake.data.set(path('pieces', TASKS.ops), { ...fake.data.get(path('pieces', TASKS.ops))!, kanban: { cols: now } })
+    echo()
+    await setKanbanCols(WID, TASKS.ops, stale.map((c) => (c.id === 'todo' ? { ...c, name: 'inbox' } : c)), 'rename a column')
+    expect(deckDoc(TASKS.ops).cols.map((c) => [c.id, c.name])).toEqual([['todo', 'inbox'], ['review', 'review'], ['shipped', 'shipped']])
+    expect(labels()).toEqual(['rename a column'])
+  })
+
+  it('setKanbanCols with a stale list whose last column was taken away since: written whole, the rename kept', async () => {
+    const stale = structuredClone(deckDoc(TASKS.ops).cols)
+    fake.data.set(path('pieces', TASKS.ops), { ...fake.data.get(path('pieces', TASKS.ops))!, kanban: { cols: stale.slice(0, -1) } })
+    echo()
+    await setKanbanCols(WID, TASKS.ops, stale.map((c) => (c.id === 'todo' ? { ...c, name: 'inbox' } : c)), 'rename a column')
+    expect(deckDoc(TASKS.ops).cols.map((c) => [c.id, c.name])).toEqual([['todo', 'inbox'], ['review', 'review'], ['shipped', 'shipped']])
+    expect(labels()).toEqual(['rename a column'])
+  })
+
+  it('setKanbanRows, setKanbanSetup and setTimeline: one step each, as before', async () => {
+    await setKanbanRows(WID, ID.deck, 'assignee')
+    expect(deckDoc(ID.deck).rows).toBe('assignee')
+    echo()
+    await setKanbanSetup(WID, TASKS.cardsDeck, { rowField: 'impact' }, 'a deck’s rows by impact')
+    expect(deckDoc(TASKS.cardsDeck).rowField).toBe('impact')
+    echo()
+    await setTimeline(WID, TASKS.timeline, { rows: 'card' }, 'change a timeline’s rows')
+    expect(fake.data.get(path('pieces', TASKS.timeline))!.timeline).toEqual({ rows: 'card' })
+    expect(labels()).toEqual(['lanes by who', 'a deck’s rows by impact', 'change a timeline’s rows'])
+  })
+
+  it('moveTasksAway (D-300): the tasks moved and the deck holding cards, one step; ⌘Z puts all back', async () => {
+    const before = new Map(fake.data)
+    await moveTasksAway(
+      WID,
+      [
+        { id: ID.task1, pieceId: TASKS.ops, col: 'todo', order: 1 },
+        { id: TASKS.task3, pieceId: TASKS.ops, col: 'todo', order: 2 },
+        { id: ID.task2, pieceId: TASKS.ops, col: 'todo', order: 3 },
+      ],
+      ID.deck,
+      { holds: 'cards', colField: 'status', source: { rules: [{ field: 'type', values: ['feature'] }], items: [] } },
+      'move 3 tasks to Ops, hold cards',
+    )
+    expect(deckDoc(ID.deck)).toMatchObject({ holds: 'cards', colField: 'status' })
+    expect([ID.task1, TASKS.task3, ID.task2].map((id) => taskDoc(id)!.pieceId)).toEqual([TASKS.ops, TASKS.ops, TASKS.ops])
+    expect(labels()).toEqual(['move 3 tasks to Ops, hold cards'])
+    await undo()
+    await settle()
+    expect(new Map(fake.data)).toEqual(before)
+  })
+
+  it('logLearned: evidence on the card and the task marked, one step; deleteTask and deleteTasks', async () => {
+    await logLearned(WID, { id: ID.task1 }, { nodeId: ID.anna, nodeType: 'customer', kind: 'interview', text: 'Sundays are slow', stance: 'supports', source: '' })
+    const ev = [...fake.data.entries()].find(([p, d]) => p.includes('/evidence/') && d.text === 'Sundays are slow')!
+    expect(ev[1]).toMatchObject({ nodeId: ID.anna, nodeType: 'customer' })
+    expect(ev[1]).not.toHaveProperty('source')
+    expect(taskDoc(ID.task1)!.learned).toBe(ev[0].split('/').pop())
+    echo()
+    await deleteTask(WID, { id: ID.task2 })
+    echo()
+    await deleteTasks(WID, [ID.task1, TASKS.task3, 'gone-already'])
+    expect([ID.task1, ID.task2, TASKS.task3].map((id) => taskDoc(id))).toEqual([undefined, undefined, undefined])
+    expect(labels()).toEqual(['log what a task taught', 'delete a task', 'delete 3 tasks'])
   })
 })

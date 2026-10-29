@@ -1,7 +1,7 @@
 // Evidence ops (S4, D-312; agent-actions.md §3): what was learned about a customer, problem or idea (D-137).
 import type { EvidenceKind } from '../model/shapes'
 import { DELETE, type OpCtx, type Plan } from './types'
-import { cardIn, find, handleOf } from './util'
+import { cardIn, find, handleOf, refuse } from './util'
 
 export type EvidenceInput = { kind: EvidenceKind; text: string; stance: 'supports' | 'contradicts'; source?: string; url?: string; date?: string }
 
@@ -12,16 +12,24 @@ export function evidenceData(fields: EvidenceInput & { nodeId: string; nodeType:
   return data
 }
 
-export type CreateEvidenceArgs = EvidenceInput & { card: string; handle?: string }
+// `from_task` (S8, D-254): what a finished task taught, logged on its card (the task's when `card` is left out), the
+// task marked as having logged it (`learned`), in the same step (data/tasks.ts' logLearned).
+export type CreateEvidenceArgs = EvidenceInput & { card?: string; from_task?: string; handle?: string }
 
 export function createEvidence(ctx: OpCtx, args: CreateEvidenceArgs): Plan {
-  const card = cardIn(ctx, 'create_evidence', args.card)
-  const { card: _, handle: __, ...fields } = args
+  const op = 'create_evidence'
+  const task = args.from_task !== undefined ? find(ctx.ws.tasks, op, args.from_task, 'task') : undefined
+  if (task && args.card === undefined && !task.cardId) refuse(op, `the task ${task.title} is for no card`, 'give card: the customer, problem or idea it taught something about')
+  const card = cardIn(ctx, op, args.card ?? task?.cardId)
+  const { card: _, handle: __, from_task: ___, ...fields } = args
   const id = ctx.newId()
   return {
-    op: 'create_evidence',
-    label: 'add evidence',
-    writes: [{ coll: 'evidence', id, set: evidenceData({ ...fields, nodeId: card.id, nodeType: card.type }, ctx.now) }],
+    op,
+    label: task ? 'log what a task taught' : 'add evidence',
+    writes: [
+      { coll: 'evidence', id, set: evidenceData({ ...fields, nodeId: card.id, nodeType: card.type }, ctx.now) },
+      ...(task ? [{ coll: 'tasks' as const, id: task.id, patch: { learned: id, updatedAt: ctx.now } }] : []),
+    ],
     ids: { [handleOf(args)]: id },
     meta: { kind: 'evidence' },
   }

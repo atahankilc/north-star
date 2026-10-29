@@ -205,3 +205,56 @@ export function lensDocs(): Docs {
 }
 
 export const lensWs = () => wsFrom(lensDocs())
+
+// S8: the fixture with more decks and tasks. A second deck holding tasks ("Ops", its first column's id `todo` like the
+// first deck's), a deck holding cards named "Build" like the first (ambiguous names), a timeline stuck to the first deck,
+// and two more tasks: one with days, labels, a priority and a checklist in the first deck's todo, one on Ops.
+export const TASKS = {
+  ops: 'deck0000000000000005',
+  cardsDeck: 'deck0000000000000006',
+  timeline: 'time0000000000000007',
+  task3: 'task0000000000000003',
+  task4: 'task0000000000000004',
+}
+
+export function taskDocs(): Docs {
+  const d = fixtureDocs()
+  d.pieces.push(
+    { id: TASKS.ops, kind: 'kanban', x: 0, y: 1300, w: 900, h: 500, name: 'Ops', kanban: { cols: [{ id: 'todo', name: 'Todo' }, { id: 'review', name: 'review', limit: 3 }, { id: 'shipped', name: 'shipped', done: true }] }, createdAt: T, updatedAt: T },
+    {
+      id: TASKS.cardsDeck,
+      kind: 'kanban',
+      x: 1000,
+      y: 1300,
+      w: 900,
+      h: 500,
+      name: 'Build',
+      kanban: { cols: [{ id: 'k1', name: 'todo' }], holds: 'cards', colField: 'status', source: { rules: [{ field: 'type', values: ['feature'] }], items: [] } },
+      createdAt: T,
+      updatedAt: T,
+    },
+    { id: TASKS.timeline, kind: 'timeline', x: 950, y: 700, w: 900, h: 400, stuckTo: ID.deck, timeline: {}, createdAt: T, updatedAt: T },
+  )
+  d.tasks.push(
+    {
+      id: TASKS.task3,
+      pieceId: ID.deck,
+      col: 'todo',
+      order: 2,
+      title: 'Write the pitch',
+      uid: 'u-alice',
+      start: '2026-11-01',
+      due: '2026-11-10',
+      labels: ['pitch'],
+      priority: 'P2',
+      checks: [{ id: 'ch1', text: 'outline' }, { id: 'ch2', text: 'slides', done: true }],
+      createdAt: T,
+      updatedAt: T,
+    },
+    { id: TASKS.task4, pieceId: TASKS.ops, col: 'review', order: 1, title: 'Check the invoices', uid: 'u-bob', createdAt: T, updatedAt: T },
+  )
+  for (const c of WS_COLLECTIONS) d[c].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+  return d
+}
+
+export const tasksWs = () => wsFrom(taskDocs())
