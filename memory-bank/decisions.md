@@ -252,8 +252,8 @@ feature comes back as a piece, and check them with the user then.
 - Tasks never hidden (D-300): a deck with tasks switched to cards asks first (a new deck for the cards, or move them);
   one hiding them says `☐ N tasks from before`. A tasks side view from anywhere (`☐` or `t`; beside's split, one or the
   other): a tab per task deck (board or days), MINE, ALL DAYS; remembered per workspace and browser.
-- Stuck to a plane (D-255, D-303): only that plane's tasks until unlinked (no switch; the dock says `only Pazar's · N
-  hidden`), beside it in its focus.
+- Stuck to a plane (D-255, D-303): only that plane's tasks until unlinked (no switch, no note: the link shows it),
+  beside it in its focus.
 - More (D-256, D-258): `[filter]` (GIVEN TO, DUE, FOR, LABEL; per browser); `#labels`, `P1`–`P3`; column limits (`4/3`
   magenta); `[LANES ▾]` by person or card (dropping sets it), lanes fold; several at once like on planes.
 - Together (D-260, D-261): picked tasks are your presence selection, a held one a ghost in your colour (`drag`);

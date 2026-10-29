@@ -14,12 +14,14 @@ export function MyTasks() {
   const { wid, tasks, pieces } = useWs()
   const { user } = useAuth()
   const me = user?.id ?? null
-  const lookedAt = useReads(wid, me).data?.tasks ?? 0
+  const reads = useReads(wid, me)
+  const lookedAt = reads.data?.tasks ?? 0
   const open = useTasksSide((s) => s.open)
   useEffect(() => loadTasksSide(wid), [wid])
 
   const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces) && pieces.some((p) => p.id === t.pieceId))
-  const fresh = mine.filter((t) => (t.givenAt ?? 0) > lookedAt && t.givenBy !== me).length
+  // Nothing counts as new until your read marks are in.
+  const fresh = reads.isLoading ? 0 : mine.filter((t) => (t.givenAt ?? 0) > lookedAt && t.givenBy !== me).length
   if (!pieces.some((p) => p.kind === 'kanban')) return null
   return (
     <span className={styles.at}>

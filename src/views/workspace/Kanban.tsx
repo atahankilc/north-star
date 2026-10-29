@@ -11,7 +11,7 @@
 // for; the place a held task would land is a cyan line between two tasks.
 //
 // Stuck to a plane (D-255), like a table (D-210): it shows that plane's tasks (for its cards, or for none), until it's
-// unlinked (D-303: no switch; its dock says so), and opens beside the plane in its focus, where a task picked glides the
+// unlinked (D-303: no switch, no note; the link shows it), and opens beside the plane in its focus, where a task picked glides the
 // plane to its card (`onTask`).
 //
 // Filters, labels, priority, limits (D-256): what it shows narrows by its dock's filter (kanbanFilter.ts, yours); a
@@ -45,7 +45,7 @@ import { closeFinder, findGo, landing } from './find'
 import type { Card } from '../../data/cards'
 import { useWs } from './context'
 import { alikeProps } from './kept'
-import { DockAction, DockNote } from './FocusDock'
+import { DockAction } from './FocusDock'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import { loadFolds, saveFolds, taskRows, type Lane } from './rows'
 import { setPresenceDrag } from '../../data/presence'
@@ -55,7 +55,7 @@ import { ThreadChip, threadOn } from './Threads'
 import { TYPE_ACCENT } from './PlaneCards'
 import { learnable } from './TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
-import { FIELD_NAME, heldCards, isPriorities, rowFieldOf } from './kanbanCards'
+import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
 import { useKanbanSizes } from './sizes'
 import styles from './Kanban.module.css'
 
@@ -1012,7 +1012,7 @@ function AddTask({ open, quiet, onPress, onOpen, onClose, onAdd }: AddProps) {
   )
 }
 
-// Its tools in a dock (its focus, its pane beside a plane): stuck to a plane, what it leaves out (D-255, D-303).
+// Its tools in a dock (its focus, its pane beside a plane). Linked to a plane it says nothing more: the link shows (D-303).
 export function KanbanDockTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   // Set up as priorities (D-271): `[order]` shows the suggested order beside the grid (yours).
   const orderOn = useOrderOn(piece.id)
@@ -1023,7 +1023,6 @@ export function KanbanDockTools({ piece, editor }: { piece: WithId<Piece>; edito
     <>
       {order}
       <HiddenTasks piece={piece} editor={editor} />
-      <StuckTools piece={piece} />
     </>
   )
 }
@@ -1043,14 +1042,3 @@ function HiddenTasks({ piece, editor }: { piece: WithId<Piece>; editor: boolean 
   )
 }
 
-function StuckTools({ piece }: { piece: WithId<Piece> }) {
-  const { tasks, cards, pieces } = useWs()
-  const plane = pieces.find((p) => p.id === piece.stuckTo)
-  if (!plane) return null
-  // Holding cards (D-268): that plane's cards of all its setup picks.
-  const holdsCards = kanbanOf(piece).holds === 'cards'
-  const mine = tasks.filter((t) => t.pieceId === piece.id)
-  const left = holdsCards ? heldCards({ kanban: piece.kanban }, cards).length - heldCards(piece, cards).length : mine.length - shownTasks(mine, piece, cards).length
-  const name = plane.name || 'the plane'
-  return <DockNote label={`only ${name}’s${left ? ` · ${left} hidden` : ''}`} title={`linked to ${name}: only its ${holdsCards ? 'cards' : 'tasks (and those for no card)'}; unlink it to see every one`} />
-}

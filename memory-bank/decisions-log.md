@@ -5430,15 +5430,15 @@ cards, as now.
   breadcrumb's bar (its shade would cover them): `01 ROADMAP · 3` per deck holding tasks (reading order, unfinished
   ones it shows), `MINE`, `ALL DAYS`. A deck's tab: its board, or `[days]` (the timeline linked to it with its own
   tools, else one of its own that's never stored: `tasks-side:<deck>`, rows by who, `‹ today ›` and its filter);
-  the deck's filter, lanes, `[setup]` and what it leaves out (D-303) in the dock. Boards and days sit top left at most
+  the deck's filter, lanes and `[setup]` in the dock. Boards and days sit top left at most
   their own size. MINE: your unfinished tasks by deck, new ones `●`, seen once shown; a row takes you to its deck's
   board with the task picked (`pending`, as going to a task does). A task picked: its panel; in a plane's focus the
   plane glides to its card (`glidePlaneTo`, shared with beside, as `usePaneView`). Escape closes it after setups; it's
   remembered per workspace in this browser (open, tab, board/days), never in the address. Card decks aren't tabs.
-- *Changed from the proposal:* with 02 "as now", the side view keeps each deck's link (no "where you are" filter);
-  the dock says what it leaves out.
+- *Changed from the proposal:* with 02 "as now", the side view keeps each deck's link (no "where you are" filter,
+  no line about what it hides, D-303).
 - *Verified* in headless Chrome on the emulators (1600 × 1000): `☐` opened MINE (2 decks, 3 tasks given, 1 new marked
-  and then seen); Roadmap's board top left, its dock `only 01 Pazar's · 1 hidden`; `[days]` rows by who; ALL DAYS
+  and then seen); Roadmap's board top left, 3 shown of 4 (one for a card on another plane); `[days]` rows by who; ALL DAYS
   both decks plus the no-day tray; Escape closed it, `t` opened it; in Pazar's focus a task clicked opened its panel
   left of the split and glided the plane to its card; two Escapes closed the panel, then the side view, focus kept;
   a MINE row opened Sprint 3's board with the task picked. 03 A: a deck with 2 tasks switched to cards showed `IT
@@ -5474,15 +5474,16 @@ once (`also on canvas`, `pieceSpots/{canvasId}_{pieceId}`, like cards' places, D
 - *Not in the first version:* per-canvas roles or visibility; loading only the open canvas.
 - *Not yet:* all of it; four sessions in the spec.
 
-### D-303 · 2026-10-29 · Accepted (changes D-255's switch; the user: "this plane only buttonu ekleyip basarsan bütün her şeyi gösteriyor nacak ben bunu istemiyorum. Link varsa sadece o plane ile ilgilieri görsün ve bu durum sadece unlink ile kapansın. Yoksa akıl karıştırıcı oluyor")
-**A deck linked to a plane shows only that plane's tasks (or cards), and only unlinking ends it.** D-255's `[this
-plane only]` switch is gone (`setEveryPlane` deleted); `shownTasks` and `heldCards` no longer read `everyPlane`
-(still in the type, the rules and export so old data reads, ignored). In its place the dock says it, not a button
-(`DockNote`): `only 01 Pazar's · 1 hidden`, its title `unlink it to see every one`; in the tasks side view too (D-300).
-- *Why:* a link meaning "only that plane" with a switch beside it that undid it was two answers to one question.
-- *Verified:* `tsc -b`; in headless Chrome the side view's Roadmap dock read `only 01 Pazar's · 1 hidden` (a task for a
-  card on another plane left out, its count 3 not 4).
-
+### D-303 · 2026-10-29 · Accepted (changes D-255's switch; the user: "this plane only buttonu ekleyip basarsan bütün her şeyi gösteriyor nacak ben bunu istemiyorum. Link varsa sadece o plane ile ilgilieri görsün ve bu durum sadece unlink ile kapansın. Yoksa akıl karıştırıcı oluyor", then "deck ten only plane 1's - 4 hidden gibi şeyleri kaldıralım. Eğer linklendiyse linklenmiştir … Zaten linkli olduğunu gösteriyoruz")
+**A deck linked to a plane shows only that plane's tasks (or cards), and only unlinking ends it; nothing more is said.**
+D-255's `[this plane only]` switch is gone (`setEveryPlane` deleted); `shownTasks` and `heldCards` no longer read
+`everyPlane` (still in the type, the rules and export so old data reads, ignored). No note of what it leaves out
+either (a `only 01 Pazar's · 1 hidden` line was tried and taken out the same day): the link already shows (`⇆`, the
+console's link), and that's the answer.
+- *Why:* a link meaning "only that plane" with a switch beside it that undid it was two answers to one question; a
+  count of what's hidden was a third.
+- *Verified:* `tsc -b`; in headless Chrome the side view's Roadmap tab counted 3, not 4 (a task for a card on another
+  plane left out), its dock without any note.
 
 ### D-305 · 2026-10-29 · Accepted (D-302's session 1; the user: "1. oturuma başla")
 **Canvases themselves, built** (docs/specs/canvases.md, session 1). `canvases/{id}` (`name`, `order`, `createdAt`,

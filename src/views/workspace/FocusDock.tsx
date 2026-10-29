@@ -51,12 +51,3 @@ export function DockAction({ label, keyHint, title, main, pressed, tone, onClick
     </span>
   )
 }
-
-// Something it says, not a button (a deck linked to a plane: what it leaves out, D-303).
-export function DockNote({ label, title }: { label: string; title?: string }) {
-  return (
-    <span className={styles.note} title={title}>
-      {label}
-    </span>
-  )
-}

@@ -208,14 +208,22 @@ function Mine({ decks, onPick, children }: { decks: WithId<Piece>[]; onPick: (de
   const { user } = useAuth()
   const me = user?.id ?? null
   const lookedAt = useReads(wid, me).data?.tasks ?? 0
-  // What was new when it was shown stays marked while it's shown.
-  const [since] = useState(lookedAt)
+  // New: given by someone else since you last looked. Shown, they're seen (your read mark moves on), but stay marked
+  // while it's shown: `held` keeps when you'd looked before. Only once the mark has held still a moment: the first one
+  // read can be the cache's, empty, before the real one.
+  const [held, setHeld] = useState<number | null>(null)
+  const since = held ?? lookedAt
   const isNew = (t: Task) => (t.givenAt ?? 0) > since && t.givenBy !== me
   const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces))
   const fresh = mine.some((t) => (t.givenAt ?? 0) > lookedAt && t.givenBy !== me)
   useEffect(() => {
-    if (fresh) void markTasksSeen(wid)
-  }, [fresh, wid])
+    if (!fresh) return
+    const id = setTimeout(() => {
+      setHeld((h) => h ?? lookedAt)
+      void markTasksSeen(wid)
+    }, 600)
+    return () => clearTimeout(id)
+  }, [fresh, lookedAt, wid])
   const colOf = (d: WithId<Piece>, t: Task) => kanbanOf(d).cols.find((c) => c.id === t.col)?.name
   const groups = decks.map((d) => ({ d, list: mine.filter((t) => t.pieceId === d.id).sort((a, b) => Number(isNew(b)) - Number(isNew(a)) || (a.due ?? '9999').localeCompare(b.due ?? '9999') || a.createdAt - b.createdAt) })).filter((g) => g.list.length)
   return (

@@ -64,7 +64,7 @@ opens in a plane's focus too.
 
 - A kanban moved near a plane's edge sticks like a table (D-210, D-215): `stuckTo`, the link dropdown in its console.
 - Stuck, it shows only tasks whose card is on that plane, plus tasks with no card, until it's unlinked (D-303: the
-  `this plane only` switch is gone; its dock says `only <plane>'s · N hidden`). Every deck's tasks are also in the tasks
+  `this plane only` switch is gone, and nothing says what it hides: the link shows). Every deck's tasks are also in the tasks
   side view (`☐` or `t`, D-300).
 - It opens beside the plane in the plane's focus (D-211), and a task picked there glides the plane to its card.
 - Rules: `stuckTo` allowed on kanbans.
