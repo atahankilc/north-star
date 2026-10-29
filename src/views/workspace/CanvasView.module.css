@@ -464,6 +464,12 @@
   background: var(--bg);
 }
 
+/* What a matrix's focus holds, over its page: cut to its window on the way in and out (FocusedPlane's `hold`). */
+.held {
+  position: absolute;
+  inset: 0;
+}
+
 /* A plane's console while it's in focus or on its way (D-185): gone at once. */
 .consoleAway {
   visibility: hidden;

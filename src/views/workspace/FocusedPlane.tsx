@@ -6,7 +6,9 @@
 // or just gone. In focus the wheel and drags are the plane's (D-186): they move its own view (`planeCam`), and going back
 // it glides home to how it sat on the canvas while the ink draws in.
 // A matrix (`bare`) isn't a plane: no marks, no ink. Its table stays whole and glides from where it sits to the middle of
-// the screen while the page fills in behind it cell by cell in random order (D-034's cells), and back the same way.
+// the screen while the page fills in behind it cell by cell in random order (D-034's cells), and back the same way. A
+// framed one is cut by its window's edge on the canvas: that cut opens out to the screen as it glides in and closes
+// round it again as it glides back, so a long table never shows past its window on the way.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -14,6 +16,7 @@ import { GRID } from '../../data/pieces'
 import { glide, stopGlide, useCanvasView, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { stopFollowing } from './collab'
 import { isReducedMotion } from '../../state/motion'
+import { isOpen } from './shownBox'
 import { CELL_PX, cellHash } from '../../ui/cellReveal'
 import styles from './CanvasView.module.css'
 
@@ -55,6 +58,8 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
   const layer = useRef<HTMLDivElement>(null)
   // What the ink cuts: the layer itself, or a matrix's page behind its table.
   const page = useRef<HTMLDivElement>(null)
+  // A matrix's table and what comes with it, cut to its window on the way in and out (`hold`).
+  const held = useRef<HTMLDivElement>(null)
   const reduced = isReducedMotion()
   const cam = useCanvasView((s) => s.planeCam) ?? home
   // Its colours turn with the ink (D-297): the piece's graphite where it sat on the canvas, the page's black in focus,
@@ -156,12 +161,14 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
       return () => void (l.style.visibility = '')
     }
     onSpread?.()
+    const unhold = bare && held.current && !isOpen(piece) ? hold(held.current, at, home, 'in', BARE_MS) : () => {}
     const stop = ink(el, at, 'in', bare ? BARE_MS : IN_MS, bare ? 1 : RAGGED, () => {
       l.style.visibility = 'hidden'
       onArrived()
     })
     return () => {
       stop()
+      unhold()
       l.style.visibility = ''
     }
     // On mount only.
@@ -178,7 +185,12 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     // Its own view goes home while the ink draws back, so its marks end where the plane's are.
     const { planeCam: c } = useCanvasView.getState()
     if (c) glide(c, home, bare ? BARE_MS : OUT_MS * 0.8, (v) => useCanvasView.setState({ planeCam: v }))
-    return ink(el, at, 'out', bare ? BARE_MS : OUT_MS, bare ? 1 : RAGGED, onLeft)
+    const unhold = bare && held.current && !isOpen(piece) ? hold(held.current, at, home, 'out', BARE_MS) : () => {}
+    const stop = ink(el, at, 'out', bare ? BARE_MS : OUT_MS, bare ? 1 : RAGGED, onLeft)
+    return () => {
+      stop()
+      unhold()
+    }
     // When it starts leaving.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaving])
@@ -198,9 +210,46 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
       aria-label={piece.name || 'plane'}
     >
       {bare ? <div ref={page} className={styles.page} aria-hidden /> : <div className={styles.focusMarks} style={marks} aria-hidden />}
-      {children}
+      {bare ? (
+        <div ref={held} className={styles.held}>
+          {children}
+        </div>
+      ) : (
+        children
+      )}
     </div>
   )
+}
+
+// A framed matrix's (or table's…) cut: its window's inside carried with its view (where the window's edge would be on
+// what it shows now), eased between that and the whole screen: from it going in, to it coming back, where the window
+// takes over.
+function hold(el: HTMLElement, at: ScreenRect, home: PlaneCam, way: 'in' | 'out', ms: number) {
+  const w = el.clientWidth
+  const h = el.clientHeight
+  // Inside its 1 px edge (homeOf's).
+  const [l, t, r, b] = [at.x + at.zoom, at.y + at.zoom, at.x + at.w - at.zoom, at.y + at.h - at.zoom]
+  const cut = (k: number) => {
+    const c = useCanvasView.getState().planeCam ?? home
+    const z = c.zoom / home.zoom
+    const [x0, y0] = [c.ox + (l - home.ox) * z, c.oy + (t - home.oy) * z]
+    const [x1, y1] = [c.ox + (r - home.ox) * z, c.oy + (b - home.oy) * z]
+    el.style.clipPath = `inset(${y0 * k}px ${(w - x1) * k}px ${(h - y1) * k}px ${x0 * k}px)`
+  }
+  const t0 = performance.now()
+  let raf = 0
+  const frame = (now: number) => {
+    const p = Math.min(1, (now - t0) / ms)
+    cut(inOut(way === 'in' ? 1 - p : p))
+    if (p < 1) raf = requestAnimationFrame(frame)
+    else if (way === 'in') el.style.clipPath = ''
+  }
+  cut(way === 'in' ? 1 : 0)
+  raf = requestAnimationFrame(frame)
+  return () => {
+    cancelAnimationFrame(raf)
+    el.style.clipPath = ''
+  }
 }
 
 // The ink: the layer cut to the cells it has reached. A cell's moment is its distance from the plane (0 inside it), plus
