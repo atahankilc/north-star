@@ -241,11 +241,16 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
   // What it shows: stuck to a plane, that plane's tasks (D-255).
   // And by its filter, yours (D-256).
   const filter = useKanbanFilter(piece.id)
+  // A task added after the filter was set (yours or someone's) shows anyway until it changes again (D-308).
+  const ids = useRef<string[]>([])
+  ids.current = tasks.map((t) => t.id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const before = useMemo(() => new Set(ids.current), [filter])
   const shown = useMemo(() => {
     const done = new Set(cols.filter((c) => c.done).map((c) => c.id))
     const typeOf = (id: string) => cards.find((c) => c.id === id)?.type
-    return shownTasks(tasks, piece, cards).filter((t) => passes(t, filter, done.has(t.col), user?.id, typeOf))
-  }, [tasks, piece, cards, filter, cols, user?.id])
+    return shownTasks(tasks, piece, cards).filter((t) => !before.has(t.id) || passes(t, filter, done.has(t.col), user?.id, typeOf))
+  }, [tasks, piece, cards, filter, before, cols, user?.id])
   // Its lanes (D-258): by a field, or one lane with no head.
   const field = useMemo(() => {
     const names = new Map(tasks.flatMap((t) => (t.assignee && t.assigneeName ? [[t.assignee, t.assigneeName] as const] : [])))

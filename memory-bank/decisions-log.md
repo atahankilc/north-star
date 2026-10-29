@@ -3940,7 +3940,7 @@ categories shown like B, not in a card, and the features under them not indented
   each kind in its colour; `[reset]`.
 - *Links:* `for`, `relates` and `competes` start hidden as on the old board (D-128, D-135; the user: "eskisi gibi gizli
   başlasın"); a hidden kind still shows on the card hovered, selected, being linked from, and for the selected link.
-- *Kept* per plane in this browser (`north-star:filter:<plane>`); the plane's picture on the canvas shows it filtered
+- *Kept* (changed by D-308: only while the focus is open) per plane in this browser (`north-star:filter:<plane>`); the plane's picture on the canvas shows it filtered
   the same way. Filtered-out cards aren't drawn, boxed or lined up against; text isn't filtered.
 - *Verified* headless (emulators): links started as `solves` only; hiding ideas, FOR Owners (Owners + its problem),
   TAG #ops (the problem) and REGION Germany (Resmio kept, OpenTable in the US dropped) each narrowed as said; no console
@@ -4465,7 +4465,7 @@ User: picked ideas 5, 10 and 9 of the kanban list (2026-10-26); this is session 
   filter's look (D-233): `GIVEN TO ▾ DUE ▾ FOR ▾ LABEL ▾ [reset]`, each a checkbox menu with counts. Given to: me, nobody,
   each other member. Due: past its day (not finished), today, this week (to Sunday), no day. For: no card, a card type,
   a card (those its tasks point at). Label: its tasks' labels. Within one menu any pick, across menus all; nothing
-  picked, everything. `[filter · N]` while narrowing. Kept per kanban in this browser (`kanbanFilter.ts`, like
+  picked, everything. `[filter · N]` while narrowing. Kept (changed by D-308: only while open) per kanban in this browser (`kanbanFilter.ts`, like
   `planeFilter.ts`), yours only. It narrows the canvas picture too; on top of D-255's plane-only.
 - *Labels:* `labels` on tasks (≤ 20, ≤ 40 letters), a line of `#labels` under the title; set in the panel's `labels`
   section like a card's tags, the kanban's other labels offered as you type.
@@ -5570,3 +5570,24 @@ a name typed that nobody has offers `+ new canvas "…"`, made and moved to in o
   heading and the plane inside (`and 2 more`); ⌘Z ⌘Z took the move and the new canvas back; Rakipler's edit console
   `[move to…]` → Engineering moved it; a screenshot caught the plane breaking cell by cell.
 - *Not yet:* sharing a piece on several canvases (session 3); text over a plane doesn't follow it (only a section's).
+
+### D-308 · 2026-10-29 · Accepted (changes D-233's and D-256's keeping; the user: "filtreler şu anda kalıcı olarak apply ediliyor, biri mesela bir link ekleyip componentten çıkarsa o filtre orda kalmaya devam ediyor, yada sayfayı yenilediğinde … Sadece kullanıcı için olması mantıksız çünkü diğerlerin değişikliklerini falan kaçırabilir. Kalıcı olması da iyi değil … sadece o anlık mı yapsak", then, offered a preview of new filter looks and the lifespan: "beğenmedim önerilerini, şu anki gibi kalsın ama filtreler o anlık olsun", "önerilerini de uygula")
+**Filters are a passing look: a plane's or a deck's filter lasts only while it's open, and what's added after it's set
+shows anyway.**
+- *Lifespan:* a plane's filter is held while its focus dock is there; a deck's (and a timeline's) while one of its
+  filter docks is (its focus, its pane beside a plane, the tasks side view, a timeline). Once none is, it goes, a tick
+  later so a remount keeps it (`useHoldFilter`, `useHoldKanbanFilter`). Kept in the tab's memory only: a reload starts
+  over; the keys the browser kept before (`north-star:filter:*`, `north-star:kanban-filter:*`) are removed on load.
+  Never shared. The plane's picture on the canvas is therefore never filtered.
+- *New things show:* what's on the plane or deck when a filter is set is what it narrows; a card, link or task added
+  after (yours or anyone's) shows anyway until the filter changes again (then it narrows that too). This covers a link
+  of a kind hidden to start (`for`, `relates`, `competes`): drawn, it stays on the plane until you leave, and a task
+  typed into a filtered deck (kanban.md's leftover) stays.
+- *Start-hidden links:* still the plane's start, not counted as a filter; the LINKS menu marks them `starts hidden`.
+- *Look:* unchanged (D-233's strip of menus). The preview's other looks (one flat sheet, a prompt, a line at the top
+  with ghosts of hidden cards) were turned down; no mark on what shows because it's new.
+- *Alternatives:* shared on the plane (one person's look changes everyone's; D-256 turned it down too); kept per
+  browser (the old way: a filter forgotten for weeks hid others' work).
+- *Verified* headless (emulators): ideas hidden (`[filter · 1]`), then an idea and a `relates` link written from outside
+  both showed; out to the canvas all cards back; in again `[filter]` with nothing narrowing; a deck filtered to
+  `nobody`, a task given to Alice written after showed; out and in, every task; no filter keys in localStorage; build.

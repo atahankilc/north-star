@@ -3,7 +3,7 @@
 // (D-210) has its own `[linked · N]` and strip the same way (D-235), under the filter's when both are open. On it, the old board's
 // filters in a row, each its own menu (the user): SHOW (card types), FOR (the plane's customers), TAG (its tags),
 // REGION (where its competitors are), LINKS (kinds of link, each in its colour), then `[reset]`. Builds and breaks cell
-// by cell (D-034).
+// by cell (D-034). The filter lasts while the focus is open (D-308).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, type ReactNode } from 'react'
 import { create } from 'zustand'
@@ -14,7 +14,7 @@ import { Menu, type MenuEntry } from '../../ui/Menu'
 import menuStyles from '../../ui/Menu.module.css'
 import { DockAction } from './FocusDock'
 import { linkTone } from './PlaneLinks'
-import { LINK_GROUPS, narrowing, setFilter, START, useFilter, type Filter } from './planeFilter'
+import { LINK_GROUPS, narrowing, setFilter, START, useFilter, useHoldFilter, type Filter } from './planeFilter'
 import styles from './FilterDock.module.css'
 
 // What opens over the focus dock (D-233, D-235): each its own strip in the console's look, stacked with a gap; Escape
@@ -29,6 +29,7 @@ export function PlaneDockExtras({ plane, cards, stuck }: { plane: string; cards:
   // side nav on the left.
   const room = useCanvasView((s) => (s.beside ? Math.round(s.size.w * s.split) : s.size.w)) - 2 * 72
   const f = useFilter(plane)
+  useHoldFilter(plane)
   const n = narrowing(f)
   useEffect(() => {
     if (!filter && !linked) return
@@ -101,7 +102,7 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   ]
   const linkItems: MenuEntry[] = [
     { key: 'all', label: 'every link', checked: f.links.length === 0, onSelect: () => set({ links: [] }) },
-    ...LINK_GROUPS.map((g) => ({ key: g.key, label: g.label, checked: !f.links.includes(g.key), tone: linkTone(g.kind), glyph: '━', onSelect: () => set({ links: flip(f.links, g.key) }) })),
+    ...LINK_GROUPS.map((g) => ({ key: g.key, label: g.label, checked: !f.links.includes(g.key), tone: linkTone(g.kind), glyph: '━', hint: START.links.includes(g.key) ? 'starts hidden' : undefined, onSelect: () => set({ links: flip(f.links, g.key) }) })),
   ]
   const linksNarrow = f.links.some((g) => !START.links.includes(g))
   return (

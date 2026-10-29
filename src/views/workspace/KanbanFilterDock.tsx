@@ -1,7 +1,7 @@
 // A kanban's filters in its dock (D-256), the plane's way (D-233): `[filter]` (`[filter · N]` while narrowing) opens a
 // strip over the dock in the console's look: GIVEN TO, DUE, FOR, LABEL, each its own menu, then `[reset]`. Escape
 // closes it. In the kanban's focus and in its pane beside a plane; a timeline's too (D-262), over its kanbans' tasks
-// (`pool`).
+// (`pool`). The filter lasts while one of these is open (D-308).
 import { AnimatePresence } from 'motion/react'
 import { useEffect } from 'react'
 import { create } from 'zustand'
@@ -15,7 +15,7 @@ import { Menu, type MenuEntry } from '../../ui/Menu'
 import { useCanvasView } from '../../state/canvasView'
 import { useWs } from './context'
 import { DockAction } from './FocusDock'
-import { NO_FILTER, narrowing, setKanbanFilter, useKanbanFilter, type DueKey, type KanbanFilter } from './kanbanFilter'
+import { NO_FILTER, narrowing, setKanbanFilter, useHoldKanbanFilter, useKanbanFilter, type DueKey, type KanbanFilter } from './kanbanFilter'
 import { TYPE_ACCENT } from './PlaneCards'
 import styles from './FilterDock.module.css'
 
@@ -38,6 +38,7 @@ export function KanbanFilterDock(props: { piece: WithId<Piece>; pool?: Task[] })
 function TaskFilterDock({ piece, pool }: { piece: WithId<Piece>; pool?: Task[] }) {
   const open = useOpen((s) => s.piece === piece.id)
   const f = useKanbanFilter(piece.id)
+  useHoldKanbanFilter(piece.id)
   const n = narrowing(f)
   const room = useCanvasView((s) => s.size.w) - 2 * 72
   useEffect(() => {

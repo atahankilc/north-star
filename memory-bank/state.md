@@ -23,6 +23,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
+- D-308 (filters only while their view is open; what's added after shows): committed, not pushed.
 - Committed, **not pushed** (2026-10-29): D-293 hidden while zooming and D-297 focus in/out together (efd34b4), D-294
   card faces on kanbans and tables (0c9178f), D-295 readable text on tinted cards (1c78097), D-296 dropped plans
   (memory only), D-298 timeline leftovers (06e11c7), D-299 card pickers as the prompt (80441e7), a framed table's focus

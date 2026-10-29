@@ -130,8 +130,8 @@ size. The preview's B (month calendar), C (load per person) and D (roadmap by ca
 ## Found along the way
 
 - Open on the canvas (unframed), a kanban's size is its window's, not measured from what it holds.
-- With a filter on, a task typed at a column's foot may not pass it and vanish at once (D-256): maybe give it the
-  filter's values (its label, given to me…) or show it until the filter changes.
+- With a filter on, a task typed at a column's foot may not pass it and vanish at once (D-256): done by D-308, it
+  shows until the filter changes.
 - In lanes by given to, a member with no tasks has no lane to drop into (only you and nobody always do); a task is given
   to them from its panel (D-258).
 - Held tasks leave their cell while dragged, so a lane emptied by the drag shrinks under the pointer (D-258).

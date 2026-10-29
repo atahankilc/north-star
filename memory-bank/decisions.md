@@ -173,12 +173,15 @@ feature comes back as a piece, and check them with the user then.
   a `PLANES` panel section (go there, `×` off one, `+ place on`); naming a new card offers `≈ … [use that one]`; folding
   per plane; matrix, table, kanban, finder and comments count a card on every plane it's on (`isOnPlane`, D-286); ⇧⌘V
   brings the cards copied as the same cards, and a card's thread is where the card is (D-290).
+- Filters are a passing look (D-308): a plane's or a deck's lasts only while one of its docks is open (its focus, beside,
+  the tasks side view, a timeline), in this tab; never kept in the browser or shared. What's added after a filter is set
+  (anyone's card, link or task) shows until the filter changes.
 - Several at once (D-227, D-229, D-230): shift+click, alt+drag a box, text too; drag together, arrows, ⌘C/⌘V/⌘D, Delete,
   Escape; the panel's `N selected` lines up, spaces out, tags all; others see it (`sel` + `more`), a follower takes it;
   a pan keeps it, only a click on the plane lets go.
 - Focus dock tools: guides (D-231: magenta lines while dragging; `a` guides, `g` snapping, per browser, in `[view ▾]`,
-  with comments `c`); `[filter]` (D-233: `SHOW FOR TAG REGION LINKS`, `for`/`relates`/`competes` hidden to start, per
-  plane and browser, the canvas picture following); `[linked · N]` (D-235: the pieces stuck to it); strips stack 8 px
+  with comments `c`); `[filter]` (D-233: `SHOW FOR TAG REGION LINKS`, `for`/`relates`/`competes` hidden to start, its
+  menu saying so; only while the focus is open, D-308); `[linked · N]` (D-235: the pieces stuck to it); strips stack 8 px
   over the dock.
 - Right-click in a focused plane (D-237): a card's open / fold / copy / duplicate / delete; text's edit / copy /
   duplicate / delete; a link's label / turn round / kind / remove; several's copy / duplicate / delete; the plane's
@@ -254,7 +257,7 @@ feature comes back as a piece, and check them with the user then.
   other): a tab per task deck (board or days), MINE, ALL DAYS; remembered per workspace and browser.
 - Stuck to a plane (D-255, D-303): only that plane's tasks until unlinked (no switch, no note: the link shows it),
   beside it in its focus.
-- More (D-256, D-258): `[filter]` (GIVEN TO, DUE, FOR, LABEL; per browser); `#labels`, `P1`–`P3`; column limits (`4/3`
+- More (D-256, D-258): `[filter]` (GIVEN TO, DUE, FOR, LABEL; only while open, D-308); `#labels`, `P1`–`P3`; column limits (`4/3`
   magenta); `[LANES ▾]` by person or card (dropping sets it), lanes fold; several at once like on planes.
 - Together (D-260, D-261): picked tasks are your presence selection, a held one a ghost in your colour (`drag`);
   comments on tasks; `☐` by your square counts tasks given to you since you last looked (`givenAt`/`givenBy`,

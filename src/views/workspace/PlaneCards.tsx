@@ -208,7 +208,17 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
   // The canvas's picture of the plane shows it as its filter says too.
   const [params] = useSearchParams()
   const filter = useFilter(live ? params.get('focus') : ((cards[0] && planeOf(cards[0])) ?? labels[0]?.pieceId ?? null))
-  const kept = useMemo(() => keep(cards, edges, filter), [cards, edges, filter])
+  // What's there when the filter is set is what it narrows; a card or link added after it (yours or someone's) shows
+  // anyway until the filter changes again (D-308).
+  const ids = useRef<string[]>([])
+  ids.current = [...cards.map((c) => c.id), ...edges.map((e) => e.id)]
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const before = useMemo(() => new Set(ids.current), [filter])
+  const kept = useMemo(() => {
+    const k = keep(cards, edges, filter)
+    for (const c of cards) if (!before.has(c.id)) k.add(c.id)
+    return k
+  }, [cards, edges, filter, before])
   const shown = cards.filter((c) => kept.has(c.id))
   const lit = useCanvasView((s) => (live ? [s.cardHovered, s.cardSelected, ...s.cardMulti, s.linking?.from].filter(Boolean).join(' ') : ''))
   const linkSel = useCanvasView((s) => (live ? s.linkSelected : null))
@@ -225,7 +235,7 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
     (e) =>
       // Both ends folded into the same thing (a feature's parts, a package's cards, D-240): inside it, not drawn.
       outer(e.fromId) === outer(e.toId) ||
-      (filter.links.includes(groupOf(e.kind)) && e.id !== linkSel && !lit.includes(e.fromId) && !lit.includes(e.toId)),
+      (filter.links.includes(groupOf(e.kind)) && before.has(e.id) && e.id !== linkSel && !lit.includes(e.fromId) && !lit.includes(e.toId)),
   )
   // Cards inside an unfolded package's frame that aren't in it (D-242): drawn faint, so the frame says who's in.
   const outsiders = new Set<string>()
