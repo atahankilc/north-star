@@ -33,6 +33,7 @@ import { isReducedMotion } from '../../state/motion'
 import { isOwnerOf } from '../../data/workspaces'
 import type { Thread } from '../../data/model'
 import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePresenceReport } from './collab'
+import { usePresenceMembers } from '../../data/presence'
 import { deleteHere, heldAt } from './selection'
 import { alikeProps } from './kept'
 import { cardsByPlane, elsewhere } from '../../data/places'
@@ -366,6 +367,8 @@ export function CanvasView() {
   // Working together (D-191): the space you're in, your pointer in it, and everyone else's.
   const space = focusId ?? CANVAS
   usePresenceReport(space)
+  // Only the members' presence is shown (D-317).
+  usePresenceMembers(workspace.memberIds)
   useCursorReport(root, (cx, cy) => (focusId ? (useCanvasView.getState().planeCam && useCanvasView.getState().focusArrived ? planeToSpace(cx, cy) : null) : canvasToSpace(cx, cy)))
   const toScreen = (x: number, y: number): [number, number] | null => {
     if (focusId) {

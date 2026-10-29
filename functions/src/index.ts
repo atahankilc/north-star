@@ -10,6 +10,7 @@ import { HttpsError, onCall, onRequest } from 'firebase-functions/https'
 import { logger } from 'firebase-functions'
 import { setGlobalOptions } from 'firebase-functions/options'
 import { defineSecret } from 'firebase-functions/params'
+import { isOwner, mayUseKey, type Access, type Workspace } from './access.js'
 
 initializeApp()
 setGlobalOptions({ region: 'europe-west1', maxInstances: 10 })
@@ -20,20 +21,15 @@ const OPENAI = process.env.OPENAI_API_BASE ?? 'https://api.openai.com/v1'
 // The Pages site and local dev servers.
 const ORIGINS = [/^https:\/\/atahankilc\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1):\d+$/]
 
-type Access = 'everyone' | 'chosen'
 type AiConfig = { hasKey?: boolean; keyHint?: string; access?: Access; allowed?: string[]; models?: Record<string, string>; allowedModels?: string[] }
 
 // Models the workspace key may be used with (D-104): the owners' pick per task and the extras they allow. Owners who
-// never chose a task's model get the app's default for it (DEFAULT_MODELS in src/ai/settings.ts; workspaceModels in
-// src/ai/models.ts is the same list).
+// never chose a task's model get the default for it (1.0's assistant kept the same list; its client code went with 1.0,
+// D-248, and comes back with the agent, D-312).
 const DEFAULT_MODEL = 'gpt-6-luna'
 const TASKS = ['chat', 'research', 'deep'] as const
 const modelsAllowed = (config: AiConfig) =>
   new Set([...TASKS.map((t) => config.models?.[t] ?? DEFAULT_MODEL), ...(config.allowedModels ?? [])])
-type Workspace = { ownerId: string; memberIds: string[]; roles?: Record<string, string> }
-
-// Any number of owners (D-098); `ownerId` is only who created it.
-const isOwner = (ws: Workspace, uid: string | undefined) => !!uid && ws.memberIds.includes(uid) && ws.roles?.[uid] === 'owner'
 
 const db = () => getFirestore()
 const configRef = (wid: string) => db().doc(`workspaces/${wid}/ai/config`)
@@ -168,9 +164,9 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
   if (!ws.memberIds.includes(uid)) return fail(403, "You're not a member of this workspace.")
   const id = wid as string
   const config = ((await configRef(id).get()).data() ?? {}) as AiConfig
-  const allowed = isOwner(ws, uid) || config.access === 'everyone' || (config.allowed ?? []).includes(uid)
   if (!config.hasKey) return fail(412, 'This workspace has no key.')
-  if (!allowed) return fail(403, "The owner hasn't let you use the workspace key.")
+  if (ws.roles?.[uid] === 'viewer') return fail(403, 'Viewers use their own key.')
+  if (!mayUseKey(ws, uid, config)) return fail(403, "The owner hasn't let you use the workspace key.")
 
   let payload: ReturnType<typeof cleanBody>
   try {
@@ -279,7 +275,7 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
   }
 })
 
-// ---- A deleted workspace takes its key, AI records and reports with it ----
+// ---- A deleted workspace takes its key, AI records, reports, documents and invites with it ----
 
 export const cleanUpWorkspaceAi = onDocumentDeleted('workspaces/{wid}', async (event) => {
   const wid = event.params.wid
@@ -290,4 +286,9 @@ export const cleanUpWorkspaceAi = onDocumentDeleted('workspaces/{wid}', async (e
   // and anything left of the people list.
   await db().recursiveDelete(db().collection(`workspaces/${wid}/reports`))
   await db().recursiveDelete(db().collection(`workspaces/${wid}/members`))
+  // Documents (D-232) with their content: members' private ones the owner's browser can't see (audit P2).
+  await db().recursiveDelete(db().collection(`workspaces/${wid}/documents`))
+  // Invites (D-323) the client didn't get to.
+  const invites = await db().collection('invites').where('workspaceId', '==', wid).get()
+  await Promise.all(invites.docs.map((d) => d.ref.delete()))
 })

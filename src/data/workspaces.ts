@@ -13,11 +13,11 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
-import { db } from './firebase'
-import { useDoc, usePaged, useQuery } from './hooks'
+import { db, firebase } from './firebase'
+import { useDoc, usePaged, useQuery, type WithId } from './hooks'
 import type { AuthUser } from './auth'
 import { deleteThread } from './threads'
-import type { InviteCode, JoinRequest, Member, Role, Workspace } from './model'
+import type { Invite, InviteCode, JoinRequest, Member, Role, Workspace } from './model'
 
 // No 0/O/1/I/L: codes get read aloud and typed by hand.
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -200,39 +200,89 @@ export function isEmail(input: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input)
 }
 
-// Owner only.
-export function inviteEmail(wid: string, email: string) {
-  return updateDoc(doc(db(), 'workspaces', wid), { invitedEmails: arrayUnion(normalizeEmail(email)) })
+// What the invitee reads instead of the workspace (D-323): one doc per invite, `<workspaceId>_<email>`.
+const inviteRef = (wid: string, email: string) => doc(db(), 'invites', `${wid}_${email}`)
+const inviteOf = (w: WithId<Workspace>, email: string, by: string): Invite => ({
+  workspaceId: w.id,
+  email,
+  name: w.name.slice(0, 200),
+  memberCount: w.memberIds.length,
+  invitedBy: by,
+  at: Date.now(),
+})
+const invitesOf = (wid: string) => getDocs(query(collection(db(), 'invites'), where('workspaceId', '==', wid)))
+
+// Owner only: the address on the workspace and its invite, in one batch.
+export function inviteEmail(w: WithId<Workspace>, email: string) {
+  const address = normalizeEmail(email)
+  const by = firebase?.auth.currentUser?.uid ?? ''
+  const batch = writeBatch(db())
+  batch.update(doc(db(), 'workspaces', w.id), { invitedEmails: arrayUnion(address) })
+  batch.set(inviteRef(w.id, address), inviteOf(w, address, by))
+  return batch.commit()
 }
 
 export function uninviteEmail(wid: string, email: string) {
-  return updateDoc(doc(db(), 'workspaces', wid), { invitedEmails: arrayRemove(email) })
+  const batch = writeBatch(db())
+  batch.update(doc(db(), 'workspaces', wid), { invitedEmails: arrayRemove(email) })
+  batch.delete(inviteRef(wid, email))
+  return batch.commit()
 }
 
-// Workspaces that invited your (verified) address.
+// Owner only, when the people page opens: every invited address has its invite (those from before D-323 had none), with
+// the name and member count of now, and no invite is left for an address taken off.
+export async function syncInvites(w: WithId<Workspace>) {
+  const by = firebase?.auth.currentUser?.uid ?? ''
+  const invited = new Set(w.invitedEmails ?? [])
+  const have = new Map((await invitesOf(w.id)).docs.map((d) => [(d.data() as Invite).email, d.data() as Invite]))
+  const batch = writeBatch(db())
+  let n = 0
+  for (const email of invited) {
+    const i = have.get(email)
+    if (!i) (batch.set(inviteRef(w.id, email), inviteOf(w, email, by)), n++)
+    else if (i.name !== w.name.slice(0, 200) || i.memberCount !== w.memberIds.length)
+      (batch.update(inviteRef(w.id, email), { name: w.name.slice(0, 200), memberCount: w.memberIds.length }), n++)
+  }
+  for (const email of have.keys()) if (!invited.has(email)) (batch.delete(inviteRef(w.id, email)), n++)
+  if (n) await batch.commit()
+}
+
+// Invites to your (verified) address.
 export function useMyInvites(email: string | null) {
   const me = email ? normalizeEmail(email) : ''
-  return useQuery<Workspace>(
-    me ? query(collection(db(), 'workspaces'), where('invitedEmails', 'array-contains', me)) : null,
-    `invites:${me}`,
-  )
+  return useQuery<Invite>(me ? query(collection(db(), 'invites'), where('email', '==', me)) : null, `invites:${me}`)
 }
 
 export async function acceptInvite(wid: string, user: AuthUser) {
-  await updateDoc(doc(db(), 'workspaces', wid), {
+  const email = normalizeEmail(user.email ?? '')
+  const batch = writeBatch(db())
+  batch.update(doc(db(), 'workspaces', wid), {
     memberIds: arrayUnion(user.id),
     [`roles.${user.id}`]: 'editor',
-    invitedEmails: arrayRemove(normalizeEmail(user.email ?? '')),
+    invitedEmails: arrayRemove(email),
   })
+  batch.delete(inviteRef(wid, email))
+  await batch.commit()
   await ensureMemberEntry(wid, user).catch(() => {})
 }
 
 export function declineInvite(wid: string, email: string) {
-  return updateDoc(doc(db(), 'workspaces', wid), { invitedEmails: arrayRemove(normalizeEmail(email)) })
+  const address = normalizeEmail(email)
+  const batch = writeBatch(db())
+  batch.update(doc(db(), 'workspaces', wid), { invitedEmails: arrayRemove(address) })
+  batch.delete(inviteRef(wid, address))
+  return batch.commit()
 }
 
-export function renameWorkspace(wid: string, name: string) {
-  return updateDoc(doc(db(), 'workspaces', wid), { name: name.trim() || 'Untitled' })
+// Owners and editors; the invites waiting on it take the new name too.
+export async function renameWorkspace(wid: string, name: string) {
+  const next = name.trim().slice(0, 200) || 'Untitled'
+  await updateDoc(doc(db(), 'workspaces', wid), { name: next })
+  const invites = await invitesOf(wid).catch(() => null)
+  if (!invites?.size) return
+  const batch = writeBatch(db())
+  for (const d of invites.docs) batch.update(d.ref, { name: next })
+  await batch.commit()
 }
 
 // What the team is building, in a sentence or two (D-082). The assistant reads it first, so it knows the startup
@@ -264,6 +314,8 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
   const snaps = await Promise.all([
     ...WORKSPACE_COLLECTIONS.map((c) => getDocs(collection(db(), 'workspaces', wid, c))),
     getDocs(query(collection(db(), 'joinRequests'), where('workspaceId', '==', wid))),
+    // Its invites (D-323); their rules read the workspace, so they go before it.
+    invitesOf(wid),
     getDocs(collection(db(), 'workspaces', wid, 'members')),
   ])
   // Once each: your own shared reports come back from both report queries. A report's body (D-098) goes before its

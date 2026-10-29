@@ -12,6 +12,7 @@
 //     threads/{id}, messages/{id}            Thread, ThreadMessage (D-159, D-192)
 //     reports/{id}                           an old research report, moved to documents once (documents.ts' moveReports)
 //   inviteCodes/{code}                       InviteCode (D-012)
+//   invites/{workspaceId}_{email}            Invite (D-323)
 //   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)
 //
 // Realtime Database (ephemeral):
@@ -46,6 +47,17 @@ export type InviteCode = {
 }
 
 // Someone entered the code and waits for the owner (D-062).
+// An email invite as the invitee sees it (D-323): `invites/<workspaceId>_<email>`. The invitee never reads the workspace
+// doc; this is what they decide on. Owners write it with the address in `invitedEmails`; members keep the name and count.
+export type Invite = {
+  workspaceId: string
+  email: string
+  name: string
+  memberCount: number
+  invitedBy: string
+  at: number
+}
+
 export type JoinRequest = {
   workspaceId: string
   uid: string

@@ -100,6 +100,12 @@ await allow('owner creates workspace + invite code', async () => {
 await deny('create workspace owned by someone else', () =>
   addDoc(collection(bob.fs, 'workspaces'), { name: 'x', ownerId: alice.uid, memberIds: [alice.uid], roles: { [alice.uid]: 'owner' }, inviteCode: 'X', createdAt: 1 }),
 )
+await deny('create workspace without a name', () =>
+  addDoc(collection(bob.fs, 'workspaces'), { ownerId: bob.uid, memberIds: [bob.uid], roles: { [bob.uid]: 'owner' }, inviteCode: 'X', createdAt: 1 }),
+)
+await deny('create workspace with a name too long', () =>
+  addDoc(collection(bob.fs, 'workspaces'), { name: 'x'.repeat(201), ownerId: bob.uid, memberIds: [bob.uid], roles: { [bob.uid]: 'owner' }, inviteCode: 'X', createdAt: 1 }),
+)
 await deny('create workspace granting yourself extra roles', () =>
   addDoc(collection(bob.fs, 'workspaces'), { name: 'x', ownerId: bob.uid, memberIds: [bob.uid], roles: { [bob.uid]: 'owner', [carol.uid]: 'owner' }, inviteCode: 'X', createdAt: 1 }),
 )
@@ -160,11 +166,38 @@ await allow('requester withdraws their request', () => writeBatch(carol.fs).dele
 // Email invites (D-062).
 await deny('member (not owner) invites an email', () => join(bob, { invitedEmails: arrayUnion('dave@example.com') }))
 await deny('uninvited user reads the workspace', () => getDoc(doc(dave.fs, 'workspaces', wid)))
-await allow('owner invites an email', () => join(alice, { invitedEmails: arrayUnion('dave@example.com', 'carol@example.com') }))
-await allow('invitee reads the workspace doc', () => getDoc(doc(dave.fs, 'workspaces', wid)))
-await allow('invitee lists their invites', () =>
+// What an invitee sees (D-323): `invites/<wid>_<email>`, written with the address in one batch.
+const inviteRef = (fs, email) => doc(fs, 'invites', `${wid}_${email}`)
+const inviteOf = (email, extra = {}) => ({ workspaceId: wid, email, name: 'Acme', memberCount: 2, invitedBy: alice.uid, at: 1, ...extra })
+const invite = (who, email, extra) => {
+  const b = writeBatch(who.fs)
+  b.update(doc(who.fs, 'workspaces', wid), { invitedEmails: arrayUnion(email) })
+  b.set(inviteRef(who.fs, email), inviteOf(email, extra))
+  return b.commit()
+}
+await deny('member (not owner) writes an invite', () => setDoc(inviteRef(bob.fs, 'dave@example.com'), inviteOf('dave@example.com', { invitedBy: bob.uid })))
+await deny('an invite for an address not invited', () => setDoc(inviteRef(alice.fs, 'dave@example.com'), inviteOf('dave@example.com')))
+await deny('an invite in someone else\'s name', () => invite(alice, 'dave@example.com', { invitedBy: bob.uid }))
+await deny('an invite carrying more than its name and count', () => invite(alice, 'dave@example.com', { inviteCode: CODE }))
+await deny('an invite under another id', () =>
+  writeBatch(alice.fs).update(doc(alice.fs, 'workspaces', wid), { invitedEmails: arrayUnion('dave@example.com') }).set(doc(alice.fs, 'invites', 'x'), inviteOf('dave@example.com')).commit())
+await allow('owner invites an email (with its invite)', () => invite(alice, 'dave@example.com'))
+await allow('owner invites a second email', () => invite(alice, 'carol@example.com'))
+await deny('invitee reads the workspace doc (D-323)', () => getDoc(doc(dave.fs, 'workspaces', wid)))
+await deny('invitee lists workspaces by their address (D-323)', () =>
   getDocs(query(collection(dave.fs, 'workspaces'), where('invitedEmails', 'array-contains', 'dave@example.com'))),
 )
+await allow('invitee reads their invite', async () => {
+  const d = (await getDoc(inviteRef(dave.fs, 'dave@example.com'))).data()
+  assert.deepEqual(Object.keys(d).sort(), ['at', 'email', 'invitedBy', 'memberCount', 'name', 'workspaceId'])
+})
+await allow('invitee lists their invites', () => getDocs(query(collection(dave.fs, 'invites'), where('email', '==', 'dave@example.com'))))
+await deny("invitee reads someone else's invite", () => getDoc(inviteRef(dave.fs, 'carol@example.com')))
+await deny('anyone lists every invite', () => getDocs(collection(dave.fs, 'invites')))
+await allow("a member lists the workspace's invites", () => getDocs(query(collection(bob.fs, 'invites'), where('workspaceId', '==', wid))))
+await allow('an editor keeps the name current', () => updateDoc(inviteRef(bob.fs, 'carol@example.com'), { name: 'Acme Inc' }))
+await deny('an invite moved to another address', () => updateDoc(inviteRef(bob.fs, 'carol@example.com'), { email: 'erin@example.com' }))
+await deny('invitee renames their invite', () => updateDoc(inviteRef(dave.fs, 'dave@example.com'), { name: 'Mine now' }))
 await deny('invitee lists ideas before joining', () => getDocs(ideas(dave.fs)))
 await deny('invitee joins as owner', () =>
   join(dave, { memberIds: arrayUnion(dave.uid), [`roles.${dave.uid}`]: 'owner', invitedEmails: arrayRemove('dave@example.com') }),
@@ -175,11 +208,24 @@ await deny('outsider joins on someone else\'s invite', async () => {
   const outsider = await client('erin')
   await join(outsider, { memberIds: arrayUnion(outsider.uid), [`roles.${outsider.uid}`]: 'editor', invitedEmails: arrayRemove('dave@example.com') })
 })
-await allow('invitee joins', () =>
-  join(dave, { memberIds: arrayUnion(dave.uid), [`roles.${dave.uid}`]: 'editor', invitedEmails: arrayRemove('dave@example.com') }),
+await allow('invitee joins, their invite gone with it', () =>
+  writeBatch(dave.fs)
+    .update(doc(dave.fs, 'workspaces', wid), { memberIds: arrayUnion(dave.uid), [`roles.${dave.uid}`]: 'editor', invitedEmails: arrayRemove('dave@example.com') })
+    .delete(inviteRef(dave.fs, 'dave@example.com'))
+    .commit(),
 )
 await allow('new member lists ideas', () => getDocs(ideas(dave.fs)))
-await allow('invitee declines', () => join(carol, { invitedEmails: arrayRemove('carol@example.com') }))
+await allow('invitee declines, their invite gone with it', () =>
+  writeBatch(carol.fs).update(doc(carol.fs, 'workspaces', wid), { invitedEmails: arrayRemove('carol@example.com') }).delete(inviteRef(carol.fs, 'carol@example.com')).commit())
+await allow('owner takes an invite back', async () => {
+  await invite(alice, 'grace@example.com')
+  await writeBatch(alice.fs).update(doc(alice.fs, 'workspaces', wid), { invitedEmails: arrayRemove('grace@example.com') }).delete(inviteRef(alice.fs, 'grace@example.com')).commit()
+})
+// The workspace's name (audit P2): text, 1–200 characters.
+await deny('a workspace named with a number', () => join(bob, { name: 42 }))
+await deny('a workspace with too long a name', () => join(bob, { name: 'x'.repeat(201) }))
+await deny('an owner empties the name', () => join(alice, { name: '' }))
+await allow('an editor renames it', () => join(bob, { name: 'Acme' }))
 await deny('declined invitee reads the workspace', () => getDoc(doc(carol.fs, 'workspaces', wid)))
 
 // New code (D-062): the old one stops working.
@@ -752,7 +798,7 @@ const presence = (who, uid) => ref(who.rt, `presence/${wid}/${uid}`)
 const me = (name, extra = {}) => ({ name, color: '#2de2e6', view: 'canvas', ts: serverTimestamp(), ...extra })
 await allow('write own presence', () => rtSet(presence(bob, bob.uid), me('Bob')))
 await allow('presence with cursor, selection and photo', () =>
-  rtSet(presence(bob, bob.uid), me('Bob', { x: 1.5, y: -2, sel: 'abc', photo: 'https://example.com/a.png', since: serverTimestamp() })),
+  rtSet(presence(bob, bob.uid), me('Bob', { x: 1.5, y: -2, sel: 'abc', photo: 'https://lh3.googleusercontent.com/a/abc=s96-c', since: serverTimestamp() })),
 )
 await allow('presence with a selection of several (D-124)', () => rtSet(presence(bob, bob.uid), me('Bob', { sel: 'abc', more: 'def ghi' })))
 await allow('presence dragging a task (D-260)', () => rtSet(presence(bob, bob.uid), me('Bob', { sel: 'tk1', drag: 'tk1 120 340 2' })))
@@ -761,6 +807,10 @@ await allow('presence with the tasks side view open (D-300)', () => rtSet(presen
 await deny('presence with too long a tasks side view', () => rtSet(presence(bob, bob.uid), me('Bob', { tasks: 'x'.repeat(141) })))
 await deny('presence with too long a selection', () => rtSet(presence(bob, bob.uid), me('Bob', { sel: 'abc', more: 'x'.repeat(2049) })))
 await deny('write someone else\'s presence', () => rtSet(presence(bob, alice.uid), me('Fake')))
+// D-317: a photo only from Google's image host (any other address would be loaded by every member's browser).
+await deny('presence with a photo from anywhere else', () => rtSet(presence(bob, bob.uid), me('Bob', { photo: 'https://example.com/a.png' })))
+await deny('presence with a photo on a look-alike host', () => rtSet(presence(bob, bob.uid), me('Bob', { photo: 'https://lh3.googleusercontent.com.evil.example/a.png' })))
+await deny('presence with a photo over http', () => rtSet(presence(bob, bob.uid), me('Bob', { photo: 'http://lh3.googleusercontent.com/a.png' })))
 await deny('presence without required fields', () => rtSet(presence(bob, bob.uid), { x: 1 }))
 await deny('presence with an unknown field', () => rtSet(presence(bob, bob.uid), me('Bob', { secret: 1 })))
 await allow('presence in a plane (D-191)', () => rtSet(presence(bob, bob.uid), me('Bob', { plane: 'p1' })))

@@ -145,6 +145,24 @@ let mine: { node: DatabaseReference; data: Omit<Presence, 'ts' | 'since'>; since
 let lastWrite = 0
 let pending: number | null = null
 
+// Who may be here (D-317): the workspace's members. Presence is readable by anyone signed in until membership is in RTDB
+// (Blaze), so a node from someone else is never shown; nobody is shown until the members are known.
+let members: ReadonlySet<string> | null = null
+let republish: (() => void) | null = null
+
+export function usePresenceMembers(memberIds: readonly string[] | undefined) {
+  const key = memberIds ? [...memberIds].sort().join(' ') : ''
+  useEffect(() => {
+    members = key ? new Set(key.split(' ')) : null
+    republish?.()
+  }, [key])
+}
+
+// A photo only from Google's own image host, as the rules allow (D-317): any other address would be loaded by every
+// member's browser.
+const PHOTO = /^https:\/\/([a-z0-9-]+\.)*googleusercontent\.com\//
+export const safePhoto = (url: string | null | undefined) => (url && url.length <= 2048 && PHOTO.test(url) ? url : undefined)
+
 function flush() {
   pending = null
   if (!mine) return
@@ -216,7 +234,7 @@ const round = (v: number) => Math.round(v * 1000) / 1000
 export function usePresenceSession(wid: string, user: AuthUser | null, view: PresenceView, canvas = 'main') {
   const uid = user?.id
   const name = user?.name || user?.email || 'Someone'
-  const photo = user?.photoURL ?? undefined
+  const photo = safePhoto(user?.photoURL)
 
   useEffect(() => {
     const rtdb = firebase?.rtdb
@@ -241,8 +259,8 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
     const publish = () => {
       const now = Date.now() + offset
       const here = Object.entries(all)
-        .filter(([id, p]) => id !== uid && now - (p.ts ?? 0) < STALE_MS)
-        .map(([id, p]) => ({ ...p, uid: id }))
+        .filter(([id, p]) => id !== uid && !!members?.has(id) && now - (p.ts ?? 0) < STALE_MS)
+        .map(([id, p]) => ({ ...p, photo: safePhoto(p.photo), uid: id }))
       let moved = false
       for (const p of here) {
         if (p.x === undefined || p.y === undefined) tracks.delete(p.uid)
@@ -277,6 +295,7 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
       () => usePresence.setState({ peers: [], following: null }),
     )
 
+    republish = publish
     const beat = window.setInterval(() => {
       flush()
       publish()
@@ -294,6 +313,7 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
       if (pending !== null) window.clearTimeout(pending)
       pending = null
       mine = null
+      republish = null
       tracks.clear()
       usePresence.setState({ peers: [], myColor: null, following: null })
       onDisconnect(node).cancel().catch(() => {})

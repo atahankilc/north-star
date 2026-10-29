@@ -391,11 +391,18 @@ service cloud.firestore {
         || (collection == 'pieceSpots' && validSpot(id, d));
     }
 
+    // A workspace's name: text, 1–200 characters.
+    function validName(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 200;
+    }
+
     match /workspaces/{wid} {
-      // Invited people see the workspace doc (name, member count) to accept or decline, not its content.
-      allow read: if signedIn() && (request.auth.uid in resource.data.memberIds || invited(resource.data));
+      // Members only. Invited people read their invite (`invites/` below: the name and member count), never this doc,
+      // which holds the invite code, the roles and everyone else's invited addresses (D-323).
+      allow read: if signedIn() && request.auth.uid in resource.data.memberIds;
 
       allow create: if signedIn()
+        && validName(request.resource.data)
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.memberIds == [request.auth.uid]
         && request.resource.data.roles.keys().hasOnly([request.auth.uid])
@@ -411,6 +418,7 @@ service cloud.firestore {
       function editing() {
         return roleIn(resource.data) in ['owner', 'editor']
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description'])
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['name']) || validName(request.resource.data))
           && optText(request.resource.data, 'description', 1000);
       }
 
@@ -420,6 +428,7 @@ service cloud.firestore {
         return roleIn(resource.data) == 'owner'
           && request.resource.data.ownerId == resource.data.ownerId
           && validRoles(request.resource.data)
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['name']) || validName(request.resource.data))
           && optText(request.resource.data, 'description', 1000)
           && (!('invitedEmails' in request.resource.data)
             || (request.resource.data.invitedEmails is list && request.resource.data.invitedEmails.size() <= 100));
@@ -743,6 +752,32 @@ service cloud.firestore {
       // The requester sees and withdraws their own; the workspace's owners see and settle them.
       allow read, delete: if signedIn()
         && (resource.data.uid == request.auth.uid || isOwner(resource.data.workspaceId));
+    }
+
+    // An email invite as the invitee sees it (D-323): the workspace's name and how many are in it, nothing else. The id is
+    // `<workspaceId>_<email>`. Owners write it with the address in the workspace's `invitedEmails` (same batch); members
+    // keep its name and count current; the invitee reads theirs and deletes it on joining or declining, an owner on
+    // taking the invite back or deleting the workspace.
+    match /invites/{id} {
+      function validInvite(d) {
+        return d.keys().hasOnly(['workspaceId', 'email', 'name', 'memberCount', 'invitedBy', 'at'])
+          && isText(d.workspaceId, 128) && isText(d.email, 320) && d.email == d.email.lower()
+          && id == d.workspaceId + '_' + d.email
+          && isText(d.name, 200) && d.memberCount is int && d.memberCount >= 0 && d.memberCount <= 100000
+          && isText(d.invitedBy, 128) && d.at is number;
+      }
+      function mine(d) {
+        return signedIn() && request.auth.token.email_verified == true && d.email == myEmail();
+      }
+      allow read: if mine(resource.data) || isMember(resource.data.workspaceId);
+      allow create: if signedIn() && validInvite(request.resource.data)
+        && request.resource.data.invitedBy == request.auth.uid
+        && roleIn(workspaceAfter(request.resource.data.workspaceId)) == 'owner'
+        && request.resource.data.email in workspaceAfter(request.resource.data.workspaceId).invitedEmails;
+      allow update: if validInvite(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'memberCount'])
+        && canEdit(resource.data.workspaceId);
+      allow delete: if mine(resource.data) || isOwner(resource.data.workspaceId);
     }
 
     // What a person has seen of the onboarding (D-315): one doc, theirs alone, nothing else under users/{uid}. Shape

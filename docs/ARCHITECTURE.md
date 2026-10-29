@@ -137,9 +137,10 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
   ai/{docId}, aiUsage/{id}   the assistant's settings and usage log (D-079, D-104), kept for when it comes back
 inviteCodes/{code}      workspaceId, createdBy
 joinRequests/{wid}_{uid} workspaceId, uid, name, email, code, createdAt   (D-062)
+invites/{wid}_{email}   workspaceId, email, name, memberCount, invitedBy, at: what an invitee reads instead of the workspace (D-323)
 aiSecrets/{wid}         the workspace key, encrypted; no client reads or writes it (D-079)
 
-RTDB: presence/{wid}/{uid}   name, color, photo?, view ('canvas'), plane? (the plane in focus), x?, y? (that space's px),
+RTDB: presence/{wid}/{uid}   name, color, photo? (googleusercontent.com only, D-317), view ('canvas'), plane? (the plane in focus), x?, y? (that space's px),
                              sel?, more?, drag? (a task held, D-260), tasks? (the tasks side view's tab, D-300), since?, ts   (D-065, D-067, D-124, D-191)
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: members (`memberIds`) read them; owners and
@@ -160,9 +161,12 @@ RTDB: presence/{wid}/{uid}   name, color, photo?, view ('canvas'), plane? (the p
   types in `src/data/`).
 - "My workspaces" = `where('memberIds', 'array-contains', uid)`.
 - **Joining (D-062).** Two ways in, both checked by the rules:
-  - *Email invite:* the owner adds a lowercased address to `invitedEmails`. That person (signed in with a verified Google
-    address) can read the workspace doc, so it shows on their workspaces page (`where('invitedEmails', 'array-contains', email)`).
-    Accepting adds only yourself as `editor` and removes your address in the same write; declining only removes your address.
+  - *Email invite:* the owner adds a lowercased address to `invitedEmails` and writes `invites/{wid}_{email}` (the
+    workspace's name and member count) in the same batch. That person (signed in with a verified Google address) reads
+    only that invite, never the workspace doc (D-323), so it shows on their workspaces page (`where('email', '==', email)`).
+    Members keep the invite's name and count current (a rename; the owner's people page fills in any missing).
+    Accepting adds only yourself as `editor`, removes your address and deletes your invite in one batch; declining only
+    removes your address and your invite.
     No mail is sent (no server); the owner tells them.
   - *Code + approval:* read `inviteCodes/{code}` (get only) → create `joinRequests/{wid}_{uid}` carrying the code; the rules
     check it against the workspace's current `inviteCode`. The owner sees requests in Settings

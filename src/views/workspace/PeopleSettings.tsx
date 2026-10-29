@@ -1,7 +1,7 @@
 // Settings → workspace → people (D-062, D-098): who is in the workspace and their roles, who's asking to join, email
 // invites and the invite code. Owners change anyone's role (several owners are fine, never none) and remove people;
 // everyone else sees the list. The list loads only on this page, a page at a time.
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import { ROLES, type JoinRequest, type Role } from '../../data/model'
@@ -11,6 +11,7 @@ import {
   inviteEmail,
   isEmail,
   isOwnerOf,
+  syncInvites,
   normalizeEmail,
   ownerCount,
   removeMember,
@@ -73,7 +74,7 @@ export function PeopleSettings({ wid, workspace, requests }: Props) {
               </ul>
             )}
           </Row>
-          <EmailInvites wid={wid} invited={workspace.invitedEmails ?? []} onError={setError} />
+          <EmailInvites workspace={workspace} onError={setError} />
         </Section>
       )}
       <InviteCode wid={wid} workspace={workspace} isOwner={isOwner} run={run} />
@@ -224,7 +225,14 @@ function InviteCode({ wid, workspace, isOwner, run }: { wid: string; workspace: 
 }
 
 // No email is sent: the invite shows up on their workspaces page once they sign in with that Google address.
-function EmailInvites({ wid, invited, onError }: { wid: string; invited: string[]; onError: (e: string | null) => void }) {
+function EmailInvites({ workspace, onError }: { workspace: WorkspaceCtx['workspace']; onError: (e: string | null) => void }) {
+  const wid = workspace.id
+  const invited = workspace.invitedEmails ?? []
+  // Every address has its invite, with today's name and count (D-323); once each time the page opens.
+  useEffect(() => {
+    syncInvites(workspace).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [draft, setDraft] = useState('')
   const email = normalizeEmail(draft)
   const valid = isEmail(email)
@@ -233,7 +241,7 @@ function EmailInvites({ wid, invited, onError }: { wid: string; invited: string[
     e.preventDefault()
     if (!valid) return
     onError(null)
-    inviteEmail(wid, email)
+    inviteEmail(workspace, email)
       .then(() => setDraft(''))
       .catch((err: Error) => onError(err.message))
   }

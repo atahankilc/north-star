@@ -358,23 +358,23 @@ function Pending({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =>
     <Appear className={styles.pending}>
       <span className={styles.label}>waiting</span>
       <ul className={styles.pendingList}>
-        {invites.data.map((w) => (
-          <li key={w.id} className={styles.pendingItem}>
-            <span className={styles.pendingName}>{w.name}</span>
-            <span className={styles.pendingMeta}>invited you · {w.memberIds.length} {w.memberIds.length === 1 ? 'member' : 'members'}</span>
+        {invites.data.map((i) => (
+          <li key={i.id} className={styles.pendingItem}>
+            <span className={styles.pendingName}>{i.name}</span>
+            <span className={styles.pendingMeta}>invited you · {i.memberCount} {i.memberCount === 1 ? 'member' : 'members'}</span>
             <span className={styles.pendingActions}>
               <button
                 className={styles.action}
                 data-tone="primary"
                 disabled={busy !== null}
-                onClick={() => run(w.id, async () => {
-                  await acceptInvite(w.id, user)
-                  onJoined(w.id)
+                onClick={() => run(i.id, async () => {
+                  await acceptInvite(i.workspaceId, user)
+                  onJoined(i.workspaceId)
                 })}
               >
                 join
               </button>
-              <button className={styles.action} data-tone="danger" disabled={busy !== null} onClick={() => run(w.id, () => declineInvite(w.id, user.email ?? ''))}>
+              <button className={styles.action} data-tone="danger" disabled={busy !== null} onClick={() => run(i.id, () => declineInvite(i.workspaceId, user.email ?? ''))}>
                 decline
               </button>
             </span>
