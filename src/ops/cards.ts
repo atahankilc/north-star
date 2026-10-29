@@ -6,9 +6,13 @@ import { CANVAS, kindOf, type Label } from '../model/labels'
 import { TEXT_NAMES } from './text'
 import { MAIN } from '../model/canvases'
 import { GRID, snap } from '../model/grid'
-import { cardsOn, clearSpot, elsewhere, freeSpot, placeId, type Place } from '../model/placement'
+import { cardsOn, clearSpot, elsewhere, placeId, type Place } from '../model/placement'
+import { besideSpot, clearOffset, firstClear, type Box, type Obstacle } from '../model/layout'
+import { kindOfPiece } from '../model/pieces'
+import { arrangeAny, sceneOf, type Scene } from './arrange'
+import { project } from './project'
 import { criterionCascade } from './lens'
-import { DELETE, type OpCtx, type Plan, type Write } from './types'
+import { DELETE, OpsRefused, type OpCtx, type Plan, type Write } from './types'
 import { cardColl, cardData, cardIn, handleOf, once, one, plural, refuse, titleField } from './util'
 import { evidenceData, type EvidenceInput } from './evidence'
 
@@ -33,8 +37,21 @@ export type CreateCardArgs = {
 
 const OP = 'create_card'
 
-function planeW(ctx: OpCtx, plane: string) {
-  return ctx.ws.pieces.find((p) => p.id === plane)?.w ?? 960
+// What stays on a plane, for a new card to keep clear of (arrange's scene: the same boxes arrange keeps clear of).
+type Room = { scene: Scene; obstacles: Obstacle[]; bounds?: Box }
+function roomOn(ctx: OpCtx, plane: string): Room {
+  const piece = ctx.ws.pieces.find((p) => p.id === plane)
+  // Not a plane: validate refuses the plan; until then the spot is worked out on nothing.
+  if (!piece || kindOfPiece(piece) !== 'plane') return { scene: { things: [], carries: () => [], obstacles: () => [], packageHolding: () => undefined }, obstacles: [] }
+  const scene = sceneOf(ctx, { plane, canvas: '' })
+  return { scene, obstacles: scene.obstacles(new Set()), bounds: scene.bounds }
+}
+
+// A card's spot moved the least it takes to sit clear (on the grid, inside the plane when it can).
+function nudged(at: { x: number; y: number }, room: Room): { x: number; y: number } {
+  const b = { x: snap(at.x), y: snap(at.y), ...CARD }
+  const d = clearOffset([b], room.obstacles, room.bounds)
+  return { x: b.x + d.dx, y: b.y + d.dy }
 }
 
 export function createCard(ctx: OpCtx, args: CreateCardArgs): Plan {
@@ -45,14 +62,19 @@ export function createCard(ctx: OpCtx, args: CreateCardArgs): Plan {
   const type = args.type
   const here = cardsOn(ctx.ws.cards, ctx.ws.places, args.plane)
   const w = args.where
+  // Where the app picks the spot (no `where`, `near`, the parts): clear of everything on the plane, not only its cards
+  // (docs/specs/agent.md §2 point 4, §4.4): cards as drawn, text by labelBox, package frames, sections as frames (a card
+  // may sit wholly inside one, never across its edge or name strip). The UI's own drops (`x`/`y`, `at`) stay as they were.
+  const room = !w || 'near' in w || args.parts?.length ? roomOn(ctx, args.plane) : undefined
   let spot: { x: number; y: number }
   if (w && 'x' in w) spot = { x: w.x, y: w.y }
   else if (w && 'at' in w) spot = clearSpot(w.at, w.avoid ?? here)
   else if (w && 'near' in w) {
     const c = here.find((x) => x.id === w.near)
     if (!c) refuse(OP, `card ${String(w.near)} isn't on plane ${args.plane}`, 'name a card on that plane, or leave `where` out for the first clear spot')
-    spot = clearSpot([c.x + CARD.w + GRID + CARD.w / 2, c.y + CARD.h / 2], here)
-  } else spot = freeSpot(here, planeW(ctx, args.plane))
+    const anchor = room!.scene.things.find((t) => t.id === c.id)?.shown ?? { x: c.x, y: c.y, w: CARD.w, h: CARD.h }
+    spot = nudged(besideSpot(anchor, CARD, 'right'), room!)
+  } else spot = firstClear(CARD, room!.obstacles, room!.bounds)
   const now = ctx.now
   const ids: Record<string, string> = { [h]: id }
   const writes: Write[] = [
@@ -69,12 +91,12 @@ export function createCard(ctx: OpCtx, args: CreateCardArgs): Plan {
     ids[`${h}.link${i + 1}`] = eid
     writes.push({ coll: 'edges', id: eid, set: { fromId: from.id, fromType: from.type, toId: to.id, toType: to.type, kind: l.kind ?? defaultKind(from.type, to.type), ...(l.label ? { label: l.label } : {}) } })
   })
-  const taken = [...here, spot]
+  if (room) room.obstacles.push({ ...spot, ...CARD })
   ;(args.parts ?? []).forEach((p, i) => {
     const part = typeof p === 'string' ? { title: p } : p
     const pid = ctx.newId()
-    const s = clearSpot([spot.x + CARD.w / 2 + i * (CARD.w + GRID), spot.y + CARD.h * 2], taken)
-    taken.push(s)
+    const s = nudged({ x: spot.x + i * (CARD.w + GRID), y: spot.y + CARD.h + 2 * GRID }, room!)
+    room!.obstacles.push({ ...s, ...CARD })
     ids[`${h}.part${i + 1}`] = pid
     writes.push({ coll: cardColl(type), id: pid, set: { [titleField(type)]: part.title.slice(0, TITLE_MAX), pieceId: args.plane, ...s, ...cardData(type, part.fields as Record<string, unknown>, false), createdAt: now, updatedAt: now } })
     const eid = ctx.newId()
@@ -165,13 +187,28 @@ export function createPackage(ctx: OpCtx, args: CreatePackageArgs): Plan {
   const n = ctx.ws.cards.filter((c) => c.type === 'package').length + 1
   const id = ctx.newId()
   const now = ctx.now
-  return {
-    op,
-    label: 'package these',
-    writes: [{ coll: 'packages', id, set: { title: (args.name ?? `Package ${n}`).slice(0, TITLE_MAX), pieceId: plane, memberIds: members.map((m) => m.id).slice(0, 60), x: snap(x), y: snap(y), createdAt: now, updatedAt: now } }],
-    ids: { [handleOf(args)]: id },
-    meta: { kind: 'package' },
+  const set: Record<string, unknown> = { title: (args.name ?? `Package ${n}`).slice(0, TITLE_MAX), pieceId: plane, memberIds: members.map((m) => m.id).slice(0, 60), x: snap(x), y: snap(y), createdAt: now, updatedAt: now }
+  const writes: Write[] = [{ coll: 'packages', id, set }]
+  // Its frame (padding and the band on top, packageBox) mustn't cut what's round its members (agent.md §2 point 4,
+  // §4.4): when it would, the package moves clear as one, its members with it, in this same plan (one undo step).
+  // This is the UI's `package these` too (data/cards.ts' addPackage builds this op): that's meant, it never overlaps.
+  if (ctx.ws.pieces.some((p) => p.id === plane && kindOfPiece(p) === 'plane')) {
+    const there = { ...ctx, ws: project(ctx.ws, [{ op, label: '', writes, ids: {} }]) }
+    let moved: Write[] = []
+    try {
+      // arrange with a layout and no `where`: where it is, pushed clear when it would land on something.
+      moved = arrangeAny(there, { items: [id], plane, layout: 'grid' }).writes
+    } catch (e) {
+      // Its members inside another unfolded package that stays: arrange won't move them out of it, so it stays put.
+      if (!(e instanceof OpsRefused)) throw e
+    }
+    for (const m of moved) {
+      // Its own move goes into the doc it makes.
+      if (m.coll === 'packages' && m.id === id && m.patch) Object.assign(set, m.patch, { updatedAt: now })
+      else writes.push(m)
+    }
   }
+  return { op, label: 'package these', writes, ids: { [handleOf(args)]: id }, meta: { kind: 'package' } }
 }
 
 // ---- delete (cards and what hangs off them; links, evidence, competitor features, matches, text)

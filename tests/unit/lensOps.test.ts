@@ -12,7 +12,7 @@ import { updateMatrix } from '../../src/ops/matrix'
 import { updateTable } from '../../src/ops/table'
 import { axisAdd, axisRemove, axisUpdate, updateCell } from '../../src/ops/lens'
 import { buildBatch } from '../../src/ops/registry'
-import { axisEntries, editorChange, findEntry, oneChange } from '../../src/model/lens'
+import { axisEntries, editorChange, findCol, findEntry, oneChange } from '../../src/model/lens'
 import { entriesOf, type MatrixSetup } from '../../src/model/matrix'
 import type { TableSetup } from '../../src/model/table'
 import type { WorkspaceCtx } from '../../src/state/wsStore'
@@ -51,6 +51,17 @@ describe('model: rows and columns by name', () => {
     expect(findEntry(m.rows, ws.cards, LENS.square)).toMatchObject({ it: { key: LENS.square, name: 'Square' } })
     const many = findEntry(m.rows, ws.cards, 'orderly')
     expect('many' in many && many.many.map((e) => e.key).sort()).toEqual([ID.orderly, LENS.orderly2].sort())
+  })
+
+  it("findCol takes a column's head as shown: `cost (€)`, `cost €`, a card field's `status (card field)`; update_cell by it", () => {
+    const ws = lensWs()
+    const t = tableOf(ws)
+    for (const ref of ['cost', 'cost (€)', 'Cost  (€)', 'cost €']) expect(findCol(t, ref), ref).toMatchObject({ it: { id: LENS.cost } })
+    expect(findCol(t, 'status (card field)')).toMatchObject({ it: { id: LENS.status } })
+    expect(findCol(t, 'cost (h)')).toEqual({ none: true })
+    const ctx = ctxOf(ws)
+    const p = updateCell(ctx, { id: LENS.table, row: 'Loyalty stamps', col: 'cost (€)', value: 12 })
+    expect(cell(run(ctx, [p]), LENS.table, ID.loyalty, LENS.cost)?.value).toBe(12)
   })
 
   it('oneChange: add at the end, remove, swap, edit; anything else null', () => {

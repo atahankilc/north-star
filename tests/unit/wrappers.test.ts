@@ -80,7 +80,7 @@ vi.mock('firebase/firestore', () => {
 import { undo, useHistory } from '../../src/data/history'
 import { WS_COLLECTIONS, type Docs, type RawDoc } from '../../src/model/fromDocs'
 import { makeStore, registerStore } from '../../src/state/wsStore'
-import { addCard, deleteCard, deleteCards, discardCard, moveCard, retitleCard, updateCard, copyCards } from '../../src/data/cards'
+import { addCard, addPackage, deleteCard, deleteCards, discardCard, moveCard, retitleCard, updateCard, copyCards } from '../../src/data/cards'
 import { createEdge, deleteEdge, reverseEdge, updateEdge } from '../../src/data/edges'
 import { addEvidence, removeEvidence, updateEvidence } from '../../src/data/evidence'
 import { addCompetitorFeature, matchOurs, removeCompetitorFeature } from '../../src/data/competitorFeatures'
@@ -155,6 +155,25 @@ describe('data/ functions as ops', () => {
     await discardCard(WID, { id, type: 'idea' })
     expect(fake.data.has(path('ideas', id))).toBe(false)
     expect(useHistory.getState().past).toEqual([])
+  })
+
+  it("addPackage (the UI's `package these`) next to a tight neighbour moves its members clear as one; one ⌘Z undoes it all", async () => {
+    const docs = fixtureDocs()
+    docs.problems = docs.problems.map((p) => (p.id === ID.menu ? { ...p, x: 275 } : p))
+    seed(docs)
+    const before = new Map(fake.data)
+    const q = card(ID.queue)
+    const id = addPackage(WID, ID.planeA, [q], [q.x, q.y], 2)
+    await settle()
+    expect(fake.commits.n).toBe(1)
+    const moved = fake.data.get(path('problems', ID.queue))!
+    expect([moved.x, moved.y]).not.toEqual([50, 225])
+    expect(fake.data.get(path('packages', id))).toMatchObject({ x: moved.x, y: moved.y, memberIds: [ID.queue] })
+    expect(fake.data.get(path('problems', ID.menu))).toMatchObject({ x: 275, y: 225 })
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['package these'])
+    await undo()
+    await settle()
+    expect(new Map(fake.data)).toEqual(before)
   })
 
   it('typing a title merges into one step; the write is the title and updatedAt, as before', async () => {

@@ -1,0 +1,5 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": { "types": ["vite/client", "node"], "noEmit": true },
+  "include": [".", "../tests/unit/fixtures", "../tests/unit/evalGraders.test.ts", "../tests/unit/evalRunner.test.ts", "../src/agent/contract.ts", "../src/agent/stubModel.ts"]
+}

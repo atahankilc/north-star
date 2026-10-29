@@ -69,10 +69,17 @@ export function findRow(t: TableSetup, cards: Card[], ref: string): Found<Row> &
 
 export const rowLine = (r: Row) => `${r.name || '(unnamed)'} [${r.key}]`
 
+// What a column is called: its name, and its head as the view and the read layer show it (`cost (€)`, `cost €`; a card
+// field's `impact (card field)`).
+export function colNames(c: Column): string[] {
+  const n = colName(c)
+  return [n, ...(c.unit ? [`${n} (${c.unit})`, `${n} ${c.unit}`] : []), ...(c.field ? [`${c.field} (card field)`] : [])]
+}
+
 // A column by id or name; the name column as NAME_COL (`name`).
 export function findCol(t: TableSetup, ref: string): Found<Column | typeof NAME_COL> {
   if (ref === NAME_COL) return { it: NAME_COL }
-  const found = findNamed(t.cols, ref, (c) => [c.id], (c) => [colName(c)])
+  const found = findNamed(t.cols, ref, (c) => [c.id], colNames)
   return found
 }
 

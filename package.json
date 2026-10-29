@@ -18,6 +18,8 @@
     "check:memory": "node scripts/check-memory.mjs",
     "check:lessons": "node scripts/check-lessons.mjs",
     "test": "vitest run",
+    "eval": "node evals/cli.mjs",
+    "eval:quick": "node evals/cli.mjs --set regression",
     "lint": "eslint --max-warnings=-1 ."
   },
   "dependencies": {

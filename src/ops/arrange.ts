@@ -75,11 +75,11 @@ export type LayoutArgs = ArrangeArgs & {
 
 const OP = 'arrange'
 
-type Space = { plane: string | null; canvas: string }
+export type Space = { plane: string | null; canvas: string }
 type Kind = 'card' | 'text' | 'section' | 'piece'
 // Something in the space: its stored top-left (`at`), its box as the panel counts it (`box`: a card's 200 × 100, text's
 // labelBox, a piece's), as drawn (`shown`; null: hidden in a fold).
-type Thing = { id: string; kind: Kind; at: { x: number; y: number }; box: Box; shown: Box | null; card?: Card; label?: Label; pieceKind?: string }
+export type Thing = { id: string; kind: Kind; at: { x: number; y: number }; box: Box; shown: Box | null; card?: Card; label?: Label; pieceKind?: string }
 
 const TYPE_ORDER = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package']
 const TYPE_HEAD: Record<string, string> = { customer: 'Customers', problem: 'Problems', competitor: 'Competitors', idea: 'Ideas', feature: 'Features', package: 'Packages', sticky: 'Notes', heading: 'Headings', paragraph: 'Paragraphs', section: 'Sections', title: 'Title' }
@@ -324,7 +324,7 @@ function spaceOf(ctx: OpCtx, items: string[], args: LayoutArgs): Space {
   return s
 }
 
-type Scene = {
+export type Scene = {
   things: Thing[]
   bounds?: Box
   carries: (id: string) => string[]
@@ -333,7 +333,8 @@ type Scene = {
   packageHolding: (id: string) => string | undefined
 }
 
-function sceneOf(ctx: OpCtx, s: Space): Scene {
+// What's in a space and what stays there as obstacles; also how create_card and create_package find room (cards.ts).
+export function sceneOf(ctx: OpCtx, s: Space): Scene {
   const ws = ctx.ws
   const things: Thing[] = []
   const labels = ws.labels.filter((l) => (s.plane ? l.pieceId === s.plane : l.pieceId === CANVAS && canvasOf(l) === s.canvas))

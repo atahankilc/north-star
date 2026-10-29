@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S11 next (eval harness: fixtures, task files, runner, graders, report; ~40 tasks; stub model). S1–S10 done.
+S12 next (OpenAI Responses adapter + the loop + a dev stub model `?agentStub=1`; plugs into src/agent/contract.ts and evals' runTurn). S1–S11 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -177,6 +177,14 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   defanged (NFKC, zero-width); 3 generated fixtures + golden files · reviewer: 1 fix round (names leaking a closing
   tag outside the wrapper, crashes on dangling refs, loose tool args, silent zero results, no comment listing), then
   pass: 20/20 "where is / what is" questions answerable from the map + ≤ 2 calls, 0 injection leaks over 9 variants.
+- S11 · see `git log --grep "Agent S11"` · `evals/` (41 tasks: find 10, edit 8, build 8, context 6, refuse 4,
+  injection 5; 25 regression, 16 capability; graded on the end state: onlyChanged, cites(only), grouped/under,
+  noOverlaps, noWriteAttempts, answerExcludes, undoRestores per TURN, made(kind), judge stub; in-memory env with the
+  real validate/project; plausible wrong script per task; report with cost/cached/reasoning, pass^k; `npm run eval`,
+  `eval:quick`), `src/agent/contract.ts` (AgentModel/AgentEnv/Transcript, Responses-API ready), `src/agent/stubModel.ts`;
+  op fixes: create_card lands clear of text/sections, create_package pushes members clear, findCol takes "cost (€)" ·
+  reviewer: 1 fix round (graders passed plausible-wrong work: 15 loopholes, all closed but one narrow `asked()` case)
+  · eval: 37/41 pass + 4 unjudged (no judge model yet), `--wrong` 0/41.
 
 ### Stuck
 _(none)_
@@ -193,6 +201,9 @@ _(questions, choices made on their behalf, anything that needs a key or a design
 - S10 (chosen): no real workspace is exported for fixtures (never touch live data); the three fixtures are generated
   (small, medium, big ≈ 1500 cards). Token counts are an estimate (chars/3.6, no tokenizer dependency); check the
   15k-token map target with a real tokenizer once a key is in.
+- Chosen in S11 (easy to undo): making a package (the UI's `package these` too) now moves its members clear as one
+  unit when the new frame would cover a neighbour, instead of overlapping. The eval runner has no Firestore-emulator
+  mode yet (the real apply needs the browser app); it runs the same ops in memory. Build it before S13's gate.
 - Chosen in S8 (easy to undo): the agent's `update_deck tasks_to: 'new_deck'` moves the TASKS to a new deck and the
   current one holds cards (the UI's "[make a new deck for cards]" does the reverse via create_piece); a task can be
   given to a member or to anyone a task is already given to.
@@ -254,3 +265,10 @@ _(the reviewers' and builders' "could be better", not done yet)_
   tall); let groups sit side by side past the plane's width or pack more columns per group. The facade has no guard
   for an open hazard confirm or (later) the preview lock: add one in S15. `window.__agentUi` registers only once
   something imports src/agent/ui.ts (S14 will).
+- **CI (from session north-star-f8):** CI now runs `npm test`, check:lessons, `npm run lint` and build:functions before
+  the Pages build; a failing tests/unit test stops the deploy. Every step must keep full `npm test` green and lint
+  error-free. Commits up to 3bc7a9c (S1–S9) were pushed by that session at the user's request.
+- S11 reviewer: 8/126 one-card packages still cut neighbours on p9 when the card is already in an unfolded package
+  (moving it changes the old frame): refuse packaging a card already in an unfolded package, or move the old frame
+  too. `asked()` should need a question word, not only "?". Decide whether unjudged regression tasks fail the run
+  once a judge exists. The eval emulator mode is still to build before S13's gate.

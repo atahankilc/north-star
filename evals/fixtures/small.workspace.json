@@ -1,0 +1,699 @@
+{
+ "format": "north-star.workspace",
+ "version": 2,
+ "exportedAt": "2026-11-03T12:00:00.000Z",
+ "workspace": {
+  "name": "Tablebook",
+  "description": "Ordering ahead for small cafés"
+ },
+ "documents": [
+  {
+   "id": "docu0000000000000001",
+   "kind": "markdown",
+   "title": "Interview notes — Anna",
+   "excerpt": "Anna runs two cafés and loses orders every morning.",
+   "origin": "upload",
+   "name": "Alice",
+   "shared": true,
+   "contentType": "text/markdown",
+   "size": 246,
+   "words": 50,
+   "createdAt": 1790000000005,
+   "updatedAt": 1790000000005,
+   "body": {
+    "text": "# Interview notes — Anna\n\n## Summary\n\nAnna runs two cafés and loses orders every morning.\n\n## Quotes\n\n- \"People leave when the queue reaches the door.\"\n- \"I would pay for pre-orders if it is not another tablet.\"\n\n## Next steps\n\nVisit on a Sunday."
+   }
+  }
+ ],
+ "pieces": [
+  {
+   "id": "deck0000000000000004",
+   "kind": "kanban",
+   "x": 0,
+   "y": 700,
+   "w": 900,
+   "h": 500,
+   "name": "Build",
+   "kanban": {
+    "cols": [
+     {
+      "id": "todo",
+      "name": "todo"
+     },
+     {
+      "id": "doing",
+      "name": "doing"
+     },
+     {
+      "id": "done",
+      "name": "done",
+      "done": true
+     }
+    ]
+   },
+   "stuckTo": "planeA00000000000001",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "deck0000000000000005",
+   "kind": "kanban",
+   "x": 0,
+   "y": 1300,
+   "w": 900,
+   "h": 500,
+   "name": "Ops",
+   "kanban": {
+    "cols": [
+     {
+      "id": "todo",
+      "name": "Todo"
+     },
+     {
+      "id": "review",
+      "name": "review",
+      "limit": 3
+     },
+     {
+      "id": "shipped",
+      "name": "shipped",
+      "done": true
+     }
+    ]
+   },
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "deck0000000000000006",
+   "kind": "kanban",
+   "x": 1000,
+   "y": 1300,
+   "w": 900,
+   "h": 500,
+   "name": "Build",
+   "kanban": {
+    "cols": [
+     {
+      "id": "k1",
+      "name": "todo"
+     }
+    ],
+    "holds": "cards",
+    "colField": "status",
+    "source": {
+     "rules": [
+      {
+       "field": "type",
+       "values": [
+        "feature"
+       ]
+      }
+     ],
+     "items": []
+    }
+   },
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "dlst0000000000000008",
+   "kind": "documents",
+   "x": 2200,
+   "y": 600,
+   "w": 800,
+   "h": 450,
+   "name": "Research",
+   "documents": {
+    "view": "table"
+   },
+   "createdAt": 1790000000003,
+   "updatedAt": 1790000000003
+  },
+  {
+   "id": "dpie0000000000000009",
+   "kind": "document",
+   "x": 3100,
+   "y": 600,
+   "w": 650,
+   "h": 500,
+   "docId": "docu0000000000000001",
+   "createdAt": 1790000000004,
+   "updatedAt": 1790000000004
+  },
+  {
+   "id": "matrix00000000000003",
+   "kind": "matrix",
+   "x": 1100,
+   "y": 700,
+   "w": 800,
+   "h": 500,
+   "name": "Rivals",
+   "matrix": {
+    "rows": {
+     "type": "competitor",
+     "items": [
+      {
+       "id": "sq0001",
+       "name": "Square"
+      }
+     ]
+    },
+    "cols": {
+     "type": "feature",
+     "plane": "planeB00000000000002",
+     "items": [],
+     "unfold": "criteria"
+    },
+    "cell": "scale",
+    "steps": [
+     {
+      "id": "none",
+      "glyph": "○",
+      "label": "none",
+      "tone": "dim"
+     },
+     {
+      "id": "partial",
+      "glyph": "◐",
+      "label": "partial",
+      "tone": "yellow"
+     },
+     {
+      "id": "full",
+      "glyph": "●",
+      "label": "full",
+      "tone": "cyan"
+     }
+    ],
+    "notRelevant": true
+   },
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "planeA00000000000001",
+   "kind": "plane",
+   "x": 0,
+   "y": 0,
+   "w": 960,
+   "h": 600,
+   "name": "Customers",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "planeB00000000000002",
+   "kind": "plane",
+   "x": 1100,
+   "y": 0,
+   "w": 960,
+   "h": 600,
+   "name": "Market",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "table000000000000007",
+   "kind": "table",
+   "x": 2200,
+   "y": 0,
+   "w": 800,
+   "h": 400,
+   "name": "Backlog",
+   "table": {
+    "rows": {
+     "rules": [
+      {
+       "field": "type",
+       "values": [
+        "feature"
+       ]
+      }
+     ],
+     "items": [
+      {
+       "id": "r00001",
+       "name": "Ops work"
+      }
+     ]
+    },
+    "cols": [
+     {
+      "id": "tc0001",
+      "field": "status"
+     },
+     {
+      "id": "tc0002",
+      "name": "cost",
+      "kind": "number",
+      "unit": "€"
+     },
+     {
+      "id": "tc0003",
+      "name": "done",
+      "kind": "check"
+     },
+     {
+      "id": "tc0004",
+      "name": "risk",
+      "kind": "scale",
+      "steps": [
+       {
+        "id": "low",
+        "glyph": "▁",
+        "label": "low",
+        "tone": "dim"
+       },
+       {
+        "id": "high",
+        "glyph": "█",
+        "label": "high",
+        "tone": "magenta"
+       }
+      ]
+     }
+    ],
+    "sort": {
+     "col": "tc0002"
+    }
+   },
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "time0000000000000007",
+   "kind": "timeline",
+   "x": 950,
+   "y": 700,
+   "w": 900,
+   "h": 400,
+   "stuckTo": "deck0000000000000004",
+   "timeline": {},
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "customers": [
+  {
+   "id": "cust0000000000000001",
+   "pieceId": "planeA00000000000001",
+   "title": "Anna, café owner",
+   "x": 50,
+   "y": 50,
+   "tags": [
+    "smb"
+   ],
+   "validation": "testing",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000,
+   "body": "Runs two cafés in Berlin."
+  },
+  {
+   "id": "cust0000000000000002",
+   "pieceId": "planeA00000000000001",
+   "title": "Baristas at rush hour",
+   "x": 300,
+   "y": 50,
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "problems": [
+  {
+   "id": "prob0000000000000001",
+   "pieceId": "planeA00000000000001",
+   "title": "Morning queues lose sales",
+   "x": 50,
+   "y": 225,
+   "validation": "validated",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "prob0000000000000002",
+   "pieceId": "planeA00000000000001",
+   "title": "Menus change daily",
+   "x": 300,
+   "y": 225,
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "competitors": [
+  {
+   "id": "comp0000000000000001",
+   "pieceId": "planeB00000000000002",
+   "name": "Orderly",
+   "x": 50,
+   "y": 50,
+   "regions": [
+    "Germany"
+   ],
+   "url": "https://orderly.example",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000,
+   "notes": "Big in DACH."
+  },
+  {
+   "id": "comp0000000000000002",
+   "pieceId": "planeB00000000000002",
+   "name": "Orderly",
+   "x": 50,
+   "y": 300,
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "ideas": [
+  {
+   "id": "idea0000000000000001",
+   "pieceId": "planeA00000000000001",
+   "title": "Pre-order from the street",
+   "x": 550,
+   "y": 225,
+   "validation": "hypothesis",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "features": [
+  {
+   "id": "feat0000000000000001",
+   "pieceId": "planeB00000000000002",
+   "title": "QR table ordering",
+   "x": 300,
+   "y": 50,
+   "priority": "P1",
+   "status": "planned",
+   "impact": "high",
+   "effort": "M",
+   "criteria": [
+    {
+     "id": "c1",
+     "text": "works offline"
+    }
+   ],
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "feat0000000000000002",
+   "pieceId": "planeB00000000000002",
+   "title": "Loyalty stamps",
+   "x": 550,
+   "y": 50,
+   "impact": "medium",
+   "effort": "S",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "packages": [
+  {
+   "id": "pack0000000000000001",
+   "pieceId": "planeB00000000000002",
+   "title": "Package 1",
+   "x": 300,
+   "y": 300,
+   "memberIds": [
+    "feat0000000000000001",
+    "feat0000000000000002"
+   ],
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "competitorFeatures": [
+  {
+   "id": "cfea0000000000000001",
+   "competitorId": "comp0000000000000001",
+   "name": "Table QR",
+   "category": "ordering",
+   "availability": "paid",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "comparisons": [
+  {
+   "id": "feat0000000000000001_comp0000000000000001",
+   "featureId": "feat0000000000000001",
+   "competitorId": "comp0000000000000001",
+   "competitorFeatureId": "cfea0000000000000001",
+   "criteria": {
+    "c1": "part"
+   },
+   "updatedAt": 1790000000000
+  }
+ ],
+ "edges": [
+  {
+   "id": "edge0000000000000001",
+   "fromId": "prob0000000000000001",
+   "fromType": "problem",
+   "toId": "cust0000000000000001",
+   "toType": "customer",
+   "kind": "for"
+  },
+  {
+   "id": "edge0000000000000002",
+   "fromId": "idea0000000000000001",
+   "fromType": "idea",
+   "toId": "prob0000000000000001",
+   "toType": "problem",
+   "kind": "solves"
+  },
+  {
+   "id": "edge0000000000000003",
+   "fromId": "comp0000000000000001",
+   "fromType": "competitor",
+   "toId": "idea0000000000000001",
+   "toType": "idea",
+   "kind": "competes-with",
+   "label": "same pitch"
+  },
+  {
+   "id": "edge0000000000000004",
+   "fromId": "feat0000000000000001",
+   "fromType": "feature",
+   "toId": "idea0000000000000001",
+   "toType": "idea",
+   "kind": "inspired-by"
+  }
+ ],
+ "evidence": [
+  {
+   "id": "evid0000000000000001",
+   "nodeId": "cust0000000000000001",
+   "nodeType": "customer",
+   "kind": "interview",
+   "text": "Loses ~20 orders every morning",
+   "stance": "supports",
+   "date": "2026-10-01",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "labels": [
+  {
+   "id": "labl0000000000000001",
+   "pieceId": "canvas",
+   "text": "Who we beat",
+   "size": "heading",
+   "kicker": "02",
+   "x": 0,
+   "y": -200,
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "labl0000000000000002",
+   "pieceId": "planeA00000000000001",
+   "text": "Ask Anna about Sundays",
+   "kind": "sticky",
+   "x": 600,
+   "y": 50,
+   "uid": "u-alice",
+   "author": "Alice",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "labl0000000000000010",
+   "pieceId": "planeA00000000000001",
+   "text": "Ideas",
+   "kind": "section",
+   "x": 525,
+   "y": 0,
+   "w": 450,
+   "h": 375,
+   "createdAt": 1790000000001,
+   "updatedAt": 1790000000001
+  },
+  {
+   "id": "labl0000000000000020",
+   "pieceId": "canvas",
+   "kind": "title",
+   "text": "",
+   "x": -800,
+   "y": -700,
+   "createdAt": 1790000000002
+  }
+ ],
+ "cells": [
+  {
+   "id": "matrix00000000000003_comp0000000000000001_feat0000000000000001",
+   "matrixId": "matrix00000000000003",
+   "row": "comp0000000000000001",
+   "col": "feat0000000000000001",
+   "value": "full",
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "matrix00000000000003_comp0000000000000001_feat0000000000000001~c1",
+   "matrixId": "matrix00000000000003",
+   "row": "comp0000000000000001",
+   "col": "feat0000000000000001~c1",
+   "value": "partial",
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "matrix00000000000003_comp0000000000000001_feat0000000000000002",
+   "matrixId": "matrix00000000000003",
+   "row": "comp0000000000000001",
+   "col": "feat0000000000000002",
+   "value": "partial",
+   "confidence": "guess",
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "matrix00000000000003_sq0001_feat0000000000000001",
+   "matrixId": "matrix00000000000003",
+   "row": "sq0001",
+   "col": "feat0000000000000001",
+   "value": "none",
+   "notes": "no QR",
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "table000000000000007_feat0000000000000001_tc0002",
+   "matrixId": "table000000000000007",
+   "row": "feat0000000000000001",
+   "col": "tc0002",
+   "value": 1200,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "table000000000000007_r00001_tc0002",
+   "matrixId": "table000000000000007",
+   "row": "r00001",
+   "col": "tc0002",
+   "value": 300,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "table000000000000007_r00001_tc0003",
+   "matrixId": "table000000000000007",
+   "row": "r00001",
+   "col": "tc0003",
+   "value": "yes",
+   "updatedAt": 1790000000000
+  }
+ ],
+ "tasks": [
+  {
+   "id": "task0000000000000001",
+   "pieceId": "deck0000000000000004",
+   "col": "todo",
+   "order": 1,
+   "title": "Interview three more owners",
+   "uid": "u-alice",
+   "cardId": "cust0000000000000001",
+   "cardType": "customer",
+   "due": "2026-11-05",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "task0000000000000002",
+   "pieceId": "deck0000000000000004",
+   "col": "doing",
+   "order": 1,
+   "title": "Prototype the QR flow",
+   "uid": "u-bob",
+   "assignee": "u-bob",
+   "assigneeName": "Bob",
+   "cardId": "feat0000000000000001",
+   "cardType": "feature",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "task0000000000000003",
+   "pieceId": "deck0000000000000004",
+   "col": "todo",
+   "order": 2,
+   "title": "Write the pitch",
+   "uid": "u-alice",
+   "start": "2026-11-01",
+   "due": "2026-11-10",
+   "labels": [
+    "pitch"
+   ],
+   "priority": "P2",
+   "checks": [
+    {
+     "id": "ch1",
+     "text": "outline"
+    },
+    {
+     "id": "ch2",
+     "text": "slides",
+     "done": true
+    }
+   ],
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  },
+  {
+   "id": "task0000000000000004",
+   "pieceId": "deck0000000000000005",
+   "col": "review",
+   "order": 1,
+   "title": "Check the invoices",
+   "uid": "u-bob",
+   "createdAt": 1790000000000,
+   "updatedAt": 1790000000000
+  }
+ ],
+ "places": [
+  {
+   "id": "planeB00000000000002_cust0000000000000001",
+   "planeId": "planeB00000000000002",
+   "cardId": "cust0000000000000001",
+   "type": "customer",
+   "x": 50,
+   "y": 300,
+   "createdAt": 1790000000000
+  }
+ ],
+ "canvases": [
+  {
+   "id": "canv0000000000000002",
+   "name": "Engineering",
+   "order": 1,
+   "createdAt": 1790000000000
+  }
+ ],
+ "pieceSpots": [
+  {
+   "id": "canv0000000000000002_planeB00000000000002",
+   "canvasId": "canv0000000000000002",
+   "pieceId": "planeB00000000000002",
+   "x": 0,
+   "y": 0,
+   "createdAt": 1790000000000
+  }
+ ]
+}
