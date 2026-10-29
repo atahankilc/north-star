@@ -49,3 +49,7 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 - Reduced motion and light theme must always work when chosen: every animation reads `useMotion().reduced` /
   `isReducedMotion()`, CSS colours come from tokens (light values under `[data-theme='light']`), WebGL colours from `usePalette()`.
 - Do not start work that depends on a `blocking` open question without asking the user.
+- Onboarding (D-315): every new user-facing feature, or a real change to one, ships in the same change with its
+  lesson in `src/onboarding/lessons.ts` (words, trigger, scene; a changed feature bumps its lesson's version) and a
+  line in `src/onboarding/releases.ts`; `npm run check:lessons` must pass. Until onboarding is built, add or change
+  the lesson in `docs/specs/onboarding-lessons.md` instead.

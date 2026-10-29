@@ -103,8 +103,8 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
 4. A lesson is data (`lessons.ts`), not code: id, version, roles, trigger, anchor, pages (title, body, scene), after,
    since. The renderer is one component. `npm run check:lessons` lints the data (§8).
 5. Demos never touch Firebase: the demo frame has no Firestore, RTDB, Auth or Storage traffic (checked, §8).
-6. Every new user-facing feature after this ships with its lesson and a release line (proposed for CLAUDE.md,
-   see §11 Q-027).
+6. Every new user-facing feature after this ships with its lesson and a release line (a CLAUDE.md hard rule since
+   2026-10-29, Q-027). `check:lessons` is what that rule runs.
 
 ---
 
@@ -402,8 +402,9 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
   the user deploys the rules once (`npm run test:rules`, then the deploy).
 - **Q-026 · answered 2026-10-29: everyone starts as new.** Nothing was recorded before, so people who used North
   Star before see the welcome and every lesson too. What's new is only for releases after onboarding ships.
-- **Q-027 · later · a rule for the future**: "every new user-facing feature ships with its lesson and a release
-  line". Default: added to CLAUDE.md's hard rules by you (the run doesn't edit CLAUDE.md).
+- **Q-027 · answered 2026-10-29: in CLAUDE.md's hard rules** (the user had it added): every new user-facing feature
+  ships with its lesson in `lessons.ts` and a line in `releases.ts`, `check:lessons` passing; until onboarding is
+  built, in onboarding-lessons.md.
 - **Q-028 · the look: decided by the user in the morning, from the real thing.** The user (2026-10-29, away for the
   night): "build every option for each if needed, I don't care". So the run **builds all 2–3 options** of each frame
   (the welcome modal, the lesson card, the kind guide, the `?` guide) as real components, switchable live with a

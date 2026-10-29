@@ -11,12 +11,7 @@ The agent's questions Q-019–Q-024 were answered by D-312.
 
 ---
 
-_Q-025 and Q-026 were answered in D-315._
-
-### Q-027 · later · A rule for every future feature (D-315)
-Recommendation: add to CLAUDE.md's hard rules "every new user-facing feature ships with its lesson
-(`src/onboarding/lessons.ts`) and a release line (`releases.ts`); `npm run check:lessons` passes". Only the user edits
-CLAUDE.md.
+_Q-025, Q-026 and Q-027 were answered in D-315._
 
 ### Q-028 · later · The onboarding's look (D-315)
 The run builds every option (2–3 per frame) behind a dev-only switch, the recommended one the default; the user

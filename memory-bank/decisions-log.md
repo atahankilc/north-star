@@ -5782,5 +5782,8 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
   whether the run builds everything just to show it: the ~60 lessons are data a few frames draw; then, going to sleep:
   "gerekirse her opsiyonu her biri için implemente et, umrumda değil", so the run builds every frame option behind a
   dev-only switch and the user picks in the morning (Q-028).
-- *Open:* Q-027 (a CLAUDE.md rule: every new feature ships its lesson), Q-028 (the look). The run uses the defaults.
+- *Q-027, answered the same day* ("Q-027'yi CLAUDE.md'ye ekle"): a hard rule in CLAUDE.md: every new user-facing
+  feature, or a real change to one, ships with its lesson in `lessons.ts` and a line in `releases.ts`,
+  `check:lessons` passing; until onboarding is built, in onboarding-lessons.md.
+- *Open:* Q-028 (the look): every option built, the user picks in the morning.
 - *Not yet:* everything: onboarding-run.md's steps O0–O16.

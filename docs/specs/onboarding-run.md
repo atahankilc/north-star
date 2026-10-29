@@ -67,7 +67,7 @@ the same time: the two leads share the repo, the emulators and the machine._
 - put the ASCII effect over text, or let a demo frame make any network request to Firebase;
 - change a rule of onboarding.md §3 without logging it under "For the user".
 When unsure: pick the choice that's easiest to undo, write it under "For the user", keep going. The questions in
-onboarding.md §11: Q-025, Q-026 answered; Q-028: build every look option (the user's words); Q-027 has a default: use it.
+onboarding.md §11: Q-025, Q-026, Q-027 answered; Q-028: build every look option (the user's words).
 
 ### 1.4 After every step
 1. Checks: `npm run build`; `npm run check:lessons` (from O2); `npx vitest run` (once it exists); `npm run test:rules`
@@ -133,7 +133,6 @@ _(none)_
 - Deploy the rules once O1 is committed and you've read them: `npm run test:rules`, then
   `npx firebase deploy --only firestore:rules --project north-star-db` (until then, seen-state lives in the browser).
 - **Pick a look** (Q-028): every option is built; compare them in the shots gallery or live with `?look=…` (onboarding.md §11). Say which per frame; the others get deleted.
-- Q-027 in onboarding.md §11: the run used the default (Q-025, Q-026 answered before the run).
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
