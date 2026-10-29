@@ -48,10 +48,11 @@ export function PeopleHere() {
       e.stopPropagation()
       setListOpen(false)
     }
-    window.addEventListener('pointerdown', onDown)
+    // Capture: the canvas stops its own pointerdown from reaching the window.
+    window.addEventListener('pointerdown', onDown, true)
     window.addEventListener('keydown', onKey, true)
     return () => {
-      window.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointerdown', onDown, true)
       window.removeEventListener('keydown', onKey, true)
     }
   }, [listOpen])

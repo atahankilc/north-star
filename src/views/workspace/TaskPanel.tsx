@@ -310,7 +310,9 @@ function Due({ task, finished, editor, n }: { task: Task; finished: boolean; edi
   const late = overdue(task, finished)
   const days = task.start && task.due ? Math.round((Date.parse(task.due) - Date.parse(task.start)) / 86400000) + 1 : 0
   const setStart = (start: string) => void updateTask(wid, task, start && task.due && start > task.due ? { start, due: start } : { start: start || undefined }, start ? 'set a first day' : 'clear a first day')
-  const setDue = (due: string) => void updateTask(wid, task, due && task.start && due < task.start ? { start: due, due } : { due: due || undefined }, due ? 'set a due day' : 'clear a due day')
+  // No due day, no first day either: a task without one sits in the tray, and an old first day would come back with
+  // the next due day.
+  const setDue = (due: string) => void updateTask(wid, task, !due ? { start: undefined, due: undefined } : task.start && due < task.start ? { start: due, due } : { due }, due ? 'set a due day' : 'clear a due day')
   return (
     <PanelSection n={n} name="when" count={task.due ? `${task.start ? `${dueText(task.start)} → ` : ''}${dueText(task.due)}${days > 1 ? ` · ${days} days` : ''}` : undefined}>
       <div className={own.row}>

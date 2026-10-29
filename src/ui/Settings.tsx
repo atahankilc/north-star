@@ -182,7 +182,7 @@ function ThemeChoice() {
             : 'Light on black, the way North Star was drawn.'
       }
     >
-      <Choice label="theme" bare options={THEME} value={pref} onChange={(p) => setPref(p ?? 'dark')} />
+      <Choice label="theme" bare options={THEME} value={pref} onChange={setPref} />
     </Row>
   )
 }
@@ -202,7 +202,7 @@ function MotionChoice() {
             : 'All animations on, whatever your system says.'
       }
     >
-      <Choice label="motion" bare options={MOTION} value={pref} onChange={(p) => setPref(p ?? 'full')} />
+      <Choice label="motion" bare options={MOTION} value={pref} onChange={setPref} />
     </Row>
   )
 }
@@ -215,7 +215,7 @@ function BackgroundChoice() {
       label="background"
       hint={background === 'on' ? 'The ASCII field flows behind your pages.' : "No background animation while you're signed in. Uses less power."}
     >
-      <Choice label="background" bare options={BACKGROUND} value={background} onChange={(b) => setBackground(b ?? 'on')} />
+      <Choice label="background" bare options={BACKGROUND} value={background} onChange={setBackground} />
     </Row>
   )
 }

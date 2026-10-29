@@ -65,7 +65,7 @@ type Props = {
   // A scope's name (D-193): the plane whose console opened the panel.
   scopeName?: (id: string) => string
   // With several canvases (D-302's session 4): the one shown, and whether a thread is on it (`on this canvas`).
-  canvasScope?: { name: string; has: (t: WithId<Thread>) => boolean }
+  canvasScope?: { id: string; name: string; has: (t: WithId<Thread>) => boolean }
   // The thread half (D-197): owners delete any thread; the target in its header shows it where it is.
   isOwner: boolean
   onShow: (t: WithId<Thread>) => void
@@ -102,9 +102,9 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
   const onCanvas = scope === THIS_CANVAS && !!canvasScope
   const threads = useMemo(
     () => (onCanvas ? all.filter(canvasScope!.has) : scope && scope !== THIS_CANVAS ? all.filter((t) => (inside ? inside(t, scope) : t.planeId === scope)) : all),
-    // `canvasScope.has` reads the canvas shown, which this is drawn again for.
+    // `canvasScope.has` reads the canvas shown, which this is drawn again for (by id: two canvases may share a name).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [all, scope, inside, onCanvas, canvasScope?.name],
+    [all, scope, inside, onCanvas, canvasScope?.id],
   )
   const openId = useThreadView((s) => s.openId)
   const draft = useThreadView((s) => s.draft)

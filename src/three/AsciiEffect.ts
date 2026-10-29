@@ -152,6 +152,7 @@ export class AsciiEffect {
   private target: WebGLRenderTarget
   private material: ShaderMaterial
   private quad: Scene
+  private geometry = new PlaneGeometry(2, 2)
   private camera = new OrthographicCamera()
   private buffer = new Vector2()
 
@@ -190,7 +191,7 @@ export class AsciiEffect {
         uDusk: { value: new Color() },
       },
     })
-    const mesh = new Mesh(new PlaneGeometry(2, 2), this.material)
+    const mesh = new Mesh(this.geometry, this.material)
     mesh.frustumCulled = false
     this.quad = new Scene().add(mesh as Object3D)
 
@@ -246,6 +247,7 @@ export class AsciiEffect {
   }
 
   dispose() {
+    this.geometry.dispose()
     this.atlas.dispose()
     this.target.dispose()
     this.material.dispose()

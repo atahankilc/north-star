@@ -2,7 +2,7 @@
 // comes in a few hard steps, and ASCII tape `╱╱╱` wraps round it from the box outwards, runs once and stops; the text
 // settles out of glyphs (DecodeText). Leaving, the box breaks apart cell by cell (D-034). Reduced motion: the tape is
 // just there, nothing moves. A native <dialog>: focus stays inside (on cancel first), Escape cancels.
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { isReducedMotion } from '../state/motion'
 import { runCells } from './Appear'
@@ -38,6 +38,7 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
   const alsoBtn = useRef<HTMLButtonElement>(null)
   const leaving = useRef(false)
   const reduced = isReducedMotion()
+  const titleId = useId()
 
   useEffect(() => {
     const d = dialog.current
@@ -124,7 +125,7 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
       ref={dialog}
       className={styles.dialog}
       data-reduced={reduced || undefined}
-      aria-labelledby="hazard-title"
+      aria-labelledby={titleId}
       // React passes events up through the portal: whatever's under it (the canvas) mustn't get the press.
       onPointerDown={(e) => e.stopPropagation()}
       onCancel={(e) => {
@@ -134,8 +135,8 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
     >
       <div className={styles.veil} aria-hidden />
       <canvas ref={canvas} className={styles.tape} aria-hidden />
-      <div ref={box} className={styles.box} role="alertdialog" aria-labelledby="hazard-title">
-        <h2 id="hazard-title" className={styles.title}>
+      <div ref={box} className={styles.box} role="alertdialog" aria-labelledby={titleId}>
+        <h2 id={titleId} className={styles.title}>
           <DecodeText text={title} duration={500} delay={100} />
         </h2>
         {lines.map((line, i) => (

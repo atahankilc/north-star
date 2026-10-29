@@ -1,18 +1,17 @@
-// One row of `[P1] P2 P3`. Clicking the active option clears it.
+// One row of `[P1] P2 P3`. Clicking the active option clears it only when it's `clearable`; else it stays picked.
 import styles from './Choice.module.css'
 
 type Props<T extends string> = {
   label: string
   options: readonly T[]
   value: T | undefined
-  onChange: (v: T | undefined) => void
   // Optional colour per option for the active state.
   tones?: Partial<Record<T, string>>
   // Only the options; the label is still read out (a settings Row shows its own, D-097).
   bare?: boolean
-}
+} & ({ clearable: true; onChange: (v: T | undefined) => void } | { clearable?: false; onChange: (v: T) => void })
 
-export function Choice<T extends string>({ label, options, value, onChange, tones, bare }: Props<T>) {
+export function Choice<T extends string>({ label, options, value, tones, bare, ...pick }: Props<T>) {
   const group = (
     <span className={styles.options} role="radiogroup" aria-label={label}>
       {options.map((o) => (
@@ -26,7 +25,7 @@ export function Choice<T extends string>({ label, options, value, onChange, tone
           data-active={value === o}
           data-tone={tones?.[o] ? '' : undefined}
           style={tones?.[o] ? { ['--tone' as string]: tones[o] } : undefined}
-          onClick={() => onChange(value === o ? undefined : o)}
+          onClick={() => (pick.clearable ? pick.onChange(value === o ? undefined : o) : value !== o && pick.onChange(o))}
         >
           {o}
         </button>

@@ -272,7 +272,9 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
   layoutRef.current = layout
   const selected = useKanbanUi((s) => s.selected?.task ?? null)
   const mode = piece.timeline?.rows ?? 'kanban'
-  const field = useMemo(() => (mode === 'kanban' ? null : taskRows(mode, cards, { me, names: new Map() })), [mode, cards, me])
+  // Who each person is, from the tasks given to them: a drop on Bob's row keeps his name on the task.
+  const names = useMemo(() => new Map(tasks.flatMap((t) => (t.assignee && t.assigneeName ? [[t.assignee, t.assigneeName] as const] : []))), [tasks])
+  const field = useMemo(() => (mode === 'kanban' ? null : taskRows(mode, cards, { me, names })), [mode, cards, me, names])
   const fullH = TOP + 8 + layout.rowsH + 16 + T.tray
   // What it's given; shorter than that, the strip stands in its middle (D-314), not at its top.
   const room = h ?? fullH

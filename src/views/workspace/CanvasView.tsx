@@ -384,7 +384,7 @@ export function CanvasView() {
     if (!p) return
     // From another plane straight to theirs: no ink (it would spread from a plane that isn't on screen).
     if (focusId) {
-      useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, labelSelected: null })
+      useCanvasView.setState(focusOff())
       selectTask('', null)
       setParams(canvasParams(p.spot ?? canvasOf(p), { focus: planeId }))
     } else focus(p)
@@ -712,13 +712,13 @@ export function CanvasView() {
   const left = () => {
     // Documents open beside a list close with its focus (D-232).
     closeDocs()
-    useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null, linkSelected: null, linking: null })
+    useCanvasView.setState(focusOff())
     setParams(canvasParams(canvas), { replace: true })
   }
   // Left by the back button, or a plane deleted (by someone else) while in focus: nothing to animate.
   useEffect(() => {
     if (!focusId) {
-      useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null, linkSelected: null, linking: null })
+      useCanvasView.setState(focusOff())
       // A task picked from a card's panel in there stays there (D-254).
       if (useKanbanUi.getState().selected && !useKanbanUi.getState().pending) selectTask('', null)
     }
@@ -1201,7 +1201,7 @@ export function CanvasView() {
           }}
         />
       )}
-      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={whereOf} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${everyPiece.find((p) => p.id === id)?.name || 'plane'}"`} canvasScope={canvases.length > 1 ? { name: canvases.find((c) => c.id === canvas)?.name ?? '', has: (t) => threadCanvas(t) === canvas } : undefined} />
+      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={whereOf} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${everyPiece.find((p) => p.id === id)?.name || 'plane'}"`} canvasScope={canvases.length > 1 ? { id: canvas, name: canvases.find((c) => c.id === canvas)?.name ?? '', has: (t) => threadCanvas(t) === canvas } : undefined} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {deletingCards && (
         <HazardConfirm
@@ -1276,6 +1276,12 @@ function sharedOnOf(cards: Card[], places: import('../../data/places').Place[], 
 }
 
 // The focus's own view set, gliding there unless `instant`.
+// What a plane's focus holds, let go together when it ends or goes straight to another plane: nothing picked there
+// (a link left selected would be deleted by the next plane's Delete), being edited, or drawn from.
+function focusOff() {
+  return { focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null, labelSelected: null, linkSelected: null, linking: null, cardMulti: [] }
+}
+
 function setPlaneView(to: PlaneCam, instant: boolean) {
   const c = useCanvasView.getState().planeCam
   stopGlide()

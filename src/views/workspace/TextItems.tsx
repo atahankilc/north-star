@@ -224,7 +224,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     const lim = kind === 'paragraph' ? PARA_W : kind === 'sticky' ? STICKY_W : kind === 'title' ? TITLE_W : { min: SECTION_MIN.w, max: 100000 }
     let to: { w?: number; h?: number; y?: number } | null = null
     const move = (ev: PointerEvent) => {
-      const at = (v: number) => (ev.altKey ? Math.round(v) : snap(v))
+      const at = (v: number) => (ev.altKey || !useGuides.getState().snap ? Math.round(v) : snap(v))
       const [dx, dy] = [(ev.clientX - sx) / zoom, (ev.clientY - sy) / zoom]
       const edge = turn === 90 ? l.y + w0 - at(l.y + dy) : turn === -90 ? at(l.y + w0 + dy) - l.y : at(l.x + w0 + dx) - l.x
       const nw = Math.min(lim.max, Math.max(lim.min, edge))

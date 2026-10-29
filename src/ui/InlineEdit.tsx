@@ -1,4 +1,4 @@
-// Click-to-rename text. Enter or blur saves, Escape cancels.
+// Click-to-rename text. Enter or blur saves, Escape cancels (the blur that follows it saves nothing).
 import { useEffect, useRef, useState } from 'react'
 import styles from './InlineEdit.module.css'
 
@@ -19,15 +19,18 @@ export function InlineEdit({ value, onSave, editing: controlled, onEditingChange
   const setEditing = (v: boolean) => (onEditingChange ? onEditingChange(v) : setOwn(v))
   const [draft, setDraft] = useState(value)
   const input = useRef<HTMLInputElement>(null)
+  const cancelled = useRef(false)
 
   useEffect(() => {
     if (!editing) return
     setDraft(value)
+    cancelled.current = false
     requestAnimationFrame(() => input.current?.select())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing])
 
   const commit = () => {
+    if (cancelled.current) return
     setEditing(false)
     const next = draft.trim()
     if (next && next !== value) void onSave(next)
@@ -52,7 +55,10 @@ export function InlineEdit({ value, onSave, editing: controlled, onEditingChange
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === 'Enter') commit()
-        if (e.key === 'Escape') setEditing(false)
+        if (e.key === 'Escape') {
+          cancelled.current = true
+          setEditing(false)
+        }
         e.stopPropagation()
       }}
     />
