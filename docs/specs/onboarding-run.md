@@ -204,8 +204,8 @@ _(none)_
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
-- When agent S9 lands: events.ts skips events while `agentDriving()` (src/agent/ui.ts) is true (the agent moving the
-  UI never teaches, like `actor: 'agent'` for writes). Agreed with b2 2026-10-29.
+- (Done after S9) learn.ts sends nothing while `agentDriving()` (src/agent/driving.ts) is true; agent writes carry
+  `actor: 'agent'` (b2: a must in agent-run.md, with a test).
 - O12: the `deck` lesson's page 1 (E+) says "`+ add a task` types one; Enter keeps typing the next" but deck-drag shows
   only the drag: give it its own page + scene (`deck-add`) or cut the sentence.
 - **O6 must (done in O6):** Kanban.tsx:339, FilterDock.tsx:38, KanbanFilterDock.tsx:47 (window capture handlers) skip events from

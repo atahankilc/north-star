@@ -1,7 +1,9 @@
 // The onboarding's emitter (D-315, docs/specs/onboarding.md §5.5): `learn(event, payload)`, the one-line hook a view
 // calls where no store knows what happened (O6), and what every watcher in events.ts sends through. On its own so the
 // pages that call it (the workspaces page is in the first chunk) don't load the watchers. The same event with the same
-// payload within DEDUPE_MS is dropped (React's double mounts, a store set twice).
+// payload within DEDUPE_MS is dropped (React's double mounts, a store set twice). Nothing is sent while the agent drives
+// the view (D-312): what it opens or selects never teaches the person, as its writes (`actor: 'agent'`) don't.
+import { agentDriving } from '../agent/driving'
 import type { LessonEvent } from './lessons'
 import type { LearnEvent, Payload } from './queue'
 
@@ -18,6 +20,7 @@ export function onLearn(fn: (e: LearnEvent) => void): () => void {
 
 // `target`: what it was about (`card:<id>`, `plane:<id>`…), where its lesson looks for its anchor first.
 export function learn(event: LessonEvent, payload?: Payload, target?: string): void {
+  if (agentDriving()) return
   const key = `${event} ${payload ? JSON.stringify(payload) : ''}`
   const now = clock()
   const was = lastSent.get(key)
