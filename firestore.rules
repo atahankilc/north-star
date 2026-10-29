@@ -622,7 +622,7 @@ service cloud.firestore {
       // (count, time) and being resolved or reopened; owners and editors delete any, a starter one nobody answered.
       match /threads/{tid} {
         function validThread(d) {
-          return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
+          return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'lastMid', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
             // 'plane' (D-193): a comment on a plane on the canvas.
             // 'task' (D-260): one of a kanban's tasks.
             && d.on in ['card', 'label', 'link', 'plane', 'task']
@@ -632,7 +632,7 @@ service cloud.firestore {
             && isText(d.uid, 128) && isText(d.name, 200)
             && d.count is int && d.count >= 0 && d.count <= 100000
             && d.lastAt is number
-            && optText(d, 'lastUid', 128) && optText(d, 'lastName', 200) && optText(d, 'lastText', 160)
+            && optText(d, 'lastUid', 128) && optText(d, 'lastName', 200) && optText(d, 'lastText', 160) && optText(d, 'lastMid', 128)
             && (!('mentions' in d) || (d.mentions is list && d.mentions.size() <= 50))
             && optBool(d, 'resolved') && optText(d, 'resolvedBy', 128)
             && d.createdAt is number && d.updatedAt is number;
@@ -642,11 +642,26 @@ service cloud.firestore {
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.count == 1
           && (!('lastUid' in request.resource.data) || request.resource.data.lastUid == request.auth.uid);
+        // The preview (who wrote last, what, mentions) is the writer's own, or set back to a message that really is in
+        // the thread (`lastMid`) after the newest was taken back; the count moves one at a time.
+        function previewBack(d) {
+          return 'lastMid' in d
+            && !d.diff(resource.data).affectedKeys().hasAny(['mentions'])
+            && isPreviewOf(d, get(/databases/$(database)/documents/workspaces/$(wid)/threads/$(tid)/messages/$(d.lastMid)).data);
+        }
+        function isPreviewOf(d, m) {
+          return m.uid == d.lastUid && m.name == d.lastName && m.createdAt == d.lastAt
+            && (!('lastText' in d) || d.lastText == m.text);
+        }
         allow update: if isMember(wid) && validThread(request.resource.data)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'mentions', 'resolved', 'resolvedBy', 'updatedAt'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'lastMid', 'mentions', 'resolved', 'resolvedBy', 'updatedAt'])
           && (!('resolvedBy' in request.resource.data) || request.resource.data.resolvedBy == request.auth.uid
             || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['resolvedBy']))
-          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastUid']) || request.resource.data.lastUid == request.auth.uid);
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastAt', 'lastUid', 'lastName', 'lastText', 'lastMid', 'mentions'])
+            || request.resource.data.get('lastUid', null) == request.auth.uid
+            || previewBack(request.resource.data))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['count'])
+            || request.resource.data.count == resource.data.count + 1 || request.resource.data.count == resource.data.count - 1);
         // Owners, or whoever started it while nobody has answered (D-166: editors no longer delete others' words).
         allow delete: if isOwner(wid) || (isMember(wid) && resource.data.uid == request.auth.uid && resource.data.count <= 1);
 

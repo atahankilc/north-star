@@ -631,9 +631,17 @@ await deny('a non-member reads threads', () => getDocs(collection(carol.fs, 'wor
 await allow('editor answers', () => {
   const b = writeBatch(bob.fs)
   b.set(msg(bob.fs, 't1', 'm2'), { uid: bob.uid, name: 'b', text: 'Only without menus.', createdAt: 2 })
-  b.update(thr(bob.fs, 't1'), { count: 2, lastAt: 2, updatedAt: 2 })
+  b.update(thr(bob.fs, 't1'), { count: 2, lastAt: 2, lastUid: bob.uid, lastName: 'b', lastText: 'Only without menus.', updatedAt: 2 })
   return b.commit()
 })
+// The preview is the writer's own (audit P2): nobody changes what someone else wrote last, or the count by more than one.
+await deny('changing the preview of someone else\'s message', () => updateDoc(thr(dave.fs, 't1'), { lastText: 'Bob said yes' }))
+await deny('mentions added under someone else\'s name', () => updateDoc(thr(dave.fs, 't1'), { mentions: [alice.uid] }))
+await deny('a preview set back to a message that is not there', () =>
+  updateDoc(thr(dave.fs, 't1'), { lastMid: 'nope', lastUid: bob.uid, lastName: 'b', lastAt: 2, lastText: 'made up' }))
+await deny('a preview set back with words the message never had', () =>
+  updateDoc(thr(dave.fs, 't1'), { lastMid: 'm2', lastUid: bob.uid, lastName: 'b', lastAt: 2, lastText: 'made up' }))
+await deny('the count jumped', () => updateDoc(thr(dave.fs, 't1'), { count: 40 }))
 await deny('a message in someone else\'s name', () => setDoc(msg(bob.fs, 't1', 'm3'), { uid: dave.uid, name: 'd', text: 'x', createdAt: 3 }))
 await deny('an empty message', () => setDoc(msg(bob.fs, 't1', 'm4'), { uid: bob.uid, name: 'b', text: '', createdAt: 3 }))
 await deny('a message in no thread', () => setDoc(msg(bob.fs, 'nope', 'm1'), { uid: bob.uid, name: 'b', text: 'x', createdAt: 3 }))
@@ -648,11 +656,12 @@ await deny('starter deletes a thread others answered', () => deleteDoc(thr(dave.
 await deny('editor deletes someone else\'s message', () => deleteDoc(msg(bob.fs, 't1', 'm1')))
 await deny('owner deletes someone else\'s message on its own', () => deleteDoc(msg(alice.fs, 't1', 'm1')))
 await deny('editor deletes a thread others answered', () => deleteDoc(thr(bob.fs, 't1')))
-await allow('writer deletes their own message', () => {
+await allow('writer deletes their own newest message, the preview back to the one before (audit P1 #7)', async () => {
   const b = writeBatch(bob.fs)
   b.delete(msg(bob.fs, 't1', 'm2'))
-  b.update(thr(bob.fs, 't1'), { count: 1, updatedAt: 5 })
-  return b.commit()
+  b.update(thr(bob.fs, 't1'), { count: 1, lastMid: 'm1', lastAt: 1, lastUid: dave.uid, lastName: 'x', lastText: 'Is 10 min real?', updatedAt: 5 })
+  await b.commit()
+  assert.equal((await getDoc(thr(bob.fs, 't1'))).data().lastText, 'Is 10 min real?')
 })
 await allow('owner deletes a thread with its messages', () => {
   const b = writeBatch(alice.fs)
@@ -672,7 +681,11 @@ await deny('saying someone else wrote last', () => updateDoc(thr(dave.fs, 't6'),
 // What you've read (D-166): yours alone.
 const reads = (fs, uid) => doc(fs, 'workspaces', wid, 'threadReads', uid)
 await allow('marking threads read', () => setDoc(reads(dave.fs, dave.uid), { seen: { t6: 2 }, updatedAt: 2 }, { merge: true }))
-await allow('marking your tasks looked at (D-261)', () => setDoc(reads(dave.fs, dave.uid), { seen: {}, tasks: 5, updatedAt: 5 }, { merge: true }))
+await allow('marking your tasks looked at (D-261) keeps the threads read (audit P1 #1)', async () => {
+  await updateDoc(reads(dave.fs, dave.uid), { tasks: 5, updatedAt: 5 })
+  assert.deepEqual((await getDoc(reads(dave.fs, dave.uid))).data().seen, { t6: 2 })
+})
+await allow('a first tasks mark brings an empty seen', () => setDoc(reads(bob.fs, bob.uid), { seen: {}, tasks: 5, updatedAt: 5 }, { merge: true }))
 await deny('a tasks mark that is not a time', () => setDoc(reads(dave.fs, dave.uid), { seen: {}, tasks: 'today', updatedAt: 6 }, { merge: true }))
 await allow('reading what you have read', () => getDoc(reads(dave.fs, dave.uid)))
 await deny('reading what someone else has read', () => getDoc(reads(bob.fs, dave.uid)))

@@ -34,6 +34,9 @@ export const useMembers = (wid: string, on = true) =>
 
 export type NewThread = { on: ThreadTarget; targetId: string; planeId: string; at: [number, number] }
 
+// How much of the newest message a thread keeps for its preview.
+const PREVIEW_MAX = 160
+
 const cap = (ids: string[]) => [...new Set(ids)].slice(0, MENTIONS_MAX)
 
 // Starts a thread with its first message; its id.
@@ -53,7 +56,7 @@ export async function startThread(wid: string, t: NewThread, text: string, menti
     lastAt: now,
     lastUid: who.uid,
     lastName: who.name,
-    lastText: text.slice(0, 160),
+    lastText: text.slice(0, PREVIEW_MAX),
     ...(ids.length && { mentions: ids }),
     createdAt: now,
     updatedAt: now,
@@ -77,7 +80,7 @@ export async function reply(wid: string, tid: string, text: string, mentions: st
     lastAt: now,
     lastUid: who.uid,
     lastName: who.name,
-    lastText: text.slice(0, 160),
+    lastText: text.slice(0, PREVIEW_MAX),
     updatedAt: now,
     ...(ids.length && { mentions: arrayUnion(...ids) }),
   })
@@ -90,12 +93,27 @@ export function editMessage(wid: string, tid: string, mid: string, text: string,
   return updateDoc(doc(messagesOf(wid, tid), mid), { text: text.slice(0, MESSAGE_MAX), mentions: ids.length ? ids : deleteField(), editedAt: Date.now() })
 }
 
-// Your own message taken back (D-166: only its writer can); the last one takes its thread with it.
+// Your own message taken back (D-166: only its writer can); the last one takes its thread with it. When it was the
+// newest, the thread's preview goes back to the one before it (`lastMid` names it, so the rules can check it's really
+// that message; a text too long for the preview is left out rather than cut).
 export async function deleteMessage(wid: string, tid: string, mid: string, wasLast: boolean) {
   if (wasLast) return deleteThread(wid, tid)
+  const newest = await getDocs(query(messagesOf(wid, tid), orderBy('createdAt', 'desc'), limit(2)))
+  const before = newest.docs[0]?.id === mid ? newest.docs[1] : undefined
+  const prev = before?.data() as ThreadMessage | undefined
   const batch = writeBatch(db())
   batch.delete(doc(messagesOf(wid, tid), mid))
-  batch.update(doc(threadsOf(wid), tid), { count: increment(-1), updatedAt: Date.now() })
+  batch.update(doc(threadsOf(wid), tid), {
+    count: increment(-1),
+    updatedAt: Date.now(),
+    ...(before && prev && {
+      lastMid: before.id,
+      lastAt: prev.createdAt,
+      lastUid: prev.uid,
+      lastName: prev.name,
+      lastText: prev.text.length <= PREVIEW_MAX ? prev.text : deleteField(),
+    }),
+  })
   await batch.commit()
 }
 
@@ -104,23 +122,41 @@ export function setResolved(wid: string, tid: string, resolved: boolean) {
   return updateDoc(doc(threadsOf(wid), tid), resolved ? { resolved: true, resolvedBy: uid, updatedAt: Date.now() } : { resolved: deleteField(), resolvedBy: deleteField(), updatedAt: Date.now() })
 }
 
-// The thread and every message in it, in one batch (an owner may take others' messages only along with the thread);
-// owners, or whoever started it while nobody answered.
+// The thread and every message in it; owners, or whoever started it while nobody answered. An owner may take others'
+// messages only once the thread is gone (in the same batch or after it), so the thread goes in the first batch with as
+// many messages as fit, and the rest follow a batch at a time until none are left.
+const DELETE_BATCH = 450
+
 export async function deleteThread(wid: string, tid: string) {
-  const msgs = await getDocs(query(messagesOf(wid, tid), limit(450)))
-  const batch = writeBatch(db())
-  for (const d of msgs.docs) batch.delete(d.ref)
-  batch.delete(doc(threadsOf(wid), tid))
-  await batch.commit()
+  let first = true
+  for (;;) {
+    const msgs = await getDocs(query(messagesOf(wid, tid), limit(first ? DELETE_BATCH - 1 : DELETE_BATCH)))
+    if (!first && msgs.empty) return
+    const batch = writeBatch(db())
+    for (const d of msgs.docs) batch.delete(d.ref)
+    if (first) batch.delete(doc(threadsOf(wid), tid))
+    await batch.commit()
+    if (msgs.size < (first ? DELETE_BATCH - 1 : DELETE_BATCH)) return
+    first = false
+  }
+}
+
+// Your tasks looked at (D-261): those given to you after this are new. In the same read marks, leaving `seen` alone: a
+// merge with `seen: {}` would replace the map and make every thread new again. The rules want `seen` on a new doc, so
+// only a first write brings an empty one.
+export async function markTasksSeen(wid: string, at = Date.now()) {
+  const user = firebase?.auth.currentUser
+  if (!user) return
+  const ref = readsRef(wid, user.uid)
+  try {
+    await updateDoc(ref, { tasks: at, updatedAt: Date.now() })
+  } catch (e) {
+    if ((e as { code?: string }).code !== 'not-found') throw e
+    await setDoc(ref, { seen: {}, tasks: at, updatedAt: Date.now() }, { merge: true })
+  }
 }
 
 // You've seen a thread up to `at` (its lastAt).
-// Your tasks looked at (D-261): those given to you after this are new. In the same read marks.
-export function markTasksSeen(wid: string, at = Date.now()) {
-  const user = firebase?.auth.currentUser
-  if (!user) return Promise.resolve()
-  return setDoc(readsRef(wid, user.uid), { seen: {}, tasks: at, updatedAt: Date.now() }, { merge: true })
-}
 
 export function markSeen(wid: string, tid: string, at: number) {
   const user = firebase?.auth.currentUser

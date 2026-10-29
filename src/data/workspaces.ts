@@ -10,13 +10,13 @@ import {
   query,
   setDoc,
   updateDoc,
-  limit,
   where,
   writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { useDoc, usePaged, useQuery } from './hooks'
 import type { AuthUser } from './auth'
+import { deleteThread } from './threads'
 import type { InviteCode, JoinRequest, Member, Role, Workspace } from './model'
 
 // No 0/O/1/I/L: codes get read aloud and typed by hand.
@@ -243,16 +243,6 @@ export function describeWorkspace(wid: string, description: string) {
   return updateDoc(doc(db(), 'workspaces', wid), { description: description.trim().slice(0, DESCRIPTION_MAX) })
 }
 
-// A comment thread (D-159) with its messages in one batch: an owner may take others' messages only along with it (D-166).
-async function deleteThread(wid: string, tid: string) {
-  const thread = doc(db(), 'workspaces', wid, 'threads', tid)
-  const msgs = await getDocs(query(collection(thread, 'messages'), limit(450)))
-  const batch = writeBatch(db())
-  for (const d of msgs.docs) batch.delete(d.ref)
-  batch.delete(thread)
-  await batch.commit()
-}
-
 // Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
 const WORKSPACE_COLLECTIONS = ['pieces', 'labels', 'customers', 'problems', 'competitors', 'ideas', 'features', 'packages', 'edges', 'competitorFeatures', 'comparisons', 'evidence', 'cells', 'tasks', 'places', 'canvases', 'pieceSpots']
 const BATCH_LIMIT = 450
@@ -284,8 +274,8 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
     for (const ref of reportRefs.slice(i, i + REPORTS_PER_BATCH)) batch.delete(doc(ref, 'content', 'body')).delete(ref)
     await batch.commit()
   }
-  // Comment threads (D-159): each with its messages in one batch, since an owner may take others' messages only along
-  // with their thread (D-166); then everyone's read marks.
+  // Comment threads (D-159): each with all its messages (threads.ts: an owner may take others' messages only once
+  // their thread is gone, D-166); then everyone's read marks.
   const threads = await getDocs(collection(db(), 'workspaces', wid, 'threads'))
   for (const t of threads.docs) await deleteThread(wid, t.id)
   const reads = await getDocs(collection(db(), 'workspaces', wid, 'threadReads'))
