@@ -155,7 +155,8 @@ feature comes back as a piece, and check them with the user then.
 - Motion (D-150, D-203): arriving cards build cell by cell; drag at 0.8 with landing marks.
 - A card's panel (D-221): what it is → what backs it → links by meaning → tags → notes, edited in place; `for` as link
   rows; a competitor's features by category, `≈ our`; a feature's plan, parts tree, must-haves, rests on + confidence,
-  `≈ theirs`; a part shows its parent.
+  `≈ theirs`; a part shows its parent. Its pickers (and a task's card) are the prompt in place: `# suggested` first
+  (a task's: its kanban's cards, its plane's; a card's: nearest), every card by type with its planes, scrolling (D-299).
 - Links (D-207): `edges` drawn when both cards are on the plane; straight, arrowhead, kind colours, a chip (its own
   label in focus), side by side; drawn from a hovered card's `›` with its label ready; a bar: kind, label, reverse,
   remove. Always straight (no bend points, D-292). Not yet: links to competitor features.

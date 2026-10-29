@@ -5326,3 +5326,22 @@ fit glide left comment chips huge, then they snapped small.
 - *Cost:* the user felt a short hitch as a zoom starts. Traced headless (6 planes × 30 cards): hiding adds ~1 ms of
   style and a few ms of paint on the first frame. A Marks span carries `data-screen-sized` only when drawn (not on
   every card); `will-change` on them didn't help. *Not yet:* if it's still felt, measure on the user's machine.
+
+### D-299 · 2026-10-29 · Accepted (the user: "for kısmında package ekliyeceğimde sadece bikaç tane gösterliyor, ne scroll var ne öneri var. Benim adını önceden bilip yazmam gerekiyor"; then "1 ve 2'yi yap, başla. 3 ü de not düş")
+**Picking a card in a panel is the prompt: every card, scrolling, suggestions first.**
+- *Why:* `CardPicker` (every picker in a card's or a task's panel: `for`, solves, parts, part of, holds, rests on, a
+  task's card) showed the first 8 titles, unsorted, no scroll, no plane; you had to know the name. It said "nothing on
+  this plane matches" while a task's picker looked at every plane.
+- *Now:* `MenuPanel` (D-222) in place in the panel, framed, at most 360 px, the rest scrolling. Before anything is
+  typed: `# suggested` (up to five, with why), then `# customers · 3`, `# problems · 2`… in the chain's order, by title;
+  each row `▌ title  planes` (a package `3 inside · 01 PAZAR`). Typed, it narrows by title, type, tags and plane
+  (`pack` lists the packages); where a card can be made, `+ "what's typed"  NEW IDEA` comes after what it finds.
+  The foot counts every card (`24 cards`).
+- *Suggested:* a task's: what this kanban's other tasks are for most (`2 on this kanban`), then the cards on the plane
+  the kanban is stuck to (`on 01 Pazar`). A card's: the four nearest on its plane (`nearby`). A suggestion is listed
+  again in its type and hidden while typing (`MenuEntry.browse`); `MenuPanel` takes `more(typed)` for the made row.
+- *Not yet:* picking on the canvas: with a kanban beside a plane, `[pick on the plane]` turns the cursor into a
+  crosshair, cards light on hover, a click sets it, for when you see the card but don't remember its name.
+- *Verified* in headless Chrome on the emulators: a task's `for` opened the list (suggested by kanban and plane, then
+  each type, 24 cards), `pack` showed the four packages with what they hold and their planes, Enter set "Later"; a
+  problem's `+ customer` with "Hotels" offered the new customer row. `tsc -b` clean in the changed files.

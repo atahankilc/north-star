@@ -5,7 +5,7 @@
 // the canvas. Escape closes it. Finished, a task for a card still being tested offers to log what it taught there (D-254).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Card } from '../../data/cards'
+import { isOnPlane, type Card } from '../../data/cards'
 import { CHECK_MAX, LABEL_MAX, LABELS_MAX, TASK_PRIORITIES, deleteTask, deleteTasks, moveTasks, updateTasks, logLearned, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, today, untested, updateTask, type Check, type Task } from '../../data/tasks'
 import type { Evidence } from '../../data/evidence'
 import { useMembers } from '../../data/workspaces'
@@ -424,8 +424,22 @@ const NO_CARD = { id: '', type: 'idea', pieceId: '', title: '', x: 0, y: 0 } as 
 
 // The card it's for (a feature, an idea, a problem…, on any plane): its row opens that card's panel; `×` lets go.
 function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
-  const { wid, cards } = useWs()
+  const { wid, cards, tasks, pieces } = useWs()
   const [picking, setPicking] = useState(false)
+  // What the picker offers first (D-299): what this kanban's other tasks are for most, then the cards on the plane the
+  // kanban is stuck to.
+  const suggest = useMemo(() => {
+    if (!picking) return []
+    const out: { id: string; why: string }[] = []
+    const add = (id: string, why: string) => !out.some((x) => x.id === id) && out.push({ id, why })
+    const count = new Map<string, number>()
+    for (const t of tasks) if (t.pieceId === task.pieceId && t.cardId && t.id !== task.id) count.set(t.cardId, (count.get(t.cardId) ?? 0) + 1)
+    for (const [id, k] of [...count].sort((a, b) => b[1] - a[1]).slice(0, 3)) add(id, `${k} on this kanban`)
+    const plane = pieces.find((p) => p.id === task.pieceId)?.stuckTo
+    const name = pieces.find((p) => p.id === plane)?.name?.trim() || 'its plane'
+    if (plane) for (const c of cards.filter((c) => isOnPlane(c, plane)).slice(0, 5)) add(c.id, `on ${name}`)
+    return out
+  }, [picking, tasks, task.pieceId, task.id, pieces, cards])
   const card = task.cardId ? cards.find((c) => c.id === task.cardId) : undefined
   const open = (c: Card) => {
     selectTask('', null)
@@ -461,6 +475,7 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
           types={null}
           exclude={exclude}
           make={false}
+          suggest={suggest}
           onPick={(c) => {
             setPicking(false)
             void updateTask(wid, task, { cardId: c.id, cardType: c.type }, 'link a task')

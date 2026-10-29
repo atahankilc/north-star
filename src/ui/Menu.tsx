@@ -35,6 +35,8 @@ export type MenuEntry =
       folded?: boolean
       // More words it's found by besides its label (a card's tags, its planes).
       words?: string
+      // Shown only before anything is typed: a suggestion that's listed again further down.
+      browse?: boolean
     }
   // A `# section` line; an empty heading is a plain rule, setting apart what's under it.
   | { key: string; heading: string }
@@ -88,9 +90,9 @@ function Lit({ label, q }: { label: ReactNode; q: string }) {
   )
 }
 
-// What a query shows: the items whose label holds it, those whose letter it is first; no headings.
+// What a query shows: the items whose label holds it, those whose letter it is first; no headings, no suggestions.
 function find(items: MenuEntry[], q: string): Item[] {
-  const all = items.filter((i): i is Item => !('heading' in i))
+  const all = items.filter((i): i is Item => !('heading' in i) && !i.browse)
   const keyed = q.length === 1 ? all.filter((i) => i.letter === q) : []
   return [...keyed, ...all.filter((i) => !keyed.includes(i) && `${text(i.label)} ${i.words ?? ''}`.toLowerCase().includes(q))]
 }
@@ -106,16 +108,21 @@ type PanelProps = {
   id?: string
   // What the keys do, in the foot after the count (the default: `↵ picks the first` while searching).
   keys?: string
+  // Items made from what's typed, after what it finds (the card picker's `new idea "…"`).
+  more?: (typed: string) => MenuEntry[]
 }
 
 // The list with its `>` line and foot (D-222): a dropdown's panel, or the right-click menu's.
-export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…', noun = 'things', onClose, id, keys }: PanelProps) {
+export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…', noun = 'things', onClose, id, keys, more }: PanelProps) {
   const [query, setQuery] = useState('')
   const field = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLDivElement>(null)
   const q = query.trim().toLowerCase()
-  const shown: MenuEntry[] = q ? find(items, q) : items.filter((i) => !('folded' in i && i.folded))
-  const count = shown.filter((i) => !('heading' in i)).length
+  const shown: MenuEntry[] = q ? [...find(items, q), ...(more?.(query.trim()) ?? [])] : items.filter((i) => !('folded' in i && i.folded))
+  // Suggestions are counted once, where they're listed again.
+  const count = shown.filter((i) => !('heading' in i) && !i.browse).length
+  // The `>` line stays while what's typed can make something.
+  const any = items.length > 0 || !!more
   // A column for `[k]` only when some item has a letter.
   const keyed = items.some((i) => 'letter' in i && i.letter)
 
@@ -158,7 +165,7 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
 
   return (
     <div className={styles.prompt} onKeyDown={onKeyDown}>
-      {items.length > 0 && (
+      {any && (
         <label className={styles.line}>
           <span className={styles.caretSign} aria-hidden>
             &gt;
@@ -178,8 +185,8 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
         </label>
       )}
       <div ref={list} id={id} className={styles.list} role="menu" aria-label={ariaLabel}>
-        {items.length === 0 && <p className={styles.empty}>{empty ?? 'Nothing here yet'}</p>}
-        {items.length > 0 && count === 0 && <p className={styles.empty}>no match · esc closes</p>}
+        {!any && <p className={styles.empty}>{empty ?? 'Nothing here yet'}</p>}
+        {any && count === 0 && <p className={styles.empty}>{q || items.length ? 'no match · esc closes' : (empty ?? 'Nothing here yet')}</p>}
         {shown.map((item, i) =>
           'heading' in item ? (
             item.heading ? (
@@ -250,7 +257,7 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
           ),
         )}
       </div>
-      {items.length > 0 && (
+      {any && (
         <div className={styles.foot} aria-hidden>
           {q
             ? count

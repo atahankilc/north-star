@@ -29,6 +29,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Fix (2026-10-29): a framed table's (any non-plane's) focus going in and out no longer shows past its window: its cut
   eases between the window and the screen (FocusedPlane's `hold`, a `.held` wrapper). Checked headless, committed, not pushed.
 
+- D-299 (panels' card pickers as the prompt: every card, scrolling, suggestions first): done, checked headless,
+  committed.
+
 ## Next steps (not started; ask the user which first)
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): links to a competitor's features and
   dropping a link on a small card (bend points dropped, D-292).

@@ -295,43 +295,13 @@
 
 .picker {
   margin: 2px 0 8px;
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
 }
 
-.found {
-  display: flex;
-  flex-direction: column;
-  margin-top: 4px;
-}
-
-.option {
-  display: flex;
-  gap: 10px;
-  padding: 3px 6px;
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.option[aria-selected='true'],
-.option:hover {
-  background: var(--bg-raised);
-}
-
-.optType {
-  flex: none;
-  width: 80px;
-  color: var(--fg-dim);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: var(--track-label);
-}
-
-.none {
-  padding: 3px 6px;
-  color: var(--fg-faint);
+/* The prompt (Menu.module.css .prompt) in a panel: shorter, the rest scrolls. */
+.picker > * {
+  max-height: min(50vh, 360px);
 }
 
 /* Label | value rows: a feature's plan, a competitor's profile, a competitor feature's details. */

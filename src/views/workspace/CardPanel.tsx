@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   addCard,
   CARD,
+  CARD_TYPES,
   cardBounds,
   isOnPlane,
   copyCards,
@@ -31,6 +32,7 @@ import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } fr
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../data/evidence'
 import { glide, useCanvasView } from '../../state/canvasView'
 import { useAutoGrow } from '../../ui/autoGrow'
+import { MenuPanel, type MenuEntry } from '../../ui/Menu'
 import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../ui/SidePanel'
 import { factsOf } from './cardFacts'
 import { packageTree } from './cardInside'
@@ -895,8 +897,10 @@ export function LinkSection({ n, name, card, cards, editor, links, add, count, e
   )
 }
 
-// Choosing a card on this plane by typing part of its title; with types given, a new card of the first type can be
-// made from what was typed (placed under this one, clear of the panel on its right).
+// Choosing a card (D-299): the prompt (D-222) in place, every card it may be, scrolling. Before anything is typed, a few
+// `suggested` first (given, or the nearest on this card's plane), then a section per type in the chain's order, each
+// row with the planes it's on (a package with how much it holds); typed, it narrows by title, type, tags and plane.
+// With types given, what's typed can make a new card of the first type (placed under this one, clear of the panel).
 export function CardPicker({
   card,
   cards,
@@ -905,6 +909,7 @@ export function CardPicker({
   onPick,
   onClose,
   make: makes = true,
+  suggest,
 }: {
   card: Card
   cards: Card[]
@@ -914,64 +919,84 @@ export function CardPicker({
   onClose: () => void
   // Whether what's typed can make a new card of the first type.
   make?: boolean
+  // Shown first, with why (the task picker's: what this kanban's tasks are for…); else the nearest on this card's plane.
+  suggest?: { id: string; why: string }[]
 }) {
-  const { wid } = useWs()
-  const [q, setQ] = useState('')
-  const [at, setAt] = useState(0)
-  const found = cards
-    .filter((c) => !exclude.has(c.id) && (!types || types.includes(c.type)) && (c.title || '').toLowerCase().includes(q.trim().toLowerCase()))
-    .slice(0, 8)
+  const { wid, cards: all, places, pieces, edges } = useWs()
+  const root = useRef<HTMLDivElement>(null)
+  // A press outside closes it (the field keeps its focus while the list is scrolled).
+  useEffect(() => {
+    const away = (e: PointerEvent) => !root.current?.contains(e.target as Node) && onClose()
+    window.addEventListener('pointerdown', away, true)
+    return () => window.removeEventListener('pointerdown', away, true)
+  }, [onClose])
   // A package is never made from here (only from a selection, D-239).
   const makeType = !makes || types?.[0] === 'package' ? undefined : types?.[0]
-  const make = async () => {
-    if (!makeType || !q.trim()) return
+  const make = async (title: string) => {
+    if (!makeType || !title) return
     // On the plane it's looked at on, under its spot there (D-281).
     const id = await addCard(wid, planeOf(card), makeType, [card.x + CARD.w / 2, card.y + CARD.h * 2], cards)
-    const made: Card = { id, type: makeType, pieceId: planeOf(card), title: q.trim(), x: 0, y: 0 }
-    await retitleCard(wid, made, q.trim(), true)
+    const made: Card = { id, type: makeType, pieceId: planeOf(card), title, x: 0, y: 0 }
+    await retitleCard(wid, made, title, true)
     onPick(made)
   }
-  const rows = found.length + (makeType && q.trim() ? 1 : 0)
+  const items = useMemo((): MenuEntry[] => {
+    const open = cards.filter((c) => !exclude.has(c.id) && (!types || types.includes(c.type)))
+    const byId = new Map(open.map((c) => [c.id, c]))
+    const name = (id: string) => pieces.find((p) => p.id === id)?.name?.trim() || 'plane'
+    const row = (c: Card, key: string, hint: string, browse?: boolean): MenuEntry => {
+      const on = planesOf(c, places).map(name)
+      const where = on.length > 2 ? `${on.slice(0, 2).join(', ')} +${on.length - 2}` : on.join(', ')
+      const held = c.type === 'package' ? packageTree(c, all, edges).length : 0
+      return {
+        key,
+        label: c.title || `untitled ${c.type}`,
+        glyph: '▌',
+        tone: TONE[c.type],
+        hint: (hint || [held ? `${held} inside` : '', where].filter(Boolean).join(' · ')).toUpperCase(),
+        words: [c.type, ...(c.tags ?? []), ...on].join(' '),
+        browse,
+        onSelect: () => onPick(c),
+      }
+    }
+    // Given, or the four nearest on this card's plane, where they are there.
+    const plane = card.id ? planeOf(card) : ''
+    const near = suggest ?? (plane ? cardsOn(all, places, plane).filter((c) => byId.has(c.id)).map((c) => ({ id: c.id, why: 'nearby', d: Math.hypot(c.x - card.x, c.y - card.y) })).sort((x, y) => x.d - y.d).slice(0, 4) : [])
+    const firsts = near.filter((x) => byId.has(x.id)).slice(0, 5)
+    const out: MenuEntry[] = []
+    if (firsts.length) {
+      out.push({ key: '#suggested', heading: 'suggested' })
+      for (const x of firsts) out.push(row(byId.get(x.id)!, `s:${x.id}`, x.why, true))
+    }
+    for (const type of PICK_ORDER) {
+      const list = open.filter((c) => c.type === type).sort((a, b) => (a.title || '~').localeCompare(b.title || '~'))
+      if (!list.length) continue
+      out.push({ key: `#${type}`, heading: `${PICK_MANY[type]} · ${list.length}` })
+      for (const c of list) out.push(row(c, c.id, ''))
+    }
+    return out
+    // `onPick` is read when picked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards, all, edges, exclude, types, places, pieces, suggest, card.id, card.x, card.y])
+  const more = makeType ? (typed: string): MenuEntry[] => [{ key: '+new', label: `“${typed}”`, glyph: '+', tone: TONE[makeType], hint: `NEW ${makeType.toUpperCase()}`, onSelect: () => void make(typed) }] : undefined
   return (
-    <div className={styles.picker}>
-      <input
-        className={styles.input}
-        autoFocus
-        placeholder={types ? `find ${types.join(', ')}…` : 'find a card…'}
-        value={q}
-        onChange={(e) => (setQ(e.target.value), setAt(0))}
-        onBlur={() => setTimeout(onClose, 150)}
-        onKeyDown={(e) => {
-          e.stopPropagation()
-          if (e.key === 'Escape') onClose()
-          if (e.key === 'ArrowDown') (e.preventDefault(), setAt((a) => Math.min(rows - 1, a + 1)))
-          if (e.key === 'ArrowUp') (e.preventDefault(), setAt((a) => Math.max(0, a - 1)))
-          if (e.key === 'Enter') {
-            e.preventDefault()
-            if (at < found.length) onPick(found[at])
-            else void make()
-          }
-        }}
+    <div ref={root} className={styles.picker}>
+      <MenuPanel
+        items={items}
+        ariaLabel={types ? `Pick a ${types.join(' or ')}` : 'Pick a card'}
+        prompt={types && types.length < 3 ? `find ${types.map((t) => PICK_MANY[t]).join(', ')}…` : 'find a card…'}
+        noun="cards"
+        empty={types ? `No ${types.map((t) => PICK_MANY[t]).join(' or ')} to pick yet` : 'No cards to pick yet'}
+        keys={makeType ? '↵ picks the first · or makes it' : undefined}
+        more={more}
+        onClose={onClose}
       />
-      <div className={styles.found} role="listbox">
-        {found.map((c, i) => (
-          <button key={c.id} role="option" aria-selected={i === at} className={styles.option} onMouseDown={(e) => e.preventDefault()} onClick={() => onPick(c)}>
-            <span className={styles.optType} style={{ color: TONE[c.type] }}>
-              {c.type}
-            </span>
-            {c.title || PLACEHOLDER[c.type]}
-          </button>
-        ))}
-        {makeType && q.trim() && (
-          <button role="option" aria-selected={at === found.length} className={styles.option} onMouseDown={(e) => e.preventDefault()} onClick={() => void make()}>
-            <span className={styles.optType}>new {makeType}</span>“{q.trim()}”
-          </button>
-        )}
-        {!rows && <span className={styles.none}>nothing on this plane matches</span>}
-      </div>
     </div>
   )
 }
+
+const PICK_ORDER: AnyType[] = [...CARD_TYPES, 'package']
+const PICK_MANY: Record<AnyType, string> = { customer: 'customers', problem: 'problems', competitor: 'competitors', idea: 'ideas', feature: 'features', package: 'packages' }
 
 // Selects a card on the plane and brings it into view, clear of the panel.
 export function goToCard(c: Card) {
