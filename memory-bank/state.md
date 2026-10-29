@@ -44,10 +44,10 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The agent back: plan accepted (D-312, docs/specs/agent.md): OpenAI, own keys, the person's model, previews, the
   bottom-right corner. Overnight run 2026-10-29/30 (docs/specs/agent-run.md, its log is the progress): S1–S3 done
   (action inventory, vitest + src/model, src/ops core), S4 next. 1.0's rules: decisions-1.0.md.
-- Onboarding: plan written (D-315; docs/specs/onboarding.md, onboarding-lessons.md, onboarding-run.md): welcome, kind
-  guide, ~60 lessons, what's new, `?`, demos from the real components in `demo.html`. Next: O0 (the demo spike), by
-  an overnight lead with onboarding-run.md's kickoff prompt (onboarding.md §12). Q-025–Q-027 answered (Firestore; everyone starts new;
-  a CLAUDE.md rule: features ship with their lesson); Q-028: every look option built, the user picks.
+- Onboarding: plan written (D-315; docs/specs/onboarding.md, onboarding-lessons.md, onboarding-run.md). Overnight run
+  2026-10-29/30 (onboarding-run.md's log is the progress): O0 demo realm (d37ea15), O1 seen-state + rules, **not
+  deployed** (3e2b9aa), O2 lessons as data + `check:lessons` (9366345) done; O3 (events, queue), O4 (look preview) next.
+  Q-028: every look option built, the user picks.
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
