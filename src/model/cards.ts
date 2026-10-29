@@ -60,7 +60,8 @@ export const FEATURE_EFFORTS = ['S', 'M', 'L']
 // `on`: set when the card is shown on a plane that isn't its home (D-281, `cardsOn`); x/y and `folded` are then its
 // place's there, and its spot is written there. `planes`: every plane it's on, its home first, when that's more than its
 // home (set as the workspace loads).
-export type Card = { id: string; type: AnyType; pieceId: string; title: string; x: number; y: number; on?: string; planes?: string[] } & CardFields
+// `createdAt`/`updatedAt`: copied from its doc when there (the agent's read layer, S10: what's new, by time).
+export type Card = { id: string; type: AnyType; pieceId: string; title: string; x: number; y: number; on?: string; planes?: string[]; createdAt?: number; updatedAt?: number } & CardFields
 
 // Whether a card is on a plane: its home or one it was brought to (D-281).
 export const isOnPlane = (c: Pick<Card, 'pieceId' | 'planes'>, plane: string) => c.pieceId === plane || !!c.planes?.includes(plane)
@@ -69,7 +70,7 @@ export const isOnPlane = (c: Pick<Card, 'pieceId' | 'planes'>, plane: string) =>
 export const titleField = (type: AnyType) => (type === 'competitor' ? 'name' : 'title')
 
 // Docs from any of the card collections, as cards; one without a plane (`pieceId`) isn't the app's and is left out.
-export type CardDoc = { id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number; body?: string } & CardFields
+export type CardDoc = { id: string; pieceId?: string; title?: string; name?: string; x?: number; y?: number; body?: string; createdAt?: number; updatedAt?: number } & CardFields
 
 // A doc that didn't change (the same object, hooks.ts) gives the same card, so what's drawn from it stays memoised.
 const made = new WeakMap<CardDoc, Card>()
@@ -102,6 +103,8 @@ export function toCards(type: AnyType, docs: CardDoc[]): Card[] {
             criteria: d.criteria,
             folded: d.folded,
             memberIds: d.memberIds,
+            ...(typeof d.createdAt === 'number' ? { createdAt: d.createdAt } : {}),
+            ...(typeof d.updatedAt === 'number' ? { updatedAt: d.updatedAt } : {}),
           },
         ]
       : []
@@ -111,11 +114,11 @@ export function toCards(type: AnyType, docs: CardDoc[]): Card[] {
 }
 
 // The other way (ops' project, S3): the card's own doc fields, as toCards reads them back. Lossless for every field
-// toCards reads (`toCards(t, [cardDoc(c)])` gives `c` back, without `planes`/`on`, which come from places); fields
-// toCards never reads (createdAt, updatedAt) aren't in a card, so they can't be here either.
+// toCards reads (`toCards(t, [cardDoc(c)])` gives `c` back, without `planes`/`on`, which come from places); its times
+// (createdAt, updatedAt) when it has them (a doc's server timestamps that aren't numbers yet are left out).
 export function cardDoc(c: Card): CardDoc {
   const d: Record<string, unknown> = { id: c.id, pieceId: c.pieceId, [titleField(c.type)]: c.title, x: c.x, y: c.y }
-  for (const k of ['tags', 'validation', 'regions', 'priority', 'status', 'impact', 'effort', 'description', 'audience', 'pricing', 'url', 'criteria', 'folded', 'memberIds'] as const)
+  for (const k of ['tags', 'validation', 'regions', 'priority', 'status', 'impact', 'effort', 'description', 'audience', 'pricing', 'url', 'criteria', 'folded', 'memberIds', 'createdAt', 'updatedAt'] as const)
     if (c[k] !== undefined) d[k] = c[k]
   if (c.notes !== undefined) d[c.type === 'competitor' ? 'notes' : 'body'] = c.notes
   // Read back unchanged, the doc gives this very card (toCards' memo), so a copy of the workspace keeps its objects.

@@ -15,6 +15,13 @@ where you do it, which function in `src/data/` it calls now, and the op the agen
 - **R7**: real logic lives in a component (what moves along, where a thing lands, what a new thing is called…).
 - **no UI caller**: exported from `src/data/` and never called from the UI.
 
+**Ids the model uses (S10, `src/agent/read/ids.ts`).** The model never sees a Firestore id. It reads and writes short,
+typed ids, stable for one chat and saved with it: `c` card (packages too), `p` piece (plane, matrix, table, deck,
+timeline, documents, document), `x` text, `t` task, `e` link, `v` evidence, `f` a competitor's feature, `d` document,
+`k` canvas, `m` comment thread, `u` person (`c12`, `p3`, `t40`). A title or name works too (exact, then ignoring case
+and spaces, then a prefix); an unclear one comes back as candidates. The ops still take real ids today; S13's `change`
+tool maps short ids (and `$handles`) to them before an op is built.
+
 Paths: views are in `src/views/workspace/` unless a full path is given; data functions are `file.ts:function` in
 `src/data/`. Line numbers are from 2026-10-29 (`8651c9b` + the uncommitted tree).
 

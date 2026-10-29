@@ -100,12 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-PAUSED 2026-10-30 (the user's internet going away). S10 (read layer) is BUILT but NOT reviewed or committed: the
-uncommitted files are src/agent/read/*, tests/unit/fixtures/workspaces.ts, tests/unit/agentRead.test.ts,
-tests/unit/golden/*, and edits to tests/unit/purity.test.ts and docs/specs/agent-actions.md (intro). tsc clean, 339
-tests passed when built. To resume: start a fresh S10 reviewer (the brief: the 20 "where is / what is" questions on the
-medium fixture with the map + ≤ 2 tool calls, output vs fixture data, the workspace_content injection guard, whether
-card docs carry createdAt/updatedAt for whats_new and id order), then fix → commit → S11. S1–S9 committed.
+S11 next (eval harness: fixtures, task files, runner, graders, report; ~40 tasks; stub model). S1–S10 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -174,6 +169,14 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   `src/agent/driving.ts` `agentDriving()` for onboarding · reviewer: 1 fix round (in_section swallowing, blocks
   landing in unnamed sections, a lone package member, facade calls racing), then pass: adversarial overlap cases,
   back-to-back facade calls end in the last call's view, live cluster beside a section.
+- S10 · see `git log --grep "Agent S10"` · `src/agent/read/` (pure): short ids (c p x t e v f d k m u; stable,
+  never reused, saved/restored; resolve by id/name with candidates; people by name/email/me), the map (legend, Today,
+  link kinds, comments line; summarised by level; big fixture ≈ 11.1k est. tokens at chars/3.0, budget 13.5k),
+  tools search/query (JSON-schema filters, bad values refused with allowed lists, comments)/get/view (every kind)/
+  neighbours/read_document/whats_new (cards' times now kept by toCards)/where_am_i; workspace text wrapped and
+  defanged (NFKC, zero-width); 3 generated fixtures + golden files · reviewer: 1 fix round (names leaking a closing
+  tag outside the wrapper, crashes on dangling refs, loose tool args, silent zero results, no comment listing), then
+  pass: 20/20 "where is / what is" questions answerable from the map + ≤ 2 calls, 0 injection leaks over 9 variants.
 
 ### Stuck
 _(none)_

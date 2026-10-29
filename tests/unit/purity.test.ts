@@ -1,4 +1,4 @@
-// src/model/ and src/ops/ stay pure (S3, D-312): no Firebase, React or zustand, nothing from views/, and no value from
+// src/model/, src/ops/ and the agent's read layer src/agent/read/ stay pure (S3, S10, D-312): no Firebase, React or zustand, nothing from views/, and no value from
 // data/, state/ or anywhere outside the two (types are fine: `import type`). So the ops and the read layer run in node,
 // in a worker, in tests, without a project. The one door to Firebase is src/ops/firestore.ts, and only src/ops/index.ts
 // may import it (pure code imports the modules it needs, never the index).
@@ -7,7 +7,7 @@ import { dirname, join, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = resolve(__dirname, '../..')
-const DIRS = ['src/model', 'src/ops'].map((d) => join(ROOT, d))
+const DIRS = ['src/model', 'src/ops', 'src/agent/read'].map((d) => join(ROOT, d))
 const ADAPTER = join(ROOT, 'src/ops/firestore.ts')
 const INDEX = join(ROOT, 'src/ops/index.ts')
 const BANNED = /^(firebase|@firebase|react|react-dom|zustand)(\/|$)/
@@ -31,7 +31,7 @@ function importsOf(src: string) {
 
 const inside = (p: string) => DIRS.some((d) => p === d || p.startsWith(d + '/'))
 
-describe('src/model and src/ops are pure', () => {
+describe('src/model, src/ops and src/agent/read are pure', () => {
   const all = DIRS.flatMap(files)
 
   it('finds the files', () => {
@@ -47,7 +47,7 @@ describe('src/model and src/ops are pure', () => {
         if (BANNED.test(spec)) bad.push(`${text}  (no Firebase, React or zustand)`)
         else if (spec.startsWith('.')) {
           const target = resolve(dirname(file), spec)
-          if (!inside(target)) bad.push(`${text}  (a value from outside src/model and src/ops: move it in, or import type)`)
+          if (!inside(target)) bad.push(`${text}  (a value from outside src/model, src/ops and src/agent/read: move it in, or import type)`)
           else if ((target === ADAPTER.replace(/\.ts$/, '') || target === INDEX.replace(/\.ts$/, '') || target === join(ROOT, 'src/ops')) && file !== INDEX)
             bad.push(`${text}  (only src/ops/index.ts imports the Firebase adapter; import the module you need)`)
         }
