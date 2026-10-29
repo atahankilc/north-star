@@ -549,13 +549,9 @@ export function CanvasView() {
       ...(mine || (d.shared && isOwnerOf(workspace, user?.id)) ? [{ key: 'delete', label: 'delete', glyph: '×', letter: 'x', danger: true, onSelect: () => useDocUi.setState({ deleting: d.id }) }] : []),
     ]
   }
-  // Delete on a piece also on another canvas takes it off this one (D-302's session 3, as a card's Delete does, D-281),
-  // a toast saying where it still is; on its only canvas, the hazard confirm. `delete everywhere` asks there too.
-  const askDelete = (id: string) => {
-    const p = piecesRef.current.find((x) => x.id === id)
-    if (!p?.canvases) return useCanvasView.setState({ confirming: id })
-    takeOffHere(wsNow(), p)
-  }
+  // Delete asks in the hazard confirm (D-182); on a piece also on other canvases it asks which (D-313): `only from here`
+  // (it stays on the others, a toast says where) or `delete everywhere`.
+  const askDelete = (id: string) => useCanvasView.setState({ confirming: id })
   askDeleteHere = askDelete
   // A document's pieces' spots on other canvases (D-307), going with them.
   const spotsOf = (list: { id: string }[]) => spots.filter((s) => list.some((p) => p.id === s.pieceId)).map((s) => spotRef(wid, s.canvasId, s.pieceId))
@@ -1192,9 +1188,29 @@ export function CanvasView() {
       )}
       {confirming && (
         <HazardConfirm
-          title={`delete ${confirming.name ? `"${confirming.name}"` : `this ${KIND_NAME[kindOfPiece(confirming)]}`}${confirming.canvases ? ' everywhere' : ''}?`}
+          title={`delete ${confirming.name ? `"${confirming.name}"` : `this ${KIND_NAME[kindOfPiece(confirming)]}`}?`}
+          also={
+            confirming.canvases
+              ? {
+                  label: 'only from here',
+                  onSelect: () => {
+                    useCanvasView.setState({ confirming: null })
+                    takeOffHere(wsNow(), confirming)
+                  },
+                }
+              : undefined
+          }
           lines={[
-            kindOfPiece(confirming) === 'document'
+            // On other canvases too (D-313): which ones first, then what each answer does.
+            ...(confirming.canvases
+              ? [
+                  `It's on ${confirming.canvases.length} canvases: ${confirming.canvases.map((c) => canvases.find((x) => x.id === c)?.name ?? 'another').join(', ')}.`,
+                  'Only from here: it stays on the others, as it is.',
+                ]
+              : []),
+            everywhereIf(
+              !!confirming.canvases,
+              kindOfPiece(confirming) === 'document'
               ? 'It goes from the canvas; the document stays in its list.'
               : kindOfPiece(confirming) === 'documents'
                 ? 'The list goes; the documents in it stay.'
@@ -1203,12 +1219,11 @@ export function CanvasView() {
                   : isBare(confirming)
                   ? `The ${KIND_NAME[kindOfPiece(confirming)]} and its cells go; the cards in it stay.`
                   : 'The plane and everything on it goes.',
+            ),
             ...(isBare(confirming) ? [] : sharedOnOf(cards, places, confirming)),
-            // On other canvases too (D-302's session 3): it goes from all of them.
-            ...(confirming.canvases ? [`It's on ${confirming.canvases.length} canvases: it goes from every one. To take it off this one only: ⌫ in edit mode.`] : []),
             `${UNDO_HINT} brings it back.`,
           ]}
-          confirm="delete"
+          confirm={confirming.canvases ? 'delete everywhere' : 'delete'}
           onCancel={() => useCanvasView.setState({ confirming: null })}
           onConfirm={() => {
             useCanvasView.setState({ confirming: null })
@@ -1918,6 +1933,9 @@ const under = (e: React.MouseEvent): [number, number] => {
   const r = e.currentTarget.getBoundingClientRect()
   return [r.left, r.bottom + 6]
 }
+
+// What deleting does, said as the `delete everywhere` answer when there are two (D-313).
+const everywhereIf = (two: boolean, line: string) => (two ? `Everywhere: ${line[0].toLowerCase()}${line.slice(1)}` : line)
 
 // A thread asked for from another canvas (D-302's session 4), gone to once its canvas is made.
 let waitingThread: string | null = null

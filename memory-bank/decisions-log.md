@@ -5598,7 +5598,8 @@ table's cells, a deck's tasks are the same everywhere.
   toast `Put "Pazar" on Engineering too [go there]`. Shared, its name ends `⧉ 2` (magenta) and its console starts
   `[⧉ 2]`: where it is (`• Marketing here`, `→ Engineering go there`), `also on canvas…`, `take it off this canvas`,
   `delete everywhere`. Right-click has the last two too; `move to canvas…` isn't offered where it's only a spot.
-- *Delete:* on a shared piece Delete (edit mode) and `[delete]` take it off this canvas, the toast `Took "Pazar" off this
+- *Delete:* (D-313: Delete now asks first, `only from here` or `delete everywhere`.) On a shared piece Delete (edit mode)
+  and `[delete]` take it off this canvas, the toast `Took "Pazar" off this
   canvas · still on Engineering` (on its home, the home moves to its first other canvas, that spot goes; one undo step);
   `delete everywhere` is the hazard confirm, saying it's on 2 canvases, its spots going with it. Deleting a canvas
   keeps a piece also elsewhere (its home moves) and says so; moving a piece onto a canvas it's spotted on drops that
@@ -5655,6 +5656,19 @@ shows anyway.**
   new id, Backend, the Roadmap heading and Pazar's spot on it.
 - *Not yet:* the export settings' note still says "everything on the canvas" (WorkspaceLayout, another session's area).
 
+### D-310 · 2026-10-29 · Accepted (adds to D-238; the user: "yeni bir component koyarken direkt baktığım yere koyuyor ya, bazen başka bir componentin üzerindeyken yeni component koyma yapabiliyor ve bu durumda mesela yeni gelen component coktan var olanın arkasına düşebiliyor. Bu yüzden yeni gelen componenti oynatmak da imkansız oluyor", then "Direkt yeni eklenen en üste çıksın desek olmaz mı?")
+- *Decision:* pieces on a canvas are drawn oldest first (`createdAt`, then id), so the newest is always on top; one
+  added over another (nearClear found no clear spot, D-238) is never under it and can be moved at once.
+- *Why:* they were drawn in Firestore's order (random ids), so a new piece fell behind an older one about half the
+  time, and the older one took its presses.
+- *Alternatives:* also lifting the selected or edited piece on top: turned down by the user, since edit mode stays on
+  for several pieces at once and an older one in edit mode would cover the new one; a stored order (`z`), bring to
+  front / send back: not needed for this.
+- *Verified* headless (emulators): pieces whose ids sort against their age (`aa_new` newer than `yy_old`) drew
+  oldest first, the newer one taking the overlap; with the screen's middle inside one 8000 px plane (nearClear found
+  nothing clear) a plane added from `+` landed on it, on top, in edit mode, and dragging it moved it (the big one
+  stayed); tsc.
+
 ### D-311 · 2026-10-29 · Accepted (the user: "bitti mi işin? doğruluğunda emin ol. Sonrada kalan işleri yap")
 **Canvases, checked again** (D-302's sessions 1–4, D-305–D-309): an independent read of the code found these, fixed.
 - A shared piece focused on the first canvas jumped to its own canvas (`?canvas=` was left out for `main`): with a focus
@@ -5677,37 +5691,14 @@ shows anyway.**
   plane` landed at 25,-700, clear of Backend's spot at 0,0; dragging the section moved its spot with it (125, 25).
 - *Not yet (small):* a deck stuck to a shared plane, the plane then taken off the deck's canvas, stays linked to it.
 
-### D-310 · 2026-10-29 · Accepted (adds to D-238; the user: "yeni bir component koyarken direkt baktığım yere koyuyor ya, bazen başka bir componentin üzerindeyken yeni component koyma yapabiliyor ve bu durumda mesela yeni gelen component coktan var olanın arkasına düşebiliyor. Bu yüzden yeni gelen componenti oynatmak da imkansız oluyor", then "Direkt yeni eklenen en üste çıksın desek olmaz mı?")
-- *Decision:* pieces on a canvas are drawn oldest first (`createdAt`, then id), so the newest is always on top; one
-  added over another (nearClear found no clear spot, D-238) is never under it and can be moved at once.
-- *Why:* they were drawn in Firestore's order (random ids), so a new piece fell behind an older one about half the
-  time, and the older one took its presses.
-- *Alternatives:* also lifting the selected or edited piece on top: turned down by the user, since edit mode stays on
-  for several pieces at once and an older one in edit mode would cover the new one; a stored order (`z`), bring to
-  front / send back: not needed for this.
-- *Verified* headless (emulators): pieces whose ids sort against their age (`aa_new` newer than `yy_old`) drew
-  oldest first, the newer one taking the overlap; with the screen's middle inside one 8000 px plane (nearClear found
-  nothing clear) a plane added from `+` landed on it, on top, in edit mode, and dragging it moved it (the big one
-  stayed); tsc.
-
-### D-312 · 2026-10-29 · Accepted (answers Q-019, Q-020, Q-021, Q-023, Q-024; the user: "openAı kullanılcak ilk başta, sonradan başka sağlayıcılar eklenebilir. Modeli kullanıcı kendisi seçicek. Şimdilik bizim provide etme gibi bir şeyimiz yok, herkes kendi api key i ile istediğini yapmakta özgür. Değişiklikler önüzleme ile gösterilcek. Şu anda acayip bir component çeşitliliğimiz var, o yüzden önüzlemenin kaliteli olması lazım … Önceki gibi sağ alt köşede duramıyoru mu? Bilgi tabanının kapsamı ne olabiliyorsa o olcak … Her şeyi yapabilsinden kastım agentic workflowlar tamamen entegre edilsin, bir kullanıcı ne yapabiliyosa aynısını yapabilsin üstüne de çok işe yarayacak toollar ekleyelim ki insanlar cidden kullansın")
-**The agent: plan accepted** (docs/specs/agent.md; research and 1.0's post-mortem there). Not started.
-- *Decision:* the agent comes back built as in agent.md: the loop in the browser, running as the signed-in person
-  through a new `src/ops/` layer the UI uses too (plan → validate → apply, one undo step); a cached workspace map +
-  read tools (search, query, get, view, neighbours) instead of a vector DB; the app places things, never the model.
-  OpenAI's Responses API first behind a thin adapter, other providers later; **the person picks the model**; **own
-  keys only**, we provide nothing (D-079's workspace key stays parked; so the agent needs no Blaze). **Every change is
-  previewed first**: the real components draw an in-memory result (`project`, the same code as apply) with diff marks
-  on every kind, a change list with ticks and a stepper, the app locked, then one click and one undo step. It lives
-  **in the screen's bottom-right corner** as 1.0's did, growing into a column the app narrows beside. The knowledge
-  base is as wide as it can be (agent.md §4.9: workspace, comments, documents, agent notes, past chats, a change log,
-  method guides, the web, files once Storage is live). "Everything" = full agentic workflows (plan → run → preview →
-  ask → report), every content action a person has (an action inventory as the gate), plus skills (§4.10). Phases 1–10
-  with gates (§6), behaviour and code rules (§7), an eval set built before any UI (§8).
-- *Why:* 1.0's assistant behaved badly mainly because of a cheap model on low reasoning, one 28-op write tool, a
-  self-contradicting prompt, no search and never being measured (agent.md §1).
-- *Alternatives:* 1.0 with a better prompt; RAG over every item; a server agent (bypasses the rules, no undo, needs
-  Blaze); a workspace key we provide; the agent in a right panel or as a piece (the user chose the corner).
-- *Q-022, answered the same day:* the agent never reads the person's other workspaces ("diğer workspace'ler hayır");
-  PDFs and images come last, once Storage is live ("PDF'ler en sona kalsın").
-- *Not yet:* everything: agent.md's phases.
+### D-313 · 2026-10-29 · Accepted (the user: "biri bir compoennti canvasdan silerken şeyi de sor, bunu bitek burdan mı silmek istersin yoksa her yerden mi?")
+**Deleting a piece on several canvases asks which** (changes D-307's Delete, which took it off at once). Delete in
+edit mode, the console's `[delete]`, right-click `delete everywhere` and the where-list's open the hazard confirm:
+`delete "Pazar"?`, `It's on 2 canvases: Marketing, Engineering.`, `Only from here: it stays on the others, as it is.`,
+`Everywhere: the plane and everything on it goes.`, `⌘Z brings it back.`; answers `[cancel] [only from here] [delete
+everywhere]`, `only from here` focused first (Enter takes it). `only from here` is D-307's take-off (the toast says where
+it still is); right-click `take it off this canvas` still does that at once. A piece on one canvas asks as before.
+- *How:* HazardConfirm takes `also` (a second, gentler answer, focused instead of cancel).
+- *Verified:* headless Chrome on the emulators: Pazar on Marketing and Engineering, Delete in edit mode showed the
+  lines and buttons above with `only from here` focused; Enter took it off Marketing (its home moved to Engineering,
+  the toast `still on Engineering`); ⌘Z back; Delete → `delete everywhere` removed the piece and its spot.

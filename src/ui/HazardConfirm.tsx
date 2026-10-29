@@ -17,6 +17,9 @@ type Props = {
   confirm: string
   onConfirm: () => void
   onCancel: () => void
+  // A second, gentler answer beside the dangerous one (D-313: `only from here` for a piece on other canvases too); when
+  // given, it has the focus first instead of cancel.
+  also?: { label: string; onSelect: () => void }
 }
 
 // How long the tape takes to wrap round, and how long it runs before it stops.
@@ -27,11 +30,12 @@ const BAND = 3
 
 const ease = (t: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3)
 
-export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel }: Props) {
+export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel, also }: Props) {
   const dialog = useRef<HTMLDialogElement>(null)
   const box = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const cancelBtn = useRef<HTMLButtonElement>(null)
+  const alsoBtn = useRef<HTMLButtonElement>(null)
   const leaving = useRef(false)
   const reduced = isReducedMotion()
 
@@ -39,7 +43,7 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel 
     const d = dialog.current
     if (!d) return
     d.showModal()
-    cancelBtn.current?.focus()
+    ;(alsoBtn.current ?? cancelBtn.current)?.focus()
     return () => d.close()
   }, [])
 
@@ -143,6 +147,11 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel 
           <button ref={cancelBtn} className={styles.action} onClick={() => leave(onCancel)}>
             cancel
           </button>
+          {also && (
+            <button ref={alsoBtn} className={styles.action} onClick={() => leave(also.onSelect)}>
+              {also.label}
+            </button>
+          )}
           <button className={`${styles.action} ${styles.danger}`} onClick={() => leave(onConfirm)}>
             {confirm}
           </button>

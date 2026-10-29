@@ -38,7 +38,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   part of the above.
 
 ## Next steps (not started; ask the user which first)
-- Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311), committed, not pushed;
+- Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
+  which (D-313); committed, not pushed;
   rules deployed.
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
 - The agent back: plan accepted (D-312, docs/specs/agent.md): OpenAI, own keys, the person's model, previews, the

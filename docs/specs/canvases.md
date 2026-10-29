@@ -67,8 +67,8 @@ bölelim, burası, bütün canvas ve everywhere … adı canvas olsun, ve ortakl
   takes what's stuck to it (`stuckTo`, D-210) and, for a plane, its cards, text and links (they're the plane's); a
   section of canvas text takes what's fully inside it. It lands at the same x/y on the target, or the nearest clear
   spot (D-238). A toast: `moved to Engineering [go there]`, ⌘Z. One undo step.
-- **A shared piece:** `⧉ 2` after its kind in its name (`PAZAR · PLANE ⧉ 2`); Delete takes it off this canvas (toast
-  says where it still is), `delete everywhere` through the hazard confirm; its console lists `CANVASES` (go there, `×`
+- **A shared piece:** `⧉ 2` after its kind in its name (`PAZAR · PLANE ⧉ 2`); Delete asks in the hazard confirm (D-313):
+  `[only from here]` (focused; toast says where it still is) or `[delete everywhere]`; its console lists `CANVASES` (go there, `×`
   off one). Edits are one: a plane's cards, a table's cells are the same on every canvas.
 - **Items across canvases:** `existing card…` and the card pickers (D-299) list every card, grouped by canvas then
   plane; a card's `PLANES` panel section says `Engineering / 02 Build` when the plane is on another canvas.
