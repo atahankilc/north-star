@@ -173,7 +173,7 @@ when `to-canvas` (first) · anchor the prompt · within menu
 
 ### `card-made` · lesson · E+ · D-250
 when `card-made` (first) · done — · anchor the card panel · within typing
-1. **Name it here**: Enter keeps it. Tab makes the next one of its type. `esc` with nothing typed takes it away. ·
+1. **Name it here**: Enter keeps it. Tab makes the next one of its type. `esc` takes it away again. ·
    `card-make-name`
 2. **Its panel**: What it is, what backs it, its links, tags and notes, all edited here. · `card-panel`
 3. **Link it**: Point at a card, drag its `›` onto another. The link's kind says what it means. · `link-draw`
@@ -185,17 +185,17 @@ when `card-selected` (first, for someone who skipped `card-made`) · anchor the 
 
 ### `status-evidence` · lesson · E+ · D-137
 when the first status set or `evidence-added` · anchor the panel's status section
-1. **Is it true?**: Hypothesis, testing, validated, invalidated. Evidence for and against shows on the card:
-   `testing +2 −1`. · `evidence`
+1. **Is it true?**: Hypothesis, testing, validated, invalidated. Evidence shows on the card as cells: filled
+   for it, hollow against. · `evidence`
 
 ### `link-made` · lesson · E+ · D-207
-when `link-made` (first) · anchor the link bar
+when `link-made` (first) · anchor the link bar · within typing (its label field has the cursor)
 1. **What does it mean?**: Pick its kind: solves, for, competes, depends on… Give it a label, or turn it round. ·
    `link-bar`
 
 ### `for-links` · lesson · all · D-044, D-128
 when the first `for` link made (`link-made {kind: for}`) or the first `FOR` filter (`filter-set {kind: for}`) ·
-anchor the panel's `for` rows · after `link-made`
+anchor the link bar (a `for` link drawn from `›` opens it with the label ready) · within typing · after `link-made`
 1. **Who it's for**: A `for` link tags a card with a customer. The filter's FOR shows one customer's cards. ·
    `for-filter`
 
@@ -210,7 +210,7 @@ when `package-made` (first) · anchor the package band
    `package`
 
 ### `brought` · lesson · E+ · D-281
-when `brought` (first) or `bringing` · anchor the card · within menu
+when `brought` (first) · anchor the card (the one brought)
 1. **The same card, twice**: Edit it here or there: it's one card. `⧉ 2` says where else it is. · `shared-card`
 2. **Deleting a shared card**: Delete takes it off this plane only; it stays on the others. `delete everywhere`
    removes it from every plane. · no scene
@@ -469,7 +469,7 @@ Each 3–8 s (≤ 8000 ms), one action, 1 s hold at the end, poster = the tellin
 | card-panel | a card clicked, the panel builds, sections scroll | panel |
 | link-draw | `›` dragged from a problem onto an idea, the link and its label | linked |
 | link-bar | a link picked, kind changed to `solves` | bar |
-| evidence | a status set to testing, two evidence rows added, the card reads `testing +2 −1` | card |
+| evidence | a status set to testing, a finding added, the card's cells read two for, one against | card |
 | for-filter | FOR set to a customer, other cards fade | filtered |
 | multi-select | alt-drag a box over 3 cards, they move together | moved |
 | package | 3 cards selected → `package these`, the band appears, `−` folds it | folded |

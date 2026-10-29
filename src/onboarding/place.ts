@@ -147,6 +147,10 @@ export function bottomMiddle(i: PlaceInput): Placed {
   return { at: 'bottom', x: Math.round(x), y: Math.round(y), lead: null }
 }
 
+// Whether a card already placed must be placed again: what it must keep clear has moved or grown under it (its anchor:
+// a console widening as its piece goes into edit mode; what the lesson is about: a link's two cards).
+export const mustReplace = (card: Rect, anchor: Rect | null, keep: Rect[] = []) => (!!anchor && hits(card, anchor)) || keep.some((k) => hits(card, k))
+
 export function place(i: PlaceInput): Placed {
   const a = i.anchor
   if (!a) return bottomMiddle(i)

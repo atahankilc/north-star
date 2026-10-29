@@ -121,11 +121,9 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 evening: O0–O9 committed (+ D-316 looks, guards). O10 (planes and cards, 14 scenes) in its fix round
-(three scenes whose Enter never reaches the menu inside the frame → click the row; `brought` only on bringing a
-card; for-links within typing; after O9: link-made's card off the link's two cards, and the console lesson off its
-own edit-mode console). Then O11 onward. Emulators run from this session (restarted three times today, the user's OK);
-watch firebase-debug.log. Never `git add`/`git mv` from builders (shared index).
+2026-10-29 late evening: O0–O10 committed (+ D-316 looks, guards). Next: O11 (text §4 + matrix and table §5).
+Emulators run from this session (restarted three times today with the user's OK); watch firebase-debug.log.
+Never `git add`/`git mv` from builders (shared index). Two builders at most at once (usage limits hit twice).
 
 ### Done
 _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
@@ -207,6 +205,16 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   END-FRAME comparison (> 1 % fails), per-scene and run timeouts · reviewer: 3 rounds, judged at the real slot sizes
   (265 / 246 px): framing, a broken in-frame prompt (kind-existing → clicks), the side nav covered · carried to O10:
   the console lesson covers its own edit-mode console; stick-follow's last column cut; kind-section's refused writes.
+- O10 · (this commit) · planes and cards: 14 scenes (card-make-name, card-panel, evidence, link-draw, link-bar,
+  for-filter, plane-filter, multi-select, package, shared-card, competitor-features, parts, guides, prompt-type) on
+  fixtures/o10.ts; lazy document refs in CardPanel's ManyInside and PlaneCards' onPlane.items (the demo has no
+  Firestore); events: no card-moved in a step that makes something, no card-selected while a card is being named;
+  lessons: brought only on bringing a card, link-made and for-links within typing at the link bar, status-evidence's
+  words (cells); placement: a link lesson keeps off the link's two cards, a lesson re-places when its anchor grows
+  under it (place.ts mustReplace, tested); the empty-plane hint centred in the plane's own part · reviewer: 2 rounds
+  (menus left open inside the frame → click the row, a lesson pointing at a random card, unreadable `⧉ 2`) · flow:
+  13 lessons one at a time, 0 px over their anchors · left: stick-follow's opening frame cuts `EDIT 500`; the
+  mustReplace check can re-ask forever when no spot is clear (harmless, guard later).
 
 ### Stuck
 _(none)_

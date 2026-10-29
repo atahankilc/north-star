@@ -40,7 +40,24 @@ import beside from './scenes/beside'
 import besidePick from './scenes/beside-pick'
 import planeInside from './scenes/plane-inside'
 import canvasesShare from './scenes/canvases-share'
+// O10's (onboarding-lessons.md §3).
+import linkDraw from './scenes/link-draw'
+import cardMakeName from './scenes/card-make-name'
+import cardPanel from './scenes/card-panel'
+import evidence from './scenes/evidence'
+import linkBar from './scenes/link-bar'
+import forFilter from './scenes/for-filter'
+import planeFilter from './scenes/plane-filter'
+import multiSelect from './scenes/multi-select'
+import pkgScene from './scenes/package'
+import sharedCard from './scenes/shared-card'
+import competitorFeatures from './scenes/competitor-features'
+import parts from './scenes/parts'
+import guides from './scenes/guides'
+import promptType from './scenes/prompt-type'
 
 export const SCENES: Record<string, Scene> = Object.fromEntries([planeDrag, canvasFit, sidenavPlus, deckDrag, peersComment, piecesTour, plusAddsPlane, finderGo].map((s) => [s.id, s]))
 // O9: the kind guide's rows and the `+` and pieces lessons (onboarding-lessons.md §2).
 for (const s of [kindPlane, kindMatrix, kindTable, kindDocuments, kindHeading, kindParagraph, kindSticky, kindTitle, cardCustomer, cardProblem, cardCompetitor, cardIdea, cardFeature, kindPackage, kindExisting, kindDeck, kindTimeline, kindSection, editMoveResize, editDone, consoleAppear, focusInk, lensFocus, unframe, unframedLive, stick, stickFollow, beside, besidePick, planeInside, canvasesShare]) SCENES[s.id] = s
+// O10: planes and cards (onboarding-lessons.md §3).
+for (const s of [linkDraw, cardMakeName, cardPanel, evidence, linkBar, forFilter, planeFilter, multiSelect, pkgScene, sharedCard, competitorFeatures, parts, guides, promptType]) SCENES[s.id] = s

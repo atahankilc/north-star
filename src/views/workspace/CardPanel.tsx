@@ -269,10 +269,11 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
     .filter(([, n]) => n)
     .map(([t, n]) => `${n} ${t}${n > 1 ? 's' : ''}`)
     .join(' · ')
-  // Everything selected with its box: cards their size, text as it's laid out (D-229).
+  // Everything selected with its box: cards their size, text as it's laid out (D-229). Each one's document only when
+  // it's moved (drawn in the onboarding's demo, which has no Firestore, D-315).
   const items = [
-    ...cards.map((c) => ({ id: c.id, ref: spotRef(wid, c), x: c.x, y: c.y, w: CARD.w, h: CARD.h })),
-    ...texts.map((x) => ({ id: x.id, ref: labelRef(wid, x.id), ...labelBox(x) })),
+    ...cards.map((c) => ({ id: c.id, get ref() { return spotRef(wid, c) }, x: c.x, y: c.y, w: CARD.w, h: CARD.h })),
+    ...texts.map((x) => ({ id: x.id, get ref() { return labelRef(wid, x.id) }, ...labelBox(x) })),
   ]
   type Item = (typeof items)[number]
   const moveTo = (to: (c: Item) => [number, number]) => {

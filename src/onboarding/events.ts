@@ -73,6 +73,8 @@ export type CanvasViewLike = {
   bringing: unknown | null
   toCanvas: { share?: boolean } | null
   cardSelected: string | null
+  // A card just made and being named (D-250).
+  fresh?: string | null
   cardMulti: string[]
   linkSelected: string | null
   linking: unknown | null
@@ -238,6 +240,9 @@ export function stepEvents(base: SnapLike, after: SnapLike, ctx: StepCtx): Learn
     }
   }
   if (deletedAny) add('deleted', { confirmed, shared: confirmed && ctx.hazard.shared })
+  // Cards that moved as something was made in the same step (a package laying its members out, a card brought) weren't
+  // dragged: `card-moved` is a person's drag (guides-snap, onboarding-lessons.md §3).
+  if (out.some((e) => e.event === 'card-made' || e.event === 'package-made' || e.event === 'brought')) return out.filter((e) => e.event !== 'card-moved')
   return out
 }
 
@@ -379,7 +384,8 @@ export function attach(s: Sources): () => void {
           learn('cell-picked', { kind, framed: !piece?.open })
         } else {
           const card = w?.cards.find((c) => c.id === sel)
-          if (card) learn('card-selected', { kind: card.type }, `card:${card.id}`)
+          // A card just made is picked for its naming panel (D-250), not by the person: only a pick later counts.
+          if (card && n.fresh !== sel) learn('card-selected', { kind: card.type }, `card:${card.id}`)
         }
       }
       if (n.cardMulti.length > 1 && p.cardMulti.length < 2) learn('cards-multi', { count: n.cardMulti.length })

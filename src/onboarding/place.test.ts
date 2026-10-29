@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hits, leadCrosses, place, RIGHT_FREE, type PlaceInput, type Rect } from './place'
+import { hits, leadCrosses, mustReplace, place, RIGHT_FREE, type PlaceInput, type Rect } from './place'
 
 const view = { w: 1568, h: 980 }
 const size = { w: 268, h: 340 }
@@ -220,5 +220,30 @@ describe('the HUD as hard obstacles', () => {
     const p = place({ anchor, size, view, hard: [piece, ...hud] })
     for (const r of hud) expect(hits(at(p), r)).toBe(false)
     expect(inView(at(p), 0)).toBe(true)
+  })
+
+  it('an anchor that grew under the card (a console in edit mode): placed again, clear of its new box', () => {
+    const small = { x: 600, y: 800, w: 140, h: 28 }
+    const p = place({ anchor: small, size, view })
+    const card = at(p)
+    // The console widens to `EDIT 960 × 600 [delete] [done]` and now reaches under the card.
+    const grown = { ...small, x: small.x - 200, w: small.w + 500 }
+    expect(mustReplace(card, small)).toBe(false)
+    expect(mustReplace(card, grown)).toBe(true)
+    const again = place({ anchor: grown, size, view })
+    expect(hits(at(again), grown)).toBe(false)
+    expect(mustReplace(at(again), grown)).toBe(false)
+  })
+
+  it("a link's two cards are kept clear like the anchor (link-made's bar between them)", () => {
+    const bar = { x: 500, y: 470, w: 430, h: 30 }
+    const from = { x: 560, y: 520, w: 200, h: 100 }
+    const to = { x: 960, y: 300, w: 200, h: 100 }
+    const p = place({ anchor: bar, size, view, hard: [from, to] })
+    expect(hits(at(p), from)).toBe(false)
+    expect(hits(at(p), to)).toBe(false)
+    expect(hits(at(p), bar)).toBe(false)
+    expect(mustReplace(at(p), bar, [from, to])).toBe(false)
+    expect(mustReplace({ ...to, w: 10, h: 10 }, bar, [from, to])).toBe(true)
   })
 })

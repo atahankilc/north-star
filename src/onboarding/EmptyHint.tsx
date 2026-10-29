@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Appear } from '../ui/Appear'
 import { findAnchor } from './Lesson'
+import { useCanvasView } from '../state/canvasView'
 import styles from './Coach.module.css'
 
 // The line, its `+` in magenta (the side nav's `+`).
@@ -28,6 +29,9 @@ export function EmptyHint({ line, toward, anchor }: { line: string; toward?: str
   const [at, setAt] = useState<{ x: number; y: number; arrow: { x1: number; x2: number } | null } | null>(null)
   // Placed again when the window changes size.
   const [tick, setTick] = useState(0)
+  // With something open beside the plane (D-211), the plane's own part of the screen is left of the split line: the
+  // words stay in its middle, never across the line.
+  const share = useCanvasView((s) => (s.beside ? s.split : 1))
   useEffect(() => {
     const on = () => setTick((n) => n + 1)
     addEventListener('resize', on)
@@ -45,10 +49,10 @@ export function EmptyHint({ line, toward, anchor }: { line: string; toward?: str
       return
     }
     const box = anchor ? findAnchor(anchor)?.getBoundingClientRect() : null
-    const cx = box ? box.left + box.width / 2 : innerWidth / 2
+    const cx = box ? box.left + box.width / 2 : (innerWidth * share) / 2
     const cy = box ? box.top + box.height / 2 : innerHeight / 2
     setAt({ x: Math.round(cx - w / 2), y: Math.round(cy), arrow: null })
-  }, [line, toward, anchor, tick])
+  }, [line, toward, anchor, tick, share])
   return createPortal(
     <>
       {at?.arrow && (

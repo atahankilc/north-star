@@ -23,6 +23,8 @@ const LOOPS = 3
 const BUILT = ['plane-drag', 'canvas-fit', 'sidenav-plus', 'deck-drag', 'pieces-tour', 'plus-adds-plane', 'finder-go', 'peers-comment']
 // O9: the kind guide's rows and the `+` and pieces lessons (onboarding-lessons.md §2).
 BUILT.push('kind-plane', 'kind-matrix', 'kind-table', 'kind-documents', 'kind-deck', 'kind-timeline', 'kind-heading', 'kind-paragraph', 'kind-sticky', 'kind-section', 'kind-title', 'card-customer', 'card-problem', 'card-competitor', 'card-idea', 'card-feature', 'kind-package', 'kind-existing', 'edit-move-resize', 'edit-done', 'console-appear', 'focus-ink', 'plane-inside', 'lens-focus', 'unframe', 'unframed-live', 'stick', 'stick-follow', 'beside', 'beside-pick', 'canvases-share')
+// O10: planes and cards (onboarding-lessons.md §3).
+BUILT.push('link-draw', 'card-make-name', 'card-panel', 'evidence', 'link-bar', 'for-filter', 'plane-filter', 'multi-select', 'package', 'shared-card', 'competitor-features', 'parts', 'guides', 'prompt-type')
 export const playable = (scene: string) => (BUILT.includes(scene) ? scene : 'plane-drag')
 
 type Msg = { ns: typeof DEMO_NS; type: string; [k: string]: unknown }

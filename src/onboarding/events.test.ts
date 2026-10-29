@@ -29,7 +29,7 @@ function fakes() {
   const tracked = new Set<(label: string, meta?: { created?: string[]; actor?: 'person' | 'agent' }) => void>()
   const tickers: Array<() => void> = []
   const inputs = new Set<() => void>()
-  const canvasView = store({ editing: [] as string[], confirming: null as string | null, deleting: null, bringing: null, toCanvas: null, cardSelected: null as string | null, cardMulti: [] as string[], linkSelected: null, linking: null as unknown, drawing: null, packing: null })
+  const canvasView = store({ editing: [] as string[], confirming: null as string | null, deleting: null, bringing: null, toCanvas: null, cardSelected: null as string | null, fresh: null as string | null, cardMulti: [] as string[], linkSelected: null, linking: null as unknown, drawing: null, packing: null })
   const history = store({ past: [] as StepLike[], future: [] as StepLike[], notice: null as { text: string; at: number } | null })
   const curtain = store({ revealed: false })
   let loaded = true
@@ -182,6 +182,17 @@ describe('events', () => {
     ])
   })
 
+  it('a card picked for its naming panel is not card-selected; picked again later it is', () => {
+    const f = started()
+    f.setWs(W({ cards: [{ id: 'c1', type: 'competitor', pieceId: 'p1' }] }))
+    f.canvasView.set({ cardSelected: 'c1', fresh: 'c1' })
+    f.canvasView.set({ fresh: null })
+    expect(f.log).toEqual([])
+    f.canvasView.set({ cardSelected: null })
+    f.canvasView.set({ cardSelected: 'c1' })
+    expect(f.log).toEqual([{ event: 'card-selected', payload: { kind: 'competitor' }, target: 'card:c1' }])
+  })
+
   it('a write step: what it made, once; a merged step only what it adds; the agent never', () => {
     const f = started()
     const made: StepLike = { label: 'add a customer', before: [snap('workspaces/w1/customers/c1', null)], after: [snap('workspaces/w1/customers/c1', { title: '' })] }
@@ -249,6 +260,11 @@ describe('stepEvents', () => {
     expect(stepEvents([snap('a/w/tasks/t', { title: 'x' })], [snap('a/w/tasks/t', { title: 'x', cardId: 'c' })], ctx)).toEqual([{ event: 'task-for-card' }])
     expect(stepEvents([snap('a/w/pieces/p', { kind: 'plane' })], [snap('a/w/pieces/p', null)], { ...ctx, hazard: { ids: ['p'], shared: false } })).toEqual([{ event: 'deleted', payload: { confirmed: true, shared: false } }])
     expect(stepEvents([snap('a/w/pieces/q', { kind: 'plane' })], [snap('a/w/pieces/q', null)], { ...ctx, hazard: { ids: ['p'], shared: false } })).toEqual([{ event: 'deleted', payload: { confirmed: false, shared: false } }])
+  })
+  it('a card dragged is card-moved; cards moved as a package forms round them are not', () => {
+    const c = { title: 'x', x: 0, y: 0 }
+    expect(stepEvents([snap('a/w/features/f', c)], [snap('a/w/features/f', { ...c, x: 25 })], ctx)).toEqual([{ event: 'card-moved', payload: { focus: true } }])
+    expect(stepEvents([snap('a/w/features/f', c)], [snap('a/w/features/f', { ...c, x: 25 }), snap('a/w/packages/p', { title: 'p' })], ctx)).toEqual([{ event: 'package-made', target: 'card:p' }])
   })
   it('one event per kind per step (a paste of five)', () => {
     const after = [1, 2, 3, 4, 5].map((i) => snap(`a/w/ideas/i${i}`, { title: 't' }))

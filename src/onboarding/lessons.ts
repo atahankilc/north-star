@@ -360,7 +360,7 @@ export const LESSONS: readonly Lesson[] = [
     id: 'card-made', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-250',
     trigger: [{ event: 'card-made' }], anchor: 'card-panel', within: 'typing',
     pages: [
-      { title: 'Name it here', body: 'Enter keeps it. Tab makes the next one of its type. `esc` with nothing typed takes it away.', scene: 'card-make-name' },
+      { title: 'Name it here', body: 'Enter keeps it. Tab makes the next one of its type. `esc` takes it away again.', scene: 'card-make-name' },
       { title: 'Its panel', body: 'What it is, what backs it, its links, tags and notes, all edited here.', scene: 'card-panel' },
       { title: 'Link it', body: "Point at a card, drag its `›` onto another. The link's kind says what it means.", scene: 'link-draw' },
     ],
@@ -373,16 +373,16 @@ export const LESSONS: readonly Lesson[] = [
   {
     id: 'status-evidence', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-137',
     trigger: [{ event: 'status-set' }, { event: 'evidence-added' }], anchor: 'panel-status',
-    pages: [{ title: 'Is it true?', body: 'Hypothesis, testing, validated, invalidated. Evidence for and against shows on the card: `testing +2 −1`.', scene: 'evidence' }],
+    pages: [{ title: 'Is it true?', body: 'Hypothesis, testing, validated, invalidated. Evidence shows on the card as cells: filled for it, hollow against.', scene: 'evidence' }],
   },
   {
     id: 'link-made', v: 1, format: 'lesson', roles: EDITORS, area: 'links', since: 'D-207',
-    trigger: [{ event: 'link-made' }], anchor: 'link-bar',
+    trigger: [{ event: 'link-made' }], anchor: 'link-bar', within: 'typing',
     pages: [{ title: 'What does it mean?', body: 'Pick its kind: solves, for, competes, depends on… Give it a label, or turn it round.', scene: 'link-bar' }],
   },
   {
     id: 'for-links', v: 1, format: 'lesson', roles: ALL, area: 'links', since: 'D-044, D-128',
-    trigger: [{ event: 'link-made', when: { kind: 'for' } }, { event: 'filter-set', when: { kind: 'for' } }], anchor: 'panel-for', after: ['link-made'],
+    trigger: [{ event: 'link-made', when: { kind: 'for' } }, { event: 'filter-set', when: { kind: 'for' } }], anchor: 'link-bar', within: 'typing', after: ['link-made'],
     pages: [{ title: "Who it's for", body: "A `for` link tags a card with a customer. The filter's FOR shows one customer's cards.", scene: 'for-filter' }],
   },
   {
@@ -397,7 +397,7 @@ export const LESSONS: readonly Lesson[] = [
   },
   {
     id: 'brought', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-281',
-    trigger: [{ event: 'brought' }, { event: 'bringing' }], anchor: 'card', within: 'menu',
+    trigger: [{ event: 'brought' }], anchor: 'card',
     pages: [
       { title: 'The same card, twice', body: "Edit it here or there: it's one card. `⧉ 2` says where else it is.", scene: 'shared-card' },
       { title: 'Deleting a shared card', body: 'Delete takes it off this plane only; it stays on the others. `delete everywhere` removes it from every plane.' },

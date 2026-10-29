@@ -7,19 +7,20 @@ import { CLEAR, PLANE_F, TABLE_F, bare, by, lensFixture } from '../fixtures/kit'
 
 const P = `[data-target="plane:${PLANE_F}"]`
 const GRAB = aim(P, 0.5, 0.45)
-const MOVE = { x: 25, y: 75 }
+const MOVE = { x: 0, y: 75 }
 const DONE = `${P} [role="toolbar"] button[aria-pressed="true"]`
 
 const scene: Scene = {
   id: 'stick-follow',
-  fixture: lensFixture(true, { w: 300 }),
+  // The table wide enough for all its columns; the view frames where both start and where they land, whole.
+  fixture: lensFixture(true, { w: 550 }),
   view: 'canvas',
   // A little larger than most (still 16:10): the plane's console in edit mode is wider than the plane at this zoom.
   size: [768, 480],
   length: 6400,
   poster: 6300,
   cursor: onStage(560, 390),
-  setup: [bare('stick-follow'), camera.set(CLEAR.x + 359, CLEAR.y + 175, 0.74), run(() => setEditing(PLANE_F, true), 'in edit mode')],
+  setup: [bare('stick-follow'), camera.set(CLEAR.x + 360, CLEAR.y + 210, 0.52), run(() => setEditing(PLANE_F, true), 'in edit mode')],
   steps: [
     { at: 300, do: cursor.to(GRAB, 900) },
     { do: wait(350) },

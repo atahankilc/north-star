@@ -275,9 +275,10 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
   if (live) onPlane.items = (ids) => {
     const all = new Set(ids)
     for (const id of ids) for (const r of folds.rows.get(id) ?? []) all.add(r.card.id)
+    // Each one's document only once it's written (drawn in the onboarding's demo, which has no Firestore, D-315).
     return [
-      ...cards.filter((c) => all.has(c.id)).map((c) => ({ id: c.id, ref: spotRef(wid, c), x: c.x, y: c.y })),
-      ...labels.filter((l) => all.has(l.id)).map((l) => ({ id: l.id, ref: labelRef(wid, l.id), x: l.x, y: l.y })),
+      ...cards.filter((c) => all.has(c.id)).map((c) => ({ id: c.id, get ref() { return spotRef(wid, c) }, x: c.x, y: c.y })),
+      ...labels.filter((l) => all.has(l.id)).map((l) => ({ id: l.id, get ref() { return labelRef(wid, l.id) }, x: l.x, y: l.y })),
     ]
   }
   if (live) onPlane.boxes = () => [

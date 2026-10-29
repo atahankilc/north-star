@@ -11,7 +11,8 @@ import { DecodeText } from '../ui/DecodeText'
 import { useCanvasView } from '../state/canvasView'
 import { Demo } from './Demo'
 import { Btn, keepFocus, stopCanvas, trapTab, useDialogFocus, Words } from './Pages'
-import { place, type Placed, type Rect, type Side } from './place'
+import { mustReplace, place, type Placed, type Rect, type Side } from './place'
+import { getWs } from '../state/wsStore'
 import { fill, lessonName, plain, type Fill } from './words'
 import type { CloseHow, Shown } from './queue'
 import styles from './Lesson.module.css'
@@ -99,6 +100,8 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
       const r = rectOf(el)
       if (isVisible(el) && r.w * r.h < screen * 0.5) hard.push(r)
     }
+  // A link (`link:<id>`): the two cards it joins are what it means, never covered either.
+  hard.push(...linkEnds(target))
   for (const el of document.querySelectorAll<HTMLElement>(`${CONSOLES}, ${MENUS}`)) {
     if (el === anchor || mine(el) || !isVisible(el)) continue
     hard.push(rectOf(el))
@@ -117,6 +120,19 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
     if (onScreen(r) && r.w * r.h < screen * 0.5) hard.push(r)
   }
   return { soft, hard, noLead }
+}
+
+// The two cards a link joins, on screen (the live ones), when the lesson is about a link.
+function linkEnds(target: string | undefined): Rect[] {
+  if (!target?.startsWith('link:')) return []
+  const e = getWs()?.edges.find((x) => x.id === target.slice(5))
+  if (!e) return []
+  const out: Rect[] = []
+  for (const id of [e.fromId, e.toId]) {
+    const el = [...document.querySelectorAll<HTMLElement>(`[data-target="card:${CSS.escape(id)}"]`)].filter(isVisible).at(-1)
+    if (el) out.push(rectOf(el))
+  }
+  return out
 }
 
 // Anchors that span the page (a row of the workspaces page's list): below them first, where the page has room, so the
@@ -197,6 +213,8 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
         const best = findAnchor(anchorName, target)
         const had = hadAnchor.current
         if (best && best !== had && (!had || !isVisible(had) || (target && best.closest(`[data-target="${CSS.escape(target)}"]`)))) setSample((n) => n + 1)
+        // What it keeps clear grew or moved under it (a console widening in edit mode, a link's card): placed again.
+        else if (had && isVisible(had) && card.current && !card.current.dataset.done && mustReplace(rectOf(card.current), rectOf(had), linkEnds(target))) setSample((n) => n + 1)
       }
     }, 700)
     return () => {
