@@ -42,8 +42,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   rules deployed.
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
 - The agent back: plan accepted (D-312, docs/specs/agent.md): OpenAI, own keys, the person's model, previews, the
-  bottom-right corner. Overnight run 2026-10-29/30 (docs/specs/agent-run.md, its log is the progress): S1–S3 done
-  (action inventory, vitest + src/model, src/ops core), S4 next. 1.0's rules: decisions-1.0.md.
+  bottom-right corner. Overnight run 2026-10-29/30 (docs/specs/agent-run.md, its log is the progress): S1–S7 done
+  (action inventory, vitest + src/model, src/ops core, every content write as ops except tasks), S8 next. 1.0's rules: decisions-1.0.md.
 - Onboarding: plan written (D-315; docs/specs/onboarding.md, onboarding-lessons.md, onboarding-run.md). Overnight run
   2026-10-29/30 (onboarding-run.md's log is the progress): O0 demo realm (d37ea15), O1 seen-state + rules, **not
   deployed** (3e2b9aa), O2 lessons as data + `check:lessons` (9366345) done; O3 (events, queue), O4 (look preview) next.
