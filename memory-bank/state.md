@@ -35,8 +35,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   pushed; its rule is already deployed. Its preview of four is docs/specs/timeline-preview/ (B, C, D not built).
 - Uncommitted code in the tree from another session (`setFitter` in CanvasView/canvasView.ts, WorkspaceLayout.tsx): not
   part of the above.
-- Audit P1–P3 (docs/audit-2026-10-29.md, D-317–D-323): committed, not pushed. **Deploy before pushing** (asked, D-322):
-  Firestore rules + RTDB (invites, thread preview, presence photo); functions wait for Blaze. P3b, P4–P6 after onboarding.
+- Audit P1–P3 (docs/audit-2026-10-29.md, D-317–D-323): committed, not pushed. Firestore rules + RTDB deployed
+  2026-10-29 (the user's go, D-322; indexes not deployed, Firebase's kept); functions wait for Blaze. P3b, P4–P6 after onboarding.
 
 ## Next steps (not started; ask the user which first)
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
