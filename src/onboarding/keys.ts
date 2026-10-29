@@ -14,6 +14,8 @@ export const KEYS: readonly KeyRow[] = [
   // Anywhere in a workspace
   { keys: '⌘F', what: 'find anything, and go there', lesson: 'finder' },
   { keys: '?', what: 'this guide' },
+  { keys: '⌘J', what: 'the agent: open it or fold it away' },
+  { keys: '/', what: 'the agent, when nothing has the keyboard' },
   { keys: '⌘Z', what: 'undo', lesson: 'hazard-undo' },
   { keys: '⇧⌘Z', what: 'redo', lesson: 'hazard-undo' },
   { keys: '0', what: 'fit: show everything', lesson: 'side-nav' },
