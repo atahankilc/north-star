@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-29 (kanban called a deck on screen, D-301; D-300 half built)_
+_Last updated: 2026-10-29 (tasks side view D-300, deck naming D-301, linked decks always filter D-303)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -27,9 +27,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   card faces on kanbans and tables (0c9178f), D-295 readable text on tinted cards (1c78097), D-296 dropped plans
   (memory only), D-298 timeline leftovers (06e11c7), D-299 card pickers as the prompt (80441e7), a framed table's focus
   kept inside its window (f14b321). D-291/D-292 and before: pushed and live. What was done: state-history.md.
-- Uncommitted: D-301 (kanban shown as "deck": strings only) and D-300 03 A (a deck never hides tasks; session
-  0b4cdc69, closed by accident: resume it with `claude --resume 0b4cdc69-779c-4040-87ce-dd33ebe4ed19`). D-300's 01 A,
-  the tasks side view, not started.
+- D-300 (tasks side view, a deck never hides tasks), D-301 (deck), D-303 (no `this plane only`): committed, not pushed.
 - Uncommitted code in the tree from another session (`setFitter` in CanvasView/canvasView.ts, WorkspaceLayout.tsx): not
   part of the above.
 

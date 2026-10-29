@@ -29,7 +29,7 @@ export type KanbanCol = {
 }
 export type KanbanSetup = {
   cols: KanbanCol[]
-  // Stuck to a plane (D-255), it shows only tasks for that plane's cards and tasks for none; this shows them all.
+  // Once let a deck stuck to a plane show every task (D-255); ignored since D-303, kept so old data reads.
   everyPlane?: boolean
   // Its rows (D-258): none, or lanes by who a task is given to or by the card it's for (src/views/workspace/rows.ts).
   rows?: KanbanRows
@@ -183,7 +183,7 @@ export function deleteTask(wid: string, task: Pick<Task, 'id'>) {
 
 // Several tasks at once (D-258), each one undo step for all of them: moved (a column, an order, and a lane's fields), their
 // fields set, taken away.
-export type TaskMove = { id: string; col: string; order: number; fields?: TaskFields }
+export type TaskMove = { id: string; col: string; order: number; fields?: TaskFields; pieceId?: string }
 const fieldsOf = (fields: TaskFields = {}) => Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v === undefined ? deleteField() : v]))
 export function moveTasks(wid: string, moves: TaskMove[], what = `move ${moves.length} tasks`) {
   const refs = moves.map((m) => taskRef(wid, m.id))
@@ -236,18 +236,30 @@ export function setKanbanSetup(wid: string, pieceId: string, patch: Partial<Pick
   return tracked(what, [ref], () => updateDoc(ref, data), key ? { key } : {})
 }
 
-// Stuck to a plane (D-255): only that plane's tasks, or every task (shared): one undo step.
-export function setEveryPlane(wid: string, pieceId: string, every: boolean) {
-  const ref = pieceRef(wid, pieceId)
-  return tracked(every ? 'show every task' : 'show this plane’s tasks', [ref], () => updateDoc(ref, { 'kanban.everyPlane': every || deleteField(), updatedAt: Date.now() }))
+// A kanban's tasks moved to another (D-300), and the one they leave set to hold cards (`patch`) when it's switching:
+// one undo step, so switching a kanban with tasks on it to cards never leaves them hidden on it.
+export function moveTasksAway(wid: string, moves: TaskMove[], pieceId: string, patch: Partial<Pick<KanbanSetup, 'holds' | 'source' | 'colField'>> | null, what: string) {
+  const refs = moves.map((m) => taskRef(wid, m.id))
+  const piece = pieceRef(wid, pieceId)
+  const now = Date.now()
+  return tracked(what, patch ? [...refs, piece] : refs, async () => {
+    const batch = writeBatch(db())
+    moves.forEach((m, i) => batch.update(refs[i], { pieceId: m.pieceId, col: m.col, order: m.order, updatedAt: now }))
+    if (patch) {
+      const data: Record<string, unknown> = { updatedAt: now }
+      for (const [k, v] of Object.entries(patch)) data[`kanban.${k}`] = v === undefined ? deleteField() : JSON.parse(JSON.stringify(v))
+      batch.update(piece, data)
+    }
+    await batch.commit()
+  })
 }
 
-// What a kanban shows (D-255): stuck to a plane and not set to every plane, the tasks for that plane's cards and those
-// for no card (or for one that's gone); otherwise all of them.
+// What a kanban shows (D-255): stuck to a plane, the tasks for that plane's cards and those for no card (or for one
+// that's gone), until it's unlinked (D-303: an old `everyPlane` is ignored); otherwise all of them.
 // A card brought to that plane from another counts as its (D-281).
 export function shownTasks(tasks: Task[], piece: { stuckTo?: string; kanban?: KanbanSetup }, cards: Pick<Card, 'id' | 'pieceId' | 'planes'>[]) {
   const plane = piece.stuckTo
-  if (!plane || piece.kanban?.everyPlane) return tasks
+  if (!plane) return tasks
   const byId = new Map(cards.map((c) => [c.id, c]))
   return tasks.filter((t) => {
     const c = t.cardId ? byId.get(t.cardId) : undefined

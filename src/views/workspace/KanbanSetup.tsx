@@ -4,9 +4,15 @@
 // impact, effort, priority), `no value` always first; rows from another, or none (D-269). Boxes (D-269): with rows, a
 // name for any box (column × row), plain, washed green or named in magenta. Every change is one undo step. The same editors make a new kanban
 // in the wizard (KanbanWizard.tsx), on a draft.
+// A kanban with tasks on it never hides them (D-300): switched to cards, it asks where they go first (a new kanban for
+// the cards beside it, or the tasks moved to another kanban); one that hid them before this says so, in the same place.
+import { useState } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { BOX_NAME_MAX, BOX_NAMES_MAX, CARD_FIELDS, setKanbanSetup, type BoxName, type CardField, type KanbanSetup } from '../../data/tasks'
+import { BOX_NAME_MAX, BOX_NAMES_MAX, CARD_FIELDS, emptyKanban, moveTasksAway, setKanbanSetup, tasksIn, type BoxName, type CardField, type KanbanSetup, type Task, type TaskMove } from '../../data/tasks'
+import { addPiece, GRID, PIECE_SIZE } from '../../data/pieces'
+import { setEditing } from '../../state/canvasView'
+import { findGo } from './find'
 import type { Source } from '../../data/source'
 import type { TableSetup } from '../../data/table'
 import { Choices, Row } from './MatrixSetup'
@@ -28,7 +34,10 @@ export type SetKanban = (patch: KanbanPatch, what: string, key?: string) => void
 export const CARDS_START = KANBAN_TEMPLATES[1].setup() as Required<Pick<KanbanPatch, 'colField' | 'source'>>
 
 export function KanbanSetupPanel({ piece }: { piece: WithId<Piece> }) {
-  const { wid, cards } = useWs()
+  const { wid, cards, tasks } = useWs()
+  const held = tasks.filter((t) => t.pieceId === piece.id)
+  // Cards picked while it holds tasks: where they go is asked first (D-300).
+  const [asking, setAsking] = useState(false)
   const setup = kanbanOf(piece)
   const tab = useKanbanUi((s) => s.tab)
   const close = () => useKanbanUi.setState({ setup: null })
@@ -58,14 +67,15 @@ export function KanbanSetupPanel({ piece }: { piece: WithId<Piece> }) {
         </span>
       </header>
       <div className={m.setupBody} role="tabpanel">
-        <KanbanEditor tab={tab} setup={setup} onChange={set} />
+        <KanbanEditor tab={tab} setup={setup} onChange={set} onHoldCards={held.length ? () => setAsking(true) : undefined} />
+        {tab === 'holds' && held.length > 0 && (asking || cardsHere) && <HeldTasks piece={piece} held={held} onDone={() => setAsking(false)} />}
       </div>
     </section>
   )
 }
 
-// One tab's editor, on the piece or a draft.
-export function KanbanEditor({ tab, setup, onChange }: { tab: KanbanTab; setup: KanbanSetup; onChange: SetKanban }) {
+// One tab's editor, on the piece or a draft. `onHoldCards`: it holds tasks, so cards picked asks first (D-300).
+export function KanbanEditor({ tab, setup, onChange, onHoldCards }: { tab: KanbanTab; setup: KanbanSetup; onChange: SetKanban; onHoldCards?: () => void }) {
   const cardsHere = setup.holds === 'cards'
   if (tab === 'holds')
     return (
@@ -77,7 +87,9 @@ export function KanbanEditor({ tab, setup, onChange }: { tab: KanbanTab; setup: 
             { value: 'cards', label: 'cards', hint: 'cards from the planes, in columns from one of their fields; dragging one sets it' },
           ]}
           onChange={(v) =>
-            v === 'cards'
+            v === 'cards' && !cardsHere && onHoldCards
+              ? onHoldCards()
+              : v === 'cards'
               ? onChange({ holds: 'cards', colField: setup.colField ?? CARDS_START.colField, source: setup.source ?? CARDS_START.source }, 'hold cards on a deck')
               : onChange({ holds: undefined }, 'hold tasks on a deck')
           }
@@ -119,6 +131,93 @@ export function KanbanEditor({ tab, setup, onChange }: { tab: KanbanTab; setup: 
         />
       </Row>
     </>
+  )
+}
+
+// Its tasks, when it's switching to cards or already holds cards (D-300): never hidden on it. Switching: a new kanban
+// for the cards next to it (first, Enter: nothing moves), or the tasks moved to another kanban and this one holding cards
+// (one undo step), or tasks kept. Holding cards already, with tasks from before: moved, or it holds tasks again.
+function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]; onDone: () => void }) {
+  const { wid, pieces, tasks: allTasks } = useWs()
+  const setup = kanbanOf(piece)
+  const cardsHere = setup.holds === 'cards'
+  const [picking, setPicking] = useState(false)
+  const others = pieces.filter((p) => p.id !== piece.id && p.kind === 'kanban' && kanbanOf(p).holds !== 'cards')
+  const n = held.length
+  const tasksWord = `${n} task${n === 1 ? '' : 's'}`
+  const toCards = { holds: 'cards' as const, colField: setup.colField ?? CARDS_START.colField, source: setup.source ?? CARDS_START.source }
+
+  // Each into the column of the same name there, else its first; after what's already in it, in the order they had.
+  const moveTo = (to: WithId<Piece>) => {
+    const cols = kanbanOf(to).cols
+    const there = (name?: string) => cols.find((c) => c.name.trim().toLowerCase() === name?.trim().toLowerCase()) ?? cols[0]
+    const last = new Map(cols.map((c) => [c.id, Math.max(0, ...tasksIn(allTasks.filter((t) => t.pieceId === to.id), c.id).map((t) => t.order))]))
+    const from = setup.cols
+    const moves: TaskMove[] = from.flatMap((c) => tasksIn(held, c.id)).concat(held.filter((t) => !from.some((c) => c.id === t.col))).map((t) => {
+      const col = there(from.find((c) => c.id === t.col)?.name)
+      const order = (last.get(col.id) ?? 0) + 1
+      last.set(col.id, order)
+      return { id: t.id, pieceId: to.id, col: col.id, order }
+    })
+    void moveTasksAway(wid, moves, piece.id, cardsHere ? null : toCards, `move ${tasksWord} to ${to.name || 'a deck'}${cardsHere ? '' : ', hold cards'}`)
+    onDone()
+  }
+  // A new kanban holding cards, next to this one, named after it, its setup open on which cards; in this one's focus,
+  // into the new one's.
+  const makeNew = async () => {
+    onDone()
+    const { w, h } = PIECE_SIZE.kanban
+    const id = await addPiece(wid, 'kanban', [piece.x + piece.w + GRID + w / 2, piece.y + h / 2], pieces, { ...emptyKanban(), ...toCards }, `${piece.name || 'deck'} · cards`)
+    useKanbanUi.setState({ setup: id, tab: 'cards' })
+    if (new URLSearchParams(location.search).get('focus') === piece.id) findGo({ kind: 'lens', space: id, k: 0, focus: id })
+    else setEditing(id, true)
+  }
+
+  return (
+    <div className={styles.held} role="group" aria-label={`Its ${tasksWord}`}>
+      <span className={styles.heldWhat}>{cardsHere ? `${tasksWord} from before it held cards` : `it holds ${tasksWord}`}</span>
+      <p className={styles.heldWhy}>
+        {cardsHere ? 'They aren’t shown on it while it holds cards. Move them to a deck of tasks, or let it hold tasks again.' : 'To hold cards, its tasks need somewhere to go first. Nothing is hidden.'}
+      </p>
+      <span className={styles.heldActs}>
+        {!cardsHere && (
+          <button className={m.tool} data-main autoFocus onClick={() => void makeNew()} title="a new deck next to this one holds the cards; the tasks stay here">
+            [make a new deck for cards]<span className={styles.heldHint}>next to this one; the tasks stay</span>
+          </button>
+        )}
+        {others.length > 0 && (
+          <button className={m.tool} aria-expanded={picking} onClick={() => setPicking(!picking)}>
+            [move the tasks to {picking ? '▴' : '▾'}]<span className={styles.heldHint}>{cardsHere ? 'into the column of the same name' : 'then this one holds cards'}</span>
+          </button>
+        )}
+        {picking && (
+          <span className={styles.heldList} role="list">
+            {others.map((p) => {
+              const cols = kanbanOf(p)
+              const count = allTasks.filter((t) => t.pieceId === p.id).length
+              const same = setup.cols.every((c) => cols.cols.some((x) => x.name.trim().toLowerCase() === c.name.trim().toLowerCase()))
+              return (
+                <button key={p.id} role="listitem" className={styles.heldTo} onClick={() => moveTo(p)}>
+                  {p.name || 'deck'}
+                  <span className={styles.heldHint}>
+                    {count} task{count === 1 ? '' : 's'} · {same ? 'same columns' : `others into ${cols.cols[0]?.name ?? 'its first'}`}
+                  </span>
+                </button>
+              )
+            })}
+          </span>
+        )}
+        {cardsHere ? (
+          <button className={m.tool} onClick={() => void setKanbanSetup(wid, piece.id, { holds: undefined }, 'hold tasks on a deck')}>
+            [hold tasks again]
+          </button>
+        ) : (
+          <button className={m.tool} onClick={onDone}>
+            [keep tasks]
+          </button>
+        )}
+      </span>
+    </div>
   )
 }
 

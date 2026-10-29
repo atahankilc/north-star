@@ -307,12 +307,21 @@ export function TimelineDockTools({ piece, editor }: { piece: WithId<Piece>; edi
   const { pieces, tasks } = useWs()
   const kanbans = timelineKanbans(piece, pieces)
   const pool = useMemo(() => tasks.filter((t) => kanbans.some((k) => k.id === t.pieceId)), [tasks, kanbans])
-  const week = useWeeks((s) => s[piece.id] ?? 0)
-  const step = (by: number) => useWeeks.setState({ [piece.id]: by === 0 ? 0 : week + by })
   return (
     <>
       <KanbanFilterDock piece={piece} pool={pool} />
       <TimelineRowsMenu piece={piece} editor={editor} />
+      <WeekTools piece={piece} />
+    </>
+  )
+}
+
+// `‹ today ›` in a dock: the weeks it shows (yours). Also the tasks side view's days (D-300), whose timeline may be none.
+export function WeekTools({ piece }: { piece: Pick<Piece, 'kind'> & { id: string } }) {
+  const week = useWeeks((s) => s[piece.id] ?? 0)
+  const step = (by: number) => useWeeks.setState({ [piece.id]: by === 0 ? 0 : week + by })
+  return (
+    <>
       <DockAction label="‹" title="the week before" onClick={() => step(-1)} />
       <DockAction label="today" pressed={week === 0} title="back to this week" onClick={() => step(0)} />
       <DockAction label="›" title="the week after" onClick={() => step(1)} />

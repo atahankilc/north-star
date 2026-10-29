@@ -54,6 +54,8 @@ import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { TableSetupPanel } from './TableSetup'
 import { KanbanSetupPanel } from './KanbanSetup'
 import { Beside, type EscNext } from './Beside'
+import { TasksSide } from './TasksSide'
+import { closeTasksSide, toggleTasksSide, useTasksSide } from './sideState'
 import { isOpen, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
 import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Doc } from '../../data/documents'
 import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from './Documents'
@@ -153,7 +155,9 @@ export function CanvasView() {
   besideRef.current = besideOpen
   const split = useCanvasView((s) => s.split)
   const setBeside = (ids: string[]) => focusId && setParams(ids.length ? { focus: focusId, beside: ids.join(',') } : { focus: focusId })
-  const toggleBeside = (id: string) => setBeside(besideIds.includes(id) ? besideIds.filter((x) => x !== id) : [...besideIds, id])
+  // Something opened beside closes the tasks side view: the right part is one or the other (D-300).
+  const toggleBeside = (id: string) => (besideIds.includes(id) ? setBeside(besideIds.filter((x) => x !== id)) : (closeTasksSide(), setBeside([...besideIds, id])))
+  const sideOpen = useTasksSide((s) => s.open)
   const setBesideRef = useRef(setBeside)
   setBesideRef.current = setBeside
   const matrixSetup = useMatrixUi((s) => s.setup)
@@ -178,6 +182,8 @@ export function CanvasView() {
         ? { what: 'setup', id: tableSetup }
         : kanbanSetup
           ? { what: 'setup', id: kanbanSetup }
+          : sideOpen
+          ? { what: 'close', id: 'tasks' }
           : besideOpen.length
           ? { what: 'close', id: besideOpen[besideOpen.length - 1].id }
           : 'unfocus'
@@ -626,7 +632,14 @@ export function CanvasView() {
 
   // The plane's part of the screen follows what's open beside it (D-211); its contents fit there again.
   // A document open beside its list (D-232) takes the right part the same way.
-  const besideCount = besideOpen.length + (readerOpen ? 1 : 0)
+  // The tasks side view too (D-300), on the canvas as in a focus; opened, what was beside closes.
+  const besideCount = sideOpen ? 1 : besideOpen.length + (readerOpen ? 1 : 0)
+  useEffect(() => {
+    if (!sideOpen) return
+    if (besideRef.current.length) setBesideRef.current([])
+    if (useDocUi.getState().readers.length) closeDocs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sideOpen])
   useEffect(() => {
     useCanvasView.setState({ beside: besideCount })
     if (focusId && useCanvasView.getState().focusArrived) fitRef.current()
@@ -716,6 +729,8 @@ export function CanvasView() {
       const tv = useThreadView.getState()
       if (e.key === 'Escape' && (tv.openId || tv.draft || tv.inbox)) return
       if (e.key === 'c' && !e.metaKey && !e.ctrlKey && !e.altKey) return toggleThreadPins()
+      // The tasks side view (D-300), from anywhere.
+      if (e.key === 't' && !e.metaKey && !e.ctrlKey && !e.altKey) return toggleTasksSide()
       // Fit (D-186): the canvas's planes, or in focus the plane's contents.
       if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         fitRef.current()
@@ -758,7 +773,8 @@ export function CanvasView() {
           // framed list comes back (they all close), an unframed one goes straight to the canvas.
           else if (useDocUi.getState().readers.length && !useDocUi.getState().listHidden) useDocUi.setState((s) => ({ readers: s.readers.slice(0, -1) }))
           else if (useDocUi.getState().readers.length && !focusedUnframedRef.current) closeDocs()
-          // Then what's open beside the plane closes, the last opened first (D-211).
+          // Then the tasks side view (D-300), or what's open beside the plane, the last opened first (D-211).
+          else if (useTasksSide.getState().open) closeTasksSide()
           else if (besideRef.current.length) setBesideRef.current(besideRef.current.slice(0, -1).map((p) => p.id))
           else unfocusRef.current()
         }
@@ -775,6 +791,7 @@ export function CanvasView() {
         if (useTableUi.getState().setup) return useTableUi.setState({ setup: null })
         if (useKanbanUi.getState().setup) return useKanbanUi.setState({ setup: null })
         if (useCanvasView.getState().cardSelected) return useCanvasView.setState({ cardSelected: null })
+        if (useTasksSide.getState().open && !useCanvasView.getState().selected) return closeTasksSide()
       }
       const id = useCanvasView.getState().selected
       if (!id) return
@@ -935,6 +952,7 @@ export function CanvasView() {
           {focusArrived && !focusLeaving && (
             <Beside plane={focused} open={besideOpen} editor={editor} esc={escNext} matrixSetupPane={matrixPane} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
           )}
+          {focusArrived && !focusLeaving && sideOpen && <TasksSide editor={editor} esc={escNext} plane={kindOfPiece(focused) === 'plane' ? focused : null} />}
           {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
           {focusedKanban && editor && kanbanSetup === focused.id && focusArrived && !focusLeaving && <KanbanSetupPanel piece={focused} />}
@@ -947,7 +965,7 @@ export function CanvasView() {
           {/* With the list put away its dock goes too; unfocus is in the bar top-left (DocReaders). */}
           {/* A document's focus has the page's own dock (DocFocus). */}
           {focusArrived && !focusLeaving && !listHidden && !focusedDocument && (
-            <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length ? (size.w * split) / 2 : undefined}>
+            <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length || sideOpen ? (size.w * split) / 2 : undefined}>
               {focusedMatrix && editor && (
                 <DockAction label="setup" pressed={!!matrixSetup} keyHint={escOn('setup')} title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
               )}
@@ -1009,6 +1027,8 @@ export function CanvasView() {
       {!focused && editor && canvasSetup && <CanvasSetup piece={canvasSetup} />}
       {/* And from one open on the canvas (D-228). */}
       {!focused && <LensCardPanel space={null} editor={editor} />}
+      {/* The tasks side view on the canvas (D-300). */}
+      {!focused && sideOpen && <TasksSide editor={editor} esc={null} plane={null} />}
       {/* And a task picked on a kanban open on the canvas (D-251), or from a card's panel there (D-254). */}
       {!focused && <TaskPanel editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />

@@ -5413,8 +5413,8 @@ cards, as now.
   problem's `+ customer` with "Hotels" offered the new customer row. `tsc -b` clean in the changed files.
 
 ### D-300 · 2026-10-29 · Accepted (the user: "kanban setup kısmında tasks ve cards arasında direkt gidip gelebiliyor ancak … önceki tasklar yok olmuyor … 'kaybolmuş' gibi olabiliyor"; offered options in a preview: "01 A, 02 şuanki gibi kalsın …, 03 A ile devam et")
-**A kanban (a deck, D-301) never hides tasks; a tasks side view opens from anywhere.** Written by session 0b4cdc69
-(closed by accident before it wrote this entry); recorded from its transcript by the D-301 session.
+**A kanban (a deck, D-301) never hides tasks; a tasks side view opens from anywhere.** Begun by session 0b4cdc69
+(closed by accident before it wrote this entry); recorded from its transcript and finished by the D-301 session.
 - *03 A, built, uncommitted:* switching a kanban with tasks to cards asks first (`it holds N tasks`): `[make a new deck
   for cards]` (default: a new one beside it, named `<name> · cards`, setup open on which cards; the tasks stay), or the
   tasks moved to another task kanban (same-named column, else the first) and this one holding cards, one undo step
@@ -5422,10 +5422,29 @@ cards, as now.
   magenta `☐ N tasks from before` in its dock, opening the same box (move them, or hold tasks again).
 - *02:* a link stays as it is: linked means it cares only about what it's linked to, and changes there show by
   themselves (D-255, D-262 unchanged).
-- *01 A, not built yet:* a tasks side view from anywhere (canvas, any focus), opened from `☐` by your square (`t`), on
-  the right like beside (D-211): a tab per task kanban, `MINE`, `ALL DAYS`; in a kanban's tab `[board] [days]`; in a
-  plane's focus `only <plane>'s cards · N hidden [show all]`. Card kanbans aren't tabs. The canvas pieces stay.
-- *Verified:* typecheck only (the session's last run). Not run in the browser.
+- *01 A, built (the D-301 session took it over):* `TasksSide.tsx` + `sideState.ts`. `☐` by your square (now shown once
+  there's a deck; its count still tasks given to you, the magenta badge the new ones; it opens on MINE when there are)
+  or `t` opens it from anywhere: the canvas or any focus. On the right with beside's line (D-211, the same `split`),
+  one or the other: opening it closes what's beside (and documents open beside a list), opening something beside
+  closes it; it counts as beside, so the plane's part, its dock and a task's panel move left of it. Tabs under the
+  breadcrumb's bar (its shade would cover them): `01 ROADMAP · 3` per deck holding tasks (reading order, unfinished
+  ones it shows), `MINE`, `ALL DAYS`. A deck's tab: its board, or `[days]` (the timeline linked to it with its own
+  tools, else one of its own that's never stored: `tasks-side:<deck>`, rows by who, `‹ today ›` and its filter);
+  the deck's filter, lanes, `[setup]` and what it leaves out (D-303) in the dock. Boards and days sit top left at most
+  their own size. MINE: your unfinished tasks by deck, new ones `●`, seen once shown; a row takes you to its deck's
+  board with the task picked (`pending`, as going to a task does). A task picked: its panel; in a plane's focus the
+  plane glides to its card (`glidePlaneTo`, shared with beside, as `usePaneView`). Escape closes it after setups; it's
+  remembered per workspace in this browser (open, tab, board/days), never in the address. Card decks aren't tabs.
+- *Changed from the proposal:* with 02 "as now", the side view keeps each deck's link (no "where you are" filter);
+  the dock says what it leaves out.
+- *Verified* in headless Chrome on the emulators (1600 × 1000): `☐` opened MINE (2 decks, 3 tasks given, 1 new marked
+  and then seen); Roadmap's board top left, its dock `only 01 Pazar's · 1 hidden`; `[days]` rows by who; ALL DAYS
+  both decks plus the no-day tray; Escape closed it, `t` opened it; in Pazar's focus a task clicked opened its panel
+  left of the split and glided the plane to its card; two Escapes closed the panel, then the side view, focus kept;
+  a MINE row opened Sprint 3's board with the task picked. 03 A: a deck with 2 tasks switched to cards showed `IT
+  HOLDS 2 TASKS … [make a new deck for cards] [move the tasks to ▾] [keep tasks]`. `tsc -b` clean.
+- *Not yet:* the canvas isn't narrowed while it's open (it sits over the canvas's right part); following someone
+  doesn't open it for you; days at the pane's width read small (zoom with the wheel).
 
 ### D-301 · 2026-10-29 · Accepted (the user: "biz kanban diyoruz ama buna task planner desek olur mu?", then, offered flow, ledger, stages and deck: "Deck diyelim ozman")
 **The kanban piece is called a deck on screen.** Everything the user reads says deck: the `+` menu's `deck…` (letter
@@ -5441,5 +5460,13 @@ the delete confirm, the setup and wizard (`make the deck`, `a deck holds tasks o
 - *Alternatives:* task planner, tasks (+ cards in cards mode), flow (recommended first), ledger, stages; board is
   taken by D-180.
 - *Verified:* `tsc -b` clean; strings checked by grep (no user-facing "kanban" left in src). Not run in the browser.
-- *Not yet:* the closed session's D-300 work (a deck never hides tasks; its code is in the tree, uncommitted) still
-  needs its log entry.
+
+### D-303 · 2026-10-29 · Accepted (changes D-255's switch; the user: "this plane only buttonu ekleyip basarsan bütün her şeyi gösteriyor nacak ben bunu istemiyorum. Link varsa sadece o plane ile ilgilieri görsün ve bu durum sadece unlink ile kapansın. Yoksa akıl karıştırıcı oluyor")
+**A deck linked to a plane shows only that plane's tasks (or cards), and only unlinking ends it.** D-255's `[this
+plane only]` switch is gone (`setEveryPlane` deleted); `shownTasks` and `heldCards` no longer read `everyPlane`
+(still in the type, the rules and export so old data reads, ignored). In its place the dock says it, not a button
+(`DockNote`): `only 01 Pazar's · 1 hidden`, its title `unlink it to see every one`; in the tasks side view too (D-300).
+- *Why:* a link meaning "only that plane" with a switch beside it that undid it was two answers to one question.
+- *Verified:* `tsc -b`; in headless Chrome the side view's Roadmap dock read `only 01 Pazar's · 1 hidden` (a task for a
+  card on another plane left out, its count 3 not 4).
+

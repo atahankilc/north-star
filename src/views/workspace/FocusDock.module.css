@@ -98,3 +98,8 @@
 .key {
   color: var(--fg-faint);
 }
+
+/* A note, not a button (D-303). */
+.note {
+  color: var(--fg-dim);
+}

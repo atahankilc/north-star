@@ -31,21 +31,32 @@ export function FocusDock({ children, center, name, label = 'Focus' }: { childre
 }
 
 // One action: `[verb]` and its key, faint, after it. `main` is the strong one (unfocus).
-export function DockAction({ label, keyHint, title, main, pressed, onClick }: {
+export function DockAction({ label, keyHint, title, main, pressed, tone, onClick }: {
   label: string
   keyHint?: string
   title?: string
   main?: boolean
   // A switch (what's open beside the plane, D-211): lit while on.
   pressed?: boolean
+  // Its colour when it warns (tasks hidden on a kanban, D-300).
+  tone?: string
   onClick: () => void
 }) {
   return (
     <span className={styles.action}>
-      <button className={styles.tool} data-main={main || undefined} aria-pressed={pressed} title={title} onClick={onClick}>
+      <button className={styles.tool} data-main={main || undefined} aria-pressed={pressed} title={title} style={tone ? { color: tone } : undefined} onClick={onClick}>
         {label}
       </button>
       {keyHint && <span className={styles.key}>{keyHint}</span>}
+    </span>
+  )
+}
+
+// Something it says, not a button (a deck linked to a plane: what it leaves out, D-303).
+export function DockNote({ label, title }: { label: string; title?: string }) {
+  return (
+    <span className={styles.note} title={title}>
+      {label}
     </span>
   )
 }

@@ -52,15 +52,3 @@
   color: var(--fg-faint);
   font-size: 10px;
 }
-
-/* The list opens on its right, its foot level with it. */
-.pop {
-  bottom: 0;
-  left: calc(100% + var(--space-3));
-  width: 440px;
-  max-width: 440px;
-}
-
-.new {
-  color: var(--accent-magenta);
-}

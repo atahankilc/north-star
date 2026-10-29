@@ -10,8 +10,8 @@
 // sections); tasks hang under it as raised sheets as tall as their text, their left edge in the colour of the card they're
 // for; the place a held task would land is a cyan line between two tasks.
 //
-// Stuck to a plane (D-255), like a table (D-210): it shows that plane's tasks (for its cards, or for none) unless set to
-// every plane (`[this plane only]` in its dock), and opens beside the plane in its focus, where a task picked glides the
+// Stuck to a plane (D-255), like a table (D-210): it shows that plane's tasks (for its cards, or for none), until it's
+// unlinked (D-303: no switch; its dock says so), and opens beside the plane in its focus, where a task picked glides the
 // plane to its card (`onTask`).
 //
 // Filters, labels, priority, limits (D-256): what it shows narrows by its dock's filter (kanbanFilter.ts, yours); a
@@ -35,7 +35,7 @@ import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { passes, useKanbanFilter } from './kanbanFilter'
-import { addTask, CARD_FIELDS, setKanbanSetup, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setEveryPlane, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
+import { addTask, CARD_FIELDS, setKanbanSetup, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
 import { newId } from '../../data/matrix'
 import { useAuth } from '../../data/auth'
 import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
@@ -45,7 +45,7 @@ import { closeFinder, findGo, landing } from './find'
 import type { Card } from '../../data/cards'
 import { useWs } from './context'
 import { alikeProps } from './kept'
-import { DockAction } from './FocusDock'
+import { DockAction, DockNote } from './FocusDock'
 import { Menu, type MenuEntry } from '../../ui/Menu'
 import { loadFolds, saveFolds, taskRows, type Lane } from './rows'
 import { setPresenceDrag } from '../../data/presence'
@@ -1012,8 +1012,7 @@ function AddTask({ open, quiet, onPress, onOpen, onClose, onAdd }: AddProps) {
   )
 }
 
-// Its tools in a dock (its focus, its pane beside a plane): stuck to a plane, `[this plane only]` (D-255), lit while it
-// shows only that plane's tasks; how many it leaves out, beside. Editors switch it (shared); others see it.
+// Its tools in a dock (its focus, its pane beside a plane): stuck to a plane, what it leaves out (D-255, D-303).
 export function KanbanDockTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   // Set up as priorities (D-271): `[order]` shows the suggested order beside the grid (yours).
   const orderOn = useOrderOn(piece.id)
@@ -1023,26 +1022,35 @@ export function KanbanDockTools({ piece, editor }: { piece: WithId<Piece>; edito
   return (
     <>
       {order}
-      <StuckTools piece={piece} editor={editor} />
+      <HiddenTasks piece={piece} editor={editor} />
+      <StuckTools piece={piece} />
     </>
   )
 }
 
-function StuckTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
-  const { wid, tasks, cards } = useWs()
-  if (!piece.stuckTo) return null
-  const only = !piece.kanban?.everyPlane
-  // Holding cards (D-268): this plane's cards, or every card its setup picks.
-  const holdsCards = kanbanOf(piece).holds === 'cards'
-  const mine = tasks.filter((t) => t.pieceId === piece.id)
-  const left = !only ? 0 : holdsCards ? heldCards({ ...piece, kanban: { ...kanbanOf(piece), everyPlane: true } }, cards).length - heldCards(piece, cards).length : mine.length - shownTasks(mine, piece, cards).length
-  const what = holdsCards ? 'cards' : 'tasks'
+// Holding cards with tasks still on it from before (D-300): says so, magenta; for editors it opens the setup's `holds`,
+// where they're moved or it holds tasks again.
+function HiddenTasks({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const n = useWs().tasks.filter((t) => t.pieceId === piece.id).length
+  if (kanbanOf(piece).holds !== 'cards' || !n) return null
   return (
     <DockAction
-      label={`this plane only${left ? ` · ${left} hidden` : ''}`}
-      pressed={only}
-      title={only ? (holdsCards ? 'showing this plane’s cards; click: every card its setup picks' : 'showing tasks for this plane’s cards and for no card; click: every task') : `showing every ${what.slice(0, -1)}; click: only this plane’s`}
-      onClick={() => editor && void setEveryPlane(wid, piece.id, only)}
+      label={`☐ ${n} task${n === 1 ? '' : 's'} from before`}
+      tone="var(--accent-magenta)"
+      title={editor ? 'tasks from before it held cards, not shown on it: move them, or let it hold tasks again' : 'tasks from before it held cards, not shown on it'}
+      onClick={() => editor && useKanbanUi.setState({ setup: piece.id, tab: 'holds' })}
     />
   )
+}
+
+function StuckTools({ piece }: { piece: WithId<Piece> }) {
+  const { tasks, cards, pieces } = useWs()
+  const plane = pieces.find((p) => p.id === piece.stuckTo)
+  if (!plane) return null
+  // Holding cards (D-268): that plane's cards of all its setup picks.
+  const holdsCards = kanbanOf(piece).holds === 'cards'
+  const mine = tasks.filter((t) => t.pieceId === piece.id)
+  const left = holdsCards ? heldCards({ kanban: piece.kanban }, cards).length - heldCards(piece, cards).length : mine.length - shownTasks(mine, piece, cards).length
+  const name = plane.name || 'the plane'
+  return <DockNote label={`only ${name}’s${left ? ` · ${left} hidden` : ''}`} title={`linked to ${name}: only its ${holdsCards ? 'cards' : 'tasks (and those for no card)'}; unlink it to see every one`} />
 }

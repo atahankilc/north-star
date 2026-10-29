@@ -85,7 +85,7 @@ export const placeOf = (c: Card, field: CardField, axis: CardCol[]) => {
 }
 
 // The cards it holds: its source's cards the field applies to (and its rows' field, D-269; typed names left out: they
-// aren't cards), stuck to a plane that plane's unless it shows every plane.
+// aren't cards), stuck to a plane that plane's (D-303).
 export function heldCards(piece: Pick<Piece, 'stuckTo'> & { kanban?: KanbanSetup }, cards: Card[]): Card[] {
   const k = piece.kanban
   const field = k?.colField ?? 'status'
@@ -93,7 +93,7 @@ export function heldCards(piece: Pick<Piece, 'stuckTo'> & { kanban?: KanbanSetup
   const source: Source = k?.source ?? { rules: [], items: [] }
   return rowsOf(source, cards)
     .flatMap((r) => (r.card && appliesTo(field, r.card.type) && (!row || appliesTo(row, r.card.type)) ? [r.card] : []))
-    .filter((c) => !piece.stuckTo || k?.everyPlane || isOnPlane(c, piece.stuckTo))
+    .filter((c) => !piece.stuckTo || isOnPlane(c, piece.stuckTo))
 }
 
 // Its rows' field (D-269): none, or one that isn't its columns'.
