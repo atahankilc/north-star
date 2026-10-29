@@ -81,7 +81,8 @@ export function Workspaces({ user }: { user: AuthUser }) {
         </ul>
         <AnimatePresence>
           {!workspaces.isLoading && sorted.length === 0 && (
-            <Appear key="empty" className={styles.empty}>
+            // The onboarding's coach puts its three choices here the first time (data-learn, D-315), in place of the line.
+            <Appear key="empty" className={styles.empty} data-learn="workspaces-empty">
               <span className={styles.label}>no workspaces yet</span>
               <p className={styles.emptyText}>Create one above, or ask to join a teammate's with their invite code.</p>
             </Appear>
@@ -300,8 +301,10 @@ function JoinForm({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =
       const result = await requestToJoin(code, user)
       if (result.status === 'member') return onJoined(result.workspaceId)
       setSent(true)
-      learn('join-requested')
       setCode('')
+      // Nothing more to type: the field lets go (so the note about the waiting row can show beside it, D-315).
+      if (document.activeElement?.id === 'ws-code') (document.activeElement as HTMLElement).blur()
+      learn('join-requested')
     } catch (err) {
       setError(err instanceof JoinError ? err.message : 'Could not send the request. Check the code and try again.')
     }
@@ -329,7 +332,7 @@ function JoinForm({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =
         </AsciiButton>
       </div>
       {error && <p className={styles.error}>! {error}</p>}
-      {sent && <p className={styles.ok}>Request sent. You're in once the owner approves it.</p>}
+      {sent && <p className={styles.ok}>Request sent. An owner lets you in from their settings.</p>}
     </Appear>
   )
 }
@@ -383,7 +386,7 @@ function Pending({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =>
         {requests.data.map((r: WithId<JoinRequest>) => (
           <li key={r.id} className={styles.pendingItem} data-learn="pending-row">
             <span className={styles.pendingName}>{r.code.slice(0, 4)}-{r.code.slice(4)}</span>
-            <span className={styles.pendingMeta}>you asked to join · waiting for the owner</span>
+            <span className={styles.pendingMeta}>you asked to join · waiting for an owner to let you in</span>
             <span className={styles.pendingActions}>
               <button className={styles.action} disabled={busy !== null} onClick={() => run(r.id, () => withdrawJoinRequest(r.workspaceId, user.id))}>
                 withdraw
@@ -433,7 +436,7 @@ function ImportStrip({ user, onCreated }: { user: AuthUser; onCreated: (id: stri
       <p className={styles.importText}>
         A workspace exported from North Star (.zip, in settings → workspace → export) becomes a new workspace you own.
       </p>
-      <input ref={input} type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => void load(e.target.files?.[0])} />
+      <input ref={input} id="ws-import" type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => void load(e.target.files?.[0])} />
       <AsciiButton accent="cyan" onClick={() => input.current?.click()} disabled={busy}>
         {busy ? 'importing' : 'choose file'}
       </AsciiButton>

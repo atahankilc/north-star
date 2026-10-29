@@ -333,3 +333,8 @@ span.cardName {
     opacity: 1;
   }
 }
+
+/* The coach's choices drawn into the empty box (src/onboarding/Choices.tsx) stand for its line. */
+.empty:has([data-coach]) .emptyText {
+  display: none;
+}

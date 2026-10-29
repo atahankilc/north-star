@@ -3,15 +3,18 @@
 // - it loads and says `ready`; no console errors or page errors; no request to Firebase or Google (googleapis,
 //   firebaseio, firebasestorage, firebaseapp, gstatic) or to an emulator's port (8080, 9099, 9010, 9199, 5001);
 // - seek 0, the poster and the end each draw; the same seek draws the same picture twice (deterministic);
-// - after a press nothing but a field to type in matches :focus-visible (a real click leaves no focus ring);
-// - every press lands on what its step meant (the director records the element each move aimed at and what was under
+// - after a press no :focus-visible rule of the page's CSS matches what has the focus, a field to type in aside (a real
+//   click leaves no focus ring; the focus itself stays where the app put it);
+// - every press lands on what its step meant, and what it lands on shows its hover first (data-demo-hover, demoCss.ts) (the director records the element each move aimed at and what was under
 //   the cursor when it pressed);
 // - a seek into the middle, then past the end, leaves a stage drawn (nothing left mid-drag to blank it);
 // - after one whole loop (hold, break, rebuild) the first frame is the first frame from before (pixels, under a
 //   threshold), both seeked and as the rebuild hands over, and no frame was shown while the stage was made again (the
 //   seam);
 // - under reduced motion it shows the poster, still (two shots a second apart, the same);
-// - an 8-frame strip (seeks at 8 even times from 0 to the end of the hold) and a contact sheet of it, for the eye.
+// - an 8-frame strip (seeks at 8 even times from 0 to the end of the hold) and a contact sheet of it, for the eye;
+// - played as the coach shows it, inside a parent's `<iframe inert>` with the focus on the parent's button: the parent
+//   keeps its focus, and what a scene types lands in its field, with no shortcut's side effect (side view, snapping).
 //
 // Needs a dev server or `vite preview` serving demo.html (DEMO_URL, default http://localhost:5185) and puppeteer-core,
 // which is not a dependency of the app: install it anywhere (`npm i puppeteer-core@24` in a scratch folder) and point
@@ -26,7 +29,8 @@ const BASE = (process.env.DEMO_URL ?? 'http://localhost:5185').replace(/\/$/, ''
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const SHOTS = resolve(process.env.SHOTS ?? 'scene-shots')
 const PREFIX = process.env.SHOT_PREFIX ?? ''
-const THEMES = (process.env.THEMES ?? 'dark,light').split(',')
+// THEMES='' plays only the in-a-frame pass.
+const THEMES = (process.env.THEMES ?? 'dark,light').split(',').filter(Boolean)
 const HOLD = 1000
 const STRIP = 8
 // Share of pixels that may differ between two pictures that should be the same (text antialiasing, the cursor's
@@ -134,7 +138,7 @@ async function open(scene, theme, reduced) {
     await wait(150)
   }
   // Played on its own when opened alone: held for the shots.
-  await page.evaluate(() => window.__demo.pause())
+  await page.evaluate(() => window.__demo?.pause())
   return { page, errors, requests, state }
 }
 const seek = async (page, t) => {
@@ -166,10 +170,14 @@ for (const scene of scenes) {
     const last = await seek(page, end)
     // The presses of a whole run (the seek to the end ran every step).
     const { presses, rings } = await page.evaluate(() => window.__demo.record())
-    rings.length ? fail(where, `a focus ring after a press: ${rings.join('; ')}`) : ok('no focus ring after a press (nothing but a field matches :focus-visible)')
+    rings.length ? fail(where, `a focus ring after a press: ${rings.join('; ')}`) : ok('no focus ring after a press (no :focus-visible rule draws on what has the focus, a field aside)')
     const off = presses.filter((p) => !p.ok)
     if (off.length) fail(where, `pressed the wrong thing: ${off.map((p) => `at ${p.at} meant ${p.meant}, got ${p.got}`).join('; ')}`)
     else ok(`${presses.length} press${presses.length === 1 ? '' : 'es'}, each on what it meant`)
+    // Lit as a real pointer lights it (`:hover`, through the demo's `data-demo-hover`) before it's pressed.
+    const dark = presses.filter((p) => !p.lit)
+    if (dark.length) fail(where, `pressed without its hover showing: ${dark.map((p) => `${p.at} ms ${p.got}`).join('; ')}`)
+    else if (presses.length) ok('every press lit (hover) before it went down')
     // Into the middle (mid-drag, a menu open) at a few moments, each then past the end: the stage is still drawn, the
     // same end.
     for (const k of [0.3, 0.45, 0.6, 0.75]) {
@@ -238,6 +246,84 @@ for (const scene of scenes) {
     }
     await r.page.close()
   }
+}
+
+// As the coach shows it (src/onboarding/Demo.tsx): inside a parent page's `<iframe inert tabindex=-1>`, the focus on a
+// button of the parent, played in real time. The frame never has the focus there, so what a scene types must still land
+// in its field (not in the canvas's shortcuts), and the parent keeps its focus. What each scene types, and where it lands:
+const TYPED = { 'finder-go': 'permit', 'peers-comment': 'Is €14 still right?' }
+const SIDE = '[data-learn="side-view"]'
+for (const scene of scenes) {
+  const where = `${scene} (in a frame)`
+  console.log(where)
+  // A browser context of its own: the reduced-motion pass above left `north-star.motion=reduced` in this origin's
+  // storage (demo.html copies motion from there), which would hold the scene on its poster. Full motion, dark, here.
+  const context = await browser.createBrowserContext()
+  const page = await context.newPage()
+  const errors = []
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message.slice(0, 300)}`))
+  await page.evaluateOnNewDocument(() => {
+    try {
+      localStorage.setItem('north-star.motion', 'full')
+      localStorage.setItem('north-star.theme', 'dark')
+    } catch {}
+  })
+  // A same-origin page that runs nothing of ours (the demo's style sheet in the build; a plain file in dev), turned into
+  // the parent: the frame only talks to a parent of its own origin.
+  await page.goto(`${BASE}/demo.html#scene=${scene}`)
+  const plain = await page.evaluate(() => document.querySelector('link[rel="stylesheet"]')?.href ?? '/package.json')
+  await page.goto(new URL(plain, BASE).href)
+  await page.setContent(`<!doctype html><button id="host">next</button><iframe inert tabindex="-1" width="960" height="600" src="${BASE}/demo.html#scene=${scene}"></iframe>
+    <script>
+      const f = document.querySelector('iframe')
+      document.getElementById('host').focus()
+      addEventListener('message', (e) => {
+        if (e.source === f.contentWindow && e.data?.ns === 'north-star-demo' && e.data.type === 'ready') f.contentWindow.postMessage({ ns: 'north-star-demo', type: 'play' }, location.origin)
+      })
+    </script>`)
+  // The typing seen as it happens: a field there and empty first, then growing to what's typed (not a poster's text).
+  const seen = { text: '', emptyFirst: false, grew: true, side: false, snap: null, snapAfter: null, lostFocus: false, length: 0, t: 0, motion: null }
+  for (let i = 0; i < 400; i++) {
+    const now = await page.evaluate((SIDE) => {
+      const f = document.querySelector('iframe')
+      const w = f.contentWindow
+      const d = f.contentDocument
+      if (!w?.__demo?.ready) return null
+      const fields = [...d.querySelectorAll('input, textarea')].map((e) => e.value)
+      return { t: w.__demo.t, length: w.__demo.length, loops: w.__demo.loops, reduced: w.localStorage.getItem('north-star.motion'), fields: fields.length, text: fields.sort((a, b) => b.length - a.length)[0] ?? '', side: !!d.querySelector(SIDE), snap: w.localStorage.getItem('north-star:snap'), host: document.activeElement?.id ?? document.activeElement?.tagName }
+    }, SIDE)
+    if (now) {
+      if (seen.snap === null) seen.snap = now.snap ?? 'unset'
+      if (now.fields && !now.text && !seen.text) seen.emptyFirst = true
+      if (now.text.length > seen.text.length) {
+        // Each new value goes on from the last one seen (typing), never jumps to something else.
+        if (seen.text && !now.text.startsWith(seen.text)) seen.grew = false
+        seen.text = now.text
+      }
+      seen.t = Math.max(seen.t, now.t)
+      seen.motion = now.reduced
+      seen.side ||= now.side
+      seen.snapAfter = now.snap ?? 'unset'
+      seen.lostFocus ||= now.host !== 'host'
+      seen.length = now.length
+      if (now.loops > 0 || now.t >= now.length) break
+    }
+    await wait(50)
+  }
+  if (process.env.DEBUG_FRAME) console.log('  ·', JSON.stringify(seen))
+  if (!seen.length) fail(where, 'never ready in the frame')
+  else {
+    seen.t > 500 ? ok(`the scene played in the frame (to t=${Math.round(seen.t)}, motion ${seen.motion ?? 'unset'})`) : fail(where, `the scene didn't play in the frame (t stayed at ${Math.round(seen.t)}, motion ${seen.motion})`)
+    seen.lostFocus ? fail(where, 'the parent lost its focus to the frame') : ok('the parent kept its focus')
+    const want = TYPED[scene]
+    if (want) {
+      seen.emptyFirst && seen.grew && seen.text.startsWith(want) ? ok(`typed "${want}" landed in its field, growing from empty`) : fail(where, `typed "${want}": the field got "${seen.text}" (empty first: ${seen.emptyFirst}, grew letter by letter: ${seen.grew})`)
+      seen.side ? fail(where, 'a typed letter opened the tasks side view') : ok('no side view opened by the typing')
+      seen.snap === seen.snapAfter ? ok('snapping unchanged') : fail(where, `snapping changed: ${seen.snap} → ${seen.snapAfter}`)
+    }
+    if (errors.length) fail(where, `errors: ${errors.join(' | ')}`)
+  }
+  await context.close()
 }
 
 await browser.close()

@@ -3,7 +3,8 @@
 //
 // In order: right of the anchor, left, above (then below, for an anchor at the screen's top, like the breadcrumb). A
 // side whose space holds cards first shifts along that side into a clear spot; only when no side has one does the card
-// cover some cards (the side covering the least); only when no side fits at all, the bottom-middle card (no lead).
+// cover some cards (the side covering the least); only when no side fits at all, the bottom-middle card (no lead),
+// clear of what it must never cover. A spot whose lead would cross a console's or dock's buttons is never taken.
 // In a focus the right of the screen stays free (D-211): left first, the right only if the card stays clear of the
 // right strip; an anchor that is the dock gets straight above it first. A look may ask for its own order (the drawer
 // hangs below or rises above its anchor, joined to it: gap 0).
@@ -20,8 +21,10 @@ export type PlaceInput = {
   view: { w: number; h: number }
   // What it should shift away from before covering (cards, tasks).
   soft?: Rect[]
-  // What it must never cover (the right panel, the piece being taught).
+  // What it must never cover (the right panel, the piece being taught, consoles and docks, the coach's hints).
   hard?: Rect[]
+  // What its lead line must never cross (the buttons of a console or a dock): a spot whose lead would is passed over.
+  noLead?: Rect[]
   // In a focus: the right strip kept free, left before right.
   focus?: boolean
   // The anchor is the focus dock (straight above it first).
@@ -88,6 +91,22 @@ function fits(r: Rect, i: PlaceInput, m: number): boolean {
 }
 
 const covered = (r: Rect, soft: Rect[]) => soft.reduce((n, s) => n + overlap(r, s), 0)
+
+// The lead as a thin box (a pixel off its anchor end, so a button the anchor touches doesn't count).
+function leadBox(l: Lead): Rect {
+  if (l.y1 === l.y2) {
+    const x0 = Math.min(l.x1, l.x2)
+    const x1 = Math.max(l.x1, l.x2)
+    return l.x2 > l.x1 ? { x: x0, y: l.y1 - 0.5, w: Math.max(0, x1 - x0 - 1), h: 1 } : { x: x0 + 1, y: l.y1 - 0.5, w: Math.max(0, x1 - x0 - 1), h: 1 }
+  }
+  const y0 = Math.min(l.y1, l.y2)
+  const y1 = Math.max(l.y1, l.y2)
+  return l.y2 > l.y1 ? { x: l.x1 - 0.5, y: y0, w: 1, h: Math.max(0, y1 - y0 - 1) } : { x: l.x1 - 0.5, y: y0 + 1, w: 1, h: Math.max(0, y1 - y0 - 1) }
+}
+export const leadCrosses = (l: Lead, blocks: Rect[]) => {
+  const b = leadBox(l)
+  return b.w > 0 && b.h > 0 && blocks.some((x) => hits(b, x))
+}
 
 // The line from the card's edge to the anchor's (straight, along the side's axis where they face each other).
 export function leadFor(side: Side, r: Rect, a: Rect): Lead {
@@ -156,6 +175,7 @@ export function place(i: PlaceInput): Placed {
       }
       // A shifted card must still face its anchor (a lead can reach it straight).
       if (along ? r.y > a.y + a.h || r.y + r.h < a.y : r.x > a.x + a.w || r.x + r.w < a.x) continue
+      if (leadCrosses(leadFor(side, r, a), i.noLead ?? [])) continue
       if (covered(r, soft) === 0) return done(side, r)
     }
   }
@@ -163,7 +183,7 @@ export function place(i: PlaceInput): Placed {
   let best: { side: Side; r: Rect; n: number } | null = null
   for (const side of sides) {
     const r = pastHard(side, base(side, a, i.size, i.view, gap, m), i.hard ?? [], Math.max(gap, 12))
-    if (!fits(r, i, m)) continue
+    if (!fits(r, i, m) || leadCrosses(leadFor(side, r, a), i.noLead ?? [])) continue
     const n = covered(r, soft)
     if (!best || n < best.n) best = { side, r, n }
   }

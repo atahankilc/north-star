@@ -5,5 +5,9 @@ import canvasFit from './scenes/canvas-fit'
 import deckDrag from './scenes/deck-drag'
 import planeDrag from './scenes/plane-drag'
 import sidenavPlus from './scenes/sidenav-plus'
+import peersComment from './scenes/peers-comment'
+import piecesTour from './scenes/pieces-tour'
+import plusAddsPlane from './scenes/plus-adds-plane'
+import finderGo from './scenes/finder-go'
 
-export const SCENES: Record<string, Scene> = Object.fromEntries([planeDrag, canvasFit, sidenavPlus, deckDrag].map((s) => [s.id, s]))
+export const SCENES: Record<string, Scene> = Object.fromEntries([planeDrag, canvasFit, sidenavPlus, deckDrag, peersComment, piecesTour, plusAddsPlane, finderGo].map((s) => [s.id, s]))

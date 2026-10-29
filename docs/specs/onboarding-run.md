@@ -121,18 +121,12 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 PAUSED by the user (internet going down). Committed: O0–O7, the look pick (D-316), threads/learn guards.
-**O8 is built but NOT reviewed, NOT committed** (all in the working tree): src/demo/{demoCss.ts (new), director.ts,
-boot.tsx, Stage.module.css, views.tsx}, vite.demo.config.ts, scripts/check-scenes.mjs, src/demo/scenes/{pieces-tour,
-plus-adds-plane,finder-go,peers-comment}.ts (new) + sceneList.ts lines, src/onboarding/{Demo,Coach,Choices (new)}.tsx,
-Coach.module.css, lessons.ts (anchor `workspaces-empty`), scripts/lessons-pending.json, src/views/workspaces/
-Workspaces.tsx + .module.css. Builder's report: carry-overs done (focus kept, :hover shown via a demo-only CSS
-rewrite), welcome variants + empty states + join pending checked in flows; scenes check 8 × dark/light passed; tsc
-fails only in the agent run's src/agent/read/*. **To resume:** start a fresh O8 reviewer (brief: run §1.5 row O8 + the
-list above; the stopped one had no verdict), then commit O8 (only the files above), then O9 again from scratch (the
-stopped O9 builder left nothing in the repo).
-Agreed with b2: `onTracked` actor and `agentDriving()` wired. Emulators are someone else's: never stop them; rules
-tests run as a copy of the file on a separate project id. Never `git add`/`git mv` from builders (shared index).
+2026-10-29 afternoon (the user is here; resumed after a network pause and two usage-limit stops): O0–O8 committed,
+the look pick (D-316). O9 (the `+` kind guide's 18 scenes, 13 piece-lesson scenes) built and fixed once, waiting for
+its 2nd review now that O8 is in. Then O10 onward. The shared emulators were restarted (with the user's OK) and now
+run from this session; the emulators' firebase-debug.log had grown to 117 GB and was emptied (the user's OK).
+Agreed with b2: `onTracked` actor, `agentDriving()`, S13's grown-`before` merges handled (6829f5a).
+Never `git add`/`git mv` from builders (shared index).
 
 ### Done
 _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
@@ -196,6 +190,15 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   equality, no focus ring after a press, reduced motion still; dark + light) · reviewer: 3 rounds (the wrong menu row,
   a blank stage after a seek mid-drag, a stray seam frame, framing, a stray focus ring, the demo's own Firebase) ·
   carry-overs for O8: the focusin blur steals focus later keys need; CSS :hover never shows (rewrite in the demo's CSS).
+- O8 · (this commit) · the start: the welcome's scenes (pieces-tour, plus-adds-plane, finder-go, peers-comment), its
+  invited (`{owner} started this workspace`, the owner's name from members/) and viewer variants, the workspaces page's
+  three framed choices (Choices.tsx), the join-pending row and lesson, the empty-canvas hint; the demo CSS rewrite
+  (demoCss.ts: `:hover`/`:focus*` from demo marks, demo build only) so the app's own hover and focus looks show; keys
+  into the element the app last focused, even inside the coach's inert frame; lessons step aside while a menu is open
+  and never cover consoles, docks, the taught piece or its target, leads never cross buttons (place.ts) · reviewer: 3
+  rounds (typing lost inside the welcome's frame and hitting app shortcuts, the in-frame check inheriting reduced
+  motion, placement over consoles and the `+` menu, a setState during render) · flows A/B/C/F/G pass (new, invited
+  editor, viewer, join pending, typing in the frame), on a private Firestore emulator when the shared one hung.
 
 ### Stuck
 _(none)_

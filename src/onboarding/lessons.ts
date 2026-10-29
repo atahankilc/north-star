@@ -113,7 +113,7 @@ export const PAYLOADS: Record<LessonEvent, readonly string[]> = {
 
 // What a lesson sits beside: `data-learn="<anchor>"` in the app (O6). None: the middle of the screen.
 export const ANCHORS = [
-  'sidenav', 'plus', 'plus-menu', 'pending-row', 'piece', 'console', 'console-unframe', 'dock', 'dock-view', 'toast',
+  'sidenav', 'plus', 'plus-menu', 'pending-row', 'workspaces-empty', 'piece', 'console', 'console-unframe', 'dock', 'dock-view', 'toast',
   'bond', 'split', 'prompt', 'card', 'card-panel', 'panel-status', 'panel-for', 'link-bar', 'package-band',
   'filter-strip', 'menu', 'text-bar', 'sticky', 'crosshair', 'heading', 'wizard', 'cell-bar', 'axis', 'setup',
   'side-view', 'tasks', 'people', 'follow-label', 'thread', 'threads', 'finder', 'crumb', 'settings-menu',
@@ -239,7 +239,7 @@ export const LESSONS: readonly Lesson[] = [
   },
   {
     id: 'workspaces-empty', v: 1, format: 'empty', roles: ALL, area: 'start', since: 'D-062',
-    trigger: [{ event: 'workspaces-open', when: { empty: true } }], doneWhen: [{ event: 'ws-made' }, { event: 'join-requested' }],
+    trigger: [{ event: 'workspaces-open', when: { empty: true } }], doneWhen: [{ event: 'ws-made' }, { event: 'join-requested' }], anchor: 'workspaces-empty',
     choices: [
       { label: 'create a workspace', line: "a name, then you're in" },
       { label: 'join with a code', line: 'an owner lets you in' },

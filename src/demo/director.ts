@@ -10,7 +10,7 @@
 // under reduced motion it shows the poster, still.
 import type { Store } from '../state/wsStore'
 import type { WorkspaceCtx } from '../state/wsStore'
-import { camOf, setCam, useCanvasView, type Bounds } from '../state/canvasView'
+import { camOf, planeArea, setCam, useCanvasView, type Bounds } from '../state/canvasView'
 import { isReducedMotion } from '../state/motion'
 import { runCells } from '../ui/Appear'
 import { finishAnimations, releaseAnimations, restart, step as stepClock, stepAnimations, yieldTask, realClock } from './clock'
@@ -74,7 +74,7 @@ const SETTLE_FRAMES = 40
 
 const cursor = { x: 0, y: 0, down: false, shown: false, over: null as Element | null, downOn: null as Element | null, meant: null as { what: string; el: Element } | null }
 // Each press: what the step meant to press and whether that's what was under the cursor (the scenes check reads it).
-export type Press = { at: number; meant: string; ok: boolean; got: string }
+export type Press = { at: number; meant: string; ok: boolean; got: string; lit: boolean }
 let presses: Press[] = []
 const describe = (el: Element) => `${el.tagName.toLowerCase()}${el.getAttribute('aria-label') ? `[aria-label="${el.getAttribute('aria-label')}"]` : ''}${el.getAttribute('data-key') ? `[data-key="${el.getAttribute('data-key')}"]` : ''}${(el as HTMLElement).dataset?.task ? `[data-task="${(el as HTMLElement).dataset.task}"]` : ''} "${(el.textContent ?? '').trim().slice(0, 30)}"`
 let capture: Element | null = null
@@ -93,14 +93,75 @@ Element.prototype.hasPointerCapture = function (this: Element) {
 
 // What the last input was (`html[data-demo-input]`): a press or a drag is a pointer's, a key a keyboard's. After a real
 // click Chrome doesn't show the focus ring on what a script focuses next (a menu giving the focus back to its trigger);
-// after made-up events it would. So with the pointer last, what gets the focus without a field to type in lets go of it
-// (as nothing looks focused in the app), and Stage.module.css hides any ring left.
+// after made-up events it would. The focus stays where the app puts it (later keys need it there: a confirm's cancel, a
+// menu's first row), and the demo's CSS doesn't draw `:focus-visible` while the pointer was last (demoCss.ts).
 const input = (how: 'pointer' | 'key') => void (document.documentElement.dataset.demoInput = how)
-document.addEventListener('focusin', (e) => {
-  const el = e.target as HTMLElement
-  if (document.documentElement.dataset.demoInput !== 'pointer' || el.matches('input, textarea, [contenteditable="true"]')) return
-  if (el.matches(':focus-visible')) el.blur()
-})
+
+// Where keys go. In the coach the demo's frame is `inert` and never has the focus, so the browser ignores the app's own
+// `.focus()` calls in it (the finder's field, a thread's) and `document.activeElement` stays <body>: keys sent there would
+// miss the field and hit the canvas's shortcuts (`t` the side view, `g` snapping). So what the app last asked to focus
+// is kept here, and keys go to it while it's still on the page, as they would if the frame had the focus.
+let wanted: HTMLElement | null = null
+// Shown in the frame (the coach's), the focus is never really taken: Chrome lets a script in an `inert` frame focus
+// its fields all the same, and the focus would leave the coach (its ← → would stop). The field is marked instead, and
+// the demo's CSS draws `:focus` / `:focus-within` for the marks too (demoCss.ts).
+const embedded = window.parent !== window
+const realFocus = HTMLElement.prototype.focus
+const realBlur = HTMLElement.prototype.blur
+function mark(el: HTMLElement | null) {
+  // Only in the frame: on its own the real focus is taken and the browser's states are right.
+  if (!embedded) return
+  document.querySelectorAll('[data-demo-focus]').forEach((e) => e.removeAttribute('data-demo-focus'))
+  document.querySelectorAll('[data-demo-focus-within]').forEach((e) => e.removeAttribute('data-demo-focus-within'))
+  if (!el) return
+  el.setAttribute('data-demo-focus', '')
+  for (let e: HTMLElement | null = el; e; e = e.parentElement) e.setAttribute('data-demo-focus-within', '')
+}
+HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions) {
+  wanted = this
+  mark(this)
+  if (!embedded) realFocus.call(this, options)
+}
+// A field's select() focuses it too: the same, its text selected without the focus.
+for (const proto of [HTMLInputElement.prototype, HTMLTextAreaElement.prototype]) {
+  const realSelect = proto.select
+  proto.select = function (this: HTMLInputElement | HTMLTextAreaElement) {
+    wanted = this
+    mark(this)
+    if (!embedded) return realSelect.call(this)
+    try {
+      this.setSelectionRange(0, this.value.length)
+    } catch {
+      // Not a text field (a checkbox): nothing to select.
+    }
+  }
+}
+HTMLElement.prototype.blur = function (this: HTMLElement) {
+  if (wanted === this) {
+    wanted = null
+    mark(null)
+  }
+  realBlur.call(this)
+}
+const keyTarget = (): Element => {
+  if (wanted?.isConnected) return wanted
+  if (wanted) mark((wanted = null))
+  return document.activeElement ?? document.body
+}
+
+// `:hover` for made-up events (the browser never sets it): `data-demo-hover` on what's under the cursor and every element
+// round it, which the demo's CSS reads as `:hover` (demoCss.ts). Kept up every frame, as the browser's follows what moves
+// under a still pointer.
+let lit: Element[] = []
+function hover(el: Element | null) {
+  const chain: Element[] = []
+  for (let e = el; e && e !== document.documentElement; e = e.parentElement) chain.push(e)
+  if (chain.length === lit.length && chain[0] === lit[0]) return
+  const keep = new Set(chain)
+  for (const e of lit) if (!keep.has(e)) e.removeAttribute('data-demo-hover')
+  for (const e of chain) if (!e.hasAttribute('data-demo-hover')) e.setAttribute('data-demo-hover', '')
+  lit = chain
+}
 
 // What's under a point: the page's own hit test (the cursor itself takes no clicks).
 function hit(x: number, y: number): Element {
@@ -150,7 +211,7 @@ function pressDown() {
   const el = hit(cursor.x, cursor.y)
   if (cursor.meant) {
     const m = cursor.meant
-    presses.push({ at: Math.round(sceneT), meant: m.what, ok: m.el.isConnected && (m.el === el || m.el.contains(el)), got: describe(el) })
+    presses.push({ at: Math.round(sceneT), meant: m.what, ok: m.el.isConnected && (m.el === el || m.el.contains(el)), got: describe(el), lit: el.hasAttribute('data-demo-hover') })
     cursor.meant = null
   }
   cursor.down = true
@@ -160,7 +221,11 @@ function pressDown() {
   // focused: a real click doesn't show their focus ring, a script's focus() would.)
   const field = el.closest<HTMLElement>('input, textarea, [contenteditable="true"]')
   if (field) field.focus({ preventScroll: true })
-  else (document.activeElement as HTMLElement | null)?.blur?.()
+  else {
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+    wanted = null
+    mark(null)
+  }
 }
 
 function pressUp(click: boolean) {
@@ -396,7 +461,7 @@ export function key(combo: string, chipMs = CHIP_MS): Action {
       input('key')
       chipText = combo
       chipUntil = sceneT + chipMs
-      const el = document.activeElement ?? document.body
+      const el = keyTarget()
       const init = { ...k, bubbles: true, cancelable: true, composed: true, metaKey: meta, shiftKey: shift, altKey: alt, view: window }
       const go = el.dispatchEvent(new KeyboardEvent('keydown', init))
       // A letter typed into a field, as the browser would after an unrefused keydown.
@@ -442,9 +507,11 @@ export const camera = {
   frame: (b: Bounds, pad = 48): Action => ({
     what: 'focus view',
     ms: 0,
-    start: (c) => {
-      const zoom = Math.min(1.25, (c.size.w - 2 * pad) / b.w, (c.size.h - 2 * pad) / b.h)
-      useCanvasView.setState({ planeCam: { zoom, ox: c.size.w / 2 - (b.x + b.w / 2) * zoom, oy: c.size.h / 2 - (b.y + b.h / 2) * zoom } })
+    // In the focused piece's own part of the screen (its half, with something open beside it).
+    start: () => {
+      const a = planeArea()
+      const zoom = Math.min(1.25, (a.w - 2 * pad) / b.w, (a.h - 2 * pad) / b.h)
+      useCanvasView.setState({ planeCam: { zoom, ox: a.w / 2 - (b.x + b.w / 2) * zoom, oy: a.h / 2 - (b.y + b.h / 2) * zoom } })
     },
   }),
   to: (what: string, ms: number, pad = 96): Action => {
@@ -521,17 +588,53 @@ function advance() {
     }
   })
   if (document.documentElement.dataset.demoInput === 'pointer') {
-    // A field to type in always matches it, after a real click too (its caret is the point): not a ring.
+    // What has the focus may match :focus-visible (it keeps the focus, for the keys after); the demo's CSS mustn't draw
+    // its ring then. A field to type in always matches it, after a real click too (its caret is the point): not a ring.
     const ring = document.querySelector(':focus-visible:not(input, textarea, [contenteditable="true"])')
-    if (ring && rings.length < 20) rings.push(`${Math.round(sceneT)}: ${describe(ring)}`)
+    if (ring && drawsRing(ring) && rings.length < 20) rings.push(`${Math.round(sceneT)}: ${describe(ring)}`)
   }
   draw()
+}
+
+// Whether a focused element shows a ring: a rule of the page's CSS about `:focus-visible` matches it (the demo's CSS
+// keeps those from matching while the pointer was last, demoCss.ts; the stage's own rule turning the ring off aside).
+// The rules are gathered again when sheets come.
+let focusRules: { sheets: number; selectors: string[] } = { sheets: -1, selectors: [] }
+function drawsRing(el: Element) {
+  // The browser's own ring (an `auto` outline), which no rule of ours draws.
+  const st = getComputedStyle(el)
+  if (st.outlineStyle !== 'none' && parseFloat(st.outlineWidth) > 0) return true
+  if (focusRules.sheets !== document.styleSheets.length) {
+    const selectors: string[] = []
+    const walk = (rules: CSSRuleList) => {
+      for (const r of Array.from(rules)) {
+        if (r instanceof CSSStyleRule && r.selectorText.includes(':focus-visible') && !/data-demo-input=['"]?pointer/.test(r.selectorText)) selectors.push(r.selectorText)
+        if ('cssRules' in r && (r as CSSGroupingRule).cssRules) walk((r as CSSGroupingRule).cssRules)
+      }
+    }
+    for (const sh of Array.from(document.styleSheets)) {
+      try {
+        walk(sh.cssRules)
+      } catch {
+        // Another origin's: none of ours.
+      }
+    }
+    focusRules = { sheets: document.styleSheets.length, selectors }
+  }
+  return focusRules.selectors.some((sel) => {
+    try {
+      return el.matches(sel)
+    } catch {
+      return false
+    }
+  })
 }
 
 // The cursor and the key chip, from where things are now.
 let pointerEl: HTMLElement | null = null
 let chipEl: HTMLElement | null = null
 function draw() {
+  if (cursor.shown) hover(capture?.isConnected && cursor.down ? capture : hit(cursor.x, cursor.y))
   if (pointerEl) {
     const k = ctx?.scale ?? 1
     pointerEl.style.transform = `translate(${cursor.x / k}px, ${cursor.y / k}px)`
@@ -585,6 +688,9 @@ async function reset() {
   await yieldTask()
   await yieldTask()
   finishAnimations()
+  hover(null)
+  wanted = null
+  mark(null)
   Object.assign(cursor, { down: false, over: null, downOn: null, shown: true, meant: null })
   chipUntil = -1
   ctx = await remount()

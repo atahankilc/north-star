@@ -81,3 +81,56 @@
   border-bottom: 3.5px solid transparent;
   border-right: 6px solid var(--fg-dim);
 }
+
+/* The workspaces page with none yet (Choices.tsx): three framed choices in the page's empty box, each one line. */
+.choices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.choiceItem {
+  display: flex;
+}
+
+.choice {
+  composes: interactive from '../ui/Frame.module.css';
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  align-items: baseline;
+  padding: var(--space-3) var(--space-4);
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.choiceNo {
+  color: var(--accent-magenta);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.choiceLabel {
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.choiceLine {
+  grid-column: 2;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 760px) {
+  .choices {
+    grid-template-columns: 1fr;
+  }
+}

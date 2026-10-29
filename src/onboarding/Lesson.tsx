@@ -11,7 +11,7 @@ import { DecodeText } from '../ui/DecodeText'
 import { useCanvasView } from '../state/canvasView'
 import { Demo } from './Demo'
 import { Btn, keepFocus, stopCanvas, trapTab, useDialogFocus, Words } from './Pages'
-import { place, type Placed, type Rect } from './place'
+import { place, type Placed, type Rect, type Side } from './place'
 import { fill, lessonName, plain, type Fill } from './words'
 import type { CloseHow, Shown } from './queue'
 import styles from './Lesson.module.css'
@@ -55,9 +55,13 @@ const onScreen = (r: Rect) => r.w > 0 && r.h > 0 && r.x < innerWidth && r.y < in
 
 // What the card shifts away from (cards, tasks) and what it never covers: every panel and dialog that isn't the
 // coach's own (the right panel, the side view's aside, the threads panel, Settings, a wizard), the pane open beside a
-// focused plane, and the piece being taught.
+// focused plane, the piece being taught and what the event was about (`target`), every console and dock on screen, an
+// open menu (the `+` menu, a right-click, a Select), and the coach's other surfaces (a hint, the kind guide). Its lead
+// never crosses a console's or a dock's buttons.
 const PANELS = '[role="dialog"], [role="alertdialog"], aside, dialog[open]'
-function obstacles(anchor: HTMLElement | null) {
+export const MENUS = '[role="menu"], [role="listbox"], [data-learn="plus-menu"]'
+const CONSOLES = '[data-learn="console"], [data-learn="console-unframe"], [data-learn="dock"], [data-learn="dock-view"]'
+function obstacles(anchor: HTMLElement | null, target: string | undefined, own: HTMLElement | null) {
   const soft: Rect[] = []
   for (const el of document.querySelectorAll('[data-card], [data-task]')) {
     if (soft.length > 400) break
@@ -67,6 +71,8 @@ function obstacles(anchor: HTMLElement | null) {
   }
   const screen = innerWidth * innerHeight
   const hard: Rect[] = []
+  const noLead: Rect[] = []
+  const mine = (el: Element) => !!own && (el === own || own.contains(el))
   for (const el of document.querySelectorAll(PANELS)) {
     if (el.closest('[data-coach]')) continue
     const r = rectOf(el)
@@ -79,19 +85,40 @@ function obstacles(anchor: HTMLElement | null) {
     const x = Math.round(cv.split * innerWidth)
     hard.push({ x, y: 0, w: innerWidth - x, h: innerHeight })
   }
-  // The piece being taught (its console, its dock…): never covered (O6 marks pieces `data-learn="piece"`).
+  // The piece being taught (its console, its dock…): never covered (O6 marks pieces `data-learn="piece"`); what the event
+  // was about too, unless it fills the screen (a plane in focus).
   const piece = anchor?.parentElement?.closest('[data-learn="piece"]')
   if (piece) hard.push(rectOf(piece))
-  return { soft, hard }
+  if (target)
+    for (const el of document.querySelectorAll<HTMLElement>(`[data-target="${CSS.escape(target)}"]`)) {
+      const r = rectOf(el)
+      if (isVisible(el) && r.w * r.h < screen * 0.5) hard.push(r)
+    }
+  for (const el of document.querySelectorAll<HTMLElement>(`${CONSOLES}, ${MENUS}`)) {
+    if (el === anchor || mine(el) || !isVisible(el)) continue
+    hard.push(rectOf(el))
+    for (const b of el.querySelectorAll('button')) if (!(anchor && (b === anchor || anchor.contains(b) || b.contains(anchor)))) noLead.push(rectOf(b))
+  }
+  // The coach's other surfaces: an empty hint, the kind guide, a nudge.
+  for (const el of document.querySelectorAll<HTMLElement>('[data-coach]')) {
+    if (mine(el) || el.closest('[role="dialog"]')) continue
+    const r = rectOf(el)
+    if (onScreen(r) && r.w * r.h < screen * 0.5) hard.push(r)
+  }
+  return { soft, hard, noLead }
 }
 
+// Anchors that span the page (a row of the workspaces page's list): below them first, where the page has room, so the
+// card never sits over the forms above.
+const ORDER: Record<string, Side[]> = { 'pending-row': ['below', 'above'] }
+
 // Where the card goes.
-function where(anchorName: string | undefined, anchor: HTMLElement | null, size: { w: number; h: number }): Placed {
+function where(anchorName: string | undefined, anchor: HTMLElement | null, size: { w: number; h: number }, target?: string, own: HTMLElement | null = null): Placed {
   const view = { w: innerWidth, h: innerHeight }
   const focus = new URLSearchParams(location.search).has('focus')
   const dockEl = findAnchor('dock')
-  const { soft, hard } = obstacles(anchor)
-  return place({ anchor: anchor ? rectOf(anchor) : null, size, view, soft, hard, focus, bottomDock: dockEl ? rectOf(dockEl) : null, dock: anchorName === 'dock' })
+  const { soft, hard, noLead } = obstacles(anchor, target, own)
+  return place({ anchor: anchor ? rectOf(anchor) : null, size, view, soft, hard, noLead, focus, bottomDock: dockEl ? rectOf(dockEl) : null, dock: anchorName === 'dock', order: anchorName ? ORDER[anchorName] : undefined })
 }
 
 type Props = {
@@ -132,7 +159,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
     const anchor = findAnchor(anchorName, target)
     if (anchor) hadAnchor.current = anchor
     const size = { w: card.current.offsetWidth, h: card.current.offsetHeight }
-    const next = where(anchorName, anchor, size)
+    const next = where(anchorName, anchor, size, target, card.current)
     setPos((p) => (p && p.x === next.x && p.y === next.y && p.at === next.at && (p.lead?.x2 ?? 0) === (next.lead?.x2 ?? 0) && (p.lead?.y2 ?? 0) === (next.lead?.y2 ?? 0) ? p : next))
   }, [i, sample, played, done, anchorName, target])
 
@@ -169,6 +196,24 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
       clearTimeout(t)
     }
   }, [played, anchorName, target])
+
+  // A menu opened while it shows (the `+` menu with its kind guide, a right-click, a Select): a lesson about menus is
+  // placed again clear of it; any other steps aside (hidden, taking no clicks) until the menu closes, then comes back.
+  const aboutMenus = shown.lesson.within === 'menu'
+  const [menuUp, setMenuUp] = useState(false)
+  useEffect(() => {
+    if (played) return
+    let was = false
+    const t = setInterval(() => {
+      const up = [...document.querySelectorAll<HTMLElement>(MENUS)].some((el) => !card.current?.contains(el) && isVisible(el))
+      if (up === was) return
+      was = up
+      setMenuUp(up)
+      setSample((n) => n + 1)
+    }, 120)
+    return () => clearInterval(t)
+  }, [played])
+  const aside = menuUp && !aboutMenus
 
   const root = useRef<HTMLElement>(null)
   const first = useRef<HTMLButtonElement>(null)
@@ -207,11 +252,11 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
     )
   }
 
-  const style = pos ? { left: pos.x, top: pos.y } : { left: -9999, top: 0, visibility: 'hidden' as const }
+  const style = pos && !aside ? { left: pos.x, top: pos.y } : pos ? { left: pos.x, top: pos.y, visibility: 'hidden' as const, pointerEvents: 'none' as const } : { left: -9999, top: 0, visibility: 'hidden' as const }
   const side = pos?.at === 'beside' ? pos.side : 'bottom'
   return createPortal(
     <>
-      {pos?.lead && !done && <LeadLine lead={pos.lead} />}
+      {pos?.lead && !done && !aside && <LeadLine lead={pos.lead} />}
       <Appear
         as="section"
         elRef={card}
@@ -219,6 +264,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
         data-coach
         data-side={side}
         data-done={done || undefined}
+        data-aside={aside || undefined}
         data-nodemo={!page.scene || undefined}
         style={style}
         role="region"

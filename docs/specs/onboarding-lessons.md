@@ -452,7 +452,7 @@ _This sample lives in a test fixture, to build and check what's new. The shipped
 
 ## 12. Scenes (≈ 35, `src/demo/scenes/`)
 
-Each ≤ 6 s, one action, 1 s hold at the end, poster = the telling moment. Fixture: `pazar` unless said.
+Each 3–8 s (≤ 8000 ms), one action, 1 s hold at the end, poster = the telling moment. Fixture: `pazar` unless said.
 
 | scene | what happens | poster |
 |---|---|---|

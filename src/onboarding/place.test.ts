@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hits, place, RIGHT_FREE, type PlaceInput, type Rect } from './place'
+import { hits, leadCrosses, place, RIGHT_FREE, type PlaceInput, type Rect } from './place'
 
 const view = { w: 1568, h: 980 }
 const size = { w: 268, h: 340 }
@@ -150,5 +150,54 @@ describe('the bottom-middle card and its anchor', () => {
   it('stays in the middle when the anchor is elsewhere', () => {
     const p = place({ anchor: { x: 20, y: 20, w: 1528, h: 300 }, size, view, hard: [{ x: 0, y: 320, w: 1568, h: 10 }] })
     if (p.at === 'bottom') expect(Math.abs(p.x + size.w / 2 - view.w / 2)).toBeLessThanOrEqual(1)
+  })
+
+  // O9's review: never over the piece taught or its console, a hint, an open menu; leads never cross buttons.
+  describe('obstacles a lesson must keep clear of', () => {
+    it('steps past the taught piece and its console rather than sit on them', () => {
+      const anchor = { x: 700, y: 400, w: 80, h: 24 }
+      const pieceBox = { x: 600, y: 200, w: 500, h: 400 }
+      const console_ = { x: 900, y: 610, w: 220, h: 28 }
+      const p = place({ anchor, size, view, hard: [pieceBox, console_] })
+      expect(p.at).toBe('beside')
+      expect(hits(at(p), pieceBox)).toBe(false)
+      expect(hits(at(p), console_)).toBe(false)
+    })
+
+    it("the bottom-middle card keeps clear of a console it would have covered", () => {
+      const console_ = { x: view.w / 2 - 100, y: view.h - 24 - size.h + 40, w: 200, h: 28 }
+      const p = place({ anchor: null, size, view, hard: [console_] })
+      expect(p.at).toBe('bottom')
+      expect(hits(at(p), console_)).toBe(false)
+    })
+
+    it('keeps clear of an empty hint and an open menu', () => {
+      const anchor = { x: 400, y: 400, w: 120, h: 24 }
+      const hint = { x: 534, y: 300, w: 300, h: 40 }
+      const menu = { x: 534, y: 380, w: 320, h: 450 }
+      const p = place({ anchor, size, view, hard: [hint, menu] })
+      expect(hits(at(p), hint)).toBe(false)
+      expect(hits(at(p), menu)).toBe(false)
+    })
+
+    it("never leads across a console's buttons", () => {
+      // The anchor (a console's `[unframe]`) with the console's other buttons right of it: the card doesn't go right.
+      const anchor = { x: 600, y: 500, w: 70, h: 22 }
+      const buttons = [
+        { x: 680, y: 500, w: 60, h: 22 },
+        { x: 750, y: 500, w: 60, h: 22 },
+      ]
+      const p = place({ anchor, size, view, noLead: buttons })
+      expect(p.at).toBe('beside')
+      if (p.at !== 'beside' || !p.lead) return
+      expect(leadCrosses(p.lead, buttons)).toBe(false)
+      expect(p.side).not.toBe('right')
+    })
+
+    it('a lead touching its own anchor only is fine', () => {
+      const lead = { x1: 100, y1: 50, x2: 200, y2: 50 }
+      expect(leadCrosses(lead, [{ x: 200, y: 40, w: 50, h: 20 }])).toBe(false)
+      expect(leadCrosses(lead, [{ x: 150, y: 40, w: 20, h: 20 }])).toBe(true)
+    })
   })
 })

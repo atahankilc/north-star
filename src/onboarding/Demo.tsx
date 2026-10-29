@@ -18,7 +18,7 @@ const LOOPS = 3
 // The scenes demo.html can play today (src/demo/sceneList.ts). Every other id plays `plane-drag` for now (a
 // placeholder until its scene is written); the strip still names the scene that was asked for. Kept here, not imported
 // from src/demo/, so the app's bundle never pulls the stage in.
-const BUILT = ['plane-drag', 'canvas-fit', 'sidenav-plus', 'deck-drag']
+const BUILT = ['plane-drag', 'canvas-fit', 'sidenav-plus', 'deck-drag', 'pieces-tour', 'plus-adds-plane', 'finder-go', 'peers-comment']
 export const playable = (scene: string) => (BUILT.includes(scene) ? scene : 'plane-drag')
 
 type Msg = { ns: typeof DEMO_NS; type: string; [k: string]: unknown }
@@ -54,6 +54,25 @@ export function Demo({ scene, width, label, compact }: { scene: string; width: n
     }
     window.addEventListener('message', on)
     return () => window.removeEventListener('message', on)
+  }, [])
+
+  // The frame never keeps the keyboard: a scene focusing a field in it (the finder's, a thread's) would take the focus
+  // out of the coach (the welcome's ← → stop working). When it goes into the frame, it's given back where it was.
+  useEffect(() => {
+    let last: HTMLElement | null = document.activeElement as HTMLElement | null
+    const onIn = (e: FocusEvent) => {
+      if (e.target !== frame.current) last = e.target as HTMLElement
+    }
+    const onBlur = () =>
+      requestAnimationFrame(() => {
+        if (document.activeElement === frame.current && last?.isConnected) last.focus({ preventScroll: true })
+      })
+    document.addEventListener('focusin', onIn)
+    window.addEventListener('blur', onBlur)
+    return () => {
+      document.removeEventListener('focusin', onIn)
+      window.removeEventListener('blur', onBlur)
+    }
   }, [])
 
   // Theme and motion follow the app's, live.

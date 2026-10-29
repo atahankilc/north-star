@@ -12,6 +12,8 @@ import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore 
 import { AnimatePresence } from 'motion/react'
 import { useAuth } from '../data/auth'
 import { usePresence } from '../data/presence'
+import { useDoc } from '../data/hooks'
+import type { Member } from '../data/model'
 import { WorkspaceContext } from '../views/workspace/context'
 import { useFind } from '../views/workspace/find'
 import { toggleTasksSide } from '../views/workspace/sideState'
@@ -28,6 +30,7 @@ import { Pages, type PagesEnd } from './Pages'
 import { Lesson } from './Lesson'
 import { Nudge } from './Nudge'
 import { EmptyHint } from './EmptyHint'
+import { Choices } from './Choices'
 import { KindGuide } from './KindGuide'
 import { Guide } from './Guide'
 
@@ -206,6 +209,9 @@ export function Coach() {
       }
       // The empty states: shown by their trigger (for this person, unseen, tips on), gone (and seen) when done.
       const p = useProgress.getState()
+      // Marked seen here, not in the state's updater: React runs updaters while rendering, and a store write there
+      // redraws other components mid-render (GuideButton's dot).
+      for (const l of HINTS) if (l.doneWhen?.some((t) => matches(t, e)) && (p.seen[l.id] ?? 0) < l.v) p.markSeen(l.id, l.v)
       setHints((h) => {
         let next = h
         for (const l of HINTS) {
@@ -214,7 +220,6 @@ export function Coach() {
               next = { ...next }
               delete next[l.id]
             }
-            if ((p.seen[l.id] ?? 0) < l.v) p.markSeen(l.id, l.v)
             continue
           }
           if (l.trigger.some((t) => matches(t, e)) && !next[l.id] && (p.seen[l.id] ?? 0) < l.v && !p.tipsOff && fitsRole(l.roles, roleRef.current))
@@ -372,14 +377,21 @@ export function Coach() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kindOpen])
 
+  // The workspace's maker's name, for the invited welcome (`{owner} started this workspace`): from the people list
+  // (members/{uid}), read only for an invited person in someone else's workspace; else from who's here.
+  // Listened to only while the welcome waits or shows.
+  const invited = useProgress((s) => s.state?.audience) === 'invited'
+  const ownerId = workspace?.ownerId
+  const welcomeDue = cur?.lesson.id === 'welcome' || queued?.lesson.id === 'welcome' || queue.queued().includes('welcome')
+  const ownerDoc = useDoc<Member>(invited && welcomeDue && store && ownerId && ownerId !== uid ? `workspaces/${store.get().wid}/members/${ownerId}` : null).data
+
   // ── Names and handlers ─────────────────────────────────────────────────────────────────────────────────────────────
   const names: Fill = useMemo(() => {
-    const ownerId = workspace?.ownerId
-    const owner = peers.find((p) => p.uid === ownerId)?.name ?? (ownerId && ownerId === uid ? (user?.name ?? undefined) : undefined)
+    const owner = ownerDoc?.name || peers.find((p) => p.uid === ownerId)?.name || (ownerId && ownerId === uid ? (user?.name ?? undefined) : undefined)
     const peer = peers.find((p) => p.uid !== uid)?.name
     const kind = cur?.payload.kind as string | undefined
     return { owner: owner?.split(' ')[0], peer: peer?.split(' ')[0], piece: kind ? (KIND_WORDS[kind] ?? kind) : undefined }
-  }, [workspace, peers, uid, user, cur])
+  }, [ownerId, ownerDoc, peers, uid, user, cur])
 
   const close = (how: CloseHow, toGuide = false) => {
     if (!cur) return
@@ -501,6 +513,11 @@ export function Coach() {
         {news && newsShowing && <Pages key="news" kind="news" pages={newsPages(news)} onEnd={endNews} />}
         {hintIds.map((id) => {
           const l = HINTS.find((h) => h.id === id)
+          // Framed choices go into their anchor on the page (the workspaces page's empty box), in place of its line.
+          if (l?.choices && l.anchor) {
+            const into = document.querySelector(`[data-learn="${l.anchor}"]`)
+            return into ? <Choices key={id} into={into} choices={l.choices} /> : null
+          }
           if (!l?.line) return null
           return <EmptyHint key={id} line={l.line} toward={id === 'empty-canvas' ? 'plus' : undefined} anchor={id === 'empty-timeline' ? 'piece' : undefined} />
         })}

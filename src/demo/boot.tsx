@@ -19,11 +19,22 @@ import { useFind } from '../views/workspace/find'
 import { useTasksSide } from '../views/workspace/sideState'
 import { usePlaneFilter } from '../views/workspace/planeFilter'
 import { useThreadView } from '../views/workspace/Threads'
+import { useDocUi } from '../views/workspace/Documents'
+import { useShelf } from '../views/workspace/FilterDock'
+import { useGoTo } from '../views/workspace/goTo'
+import { useGuides } from '../views/workspace/guides'
+import { useKanbanSizes, useOpenSize } from '../views/workspace/sizes'
+import { usePresence } from '../data/presence'
 import { load, onError, onLoop, pause, play, record, seek, type Ctx, type Scene } from './director'
 import { SCENES } from './sceneList'
 import { Stage } from './Stage'
+import { watchDemoCss } from './demoCss'
 
 // Anything that slips through to a write is refused (the toast that would say so isn't mounted here).
+// `:hover` and `:focus-visible` for the made-up input (demoCss.ts): the build rewrote its CSS already; the dev server
+// serves the app's own, so it's rewritten here as it arrives.
+if (import.meta.env.DEV) watchDemoCss()
+
 setReadOnly('the demo writes nothing', 'demo')
 // No curtain here: the stage is the page from the first frame, entrances play at once.
 useCurtain.getState().setRevealed(true)
@@ -46,8 +57,17 @@ window.addEventListener('error', (e) => {
 })
 
 // Every store the real views keep outside React, as it was when the page loaded: a scene starts on them afresh.
-const stores = [useCanvasView, useKanbanUi, useMatrixUi, useTableUi, useFind, useTasksSide, usePlaneFilter, useThreadView]
-const fresh = () => stores.forEach((s) => (s as { setState: (v: unknown, replace: true) => void }).setState(s.getInitialState(), true))
+// What a scene leaves in the demo's own storage (the split, snapping, the side view's tab…; demo.html keeps it in memory)
+// goes too, but for the app's theme and motion, which the demo follows.
+const stores = [useCanvasView, useKanbanUi, useMatrixUi, useTableUi, useFind, useTasksSide, usePlaneFilter, useThreadView, useDocUi, useShelf, useGoTo, useGuides, useOpenSize, useKanbanSizes, usePresence]
+const KEEP = ['north-star.theme', 'north-star.motion']
+const fresh = () => {
+  for (const st of [localStorage, sessionStorage]) {
+    const keys = Array.from({ length: st.length }, (_, i) => st.key(i)).filter((k): k is string => !!k && !KEEP.includes(k))
+    keys.forEach((k) => st.removeItem(k))
+  }
+  stores.forEach((s) => (s as { setState: (v: unknown, replace: true) => void }).setState(s.getInitialState(), true))
+}
 
 const root = createRoot(document.getElementById('root')!)
 let gen = 0

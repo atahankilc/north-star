@@ -227,7 +227,7 @@ src/demo/                    the demo realm (its own entry, demo.html)
   Stage.tsx                  WorkspaceContext over fixtures, the real views, a fake cursor and key chips
   director.ts                plays a scene's script on a clock that can seek (headless) and loop
   fixtures/                  made-up workspaces (a real-looking startup: "Pazar", customers, problems, rivals…)
-  scenes/                    one file per scene: setup + steps (≤ 6 s), poster time
+  scenes/                    one file per scene: setup + steps (3–8 s, ≤ 8000 ms), poster time
 scripts/check-lessons.mjs    the lint (§8)
 ```
 
@@ -330,7 +330,7 @@ Rejected: (a) the same page with every store made per-instance (a rewrite of hot
   welcome's pages show the whole screen. Each scene says which parts it mounts (§6.2b). The backdrop on (dimmed like in a workspace) or off as
   the scene says; the frame is `inert` to the person (nothing they do reaches it); a fake cursor (the app's pointer
   drawn as an SVG) and key chips (`⌘F` shown bottom-left like a keycap) drawn by the stage.
-- **Director**: a scene is `{ id, fixture, view, size: [w, h], length ≤ 6000 ms, poster, steps }`; a step is
+- **Director**: a scene is `{ id, fixture, view, size: [w, h], length 3–8 s (≤ 8000 ms, as §6.2b.4), poster, steps }`; a step is
   `{ at, do }` with a small API: `set(ws => …)` (change the made-up data, e.g. move a task), `cursor.to(selector, ms)`,
   `cursor.press()`, `cursor.drag(selector, to, ms)`, `key('⌘F')`, `ui.focus(id)`, `ui.select(id)`, `ui.edit(id)`,
   `ui.open('setup')`, `peer(name).to(selector)`, `camera.to(selector | 'all', ms)`, `wait(ms)`.

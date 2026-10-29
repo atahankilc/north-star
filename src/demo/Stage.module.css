@@ -70,7 +70,8 @@
   font-size: var(--text-sm);
 }
 
-/* The pointer was the last input (director.ts): no focus ring, as after a real click. */
+/* The pointer was the last input (director.ts): the browser's own focus ring off too, as after a real click (the app's
+   :focus-visible rules don't match then, demoCss.ts; this one is left as it is). */
 :global(html[data-demo-input='pointer']) :global(:focus-visible) {
   outline: none !important;
 }

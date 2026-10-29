@@ -7,6 +7,7 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig, type UserConfig } from 'vite'
 import app from './vite.config'
+import { demoStates } from './src/demo/demoCss'
 
 const stub = fileURLToPath(new URL('./src/demo/firebaseStub.ts', import.meta.url))
 
@@ -17,6 +18,8 @@ const shared = Array.isArray(out) ? out[0] : out
 
 export default defineConfig({
   ...base,
+  // `:hover` and `:focus-visible` as the director's made-up input needs them, in the demo's CSS only (src/demo/demoCss.ts).
+  css: { ...base.css, postcss: { plugins: [demoStates()] } },
   resolve: { ...base.resolve, alias: [{ find: /^firebase\/(app|auth|database|firestore|functions|storage)$/, replacement: stub }] },
   build: {
     ...base.build,

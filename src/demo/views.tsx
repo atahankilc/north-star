@@ -9,6 +9,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Hud } from '../ui/Hud'
 import { PeopleHere } from '../ui/PeopleHere'
 import { CanvasView } from '../views/workspace/CanvasView'
+import { Finder } from '../views/workspace/Finder'
 import { InboxButton } from '../views/workspace/ThreadInbox'
 import { SideNav } from '../views/workspace/SideNav'
 import { useWs } from '../views/workspace/context'
@@ -44,6 +45,8 @@ export function CanvasScreen() {
         side={<SideNav wid={wid} focused={focused} editor />}
       />
       <CanvasView />
+      {/* The finder (⌘F, the side nav's compass), as WorkspaceLayout mounts it: nothing drawn until it's opened. */}
+      <Finder />
     </div>
   )
 }
