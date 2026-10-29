@@ -71,6 +71,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   (buttons, the Settings menu, choices).
 - *Tracking:* `--track-label` 0.12em on every small uppercase label, `--track-title` -0.02em on Geist titles,
   `--track-display` -0.045em on the display headline. Lowercase actions are untracked.
+- *Inside the zoomed world too (D-319):* sizes in canvas px (card faces, plane and kanban text, matrix heads) and
+  their tracking get their own tokens in `src/styles/` (a `--world-*` family), and Hud's night colours become `--night-*`;
+  no raw px, letter-spacing or hex stays in any CSS file. Not done yet: converted file by file, each with before/after
+  shots in dark and light, nothing may look different.
 - *Reading width:* `--measure` (760 px) for long text (a document open in its reader).
 - *1.0 (D-096, D-101, D-102, D-106):* the reports tab read on solid `--bg` with an "on this page" outline (documents keep
   that); the assistant's stage was one cyan box (`StageBox`) with a `‹ n/N ›` stepper.

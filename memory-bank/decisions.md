@@ -35,14 +35,19 @@ feature comes back as a piece, and check them with the user then.
 - Plain paths (`/workspaces/<id>`, `?focus=<id>`, `beside=`), BrowserRouter, index.html copied to 404.html; signing out
   goes to `/`; a link opened signed out continues after sign-in; paths only via `src/app/paths.ts` (D-070, D-174, D-248).
 - Local dev and tests on emulators: a `demo-` project, test users Alice/Bob/Carol, RTDB on 9010 (D-020).
+- Every deploy (rules, indexes, functions) is asked for first, after `npm run test:rules`; until Blaze the storage-less
+  command; an index deploy never deletes Firebase's indexes (D-322).
+- ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
 ## Accounts, sharing, roles
 - Google sign-in only, popup (D-011).
 - Roles `owner | editor | viewer`, several owners, never none; `ownerId` is only the creator. Owners: people, roles,
   codes, invites, requests, workspace key, delete. Editors: all content. Viewers: read, own documents, own-key calls;
-  the app locked for them (`editLocked`, tracked writes refused) (D-098).
+  the app locked for them (`editLocked`, tracked writes refused) (D-098). Viewers never use the workspace key, even
+  with access `everyone` (D-318).
 - Joining: a code only *asks* and an owner approves in Settings, or an owner invites an email (no mail sent); a new
-  code revokes the old (D-062).
+  code revokes the old (D-062). An invitee reads only a small `invites/{wid}_{email}` doc (name, member count), never
+  the workspace doc (D-323).
 - Owners delete a workspace (client-side cascade); anyone but the last owner may leave (D-023, D-098). People list
   `members/{uid}`, written by each member on open, paged 20 at a time (D-098).
 
@@ -61,11 +66,13 @@ feature comes back as a piece, and check them with the user then.
 - 3D ASCII, mostly black and white with vivid accents (D-004); Geist for titles and long reading, Geist Mono for the
   rest, self-hosted (D-013, D-093). WebGL only behind; readable or editable text is DOM, never under the ASCII effect
   (D-009, D-019).
-- Tokens only, no raw colours, sizes or tracking (D-069, D-093, D-097); `Frame.module.css` is the one framed surface
+- Tokens only, no raw colours, sizes or tracking (D-069, D-093, D-097), inside the zoomed world too, with its own
+  tokens (D-319, not done yet); `Frame.module.css` is the one framed surface
   (D-024); shared `Page.module.css`, `fieldLabel`, `small` buttons (D-093). Actions lowercase, labels uppercase; no
   native `<select>` (`src/ui/Select.tsx`) (D-093). `▸`/`▾` only open or fold something, never lead a row of actions (D-189).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,
-  D-069). Light theme via tokens under `[data-theme='light']` and `usePalette()`, bg `#f5f5f5`, no-flash script (D-069).
+  D-069). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
+  `Palette` only what WebGL reads, D-321), bg `#f5f5f5`, no-flash script (D-069).
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
   people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge; its `+` an unframed drawn
@@ -284,7 +291,8 @@ feature comes back as a piece, and check them with the user then.
 
 ## Collaboration
 - Real-time collaboration with presence and live cursors (D-005); presence in RTDB `presence/{wid}/{uid}`, readable by
-  any signed-in user, own node whole-node writes (D-016, D-065).
+  any signed-in user, own node whole-node writes (D-016, D-065); the client shows only members' presence and a
+  `photo` only from googleusercontent.com, the rule checks the photo too; with Blaze the read is bound to membership (D-317).
 - Cursors (D-065, D-169, D-191): in your space's px (`plane` = the plane in focus); sent 10× a second, drawn 200 ms
   behind on a curve (D-193). Following (D-067, D-170, D-191) is total: into the plane they focus and out, their cursor
   kept in your middle (gliding only past ±22 %), their selection and panel yours until you click; a frame in their

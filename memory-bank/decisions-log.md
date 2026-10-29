@@ -5823,3 +5823,60 @@ twin (a list).
   its `order`/`gap` options (tested, no longer used by a look). The preview stays as the record.
 - *Verified:* tsc, vitest 397/397, build; headless shots of the welcome, a lesson (beside, played, done, no demo),
   the kind guide and `?` in dark and light match the earlier `a` shots (O5-final-*).
+
+### D-317 · 2026-10-29 · Accepted (audit K1; the user: "Şimdi client, sonra RTDB")
+**Presence: filtered by membership in the client now, bound to membership in RTDB once Blaze is live.** Now: the
+client shows presence only for uids in the workspace's `memberIds`, and a presence `photo` must be an
+`https://…googleusercontent.com/` address, in `database.rules.json` and in the client (`PeopleHere` draws nothing else).
+Later (Blaze): membership is copied to RTDB (`members/{wid}/{uid}`) by a function and the presence rule reads it.
+- *Why:* presence only checked `auth != null`; anyone knowing a workspace id (in every shared URL) could read cursors
+  and selections and add a fake person with any `photo`, whose `<img>` leaked every member's IP address.
+- *Alternatives:* (a) copy membership to RTDB now, written by the client (two copies of membership, no function to keep
+  them true); (b) client filter + photo check only (the read stays open). The user took (b) now, (a) with Blaze.
+- *Not yet:* the RTDB copy and the read rule (needs Blaze).
+
+### D-318 · 2026-10-29 · Accepted (audit K2; the user: "Viewer'a hayır")
+**Viewers never use the workspace key.** `functions/src/index.ts` refuses a viewer even when the workspace's key access
+is `everyone`, as D-098 says (viewers: own-key calls only).
+- *Why:* the function let viewers spend the workspace key when access was `everyone`, against D-098.
+- *Alternatives:* let `everyone` mean viewers too (and change D-098). Not urgent: the key waits for Blaze and the agent
+  uses own keys (D-312), but the code should agree with the rule.
+
+### D-319 · 2026-10-29 · Accepted (audit K3; the user: "Hepsi token")
+**Every raw px, letter-spacing and hex in the CSS becomes a token, inside the zoomed world too.** Sizes inside the world
+(card faces, plane px, kanban sheets…) get their own tokens in `src/styles/` (written in DESIGN.md), Hud's night
+colours become `--night-*`. Done file by file with before/after headless shots in dark and light; nothing may look
+different.
+- *Why:* the audit counted ~53 raw `font-size`, ~21 raw `letter-spacing` and 8 hex colours against D-069/D-093/D-097.
+- *Alternatives:* a written exception for the zoomed world, tokens only for screen-sized UI (the audit's
+  recommendation); the user wanted all of it.
+- *Not yet:* all of it (the audit's P3b; it touches every view's CSS, so it waits for the onboarding run).
+
+### D-320 · 2026-10-29 · Accepted (audit K4; the user: "Sadece eslint-plugin-react-hooks, uyarı olarak")
+**ESLint with only `eslint-plugin-react-hooks`, as warnings.** `npm run lint` counts them; CI runs it but never fails
+on it. The 56 `eslint-disable react-hooks/exhaustive-deps` comments now mean something.
+- *Why:* there was no linter, so those comments did nothing and hook dependency bugs were checked by nothing.
+- *Alternatives:* a full ESLint setup (hundreds of warnings at once); no linter.
+
+### D-321 · 2026-10-29 · Accepted (audit K5; the user: "usePalette()'e geç, eskileri sil")
+**three.js reads its colours through `usePalette()`; the unused 1.0 fields of `tokens.ts`'s `Palette` are deleted.**
+- *Why:* CLAUDE.md says WebGL colours come from `usePalette()`, but nothing used it (`Backdrop`, `AmbientField` read
+  `palettes[theme]` directly), and the 1.0 fields copied tokens.css and could drift from it.
+- *Alternatives:* drop `usePalette` and change CLAUDE.md to what the code does.
+
+### D-322 · 2026-10-29 · Accepted (audit K6; the user: "Her deploy'dan önce kullanıcıya sor")
+**Every deploy (rules, indexes, functions) is asked for first.** `npm run test:rules` passes before; until Blaze the
+storage-less command is used (`npx firebase deploy --only firestore:rules,firestore:indexes,database --project
+north-star-db`). An index deploy never deletes the indexes already in Firebase.
+- *Why:* a deploy reaches the live project; sessions had deployed after tests on their own.
+- *Alternatives:* deploy after green tests without asking.
+
+### D-323 · 2026-10-29 · Accepted (audit, the invitee read; the user: "Düzelt")
+**An invited person reads only the workspace's name and member count, not the workspace doc.** One small doc per
+invite (`invites/{wid}_{email}`: `workspaceId`, `email`, `name`, `memberCount`, `invitedBy`, `at`) is written by the
+owner in the same batch as the workspace's `invitedEmails`; the invitee lists and reads only those, and deletes theirs on
+join or decline; never `workspaces/{wid}` (whose `inviteCode`, roles and other invitees' emails it could read before). Rules, data layer
+and tests change together.
+- *Why:* `firestore.rules` let an invitee read the whole workspace doc.
+- *Alternatives:* keep it (an invitee is about to join anyway); split the private fields out of the workspace doc (a
+  bigger move).
