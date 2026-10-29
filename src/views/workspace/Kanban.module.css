@@ -305,6 +305,20 @@
   background: color-mix(in srgb, var(--tone) var(--card-tint), var(--bg-raised));
 }
 
+/* On that tinted face its greys lean to the ink and its type's colour a quarter to it, as on a plane (D-295). */
+.task[data-ccard] {
+  --fg-dim: color-mix(in srgb, var(--fg) 70%, transparent);
+  --fg-faint: color-mix(in srgb, var(--fg) 62%, transparent);
+}
+
+.task[data-ccard] .sheetType {
+  color: color-mix(in srgb, var(--tone) 75%, var(--fg));
+}
+
+.task[data-ccard] .priority[data-p='P1'] {
+  color: color-mix(in srgb, var(--accent-magenta) 60%, var(--fg));
+}
+
 .layer[data-live='true'] .task {
   cursor: grab;
 }

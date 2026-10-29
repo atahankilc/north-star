@@ -53,6 +53,17 @@
     translate 180ms var(--ease-out);
 }
 
+/* On a face tinted by its type the page's greys sink into it: inside, they lean to the ink (in both themes), and the
+   type's own colour leans a quarter to it, so every line reads, small ones too (D-295). */
+.card,
+.band {
+  --fg-dim: color-mix(in srgb, var(--fg) 70%, transparent);
+  --fg-faint: color-mix(in srgb, var(--fg) 62%, transparent);
+  --placeholder: color-mix(in srgb, var(--fg) 52%, transparent);
+  --type-ink: color-mix(in srgb, var(--type) 75%, var(--fg));
+  --clash-ink: color-mix(in srgb, var(--accent-magenta) 60%, var(--fg));
+}
+
 /* Carried, it follows the pointer at once; let go, it grows back into its marks (D-265). */
 .box[data-dragging='true'] .card {
   transition: scale 160ms var(--ease-out);
@@ -71,7 +82,7 @@
 
 .kind {
   flex: none;
-  color: var(--type);
+  color: var(--type-ink);
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -85,7 +96,7 @@
 
 .status[data-clash='true'],
 .proof[data-clash='true'] {
-  color: var(--accent-magenta);
+  color: var(--clash-ink);
 }
 
 .proof {
@@ -278,7 +289,7 @@
   margin-bottom: 3px;
   padding: 0 6px 0 8px;
   border: 0;
-  background: color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised));
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
   box-shadow: inset 2px 0 0 var(--type);
   color: var(--fg);
   font-family: var(--font-display);
@@ -292,7 +303,7 @@
 }
 
 .mini:hover {
-  background: color-mix(in srgb, var(--fg) 6%, color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised)));
+  background: color-mix(in srgb, var(--fg) 12%, transparent);
 }
 
 .miniName {
@@ -495,7 +506,7 @@
 
 .band .fold,
 .box[data-type='package'] .fold {
-  color: var(--type);
+  color: var(--type-ink);
 }
 
 /* A row in a folded card (D-245): a bar in its own card's colour, its name, its status (cardInside's PART_ROW). */
