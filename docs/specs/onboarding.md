@@ -33,7 +33,7 @@ a first time  ─► a LESSON beside the thing just opened (1–3 short pages, a
    first focus      first focus → inside a plane: + makes cards, pan, Esc
    first link …)    … ~60 lessons in onboarding-lessons.md, each shown once
                     │
-returning     ─► WHAT'S NEW (one modal: the releases since you last came, a demo each)
+a later release ─► WHAT'S NEW (one modal: what came since you last came, a demo each)
                     │
 any time      ─► `?` THE GUIDE: every lesson by area (seen / not yet), replay, shortcuts, tips on/off
 ```
@@ -144,11 +144,13 @@ family, D-266). It stays until closed or until the person does what it teaches (
 "✓ done" for a moment). It never moves with the camera: it is anchored to a *screen* rect sampled when it opens and
 re-sampled on pan/zoom end.
 
-### 4.4 What's new (returning people)
-For someone who used North Star before, once per release they haven't seen: a modal like the welcome, one page per
-change (the biggest 3–4 first, `+ N more` as a list page), each with its demo and a `[show me]` that closes it and
-goes there when it makes sense (e.g. opens the side view). Then those features' lessons are *armed* (they'll show
-on first use, marked `NEW`), the rest of the lessons are marked known (a returning person isn't taught what they know).
+### 4.4 What's new (people who were here before a release)
+**Only for releases after onboarding ships** (Q-026, answered: nothing was recorded before, so at launch everyone,
+old accounts too, starts as new and gets the welcome and every lesson). Afterwards, for someone whose seen-state is
+older than a release, once per release: a modal like the welcome, one page per change (the biggest 3–4 first,
+`+ N more` as a list page), each with its demo and a `[show me]` that closes it and goes there when it makes sense
+(e.g. opens the side view). Then those features' lessons are *armed* (they'll show on first use, marked `NEW`, even
+if an older version of the lesson was seen), and lessons already seen stay seen.
 It opens only on the canvas, after the curtain, never in a focus or a drag; if the person is busy, it waits.
 
 ### 4.5 Nudges (pointing at something not met yet)
@@ -185,7 +187,7 @@ src/data/onboarding.ts       seen-state: read/write own doc (Firestore) + localS
 src/onboarding/
   lessons.ts                 every lesson as data (id@v, roles, trigger, anchor, pages, scene, after, since, area)
   releases.ts                releases: id, date, title, items → lesson ids (what's new)
-  audience.ts                who is this person: new | invited | returning; role; first canvas?
+  audience.ts                who is this person: new | invited (no seen-state = new); role; first canvas?
   events.ts                  learn(event), and the watchers: store subscriptions, tracked() labels, URL → events
   queue.ts                   one at a time: busy detection, cooldown, priorities, nudge budget, retire-on-done
   progress.ts                zustand store over data/onboarding.ts: seen, armed, tipsOff, lastRelease
@@ -205,21 +207,20 @@ src/demo/                    the demo realm (its own entry, demo.html)
 scripts/check-lessons.mjs    the lint (§8)
 ```
 
-### 5.2 Who is new, invited, returning (audience.ts)
-- **The seen-state doc exists** → we know them; use it.
-- **No doc, Auth account created after `ONBOARDING_START`** (`user.metadata.creationTime`; the constant is the date
-  onboarding ships) → **new**. If their first workspace was made by someone else → **invited** (variant texts).
-- **No doc, account older than `ONBOARDING_START`** → **returning**: no welcome; what's new from `RETURNING_BASELINE`
-  (the release they're assumed to know, §11 Q-026); every lesson whose feature is older than that baseline is marked
-  known; newer ones are armed.
+### 5.2 Who is new, invited, back after a release (audience.ts)
+- **No seen-state doc** → **new**, whatever the account's age (Q-026, answered 2026-10-29: "there was no record
+  before, so they see it too"). If the workspace they first open was made by someone else and has pieces →
+  **invited** (variant texts).
+- **The doc exists** → we know them: lessons by `seen`; what's new for releases newer than `lastRelease` (§7).
+- (No `ONBOARDING_START` date and no baseline: not needed.)
 - **Role** comes from the workspace (`canEditIn`, owner list), so it's per workspace: a viewer here can be an owner
   elsewhere. Lessons check the role at the moment they'd show.
 - The first time the doc is written, it records `startedAt`, `audience` and `lastRelease`.
 
 ### 5.3 The seen-state (data/onboarding.ts)
-- **Firestore `users/{uid}/private/onboarding`** (a new top-level `users` collection; only `request.auth.uid == uid`
+- **Firestore `users/{uid}/private/onboarding`** (Q-025, answered: yes; a new top-level `users` collection; only `request.auth.uid == uid`
   may read or write; shape checked by the rules; ≤ ~20 KB):
-  `{ v: 1, audience: 'new'|'invited'|'returning', startedAt, seen: { 'focus': 1, … }, armed: ['side-view'],
+  `{ v: 1, audience: 'new'|'invited', startedAt, seen: { 'focus': 1, … }, armed: ['side-view'],
   tipsOff: false, lastRelease: '2026-11', welcome: 'done'|'skipped', nudges: { last: <ms> }, updatedAt }`.
   Writes are not `tracked()` (not undoable, not content), batched (≤ 1 write / 2 s), merged per field.
 - **localStorage `north-star:onboarding:<uid>`**: the same object, read first so nothing flashes, written at once.
@@ -326,10 +327,12 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
 
 - `releases.ts` lists releases newest first: `{ id: '2026-11', date, title, items: [{ title, line, scene?, lessons:
   [...], go? }] }`. A release is a group of user-facing decisions (D-numbers), not a version number: the app has none
-  (package.json `0.0.0`). The first list is written from `state-history.md` (§11 Q-026 decides how far back).
+  (package.json `0.0.0`). **At launch the list holds one release, `launch`** (onboarding itself, with nothing to
+  show as new); every later release adds an entry with the features it brought. For the run's tests, a sample later
+  release is written from state-history.md (D-293 → the newest) in a test fixture, **not** in the shipped list.
 - On `canvas-open`: releases newer than `lastRelease` → what's new (§4.4), then `lastRelease` = newest.
 - New people: `lastRelease` = newest at once (they get the welcome instead).
-- Each lesson has `since: '<release id>'`; a returning person's baseline marks older lessons known.
+- Each lesson has `since: '<release id>'`: a release that changes a feature bumps its lesson's version and arms it.
 
 ---
 
@@ -343,7 +346,7 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
    piece kind and card type in `pieces.ts`/`cards.ts` has a kind-guide entry; the words avoid "board"/"kanban" on screen
    (D-180, D-301: "plane", "deck").
 3. **vitest** (shared with the agent run; if it's not there yet, wait for it or coordinate): audience (new, invited,
-   returning, viewer), the queue (busy, one at a time, cooldown, retire-on-done, tipsOff), progress merge (local vs
+   viewer, no doc on an old account = new), the queue (busy, one at a time, cooldown, retire-on-done, tipsOff), progress merge (local vs
    Firestore, older wins nothing), releases (what's new for a given lastRelease).
 4. **Rules tests** for `users/{uid}/private/onboarding` (own only, shape, size) in `tests/rules.test.mjs`
    (`npm run test:rules`; **not deployed**).
@@ -353,8 +356,9 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
    reduced motion shows the poster still.
 6. **Flows** (headless on the emulators, puppeteer-core, state.md's notes): a **new** person (fresh auth user) →
    workspaces empty state → create → welcome 4 pages → empty-canvas hint → `+` with the kind guide → a plane → its
-   lesson → focus → its lesson → a card → … ; an **invited** person (Bob into Alice's filled workspace); a **returning**
-   person (account older than `ONBOARDING_START`) → what's new only; a **viewer** (Carol) → viewer welcome, no editing
+   lesson → focus → its lesson → a card → … ; an **invited** person (Bob into Alice's filled workspace); a person **back after a
+   release** (a seeded seen-state doc with an older `lastRelease` + the test release) → what's new only, its lessons
+   armed; an **old account with no doc** → the full welcome, like a new one; a **viewer** (Carol) → viewer welcome, no editing
    lessons; `tipsOff`; `?` replays. Asserts: never two coach surfaces at once; nothing opens during a drag or focus
    transition; each lesson's card doesn't cover its anchor (rects); `esc` closes; focus returns.
 7. **Shots** (like agent-run §1.6): every lesson, the welcome, the kind guide, what's new and `?` in dark and light, at
@@ -373,7 +377,7 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
 4. The director + fixtures + scene tooling (seek, poster, loop, headless check).
 5. Lessons by area, each with its scenes: canvas & pieces → planes & cards → links → text → matrix & table →
    documents → decks & days → together → canvases & settings → workspaces page & empty states.
-6. What's new + releases + returning flow.
+6. What's new + releases (the release after launch; tested with a sample release).
 7. Full flows + shots gallery + polish.
 
 ---
@@ -394,17 +398,16 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
 
 ## 11. Questions for the user (each has a default the run uses until answered)
 
-- **Q-025 · soon · where is "seen" kept?** Default: per person in Firestore (`users/{uid}/private/onboarding`) with a
-  browser cache; needs `npm run deploy:rules` by you once. Alternative: this browser only (no deploy, but a new
-  laptop shows everything again).
-- **Q-026 · soon · what counts as "new" for people who used it before?** Default: accounts made before
-  `ONBOARDING_START` are "returning"; their baseline is **D-291 (2026-10-27, 1.5 merged to main)**, so what's new
-  covers what came after (decks and days, timeline as a strip, several canvases, filters that pass, D-293–D-314).
-  Alternatives: everything in 1.5 is new to them (show the full welcome too), or nothing (only lessons as they go).
+- **Q-025 · answered 2026-10-29: per person in Firestore** (`users/{uid}/private/onboarding`) with a browser cache;
+  the user deploys the rules once (`npm run test:rules`, then the deploy).
+- **Q-026 · answered 2026-10-29: everyone starts as new.** Nothing was recorded before, so people who used North
+  Star before see the welcome and every lesson too. What's new is only for releases after onboarding ships.
 - **Q-027 · later · a rule for the future**: "every new user-facing feature ships with its lesson and a release
   line". Default: added to CLAUDE.md's hard rules by you (the run doesn't edit CLAUDE.md).
-- **Q-028 · later · the look**: the run builds the recommended look (wizard-like modal, prompt-like lesson card);
-  a preview with 2–3 options goes in `docs/specs/onboarding-preview/` for you to pick in the morning.
+- **Q-028 · later · the look**: only the **frames** get options (the welcome modal, the lesson card, the kind
+  guide: 2–3 each, a static preview page in `docs/specs/onboarding-preview/`, an hour's work, not built three times).
+  The run builds the recommended one and goes on; every lesson is data drawn by those same few components, so a
+  different pick in the morning is a change to 3 components, not to 60 lessons.
 
 ---
 

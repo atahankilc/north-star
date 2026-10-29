@@ -5767,8 +5767,7 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
   was just opened (first piece, console, focus, card, link, unframe, stick, beside, deck, timeline, comments…);
   **what's new** for people who used it before (releases since their last); at most one **nudge** a session; `?` the
   **guide** (replay any lesson, keys, tips on/off); empty states that teach. Seen-state per person
-  (`users/{uid}/private/onboarding`, localStorage fallback), ids versioned. Audience from the Auth account's creation
-  date vs `ONBOARDING_START`. **Demos are the real components** drawn from a made-up workspace inside a same-origin
+  (`users/{uid}/private/onboarding`, localStorage fallback), ids versioned. No seen-state = new, old accounts too. **Demos are the real components** drawn from a made-up workspace inside a same-origin
   iframe (`demo.html`, its own copy of every module, no Firebase), played by a scripted director, 3 loops then paused,
   a still poster under reduced motion. Events from store subscriptions and the agent run's `onTracked` (S3), not new
   calls in hot files; agent writes never trigger lessons.
@@ -5777,6 +5776,10 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
   share the camera/selection stores with the person's canvas, hence the iframe.
 - *Alternatives:* one long up-front tour; a checklist; hint dots; videos/GIFs; hand-made look-alikes; per-instance
   stores in the same page (a rewrite of hot files).
-- *Open:* Q-025 (where seen-state lives), Q-026 (the returning baseline, default D-291), Q-027 (a CLAUDE.md rule:
-  every new feature ships its lesson), Q-028 (the look, from a preview the run makes). The run uses the defaults.
+- *Q-025 and Q-026, answered the same day:* seen-state per person in Firestore ("evet"); people who used North Star
+  before see everything too, since nothing was recorded ("eski kullanıcılar için de tutulan bir kayıt olmadığına göre
+  önceden, onlar da görcek"), so what's new is only for releases after onboarding ships. On the look the user asked
+  whether the run builds everything just to show it: only the frames get a preview of options (Q-028), the run builds
+  the recommended one, and the ~60 lessons are data those frames draw, so a different pick changes a few components.
+- *Open:* Q-027 (a CLAUDE.md rule: every new feature ships its lesson), Q-028 (the look). The run uses the defaults.
 - *Not yet:* everything: onboarding-run.md's steps O0–O16.

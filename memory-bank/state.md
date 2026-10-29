@@ -45,7 +45,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   bottom-right corner. Next: Phase 1 (the ops layer, no AI; first the action inventory). 1.0's rules: decisions-1.0.md.
 - Onboarding: plan written (D-315; docs/specs/onboarding.md, onboarding-lessons.md, onboarding-run.md): welcome, kind
   guide, ~60 lessons, what's new, `?`, demos from the real components in `demo.html`. Next: O0 (the demo spike), by
-  an overnight lead with onboarding-run.md's kickoff prompt (onboarding.md §12). Q-025–Q-028 open, defaults used.
+  an overnight lead with onboarding-run.md's kickoff prompt (onboarding.md §12). Q-025/Q-026 answered (Firestore; everyone starts new);
+  Q-027/Q-028 open, defaults used.
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).

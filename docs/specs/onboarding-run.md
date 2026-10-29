@@ -67,7 +67,7 @@ the same time: the two leads share the repo, the emulators and the machine._
 - put the ASCII effect over text, or let a demo frame make any network request to Firebase;
 - change a rule of onboarding.md §3 without logging it under "For the user".
 When unsure: pick the choice that's easiest to undo, write it under "For the user", keep going. The questions in
-onboarding.md §11 (Q-025–Q-028) have defaults: use them.
+onboarding.md §11: Q-025 and Q-026 are answered; Q-027 and Q-028 have defaults: use them.
 
 ### 1.4 After every step
 1. Checks: `npm run build`; `npm run check:lessons` (from O2); `npx vitest run` (once it exists); `npm run test:rules`
@@ -82,7 +82,7 @@ onboarding.md §11 (Q-025–Q-028) have defaults: use them.
 | Step | What | Gate (on top of 1.4) |
 |---|---|---|
 | O0 | **Spike: the demo realm** (onboarding.md §6.1–6.2): `demo.html` + `src/demo/main.tsx` + `Stage.tsx`; the `firebase.ts` guard; a tiny fixture; the real plane view (PlaneCards in a focus-like stage) drawing 6 cards and 3 links; a scripted drag of one card via `set()`; a fake cursor. **Decides the approach**: if the real components can't run sealed in one step's time, log why, take the fallback (§10: alias-stub the module in the demo entry; or a `MemoryRouter`), and if even that fails, poster PNGs + CSS motion, and say so under "For the user". | the demo page loads in headless Chrome with **0 requests** to googleapis/firebaseio/firebasestorage, no console errors; screenshot of the plane drawn by the real components, dark + light; the app itself unchanged (smoke: open a workspace, focus a plane) |
-| O1 | **Seen-state**: `src/data/onboarding.ts` (Firestore `users/{uid}/private/onboarding` + localStorage cache + silent fallback), `firestore.rules` (own only, shape, size) + tests in `tests/rules.test.mjs`; `src/onboarding/audience.ts` (new / invited / returning; role per workspace), `progress.ts` (zustand) | rules tests pass (**not deployed**); unit tests for audience and progress merge (vitest, or logged as waiting for S2) |
+| O1 | **Seen-state** (Q-025: Firestore, answered): `src/data/onboarding.ts` (Firestore `users/{uid}/private/onboarding` + localStorage cache + silent fallback), `firestore.rules` (own only, shape, size) + tests in `tests/rules.test.mjs`; `src/onboarding/audience.ts` (new / invited; no doc = new, whatever the account's age, Q-026; role per workspace), `progress.ts` (zustand) | rules tests pass (**not deployed**); unit tests for audience and progress merge (vitest, or logged as waiting for S2) |
 | O2 | **Lessons as data + lint**: `lessons.ts` (from onboarding-lessons.md, all of it), `releases.ts` (from state-history.md, D-291 → newest), `scripts/check-lessons.mjs` + the `check:lessons` script | `npm run check:lessons` passes and **fails** on 5 planted mistakes (a missing scene, a 30-word body, a cycle in `after`, a bad role, "kanban" on screen), each reverted |
 | O3 | **Events + queue**: `events.ts` (store subscriptions + URL; `onTracked` if S3 is in), `queue.ts` (busy, one at a time, cooldown, retire on done, tipsOff, nudge budget) | unit tests for the queue rules; a headless run logging the events of: open a workspace, `+` a plane, edit, focus, a card, a link, a deck task drag (each fires once, in order) |
 | O4 | **Design pass**: `docs/specs/onboarding-preview/index.html` (the app's tokens and fonts, no external links, like timeline-preview) with **2–3 options** each for the welcome, the lesson card and the kind guide, one marked recommended with why; then build the recommended one | the preview opens locally; the reviewer checks the options are really different and on-brand (DESIGN.md, consistency.md, D-222 prompt look, D-219 panel look) |
@@ -95,7 +95,7 @@ onboarding.md §11 (Q-025–Q-028) have defaults: use them.
 | O11 | **Text** (§4) and **matrix and table** (§5) | flows; scenes checked |
 | O12 | **Documents** (§6) and **decks and days** (§7) | flows; scenes checked |
 | O13 | **Together** (§8; two headless browsers as Alice and Bob) and **finding, canvases, settings** (§9) | flows: Bob arrives → `people-here` for Alice; follow; a comment thread |
-| O14 | **Nudges** (§10) and **what's new** (§11): `releases.ts` wired, returning audience, armed lessons marked `NEW` in `?` | flow: an account older than `ONBOARDING_START` (set its creationTime in the auth emulator, or stub the date) → what's new only, no welcome; its lessons armed; a new account → no what's new |
+| O14 | **Nudges** (§10) and **what's new** (§4.4, §7): `releases.ts` (shipped: only `launch`), the sample release as a test fixture, armed lessons marked `NEW` in `?` | flow: a seeded seen-state with an older `lastRelease` + the sample release → what's new only, no welcome, its lessons armed; an old account with no doc → the full welcome; a new account → no what's new |
 | O15 | **The guide `?`**: every lesson listed by area, replay, `# keys` (inventory §C), tips on/off; the magenta dot | flow: replay every lesson from `?` (each opens, shows its scene, closes) |
 | O16 | **All of it, end to end** + the shots gallery + a polish pass: the reviewer reads every lesson's words aloud against the screen ("does it say what I see?"), timings, the queue's calm, speed (the canvas's frame time with the coach mounted and a demo playing: no worse than without, state-history D-279 / D-287 for how to measure) | the full flow for each audience green; the gallery complete; frame times logged |
 
@@ -132,7 +132,7 @@ _(none)_
 ### For the user (in the morning)
 - Deploy the rules once O1 is committed and you've read them: `npm run test:rules`, then
   `npx firebase deploy --only firestore:rules --project north-star-db` (until then, seen-state lives in the browser).
-- Q-025–Q-028 in onboarding.md §11: the run used the defaults.
+- Q-027 and Q-028 in onboarding.md §11: the run used the defaults (Q-025, Q-026 answered before the run).
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_

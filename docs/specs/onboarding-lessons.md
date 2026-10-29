@@ -7,8 +7,8 @@ actions, keys as the app writes them. **Never "board" or "kanban" on screen: "pl
 
 How to read an entry:
 - **`id`** · format (`welcome`, `guide` = the kind guide, `lesson`, `nudge`, `empty`) · roles (all / E+ / O / V) ·
-  `since` = the decision that made the feature as it is now. A returning person's baseline decides whether it's armed
-  as `NEW` (onboarding.md §5.2).
+  `since` = the decision that made the feature as it is now (a later release that changes it bumps the version and
+  arms it as `NEW`, onboarding.md §4.4).
 - **when**: the event that shows it (onboarding.md §5.5). **done**: the event that retires it unshown. **anchor**: the
   `data-learn` it sits beside. **after**: lessons that must be seen first (otherwise it waits for the next trigger).
 - Pages: **title**: body · `scene`.
@@ -379,7 +379,7 @@ when the viewer's first try to change something (the "You're a viewer" toast) ·
 
 ---
 
-## 11. What's new (first release list, from state-history.md; Q-026 decides the baseline)
+## 11. What's new: a **sample** release for the tests (not shipped; at launch everyone starts as new, Q-026)
 
 | item | line | scene | lessons armed | go |
 |---|---|---|---|---|
@@ -389,8 +389,8 @@ when the viewer's first try to change something (the "You're a viewer" toast) ·
 | Filters that pass | A filter lasts while its view is open, and new things always show. | `plane-filter` | plane-filter, deck-filter | — |
 | Card faces | Cards tinted by type everywhere: on decks and in tables too. | `card-deck` | — | — |
 
-_The run fills `releases.ts` from `state-history.md` (D-291 → the newest) and asks nothing: it's a list for the user
-to trim._
+_This sample lives in a test fixture, to build and check what's new. The shipped `releases.ts` starts with only
+`launch`; the first real entry comes with the first release after onboarding._
 
 ---
 
