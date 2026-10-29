@@ -373,10 +373,6 @@ await deny('competitor with regions as a string', () => updateDoc(compRef, { reg
 await deny('competitor with over 20 regions', () => updateDoc(compRef, { regions: Array.from({ length: 21 }, (_, i) => `r${i}`) }))
 await allow('edge tagging an idea for a customer', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'c', toType: 'customer', kind: 'for' }))
 await allow('edge from an idea to a problem', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'p', toType: 'problem', kind: 'solves' }))
-// Bend points the user put on a link (D-155): up to 8.
-await allow('edge with bend points', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'p', toType: 'problem', kind: 'solves', bends: [{ x: -1.5, y: 0.25 }, { x: 2, y: 1 }] }))
-await deny('edge with too many bend points', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'p', toType: 'problem', kind: 'solves', bends: Array.from({ length: 9 }, (_, i) => ({ x: i, y: 0 })) }))
-await deny('edge with bend points that are not a list', () => addDoc(sub(bob.fs, 'edges'), { fromId: 'a', fromType: 'idea', toId: 'p', toType: 'problem', kind: 'solves', bends: { x: 1, y: 2 } }))
 // Labels: text on the board (D-050). Groups are retired (D-049).
 await deny('text in no space (1.0, D-248)', () => addDoc(sub(bob.fs, 'labels'), { text: 'x', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('text label', () => addDoc(sub(bob.fs, 'labels'), { pieceId: 'canvas', text: 'COMPETITORS', x: 0, y: 5, createdAt: 1, updatedAt: 1 }))

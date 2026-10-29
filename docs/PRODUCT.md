@@ -27,7 +27,7 @@ are nodes in a single graph. Each view is a different lens on that same graph.
 | **Sticky note** | A note anyone who edits drops on the canvas or a plane, signed with who wrote it and when (D-158, D-257) | text, colour, author, width, folded, position |
 | **Comment thread** | A conversation on a component: a plane, card, text, link or kanban task (D-193, D-260); anyone in the workspace starts one or answers, viewers too; `@` mentions people; new ones light up, and all of them are in the threads panel (D-159, D-166, D-199) | what it's on, its space, messages (who, text, mentions, when), resolved, what each person has read |
 | **Idea** | A thought, insight or answer to a problem | title, body, tags, position on its plane, status |
-| **Connection** | Typed link between any two cards | from, to, kind (`solves`, `part-of`, `competes-with`, `contradicts`, `inspired-by`, `depends-on`, `relates`, `for`, or custom; D-147), label, bend points (kept, not drawn on planes yet, D-155) |
+| **Connection** | Typed link between any two cards | from, to, kind (`solves`, `part-of`, `competes-with`, `contradicts`, `inspired-by`, `depends-on`, `relates`, `for`, or custom; D-147), label; always straight (bend points dropped, D-292) |
 | **Feature** (ours) | Something we plan to build; its own view, linked to the ideas it came from | name, detailed description, priority, status, effort, impact (D-138), linked ideas |
 | **Competitor** | A company or product in the space | name, URL, description, pricing, audience, regions it operates in (D-145), notes |
 | **Competitor Feature** | One piece of a competitor's functionality | name, description, category, competitor, availability, source link (D-164) |

@@ -3,7 +3,8 @@
 // while it's hovered, selected or the selected card's). Several links between two cards sit side by side. In focus a
 // click selects one (a bar under its chip: kind, label, reverse, remove); a hovered link, or a hovered or selected card,
 // lights its links (a hovered link shows its own label) and the rest dim. Right-click → comment (D-193): its
-// conversation's chip under the link's chip. A link is drawn from a card's `›` onto another card (PlaneCards). Bend points (D-155) not yet.
+// conversation's chip under the link's chip. A link is drawn from a card's `›` onto another card (PlaneCards). Always
+// straight: no bend points (D-292).
 import { useEffect, useRef, useState } from 'react'
 import { CARD, type Card } from '../../data/cards'
 import { deleteEdge, FOR, reverseEdge, updateEdge, type Edge } from '../../data/edges'

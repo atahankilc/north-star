@@ -236,13 +236,11 @@ export function cleanEvidence(d: Raw, now: number) {
   return compact({ text, kind, stance, source: str(d.source, 200), url: str(d.url, 2000), date, ...times(d, now) })
 }
 
-// A link, without its ends; its bend points (D-155) kept.
+// A link, without its ends; bend points in an older file are left out (D-292).
 export function cleanEdge(d: Raw) {
   const kind = str(d.kind, 40)
   if (!kind) return null
-  const bends = list(d.bends, 8).map((b) => ({ x: num(obj(b)?.x), y: num(obj(b)?.y) }))
-  const straight = !bends.length || bends.some((b) => b.x === undefined || b.y === undefined)
-  return compact({ kind, label: str(d.label, 200), bends: straight ? undefined : (bends as { x: number; y: number }[]) })
+  return compact({ kind, label: str(d.label, 200) })
 }
 
 // ---- Text (labels.ts), without its space

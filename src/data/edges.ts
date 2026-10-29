@@ -10,8 +10,8 @@ export const FOR = 'for'
 
 export type EdgeKind = 'relates' | 'depends-on' | 'contradicts' | 'part-of' | 'inspired-by' | 'solves' | 'competes-with' | typeof FOR | (string & {})
 
-// Bend points (D-155) aren't drawn on planes yet; a link keeps the ones it has.
-export type Edge = { id: string; fromId: string; fromType: string; toId: string; toType: string; kind: EdgeKind; label?: string; bends?: { x: number; y: number }[] }
+// Always straight: bend points (1.0's D-155) are gone (D-292).
+export type Edge = { id: string; fromId: string; fromType: string; toId: string; toType: string; kind: EdgeKind; label?: string }
 
 const edgesOf = (wid: string) => collection(db(), 'workspaces', wid, 'edges')
 export const edgeRef = (wid: string, id: string): DocumentReference => doc(edgesOf(wid), id)
@@ -41,7 +41,7 @@ export function updateEdge(wid: string, id: string, fields: { kind?: EdgeKind; l
   return tracked('label' in fields ? 'link label' : 'link type', [edgeRef(wid, id)], () => updateDoc(edgeRef(wid, id), data))
 }
 
-// "A solves B" becomes "B solves A"; its bend points the other way round.
+// "A solves B" becomes "B solves A".
 export function reverseEdge(wid: string, e: Edge) {
   return tracked('reverse link', [edgeRef(wid, e.id)], () =>
     updateDoc(edgeRef(wid, e.id), {
@@ -49,7 +49,6 @@ export function reverseEdge(wid: string, e: Edge) {
       fromType: e.toType,
       toId: e.fromId,
       toType: e.fromType,
-      ...(e.bends ? { bends: [...e.bends].reverse() } : {}),
     }),
   )
 }

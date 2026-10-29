@@ -110,7 +110,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
   competitorFeatures/{id}  competitorId, name, description?, category?, availability? (free|paid|enterprise|beta), url? (D-164)
   comparisons/{id}      featureId, competitorId, competitorFeatureId? (their feature matching ours, D-164),
                         criteria? {criterionId: met|part|no} (D-133) (id = featureId_competitorId)
-  edges/{id}            fromId, fromType, toId, toType, kind, label?, bends? [{x, y}] (D-155; kept, not drawn on planes yet)
+  edges/{id}            fromId, fromType, toId, toType, kind, label? (always straight: bend points dropped, D-292)
   evidence/{id}         nodeId, nodeType (customer|problem|idea), kind, text, stance (supports|contradicts), source?, url?,
                         date? (YYYY-MM-DD) (D-137)
   labels/{id}           pieceId (`canvas` or a plane's id), text, x, y, size? (heading|subheading|minor|note), bold?, italic?,

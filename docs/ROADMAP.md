@@ -23,7 +23,7 @@ old reports move to documents. Its specs stay as reference for when a feature co
 - One look and behaviour across the canvas ✅ ([specs/consistency.md](specs/consistency.md), D-263–D-277).
 
 ## Next
-- What the old board still did that planes don't: link bend points, links to a competitor's features.
+- What the old board still did that planes don't: links to a competitor's features (bend points dropped, D-292).
 - Documents' files (images, PDFs) and the workspace key: both need the Blaze plan (D-232, D-079).
 - The assistant back, as a piece.
 

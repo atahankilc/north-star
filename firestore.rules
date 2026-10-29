@@ -328,8 +328,7 @@ service cloud.firestore {
       return isText(d.fromId, 128) && isText(d.toId, 128) && d.fromId != d.toId
         && d.fromType in types && d.toType in types
         && isText(d.kind, 40)
-        && optText(d, 'label', 200)
-        && (!('bends' in d) || (d.bends is list && d.bends.size() <= 8));
+        && optText(d, 'label', 200);
     }
 
     // A card on a plane besides its own (D-281, src/data/places.ts): its spot there and whether it's folded there. The id
