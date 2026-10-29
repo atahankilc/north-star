@@ -1,7 +1,10 @@
 /* The demo's stage (D-315): the whole frame, the plane in focus filling it, the stage's pointer over it. */
 .stage {
+  /* The scene's own size, scaled to the frame from its top-left; a containing block for what's fixed inside it (the HUD). */
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
   overflow: hidden;
   background: var(--bg);
 }
@@ -30,4 +33,44 @@
 /* Pressed: a little smaller, the press the Marks answer with (D-265's 70 ms). */
 .pointer[data-pressed='true'] svg {
   transform: scale(0.88);
+}
+
+.pointer[data-shown='false'] {
+  visibility: hidden;
+}
+
+/* A key pressed (the director's `key()`), bottom-left like a keycap, clear of the HUD's corner (your square, the gear):
+   shown for a moment, then gone. */
+.chip {
+  position: absolute;
+  left: calc(var(--space-4) * 4);
+  bottom: var(--space-4);
+  z-index: 10;
+  min-width: 28px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--fg-dim);
+  border-bottom-width: 3px;
+  background: var(--bg-raised);
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-align: center;
+  pointer-events: none;
+}
+
+.chip[data-shown='false'] {
+  visibility: hidden;
+}
+
+/* A scene that failed while drawing (the director reports it as `error`). */
+.failed {
+  padding: var(--space-4);
+  color: var(--accent-magenta);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* The pointer was the last input (director.ts): no focus ring, as after a real click. */
+:global(html[data-demo-input='pointer']) :global(:focus-visible) {
+  outline: none !important;
 }

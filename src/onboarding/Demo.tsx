@@ -15,10 +15,10 @@ export const DEMO_NS = 'north-star-demo'
 export const STAGE = { w: 960, h: 600 }
 const LOOPS = 3
 
-// The scenes demo.html can play today. Every other id plays `plane-drag` for now (a placeholder until its scene is
-// written); the strip still names the scene that was asked for. Kept here, not imported from src/demo/Stage.tsx, so
-// the app's bundle never pulls the stage in.
-const BUILT = ['plane-drag']
+// The scenes demo.html can play today (src/demo/sceneList.ts). Every other id plays `plane-drag` for now (a
+// placeholder until its scene is written); the strip still names the scene that was asked for. Kept here, not imported
+// from src/demo/, so the app's bundle never pulls the stage in.
+const BUILT = ['plane-drag', 'canvas-fit', 'sidenav-plus', 'deck-drag']
 export const playable = (scene: string) => (BUILT.includes(scene) ? scene : 'plane-drag')
 
 type Msg = { ns: typeof DEMO_NS; type: string; [k: string]: unknown }

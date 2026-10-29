@@ -6,7 +6,7 @@
 // - every `when` key is in PAYLOADS for its event, every `within` in WITHIN, every `{placeholder}` in PLACEHOLDERS,
 //   every D-number in `since` a `### D-xxx` of memory-bank/decisions-log.md;
 // - every piece kind (PIECE_SIZE, src/model/pieces.ts or src/data/pieces.ts) but NOT_IN_PLUS and every card type
-//   (CARD_TYPES) has a kind-guide row; so has every row of the `+` menu (AddToCanvas in WorkspaceLayout.tsx), with the
+//   (CARD_TYPES) has a kind-guide row; so has every row of the `+` menu (AddToCanvas in SideNav.tsx), with the
 //   menu's label and the menu it's in (`where`); and every guide row is still in the menu;
 // - release items name lessons and scenes that exist;
 // - never "board" or "kanban" in words shown (D-180, D-301);
@@ -244,7 +244,7 @@ if (LESSONS.filter((l) => l.format === 'guide').length !== 1) bad('there must be
   if (cardsSrc && !cardTypes.length) bad(`can't read CARD_TYPES in ${cardsFile}`)
   for (const k of NOT_IN_PLUS) if (kinds.length && !kinds.includes(k)) bad(`NOT_IN_PLUS has "${k}", which isn't a piece kind`)
 
-  const layoutFile = 'src/views/workspace/WorkspaceLayout.tsx'
+  const layoutFile = 'src/views/workspace/SideNav.tsx'
   const layout = read(layoutFile)
   const start = layout.indexOf('function AddToCanvas')
   const lines = start === -1 ? [] : layout.slice(start, layout.indexOf('\n}\n', start)).split('\n')

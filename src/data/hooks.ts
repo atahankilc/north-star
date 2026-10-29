@@ -1,7 +1,7 @@
 // Live Firestore subscriptions as React state.
 import { collection, doc, limit, onSnapshot, orderBy, query, type Query, type QueryConstraint } from 'firebase/firestore'
 import { useEffect, useMemo, useState } from 'react'
-import { db } from './firebase'
+import { db, firebase } from './firebase'
 
 export type WithId<T> = T & { id: string }
 
@@ -55,9 +55,10 @@ export function useQuery<T>(q: Query | null, key: string): Live<WithId<T>[]> {
   )
 }
 
+// Without Firebase (the onboarding's demo realm, D-315; no config) there's no doc: null, not loading.
 export function useDoc<T>(path: string | null): Live<WithId<T> | null> {
   return useSnapshot<WithId<T> | null>(
-    !path
+    !path || !firebase
       ? null
       : (set, fail) =>
         onSnapshot(

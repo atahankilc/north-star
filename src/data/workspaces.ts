@@ -161,9 +161,9 @@ export async function ensureMemberEntry(wid: string, user: AuthUser) {
   await setDoc(ref, { ...now, joinedAt: was?.joinedAt ?? now.joinedAt })
 }
 
-// The people list, by name, a page at a time.
+// The people list, by name, a page at a time; nobody without Firebase (the demo realm, D-315).
 export function useMembers(wid: string, size = 20) {
-  return usePaged<Member>([collection(db(), 'workspaces', wid, 'members')], `members:${wid}`, 'name', 'asc', size)
+  return usePaged<Member>([firebase ? collection(db(), 'workspaces', wid, 'members') : null], `members:${wid}`, 'name', 'asc', size)
 }
 
 // Owners only. The rules keep at least one owner.

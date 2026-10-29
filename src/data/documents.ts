@@ -11,7 +11,7 @@
 // piece shows one (`docId`).
 import { collection, doc, getDoc, getDocs, query, updateDoc, where, writeBatch, type DocumentReference } from 'firebase/firestore'
 import { useMemo } from 'react'
-import { db, useEmulators } from './firebase'
+import { db, isDemo, useEmulators } from './firebase'
 import { absent, tracked } from './history'
 import { useDoc, useQuery, type WithId } from './hooks'
 
@@ -293,7 +293,8 @@ const moved = new Set<string>()
 // ones too (the only ones the rules let each of them read and write). One report a batch: a body's rules read its summary.
 // Not an undo step: nothing anyone did. Safe to run twice: a report already moved is only deleted.
 export async function moveReports(wid: string, uid: string, owner: boolean) {
-  if (moved.has(wid)) return
+  // The demo realm (D-315) has no reports and no Firestore.
+  if (isDemo || moved.has(wid)) return
   moved.add(wid)
   const reports = collection(db(), 'workspaces', wid, 'reports')
   const [mine, shared] = await Promise.all([

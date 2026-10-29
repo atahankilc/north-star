@@ -2,7 +2,6 @@
   "_note": "Built in later onboarding steps (scenes O7+, anchors O6, events O3): check:lessons fails on anything missing that is not here, and on anything here that now exists. Only ever shrink it.",
   "scenes": [
     "beside",
-    "canvas-fit",
     "canvases",
     "canvases-share",
     "card-competitor",
@@ -16,7 +15,6 @@
     "competitor-features",
     "console-appear",
     "criteria",
-    "deck-drag",
     "deck-filter",
     "deck-kinds",
     "doc-beside",
@@ -66,7 +64,6 @@
     "side-view",
     "sidenav-find",
     "sidenav-fit",
-    "sidenav-plus",
     "sidenav-side",
     "stick",
     "stick-follow",

@@ -121,8 +121,8 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 ~06:00, lead workspace-sections-canvas: O0–O6 committed. O7 (director, Pazar fixture, scenes canvas-fit / sidenav-plus / deck-drag, a scenes check) building;
-then O8 (start: welcome variants, empty states) onward.
+2026-10-29 ~06:00, lead workspace-sections-canvas: O0–O7 committed. O8 (start: welcome scenes and variants, empty states) building; it first fixes O7's two
+carry-overs (focus kept, :hover shown in the demo).
 Agreed with b2: S3's `onTracked` is in (events.ts uses it; ops will fill `meta.kind`/`created` from S4 on).
 The uncommitted 2-line hunk in tests/rules.test.mjs (and CanvasView/WorkspaceLayout/canvasView.ts) is a third
 session's: commit only our own hunks. Emulators already run (someone's): never stop them; rules tests run as a copy of
@@ -180,6 +180,16 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   guard in collab.tsx's cursor report after a canvas remount · reviewer: 2 rounds (hidden consoles/cards as anchors,
   the empty hint over the `+` menu) · smoke 21/21 tips off; tips on, the first esc closes a showing lesson (§3.1.5) ·
   the orphan session's hunks in CanvasView/WorkspaceLayout/canvasView.ts left uncommitted, untouched.
+- O7 · (this commit) · src/demo/director.ts (scenes as steps: a person's cursor on a curve with rests, real
+  pointer/wheel/key events on the real elements, `set()` for what would write, a deterministic seek, the loop with a
+  1 s hold and the cell break/rebuild over the whole page, presses recorded), the clock and an in-memory storage as
+  inline scripts in demo.html before any module, demo.html built in its own Vite pass (vite.demo.config.ts, Firebase
+  stubbed there) so the app's chunks are the app's alone, the side nav moved to SideNav.tsx and mounted in the app and
+  the demo, fixtures/pazar.ts (the made-up startup), scenes canvas-fit / sidenav-plus / deck-drag (+ plane-drag on the
+  director), scripts/check-scenes.mjs (0 requests, no errors, press targets, seeks in any order, seam frames, loop
+  equality, no focus ring after a press, reduced motion still; dark + light) · reviewer: 3 rounds (the wrong menu row,
+  a blank stage after a seek mid-drag, a stray seam frame, framing, a stray focus ring, the demo's own Firebase) ·
+  carry-overs for O8: the focusin blur steals focus later keys need; CSS :hover never shows (rewrite in the demo's CSS).
 
 ### Stuck
 _(none)_
@@ -194,7 +204,11 @@ _(none)_
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
-- **O6 must:** Kanban.tsx:339, FilterDock.tsx:38, KanbanFilterDock.tsx:47 (window capture handlers) skip events from
+- When agent S9 lands: events.ts skips events while `agentDriving()` (src/agent/ui.ts) is true (the agent moving the
+  UI never teaches, like `actor: 'agent'` for writes). Agreed with b2 2026-10-29.
+- O12: the `deck` lesson's page 1 (E+) says "`+ add a task` types one; Enter keeps typing the next" but deck-drag shows
+  only the drag: give it its own page + scene (`deck-add`) or cut the sentence.
+- **O6 must (done in O6):** Kanban.tsx:339, FilterDock.tsx:38, KanbanFilterDock.tsx:47 (window capture handlers) skip events from
   inside `[role=dialog]`: Backspace on the coach's welcome deleted a selected task (O5 review). Before mounting Coach.
 - O7: one demo frame reused, scenes swapped in place (today a new scene reloads demo.html); preload on idle; measure in
   O16 what opening `+` costs with the kind guide's frame.

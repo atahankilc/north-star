@@ -6,7 +6,7 @@ import {
   signOut as fbSignOut,
 } from 'firebase/auth'
 import { useEffect, useState } from 'react'
-import { firebase, useEmulators } from './firebase'
+import { firebase, isDemo, useEmulators } from './firebase'
 
 export type AuthUser = { id: string; email: string | null; name: string | null; photoURL: string | null }
 
@@ -15,6 +15,9 @@ type Auth = {
   user: AuthUser | null
   error: { message: string } | null
 }
+
+// The onboarding's demo realm (demo.html, D-315): a made-up person, the made-up workspace's owner, never a Firebase user.
+const DEMO: Auth = { isLoading: false, user: { id: 'demo', email: null, name: 'You', photoURL: null }, error: null }
 
 export function useAuth(): Auth {
   const [state, setState] = useState<Auth>({ isLoading: Boolean(firebase), user: null, error: null })
@@ -33,7 +36,7 @@ export function useAuth(): Auth {
     )
   }, [])
 
-  return state
+  return isDemo ? DEMO : state
 }
 
 // Google sign-in (D-011). A popup keeps the page and its router state intact.
