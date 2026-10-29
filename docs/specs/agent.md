@@ -486,12 +486,9 @@ Every bug a person hits becomes a task here before it's fixed.
 
 For long unattended runs (the user asleep), the protocol and the progress log are [agent-run.md](agent-run.md).
 
-> North Star'a agent'ı geri getiriyoruz. Önce `docs/specs/agent.md`'yi baştan sona oku: 1.0 asistanının neden kötü
-> çalıştığı, araştırma, karşılaştırılan mimariler, verdiğim kararlar (D-312), tasarım, gereken refactor, fazlar,
-> kurallar ve eval seti orada. Phase 1'e (ops katmanı, hiç AI yok) geç; Phase 1'in ilk işi action inventory (kullanıcının yapabildiği her şeyin listesi). Kurallar: bir faz, öncekinin gate'i geçmeden başlamaz; hiçbir yazma
-> agent'a özel bir yoldan gitmez (hep `src/ops/`); eval seti UI'dan önce kurulur; prompt ya da tool değişince
-> `eval:quick` çalışır. Başka session'lar aynı ağaçta çalışıyor: dosyaları değiştirmeden önce `git status`'a bak,
-> sadece kendi değişikliklerini commit'le. Bir şeyden emin değilsen tahmin etme, sor.
+> You are the lead building North Star's agent. Read `docs/specs/agent.md` (the plan, D-312) and
+> `docs/specs/agent-run.md` (the protocol and the progress log) in full, and follow the protocol exactly. Start from
+> the log's "Now".
 
 ---
 
