@@ -5663,4 +5663,7 @@ shows anyway.**
 - *Alternatives:* also lifting the selected or edited piece on top: turned down by the user, since edit mode stays on
   for several pieces at once and an older one in edit mode would cover the new one; a stored order (`z`), bring to
   front / send back: not needed for this.
-- *Verified:* tsc only.
+- *Verified* headless (emulators): pieces whose ids sort against their age (`aa_new` newer than `yy_old`) drew
+  oldest first, the newer one taking the overlap; with the screen's middle inside one 8000 px plane (nearClear found
+  nothing clear) a plane added from `+` landed on it, on top, in edit mode, and dragging it moved it (the big one
+  stayed); tsc.
