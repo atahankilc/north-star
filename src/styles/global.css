@@ -106,3 +106,9 @@ html[data-motion='reduced'] *::after {
   outline: 2px solid var(--accent-yellow);
   outline-offset: -2px;
 }
+
+/* While a space zooms, what's held at screen size in it (chips, marks, consoles, bars, guides) is hidden until the zoom
+   it's drawn for catches up, instead of growing and shrinking with the world (D-293). Not while the keyboard is in it. */
+[data-zooming] [data-screen-sized]:not(:focus-within) {
+  visibility: hidden;
+}

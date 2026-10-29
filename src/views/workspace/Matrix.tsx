@@ -429,7 +429,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !(live || still)) }}>
+      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !(live || still)) }}>
         <div className={styles.table} style={{ width: L.w, height: L.h }} role="grid" aria-label={piece.name || 'matrix'} onPointerLeave={() => setHot(null)}>
           {cellsShown}
           {far && <CellDots setup={setup} rows={rows} cols={cols} cellAt={shownAt} L={L} live={live} acts={acts} />}
@@ -1002,7 +1002,7 @@ function CellBar({ setup, cell, row, col, editor, onFold, at, room, write, onTyp
   }, [])
   const left = room && w ? Math.max(8, Math.min(at[0], room - w - 8)) : at[0]
   return (
-    <div ref={bar} className={styles.cellBar} style={{ left, top: at[1] + 8 }} role="toolbar" aria-label="Cell" onPointerDown={(e) => e.stopPropagation()}>
+    <div ref={bar} className={styles.cellBar} data-screen-sized style={{ left, top: at[1] + 8 }} role="toolbar" aria-label="Cell" onPointerDown={(e) => e.stopPropagation()}>
       <div className={styles.where}>
         <span>{row.name || 'untitled'}</span>
         <span className={styles.cross}>×</span>

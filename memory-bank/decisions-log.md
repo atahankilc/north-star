@@ -5308,3 +5308,21 @@ a paragraph's landing L's on the grid, a section or package dragged shrinks as o
   `bends` keep the field, unread.
 - *Not to propose again:* bend points on links (decisions.md, Rejected).
 - *Rules:* changed, not deployed yet.
+
+### D-293 · 2026-10-29 · Accepted (changes D-278's look while zooming; the user: "bu tarz componentleri zoom yaparken render etmesek? … isimler kalsın diğerleri gözükmesin")
+**While a space zooms, what's held at screen size is hidden, except piece names.** D-278 lets those things follow the
+zoom only 120 ms after it stops, so during a wheel or a glide they grew and shrank with the world; entering a focus the
+fit glide left comment chips huge, then they snapped small.
+- *How:* each world (the canvas's `World`, and a focus's plane, kanban, card kanban, matrix, table, timeline, documents)
+  sets `data-zooming` while its camera's zoom isn't the zoom shown (`useShownZoom` / `useSettledZoom`): written once
+  when a zoom starts and once when it settles, never per step (D-279). What's at screen size carries `data-screen-sized`
+  and `global.css` hides it under `[data-zooming]` (`visibility`, nothing redrawn), unless the keyboard is in it
+  (`:focus-within`). Marked: Marks (L's, handles + readout, peers' L's and tags, `Landing`, `BoxSelect`), consoles (and
+  the fresh-comments tab), `ThreadChip`, `LinkBar`, `LabelBar`, a matrix's `cellBar`, `Bond`'s line and notch, guides.
+  Piece names stay (the user's choice: a canvas without names while zooming is hard to read). Link chips are in plane px,
+  untouched. They come back at once, no cell build (it would play after every wheel stop).
+- *Verified:* headless Chrome on the emulators: a plane chip and a card chip `hidden` 40 ms into a wheel zoom on the
+  canvas and in focus, `visible` at the right size 400 ms later. `npm run build` clean.
+- *Cost:* the user felt a short hitch as a zoom starts. Traced headless (6 planes × 30 cards): hiding adds ~1 ms of
+  style and a few ms of paint on the first frame. A Marks span carries `data-screen-sized` only when drawn (not on
+  every card); `will-change` on them didn't help. *Not yet:* if it's still felt, measure on the user's machine.

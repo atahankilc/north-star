@@ -23,8 +23,9 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
-- Nothing open. Pushed and live 2026-10-29: D-287–D-292 (speed, small details, one card on many planes, plane details,
-  bend points dropped). What was done: state-history.md.
+- D-297 (focus fits as the ink spreads, its colour eases in and out): code committed with D-293, its memory-bank lines
+  follow D-294–D-296's. D-293 (screen-sized things hidden while zooming, names stay) committed, not pushed. Pushed and
+  live 2026-10-29: D-287–D-292. What was done: state-history.md.
 
 ## Next steps (not started; ask the user which first)
 - Plane parity with the old board, left over (D-207's and D-225's *Not yet*): links to a competitor's features and

@@ -650,6 +650,8 @@ export function CanvasView() {
     }
     else fitRef.current(instant)
   }
+  // Set when it went there as the ink began, so arriving doesn't go again.
+  const arrivedEarly = useRef(false)
   const arriveLate = useRef(arrive)
   arriveLate.current = arrive
   useEffect(() => {
@@ -856,7 +858,7 @@ export function CanvasView() {
       role="application"
     >
       <div ref={lens} className={styles.lens}>
-      <World wid={wid} size={size}>
+      <World wid={wid} size={size} zoom={zoom}>
         {/* What's linked to a plane (D-210, D-215): touching, ASCII in the gap; apart, a thin line. Under the pieces, so a
             line never crosses one. */}
         {bonds('under')}
@@ -894,14 +896,19 @@ export function CanvasView() {
           at={screenRect(shown.find((p) => p.id === focused.id) ?? focused)}
           home={homeOf(focused, screenRect(shown.find((p) => p.id === focused.id) ?? focused), contentOf(focused))}
           bare={focusedBare}
-          // A matrix's table glides from where it sits to the middle of the screen while the page fills in behind it.
-          onSpread={focusedBare ? () => fitRef.current() : undefined}
+          // Its view glides to where it's going (fitted, or the place picked) while the ink spreads or, a matrix, the page
+          // fills in behind its table (D-297): not after.
+          onSpread={() => {
+            arrivedEarly.current = true
+            arrive()
+          }}
           spread={focusSpread}
           leaving={focusLeaving}
           lens={lens}
           // Once there, its cards centred and fitted to the screen (D-186, D-187), or on to the place go to picked (D-196).
           onArrived={() => {
             useCanvasView.setState({ focusArrived: true })
+            if (arrivedEarly.current) return void (arrivedEarly.current = false)
             // Without the ink (a reload, a link) this can come before the screen is measured: it waits for that.
             if (useCanvasView.getState().size.w === 0) arriveRef.current = true
             else arrive()
@@ -1147,14 +1154,16 @@ function useShownZoom(wid: string) {
 }
 
 // The canvas's world: the camera's pan and zoom as its transform, the only thing a pan or a wheel step changes. What's
-// in it is CanvasView's, drawn again only when that is.
-function World({ wid, size, children }: { wid: string; size: { w: number; h: number }; children: ReactNode }) {
+// in it is CanvasView's, drawn again only when that is. While the camera's zoom isn't yet the one shown (`zoom`), what's
+// held at screen size is hidden (`data-zooming`, D-293): set once when a zoom starts, once when it settles.
+function World({ wid, size, zoom, children }: { wid: string; size: { w: number; h: number }; zoom: number; children: ReactNode }) {
   const cam = useCanvasView((s) => s.cams[wid]) ?? camOf(wid)
   return (
     <div
       className={styles.world}
       // The finder's preview copies it (D-236).
       data-canvas-world
+      data-zooming={cam.zoom !== zoom || undefined}
       style={{ transform: `translate(${onPixel(size.w / 2 + cam.x)}px, ${onPixel(size.h / 2 + cam.y)}px) scale(${cam.zoom})` }}
     >
       {children}
@@ -1221,7 +1230,7 @@ function Bond({ piece, plane: at, zoom, layer }: { piece: WithId<Piece>; plane: 
     const rows = Math.floor(gap.height / BOND_CELL)
     const text = Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => ((r + c) % 2 ? glyph : '·')).join('')).join('\n')
     return layer === 'over' ? (
-      <span className={styles.notch} data-lit={lit || undefined} style={notch} aria-hidden />
+      <span className={styles.notch} data-lit={lit || undefined} data-screen-sized style={notch} aria-hidden />
     ) : (
       <span className={styles.bondGap} data-lit={lit || undefined} style={gap} aria-hidden>
         {text}
@@ -1239,9 +1248,9 @@ function Bond({ piece, plane: at, zoom, layer }: { piece: WithId<Piece>; plane: 
   const B = flat ? [dx > 0 ? box.x : box.x + box.w, clamp(A[1], box.y + 20, box.y + box.h - 20)] : [clamp(A[0], box.x + 20, box.x + box.w - 20), dy > 0 ? box.y : box.y + box.h]
   const notch = flat ? { left: A[0] - 1, top: A[1] - 10, width: 2, height: 20 } : { left: A[0] - 10, top: A[1] - 1, width: 20, height: 2 }
   return layer === 'over' ? (
-    <span className={styles.notch} data-lit={lit || undefined} style={notch} aria-hidden />
+    <span className={styles.notch} data-lit={lit || undefined} data-screen-sized style={notch} aria-hidden />
   ) : (
-    <svg className={styles.bondLine} data-lit={lit || undefined} aria-hidden>
+    <svg className={styles.bondLine} data-lit={lit || undefined} data-screen-sized aria-hidden>
       <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} strokeWidth={1 / zoom} />
     </svg>
   )
@@ -1780,7 +1789,7 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
   return (
     <>
     {fresh && (
-      <div className={`${styles.console} ${className ?? ''}`} data-fresh onPointerDown={(e) => e.stopPropagation()}>
+      <div className={`${styles.console} ${className ?? ''}`} data-fresh data-screen-sized onPointerDown={(e) => e.stopPropagation()}>
         <button className={styles.tool} data-new title={`something new in the conversations inside this ${noun}`} aria-label={`Comments inside, ${comments!.count}, something new`} onClick={comments!.onOpen}>
           {comments!.mentioned ? '@' : <CommentIcon size={11} />} {comments!.count}
         </button>
@@ -1791,6 +1800,7 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
       className={`${styles.console} ${className ?? ''}`}
       role="toolbar"
       aria-label={noun}
+      data-screen-sized
       data-editing={size ? true : undefined}
       data-shown={on || undefined}
       onPointerDown={(e) => e.stopPropagation()}

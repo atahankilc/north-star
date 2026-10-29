@@ -222,7 +222,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
 
   return (
     <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div ref={world} className={styles.world} style={style}>
+      <div ref={world} className={styles.world} data-zooming={view.zoom !== settled || undefined} style={style}>
         {all.length === 0 ? (
           <div className={styles.empty} style={{ width: TABLE_W }}>
             <p>No documents yet.</p>

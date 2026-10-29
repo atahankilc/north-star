@@ -127,10 +127,11 @@ Values will be tuned against contrast checks (WCAG AA for text).
   screen). Grey a little out on hover (160 ms); on the corners, longer, in the item's tone while pressed (70 ms); just
   outside in the tone once selected (a 300 ms overshooting spring). Cyan is what you can do (a link's target, the box
   select). Others' selections: the same L's in their colour with their name on a tag. Reduced motion: states switch at once.
-- **Screen size while zooming** (D-278, D-280): during a wheel, pinch or glide only the canvas's (or a focus's view's)
-  transform changes; marks, piece names, consoles, chips and text's bars grow and shrink with it and settle to their
-  screen size 120 ms after it stops (at once on a press). The same in a focused plane, table, matrix, kanban, timeline
-  and documents list.
+- **Screen size while zooming** (D-278, D-280, D-293): during a wheel, pinch or glide only the canvas's (or a focus's
+  view's) transform changes. Piece names grow and shrink with it; everything else held at screen size (marks and their
+  L's, resize handles, consoles, comment chips, text's and links' bars, a matrix cell's bar, a stuck piece's line, guides)
+  is hidden until it stops, then shows at once at its screen size 120 ms later (at once on a press); not what the
+  keyboard is in. The same in a focused plane, table, matrix, kanban, timeline and documents list, and while focus fits.
 - **Drag and resize** (D-265, D-272, D-273): a press becomes a drag after 5 px; what's dragged (each of several) shrinks
   to 0.8 round the point held and follows the pointer, its L's at full size where it will land (`<Landing>`, 80 ms per
   grid step; on a kanban the gap that opens); let go, it grows into them (180 ms). What holds others (a section, an
@@ -197,8 +198,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
   piece is pointed at (cell by cell), in edit mode, with its setup or the keyboard in it; 11 px, growing to 1.4 × as the
   canvas zooms out; new comments keep a small magenta tab. Edit mode: marks in the kind's colour, a cyan handle on every
   corner and edge, the console a cyan status line with the live size and `[done]`.
-- Focus (D-185, D-189): a plane spreads over the screen like ink, cell by cell, its `+` marks never moving; nothing
-  zooms. The focus dock is a tab on the bottom edge's middle, `[unfocus] esc` last. The right of the screen stays free,
+- Focus (D-185, D-189, D-297): a plane spreads over the screen like ink, cell by cell, while its own view glides to fit
+  what it holds (going out it glides home while the ink draws back); its page eases from the piece's graphite to the
+  black on the way in and back on the way out, everything on `--bg` inside with it. The focus dock is a tab on the bottom edge's middle, `[unfocus] esc` last. The right of the screen stays free,
   except what's beside the plane (D-211) and the right panel (D-219).
 
 ### HUD (D-027, D-175)
@@ -280,8 +282,9 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
   report glides it left (700 ms) while the stage builds in its wake; steps a live log folding into `▸ N steps · 4.7s`.
 - **Motion setting** (D-030, D-063): `full | reduced | system`, default `full`; reduced = frozen background, no waves or sweeps.
   **Background** `on | off` beside it (signed-in pages only).
-- **Focus** (D-185): ink spreading cell by cell on the 9 px grid, nearest first, 820 ms in, 700 ms out; matrices and
-  tables glide to the middle instead (D-206). Framing and unframing turn cell by cell in 320 ms (D-276).
+- **Focus** (D-185, D-297): ink spreading cell by cell on the 9 px grid, nearest first, 820 ms in, 700 ms out, the
+  view gliding to its fit (420 ms) and the page's colour easing with it; matrices and tables glide to the middle instead
+  (D-206). Framing and unframing turn cell by cell in 320 ms (D-276).
 - Cards build cell by cell when they arrive and break apart when they go (D-203); nothing lifts, tilts or shimmers (D-061).
 - Collaborator cursors are drawn 200 ms behind on a curve through what was sent, so they glide like the sender's
   (D-169, D-193; no trail: tried and removed, D-067)

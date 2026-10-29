@@ -1,13 +1,13 @@
 // A plane in focus (D-184, D-185): it becomes the view. `?focus=<id>` on the canvas's path, so back leaves and a reload
 // stays. Going in, from the console's `[focus]`, the plane spreads out over the screen like ink: cell by cell on the 9 px
-// grid (D-034's cells), nearest the plane first with a ragged edge, until it has swallowed the screen. Nothing zooms and
-// its `+` marks never move: the layer carries them on the plane's own grid at the canvas's zoom, and only its cut grows.
+// grid (D-034's cells), nearest the plane first with a ragged edge, until it has swallowed the screen. Its own view glides
+// to fit what it holds as the ink spreads (D-297), its `+` marks with it, as it glides home while the ink draws back.
 // Coming back (`[unfocus]`, Escape) the ink draws back into wherever the plane is now. Reduced motion: it's just there,
 // or just gone. In focus the wheel and drags are the plane's (D-186): they move its own view (`planeCam`), and going back
 // it glides home to how it sat on the canvas while the ink draws in.
 // A matrix (`bare`) isn't a plane: no marks, no ink. Its table stays whole and glides from where it sits to the middle of
 // the screen while the page fills in behind it cell by cell in random order (D-034's cells), and back the same way.
-import { useEffect, useLayoutEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
 import { GRID } from '../../data/pieces'
@@ -46,7 +46,7 @@ type Props = {
   onLeft: () => void
   // A matrix: no marks, the page built cell by cell behind its table instead of the ink.
   bare?: boolean
-  // When going in starts (with the ink): a matrix's table starts gliding to the middle.
+  // When going in starts (with the ink): its view starts gliding to where it's going (D-297).
   onSpread?: () => void
   children?: ReactNode
 }
@@ -57,6 +57,16 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
   const page = useRef<HTMLDivElement>(null)
   const reduced = isReducedMotion()
   const cam = useCanvasView((s) => s.planeCam) ?? home
+  // Its colours turn with the ink (D-297): the piece's graphite where it sat on the canvas, the page's black in focus,
+  // `--bg` easing between them (inside, everything on `--bg` follows) as the ink spreads and as it draws back.
+  const [shade, setShade] = useState<'piece' | null>(spread && !reduced ? 'piece' : null)
+  useEffect(() => {
+    if (leaving) return setShade(reduced ? null : 'piece')
+    if (shade !== 'piece') return
+    const raf = requestAnimationFrame(() => setShade(null))
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leaving])
   useLayoutEffect(() => {
     useCanvasView.setState({ planeCam: home, planeHome: home })
     return () => {
@@ -177,7 +187,16 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
   const step = GRID * cam.zoom
   const marks = { '--mark': `${step}px`, '--mx': `${cam.ox - step / 2}px`, '--my': `${cam.oy - step / 2}px` } as CSSProperties
   return (
-    <div ref={layer} className={styles.focused} data-bare={bare || undefined} data-reduced={reduced || undefined} onPointerDown={pan} aria-label={piece.name || 'plane'}>
+    <div
+      ref={layer}
+      className={styles.focused}
+      data-bare={bare || undefined}
+      data-reduced={reduced || undefined}
+      data-shade={shade ?? undefined}
+      style={{ '--shade-ms': `${bare ? BARE_MS : leaving ? OUT_MS : IN_MS}ms` } as CSSProperties}
+      onPointerDown={pan}
+      aria-label={piece.name || 'plane'}
+    >
       {bare ? <div ref={page} className={styles.page} aria-hidden /> : <div className={styles.focusMarks} style={marks} aria-hidden />}
       {children}
     </div>

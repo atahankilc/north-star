@@ -94,7 +94,7 @@ export function ThreadChip({ wid, thread, zoom }: { wid: string; thread: WithId<
   const fresh = isNew(thread, seen, thread.id, me)
   const mentioned = fresh && !!thread.mentions?.includes(me)
   return (
-    <span className={styles.chipAt} style={{ transform: `scale(${1 / zoom})` }}>
+    <span className={styles.chipAt} data-screen-sized style={{ transform: `scale(${1 / zoom})` }}>
       <button
         className={styles.chip}
         data-open={thread.id === openId || undefined}

@@ -836,3 +836,9 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 ## Done (2026-10-29): link bend points dropped (D-292)
 - At the user's word: `bends` gone from the Edge type, reversing, rules and import; docs and the plan say links are
   straight. Rules tests 427/0. Committed after D-291's memory-bank entry (another session's) so the log has no gap.
+
+## Done (2026-10-29): hidden while zooming (D-293)
+- Each world sets `data-zooming` while its zoom isn't the shown one; `[data-zooming] [data-screen-sized]` is hidden in
+  `global.css` (marks, handles, consoles, comment chips, text's and links' bars, a matrix cell's bar, bond lines,
+  guides; piece names stay). Checked in headless Chrome on the emulators (canvas and focus: hidden 40 ms into a wheel,
+  back 400 ms later); build clean. Marks carry the mark only when drawn (lighter at a zoom's start).

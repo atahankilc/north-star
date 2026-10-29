@@ -132,7 +132,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   }
   return (
     <div className={styles.layer} data-live={live || undefined} data-packing={packing || undefined} onPointerDown={boxSelect}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
+      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <Inside cards={cards} labels={labels} zoom={settled} detail={detail} live={live} editor={editor} still={still} box={box} />
       </div>
       {live && !packing && <Panel cards={cards} labels={labels} editor={editor} />}
@@ -329,6 +329,7 @@ function GuideLines({ zoom }: { zoom: number }) {
         <i
           key={i}
           className={styles.guide}
+          data-screen-sized
           style={
             g.axis === 'x'
               ? { left: g.at - 0.5 / zoom, top: g.from, width: 1 / zoom, height: g.to - g.from }

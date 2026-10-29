@@ -132,6 +132,8 @@ export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live 
     <>
       <span
         className={styles.marks}
+        // Hidden while zooming (D-293) only when drawn: on every card it would restyle hundreds of spans at a zoom's start.
+        data-screen-sized={state !== 'none' || (live && hover === undefined) || undefined}
         style={style}
         data-tier={t}
         data-state={state}
@@ -142,7 +144,7 @@ export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live 
         <Ls />
       </span>
       {!!handles?.length && !dragging && (
-        <span className={styles.handles} style={style} data-tier={t} data-reduced={reduced || undefined}>
+        <span className={styles.handles} data-screen-sized style={style} data-tier={t} data-reduced={reduced || undefined}>
           {handles.map((h) => (
             <span key={h} className={styles.handle} data-h={h} data-k={h.length === 2 ? 'c' : 'b'} data-on={resizing === h || undefined} onPointerDown={(e) => onHandle?.(h, e)} aria-hidden />
           ))}
@@ -155,7 +157,7 @@ export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live 
         </span>
       )}
       {peers?.map((p, i) => (
-        <span key={p.uid} className={styles.marks} style={{ ...style, '--peer': p.color, '--i': i } as CSSProperties} data-tier={t} data-state="peer" data-reduced={reduced || undefined} aria-hidden>
+        <span key={p.uid} className={styles.marks} data-screen-sized style={{ ...style, '--peer': p.color, '--i': i } as CSSProperties} data-tier={t} data-state="peer" data-reduced={reduced || undefined} aria-hidden>
           <Ls />
           <span className={styles.tag}>{p.name}</span>
         </span>
@@ -169,7 +171,7 @@ export function Landing({ x, y, w, h, zoom, tier = 'm', tone, pad = 0 }: { x: nu
   const reduced = useMotion((s) => s.reduced)
   const style = { left: x, top: y, width: w, height: h, '--zs': 1 / zoom, '--pad': `${pad}px`, ...(tone && { '--tone': tone }) } as CSSProperties
   return (
-    <span className={styles.landing} style={style} data-reduced={reduced || undefined} aria-hidden>
+    <span className={styles.landing} data-screen-sized style={style} data-reduced={reduced || undefined} aria-hidden>
       <span className={styles.marks} data-tier={tierFor(tier, Math.min(w, h) * zoom)} data-state="press" data-reduced={reduced || undefined}>
         <Ls />
       </span>
@@ -180,7 +182,7 @@ export function Landing({ x, y, w, h, zoom, tier = 'm', tone, pad = 0 }: { x: nu
 // Alt+drag's box (D-227, D-265): a cyan wash, cyan L's on its corners.
 export function BoxSelect({ x, y, w, h, zoom }: { x: number; y: number; w: number; h: number; zoom: number }) {
   return (
-    <span className={styles.box} style={{ left: x, top: y, width: w, height: h, '--zs': 1 / zoom } as CSSProperties} aria-hidden>
+    <span className={styles.box} data-screen-sized style={{ left: x, top: y, width: w, height: h, '--zs': 1 / zoom } as CSSProperties} aria-hidden>
       <span className={styles.marks} data-state="box">
         <Ls />
       </span>

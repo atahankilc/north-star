@@ -42,7 +42,7 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
   const settled = useSettledZoom(view.zoom, live)
   return (
     <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
+      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
         <CardBoard piece={piece} live={live} editor={editor} onCard={onCard} />
       </div>
     </div>

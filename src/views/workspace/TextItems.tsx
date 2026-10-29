@@ -864,7 +864,7 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
   const named = kind === 'heading' || kind === 'section'
   const sizes = named ? SIZES : kind === 'paragraph' || kind === 'sticky' ? SCALES : []
   return (
-    <div className={styles.bar} style={{ transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+    <div className={styles.bar} data-screen-sized style={{ transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
       {sizes.map(([s, name]) => (
         <button
           key={s}

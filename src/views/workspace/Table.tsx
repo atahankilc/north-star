@@ -468,7 +468,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
+      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
         <div className={styles.table} style={{ width: width + (live && editor ? T.add : 0), height: bottom + T.add }} role="grid" aria-label={piece.name || 'table'}>
           {headsShown}
 

@@ -240,7 +240,7 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
     if (next !== (edge.label ?? '')) void updateEdge(wid, edge.id, { label: next || undefined })
   }
   return (
-    <div className={styles.barAt} style={{ transform: `scale(${1 / zoom})` }}>
+    <div className={styles.barAt} data-screen-sized style={{ transform: `scale(${1 / zoom})` }}>
       <div
         className={styles.bar}
         style={{ ['--tone' as string]: linkTone(edge.kind) }}

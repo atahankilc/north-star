@@ -205,7 +205,7 @@ function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }:
   const settled = useSettledZoom(view.zoom, live)
   return (
     <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
+      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
         <TaskBoard piece={piece} zoom={settled} live={live} editor={editor} onTask={onTask} />
       </div>
     </div>

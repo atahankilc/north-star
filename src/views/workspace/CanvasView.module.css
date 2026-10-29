@@ -429,6 +429,15 @@
   cursor: grab;
 }
 
+/* Going in and out its page eases between the piece's graphite and the black (D-297); what's on `--bg` inside follows. */
+.focused:not([data-reduced='true']) {
+  transition: --bg var(--shade-ms, 0ms) ease-in-out;
+}
+
+.focused[data-shade='piece'] {
+  --bg: var(--piece);
+}
+
 .focused[data-panning='true'] {
   cursor: grabbing;
 }

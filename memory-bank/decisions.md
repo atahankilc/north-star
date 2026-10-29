@@ -118,8 +118,8 @@ feature comes back as a piece, and check them with the user then.
   a tab on the bottom edge in the bottom-right corner (`[focus] [edit]`; editing: `EDIT 960 × 600 [delete] [done]`), no
   name or zoom in it (D-186); old looks (D-179) replaced by the surface, Marks and resize above.
 - While zooming only the canvas's (or a focus's view's) transform changes; what's at screen size settles 120 ms after
-  it stops (D-278, D-280). A
-  pan, on the canvas or in a focus, redraws and restyles nothing inside the world; per-step values never go on an
+  it stops (D-278, D-280), hidden till then except piece names (`data-zooming` on the world, `data-screen-sized` on
+  each, D-293). A pan, on the canvas or in a focus, redraws and restyles nothing inside the world; per-step values never go on an
   element that holds the contents (D-279).
 - A write draws what it changed (D-287): unchanged docs and cards keep their objects; `useWs()` redraws a component only
   when a field it read changes (`useWsNow()` for handlers); cards, table rows, matrix heads and kanban tasks are memoised
