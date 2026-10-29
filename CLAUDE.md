@@ -31,7 +31,8 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 
 ## Commands
 - `npm run dev` (real Firebase, http://localhost:5288, set in `vite.config.ts`), `npm run dev:emu` + `npm run emulators` (local, test users; builds and runs the functions too)
-- `npm run test:rules`: run after any change to `firestore.rules` / `database.rules.json`, then `npm run deploy:rules`
+- `npm run test:rules`: run after any change to `firestore.rules` / `database.rules.json`, then ask the user before
+  `npm run deploy:rules` (D-322; storage-less until Blaze, `deploy:storage` apart)
 - `npm run check:memory`: the memory bank agrees with itself (log numbering, every standing decision has a line in
   decisions.md or decisions-1.0.md, nothing superseded cited as a rule, state.md ≤ 120 lines); run after editing memory-bank/
 - `npm run build`: typecheck + production build; `npm run build:functions`, `npm run deploy:functions` (needs the Blaze plan)

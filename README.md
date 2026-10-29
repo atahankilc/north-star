@@ -1,8 +1,8 @@
 # North Star
 
-A visual, real-time collaborative workspace for the startup ideation phase. Capture ideas as
-post-its, connect and structure them, break competitors down into features, and compare it all,
-rendered in a 3D ASCII aesthetic.
+A visual, real-time collaborative workspace for the startup ideation phase. Customers, problems,
+competitors, ideas and features as cards on planes, linked and compared in matrices, tables, decks and
+timelines on one canvas, rendered in a 3D ASCII aesthetic.
 
 - Product: [docs/PRODUCT.md](docs/PRODUCT.md)
 - Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
@@ -10,7 +10,7 @@ rendered in a 3D ASCII aesthetic.
 - Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Current state, decisions and open questions: [memory-bank/](memory-bank/README.md)
 
-Status: Phase 0 (foundations). See [memory-bank/state.md](memory-bank/state.md).
+Status: 1.5, live at <https://atahankilc.github.io/north-star/>. See [memory-bank/state.md](memory-bank/state.md).
 
 ## Develop
 
@@ -28,7 +28,8 @@ Without Firebase config the UI still runs (sign-in disabled), which is handy for
 npm run emulators      # terminal 1: auth, Firestore, RTDB, UI at http://localhost:4000
 npm run dev:emu        # terminal 2: app with test sign-in buttons (Alice / Bob / Carol)
 npm run test:rules     # one-off: security-rule tests (starts and stops its own emulators)
-npm run deploy:rules   # push firestore.rules + database.rules.json to north-star-db
+npm test               # unit tests (vitest); npm run lint counts React hook warnings
+npm run deploy:rules   # push the Firestore rules + indexes and database.rules.json to north-star-db (ask first, D-322)
 ```
 
 ## Setup (one-time, Firebase free "Spark" plan, no card)
@@ -44,5 +45,5 @@ npm run deploy:rules   # push firestore.rules + database.rules.json to north-sta
 6. **Rules**: `npx firebase-tools login`, then
    `npx firebase-tools deploy --only firestore:rules,database --project <project-id>`.
 7. **GitHub Pages**: repo → Settings → Pages → Source: *GitHub Actions*. Then Settings → Secrets and
-   variables → Actions → **Variables**: add the five `VITE_FIREBASE_*` values.
+   variables → Actions → **Variables**: add the six `VITE_FIREBASE_*` values (API key, auth domain, project id, database URL, app id, storage bucket).
    Every push to `main` deploys to `https://atahankilc.github.io/<repo-name>/`. The base path follows the repo name automatically.
