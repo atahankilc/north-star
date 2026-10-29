@@ -121,7 +121,7 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 ~05:20, lead workspace-sections-canvas: O0 and O1 committed. O2 committed; O4 (look options preview) in review. Next: commit O2 (it imports O1's seenMerge types: fine now), then O3 (events +
+2026-10-29 ~05:20, lead workspace-sections-canvas: O0 and O1 committed. O2 and O4 committed; O3 (events + queue) in review. Next: commit O2 (it imports O1's seenMerge types: fine now), then O3 (events +
 queue) once S3's `onTracked` lands or from the stores, and O5 (the coach surfaces, every look) after O4 passes.
 b2 agreed: firebase.ts, vite.config.ts and package.json are free; it pings when S3 (`onTracked`) lands. The uncommitted
 2-line hunk in tests/rules.test.mjs (and CanvasView/WorkspaceLayout/canvasView.ts) is a third session's, not b2's:
@@ -146,6 +146,14 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   the `+` menu vs the kind guide, same-event pairs ordered, a ratchet of pending scenes/anchors/events) · reviewer: 3
   rounds (lessons that could never show, same-event pairs, a clean checkout, words matching the app, viewer pages,
   shared-delete and join-request pages) · onboarding.md §3.1/§5.4/§5.5/§7 and onboarding-lessons.md kept in step.
+- O4 · (this commit) · docs/specs/onboarding-preview/: 3 looks each for the welcome (a wizard window, b ink on the page,
+  c a transcript), the lesson card (a prompt card, b margin note, c drawer), the kind guide (a glued column, b ink
+  beside, c man page) and `?` (a the finder's twin, b list + preview, c the map); recommended: all `a`. Also no-demo,
+  bottom-middle fallback, what's new, narrowed/hidden kind guide, `?` playing a note, done → next, nudge, empty canvas;
+  dark/light · reviewer: 3 rounds (ink unreadable over pieces → `--ink-shade` as one layer under the text; demo label
+  and pause in a strip under the scene; ways out at `--fg-muted`; sizes on tokens; heights for a 768 px laptop) ·
+  onboarding.md §4 (+ §4.2, §4.3, §4.6) updated: 16:10 demos everywhere, placement order, 1.2 s + 320 + 300 ms
+  handover. For O5: follow §4.3's placement, not lesson:a's focus mock (it covers two cards).
 
 ### Stuck
 _(none)_

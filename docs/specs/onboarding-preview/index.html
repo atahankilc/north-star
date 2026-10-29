@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onboarding · looks</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="preview.css">
+</head>
+<body>
+<div class="topbar">
+  <h1>Onboarding · looks (O4, Q-028)</h1>
+  <a href="#welcome"><b>01</b>welcome · what’s new</a>
+  <a href="#lesson"><b>02</b>lesson card</a>
+  <a href="#kind"><b>03</b>kind guide</a>
+  <a href="#q"><b>04</b>? guide</a>
+  <a href="#small"><b>05</b>nudge · empty</a>
+  <a href="#flaws"><b>06</b>tokens · what the mocks showed</a>
+  <span class="sp"></span>
+  <button class="tbtn" id="replay">build again</button>
+  <button class="tbtn" id="theme">light</button>
+</div>
+<main>
+<div class="intro">
+  <h2>Four frames, two or three looks each</h2>
+  <p>Mocks at real size, made from the app's tokens and fonts (nothing loaded from outside). Every option's id is what
+  O5's dev-only switch takes: <code>?look=welcome:b,lesson:a</code> or <code>window.__onboardingLook</code>. The
+  recommended one is the default; the user picks in the morning from the real components (onboarding.md §11, Q-028).
+  Demos here are stills drawn in CSS; in the app they are the real components in <code>demo.html</code>. What a demo
+  is and its pause sit in a strip under it, never on the scene. The light/dark switch is this page's only; in the app it stays in Settings.</p>
+</div>
+
+<!-- ═══ 01 THE WELCOME · WHAT'S NEW ═══ -->
+<section class="frame" id="welcome">
+  <div class="frameHead"><b>01</b>The welcome, and what’s new</div>
+  <p class="frameSpec">Once per person, on their first canvas: a dialog in the middle over the wizard shade, four pages,
+  a demo on top (16:10), <code>01 / 04</code>, <code>[skip]</code> on every page, <code>[‹ back]</code> <code>[next ›]</code>, ← → ↵.
+  What's new is the same frame once per release: a page per change with <code>[show me]</code>, the smaller ones on a
+  <code>+ N more</code> list page, <code>[close]</code> instead of <code>[skip]</code>. Shown: welcome pages 1 and 3 (editor), what's new pages 1 and 4.</p>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">a</span><span class="optName">The wizard window</span><span class="optKey">welcome:a</span><span class="rec">recommended</span></div>
+    <p class="why isRec">The same frame as the matrix, table and deck wizards (tabs <code>01 CANVAS 02 PIECES…</code> with the
+    magenta underline, the finder's corner marks), so the first window anyone sees is the one they meet again a minute later.
+    The demo gets the most room, the words sit on solid black (best to read), and the four tabs show how long it is at a glance.
+    What's new reuses it as is: the tabs become the changes, the last one <code>+ 2 MORE</code>.</p>
+    <div class="row" id="welcome-a"></div>
+    <div class="sub">What’s new in this look</div>
+    <div class="row" id="news-a"></div>
+  </div>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">b</span><span class="optName">Ink on the page</span><span class="optKey">welcome:b</span></div>
+    <p class="why">No window: the demo is a piece (graphite edge, band, its name cut in), the words are ink under it like an H1
+    with its small line (<code>01 ── WELCOME · 04</code>) and fading rule, each line on the proposed <code>--ink-shade</code>
+    with a feathered edge, over the normal 72 % wizard shade. It looks like the canvas itself talking; with no box the
+    dialog's edge is less clear, and the busy canvas still shows between the lines.</p>
+    <div class="row" id="welcome-b"></div>
+    <div class="sub">What’s new in this look</div>
+    <div class="row" id="news-b"></div>
+  </div>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">c</span><span class="optName">The transcript</span><span class="optKey">welcome:c</span></div>
+    <p class="why">A terminal log: <code>$ north-star --welcome</code>, each page a line (<code>✓</code> done, <code>›</code> now,
+    <code>·</code> next), the current one typed out with a magenta block cursor; the demo on the right. Bold, and the log
+    doubles as a table of contents you can click. Costs: the demo is smaller (432 wide vs 620).</p>
+    <div class="row" id="welcome-c"></div>
+    <div class="sub">What’s new in this look</div>
+    <div class="row" id="news-c"></div>
+  </div>
+</section>
+
+<!-- ═══ 02 THE LESSON CARD ═══ -->
+<section class="frame" id="lesson">
+  <div class="frameHead"><b>02</b>The lesson card</div>
+  <p class="frameSpec">Beside its anchor, never over it, a short magenta lead to it; demo on top (4:3), title, body, <code>1 / 3</code>,
+  <code>[next ›]</code> / <code>[got it]</code>, <code>×</code>, a quiet <code>don't show tips</code>; closes itself with <code>✓ done</code>
+  when the person does what it teaches. Placement: right of the anchor, else left, else above; if the space there holds
+  cards, it first shifts sideways into a clear area (in focus: left before right, keeping the right free, D-211) and covers
+  cards only when nothing is clear; else the bottom-middle card. In focus it sits straight above the dock when that's clear.
+  Demos are 16:10 everywhere, as the scenes are authored.
+  Each option: by a console, by the dock, with no demo, with no room beside its anchor, and the done → next handover.</p>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">a</span><span class="optName">The prompt card</span><span class="optKey">lesson:a</span><span class="rec">recommended</span></div>
+    <p class="why isRec">A small box in the prompt's look: <code>┌ LESSON · CONSOLE</code>, the right panel's magenta corner marks,
+    a straight lead with a square tip on the anchor. It's a box on solid black, so it reads on any canvas (busy planes,
+    light theme), and it goes anywhere (console, dock, toast, panel, side nav, corner) the same way. 268 px wide; without a
+    demo it's just shorter. Its actions (<code>[‹ guide]</code> when played from <code>?</code>) stay lowercase.</p>
+    <div class="row" id="lesson-a"></div>
+    <div class="row" id="nodemo-a" style="margin-top:20px"></div>
+    <div class="sub">✓ done → the next lesson (1.2 s done, 320 ms break, 300 ms of nothing, then it builds)</div>
+    <div class="row" id="handover-a"></div>
+  </div>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">b</span><span class="optName">The margin note</span><span class="optKey">lesson:b</span></div>
+    <p class="why">Ink, no box: a magenta hairline down its left like a paragraph's, the lead joining it; the name a small line
+    (<code>2/2 ── CONSOLE · LESSON</code>); every text block on the proposed <code>--ink-shade</code> with a feathered edge,
+    all shades one layer under all the text (so a shade never paints over the line before it), the demo with a halo of it. Shown over a busy table: it now reads, but the gaps between lines still show the piece, and
+    without a box it's less clear where to click.</p>
+    <div class="row" id="lesson-b"></div>
+    <div class="row" id="nodemo-b" style="margin-top:20px"></div>
+    <div class="sub">✓ done → the next lesson</div>
+    <div class="row" id="handover-b"></div>
+  </div>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">c</span><span class="optName">The drawer</span><span class="optKey">lesson:c</span></div>
+    <p class="why">The anchor opens: the lesson hangs out of the piece's bottom edge under the console (or rises out of the
+    dock's or toast's top edge), joined with no gap, the demo beside the words. <b>Without a demo</b> it's one column, at least
+    320 px, centred on its anchor; where it's wider than the anchor, its open edge is magenta out to the anchor's corners. <b>With no edge to hang from</b> (the fallback, or played from <code>?</code>)
+    it rises from the screen's bottom edge or becomes a plain box. Its "done" can't fold back into the console after a focus
+    (the console is gone), so it breaks in place like the others.</p>
+    <div class="row" id="lesson-c"></div>
+    <div class="row" id="nodemo-c" style="margin-top:20px"></div>
+    <div class="sub">✓ done → the next lesson</div>
+    <div class="row" id="handover-c"></div>
+  </div>
+</section>
+
+<!-- ═══ 03 THE KIND GUIDE ═══ -->
+<section class="frame" id="kind">
+  <div class="frameHead"><b>03</b>The kind guide</div>
+  <p class="frameSpec">The first times the <code>+</code> opens: a column beside the menu, the row under the pointer or keys
+  showing its demo and two lines; typing, Enter and the letters keep working; <code>[hide guide]</code> at its foot hides
+  it for good (one line says <code>?</code> brings it back). Each option: on the canvas, in a plane's focus, after typing
+  <code>pl</code>, and after <code>[hide guide]</code>. Words from onboarding-lessons.md §2.</p>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">a</span><span class="optName">Glued column</span><span class="optKey">kind:a</span><span class="rec">recommended</span></div>
+    <p class="why isRec">One panel, split by a hairline: the menu left, the guide right, the same height, the two feet one line.
+    It reads as the menu getting wider, not a second thing opening (one at a time, §3.1), and moving through the rows
+    swaps only the right half. Typing can't shrink it below the guide's own height (its floor, measured here: 338 px with a 16:10 demo), so the guide always fits.
+    <code>[hide guide]</code> hides it for good; one line says <code>?</code> brings it back.</p>
+    <div class="row" id="kind-a"></div>
+    <div class="row" id="kind2-a" style="margin-top:20px"></div>
+  </div>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">b</span><span class="optName">Ink beside</span><span class="optKey">kind:b</span></div>
+    <p class="why">The menu stays exactly the menu; the guide is unframed ink to its right, a dashed magenta lead from the row
+    under the keys, every line on <code>--ink-shade</code>. Shown over the canvas's table and deck and over cards in a
+    focus: it reads, and needs no floor when typing narrows the menu. But it moves on every arrow press, and the canvas
+    still shows around it.</p>
+    <div class="row" id="kind-b"></div>
+    <div class="row" id="kind2-b" style="margin-top:20px"></div>
+  </div>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">c</span><span class="optName">The man page</span><span class="optKey">kind:c</span></div>
+    <p class="why">Glued like a, written as a terminal manual: <code>PLANE(1)</code>, <code>NAME</code> (the title line),
+    <code>USE</code>, <code>KEY + p ↵</code>, <code>SEEN</code> with a bar; rows not seen yet carry a magenta dot in the
+    menu, so it shows what's left to learn. The most to read: four labelled lines instead of two, which the "short" rule
+    (§3.1) pushes against.</p>
+    <div class="row" id="kind-c"></div>
+    <div class="row" id="kind2-c" style="margin-top:20px"></div>
+  </div>
+</section>
+
+<!-- ═══ 04 THE ? GUIDE ═══ -->
+<section class="frame" id="q">
+  <div class="frameHead"><b>04</b>The <code>?</code> guide</div>
+  <p class="frameSpec">A prompt in the middle like the finder: <code># start</code>, then every area as a row that folds
+  like the finder's planes (<code>[▸ 9 inside]</code>; → or ↵ opens it, ← folds it), each note a row
+  <code>› ✓ focus · work inside a piece</code> (✓ seen, • not yet, <code>NEW</code> armed); Enter on a note plays it in the
+  middle; typing narrows; <code># keys</code> folded the same way; <code>tips: on | off</code>. A magenta dot on the side
+  nav's <code>?</code> while something new is unseen. Its height is at most the screen minus 48 px top and bottom; the list
+  scrolls inside it, a dashed line saying what's below. The stages here are 680 px tall, about what a 768 px laptop shows.</p>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">a</span><span class="optName">The finder's twin</span><span class="optKey">guide:a</span><span class="rec">recommended</span></div>
+    <p class="why isRec">The finder exactly (560 wide, the scrim, magenta top corners, the cyan switch where <code>here | everywhere</code>
+    sits now holding <code>tips on | off</code>), so <code>?</code> and <code>⌘F</code> feel like one tool. Every area folds the
+    same way with its count and a <code>NEW</code> when one of its notes is armed; one is open here (<code>canvas</code>,
+    its notes hanging off a line), the keys folded under <code>[▸ 38 keys]</code>; the foot says how arrows and Enter work.</p>
+    <div id="q-a"></div>
+  </div>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">b</span><span class="optName">List and preview</span><span class="optKey">guide:b</span></div>
+    <p class="why">The finder with its preview half: the note under the keys shows its demo and first page on the right,
+    live as you move, so you know what a note says before playing it. Better when names aren't enough; costs a running
+    demo while browsing and 750 px of width.</p>
+    <div id="q-b"></div>
+  </div>
+
+  <div class="opt">
+    <div class="optHead"><span class="optId">c</span><span class="optName">The map</span><span class="optKey">guide:c</span></div>
+    <p class="why">Every area at once, in the deck's ledger look: a column head <code>02 CANVAS ──── 6/9</code> with a bar of
+    cells (seen grey, new magenta), the keys as a keycap sheet. A real "how much do I know" picture, bold. But it can't show
+    everything at once: each area ends in <code>+ 4 more</code>, <code>+ 7 more</code>, and on a 768 px laptop documents,
+    canvases, settings and the keys don't fit (they're below, the map scrolls), which undercuts the point. Arrows over a grid
+    are harder than up/down a list.</p>
+    <div id="q-c"></div>
+  </div>
+
+  <div class="opt">
+    <div class="sub">Enter on a note plays it in the middle (drawn in the lesson's look, whichever <code>?</code> look is chosen)</div>
+    <div class="row" id="play-row"></div>
+  </div>
+</section>
+
+<!-- ═══ 05 SMALL ═══ -->
+<section class="frame" id="small">
+  <div class="frameHead"><b>05</b>Nudge · empty canvas</div>
+  <p class="frameSpec">One look each. The nudge: one line at most once a session, by the tool it's about, a short magenta
+  lead, ink, <code>· ×</code>. The empty canvas: the words at the <code>+</code>'s height, a dashed arrow straight to it; gone at the first piece.</p>
+  <div class="opt"><div class="row" id="small-row"></div></div>
+</section>
+
+<!-- ═══ 06 TOKENS · WHAT THE MOCKS SHOWED ═══ -->
+<section class="flaws" id="flaws">
+  <h3>A token to add, and what the mocks showed</h3>
+  <h4>Proposed token: <code>--ink-shade</code> (O5 adds it to tokens.css)</h4>
+  <ul>
+    <li>What unframed onboarding ink sits on when it floats over pieces: each line's shade and its feathered edge
+    (<code>background</code> + <code>box-shadow: 0 0 18px 12px</code>), and a halo round an ink option's demo.</li>
+    <li><b>Dark</b> <code>rgba(0, 0, 0, 0.9)</code> (the page black at 90 %); <b>light</b> <code>rgba(245, 245, 245, 0.92)</code>
+    (the page paper <code>#f5f5f5</code> at 92 %). The app's own unframed ink uses <code>--bg</code> at 80 % / 72 %, enough on the
+    empty canvas, not over a busy piece. Only the ink options (welcome:b, lesson:b, kind:b) need it.</li>
+  </ul>
+  <h4>What the mocks showed about the spec</h4>
+  <ul>
+    <li><b>Demo shapes:</b> scenes are authored at 16:10 (§6.2), so every demo is 16:10 now (lesson cards and the kind guide too, no 4:3).</li>
+    <li><b>"Same height as the menu" breaks when typing narrows it.</b> Typed <code>pl</code>, the <code>+</code> menu is one row. The glued
+    column needs a floor: the guide's own height (measured: 338 px for kind:a, 400 for the man page), drawn in kind a and c; the ink option needs none.</li>
+    <li><b>The canvas <code>+</code> menu is tall</b> (≈ 400 px; in a plane ≈ 450). From the side nav's <code>+</code> it runs off a
+    768 px laptop; <code>floating.ts</code> must lift it, and the guide with it.</li>
+    <li><b>A lesson card is ≈ 340 px tall</b> with a 16:10 demo; beside a console near the bottom it fits only left or right.
+    Placement: right, left, above; over cards, shift sideways into a clear area first; then the bottom-middle fallback (drawn for each option). In focus: above the dock, the right kept free.</li>
+    <li><b>The <code>?</code> guide is taller than a laptop</b> (≈ 790 px with one area open): at most the screen minus 96 px, the list scrolls.</li>
+    <li><b><code># keys</code> is ≈ 38 rows</b> and every area 3–11: all fold (<code>[▸ N inside]</code>), one open at a time.</li>
+    <li><b>"✓ done for a moment" needs numbers:</b> 1.2 s, then the 320 ms break, 300 ms of nothing, then the next one builds.
+    The next lesson waits for that, so two never overlap. A done after a focus shows where the card was; the anchor (the console) is gone.</li>
+    <li><b>lesson:c</b> only hangs from edges (console, dock, toast); everywhere else it falls back to a plain box, so it's two looks in one.</li>
+    <li><b>The empty-canvas hint</b> reads best at the <code>+</code>'s height (a little above the middle) with a straight arrow;
+    the old "or drop a .md file here" line is gone (it isn't in the lessons' words).</li>
+    <li><b>guide:c</b> can't fit 61 notes at once at 1500 × 640; it ends every column with <code>+ N more</code>.</li>
+  </ul>
+</section>
+</main>
+<script src="preview.js"></script>
+</body>
+</html>

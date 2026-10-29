@@ -112,6 +112,13 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
 
 ## 4. The formats
 
+_Looks (O4, mocked in `docs/specs/onboarding-preview/`; each frame has 2–3 options, the user picks, Q-028). For all of
+them: a demo is 16:10 everywhere (as scenes are authored, §6.2; no 4:3), and what it is (`▸ LIVE DEMO · <scene>`) and
+its `[❚❚]` sit in a strip under the scene, never on it. Ways out (`skip`, `close`, `×`, `hide guide`, `don't show tips`)
+are `--fg-muted` (≥ 4.5:1 both themes), quiet by where they sit. The ink options (welcome:b, lesson:b, kind:b) need a
+new token, **`--ink-shade`** (dark `rgba(0,0,0,.9)`, light `rgba(245,245,245,.92)`), drawn as one layer under all the
+text (each block's shade a `::before` at z −1, feathered `0 0 18px 12px`), so no shade paints over the line before it._
+
 ### 4.1 The welcome (once per person, on their first canvas)
 A modal in the middle (the wizard shade, z 40, `role="dialog"`), framed like the wizards: `01 / 04` in magenta at the
 top left, a Geist title, one line of body, a demo filling the top two thirds (16:10), `[skip]` left, `[‹ back]`
@@ -134,17 +141,27 @@ Variants, picked by what's true when it opens:
 The first times the `+` opens (until every row has been seen, or `don't show`), a **guide column is glued to the
 right of the menu**, the same height, the same prompt look: the row under the pointer or the keys shows its demo and
 two lines (what it is, when to use it), changing as you move through the list. It never blocks: typing, Enter and the
-letters keep working; the menu works exactly as before. A small `[hide guide]` at its foot. In a plane's focus it
+letters keep working; the menu works exactly as before. Typing that narrows the menu never makes the panel shorter
+than the guide: the guide's own height is its floor (≈ 340 px with a 16:10 demo; the menu's list grows to it). A small
+`[hide guide]` at its foot hides it **for good**; one line under the menu says `guide hidden · ? brings it back` (the
+switch is in `?`). In a plane's focus it
 explains the plane's items (customer, problem, competitor, idea, feature, package, existing card, text). It's the
 user's "a modal with every component explained", but tied to the menu so nothing extra is opened.
 
 ### 4.3 Lessons (the first time something is met)
 A card beside its anchor (a piece, the console, the dock, a panel, a corner button): the prompt's look (`┌ LESSON ·
-FOCUS`, magenta corner marks like the right panel), a demo on top when it has one (small, 4:3), title, body, a
+FOCUS`, magenta corner marks like the right panel), a demo on top when it has one (small, 16:10), title, body, a
 `1 / 3` and `[next ›]` / `[got it]`, `×`. It points at its anchor with a short magenta lead line (the app's line
 family, D-266). It stays until closed or until the person does what it teaches (then it closes itself with
 "✓ done" for a moment). It never moves with the camera: it is anchored to a *screen* rect sampled when it opens and
 re-sampled on pan/zoom end.
+- **Placement**, in this order: right of the anchor, left, above; if that space holds cards, shift sideways into a
+  clear area before covering any (in a focus: left before right, the right of the screen kept free, D-211; straight
+  above the dock when clear); only then the **bottom-middle card** (no lead). About 340 px tall with a demo.
+- **Done → next:** `✓ done` stays 1.2 s where the card was (its anchor may be gone, e.g. the console after a focus),
+  breaks cell by cell (320 ms), 300 ms of nothing, then the next lesson builds. The queue waits for that whole ~1.8 s,
+  so two never overlap.
+- Played from `?` it opens in the middle with `[‹ guide]` (lowercase) to go back.
 
 ### 4.4 What's new (people who were here before a release)
 **Only for releases after onboarding ships** (Q-026, answered: nothing was recorded before, so at launch everyone,
@@ -162,11 +179,14 @@ following, side view), and **retired** as soon as the person does the thing, eve
 
 ### 4.6 `?` the guide
 `?` (free, bound nowhere; ignored while typing) or a `?` in the side nav under the compass opens a prompt in the
-middle like the finder: `# start` (replay the welcome, what's new), then a section per area (`# canvas`, `# planes and
-cards`, `# links`, `# text`, `# matrix and table`, `# documents`, `# decks and days`, `# together`, `# canvases`,
-`# settings`), each lesson a row `› ✓ focus · work inside a piece` (✓ seen, • not yet, `NEW` armed). Enter plays it
-in place (as a lesson in the middle). Typing narrows. Also `# keys` (every shortcut, from the inventory §C) and the
-switch `tips: on | off`. A magenta dot on `?` while something new is unseen.
+middle like the finder: `# start` (replay the welcome, what's new), then `# areas`: one row per area (canvas, planes
+and cards, links, text, matrix and table, documents, decks and days, together, canvases, settings) with
+`6 / 9 seen`, a `NEW` when one of its lessons is armed, and the finder's fold `[▸ 9 inside]`; → or Enter opens it, ←
+folds it, its lessons hanging off a line under it, each a row `› ✓ focus · work inside a piece` (✓ seen, • not yet,
+`NEW` armed). Enter on a lesson plays it in place (as a lesson in the middle). Typing narrows (and opens what
+matches). `# keys` folds the same way (`[▸ 38 keys]`; every shortcut, from the inventory §C); the switch
+`tips: on | off` sits on the `>` line. Its height is at most the screen minus 48 px top and bottom; the list scrolls
+inside (on a 768 px laptop it does with one area open). A magenta dot on `?` while something new is unseen.
 
 ### 4.7 Teaching empty states (workspaces page, empty canvas, empty pieces)
 Not modals: the empty states themselves teach, then vanish.

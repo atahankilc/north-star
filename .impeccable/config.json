@@ -53,6 +53,36 @@
         ],
         "createdAt": "2026-10-27T01:23:20.369Z",
         "reason": "Claude's call: the 4 tiny absolutely positioned corner L's animate top/left/width/height (no layout reflow of siblings), as the marks they replace did"
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "createdAt": "2026-10-29T04:07:14.585Z",
+        "reason": "project design language: Geist is North Star's self-hosted font (decisions D-013, D-093)"
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist mono",
+        "createdAt": "2026-10-29T04:07:14.610Z",
+        "reason": "project design language: Geist Mono is North Star's self-hosted font (D-013, D-093)"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "docs/specs/onboarding-preview/preview.css"
+        ],
+        "createdAt": "2026-10-29T04:07:14.632Z",
+        "reason": "preview mocks the app's real cards, whose type edge is a coloured left band (D-187)"
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "docs/specs/onboarding-preview/index.html"
+        ],
+        "createdAt": "2026-10-29T04:29:36.430Z",
+        "reason": "O4 reviewer measured: mocks' title:body steps are 1.4-1.7x; the page-wide count is skewed by ~1400 scaled-down scene texts at 5.5-9px"
       }
     ]
   }
