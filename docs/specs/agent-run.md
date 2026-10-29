@@ -193,7 +193,7 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   no coordinates), `models.ts`, `devStub.ts` (`?agentStub=1`, dev only), `usage.ts` (no text); evals on the real loop
   with followUps and an automatic "go" after a plan (off for refuse/injection/viewer) · reviewer: 2 fix rounds (the
   plan-first rule vs one-turn evals; `change` offered coordinates; a stop didn't stop queued writes; small prompt and
-  adapter items) · eval 37/41 + 4 unjudged, `--wrong` 0/41.
+  adapter items; round 2 checked by the lead: tests, eval, lint, tsc) · eval 37/41 + 4 unjudged, `--wrong` 0/41.
 
 ### Stuck
 _(none)_
