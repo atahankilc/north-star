@@ -100,16 +100,26 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-Not started. First step: S1.
+S2 next (vitest; `getWs()`; pure helpers to `src/model/`). S1 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
+- S1 · see `git log --grep "Agent S1"` · docs/specs/agent-actions.md: 180 rows in 17 groups, 49 ops (one naming rule:
+  `create_*`/`update_*`/`delete` + named exceptions; `deck` to the model), 22 gaps, who-may/tracked per group ·
+  reviewer: 1 fix round (a missing join-request write, presence session, canvas text has no duplicate/paste, 4 line
+  numbers), then pass; reran the exported-function grep and the ops-vs-rows diff · ideas: its "Notes for S3–S8".
 
 ### Stuck
 _(none)_
 
 ### For the user (in the morning)
 _(questions, choices made on their behalf, anything that needs a key or a design session)_
+- decisions-log.md has another session's uncommitted edits, so the run doesn't add D-numbers to it; every step commits
+  under D-312 and the phases' own D-numbers are left for a day session.
+- Op names (agent-actions.md): the model sees `deck`, never `kanban` (D-301); workspace name/description and comments
+  are untracked today (no undo), so they can't join a preview's single undo step until they are.
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
+- S15's store swap is also what onboarding's demos need (session workspace-sections-canvas, docs/specs/onboarding.md,
+  "Needs from the store swap"): read it before S15 and build one seam for both.
