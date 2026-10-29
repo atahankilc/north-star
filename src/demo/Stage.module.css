@@ -1,0 +1,33 @@
+/* The demo's stage (D-315): the whole frame, the plane in focus filling it, the stage's pointer over it. */
+.stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* The person's pointer, drawn by the stage (onboarding.md §6.2): ink with the page round it, so it reads on either
+   theme. Its tip is the element's top-left; moved by transform only. */
+.pointer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.pointer svg {
+  display: block;
+  fill: var(--fg);
+  stroke: var(--bg);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  transform-origin: 1px 1px;
+  transition: transform 70ms ease-out;
+}
+
+/* Pressed: a little smaller, the press the Marks answer with (D-265's 70 ms). */
+.pointer[data-pressed='true'] svg {
+  transform: scale(0.88);
+}

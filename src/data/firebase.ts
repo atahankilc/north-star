@@ -7,6 +7,7 @@ import { connectFunctionsEmulator, getFunctions, type Functions } from 'firebase
 import { connectStorageEmulator, getStorage, type FirebaseStorage } from 'firebase/storage'
 import {
   connectFirestoreEmulator,
+  disableNetwork,
   initializeFirestore,
   memoryLocalCache,
   persistentLocalCache,
@@ -44,8 +45,12 @@ type Services = { app: FirebaseApp; auth: Auth; firestore: Firestore; rtdb: Data
 // Our Cloud Functions live next to the Realtime Database (D-079).
 const REGION = 'europe-west1'
 
-// Null until the VITE_FIREBASE_* vars are set, so the UI can still render (e.g. local design work).
-export const firebase: Services | null = isConfigured ? init() : null
+// The onboarding's demo realm (demo.html, D-315): its own page in a sealed frame, drawing the real components on made-up
+// data. demo.html sets the flag before any module loads, so nothing there ever reaches Firebase.
+export const isDemo = typeof window !== 'undefined' && (window as { __northStarDemo?: boolean }).__northStarDemo === true
+
+// Null until the VITE_FIREBASE_* vars are set, so the UI can still render (e.g. local design work); always in the demo.
+export const firebase: Services | null = isConfigured && !isDemo ? init() : null
 
 function init(): Services {
   const app = initializeApp(config)
@@ -74,8 +79,25 @@ function init(): Services {
 }
 
 export function db(): Firestore {
+  if (isDemo) return sealed()
   if (!firebase) throw new Error('Firebase is not configured')
   return firebase.firestore
+}
+
+// The demo's Firestore. It exists only because PlaneCards builds every card's `spotRef` while drawing (the `carry` list
+// its text items get), so `db()` has to give something there; the cleaner fix, building `carry` lazily when a drag
+// starts, is a change to a hot file, left for onboarding's O6 pass. A `demo-` project in memory with its network off
+// before anything is asked of it: refs work, nothing is ever sent (writes are refused before this anyway, setReadOnly
+// in src/demo/main.tsx). One trace it leaves: firebase/app keeps a heartbeat row in the origin's IndexedDB for this
+// "demo" app. Harmless: the app's own [DEFAULT] app reads only its own key there.
+let demoStore: Firestore | null = null
+function sealed(): Firestore {
+  if (!demoStore) {
+    const app = initializeApp({ apiKey: 'demo-key', projectId: 'demo-north-star', appId: 'demo-app' }, 'demo')
+    demoStore = initializeFirestore(app, { localCache: memoryLocalCache() })
+    void disableNetwork(demoStore)
+  }
+  return demoStore
 }
 
 // The streaming endpoint that calls OpenAI on a workspace's key (functions/src/index.ts `ai`).

@@ -22,6 +22,13 @@ export default defineConfig({
   // workspace's chunk, D-287).
   build: {
     rolldownOptions: {
+      // Two pages: the app, and the onboarding's demo realm (D-315, docs/specs/onboarding.md §6.2), the real components
+      // on made-up data in a sealed frame. Pages serves demo.html as a file.
+      // Paths from the project's root (where npm runs Vite).
+      input: {
+        main: 'index.html',
+        demo: 'demo.html',
+      },
       output: {
         codeSplitting: {
           groups: [
