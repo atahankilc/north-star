@@ -330,8 +330,12 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
   // their thread is gone, D-166); then everyone's read marks.
   const threads = await getDocs(collection(db(), 'workspaces', wid, 'threads'))
   for (const t of threads.docs) await deleteThread(wid, t.id)
-  const reads = await getDocs(collection(db(), 'workspaces', wid, 'threadReads'))
-  const refs = [...reads.docs.map((d) => d.ref), ...snaps.flatMap((s) => s.docs.map((d) => d.ref))]
+  // Read marks can't be listed (each person reads only their own), so they go by id: everyone in the workspace and in
+  // its people list (the last of `snaps`). Deleting one that isn't there is fine.
+  const ws = await getDoc(doc(db(), 'workspaces', wid))
+  const readers = new Set([uid, ...((ws.data() as Workspace | undefined)?.memberIds ?? []), ...snaps[snaps.length - 1].docs.map((d) => d.id)])
+  const reads = [...readers].map((u) => doc(db(), 'workspaces', wid, 'threadReads', u))
+  const refs = [...reads, ...snaps.flatMap((s) => s.docs.map((d) => d.ref))]
   for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
     const batch = writeBatch(db())
     for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)
