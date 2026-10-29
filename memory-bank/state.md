@@ -37,6 +37,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   part of the above.
 - Audit P1–P3 (docs/audit-2026-10-29.md, D-317–D-323): committed, not pushed. Firestore rules + RTDB deployed
   2026-10-29 (the user's go, D-322; indexes not deployed, Firebase's kept); functions wait for Blaze. P3b, P4–P6 after onboarding.
+  Left: Q-029, Q-030; `kindOfType` once documents.ts is committed; until the push, invites don't work live (old client).
 
 ## Next steps (not started; ask the user which first)
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
