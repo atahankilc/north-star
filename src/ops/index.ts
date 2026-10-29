@@ -26,3 +26,8 @@ export { createPiece, updatePiece, rename, resize, place, createCanvas, moveCanv
 export type { CreatePieceArgs, UpdatePieceArgs, RenameArgs, PlaceArgs, ResizeArgs, CreateCanvasArgs, MoveCanvasArgs, MoveToCanvasArgs, PiecesOnArgs, PieceOffArgs, DeletePiecesArgs } from './pieces'
 export { deleteAny, type DeleteAnyArgs } from './delete'
 export { boundTo } from './stick'
+// Matrix and table ops (S7): update_matrix, update_table, axis_add / axis_remove / axis_update, update_cell; create_piece
+// takes a typed matrix / table; criteria taken off a feature (update_card) take their scores.
+export { updateMatrix, matrixSetupFrom, axisFrom, stepsFrom, tidy, MATRIX_TEMPLATES, SCALE_KEYS, type UpdateMatrixArgs, type MatrixSpec, type AxisSpec, type AxisPatch } from './matrix'
+export { updateTable, tableSetupFrom, rulesFrom, columnFrom, TABLE_TEMPLATES, type UpdateTableArgs, type TableSpec, type RuleSpec, type ColumnSpec } from './table'
+export { axisAdd, axisRemove, axisUpdate, updateCell, criterionCascade, type AxisAddArgs, type AxisRemoveArgs, type AxisUpdateArgs, type UpdateCellArgs } from './lens'

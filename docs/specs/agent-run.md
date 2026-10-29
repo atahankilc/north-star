@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S7 next (matrix, table: entries, cells, rules, columns; per-kind setup templates; `dropCriterionScores`). S1–S6 done.
+S8 next (tasks, deck columns, timeline; logLearned → create_evidence; cleanTask `start` check). S1–S7 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -144,6 +144,15 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   planeGoes/runOps/commit gone · reviewer: pass first round (real UI: stick by drag, plane move with deck + matrix =
   one step, resize keeps followers on edges, plane delete re-homes a shared card, D-313 confirm, canvas delete, all
   undone by one ⌘Z) · left: `placeDocument` with sharing (documents aren't ops yet).
+- S7 · see `git log --grep "Agent S7"` · `src/ops/{matrix,table,lens}.ts`, `src/model/{matrix,table,lens}.ts`: typed
+  matrix/table setups on create_piece, update_matrix, update_table, axis_add/axis_remove/axis_update (matrix entries,
+  table rows and columns), update_cell by names (ambiguous → candidates; merge writes), criteria removal cascades its
+  cells and scores from the snapshot; every write in data/{matrix,table} + dropCriterionScores wrapped; whole-list
+  editor writes go through `editorChange` (one add/edit/swap → the axis op, never a guessed removal);
+  agent-actions.md moved to the merged names (46 ops) · reviewer: 2 fix rounds (a stale editor list deleted a
+  collaborator's column and its cells: reproduced, fixed; axisFrom skipped asked-for cards; "1,234"; then a docs
+  search-and-replace broke 5 drag rows, put back by the lead) · real UI: wizards, keys, notes merging, totals,
+  setup edits, criteria, all one step each and undone exactly.
 
 ### Stuck
 _(none)_
@@ -198,3 +207,6 @@ _(the reviewers' and builders' "could be better", not done yet)_
 - **S7/S8 (S6 reviewer):** give the model per-kind setup templates or a typed schema per kind (matrix axes by type/plane,
   table rules, deck `holds` + source) instead of a free-form `setup`; `create_piece` with `stuck_to` should pick a free
   side; `stuck_to` should refuse a host on another canvas; expose `where.at`; `resize` summary: grows right and down.
+- S7 reviewer: `oneChange`'s add compares ids only, so a collaborator's removal of Y while my stale list edits X and
+  still holds Y brings Y back and drops my X edit (nothing deleted); checking the rest is `same` in the add branch
+  closes it. Whole-list writes of rule edits / bring back can still lose a concurrent edit (as before S7).

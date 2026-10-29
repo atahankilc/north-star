@@ -143,3 +143,65 @@ export function textWs(): WorkspaceCtx {
   return wsFrom(d)
 }
 
+
+// S7: the fixture with a matrix that unfolds features into their criteria and has a typed row, a second competitor
+// with the same name (for ambiguous names), and a table of features with a typed row and own columns, with cells.
+export const LENS = {
+  table: 'table000000000000007',
+  orderly2: 'comp0000000000000002',
+  square: 'sq0001',
+  backlog: 'r00001',
+  status: 'tc0001',
+  cost: 'tc0002',
+  done: 'tc0003',
+  risk: 'tc0004',
+}
+
+export function lensDocs(): Docs {
+  const d = fixtureDocs()
+  const m = d.pieces.find((p) => p.id === ID.matrix)! as RawDoc & { matrix: Record<string, unknown> }
+  m.matrix = {
+    rows: { type: 'competitor', items: [{ id: LENS.square, name: 'Square' }] },
+    cols: { type: 'feature', plane: ID.planeB, items: [], unfold: 'criteria' },
+    cell: 'scale',
+    steps: [
+      { id: 'none', glyph: '○', label: 'none', tone: 'dim' },
+      { id: 'partial', glyph: '◐', label: 'partial', tone: 'yellow' },
+      { id: 'full', glyph: '●', label: 'full', tone: 'cyan' },
+    ],
+    notRelevant: true,
+  }
+  d.competitors.push({ id: LENS.orderly2, name: 'Orderly', pieceId: ID.planeB, x: 50, y: 300, createdAt: T, updatedAt: T })
+  d.pieces.push({
+    id: LENS.table,
+    kind: 'table',
+    x: 2200,
+    y: 0,
+    w: 800,
+    h: 400,
+    name: 'Backlog',
+    table: {
+      rows: { rules: [{ field: 'type', values: ['feature'] }], items: [{ id: LENS.backlog, name: 'Ops work' }] },
+      cols: [
+        { id: LENS.status, field: 'status' },
+        { id: LENS.cost, name: 'cost', kind: 'number', unit: '€' },
+        { id: LENS.done, name: 'done', kind: 'check' },
+        { id: LENS.risk, name: 'risk', kind: 'scale', steps: [{ id: 'low', glyph: '▁', label: 'low', tone: 'dim' }, { id: 'high', glyph: '█', label: 'high', tone: 'magenta' }] },
+      ],
+      sort: { col: LENS.cost },
+    },
+    createdAt: T,
+    updatedAt: T,
+  })
+  d.cells.push(
+    { id: `${ID.matrix}_${ID.orderly}_${ID.qr}~c1`, matrixId: ID.matrix, row: ID.orderly, col: `${ID.qr}~c1`, value: 'partial', updatedAt: T },
+    { id: `${ID.matrix}_${LENS.square}_${ID.qr}`, matrixId: ID.matrix, row: LENS.square, col: ID.qr, value: 'none', notes: 'no QR', updatedAt: T },
+    { id: `${LENS.table}_${ID.qr}_${LENS.cost}`, matrixId: LENS.table, row: ID.qr, col: LENS.cost, value: 1200, updatedAt: T },
+    { id: `${LENS.table}_${LENS.backlog}_${LENS.cost}`, matrixId: LENS.table, row: LENS.backlog, col: LENS.cost, value: 300, updatedAt: T },
+    { id: `${LENS.table}_${LENS.backlog}_${LENS.done}`, matrixId: LENS.table, row: LENS.backlog, col: LENS.done, value: 'yes', updatedAt: T },
+  )
+  for (const c of WS_COLLECTIONS) d[c].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+  return d
+}
+
+export const lensWs = () => wsFrom(lensDocs())

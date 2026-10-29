@@ -1,7 +1,7 @@
 // A matrix's or a table's scales to start from (D-204, D-209), and the short ids their steps and entries get. Nothing
 // here imports anything at run time: matrix.ts, pieces.ts and table.ts import each other, and table.ts reads a scale as
 // it loads, whichever of them loads first (the workspace's code is its own chunk, so that order changes).
-import type { Step, Tone } from '../data/matrix'
+import type { Step, Tone } from './matrix'
 
 export const newId = () => Math.random().toString(36).slice(2, 8)
 

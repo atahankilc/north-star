@@ -6,215 +6,112 @@
 //
 // The setup lives on the piece (`table`); the own columns' values in `cells/{tableId}_{row}_{col}` like a matrix's
 // (D-204, `matrixId` holding the table's id), so deleting the table or a column takes them along.
-import { deleteField, updateDoc, writeBatch } from 'firebase/firestore'
+//
+// The pure part is src/model/table.ts (S7), re-exported here. Every write is an op (S7, D-312: src/ops/table.ts'
+// update_table, src/ops/lens.ts' axis_add / axis_remove / axis_update) behind the same signature: the setup and cells
+// passed are read from the workspace instead (R5). The setup's whole-list writes (`rows`, `cols`) go through the
+// fine-grained ops when the editor's list is one change from what's there now, columns or rows someone else added
+// since left aside (model/lens.ts' editorChange: a column added, edited or moved; a row added), so their column, its
+// cells and your edit all stay. Anything else is written whole, as before (a concurrent edit can still be lost then).
 import type { Card } from './cards'
-import { db } from './firebase'
-import { tracked } from './history'
-import { cellKey, cellRef, type Cell, type Step } from './matrix'
-import { newId, SCALES } from './scales'
-import { pieceRef } from './pieces'
-import type { Row, Rule, Source } from './source'
+import { applyUi, runUi, sayRefused, uiCtx } from '../ops/firestore'
+import { updateTable } from '../ops/table'
+import { axisAdd, axisRemove, axisUpdate } from '../ops/lens'
+import { editorChange } from '../model/lens'
+import type { Cell } from '../model/matrix'
+import type { Row, Source, SourceItem } from '../model/source'
+import { NAME_COL, type Column, type TableSetup } from '../model/table'
+import type { OpCtx, Plan } from '../ops/types'
 
-// The fixed lists live in src/model/shapes.ts, without Firebase (S3).
-export { FIELDS, OWN_KINDS, COL_W } from '../model/shapes'
-export type { Field, OwnKind } from '../model/shapes'
-import { COL_W, type Field, type OwnKind } from '../model/shapes'
-
-export type Column = {
-  id: string
-  // A card's field; or, without one, a column of its own.
-  field?: Field
-  name?: string
-  kind?: OwnKind
-  // A scale's steps, low to high (kept when the kind changes, so changing back finds them).
-  steps?: Step[]
-  unit?: string
-  // Its width in the table's px, dragged from its head's right edge; unset = its kind's own.
-  width?: number
-}
-
-export type TableSetup = {
-  rows: Source
-  // Only what's added by hand: the rules bring no cards (a list of names).
-  manual?: boolean
-  cols: Column[]
-  // Sorted by a column (`name` for the first), shared by everyone; unset = the source's order.
-  sort?: { col: string; desc?: boolean }
-  // Rows a page (D-213), shared; unset = all on one page. Which page you're on is yours (Table.tsx's useTableUi).
-  pageSize?: number
-  // The name column's width, dragged like a column's; unset = the default.
-  nameWidth?: number
-}
-
-// firestore.rules' validTable allows these.
-export const MAX_COLS = 30
-export const COL_NAME_MAX = 40
-export const CHECKED = 'yes'
-export const NAME_COL = 'name'
-
-// The page sizes the dock offers (D-213).
-export const PAGE_SIZES = [10, 25, 50, 100]
-
-// What a column is called in its head.
-export const colName = (c: Column) => c.name || c.field || 'column'
-
-const own = (name: string, kind: OwnKind, extra: Partial<Column> = {}): Column => ({ id: newId(), name, kind, ...extra })
-const field = (f: Field): Column => ({ id: newId(), field: f })
-const rule = (r: Rule) => r
-
-// Setups to start from; the setup changes any of it after.
-export const TEMPLATES: { key: string; name: string; hint: string; setup: () => TableSetup }[] = [
-  {
-    key: 'cards',
-    name: 'every card',
-    hint: 'every card, its type, plane and status',
-    setup: () => ({ rows: { rules: [], items: [] }, cols: [field('type'), field('plane'), field('status'), field('tags')] }),
-  },
-  {
-    key: 'features',
-    name: 'features',
-    hint: 'features by priority, impact and effort',
-    setup: () => ({
-      rows: { rules: [rule({ field: 'type', values: ['feature'] })], items: [] },
-      cols: [field('status'), field('priority'), field('impact'), field('effort'), own('cost', 'number')],
-    }),
-  },
-  {
-    key: 'competitors',
-    name: 'competitors',
-    hint: 'competitors by region, price and threat',
-    setup: () => ({
-      rows: { rules: [rule({ field: 'type', values: ['competitor'] })], items: [] },
-      cols: [field('regions'), field('tags'), own('price', 'text'), own('threat', 'scale', { steps: SCALES[2].steps })],
-    }),
-  },
-  {
-    key: 'blank',
-    name: 'blank',
-    hint: 'rows you name, columns you make',
-    setup: () => ({
-      rows: { rules: [], items: [{ id: newId(), name: 'row 1' }, { id: newId(), name: 'row 2' }] },
-      manual: true,
-      cols: [own('notes', 'text'), own('done', 'check')],
-    }),
-  },
-]
-
-export const emptyTable = (): TableSetup => TEMPLATES[0].setup()
-
-// The steps a new scale column starts with.
-export const DEFAULT_STEPS = SCALES[2].steps
-
-// What an own column's cell shows: a step, a number, a text, a check, or nothing.
-export function readOwn(col: Column, cell: Cell | undefined): { step?: Step; number?: number; text?: string; checked?: boolean } {
-  const v = cell?.value
-  if (v === undefined) return {}
-  switch (col.kind) {
-    case 'scale':
-      return typeof v === 'string' ? { step: (col.steps ?? DEFAULT_STEPS).find((s) => s.id === v) } : {}
-    case 'number':
-      return typeof v === 'number' ? { number: v } : {}
-    case 'check':
-      return v === CHECKED ? { checked: true } : {}
-    default:
-      return typeof v === 'string' && v ? { text: v } : {}
-  }
-}
+export * from '../model/table'
 
 // ---- Writes. Each is one undo step; typing in a field merges into one.
 
 export function setTable(wid: string, id: string, setup: TableSetup, name?: string) {
-  const ref = pieceRef(wid, id)
-  return tracked('set up a table', [ref], () => updateDoc(ref, { table: clean(setup), ...(name ? { name } : {}), updatedAt: Date.now() }))
+  return runUi(wid, (ctx) => [updateTable(ctx, { id, setup, ui: true, ...(name ? { name } : {}) })], { label: 'set up a table' })
+}
+
+const LABEL = 'change a table'
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+const tableIn = (ctx: OpCtx, id: string) => ctx.ws.pieces.find((p) => p.id === id)?.table as TableSetup | undefined
+
+// One whole part as the setup's editors give it, through a fine-grained op when it's one change from what's there.
+function partPlan<K extends keyof TableSetup>(ctx: OpCtx, id: string, part: K, value: TableSetup[K] | undefined): Plan {
+  const t = tableIn(ctx, id)
+  if (t && part === 'cols' && Array.isArray(value)) {
+    const ch = editorChange(t.cols, value as Column[], same)
+    if (ch && 'add' in ch) return axisAdd(ctx, { id, axis: 'cols', column: ch.add, label: LABEL })
+    if (ch && 'move' in ch) return axisUpdate(ctx, { id, axis: 'cols', entry: ch.move.id, move: 'right', label: LABEL })
+    if (ch && 'edit' in ch) {
+      const change = Object.fromEntries([...new Set([...Object.keys(ch.was), ...Object.keys(ch.edit)])].filter((k) => !same((ch.was as Record<string, unknown>)[k], (ch.edit as Record<string, unknown>)[k])).map((k) => [k, (ch.edit as Record<string, unknown>)[k]]))
+      return axisUpdate(ctx, { id, axis: 'cols', entry: ch.edit.id, change, label: LABEL })
+    }
+  }
+  if (t && part === 'rows' && value) {
+    const next = value as Source
+    const ch = same({ ...t.rows, items: [] }, { ...next, items: [] }) ? editorChange<SourceItem>(t.rows.items, next.items, same) : null
+    if (ch && 'add' in ch) return axisAdd(ctx, { id, axis: 'rows', ...(ch.add.cardId ? { card: ch.add.cardId } : { name: ch.add.name ?? '' }), label: LABEL })
+  }
+  return updateTable(ctx, { id, parts: { [part]: value }, ui: true })
 }
 
 export function setTablePart<K extends keyof TableSetup>(wid: string, id: string, part: K, value: TableSetup[K] | undefined, key?: string) {
-  const ref = pieceRef(wid, id)
-  return tracked(
-    'change a table',
-    [ref],
-    () => updateDoc(ref, { [`table.${part}`]: value === undefined ? deleteField() : clean(value), updatedAt: Date.now() }),
-    key ? { key: `table:${id}:${key}` } : {},
-  )
+  return runUi(wid, (ctx) => [partPlan(ctx, id, part, value)], { label: LABEL, ...(key ? { key: `table:${id}:${key}` } : {}) })
 }
 
 export const setRows = (wid: string, id: string, rows: Source, key?: string) => setTablePart(wid, id, 'rows', rows, key)
 
-// A typed row at the end; its id, to type its name in.
-export async function addNamedRow(wid: string, id: string, setup: TableSetup, name = '') {
-  const item = { id: newId(), name }
-  await setRows(wid, id, { ...setup.rows, items: [...setup.rows.items, item] })
-  return item.id
+// A typed row at the end; its id, to type its name in ('' when nothing was made).
+export async function addNamedRow(wid: string, id: string, _setup: TableSetup, name = '') {
+  const ctx = uiCtx(wid)
+  if (!ctx) return ''
+  let plan
+  try {
+    plan = axisAdd(ctx, { id, axis: 'rows', name, label: LABEL })
+  } catch (e) {
+    sayRefused(e, LABEL)
+    return ''
+  }
+  const done = await applyUi(wid, ctx, [plan], { label: LABEL })
+  if (!done) return ''
+  await done.written
+  return plan.ids.$new
 }
 
-export function addCardRow(wid: string, id: string, setup: TableSetup, card: Card) {
-  const s = setup.rows
-  // A card the rules bring but taken out comes back instead.
-  if (s.hide?.includes(card.id)) return setRows(wid, id, { ...s, hide: s.hide.filter((h) => h !== card.id) })
-  return setRows(wid, id, { ...s, items: [...s.items, { id: newId(), cardType: card.type, cardId: card.id }] })
+export function addCardRow(wid: string, id: string, _setup: TableSetup, card: Card) {
+  return runUi(wid, (ctx) => [axisAdd(ctx, { id, axis: 'rows', card: card.id, label: LABEL })], { label: LABEL })
 }
 
-export function renameRow(wid: string, id: string, setup: TableSetup, itemId: string, name: string) {
-  const items = setup.rows.items.map((i) => (i.id === itemId ? { ...i, name: name.slice(0, 200) } : i))
-  return setRows(wid, id, { ...setup.rows, items }, `name:${itemId}`)
+export function renameRow(wid: string, id: string, _setup: TableSetup, itemId: string, name: string) {
+  return runUi(wid, (ctx) => [axisUpdate(ctx, { id, axis: 'rows', entry: itemId, name, label: LABEL })], { label: LABEL, key: `table:${id}:name:${itemId}` })
 }
 
 // A row taken out: one added by hand goes with its cells; a card the rules bring is hidden (its cells kept).
-export function removeRow(wid: string, id: string, setup: TableSetup, row: Row, cells: Cell[]) {
-  const s = setup.rows
-  const next: Source = row.auto ? { ...s, hide: [...(s.hide ?? []), row.key] } : { ...s, items: s.items.filter((i) => i !== row.item) }
-  const gone = row.auto ? [] : cells.filter((c) => c.matrixId === id && c.row === row.key)
-  return withCells(wid, id, 'take out a row', { 'table.rows': clean(next) }, gone)
+export function removeRow(wid: string, id: string, _setup: TableSetup, row: Row, _cells: Cell[]) {
+  return runUi(wid, (ctx) => [axisRemove(ctx, { id, axis: 'rows', entry: row.auto ? row.key : (row.item?.id ?? row.key) })], { label: 'take out a row' })
 }
 
-export function addColumn(wid: string, id: string, setup: TableSetup, col: Omit<Column, 'id'>) {
-  return setTablePart(wid, id, 'cols', [...setup.cols, { id: newId(), ...col }])
+export function addColumn(wid: string, id: string, _setup: TableSetup, col: Omit<Column, 'id'>) {
+  return runUi(wid, (ctx) => [axisAdd(ctx, { id, axis: 'cols', column: col, label: LABEL })], { label: LABEL })
 }
 
-export function editColumn(wid: string, id: string, setup: TableSetup, colId: string, change: Partial<Column>, key?: string) {
-  const cols = setup.cols.map((c) => (c.id === colId ? { ...c, ...change } : c))
-  return setTablePart(wid, id, 'cols', cols, key ? `col:${colId}:${key}` : undefined)
+export function editColumn(wid: string, id: string, _setup: TableSetup, colId: string, change: Partial<Column>, key?: string) {
+  return runUi(wid, (ctx) => [axisUpdate(ctx, { id, axis: 'cols', entry: colId, change, label: LABEL })], { label: LABEL, ...(key ? { key: `table:${id}:col:${colId}:${key}` } : {}) })
 }
 
 // A column's width (or the name column's, NAME_COL) dragged to `w`; undefined goes back to its own.
-export function setColumnWidth(wid: string, id: string, setup: TableSetup, colId: string, w: number | undefined) {
-  const width = w === undefined ? undefined : Math.round(Math.min(COL_W.max, Math.max(COL_W.min, w)))
-  if (colId === NAME_COL) return setTablePart(wid, id, 'nameWidth', width)
-  return editColumn(wid, id, setup, colId, { width })
+export function setColumnWidth(wid: string, id: string, _setup: TableSetup, colId: string, w: number | undefined) {
+  return runUi(wid, (ctx) => [axisUpdate(ctx, { id, axis: 'cols', entry: colId === NAME_COL ? NAME_COL : colId, width: w ?? null, label: LABEL })], { label: LABEL })
 }
 
 export function moveColumn(wid: string, id: string, setup: TableSetup, colId: string, by: -1 | 1) {
   const i = setup.cols.findIndex((c) => c.id === colId)
   const j = i + by
   if (i < 0 || j < 0 || j >= setup.cols.length) return
-  const cols = [...setup.cols]
-  ;[cols[i], cols[j]] = [cols[j], cols[i]]
-  return setTablePart(wid, id, 'cols', cols)
+  return runUi(wid, (ctx) => [axisUpdate(ctx, { id, axis: 'cols', entry: colId, move: by < 0 ? 'left' : 'right', label: LABEL })], { label: LABEL })
 }
 
 // A column taken out, with its cells.
-export function removeColumn(wid: string, id: string, setup: TableSetup, colId: string, cells: Cell[]) {
-  const gone = cells.filter((c) => c.matrixId === id && c.col === colId)
-  const change: Record<string, unknown> = { 'table.cols': clean(setup.cols.filter((c) => c.id !== colId)) }
-  if (setup.sort?.col === colId) change['table.sort'] = deleteField()
-  return withCells(wid, id, 'take out a column', change, gone)
-}
-
-// The setup changed and some cells deleted, together.
-function withCells(wid: string, id: string, what: string, change: Record<string, unknown>, gone: Cell[]) {
-  const ref = pieceRef(wid, id)
-  const refs = [ref, ...gone.map((c) => cellRef(wid, cellKey(c.matrixId, c.row, c.col)))]
-  return tracked(what, refs, async () => {
-    for (let i = 0; i < refs.length; i += 450) {
-      const batch = writeBatch(db())
-      if (i === 0) batch.update(ref, { ...change, updatedAt: Date.now() })
-      refs.slice(Math.max(1, i), i + 450).forEach((r) => batch.delete(r))
-      await batch.commit()
-    }
-  })
-}
-
-// Firestore takes no `undefined`: fields left unset are dropped.
-function clean<T>(v: T): T {
-  return JSON.parse(JSON.stringify(v)) as T
+export function removeColumn(wid: string, id: string, _setup: TableSetup, colId: string, _cells: Cell[]) {
+  return runUi(wid, (ctx) => [axisRemove(ctx, { id, axis: 'cols', entry: colId })], { label: 'take out a column' })
 }

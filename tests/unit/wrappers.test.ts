@@ -92,7 +92,10 @@ import { addCanvas, alsoOnCanvas, deleteCanvas, moveCanvas, moveToCanvas, rename
 import { apply, recentCount, uiCtx } from '../../src/ops/firestore'
 import { buildBatch } from '../../src/ops/registry'
 import { counterIds } from '../../src/ops/newId'
-import { ALICE, fixtureDocs, ID, SEC, T, WID, WORKSPACE, wsFrom } from './fixtures/ws'
+import { ALICE, fixtureDocs, ID, LENS, lensDocs, SEC, T, WID, WORKSPACE, wsFrom } from './fixtures/ws'
+import { addCardEntry, addNamed, removeEntry, renameEntry, setCell, setOpen, setPart, setSetup, TEMPLATES as MATRIX_TEMPLATES, type MatrixSetup } from '../../src/data/matrix'
+import { addNamedRow, moveColumn, removeColumn, removeRow, renameRow, setColumnWidth, setTable, setTablePart, type TableSetup } from '../../src/data/table'
+import { dropCriterionScores } from '../../src/data/competitorFeatures'
 
 const path = (coll: string, id: string) => `workspaces/${WID}/${coll}/${id}`
 
@@ -117,11 +120,10 @@ const ws = () => store.get()
 const card = (id: string) => ws().cards.find((c) => c.id === id)!
 const settle = () => new Promise((r) => setTimeout(r, 0))
 
-function seed() {
+function seed(docs = fixtureDocs()) {
   fake.data.clear()
   fake.commits.n = 0
   fake.commits.batches = []
-  const docs = fixtureDocs()
   for (const c of WS_COLLECTIONS) for (const { id, ...d } of docs[c]) fake.data.set(path(c, id), d)
   const { id: _, ...w } = WORKSPACE
   fake.data.set(`workspaces/${WID}`, structuredClone(w))
@@ -130,7 +132,7 @@ function seed() {
 }
 
 describe('data/ functions as ops', () => {
-  beforeEach(seed)
+  beforeEach(() => seed())
 
   it('addCard + its first title (fresh) are one undo step, even before the snapshot shows the card; undo takes it away', async () => {
     const id = await addCard(WID, ID.planeA, 'idea', [150, 400], cardsOn(ws().cards, ws().places, ID.planeA))
@@ -489,7 +491,7 @@ describe('data/ functions as ops', () => {
 
 // ---- S6: data/pieces.ts and data/canvases.ts over ops.
 describe('pieces and canvases as ops (S6)', () => {
-  beforeEach(seed)
+  beforeEach(() => seed())
   const piece = (id: string) => ws().pieces.find((p) => p.id === id)!
 
   it('deletePiece reads its own cascade (whatever lists are passed): one undo step, one ⌘Z brings everything back', async () => {
@@ -610,3 +612,164 @@ describe('pieces and canvases as ops (S6)', () => {
   })
 })
 
+
+// ---- S7: data/matrix.ts, data/table.ts and dropCriterionScores over ops.
+describe('matrices, tables and criteria as ops (S7)', () => {
+  beforeEach(() => seed(lensDocs()))
+  const piece = (id: string) => ws().pieces.find((p) => p.id === id)!
+  const mx = () => piece(ID.matrix).matrix as MatrixSetup
+  const tb = () => piece(LENS.table).table as TableSetup
+  const cellDoc = (m: string, r: string, c: string) => fake.data.get(path('cells', `${m}_${r}_${c}`))
+  const labels = () => useHistory.getState().past.map((x) => x.label)
+
+  it('setCell: a set with merge (the note stays); typing a note merges into one step; ⌘Z puts the cell back as it was', async () => {
+    await setCell(WID, ID.matrix, LENS.square, ID.qr, { value: 'full' })
+    expect(cellDoc(ID.matrix, LENS.square, ID.qr)).toMatchObject({ value: 'full', notes: 'no QR' })
+    echo()
+    await setCell(WID, ID.matrix, LENS.square, ID.qr, { notes: 'QR' })
+    echo()
+    await setCell(WID, ID.matrix, LENS.square, ID.qr, { notes: 'QR soon' })
+    echo()
+    expect(labels()).toEqual(['matrix cell', 'matrix cell'])
+    expect(cellDoc(ID.matrix, LENS.square, ID.qr)).toMatchObject({ value: 'full', notes: 'QR soon' })
+    await undo()
+    await settle()
+    expect(cellDoc(ID.matrix, LENS.square, ID.qr)).toMatchObject({ value: 'full', notes: 'no QR' })
+    echo()
+    // A step cleared (Backspace), `—`, a new cell made and undone: gone again.
+    await setCell(WID, ID.matrix, LENS.square, ID.qr, { value: undefined, notRelevant: true })
+    expect(cellDoc(ID.matrix, LENS.square, ID.qr)).toMatchObject({ notRelevant: true, notes: 'no QR' })
+    expect(cellDoc(ID.matrix, LENS.square, ID.qr)).not.toHaveProperty('value')
+    echo()
+    await setCell(WID, ID.matrix, LENS.square, ID.loyalty, { value: 'partial' })
+    expect(cellDoc(ID.matrix, LENS.square, ID.loyalty)).toMatchObject({ matrixId: ID.matrix, value: 'partial' })
+    await undo()
+    await settle()
+    expect(cellDoc(ID.matrix, LENS.square, ID.loyalty)).toBeUndefined()
+  })
+
+  it('a table cell through setCell (a check), refused out-of-range values say so in the toast', async () => {
+    await setCell(WID, LENS.table, ID.qr, LENS.done, { value: 'yes' })
+    expect(cellDoc(LENS.table, ID.qr, LENS.done)).toMatchObject({ value: 'yes' })
+    echo()
+    await setCell(WID, LENS.table, ID.qr, LENS.risk, { value: 'enormous' })
+    expect(cellDoc(LENS.table, ID.qr, LENS.risk)).toBeUndefined()
+    expect(useHistory.getState().notice?.text ?? '').toMatch(/isn't one of the scale's steps/)
+  })
+
+  it('entries: addNamed returns its id, renaming merges, removing a typed row takes its cells (one ⌘Z back), hiding a card keeps them', async () => {
+    const id = await addNamed(WID, ID.matrix, mx(), 'rows')
+    expect(id).toMatch(/^[A-Za-z0-9]{6,8}$/)
+    echo()
+    await renameEntry(WID, ID.matrix, mx(), 'rows', id, 'To')
+    echo()
+    await renameEntry(WID, ID.matrix, mx(), 'rows', id, 'Toast')
+    echo()
+    expect(mx().rows.items.at(-1)).toEqual({ id, name: 'Toast' })
+    expect(labels()).toEqual(['change a matrix', 'change a matrix'])
+    const before = new Map(fake.data)
+    const sq = { key: LENS.square, name: 'Square', item: mx().rows.items[0], auto: false }
+    await removeEntry(WID, ID.matrix, mx(), 'rows', sq, [])
+    expect(cellDoc(ID.matrix, LENS.square, ID.qr)).toBeUndefined()
+    expect(labels().at(-1)).toBe('take out a row')
+    await undo()
+    await settle()
+    expect(new Map(fake.data)).toEqual(before)
+    echo()
+    await removeEntry(WID, ID.matrix, mx(), 'rows', { key: ID.orderly, name: 'Orderly', auto: true }, [])
+    expect(mx().rows.hide ?? fake.data.get(path('pieces', ID.matrix))!.matrix).toBeDefined()
+    expect((fake.data.get(path('pieces', ID.matrix))!.matrix as MatrixSetup).rows.hide).toEqual([ID.orderly])
+    expect(cellDoc(ID.matrix, ID.orderly, ID.qr)).toBeDefined()
+    echo()
+    await addCardEntry(WID, ID.matrix, mx(), 'rows', card(ID.orderly))
+    expect((fake.data.get(path('pieces', ID.matrix))!.matrix as MatrixSetup).rows.hide).toBeUndefined()
+  })
+
+  it('setPart: an axis with one entry added goes as axis_add (a collaborator\'s change kept); setOpen; setSetup', async () => {
+    // A collaborator renamed Square meanwhile: the editor's stale axis adds an entry, and the rename stays.
+    const stale = structuredClone(mx().rows)
+    const m = fake.data.get(path('pieces', ID.matrix))! as { matrix: MatrixSetup }
+    m.matrix.rows.items[0].name = 'Square Inc'
+    echo()
+    await setPart(WID, ID.matrix, 'rows', { ...stale, items: [...stale.items, { id: 'x1', name: 'Zettle' }] })
+    expect((fake.data.get(path('pieces', ID.matrix))!.matrix as MatrixSetup).rows.items.map((i) => i.name)).toEqual(['Square Inc', 'Zettle'])
+    echo()
+    await setPart(WID, ID.matrix, 'cell', 'number')
+    await setPart(WID, ID.matrix, 'unit', '€', 'unit')
+    echo()
+    await setOpen(WID, ID.matrix, mx(), 'cols', [ID.qr], true)
+    echo()
+    expect(mx()).toMatchObject({ cell: 'number', unit: '€', cols: { open: [ID.qr] } })
+    await setOpen(WID, ID.matrix, mx(), 'cols', [ID.qr], false)
+    echo()
+    expect(mx().cols.open).toBeUndefined()
+    await setSetup(WID, ID.matrix, MATRIX_TEMPLATES[1].setup())
+    expect(mx()).toBeDefined()
+    expect((fake.data.get(path('pieces', ID.matrix))!.matrix as MatrixSetup).rows.type).toBe('problem')
+    expect(labels()).toEqual(['change a matrix', 'change a matrix', 'change a matrix', 'change a matrix', 'change a matrix', 'set up a matrix'])
+  })
+
+  it('tables: a named row, a column added through setTablePart (one change → axis_add), width, sort, move, a column taken out with its cells and sort', async () => {
+    const r = await addNamedRow(WID, LENS.table, tb())
+    echo()
+    await renameRow(WID, LENS.table, tb(), r, 'Hiring')
+    echo()
+    expect(tb().rows.items.at(-1)).toEqual({ id: r, name: 'Hiring' })
+    await setTablePart(WID, LENS.table, 'cols', [...tb().cols, { id: 'new001', name: 'owner', kind: 'text' }])
+    echo()
+    expect(tb().cols.at(-1)).toEqual({ id: 'new001', name: 'owner', kind: 'text' })
+    await setColumnWidth(WID, LENS.table, tb(), LENS.cost, 2000)
+    await setColumnWidth(WID, LENS.table, tb(), 'name', 100)
+    echo()
+    expect(tb().cols.find((c) => c.id === LENS.cost)!.width).toBe(640)
+    expect(tb().nameWidth).toBe(100)
+    await setTablePart(WID, LENS.table, 'sort', { col: LENS.risk, desc: true })
+    echo()
+    expect(await moveColumn(WID, LENS.table, tb(), LENS.status, -1)).toBeUndefined()
+    await moveColumn(WID, LENS.table, tb(), LENS.status, 1)
+    echo()
+    expect(tb().cols.map((c) => c.id).slice(0, 2)).toEqual([LENS.cost, LENS.status])
+    // An edit through the editor's whole list: one column changed → axis_update.
+    await setTablePart(WID, LENS.table, 'cols', tb().cols.map((c) => (c.id === LENS.risk ? { ...c, name: 'danger' } : c)), `col:${LENS.risk}:name`)
+    echo()
+    expect(tb().cols.find((c) => c.id === LENS.risk)!.name).toBe('danger')
+    await removeColumn(WID, LENS.table, tb(), LENS.risk, [])
+    echo()
+    expect(tb().sort).toBeUndefined()
+    await removeColumn(WID, LENS.table, tb(), LENS.cost, [])
+    expect(cellDoc(LENS.table, ID.qr, LENS.cost)).toBeUndefined()
+    echo()
+    await removeRow(WID, LENS.table, tb(), { key: LENS.backlog, name: 'Ops work', item: tb().rows.items[0], auto: false }, [])
+    expect(cellDoc(LENS.table, LENS.backlog, LENS.done)).toBeUndefined()
+    expect(labels().slice(-3)).toEqual(['take out a column', 'take out a column', 'take out a row'])
+    await setTable(WID, LENS.table, { rows: { rules: [], items: [] }, cols: [] }, 'Fresh')
+    expect(fake.data.get(path('pieces', LENS.table))).toMatchObject({ name: 'Fresh', table: { rows: { rules: [], items: [] }, cols: [] } })
+    expect(labels().at(-1)).toBe('set up a table')
+  })
+
+  it("a stale column list with one edit, after a collaborator added a column with a cell: their column and cell stay, the edit lands", async () => {
+    const stale = structuredClone(tb())
+    await setTablePart(WID, LENS.table, 'cols', [...tb().cols, { id: 'theirs', name: 'theirs', kind: 'text' }])
+    echo()
+    await setCell(WID, LENS.table, ID.qr, 'theirs', { value: 'their words' })
+    echo()
+    await setTablePart(WID, LENS.table, 'cols', stale.cols.map((c) => (c.id === LENS.cost ? { ...c, name: 'price' } : c)), `col:${LENS.cost}:name`)
+    echo()
+    expect(tb().cols.map((c) => c.id)).toEqual([LENS.status, LENS.cost, LENS.done, LENS.risk, 'theirs'])
+    expect(tb().cols.find((c) => c.id === LENS.cost)!.name).toBe('price')
+    expect(cellDoc(LENS.table, ID.qr, 'theirs')).toMatchObject({ value: 'their words' })
+    expect(cellDoc(LENS.table, ID.qr, LENS.cost)).toMatchObject({ value: 1200 })
+  })
+
+  it('dropCriterionScores reads its cascade from the workspace (whatever is passed): cells and old scores, one step, one ⌘Z back', async () => {
+    const before = new Map(fake.data)
+    await dropCriterionScores(WID, ID.qr, 'c1', [], { ref: {} as never, write: () => {} }, [])
+    expect(fake.data.get(path('features', ID.qr))!.criteria).toBeUndefined()
+    expect(cellDoc(ID.matrix, ID.orderly, `${ID.qr}~c1`)).toBeUndefined()
+    expect(fake.data.get(path('comparisons', `${ID.qr}_${ID.orderly}`))!.criteria).toBeUndefined()
+    expect(labels()).toEqual(['remove a criterion'])
+    await undo()
+    await settle()
+    expect(new Map(fake.data)).toEqual(before)
+  })
+})

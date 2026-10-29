@@ -7,6 +7,7 @@ import { TEXT_NAMES } from './text'
 import { MAIN } from '../model/canvases'
 import { GRID, snap } from '../model/grid'
 import { cardsOn, clearSpot, elsewhere, freeSpot, placeId, type Place } from '../model/placement'
+import { criterionCascade } from './lens'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { cardColl, cardData, cardIn, handleOf, once, one, plural, refuse, titleField } from './util'
 import { evidenceData, type EvidenceInput } from './evidence'
@@ -124,6 +125,11 @@ export function updateCard(ctx: OpCtx, args: UpdateCardArgs): Plan {
     if (Object.keys(own).length) writes.unshift({ coll: cardColl(card.type), id: card.id, patch: { ...own, updatedAt: now } })
   } else if (Object.keys(own).length || Object.keys(spot).length) {
     writes.push({ coll: cardColl(card.type), id: card.id, patch: { ...own, ...spot, updatedAt: now } })
+  }
+  // Criteria taken off a feature take their scores with them (D-133, D-249): matrix cells and old comparisons' scores.
+  if (args.fields && 'criteria' in args.fields && card.type === 'feature') {
+    const next = new Set(((args.fields.criteria as { id: string }[] | null | undefined) ?? []).map((c) => c.id))
+    writes.push(...criterionCascade(ctx, card.id, (card.criteria ?? []).map((c) => c.id).filter((id) => !next.has(id))))
   }
   const onlySpot = !Object.keys(own).length
   const label =

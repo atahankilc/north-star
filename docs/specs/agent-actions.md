@@ -201,15 +201,15 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 |---|---|---|---|
 | Cell: click steps, 1–9, Backspace, `-`, typed number/text (Matrix.tsx:196–305) | `matrix.ts:setCell` | `update_cell` (by axis names) | |
 | Cell bar: step, clear, `—` doesn't apply, `~ ?` confidence, note (Matrix.tsx:1033–1077) | `matrix.ts:setCell` | `update_cell` | |
-| Dashed card: add a typed name (Matrix.tsx:737) | `matrix.ts:addNamed` | `create_matrix_entry` (row/col, a name) | |
-| Dashed card: add a card (Matrix.tsx:749) | `matrix.ts:addCardEntry` | `create_matrix_entry` (row/col, a card) | |
-| Head `×`: hide a card / drop a name with its cells (Matrix.tsx:271) | `matrix.ts:removeEntry` | `matrix_remove` | R5: the matrix's cells passed. |
-| Head rename (typed name) (Matrix.tsx:378) | `matrix.ts:renameEntry` | `rename` | Unfolded criteria: `update_card` (Cards). |
+| Dashed card: add a typed name (Matrix.tsx:737) | `matrix.ts:addNamed` | `axis_add` (row/col, a name) | S7: op. |
+| Dashed card: add a card (Matrix.tsx:749) | `matrix.ts:addCardEntry` | `axis_add` (row/col, a card) | S7: op. |
+| Head `×`: hide a card / drop a name with its cells (Matrix.tsx:271) | `matrix.ts:removeEntry` | `axis_remove` | R5 solved (S7): the op reads the cells from the snapshot; the list passed is ignored. |
+| Head rename (typed name) (Matrix.tsx:378) | `matrix.ts:renameEntry` | `axis_update` (name) | Unfolded criteria: `update_card` (Cards). |
 | Unfold / fold a card's criteria (Matrix.tsx:278) | `matrix.ts:setOpen` | `update_matrix` | |
-| Setup: rows/cols axis (type, plane, by hand, called, unfold), cells (kind, steps, unit), options (`—`, guesses, totals) (MatrixSetup.tsx:56) | `matrix.ts:setPart` | `update_matrix` | R7: each editor rebuilds the whole part. |
-| Setup: take a hand-added item out (MatrixSetup.tsx:60) | `matrix.ts:removeEntry` | `matrix_remove` | R5. |
+| Setup: rows/cols axis (type, plane, by hand, called, unfold), cells (kind, steps, unit), options (`—`, guesses, totals) (MatrixSetup.tsx:56) | `matrix.ts:setPart` | `update_matrix` | R7 mostly solved (S7): an axis whose only change is one entry added goes through `axis_add` (entries someone else added since left aside); other parts are still written whole as the editors give them. |
+| Setup: take a hand-added item out (MatrixSetup.tsx:60) | `matrix.ts:removeEntry` | `axis_remove` | R5 solved (S7). |
 | Setup: `start over from` a template (MatrixSetup.tsx:61) | `matrix.ts:setSetup` | `update_matrix` (template) | |
-| (none) | `Matrix.tsx:addCard` (export, :1087) → `matrix.ts:addCardEntry` | `create_matrix_entry` | **no caller** (dead export in a view). |
+| (none) | `Matrix.tsx:addCard` (export, :1087) → `matrix.ts:addCardEntry` | `axis_add` | **no caller** (dead export in a view). |
 
 ## 12. Table
 
@@ -218,22 +218,22 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 | UI action (where) | Today: data fn (file) | Op | Notes |
 |---|---|---|---|
 | Cell: click steps / flips, 1–9, Backspace, Enter, typed (Table.tsx:223–308, :403) | `matrix.ts:setCell` | `update_cell` | |
-| `+` named row (Table.tsx:450) | `table.ts:addNamedRow` | `create_table_row` (a name) | |
-| Rename a row (typed name) (Table.tsx:407) | `table.ts:renameRow` | `rename` | A card row: `update_card` (Cards). |
-| Row `×` (Table.tsx:409), setup take out (TableSetup.tsx:85) | `table.ts:removeRow` | `matrix_remove` | R5: cells passed. |
+| `+` named row (Table.tsx:450) | `table.ts:addNamedRow` | `axis_add` (rows, a name) | S7: op. |
+| Rename a row (typed name) (Table.tsx:407) | `table.ts:renameRow` | `axis_update` (rows, name) | A card row: `update_card` (Cards). |
+| Row `×` (Table.tsx:409), setup take out (TableSetup.tsx:85) | `table.ts:removeRow` | `axis_remove` (rows) | R5 solved (S7): cells read from the snapshot. |
 | Head click sorts (Table.tsx:323) | `table.ts:setTablePart` (`sort`) | `update_table` | Shared. |
-| Column width drag / reset (Table.tsx:487, :489) | `table.ts:setColumnWidth` | `update_table_column` (`width`) | |
+| Column width drag / reset (Table.tsx:487, :489) | `table.ts:setColumnWidth` | `axis_update` (cols, `width`) | |
 | Page size (Table.tsx:812; setup view TableSetup.tsx:332) | `table.ts:setTablePart` (`pageSize`) | `update_table` | Shared; the page you're on is yours. |
-| Setup rows: rules, cards on/off, by hand, bring back (TableSetup.tsx:102–150) | `table.ts:setTablePart` (`rows`) | `update_table` (`rows`) / `create_table_row` (a card) | R7: whole `rows` rewritten. |
-| Setup columns: field on/off, own column (scale, number, text, check), rename, kind, unit, steps, move left/right (TableSetup.tsx:222–310) | `table.ts:setTablePart` (`cols`) | `create_table_column`, `update_table_column`, `move_table_column` | R7: whole `cols` rewritten, while `addColumn`/`editColumn`/`moveColumn` sit unused. |
-| Setup column `×` (TableSetup.tsx:88) | `table.ts:removeColumn` | `delete` | R5: cells passed. |
+| Setup rows: rules, cards on/off, by hand, bring back (TableSetup.tsx:102–150) | `table.ts:setTablePart` (`rows`) | `update_table` (`rules`, `manual`, `bring_back`) / `axis_add` (a card or name) | R7 partly solved (S7): one row added (rows someone else added since left aside) goes through `axis_add`; rule edits and bring back still rewrite `rows` whole. |
+| Setup columns: field on/off, own column (scale, number, text, check), rename, kind, unit, steps, move left/right (TableSetup.tsx:222–310) | `table.ts:setTablePart` (`cols`) | `axis_add` (cols), `axis_update` (name, kind, unit, steps, width, move) | R7 solved for one change (S7): the editor's list is compared with what's there now, columns someone else added since left aside (`editorChange`), and one add, edit or move goes through the axis op; a removal is never guessed (real removes are `removeColumn`). Anything else is still written whole, and can still lose a concurrent edit. |
+| Setup column `×` (TableSetup.tsx:88) | `table.ts:removeColumn` | `axis_remove` (cols) | R5 solved (S7): cells and the sort read from the snapshot. |
 | Setup sort (TableSetup.tsx:342, :351) | `table.ts:setTablePart` (`sort`) | `update_table` | |
 | Setup `start over from` a template (TableSetup.tsx:60) | `table.ts:setTable` | `update_table` (template) | |
-| (none) | `table.ts:setRows` | `update_table` | Called only inside table.ts; **no UI caller**. |
-| (none) | `table.ts:addCardRow` | `create_table_row` (a card) | **no UI caller**. |
-| (none) | `table.ts:addColumn` | `create_table_column` | **no UI caller**. |
-| (none) | `table.ts:editColumn` | `update_table_column` | **no UI caller** (only `setColumnWidth` uses it). |
-| (none) | `table.ts:moveColumn` | `move_table_column` | **no UI caller**. |
+| (none) | `table.ts:setRows` | `update_table` / `axis_add` | Called only inside table.ts (= `setTablePart('rows')`). |
+| (none) | `table.ts:addCardRow` | `axis_add` (rows, a card) | Used now: the op behind a row added in the setup (S7). |
+| (none) | `table.ts:addColumn` | `axis_add` (cols) | Used now: the op behind a column added in the setup (S7). |
+| (none) | `table.ts:editColumn` | `axis_update` (cols) | Used now: the op behind a column edited in the setup (S7). |
+| (none) | `table.ts:moveColumn` | `axis_update` (cols, move) | Used now: the op behind a column moved in the setup (S7). |
 
 ## 13. Decks (kanban) and tasks
 
@@ -404,9 +404,9 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 features, criteria, deck and table columns, typed table rows, threads, messages); it always asks and reads its own
 cascade. Named exceptions, because they mean something else: `link` / `unlink` (a link between two cards), `place_on`
 / `take_off` (the same card on another plane, or the same piece on another canvas: nothing is made or deleted),
-`matrix_remove` (hides a card from a matrix axis or a table's rows; a typed name goes with its cells), `rename` (the
-name of anything: piece, canvas, document, workspace, matrix entry, table row, deck column; a card's title is
-`update_card`), `move_*` (order or container, not position), `arrange` / `resize` (where things are and how big,
+`axis_add` / `axis_remove` / `axis_update` (a matrix's rows and columns, a table's rows and columns: a card brought
+by the type or rules is hidden, not deleted; a typed entry goes with its cells; typed names renamed here), `rename` (the
+name of anything: piece, canvas, document, workspace, deck column; a card's title is `update_card`), `move_*` (order or container, not position), `arrange` / `resize` (where things are and how big,
 laid out by the app, never coordinates), `duplicate` (copies).
 
 **Decks.** The model only ever sees `deck`: `create_piece(kind: deck)`, `update_deck`, `create_deck_column`,
@@ -415,6 +415,9 @@ data keep calling it (D-301).
 
 | Op | Sketch |
 |---|---|
+| `axis_add` | `(matrix or table, rows or cols, card or name or column: {field} or {name, kind, unit?, steps?}) → $id`: a hidden card of the type (or rules) comes back |
+| `axis_remove` | `(matrix or table, rows or cols, entry: key or name)`: a card the type or rules bring is hidden (cells kept); one added by hand, or a table column, goes with its cells |
+| `axis_update` | `(matrix or table, rows or cols, entry, {name?; columns: kind?, unit?, steps?, width?, move?: left or right})` |
 | `arrange` | `(items, layout: near or align-left/centre/right/top/middle/bottom or spread-x/y or grid or by:[dx,dy], where?)`: positions only; carries folded parts, package members, section contents, stuck pieces |
 | `create_canvas` | `(name) → $id` |
 | `create_card` | `(type, plane, title, fields?, links?, parts?, evidence?, near?) → $id` (one undo step with its name) |
@@ -422,22 +425,17 @@ data keep calling it (D-301).
 | `create_deck_column` | `(deck, name, limit?, done?) → $id` |
 | `create_document` | `(title, markdown) → $id` (later, §4.4's `write_document`) |
 | `create_evidence` | `(card, {kind, text, stance, source?, date?, url?}, from_task?) → $id`: with `from_task`, the task is marked learned (today's `logLearned`) |
-| `create_matrix_entry` | `(matrix, rows or cols, card or name) → $id` |
 | `create_message` | `(thread, text, mentions?) → $id` (later; a reply) |
 | `create_package` | `(cards, name?) → $id` |
-| `create_piece` | `(kind: plane or matrix or table or deck or timeline or documents or document, name?, setup? or template?, stuck_to?, doc?, canvas, near?) → $id` |
-| `create_table_column` | `(table, {field} or {name, kind, steps?, unit?}) → $id` |
-| `create_table_row` | `(table, card or name) → $id` |
+| `create_piece` | `(kind: plane or matrix or table or deck or timeline or documents or document, name?, matrix?: {template?, rows?/cols?: {type?, plane?, cards?, names?, noun?, unfold?}, cell?, scale? or steps?, unit?, not_relevant?, confidence?, totals?, totals_at?, totals_as?, marks?}, table?: {template?, rules?, manual?, cards?, names?, columns?, sort?, page_size?}, setup? (deck, timeline, documents), stuck_to?, doc?, canvas, near?) → $id` |
 | `create_task` | `(deck, title, column?, card?, assignee?, start?, due?, priority?, labels?, checks?, before? or after?) → $id` |
 | `create_text` | `(where: plane or canvas, {kind: heading or paragraph or sticky or section or title, text, size?, colour?}, near? or around?: ids) → $id` |
 | `create_thread` | `(on: id, text, mentions?) → $id` (later; §4.4's `comment`) |
 | `delete` | `(ids, everywhere?)`: see the rule; always asks |
 | `duplicate` | `(ids, to: plane, by?)`: copies, not the same cards (see §1 for what is copied) |
 | `link` | `(from, to, kind?, label?) → $id` |
-| `matrix_remove` | `(matrix or table, rows or cols, entry)` |
 | `move_canvas` | `(canvas, up or down)` |
 | `move_deck_column` | `(deck, column, left or right)` |
-| `move_table_column` | `(table, column, left or right)` |
 | `move_task` | `(tasks, column, deck?, lane?, before? or after?)` |
 | `move_to_canvas` | `(pieces and text, canvas)`: with what's stuck and what a section holds |
 | `place_on` | `(cards, plane, move?, near?)` or `(pieces, canvas)`: the same thing in one more place, with parts, members, what's stuck |
@@ -446,7 +444,7 @@ data keep calling it (D-301).
 | `take_off` | `(cards, plane)` or `(piece, canvas)`: off one place, still on the others |
 | `unlink` | `(link)` |
 | `update_card` | `(card, {title?, status/validation?, priority?, impact?, effort?, tags?, notes?, regions?, profile fields?, criteria?, members?, folded? (per plane)})` |
-| `update_cell` | `(matrix or table, row name, column name, {value?, notes?, notRelevant?, confidence?})` |
+| `update_cell` | `(matrix or table, row: key or name, col: key or name, {value?, note?, not_relevant?, confidence?} or clear)`: names are a card's title, a typed name, `Feature › criterion`, a column's name; unclear → refused with the candidates |
 | `update_competitor_feature` | `(feature, {name?, description?, category?, availability?, url?, ours?: feature or null})` |
 | `update_deck` | `(deck, {holds?, source?, colField?, rowField?, names?, lanes?, move_tasks_to?: deck or new_deck})`: D-300's question decided by the op |
 | `update_deck_column` | `(deck, column, {limit?, done?})` |
@@ -454,22 +452,20 @@ data keep calling it (D-301).
 | `update_documents_list` | `(piece, {sort?, kinds?, pageSize?, view?})` |
 | `update_evidence` | `(evidence, fields)` |
 | `update_link` | `(link, {kind?, label?, reverse?})` |
-| `update_matrix` | `(matrix, part or template, value)` or `(matrix, {open: entries})` |
+| `update_matrix` | `(matrix, {template?, name?, cell?, scale? or steps?, unit?, not_relevant?, confidence?, totals?, totals_at?, totals_as?, marks?, rows?/cols?: {type?, plane?, noun?, unfold?, open?, fold?, bring_back?}})` |
 | `update_message` | `(thread, message, text)` (later) |
 | `update_piece` | `(piece, {stuck_to?, framed?})` |
-| `update_table` | `(table, {rows?, pageSize?, sort?} or template)` |
-| `update_table_column` | `(table, column, {name?, kind?, unit?, steps?, width?})` |
+| `update_table` | `(table, {template?, name?, rules?, manual?, sort?, page_size?, bring_back?})` |
 | `update_task` | `(task, {title?, assignee?, start?, due?, priority?, labels?, card?, checks?, notes?, learned?})` |
 | `update_text` | `(text, {text?, kicker?, size?, scale?, bold?, italic?, caps?, rotate?, side?, colour?, folded?})` |
 | `update_thread` | `(thread, {resolved})` (later) |
 | `update_timeline` | `(timeline, {rows})` |
 | `update_workspace` | `({description})` (the name goes through `rename`) |
 
-49 ops. Five are for later rows (`create_thread`, `create_message`, `update_message`, `update_thread`,
-`create_document`); the other 44 cover what a person can do today. §4.4's first set maps as: `create_card`,
+46 ops (S7 merged the six matrix/table entry ops into `axis_add` / `axis_remove` / `axis_update`). Five are for later
+rows (`create_thread`, `create_message`, `update_message`, `update_thread`, `create_document`); the other 41 cover what a person can do today. §4.4's first set maps as: `create_card`,
 `update_card`, `link`, `unlink`, `edit_link` → `update_link`, `place_on`, `take_off`, `create_piece`, `set_cell` →
-`update_cell`, `table_*` → `create_table_row`, `create_table_column`, `update_table_column`, `move_table_column`,
-`update_table`, `matrix_remove`, `delete`; `create_task`, `update_task`, `move_task`, `add_text` → `create_text`,
+`update_cell`, `table_*` → `axis_add`, `axis_remove`, `axis_update`, `update_table`, `delete`; `create_task`, `update_task`, `move_task`, `add_text` → `create_text`,
 `package` → `create_package`, `arrange`, `rename`, `delete`.
 
 ### Gaps found (no clean data function, or the logic sits in a component)
@@ -489,7 +485,8 @@ data keep calling it (D-301).
    cells; `matchOurs`/`removeCompetitorFeature` take comparisons; `unshareDocument`/`deleteDocument` take piece and
    spot refs.
 6. **Removing a criterion** (R5, R7): `CardPanelKinds.tsx:415` builds the card write and the cell refs itself and hands
-   them to `dropCriterionScores`.
+   them to `dropCriterionScores`. **Solved (S7):** taking a criterion off a feature is `update_card` with its criteria;
+   the op deletes its matrix cells and comparison scores from the snapshot, and the passed batch and refs are ignored.
 7. **Moving a plane carries its followers** (R7, R1): the followers and their boxes are computed in
    `CanvasView.tsx` `press` (~1611–1631); `stickTarget` only runs inside the drag; `placePiece` uses `posRef`/`spotted`,
    the module's spots.
@@ -511,11 +508,13 @@ data keep calling it (D-301).
     and for a new deck makes it then opens its setup.
 16. **Whole-array rewrites from components** (R7): deck columns (`setKanbanCols`), matrix parts (`setPart`), table
     `rows`/`cols` (`setTablePart`) are rebuilt by the editors and written whole; two people editing at once lose one
-    edit.
+    edit. **Matrix and table partly solved (S7):** one add, edit or move in the editor's list goes through the axis ops,
+    with what someone else added since left aside; anything else is still written whole (decks: S8).
 17. **Unused data functions**: `table.ts:addCardRow`, `addColumn`, `editColumn` (only via `setColumnWidth`),
     `moveColumn`, `setRows` (internal); `competitorFeatures.ts:removeComparison`; `places.ts:planeGoes` (internal to
     `deletePiece`); the view export `Matrix.tsx:addCard`. The table's setup does the same work through
-    `setTablePart('cols')`: the ops should use one path.
+    `setTablePart('cols')`: the ops should use one path. **S7:** `addCardRow`, `addColumn`, `editColumn`, `moveColumn`
+    are the same ops (`axis_add`, `axis_update`) that the setup's one-change writes use now.
 18. **Moving to a canvas** (R7, R2): what goes along (stuck pieces, what a section holds wholly) is worked out in
     `MoveToCanvas.tsx` `go`; a canvas typed in the prompt is made first, then the move: two steps.
 19. **Workspace name and description aren't tracked**: `renameWorkspace`/`describeWorkspace` write directly (no undo,
@@ -559,4 +558,7 @@ grep -rn "from '[./]*data/[a-zA-Z]*'" src | grep -v '^src/data/' | grep -v "impo
   deck.
 - **Route table setup through the fine-grained `table.ts` functions** (`addColumn`, `editColumn`, `moveColumn`,
   `addCardRow`) instead of whole-array `setTablePart`, which overwrites a concurrent edit by someone else (gap 16).
+  Done in S7 by detecting one change: `setTablePart`/`setPart` compare the editor's list with what's there now
+  (what someone else added since left aside, `editorChange` in src/model/lens.ts) and send one add, edit or move
+  through the axis op; anything else is still written whole.
 

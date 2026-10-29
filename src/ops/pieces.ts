@@ -7,7 +7,10 @@
 import { KIND_NAME, PIECE_MIN, PIECE_NAME_MAX, PIECE_SIZE, canOpen, hostKinds, kindOfPiece, sticks } from '../model/pieces'
 import { CANVAS_NAME_MAX, MAIN, MAIN_NAME, canvasGoes, canvasOf, canvasTextOn, canvasesOf, withStuck } from '../model/canvases'
 import { GRID, snap } from '../model/grid'
-import { SCALES } from '../model/scales'
+import { TEMPLATES as MATRIX_TEMPLATES_ALL } from '../model/matrix'
+import { TEMPLATES as TABLE_TEMPLATES_ALL } from '../model/table'
+import { matrixSetupFrom, type MatrixSpec } from './matrix'
+import { tableSetupFrom, type TableSpec } from './table'
 import { kindOf, type Label } from '../model/labels'
 import { labelBox } from '../model/labelBox'
 import { clearSpotFor, piecesShown, sectionHolds, type Box } from '../model/textPlace'
@@ -73,9 +76,9 @@ function moveTo(ctx: OpCtx, op: string, out: Writes, p: P, canvas: string, x: nu
 
 function startSetup(ctx: OpCtx, kind: PieceKind): Record<string, unknown> | undefined {
   const id = () => ctx.newId().slice(-8)
-  if (kind === 'matrix')
-    return { rows: { noun: 'rows', items: [{ id: id(), name: 'row 1' }, { id: id(), name: 'row 2' }] }, cols: { noun: 'columns', items: [{ id: id(), name: 'column 1' }, { id: id(), name: 'column 2' }] }, cell: 'scale', steps: SCALES[1].steps, reading: true }
-  if (kind === 'table') return { rows: { rules: [], items: [] }, cols: ['type', 'plane', 'status', 'tags'].map((field) => ({ id: id(), field })) }
+  // A matrix starts blank (D-204), a table with every card (D-209): the templates in src/model/matrix.ts and table.ts.
+  if (kind === 'matrix') return JSON.parse(JSON.stringify(MATRIX_TEMPLATES_ALL.find((t) => t.key === 'blank')!.setup(id)))
+  if (kind === 'table') return JSON.parse(JSON.stringify(TABLE_TEMPLATES_ALL[0].setup(id)))
   if (kind === 'kanban') return { cols: [{ id: id(), name: 'todo' }, { id: id(), name: 'doing' }, { id: id(), name: 'done', done: true }] }
   if (kind === 'documents') return { view: 'table', pageSize: 10 }
   return undefined
@@ -90,6 +93,10 @@ export type CreatePieceArgs = {
   canvas: string
   // A matrix's, table's, deck's, timeline's or documents list's setup; left out, a blank one.
   setup?: Record<string, unknown>
+  // A matrix's or a table's setup from typed arguments (S7: src/ops/matrix.ts' matrixSetupFrom, table.ts'
+  // tableSetupFrom), converted to the stored setup; instead of setup.
+  matrix?: MatrixSpec
+  table?: TableSpec
   // A document piece: the document it shows (shared: a private one is shared first, by a person).
   doc?: string
   size?: { w: number; h: number }
@@ -149,7 +156,11 @@ export function createPiece(ctx: OpCtx, args: CreatePieceArgs): Plan {
   } else if (hostShown) spot = { x: hostShown.x + hostShown.w + STICK_GAP, y: hostShown.y }
   else spot = clearSpotFor(size, [...shown, ...ws.labels.filter(canvasTextOn(canvas)).map(labelBox)])
 
-  const setup = key ? (args.setup ? structuredClone(args.setup) : startSetup(ctx, kind)) : undefined
+  if (args.matrix !== undefined && kind !== 'matrix') refuse(op, `${a(KIND_NAME[kind])} has no matrix setup`, 'say kind: matrix, or leave matrix out')
+  if (args.table !== undefined && kind !== 'table') refuse(op, `${a(KIND_NAME[kind])} has no table setup`, 'say kind: table, or leave table out')
+  if ((args.matrix !== undefined || args.table !== undefined) && args.setup !== undefined) refuse(op, `setup and ${kind} both say how it's set up`, `give ${kind} (typed) and leave setup out`)
+  const typed = args.matrix !== undefined ? matrixSetupFrom(ctx, op, args.matrix) : args.table !== undefined ? tableSetupFrom(ctx, op, args.table) : undefined
+  const setup = key ? (typed ? (typed as unknown as Record<string, unknown>) : args.setup ? structuredClone(args.setup) : startSetup(ctx, kind)) : undefined
   const name = typeof args.name === 'string' ? args.name.trim().slice(0, PIECE_NAME_MAX) : ''
   const now = ctx.now
   let data: Record<string, unknown> = {

@@ -3,10 +3,9 @@
 // later) and its builder. Plain data and functions: the agent's tools, validate's op names and onboarding read it.
 // Later steps (S5–S8) add theirs.
 //
-// What S4 left for later steps (still plain tracked() writes in data/):
-// - competitorFeatures.ts' dropCriterionScores (a criterion taken off a feature, with its scores): S7, as a criterion
-//   delete op that works out the matrix cells it takes itself (today the component passes them and a batch callback).
-// - (S6 did places.ts' planeGoes and runOps: the plane delete is pieces.ts' pieceCascade now.)
+// What S4 left for later steps: competitorFeatures.ts' dropCriterionScores is update_card since S7 (criteria taken off a
+// feature take their matrix cells and comparison scores, src/ops/lens.ts' criterionCascade); S6 did places.ts'
+// planeGoes and runOps (the plane delete is pieces.ts' pieceCascade).
 //
 // S5 (text.ts): every write in data/labels.ts is a wrapper (addLabel → create_text, updateLabel → update_text,
 // deleteLabel → delete, moveMany → arrange). Left: arrange's layouts (line up, space out: CardPanel's maths);
@@ -28,6 +27,12 @@ import { placeOn, takeOff } from './places'
 import { arrange, createText, HEADING_SIZES, TEXT_KINDS, TEXT_SCALES, updateText } from './text'
 import { createCanvas, createPiece, moveCanvas, moveToCanvas, PIECE_KINDS, piecesOff, piecesOnPlan, rename, resize, updatePiece } from './pieces'
 import { deleteAny } from './delete'
+import { MATRIX_TEMPLATES, SCALE_KEYS, updateMatrix } from './matrix'
+import { TABLE_TEMPLATES, updateTable } from './table'
+import { axisAdd, axisRemove, axisUpdate, updateCell } from './lens'
+import { CARD_TYPES as TYPES5 } from '../model/cards'
+import { CELL_KINDS, CONFIDENCES, FIELDS, OWN_KINDS, TONES, TOTALS_AS, TOTALS_AT } from '../model/shapes'
+import { RULE_FIELDS } from '../model/source'
 import { LABEL_COLORS } from '../model/labels'
 import type { OpCtx, Plan } from './types'
 import { refuse } from './util'
@@ -37,7 +42,7 @@ export type ArgSchema = { type?: string | string[]; anyOf?: ArgSchema[]; descrip
 
 export type OpDef = {
   name: string
-  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'piece' | 'canvas' | 'any'
+  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'piece' | 'canvas' | 'matrix' | 'table' | 'lens' | 'any'
   summary: string
   args: ArgSchema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -97,6 +102,90 @@ const textStyle = (nullable: boolean): Record<string, ArgSchema> => {
 }
 
 const evidenceArgs = { kind: { type: 'string', enum: EVIDENCE_KINDS }, text: s('what was learned, a sentence or a quote'), stance: { type: 'string', enum: ['supports', 'contradicts'] }, source: s('who or where'), url: s(), date: s('YYYY-MM-DD') }
+// S7: a matrix's and a table's setup, typed (converted to the stored setup by src/ops/matrix.ts and table.ts).
+const stepsArg: ArgSchema = {
+  anyOf: [{ type: 'string', enum: SCALE_KEYS }, { type: 'array', items: { anyOf: [s('a label'), obj({ label: s(), glyph: s('≤ 4 characters'), tone: { type: 'string', enum: TONES } }, ['label'])] } }],
+  description: `a scale (${SCALE_KEYS.join(', ')}) or 2–9 step labels, low to high`,
+}
+const axisSpec = (side: string) =>
+  obj(
+    {
+      type: { type: 'string', enum: TYPES5, description: 'every card of this type joins by itself (new ones too)' },
+      plane: s('only the type\'s cards on this plane (id or name)'),
+      cards: ids('cards added by hand (any type)'),
+      names: { type: 'array', items: s(), description: 'typed names' },
+      noun: s(`what one of the ${side} is called`),
+      unfold: b('features only: each opens into what it is judged on (its criteria)'),
+    },
+    [],
+    `the ${side}`,
+  )
+const matrixOptions = (nullable: boolean): Record<string, ArgSchema> => {
+  const e = (values: readonly string[], description: string): ArgSchema => (nullable ? { anyOf: [{ type: 'string', enum: values }, { type: 'null' }], description } : { type: 'string', enum: values, description })
+  const f = (description: string): ArgSchema => (nullable ? { type: ['boolean', 'null'], description } : b(description))
+  return {
+    cell: { type: 'string', enum: CELL_KINDS, description: 'what every cell holds: a step of a scale, a number or a short text' },
+    scale: { type: 'string', enum: SCALE_KEYS, description: 'the steps, from a scale' },
+    steps: stepsArg,
+    unit: nullable ? orNull('number cells: €, h, %…') : s('number cells: €, h, %…'),
+    not_relevant: f('allow "doesn\'t apply" (—): left out of the totals'),
+    confidence: f('allow marking guesses (~ inferred, ? a guess)'),
+    totals: f('show totals for each row and column'),
+    totals_at: e(TOTALS_AT, 'where the totals are'),
+    totals_as: e(TOTALS_AS, 'what the totals look like'),
+    marks: f("a scale's cells as their glyphs instead of filled squares"),
+  }
+}
+const ruleSpec = obj(
+  { field: { type: 'string', enum: RULE_FIELDS }, not: b('is not'), values: { type: 'array', items: s(), description: 'any of these: plane ids or names, card types, statuses, tags; title: the words it holds' } },
+  ['field', 'values'],
+)
+const columnSpec = obj(
+  {
+    field: { type: 'string', enum: FIELDS, description: "a card field, shown read-only (leave kind out)" },
+    name: s('its head'),
+    kind: { type: 'string', enum: OWN_KINDS, description: 'a column of its own: its values (name needed)' },
+    unit: s('number columns'),
+    steps: stepsArg,
+    width: n('px, 48–640'),
+  },
+  [],
+  '{ field } or { name, kind }',
+)
+const tableSpec = obj(
+  {
+    template: { type: 'string', enum: TABLE_TEMPLATES, description: 'cards: every card; features; competitors; blank: rows you name' },
+    rules: { type: 'array', items: ruleSpec, description: 'every rule must hold; none: every card' },
+    manual: b('only the rows added by hand (a list of names)'),
+    cards: ids('cards added by hand'),
+    names: { type: 'array', items: s(), description: 'typed rows' },
+    columns: { type: 'array', items: columnSpec, description: "replaces the template's columns (the name column is always first)" },
+    sort: obj({ col: s('a column id or name; name for the rows'), desc: b() }, ['col']),
+    page_size: n('rows a page'),
+  },
+  [],
+  'table only: its setup, typed',
+)
+const matrixSpec = obj(
+  { template: { type: 'string', enum: MATRIX_TEMPLATES, description: 'compare: features × competitors; pain: problems × customers; score: ideas × criteria; blank' }, rows: axisSpec('rows'), cols: axisSpec('columns'), ...matrixOptions(false) },
+  [],
+  'matrix only: its setup, typed (left out: blank)',
+)
+const axisPatch = (side: string) =>
+  obj(
+    {
+      type: { anyOf: [{ type: 'string', enum: TYPES5 }, { type: 'null' }], description: 'null: only what was added by hand' },
+      plane: orNull('narrow the type to one plane (id or name); null: every plane'),
+      noun: orNull(`what one of the ${side} is called`),
+      unfold: b('features: open into their criteria'),
+      open: ids('feature cards shown open'),
+      fold: ids('feature cards shown folded'),
+      bring_back: b('the cards taken out come back'),
+    },
+    [],
+    `the ${side}`,
+  )
+const axisArg = { type: 'string', enum: ['rows', 'cols'] } as ArgSchema
 const featureFields = { name: s(), description: s(), category: s(), availability: { type: 'string', enum: AVAILABILITIES }, url: s() }
 
 export const OPS: OpDef[] = [
@@ -272,7 +361,9 @@ export const OPS: OpDef[] = [
         kind: { type: 'string', enum: PIECE_KINDS },
         name: s(),
         canvas: s('the canvas it goes on (main for the first)'),
-        setup: { type: 'object', description: "matrix, table, deck, timeline or documents list: its setup as the piece stores it; left out, a blank one" },
+        matrix: matrixSpec,
+        table: tableSpec,
+        setup: { type: 'object', description: "deck, timeline or documents list: its setup as the piece stores it; left out, a blank one (a matrix or table: use matrix / table)" },
         doc: s('document only: the shared document it shows'),
         stuck_to: s('matrix, table, deck: the plane it sticks to; timeline: a deck or a plane'),
         where: obj({ near: s('right of this piece') }, ['near'], 'left out: beside what it sticks to, else under everything on the canvas'),
@@ -314,6 +405,85 @@ export const OPS: OpDef[] = [
     summary: "Move pieces and the canvas's text to another canvas, with what's stuck to them and what their sections hold; they land where they were or the nearest clear place.",
     args: obj({ items: ids('pieces and text on the canvas'), canvas: s('where they go'), from: s('the canvas they are on (left out: the one shown)') }, ['items', 'canvas']),
     build: moveToCanvas,
+  },
+  {
+    name: 'update_matrix',
+    kind: 'matrix',
+    summary: "Change a matrix's setup: start over from a template, the cells' kind, steps, unit, options, totals, or an axis (its type, plane, name, unfolding, cards shown open, taken-out cards brought back).",
+    args: obj({ id: s('the matrix'), template: { type: 'string', enum: MATRIX_TEMPLATES }, name: s(), rows: axisPatch('rows'), cols: axisPatch('columns'), ...matrixOptions(true) }, ['id']),
+    build: updateMatrix,
+  },
+  {
+    name: 'update_table',
+    kind: 'table',
+    summary: "Change a table's setup: start over from a template, its rules (a plane rule set by sticking stays), only-by-hand, sort, rows a page, taken-out cards brought back.",
+    args: obj(
+      {
+        id: s('the table'),
+        template: { type: 'string', enum: TABLE_TEMPLATES },
+        name: s(),
+        rules: { type: 'array', items: ruleSpec, description: 'replaces the rules' },
+        manual: b(),
+        sort: { anyOf: [obj({ col: s('a column id or name; name for the rows'), desc: b() }, ['col']), { type: 'null' }], description: 'null: the rules\' order' },
+        page_size: { type: ['number', 'null'], description: 'rows a page; null: all on one' },
+        bring_back: b(),
+      },
+      ['id'],
+    ),
+    build: updateTable,
+  },
+  {
+    name: 'axis_add',
+    kind: 'lens',
+    summary: "Add a row or column to a matrix (a card, or a typed name; a card of the axis's type taken out comes back), a row to a table (a card or a name), or a column to a table ({ field } read-only, or { name, kind } its own).",
+    args: obj({ id: s('the matrix or table'), axis: axisArg, card: s(), name: s(), column: columnSpec, handle }, ['id', 'axis']),
+    build: axisAdd,
+  },
+  {
+    name: 'axis_remove',
+    kind: 'lens',
+    summary: "Take a row or column out of a matrix or table: a card its type or rules bring is hidden (its cells kept for when it comes back), one added by hand goes with its cells; a table's column goes with its cells. A criterion row: update_card.",
+    args: obj({ id: s('the matrix or table'), axis: axisArg, entry: s('its key, a card id or title, a typed name or a column id or name') }, ['id', 'axis', 'entry']),
+    build: axisRemove,
+  },
+  {
+    name: 'axis_update',
+    kind: 'lens',
+    summary: "Rename a typed row or column (a card's row reads its title: update_card), or change a table's column: name, kind, unit, steps, width (the name column: width only), move left or right.",
+    args: obj(
+      {
+        id: s('the matrix or table'),
+        axis: axisArg,
+        entry: s('its key or name; a column id or name, `name` for the name column'),
+        name: s(),
+        kind: { type: 'string', enum: OWN_KINDS },
+        unit: orNull('number columns'),
+        steps: { ...stepsArg, description: `scale columns only: a scale (${SCALE_KEYS.join(', ')}) or 2–9 step labels, low to high` },
+        width: { type: ['number', 'null'], description: 'px 48–640; null: its own' },
+        move: { type: 'string', enum: ['left', 'right'] },
+      },
+      ['id', 'axis', 'entry'],
+    ),
+    build: axisUpdate,
+  },
+  {
+    name: 'update_cell',
+    kind: 'lens',
+    summary: "Fill a matrix's or table's cell, rows and columns by name (a card's title, a typed name, `Feature › criterion`, a column's name) or key: its value (a step's label or 1…, a number, a text; a check true/false), a note, doesn't-apply, how sure; null clears one, clear: true empties the cell.",
+    args: obj(
+      {
+        id: s('the matrix or table'),
+        row: s('the row: key or name'),
+        col: s('the column: key or name'),
+        value: { type: ['string', 'number', 'boolean', 'null'], description: 'as the cells say; null clears it' },
+        note: orNull('null takes it away'),
+        not_relevant: { type: ['boolean', 'null'], description: 'matrix: "doesn\'t apply" (—), if allowed' },
+        confidence: { anyOf: [{ type: 'string', enum: CONFIDENCES }, { type: 'null' }], description: 'matrix: how sure, if guesses are allowed' },
+        clear: b('everything in the cell taken away'),
+      },
+      ['id', 'row', 'col'],
+    ),
+    build: updateCell,
   },
 ]
 
@@ -362,3 +532,12 @@ export function buildBatch(ctx: OpCtx, steps: Step[]): Plan[] {
 // takeOffCanvas → take_off). Left: placeDocument sharing the document in the same step (documents aren't an ops
 // collection yet: a plain tracked() batch, as before). The UI's drag still passes exact boxes for what follows a plane
 // (it draws them while dragging); arrange and resize work them out themselves (model/pieceMoves.ts' followerMoves).
+
+// S7 (matrix.ts, table.ts, lens.ts; pure helpers in src/model/{matrix,table,lens}.ts): every write in data/matrix.ts and
+// data/table.ts is a wrapper (setSetup/setPart/setOpen → update_matrix; setTable/setTablePart/setRows → update_table,
+// or the axis op when the editors' whole list is one change; addNamed/addCardEntry/addNamedRow/addCardRow/addColumn →
+// axis_add; removeEntry/removeRow/removeColumn → axis_remove; renameEntry/renameRow/editColumn/setColumnWidth/
+// moveColumn → axis_update; setCell → update_cell, a set with merge). create_piece takes a typed `matrix` or `table`
+// (templates, axes by type/plane/cards/names, rules, columns), converted to the stored setup. Rows and columns are
+// named by key or name (a card's title, a typed name, `Feature › criterion`, a column's name), ambiguous → refused with
+// the candidates. A criterion is update_card's `criteria` (taking one off cascades).

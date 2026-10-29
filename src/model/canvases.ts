@@ -5,7 +5,7 @@ import type { Card } from './cards'
 import type { Label } from './labels'
 import type { Place } from './placement'
 import type { Piece } from '../data/model'
-import type { Cell } from '../data/matrix'
+import type { Cell } from './matrix'
 import type { Edge } from './edges'
 import type { Task } from '../data/tasks'
 
