@@ -27,7 +27,7 @@ export const useReads = (wid: string, uid: string | null) => useDoc<ThreadReads>
 
 // Everyone in the workspace, for `@` (D-166): the people list, up to 200.
 export const useMembers = (wid: string, on = true) =>
-  useQuery<Member>(on ? query(collection(db(), 'workspaces', wid, 'members'), orderBy('name'), limit(200)) : null, `${wid}/members/all`)
+  useQuery<Member>(on && firebase ? query(collection(db(), 'workspaces', wid, 'members'), orderBy('name'), limit(200)) : null, `${wid}/members/all`)
 
 export type NewThread = { on: ThreadTarget; targetId: string; planeId: string; at: [number, number] }
 
