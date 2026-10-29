@@ -110,7 +110,7 @@ feature comes back as a piece, and check them with the user then.
   items shared; pieces moved with what's stuck to them, D-306; one piece on several, `pieceSpots/`, `⧉ 2`, D-307). Each canvas (`/workspaces/<id>`, D-174): backdrop at full strength, no pages, no view tabs; 1.0's views
   come back as pieces (D-177, D-248). Settings keep you, general, people and export.
 - Pieces (D-176): `pieces/{id}`, x/y/w/h in canvas px, a name. The side nav's `+` puts one at the screen's middle or the
-  nearest clear spot, in edit mode (D-238). Drag pans, the wheel zooms round the pointer (0.1–4); over a plane too,
+  nearest clear spot, in edit mode (D-238); drawn oldest first, the newest on top (D-310). Drag pans, the wheel zooms round the pointer (0.1–4); over a plane too,
   out of focus (D-186). Fit (side nav, `0`; at once on a workspace's first open in a tab) frames all planes (D-202).
 - Edit mode (D-180, D-182, D-183): a press on a piece is its own; only in edit mode does it move, resize (snapped to the
   canvas's 25 px grid, alt free, ≥ 325 × 200), take a name or get deleted; edit stays on until pressed off. Deleting

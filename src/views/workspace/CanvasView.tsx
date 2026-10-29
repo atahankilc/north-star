@@ -95,7 +95,8 @@ export function CanvasView() {
   // Looked up by id (a thread's plane, a focus asked for), every piece.
   const wsNow = useWsNow()
   // A piece shared from another canvas is here at its spot (D-302's session 3); its moves write that spot.
-  const pieces = useMemo(() => piecesOn(canvas, everyPiece, spots), [everyPiece, canvas, spots])
+  // Drawn oldest first, so the newest is on top (D-310): one added over another is never under it.
+  const pieces = useMemo(() => piecesOn(canvas, everyPiece, spots).sort((a, b) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1)), [everyPiece, canvas, spots])
   setSpotted(pieces.filter((p) => p.spot).map((p) => p.id))
   const labels = useMemo(() => everyLabel.filter((l) => l.pieceId !== CANVAS || canvasTextOn(canvas)(l)), [everyLabel, canvas])
   const { user } = useAuth()

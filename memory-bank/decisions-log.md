@@ -5631,3 +5631,13 @@ shows anyway.**
 - *Verified* headless (emulators): ideas hidden (`[filter · 1]`), then an idea and a `relates` link written from outside
   both showed; out to the canvas all cards back; in again `[filter]` with nothing narrowing; a deck filtered to
   `nobody`, a task given to Alice written after showed; out and in, every task; no filter keys in localStorage; build.
+
+### D-310 · 2026-10-29 · Accepted (adds to D-238; the user: "yeni bir component koyarken direkt baktığım yere koyuyor ya, bazen başka bir componentin üzerindeyken yeni component koyma yapabiliyor ve bu durumda mesela yeni gelen component coktan var olanın arkasına düşebiliyor. Bu yüzden yeni gelen componenti oynatmak da imkansız oluyor", then "Direkt yeni eklenen en üste çıksın desek olmaz mı?")
+- *Decision:* pieces on a canvas are drawn oldest first (`createdAt`, then id), so the newest is always on top; one
+  added over another (nearClear found no clear spot, D-238) is never under it and can be moved at once.
+- *Why:* they were drawn in Firestore's order (random ids), so a new piece fell behind an older one about half the
+  time, and the older one took its presses.
+- *Alternatives:* also lifting the selected or edited piece on top: turned down by the user, since edit mode stays on
+  for several pieces at once and an older one in edit mode would cover the new one; a stored order (`z`), bring to
+  front / send back: not needed for this.
+- *Verified:* tsc only.
