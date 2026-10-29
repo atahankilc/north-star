@@ -9,8 +9,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import { Color, Vector2, type ShaderMaterial } from 'three'
-import { useTheme } from '../state/theme'
-import { palettes } from '../styles/tokens'
+import { usePalette, useTheme } from '../state/theme'
 import { introTime, sceneTime } from './sceneClock'
 
 const vertexShader = /* glsl */ `
@@ -193,10 +192,8 @@ export function AmbientField({ uvScale }: { uvScale: Vector2 }) {
     }),
     [],
   )
-  const accents = useMemo(() => {
-    const p = palettes[theme]
-    return [new Color(p.magenta), new Color(p.yellow), new Color(p.cyan), new Color(p.ember), new Color(p.dawn)]
-  }, [theme])
+  const p = usePalette()
+  const accents = useMemo(() => [new Color(p.magenta), new Color(p.yellow), new Color(p.cyan), new Color(p.ember), new Color(p.dawn)], [p])
 
   // Write through the material: R3F copies the uniforms prop, so the memo object isn't the live one.
   useFrame(() => {

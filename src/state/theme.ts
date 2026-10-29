@@ -60,12 +60,9 @@ query?.addEventListener('change', () => {
   if (next !== theme) useTheme.setState({ theme: next })
 })
 
+// WebGL's colours in the theme shown (D-321); the DOM's come from tokens.css.
 export function usePalette(): Palette {
   return palettes[useTheme((s) => s.theme)]
-}
-
-export function currentPalette(): Palette {
-  return palettes[useTheme.getState().theme]
 }
 
 const ACCENT_KEYS = ['magenta', 'cyan', 'yellow', 'blue', 'green'] as const

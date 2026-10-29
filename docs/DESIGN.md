@@ -46,11 +46,12 @@ References in [design/references/](design/references/):
 **Light theme (D-069):** dark is the default; Settings → display → theme switches to light (or `system`). Light swaps the
 tokens above for neutral light grey (`--bg #f5f5f5`), white surfaces, near-black text and darker accents (magenta `#db1a7a`, cyan `#0a979c`,
 yellow `#a87d00`, blue `#2a5fe0`, green `#0f9a4b`); the ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
-(`[data-theme='light']`) and `palettes.light` in `tokens.ts`. Text on an accent fill uses `--on-accent`; tints use `--wash-*`.
+(`[data-theme='light']`); what WebGL draws (bg, accents, the night sky) also in `palettes.light` in `tokens.ts`, read through
+`usePalette()` (D-321). Text on an accent fill uses `--on-accent`; tints use `--wash-*`.
 
 **Diff colours (D-096, 1.0's assistant):** the assistant's preview marks what a proposal does with the checklist's signs in their own colours,
 apart from the type colours: `--diff-new` `+` (`#a6ff3d`), `--diff-edited` `~` (`#ff9f1c`), `--diff-moved` `→` (`#3d7bff`),
-`--diff-deleted` `−` (`#ff4545`); darker in light (`palettes.*.diff` for WebGL). Only the sign badge, the ring and the moved
+`--diff-deleted` `−` (`#ff4545`); darker in light. Only the sign badge, the ring and the moved
 ghost carry them; a deleted item turns grey and struck through, an edit shows `was` and the old value under the new.
 
 Collaborator cursors cycle through the accents. The matrix coverage scale runs:
