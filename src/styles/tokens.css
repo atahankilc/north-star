@@ -151,6 +151,9 @@
   --piece-card-edge: transparent;
   /* A card's face: this much of its type's colour over the surface, a dark tone of its left edge (D-291). */
   --card-tint: 16%;
+  /* What the onboarding's ink sits on when it floats over pieces (D-315, onboarding.md §4): the page at 90 %, fed to the
+     hugging, feathered shade (background + box-shadow 0 0 18px 12px), one layer under all the text. */
+  --ink-shade: rgba(0, 0, 0, 0.9);
 }
 
 /* Light theme (D-069), set on <html> by src/state/theme.ts. Mirror any change in palettes.light (tokens.ts). */
@@ -167,6 +170,7 @@
   --piece-shadow: 0 14px 40px -14px rgba(0, 0, 0, 0.22);
   --piece-card-edge: #e6e6e8;
   --card-tint: 9%;
+  --ink-shade: rgba(245, 245, 245, 0.92);
   --line: #d9d9d9;
   --fg-dim: #6b6b6b;
   --fg-muted: #555555;

@@ -121,10 +121,7 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 ~06:00, lead workspace-sections-canvas: O0–O4 committed.
-O5 building in two halves: O5a (Coach, Pages = welcome + what's new, Lesson, Nudge, EmptyHint, Demo, place.ts,
-`--ink-shade`) and O5b (KindGuide, Guide, keys.ts); the lead wrote src/onboarding/looks.ts (the dev-only look switch).
-Then O6 (mount + anchors + view hooks: ask b2 and the third session first), O7 (director + scenes).
+2026-10-29 ~06:00, lead workspace-sections-canvas: O0–O5 committed. Next O6 (mount + anchors + view hooks: ask b2 and the third session first), O7 (director + scenes).
 Agreed with b2: S3's `onTracked` is in (events.ts uses it; ops will fill `meta.kind`/`created` from S4 on).
 The uncommitted 2-line hunk in tests/rules.test.mjs (and CanvasView/WorkspaceLayout/canvasView.ts) is a third
 session's: commit only our own hunks. Emulators already run (someone's): never stop them; rules tests run as a copy of
@@ -164,17 +161,38 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   "busy" forever, confirmed deletes after a cancel, a start/stop race, per-kind pending for the deck's filter) ·
   headless: open, + plane, edit, focus, card, link, deck task drag each once in order (link/deck made by data calls; O6
   redoes them through the UI). Costs: readBusy 0.45 ms at 30k nodes (call only while something waits).
+- O5 · (this commit) · the coach, every look a/b/c behind looks.ts's dev-only switch (`?look=welcome:b`,
+  `window.__onboardingLook`; absent from production): Coach.tsx (starts progress/events/busy, welcome vs what's new,
+  the queue's surface, `?`, the kind guide and empty states beside the queue), Pages (welcome + what's new), Lesson
+  (anchored by `data-learn`, place.ts: right/left/above/below, past cards, never over a panel, the taught piece or the
+  beside pane; bottom-middle fallback), Nudge, EmptyHint, Demo (the demo.html frame host, postMessage), KindGuide
+  (inside the `+` menu's panel, never takes its keys), Guide (`?`: areas folding, keys, tips, plays a lesson), words.ts,
+  guideModel.ts, keys.ts, `--ink-shade`; dev helpers devMount.tsx / devGuides.tsx · reviewer: 2 rounds (esc closes a
+  lesson first, `?` → Enter reaches it, focus returns, sign-out stops the seen-state, panels never covered, tokens) ·
+  shots: /…/tmp/shots/O5a-*, O5b-* (to move into the gallery) · not mounted yet (O6).
 
 ### Stuck
 _(none)_
 
 ### For the user (in the morning)
+- Uncommitted `setFitter`/`fitHere` edits (src/state/canvasView.ts, CanvasView.tsx, WorkspaceLayout.tsx) and a 2-line
+  presence-test move in tests/rules.test.mjs belong to no running session (asked b2, steward-50, steward-05, the audit
+  session: not theirs). The run never commits or reverts them; O6 adds its one-line hooks beside them and commits only
+  its own lines. Commit or drop them yourself.
 - Deploy the rules once O1 is committed and you've read them: `npm run test:rules`, then
   `npx firebase deploy --only firestore:rules --project north-star-db` (until then, seen-state lives in the browser).
 - **Pick a look** (Q-028): every option is built; compare them in the shots gallery or live with `?look=…` (onboarding.md §11). Say which per frame; the others get deleted.
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
+- **O6 must:** Kanban.tsx:339, FilterDock.tsx:38, KanbanFilterDock.tsx:47 (window capture handlers) skip events from
+  inside `[role=dialog]`: Backspace on the coach's welcome deleted a selected task (O5 review). Before mounting Coach.
+- O7: one demo frame reused, scenes swapped in place (today a new scene reloads demo.html); preload on idle; measure in
+  O16 what opening `+` costs with the kind guide's frame.
+- O5: the first esc goes to window handlers set up before the lesson (a selected task/card, following), then the
+  lesson; `keys: ? → tips off` turns off every tip (give the kind guide its own switch in `?`?); progress.ts imports
+  firebase/auth directly: a `watchUser()` in src/data/auth.ts would be cleaner.
+- O5: the coach ships all three looks of each frame (~517 KB JS + 138 KB CSS unminified) until the user picks.
 - O1: `roleHere`/`canEditHere` in src/onboarding/audience.ts copy `roleOf`/`canEditIn` (src/data/workspaces.ts, which
   loads Firestore): move them into a pure module under src/model once the agent run's model split is committed.
 - O1: the rules bound `seen`/`armed` counts, not their values' sizes (rules can't loop); only your own doc is at stake.

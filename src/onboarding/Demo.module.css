@@ -1,0 +1,76 @@
+/* A live demo (D-315, onboarding.md §4's note): the scene 16:10, a strip under it (never on it). */
+.demo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.scene {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  border: var(--demo-frame, 0);
+}
+
+/* The frame at the stage's size, scaled from its top-left into the slot; faint until the scene is drawn. */
+.frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.scene[data-ready] .frame {
+  opacity: 1;
+}
+
+.strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 5px var(--demo-strip-x, 0) 6px;
+  /* A look draws lines round the strip (the window's) or none (a card's); set by what holds the demo. */
+  border-top: var(--demo-strip-line, 0);
+  border-bottom: var(--demo-strip-line-b, 0);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.what {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.what b {
+  color: var(--accent-magenta);
+  font-weight: 400;
+}
+
+.toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.toggle:hover,
+.toggle:focus-visible {
+  color: var(--fg);
+}
+
+.still {
+  color: var(--fg-dim);
+}

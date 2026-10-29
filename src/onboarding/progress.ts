@@ -3,6 +3,8 @@
 // it while started, from another tab or device), other tabs' localStorage writes too. The coach calls startFor(uid)
 // on sign-in and stop() on sign-out. No components here.
 import { create } from 'zustand'
+import { onAuthStateChanged } from 'firebase/auth'
+import { firebase } from '../data/firebase'
 import {
   readLocalSeen,
   seenWriter,
@@ -74,6 +76,14 @@ function view(s: SeenState | null) {
     ? { state: s, seen: s.seen, armed: s.armed, tipsOff: s.tipsOff, lastRelease: s.lastRelease, welcome: s.welcome ?? null }
     : { state: null, seen: {}, armed: [], tipsOff: false, lastRelease: '', welcome: null }
 }
+
+// Who is signed in, as it changes (the person's uid, or null signed out). The coach unmounts with the tree on
+// sign-out, so the store ends itself: a different person (or none) stops the old one's watches and writes. Firebase's
+// auth by default; tests pass their own (`setAuthWatch`).
+export type AuthWatch = (on: (uid: string | null) => void) => () => void
+const firebaseAuth: AuthWatch = (on) => (firebase?.auth ? onAuthStateChanged(firebase.auth, (u) => on(u?.uid ?? null)) : () => {})
+let authWatch: AuthWatch = firebaseAuth
+export const setAuthWatch = (w: AuthWatch | null) => void (authWatch = w ?? firebaseAuth)
 
 // How long stop() waits for the last write (an offline setDoc never resolves).
 const STOP_WAIT = 3000
@@ -187,6 +197,12 @@ export const useProgress = create<Progress>((set, get) => {
           if (!here) set({ hadDoc: true })
         }),
       ]
+      // Last, so a sign-out heard at once (before this returns) still finds the watches above to end.
+      const offAuth = authWatch((now) => {
+        if (mine === session && now !== uid) void get().stop()
+      })
+      if (mine === session) unwatch.push(offAuth)
+      else offAuth()
     },
 
     async stop() {

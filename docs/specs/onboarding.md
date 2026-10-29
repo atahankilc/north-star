@@ -73,7 +73,7 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
    transition, typing, or following someone is going on. It waits in a queue (§5.4) and shows when the person is free.
    A lesson *about* one of those surfaces says so (`within`: `wizard`, `finder`, `menu`, `setup`, `settings`,
    `threads`, `following`, `typing`) and shows on it: that one busy source (and typing inside it) doesn't hold it back.
-3. **Short.** ≤ 4 pages a lesson (the welcome 4), a title ≤ 6 words, a body ≤ 25 words, one demo or none. Keys are
+3. **Short.** ≤ 4 pages a lesson (the welcome 4; the kind guide replayed from `?` pages through its rows, one per kind), a title ≤ 6 words, a body ≤ 25 words, one demo or none. Keys are
    written as the app writes them (`⌘F`, `esc`, `0`). Lowercase actions, uppercase labels, the app's two voices.
 4. **Next to what it explains, never over it.** An anchored lesson sits beside its anchor (`src/ui/floating.ts`), and
    never covers the anchor, the piece being taught, or the right panel. When there's no room, it goes to the middle
@@ -272,6 +272,8 @@ scripts/check-lessons.mjs    the lint (§8)
   it in `after`, so they may show first (harmless). `check:lessons` fails on two lessons for a shared role that one
   event can trigger together unless `after` or `unless` orders them (directly or through a chain).
 - `tipsOff`: nothing opens by itself; `?` still works; what's new still marks a dot on `?` instead of opening.
+- **Beside the queue**: the kind guide and the empty states never hold its one slot. The coach runs them itself (an
+  empty state from its trigger until its `doneWhen`, which marks it seen; the kind guide while the `+` menu is open).
 
 ### 5.5 Events (events.ts), mostly without touching views
 | Source | Events |

@@ -347,8 +347,10 @@ const walk = (dir) => {
   }
 }
 walk(at('src/').pathname)
+// Anchors count only where the app draws them: the coach's own selectors (`[data-learn="plus"]`) and the demo don't.
 const learnIn = new Set()
-for (const p of srcFiles) for (const m of readFileSync(p, 'utf8').matchAll(/data-learn(?:=|'?\s*:\s*)\{?\s*["'`]([\w-]+)["'`]/g)) learnIn.add(m[1])
+const coachOrDemo = /[\\/]src[\\/](onboarding|demo)[\\/]/
+for (const p of srcFiles.filter((p) => !coachOrDemo.test(p))) for (const m of readFileSync(p, 'utf8').matchAll(/data-learn(?:=|'?\s*:\s*)\{?\s*["'`]([\w-]+)["'`]/g)) learnIn.add(m[1])
 const eventsFile = at('src/onboarding/events.ts')
 const eventsSrc = existsSync(eventsFile) ? readFileSync(eventsFile, 'utf8') : ''
 // Emitted: `learn('e'` / `emit('e'` calls, or the strings of an exported EMITS list.

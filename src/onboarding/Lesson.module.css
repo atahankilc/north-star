@@ -1,0 +1,347 @@
+/* A lesson (D-315, onboarding.md §4.3): three looks (Q-028; mocks: docs/specs/onboarding-preview/ preview.css §2).
+   Fixed to the screen at z 20 (above the HUD and the right panel, under the finder and the toast); tokens only. */
+.a,
+.b,
+.c {
+  position: fixed;
+  z-index: 20;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.sp {
+  flex: 1;
+}
+
+.num {
+  color: var(--accent-magenta);
+}
+
+.ok {
+  color: var(--accent-cyan);
+}
+
+.newChip {
+  padding: 0 4px;
+  background: var(--accent-magenta);
+  color: var(--on-accent);
+  letter-spacing: var(--track-label);
+}
+
+.title,
+.titleB,
+.titleC {
+  margin: 0;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  letter-spacing: var(--track-title);
+  line-height: 1.2;
+}
+
+.body {
+  margin: 0;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* The lead (D-266): straight, magenta, a square tip on the anchor. */
+.lead,
+.tip {
+  position: fixed;
+  z-index: 20;
+  background: var(--accent-magenta);
+  pointer-events: none;
+}
+
+.tip {
+  width: 5px;
+  height: 5px;
+}
+
+/* Played from `?`: in the middle over the scrim, a dialog. */
+.shade {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: var(--scrim);
+}
+
+.middle {
+  outline: none;
+}
+
+.middle > * {
+  position: relative;
+}
+
+/* ── a · the prompt card ────────────────────────────────────────── */
+.a {
+  width: 268px;
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  --demo-frame: 1px solid var(--line);
+}
+
+/* The right panel's magenta corner marks, on its left. */
+.a::before,
+.a::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  width: 7px;
+  height: 7px;
+  border-left: 1px solid var(--accent-magenta);
+  pointer-events: none;
+}
+
+.a::before {
+  top: -1px;
+  border-top: 1px solid var(--accent-magenta);
+}
+
+.a::after {
+  bottom: -1px;
+  border-bottom: 1px solid var(--accent-magenta);
+}
+
+.a[data-done] {
+  width: auto;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 10px 7px;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.top button {
+  flex: none;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* A long name gives way first (`…`), never pushing `[‹ guide] [×]` out of the card. */
+.top > span {
+  flex: none;
+}
+
+.top > .k {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.a[data-done] .top {
+  padding: 8px 12px;
+}
+
+.k {
+  color: var(--fg);
+}
+
+.demo {
+  margin: 0 10px;
+}
+
+.a .title {
+  margin: 12px 12px 0;
+}
+
+.a .body {
+  margin: 6px 12px 0;
+}
+
+.foot {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 8px 12px 9px;
+  border-top: 1px solid var(--line);
+}
+
+/* ── b · the margin note ────────────────────────────────────────── */
+.b {
+  width: 264px;
+  padding-left: 14px;
+  isolation: isolate;
+  --demo-frame: 1px solid var(--piece-edge);
+}
+
+.b[data-done] {
+  width: auto;
+}
+
+.rail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--accent-magenta);
+}
+
+/* Each block of ink on its own feathered shade, one layer under all the text (onboarding.md §4's note). */
+.ink {
+  position: relative;
+}
+
+.ink::before,
+.halo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ink-shade);
+  box-shadow: 0 0 18px 12px var(--ink-shade);
+  pointer-events: none;
+}
+
+:where(span.ink) {
+  display: inline-block;
+}
+
+.halo {
+  position: relative;
+  margin: 0;
+}
+
+.halo::before {
+  box-shadow: 0 0 22px 14px var(--ink-shade);
+}
+
+.small {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.smallIn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rule {
+  width: 1.8em;
+  height: 1px;
+  background: var(--fg-dim);
+}
+
+.tt {
+  margin-top: 12px;
+}
+
+.titleB {
+  display: inline;
+}
+
+.b .body {
+  margin-top: 8px;
+}
+
+.acts {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.chev {
+  color: var(--accent-magenta);
+}
+
+.doneLine {
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+}
+
+/* ── c · the drawer ─────────────────────────────────────────────── */
+.c {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 12px;
+  width: 440px;
+  padding: 10px 12px 10px 10px;
+  border: 1px solid var(--accent-magenta);
+  background: var(--bg);
+  --demo-frame: 1px solid var(--line);
+}
+
+.c[data-nodemo] {
+  grid-template-columns: 1fr;
+  width: 340px;
+}
+
+/* Joined to its anchor: the edge it hangs from (below) or rises from (above) is open. */
+.c[data-side='below'] {
+  border-top-color: transparent;
+}
+
+.c[data-side='above'] {
+  border-bottom-color: transparent;
+}
+
+.c[data-done] {
+  grid-template-columns: auto;
+  width: auto;
+  padding: 7px 12px;
+  border-color: var(--accent-magenta);
+}
+
+.demoC {
+  align-self: start;
+}
+
+.words {
+  min-width: 0;
+}
+
+.hd {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.hd button {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.titleC {
+  margin-top: 6px;
+}
+
+.c .body {
+  margin-top: 4px;
+}
+
+.c .acts {
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.doneC {
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}

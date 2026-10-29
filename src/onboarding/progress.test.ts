@@ -78,3 +78,26 @@ describe('progress', () => {
     expect(mem.size).toBe(0)
   })
 })
+
+describe('progress on sign-out', () => {
+  it('stops itself when the signed-in person changes (the old watches end)', async () => {
+    const { setAuthWatch } = await import('./progress')
+    let tell: ((uid: string | null) => void) | null = null
+    let ended = 0
+    setAuthWatch((on) => {
+      tell = on
+      on('u9')
+      return () => void ended++
+    })
+    useProgress.getState().startFor('u9')
+    await settle()
+    expect(useProgress.getState().uid).toBe('u9')
+    tell!('u9')
+    expect(useProgress.getState().uid).toBe('u9')
+    tell!(null)
+    await settle()
+    expect(useProgress.getState().uid).toBe(null)
+    expect(ended).toBe(1)
+    setAuthWatch(null)
+  })
+})
