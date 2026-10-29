@@ -87,6 +87,10 @@ export type Piece = {
   open?: boolean
   // The canvas it's on (D-302); missing: the first, `main`.
   canvasId?: string
+  // Never stored (D-302's session 3, src/data/canvases.ts): `spot`, the canvas it's shown on through a `pieceSpots` doc
+  // (its x/y that one's); `canvases`, every canvas it's on, its own first, when that's more than one.
+  spot?: string
+  canvases?: string[]
   createdAt: number
   updatedAt: number
 }

@@ -22,7 +22,8 @@ type State = {
   bringing: { plane: string; at: [number, number] | null; screen: [number, number] } | null
   // Pieces (and the canvas's text) to move to another canvas (D-302's session 2): the list of canvases open where it was
   // asked for (`screen`, client px).
-  toCanvas: { pieces: string[]; labels: string[]; screen: [number, number] } | null
+  // `share`: put them there as well (D-302's session 3), not moved; `where`: the canvases a shared piece is on.
+  toCanvas: { pieces: string[]; labels: string[]; screen: [number, number]; share?: boolean; where?: boolean } | null
   // The focus transition (D-184, D-185): spread in from the plane (the console's `[focus]`, not a reload), arrived (its
   // console shows), drawing back out.
   focusSpread: boolean

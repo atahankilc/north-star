@@ -90,7 +90,9 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   const focused = focusId ? data.pieces.find((p) => p.id === focusId) : undefined
   // The canvas (D-302): the focused piece's, else `?canvas=` when it's one of them, else the first.
   const asked = params.get('canvas')
-  const canvas = focused ? canvasOf(focused) : asked && (isLoading || data.canvases.some((c) => c.id === asked)) ? asked : MAIN
+  // A piece on the canvas asked for through a spot (D-302's session 3) stays on it.
+  const sharedHere = !!focused && !!asked && data.spots.some((s) => s.pieceId === focused.id && s.canvasId === asked)
+  const canvas = focused && !sharedHere ? canvasOf(focused) : asked && (isLoading || data.canvases.some((c) => c.id === asked)) ? asked : MAIN
   const shown = useShownCanvas(wid, canvas)
   const ctx = useMemo<WorkspaceCtx>(() => ({ ...data, wid, workspace, canvas: shown }), [data, wid, workspace, shown])
   const store = useWorkspaceStore(ctx)

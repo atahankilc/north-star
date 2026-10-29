@@ -116,6 +116,8 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
           lines={[
             goes.pieces.length ? `${plural(goes.pieces.length, 'piece')} on it ${goes.pieces.length === 1 ? 'goes' : 'go'}${goes.gone.length ? `, with ${plural(goes.gone.length, 'card')}` : ''}, and the text on it.` : 'Nothing is on it but its text.',
             ...(goes.stay.length ? [`${plural(goes.stay.length, 'card')} also on planes elsewhere ${goes.stay.length === 1 ? 'stays' : 'stay'} there.`] : []),
+            // A piece also on another canvas stays there (D-302's session 3).
+            ...(goes.kept.length ? [`${plural(goes.kept.length, 'piece')} also on other canvases ${goes.kept.length === 1 ? 'stays' : 'stay'} there.`] : []),
             `${UNDO_HINT} brings it back.`,
           ]}
           confirm="delete"

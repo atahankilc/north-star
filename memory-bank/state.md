@@ -37,8 +37,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   part of the above.
 
 ## Next steps (not started; ask the user which first)
-- Several canvases in a workspace (D-302, docs/specs/canvases.md): sessions 1 (D-305) and 2 (D-306, moving
-  pieces) committed, not pushed; rules deployed. Next: session 3, one piece on several canvases.
+- Several canvases in a workspace (D-302, docs/specs/canvases.md): sessions 1–3 (D-305, D-306, D-307: one
+  piece on several) committed, not pushed; rules deployed with D-307. Next: session 4 (pickers, threads, following, ⌘1–⌘9, export).
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
 - The assistant back as a piece (its rules are in decisions-1.0.md; check them with the user first). Then the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,

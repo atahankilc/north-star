@@ -15,13 +15,16 @@ import { useAuth } from './auth'
 import { useDocuments, type Doc } from './documents'
 import type { Task } from './tasks'
 import type { Place } from './places'
-import { canvasList, type Canvas } from './canvases'
+import { canvasList, canvasOf, type Canvas, type Spot } from './canvases'
 
 export type WorkspaceData = {
   // The workspace's canvases in order, `main` first even without its doc (D-302).
   canvases: Canvas[]
-  // Every piece, on every canvas (`canvasId`, D-302): what's drawn filters them to the one shown.
+  // Every piece, on every canvas (`canvasId`, D-302): what's drawn filters them to the one shown (`piecesOn`). One on
+  // more than its own says them all (`canvases`, D-302's session 3).
   pieces: WithId<Piece>[]
+  // Pieces on canvases besides their own (D-302's session 3); one whose piece or canvas is gone is skipped.
+  spots: Spot[]
   cards: Card[]
   // Text always has a space (`pieceId`); a doc without one isn't the app's and is skipped.
   labels: Label[]
@@ -55,6 +58,17 @@ function useSame<T>(list: T[]): T[] {
   return kept.current
 }
 
+// A piece on more than its own canvas (D-302's session 3) with them: the same object while it and they are the same.
+const withCanvases = new WeakMap<object, { key: string; piece: WithId<Piece> }>()
+function onCanvases(p: WithId<Piece>, canvases: string[]): WithId<Piece> {
+  const key = canvases.join(' ')
+  const was = withCanvases.get(p)
+  if (was?.key === key) return was.piece
+  const piece = { ...p, canvases }
+  withCanvases.set(p, { key, piece })
+  return piece
+}
+
 // A card on more than its home (D-281) with its planes: the same object while it and its planes are the same.
 const withPlanes = new WeakMap<Card, { key: string; card: Card }>()
 function planesOn(c: Card, planes: string[]): Card {
@@ -70,6 +84,26 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const pieces = useWorkspaceCollection<Piece>(wid, 'pieces')
   const canvasDocs = useWorkspaceCollection<Omit<Canvas, 'id'>>(wid, 'canvases')
   const canvases = useMemo(() => canvasList(canvasDocs.data), [canvasDocs.data])
+  const spotDocs = useWorkspaceCollection<Omit<Spot, 'id'>>(wid, 'pieceSpots')
+  const spots = useSame(
+    useMemo(() => {
+      const ids = new Set(pieces.data.map((p) => p.id))
+      const names = new Set(canvases.map((c) => c.id))
+      return spotDocs.data.filter((s) => ids.has(s.pieceId) && names.has(s.canvasId))
+    }, [spotDocs.data, pieces.data, canvases]),
+  )
+  // Each piece says the canvases it's on when that's more than its own; the others stay the same objects.
+  const shared = useSame(
+    useMemo(() => {
+      if (!spots.length) return pieces.data
+      const on = new Map<string, Spot[]>()
+      for (const s of spots) on.set(s.pieceId, [...(on.get(s.pieceId) ?? []), s])
+      return pieces.data.map((p) => {
+        const ss = on.get(p.id)?.filter((s) => s.canvasId !== canvasOf(p))
+        return ss?.length ? onCanvases(p, [canvasOf(p), ...ss.sort((a, b) => a.createdAt - b.createdAt).map((s) => s.canvasId)]) : p
+      })
+    }, [pieces.data, spots]),
+  )
   const customers = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.customer)
   const problems = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.problem)
   const competitors = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.competitor)
@@ -120,11 +154,11 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
       })
     }, [cards, places]),
   )
-  const all = [canvasDocs, pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs]
+  const all = [canvasDocs, spotDocs, pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs]
   // The same object while nothing in it changed (the workspace's context is built from it).
   const data = useMemo(
-    () => ({ canvases, pieces: pieces.data, cards: placed, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places }),
-    [canvases, pieces.data, placed, labels, threads, cells.data, evidence.data, competitorFeatures.data, comparisons.data, edges.data, documents.data, tasks.data, places],
+    () => ({ canvases, spots, pieces: shared, cards: placed, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places }),
+    [canvases, spots, shared, placed, labels, threads, cells.data, evidence.data, competitorFeatures.data, comparisons.data, edges.data, documents.data, tasks.data, places],
   )
   return {
     data,

@@ -594,3 +594,11 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
+
+/* A piece on several canvases (D-302's session 3): `⧉ 2` after its kind, its number magenta like a name's (D-266). */
+.nameShared {
+  flex: none;
+  margin-left: 0.6em;
+  color: var(--accent-magenta);
+  font-weight: 400;
+}

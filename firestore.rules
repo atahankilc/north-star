@@ -360,6 +360,17 @@ service cloud.firestore {
         && optText(d, 'createdBy', 128);
     }
 
+    // A piece on a canvas besides its own (D-302's session 3, src/data/canvases.ts): its spot there. The id is fixed by
+    // its two ends, so a piece is on a canvas at most once. Whether the piece and the canvas exist isn't checked (as a
+    // place's, D-282); the app skips a spot whose piece or canvas is gone.
+    function validSpot(id, d) {
+      return d.keys().hasOnly(['canvasId', 'pieceId', 'x', 'y', 'createdAt'])
+        && isText(d.canvasId, 128) && isText(d.pieceId, 128)
+        && id == d.canvasId + '_' + d.pieceId
+        && d.x is number && d.y is number
+        && d.createdAt is number;
+    }
+
     function valid(wid, collection, id, d) {
       return (collection == 'labels' && validLabel(d))
         || (collection == 'customers' && validCard(d))
@@ -376,7 +387,8 @@ service cloud.firestore {
         || (collection == 'cells' && validCell(id, d))
         || (collection == 'tasks' && validTask(d))
         || (collection == 'places' && validPlace(id, d))
-        || (collection == 'canvases' && validCanvas(d));
+        || (collection == 'canvases' && validCanvas(d))
+        || (collection == 'pieceSpots' && validSpot(id, d));
     }
 
     match /workspaces/{wid} {
@@ -677,7 +689,7 @@ service cloud.firestore {
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells', 'tasks', 'places', 'canvases'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells', 'tasks', 'places', 'canvases', 'pieceSpots'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();

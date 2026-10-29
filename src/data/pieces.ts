@@ -13,7 +13,7 @@ import { db } from './firebase'
 import { GRID, snap } from './grid'
 import { absent, snapshotWith, tracked } from './history'
 import type { Piece, PieceKind } from './model'
-import { canvasField, canvasHere, onCanvas } from './canvases'
+import { canvasField, canvasHere, onCanvas, posRef, spotRef, spotted, type Spot } from './canvases'
 
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'pieces')
 export const pieceRef = (wid: string, id: string) => doc(col(wid), id)
@@ -72,7 +72,7 @@ const overlaps = (a: Box, b: Box) => a.x < b.x + b.w + GAP && b.x < a.x + a.w + 
 // first.
 // Only what's on the canvas shown is in the way (D-302), or on `canvas` (moved there, D-302's session 2).
 export function nearClear(box: Box, all: Box[], canvas = canvasHere()): Pick<Box, 'x' | 'y'> {
-  const others = (all as (Box & { canvasId?: string })[]).filter(onCanvas(canvas))
+  const others = (all as (Box & { canvasId?: string; spot?: string })[]).filter((o) => (o.spot ? o.spot === canvas : onCanvas(canvas)(o)))
   const free = (b: Box) => !others.some((o) => overlaps(b, o))
   if (free(box)) return { x: box.x, y: box.y }
   const step = 4 * GRID
@@ -117,20 +117,33 @@ export async function addPiece(wid: string, kind: PieceKind, at: [number, number
 // The end of a move or a resize (D-180): one undo step from the box it started as.
 // A plane's move or resize carries what's stuck to it (D-210), `followers` with where each goes: the same undo step.
 export async function placePiece(wid: string, id: string, from: Box, to: Box, kind: PieceKind = 'plane', followers: { id: string; from: Box; to: Box }[] = []) {
-  const ref = doc(col(wid), id)
-  const refs = [ref, ...followers.map((f) => doc(col(wid), f.id))]
-  // A follower only moves (its size is its own; an open one's shown size isn't even stored, D-228).
-  const at = (b: Box) => ({ x: b.x, y: b.y })
-  const before = (await Promise.all([snapshotWith(ref, { ...from }), ...followers.map((f, i) => snapshotWith(refs[i + 1], at(f.from)))])).flat()
   const what = from.w === to.w && from.h === to.h ? 'move' : 'resize'
+  return placeAll(wid, `${what} a ${KIND_NAME[kind]}`, id, from, to, {}, followers)
+}
+
+// Where a piece and its followers go, as one undo step. On a canvas it's shown on through a spot (D-302's session 3),
+// its x/y are the spot's and its size (and `extra`) the piece's own. A follower only moves (its size is its own; an open
+// one's shown size isn't even stored, D-228).
+async function placeAll(wid: string, label: string, id: string, from: Box, to: Box, extra: object, followers: { id: string; from: Box; to: Box }[]) {
+  const at = (b: Box) => ({ x: b.x, y: b.y })
+  const size = (b: Box) => ({ w: b.w, h: b.h })
+  const writes: { ref: ReturnType<typeof pieceRef>; from: object; to: object; spot: boolean }[] = []
+  const add = (pid: string, f: Box, t: Box, sized: boolean, more: object) => {
+    if (spotted(pid)) {
+      writes.push({ ref: posRef(wid, pid), from: at(f), to: at(t), spot: true })
+      if (sized && (f.w !== t.w || f.h !== t.h || Object.keys(more).length)) writes.push({ ref: pieceRef(wid, pid), from: size(f), to: { ...size(t), ...more }, spot: false })
+    } else writes.push({ ref: pieceRef(wid, pid), from: sized ? { ...f } : at(f), to: { ...(sized ? t : at(t)), ...more }, spot: false })
+  }
+  add(id, from, to, true, extra)
+  for (const f of followers) add(f.id, f.from, f.to, false, {})
+  const before = (await Promise.all(writes.map((w) => snapshotWith(w.ref, w.from)))).flat()
   return tracked(
-    `${what} a ${KIND_NAME[kind]}`,
-    refs,
+    label,
+    writes.map((w) => w.ref),
     () => {
       const batch = writeBatch(db())
       const now = Date.now()
-      batch.update(ref, { ...to, updatedAt: now })
-      followers.forEach((f, i) => batch.update(refs[i + 1], { ...at(f.to), updatedAt: now }))
+      for (const w of writes) batch.update(w.ref, w.spot ? w.to : { ...w.to, updatedAt: now })
       return batch.commit()
     },
     { before },
@@ -226,25 +239,10 @@ export const linkLens = (wid: string, piece: Piece & { id: string }, plane: stri
 // The end of a matrix's or table's move: stuck to a plane, or let go; one undo step.
 // A kanban is stuck and a host at once (D-262): what's stuck to it (`followers`) moves with it, in the same step.
 export async function placeLens(wid: string, piece: Piece & { id: string }, from: Box, to: Box, stuck: string | null, followers: { id: string; from: Box; to: Box }[] = []) {
-  const ref = doc(col(wid), piece.id)
-  const refs = [ref, ...followers.map((f) => doc(col(wid), f.id))]
-  const at = (b: Box) => ({ x: b.x, y: b.y })
-  const before = (await Promise.all([snapshotWith(ref, { ...from }), ...followers.map((f, i) => snapshotWith(refs[i + 1], at(f.from)))])).flat()
   const kind = kindOfPiece(piece)
   const change = stuck === (piece.stuckTo ?? null) ? {} : { stuckTo: stuck ?? deleteField(), ...boundTo(piece, stuck) }
   const what = stuck && stuck !== piece.stuckTo ? 'stick' : !stuck && piece.stuckTo ? 'unstick' : 'move'
-  return tracked(
-    `${what} a ${KIND_NAME[kind]}`,
-    refs,
-    () => {
-      const batch = writeBatch(db())
-      const now = Date.now()
-      batch.update(ref, { ...to, ...change, updatedAt: now })
-      followers.forEach((f, i) => batch.update(refs[i + 1], { ...at(f.to), updatedAt: now }))
-      return batch.commit()
-    },
-    { before },
-  )
+  return placeAll(wid, `${what} a ${KIND_NAME[kind]}`, piece.id, from, to, change, followers)
 }
 
 // A matrix, a table or documents (D-234) opened onto the canvas, or closed back into its window (D-228): shared, one undo step.
@@ -292,7 +290,8 @@ export function renamePiece(wid: string, id: string, name: string, kind: PieceKi
 // and its tasks (D-251), as one undo step.
 // A plane takes its cards with it, except those also on another plane, which stay there with their links (D-281); the
 // places on it go.
-export function deletePiece(wid: string, id: string, cards: Card[], labels: Label[], cells: Cell[] = [], kind: PieceKind = 'plane', edges: Edge[] = [], tasks: Task[] = [], places: Place[] = []) {
+// Its spots on other canvases go too (D-302's session 3: deleted everywhere).
+export function deletePiece(wid: string, id: string, cards: Card[], labels: Label[], cells: Cell[] = [], kind: PieceKind = 'plane', edges: Edge[] = [], tasks: Task[] = [], places: Place[] = [], spots: Spot[] = []) {
   const kept = planeGoes(wid, id, cards, places)
   const on = cards.filter((c) => c.pieceId === id && !kept.stay.has(c.id))
   const gone = [
@@ -303,6 +302,7 @@ export function deletePiece(wid: string, id: string, cards: Card[], labels: Labe
     ...labels.filter((l) => l.pieceId === id).map((l) => labelRef(wid, l.id)),
     ...cells.filter((c) => c.matrixId === id).map((c) => cellRef(wid, cellKey(c.matrixId, c.row, c.col))),
     ...tasks.filter((t) => t.pieceId === id).map((t) => taskRef(wid, t.id)),
+    ...spots.filter((s) => s.pieceId === id).map((s) => spotRef(wid, s.canvasId, id)),
   ]
   // A big matrix has more cells than one batch takes.
   const ops = [...gone.map((ref) => ({ ref, data: null })), ...kept.ops]

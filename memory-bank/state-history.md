@@ -882,3 +882,7 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - `move to canvas…` on a piece's right-click and `[move to…]` in its edit console (and the canvas's text): the other
   canvases or a new one; what's stuck comes along, a section takes what it holds; cell-by-cell leaving, a toast with
   `[go there]`, one undo step. Verified in headless Chrome on the emulators (details in D-306).
+
+## Done (2026-10-29): one piece on several canvases (D-307, D-302's session 3)
+- `pieceSpots/` + rules (457/0), `piecesOn`, `⧉ 2` in the name and the console's where-list, `also on canvas…`, Delete
+  takes a shared piece off this canvas, `delete everywhere` through the confirm. Verified in headless Chrome (D-307).

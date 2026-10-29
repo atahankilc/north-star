@@ -340,6 +340,17 @@ await deny('a piece on a canvas named by a number', () => addDoc(sub(bob.fs, 'pi
 await allow('a heading on another canvas', () => addDoc(sub(bob.fs, 'labels'), { text: 'Plan', pieceId: 'canvas', canvasId: 'c1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await deny('text on a plane saying a canvas', () => addDoc(sub(bob.fs, 'labels'), { text: 'Plan', pieceId: 'p1', canvasId: 'c1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a canvas deleted', () => deleteDoc(doc(sub(bob.fs, 'canvases'), 'c1')))
+// A piece on another canvas too (D-302's session 3): `pieceSpots/{canvasId}_{pieceId}`.
+const spot = { canvasId: 'c1', pieceId: 'p1', x: 100, y: -50, createdAt: 1 }
+const spotRef = (who, id = 'c1_p1') => doc(sub(who.fs, 'pieceSpots'), id)
+await allow('a piece put on another canvas too', () => setDoc(spotRef(bob), spot))
+await allow('a shared piece moved there', () => updateDoc(spotRef(bob), { x: 0, y: 0 }))
+await deny('a spot whose id is not its canvas and piece', () => setDoc(spotRef(bob, 'c2_p1'), spot))
+await deny('a spot whose id is made up', () => addDoc(sub(bob.fs, 'pieceSpots'), spot))
+await deny('a spot with a size of its own', () => setDoc(spotRef(bob), { ...spot, w: 400 }))
+await deny('a spot without a place', () => setDoc(spotRef(bob), { canvasId: 'c1', pieceId: 'p1', createdAt: 1 }))
+await allow('a member reads the spots', () => getDocs(sub(alice.fs, 'pieceSpots')))
+await allow('a piece taken off another canvas', () => deleteDoc(spotRef(bob)))
 // Cards on a plane (D-187).
 await allow('an idea on a plane', () => addDoc(sub(bob.fs, 'ideas'), { title: '', pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }))
 await allow('a competitor on a plane', () => addDoc(sub(bob.fs, 'competitors'), { name: 'Crewly', pieceId: 'p1', x: 25, y: 50, createdAt: 1, updatedAt: 1 }))
@@ -529,6 +540,7 @@ await deny('viewer takes a card off a plane', () => deleteDoc(doc(sub(dave.fs, '
 await allow('viewer reads the places', () => getDocs(sub(dave.fs, 'places')))
 await deny('viewer adds a canvas (D-302)', () => setDoc(doc(sub(dave.fs, 'canvases'), 'c9'), { name: 'Mine', order: 9, createdAt: 1 }))
 await allow('viewer reads the canvases', () => getDocs(sub(dave.fs, 'canvases')))
+await deny('viewer puts a piece on another canvas', () => setDoc(doc(sub(dave.fs, 'pieceSpots'), 'c1_p1'), { canvasId: 'c1', pieceId: 'p1', x: 0, y: 0, createdAt: 1 }))
 await deny('viewer deletes an idea', async () => {
   const one = (await getDocs(ideas(dave.fs))).docs[0]
   await deleteDoc(doc(dave.fs, one.ref.path))

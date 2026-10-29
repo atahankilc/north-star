@@ -5584,6 +5584,33 @@ a name typed that nobody has offers `+ new canvas "…"`, made and moved to in o
   `[move to…]` → Engineering moved it; a screenshot caught the plane breaking cell by cell.
 - *Not yet:* sharing a piece on several canvases (session 3); text over a plane doesn't follow it (only a section's).
 
+### D-307 · 2026-10-29 · Accepted (D-302's session 3; the user: "3. oturuma başla")
+**One piece on several canvases** (docs/specs/canvases.md, session 3). A piece's home is its `canvasId` and x/y;
+every other canvas it's on is a `pieceSpots/{canvasId}_{pieceId}` doc (`canvasId`, `pieceId`, `x`, `y`, `createdAt`;
+rules: keys only these, the id its two ends). Size, frame, name and contents stay the piece's, so a plane's cards, a
+table's cells, a deck's tasks are the same everywhere.
+- *Shown:* `piecesOn(canvas, pieces, spots)` gives a canvas's pieces with a spot copy (`spot` set, the same object while
+  unchanged); every piece on more than one says them (`canvases`, built in workspaceData like a card's `planes`).
+  Moves and resizes of one here through a spot write its spot's x/y and the piece's size (`placeAll`, `setSpotted`,
+  `posRef`; a section's carry too). Focusing it stays on the canvas you're on (`?canvas=…&focus=…`).
+- *Asked for:* right-click `[a] ⧉ also on canvas…`, and `[also on…]` in the edit console: the other canvases or a new
+  one (MoveToCanvas, `share`); what's stuck to it comes too; it lands where it is or the nearest clear place there;
+  toast `Put "Pazar" on Engineering too [go there]`. Shared, its name ends `⧉ 2` (magenta) and its console starts
+  `[⧉ 2]`: where it is (`• Marketing here`, `→ Engineering go there`), `also on canvas…`, `take it off this canvas`,
+  `delete everywhere`. Right-click has the last two too; `move to canvas…` isn't offered where it's only a spot.
+- *Delete:* on a shared piece Delete (edit mode) and `[delete]` take it off this canvas, the toast `Took "Pazar" off this
+  canvas · still on Engineering` (on its home, the home moves to its first other canvas, that spot goes; one undo step);
+  `delete everywhere` is the hazard confirm, saying it's on 2 canvases, its spots going with it. Deleting a canvas
+  keeps a piece also elsewhere (its home moves) and says so; moving a piece onto a canvas it's spotted on drops that
+  spot. Unsharing or deleting a document now takes its pieces on every canvas (session 1 only took this one's).
+- *Verified:* rules tests 457/0 (other ports); `npm run build`; headless Chrome on the emulators: right-click Pazar →
+  also on Engineering wrote a spot (moved clear of Backend), `⧉ 2` in its name, `[go there]` showed it with its idea;
+  focusing it there kept `?canvas=eng` in and out; take off from Engineering left it on Marketing with the toast, ⌘Z
+  brought the spot back; on Marketing its console read `[⧉ 2] [focus] [edit]`, `⧉ 2` listed both canvases; Delete in
+  edit mode moved its home to Engineering, ⌘Z back; `delete everywhere` removed the piece and its spot.
+- *Not yet:* a piece stuck to a shared plane isn't carried on the canvases it's only spotted on (it follows the plane
+  where they're both); export/import of spots (session 4).
+
 ### D-308 · 2026-10-29 · Accepted (changes D-233's and D-256's keeping; the user: "filtreler şu anda kalıcı olarak apply ediliyor, biri mesela bir link ekleyip componentten çıkarsa o filtre orda kalmaya devam ediyor, yada sayfayı yenilediğinde … Sadece kullanıcı için olması mantıksız çünkü diğerlerin değişikliklerini falan kaçırabilir. Kalıcı olması da iyi değil … sadece o anlık mı yapsak", then, offered a preview of new filter looks and the lifespan: "beğenmedim önerilerini, şu anki gibi kalsın ama filtreler o anlık olsun", "önerilerini de uygula")
 **Filters are a passing look: a plane's or a deck's filter lasts only while it's open, and what's added after it's set
 shows anyway.**

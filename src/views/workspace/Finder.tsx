@@ -7,7 +7,7 @@
 import { Fragment, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { canvasPath } from '../../app/paths'
-import { canvasTextOn, onCanvas } from '../../data/canvases'
+import { canvasTextOn, piecesOn } from '../../data/canvases'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Doc, DocBody } from '../../data/documents'
@@ -126,7 +126,7 @@ function Panel() {
   const held = useMemo(() => new Map(), [ws.pieces, ws.cards, ws.cells, ws.documents, fieldText, user?.id])
   const groups: Group[] = useMemo(() => {
     if (going) {
-      const places = placesIn(here, shownPieces(ws.pieces.filter(onCanvas(ws.canvas)), ws.cards), ws.labels.filter((l) => l.pieceId !== CANVAS || canvasTextOn(ws.canvas)(l)), ws.workspace.name)
+      const places = placesIn(here, shownPieces(piecesOn(ws.canvas, ws.pieces, ws.spots), ws.cards), ws.labels.filter((l) => l.pieceId !== CANVAS || canvasTextOn(ws.canvas)(l)), ws.workspace.name)
       if (!places.length) return []
       const inside = (id: string) => places.filter((p) => p.inside && p.space === id).length
       return [
@@ -158,7 +158,7 @@ function Panel() {
     const all: Group[] = []
     const named: { row: Row; canvas: string }[] = []
     for (const c of looked) {
-      const pieces = ws.pieces.filter(onCanvas(c))
+      const pieces = piecesOn(c, ws.pieces, ws.spots)
       const labels = ws.labels.filter((l) => l.pieceId !== CANVAS || canvasTextOn(c)(l))
       const other = c !== ws.canvas
       const name = ws.canvases.find((x) => x.id === c)?.name ?? ''

@@ -16,14 +16,14 @@ import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
 import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
-import { useWs } from './context'
+import { useWs, useWsNow } from './context'
 import { FocusedPlane } from './FocusedPlane'
 import { ViewMenu } from './ViewMenu'
 import { planeCtx, planeItems } from './planeMenu'
 import { PlaneDockExtras } from './FilterDock'
 import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadIn, threadOn, toggleInbox, toggleThreadPins, useThreadView } from './Threads'
 import { ContextMenu } from './ContextMenu'
-import { MoveToCanvas } from './MoveToCanvas'
+import { MoveToCanvas, takeOffHere } from './MoveToCanvas'
 import { BringCards } from './BringCards'
 import { isNew, useReads } from '../../data/threads'
 import { ThreadInbox } from './ThreadInbox'
@@ -42,7 +42,7 @@ import { DrawSection } from './DrawSection'
 import { labelBox, TextItems } from './TextItems'
 import { spaceBounds } from './spaceBounds'
 import { CANVAS, deleteLabel, type Label } from '../../data/labels'
-import { canvasOf, canvasTextOn, onCanvas } from '../../data/canvases'
+import { canvasOf, canvasTextOn, piecesOn, setSpotted, spotRef } from '../../data/canvases'
 import { canvasParams } from '../../app/paths'
 import { PlaneCards } from './PlaneCards'
 import { LensCardPanel } from './CardPanel'
@@ -90,10 +90,13 @@ const onPixel = (v: number) => {
 }
 
 export function CanvasView() {
-  const { wid, workspace, pieces: everyPiece, cards, labels: everyLabel, threads, cells, edges, documents, tasks, places, canvas } = useWs()
+  const { wid, workspace, pieces: everyPiece, cards, labels: everyLabel, threads, cells, edges, documents, tasks, places, canvas, spots } = useWs()
   // Only what's on the canvas shown (D-302): its pieces, and its own text with the planes' (theirs go with them).
   // Looked up by id (a thread's plane, a focus asked for), every piece.
-  const pieces = useMemo(() => everyPiece.filter(onCanvas(canvas)), [everyPiece, canvas])
+  const wsNow = useWsNow()
+  // A piece shared from another canvas is here at its spot (D-302's session 3); its moves write that spot.
+  const pieces = useMemo(() => piecesOn(canvas, everyPiece, spots), [everyPiece, canvas, spots])
+  setSpotted(pieces.filter((p) => p.spot).map((p) => p.id))
   const labels = useMemo(() => everyLabel.filter((l) => l.pieceId !== CANVAS || canvasTextOn(canvas)(l)), [everyLabel, canvas])
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
@@ -112,7 +115,8 @@ export function CanvasView() {
   // The plane in focus (D-184), in the address so back leaves it and a reload stays in it.
   const [params, setParams] = useSearchParams()
   const focusId = params.get('focus')
-  const focused = focusId ? (everyPiece.find((p) => p.id === focusId) ?? null) : null
+  // Where it is on this canvas when it's here (through a spot too, D-302's session 3).
+  const focused = focusId ? (pieces.find((p) => p.id === focusId) ?? everyPiece.find((p) => p.id === focusId) ?? null) : null
   const focusedBare = Boolean(focused && isBare(focused))
   const focusSpread = useCanvasView((s) => s.focusSpread)
   const focusArrived = useCanvasView((s) => s.focusArrived)
@@ -324,7 +328,8 @@ export function CanvasView() {
   focusedCardsRef.current = focusedCards
   const drawing = useCanvasView((s) => s.drawing)
   // What a canvas section carries besides text: the planes inside it.
-  const pieceCarry = useMemo(() => shown.map((p) => ({ id: p.id, ref: pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h })), [shown, wid])
+  // A section carries the pieces it holds; one here through a spot moves its spot (D-302's session 3).
+  const pieceCarry = useMemo(() => shown.map((p) => ({ id: p.id, ref: p.spot ? spotRef(wid, p.spot, p.id) : pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h })), [shown, wid])
   // A point on screen (client px) in a space's px: the canvas's, or the focused plane's own view.
   const canvasToSpace = (cx: number, cy: number): [number, number] => {
     const r = root.current!.getBoundingClientRect()
@@ -352,13 +357,14 @@ export function CanvasView() {
   // Following someone into a plane, or back out (D-191).
   const focusTo = (planeId: string | null) => {
     if (planeId === null) return unfocus()
-    const p = everyPiece.find((x) => x.id === planeId)
+    // Here when it's here (through a spot too, D-302's session 3), else where it lives.
+    const p = pieces.find((x) => x.id === planeId) ?? everyPiece.find((x) => x.id === planeId)
     if (!p) return
     // From another plane straight to theirs: no ink (it would spread from a plane that isn't on screen).
     if (focusId) {
       useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, labelSelected: null })
       selectTask('', null)
-      setParams(canvasParams(canvasOf(p), { focus: planeId }))
+      setParams(canvasParams(p.spot ?? canvasOf(p), { focus: planeId }))
     } else focus(p)
   }
 
@@ -462,7 +468,7 @@ export function CanvasView() {
     const r = root.current!.getBoundingClientRect()
     // What it's on, for the menu's `>` line (D-222): "do with this customer…".
     const label = on === 'label' ? labels.find((x) => x.id === targetId) : undefined
-    const piece = on === 'plane' ? everyPiece.find((x) => x.id === targetId) : undefined
+    const piece = on === 'plane' ? (pieces.find((x) => x.id === targetId) ?? everyPiece.find((x) => x.id === targetId)) : undefined
     const what =
       on === 'card'
         ? (cards.find((x) => x.id === targetId)?.type ?? 'card')
@@ -497,7 +503,8 @@ export function CanvasView() {
         },
         ...own.slice(1),
         // To another canvas (D-302's session 2): a piece, or the canvas's own text (a section with what it holds).
-        ...(editor && !focused && (piece || label?.pieceId === CANVAS)
+        // Here through a spot it isn't moved, only taken off (its own canvas keeps it).
+        ...(editor && !focused && ((piece && !piece.spot) || label?.pieceId === CANVAS)
           ? [
               {
                 key: 'move',
@@ -507,6 +514,18 @@ export function CanvasView() {
                 onSelect: () =>
                   useCanvasView.setState({ toCanvas: { pieces: piece ? movingWith(piece.id) : [], labels: label ? [label.id] : [], screen: [e.clientX, e.clientY] } }),
               },
+            ]
+          : []),
+        // The same piece on another canvas as well (D-302's session 3); shared, off this one or everywhere.
+        ...(editor && !focused && piece
+          ? [
+              { key: 'also', label: 'also on canvas…', glyph: '⧉', letter: 'a', onSelect: () => useCanvasView.setState({ toCanvas: { pieces: movingWith(piece.id), labels: [], screen: [e.clientX, e.clientY], share: true } }) },
+              ...(piece.canvases
+                ? [
+                    { key: 'off', label: 'take it off this canvas', glyph: '−', letter: 't', hint: `on ${piece.canvases.length}`, onSelect: () => takeOffHere(wsNow(), piece) },
+                    { key: 'everywhere', label: 'delete everywhere', glyph: '×', letter: 'x', danger: true, onSelect: () => useCanvasView.setState({ confirming: piece.id }) },
+                  ]
+                : []),
             ]
           : []),
       ],
@@ -527,11 +546,19 @@ export function CanvasView() {
       ...(mine || (d.shared && isOwnerOf(workspace, user?.id)) ? [{ key: 'delete', label: 'delete', glyph: '×', letter: 'x', danger: true, onSelect: () => useDocUi.setState({ deleting: d.id }) }] : []),
     ]
   }
+  // Delete on a piece also on another canvas takes it off this one (D-302's session 3, as a card's Delete does, D-281),
+  // a toast saying where it still is; on its only canvas, the hazard confirm. `delete everywhere` asks there too.
+  const askDelete = (id: string) => {
+    const p = piecesRef.current.find((x) => x.id === id)
+    if (!p?.canvases) return useCanvasView.setState({ confirming: id })
+    takeOffHere(wsNow(), p)
+  }
+  askDeleteHere = askDelete
   const deletingId = useDocUi((s) => s.deleting)
   const deletingDoc = documents.find((d) => d.id === deletingId) ?? null
   const unsharingId = useDocUi((s) => s.unsharing)
   const unsharingDoc = documents.find((d) => d.id === unsharingId) ?? null
-  const unsharingPieces = unsharingDoc ? pieces.filter((p) => p.docId === unsharingDoc.id) : []
+  const unsharingPieces = unsharingDoc ? everyPiece.filter((p) => p.docId === unsharingDoc.id) : []
 
   // A document just put on the canvas (D-232): in edit mode where you're looking, to be moved; from a focus, back to the
   // canvas to see it.
@@ -624,7 +651,7 @@ export function CanvasView() {
     useTableUi.setState({ setup: null })
     useKanbanUi.setState({ setup: null })
     closeDocs()
-    setParams(canvasParams(canvasOf(p), { focus: p.id }))
+    setParams(canvasParams(p.spot ?? canvasOf(p), { focus: p.id }))
   }
   focusRef.current = focus
 
@@ -838,7 +865,7 @@ export function CanvasView() {
       if (e.key === 'Escape') useCanvasView.setState({ selected: null })
       if ((e.key === 'Delete' || e.key === 'Backspace') && editor && useCanvasView.getState().editing.includes(id)) {
         e.preventDefault()
-        useCanvasView.setState({ confirming: id })
+        askDeleteHere(id)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -858,7 +885,7 @@ export function CanvasView() {
     // Nor through what's live on it, opened onto the canvas (D-228): a double-click there types in a cell.
     if (!hit || hit.closest('button, input, textarea, a, [data-live]')) return
     const id = hit.closest<HTMLElement>('[data-target]')?.dataset.target?.match(/^plane:(.+)$/)?.[1]
-    const p = id && everyPiece.find((x) => x.id === id)
+    const p = id && pieces.find((x) => x.id === id)
     if (!p || useCanvasView.getState().editing.includes(p.id)) return
     stopFollowing()
     focus(p)
@@ -1102,14 +1129,14 @@ export function CanvasView() {
         <HazardConfirm
           title={`delete "${deletingDoc.title.length > 40 ? `${deletingDoc.title.slice(0, 39)}…` : deletingDoc.title}"?`}
           lines={[
-            pieces.some((p) => p.docId === deletingDoc.id) ? 'The document goes, and every piece showing it on the canvas.' : 'The document goes from every list.',
+            everyPiece.some((p) => p.docId === deletingDoc.id) ? 'The document goes, and every piece showing it on the canvas.' : 'The document goes from every list.',
             `${UNDO_HINT} brings it back.`,
           ]}
           confirm="delete"
           onCancel={() => useDocUi.setState({ deleting: null })}
           onConfirm={() => {
             useDocUi.setState((s) => ({ deleting: null, readers: s.readers.filter((x) => x !== deletingDoc.id) }))
-            void deleteDocument(wid, deletingDoc.id, piecesOfDoc(wid, pieces, deletingDoc.id))
+            void deleteDocument(wid, deletingDoc.id, piecesOfDoc(wid, everyPiece, deletingDoc.id))
           }}
         />
       )}
@@ -1133,7 +1160,7 @@ export function CanvasView() {
       )}
       {confirming && (
         <HazardConfirm
-          title={`delete ${confirming.name ? `"${confirming.name}"` : `this ${KIND_NAME[kindOfPiece(confirming)]}`}?`}
+          title={`delete ${confirming.name ? `"${confirming.name}"` : `this ${KIND_NAME[kindOfPiece(confirming)]}`}${confirming.canvases ? ' everywhere' : ''}?`}
           lines={[
             kindOfPiece(confirming) === 'document'
               ? 'It goes from the canvas; the document stays in its list.'
@@ -1145,6 +1172,8 @@ export function CanvasView() {
                   ? `The ${KIND_NAME[kindOfPiece(confirming)]} and its cells go; the cards in it stay.`
                   : 'The plane and everything on it goes.',
             ...(isBare(confirming) ? [] : sharedOnOf(cards, places, confirming)),
+            // On other canvases too (D-302's session 3): it goes from all of them.
+            ...(confirming.canvases ? [`It's on ${confirming.canvases.length} canvases: it goes from every one. To take it off this one only: ⌫ in edit mode.`] : []),
             `${UNDO_HINT} brings it back.`,
           ]}
           confirm="delete"
@@ -1152,7 +1181,7 @@ export function CanvasView() {
           onConfirm={() => {
             useCanvasView.setState({ confirming: null })
             setEditing(confirming.id, false)
-            void deletePiece(wid, confirming.id, cards, labels, cells, kindOfPiece(confirming), edges, tasks, places)
+            void deletePiece(wid, confirming.id, cards, labels, cells, kindOfPiece(confirming), edges, tasks, places, spots)
           }}
         />
       )}
@@ -1674,6 +1703,12 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
               <span className={styles.nameKind}>{KIND_NAME[kind]}</span>
             </>
           )}
+          {/* On other canvases too (D-302's session 3): how many it's on. */}
+          {piece.canvases && (
+            <span className={styles.nameShared} title={`on ${piece.canvases.length} canvases`}>
+              ⧉ {piece.canvases.length}
+            </span>
+          )}
         </span>
       )}
       {/* Its marks (D-265, tier L, its kind's colour): hover, others' selection; in edit mode selected, with a cyan
@@ -1742,8 +1777,10 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
         size={editing ? box : null}
         noun={KIND_NAME[kind]}
         onEdit={editor ? () => setEditing(piece.id, !editing) : undefined}
-        onDelete={() => useCanvasView.setState({ confirming: piece.id })}
-        onMove={editor ? (at) => useCanvasView.setState({ toCanvas: { pieces: movingWith(piece.id), labels: [], screen: at } }) : undefined}
+        onDelete={() => askDeleteHere(piece.id)}
+        onMove={editor && !piece.spot ? (at) => useCanvasView.setState({ toCanvas: { pieces: movingWith(piece.id), labels: [], screen: at } }) : undefined}
+        onAlso={editor ? (at) => useCanvasView.setState({ toCanvas: { pieces: movingWith(piece.id), labels: [], screen: at, share: true } }) : undefined}
+        shared={piece.canvases ? { count: piece.canvases.length, onWhere: (at) => useCanvasView.setState({ toCanvas: { pieces: [piece.id], labels: [], screen: at, where: true } }) } : undefined}
         onFocus={onFocus}
         comments={comments}
         link={sticks(piece) ? { at: host?.id ?? null, planes, editor, onChange: (plane) => void linkLens(wid, piece, plane) } : undefined}
@@ -1826,8 +1863,11 @@ type ConsoleProps = {
   onFocus: () => void
   onEdit?: () => void
   onDelete?: () => void
-  // To another canvas (D-302's session 2), in edit mode: `[move to…]` opens the canvases under it.
+  // To another canvas (D-302's session 2), in edit mode: `[move to…]` opens the canvases under it; `[also on…]` puts it
+  // on one more (session 3). Shared, `⧉ 2` out of edit mode: where it is (`onWhere`).
   onMove?: (at: [number, number]) => void
+  onAlso?: (at: [number, number]) => void
+  shared?: { count: number; onWhere: (at: [number, number]) => void }
   className?: string
   // A matrix's or table's link to a plane (D-215): a dropdown, `link ▾` or `⇆ 01 Pazar ▾`, to pick a plane or unlink.
   link?: { at: string | null; planes: (Box & { id: string; name?: string })[]; editor: boolean; onChange: (plane: string | null) => void }
@@ -1841,6 +1881,15 @@ type ConsoleProps = {
 
 const UNLINKED = 'none'
 
+// Just under a console's button, for the prompt it opens.
+const under = (e: React.MouseEvent): [number, number] => {
+  const r = e.currentTarget.getBoundingClientRect()
+  return [r.left, r.bottom + 6]
+}
+
+// A piece's delete, as the canvas shown asks it (CanvasView sets it): off this canvas or the hazard confirm.
+let askDeleteHere: (id: string) => void = () => {}
+
 // What moves to another canvas with a piece asked for (D-302's session 2): every piece in edit mode when it's one of
 // them, else it alone; what's stuck to them comes along (MoveToCanvas).
 const movingWith = (id: string) => {
@@ -1852,7 +1901,7 @@ const movingWith = (id: string) => {
 // (70 %: 13.1 px; 50 % and under: 15.4 px). In the canvas's px, so its zoom's divided back out.
 const consoleScale = (zoom: number) => Math.min(1.4, Math.max(1, zoom ** -0.5)) / zoom
 
-function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, onMove, className, link, open, extra, shown = true }: ConsoleProps) {
+function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, onMove, onAlso, shared, className, link, open, extra, shown = true }: ConsoleProps) {
   // Shown only while the piece is pointed at (D-264), in edit mode, or with the keyboard in it: built cell by cell as it
   // comes (170 ms), broken as it goes (90 ms). Something new in its comments stays meanwhile, a small magenta tab.
   const ref = useRef<HTMLDivElement>(null)
@@ -1914,6 +1963,11 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
               move to…
             </button>
           )}
+          {onAlso && (
+            <button className={styles.tool} title={`put the same ${noun} on another canvas as well`} onClick={(e) => onAlso(under(e))}>
+              also on…
+            </button>
+          )}
           {onDelete && (
             <button className={styles.tool} data-tone="danger" title={`delete the ${noun} (Delete)`} onClick={onDelete}>
               delete
@@ -1927,6 +1981,11 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
         </>
       ) : (
         <>
+          {shared && (
+            <button className={styles.tool} title={`on ${shared.count} canvases: where`} aria-label={`On ${shared.count} canvases`} onClick={(e) => shared.onWhere(under(e))}>
+              ⧉ {shared.count}
+            </button>
+          )}
           {comments && comments.count > 0 && (
             <button
               className={styles.tool}
