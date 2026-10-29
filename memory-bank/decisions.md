@@ -259,10 +259,12 @@ feature comes back as a piece, and check them with the user then.
 - Together (D-260, D-261): picked tasks are your presence selection, a held one a ghost in your colour (`drag`);
   comments on tasks; `☐` by your square counts tasks given to you since you last looked (`givenAt`/`givenBy`,
   `threadReads.tasks`); the finder finds tasks.
-- Timeline (D-262, D-289, D-298): a piece showing the tasks of the kanban it's linked to (else every kanban; no `shows`)
-  on two weeks of days (rows by kanban, person or card; a drag sets the due day; late on today magenta; a no-day tray),
-  stuck to a kanban and beside it; a kanban's `SOON` band. A plane carries its kanban and that kanban's timeline; going
-  to a task from a timeline's focus that draws it stays there.
+- Timeline (D-262, D-289, D-298, D-304): a piece showing the tasks of the kanban it's linked to (else every kanban) on a
+  strip of days without end (yours: moved sideways, a drag, an overview on top; scale day/week/month/quarter or a pinch,
+  text at its own size); tasks from `start` to `due` (only a due day: a `◆`), late hatched to today; rows by kanban,
+  person or card; drags move a task or (picked) its edges, a drawn `+` makes one, a no-day tray. Stuck to a kanban and
+  beside it; a kanban's `SOON` band. A plane carries its kanban and that kanban's timeline; going to a task from a
+  timeline's focus that draws it stays there.
 - Cards on a kanban (D-253, D-268, D-269): it holds tasks or cards (`holds`); cards from a source (the table's rules);
   columns one field's values (status, impact, effort, priority), rows another's, `no value` first; a drop sets the
   fields (one undo step); boxes can be named (`good` green, `bad` magenta).

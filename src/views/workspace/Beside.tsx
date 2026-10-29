@@ -218,7 +218,8 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
   const { cards, tasks, pieces, places } = useWs()
   const kind = kindOfPiece(piece)
   const content = kind === 'matrix' ? matrixBounds(piece, cards) : kind === 'kanban' ? kanbanBounds(piece, tasks) : kind === 'timeline' ? timelineBounds(piece, pieces, tasks, cards, T.besideDays) : tableBounds(piece, cards)
-  const { el, view, setView, pan } = usePaneView(content, box)
+  // A timeline fills its pane at its own size (D-304), from the top left.
+  const { el, view, setView, pan } = usePaneView(content, box, kind === 'timeline')
 
   // A card's row picked: the card selected, and the plane's view glides to put it in the middle of the plane's part.
   const toCard = (card: Card) => {

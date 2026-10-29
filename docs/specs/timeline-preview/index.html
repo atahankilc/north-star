@@ -1,0 +1,1355 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timeline · options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<style>
+@font-face { font-family: 'Geist Variable'; src: url(../../../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; }
+@font-face { font-family: 'Geist Mono Variable'; src: url(../../../node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-mono); font-size: var(--text-sm); overflow: hidden; }
+button { font: inherit; color: inherit; }
+
+/* ── The preview's own chrome ─────────────────────────────────────── */
+.app { display: grid; grid-template-columns: 1fr 400px; grid-template-rows: auto 1fr; height: 100vh; }
+.topbar { grid-column: 1 / -1; display: flex; gap: 14px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--line); z-index: 50; }
+.topbar h1 { font: 500 11px/1 var(--font-mono); letter-spacing: var(--track-label); text-transform: uppercase; margin: 0 8px 0 0; color: var(--fg-muted); }
+.tabs { display: flex; gap: 2px; }
+.tab { font-size: 12px; color: var(--fg-dim); background: none; border: 1px solid transparent; padding: 6px 10px; cursor: pointer; }
+.tab b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+.tab:hover { color: var(--fg); }
+.tab[aria-pressed='true'] { color: var(--fg); border-color: var(--line-hover); background: var(--wash-2); }
+.topbar .sp { flex: 1; }
+.tbtn { background: none; border: 0; color: var(--fg-dim); cursor: pointer; font-size: 12px; }
+.tbtn:hover { color: var(--fg); }
+
+.notes { border-left: 1px solid var(--line); padding: 22px 24px 60px; overflow-y: auto; font-size: 12.5px; line-height: 1.6; color: var(--fg-muted); }
+.notes h2 { font: 500 24px/1.15 var(--font-display); letter-spacing: var(--track-title); color: var(--fg); margin: 2px 0 6px; }
+.notes .kind { font-size: 11px; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg-dim); }
+.notes h3 { display: flex; gap: 8px; align-items: center; font: 500 11px/1 var(--font-mono); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg); margin: 22px 0 8px; }
+.notes h3 b { color: var(--accent-magenta); font-weight: 500; }
+.notes h3::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.notes p { margin: 0 0 8px; }
+.notes ul { margin: 0 0 8px; padding-left: 16px; }
+.notes li { margin: 0 0 4px; }
+.notes kbd { font: 11px var(--font-mono); color: var(--fg); border: 1px solid var(--line-hover); padding: 0 4px; }
+.notes code { font: 11.5px var(--font-mono); color: var(--fg); }
+.notes .rec { border-left: 2px solid var(--accent-cyan); padding: 6px 0 6px 12px; color: var(--fg); background: var(--wash-cyan); }
+.notes .bad { color: var(--accent-magenta); }
+
+/* ── The stage: a timeline in its focus, on the page's black ──────── */
+.stage { position: relative; overflow: hidden; background: var(--bg); }
+.crumb { position: absolute; top: 14px; left: 24px; z-index: 6; font-size: 11px; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg-dim); pointer-events: none; }
+.crumb b { color: var(--fg); font-weight: 500; }
+.crumb i { font-style: normal; color: var(--fg-faint); }
+.view { position: absolute; inset: 44px 24px 46px 24px; display: flex; flex-direction: column; }
+
+/* The dock (FocusDock): a tab on the bottom edge, magenta top corners. */
+.dock { position: absolute; left: 50%; bottom: 0; z-index: 8; display: flex; align-items: baseline; gap: 12px; padding: 7px 16px 9px; border: 1px solid var(--piece-edge); border-bottom: 0; background: var(--bg); color: var(--fg-dim); font-size: var(--text-xs); line-height: 16px; white-space: nowrap; transform: translateX(-50%); }
+.dock::before, .dock::after { content: ''; position: absolute; top: -1px; width: 8px; height: 8px; border-top: 1px solid var(--accent-magenta); }
+.dock::before { left: -1px; border-left: 1px solid var(--accent-magenta); }
+.dock::after { right: -1px; border-right: 1px solid var(--accent-magenta); }
+.dock .sep { width: 1px; align-self: stretch; background: var(--line-hover); }
+.dock .lab { color: var(--fg-faint); letter-spacing: var(--track-label); text-transform: uppercase; }
+.db { background: none; border: 0; padding: 0 2px; color: var(--fg-dim); cursor: pointer; }
+.db:hover { color: var(--fg); }
+.db[aria-pressed='true'] { color: var(--fg); }
+.db[aria-pressed='true']::before { content: '•'; color: var(--accent-cyan); margin-right: 3px; }
+.db.bracket::before { content: '['; } .db.bracket::after { content: ']'; }
+.db.bracket[aria-pressed='true']::before { content: '['; margin: 0; color: inherit; }
+.db .k { color: var(--fg-faint); margin-left: 4px; }
+
+/* ── Time views (A, C, D): one horizontal axis ────────────────────── */
+.tv { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; user-select: none; }
+.tv .top { position: relative; flex: none; height: 84px; }
+.scrub { position: absolute; left: var(--left); right: 0; top: 0; height: 34px; cursor: pointer; }
+.scrubLab { position: absolute; left: 0; top: 2px; width: calc(var(--left) - 16px); font-size: 10px; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg-faint); line-height: 14px; }
+.scrubLab b { display: block; color: var(--fg-dim); font-weight: 400; }
+.density { position: absolute; left: 0; top: 0; height: 18px; font-size: 11px; line-height: 18px; white-space: pre; color: var(--fg-faint); letter-spacing: 0; overflow: hidden; width: 100%; }
+.smo { position: absolute; top: 20px; font-size: 9.5px; letter-spacing: var(--track-label); color: var(--fg-faint); padding-left: 3px; border-left: 1px solid var(--line); line-height: 12px; }
+.stoday { position: absolute; top: 0; width: 1px; height: 18px; background: var(--accent-cyan); }
+.win { position: absolute; top: -2px; height: 22px; border: 1px solid var(--accent-cyan); background: var(--wash-cyan); cursor: grab; }
+.win::before, .win::after { content: ''; position: absolute; top: 50%; width: 3px; height: 9px; margin-top: -5px; border-left: 1px solid var(--accent-cyan); border-right: 1px solid var(--accent-cyan); }
+.win::before { left: -5px; } .win::after { right: -5px; }
+
+.head { position: absolute; left: var(--left); right: 0; top: 40px; height: 44px; overflow: hidden; cursor: grab; border-bottom: 1px solid var(--line-hover); }
+.hw { position: absolute; top: 0; left: 0; height: 100%; will-change: transform; }
+.mo { position: absolute; top: 2px; height: 42px; padding-left: 6px; border-left: 1px solid var(--line-hover); font-size: 11px; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg); white-space: nowrap; line-height: 14px; }
+.mo b { color: var(--accent-magenta); font-weight: 500; margin-right: 4px; }
+.dl { position: absolute; top: 24px; font-size: 11px; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg-dim); white-space: nowrap; padding-left: 5px; line-height: 14px; }
+.dl i { font-style: normal; color: var(--fg-faint); margin-right: 3px; }
+.dl[data-we] { color: var(--fg-faint); }
+.dl[data-today] { color: var(--accent-cyan); }
+.dl[data-today] i { color: var(--accent-cyan); }
+.htoday { position: absolute; top: 20px; height: 24px; width: 1px; background: var(--accent-cyan); }
+
+.body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+.inner { position: relative; }
+.names { position: absolute; left: 0; top: 0; width: var(--left); z-index: 3; }
+.vp { position: absolute; left: var(--left); right: 0; top: 0; overflow: hidden; cursor: grab; }
+.tv[data-panning] .vp, .tv[data-panning] .head { cursor: grabbing; }
+.world { position: absolute; left: 0; top: 0; will-change: transform; }
+
+.we { position: absolute; top: 0; bottom: 0; background: var(--wash-2); }
+.dline { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--line); }
+.mline { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line-hover); }
+.tline { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent-cyan); z-index: 2; pointer-events: none; }
+.band { position: absolute; left: 0; right: 0; border-bottom: 1px solid var(--line); }
+
+.rname { position: absolute; left: 0; display: flex; align-items: center; gap: 6px; width: calc(var(--left) - 14px); height: 30px; font-size: var(--text-xs); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg); white-space: nowrap; }
+.rname > .l { overflow: hidden; text-overflow: ellipsis; }
+.rname .who { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: var(--wash-3); font-size: 9px; letter-spacing: 0; }
+.rname .kd { color: var(--tone); }
+.rname .n { margin-left: auto; color: var(--fg-faint); letter-spacing: 0; }
+.rname[data-unfold] { cursor: pointer; }
+.rname[data-unfold]:hover .l { color: var(--fg-strong); }
+.rname .fold { color: var(--fg-dim); width: 10px; }
+.gname { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 8px; height: 30px; font-size: var(--text-xs); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg-dim); pointer-events: none; }
+.gname b { color: var(--accent-magenta); font-weight: 500; }
+.gname::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* A task: a sheet from its first day to its last, in its card's colour (D-291's face). */
+.bar { position: absolute; height: 28px; z-index: 1; background: color-mix(in srgb, var(--tone, var(--fg-dim)) var(--card-tint), var(--bg-raised)); box-shadow: inset 2px 0 0 var(--tone, var(--line-hover)), 0 0 0 1px var(--piece-card-edge); cursor: grab; }
+.bar:hover { box-shadow: inset 2px 0 0 var(--tone, var(--line-hover)), 0 0 0 1px var(--line-hover); }
+.bar[data-guess] { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--tone, var(--fg-dim)) var(--card-tint), var(--bg-raised)) 85%); box-shadow: inset 0 0 0 1px transparent; border-left: 1px dashed var(--line-hover); }
+.bar[data-guess] .lbl.in { color: var(--fg-muted); }
+.bar[data-late] { outline: 1px solid var(--accent-magenta); outline-offset: -1px; }
+.bar[data-done] { opacity: .5; }
+.bar[data-draft] { background: var(--wash-cyan); box-shadow: none; outline: 1px dashed var(--accent-cyan); outline-offset: -1px; }
+.bar[data-held] { z-index: 4; }
+.lbl { position: absolute; top: 0; line-height: 28px; font-family: var(--font-display); font-size: 13px; white-space: nowrap; pointer-events: none; }
+.lbl.in { left: 10px; right: 8px; overflow: hidden; text-overflow: ellipsis; color: var(--fg); }
+.lbl.out { left: calc(100% + 8px); color: var(--fg-muted); }
+.lbl .p { font-family: var(--font-mono); font-size: 11px; color: var(--fg-dim); margin-right: 5px; }
+.lbl .p[data-p='P1'] { color: var(--accent-magenta); }
+.lbl .ok { color: var(--accent-green); margin-right: 4px; font-family: var(--font-mono); }
+.prog { position: absolute; left: 2px; right: 0; bottom: 0; height: 2px; background: color-mix(in srgb, var(--tone, var(--fg-dim)) 22%, transparent); pointer-events: none; }
+.prog i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--tone, var(--fg-dim)); }
+.grip { position: absolute; top: 0; bottom: 0; width: 8px; cursor: ew-resize; z-index: 2; }
+.grip.l { left: -3px; } .grip.r { right: -3px; }
+.grip::after { content: ''; position: absolute; top: 5px; bottom: 5px; left: 3px; width: 2px; background: var(--accent-cyan); opacity: 0; transition: opacity 120ms; }
+.bar:hover .grip::after, .bar[data-sel] .grip::after, .bar[data-held] .grip::after { opacity: .9; }
+.bar[data-done] .grip, .bar[data-guess] .grip.l { display: none; }
+
+/* No first day: a point on its last (◆), a handle on its left to give it one. */
+.bar[data-kind='point'] { width: 0 !important; background: none; box-shadow: none; outline: 0; }
+.dia { position: absolute; left: -7px; top: 7px; width: 14px; height: 14px; transform: rotate(45deg) scale(.82); background: var(--tone, var(--fg-dim)); box-shadow: 0 0 0 2px var(--bg); }
+.bar[data-kind='point'][data-late] .dia { outline: 1px solid var(--accent-magenta); outline-offset: 2px; }
+.bar[data-kind='point'] .lbl.out { left: 14px; }
+.bar[data-kind='point'] .grip.l { left: -30px; width: 20px; }
+.bar[data-kind='point'] .grip.l::after { content: '⟵'; left: 0; top: 6px; width: auto; height: auto; background: none; color: var(--accent-cyan); font-size: 12px; line-height: 14px; }
+.bar[data-kind='point'] .grip.r { display: none; }
+
+.hatch { position: absolute; height: 28px; z-index: 1; pointer-events: none; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--accent-magenta) 75%, transparent) 0 1px, transparent 1px 6px); border-top: 1px solid color-mix(in srgb, var(--accent-magenta) 40%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--accent-magenta) 40%, transparent); }
+.hatch span { position: absolute; left: calc(100% + 6px); top: 0; line-height: 26px; font-size: 11px; color: var(--accent-magenta); white-space: nowrap; }
+
+/* Marks (D-265), selected: L's just outside, in its tone. */
+.marks { position: absolute; inset: -5px; pointer-events: none; --c: var(--tone, var(--fg)); --len: 10px; --th: 2px;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--len) var(--th), linear-gradient(var(--c), var(--c)) top left / var(--th) var(--len),
+    linear-gradient(var(--c), var(--c)) top right / var(--len) var(--th), linear-gradient(var(--c), var(--c)) top right / var(--th) var(--len),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--len) var(--th), linear-gradient(var(--c), var(--c)) bottom left / var(--th) var(--len),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--len) var(--th), linear-gradient(var(--c), var(--c)) bottom right / var(--th) var(--len);
+  background-repeat: no-repeat; }
+.bar[data-kind='point'] .marks { inset: 2px auto auto -12px; width: 24px; height: 24px; }
+.read { position: absolute; z-index: 6; transform: translateY(-100%); margin-top: -8px; padding: 2px 6px; background: var(--bg); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-size: 10.5px; letter-spacing: var(--track-label); text-transform: uppercase; white-space: nowrap; pointer-events: none; }
+.read b { color: var(--fg); font-weight: 400; }
+
+.ghost { position: absolute; z-index: 1; display: none; align-items: center; justify-content: center; height: 28px; border: 1px dashed var(--line-hover); color: var(--accent-cyan); font-size: 14px; cursor: crosshair; }
+.ghost[data-on] { display: flex; }
+.ghost:hover { border-color: var(--accent-cyan); background: var(--wash-cyan); }
+.draftIn { position: absolute; z-index: 7; height: 28px; padding: 0 8px; border: 1px solid var(--accent-cyan); background: var(--bg); color: var(--fg); font: 13px var(--font-display); outline: 0; }
+
+.chips { position: absolute; left: var(--left); right: 0; top: 0; pointer-events: none; z-index: 4; }
+.chip { position: absolute; pointer-events: auto; padding: 1px 6px; background: var(--bg); border: 1px solid var(--line-hover); color: var(--fg-muted); font-size: 11px; cursor: pointer; }
+.chip:hover { color: var(--fg); border-color: var(--fg-dim); }
+
+.tray { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 0 20px; color: var(--fg-dim); font-size: var(--text-xs); }
+.trayL { width: calc(var(--left) - 16px); letter-spacing: var(--track-label); text-transform: uppercase; }
+.pill { position: relative; padding: 4px 9px; border: 1px solid var(--line-hover); background: var(--bg); box-shadow: inset 2px 0 0 var(--tone, transparent); color: var(--fg); font: 12.5px var(--font-display); cursor: grab; }
+.trayH { color: var(--fg-faint); }
+.float { position: fixed; z-index: 100; pointer-events: none; scale: .8; transform-origin: 0 0; }
+
+/* C: load as glyphs. */
+.g { position: absolute; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); line-height: 1; color: var(--fg-faint); pointer-events: auto; cursor: default; }
+.g[data-n='1'] { color: var(--fg-dim); }
+.g[data-n='2'] { color: var(--fg-muted); }
+.g[data-n='3'] { color: var(--fg); }
+.g[data-over] { color: var(--accent-magenta); }
+.g:hover { outline: 1px solid var(--line-hover); outline-offset: -1px; }
+.tnum { position: absolute; font-size: 10px; color: var(--fg-dim); text-align: center; line-height: 20px; }
+.tnum[data-over] { color: var(--accent-magenta); }
+.tip { position: fixed; z-index: 120; min-width: 200px; max-width: 320px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--piece-edge); font-size: 11px; color: var(--fg-muted); pointer-events: none; display: none; }
+.tip b { color: var(--fg); font-weight: 400; letter-spacing: var(--track-label); text-transform: uppercase; }
+.tip div { font: 12.5px/1.6 var(--font-display); color: var(--fg); display: flex; gap: 6px; align-items: baseline; }
+.tip div i { width: 2px; height: 11px; background: var(--tone); flex: none; }
+.tip .o { color: var(--accent-magenta); }
+
+/* D: a card's span. */
+.span { position: absolute; height: 22px; z-index: 1; background: color-mix(in srgb, var(--tone) var(--card-tint), var(--bg-raised)); box-shadow: inset 2px 0 0 var(--tone); cursor: grab; }
+.span:hover { box-shadow: inset 2px 0 0 var(--tone), 0 0 0 1px var(--line-hover); }
+.span .fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--tone) 34%, transparent); pointer-events: none; }
+.span .lbl { line-height: 22px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: var(--track-label); text-transform: uppercase; }
+.span .lbl.in { color: var(--fg); }
+.span[data-late] { outline: 1px solid var(--accent-magenta); outline-offset: -1px; }
+.seg { position: absolute; height: 3px; pointer-events: none; background: var(--fg-dim); }
+.seg[data-done] { background: var(--accent-green); }
+.seg[data-late] { background: var(--accent-magenta); }
+.seg[data-pt] { width: 5px !important; height: 5px; transform: rotate(45deg); margin-top: -1px; }
+
+/* ── B: a month calendar ──────────────────────────────────────────── */
+.cal { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; user-select: none; }
+.calHead { flex: none; display: grid; grid-template-columns: 72px repeat(7, 1fr); border-bottom: 1px solid var(--line-hover); font-size: 11px; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg-dim); padding-bottom: 8px; }
+.calHead span { padding-left: 6px; }
+.calHead span:nth-child(7), .calHead span:nth-child(8) { color: var(--fg-faint); }
+.calTray { flex: none; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 11px; color: var(--fg-dim); }
+.calTray .trayL { width: 64px; }
+.calBody { position: relative; flex: 1; overflow-y: auto; scrollbar-width: thin; }
+.wk { position: relative; display: grid; grid-template-columns: 72px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
+.wkL { padding: 8px 0 0; font-size: 11px; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg); line-height: 14px; }
+.wkL b { color: var(--accent-magenta); font-weight: 500; display: block; font-size: 18px; line-height: 22px; letter-spacing: 0; }
+.wkL i { font-style: normal; display: block; color: var(--fg-faint); font-size: 10px; margin-top: 6px; }
+.cd { position: relative; border-left: 1px dashed var(--line); min-height: 100%; }
+.cd[data-we] { background: var(--wash-2); }
+.cd[data-odd] { background-image: linear-gradient(var(--wash-1), var(--wash-1)); }
+.cd[data-first] { border-left: 1px solid var(--line-hover); }
+.cd .num { position: absolute; top: 6px; left: 6px; font-size: 11px; color: var(--fg-dim); }
+.cd[data-first] .num { color: var(--fg); }
+.cd[data-first] .num::after { content: attr(data-m); margin-left: 5px; color: var(--accent-magenta); letter-spacing: var(--track-label); }
+.cd[data-today] { box-shadow: inset 0 0 0 1px var(--accent-cyan); }
+.cd[data-today] .num { color: var(--accent-cyan); }
+.cd[data-target] { background: var(--wash-cyan); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-cyan) 60%, transparent); }
+.cd .add { position: absolute; top: 3px; right: 4px; display: none; padding: 0 4px; background: none; border: 0; color: var(--accent-cyan); cursor: pointer; font-size: 14px; }
+.cd:hover .add { display: block; }
+.cbar { position: absolute; height: 20px; z-index: 1; background: color-mix(in srgb, var(--tone, var(--fg-dim)) var(--card-tint), var(--bg-raised)); box-shadow: inset 2px 0 0 var(--tone, var(--line-hover)); font: 12px/20px var(--font-display); padding: 0 6px 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; }
+.cbar[data-cont] { box-shadow: none; padding-left: 10px; }
+.cbar[data-cont]::before { content: '‹'; position: absolute; left: 2px; color: var(--fg-dim); font-family: var(--font-mono); }
+.cbar[data-late] { outline: 1px solid var(--accent-magenta); outline-offset: -1px; }
+.cbar[data-done] { opacity: .5; }
+.cbar[data-sel] { outline: 1px solid var(--tone, var(--fg)); outline-offset: 2px; }
+.cbar[data-pt] { background: none; box-shadow: none; padding-left: 16px; color: var(--fg-muted); }
+.cbar[data-pt]::after { content: ''; position: absolute; left: 4px; top: 6px; width: 7px; height: 7px; transform: rotate(45deg); background: var(--tone, var(--fg-dim)); }
+.cbar .ok { color: var(--accent-green); font-family: var(--font-mono); margin-right: 4px; }
+.cbar .p { font: 10.5px var(--font-mono); color: var(--fg-dim); margin-right: 4px; }
+.cbar .p[data-p='P1'] { color: var(--accent-magenta); }
+.chatch { position: absolute; height: 20px; z-index: 1; pointer-events: none; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--accent-magenta) 75%, transparent) 0 1px, transparent 1px 6px); }
+.cmore { position: absolute; font-size: 10.5px; color: var(--fg-dim); padding-left: 8px; }
+.cin { position: absolute; z-index: 5; height: 22px; border: 1px solid var(--accent-cyan); background: var(--bg); color: var(--fg); font: 12px var(--font-display); padding: 0 6px; outline: 0; }
+
+/* ── 0: today's timeline, fitted ─────────────────────────────────── */
+.old { position: relative; flex: 1; overflow: hidden; }
+.oldB { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.ohead { position: absolute; top: 12px; width: 150px; height: 32px; padding-left: 6px; border-bottom: 1px solid var(--line-hover); color: var(--fg-dim); font-size: 11px; letter-spacing: var(--track-label); text-transform: uppercase; }
+.ohead[data-we] { color: var(--fg-faint); } .ohead[data-today] { color: var(--accent-cyan); }
+.ocell { position: absolute; top: 0; bottom: 0; width: 150px; border-left: 1px dashed var(--line); }
+.ocell[data-we] { background: var(--wash-2); }
+.osheet { position: absolute; height: 30px; padding: 0 8px 0 10px; background: var(--bg-raised); box-shadow: inset 2px 0 0 var(--tone, var(--line-hover)), 0 0 0 1px var(--piece-card-edge); font: 13px/30px var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.osheet[data-late] { outline: 1px solid var(--accent-magenta); outline-offset: -1px; }
+.osheet[data-done] { color: var(--fg-dim); }
+.osheet .late { color: var(--accent-magenta); font: 11px var(--font-mono); }
+.omore { position: absolute; top: 12px; color: var(--fg-faint); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar" lang="en">
+    <h1>Timeline · options</h1>
+    <div class="tabs" id="tabs"></div>
+    <span class="sp"></span>
+    <button class="tbtn" id="reset" title="Put the sample tasks back">[reset tasks]</button>
+    <button class="tbtn" id="theme">[light]</button>
+  </div>
+  <div class="stage" id="stage" lang="en">
+    <div class="crumb" id="crumb"></div>
+    <div class="view" id="view"></div>
+    <div class="dock" id="dock"></div>
+  </div>
+  <aside class="notes" id="notes"></aside>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+// ── Days ───────────────────────────────────────────────────────────────────────────────────
+const DAY = 86400000
+const D0 = Date.UTC(2026, 7, 31) // a Monday: day 0
+const N = Math.round((Date.UTC(2027, 2, 1) - D0) / DAY)
+const TI = Math.round((Date.UTC(2026, 9, 29) - D0) / DAY) // today, Thursday 29 Oct 2026
+const dateOf = (i) => new Date(D0 + i * DAY)
+const dow = (i) => (((i % 7) + 7) % 7) // 0 = Monday
+const MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+const MONL = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+const WD = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+const fmt = (i) => { const d = dateOf(i); return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}` }
+const isoWeek = (i) => { const d = dateOf(i); const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7))); const w1 = new Date(Date.UTC(t.getUTCFullYear(), 0, 4)); return 1 + Math.round(((t - w1) / DAY - 3 + ((w1.getUTCDay() + 6) % 7)) / 7) }
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+
+// ── The sample workspace ───────────────────────────────────────────────────────────────────
+const TONE = { customer: 'var(--accent-green)', problem: 'var(--accent-magenta)', competitor: 'var(--accent-yellow)', idea: 'var(--fg)', feature: 'var(--accent-cyan)' }
+const ORDER = ['customer', 'problem', 'competitor', 'idea', 'feature']
+const TYPEN = { customer: 'customers', problem: 'problems', competitor: 'competitors', idea: 'ideas', feature: 'features' }
+const CARDS = {
+  c1: { title: 'Boutique hotels', type: 'customer' },
+  p1: { title: 'Hotels lose 15% to OTAs', type: 'problem' },
+  k1: { title: 'Booking.com', type: 'competitor' },
+  i1: { title: 'Direct-booking widget', type: 'idea' },
+  f1: { title: 'Online booking', type: 'feature' },
+  f2: { title: 'Price alerts', type: 'feature' },
+}
+const KANBANS = { rm: 'Roadmap', rs: 'Research' }
+const PEOPLE = { AK: 'Atahan', BO: 'Bob', CA: 'Carol' }
+// Days as offsets from today; `s` the first day (none on old tasks), `e` the due day, `m` the day it was added.
+const SEED = [
+  ['Interview 8 hotel owners', 'rm', 'AK', 'c1', -9, -2, 1, [8, 8], '', -12],
+  ['Write the offer', 'rm', 'AK', 'i1', -3, 2, 0, [2, 5], 'P1', -5],
+  ['Booking flow wireframes', 'rm', 'BO', 'f1', -1, 6, 0, [1, 4], '', -4],
+  ['Stripe test account', 'rm', 'CA', 'f1', null, 3, 0, null, '', -6],
+  ['Price-alert prototype', 'rm', 'BO', 'f2', 4, 15, 0, [0, 6], 'P2', -2],
+  ['Landing page copy', 'rm', 'CA', 'i1', 1, 4, 0, [0, 3], '', -3],
+  ['Compare Booking.com fees', 'rs', 'AK', 'k1', -6, -2, 0, [3, 4], '', -8],
+  ['Pilot with 3 hotels', 'rm', 'AK', 'c1', 14, 35, 0, [0, 5], 'P1', -1],
+  ['Payments integration', 'rm', 'CA', 'f1', 8, 22, 0, null, '', -2],
+  ['Pricing page', 'rm', 'BO', 'i1', null, 10, 0, null, '', -9],
+  ['Onboarding emails', 'rm', 'CA', 'f1', 18, 26, 0, null, '', -1],
+  ['Beta launch', 'rm', 'AK', 'i1', null, 38, 0, null, 'P1', -14],
+  ['Survey 40 guests', 'rs', 'BO', 'p1', -12, -5, 1, [40, 40], '', -15],
+  ['OTA commission study', 'rs', 'CA', 'p1', -4, 1, 0, [1, 2], '', -6],
+  ['Expedia teardown', 'rs', 'BO', 'k1', 2, 9, 0, null, '', -3],
+  ['Channel-manager research', 'rs', 'CA', 'k1', 20, 30, 0, null, 'P3', -2],
+  ['Interview 5 guests', 'rs', 'AK', 'c1', 30, 44, 0, null, '', -1],
+  ['First market sizing', 'rs', 'AK', 'p1', -40, -27, 1, null, '', -45],
+  ['Booking widget spike', 'rm', 'AK', 'f1', 0, 3, 0, [0, 2], '', -1],
+  ['Fee model draft', 'rs', 'AK', 'k1', 1, 5, 0, null, '', -2],
+  ['Investor update', 'rm', 'AK', 'i1', 1, 2, 0, null, '', -1],
+  ['Read: hotel tech report', 'rs', 'BO', 'p1', null, null, 0, null, '', -3],
+  ['Ask the bank about fees', 'rm', '', 'f1', null, null, 0, null, '', -1],
+]
+let TASKS
+let nextId = 1
+function resetTasks() {
+  TASKS = SEED.map(([title, kb, who, card, s, e, done, checks, prio, m]) => ({ id: 't' + nextId++, title, kb, who, card, s: s == null ? null : TI + s, e: e == null ? null : TI + e, done: !!done, checks, prio, m: TI + m }))
+}
+resetTasks()
+
+// ── State ──────────────────────────────────────────────────────────────────────────────────
+const LEFT = 170, BAR = 28, GAP = 6, PAD = 10
+const SCALES = [['day', 150, '1'], ['week', 48, '2'], ['month', 18, '3'], ['quarter', 7, '4']]
+const S = {
+  opt: 'A', theme: 'dark',
+  ppd: { A: 48, C: 26, D: 14 }, sx: { A: null, C: null, D: null },
+  rows: 'kanban', noStart: 'point', sel: null, limit: 3,
+  unfold: { C: new Set(['AK']), D: new Set(['f1']) },
+}
+const stage = document.getElementById('stage')
+const view = document.getElementById('view')
+const dock = document.getElementById('dock')
+const tip = document.getElementById('tip')
+
+// What a task is drawn as: its first and last day, and whether it is a point (no first day).
+function shape(t) {
+  if (t.e == null) return null
+  if (t.s != null) return { s: Math.min(t.s, t.e), e: t.e, kind: 'bar' }
+  if (S.noStart === 'point') return { s: t.e, e: t.e, kind: 'point' }
+  if (S.noStart === 'added') return { s: Math.min(t.m, t.e), e: t.e, kind: 'bar', guess: true }
+  return { s: t.e, e: t.e, kind: 'bar' }
+}
+const isLate = (t) => !t.done && t.e != null && t.e < TI
+const tone = (t) => (t.card ? TONE[CARDS[t.card].type] : '')
+const activeOn = (t, i) => { const sh = shape(t); return sh && !t.done && i >= sh.s && i <= Math.max(sh.e, isLate(t) ? TI : sh.e) }
+
+const mctx = document.createElement('canvas').getContext('2d')
+const textW = (s, font = '13px "Geist Variable"') => { mctx.font = font; return mctx.measureText(s).width }
+const labelOf = (t) => `${t.done ? '✓ ' : ''}${t.prio ? t.prio + ' ' : ''}${t.title}`
+const labelHtml = (t) => `${t.done ? '<span class="ok">✓</span>' : ''}${t.prio ? `<span class="p" data-p="${t.prio}">${t.prio}</span>` : ''}${esc(t.title)}`
+
+// ── Rows for A: by kanban, person or card ─────────────────────────────────────────────────
+function lanesFor(mode) {
+  if (mode === 'kanban') return Object.entries(KANBANS).map(([k, l]) => ({ key: k, name: `<span class="l">${l}</span>` }))
+  if (mode === 'person') return [...Object.entries(PEOPLE).map(([k, l]) => ({ key: k, name: `<span class="who">${k}</span><span class="l">${l}</span>` })), { key: '', name: '<span class="l" style="color:var(--fg-dim)">no one</span>' }]
+  const used = new Set(TASKS.map((t) => t.card))
+  return Object.entries(CARDS).filter(([k]) => used.has(k)).sort((a, b) => ORDER.indexOf(a[1].type) - ORDER.indexOf(b[1].type)).map(([k, c]) => ({ key: k, name: `<span class="kd" style="--tone:${TONE[c.type]}">▌</span><span class="l">${esc(c.title)}</span>` }))
+}
+const rowKey = (t, mode) => (mode === 'kanban' ? t.kb : mode === 'person' ? t.who : t.card)
+const setRow = (t, mode, key) => { if (mode === 'person') t.who = key; else if (mode === 'card') t.card = key }
+
+// A task's box on the axis (px), with what's drawn past it (hatch, an outside label).
+function geom(t, ppd) {
+  const sh = shape(t)
+  if (!sh) return null
+  const inset = ppd >= 20 ? 3 : 1
+  const lw = textW(labelOf(t)) + 20
+  if (sh.kind === 'point') {
+    const cx = sh.e * ppd + ppd / 2
+    let x1 = cx + 14 + lw
+    const late = isLate(t)
+    return { sh, x: cx, w: 0, inset, out: true, lw, late, hx: late ? (sh.e + 1) * ppd : 0, hw: late ? (TI - sh.e) * ppd : 0, x0: cx - 34, x1: late ? Math.max(x1, (TI + 1) * ppd + 60) : x1 }
+  }
+  const x = sh.s * ppd + inset
+  const w = Math.max(ppd >= 20 ? 10 : 4, (sh.e - sh.s + 1) * ppd - 2 * inset)
+  const out = w < lw
+  const late = isLate(t)
+  const hx = (sh.e + 1) * ppd - inset, hw = late ? (TI - sh.e) * ppd + inset : 0
+  let x1 = x + w
+  if (late) x1 = hx + hw + 74
+  if (out) x1 = late ? x1 + lw : Math.max(x1, x + w + 8 + lw)
+  return { sh, x, w, inset, out, lw, late, hx, hw, x0: x - 4, x1: x1 + 6 }
+}
+
+// Lanes in a row: first fit, in px so outside labels never collide. A drag keeps everyone's lane.
+let frozen = null
+function packRow(items) {
+  const ends = []
+  const fixed = items.filter((it) => frozen?.has(it.t.id))
+  for (const it of fixed) { it.lane = frozen.get(it.t.id); ends[it.lane] = Math.max(ends[it.lane] ?? -1e9, it.g.x1) }
+  const rest = items.filter((it) => !frozen?.has(it.t.id)).sort((a, b) => a.g.x0 - b.g.x0)
+  for (const it of rest) {
+    let lane = 0
+    while ((ends[lane] ?? -1e9) > it.g.x0) lane++
+    it.lane = lane
+    ends[lane] = it.g.x1
+  }
+  return Math.max(1, ends.length)
+}
+
+function barHtml(t, g, y) {
+  const sel = S.sel === t.id
+  const tn = tone(t)
+  const prog = t.checks && !t.done && g.sh.kind === 'bar' ? `<span class="prog"><i style="width:${Math.round((t.checks[0] / t.checks[1]) * 100)}%"></i></span>` : ''
+  // Past its hatching when it's late, so the two never overlap.
+  const after = g.out && g.late && g.hw > 0 ? ` style="left:${g.hx - g.x + g.hw + 74}px"` : ''
+  const lbl = `<span class="lbl ${g.out ? 'out' : 'in'}"${after}>${labelHtml(t)}</span>`
+  let h = `<div class="bar" data-id="${t.id}" data-kind="${g.sh.kind}" ${g.sh.guess ? 'data-guess' : ''} ${g.late ? 'data-late' : ''} ${t.done ? 'data-done' : ''} ${sel ? 'data-sel' : ''} ${drag?.id === t.id ? 'data-held' : ''} style="left:${g.x}px;top:${y}px;width:${g.w}px;${tn ? `--tone:${tn}` : ''}" title="${esc(t.title)}">`
+  h += `<span class="grip l"></span><span class="grip r"></span>${g.sh.kind === 'point' ? '<span class="dia"></span>' : ''}${lbl}${prog}${sel || drag?.id === t.id ? '<span class="marks"></span>' : ''}</div>`
+  if (g.late && g.hw > 0) h += `<div class="hatch" style="left:${g.hx}px;top:${y}px;width:${g.hw}px"><span>+${TI - g.sh.e}d late</span></div>`
+  if (sel || drag?.id === t.id) h += readHtml(t, g, y)
+  return h
+}
+function readHtml(t, g, y) {
+  const sh = g.sh
+  const txt = sh.kind === 'point' ? `due <b>${fmt(sh.e)}</b> · no first day` : `<b>${fmt(sh.s)}</b> → <b>${fmt(sh.e)}</b> · ${sh.e - sh.s + 1} days`
+  return `<div class="read" style="left:${sh.kind === 'point' ? g.x - 12 : g.x}px;top:${y}px">${txt}${t.who ? ` · ${t.who}` : ''}</div>`
+}
+
+// ── Time views: skeleton, contents, scroll ─────────────────────────────────────────────────
+let TV = null // { el, vp, world, hw, names, inner, chips, scrub, win, rows, H, W }
+const ppd = () => S.ppd[S.opt]
+function mountTime() {
+  view.innerHTML = `<div class="tv" style="--left:${LEFT}px">
+    <div class="top">
+      <div class="scrubLab"><b>Overview</b>sep 2026 – feb 2027</div>
+      <div class="scrub"><div class="density"></div><div class="smos"></div><div class="win"></div></div>
+      <div class="head"><div class="hw"></div></div>
+    </div>
+    <div class="body"><div class="inner"><div class="names"></div><div class="vp"><div class="world"></div></div><div class="chips"></div></div><div class="trayWrap"></div></div>
+  </div>`
+  const el = view.firstElementChild
+  TV = { el, vp: el.querySelector('.vp'), world: el.querySelector('.world'), hw: el.querySelector('.hw'), names: el.querySelector('.names'), inner: el.querySelector('.inner'), chips: el.querySelector('.chips'), scrub: el.querySelector('.scrub'), win: el.querySelector('.win'), density: el.querySelector('.density'), smos: el.querySelector('.smos'), tray: el.querySelector('.trayWrap'), body: el.querySelector('.body') }
+  TV.W = TV.vp.clientWidth || (view.clientWidth - LEFT)
+  if (S.sx[S.opt] == null) S.sx[S.opt] = TI * ppd() - TV.W / 3
+  fill()
+}
+
+function fill() {
+  if (!TV) return
+  TV.W = TV.vp.clientWidth || TV.W
+  const p = ppd()
+  const built = S.opt === 'A' ? buildA(p) : S.opt === 'C' ? buildC(p) : buildD(p)
+  TV.rows = built.rows
+  TV.H = built.H
+  const width = N * p
+  TV.inner.style.height = built.H + 'px'
+  TV.vp.style.height = built.H + 'px'
+  TV.world.style.width = width + 'px'
+  TV.world.style.height = built.H + 'px'
+  TV.world.innerHTML = gridHtml(p, built.H) + built.world + `<div class="ghost"></div>`
+  TV.names.innerHTML = built.names
+  TV.hw.innerHTML = headHtml(p)
+  TV.hw.style.width = width + 'px'
+  TV.tray.innerHTML = built.tray ?? ''
+  densityHtml()
+  applyScroll()
+}
+
+function gridHtml(p, H) {
+  let h = ''
+  for (let i = 0; i < N; i++) {
+    const d = dateOf(i)
+    if (dow(i) === 5 && p >= 5) h += `<div class="we" style="left:${i * p}px;width:${2 * p}px"></div>`
+    if (d.getUTCDate() === 1) h += `<div class="mline" style="left:${i * p}px"></div>`
+    else if (p >= 20 || (p >= 9 && dow(i) === 0)) h += `<div class="dline" style="left:${i * p}px"></div>`
+  }
+  return h + `<div class="tline" style="left:${TI * p + (p >= 60 ? 0 : p / 2)}px"></div>`
+}
+
+function headHtml(p) {
+  let h = ''
+  for (let i = 0; i < N; i++) {
+    const d = dateOf(i)
+    const dt = d.getUTCDate()
+    if (dt === 1 || (i === 0 && dt < 24)) {
+      const mm = String(d.getUTCMonth() + 1).padStart(2, '0')
+      const long = p * 30 > 260
+      h += `<div class="mo" style="left:${i * p}px"><b>${mm}</b>${long ? MONL[d.getUTCMonth()] + ' ' + d.getUTCFullYear() : MON[d.getUTCMonth()]}</div>`
+    }
+    const today = i === TI, we = dow(i) >= 5
+    let lab = ''
+    if (p >= 90) lab = `${WD[dow(i)]} ${dt}`
+    else if (p >= 30) lab = `<i>${WD[dow(i)][0]}</i>${dt}`
+    else if (p >= 12) lab = dow(i) === 0 || today ? `${dt}` : ''
+    else if (dow(i) === 0 && (p * 7 >= 40 || isoWeek(i) % 2 === 0)) lab = `W${isoWeek(i)}`
+    if (lab) h += `<div class="dl" ${we ? 'data-we' : ''} ${today ? 'data-today' : ''} style="left:${i * p}px">${lab}</div>`
+  }
+  h += `<div class="htoday" style="left:${TI * p + (p >= 60 ? 0 : p / 2)}px"></div>`
+  return h
+}
+
+// The overview: every day's load as a bar glyph, months under it, today a cyan tick, the window you see.
+function densityHtml() {
+  const W = TV.W
+  const cw = 6.6
+  const chars = Math.floor(W / cw)
+  const G = ' ▁▂▃▄▅▆▇█'
+  let s = ''
+  for (let c = 0; c < chars; c++) {
+    const a = Math.floor((c * N) / chars), b = Math.max(a + 1, Math.floor(((c + 1) * N) / chars))
+    let m = 0
+    for (let i = a; i < b; i++) m = Math.max(m, TASKS.filter((t) => activeOn(t, i) || (t.done && shape(t) && i >= shape(t).s && i <= shape(t).e)).length)
+    s += G[Math.min(8, Math.round(m * 1.3))]
+  }
+  TV.density.textContent = s
+  let mo = ''
+  for (let i = 0; i < N; i++) if (dateOf(i).getUTCDate() === 1) mo += `<div class="smo" style="left:${(i / N) * W}px">${MON[dateOf(i).getUTCMonth()]}</div>`
+  mo += `<div class="stoday" style="left:${(TI / N) * W}px"></div>`
+  TV.smos.innerHTML = mo
+}
+
+function clampX(x) { return Math.max(-TV.W * 0.25, Math.min(N * ppd() - TV.W * 0.75, x)) }
+function applyScroll() {
+  const x = (S.sx[S.opt] = clampX(S.sx[S.opt]))
+  TV.world.style.transform = `translateX(${-x}px)`
+  TV.hw.style.transform = `translateX(${-x}px)`
+  const total = N * ppd()
+  const W = TV.W
+  const l = (Math.max(0, x) / total) * W, w = Math.max(14, (W / total) * W)
+  TV.win.style.left = Math.min(W - w, l) + 'px'
+  TV.win.style.width = w + 'px'
+  // A long task started past the left edge keeps its name on screen.
+  for (const el of TV.world.querySelectorAll('.bar[data-kind="bar"] > .lbl.in, .span > .lbl.in')) {
+    const b = el.parentElement
+    const bx = parseFloat(b.style.left), bw = parseFloat(b.style.width)
+    el.style.left = Math.max(10, Math.min(bw - 60, x - bx + 44)) + 'px'
+  }
+  chipsHtml()
+}
+
+// Tasks past the screen's edges, per row: `‹ 2` / `3 ›`; a click glides to the nearest.
+function chipsHtml() {
+  if (!TV.rows) return
+  const p = ppd(), x = S.sx[S.opt], W = TV.W
+  let h = ''
+  for (const r of TV.rows) {
+    if (!r.items?.length) continue
+    const left = r.items.filter((it) => it.g.x + Math.max(it.g.w, 1) < x)
+    const right = r.items.filter((it) => it.g.x > x + W)
+    const y = r.top + PAD + 4
+    if (left.length) h += `<span class="chip" data-go="${left.reduce((a, b) => (b.g.x > a.g.x ? b : a)).t.id}" style="left:4px;top:${y}px">‹ ${left.length}</span>`
+    if (right.length) h += `<span class="chip" data-go="${right.reduce((a, b) => (b.g.x < a.g.x ? b : a)).t.id}" style="right:4px;top:${y}px">${right.length} ›</span>`
+  }
+  TV.chips.innerHTML = h
+}
+
+// ── A: periods on a strip ──────────────────────────────────────────────────────────────────
+function buildA(p) {
+  const lanes = lanesFor(S.rows)
+  let top = 0, world = '', names = ''
+  const rows = []
+  for (const l of lanes) {
+    const items = TASKS.filter((t) => rowKey(t, S.rows) === l.key && t.e != null).map((t) => ({ t, g: geom(t, p) }))
+    const n = packRow(items)
+    const h = 2 * PAD + n * BAR + (n - 1) * GAP
+    rows.push({ key: l.key, top, h, items, lanes: n })
+    world += `<div class="band" style="top:${top}px;height:${h}px"></div>`
+    for (const it of items) world += barHtml(it.t, it.g, top + PAD + it.lane * (BAR + GAP))
+    const count = items.length
+    names += `<div class="rname" style="top:${top + PAD - 1}px">${l.name}<span class="n">${count}</span></div>`
+    top += h
+  }
+  const tray = TASKS.filter((t) => t.e == null)
+  const trayH = `<div class="tray"><span class="trayL">no day · ${tray.length}</span>${tray.map((t) => `<span class="pill" data-tray="${t.id}" style="--tone:${tone(t)}">☐ ${esc(t.title)}</span>`).join('')}<span class="trayH">${tray.length ? 'drag onto a day to give it one' : 'every task has a day'}</span></div>`
+  return { rows, H: top, world, names, tray: trayH }
+}
+
+// ── C: load as glyphs, per person ──────────────────────────────────────────────────────────
+const GLY = ['·', '░', '▒', '▓', '█']
+function buildC(p) {
+  const people = [...Object.keys(PEOPLE)]
+  let top = 0, world = '', names = ''
+  const rows = []
+  const daily = p >= 12
+  const cell = daily ? p : 7 * p
+  const fs = Math.max(9, Math.min(26, cell * 0.95))
+  const LH = 40
+  const totals = new Array(N).fill(0)
+  const overDay = new Array(N).fill(false)
+  for (const who of people) {
+    const mine = TASKS.filter((t) => t.who === who)
+    const count = (i) => mine.filter((t) => activeOn(t, i)).length
+    let peak = 0
+    for (let i = 0; i < N; i++) { const n = count(i); totals[i] += n; if (n > S.limit) overDay[i] = true; if (i >= TI) peak = Math.max(peak, n) }
+    const open = S.unfold.C.has(who)
+    let h = LH
+    let items = []
+    let lanesN = 0
+    if (open) {
+      items = mine.filter((t) => t.e != null).map((t) => ({ t, g: geom(t, p) }))
+      lanesN = packRow(items)
+      h += lanesN * BAR + (lanesN - 1) * GAP + PAD
+    }
+    rows.push({ key: who, top, h, items: open ? items : [], lanes: lanesN, glyphTop: top })
+    world += `<div class="band" style="top:${top}px;height:${h}px"></div>`
+    for (let i = 0; i < N; i += daily ? 1 : 7) {
+      let n = 0
+      if (daily) n = count(i)
+      else for (let k = 0; k < 7; k++) n = Math.max(n, count(i + k))
+      world += `<span class="g" data-who="${who}" data-day="${i}" data-n="${Math.min(n, 4)}" ${n > S.limit ? 'data-over' : ''} style="left:${i * p}px;top:${top + 4}px;width:${cell}px;height:${LH - 8}px;font-size:${fs}px">${GLY[Math.min(n, 4)]}</span>`
+    }
+    if (open) for (const it of items) world += barHtml(it.t, it.g, top + LH + it.lane * (BAR + GAP))
+    names += `<div class="rname" data-unfold="${who}" style="top:${top + 5}px"><span class="fold">${open ? '▾' : '▸'}</span><span class="who">${who}</span><span class="l">${PEOPLE[who]}</span><span class="n" ${peak > S.limit ? 'style="color:var(--accent-magenta)"' : ''}>peak ${peak}</span></div>`
+    top += h
+  }
+  // The team's sum, a number a day.
+  const TH = 26
+  world += `<div class="band" style="top:${top}px;height:${TH}px;border-bottom:0"></div>`
+  if (daily && p >= 18) for (let i = 0; i < N; i++) if (totals[i]) world += `<span class="tnum" ${overDay[i] ? 'data-over' : ''} style="left:${i * p}px;top:${top + 3}px;width:${p}px">${totals[i]}</span>`
+  names += `<div class="rname" style="top:${top - 2}px;color:var(--fg-dim)"><span class="l">team · a day</span></div>`
+  rows.push({ key: '__team', top, h: TH, items: [] })
+  top += TH
+  const key = `<div class="tray"><span class="trayL">key</span>${GLY.map((g, i) => `<span style="color:${i === 4 ? 'var(--accent-magenta)' : 'var(--fg-muted)'}"><span style="font-size:16px">${g}</span> ${i === 0 ? 'free' : i === 4 ? `over ${S.limit} at once` : i + (i === 1 ? ' task' : ' tasks')}</span>`).join('<span class="trayH">·</span>')}<span class="trayH">${daily ? 'a glyph a day' : 'zoomed out: a glyph a week (its busiest day)'}</span></div>`
+  return { rows, H: top, world, names, tray: key }
+}
+
+// ── D: a roadmap by card ───────────────────────────────────────────────────────────────────
+function cardSpan(cid) {
+  const ts = TASKS.filter((t) => t.card === cid && t.e != null)
+  if (!ts.length) return null
+  const s = Math.min(...ts.map((t) => shape(t).s)), e = Math.max(...ts.map((t) => t.e))
+  return { ts, s, e, done: ts.filter((t) => t.done).length, late: ts.some(isLate) }
+}
+function buildD(p) {
+  let top = 0, world = '', names = ''
+  const rows = []
+  let gi = 0
+  for (const type of ORDER) {
+    const cards = Object.entries(CARDS).filter(([k, c]) => c.type === type && cardSpan(k))
+    if (!cards.length) continue
+    gi++
+    names += `<div class="gname" style="top:${top + 2}px;width:calc(var(--left) + 100vw)"><b>${String(gi).padStart(2, '0')}</b>${TYPEN[type]} · ${cards.length}</div>`
+    rows.push({ key: '__g' + type, top, h: 34, items: [] })
+    top += 34
+    for (const [cid, c] of cards) {
+      const sp = cardSpan(cid)
+      const open = S.unfold.D.has(cid)
+      const RH = 52
+      let items = [], lanesN = 0
+      if (open) { items = sp.ts.map((t) => ({ t, g: geom(t, p) })); lanesN = packRow(items) }
+      const h = RH + (open ? lanesN * BAR + (lanesN - 1) * GAP + PAD : 0)
+      rows.push({ key: cid, top, h, items, lanes: lanesN })
+      world += `<div class="band" style="top:${top}px;height:${h}px"></div>`
+      const x = sp.s * p + 1, w = Math.max(6, (sp.e - sp.s + 1) * p - 2)
+      const frac = sp.done / sp.ts.length
+      const lbl = `${sp.done}/${sp.ts.length} · ${fmt(sp.s)} → ${fmt(sp.e)}`
+      const lw = textW(lbl, '10.5px "Geist Mono Variable"') * 1.12 + 20
+      world += `<div class="span" data-card="${cid}" ${sp.late ? 'data-late' : ''} style="left:${x}px;top:${top + 9}px;width:${w}px;--tone:${TONE[c.type]}"><span class="fill" style="width:${frac * 100}%"></span><span class="lbl ${w < lw ? 'out' : 'in'}">${lbl}</span></div>`
+      // Its tasks as a strip under it: a line from first to last day, a point for one with only a due day.
+      const segs = sp.ts.map((t) => ({ t, sh: shape(t) })).sort((a, b) => a.sh.s - b.sh.s)
+      const ends = []
+      for (const sg of segs) {
+        let ln = 0
+        while ((ends[ln] ?? -1) >= sg.sh.s) ln++
+        ends[ln] = sg.sh.e + 1
+        const pt = sg.sh.kind === 'point'
+        if (ln < 3) world += `<span class="seg" ${pt ? 'data-pt' : ''} ${sg.t.done ? 'data-done' : ''} ${isLate(sg.t) ? 'data-late' : ''} style="left:${pt ? sg.sh.e * p + p / 2 - 2 : sg.sh.s * p + 2}px;top:${top + 36 + ln * 5}px;width:${Math.max(2, (sg.sh.e - sg.sh.s + 1) * p - 4)}px"></span>`
+      }
+      if (open) for (const it of items) world += barHtml(it.t, it.g, top + RH + it.lane * (BAR + GAP))
+      names += `<div class="rname" data-unfold="${cid}" style="top:${top + 5}px"><span class="fold">${open ? '▾' : '▸'}</span><span class="kd" style="--tone:${TONE[c.type]}">▌</span><span class="l" style="text-transform:none;letter-spacing:0;font:13px var(--font-display)">${esc(c.title)}</span></div>`
+      top += h
+    }
+  }
+  return { rows, H: top, world, names, tray: `<div class="tray"><span class="trayL"></span><span class="trayH">a card's span runs from its first task's first day to its last task's due day; the fill is how many are finished. Drag a span: every task of that card moves with it.</span></div>` }
+}
+
+// ── Interaction on the time views ──────────────────────────────────────────────────────────
+let drag = null
+let glideRaf = 0
+function worldX(clientX) { return clientX - TV.vp.getBoundingClientRect().left + S.sx[S.opt] }
+function rowAtY(clientY) {
+  const y = clientY - TV.inner.getBoundingClientRect().top
+  return TV.rows.find((r) => y >= r.top && y < r.top + r.h)
+}
+function glideTo(target, ms = 420) {
+  cancelAnimationFrame(glideRaf)
+  const from = S.sx[S.opt], to = clampX(target), t0 = performance.now()
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / ms)
+    const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2
+    S.sx[S.opt] = from + (to - from) * e
+    applyScroll()
+    if (k < 1) glideRaf = requestAnimationFrame(step)
+  }
+  glideRaf = requestAnimationFrame(step)
+}
+// A new scale, eased so the day under the anchor stays put; text keeps its size.
+let zoomRaf = 0
+function zoomTo(target, anchorPx = TV.W / 2, ms = 340) {
+  cancelAnimationFrame(zoomRaf)
+  const from = ppd(), t0 = performance.now()
+  const day = (S.sx[S.opt] + anchorPx) / from
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / ms)
+    const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2
+    const p = from * Math.pow(target / from, e)
+    S.ppd[S.opt] = p
+    S.sx[S.opt] = day * p - anchorPx
+    fill()
+    renderDock()
+    if (k < 1) zoomRaf = requestAnimationFrame(step)
+  }
+  zoomRaf = requestAnimationFrame(step)
+}
+
+function commitRows() { frozen = null; fill() }
+function freeze() { frozen = new Map(); for (const r of TV.rows) for (const it of r.items ?? []) frozen.set(it.t.id, it.lane) }
+
+stage.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || !TV || !TV.el.isConnected) return
+  const tgt = e.target
+  const chip = tgt.closest('.chip')
+  if (chip) {
+    const t = TASKS.find((x) => x.id === chip.dataset.go)
+    const g = geom(t, ppd())
+    S.sel = t.id
+    glideTo(g.x + Math.max(g.w, 0) / 2 - TV.W / 2)
+    fill()
+    return
+  }
+  const fold = tgt.closest('.rname[data-unfold]')
+  if (fold) {
+    const set = S.unfold[S.opt]
+    const k = fold.dataset.unfold
+    set.has(k) ? set.delete(k) : set.add(k)
+    frozen = null
+    fill()
+    return
+  }
+  const pill = tgt.closest('.pill[data-tray]')
+  if (pill) return startTray(e, pill)
+  const bar = tgt.closest('.bar[data-id]')
+  if (bar && !bar.dataset.draft) return startBar(e, bar, tgt.closest('.grip'))
+  const span = tgt.closest('.span[data-card]')
+  if (span) return startSpan(e, span)
+  const ghost = tgt.closest('.ghost[data-on]')
+  if (ghost) return startDraw(e, ghost)
+  if (tgt.closest('.win, .scrub')) return startScrub(e, !!tgt.closest('.win'))
+  if (tgt.closest('.vp, .head')) return startPan(e)
+})
+
+function onDrag(move, up) {
+  const mv = (ev) => move(ev)
+  const fin = (ev) => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', fin); window.removeEventListener('pointercancel', fin); up(ev) }
+  window.addEventListener('pointermove', mv)
+  window.addEventListener('pointerup', fin)
+  window.addEventListener('pointercancel', fin)
+}
+
+// Near an edge while holding something: the days scroll under it.
+let edgeRaf = 0, lastPtr = null
+function edgeScroll(apply) {
+  cancelAnimationFrame(edgeRaf)
+  const tick = () => {
+    if (!lastPtr || !drag) return
+    const r = TV.vp.getBoundingClientRect()
+    const d = lastPtr.clientX < r.left + 50 ? -(r.left + 50 - lastPtr.clientX) : lastPtr.clientX > r.right - 50 ? lastPtr.clientX - (r.right - 50) : 0
+    if (d) { S.sx[S.opt] += d * 0.35; applyScroll(); apply(lastPtr) }
+    edgeRaf = requestAnimationFrame(tick)
+  }
+  edgeRaf = requestAnimationFrame(tick)
+}
+
+function startPan(e) {
+  cancelAnimationFrame(glideRaf)
+  let last = e.clientX, lt = performance.now(), v = 0, moved = false
+  const x0 = e.clientX
+  TV.el.dataset.panning = ''
+  onDrag((ev) => {
+    const now = performance.now()
+    const dx = ev.clientX - last
+    if (Math.abs(ev.clientX - x0) > 3) moved = true
+    S.sx[S.opt] -= dx
+    v = dx / Math.max(1, now - lt)
+    last = ev.clientX; lt = now
+    applyScroll()
+  }, () => {
+    delete TV.el.dataset.panning
+    if (!moved) { if (S.sel) { S.sel = null; fill() } return }
+    // A flick keeps going and slows.
+    let vel = v * 16
+    const decay = () => { if (Math.abs(vel) < 0.4) return; S.sx[S.opt] -= vel; vel *= 0.92; applyScroll(); glideRaf = requestAnimationFrame(decay) }
+    glideRaf = requestAnimationFrame(decay)
+  })
+}
+
+function startScrub(e, onWin) {
+  const r = TV.scrub.getBoundingClientRect()
+  const total = N * ppd()
+  const toX = (cx) => ((cx - r.left) / r.width) * total
+  const grabOff = onWin ? toX(e.clientX) - S.sx[S.opt] : TV.W / 2
+  if (!onWin) glideTo(toX(e.clientX) - TV.W / 2, 300)
+  onDrag((ev) => { cancelAnimationFrame(glideRaf); S.sx[S.opt] = toX(ev.clientX) - grabOff; applyScroll() }, () => {})
+}
+
+function startBar(e, el, grip) {
+  e.preventDefault()
+  const t = TASKS.find((x) => x.id === el.dataset.id)
+  const sh = shape(t)
+  const part = grip ? (grip.classList.contains('l') ? 'start' : 'due') : 'move'
+  const w0 = worldX(e.clientX)
+  const orig = { s: t.s, e: t.e, who: t.who, card: t.card }
+  const row0 = rowAtY(e.clientY)
+  let moved = false
+  freeze()
+  drag = { id: t.id }
+  const apply = (ev) => {
+    const d = Math.round((worldX(ev.clientX) - w0) / ppd())
+    if (!moved && Math.abs(ev.clientX - e.clientX) + Math.abs(ev.clientY - e.clientY) < 4) return
+    moved = true
+    if (part === 'move') {
+      t.e = orig.e + d
+      if (orig.s != null) t.s = orig.s + d
+    } else if (part === 'start') {
+      const ns = sh.s + d
+      t.s = Math.min(ns, t.e)
+      if (sh.kind === 'point' && ns >= t.e) t.s = null
+    } else t.e = Math.max(sh.s, orig.e + d)
+    fill()
+  }
+  lastPtr = e
+  edgeScroll(apply)
+  onDrag((ev) => { lastPtr = ev; apply(ev) }, (ev) => {
+    cancelAnimationFrame(edgeRaf)
+    drag = null
+    lastPtr = null
+    if (!moved) { S.sel = S.sel === t.id ? null : t.id; frozen = null; fill(); return }
+    // Dropped on another row: by person or card, that too (rows by kanban keep it).
+    const r = rowAtY(ev.clientY)
+    const mode = S.opt === 'C' ? 'person' : S.opt === 'A' ? S.rows : null
+    if (part === 'move' && r && row0 && r.key !== row0.key && mode && mode !== 'kanban' && !r.key.startsWith('__')) setRow(t, mode, r.key)
+    S.sel = t.id
+    commitRows()
+  })
+}
+
+function startSpan(e, el) {
+  e.preventDefault()
+  const cid = el.dataset.card
+  const ts = TASKS.filter((t) => t.card === cid && t.e != null)
+  const orig = ts.map((t) => ({ t, s: t.s, e: t.e }))
+  const w0 = worldX(e.clientX)
+  freeze()
+  drag = { id: '__span' }
+  const apply = (ev) => {
+    const d = Math.round((worldX(ev.clientX) - w0) / ppd())
+    for (const o of orig) { o.t.e = o.e + d; if (o.s != null) o.t.s = o.s + d }
+    fill()
+  }
+  lastPtr = e
+  edgeScroll(apply)
+  onDrag((ev) => { lastPtr = ev; apply(ev) }, () => { cancelAnimationFrame(edgeRaf); drag = null; lastPtr = null; commitRows() })
+}
+
+// Hovering an empty day in a row: a `+`; press it and draw across days, a new task with that period.
+stage.addEventListener('pointermove', (e) => {
+  if (!TV || !TV.el.isConnected || drag || S.opt !== 'A') return
+  const ghost = TV.world.querySelector('.ghost')
+  if (!ghost) return
+  if (e.target.closest('.bar, .chip, .read') || !e.target.closest('.vp, .ghost')) { delete ghost.dataset.on; return }
+  const r = rowAtY(e.clientY)
+  if (!r) { delete ghost.dataset.on; return }
+  const p = ppd()
+  const day = Math.floor(worldX(e.clientX) / p)
+  // The lane under the pointer, if it's free there; else under the row's lanes.
+  const y = e.clientY - TV.inner.getBoundingClientRect().top - r.top - PAD
+  const lane = Math.max(0, Math.min(r.lanes, Math.floor(y / (BAR + GAP))))
+  const busy = r.items.some((it) => it.lane === lane && it.g.x0 < (day + 1) * p && it.g.x1 > day * p)
+  if (busy || lane >= r.lanes) { delete ghost.dataset.on; return }
+  const w = Math.max(22, p - 6)
+  ghost.style.left = day * p + (p - w) / 2 + 'px'
+  ghost.style.width = w + 'px'
+  ghost.style.top = r.top + PAD + lane * (BAR + GAP) + 'px'
+  ghost.dataset.on = ''
+  ghost.dataset.day = day
+  ghost.dataset.row = r.key
+  ghost.dataset.lane = lane
+  ghost.textContent = p >= 60 ? '+ task' : '+'
+})
+
+function startDraw(e, ghost) {
+  e.preventDefault()
+  const d0 = +ghost.dataset.day, row = ghost.dataset.row, top = parseFloat(ghost.style.top)
+  const p = ppd()
+  let s = d0, en = d0
+  drag = { id: '__draft' }
+  const draft = document.createElement('div')
+  draft.className = 'bar'
+  draft.dataset.draft = ''
+  TV.world.appendChild(draft)
+  delete ghost.dataset.on
+  const place = () => {
+    draft.style.left = s * p + 3 + 'px'
+    draft.style.width = (en - s + 1) * p - 6 + 'px'
+    draft.style.top = top + 'px'
+    draft.innerHTML = `<span class="marks" style="--c:var(--accent-cyan)"></span><div class="read" style="left:0;top:0">${fmt(s)} → ${fmt(en)} · ${en - s + 1} days</div>`
+  }
+  place()
+  const apply = (ev) => { const d = Math.floor(worldX(ev.clientX) / p); s = Math.min(d0, d); en = Math.max(d0, d); place() }
+  lastPtr = e
+  edgeScroll(apply)
+  onDrag((ev) => { lastPtr = ev; apply(ev) }, () => {
+    cancelAnimationFrame(edgeRaf)
+    drag = null
+    lastPtr = null
+    const input = document.createElement('input')
+    input.className = 'draftIn'
+    input.placeholder = 'what is it?   ↵ keep · esc away'
+    input.style.left = draft.style.left
+    input.style.top = draft.style.top
+    input.style.width = Math.max(240, parseFloat(draft.style.width)) + 'px'
+    TV.world.appendChild(input)
+    input.focus()
+    let closed = false
+    const done = (keep) => {
+      if (closed) return
+      closed = true
+      if (keep && input.value.trim()) {
+        const t = { id: 't' + nextId++, title: input.value.trim(), kb: S.rows === 'kanban' ? row : 'rm', who: S.rows === 'person' ? row : 'AK', card: S.rows === 'card' ? row : '', s, e: en, done: false, checks: null, prio: '', m: TI }
+        TASKS.push(t)
+        S.sel = t.id
+      }
+      input.remove()
+      draft.remove()
+      fill()
+    }
+    input.addEventListener('keydown', (ev) => { ev.stopPropagation(); if (ev.key === 'Enter') done(true); if (ev.key === 'Escape') done(false) })
+    input.addEventListener('blur', () => input.isConnected && done(true))
+  })
+}
+
+// A tray task dragged onto a day: that's its due day.
+function startTray(e, pill) {
+  e.preventDefault()
+  const t = TASKS.find((x) => x.id === pill.dataset.tray)
+  const f = pill.cloneNode(true)
+  f.classList.add('float')
+  document.body.appendChild(f)
+  const r = pill.getBoundingClientRect()
+  const ox = e.clientX - r.left, oy = e.clientY - r.top
+  const place = (ev) => { f.style.left = ev.clientX - ox * 0.8 + 'px'; f.style.top = ev.clientY - oy * 0.8 + 'px' }
+  place(e)
+  onDrag(place, (ev) => {
+    f.remove()
+    const vr = TV.vp.getBoundingClientRect()
+    if (ev.clientX < vr.left || ev.clientX > vr.right || ev.clientY < vr.top || ev.clientY > vr.bottom) return
+    t.e = Math.floor(worldX(ev.clientX) / ppd())
+    const row = rowAtY(ev.clientY)
+    if (row && S.rows !== 'kanban') setRow(t, S.rows, row.key)
+    S.sel = t.id
+    fill()
+  })
+}
+
+// Wheel: sideways (or shift) moves the days; pinch or ⌘ changes the scale round the pointer; up/down scrolls the rows.
+stage.addEventListener('wheel', (e) => {
+  if (!TV || !TV.el.isConnected || !e.target.closest('.tv')) return
+  const anchor = e.clientX - TV.vp.getBoundingClientRect().left
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault()
+    cancelAnimationFrame(zoomRaf)
+    const from = ppd()
+    const to = Math.max(5, Math.min(160, from * Math.exp(-e.deltaY * 0.012)))
+    const day = (S.sx[S.opt] + anchor) / from
+    S.ppd[S.opt] = to
+    S.sx[S.opt] = day * to - anchor
+    fill()
+    renderDock()
+    return
+  }
+  const dx = e.shiftKey ? e.deltaY || e.deltaX : e.deltaX
+  if (Math.abs(dx) > Math.abs(e.shiftKey ? 0 : e.deltaY) || e.target.closest('.head, .scrub')) {
+    e.preventDefault()
+    cancelAnimationFrame(glideRaf)
+    S.sx[S.opt] += dx || e.deltaY
+    applyScroll()
+  }
+}, { passive: false })
+
+// Hovering a load glyph: who has what that day.
+stage.addEventListener('mouseover', (e) => {
+  const g = e.target.closest?.('.g')
+  if (!g) { tip.style.display = 'none'; return }
+  const who = g.dataset.who, i = +g.dataset.day
+  const daily = ppd() >= 12
+  const days = daily ? [i] : [0, 1, 2, 3, 4, 5, 6].map((k) => i + k)
+  const ts = TASKS.filter((t) => t.who === who && days.some((d) => activeOn(t, d)))
+  tip.innerHTML = `<b>${PEOPLE[who]} · ${daily ? `${WD[dow(i)]} ${fmt(i)}` : `week of ${fmt(i)}`}</b>` + (ts.length ? ts.map((t) => `<div style="--tone:${tone(t) || 'var(--fg-dim)'}"><i></i>${esc(t.title)}${isLate(t) ? ' <span class="o">late</span>' : ''}</div>`).join('') : '<div>free</div>') + (ts.length > S.limit ? `<span class="o">${ts.length} at once, more than ${S.limit}</span>` : '')
+  const r = g.getBoundingClientRect()
+  tip.style.left = Math.min(innerWidth - 340, r.left) + 'px'
+  tip.style.top = r.bottom + 6 + 'px'
+  tip.style.display = 'block'
+})
+
+// ── B: the month calendar ──────────────────────────────────────────────────────────────────
+let CAL = null
+function mountCal(keep) {
+  const prevTop = keep && CAL ? CAL.body.scrollTop : null
+  view.innerHTML = `<div class="cal"><div class="calHead"><span></span>${WD.map((d) => `<span>${d}</span>`).join('')}</div><div class="calTray"></div><div class="calBody"></div></div>`
+  const el = view.firstElementChild
+  CAL = { el, body: el.querySelector('.calBody'), tray: el.querySelector('.calTray') }
+  fillCal()
+  if (prevTop != null) CAL.body.scrollTop = prevTop
+  else { const wk = CAL.body.querySelector(`.wk[data-w="${Math.floor(TI / 7) - 1}"]`); if (wk) CAL.body.scrollTop = wk.offsetTop }
+}
+function fillCal() {
+  const body = CAL.body
+  const cw = (body.clientWidth - 72) / 7
+  const weeks = Math.ceil(N / 7)
+  let h = ''
+  const MAXL = 4
+  for (let w = 0; w < weeks; w++) {
+    const a = w * 7, b = a + 6
+    const segs = []
+    for (const t of TASKS) {
+      const sh = shape(t)
+      if (!sh) continue
+      const lateEnd = isLate(t) ? TI : sh.e
+      if (sh.e < a || sh.s > b) { if (!(isLate(t) && sh.e < a && TI >= a)) continue }
+      const ss = Math.max(a, sh.s), se = Math.min(b, sh.e)
+      segs.push({ t, sh, ss, se, he: Math.min(b, lateEnd), cont: sh.s < a, pt: sh.kind === 'point', only: sh.e < a })
+    }
+    segs.sort((x, y) => x.ss - y.ss || y.se - y.ss - (x.se - x.ss))
+    const ends = []
+    for (const sg of segs) {
+      const end = Math.max(sg.only ? sg.he : sg.se, sg.he) + (sg.pt ? 1 : 0)
+      let ln = 0
+      while ((ends[ln] ?? -1) >= sg.ss) ln++
+      sg.lane = ln
+      ends[ln] = end
+    }
+    const lanes = Math.min(MAXL, ends.length)
+    const hh = Math.max(104, 30 + lanes * 24 + 22)
+    const firstIn = [...Array(7)].map((_, k) => a + k).find((i) => i >= 0 && dateOf(i).getUTCDate() === 1)
+    const mFirst = dateOf(Math.max(a, 0))
+    const label = firstIn != null || w === 0 ? (() => { const d = dateOf(firstIn ?? a); return `<b>${String(d.getUTCMonth() + 1).padStart(2, '0')}</b>${MONL[d.getUTCMonth()].slice(0, 3)} ${d.getUTCFullYear()}` })() : ''
+    h += `<div class="wk" data-w="${w}" style="height:${hh}px"><div class="wkL">${label}<i>W${isoWeek(a)}</i></div>`
+    for (let k = 0; k < 7; k++) {
+      const i = a + k
+      const d = dateOf(i)
+      h += `<div class="cd" data-day="${i}" ${k >= 5 ? 'data-we' : ''} ${d.getUTCMonth() % 2 ? 'data-odd' : ''} ${d.getUTCDate() === 1 ? 'data-first' : ''} data-m="${MON[d.getUTCMonth()]}" ${i === TI ? 'data-today' : ''}><span class="num">${d.getUTCDate()}</span><button class="add" data-add="${i}" title="a task on this day">+</button></div>`
+    }
+    const hidden = new Map()
+    for (const sg of segs) {
+      if (sg.lane >= MAXL) { for (let i = sg.ss; i <= sg.se; i++) hidden.set(i, (hidden.get(i) ?? 0) + 1); continue }
+      const top = 30 + sg.lane * 24
+      const tn = tone(sg.t)
+      if (!sg.only) {
+        const left = 72 + (sg.ss - a) * cw + 3, width = (sg.se - sg.ss + 1) * cw - 6
+        h += `<div class="cbar" data-cid="${sg.t.id}" ${sg.cont ? 'data-cont' : ''} ${sg.pt ? 'data-pt' : ''} ${isLate(sg.t) ? 'data-late' : ''} ${sg.t.done ? 'data-done' : ''} ${S.sel === sg.t.id ? 'data-sel' : ''} style="left:${left}px;top:${top}px;width:${sg.pt ? Math.max(width, cw * 1.6) : width}px;${tn ? `--tone:${tn}` : ''}" title="${esc(sg.t.title)}">${sg.t.done ? '<span class="ok">✓</span>' : ''}${sg.t.prio ? `<span class="p" data-p="${sg.t.prio}">${sg.t.prio}</span>` : ''}${esc(sg.t.title)}</div>`
+      }
+      if (isLate(sg.t) && sg.he > Math.max(sg.se, a - 1)) {
+        const hs = sg.only ? a : sg.se + 1
+        if (hs <= sg.he) h += `<div class="chatch" style="left:${72 + (hs - a) * cw}px;top:${top}px;width:${(sg.he - hs + 1) * cw - 3}px"></div>`
+      }
+    }
+    for (const [i, n] of hidden) h += `<div class="cmore" style="left:${72 + (i - a) * cw}px;top:${30 + MAXL * 24}px">+${n} more</div>`
+    h += `</div>`
+  }
+  body.innerHTML = h
+  const tray = TASKS.filter((t) => t.e == null)
+  CAL.tray.innerHTML = `<span class="trayL">no day · ${tray.length}</span>${tray.map((t) => `<span class="pill" data-ctray="${t.id}" style="--tone:${tone(t)}">☐ ${esc(t.title)}</span>`).join('')}<span class="trayH">${tray.length ? 'drag onto a day' : ''}</span>`
+}
+function calDayAt(x, y) {
+  const el = document.elementFromPoint(x, y)?.closest?.('.cd')
+  if (el) return +el.dataset.day
+  const wk = document.elementFromPoint(x, y)?.closest?.('.wk')
+  if (!wk) return null
+  const r = wk.getBoundingClientRect()
+  const k = Math.floor((x - r.left - 72) / ((r.width - 72) / 7))
+  return k >= 0 && k < 7 ? +wk.dataset.w * 7 + k : null
+}
+stage.addEventListener('pointerdown', (e) => {
+  if (S.opt !== 'B' || e.button !== 0 || !CAL) return
+  const add = e.target.closest('.add[data-add]')
+  if (add) {
+    e.preventDefault()
+    const i = +add.dataset.add
+    const cd = add.closest('.cd')
+    const wk = cd.closest('.wk')
+    const input = document.createElement('input')
+    input.className = 'cin'
+    input.placeholder = 'what is it?  ↵'
+    input.style.left = cd.offsetLeft + 3 + 'px'
+    input.style.top = '28px'
+    input.style.width = Math.max(180, cd.offsetWidth - 6) + 'px'
+    wk.appendChild(input)
+    setTimeout(() => input.focus())
+    let closed = false
+    const done = (keep) => { if (closed) return; closed = true; if (keep && input.value.trim()) { const t = { id: 't' + nextId++, title: input.value.trim(), kb: 'rm', who: 'AK', card: '', s: i, e: i, done: false, checks: null, prio: '', m: TI }; TASKS.push(t); S.sel = t.id } mountCal(true) }
+    input.addEventListener('keydown', (ev) => { ev.stopPropagation(); if (ev.key === 'Enter') done(true); if (ev.key === 'Escape') done(false) })
+    input.addEventListener('blur', () => input.isConnected && done(true))
+    return
+  }
+  const bar = e.target.closest('.cbar[data-cid]')
+  const pill = e.target.closest('.pill[data-ctray]')
+  if (!bar && !pill) return
+  e.preventDefault()
+  const t = TASKS.find((x) => x.id === (bar ? bar.dataset.cid : pill.dataset.ctray))
+  const sh = shape(t)
+  const d0 = calDayAt(e.clientX, e.clientY)
+  let moved = false, delta = 0
+  let f = null
+  if (pill) { f = pill.cloneNode(true); f.classList.add('float'); document.body.appendChild(f) }
+  const mark = () => {
+    CAL.body.querySelectorAll('.cd[data-target]').forEach((c) => delete c.dataset.target)
+    if (!moved) return
+    const s = pill ? delta : sh.s + delta, en = pill ? delta : sh.e + delta
+    for (let i = s; i <= en; i++) { const c = CAL.body.querySelector(`.cd[data-day="${i}"]`); if (c) c.dataset.target = '' }
+  }
+  onDrag((ev) => {
+    if (f) { f.style.left = ev.clientX - 10 + 'px'; f.style.top = ev.clientY - 10 + 'px' }
+    if (Math.abs(ev.clientX - e.clientX) + Math.abs(ev.clientY - e.clientY) > 4) moved = true
+    const d = calDayAt(ev.clientX, ev.clientY)
+    if (d == null) return
+    delta = pill ? d : d - d0
+    mark()
+    // Near the top or bottom: the weeks scroll.
+    const r = CAL.body.getBoundingClientRect()
+    if (ev.clientY > r.bottom - 40) CAL.body.scrollTop += 12
+    if (ev.clientY < r.top + 40) CAL.body.scrollTop -= 12
+  }, () => {
+    f?.remove()
+    if (!moved) { S.sel = S.sel === t.id ? null : t.id; mountCal(true); return }
+    if (pill) t.e = delta
+    else { t.e = sh.e + delta; if (t.s != null) t.s += delta }
+    S.sel = t.id
+    mountCal(true)
+  })
+})
+function calStep(by) {
+  const body = CAL.body
+  const weeks = [...body.querySelectorAll('.wk')]
+  const cur = weeks.findIndex((w) => w.offsetTop + w.offsetHeight > body.scrollTop + 2)
+  const curDay = Math.max(0, (cur < 0 ? 0 : cur) * 7 + 3)
+  const d = dateOf(curDay)
+  let target
+  if (by === 0) target = Math.floor(TI / 7) - 1
+  else { const m = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + by, 1); target = Math.floor(Math.round((m - D0) / DAY) / 7) }
+  const wk = body.querySelector(`.wk[data-w="${Math.max(0, target)}"]`)
+  if (wk) body.scrollTo({ top: wk.offsetTop, behavior: 'smooth' })
+}
+
+// ── 0: today's timeline, as it is ──────────────────────────────────────────────────────────
+function mountOld() {
+  const from = TI - 3 // Monday 26 Oct
+  const span = 14, L = 150, Dw = 150, H0 = 44
+  let h = ''
+  for (let k = 0; k < span; k++) {
+    const i = from + k
+    const d = dateOf(i)
+    h += `<div class="ohead" ${dow(i) >= 5 ? 'data-we' : ''} ${i === TI ? 'data-today' : ''} style="left:${L + k * Dw}px">${WD[dow(i)]} ${d.getUTCDate()}${d.getUTCDate() === 1 ? ' ' + MON[d.getUTCMonth()] : ''}</div>`
+  }
+  let top = H0, later = 0, earlier = 0
+  for (const [kb, name] of Object.entries(KANBANS)) {
+    const placed = []
+    for (const t of TASKS.filter((x) => x.kb === kb && x.e != null)) {
+      let day = t.e - from
+      const late = isLate(t)
+      if (late) day = TI - from
+      if (day < 0) { earlier++; continue }
+      if (day >= span) { later++; continue }
+      placed.push({ t, day, late })
+    }
+    placed.sort((a, b) => Number(b.late) - Number(a.late) || a.t.title.localeCompare(b.t.title))
+    const used = new Map()
+    for (const p of placed) { p.slot = used.get(p.day) ?? 0; used.set(p.day, p.slot + 1) }
+    const most = Math.max(1, ...used.values())
+    const rh = 20 + most * 30 + (most - 1) * 6
+    h += `<div style="position:absolute;left:0;right:0;top:${top}px;height:${rh}px;border-bottom:1px solid var(--line)"><span class="rname" style="top:6px">${name}</span>${[...Array(span)].map((_, k) => `<span class="ocell" ${dow(from + k) >= 5 ? 'data-we' : ''} style="left:${L + k * Dw}px"></span>`).join('')}</div>`
+    for (const p of placed) h += `<div class="osheet" ${p.late ? 'data-late' : ''} ${p.t.done ? 'data-done' : ''} style="left:${L + p.day * Dw + 4}px;top:${top + 10 + p.slot * 36}px;width:${Dw - 8}px;${tone(p.t) ? `--tone:${tone(p.t)}` : ''}">${p.late ? `<span class="late">← ${dateOf(p.t.e).getUTCDate()} · </span>` : ''}${p.t.done ? '✓ ' : ''}${p.t.prio ? `<span class="late" style="color:var(--fg-dim)">${p.t.prio} </span>` : ''}${esc(p.t.title)}</div>`
+    top += rh
+  }
+  h += `<span style="position:absolute;left:${L + TI * 0 + (TI - from) * Dw}px;top:${H0 - 8}px;width:1px;height:${top - H0 + 8}px;background:var(--accent-cyan)"></span>`
+  if (earlier) h += `<div class="omore" style="left:${L - 40}px">← ${earlier}</div>`
+  if (later) h += `<div class="omore" style="left:${L + span * Dw + 6}px">${later} →</div>`
+  const tray = TASKS.filter((t) => t.e == null)
+  h += `<div class="tray" style="position:absolute;left:0;right:0;top:${top + 16}px;--left:150px"><span class="trayL">no day · ${tray.length}</span>${tray.map((t) => `<span class="pill" style="--tone:${tone(t)}">☐ ${esc(t.title)}</span>`).join('')}</div>`
+  const W = L + span * Dw + 40
+  view.innerHTML = `<div class="old"><div class="oldB" style="width:${W}px;height:${top + 80}px">${h}</div></div>`
+  const box = view.firstElementChild
+  const k = Math.min(1, box.clientWidth / W)
+  box.firstElementChild.style.transform = `scale(${k})`
+}
+
+// ── Dock, notes, tabs ──────────────────────────────────────────────────────────────────────
+const db = (label, act, pressed, title = '', cls = '') => `<button class="db ${cls}" data-act="${act}" ${pressed != null ? `aria-pressed="${pressed}"` : ''} title="${title}">${label}</button>`
+function scaleTools() {
+  const p = ppd()
+  return SCALES.map(([n, v, k]) => db(`${n}<span class="k">${k}</span>`, 'scale:' + v, Math.abs(Math.log(p / v)) < 0.25, `${v} px a day`)).join('')
+}
+function renderDock() {
+  let h = ''
+  const sep = '<span class="sep"></span>'
+  if (S.opt === '0') h = `${db('filter', '', null, '', 'bracket')}<span>rows ▾ <span style="color:var(--fg)">deck</span></span>${sep}${db('‹', '')}${db('today', '', true)}${db('›', '')}${sep}${db('unfocus', '', null, '', 'bracket')}<span>esc</span>`
+  if (S.opt === 'A') h = `${db('filter', '', null, '', 'bracket')}<span class="lab">rows</span>${['kanban', 'person', 'card'].map((r) => db(r === 'kanban' ? 'deck' : r, 'rows:' + r, S.rows === r)).join('')}${sep}${scaleTools()}${sep}${db('today', 'today', null, 'back to today (t)', 'bracket')}${sep}<span class="lab">no first day</span>${[['point', '◆ point'], ['day', '▭ one day'], ['added', '┄ since added']].map(([k, l]) => db(l, 'ns:' + k, S.noStart === k)).join('')}${sep}${db('unfocus', '', null, '', 'bracket')}<span>esc</span>`
+  if (S.opt === 'B') h = `${db('filter', '', null, '', 'bracket')}${sep}${db('‹', 'cal:-1', null, 'the month before')}${db('today', 'cal:0', null, '', 'bracket')}${db('›', 'cal:1', null, 'the month after')}${sep}<span class="lab">no first day</span>${[['point', '◆ point'], ['day', '▭ one day'], ['added', '┄ since added']].map(([k, l]) => db(l, 'ns:' + k, S.noStart === k)).join('')}${sep}${db('unfocus', '', null, '', 'bracket')}<span>esc</span>`
+  if (S.opt === 'C') h = `${db('filter', '', null, '', 'bracket')}<span class="lab">rows</span><span style="color:var(--fg)">person</span>${sep}${scaleTools()}${sep}${db('today', 'today', null, '', 'bracket')}${sep}<span class="lab">too much at</span>${db('−', 'lim:-1')}<span style="color:var(--fg)">${S.limit}</span>${db('+', 'lim:1')}${sep}${db('unfocus', '', null, '', 'bracket')}<span>esc</span>`
+  if (S.opt === 'D') h = `${db('filter', '', null, '', 'bracket')}${sep}${scaleTools()}${sep}${db('today', 'today', null, '', 'bracket')}${sep}${db('unfold all', 'unfold', null, '', 'bracket')}${db('fold all', 'fold', null, '', 'bracket')}${sep}${db('unfocus', '', null, '', 'bracket')}<span>esc</span>`
+  dock.innerHTML = h
+}
+dock.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act]')
+  if (!b || !b.dataset.act) return
+  const [a, v] = b.dataset.act.split(':')
+  if (a === 'rows') { S.rows = v; frozen = null; fill() }
+  if (a === 'scale') zoomTo(+v)
+  if (a === 'today') glideTo(TI * ppd() - TV.W / 3)
+  if (a === 'ns') { S.noStart = v; S.opt === 'B' ? mountCal(true) : fill() }
+  if (a === 'lim') { S.limit = Math.max(1, Math.min(6, S.limit + +v)); fill() }
+  if (a === 'cal') calStep(+v)
+  if (a === 'unfold') { Object.keys(CARDS).forEach((k) => S.unfold.D.add(k)); fill() }
+  if (a === 'fold') { S.unfold.D.clear(); fill() }
+  renderDock()
+})
+
+const OPTS = {
+  0: { tab: 'now', name: 'Today’s timeline', crumb: '05 Plan · timeline' },
+  A: { tab: 'strip', name: 'A · Periods on a moving strip', crumb: '05 Plan · timeline' },
+  B: { tab: 'calendar', name: 'B · Month calendar', crumb: '05 Plan · timeline · calendar' },
+  C: { tab: 'load', name: 'C · Who’s how busy', crumb: '05 Plan · timeline · load' },
+  D: { tab: 'roadmap', name: 'D · Roadmap by card', crumb: '05 Plan · timeline · roadmap' },
+}
+const NOTES = {
+  0: `<div class="kind">bugün olan · karşılaştırmak için</div><h2>Şimdiki timeline</h2>
+<p>Focus'a girince iki haftanın tamamı ekrana sığdırılıyor; o yüzden yazılar küçük kalıyor.</p>
+<h3><b>01</b> sorunlar</h3>
+<ul>
+<li>Görevin sadece <b>bitiş günü</b> var. Görev bitiş gününde tek günlük bir kutu olarak duruyor, ne zaman başladığı ve ne kadar sürdüğü görünmüyor.</li>
+<li>Gecikmiş bir görev <b>bugüne taşınıyor</b> (<code>← 27</code>). Asıl yeri kayboluyor ve ne kadar geciktiği bir bakışta anlaşılmıyor.</li>
+<li><b>Sabit iki hafta</b> var, <code>‹ ›</code> ile haftalık adımlarla ilerliyorsun. Dışarıda kalanlar sadece bir sayı (<code>3 →</code>): ne olduklarını görmek için tek tek tıklamak gerekiyor.</li>
+<li>Bir ayı ya da çeyreği bütün olarak görmenin bir yolu yok. Kimin ne kadar dolu olduğu da görünmüyor.</li>
+</ul>
+<p>Sağdaki seçenekler bunları çözüyor. Birden çok seçeneği birlikte de seçebilirsin; en sonda önerim var.</p>`,
+  A: `<div class="kind">temel öneri</div><h2>Hareket eden şerit</h2>
+<p>Her görev, ilk gününden bitiş gününe kadar uzanan <b>bir şerit</b>. Zaman sonsuz bir bant gibi sağa ve sola kayıyor, yakınlaştırınca yazılar küçülmüyor; sadece günler daralıp genişliyor.</p>
+<h3><b>01</b> kaydırmak</h3>
+<ul>
+<li>Trackpad'de sağa-sola kaydır, ya da <kbd>shift</kbd> + tekerlek.</li>
+<li>Boş bir yeri veya gün başlığını tutup sürükle. Hızlı bırakırsan biraz daha kayıp yavaşlıyor.</li>
+<li>En üstteki <b>genel bakış</b> şeridi sep–şubat aralığının tamamını gösteriyor (◢ yükseklik = o gün kaç iş var). Cyan pencereyi sürükle ya da bir yere tıkla, oraya kayar.</li>
+<li>Satır kenarındaki <code>‹ 2</code> / <code>3 ›</code>: ekranın dışında kalan görevler. Tıklayınca en yakınına kayar.</li>
+</ul>
+<h3><b>02</b> ölçek</h3>
+<ul>
+<li>Dock'ta <code>day · week · month · quarter</code> (<kbd>1</kbd>–<kbd>4</kbd>). Pinch ya da <kbd>⌘</kbd> + tekerlek ile ara değerleri de seçebilirsin; imlecin altındaki gün yerinde kalır.</li>
+<li>Uygulamada timeline'ın focus'unda tekerlek zaten kamerayı yakınlaştırıyor. Öneri: burada pinch kamerayı değil <b>zaman ölçeğini</b> değiştirsin, yazılar hep okunur kalsın.</li>
+</ul>
+<h3><b>03</b> period</h3>
+<ul>
+<li>Şeridi gövdesinden sürükle: görev taşınır. <b>Sol kenar</b> başlangıcı, <b>sağ kenar</b> bitişi değiştirir (kenarlarda cyan çizgi var). Kenara gelince günler kendiliğinden kayar.</li>
+<li>Boş bir günün üstüne gel, <code>+</code> çıkar. Ona basıp yana sürükle: o aralıkta <b>yeni bir görev</b> oluşur, adını yazıp ↵.</li>
+<li>Kişiye ya da karta göre satırlarda, başka bir satıra bırakmak o kişiyi ya da kartı da değiştirir.</li>
+<li>Alttaki ince çizgi checklist'in ilerlemesi (<code>2/5</code>).</li>
+<li><span class="bad">Gecikme</span>: görev yerinde kalıyor; bitişinden bugüne kadar <code>╱╱╱</code> magenta tarama ve <code>+4d late</code> yazısı var. Ne kadar geç kaldığı bir bakışta görünüyor.</li>
+</ul>
+<h3><b>04</b> ilk günü olmayanlar</h3>
+<p>Eski görevlerin sadece bitiş günü var. Dock'taki <b>no first day</b> ile üç yolu karşılaştırabilirsin:</p>
+<ul>
+<li><code>◆ point</code>: bitiş gününde bir işaret. Soluna gelince <code>⟵</code> çıkıyor, onu sürükleyerek bir ilk gün verirsin.</li>
+<li><code>▭ one day</code>: bugünkü gibi tek günlük bir kutu.</li>
+<li><code>┄ since added</code>: eklendiği günden itibaren soluk bir şerit. Tahmin olduğu belli oluyor.</li>
+</ul>
+<h3><b>05</b> veri</h3>
+<p>Görevlere isteğe bağlı bir <code>start</code> (ilk gün) alanı eklenir. Kurallar, export/import ve görevin paneli de bunu taşır (panelde <code>start → due</code>). Deck'teki <code>SOON</code> bandı ve kartlardaki tarih de aynen kalır.</p>`,
+  B: `<div class="kind">ayrı bir görünüm</div><h2>Ay takvimi</h2>
+<p>"Bu ay neler var?" sorusu için. Haftalar alt alta diziliyor ve <b>yukarı-aşağı sonsuz kayıyor</b>. Ay başlarında solda magenta numarayla ay adı var (<code>11 NOV</code>), aylar sırayla hafif koyu ve açık tonda.</p>
+<ul>
+<li>Birkaç gün süren görev hafta boyunca bir şerit. Hafta bitince alttaki haftada <code>‹</code> ile devam ediyor.</li>
+<li>Bir görevi sürükleyip başka bir güne bırak: bütün period kayar (cyan günler nereye düşeceğini gösterir). <code>no day</code> tepsisindeki bir görevi bir güne bırakınca o gün bitiş günü olur.</li>
+<li>Bir günün sağ üstündeki <code>+</code>: o gün için yeni görev.</li>
+<li>Bir günde 4'ten fazla iş varsa <code>+2 more</code>.</li>
+<li>Dock: <code>‹ today ›</code> ay ay atlar.</li>
+</ul>
+<p>Artısı: tanıdık bir görünüm ve deck'in yanında (beside, yarım ekran) iyi oturuyor. Eksisi: uzun işler ve "bu iş ne kadar sürüyor" A'daki kadar net değil; satırlar (deck, kişi, kart) yok.</p>`,
+  C: `<div class="kind">aynı şeridin başka bir görünümü</div><h2>Kim ne kadar dolu</h2>
+<p>Satırlar kişiler. Her gün bir <b>ASCII hücre</b> ve o gün kişinin kaç işi açıksa o kadar koyu:</p>
+<ul>
+<li><code>·</code> boş, <code>░ ▒ ▓</code> 1–3 iş, <code>█</code> <span class="bad">magenta</span> = sınırın üstü (dock'ta <code>too much at − 3 +</code>).</li>
+<li>Bir hücrenin üstüne gel: o gün hangi işler var.</li>
+<li>İsme tıkla (<code>▸</code>): o kişinin görevleri altında A'daki gibi şerit olarak açılır. Oradan sürükleyip yükü düzeltebilirsin. Hücreler hemen güncellenir; başka bir kişinin satırına bırakmak görevi o kişiye verir.</li>
+<li>En altta takımın günlük toplamı var. Uzaklaşınca hücreler haftalık olur (haftanın en yoğun günü).</li>
+</ul>
+<p>Planlarken "Atahan'a çok mu yükledik?" sorusunu bir bakışta cevaplıyor. Görsel dil olarak bizim ASCII çizgimize de çok uyuyor.</p>`,
+  D: `<div class="kind">aynı şeridin başka bir görünümü</div><h2>Kartlara göre yol haritası</h2>
+<p>Satırlar kartlar (müşteri → problem → rakip → fikir → özellik sırasıyla). Her kartın şeridi, ilk görevinin başından son görevinin bitişine kadar uzanıyor. <b>Dolu kısım</b> bitmiş görevlerin oranı, yazısı <code>2/5 · 12 OCT → 22 NOV</code>.</p>
+<ul>
+<li>Şeridin altındaki ince çizgiler kartın görevleri: yeşil = bitti, magenta = geç, ◆ = sadece bitiş günü var.</li>
+<li>Bir kartın şeridini sürükle: <b>o kartın bütün görevleri</b> birlikte kayar ("online booking'i iki hafta erteleyelim").</li>
+<li><code>▸</code> ile kartı aç: görevleri altında A'daki gibi düzenlenebilir.</li>
+<li>Ay ve çeyrek ölçeğinde iyi duruyor. Bir startup'ın planını, plane'deki kartlarla bağlantılı olarak gösteriyor.</li>
+</ul>`,
+}
+const REC = `<h3><b>→</b> önerim</h3><p class="rec">Temel olarak <b>A</b>: <code>start</code> alanı, sonsuz kaydırma, ölçek ve genel bakış şeridi. <b>C</b> ve <b>D</b> aynı parçanın dock'unda bir <code>view ▾</code> seçeneği olsun (aynı zaman ekseni, aynı kaydırma), ayrı parça gerekmez. <b>B</b>'yi istersen dördüncü görünüm olarak ekleriz; ama A'nın <code>month</code> ölçeği ihtiyacın çoğunu karşılıyor.</p>`
+
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = Object.entries(OPTS).map(([k, o]) => `<button class="tab" data-opt="${k}" aria-pressed="${S.opt === k}"><b>${k}</b>${o.tab}</button>`).join('')
+}
+document.getElementById('tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-opt]'); if (b) go(b.dataset.opt) })
+function go(opt) {
+  S.opt = opt
+  S.sel = null
+  frozen = null
+  TV = null
+  CAL = null
+  renderTabs()
+  document.getElementById('crumb').innerHTML = `<i>north star /</i> pazar <i>/</i> <b>${OPTS[opt].crumb}</b>`
+  document.getElementById('notes').innerHTML = NOTES[opt] + REC
+  if (opt === '0') mountOld()
+  else if (opt === 'B') mountCal()
+  else mountTime()
+  renderDock()
+  history.replaceState(null, '', '#' + opt)
+}
+document.getElementById('theme').addEventListener('click', (e) => {
+  S.theme = S.theme === 'dark' ? 'light' : 'dark'
+  document.documentElement.dataset.theme = S.theme
+  e.target.textContent = S.theme === 'dark' ? '[light]' : '[dark]'
+})
+document.getElementById('reset').addEventListener('click', () => { resetTasks(); go(S.opt) })
+addEventListener('keydown', (e) => {
+  if (e.target.closest?.('input')) return
+  if (S.opt === 'B') { if (e.key === 'ArrowLeft') calStep(-1); if (e.key === 'ArrowRight') calStep(1); if (e.key === 't') calStep(0); return }
+  if (!TV) return
+  const sc = SCALES.find((s) => s[2] === e.key)
+  if (sc) zoomTo(sc[1])
+  if (e.key === 't') glideTo(TI * ppd() - TV.W / 3)
+  if (e.key === 'ArrowLeft') glideTo(S.sx[S.opt] - Math.max(ppd() * 3, TV.W / 4), 260)
+  if (e.key === 'ArrowRight') glideTo(S.sx[S.opt] + Math.max(ppd() * 3, TV.W / 4), 260)
+  if (e.key === 'Escape' && S.sel) { S.sel = null; fill() }
+})
+let rz = 0
+addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => (S.opt === '0' ? mountOld() : S.opt === 'B' ? mountCal(true) : fill())) })
+
+document.fonts.ready.then(() => go(OPTS[location.hash.slice(1)] ? location.hash.slice(1) : 'A'))
+</script>
+</body>
+</html>

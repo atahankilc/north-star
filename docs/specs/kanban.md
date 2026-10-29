@@ -121,6 +121,9 @@ the read mark is a field in the thread read marks; going lands on the task's gue
 
 Built (D-262): the user picked a new piece (from a preview of three: a switch on the kanban, a piece, a ruler under the
 columns). It sticks to a kanban and opens beside it at one week; two weeks in its own focus.
+Then a strip (D-304, option A of docs/specs/timeline-preview/): tasks get a first day (`start`) and run to their due
+day; time moves on sideways without end at a scale you pick, an overview on top; it fills its focus or pane at its own
+size. The preview's B (month calendar), C (load per person) and D (roadmap by card) are not built.
 
 ---
 
@@ -133,8 +136,8 @@ columns). It sticks to a kanban and opens beside it at one week; two weeks in it
   to them from its panel (D-258).
 - Held tasks leave their cell while dragged, so a lane emptied by the drag shrinks under the pointer (D-258).
 - Going to a task lands on its guessed place, which is off in lanes (`taskBox` doesn't count them) (D-261).
-- A plane moved carries its kanban but not the kanban's timeline; the timeline's sheets have no comments or presence;
-  going to a task lands on its kanban, never a timeline (D-262).
+- The timeline's sheets have no comments or presence (D-262; a plane carrying its kanban's timeline and going to a
+  task on a timeline came with D-298).
 - The assistant's brief doesn't list tasks (not picked: idea 3).
 - Priorities will be this kanban holding cards, columns and rows from their fields ([priorities.md](priorities.md)).
   Session 5's swimlanes are built as "rows by a field" (`rows.ts`, D-258) so cards can use them too.

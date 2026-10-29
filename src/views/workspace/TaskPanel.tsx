@@ -273,24 +273,42 @@ function Assignee({ task, editor, n }: { task: Task; editor: boolean; n: number 
   )
 }
 
-// When it's due: a day, or none. Past it (and not finished), the card and this say so in magenta.
+// When it's done: from a first day (D-304, or none: just a due day) to its due day. A first day after the due day takes
+// the due day with it, a due day before the first day the first day; one undo step. Past its due day (and not finished),
+// the card and this say so in magenta.
 function Due({ task, finished, editor, n }: { task: Task; finished: boolean; editor: boolean; n: number }) {
   const { wid } = useWs()
   const late = overdue(task, finished)
+  const days = task.start && task.due ? Math.round((Date.parse(task.due) - Date.parse(task.start)) / 86400000) + 1 : 0
+  const setStart = (start: string) => void updateTask(wid, task, start && task.due && start > task.due ? { start, due: start } : { start: start || undefined }, start ? 'set a first day' : 'clear a first day')
+  const setDue = (due: string) => void updateTask(wid, task, due && task.start && due < task.start ? { start: due, due } : { due: due || undefined }, due ? 'set a due day' : 'clear a due day')
   return (
-    <PanelSection n={n} name="due" count={task.due ? dueText(task.due) : undefined}>
+    <PanelSection n={n} name="when" count={task.due ? `${task.start ? `${dueText(task.start)} → ` : ''}${dueText(task.due)}${days > 1 ? ` · ${days} days` : ''}` : undefined}>
       <div className={own.row}>
+        <input
+          className={`${styles.input} ${own.date}`}
+          type="date"
+          value={task.start ?? ''}
+          max={task.due}
+          readOnly={!editor}
+          aria-label="First day"
+          title="its first day (optional)"
+          onChange={(e) => editor && setStart(e.target.value)}
+          onKeyDown={(e) => e.stopPropagation()}
+        />
+        <span className={own.to}>→</span>
         <input
           className={`${styles.input} ${own.date}`}
           type="date"
           value={task.due ?? ''}
           readOnly={!editor}
           aria-label="Due"
-          onChange={(e) => editor && void updateTask(wid, task, { due: e.target.value || undefined }, 'set a due day')}
+          title="its due day"
+          onChange={(e) => editor && setDue(e.target.value)}
           onKeyDown={(e) => e.stopPropagation()}
         />
-        {editor && task.due && (
-          <button className={styles.pill} onClick={() => void updateTask(wid, task, { due: undefined }, 'clear a due day')}>
+        {editor && (task.due || task.start) && (
+          <button className={styles.pill} onClick={() => void updateTask(wid, task, { start: undefined, due: undefined }, 'clear a task’s days')}>
             clear
           </button>
         )}

@@ -38,9 +38,9 @@ import { passes, useKanbanFilter } from './kanbanFilter'
 import { addTask, CARD_FIELDS, setKanbanSetup, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../data/tasks'
 import { newId } from '../../data/matrix'
 import { useAuth } from '../../data/auth'
-import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
-import { isReducedMotion } from '../../state/motion'
+import { useCanvasView, type Bounds, type PlaneCam } from '../../state/canvasView'
 import { timelineKanbans } from '../../data/tasks'
+import { revealOnStrip } from './stripReveal'
 import { closeFinder, findGo, landing } from './find'
 import type { Card } from '../../data/cards'
 import { useWs } from './context'
@@ -134,21 +134,14 @@ export function goToTask(piece: WithId<Piece>, tasks: Task[], task: Pick<Task, '
 }
 
 // A task on the timeline in focus (D-298): picked there, glided to when it's off the screen. False when the timeline
-// doesn't draw it (another week, filtered out, done).
+// doesn't draw it (filtered out, or not one of its decks').
 function showOnTimeline(kanban: string, task: string): boolean {
-  // On the live timeline only: the kanban drawn on the canvas has its tasks too.
-  const el = document.querySelector<HTMLElement>(`[data-timeline][data-live] [data-task="${task}"]`)
-  const c = useCanvasView.getState().planeCam
-  if (!el || !c) return false
+  // On the live timeline only (its strip glides its days and rows to it, D-304): the kanban drawn on the canvas has its
+  // tasks too.
+  if (!revealOnStrip(task)) return false
   // The finder goes, as when it goes elsewhere.
   closeFinder()
   selectTask(kanban, task)
-  const { size } = useCanvasView.getState()
-  const r = el.getBoundingClientRect()
-  if (r.left >= 48 && r.right <= size.w - 48 && r.top >= 56 && r.bottom <= size.h - 56) return true
-  const to = { ...c, ox: c.ox + size.w / 2 - (r.left + r.width / 2), oy: c.oy + size.h / 2 - (r.top + r.height / 2) }
-  if (isReducedMotion()) useCanvasView.setState({ planeCam: to })
-  else glide(c, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
   return true
 }
 

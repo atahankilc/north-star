@@ -2,7 +2,8 @@
 // the piece (`kanban`: `todo · doing · done` to start, renamed, added, moved, taken away); the tasks are their own docs
 // in `tasks/{id}`, each in one column of one kanban (`pieceId`, `col`), in order (`order`, a number between its
 // neighbours'). A task may be given to a member (`assignee`, their name kept beside it so the card needs no lookup),
-// have a due day (`due`, `YYYY-MM-DD`), point at a card (`cardId`, `cardType`) and carry a checklist (`checks`).
+// have a due day (`due`, `YYYY-MM-DD`) and a first day before it (`start`, D-304: from it to `due` on a timeline),
+// point at a card (`cardId`, `cardType`) and carry a checklist (`checks`).
 // A task for a customer, problem or idea that's finished may log what it taught on that card (D-254): `learned` is the
 // evidence it wrote, or `skip` once that was declined.
 // A kanban may hold cards instead (D-268, docs/specs/priorities.md): `holds: 'cards'`, which cards from a `source` (the
@@ -83,6 +84,8 @@ export type Task = {
   notes?: string
   assignee?: string
   assigneeName?: string
+  // Its first day (D-304), at most its due day; none on a task that only has a due day.
+  start?: string
   due?: string
   cardId?: string
   cardType?: AnyType
@@ -100,7 +103,7 @@ export type Task = {
   createdAt: number
   updatedAt: number
 }
-export type TaskFields = Partial<Pick<Task, 'title' | 'notes' | 'assignee' | 'assigneeName' | 'due' | 'cardId' | 'cardType' | 'checks' | 'learned' | 'labels' | 'priority'>>
+export type TaskFields = Partial<Pick<Task, 'title' | 'notes' | 'assignee' | 'assigneeName' | 'start' | 'due' | 'cardId' | 'cardType' | 'checks' | 'learned' | 'labels' | 'priority'>>
 export const TASK_PRIORITIES = ['P1', 'P2', 'P3'] as const
 export type TaskPriority = (typeof TASK_PRIORITIES)[number]
 
@@ -153,7 +156,7 @@ function given(fields: TaskFields): Record<string, unknown> {
 
 // A new task at the end of a column, its title typed (and from a card's panel, the card it's for): one undo step;
 // returns its id.
-export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, uid: string, fields: Pick<TaskFields, 'cardId' | 'cardType' | 'assignee' | 'assigneeName'> = {}) {
+export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, uid: string, fields: Pick<TaskFields, 'cardId' | 'cardType' | 'assignee' | 'assigneeName' | 'start' | 'due'> = {}) {
   const ref = doc(col(wid))
   const now = Date.now()
   const data = { pieceId, col: column, order, title: title.trim().slice(0, TASK_TITLE_MAX), ...fields, ...(fields.assignee ? { givenAt: now, givenBy: uid } : {}), uid, createdAt: now, updatedAt: now }

@@ -15,6 +15,12 @@
   color-scheme: light;
 }
 
+/* Between a task's first day and its due day (D-304). */
+.to {
+  margin: 0 calc(-1 * var(--space-1));
+  color: var(--fg-faint);
+}
+
 /* The card it's for: its type in its colour, its title, `↗` to its panel. */
 .card {
   display: flex;

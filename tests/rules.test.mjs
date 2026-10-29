@@ -289,6 +289,9 @@ await allow('a task given to someone, due, for a card, with a checklist', () =>
 await deny('a task with a title too long', () => addDoc(sub(bob.fs, 'tasks'), { ...task, title: 'x'.repeat(201) }))
 await deny('a task without an order', () => addDoc(sub(bob.fs, 'tasks'), { ...task, order: 'first' }))
 await deny('a task due on a day not written as a day', () => addDoc(sub(bob.fs, 'tasks'), { ...task, due: 'next week' }))
+// A first day (D-304).
+await allow('a task from a first day to its due day', () => addDoc(sub(bob.fs, 'tasks'), { ...task, start: '2026-10-28', due: '2026-11-02' }))
+await deny('a task starting on a day not written as a day', () => addDoc(sub(bob.fs, 'tasks'), { ...task, start: 'monday' }))
 await deny('a task for an unknown kind of card', () => addDoc(sub(bob.fs, 'tasks'), { ...task, cardId: 'x', cardType: 'video' }))
 await deny('a task with a field nobody knows', () => addDoc(sub(bob.fs, 'tasks'), { ...task, points: 3 }))
 await allow('a finished task with what it taught logged (D-254)', () => addDoc(sub(bob.fs, 'tasks'), { ...task, cardId: 'p1', cardType: 'problem', learned: 'ev1' }))

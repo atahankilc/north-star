@@ -121,7 +121,7 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         (id = matrixId_row_col; a row or column is its card's id, its typed entry's id, or `card~criterion`
                         for what a feature unfolded into, D-249; a table's own columns' values too, matrixId = the table's id)
   tasks/{id}            pieceId (a kanban), col (its column's id), order (between its neighbours'), title (≤ 200),
-                        notes?, assignee? (uid) + assigneeName?, due? (YYYY-MM-DD), cardId? + cardType?, checks?[{id, text,
+                        notes?, assignee? (uid) + assigneeName?, start? ≤ due? (YYYY-MM-DD, D-304), cardId? + cardType?, checks?[{id, text,
                         done?}] (≤ 50), learned? (evidence id | 'skip', D-254), labels?[] (≤ 20) + priority? (P1–P3, D-256),
                         givenAt? + givenBy? (D-261), uid (who made it) (D-251)
   documents/{id}        kind (markdown|image|pdf|report), title, excerpt, origin, uid, name, shared, size, words?, path?…   (D-232)

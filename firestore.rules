@@ -252,16 +252,18 @@ service cloud.firestore {
         && (!('names' in k) || (k.names is list && k.names.size() <= 40));
     }
 
-    // One of a kanban's tasks (D-251, src/data/tasks.ts): in a column of a kanban, in order; given to a member, due on a
-    // day, pointing at a card, with a checklist.
+    // One of a kanban's tasks (D-251, src/data/tasks.ts): in a column of a kanban, in order; given to a member, from a
+    // first day to a due day, pointing at a card, with a checklist.
     function validTask(d) {
-      return d.keys().hasOnly(['pieceId', 'col', 'order', 'title', 'notes', 'assignee', 'assigneeName', 'due', 'cardId', 'cardType', 'checks', 'learned', 'labels', 'priority', 'givenAt', 'givenBy', 'uid', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['pieceId', 'col', 'order', 'title', 'notes', 'assignee', 'assigneeName', 'start', 'due', 'cardId', 'cardType', 'checks', 'learned', 'labels', 'priority', 'givenAt', 'givenBy', 'uid', 'createdAt', 'updatedAt'])
         && isText(d.pieceId, 128) && isText(d.col, 40)
         && d.order is number
         && isText(d.title, 200)
         && optText(d, 'notes', 20000)
         && optText(d, 'assignee', 128) && optText(d, 'assigneeName', 200)
         && (!('due' in d) || (d.due is string && d.due.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')))
+        // Its first day (D-304): from it to its due day on a timeline.
+        && (!('start' in d) || (d.start is string && d.start.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')))
         && optText(d, 'cardId', 128)
         && optIn(d, 'cardType', ['customer', 'problem', 'competitor', 'idea', 'feature', 'package'])
         && (!('checks' in d) || (d.checks is list && d.checks.size() <= 50))

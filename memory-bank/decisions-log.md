@@ -5485,6 +5485,41 @@ console's link), and that's the answer.
 - *Verified:* `tsc -b`; in headless Chrome the side view's Roadmap tab counted 3, not 4 (a task for a card on another
   plane left out), its dock without any note.
 
+### D-304 · 2026-10-29 · Accepted (changes D-262's two weeks; the user: "timeline componenti çok kullanışlı değil gibi … taskların bitiş tarihleri var ancak bir period görmüyoruz … iki haftalık gösteriliyor ama bunu daha güzel gösteremez miyiz? Mesela sağa sola kaydırarak yada farklı gösterim opsiyonları seçerek", then, offered a preview of four (docs/specs/timeline-preview/): "şimdilik sadece A yı yapalım, baya iyi duruyor")
+**A timeline is a strip: tasks run from a first day to their due day, and time moves on sideways without end, at a
+scale you pick.** Option A of the preview: B (a month calendar), C (load per person as ASCII cells) and D (a roadmap by
+card, "galiba … epic gibi bişi") not now.
+- *Data:* tasks get `start` (optional, `YYYY-MM-DD`, at most `due`; rules + 2 tests; import copies it). The task panel's
+  `when` section: `start → due` (a first day after the due day takes it along, and back), `28 oct → 4 nov · 8 days`.
+- *The strip:* yours, per tab (`useStrip`: its first day, px a day, its rows' scroll), never written to the piece, so the
+  tasks side view's unstored timeline works too. Scales `day 150 · week 48 · month 18 · quarter 7` px a day in the dock
+  (eased round the middle), a pinch or ⌘-wheel in between round the pointer; a sideways wheel (or shift) moves along,
+  up/down scrolls the rows (or moves along when they all show); a drag on empty space does both, a flick keeps going.
+  Never the view's zoom: text stays its size. On top an overview of the whole span (load as `▁▂▃▅▇`, months, today, the
+  window shown: a press glides there, its window drags). Head: months (number magenta) over days, labels thinning with
+  the scale (`THU 29`, `T 29`, Mondays, `W45`). `‹ N` / `N ›` per row for tasks past an edge, a click glides to the
+  nearest. `‹ today ›` steps a week. Three screens of days are drawn round the one shown; moving writes only transforms.
+- *Tasks:* a sheet from first to due day (D-291's tinted face, its card's colour on the left; its name outside when
+  short, kept on screen when it starts off the left edge; its checklist a line on its foot); only a due day: a `◆` on it
+  (the preview's "point"; "one day" and "since added" not taken). Late: it stays on its days, hatched magenta to today,
+  `+3d late`. Lanes fit in px. Live: picked, cyan grips on its edges move its first or due day (a ◆'s `⟵` gives it a
+  first day); a drag moves it at 0.8 with landing L's and its days in a readout, edges of the screen scrolling; onto
+  another row by person or card that too. An empty day's `+` (in a free lane) pressed and drawn across days makes a
+  task (named in place, Enter; in its deck's first open column, with the row's person or card). A tray task dropped on
+  a day gets it as its due day.
+- *Size:* it fills what it's drawn in at its own size: framed, its window (`timelineBounds` is the window); in focus the
+  screen less 96 px (CanvasView's fit for a timeline); beside a deck or in the tasks side view, its pane from the top
+  left (`usePaneView(…, true)`); unframed, its width. Going to a task (D-298) asks the live strip (`stripReveal.ts`),
+  which glides its days and rows to it.
+- *Alternatives:* B, C, D above (kept in the preview); a strip of fixed weeks with paging (today's, too stiff).
+- *Not yet:* B, C and D; dependencies between tasks; the side view's own timeline remembers where it was only per tab.
+- *Verified* in headless Chrome on the emulators (1600 × 900): focus filled the screen at 100 %, the overview and months
+  drawn; a sideways wheel moved along, a pinch went to quarter (W36…W5), `week` and `today` came back; a picked task's
+  right grip dragged three days (`28 oct → 4 nov` → `7 nov`, the panel's `when` following), a body drag moved one two
+  days (`30 oct → 2 nov` → `1 nov → 4 nov`) at 0.8 with landing marks; a drawn `+` made "Hotel demo call" 29 oct → 1 nov
+  on Roadmap's first column; the tray task dropped on 2 nov; beside the deck the strip filled its pane; on the canvas the
+  window shows the strip. `npm run build`; rules tests 446/0 (run by the D-305 session with this rule in).
+
 ### D-305 · 2026-10-29 · Accepted (D-302's session 1; the user: "1. oturuma başla")
 **Canvases themselves, built** (docs/specs/canvases.md, session 1). `canvases/{id}` (`name`, `order`, `createdAt`,
 `createdBy`; src/data/canvases.ts); the first is `main`, implied and named `Main` until its doc is written (with the

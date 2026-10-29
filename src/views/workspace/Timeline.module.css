@@ -1,5 +1,6 @@
-/* A timeline (D-262), in the kanban's ledger look (D-252): no frames, rules and raised sheets. Laid out in its own px
-   (Timeline.tsx's T), scaled by the view. */
+/* A timeline (D-262, D-304), in the deck's ledger look (D-252): no frames, rules and raised sheets. Laid out in its own
+   px (Timeline.tsx's T), scaled by the view; moving along its days or its rows writes only the transforms of
+   `.timeLayer` and `.rowsInner`. */
 .layer {
   position: absolute;
   inset: 0;
@@ -11,7 +12,7 @@
   pointer-events: auto;
 }
 
-/* Unframed (D-289, as a kanban, D-228): nothing cut at its edge; it sits on the unframed piece's black page. */
+/* Unframed (D-289, as a deck, D-228): nothing cut at its edge; it sits on the unframed piece's black page. */
 .layer[data-on-canvas='true'] {
   overflow: visible;
 }
@@ -27,23 +28,139 @@
   position: relative;
   font-family: var(--font-mono);
   font-size: var(--text-sm);
+  user-select: none;
 }
 
+.layer[data-live='true'] .board {
+  cursor: grab;
+}
+
+.board[data-panning='true'],
 .board[data-dragging='true'] {
   cursor: grabbing;
 }
 
-/* `MON 26` over each day, on a rule. */
+/* The overview: every day's load as a bar glyph across the whole span, months under it, today a cyan tick, the
+   window you see in cyan. */
+.over {
+  position: absolute;
+  top: 0;
+  left: var(--left);
+  right: 0;
+  height: var(--over);
+  cursor: pointer;
+}
+
+.overName {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  width: calc(var(--left) - 16px);
+  color: var(--fg-faint);
+  font-size: 10px;
+  letter-spacing: var(--track-label);
+  line-height: 14px;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.overName span {
+  display: block;
+}
+
+.density {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 18px;
+  overflow: hidden;
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+  line-height: 18px;
+  white-space: pre;
+}
+
+.overMonth {
+  position: absolute;
+  top: 20px;
+  padding-left: 3px;
+  border-left: 1px solid var(--line);
+  color: var(--fg-faint);
+  font-size: 9.5px;
+  letter-spacing: var(--track-label);
+  line-height: 12px;
+  text-transform: uppercase;
+}
+
+.overToday {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 18px;
+  background: var(--accent-cyan);
+}
+
+.window {
+  position: absolute;
+  top: -2px;
+  height: 22px;
+  border: 1px solid var(--accent-cyan);
+  background: var(--wash-cyan);
+  cursor: grab;
+}
+
+.layer:not([data-live='true']) .over,
+.layer:not([data-live='true']) .window {
+  cursor: default;
+}
+
+/* The days' head: months (their number magenta) over the days, as the scale allows. */
+.headClip {
+  position: absolute;
+  top: calc(var(--over) + 8px);
+  left: var(--left);
+  right: 0;
+  height: var(--head);
+  overflow: hidden;
+  border-bottom: 1px solid var(--line-hover);
+}
+
+.timeLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+}
+
+.month {
+  position: absolute;
+  top: 2px;
+  height: 42px;
+  padding-left: 6px;
+  border-left: 1px solid var(--line-hover);
+  color: var(--fg);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  line-height: 14px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.month b {
+  margin-right: 4px;
+  color: var(--accent-magenta);
+  font-weight: 500;
+}
+
 .dayHead {
   position: absolute;
-  top: 12px;
-  width: var(--day);
-  height: calc(var(--head) - 12px);
-  padding-left: 6px;
-  border-bottom: 1px solid var(--line-hover);
+  top: 24px;
+  padding-left: 5px;
   color: var(--fg-dim);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
+  line-height: 14px;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -56,30 +173,91 @@
   color: var(--accent-cyan);
 }
 
-/* Tasks before or after the days shown. */
-.more {
+.headToday {
   position: absolute;
-  top: 12px;
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
-  white-space: nowrap;
+  top: 20px;
+  width: 1px;
+  height: 24px;
+  background: var(--accent-cyan);
 }
 
-.row {
+/* The rows, cut to its height and scrolled inside it. */
+.rowsClip {
+  position: absolute;
+  top: calc(var(--over) + 8px + var(--head) + 8px);
+  left: 0;
+  right: 0;
+  overflow: hidden;
+}
+
+.layer[data-on-canvas='true'] .rowsClip {
+  overflow: visible;
+}
+
+.rowsInner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.timeClip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--left);
+  right: 0;
+  overflow: hidden;
+}
+
+.weekend {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--wash-2);
+}
+
+.dayLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--line);
+}
+
+.monthLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line-hover);
+}
+
+.today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 1px;
+  background: var(--accent-cyan);
+  pointer-events: none;
+}
+
+.rule {
   position: absolute;
   left: 0;
   right: 0;
-  border-bottom: 1px solid var(--line);
+  height: 1px;
+  background: var(--line);
 }
 
 .rowName {
   position: absolute;
-  top: 10px;
   left: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  width: calc(var(--left) - 16px);
+  width: calc(var(--left) - 14px);
+  height: var(--bar);
   color: var(--fg);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
@@ -87,14 +265,15 @@
   white-space: nowrap;
 }
 
-.row[data-none='true'] .rowName,
-.rowName:has(.rowLabel:only-child) {
-  color: var(--fg);
-}
-
 .rowLabel {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.rowCount {
+  margin-left: auto;
+  color: var(--fg-faint);
+  letter-spacing: 0;
 }
 
 .who {
@@ -113,53 +292,18 @@
   color: var(--tone);
 }
 
-/* A day in a row: a faint line on its left; weekends a shade darker; where a held task would land, cyan. */
-.cell {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: var(--day);
-  border-left: 1px dashed var(--line);
-}
-
-.cell[data-weekend='true'] {
-  background: var(--wash-2);
-}
-
-.today {
-  position: absolute;
-  width: 1px;
-  background: var(--accent-cyan);
-  pointer-events: none;
-}
-
-/* A task: a raised sheet a day wide, its left edge in its card's colour. */
+/* A task: a sheet from its first day to its due day, its face its card's colour (D-291), its left edge that colour. */
 .task {
   position: absolute;
+  z-index: 1;
   height: var(--bar);
-  padding: 0 8px 0 10px;
-  border: 0;
-  background: var(--bg-raised);
+  background: color-mix(in srgb, var(--tone, var(--fg-dim)) var(--card-tint), var(--bg-raised));
   box-shadow: inset 2px 0 0 var(--tone, var(--line-hover)), 0 0 0 1px var(--piece-card-edge);
   color: var(--fg);
-  font-family: var(--font-display);
-  font-size: 13px;
-  line-height: var(--bar);
-  text-align: left;
-  cursor: pointer;
-  user-select: none;
 }
 
-/* A sheet's or pill's text, cut with `…`; its marks stand outside it. */
-.line {
-  display: block;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.layer:not([data-live='true']) .task {
-  cursor: default;
+.layer[data-live='true'] .task {
+  cursor: grab;
 }
 
 .task:focus-visible {
@@ -167,33 +311,74 @@
   outline-offset: -1px;
 }
 
-/* Past its day, not finished: on today, magenta. */
+/* Past its due day, not finished: a magenta edge, hatched on to today. */
 .task[data-late='true'] {
   outline: 1px solid var(--accent-magenta);
   outline-offset: -1px;
 }
 
-.late {
-  color: var(--accent-magenta);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-}
-
 .task[data-finished='true'] {
-  color: var(--fg-dim);
-}
-
-.task[data-finished='true']::before {
-  content: '✓ ';
-  color: var(--accent-green);
+  opacity: 0.5;
 }
 
 .task[data-lifted] {
-  z-index: 3;
+  z-index: 4;
   pointer-events: none;
 }
 
+/* Only a due day: a ◆ on it, its name beside it. */
+.task[data-point='true'] {
+  background: none;
+  box-shadow: none;
+  outline: 0;
+}
+
+.dia {
+  position: absolute;
+  top: 8px;
+  left: 5px;
+  width: 14px;
+  height: 14px;
+  background: var(--tone, var(--fg-dim));
+  box-shadow: 0 0 0 2px var(--bg);
+  transform: rotate(45deg) scale(0.82);
+}
+
+.task[data-point='true'][data-late='true'] .dia {
+  outline: 1px solid var(--accent-magenta);
+  outline-offset: 2px;
+}
+
+/* Its name, cut with `…` inside a sheet; beside it when the sheet is too short. */
+.label {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 8px;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: var(--bar);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.label[data-out='true'] {
+  left: calc(100% + 8px);
+  right: auto;
+  overflow: visible;
+  color: var(--fg-muted);
+}
+
+.ok {
+  margin-right: 4px;
+  color: var(--accent-green);
+  font-family: var(--font-mono);
+}
+
 .p {
+  margin-right: 5px;
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -201,6 +386,167 @@
 
 .p[data-p='P1'] {
   color: var(--accent-magenta);
+}
+
+/* Its checklist: a line along its foot, filled as far as it's done. */
+.checks {
+  position: absolute;
+  left: 2px;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--tone, var(--fg-dim)) 22%, transparent);
+  pointer-events: none;
+}
+
+.checks i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--tone, var(--fg-dim));
+}
+
+/* Picked, its edges move its days (D-273: cyan, only when selected); a ◆'s `⟵` gives it a first day. */
+.grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.grip::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 4px;
+  width: 2px;
+  background: var(--accent-cyan);
+}
+
+.grip[data-side='start'] {
+  left: -5px;
+}
+
+.grip[data-side='due'] {
+  right: -5px;
+}
+
+.grip[data-side='give'] {
+  left: -26px;
+  width: 22px;
+}
+
+.grip[data-side='give']::after {
+  content: '⟵';
+  top: 7px;
+  bottom: auto;
+  left: 2px;
+  width: auto;
+  background: none;
+  color: var(--accent-cyan);
+  font-size: var(--text-sm);
+  line-height: 14px;
+}
+
+.hatch {
+  position: absolute;
+  z-index: 1;
+  height: var(--bar);
+  border-top: 1px solid color-mix(in srgb, var(--accent-magenta) 40%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-magenta) 40%, transparent);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--accent-magenta) 75%, transparent) 0 1px, transparent 1px 6px);
+  pointer-events: none;
+}
+
+.hatch span {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 6px);
+  color: var(--accent-magenta);
+  font-size: var(--text-xs);
+  line-height: calc(var(--bar) - 2px);
+  white-space: nowrap;
+}
+
+/* The days a held or drawn task would get. */
+.readout {
+  position: absolute;
+  z-index: 5;
+  margin-top: -8px;
+  padding: 2px 6px;
+  border: 1px solid var(--accent-cyan);
+  background: var(--bg);
+  color: var(--accent-cyan);
+  font-size: 10.5px;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
+/* An empty day's `+`: pressed and drawn across days, a new task. */
+.ghost {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--bar);
+  border: 1px dashed var(--line-hover);
+  color: var(--accent-cyan);
+  font-size: var(--text-sm);
+  cursor: crosshair;
+}
+
+.ghost:hover {
+  border-color: var(--accent-cyan);
+  background: var(--wash-cyan);
+}
+
+.draft {
+  position: absolute;
+  z-index: 1;
+  height: var(--bar);
+  outline: 1px dashed var(--accent-cyan);
+  outline-offset: -1px;
+  background: var(--wash-cyan);
+}
+
+.name {
+  position: absolute;
+  z-index: 6;
+  height: var(--bar);
+  padding: 0 8px;
+  border: 1px solid var(--accent-cyan);
+  outline: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px var(--font-display);
+}
+
+/* Tasks past the screen's edges, per row. */
+.edge {
+  position: absolute;
+  z-index: 3;
+  padding: 1px 6px;
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.edge:hover {
+  border-color: var(--fg-dim);
+  color: var(--fg);
+}
+
+.layer:not([data-live='true']) .edge {
+  pointer-events: none;
 }
 
 /* No day yet: the tray. */
@@ -232,10 +578,24 @@
   color: var(--fg);
   font-family: var(--font-display);
   font-size: 12.5px;
-  cursor: pointer;
-  user-select: none;
+  cursor: grab;
 }
 
+.pill[data-lifted] {
+  position: absolute;
+  z-index: 6;
+  scale: 0.8;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+/* A sheet's or pill's text, cut with `…`; its marks stand outside it. */
+.line {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 
 .trayNone,
 .trayHint {

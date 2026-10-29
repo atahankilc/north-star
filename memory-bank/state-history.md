@@ -871,3 +871,9 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   rename, move, delete with the hazard confirm and undo), break and build between canvases with a camera each, the
   finder's three scopes and going across canvases, presence's `canvas`. Verified in headless Chrome on the emulators
   (two scripts: switching + finder; new/rename/delete/undo); details in D-305.
+
+## Done (2026-10-29): the timeline as a strip (D-304)
+- Tasks' `start` (rules + 2 tests, the panel's `when`), the strip in Timeline.tsx (yours per tab, scales, pinch, overview,
+  edges, drawn `+`, lanes in px, late hatched), filling focus / panes / its window at its own size, go to via
+  `stripReveal.ts`. Verified in headless Chrome on the emulators with a seeded workspace (two decks, 14 tasks): wheel,
+  pinch, scales, edge resize, move, draw, tray drop, beside a deck, the canvas picture; details in D-304.

@@ -110,7 +110,7 @@ Overview (D-144), Reports (D-090, D-103; now documents), the assistant (D-074–
   `priorities` template (D-271): features and packages on effort × impact, the corners named, and beside it the
   suggested order impact × confidence ÷ effort; confidence is the share of what a card rests on that's validated or
   being tested, broken by anything invalidated.
-- **Timeline** (D-262, D-289): the linked kanban's tasks (else every kanban's) on two weeks of days; a drag sets the due day; stuck to a kanban, beside it; unframes like the others.
+- **Timeline** (D-262, D-289, D-304): the linked kanban's tasks (else every kanban's) on a strip of days that moves on sideways without end, at a scale you pick (day, week, month, quarter); a task runs from its first day to its due day, dragged to move it or (picked) by its edges; a drawn `+` makes one; stuck to a kanban, beside it; unframes like the others.
 
 ### Later / nice to have
 - Templates (Lean Canvas, SWOT, positioning map)
