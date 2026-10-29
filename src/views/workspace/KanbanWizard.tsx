@@ -74,7 +74,7 @@ function Wizard() {
 
   return (
     <div className={m.wizardShade} onPointerDown={(e) => e.target === e.currentTarget && close()}>
-      <section className={m.wizard} role="dialog" aria-modal="true" aria-label="A new kanban" onKeyDown={(e) => e.stopPropagation()}>
+      <section className={m.wizard} role="dialog" aria-modal="true" aria-label="A new deck" onKeyDown={(e) => e.stopPropagation()}>
         <nav className={m.wizardSteps} role="tablist">
           {STEPS.map((s, i) => (
             <button key={s} role="tab" aria-selected={step === i} className={m.wizardStep} onClick={() => setStep(i)}>
@@ -167,7 +167,7 @@ function Wizard() {
               </button>
             )}
             <button className={m.tool} data-main onClick={() => void make()}>
-              make the kanban
+              make the deck
             </button>
           </span>
         </footer>

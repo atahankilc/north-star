@@ -969,7 +969,7 @@ export function CanvasView() {
                     key={p.id}
                     label={`⇆ ${KIND_NAME[kindOfPiece(p)]}${p.name ? ` · ${p.name}` : ''}`}
                     pressed={besideIds.includes(p.id)}
-                    title={besideIds.includes(p.id) ? 'close it beside the kanban' : 'open it beside the kanban'}
+                    title={besideIds.includes(p.id) ? 'close it beside the deck' : 'open it beside the deck'}
                     onClick={() => toggleBeside(p.id)}
                   />
                 ))}
@@ -1079,7 +1079,7 @@ export function CanvasView() {
               : kindOfPiece(confirming) === 'documents'
                 ? 'The list goes; the documents in it stay.'
                 : kindOfPiece(confirming) === 'kanban'
-                  ? 'The kanban and its tasks go; the cards they were for stay.'
+                  ? 'The deck and its tasks go; the cards they were for stay.'
                   : isBare(confirming)
                   ? `The ${KIND_NAME[kindOfPiece(confirming)]} and its cells go; the cards in it stay.`
                   : 'The plane and everything on it goes.',

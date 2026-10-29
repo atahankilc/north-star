@@ -53,7 +53,7 @@ function layoutOf(piece: WithId<Piece>, all: WithId<Piece>[], tasks: Task[], car
   const mode: TimelineRows = piece.timeline?.rows ?? 'kanban'
   const names = new Map(pool.flatMap((t) => (t.assignee && t.assigneeName ? [[t.assignee, t.assigneeName] as const] : [])))
   const field = mode === 'kanban' ? null : taskRows(mode, cards as never, { me, names })
-  const lanes: Lane[] = field ? field.lanes(pool) : kanbans.map((k) => ({ key: k.id, label: k.name || 'kanban', drop: true }))
+  const lanes: Lane[] = field ? field.lanes(pool) : kanbans.map((k) => ({ key: k.id, label: k.name || 'deck', drop: true }))
   const rowOf = (t: Task) => (field ? field.laneOf(t) : t.pieceId)
   const from = startOf(week)
   const now = dayOf(today())
@@ -339,7 +339,7 @@ export function TimelineWeeks({ piece, toolClass }: { piece: WithId<Piece>; tool
   )
 }
 
-const ROW_NAME: Record<TimelineRows, string> = { kanban: 'kanban', assignee: 'given to', card: 'card' }
+const ROW_NAME: Record<TimelineRows, string> = { kanban: 'deck', assignee: 'given to', card: 'card' }
 
 // Its rows (shared): by kanban, by who it's given to, by the card it's for.
 function TimelineRowsMenu({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {

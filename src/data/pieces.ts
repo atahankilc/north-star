@@ -34,7 +34,7 @@ export const PIECE_MIN = { w: 325, h: 200 }
 // Pieces sit on the canvas's 25 px grid (D-182), the step of a plane's `+` marks, so marks of planes side by side line up.
 export { GRID, snap }
 
-export const KIND_NAME: Record<PieceKind, string> = { plane: 'plane', matrix: 'matrix', table: 'table', documents: 'documents', document: 'document', kanban: 'kanban', timeline: 'timeline' }
+export const KIND_NAME: Record<PieceKind, string> = { plane: 'plane', matrix: 'matrix', table: 'table', documents: 'documents', document: 'document', kanban: 'deck', timeline: 'timeline' }
 
 // What a piece is.
 const KINDS: PieceKind[] = ['matrix', 'table', 'documents', 'document', 'kanban', 'timeline']

@@ -1,5 +1,8 @@
 # Spec: the kanban, step by step
 
+Naming (D-301): on screen this piece is called a **deck** (`+ → deck…`, `PAZAR · DECK`); in code and data it stays
+`kind: 'kanban'`, so this spec keeps the word kanban.
+
 Status: **v1 built (D-251); all eight sessions done (D-252–D-262)**. This file is the plan for what comes next, split into sessions. The user checks each
 session's work, then starts a new one with a fresh context ("reset"). So every session must be able to start from this
 file alone.

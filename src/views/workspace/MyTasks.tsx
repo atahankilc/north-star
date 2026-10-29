@@ -58,7 +58,7 @@ export function MyTasks() {
       label: t.title,
       glyph: isNew(t, since) ? <span className={styles.new}>●</span> : '☐',
       tone: late ? 'var(--accent-magenta)' : undefined,
-      hint: [several ? p.name || 'kanban' : '', colOf(t)?.name, t.due && `${late ? 'was due ' : ''}${dueText(t.due)}`].filter(Boolean).join(' · '),
+      hint: [several ? p.name || 'deck' : '', colOf(t)?.name, t.due && `${late ? 'was due ' : ''}${dueText(t.due)}`].filter(Boolean).join(' · '),
       onSelect: () => goToTask(p, tasks, t, pieces),
     }
   }

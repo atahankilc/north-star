@@ -289,7 +289,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
                 // The documents list (D-232); a document on its own comes out of it (or a file dropped on the canvas).
                 { key: 'documents', label: 'documents', glyph: PIECE_GLYPH.documents, letter: 'd', hint: '.md, images, pdfs', onSelect: () => void add('documents') },
                 // A kanban (D-251): the team's tasks in columns, or cards by a field (D-268), made in its wizard.
-                { key: 'kanban', label: 'kanban…', glyph: PIECE_GLYPH.kanban, letter: 'k', hint: 'tasks or cards in columns', onSelect: () => useKanbanUi.setState({ wizard: true }) },
+                { key: 'kanban', label: 'deck…', glyph: PIECE_GLYPH.kanban, letter: 'k', hint: 'tasks or cards in columns', onSelect: () => useKanbanUi.setState({ wizard: true }) },
                 // A timeline (D-262): the kanbans' tasks on a row of days.
                 { key: 'timeline', label: 'timeline', glyph: PIECE_GLYPH.timeline, letter: 'l', hint: 'tasks by due day', onSelect: () => void add('timeline') },
                 ...text,

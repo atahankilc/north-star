@@ -78,17 +78,17 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
                 ◷ {dueText(t.due)}
               </span>
             )}
-            <span className={own.where}>{[kanbans.length > 1 ? on?.name || 'kanban' : '', col?.name].filter(Boolean).join(' · ')}</span>
+            <span className={own.where}>{[kanbans.length > 1 ? on?.name || 'deck' : '', col?.name].filter(Boolean).join(' · ')}</span>
           </button>
         )
       })}
       {draft !== null && (
         <div className={own.add}>
           {kanbans.length > 1 && (
-            <div className={styles.pills} role="group" aria-label="Into which kanban">
+            <div className={styles.pills} role="group" aria-label="Into which deck">
               {kanbans.map((k) => (
                 <button key={k.id} className={styles.pill} aria-pressed={k.id === kanban?.id} onMouseDown={(e) => e.preventDefault()} onClick={() => setInto(k.id)}>
-                  {k.name || 'kanban'}
+                  {k.name || 'deck'}
                 </button>
               ))}
             </div>
@@ -123,7 +123,7 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
           </button>
         </div>
       )}
-      {editor && !kanbans.length && <p className={own.none}>no kanban yet: put one on the canvas from its +</p>}
+      {editor && !kanbans.length && <p className={own.none}>no deck yet: put one on the canvas from its +</p>}
     </PanelSection>
   )
 }

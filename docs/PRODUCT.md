@@ -23,7 +23,7 @@ lens on that same graph.
 | **Workspace** | One startup idea space; the unit of sharing | name, description, members, roles (owners, editors, viewers; D-098) |
 | **Customer** | Who it's for, at any breadth; doubles as the segment (D-044) | title, notes, position, status (D-137) |
 | **Problem** | A pain worth solving; ideas link to it (D-041) | title, notes, position, status (D-137) |
-| **Piece** | Something placed on a workspace's canvas: a plane, matrix, table, documents list, document, kanban or timeline (D-176) | kind, position, size, name, its setup, the plane it's stuck to, framed or open |
+| **Piece** | Something placed on a workspace's canvas: a plane, matrix, table, documents list, document, deck (the kanban; called so on screen, D-301) or timeline (D-176) | kind, position, size, name, its setup, the plane it's stuck to, framed or open |
 | **Text label** | Text written on the canvas or a plane: a heading that names an area and is a place to jump to (D-050, D-188), a paragraph of light Markdown (D-156), a section (a named frame, D-130) or the project title (D-118); any can turn a quarter | text, size, small line, turn, width, position, its space |
 | **Sticky note** | A note anyone who edits drops on the canvas or a plane, signed with who wrote it and when (D-158, D-257) | text, colour, author, width, folded, position |
 | **Comment thread** | A conversation on a component: a plane, card, text, link or kanban task (D-193, D-260); anyone in the workspace starts one or answers, viewers too; `@` mentions people; new ones light up, and all of them are in the threads panel (D-159, D-166, D-199) | what it's on, its space, messages (who, text, mentions, when), resolved, what each person has read |
@@ -37,7 +37,7 @@ lens on that same graph.
 | **Comparison** | Which competitor feature matches one of our features (D-164), and old criteria scores (D-133); how well is scored in a matrix's cells now (D-204, D-249) | feature, competitor, matched competitor feature, criteria scores (`met`/`part`/`no`) |
 | **Matrix cell** | One cell of a matrix piece, or of a table's own column (D-204, D-209) | matrix, row, column, value (a step, a number or text), note, not relevant, confidence (`documented`/`inferred`/`guess`, D-136) |
 | **Document** | A file the workspace keeps: a `.md`, an image, a PDF or an old report (D-232); private to its author until shared | kind, title, excerpt, author, shared, its content |
-| **Task** | A to-do on a kanban (D-251): in a column, given to someone, due on a day, for a card | title, notes, column, assignee, due, card, checklist, labels, priority |
+| **Task** | A to-do on a deck, the kanban piece (D-251, D-301): in a column, given to someone, due on a day, for a card | title, notes, column, assignee, due, card, checklist, labels, priority |
 
 ## 4. Views
 

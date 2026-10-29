@@ -5411,3 +5411,35 @@ cards, as now.
 - *Verified* in headless Chrome on the emulators: a task's `for` opened the list (suggested by kanban and plane, then
   each type, 24 cards), `pack` showed the four packages with what they hold and their planes, Enter set "Later"; a
   problem's `+ customer` with "Hotels" offered the new customer row. `tsc -b` clean in the changed files.
+
+### D-300 · 2026-10-29 · Accepted (the user: "kanban setup kısmında tasks ve cards arasında direkt gidip gelebiliyor ancak … önceki tasklar yok olmuyor … 'kaybolmuş' gibi olabiliyor"; offered options in a preview: "01 A, 02 şuanki gibi kalsın …, 03 A ile devam et")
+**A kanban (a deck, D-301) never hides tasks; a tasks side view opens from anywhere.** Written by session 0b4cdc69
+(closed by accident before it wrote this entry); recorded from its transcript by the D-301 session.
+- *03 A, built, uncommitted:* switching a kanban with tasks to cards asks first (`it holds N tasks`): `[make a new deck
+  for cards]` (default: a new one beside it, named `<name> · cards`, setup open on which cards; the tasks stay), or the
+  tasks moved to another task kanban (same-named column, else the first) and this one holding cards, one undo step
+  (`moveTasksAway` in tasks.ts; the rules already let a task change kanban). One that hid tasks before this shows a
+  magenta `☐ N tasks from before` in its dock, opening the same box (move them, or hold tasks again).
+- *02:* a link stays as it is: linked means it cares only about what it's linked to, and changes there show by
+  themselves (D-255, D-262 unchanged).
+- *01 A, not built yet:* a tasks side view from anywhere (canvas, any focus), opened from `☐` by your square (`t`), on
+  the right like beside (D-211): a tab per task kanban, `MINE`, `ALL DAYS`; in a kanban's tab `[board] [days]`; in a
+  plane's focus `only <plane>'s cards · N hidden [show all]`. Card kanbans aren't tabs. The canvas pieces stay.
+- *Verified:* typecheck only (the session's last run). Not run in the browser.
+
+### D-301 · 2026-10-29 · Accepted (the user: "biz kanban diyoruz ama buna task planner desek olur mu?", then, offered flow, ledger, stages and deck: "Deck diyelim ozman")
+**The kanban piece is called a deck on screen.** Everything the user reads says deck: the `+` menu's `deck…` (letter
+`k` kept), the kind in a piece's name (`PAZAR · DECK`, `KIND_NAME`), the finder's hint, `⇆ deck · …` in a plane's dock,
+the delete confirm, the setup and wizard (`make the deck`, `a deck holds tasks or cards`), a card's tasks section
+(`no deck yet`), a timeline's rows `by deck`, task hints and every undo line (`change a deck`).
+- *Why:* "task planner" fits only half of it (a kanban holds tasks or cards, D-253) and "planner" promises dates, which
+  are the timeline's; the other kinds are one word. Deck: one word, a deck of cards (its cards mode) and a ship's deck
+  (North Star's way-finding). Its risk, read as a slide deck, accepted.
+- *Kept:* code, data and rules say `kanban` (`kind: 'kanban'`, `Kanban.tsx`, `piece.kanban`, the timeline's
+  `rows: 'kanban'`, localStorage keys), so no data moves and old exports import; docs and specs keep the word kanban
+  with a note (PRODUCT.md, specs/kanban.md).
+- *Alternatives:* task planner, tasks (+ cards in cards mode), flow (recommended first), ledger, stages; board is
+  taken by D-180.
+- *Verified:* `tsc -b` clean; strings checked by grep (no user-facing "kanban" left in src). Not run in the browser.
+- *Not yet:* the closed session's D-300 work (a deck never hides tasks; its code is in the tree, uncommitted) still
+  needs its log entry.

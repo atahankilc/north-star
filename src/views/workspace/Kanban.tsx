@@ -519,7 +519,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
   taskActs.current = { press, pick, learn: (t: Task) => void (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) }
 
   return (
-    <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'kanban'} data-dragging={held ? true : undefined} data-lanes={field ? true : undefined} onPointerDown={boxPress}>
+    <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'deck'} data-dragging={held ? true : undefined} data-lanes={field ? true : undefined} onPointerDown={boxPress}>
       <SoonBand piece={piece} tasks={shown} live={live} picked={isPicked} onPick={pick} onPress={own} />
       <div className={styles.row}>
         {cols.map((c, i) => (
@@ -717,8 +717,8 @@ export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: b
     const row = rowFieldOf(setup)
     const fields = CARD_FIELDS.filter((f) => f !== (setup.colField ?? 'status'))
     const cardItems: MenuEntry[] = [
-      { key: 'none', label: 'no rows', checked: !row, onSelect: () => editor && row && void setKanbanSetup(wid, piece.id, { rowField: undefined }, 'no rows on a kanban') },
-      ...fields.map((f) => ({ key: f, label: `by ${FIELD_NAME[f]}`, checked: row === f, onSelect: () => editor && row !== f && void setKanbanSetup(wid, piece.id, { rowField: f }, `a kanban’s rows by ${FIELD_NAME[f]}`) })),
+      { key: 'none', label: 'no rows', checked: !row, onSelect: () => editor && row && void setKanbanSetup(wid, piece.id, { rowField: undefined }, 'no rows on a deck') },
+      ...fields.map((f) => ({ key: f, label: `by ${FIELD_NAME[f]}`, checked: row === f, onSelect: () => editor && row !== f && void setKanbanSetup(wid, piece.id, { rowField: f }, `a deck’s rows by ${FIELD_NAME[f]}`) })),
     ]
     return <Menu label="rows" up plain summary={row ? FIELD_NAME[row] : 'none'} active={!!row} items={cardItems} ariaLabel="Rows" noun="fields" />
   }

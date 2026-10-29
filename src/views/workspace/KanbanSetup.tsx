@@ -41,7 +41,7 @@ export function KanbanSetupPanel({ piece }: { piece: WithId<Piece> }) {
     boxes: cardsHere && rowFieldOf(setup) ? (setup.names?.length ?? 0) : undefined,
   }
   return (
-    <section className={m.setup} aria-label="Set up the kanban" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
+    <section className={m.setup} aria-label="Set up the deck" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
       <header className={m.setupHead}>
         <nav className={m.tabs} role="tablist" aria-label="Setup">
           {KANBAN_TABS.map((t) => (
@@ -69,7 +69,7 @@ export function KanbanEditor({ tab, setup, onChange }: { tab: KanbanTab; setup: 
   const cardsHere = setup.holds === 'cards'
   if (tab === 'holds')
     return (
-      <Row label="it holds" hint="a kanban holds tasks or cards, never both">
+      <Row label="it holds" hint="a deck holds tasks or cards, never both">
         <Choices<'tasks' | 'cards'>
           value={cardsHere ? 'cards' : 'tasks'}
           options={[
@@ -78,8 +78,8 @@ export function KanbanEditor({ tab, setup, onChange }: { tab: KanbanTab; setup: 
           ]}
           onChange={(v) =>
             v === 'cards'
-              ? onChange({ holds: 'cards', colField: setup.colField ?? CARDS_START.colField, source: setup.source ?? CARDS_START.source }, 'hold cards on a kanban')
-              : onChange({ holds: undefined }, 'hold tasks on a kanban')
+              ? onChange({ holds: 'cards', colField: setup.colField ?? CARDS_START.colField, source: setup.source ?? CARDS_START.source }, 'hold cards on a deck')
+              : onChange({ holds: undefined }, 'hold tasks on a deck')
           }
         />
       </Row>
@@ -88,7 +88,7 @@ export function KanbanEditor({ tab, setup, onChange }: { tab: KanbanTab; setup: 
     return (
       <Row label={TAB_NAME[tab]}>
         <span className={m.checkHint}>
-          {tab === 'cards' ? 'it holds tasks: a task points at a card from its panel' : tab === 'cols' ? 'its own: renamed by a double-click on a head, added with + column' : 'boxes are for a kanban holding cards, with rows'}
+          {tab === 'cards' ? 'it holds tasks: a task points at a card from its panel' : tab === 'cols' ? 'its own: renamed by a double-click on a head, added with + column' : 'boxes are for a deck holding cards, with rows'}
         </span>
       </Row>
     )
@@ -96,7 +96,7 @@ export function KanbanEditor({ tab, setup, onChange }: { tab: KanbanTab; setup: 
     const source: Source = setup.source ?? { rules: [], items: [] }
     // The table's editor, on a table-shaped draft of the source alone.
     const asTable = { rows: source, cols: [] } as TableSetup
-    return <RowsEditor setup={asTable} cardsOnly onChange={(part, v, key) => part === 'rows' && onChange({ source: v as Source }, 'change which cards a kanban holds', key)} />
+    return <RowsEditor setup={asTable} cardsOnly onChange={(part, v, key) => part === 'rows' && onChange({ source: v as Source }, 'change which cards a deck holds', key)} />
   }
   if (tab === 'boxes') return <BoxesEditor setup={setup} onChange={onChange} />
   const field = setup.colField ?? 'status'
@@ -108,14 +108,14 @@ export function KanbanEditor({ tab, setup, onChange }: { tab: KanbanTab; setup: 
           value={field}
           options={CARD_FIELDS.map((f) => ({ value: f, label: FIELD_NAME[f], hint: HINT[f] }))}
           // The rows' field can't be the columns' too: it goes.
-          onChange={(f) => onChange({ colField: f, ...(f === setup.rowField ? { rowField: undefined } : {}) }, `a kanban’s columns by ${FIELD_NAME[f]}`)}
+          onChange={(f) => onChange({ colField: f, ...(f === setup.rowField ? { rowField: undefined } : {}) }, `a deck’s columns by ${FIELD_NAME[f]}`)}
         />
       </Row>
       <Row label="rows from" hint="none, or another field: then each box is a column × a row, and dropping a card in one sets both">
         <Choices<CardField | 'none'>
           value={row ?? 'none'}
           options={[{ value: 'none' as const, label: 'none', hint: 'one row' }, ...CARD_FIELDS.filter((f) => f !== field).map((f) => ({ value: f, label: FIELD_NAME[f], hint: HINT[f] }))]}
-          onChange={(f) => onChange({ rowField: f === 'none' ? undefined : f }, f === 'none' ? 'no rows on a kanban' : `a kanban’s rows by ${FIELD_NAME[f]}`)}
+          onChange={(f) => onChange({ rowField: f === 'none' ? undefined : f }, f === 'none' ? 'no rows on a deck' : `a deck’s rows by ${FIELD_NAME[f]}`)}
         />
       </Row>
     </>

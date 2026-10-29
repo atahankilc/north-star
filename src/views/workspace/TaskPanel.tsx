@@ -434,7 +434,7 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
     const add = (id: string, why: string) => !out.some((x) => x.id === id) && out.push({ id, why })
     const count = new Map<string, number>()
     for (const t of tasks) if (t.pieceId === task.pieceId && t.cardId && t.id !== task.id) count.set(t.cardId, (count.get(t.cardId) ?? 0) + 1)
-    for (const [id, k] of [...count].sort((a, b) => b[1] - a[1]).slice(0, 3)) add(id, `${k} on this kanban`)
+    for (const [id, k] of [...count].sort((a, b) => b[1] - a[1]).slice(0, 3)) add(id, `${k} on this deck`)
     const plane = pieces.find((p) => p.id === task.pieceId)?.stuckTo
     const name = pieces.find((p) => p.id === plane)?.name?.trim() || 'its plane'
     if (plane) for (const c of cards.filter((c) => isOnPlane(c, plane)).slice(0, 5)) add(c.id, `on ${name}`)

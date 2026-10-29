@@ -219,7 +219,7 @@ export function setKanbanRows(wid: string, pieceId: string, rows: KanbanRows | u
 }
 
 // Its columns, all at once (renamed, added, moved, marked done): one undo step; a name typed merges.
-export function setKanbanCols(wid: string, pieceId: string, cols: KanbanCol[], what = 'change a kanban', key?: string) {
+export function setKanbanCols(wid: string, pieceId: string, cols: KanbanCol[], what = 'change a deck', key?: string) {
   const ref = pieceRef(wid, pieceId)
   const clean = cols
     .slice(0, KANBAN_COLS_MAX)
@@ -229,7 +229,7 @@ export function setKanbanCols(wid: string, pieceId: string, cols: KanbanCol[], w
 
 // What it holds and, for cards, which and by what (D-268), merged (shared): one undo step. Setting a field to undefined
 // takes it away.
-export function setKanbanSetup(wid: string, pieceId: string, patch: Partial<Pick<KanbanSetup, 'holds' | 'source' | 'colField' | 'rowField' | 'names'>>, what = 'change a kanban', key?: string) {
+export function setKanbanSetup(wid: string, pieceId: string, patch: Partial<Pick<KanbanSetup, 'holds' | 'source' | 'colField' | 'rowField' | 'names'>>, what = 'change a deck', key?: string) {
   const ref = pieceRef(wid, pieceId)
   const data: Record<string, unknown> = { updatedAt: Date.now() }
   for (const [k, v] of Object.entries(patch)) data[`kanban.${k}`] = v === undefined ? deleteField() : JSON.parse(JSON.stringify(v))

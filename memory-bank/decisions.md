@@ -240,12 +240,15 @@ feature comes back as a piece, and check them with the user then.
   only until Blaze).
 
 ## Kanban, priorities, timeline
-- Kanban (D-251, D-252): a piece (`+ → kanban…`) in the ledger look: columns as `01 TODO ──── 5` rules (renamed by
+- Kanban (D-251, D-252), called a **deck** on screen (D-301: `+ → deck…`, `· DECK`, every label and undo line; code,
+  data and docs keep `kanban`): a piece in the ledger look: columns as `01 TODO ──── 5` rules (renamed by
   double-click, `‹ › ✓ ×` on hover, `+ column`, one finished), tasks as sheets edged in their card's colour (title, given
   to, due, card, checklist, notes; in `tasks`); drag between columns (a cyan line where it lands), `+ task` types them,
   a click opens its panel; overdue magenta.
 - Tasks and cards (D-254): a card's panel lists its tasks and adds one; the facts line ends `☐ 2/5`; a card still being
   tested offers `+ test it`, and its finished task `+ log what it taught` → evidence.
+- Tasks never hidden (D-300): a deck with tasks switched to cards asks first (a new deck for the cards, or move them);
+  one hiding them says `☐ N tasks from before`. Next: a tasks side view from anywhere (tabs per deck, MINE, ALL DAYS).
 - Stuck to a plane (D-255): only that plane's tasks (`[this plane only · N hidden]`), beside it in its focus.
 - More (D-256, D-258): `[filter]` (GIVEN TO, DUE, FOR, LABEL; per browser); `#labels`, `P1`–`P3`; column limits (`4/3`
   magenta); `[LANES ▾]` by person or card (dropping sets it), lanes fold; several at once like on planes.
