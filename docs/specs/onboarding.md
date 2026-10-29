@@ -284,7 +284,7 @@ scripts/check-lessons.mjs    the lint (§8)
 | One-line hooks (only where no store has it) | `plus-open {plane}` (+ the hovered row for the kind guide), `context-menu {kind}`, `menu-open` (any prompt) |
 | Workspaces page | `workspaces-open {empty}` (the list loaded), `ws-made` (one created or imported), `join-requested` (a code sent) |
 | `useCanvasView` (more) | `console-shown {kind}` (a piece's console first drawn for this person), `piece-moved {kind, editing}` (a piece's drag ended), `card-moved {focus}` (a card's drag ended), `cell-picked {kind, framed}` (a matrix/table cell picked), `axis-unfold` (a feature axis's `unfold`), `parts-folded` (a folded parts tree first drawn) |
-| Writes (more) | `deleted {confirmed, shared}` (the hazard confirm's delete went through), `status-set` (a card's status changed), `task-for-card` (a task given a card), `filter-set {kind}` (a filter value picked, e.g. FOR) |
+| Writes (more) | `deleted {confirmed, shared}` (the hazard confirm's delete went through), `status-set` (a card's status changed), `task-for-card` (a task given a card), `task-moved {done}` (a task dragged to another column; `done`: into the finished one), `filter-set {kind}` (a filter value picked, e.g. FOR) |
 | Workspace data and presence | `task-given {byOther}` (a task newly given to you, `givenBy` someone else), `peer-joined` (another person first in `presence/{wid}`), `edit-refused` (the viewer's "You're a viewer" toast) |
 | The coach itself | `sidenav-rest` (the pointer rests ≥ 600 ms on the side nav), `guide-open` (`?` opened), `crumb-open` (the breadcrumb's canvas prompt opened), `idle {pieces, cards, seen, decks, peerFor}` (≥ 3 min here and 10 s without input, §4.5; counts for nudges) |
 

@@ -358,10 +358,24 @@ const emitted = new Set([
   ...[...emitsList.matchAll(/(['"`])([\w-]+)\1/g)].map((m) => m[2]),
 ])
 
+// Emitted for some kinds only (EMITS_PARTLY: `{ 'filter-open': ['plane'] }`): each other kind a lesson listens for is
+// still to be built, listed as `event:kind` (e.g. `filter-open:kanban`).
+const partlySrc = eventsSrc.match(/export const EMITS_PARTLY[^=]*=\s*\{([^}]*)\}/)?.[1] ?? ''
+const partly = new Map(
+  [...partlySrc.matchAll(/(['"`])([\w-]+)\1\s*:\s*\[([^\]]*)\]/g)].map((m) => [m[2], new Set([...m[3].matchAll(/(['"`])([\w-]+)\1/g)].map((x) => x[2]))]),
+)
+const kindsLeft = new Set()
+for (const l of LESSONS)
+  for (const t of [...l.trigger, ...(l.doneWhen ?? [])]) {
+    const got = partly.get(t.event)
+    const k = t.when?.kind
+    if (got && k != null) for (const kind of Array.isArray(k) ? k : [k]) if (!got.has(kind)) kindsLeft.add(`${t.event}:${kind}`)
+  }
+
 const missing = {
   scenes: [...scenes.keys()].filter((s) => !builtScenes.has(s)).sort(),
   anchors: [...anchors.keys()].filter((a) => !learnIn.has(a)).sort(),
-  events: EVENTS.filter((e) => !emitted.has(e)).sort(),
+  events: [...EVENTS.filter((e) => !emitted.has(e)), ...kindsLeft].sort(),
 }
 
 if (process.argv.includes('--write-pending')) {
@@ -381,7 +395,7 @@ const ratchet = (kind, used, have, whereOf, home) => {
 }
 ratchet('scenes', [...scenes.keys()], (s) => builtScenes.has(s), (s) => scenes.get(s), 'in src/demo/scenes/')
 ratchet('anchors', [...anchors.keys()], (a) => learnIn.has(a), (a) => anchors.get(a), 'a data-learn in src/')
-ratchet('events', [...EVENTS], (e) => emitted.has(e), () => 'EVENTS', 'emitted by src/onboarding/events.ts')
+ratchet('events', [...EVENTS, ...kindsLeft], (e) => !kindsLeft.has(e) && emitted.has(e), (e) => (kindsLeft.has(e) ? 'a lesson, EMITS_PARTLY' : 'EVENTS'), 'emitted by src/onboarding/events.ts')
 
 if (problems.length) {
   console.error(problems.join('\n'))

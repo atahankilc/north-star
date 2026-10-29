@@ -26,7 +26,7 @@ export const EVENTS = [
   // Writes (tracked() / the store): what this tab made or changed.
   'piece-made', 'card-made', 'text-made', 'link-made', 'task-made', 'package-made', 'stuck', 'unstuck', 'unframed',
   'framed', 'brought', 'canvas-made', 'moved-canvas', 'evidence-added', 'status-set', 'doc-uploaded', 'undo', 'deleted',
-  'task-for-card',
+  'task-for-card', 'task-moved',
   // Other stores.
   'wizard', 'setup-open', 'finder-open', 'threads-open', 'thread-open', 'side-view', 'following', 'filter-open',
   'filter-set', 'doc-reader', 'settings-open', 'task-given', 'peer-joined', 'edit-refused',
@@ -85,6 +85,8 @@ export const PAYLOADS: Record<LessonEvent, readonly string[]> = {
   undo: [],
   deleted: ['confirmed', 'shared'],
   'task-for-card': [],
+  // A task's column changed; `done`: it landed in the deck's finished column.
+  'task-moved': ['done'],
   wizard: ['kind'],
   'setup-open': ['kind'],
   'finder-open': ['headings'],
@@ -515,7 +517,7 @@ export const LESSONS: readonly Lesson[] = [
   },
   {
     id: 'deck', v: 1, format: 'lesson', roles: ALL, area: 'decks', since: 'D-252',
-    trigger: [{ event: 'focus-in', when: { kind: 'kanban' } }, { event: 'unframed', when: { kind: 'kanban' } }], anchor: 'dock', after: ['focus-lens', 'unframed'],
+    trigger: [{ event: 'focus-in', when: { kind: 'kanban' } }, { event: 'unframed', when: { kind: 'kanban' } }], doneWhen: [{ event: 'task-moved' }], anchor: 'dock', after: ['focus-lens', 'unframed'],
     pages: [
       { roles: EDITORS, title: 'Moving work along', body: 'Drag tasks between columns. `+ add a task` types one; Enter keeps typing the next.', scene: 'deck-drag' },
       { roles: VIEWERS, title: 'Where the work is', body: "Each column is a step; each task sits in one. Click a task to read who has it, its day and card.", scene: 'deck-drag' },

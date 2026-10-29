@@ -121,12 +121,14 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 ~05:20, lead workspace-sections-canvas: O0 and O1 committed. O2 and O4 committed; O3 (events + queue) in review. Next: commit O2 (it imports O1's seenMerge types: fine now), then O3 (events +
-queue) once S3's `onTracked` lands or from the stores, and O5 (the coach surfaces, every look) after O4 passes.
-b2 agreed: firebase.ts, vite.config.ts and package.json are free; it pings when S3 (`onTracked`) lands. The uncommitted
-2-line hunk in tests/rules.test.mjs (and CanvasView/WorkspaceLayout/canvasView.ts) is a third session's, not b2's:
-commit only our own hunk there. Emulators already run (someone's): never stop them; rules tests run as a copy of the
-file on a separate project id (`demo-onboarding-*`, rules loaded by REST), not `npm run test:rules`.
+2026-10-29 ~06:00, lead workspace-sections-canvas: O0–O4 committed.
+O5 building in two halves: O5a (Coach, Pages = welcome + what's new, Lesson, Nudge, EmptyHint, Demo, place.ts,
+`--ink-shade`) and O5b (KindGuide, Guide, keys.ts); the lead wrote src/onboarding/looks.ts (the dev-only look switch).
+Then O6 (mount + anchors + view hooks: ask b2 and the third session first), O7 (director + scenes).
+Agreed with b2: S3's `onTracked` is in (events.ts uses it; ops will fill `meta.kind`/`created` from S4 on).
+The uncommitted 2-line hunk in tests/rules.test.mjs (and CanvasView/WorkspaceLayout/canvasView.ts) is a third
+session's: commit only our own hunks. Emulators already run (someone's): never stop them; rules tests run as a copy of
+the file on a separate project id (`demo-onboarding-*`, rules loaded by REST), not `npm run test:rules`.
 
 ### Done
 _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
@@ -154,6 +156,14 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   and pause in a strip under the scene; ways out at `--fg-muted`; sizes on tokens; heights for a 768 px laptop) ·
   onboarding.md §4 (+ §4.2, §4.3, §4.6) updated: 16:10 demos everywhere, placement order, 1.2 s + 320 + 300 ms
   handover. For O5: follow §4.3's placement, not lesson:a's focus mock (it covers two cards).
+- O3 · (this commit) · events.ts (store/URL/history watchers → EVENTS with PAYLOADS; write events from `onTracked`'s
+  steps, agent writes ignored, merged steps once; `task-moved {done}` added), busy.ts (§5.4's busy sources), queue.ts
+  (one at a time, 400 ms calm, 10 s give-up paused while a coach surface shows, one queued per lesson, after/unless/
+  within, retire on done, cooldown for automatic triggers, tipsOff, one nudge per page load, holds until the seen-state
+  and the role are known) · reviewer: 2 rounds (canvas-open before the seen-state loaded, a stale `landing` keeping
+  "busy" forever, confirmed deletes after a cancel, a start/stop race, per-kind pending for the deck's filter) ·
+  headless: open, + plane, edit, focus, card, link, deck task drag each once in order (link/deck made by data calls; O6
+  redoes them through the UI). Costs: readBusy 0.45 ms at 30k nodes (call only while something waits).
 
 ### Stuck
 _(none)_

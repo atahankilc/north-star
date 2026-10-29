@@ -327,7 +327,7 @@ when `wizard {kind: kanban}` (first) · anchor the wizard · within wizard
 1. **Tasks or cards**: A deck holds tasks, or your cards sorted by a field: status, impact, effort. · `deck-kinds`
 
 ### `deck` · lesson · all · D-252
-when `focus-in {deck}` (first) or the first deck unframed · anchor `dock` · after `focus-lens`, `unframed`
+when `focus-in {deck}` (first) or the first deck unframed · done `task-moved` (a task dragged to another column) · anchor `dock` · after `focus-lens`, `unframed`
 1. (E+) **Moving work along**: Drag tasks between columns. `+ add a task` types one; Enter keeps typing the next. ·
    `deck-drag`
    (V) **Where the work is**: Each column is a step; each task sits in one. Click a task to read who has it, its day
