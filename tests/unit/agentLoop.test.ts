@@ -240,6 +240,9 @@ describe('writes go as the agent', () => {
     const m = stubModel([{ calls: [{ name: 'change', args: { ops: [{ op: 'create_card', args: { type: 'idea', plane: 'p3', title: 'Bread club' } }] } }] }, { answer: 'Added.' }])
     const { turn } = await runTurn(m, e, AGENT_TOOLS, [], 'add an idea')
     expect(turn.steps[0].results[0].ok).toBe(true)
+    // S13: the turn only proposes; the person's accept writes, as the agent.
+    expect(spy).toHaveBeenCalledTimes(0)
+    await e.accept()
     expect(spy).toHaveBeenCalledTimes(1)
     expect(spy.mock.calls[0][1]).toMatchObject({ actor: 'agent' })
     expect(e.steps.map((s) => s.actor)).toEqual(['agent'])

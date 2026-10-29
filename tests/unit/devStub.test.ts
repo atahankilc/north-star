@@ -1,6 +1,6 @@
 // S12's dev stub model (D-312, src/agent/devStub.ts): its four scripts played through the real loop and the real tools
 // on the medium fixture (a question answered with cited items after a search and a get; a small edit as one change
-// applied as the agent; a refusal with no tools; a plan for a big job with no writes); it streams; it stops when asked.
+// proposed, then applied as the agent; a refusal with no tools; a plan for a big job with no writes); it streams; it stops when asked.
 // And it is never in a production build: models.ts built for production must not hold DEV_STUB_MARK.
 import { describe, expect, it } from 'vitest'
 import { build } from 'vite'
@@ -20,6 +20,8 @@ async function play(ask: string) {
   const transcript: Transcript = { model: 'dev stub', startedAt: 0, turns: [] }
   const deltas: string[] = []
   const { turn } = await runTurn(devStubModel(env, fast), env, AGENT_TOOLS, [], ask, { transcript, onEvent: (e) => e.type === 'text' && deltas.push(e.delta) })
+  // S13: what the turn proposed is applied when the person accepts the preview.
+  await env.accept()
   return { env, turn, calls: callsOf(transcript).map((c) => c.name), deltas }
 }
 
@@ -71,15 +73,18 @@ describe('the dev stub', () => {
     expect(env.steps).toHaveLength(0)
     const transcript: Transcript = { model: 'dev stub', startedAt: 0, turns: [] }
     const second = await runTurn(model, env, AGENT_TOOLS, first.history, 'go', { transcript })
+    expect(env.steps).toHaveLength(0)
+    await env.accept()
     expect(callsOf(transcript).map((c) => c.name)).toEqual(['change'])
     expect(env.steps.map((s) => [s.actor, s.ops])).toEqual([['agent', ['create_piece']]])
     expect(env.getWs().pieces.some((p) => p.kind === 'matrix' && p.name === 'Features vs competitors')).toBe(true)
-    expect(second.turn.answer).toMatch(/^Done, as planned: p\d+/)
+    expect(second.turn.answer).toMatch(/^Ready, as planned: p\d+ "Features vs competitors"/)
     // A deck plan makes a deck with three tasks.
     const env2 = makeEnv(loadFixture('medium'))
     const m2 = devStubModel(env2, fast)
     const plan = await runTurn(m2, env2, AGENT_TOOLS, [], 'Make a deck of tasks to test our riskiest idea')
     await runTurn(m2, env2, AGENT_TOOLS, plan.history, 'yes')
+    await env2.accept()
     expect(env2.steps[0].ops).toEqual(['create_piece', 'create_task', 'create_task', 'create_task'])
     expect(pickScript('go')).toBe('question')
   })

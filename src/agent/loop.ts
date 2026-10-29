@@ -28,7 +28,10 @@
 // calls, results and provider items dropped), with a note where a summary will go; a model-written summary can come
 // later through the same hook (opts.compact).
 //
-// WRITES: every write a tool makes goes through `env.apply` with `actor: 'agent'`: the loop hands tools a wrapper of the
+// WRITES: `change` writes nothing during the turn (S13): it adds to the chat's pending changes (`env.changes`,
+// changeset.ts), which every read of the turn sees (`getWs()` = the workspace with them played on); the workflow
+// (workflow.ts) previews them when the turn ends and accepts them as ONE undo step. Every apply (accept, or auto-apply
+// when the person turned it on) goes through `env.apply` with `actor: 'agent'`: the loop hands tools a wrapper of the
 // env whose apply always says so (agent-run.md "S12/S13 must"; onboarding skips those steps).
 //
 // EVENTS (for the UI): turn and step start/finish, each call with a short label (`reading "Pazar"…`), its args in brief
@@ -37,6 +40,9 @@ import { workspaceMap, whereAmI, resolve, estimateTokens, RESULT_TOKENS, type Id
 import { clean, derive } from './read/derive'
 import { addUsage, NO_USAGE, toolsHash, type AgentEnv, type AgentModel, type AgentStep, type AgentTool, type AgentTurn, type AgentWs, type ModelMessage, type ModelRequest, type ModelResponse, type ToolCall, type ToolResult, type Transcript, type Usage } from './contract'
 import { systemPrompt } from './prompt'
+import { viewOf } from './changeset'
+
+let turnCount = 0
 
 export const STEP_BUDGET = 25
 // Tool results kept whole in the history; older ones become a one-line note.
@@ -77,6 +83,8 @@ export type TurnOpts = {
   keepResults?: number
   compactAt?: number
   compact?: Compactor
+  // This turn's id (auto-apply's undo key `agent-turn:<id>`); left out, a counter.
+  turnId?: string
 }
 
 export type TurnResult = { turn: AgentTurn; history: ModelMessage[] }
@@ -254,18 +262,30 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   emit({ type: 'turn_started' })
   env.newTurn?.(userMessage)
 
-  // Every write a tool makes goes as the agent, whatever the tool passes.
+  // Every write a tool makes goes as the agent, whatever the tool passes. Reads see the pending changes (S13: the
+  // agent checks its own result); `change` builds on the workspace without them (liveWs) and keeps them on the env.
+  const turnId = `${opts.turnId ?? ++turnCount}`
   const agentEnv: AgentEnv = {
-    getWs: () => env.getWs(),
+    getWs: () => viewOf(env.changes, env.getWs()),
+    liveWs: () => env.getWs(),
     apply: (plans, as) => env.apply(plans, { ...as, actor: 'agent' }),
     actor: { ...env.actor, agent: true },
     ids: env.ids,
     ui: env.ui,
     now: () => env.now(),
+    turnId,
+    ...(env.chatId ? { chatId: env.chatId } : {}),
+    ...(env.settings ? { settings: env.settings } : {}),
     ...(env.newId ? { newId: () => env.newId!() } : {}),
+    get changes() {
+      return env.changes
+    },
+    set changes(cs) {
+      env.changes = cs
+    },
   }
 
-  const ws = env.getWs()
+  const ws = agentEnv.getWs()
   env.ids.sync(ws)
   const system = opts.system ?? systemPrompt({ workspaceName: ws.workspace?.name })
   const map = workspaceMap(ws, env.ids)
@@ -346,7 +366,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     const lines: ToolLine[] = calls.map((c) => {
       let label = ''
       try {
-        label = stepLabel(c, env.getWs(), env.ids)
+        label = stepLabel(c, agentEnv.getWs(), env.ids)
       } catch {
         label = `${c.name}…`
       }

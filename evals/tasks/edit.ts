@@ -1,7 +1,8 @@
-// Small edits (agent.md §8, 8 tasks): one or two ops, graded on the end state: what was asked is there, nothing else
+// Small edits (agent.md §8, 8 tasks; S13 added 5 on the preview: tick off, delete after a yes, revise, dry run, a person's untick): one
+// or two ops, graded on the end state: what was asked is there, nothing else
 // changed (`onlyChanged`), one undo step that gives the start back. Each has a plausible wrong script (the wrong card,
 // the wrong column, the wrong direction, an extra write) so `--wrong` tests precision.
-import { cell, count, exists, field, linked, noDeletes, noOverlaps, onlyChanged, task, undoRestores } from '../graders'
+import { absent, answerIncludes, cell, count, dryRunOnly, exists, field, linked, noDeletes, noOverlaps, noWritesInTurn, onlyChanged, proposedIn, task, undoRestores } from '../graders'
 import type { Task } from '../types'
 import { answer, call, change, realOf } from './util'
 
@@ -156,5 +157,151 @@ export const EDIT: Task[] = [
     reference: [call('get', { ids: ['c36', 'p6'] }), change([['create_task', { deck: 'p6', title: 'Call the Freshgo founder', card: 'c36', priority: 'P1' }]]), answer('Added the task "Call the Freshgo founder" (P1, for c36 Freshgo) to todo on p6 Research.')],
     // On the other deck.
     wrong: [change([['create_task', { deck: 'p13', title: 'Call the Freshgo founder', card: 'c36', priority: 'P1' }]]), answer('Added it to Research.')],
+  },
+  // ---- S13: the preview (agent.md §4.5, §4.10): an item ticked off by a note, a delete only after a yes (with its why),
+  // a revision during the preview, a dry run.
+  {
+    id: 'edit-09-untick-third',
+    group: 'edit',
+    set: 'regression',
+    fixture: 'medium',
+    ask: "Add three ideas to Bets: 'Bread club', 'Cheese club' and 'Olive club'.",
+    followUps: ["Don't add the third card."],
+    graders: [
+      proposedIn(1, { n: 3, ops: ['create_card', 'create_card', 'create_card'] }),
+      proposedIn(2, { n: 2 }),
+      exists('card', { type: 'idea', title: 'Bread club', plane: 'Bets' }),
+      exists('card', { type: 'idea', title: 'Cheese club', plane: 'Bets' }),
+      absent('card', { title: 'Olive club' }),
+      onlyChanged({ add: { ideas: 2 } }),
+      noOverlaps('Bets'),
+      undoRestores(),
+    ],
+    reference: [
+      call('view', { piece: 'p3' }),
+      change([
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Bread club' }],
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Cheese club' }],
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Olive club' }],
+      ], 'three clubs'),
+      answer('Proposed three ideas on p3 Bets: "Bread club", "Cheese club" and "Olive club". They wait in the preview.'),
+      change([], undefined, { drop: ['i3'] }),
+      answer('Took "Olive club" off; the preview now holds "Bread club" and "Cheese club".'),
+    ],
+    // The note ignored: all three land.
+    wrong: [
+      change([
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Bread club' }],
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Cheese club' }],
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Olive club' }],
+      ]),
+      answer('Proposed three ideas.'),
+      answer('Done, only two.'),
+    ],
+  },
+  {
+    id: 'edit-10-delete-after-yes',
+    group: 'edit',
+    set: 'regression',
+    autoGo: false,
+    fixture: 'medium',
+    ask: "Delete the duplicate 'Cash only is a big deal' sticky note on Rivals.",
+    followUps: ['yes'],
+    graders: [
+      noWritesInTurn(1),
+      proposedIn(1, { n: 0 }),
+      proposedIn(2, { n: 1, ops: ['delete'], deletesWithWhy: true }),
+      absent('text', { id: R('x9') }),
+      exists('text', { id: R('x8') }),
+      onlyChanged({ allow: [R('x9')] }),
+      undoRestores(),
+    ],
+    reference: [
+      call('search', { query: 'Cash only is a big deal', kinds: ['text'], scope: 'Rivals' }),
+      answer('Rivals has two sticky notes saying "Cash only is a big deal": x8 and x9. Shall I delete x9 and keep x8? Say yes and I will.'),
+      change([['delete', { ids: ['x9'] }, 'the same words as x8 on Rivals; you said yes']], 'delete a duplicate sticky'),
+      answer('Proposed deleting x9 (a duplicate of x8); it waits in the preview, struck, with the reason.'),
+    ],
+    // Deleted at once, without asking.
+    wrong: [change([['delete', { ids: ['x9'] }, 'a duplicate']]), answer('Deleted the duplicate.'), answer('Done.')],
+  },
+  {
+    id: 'edit-11-revise-in-preview',
+    group: 'edit',
+    set: 'regression',
+    fixture: 'medium',
+    ask: "Add a problem 'Cheese goes off in summer' for Bakers near the tram, on Segments.",
+    followUps: ['Actually make it for Young parents on Saturdays (core) instead.'],
+    graders: [
+      proposedIn(1, { n: 1, line: /for: problem "Cheese goes off in summer" → customer "Bakers near the tram"/ }),
+      linked('Cheese goes off in summer', 'Young parents on Saturdays (core)', 'for'),
+      count('card', { title: 'Cheese goes off in summer' }, 1),
+      onlyChanged({ add: { problems: 1, edges: 1 } }),
+      undoRestores(),
+    ],
+    reference: [
+      call('get', { ids: ['c11'] }),
+      change([['create_card', { type: 'problem', plane: 'p1', title: 'Cheese goes off in summer', links: [{ to: 'c11', kind: 'for' }] }]]),
+      answer('Proposed the problem "Cheese goes off in summer" on p1 Segments, for c11; it waits in the preview.'),
+      change([['create_card', { type: 'problem', plane: 'p1', title: 'Cheese goes off in summer', links: [{ to: 'c12', kind: 'for' }] }]], undefined, { drop: ['i1'] }),
+      answer('Changed it: the problem is now for c12 "Young parents on Saturdays (core)" instead of c11; the preview holds only that.'),
+    ],
+    // A second card added instead of the first one revised.
+    wrong: [
+      change([['create_card', { type: 'problem', plane: 'p1', title: 'Cheese goes off in summer', links: [{ to: 'c11', kind: 'for' }] }]]),
+      answer('Proposed.'),
+      change([['create_card', { type: 'problem', plane: 'p1', title: 'Cheese goes off in summer', links: [{ to: 'c12', kind: 'for' }] }]]),
+      answer('Changed it.'),
+    ],
+  },
+  {
+    id: 'edit-12-dry-run',
+    group: 'edit',
+    set: 'regression',
+    autoGo: false,
+    fixture: 'medium',
+    ask: "Check whether moving the overdue tasks in review on Sprint to done would work and how many would move, but don't change anything yet.",
+    graders: [dryRunOnly(), answerIncludes(['5']), onlyChanged({})],
+    reference: [
+      call('query', { kind: 'task', deck: 'Sprint', column: 'review', overdue: true }),
+      change([['move_task', { tasks: OVERDUE_REVIEW, column: 'done' }]], undefined, { dry_run: true }),
+      answer('It would work: 5 overdue tasks in review on p13 Sprint (t52, t54, t46, t44, t45) would move to done. Nothing is changed or proposed; say go to propose it.'),
+    ],
+    // Proposed for real.
+    wrong: [change([['move_task', { tasks: OVERDUE_REVIEW, column: 'done' }]]), answer('5 would move.')],
+  },
+  {
+    id: 'edit-13-person-unticks',
+    group: 'edit',
+    set: 'regression',
+    fixture: 'medium',
+    ask: "Add three ideas to Bets: 'Bread club', 'Cheese club' and 'Olive club'.",
+    // The person unticks one in the preview (no turn), then accepts.
+    followUps: [{ untick: '"Olive club"' }],
+    graders: [
+      proposedIn(1, { n: 3 }),
+      exists('card', { type: 'idea', title: 'Bread club', plane: 'Bets' }),
+      exists('card', { type: 'idea', title: 'Cheese club', plane: 'Bets' }),
+      absent('card', { title: 'Olive club' }),
+      onlyChanged({ add: { ideas: 2 } }),
+      undoRestores(),
+    ],
+    reference: [
+      call('view', { piece: 'p3' }),
+      change([
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Bread club' }],
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Cheese club' }],
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Olive club' }],
+      ], 'three clubs'),
+      answer('Proposed three ideas on p3 Bets: "Bread club", "Cheese club" and "Olive club". They wait in the preview.'),
+    ],
+    // Only two made, and the wrong two: the untick finds nothing to take off, and Cheese club is missing.
+    wrong: [
+      change([
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Bread club' }],
+        ['create_card', { type: 'idea', plane: 'p3', title: 'Olive clubs' }],
+      ]),
+      answer('Proposed the ideas.'),
+    ],
   },
 ]

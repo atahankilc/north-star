@@ -1,5 +1,5 @@
 // S11's runner (D-312, evals/run.ts; on S12's real loop) with the stub model: three tasks' references pass, wrong scripts fail the right
-// graders; the stub answers as a model would; the stand-in change tool applies as the agent (agent-run.md "S12/S13
+// graders; the stub answers as a model would; the change tool proposes and the accept applies as the agent (agent-run.md "S12/S13
 // must"); the task set has §8's groups; the export-v2 fixtures round-trip; the report is written.
 import { describe, expect, it } from 'vitest'
 import { mkdtempSync, readFileSync, existsSync } from 'node:fs'
@@ -63,9 +63,16 @@ describe('the runner on three tasks with the stub', () => {
 })
 
 describe('every task', () => {
+  it('an untick in the preview that matches no item fails the attempt', async () => {
+    const t = { ...byId('edit-13-person-unticks'), followUps: [{ untick: 'Nothing like this' }] }
+    const r = await attempt(t, referenceModel(t))
+    expect(r.attempt.grades.find((g) => g.name === 'untick found its item')).toMatchObject({ pass: false })
+    expect(r.attempt.verdict).toBe('fail')
+  })
+
   it('has §8\'s groups and unique ids', () => {
     const count = (g: string) => TASKS.filter((t) => t.group === g).length
-    expect([count('find'), count('edit'), count('build'), count('context'), count('refuse'), count('injection')]).toEqual([10, 8, 8, 6, 4, 5])
+    expect([count('find'), count('edit'), count('build'), count('context'), count('refuse'), count('injection')]).toEqual([10, 13, 8, 6, 4, 5])
     expect(new Set(TASKS.map((t) => t.id)).size).toBe(TASKS.length)
     expect(TASKS.filter((t) => t.set === 'regression').length).toBeGreaterThan(15)
   })
@@ -138,13 +145,15 @@ describe('the stub model', () => {
   })
 })
 
-describe('the stand-in tools', () => {
-  it('change applies as the agent, one step; the model sees the made things by short id', async () => {
+describe('the tools', () => {
+  it('change proposes; the accept applies as the agent, one step; the model sees the made things by short id', async () => {
     const env = makeEnv(loadFixture('medium'))
     const m = stubModel([{ calls: [{ name: 'change', args: { ops: [{ op: 'create_card', args: { type: 'idea', plane: 'p3', title: 'Bread club' } }] } }] }, { answer: 'ok' }])
     const turn = await runTurn(env, m, EVAL_TOOLS, 'add')
     expect(turn.steps[0].results[0]).toMatchObject({ ok: true })
-    expect(turn.steps[0].results[0].text).toMatch(/Made: \$1 → c\d+/)
+    expect(turn.steps[0].results[0].text).toMatch(/New: \$1 → c\d+/)
+    expect(env.steps).toHaveLength(0)
+    await env.accept()
     expect(env.steps).toHaveLength(1)
     expect(env.steps[0].actor).toBe('agent')
     expect(env.actor.agent).toBe(true)
@@ -166,6 +175,7 @@ describe('the stand-in tools', () => {
     const r = await change.run(viewer, { ops: [{ op: 'rename', args: { id: 'p6', name: 'x' } }] })
     expect([r.ok, viewer.steps.length]).toEqual([false, 0])
     expect(r.text).toContain('viewers can only read')
+    expect(r.text).toContain("a viewer's agent is read-only")
   })
 
   it('a call to a tool that does not exist goes back to the model as an error, and is in the transcript', async () => {
@@ -181,7 +191,8 @@ describe('the stand-in tools', () => {
     const change = EVAL_TOOLS.find((t) => t.def.name === 'change')!
     const r = await change.run(env, { ops: [{ op: 'create_card', args: { type: 'idea', plane: 'p3', title: 'c12', links: [{ to: 'c11' }] } }] })
     expect(r.ok).toBe(true)
-    const made = env.getWs().cards.find((c) => c.id === env.steps[0].plans[0].ids.$1)!
+    await env.accept()
+    const made = env.getWs().cards.find((c) => c.id === Object.entries(env.steps[0].plans[0].ids).find(([h]) => h.startsWith("$1"))?.[1])!
     expect([made.title, made.pieceId]).toEqual(['c12', realOf('medium', 'p3')])
     expect(env.getWs().edges.some((e) => e.fromId === made.id && e.toId === realOf('medium', 'c11'))).toBe(true)
   })

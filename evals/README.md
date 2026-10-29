@@ -10,6 +10,7 @@ npm run eval -- --repeat 3        pass^3: every attempt must pass (catches flaky
 npm run eval -- --group build --set capability --task find-01-no-evidence,edit-02-validate-with-interview
 npm run eval -- --wrong           the stub plays each task's plausible wrong script: every task should FAIL
 npm run eval -- --write-fixtures  rewrite evals/fixtures/*.workspace.json (export v2) after the fixtures change
+npm run eval -- --emulator        accepts through the real apply into the running Firestore emulator (below)
 OPENAI_API_KEY=… npm run eval -- --model openai:gpt-5.6-terra   a real model (S12); the judge uses it too
 ```
 
@@ -36,7 +37,7 @@ grader's verdict and why), `report.json`, and `transcripts/<task>-<attempt>.json
    `where_am_i`, a stand-in `change` (ops by name, each op's arguments and summary in its description; args checked
    against the op's JSON Schema in `src/agent/schema.ts` (types, enums, required, nested, unknown keys) with the errors
    returned to the model; short ids resolved only under argument names that hold ids (`ID_KEYS`), never inside a title
-   or text), the UI tools. S13 replaces `change` with the real write tool; the runner doesn't change.
+   or text), the UI tools. Since S13 `change` is the real write tool (src/agent/change.ts): see "Writes" below.
 5. **Graders** (`graders.ts`) read the END STATE and the transcript, never what the model says it did.
 6. **Report** (`report.ts`): per attempt a verdict `pass`, `fail` or `unjudged` (no grader failed but an LLM judge was
    skipped: never counted as a pass); pass@1, pass^k, unjudged, failed, steps, tokens in (cached) and out (reasoning),
@@ -49,7 +50,7 @@ A task is `{ id, group, set, fixture, ask, followUps?, view?, role?, graders, re
 turns of the same chat (`['go']` after a big job's plan, agent.md §4.10); the reference script runs on across the turns;
 graders read the end state after the last turn, and `noWritesInTurn(1)` checks the plan wrote nothing (build-01, build-03).
 
-- `group`: find (10), edit (8), build (8), context (6, one with a table beside), refuse (4), injection (5), as agent.md §8.
+- `group`: find (10), edit (13), build (8), context (6, one with a table beside), refuse (4), injection (5), as agent.md §8.
 - `set`: `regression` (100 % on every change) or `capability` (measured at phase gates).
 - `view`: where the person is (focus, selection, panel, beside, side view), real ids (`realOf('medium', 'c58')`).
 - `reference`: the stub model's scripted solution. It exists **only** to prove the graders and the runner: a task whose
@@ -115,15 +116,30 @@ unjudged) and all wrong scripts fail); the loop itself: tests/unit/agentLoop.tes
 - `src/agent/devStub.ts`: a scripted model for the UI in dev (`?agentStub=1`), on the real tools; not in production.
 - `src/agent/usage.ts`: the browser's usage log, counts and tool names only.
 
-## Emulator mode (not built)
+## Writes (S13)
 
-`--emulator` stops with an error. Why: the real `apply` (src/ops/firestore.ts) is the browser app's adapter. It records
-the step in `history.ts` (zustand, toasts), takes the signed-in Firebase app from `src/data/firebase.ts` (Vite env,
-`connectAuthEmulator` from the browser's sign-in), and `importWorkspace` creates the workspace through
-`src/data/workspaces.ts` with the same app. Running that in node means a node Firebase app signed in to the auth
-emulator as a test user and those modules loaded without their browser parts; doable, but it touches src/data/, which
-this step may not change. The in-memory mode runs the very same op builders, `validate` and `project` (and S3's tests
-check `project` equals what `apply` writes), so what it grades is what the browser would write. To add it later: seed
-with the firebase client in node as state.md's "Seed script" note does (sign in as `test-alice`, write the bundle's docs
-under a new workspace), give `makeEnv` an `apply` that writes the plans with a batch, and read the end state back with
-the listeners' converters (`fromDocs`).
+`change` writes nothing during a turn: its ops join the chat's pending changes (`src/agent/changeset.ts`), one item
+per op (plain words, where, what it depends on, a delete's `why`); the turn's reads see them (`viewOf`). The runner is
+the person: after the last turn it **accepts** what's pending (one undo step, as the agent, label `agent: …`); a turn
+that ends with changes pending before a later follow-up keeps them in the preview, and the follow-up is a note on it
+(the agent revises with `change(drop: [...])`). A follow-up `{ untick: 'words' }` is the person unticking an item.
+`RunResult.proposed` holds what each turn's preview showed; graders: `proposedIn(turn, { n, ops, deletesWithWhy, line })`,
+`dryRunOnly()`. The 5 preview tasks: edit-09 (tick off by a note), edit-10 (a delete only after a yes, with its why),
+edit-11 (revise during the preview), edit-12 (a dry run), edit-13 (the person unticks; an untick that matches no item
+fails the attempt). A stale preview (the workspace changed so a change no longer builds) is rebuilt at accept and goes
+back to the person, in names, instead of applying. The turn lifecycle is `src/agent/workflow.ts` (pure); the
+browser's apply, the turn lock and `[undo]` are `src/agent/browser.ts`.
+
+## Emulator mode
+
+`npm run eval -- --emulator` (the emulators running: `npm run emulators`; never started or stopped by the runner).
+`evals/cli.mjs` sets `VITE_USE_EMULATORS=true` and loads `evals/emulatorMain.ts`, so `src/data/firebase.ts` (unchanged)
+connects to the demo-north-star emulators; firebase/auth and firebase/firestore run in node (gRPC), no shim needed.
+Per attempt (`evals/emulator.ts`): a new workspace id; the fixture's docs written with the emulator's admin access (REST
+`Bearer owner`), the acting person given their role in the workspace doc; the auth emulator signs in as the fixture's
+person (an unsigned custom token, emulator only); listeners on every collection, as the app keeps them; the start read
+back from Firestore. Every accept goes through the REAL `apply` (src/ops/firestore.ts: validate, one `tracked()` step
+in src/data/history.ts, batched writes) under the real firestore.rules, and waits for the server; the end state is read
+back from Firestore. Two extra checks: **applied = previewed** (what Firestore holds equals `project`, field by field)
+and `undoRestores` runs the **real history undo** and reads the workspace back. The workspaces it makes stay in the
+emulator (throwaway data).

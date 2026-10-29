@@ -627,12 +627,51 @@ export const argsExclude = (text: string): Grader => ({
 
 // The run was one undo step (one turn = one step, §7.2 point 2), by the agent, and undoing it returns the exact start
 // state (Phase 5's gate). The undo is the step's inverse (each doc as it was when the turn began) played with project.
+// ---- What the preview showed (S13): the items pending at the end of a turn, before anything was accepted.
+
+export type ProposedWant = { n?: number | { min?: number; max?: number }; ops?: string[]; deletesWithWhy?: boolean; line?: RegExp }
+
+// At the end of turn `turn`, the preview held items like these: how many, their ops (in order), every delete with its
+// why, a line matching.
+export const proposedIn = (turn: number, want: ProposedWant): Grader => ({
+  name: `proposedIn(${turn}, ${JSON.stringify({ ...want, line: want.line?.source })})`,
+  grade: (r) => {
+    const items = r.proposed?.[turn - 1]
+    if (!items) return ok(false, `no preview recorded for turn ${turn}`)
+    const n = want.n
+    if (n !== undefined && (typeof n === 'number' ? items.length !== n : items.length < (n.min ?? 0) || items.length > (n.max ?? Infinity))) return ok(false, `${items.length} items pending (want ${JSON.stringify(n)}): ${items.map((i) => i.line).join(' | ').slice(0, 200)}`)
+    if (want.ops && JSON.stringify(items.map((i) => i.op)) !== JSON.stringify(want.ops)) return ok(false, `ops ${items.map((i) => i.op).join(', ') || 'none'} (want ${want.ops.join(', ')})`)
+    if (want.deletesWithWhy && !items.filter((i) => i.delete).every((i) => i.why?.trim())) return ok(false, 'a delete without its why')
+    if (want.deletesWithWhy && !items.some((i) => i.delete)) return ok(false, 'no delete pending')
+    if (want.line && !items.some((i) => want.line!.test(i.line))) return ok(false, `no item line matches ${want.line}`)
+    return ok(true, `${items.length} pending: ${items.map((i) => `${i.id} ${i.op}`).join(', ') || 'none'}`)
+  },
+})
+
+// Only dry runs: every change call had dry_run, nothing was proposed or written.
+export const dryRunOnly = (): Grader => ({
+  name: 'dryRunOnly',
+  grade: (r) => {
+    const calls = callsOf(r.transcript).filter((c) => c.name === 'change')
+    if (!calls.length) return ok(false, 'no change call (a dry run is one)')
+    const real = calls.filter((c) => c.args.dry_run !== true)
+    const pending = (r.proposed ?? []).some((t) => t.length)
+    return ok(!real.length && !pending && !r.steps.length, real.length ? `${real.length} change calls were not dry runs` : pending ? 'something was proposed' : r.steps.length ? 'something was written' : `${calls.length} dry run${calls.length === 1 ? '' : 's'}, nothing proposed or written`)
+  },
+})
+
 export const undoRestores = (): Grader => ({
   name: 'undoRestores',
-  grade: (r) => {
+  grade: async (r) => {
     if (r.steps.length !== 1) return ok(false, `${r.steps.length} undo steps (want exactly 1)`)
     const s = r.steps[0]
     if (s.actor !== 'agent') return ok(false, `the step is the ${s.actor}'s, not the agent's`)
+    // Emulator mode: the real history's undo, the workspace read back from Firestore.
+    if (r.undo) {
+      const real = await r.undo()
+      const d = diff(r.start, real)
+      return ok(d.size === 0, d.size ? `${d.size} differ after the real undo: ${[...d.keys()].slice(0, 4).join(', ')}` : 'the real undo (history.ts on the emulator) gives the start back exactly')
+    }
     const back = project(r.end, [s.inverse]) as AgentWs
     const d = diff(r.start, back)
     return ok(d.size === 0, d.size ? `${d.size} differ after undo: ${[...d.keys()].slice(0, 4).join(', ')}` : `undo gives the start back exactly (${s.applies} applies in the step)`)

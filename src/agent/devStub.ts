@@ -12,15 +12,16 @@
 //   plan      build, organise, matrix, compare, prioritise, research, "deck of", plan → reads a plane, answers a
 //             numbered plan and makes no change (a big job, prompt.ts' "Big jobs").
 //   go        "go" / "yes" / "do it" right after that plan → carries it out in one `change` (a matrix, a deck of three
-//             tasks, or a heading) and says what it made.
+//             tasks, or a heading) and says what's in the preview (S13: nothing is written until the person applies).
 //   edit      add, create, make, new → where_am_i + the planes; view the plane; one `change` (create_card); reports
-//             what the result says (short id, one undo step).
+//             what the result says (short id, in the preview, one undo step when applied).
 //   question  anything else → search (or a query when there are no words); get the first hits; answers citing them.
 import type { AgentEnv, AgentModel, ModelEvent, ModelMessage, ModelRequest, ModelResponse, ToolCall, Usage } from './contract'
 import { estimateTokens } from './read/text'
 import { clean, derive } from './read/derive'
 import { kindOfPiece } from '../model/pieces'
 import { canvasOf } from '../model/canvases'
+import { viewOf } from './changeset'
 
 export const DEV_STUB_MARK = 'north-star:agent-dev-stub'
 
@@ -30,7 +31,7 @@ export type DevStubOpts = {
   wordMs?: number
 }
 
-type Env = Pick<AgentEnv, 'getWs' | 'ids'>
+type Env = Pick<AgentEnv, 'getWs' | 'ids'> & { changes?: AgentEnv['changes'] }
 type Call = { name: string; args: Record<string, unknown> }
 type Step = { calls: Call[]; text?: string } | { answer: string }
 
@@ -86,7 +87,8 @@ function turnOf(messages: ModelMessage[]) {
 function titleOf(env: Env, short: string): string {
   const r = env.ids.real(short)
   if (!r) return short
-  const ws = clean(env.getWs())
+  // With what's pending (the preview), so a card it just proposed has its title.
+  const ws = clean(viewOf(env.changes, env.getWs()))
   const t =
     r.kind === 'card' ? ws.cards.find((c) => c.id === r.id)?.title
     : r.kind === 'task' ? ws.tasks.find((c) => c.id === r.id)?.title
@@ -137,7 +139,7 @@ export function nextStep(env: Env, ask: string, step: number, results: { name: s
       return { calls: [{ name: 'change', args: { ops: [{ op: 'create_text', args: { kind: 'heading', plane, text: 'Sorted by the agent', size: 'subheading' } }], summary: 'a heading' } }], text: 'Adding the heading.' }
     }
     const made = [...last.matchAll(/\$\w+ → ([cptx]\d+)/g)].map((m) => m[1])
-    if (results[results.length - 1]?.name === 'change' && /^Applied/.test(last)) return { answer: `Done, as planned: ${made.length ? made.map((m) => `${m} ${titleOf(env, m)}`).join(', ') : 'the change is in'}. It's one undo step: ⌘Z takes it all back.` }
+    if (results[results.length - 1]?.name === 'change' && /^(Proposed|Applied)/.test(last)) return { answer: `Ready, as planned: ${made.length ? made.map((m) => `${m} ${titleOf(env, m)}`).join(', ') : 'the change is ready'}. It's in the preview: apply it as one undo step (⌘Z takes it all back), untick what you don't want, or tell me what to change.` }
     return { answer: `I tried, but it was refused: ${last.split('\n')[0]}. Nothing changed.` }
   }
   if (kind === 'refuse') {
@@ -171,7 +173,7 @@ export function nextStep(env: Env, ask: string, step: number, results: { name: s
     if (step === 1) return { calls: [{ name: 'view', args: { piece: plane } }] }
     if (step === 2) return { calls: [{ name: 'change', args: { ops: [{ op: 'create_card', args: { type, plane, title } }], summary: `add ${type} "${title}"` } }], text: `Adding the ${type} to ${plane}.` }
     const made = /\$\w+ → (c\d+)/.exec(last)?.[1]
-    if (results[results.length - 1]?.name === 'change' && made) return { answer: `Added the ${type} ${made} ${titleOf(env, made)} on ${plane} ${titleOf(env, plane)}. It's one undo step: ⌘Z takes it back. I didn't link it to anything yet; tell me what it's for and I'll wire it in.` }
+    if (results[results.length - 1]?.name === 'change' && made) return { answer: `The ${type} ${made} ${titleOf(env, made)} on ${plane} ${titleOf(env, plane)} is in the preview: apply it as one undo step (⌘Z takes it back). I didn't link it to anything yet; tell me what it's for and I'll wire it in.` }
     return { answer: `I tried to add the ${type}, but it was refused: ${last.split('\n')[0]}. Nothing changed.` }
   }
   // question

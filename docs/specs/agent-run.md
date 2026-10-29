@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S13 next (the real `change` tool over src/ops with short ids, schema-strict args, actor 'agent', one undo step per turn in the browser; workflows plan → run → preview → ask → report; the eval emulator mode). S1–S12 done.
+S14 next (the UI: bottom-right box → column, steps live, stop, [undo], Settings → the agent, empty state, presence; screenshots per 1.6). S1–S13 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -194,6 +194,17 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   with followUps and an automatic "go" after a plan (off for refuse/injection/viewer) · reviewer: 2 fix rounds (the
   plan-first rule vs one-turn evals; `change` offered coordinates; a stop didn't stop queued writes; small prompt and
   adapter items; round 2 checked by the lead: tests, eval, lint, tsc) · eval 37/41 + 4 unjudged, `--wrong` 0/41.
+- S13 · see `git log --grep "Agent S13"` · `src/agent/change.ts` (the real change tool: schema-strict, ids only in id
+  fields, people resolved, deletes need why, ≤ 80 ops, viewer refused, result in names + new short ids + warnings + a
+  view), `changeset.ts` (pending per chat: untick with dependants, drop to revise, reads see it, previewDiff for S15,
+  accept = one step with a stale-check rebuild, names-only messages), `workflow.ts` (idle → running → asking |
+  previewing → applying → applied | discarded; fail/reset unlock from any phase), `browser.ts` (apply as agent, turn
+  and preview locks, releaseAgentLocks, undo of the agent's step); history.ts: a merge adds new docs to `before` in
+  place and reads every held doc into `after` (exact undo/redo of merged agent turns; onboarding's contract kept);
+  evals: real change tool, untick follow-ups, proposedIn/dryRunOnly, 5 new edit tasks, `--emulator` mode through the
+  real apply + history undo + "applied = previewed" · reviewer: 1 fix round (redo lost a doc; `from` as canvas; no
+  lock release paths; a stale accept stuck the person; untick follow-up silent) · eval 42/46 + 4 unjudged, `--wrong`
+  0/46, same on the emulator.
 
 ### Stuck
 _(none)_
@@ -289,3 +300,7 @@ _(the reviewers' and builders' "could be better", not done yet)_
 - S12 reviewer: `reasoning.context` isn't sent (GPT-5.6 defaults to replaying all turns' reasoning: costs tokens);
   confirm with the docs + a key and send `current_turn` if right. The map and where-am-i are built once per turn: after
   its own writes the model must call get/view/where_am_i to see them.
+- **S14 must (S13 reviewer):** the driver calls `releaseAgentLocks()` in a finally, on unmount and on workspace change
+  (`history.reset` doesn't clear read-only locks); workflow `fail` from the preview should discard or knowingly keep
+  `env.changes` (today it keeps them while the state says nothing is pending); the stale-accept text "there is no card
+  something that is gone" → "that card is gone".

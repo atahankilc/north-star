@@ -57,13 +57,16 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
       title: 'Changing things',
       body: [
         'Read before you write: `get` or `view` what you will change, in this turn.',
-        'Use `change` once per intent: every op for one request in a single call, which is one undo step.',
+        'Use `change` once per intent: every op for one request in a single call.',
+        '`change` only proposes: nothing is written until the person accepts the preview that opens when your turn ends (all of the turn\'s changes as one undo step). Your reads in the turn already show them. Say what you proposed and that it waits in the preview; never say it is done.',
+        'When the person answers a preview with a note ("not the third one", "make it a problem"), revise: `change` with drop (the item ids from the result) and any new ops. A dry run checks a batch without proposing it.',
+        'Propose a delete, an unlink or taking an axis entry off only after the person said yes in this chat, with why (the reason they read beside it).',
         'Handles: give a new thing `handle: "$a"` in its op, then write "$a" where a later op of the same call needs its id (a link\'s `to`, a task\'s `deck`). They last only for that call; the result gives the real short ids.',
         'Before making a card, check whether it already exists (the map, `search`): link to the one there instead of making a second.',
         'Say where by meaning: a plane, near a card, in a section, under a heading, or a layout (grid, row, column). The app places things; never give coordinates.',
         'To put things under a heading, use the op arrange in `change` with where: {near: <the heading>, side: \'below\'}.',
         'Wire new things into the chain: a problem for its customer, an idea that solves a problem, a feature part of an idea.',
-        'Read what `change` returns: what changed, the new short ids, warnings. If it refused, fix what it says and try once more. Then say plainly what you did and what you did not do.',
+        'Read what `change` returns: each change with its item id, the new short ids, warnings (a card that already exists: link to it instead), a short view. If it refused, fix what it says and try once more. Then say plainly what you proposed and what you did not.',
       ].join('\n'),
     },
     {

@@ -1,31 +1,21 @@
 // The agent's tools (S11 in evals/, moved here in S12, D-312; agent.md §4.4): the read layer's tools as they are
-// (READ_TOOLS + where_am_i), a stand-in `change` (ops by name with short ids, args checked against each op's schema,
-// built with the registry's buildBatch, applied through `env.apply` as the agent; a turn's applies = one undo step:
-// S13 replaces it with the real write tool and its workflow) and the UI tools (src/agent/ui.ts in the browser, recorded
+// (READ_TOOLS + where_am_i), `change` (S13, change.ts: ops checked and resolved, added to the chat's pending changes,
+// previewed at the turn's end and accepted as one undo step: changeset.ts, workflow.ts) and the UI tools (src/agent/ui.ts in the browser, recorded
 // by the eval env). Every tool is an `AgentTool` of the contract; the loop (loop.ts), the evals (evals/tools.ts) and
 // the dev stub (devStub.ts) take this one list, and the prompt's test checks every tool it names is here.
 import { READ_TOOLS, whereAmI, type Ids } from './read'
-import { REGISTRY, buildBatch, type ArgSchema, type OpDef, type Step } from '../ops/registry'
-import { OpsRefused, type OpCtx } from '../ops/types'
-import { autoId } from '../ops/newId'
+import { REGISTRY, type ArgSchema } from '../ops/registry'
 import { toolDef, type AgentTool } from './contract'
-import { checkArgs } from './schema'
+import { agentArgs, ID_KEYS, runChange } from './change'
+
+export { NO_COORDS, COORDS_FIX, agentArgs, ID_KEYS } from './change'
 
 const SHORT = /^[a-z]\d+$/
-
-// The argument names that hold ids (of cards, pieces, text, tasks, links, evidence, canvases…) in the ops registry's
-// schemas. Only strings under these are read as short ids: a title, name, text or note that happens to look like `c12`
-// stays as written.
-export const ID_KEYS = new Set([
-  'id', 'ids', 'card', 'cards', 'plane', 'canvas', 'from', 'to', 'link', 'items', 'pieces', 'near', 'in_section', 'deck', 'task', 'tasks',
-  'stuck_to', 'evidence', 'competitor', 'ours', 'memberIds', 'around', 'doc', 'before', 'after', 'lane', 'from_task', 'row', 'col',
-  'entry', 'open', 'fold', 'tasks_to', 'values', 'column',
-])
 
 const one = (ids: Ids, v: string) => (SHORT.test(v.trim()) ? (ids.real(v.trim())?.id ?? v) : v)
 
 // Short ids (c12, p3…) turned into real ids where the key says an id goes (ID_KEYS), deeply; anything else as it was.
-// `asId`: the value itself is an id (a UI tool's argument).
+// `asId`: the value itself is an id (a UI tool's argument). (The change tool resolves names too: change.ts' resolveIds.)
 export function realIds(ids: Ids, v: unknown, asId = false): unknown {
   if (typeof v === 'string') return asId ? one(ids, v) : v
   if (Array.isArray(v)) return v.map((x) => realIds(ids, x, asId))
@@ -48,23 +38,7 @@ const whereTool: AgentTool = {
   run: async (env) => ({ ok: true, text: whereAmI(env.getWs(), env.ids, env.ui.currentView()).text }),
 }
 
-// ---- change (the stand-in; S13 replaces it)
-
-const OPS_LIST = [...REGISTRY.keys()].join(', ')
-
-// ---- No coordinates (agent.md §4.4, §7.1 rule 4): the args the UI uses to put things at exact spots stay out of the
-// agent's view of each op and are refused when sent: a card's x/y, a duplicate's or arrange's [dx, dy] (`by`, and `stick`,
-// which only goes with it), a text's width/height at creation (update_text never takes them). Sizing a piece on purpose
-// stays (`resize`); `by: 'up' | 'down' | 'left' | 'right'` (canvases, deck columns) is an order, not a coordinate.
-export const NO_COORDS: Record<string, string[]> = { update_card: ['x', 'y'], duplicate: ['by'], create_text: ['w', 'h'], update_text: ['w', 'h', 'x', 'y'], arrange: ['by', 'stick'] }
-export const COORDS_FIX = 'say where by meaning instead: arrange with layout (grid, row, column, cluster, align-…) and where (near a thing, in_section, at: clear); new things take where: near or in_section'
-
-// An op's schema as the agent sees it: the coordinate args taken out.
-export function agentArgs(def: OpDef): ArgSchema {
-  const hide = new Set(NO_COORDS[def.name] ?? [])
-  if (!hide.size || !def.args.properties) return def.args
-  return { ...def.args, properties: Object.fromEntries(Object.entries(def.args.properties).filter(([k]) => !hide.has(k))), required: (def.args.required ?? []).filter((k) => !hide.has(k)) }
-}
+// ---- change (change.ts: the real write tool, S13)
 
 // Shapes used by several ops, written once under "Types" and named in the signatures (found by their JSON, so the
 // registry's helpers that build a fresh object each time still match).
@@ -140,48 +114,16 @@ const brief = (summary: string) => {
 export const OPS_LINES = [...REGISTRY.values()].map((d) => `- ${d.name} ${sig(agentArgs(d))}: ${brief(d.summary)}`).join('\n')
 
 const changeTool: AgentTool = {
-  def: toolDef('change', `Change the workspace: ops: [{ op, args }] applied together as one undo step; calls see the workspace as it was before this step. Ids: short ids (c12, p3) or titles. A new thing gets a handle (args.handle: \"$a\") that later ops in the same list use in place of an id (to: \"$a\"). Say where by meaning (a plane, where: near / in_section, arrange's layout); coordinates are refused. str = an id, a name or text; ? = optional. The result names what changed and the new short ids; a refusal says how to fix it.\nTypes:\n${TYPE_LINES}\nOps:\n${OPS_LINES}`, {
+  def: toolDef('change', `Propose changes to the workspace: ops: [{ op, args, why? }]. Nothing is written yet: the person sees every pending change as a preview when your turn ends and accepts them as one undo step (or unticks some, or says what to change). Your reads in this turn show them. Ids: short ids (c12, p3) or exact titles. A new thing gets a handle (args.handle: \"$a\") that later ops in the same call use in place of an id (to: \"$a\"); the result gives its short id. Say where by meaning (a plane, where: near / in_section, arrange's layout); coordinates are refused. A delete (delete, unlink, axis_remove) needs why: the reason the person reads, and only after they said yes. drop: [item ids] takes pending items off (and what depends on them) before adding, to revise. dry_run: true checks and describes without adding. str = an id, a name or text; ? = optional. The result names each change with its item id (i3), the new short ids, warnings and a short view; a refusal says how to fix it.\nTypes:\n${TYPE_LINES}\nOps:\n${OPS_LINES}`, {
     properties: {
-      ops: { type: 'array', items: { type: 'object', properties: { op: { type: 'string', enum: [...REGISTRY.keys()] }, args: { type: 'object' } }, required: ['op', 'args'] } },
+      ops: { type: 'array', items: { type: 'object', properties: { op: { type: 'string', enum: [...REGISTRY.keys()] }, args: { type: 'object' }, why: { type: 'string', description: 'why: required for delete, unlink and axis_remove' } }, required: ['op', 'args'] } },
+      drop: { type: 'array', items: { type: 'string' }, description: 'pending item ids (i2…) to take off first' },
+      dry_run: { type: 'boolean', description: 'check and describe only; nothing is added' },
       summary: { type: 'string', description: 'one line for the undo list' },
     },
-    required: ['ops'],
   }),
   kind: 'write',
-  run: async (env, args) => {
-    const list = Array.isArray(args.ops) ? (args.ops as { op?: unknown; args?: unknown }[]) : []
-    if (!list.length) return { ok: false, text: 'change needs ops: [{ op, args }, …]' }
-    const steps: Step[] = []
-    for (const s of list) {
-      const def = typeof s.op === 'string' ? REGISTRY.get(s.op) : undefined
-      if (!def) return { ok: false, text: `there is no op ${String(s.op)}; use one of ${OPS_LIST}` }
-      const raw = (s.args && typeof s.args === 'object' && !Array.isArray(s.args) ? s.args : {}) as Record<string, unknown>
-      // Checked against the op's schema: types, enums, required, nested; keys it doesn't declare refused (agent-run.md
-      // "S13 must": UI-only args never reach the builders from the model). Errors go back to the model.
-      const coords = Object.keys(raw).filter((k) => (NO_COORDS[def.name] ?? []).includes(k))
-      if (coords.length) return { ok: false, text: `${def.name} refused, nothing changed: ${coords.join(', ')} ${coords.length > 1 ? 'are' : 'is'} a coordinate the agent never gives; ${COORDS_FIX}.` }
-      const bad = checkArgs(raw, agentArgs(def), `${def.name}.args`)
-      if (bad.length) return { ok: false, text: `${def.name} refused, nothing changed:\n${bad.slice(0, 8).join('\n')}` }
-      steps.push({ op: def.name, args: realIds(env.ids, raw) as Record<string, unknown> })
-    }
-    const ctx: OpCtx = { ws: env.getWs(), actor: env.actor, now: env.now(), newId: env.newId ?? (() => autoId()) }
-    let plans
-    try {
-      plans = buildBatch(ctx, steps)
-    } catch (e) {
-      if (e instanceof OpsRefused) return { ok: false, text: e.errors.map((x) => `${x.op}: ${x.message} (fix: ${x.fix})`).join('\n') }
-      return { ok: false, text: `change failed: ${(e as Error).message}` }
-    }
-    const done = await env.apply(plans, { actor: 'agent', label: typeof args.summary === 'string' ? args.summary : undefined })
-    if (!done.ok) return { ok: false, text: done.errors.map((x) => `${x.op}: ${x.message} (fix: ${x.fix})`).join('\n') }
-    const made = plans.flatMap((p) =>
-      Object.entries(p.ids).map(([h, id]) => {
-        const r = env.ids.has('card', id) ?? env.ids.has('piece', id) ?? env.ids.has('text', id) ?? env.ids.has('task', id) ?? env.ids.has('link', id) ?? env.ids.has('evidence', id) ?? env.ids.has('canvas', id) ?? id
-        return `${h} → ${r}`
-      }),
-    )
-    return { ok: true, text: `Applied as one undo step: ${done.label}.${made.length ? ` Made: ${made.join(', ')}.` : ''}` }
-  },
+  run: runChange,
 }
 
 // ---- UI tools (the facade; the eval records them)

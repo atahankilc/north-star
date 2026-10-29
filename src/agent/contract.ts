@@ -11,6 +11,7 @@ import type { Plan, OpActor, OpError } from '../ops/types'
 import type { WorkspaceCtx } from '../state/wsStore'
 import type { Ids, ReadWs } from './read'
 import type { WhereView } from './read/tools'
+import type { AgentSettings, Changeset } from './changeset'
 
 // ---- What the model sees and says
 
@@ -76,11 +77,13 @@ export type UiFacade = {
 }
 
 // What one apply did: the plans written as one undo step, or refused (validate's errors, each with its fix).
-export type Applied = { ok: true; label: string; plans: Plan[] } | { ok: false; errors: OpError[] }
+// `step`: the undo step it joined (its key, for the chat's `[undo]`), when the env knows it; null: nothing was recorded.
+export type Applied = { ok: true; label: string; plans: Plan[]; step?: { key: string; label: string } | null } | { ok: false; errors: OpError[] }
 
 // How the agent applies: always as the agent (onboarding skips those steps; agent-run.md "S12/S13 must"), with the undo
 // line's text when the loop has a better one than the plans' labels.
-export type ApplyAs = { actor: 'agent'; label?: string }
+// `key` + `mergeAlways`: auto-apply's several applies in one turn joining one undo step (`agent-turn:<turnId>`, S13).
+export type ApplyAs = { actor: 'agent'; label?: string; key?: string; mergeAlways?: boolean }
 
 // The snapshot the agent reads: the store's workspace plus what the read layer can use beside it (members, messages,
 // document bodies, me, now). In the browser `getWs()` gives the store's; in the evals the in-memory store's.
@@ -101,6 +104,17 @@ export type AgentEnv = {
   newId?: () => string
   // Called by the loop when a turn starts: every apply within one turn is one undo step (agent.md §7.2 point 2).
   newTurn?: (ask: string) => void
+  // S13: the chat's pending changes (src/agent/changeset.ts). `change` adds to it and writes nothing; the workflow
+  // (workflow.ts) previews it at the turn's end and accepts or discards it. Left out, the first change call makes one.
+  changes?: Changeset
+  // The person's agent settings (auto-apply, off by default).
+  settings?: AgentSettings
+  // Set by the loop for the tools: this turn's id (auto-apply's undo key) and the workspace without the pending changes
+  // (`getWs()` inside a turn shows them, so the agent reads its own result).
+  turnId?: string
+  liveWs?: () => AgentWs
+  // The chat's id (auto-apply's undo key `agent-turn:<chatId>:<turnId>`, so two chats' turns never share a step).
+  chatId?: string
 }
 
 // A tool the loop can run: its definition for the model and how it runs. Read tools never write; write tools go

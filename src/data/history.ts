@@ -153,6 +153,16 @@ async function record(label: string, refs: DocumentReference[], write: () => Pro
   const now = Date.now()
   let step: Step
   if (opts.key && last?.key === opts.key && (opts.mergeAlways || now - last.at < MERGE_WITHIN_MS)) {
+    // Docs this write touched that the step didn't hold yet (the agent's auto-apply: several batches in one turn, S13)
+    // join it: their before (read above, before this write) added to the step's own before IN PLACE (its identity is
+    // how onboarding tells a merged step), and after read for all of them. Same docs (typing, a drag): nothing joins.
+    // Docs the step holds that this write didn't touch are read for `after` too, so a redo puts every doc back.
+    const held = new Set(last.before.map((b) => b.ref.path))
+    const extra = before.filter((b) => !held.has(b.ref.path))
+    if (extra.length) last.before.push(...extra)
+    const mine = new Set(after.map((a) => a.ref.path))
+    const rest = last.before.map((b) => b.ref).filter((r) => !mine.has(r.path))
+    if (rest.length) after.unshift(...(await snapshot(rest)))
     step = { ...last, after, at: now }
     useHistory.setState({ past: [...past.slice(0, -1), step], future: [] })
   } else {

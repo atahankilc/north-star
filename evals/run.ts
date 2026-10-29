@@ -11,7 +11,8 @@
 //   npm run eval -- --model openai:gpt-5.6-terra   a real model; the key ONLY from the env var OPENAI_API_KEY, read at
 //                                     run time and never written anywhere (transcripts and the report hold no key)
 //   npm run eval -- --write-fixtures  writes evals/fixtures/<name>.workspace.json (export v2)
-//   npm run eval -- --emulator        not built yet (see evals/README.md)
+//   npm run eval -- --emulator        accepts through the real apply into the running Firestore emulator, end state and
+//                                     undo read back from it (evals/emulator.ts; README "Emulator mode")
 //
 // The report goes to evals/results/<timestamp>/ (report.md, report.json, transcripts/).
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -29,8 +30,11 @@ import { diffLines, gradeAll, setJudge } from './graders'
 import { costOf } from './prices'
 import { TASKS } from './tasks'
 import { writeReport } from './report'
-import type { Grade, RunResult, Task } from './types'
+import type { FollowUp, Grade, RunResult, Task } from './types'
 import type { Judge } from './graders'
+import type { Writer } from './env'
+import type { AgentWs } from '../src/agent/contract'
+import type { Role } from '../src/data/model'
 
 // An attempt's verdict: `pass` (every grader passed), `fail` (one failed, or the attempt itself failed), `unjudged` (none
 // failed but an LLM judge was skipped: never counted as a pass in the rates).
@@ -55,6 +59,7 @@ export type RunOpts = {
   repeat?: number
   // The model for a task's attempt (default: the stub playing its reference).
   model?: (task: Task, attempt: number) => AgentModel
+  backend?: Backend
 }
 
 export const referenceModel = (task: Task): AgentModel => stubModel(task.reference, { name: 'stub' })
@@ -73,37 +78,72 @@ const WRITE_CALLS = new RegExp(`\\b(${[...WRITE_TOOLS].join('|')})\\b`)
 
 // One attempt: a fresh env on the fixture, one turn, the graders over what it left. Anything that throws (the model,
 // the loop, a fixture) fails this attempt with its message, never the run.
-export async function attempt(task: Task, model: AgentModel): Promise<{ result?: RunResult; attempt: Attempt }> {
+// The emulator mode's backend (evals/emulator.ts' emulate), handed in by evals/cli.mjs: run.ts never loads Firebase.
+export type Backend = (start: AgentWs, o: { role: Role; tag?: string }) => Promise<{ start: AgentWs; write: Writer; undo: () => Promise<AgentWs>; close: () => void }>
+
+export async function attempt(task: Task, model: AgentModel, o: { backend?: Backend } = {}): Promise<{ result?: RunResult; attempt: Attempt }> {
   const t0 = performance.now()
   const defs = EVAL_TOOLS.map((t) => t.def)
+  let close = () => {}
   try {
-    const start = loadFixture(task.fixture)
-    const env = makeEnv(start, { role: task.role ?? 'editor', view: task.view })
+    const fixture = loadFixture(task.fixture)
+    const em = o.backend ? await o.backend(fixture, { role: task.role ?? 'editor', tag: task.id }) : null
+    if (em) close = em.close
+    const start = em ? em.start : fixture
+    const env = makeEnv(start, { role: task.role ?? 'editor', view: task.view, ...(em ? { writer: em.write } : {}) })
     const startedAt = env.now()
     const transcript: Transcript = { model: model.name, startedAt, turns: [] }
     // The ask, then each follow-up as a later turn of the same chat (e.g. a plan, then "go"); graded on the end state
     // after the last turn.
     let history: Awaited<ReturnType<typeof runTurn>>['history'] = []
     const turns: AgentTurn[] = []
-    const asks = [task.ask, ...(task.followUps ?? [])]
+    const asks: FollowUp[] = [task.ask, ...(task.followUps ?? [])]
+    const nTurns = () => asks.filter((a) => typeof a === 'string').length
     let autoGone = false
+    let acceptError: string | undefined
+    const untickMissed: string[] = []
     for (let i = 0; i < asks.length; i++) {
-      const r = await runTurn(model, env, EVAL_TOOLS, history, asks[i], { transcript })
+      const ask = asks[i]
+      // A person's action in the preview (S13): untick an item, found by words in its line.
+      if (typeof ask !== 'string') {
+        const item = env.changes?.items.find((x) => x.line.toLowerCase().includes(ask.untick.toLowerCase()))
+        if (item) env.untick(item.id)
+        // An untick that finds nothing is a broken run (or a wrong one), never silently skipped.
+        else untickMissed.push(ask.untick)
+        continue
+      }
+      const r = await runTurn(model, env, EVAL_TOOLS, history, ask, { transcript, turnId: `${turns.length + 1}` })
       history = r.history
       turns.push(r.turn)
+      // What the preview showed at this turn's end (agent.md §4.5).
+      env.proposed.push([...(env.changes?.items ?? [])])
       if (r.turn.end !== 'answered') break
       // The last turn planned and wrote nothing: say go, once (unless the task keeps plans as plans).
-      if (i === asks.length - 1 && !autoGone && task.autoGo !== false && looksLikePlan(r.turn)) {
+      if (i === asks.length - 1 && !autoGone && task.autoGo !== false && looksLikePlan(r.turn) && !env.changes?.items.length) {
         autoGone = true
         asks.push('go')
       }
     }
+    // The person accepts what's pending after the last turn (agent.md §4.5: one undo step); a turn that left changes
+    // pending before a later turn kept them in the preview (the next message is a note on it, §4.10).
+    if (env.changes?.items.length) {
+      const a = await env.accept()
+      if (!a.ok) acceptError = a.said
+    }
     const turn = turns[turns.length - 1]
-    const result: RunResult = { start, end: env.getWs(), steps: env.steps, refused: env.refused, moves: env.moves, transcript, answer: answerOf(transcript), ids: env.ids, view: env.ui.currentView() }
+    const result: RunResult = { start, end: env.getWs(), steps: env.steps, refused: env.refused, moves: env.moves, transcript, answer: answerOf(transcript), ids: env.ids, view: env.ui.currentView(), proposed: env.proposed, ...(em ? { undo: em.undo } : {}) }
     const grades = await gradeAll(task.graders, result)
     // A turn that didn't end in an answer fails, whatever the graders say (a refusal or a cut-off is not a reply).
     if (turn.end !== 'answered') grades.push({ name: 'turn answered', pass: false, why: `turn ${turns.length} ended: ${turn.end}${turn.error ? ` (${turn.error})` : ''}` })
-    else if (turns.length < asks.length) grades.push({ name: 'every turn ran', pass: false, why: `${turns.length} of ${asks.length} turns` })
+    else if (turns.length < nTurns()) grades.push({ name: 'every turn ran', pass: false, why: `${turns.length} of ${nTurns()} turns` })
+    if (untickMissed.length) grades.push({ name: 'untick found its item', pass: false, why: `no pending item matched ${untickMissed.map((u) => `"${u}"`).join(', ')}` })
+    if (acceptError) grades.push({ name: 'accepted', pass: false, why: `the preview's accept was refused: ${acceptError}` })
+    // Emulator: what Firestore holds after the apply equals what the preview drew (project), field by field.
+    if (em && env.steps.length) {
+      const drift = env.steps.flatMap((x) => x.drift ?? [])
+      grades.push({ name: 'applied = previewed', pass: drift.length === 0, why: drift.length ? `${drift.length} differ: ${drift.slice(0, 4).join('; ')}` : 'Firestore holds exactly what the preview drew' })
+    }
+    close()
     const usage = transcriptUsage(transcript)
     const verdict = verdictOf(grades)
     return {
@@ -111,6 +151,7 @@ export async function attempt(task: Task, model: AgentModel): Promise<{ result?:
       attempt: { verdict, pass: verdict === 'pass', grades, steps: stepsOf(transcript), undoSteps: env.steps.length, usage, cost: costOf(model.name, usage), ms: performance.now() - t0, end: turn.end, changes: diffLines(start, result.end), ...(turn.error ? { error: turn.error } : {}), transcript },
     }
   } catch (e) {
+    close()
     const error = `the attempt failed: ${(e as Error).message}`
     return {
       attempt: { verdict: 'fail', pass: false, grades: [{ name: 'attempt ran', pass: false, why: error }], steps: 0, undoSteps: 0, usage: { input: 0, output: 0 }, cost: 0, ms: performance.now() - t0, end: 'error', changes: [], error, transcript: { model: model.name, startedAt: 0, turns: [], system: systemPrompt(), toolsHash: toolsHash(defs) } },
@@ -120,7 +161,7 @@ export async function attempt(task: Task, model: AgentModel): Promise<{ result?:
 
 export async function runTask(task: Task, o: RunOpts = {}): Promise<TaskResult> {
   const attempts: Attempt[] = []
-  for (let i = 0; i < Math.max(1, o.repeat ?? 1); i++) attempts.push((await attempt(task, (o.model ?? referenceModel)(task, i))).attempt)
+  for (let i = 0; i < Math.max(1, o.repeat ?? 1); i++) attempts.push((await attempt(task, (o.model ?? referenceModel)(task, i), { ...(o.backend ? { backend: o.backend } : {}) })).attempt)
   return { id: task.id, group: task.group, set: task.set, ask: task.ask, attempts }
 }
 
@@ -184,7 +225,7 @@ export function selectTasks(a: Pick<Args, 'set' | 'group' | 'task'>, all: Task[]
   return all.filter((t) => (!a.set || t.set === a.set) && (!a.group || t.group === a.group) && (!a.task || a.task.includes(t.id)))
 }
 
-export async function main(argv: string[]): Promise<number> {
+export async function main(argv: string[], o: { backend?: Backend } = {}): Promise<number> {
   const a = parseArgs(argv)
   if (a.writeFixtures) {
     for (const f of FIXTURES) {
@@ -194,20 +235,17 @@ export async function main(argv: string[]): Promise<number> {
     }
     return 0
   }
-  if (a.emulator)
-    throw new Error(
-      '--emulator is not built yet: the real apply (src/ops/firestore.ts) runs inside the browser app (history.ts, the toasts, the signed-in Firebase app from src/data/firebase.ts, which reads Vite env). See evals/README.md, "Emulator mode". The in-memory mode runs the same ops code.',
-    )
+  if (a.emulator && !o.backend) throw new Error('--emulator runs through evals/cli.mjs (it loads evals/emulator.ts with VITE_USE_EMULATORS=true); start the emulators first: npm run emulators')
   const real = a.model === 'stub' ? null : realModel(a.model, process.env)
   const tasks = selectTasks(a)
   if (!tasks.length) throw new Error('no task matches')
   if (real) setJudge(real.judge)
-  const results = await runTasks(tasks, { repeat: a.repeat, model: real ? () => real.make() : a.wrong ? wrongModel : referenceModel })
+  const results = await runTasks(tasks, { repeat: a.repeat, model: real ? () => real.make() : a.wrong ? wrongModel : referenceModel, ...(a.emulator && o.backend ? { backend: o.backend } : {}) })
   if (real) setJudge(null)
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const dir = a.out ? resolve(a.out) : join(ROOT, 'evals/results', stamp)
   mkdirSync(dir, { recursive: true })
-  const { summary } = writeReport(dir, results, { model: real ? real.name : a.wrong ? 'stub (wrong)' : 'stub', repeat: a.repeat, argv })
+  const { summary } = writeReport(dir, results, { model: `${real ? real.name : a.wrong ? 'stub (wrong)' : 'stub'}${a.emulator ? ' · emulator' : ''}`, repeat: a.repeat, argv })
   console.log(summary)
   console.log(`\nreport: ${join(dir, 'report.md')}`)
   const failed = results.filter((r) => r.attempts.some((x) => x.verdict === 'fail')).length

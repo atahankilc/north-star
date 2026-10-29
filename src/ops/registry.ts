@@ -652,10 +652,12 @@ export function build(ctx: OpCtx, op: string, args: unknown): Plan {
 }
 
 // `$a`-style handles in args replaced by the ids made earlier in the batch (deeply, in strings that are a handle).
-function resolve(v: unknown, made: Record<string, string>): unknown {
-  if (typeof v === 'string') return v.startsWith('$') && v in made ? made[v] : v
-  if (Array.isArray(v)) return v.map((x) => resolve(x, made))
-  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolve(x, made)]))
+// `keys`: only strings under these argument names are read as handles (the agent's: a title "$a" stays text); left
+// out, every string (the UI's batches).
+function resolve(v: unknown, made: Record<string, string>, keys?: ReadonlySet<string>, on = !keys): unknown {
+  if (typeof v === 'string') return on && v.startsWith('$') && v in made ? made[v] : v
+  if (Array.isArray(v)) return v.map((x) => resolve(x, made, keys, on))
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, resolve(x, made, keys, keys ? keys.has(k) : true)]))
   return v
 }
 
@@ -663,12 +665,15 @@ export type Step = { op: string; args: Record<string, unknown> }
 
 // A batch built in order: each op sees the workspace as the ops before it left it (projected), and may name what they
 // made by handle. A step that makes something and gives no handle gets `$1`, `$2`… (its place in the batch).
-export function buildBatch(ctx: OpCtx, steps: Step[]): Plan[] {
+// `onStep(i, args)`: told before each step is built, with its args as the builder gets them (handles replaced): the
+// agent's changeset (src/agent/changeset.ts) uses it to give each step its own new ids and to see what it names.
+export function buildBatch(ctx: OpCtx, steps: Step[], onStep?: (i: number, args: Record<string, unknown>) => void, handleKeys?: ReadonlySet<string>): Plan[] {
   const plans: Plan[] = []
   const made: Record<string, string> = {}
   let ws = ctx.ws
   steps.forEach((step, i) => {
-    const args = resolve(step.args, made) as Record<string, unknown>
+    const args = resolve(step.args, made, handleKeys) as Record<string, unknown>
+    onStep?.(i, args)
     if (!('handle' in args)) args.handle = `$${i + 1}`
     const plan = build({ ...ctx, ws }, step.op, args)
     for (const [h, id] of Object.entries(plan.ids)) {

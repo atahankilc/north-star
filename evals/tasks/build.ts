@@ -72,7 +72,7 @@ export const BUILD: Task[] = [
       change([
         ['create_card', { type: 'idea', plane: 'p3', title: 'Who owns the stall data?' }],
         ['create_card', { type: 'idea', plane: 'p3', title: 'Maybe start with bread' }],
-        ['delete', { ids: ['x13', 'x14'] }],
+        ['delete', { ids: ['x13', 'x14'] }, 'they are cards now'],
       ]),
       answer('Turned the stickies into ideas.'),
     ],

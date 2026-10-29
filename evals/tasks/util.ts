@@ -21,6 +21,8 @@ export function realOf(fixture: FixtureName, short: string): string {
 // Script steps, short.
 export const call = (name: string, args: Record<string, unknown> = {}) => ({ calls: [{ name, args }] })
 export const calls = (...list: [string, Record<string, unknown>][]) => ({ calls: list.map(([name, args]) => ({ name, args })) })
-export const change = (ops: [string, Record<string, unknown>][], summary?: string) => call('change', { ops: ops.map(([op, args]) => ({ op, args })), ...(summary ? { summary } : {}) })
+// An op is [op, args] or [op, args, why] (a delete's reason, S13).
+export const change = (ops: ([string, Record<string, unknown>] | [string, Record<string, unknown>, string])[], summary?: string, o: { drop?: string[]; dry_run?: boolean } = {}) =>
+  call('change', { ops: ops.map(([op, args, why]) => ({ op, args, ...(why ? { why } : {}) })), ...(summary ? { summary } : {}), ...o })
 export const answer = (text: string) => ({ answer: text })
 export type { Script }

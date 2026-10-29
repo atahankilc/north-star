@@ -7,6 +7,9 @@ import type { AgentWs, Transcript } from '../src/agent/contract'
 import type { Script } from '../src/agent/stubModel'
 import type { FixtureName } from './fixtures'
 import type { AppliedStep, UiMove } from './env'
+import type { ChangeItem } from '../src/agent/changeset'
+
+export type FollowUp = string | { untick: string }
 
 export type Group = 'find' | 'edit' | 'build' | 'context' | 'refuse' | 'injection'
 // regression: must pass on every change (100 %); capability: what a phase gate measures.
@@ -24,6 +27,10 @@ export type RunResult = {
   answer: string
   ids: Ids
   view: WhereView
+  // What the preview showed at the end of each turn (S13), turn by turn; the end state is after the last accept.
+  proposed?: ChangeItem[][]
+  // Emulator mode: the real history's undo of the run's step, then the workspace read back (undoRestores uses it).
+  undo?: () => Promise<AgentWs>
 }
 
 // `pass: 'skipped'`: a grader that couldn't run (the LLM judge with no model): counted apart, never a failure.
@@ -40,7 +47,8 @@ export type Task = {
   ask: string
   // What they type next, each a later turn of the same chat (e.g. ['go'] after the agent's plan for a big job); the
   // graders read the end state after the last one.
-  followUps?: string[]
+  // S13: `{ untick }` is the person unticking an item in the preview (found by words in its line), not a turn.
+  followUps?: FollowUp[]
   // The runner answers a plan with "go" by itself (once, after the follow-ups) when a turn ends with a plan and no
   // writes, so a model that plans a big job first isn't failed for it. false: refuse, ask, injection and viewer tasks,
   // where a plan must stay a plan.
