@@ -19,7 +19,7 @@ import {
 } from 'react'
 import type { DocumentReference } from 'firebase/firestore'
 import { useAuth } from '../../data/auth'
-import { snap } from '../../data/grid'
+import { GRID, snap } from '../../data/grid'
 import {
   deleteLabel,
   discardLabel,
@@ -114,6 +114,10 @@ export function labelBox(l: Label) {
   }
   return l.rotate ? { x: l.x, y: l.y, w: h, h: w } : { x: l.x, y: l.y, w, h }
 }
+
+// Where a heading or paragraph lands, its L's on the grid's marks all round (D-294): its size up to the next step (alt
+// drops it off the grid, and then its L's go with it).
+const onGrid = (v: number) => Math.ceil(v / GRID - 0.02) * GRID
 
 const inside = (b: { x: number; y: number; w: number; h: number }, s: { x: number; y: number; w: number; h: number }) =>
   b.x >= s.x && b.y >= s.y && b.x + b.w <= s.x + s.w && b.y + b.h <= s.y + s.h
@@ -308,9 +312,10 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     'data-caps': l.caps || undefined,
     'data-colored': !!l.color || undefined,
   }
-  // Text keeps its marks a little clear of its glyphs; a sticky note's, a section's and a paragraph's go round their
-  // edges (D-265): a paragraph's hairline is its left edge, on the grid's marks, so where it lands is on them (D-291).
-  const pad = kind === 'sticky' || kind === 'section' || kind === 'paragraph' ? 0 : 7
+  // Marks go round a text's edges (D-265), its top-left on the grid's marks; the title keeps its a little clear of its
+  // glyphs (D-291, D-294).
+  const pad = kind === 'title' ? 7 : 0
+  const stepped = kind === 'heading' || kind === 'paragraph'
   const tier = kind === 'section' ? 'l' : 'm'
   const near = labelBox(l)
   // Its handle (D-265): a paragraph's, sticky note's or the title's width at its right edge (a turned one's along its
@@ -343,7 +348,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const withLanding = (item: ReactNode) => (
     <>
       {item}
-      {live && carried && measured && (!shift?.lead || shift.lead === l.id) && <Landing x={left} y={top} w={measured[0]} h={measured[1]} zoom={zoom} tier={tier} tone={color} pad={pad} />}
+      {live && carried && measured && (!shift?.lead || shift.lead === l.id) && <Landing x={left} y={top} w={stepped ? onGrid(measured[0]) : measured[0]} h={stepped ? onGrid(measured[1]) : measured[1]} zoom={zoom} tier={tier} tone={color} pad={pad} />}
     </>
   )
   // Its own bar only while it's selected alone; with others, the right panel's `N selected` is theirs (D-229).

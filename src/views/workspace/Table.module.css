@@ -183,7 +183,9 @@
   color: var(--fg-strong);
 }
 
+/* Its face a dark tone of its type, as a card's on a plane (D-294). */
 .name[data-card='true'] {
+  background: color-mix(in srgb, var(--type) var(--card-tint), transparent);
   box-shadow: inset 2px 0 0 var(--type);
 }
 

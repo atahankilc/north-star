@@ -135,13 +135,13 @@ Values will be tuned against contrast checks (WCAG AA for text).
   to 0.8 round the point held and follows the pointer, its L's at full size where it will land (`<Landing>`, 80 ms per
   grid step; on a kanban the gap that opens); let go, it grows into them (180 ms). What holds others (a section, an
   unfolded package dragged by its band) shrinks with them as one, round the same point, in the same 160 ms, and only
-  its L's show where it lands (D-291). A paragraph's L's are on its edges (its hairline is on the grid), not 7 px out
-  like a heading's. Resizing: cyan handles on the ring
+  its L's show where it lands (D-291). Text's L's are on its edges (the project title's 7 px out); where a heading or
+  paragraph lands is rounded up to the grid, so its L's sit on the `+` marks (D-294). Resizing: cyan handles on the ring
   only while selected (a corner's L, an edge's bar), the moving edges lit cyan, the size beside them.
 - **Cards** (D-055, D-152, D-205): flat, one shape for every type; a left border and a small uppercase label in the type's
   colour (customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue), the face a dark
   tone of it (`--card-tint` of the colour over `--bg-raised`: 16 %, light 9 %; a matrix's card heads and a package's
-  band too, D-291), no edge of their own (D-148); never lift or tilt (D-061). Type colours are only for type: tags are white `#chips` (D-056). Inside: a
+  band too, D-291; a kanban's card sheets and a table's card names, D-294), no edge of their own (D-148); never lift or tilt (D-061). Type colours are only for type: tags are white `#chips` (D-056). Inside: a
   header (type label; the status, regions, priority or rating, then evidence cells: filled supports, outlined against,
   magenta when they disagree with the status), the title (≤ 3 lines), a dim mono facts line, tag chips. Smaller on
   screen (D-111, D-153): the title alone, whole words, `…`; then each line a `--fg-dim` bar. A hovered card shows a dim

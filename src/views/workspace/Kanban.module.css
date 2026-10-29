@@ -300,6 +300,11 @@
   box-shadow: inset 2px 0 0 var(--tone), 0 0 0 1px var(--piece-card-edge);
 }
 
+/* A card on a kanban (D-268): its face a dark tone of its type, as on a plane (D-294); a task keeps the plain sheet. */
+.task[data-ccard] {
+  background: color-mix(in srgb, var(--tone) var(--card-tint), var(--bg-raised));
+}
+
 .layer[data-live='true'] .task {
   cursor: grab;
 }
