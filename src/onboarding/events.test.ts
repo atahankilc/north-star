@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { attach, DEDUPE_MS, EMITS, IDLE_AFTER_MS, learn, onLearn, startEvents, stepEvents, stopEvents, type Sources, type StepLike, type WsLike } from './events'
+import { attach, DEDUPE_MS, EMITS, IDLE_AFTER_MS, learn, onLearn, startEvents, stepEvents, stopEvents, withMissing, type Sources, type StepLike, type WsLike } from './events'
 import { EVENTS } from './lessons'
 import type { LearnEvent } from './queue'
 
@@ -260,6 +260,13 @@ describe('stepEvents', () => {
     expect(stepEvents([snap('a/w/tasks/t', t)], [snap('a/w/tasks/t', { ...t, col: 'b' })], { ...ctx, doneCol })).toEqual([{ event: 'task-moved', payload: { done: false } }])
     expect(stepEvents([snap('a/w/tasks/t', t)], [snap('a/w/tasks/t', { ...t, col: 'z' })], { ...ctx, doneCol })).toEqual([{ event: 'task-moved', payload: { done: true } }])
     expect(stepEvents([snap('a/w/tasks/t', t)], [snap('a/w/tasks/t', { ...t, order: 3 })], { ...ctx, doneCol })).toEqual([])
+  })
+  it('a merge whose before grew: an updated doc is not taken for a new one', () => {
+    // The step first held idea i1; a merge then touched problem p1 (already there) and its before grew in place.
+    const seen = [snap('a/w/ideas/i1', { title: 'Cook-ahead' })]
+    const before = [snap('a/w/ideas/i1', null), snap('a/w/problems/p1', { title: 'Greasy', validation: 'hypothesis' })]
+    const after = [snap('a/w/ideas/i1', { title: 'Cook-ahead' }), snap('a/w/problems/p1', { title: 'Greasy', validation: 'testing' })]
+    expect(stepEvents(withMissing(seen, before), after, ctx)).toEqual([{ event: 'status-set' }])
   })
 })
 

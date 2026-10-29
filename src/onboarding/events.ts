@@ -166,6 +166,12 @@ export type StepCtx = {
   // Whether a deck's column is its finished one.
   doneCol?: (deck: string, col: string) => boolean
 }
+// `seen` with every doc of `before` it doesn't hold: the base of a merged step whose `before` grew.
+export function withMissing(seen: SnapLike, before: SnapLike): SnapLike {
+  const has = new Set(seen.map((s) => s.ref.path))
+  return [...seen, ...before.filter((b) => !has.has(b.ref.path))]
+}
+
 export function stepEvents(base: SnapLike, after: SnapLike, ctx: StepCtx): LearnEvent[] {
   const out: LearnEvent[] = []
   const seen = new Set<string>()
@@ -407,7 +413,9 @@ export function attach(s: Sources): () => void {
       const seenAfter = afterOf.get(step.before)
       if (seenAfter === step.after) return
       const merged = !!seenAfter
-      const base = seenAfter ?? step.before
+      // A merge that touches docs its step didn't hold yet adds them to `before` in place (agent S13): their state
+      // before comes from there, so an updated doc isn't taken for a new one.
+      const base = seenAfter ? withMissing(seenAfter, step.before) : step.before
       afterOf.set(step.before, step.after)
       if (meta?.actor === 'agent') return
       const cv = s.canvasView.getState()
