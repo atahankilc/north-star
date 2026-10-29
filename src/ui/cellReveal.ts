@@ -22,18 +22,3 @@ export function cellHash(x: number, y: number) {
 export function cellTime(gx: number, gy: number) {
   return cellHash(gx, gy)
 }
-
-// GLSL for 3D materials: discard fragments whose screen cell hasn't appeared yet.
-export const CELL_REVEAL_UNIFORMS = /* glsl */ `
-uniform float uCellProgress; // 0 → OVERSHOOT
-uniform float uCellMode;     // 0 off · 1 revealing
-uniform float uCellSize;     // cell size in buffer px
-`
-
-export const CELL_REVEAL_FRAGMENT = /* glsl */ `
-if (uCellMode > 0.5) {
-  vec2 cellIdx = floor(gl_FragCoord.xy / uCellSize);
-  float t = fract(sin(cellIdx.x * 12.9898 + cellIdx.y * 78.233) * 43758.5453);
-  if (t > uCellProgress) discard;
-}
-`

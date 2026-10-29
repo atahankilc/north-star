@@ -22,7 +22,8 @@ service cloud.firestore {
       return signedIn() && request.auth.uid in workspace(wid).memberIds;
     }
 
-    // Roles (D-098): owners (any number, never none), editors, viewers. Viewers read and keep their own reports only.
+    // Roles (D-098): owners (any number, never none), editors, viewers. Viewers read, keep their own documents and write
+    // comments as themselves; nothing else.
     function roleIn(data) {
       return signedIn() && request.auth.uid in data.memberIds && request.auth.uid in data.roles
         ? data.roles[request.auth.uid] : null;

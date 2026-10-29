@@ -97,14 +97,6 @@ export function parse(src: string): Block[] {
   return out
 }
 
-// The headings in reading order, for an outline.
-export const headingsOf = (src: string): Heading[] =>
-  parse(src)
-    .filter((b): b is Extract<Block, { t: 'h' }> => b.t === 'h')
-    .map((b, index) => ({ level: b.level, text: plain(b.text), index }))
-
-const plain = (s: string) => s.replace(/[*_`~]/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-
 const INLINE = /(`[^`]+`|!\[[^\]]*\]\([^)\s]*\)|\[[^\]]+\]\([^)\s]+\)|\*\*[^*]+\*\*|__[^_]+__|~~[^~]+~~|\*[^*\s][^*]*\*|_[^_\s][^_]*_|https?:\/\/[^\s<>()]+)/g
 const SAFE = /^(https?:|mailto:)/i
 

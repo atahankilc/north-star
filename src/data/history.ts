@@ -1,6 +1,6 @@
 // Undo and redo (Q-013): every tracked write snapshots the documents it touches before and after, so undo
 // and redo just put a snapshot back. Local to this tab and workspace; last write wins against collaborators.
-import { deleteDoc, doc, getDoc, getDocFromCache, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
+import { deleteDoc, getDoc, getDocFromCache, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
 import { create } from 'zustand'
 import { db } from './firebase'
 
@@ -211,5 +211,3 @@ async function redoNow() {
   say(`Redid ${step.label}`)
   restore(step.after).catch(() => say(`Couldn't redo ${step.label}`))
 }
-
-export const workspaceDoc = (wid: string, collection: string, id: string) => doc(db(), 'workspaces', wid, collection, id)

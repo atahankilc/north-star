@@ -3,8 +3,8 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app'
 import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth'
 import { connectDatabaseEmulator, getDatabase, type Database } from 'firebase/database'
-import { connectFunctionsEmulator, getFunctions, type Functions } from 'firebase/functions'
-import { connectStorageEmulator, getStorage, type FirebaseStorage } from 'firebase/storage'
+import type { Functions } from 'firebase/functions'
+import type { FirebaseStorage } from 'firebase/storage'
 import {
   connectFirestoreEmulator,
   initializeFirestore,
@@ -39,7 +39,7 @@ const config = useEmulators
 
 export const isConfigured = Boolean(config.apiKey && config.projectId)
 
-type Services = { app: FirebaseApp; auth: Auth; firestore: Firestore; rtdb: Database | null; functions: Functions; storage: FirebaseStorage }
+type Services = { app: FirebaseApp; auth: Auth; firestore: Firestore; rtdb: Database | null }
 
 // Our Cloud Functions live next to the Realtime Database (D-079).
 const REGION = 'europe-west1'
@@ -61,28 +61,42 @@ function init(): Services {
   })
   // Realtime Database: ephemeral presence and cursors only (D-016).
   const rtdb = config.databaseURL ? getDatabase(app) : null
-  // The assistant's workspace key (D-079): only server code ever holds it.
-  const functions = getFunctions(app, REGION)
-  // Attachment files (D-083); their metadata lives in Firestore.
-  const storage = getStorage(app)
 
   if (useEmulators) {
     connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
     connectFirestoreEmulator(firestore, '127.0.0.1', 8080)
     if (rtdb) connectDatabaseEmulator(rtdb, '127.0.0.1', 9010)
-    connectFunctionsEmulator(functions, '127.0.0.1', 5001)
-    connectStorageEmulator(storage, '127.0.0.1', 9199)
   }
 
-  return { app, auth, firestore, rtdb, functions, storage }
+  return { app, auth, firestore, rtdb }
+}
+
+// Cloud Functions (the workspace key, D-079) and Storage (documents' files, D-232) wait for Blaze: each loads the first
+// time something asks for it, so neither is in the app's code until then.
+let functions: Promise<Functions> | null = null
+let storage: Promise<FirebaseStorage> | null = null
+
+export function functionsOf(): Promise<Functions> {
+  if (!firebase) return Promise.reject(new Error('Firebase is not configured'))
+  const { app } = firebase
+  return (functions ??= import('firebase/functions').then(({ getFunctions, connectFunctionsEmulator }) => {
+    const f = getFunctions(app, REGION)
+    if (useEmulators) connectFunctionsEmulator(f, '127.0.0.1', 5001)
+    return f
+  }))
+}
+
+export function storageOf(): Promise<FirebaseStorage> {
+  if (!firebase) return Promise.reject(new Error('Firebase is not configured'))
+  const { app } = firebase
+  return (storage ??= import('firebase/storage').then(({ getStorage, connectStorageEmulator }) => {
+    const s = getStorage(app)
+    if (useEmulators) connectStorageEmulator(s, '127.0.0.1', 9199)
+    return s
+  }))
 }
 
 export function db(): Firestore {
   if (!firebase) throw new Error('Firebase is not configured')
   return firebase.firestore
 }
-
-// The streaming endpoint that calls OpenAI on a workspace's key (functions/src/index.ts `ai`).
-export const aiProxyUrl = useEmulators
-  ? `http://127.0.0.1:5001/${config.projectId}/${REGION}/ai`
-  : `https://${REGION}-${config.projectId}.cloudfunctions.net/ai`

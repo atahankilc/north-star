@@ -5,7 +5,7 @@
 // `threadReads/{your uid}`: each thread's `lastAt` when you last had it open.
 import { arrayUnion, collection, doc, getDocs, increment, limit, orderBy, query, setDoc, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
 import { db, firebase } from './firebase'
-import { useDoc, useQuery, useWorkspaceCollection } from './hooks'
+import { useDoc, useQuery } from './hooks'
 import { MENTIONS_MAX, MESSAGE_MAX, type Member, type Thread, type ThreadMessage, type ThreadReads, type ThreadTarget } from './model'
 
 const threadsOf = (wid: string) => collection(db(), 'workspaces', wid, 'threads')
@@ -17,9 +17,6 @@ function me() {
   if (!user) throw new Error('Not signed in')
   return { uid: user.uid, name: (user.displayName || user.email || 'someone').slice(0, 200) }
 }
-
-// Every thread in the workspace: few, and the board shows their pins.
-export const useThreads = (wid: string) => useWorkspaceCollection<Thread>(wid, 'threads')
 
 // A thread's messages, oldest first, while it's open.
 export const useMessages = (wid: string, tid: string | null) =>

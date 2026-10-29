@@ -29,9 +29,9 @@ import type { WorkspaceCtx } from './context'
 import styles from './PeopleSettings.module.css'
 
 const ROLE_HINT: Record<Role, string> = {
-  owner: 'manages people, the invite code and the assistant key; can delete it',
-  editor: 'changes everything on the board, the table and the matrix',
-  viewer: 'reads everything, keeps their own reports, changes nothing',
+  owner: 'manages people and the invite code; can delete it',
+  editor: 'changes everything on the canvas',
+  viewer: 'reads everything, keeps their own documents, changes nothing',
 }
 
 type Props = { wid: string; workspace: WorkspaceCtx['workspace']; requests: WithId<JoinRequest>[] }

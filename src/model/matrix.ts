@@ -14,7 +14,7 @@
 // An axis may unfold its cards into what they're made of (D-249): a feature into what it's judged on (its `criteria`,
 // D-133). Each is a row (or column) of its own under the card, `card~criterion`, its cells ordinary cells; the card's
 // own cells then read from them (rollUp), folded as one small square each. Shown open or folded per card, shared.
-import { CARD_TYPES, isOnPlane, type AnyType, type Card, type CardType } from './cards'
+import { isOnPlane, type AnyType, type Card, type CardType } from './cards'
 import { newId, SCALES } from './scales'
 
 export type AxisItem = { id: string; name?: string; cardType?: AnyType; cardId?: string }
@@ -143,7 +143,6 @@ export type Entry = {
 // The key of what a card unfolds into: `card~criterion`.
 export const SUB = '~'
 export const subKey = (card: string, sub: string) => `${card}${SUB}${sub}`
-export const isSubKey = (key: string) => key.includes(SUB)
 
 const byTitle = (a: Card, b: Card) => (a.title ? (b.title ? a.title.localeCompare(b.title) : -1) : b.title ? 1 : 0)
 
@@ -257,4 +256,3 @@ export function isOpen(setup: MatrixSetup, cells: (Cell | undefined)[]) {
 }
 
 
-export const isCardType = (t: string): t is CardType => (CARD_TYPES as readonly string[]).includes(t)
