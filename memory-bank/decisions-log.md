@@ -5756,3 +5756,27 @@ board; a timeline couldn't make a task for a card.
   timeline 367–633 of 1000 in the left part.
 - *Not yet:* Beside.tsx still holds its deck/timeline pane code, unused now; the canvas isn't shifted again while the
   side view's line is dragged.
+
+### D-315 · 2026-10-29 · Accepted (plan only; the user: "yeni biri geldiğinde bi anda bilgi bombardımanına tutmak istemiyorum … kimin ne zaman onboarding olduğunu, sıfırdan ise bütün ekranların, önceden kullanıyor ise de yeni versiyonla nelerin geldiği anlatılmalı … step by step introduction … animasyonlar … componentler elimizde var, bunları kullanarak mock data ile animasyon oluşturabiliriz sonsuz döngüde … ai dışındaki her şeyi kapsasın … senden sonraki agent yapıcak")
+**Onboarding: plan written** (docs/specs/onboarding.md, onboarding-lessons.md, onboarding-run.md; reference:
+onboarding-inventory.md, onboarding-research.md). Not started; built by an overnight lead with builder/reviewer
+subagents (onboarding-run.md), beside the agent's run (D-312).
+- *Decision:* taught at the moment of use, one thing at a time, short (≤ 4 pages, ≤ 25 words a page): a 4-page
+  **welcome** on a person's first canvas (variants: invited into a filled workspace, viewer); the **kind guide**, a
+  column glued to the `+` menu explaining the row under the pointer/keys; ~60 **lessons**, each shown once beside what
+  was just opened (first piece, console, focus, card, link, unframe, stick, beside, deck, timeline, comments…);
+  **what's new** for people who used it before (releases since their last); at most one **nudge** a session; `?` the
+  **guide** (replay any lesson, keys, tips on/off); empty states that teach. Seen-state per person
+  (`users/{uid}/private/onboarding`, localStorage fallback), ids versioned. Audience from the Auth account's creation
+  date vs `ONBOARDING_START`. **Demos are the real components** drawn from a made-up workspace inside a same-origin
+  iframe (`demo.html`, its own copy of every module, no Firebase), played by a scripted director, 3 loops then paused,
+  a still poster under reduced motion. Events from store subscriptions and the agent run's `onTracked` (S3), not new
+  calls in hot files; agent writes never trigger lessons.
+- *Why:* research (onboarding-research.md): short, action-started help is finished ~3× more than tours that start by
+  themselves; up-front tutorials can make apps feel harder; live components beat video. A demo in the same page would
+  share the camera/selection stores with the person's canvas, hence the iframe.
+- *Alternatives:* one long up-front tour; a checklist; hint dots; videos/GIFs; hand-made look-alikes; per-instance
+  stores in the same page (a rewrite of hot files).
+- *Open:* Q-025 (where seen-state lives), Q-026 (the returning baseline, default D-291), Q-027 (a CLAUDE.md rule:
+  every new feature ships its lesson), Q-028 (the look, from a preview the run makes). The run uses the defaults.
+- *Not yet:* everything: onboarding-run.md's steps O0–O16.

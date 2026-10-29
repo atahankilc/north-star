@@ -1,0 +1,138 @@
+# Onboarding: how the long runs work, and the run log
+
+_The protocol for any session building onboarding (D-315, [onboarding.md](onboarding.md)), above all long unattended
+runs (the user asleep). Part 1 is the rules; Part 2 is the log, the **single source of truth for progress**: after an
+auto-compact, read this file first and continue from "Now". Written like [agent-run.md](agent-run.md), which runs at
+the same time: the two leads share the repo, the emulators and the machine._
+
+---
+
+## Part 1: the protocol
+
+### 1.1 Who does what
+- **The lead** (the main session) plans, briefs, reviews results, commits, and keeps this log. It doesn't write big
+  code itself: each step's work goes to a **builder** subagent (`model: opus`), so the lead's context stays small all
+  night.
+- **Builder**: one per step, a narrow brief: the step's goal, the sections of onboarding.md / onboarding-lessons.md it
+  implements, the files it may touch, the gate, what not to touch, "run the checks and report what you ran and its
+  output". It edits files but **doesn't commit**.
+- **Reviewer**: a fresh subagent (`model: opus`) per step, given the diff, the gate and the spec sections, **not** the
+  builder's report (so it isn't anchored). It checks (a) correctness: bugs, broken behaviour of the app around it (the
+  onboarding must never break or slow the canvas), keys stolen, focus lost, stores leaking between the demo frame and
+  the app; (b) the gate, item by item, by running the checks itself; (c) the rules of onboarding.md §3, one by one;
+  (d) the shots (1.6): readable, nothing covering its anchor, tokens not raw colours, light theme right, reduced
+  motion still; (e) **what's missing or could be better** (shorter words, a better scene, a lesson the spec forgot).
+  Verdict: `pass`, `fix` (a list) or `rethink`.
+- **Fix loop**: `fix` → a builder fixes exactly the list → the reviewer checks again. At most 3 rounds; still failing →
+  revert the step's uncommitted changes (own files only), log why under "Stuck", go on with work that doesn't depend on it.
+- **Improve pass**: small "could be better" items inside the step are done in the fix loop; bigger ones go to "Ideas".
+- Several builders may run at once only on steps that touch **different files** (the scenes of different areas, for
+  instance, once O5 is done).
+
+### 1.2 Working beside other sessions (above all the agent's lead, north-star-b2 or its successor)
+- Before each step: `git status`, `git log -5`, `ListAgents`; tell running peers with `SendMessage` which files the
+  step will touch ("onboarding-run: step O3 adds src/onboarding/queue.ts, events.ts for ~1 h").
+- **Don't edit a file that has uncommitted changes you didn't make.** If a step needs one, do other steps first, then
+  ask that peer; never take their hunks.
+- **Shared files and who goes first** (agreed with north-star-b2, 2026-10-29):
+  - `src/data/history.ts`: the agent run's **S3 adds `onTracked(fn: (label, meta?: { kind?, ids?, op?, actor?:
+    'person'|'agent' }) => void)`**. Onboarding uses it once S3 is committed (`git log --grep 'Agent S3'`); until then
+    events come from the stores only (onboarding.md §5.5). **Writes with `actor: 'agent'` never trigger lessons.**
+  - `package.json`, `vitest.config.*`: vitest comes from the agent run's **S2**. Onboarding adds only the
+    `check:lessons` script line, after telling b2. If S2 isn't committed when O2 needs unit tests, write the tests
+    anyway and run them when it lands (log it), or ask b2.
+  - `src/data/presence.ts` (agent S14 adds the agent as a participant), `src/views/workspace/WorkspaceLayout.tsx`
+    (agent S14 mounts its box; another session has uncommitted edits there now): onboarding's one-line additions
+    (a demo source in presence; `<Coach />`) go in **after** asking b2, as small separate commits.
+  - `src/views/workspace/context.ts`: the agent's S2 adds `getWs()`; onboarding doesn't edit it.
+  - `src/firebase.ts` (demo guard) and `vite.config.ts` (the `demo.html` entry): not on the agent's list; tell b2 anyway.
+- Hot files (CanvasView.tsx, CardPanel.tsx, WorkspaceLayout.tsx, PlaneCards.tsx, Kanban.tsx, TextItems.tsx,
+  selection.ts…): change them as little as possible. Events come from store subscriptions; anchors are
+  `data-learn="…"` attributes added in **one** pass (O6), coordinated.
+- Commit **only your own files/hunks**. If the shared index holds others' staged work, build the commit from a
+  separate index (`GIT_INDEX_FILE=<scratch>/index git read-tree HEAD`, `update-index --cacheinfo` your blobs,
+  `write-tree`, `commit-tree -p HEAD`, `update-ref HEAD <new> <old>`), then `git reset -q -- <your paths>`. In zsh never
+  name a loop variable `path` (it is `$PATH`).
+- D-numbers: onboarding's plan is **D-315**; each built phase may take its own number. Re-check the last `### D-` in
+  decisions-log.md right before writing one; the agent run takes numbers too.
+- Emulators: if one is already running on 8080/9099/9010, use it, never stop it; if you start your own, stop it with
+  `kill -INT` when done. `test:rules` starts its own emulators: if the agent lead is running it, wait (ports busy).
+- Dev server on **5181** (5288 is the user's, 5179 the agent run's).
+- Headless Chrome: one browser at a time per lead; close it after each check.
+
+### 1.3 Never, during an unattended run
+- push, deploy (rules, functions, hosting), change Firebase settings, touch live data;
+- edit CLAUDE.md, permission settings, or other sessions' uncommitted work;
+- change the defaults or add a theme/motion/background control anywhere (CLAUDE.md hard rule);
+- put the ASCII effect over text, or let a demo frame make any network request to Firebase;
+- change a rule of onboarding.md §3 without logging it under "For the user".
+When unsure: pick the choice that's easiest to undo, write it under "For the user", keep going. The questions in
+onboarding.md §11 (Q-025–Q-028) have defaults: use them.
+
+### 1.4 After every step
+1. Checks: `npm run build`; `npm run check:lessons` (from O2); `npx vitest run` (once it exists); `npm run test:rules`
+   if rules changed; for anything a person sees, a headless check (puppeteer-core in the scratchpad, state.md's notes).
+2. Reviewer verdict `pass`.
+3. Commit (own files), message `Onboarding O<n>: … (D-315)` + the co-author line.
+4. Update Part 2: the step's line in "Done" (commit, what the reviewer checked, ideas), "Now", "Next".
+5. Every ~3 steps: `npm run check:memory`; state.md's onboarding line updated (one line); the shots gallery current.
+
+### 1.5 The night's steps
+
+| Step | What | Gate (on top of 1.4) |
+|---|---|---|
+| O0 | **Spike: the demo realm** (onboarding.md §6.1–6.2): `demo.html` + `src/demo/main.tsx` + `Stage.tsx`; the `firebase.ts` guard; a tiny fixture; the real plane view (PlaneCards in a focus-like stage) drawing 6 cards and 3 links; a scripted drag of one card via `set()`; a fake cursor. **Decides the approach**: if the real components can't run sealed in one step's time, log why, take the fallback (§10: alias-stub the module in the demo entry; or a `MemoryRouter`), and if even that fails, poster PNGs + CSS motion, and say so under "For the user". | the demo page loads in headless Chrome with **0 requests** to googleapis/firebaseio/firebasestorage, no console errors; screenshot of the plane drawn by the real components, dark + light; the app itself unchanged (smoke: open a workspace, focus a plane) |
+| O1 | **Seen-state**: `src/data/onboarding.ts` (Firestore `users/{uid}/private/onboarding` + localStorage cache + silent fallback), `firestore.rules` (own only, shape, size) + tests in `tests/rules.test.mjs`; `src/onboarding/audience.ts` (new / invited / returning; role per workspace), `progress.ts` (zustand) | rules tests pass (**not deployed**); unit tests for audience and progress merge (vitest, or logged as waiting for S2) |
+| O2 | **Lessons as data + lint**: `lessons.ts` (from onboarding-lessons.md, all of it), `releases.ts` (from state-history.md, D-291 → newest), `scripts/check-lessons.mjs` + the `check:lessons` script | `npm run check:lessons` passes and **fails** on 5 planted mistakes (a missing scene, a 30-word body, a cycle in `after`, a bad role, "kanban" on screen), each reverted |
+| O3 | **Events + queue**: `events.ts` (store subscriptions + URL; `onTracked` if S3 is in), `queue.ts` (busy, one at a time, cooldown, retire on done, tipsOff, nudge budget) | unit tests for the queue rules; a headless run logging the events of: open a workspace, `+` a plane, edit, focus, a card, a link, a deck task drag (each fires once, in order) |
+| O4 | **Design pass**: `docs/specs/onboarding-preview/index.html` (the app's tokens and fonts, no external links, like timeline-preview) with **2–3 options** each for the welcome, the lesson card and the kind guide, one marked recommended with why; then build the recommended one | the preview opens locally; the reviewer checks the options are really different and on-brand (DESIGN.md, consistency.md, D-222 prompt look, D-219 panel look) |
+| O5 | **The coach surfaces** on placeholder demos: `Coach.tsx` (portal, z, `role="dialog"`, pointerdown stopped), `Welcome`/`WhatsNew` (one Pages component), `Lesson` (anchored, lead line, never over its anchor), `KindGuide` (glued to the `+` menu), `Nudge`, `Guide` (`?`), `Demo.tsx` (the iframe host: postMessage, pause, 3 loops, poster, reduced motion) | shots of every surface dark + light; keyboard only: open, page, close, focus back; reduced motion: no loop; `?` free while typing (ignored in inputs) |
+| O6 | **Mount + anchors**: `<Coach />` in WorkspaceLayout and Workspaces (one line each, after asking b2 and the session with uncommitted edits there), `data-learn` anchors in **one** pass, the `plus-open` / `context-menu` / `menu-open` one-line hooks | the app's own behaviour unchanged (smoke of focus, `+`, menus, drags, finder, Esc chains); every anchor named in lessons.ts found by `check:lessons` |
+| O7 | **Director + fixtures + scene tooling**: `director.ts` (steps API, clock, seek, loop with the cell break/rebuild), `fixtures/pazar.ts` (onboarding.md §6.4), the fake cursor and key chips, a headless `scenes check` (loads, 0 requests, poster, loop equality, dark/light) | the scenes check passes on 3 scenes: `canvas-pan-zoom`, `focus-ink`, `deck-drag` |
+| O8 | **Start**: welcome (4 pages + variants: invited, viewer), empty canvas, workspaces empty state, join pending; their scenes | flow: a fresh emulator user → workspaces empty state → create → welcome → empty-canvas hint gone at the first piece; Bob invited into Alice's filled workspace → the invited variant; Carol viewer → the viewer variant |
+| O9 | **The `+` and pieces**: kind guide (every row, its `kind-*`/`card-*` scenes), piece-made, piece-console, focus-plane, focus-lens, hazard-undo, unframe(d), stick-hint, stuck, beside, move-canvas | flow: `+` → kind guide follows the keys → a plane → its lessons in order, never two at once, never during the drag or the focus ink |
+| O10 | **Planes and cards** (§3 of lessons): card-made, card-panel, status-evidence, link-made, for-links, multi-select, package-made, brought, competitor-features, parts, plane-filter, guides-snap, right-click | flow over a focused plane; each lesson's rect doesn't cover its anchor |
+| O11 | **Text** (§4) and **matrix and table** (§5) | flows; scenes checked |
+| O12 | **Documents** (§6) and **decks and days** (§7) | flows; scenes checked |
+| O13 | **Together** (§8; two headless browsers as Alice and Bob) and **finding, canvases, settings** (§9) | flows: Bob arrives → `people-here` for Alice; follow; a comment thread |
+| O14 | **Nudges** (§10) and **what's new** (§11): `releases.ts` wired, returning audience, armed lessons marked `NEW` in `?` | flow: an account older than `ONBOARDING_START` (set its creationTime in the auth emulator, or stub the date) → what's new only, no welcome; its lessons armed; a new account → no what's new |
+| O15 | **The guide `?`**: every lesson listed by area, replay, `# keys` (inventory §C), tips on/off; the magenta dot | flow: replay every lesson from `?` (each opens, shows its scene, closes) |
+| O16 | **All of it, end to end** + the shots gallery + a polish pass: the reviewer reads every lesson's words aloud against the screen ("does it say what I see?"), timings, the queue's calm, speed (the canvas's frame time with the coach mounted and a demo playing: no worse than without, state-history D-279 / D-287 for how to measure) | the full flow for each audience green; the gallery complete; frame times logged |
+
+If the night runs out, stop at a clean, committed step with the gallery up to date. If it doesn't, do the small, safe
+"Ideas", each through the same review.
+
+### 1.6 Screenshots of everything new (for the user to look at and change)
+- Headless Chrome (puppeteer-core in the scratchpad, state.md's notes), emulators, a seeded workspace with realistic
+  content (the same "Pazar" as the fixtures, written through the client SDK as Alice), the onboarding driven by the
+  real triggers.
+- Each surface and lesson in **dark and light**, at 1568 × 980 (2× device scale), cropped to the lesson plus enough of
+  its anchor to see where it sits; one full-screen shot per flow step; for each scene its poster frame and three frames
+  across the loop.
+- Saved in `docs/specs/onboarding-shots/` as `O9-03-focus-plane-dark.png`…, plus `docs/specs/onboarding-shots/index.html`:
+  a simple page (the app's tokens and fonts, no external links) with every shot under a heading per step and a one-line
+  caption (what it is, what to look at, what's not final). Scenes can also be watched live: `npm run dev -- --port 5181`
+  then `/demo.html#scene=<id>`; the gallery lists those links. Never published anywhere.
+- Retaken when a later step changes a part; old ones replaced, not piled up.
+
+---
+
+## Part 2: the log
+
+### Now
+Not started. First step: O0. (Plan written 2026-10-29 by workspace-sections-canvas; agreed with north-star-b2: S3's
+`onTracked`, S2's vitest, §1.2's order.)
+
+### Done
+_(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
+
+### Stuck
+_(none)_
+
+### For the user (in the morning)
+- Deploy the rules once O1 is committed and you've read them: `npm run test:rules`, then
+  `npx firebase deploy --only firestore:rules --project north-star-db` (until then, seen-state lives in the browser).
+- Q-025–Q-028 in onboarding.md §11: the run used the defaults.
+
+### Ideas
+_(the reviewers' and builders' "could be better", not done yet)_

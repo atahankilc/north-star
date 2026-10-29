@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-29 (tasks side view D-300, deck naming D-301, linked decks always filter D-303)_
+_Last updated: 2026-10-29 (onboarding plan D-315, tasks side view D-300, deck naming D-301, linked decks always filter D-303)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -43,6 +43,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
 - The agent back: plan accepted (D-312, docs/specs/agent.md): OpenAI, own keys, the person's model, previews, the
   bottom-right corner. Next: Phase 1 (the ops layer, no AI; first the action inventory). 1.0's rules: decisions-1.0.md.
+- Onboarding: plan written (D-315; docs/specs/onboarding.md, onboarding-lessons.md, onboarding-run.md): welcome, kind
+  guide, ~60 lessons, what's new, `?`, demos from the real components in `demo.html`. Next: O0 (the demo spike), by
+  an overnight lead with onboarding-run.md's kickoff prompt (onboarding.md §12). Q-025–Q-028 open, defaults used.
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).

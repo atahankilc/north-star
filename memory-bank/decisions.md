@@ -306,6 +306,12 @@ feature comes back as a piece, and check them with the user then.
   can be, never other workspaces, PDFs/images last;
   full workflows with parity to a person plus skills; phases gated by evals built before the UI.
 
+## Onboarding (planned, docs/specs/onboarding.md)
+- Onboarding (D-315, not started): taught at the moment of use, one at a time, short (≤ 4 pages, ≤ 25 words): a
+  welcome on the first canvas, the kind guide beside the `+` menu, ~60 one-time lessons beside what was just opened,
+  what's new for returning people, ≤ 1 nudge a session, `?` replays all; seen-state per person; demos are the real
+  components on made-up data in a sealed iframe (`demo.html`), looping, paused/still under reduced motion.
+
 ## Settings
 - A modal from the gear or your square: YOU (account, display), WORKSPACE (general: name and "building" description;
   people; export); framed sections, rows with name + hint, notes at the foot; 960 × 720. The assistant's keys and usage
