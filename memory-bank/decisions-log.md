@@ -5690,6 +5690,28 @@ shows anyway.**
   plane` landed at 25,-700, clear of Backend's spot at 0,0; dragging the section moved its spot with it (125, 25).
 - *Not yet (small):* a deck stuck to a shared plane, the plane then taken off the deck's canvas, stays linked to it.
 
+### D-312 · 2026-10-29 · Accepted (answers Q-019, Q-020, Q-021, Q-023, Q-024; the user: "openAı kullanılcak ilk başta, sonradan başka sağlayıcılar eklenebilir. Modeli kullanıcı kendisi seçicek. Şimdilik bizim provide etme gibi bir şeyimiz yok, herkes kendi api key i ile istediğini yapmakta özgür. Değişiklikler önüzleme ile gösterilcek. Şu anda acayip bir component çeşitliliğimiz var, o yüzden önüzlemenin kaliteli olması lazım … Önceki gibi sağ alt köşede duramıyoru mu? Bilgi tabanının kapsamı ne olabiliyorsa o olcak … Her şeyi yapabilsinden kastım agentic workflowlar tamamen entegre edilsin, bir kullanıcı ne yapabiliyosa aynısını yapabilsin üstüne de çok işe yarayacak toollar ekleyelim ki insanlar cidden kullansın")
+**The agent: plan accepted** (docs/specs/agent.md; research and 1.0's post-mortem there). Not started.
+- *Decision:* the agent comes back built as in agent.md: the loop in the browser, running as the signed-in person
+  through a new `src/ops/` layer the UI uses too (plan → validate → apply, one undo step); a cached workspace map +
+  read tools (search, query, get, view, neighbours) instead of a vector DB; the app places things, never the model.
+  OpenAI's Responses API first behind a thin adapter, other providers later; **the person picks the model**; **own
+  keys only**, we provide nothing (D-079's workspace key stays parked; so the agent needs no Blaze). **Every change is
+  previewed first**: the real components draw an in-memory result (`project`, the same code as apply) with diff marks
+  on every kind, a change list with ticks and a stepper, the app locked, then one click and one undo step. It lives
+  **in the screen's bottom-right corner** as 1.0's did, growing into a column the app narrows beside. The knowledge
+  base is as wide as it can be (agent.md §4.9: workspace, comments, documents, agent notes, past chats, a change log,
+  method guides, the web, files once Storage is live). "Everything" = full agentic workflows (plan → run → preview →
+  ask → report), every content action a person has (an action inventory as the gate), plus skills (§4.10). Phases 1–10
+  with gates (§6), behaviour and code rules (§7), an eval set built before any UI (§8).
+- *Why:* 1.0's assistant behaved badly mainly because of a cheap model on low reasoning, one 28-op write tool, a
+  self-contradicting prompt, no search and never being measured (agent.md §1).
+- *Alternatives:* 1.0 with a better prompt; RAG over every item; a server agent (bypasses the rules, no undo, needs
+  Blaze); a workspace key we provide; the agent in a right panel or as a piece (the user chose the corner).
+- *Q-022, answered the same day:* the agent never reads the person's other workspaces ("diğer workspace'ler hayır");
+  PDFs and images come last, once Storage is live ("PDF'ler en sona kalsın").
+- *Not yet:* everything: agent.md's phases.
+
 ### D-313 · 2026-10-29 · Accepted (the user: "biri bir compoennti canvasdan silerken şeyi de sor, bunu bitek burdan mı silmek istersin yoksa her yerden mi?")
 **Deleting a piece on several canvases asks which** (changes D-307's Delete, which took it off at once). Delete in
 edit mode, the console's `[delete]`, right-click `delete everywhere` and the where-list's open the hazard confirm:
@@ -5762,6 +5784,9 @@ board; a timeline couldn't make a task for a card.
   copy of firebase.json on other ports, outside the repo): 457 passed, 0 failed, the presence `tasks` ones in them.
   Checked headless: ALL · DAYS on the main canvas Roadmap and Sprint 3 only, on "Engineering" its own task only; a
   table stuck to Pazar still opens beside it (`table · Rivals | all 2 ▾ setup close`), `t` then closes it.
+- *Then (the user: "timeline de sadece kendi canvasını göstersin"):* a timeline piece linked to nothing shows the decks of
+  its own canvas only (`canvasId`, none = `main`), as ALL · DAYS does. Checked headless: one on the main canvas showed
+  Roadmap and Sprint 3, not "Eng board"'s task; one on "Engineering" showed only that deck.
 
 ### D-315 · 2026-10-29 · Accepted (plan only; the user: "yeni biri geldiğinde bi anda bilgi bombardımanına tutmak istemiyorum … kimin ne zaman onboarding olduğunu, sıfırdan ise bütün ekranların, önceden kullanıyor ise de yeni versiyonla nelerin geldiği anlatılmalı … step by step introduction … animasyonlar … componentler elimizde var, bunları kullanarak mock data ile animasyon oluşturabiliriz sonsuz döngüde … ai dışındaki her şeyi kapsasın … senden sonraki agent yapıcak")
 **Onboarding: plan written** (docs/specs/onboarding.md, onboarding-lessons.md, onboarding-run.md; reference:
@@ -5784,9 +5809,6 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
   stores in the same page (a rewrite of hot files).
 - *Q-025 and Q-026, answered the same day:* seen-state per person in Firestore ("evet"); people who used North Star
   before see everything too, since nothing was recorded ("eski kullanıcılar için de tutulan bir kayıt olmadığına göre
-- *Then (the user: "timeline de sadece kendi canvasını göstersin"):* a timeline piece linked to nothing shows the decks of
-  its own canvas only (`canvasId`, none = `main`), as ALL · DAYS does. Checked headless: one on the main canvas showed
-  Roadmap and Sprint 3, not "Eng board"'s task; one on "Engineering" showed only that deck.
   önceden, onlar da görcek"), so what's new is only for releases after onboarding ships. On the look the user asked
   whether the run builds everything just to show it: the ~60 lessons are data a few frames draw; then, going to sleep:
   "gerekirse her opsiyonu her biri için implemente et, umrumda değil", so the run builds every frame option behind a
