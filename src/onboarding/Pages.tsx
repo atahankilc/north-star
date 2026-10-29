@@ -1,18 +1,12 @@
 // The welcome and what's new (D-315, docs/specs/onboarding.md §4.1, §4.4): one paged modal, the wizard's shade, z 40,
-// `role="dialog"`, focus inside and back where it was on close; `←` `→` `Enter` page, `esc` skips. Three looks (Q-028,
-// docs/specs/onboarding-preview/), `useLook('welcome')`, `a` the default:
-//   a · the wizard window: the matrix/table/deck wizards' frame, the pages as tabs, the demo on top, words on black.
-//   b · ink on the page: no window; the demo is a piece (graphite, a magenta band, its name cut in), the words ink
-//       under it like an H1 with its small line, each block on `--ink-shade`.
-//   c · the transcript: a terminal log of the pages (✓ done, › now, · next) beside the demo; the page typed out.
+// `role="dialog"`, focus inside and back where it was on close; `←` `→` `Enter` page, `esc` skips. The wizard window
+// (D-316): the matrix/table/deck wizards' frame, the pages as tabs, the demo on top, words on black.
 // What's new is the same frame: the pages are the changes, `[show me]` where an item has somewhere to go, the last
 // page `+ N more` as a list.
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Appear } from '../ui/Appear'
 import { DecodeText } from '../ui/DecodeText'
-import { useMotion } from '../state/motion'
-import { useLook } from './looks'
 import { Demo } from './Demo'
 import { bits, plain, two, type PageModel } from './words'
 import type { ReleaseItem } from './releases'
@@ -97,7 +91,6 @@ type Props = {
 }
 
 export function Pages({ kind, pages, onEnd }: Props) {
-  const look = useLook('welcome')
   const [i, setI] = useState(0)
   const root = useRef<HTMLElement>(null)
   const next = useRef<HTMLButtonElement>(null)
@@ -134,7 +127,7 @@ export function Pages({ kind, pages, onEnd }: Props) {
   const end = 'done'
   const titleId = `coach-${kind}-title`
   const scene = pages.find((p, k) => k >= i && p.scene)?.scene ?? pages.find((p) => p.scene)?.scene
-  const fitW = useFitWidth(look)
+  const fitW = useFitWidth()
   const common = { page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW: fitW - 2 }
 
   return createPortal(
@@ -142,23 +135,22 @@ export function Pages({ kind, pages, onEnd }: Props) {
       <Appear
         as="section"
         elRef={root}
-        className={look === 'a' ? styles.wa : look === 'b' ? styles.wb : styles.wc}
+        className={styles.wa}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={onKey}
-        data-look={look}
-        style={look === 'c' ? undefined : ({ '--w': `${fitW}px` } as React.CSSProperties)}
+        style={{ '--w': `${fitW}px` } as React.CSSProperties}
       >
-        {look === 'a' ? <LookA {...common} /> : look === 'b' ? <LookB {...common} /> : <LookC {...common} />}
+        <Window {...common} />
       </Appear>
     </div>,
     document.body,
   )
 }
 
-type LookProps = {
+type WindowProps = {
   page: PageModel
   pages: PageModel[]
   i: number
@@ -177,28 +169,27 @@ type LookProps = {
   demoW: number
 }
 
-// The window's width: its look's, smaller on a short screen so all of it shows (a 16:10 demo plus the words under it).
-const WIDE = { a: 620, b: 600, c: 0 }
-const UNDER = { a: 300, b: 330, c: 0 }
-function useFitWidth(look: 'a' | 'b' | 'c'): number {
+// The window's width: 620, smaller on a short screen so all of it shows (a 16:10 demo plus the words under it).
+const WIDE = 620
+const UNDER = 300
+function useFitWidth(): number {
   const [h, setH] = useState(() => innerHeight)
   useEffect(() => {
     const on = () => setH(innerHeight)
     addEventListener('resize', on)
     return () => removeEventListener('resize', on)
   }, [])
-  if (look === 'c') return 432
-  return Math.round(Math.max(360, Math.min(WIDE[look], ((h - 32 - UNDER[look]) * 16) / 10)))
+  return Math.round(Math.max(360, Math.min(WIDE, ((h - 32 - UNDER) * 16) / 10)))
 }
 
 // The demo, kept mounted across pages (one frame; a page turn sends it the next scene); a page without one (the
 // `+ N more` list) shows its rows over it.
-function Stage({ page, scene, width, label }: { page: PageModel; scene?: string; width: number; label?: string }) {
+function Stage({ page, scene, width }: { page: PageModel; scene?: string; width: number }) {
   return (
     <div className={styles.stage}>
       {scene && (
         <div className={styles.demoKeep} data-away={!page.scene || undefined} aria-hidden={!page.scene || undefined}>
-          <Demo scene={page.scene ?? scene} width={width} label={label} />
+          <Demo scene={page.scene ?? scene} width={width} />
         </div>
       )}
       {!page.scene && <NewsList page={page} />}
@@ -253,8 +244,8 @@ const Keys = () => (
   </span>
 )
 
-// a · the wizard window.
-function LookA({ page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW }: LookProps) {
+// The wizard window.
+function Window({ page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW }: WindowProps) {
   return (
     <>
       <nav className={styles.steps} aria-label="pages">
@@ -291,180 +282,6 @@ function LookA({ page, pages, i, n, last, go, forward, skip, showMe, name, out, 
           {last ? end : 'next ›'}
         </Btn>
       </div>
-    </>
-  )
-}
-
-// b · ink on the page.
-function LookB({ page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW }: LookProps) {
-  return (
-    <>
-      <div className={styles.demoPiece}>
-        <span className={styles.pname}>
-          <span className={styles.num}>{two(i + 1)}</span> {page.tab} <span className={styles.kindName}>· {name}</span>
-        </span>
-        <Stage page={page} scene={scene} width={demoW} />
-      </div>
-      <div className={styles.small}>
-        <span className={`${styles.ink} ${styles.smallIn}`}>
-          <span className={styles.num}>{two(i + 1)}</span>
-          <span className={styles.rule} />
-          {name} <span className={styles.dimmer}>· {two(n)}</span>
-        </span>
-      </div>
-      <h2 id={titleId} className={styles.h1}>
-        <span className={styles.ink}>
-          <DecodeText key={page.title} text={plain(page.title)} />
-        </span>
-      </h2>
-      <div className={styles.h1rule} />
-      {(page.body || page.extra) && (
-        <p className={styles.bodyB}>
-          <span className={styles.ink}>
-            <Words text={page.body} />
-            {page.extra && (
-              <>
-                {' '}
-                <span className={styles.extra}>{page.extra}</span>
-              </>
-            )}
-          </span>
-        </p>
-      )}
-      <div className={styles.acts}>
-        <span className={styles.ink}>
-          <Btn bare tone="out" onClick={skip}>
-            {out}
-          </Btn>
-        </span>
-        <span className={styles.sp} />
-        <span className={`${styles.ink} ${styles.pageNums}`}>
-          {pages.map((_, k) => (
-            <button key={k} type="button" tabIndex={-1} className={styles.pageNum} data-on={k === i || undefined} data-done={k < i || undefined} onClick={() => go(k)} aria-label={`page ${k + 1}`}>
-              {two(k + 1)}
-            </button>
-          ))}
-        </span>
-        <span className={`${styles.ink} ${styles.actRow}`}>
-          <Btn bare onClick={() => go(i - 1)} disabled={i === 0}>
-            ‹ back
-          </Btn>
-          {showMe && (
-            <Btn bare tone="go" onClick={showMe}>
-              show me
-            </Btn>
-          )}
-          <Btn bare tone="hot" onClick={forward} elRef={next}>
-            {last ? end : 'next'}
-            <span className={styles.chev}> ›</span>
-          </Btn>
-        </span>
-      </div>
-    </>
-  )
-}
-
-// c · the transcript.
-function LookC({ page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId }: LookProps) {
-  const reduced = useMotion((s) => s.reduced)
-  const typed = useTyped(plain(page.title).length + page.body.length, reduced, page.title)
-  const tLen = plain(page.title).length
-  return (
-    <>
-      <div className={styles.bar}>
-        north-star · {name}
-        <span className={styles.sp} />
-        <span className={styles.num}>{two(i + 1)}</span> / {two(n)}
-      </div>
-      <div className={styles.log}>
-        <div className={styles.ln}>
-          <span className={styles.num}>$</span> north-star --{name === 'welcome' ? 'welcome' : 'whats-new'}
-        </div>
-        {pages.map((p, k) => (
-          <button key={k} type="button" tabIndex={-1} className={styles.ln} data-done={k < i || undefined} data-now={k === i || undefined} onClick={() => go(k)}>
-            <em>{k < i ? '✓' : k === i ? '›' : '·'}</em> {two(k + 1)} {p.tab === p.title.toLowerCase() ? p.tab : plain(p.title).toLowerCase()}
-          </button>
-        ))}
-        <div className={styles.typed}>
-          <h2 id={titleId} className={styles.titleC} aria-label={plain(page.title)}>
-            <span aria-hidden>{plain(page.title).slice(0, typed)}</span>
-            {typed < tLen && <span className={styles.blk} aria-hidden />}
-          </h2>
-          <p className={styles.bodyC} aria-label={plain(page.body) + (page.extra ? ' ' + page.extra : '')}>
-            <span aria-hidden>
-              <TypedWords text={page.body} n={Math.max(0, typed - tLen)} />
-              {typed >= tLen + page.body.length && page.extra && <span className={styles.extra}> {page.extra}</span>}
-            </span>
-            {typed >= tLen && <span className={styles.blk} aria-hidden />}
-          </p>
-        </div>
-        <span className={styles.fill} />
-      </div>
-      <div className={styles.right}>
-        <Stage page={page} scene={scene} width={430} />
-        <div className={styles.footC}>
-          <Btn tone="out" onClick={skip}>
-            {out}
-          </Btn>
-          <span className={styles.sp} />
-          <Keys />
-          <Btn onClick={() => go(i - 1)} disabled={i === 0}>
-            ‹ back
-          </Btn>
-          {showMe && (
-            <Btn tone="go" onClick={showMe}>
-              show me
-            </Btn>
-          )}
-          <Btn tone="hot" onClick={forward} elRef={next}>
-            {last ? end : 'next ›'}
-          </Btn>
-        </div>
-      </div>
-    </>
-  )
-}
-
-// How many characters are typed out so far (a readable pace); all at once under reduced motion.
-const TYPE_MS = 14
-function useTyped(total: number, reduced: boolean, key: string): number {
-  const [n, setN] = useState(reduced ? total : 0)
-  useEffect(() => {
-    if (reduced) {
-      setN(total)
-      return
-    }
-    setN(0)
-    const t0 = performance.now()
-    let raf = 0
-    const step = (now: number) => {
-      const k = Math.min(total, Math.floor((now - t0) / TYPE_MS))
-      setN(k)
-      if (k < total) raf = requestAnimationFrame(step)
-    }
-    raf = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(raf)
-  }, [total, reduced, key])
-  return n
-}
-
-// The body's first `n` characters (backticks not counted), its chips drawn as they come.
-function TypedWords({ text, n }: { text: string; n: number }) {
-  let left = n
-  return (
-    <>
-      {bits(text).map((b, k) => {
-        if (left <= 0) return null
-        const s = b.text.slice(0, left)
-        left -= b.text.length
-        return b.key ? (
-          <kbd key={k} className={styles.kbd}>
-            {s}
-          </kbd>
-        ) : (
-          <span key={k}>{s}</span>
-        )
-      })}
     </>
   )
 }

@@ -4,10 +4,8 @@
 // press on it neither moves focus nor closes the menu. `[hide guide]` hides it for good (the coach records it through
 // `onHide`); one line under the menu then says `? brings it back`, until the menu closes.
 //
-// Three looks while the user picks (Q-028, `useLook('kind')`): a, the glued column (the menu gets wider: one panel split
-// by a hairline, its height the guide's floor when typing narrows the menu); b, ink beside (unframed, a dashed magenta
-// lead from the row under the keys, no floor); c, the man page (glued like a, `PLANE(1)`, NAME / USE / KEY / SEEN, and
-// a magenta dot on the menu's rows not seen yet).
+// The glued column (D-316): the menu gets wider, one panel split by a hairline, its height the guide's floor when typing
+// narrows the menu.
 //
 // Where it's drawn: inside the menu's own panel (found from `menu`, its rect), so a press on it is a press in the menu
 // (the menu closes on presses outside its root) and it breaks away with the menu's cells. If the panel can't be found,
@@ -18,7 +16,6 @@ import { Appear } from '../ui/Appear'
 import { DecodeText } from '../ui/DecodeText'
 import { Demo } from './Demo'
 import { lessonById, type GuideLesson, type GuideRow } from './lessons'
-import { useLook } from './looks'
 import { useProgress } from './progress'
 import styles from './KindGuide.module.css'
 
@@ -26,31 +23,31 @@ type Props = { menu: DOMRect; row: string | null; where: 'canvas' | 'plane'; onH
 
 // A row counts as seen once it has been shown this long (not every row the arrows pass on the way).
 const SEEN_AFTER_MS = 600
-// Widths: the glued column (a), the man page (c), the ink (b); the demo fills the column less its padding.
-const W = { a: 290, b: 290, c: 310 }
+// The glued column's width; the demo fills it less its padding.
+const W = 290
 const PAD = 12
 
-// Each row's glyph, colour and letter, as the `+` menu has them (AddToCanvas in WorkspaceLayout.tsx; check:lessons
+// Each row's glyph and colour, as the `+` menu has them (AddToCanvas in WorkspaceLayout.tsx; check:lessons
 // keeps the labels in step). Read from the menu's own row when it's there; these are the fallback.
-const LOOK: Record<string, { glyph: string; tone?: string; letter: string }> = {
-  plane: { glyph: '▦', letter: 'p' },
-  matrix: { glyph: '⊞', letter: 'm' },
-  table: { glyph: '☰', letter: 't' },
-  documents: { glyph: '▯', letter: 'd' },
-  kanban: { glyph: '▥', letter: 'k' },
-  timeline: { glyph: '▤', letter: 'l' },
-  heading: { glyph: 'T', letter: 'h' },
-  paragraph: { glyph: '¶', letter: 'a' },
-  sticky: { glyph: '▤', tone: 'var(--accent-yellow)', letter: 'n' },
-  section: { glyph: '⬚', letter: 's' },
-  title: { glyph: '✦', letter: 'i' },
-  customer: { glyph: '▌', tone: 'var(--accent-green)', letter: 'c' },
-  problem: { glyph: '▌', tone: 'var(--accent-magenta)', letter: 'r' },
-  competitor: { glyph: '▌', tone: 'var(--accent-yellow)', letter: 'o' },
-  idea: { glyph: '▌', tone: 'var(--fg)', letter: 'i' },
-  feature: { glyph: '▌', tone: 'var(--accent-cyan)', letter: 'f' },
-  package: { glyph: '▣', tone: 'var(--accent-blue)', letter: 'k' },
-  existing: { glyph: '⧉', letter: 'e' },
+const LOOK: Record<string, { glyph: string; tone?: string }> = {
+  plane: { glyph: '▦' },
+  matrix: { glyph: '⊞' },
+  table: { glyph: '☰' },
+  documents: { glyph: '▯' },
+  kanban: { glyph: '▥' },
+  timeline: { glyph: '▤' },
+  heading: { glyph: 'T' },
+  paragraph: { glyph: '¶' },
+  sticky: { glyph: '▤', tone: 'var(--accent-yellow)' },
+  section: { glyph: '⬚' },
+  title: { glyph: '✦' },
+  customer: { glyph: '▌', tone: 'var(--accent-green)' },
+  problem: { glyph: '▌', tone: 'var(--accent-magenta)' },
+  competitor: { glyph: '▌', tone: 'var(--accent-yellow)' },
+  idea: { glyph: '▌', tone: 'var(--fg)' },
+  feature: { glyph: '▌', tone: 'var(--accent-cyan)' },
+  package: { glyph: '▣', tone: 'var(--accent-blue)' },
+  existing: { glyph: '⧉' },
 }
 
 const seenId = (key: string) => `kind-guide:${key}`
@@ -74,7 +71,6 @@ function panelOf(menu: DOMRect): HTMLElement | null {
 const keepFocus = (e: React.MouseEvent) => e.preventDefault()
 
 export function KindGuide({ menu, row, where, onHide }: Props) {
-  const look = useLook('kind')
   const lesson = lessonById('kind-guide') as GuideLesson | undefined
   const rows = useMemo(() => (lesson?.rows ?? []).filter((r) => r.where === where || r.where === 'both'), [lesson, where])
   const seen = useProgress((s) => s.seen)
@@ -105,9 +101,6 @@ export function KindGuide({ menu, row, where, onHide }: Props) {
     return () => cancelAnimationFrame(raf)
   }, [menu.left, menu.top, menu.width])
 
-  // Layout of the menu's rows (for b's lead and c's dots): redone when the list scrolls, changes or resizes.
-  const tick = useListTick(host)
-
   const hide = () => {
     setHidden(true)
     onHide()
@@ -120,31 +113,15 @@ export function KindGuide({ menu, row, where, onHide }: Props) {
         guide hidden · <kbd className={styles.k}>?</kbd> brings it back
       </div>
     )
-  } else if (look === 'b') {
-    body = <InkBeside host={host} row={cur} tick={tick} onHide={hide} />
   } else {
     body = (
-      <Glued host={host} look={look}>
-        {look === 'c' ? (
-          <ManPage host={host} row={cur} seenN={seenN} total={rows.length} where={where} onHide={hide} />
-        ) : (
-          <Column host={host} row={cur} seenN={seenN} total={rows.length} onHide={hide} />
-        )}
+      <Glued host={host}>
+        <Column host={host} row={cur} seenN={seenN} total={rows.length} onHide={hide} />
       </Glued>
     )
   }
 
-  const unseenDots = look === 'c' && !hidden && host ? <Dots host={host} rows={rows} seen={seen} tick={tick} /> : null
-
-  if (host) {
-    return createPortal(
-      <>
-        {body}
-        {unseenDots}
-      </>,
-      host,
-    )
-  }
+  if (host) return createPortal(body, host)
   // No panel found: over the page at the menu's box.
   return createPortal(
     <div className={styles.over} style={{ left: menu.left, top: menu.top, width: menu.width, height: menu.height }}>
@@ -154,48 +131,10 @@ export function KindGuide({ menu, row, where, onHide }: Props) {
   )
 }
 
-// A number that changes whenever the menu's rows may have moved.
-function useListTick(host: HTMLElement | null) {
-  const [tick, setTick] = useState(0)
-  useEffect(() => {
-    if (!host) return
-    const list = host.querySelector<HTMLElement>('[role=menu]')
-    const bump = () => setTick((t) => t + 1)
-    const mo = new MutationObserver(bump)
-    if (list) mo.observe(list, { childList: true, subtree: true })
-    const ro = new ResizeObserver(bump)
-    ro.observe(host)
-    list?.addEventListener('scroll', bump, { passive: true })
-    return () => {
-      mo.disconnect()
-      ro.disconnect()
-      list?.removeEventListener('scroll', bump)
-    }
-  }, [host])
-  return tick
-}
-
-// Where a menu row sits in the panel's box (its padding box: what an absolute child is placed in).
-function rowBox(host: HTMLElement, key: string): { top: number; height: number; visible: boolean } | null {
-  const el = host.querySelector<HTMLElement>(`[role^=menuitem][data-key="${CSS.escape(key)}"]`)
-  if (!el) return null
-  const h = host.getBoundingClientRect()
-  const b = el.getBoundingClientRect()
-  const list = host.querySelector<HTMLElement>('[role=menu]')?.getBoundingClientRect()
-  const visible = !list || (b.bottom > list.top + 2 && b.top < list.bottom - 2)
-  return { top: b.top - h.top - host.clientTop, height: b.height, visible }
-}
-
-// What the menu's own row says (its letter), else the fallback.
-function letterOf(host: HTMLElement | null, key: string) {
-  const el = host?.querySelector(`[role^=menuitem][data-key="${CSS.escape(key)}"] b`)
-  return el?.textContent || LOOK[key]?.letter || ''
-}
-
-// a and c: glued to the menu's right edge, as tall as the menu, and the menu at least as tall as the guide (its floor:
+// Glued to the menu's right edge, as tall as the menu, and the menu at least as tall as the guide (its floor:
 // typing that narrows the menu never makes the panel shorter than the guide). The menu's prompt gets that floor as its
 // min-height while the guide is up (its list grows; its foot stays level with the guide's).
-function Glued({ host, look, children }: { host: HTMLElement | null; look: 'a' | 'c'; children: ReactNode }) {
+function Glued({ host, children }: { host: HTMLElement | null; children: ReactNode }) {
   const own = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const el = own.current
@@ -214,9 +153,9 @@ function Glued({ host, look, children }: { host: HTMLElement | null; look: 'a' |
       ro.disconnect()
       prompt.style.minHeight = before
     }
-  }, [host, look])
+  }, [host])
   return (
-    <Appear className={styles.glued} data-look={look} style={{ width: W[look] }} onMouseDown={keepFocus} aria-live="polite">
+    <Appear className={styles.glued} style={{ width: W }} onMouseDown={keepFocus} aria-live="polite">
       <div ref={own} className={styles.gluedIn}>
         {children}
       </div>
@@ -237,7 +176,7 @@ function DemoSlot({ row, width }: { row: GuideRow | null; width: number }) {
   return <Demo scene={row.scene} width={width} label={row.scene} />
 }
 
-// a · the glued column.
+// The column: the row's name, its demo, what it is and when to use it.
 function Column({ host, row, seenN, total, onHide }: { host: HTMLElement | null; row: GuideRow | null; seenN: number; total: number; onHide: () => void }) {
   const look = row ? LOOK[row.key] : null
   return (
@@ -258,7 +197,7 @@ function Column({ host, row, seenN, total, onHide }: { host: HTMLElement | null;
         </span>
       </div>
       <div className={styles.demoWrap}>
-        <DemoSlot row={row} width={W.a - 2 * PAD - 1} />
+        <DemoSlot row={row} width={W - 2 * PAD - 1} />
       </div>
       <div className={styles.lines}>
         <p className={styles.what}>{row ? <DecodeText key={row.key} text={row.lines[0]} /> : INTRO.what}</p>
@@ -269,108 +208,6 @@ function Column({ host, row, seenN, total, onHide }: { host: HTMLElement | null;
         <span>↑ ↓ shows the others</span>
         <HideButton onHide={onHide} />
       </div>
-    </>
-  )
-}
-
-// c · the man page.
-function ManPage({ host, row, seenN, total, where, onHide }: { host: HTMLElement | null; row: GuideRow | null; seenN: number; total: number; where: 'canvas' | 'plane'; onHide: () => void }) {
-  const label = row ? row.label.replace('…', '') : 'the + menu'
-  const page = `${label.toUpperCase().replace(/ /g, '-')}(1)`
-  return (
-    <>
-      <div className={styles.manHead}>
-        <span>{row ? page : 'ADD(1)'}</span>
-        <span className={styles.manRight}>NORTH STAR</span>
-      </div>
-      <div className={styles.demoWrap}>
-        <DemoSlot row={row} width={W.c - 2 * PAD - 1} />
-      </div>
-      <dl className={styles.man}>
-        <dt>NAME</dt>
-        <dd className={styles.manName}>
-          {row ? <DecodeText key={row.key} text={`${label} — ${row.lines[0].toLowerCase().replace(/\.$/, '')}`} /> : 'add — what each thing is'}
-        </dd>
-        <dt>USE</dt>
-        <dd>{row ? row.lines[1].replace(/`/g, '') : INTRO.when}</dd>
-        <dt>KEY</dt>
-        <dd className={styles.mono}>{row ? `+ ${letterOf(host, row.key)} ↵${where === 'plane' ? '  ·  right-click → add' : ''}` : '+ then a letter, ↵'}</dd>
-        <dt>SEEN</dt>
-        <dd className={styles.mono}>
-          {seenN} of {total} kinds
-        </dd>
-      </dl>
-      <div className={styles.meter} aria-hidden>
-        {Array.from({ length: total }, (_, i) => (
-          <i key={i} data-on={i < seenN || undefined} />
-        ))}
-      </div>
-      <div className={styles.spacer} />
-      <div className={styles.foot}>
-        <span>
-          <i className={styles.dotKey} aria-hidden /> not seen yet
-        </span>
-        <HideButton onHide={onHide} />
-      </div>
-    </>
-  )
-}
-
-// b · ink beside: no frame, a dashed lead from the row under the keys, each line on its shade.
-function InkBeside({ host, row, tick, onHide }: { host: HTMLElement | null; row: GuideRow | null; tick: number; onHide: () => void }) {
-  const [y, setY] = useState<number | null>(null)
-  useLayoutEffect(() => {
-    if (!host) return setY(null)
-    const first = host.querySelector<HTMLElement>('[role^=menuitem]')?.dataset.key
-    const box = rowBox(host, row?.key ?? first ?? '')
-    setY(box && box.visible ? box.top + box.height / 2 : null)
-  }, [host, row?.key, tick])
-  const top = y ?? 60
-  return (
-    <>
-      {y !== null && <div className={styles.lead} style={{ top: y }} aria-hidden />}
-      <Appear className={styles.ink} style={{ top: top - 9, width: W.b }} onMouseDown={keepFocus} aria-live="polite">
-        <div className={styles.small}>
-          <span className={styles.num}>{row ? letterOf(host, row.key).toUpperCase() : '+'}</span>
-          <span className={styles.rule} />
-          <span>{row ? row.label.replace('…', '') : 'the + menu'} · what it is</span>
-        </div>
-        <div className={styles.inkDemo}>
-          <DemoSlot row={row} width={W.b} />
-        </div>
-        <p className={styles.inkWhat}>
-          <span className={styles.shade}>{row ? <DecodeText key={row.key} text={row.lines[0]} /> : INTRO.what}</span>
-        </p>
-        <p className={styles.inkWhen}>
-          <span className={styles.shade}>{row ? row.lines[1].replace(/`/g, '') : INTRO.when}</span>
-        </p>
-        <div className={styles.inkHide}>
-          <span className={styles.shade}>
-            <HideButton onHide={onHide} />
-          </span>
-        </div>
-      </Appear>
-    </>
-  )
-}
-
-// c's dots: a small magenta square at the right end of each menu row not seen yet.
-function Dots({ host, rows, seen, tick }: { host: HTMLElement; rows: readonly GuideRow[]; seen: Record<string, number>; tick: number }) {
-  const [at, setAt] = useState<number[]>([])
-  useLayoutEffect(() => {
-    const out: number[] = []
-    for (const r of rows) {
-      if ((seen[seenId(r.key)] ?? 0) >= r.v) continue
-      const b = rowBox(host, r.key)
-      if (b?.visible) out.push(b.top + b.height / 2)
-    }
-    setAt(out)
-  }, [host, rows, seen, tick])
-  return (
-    <>
-      {at.map((y) => (
-        <i key={y} className={styles.dot} style={{ top: y }} aria-hidden />
-      ))}
     </>
   )
 }

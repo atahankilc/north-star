@@ -112,12 +112,14 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
 
 ## 4. The formats
 
-_Looks (O4, mocked in `docs/specs/onboarding-preview/`; each frame has 2–3 options, the user picks, Q-028). For all of
-them: a demo is 16:10 everywhere (as scenes are authored, §6.2; no 4:3), and what it is (`▸ LIVE DEMO · <scene>`) and
+_Looks (O4, mocked in `docs/specs/onboarding-preview/` with 2–3 options per frame; the user picked `a` for every
+frame, D-316, Q-028: the welcome the wizard window, the lesson the prompt card, the kind guide the glued column, `?` the
+finder's twin; the others were deleted from the code, the preview keeps them as the record). For all of them: a demo is 16:10 everywhere (as scenes are authored, §6.2; no 4:3), and what it is (`▸ LIVE DEMO · <scene>`) and
 its `[❚❚]` sit in a strip under the scene, never on it. Ways out (`skip`, `close`, `×`, `hide guide`, `don't show tips`)
-are `--fg-muted` (≥ 4.5:1 both themes), quiet by where they sit. The ink options (welcome:b, lesson:b, kind:b) need a
-new token, **`--ink-shade`** (dark `rgba(0,0,0,.9)`, light `rgba(245,245,245,.92)`), drawn as one layer under all the
-text (each block's shade a `::before` at z −1, feathered `0 0 18px 12px`), so no shade paints over the line before it._
+are `--fg-muted` (≥ 4.5:1 both themes), quiet by where they sit. Ink with no box round it (the kind guide's `? brings it back` line, the nudge, the empty
+hints) sits on the token **`--ink-shade`** (dark `rgba(0,0,0,.9)`, light `rgba(245,245,245,.92)`), drawn as one layer
+under all the text (each block's shade a `::before` at z −1, feathered `0 0 18px 12px`), so no shade paints over the
+line before it._
 
 ### 4.1 The welcome (once per person, on their first canvas)
 A modal in the middle (the wizard shade, z 40, `role="dialog"`), framed like the wizards: `01 / 04` in magenta at the
@@ -448,7 +450,7 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
 1. Data + audience + progress + rules (+ tests, not deployed).
 2. Events, queue, `?` skeleton, `check:lessons`.
 3. The coach surfaces (welcome, lesson card, kind guide, what's new, nudge, `?`) on placeholder demos; a design pass
-   with a preview of options first (the user decides the look later; the run builds the recommended one).
+   with a preview of options first (the user picked `a` for every frame, D-316).
 4. The director + fixtures + scene tooling (seek, poster, loop, headless check).
 5. Lessons by area, each with its scenes: canvas & pieces → planes & cards → links → text → matrix & table →
    documents → decks & days → together → canvases & settings → workspaces page & empty states.
@@ -481,13 +483,12 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
   ships with its lesson in `lessons.ts` and a line in `releases.ts`, `check:lessons` passing; until onboarding is
   built, in onboarding-lessons.md. **Not the agent while it's being built**: a lesson's demo is drawn from the
   finished components, so the agent's lessons come once its UI is done.
-- **Q-028 · the look: decided by the user in the morning, from the real thing.** The user (2026-10-29, away for the
-  night): "build every option for each if needed, I don't care". So the run **builds all 2–3 options** of each frame
-  (the welcome modal, the lesson card, the kind guide, the `?` guide) as real components, switchable live with a
-  **dev-only** switch (`window.__onboardingLook = { welcome: 'b', lesson: 'a', … }` and `?look=welcome:b,lesson:a` in
-  the URL; never in Settings, never in production builds), the recommended one the default. The shots gallery shows
-  every lesson in the recommended look and each frame in every option, side by side. The lessons are data drawn by
-  those frames, so every option shows every lesson. In the morning the user picks; the others are deleted.
+- **Q-028 · answered 2026-10-29 (D-316): `a` for all four frames.** The user (away for the night) had said "build
+  every option for each if needed, I don't care", so the run built all 2–3 options of each frame as real components
+  behind a dev-only switch. In the morning the user picked from the preview and the built components: the welcome
+  `a` (the wizard window), the lesson `a` (the prompt card), the kind guide `a` (the glued column), `?` `a` (the
+  finder's twin). The other options and the switch were deleted from the code; `docs/specs/onboarding-preview/` keeps
+  them as the record of what was weighed.
 
 ---
 

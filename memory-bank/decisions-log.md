@@ -5800,5 +5800,26 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
   kabuk"): a scene shows the real part being talked about, in place, and only as much of the app as needed; a fake
   cursor moving like a person sends real clicks, so the real menu opens and the real fit glides; cause then effect;
   one idea, 3–8 s; checked by eye from frame strips (onboarding.md §6.2b). A `side-nav` lesson walks its tools.
-- *Open:* Q-028 (the look): every option built, the user picks in the morning.
+- *Answered:* Q-028 by D-316 (look `a` for every frame, the others deleted).
 - *Not yet:* everything: onboarding-run.md's steps O0–O16.
+
+### D-316 · 2026-10-29 · The onboarding's look: `a` for every frame (Q-028)
+**Each coach frame keeps its look `a`; the other options are deleted.** The welcome and what's new are the wizard
+window (the wizards' frame, the pages as tabs, the demo on top, words on black); a lesson is the prompt card
+(`┌ LESSON · FOCUS`, the right panel's magenta corner marks, a straight lead with a square tip); the kind guide is the
+glued column (the `+` menu gets wider, one panel split by a hairline, its height the menu's floor); `?` is the finder's
+twin (a list).
+- *Why:* the user picked `a` for all four from the preview (docs/specs/onboarding-preview/) and the built components,
+  as D-315 planned (every option built overnight, the user picks in the morning). They were also the run's
+  recommendation.
+- *Alternatives (built, then deleted):* welcome b, ink on the page (the demo a piece, the words ink under it); welcome
+  c, a transcript (a terminal log of the pages, the page typed out); lesson b, a margin note (ink, a magenta hairline
+  down its left); lesson c, a drawer (hanging out of its anchor's edge, the demo beside the words); kind b, ink beside
+  the menu (a dashed lead from the row); kind c, a man page (`PLANE(1)`, NAME / USE / KEY / SEEN, dots on unseen
+  rows); `?` b, the list with a preview of the note; `?` c, a map (every area a column, the keys as keycaps).
+- *Deleted:* `src/onboarding/looks.ts` (`useLook`, `?look=`, `window.__onboardingLook`), the b/c components and
+  their CSS in Pages, Lesson, KindGuide and Guide, and devMount's `look` argument (`show(kind, id, opts)` now).
+  `--ink-shade` stays: the nudge, the empty hints and the kind guide's `? brings it back` line use it. place.ts keeps
+  its `order`/`gap` options (tested, no longer used by a look). The preview stays as the record.
+- *Verified:* tsc, vitest 397/397, build; headless shots of the welcome, a lesson (beside, played, done, no demo),
+  the kind guide and `?` in dark and light match the earlier `a` shots (O5-final-*).

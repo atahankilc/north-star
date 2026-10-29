@@ -1,8 +1,7 @@
-/* A lesson (D-315, onboarding.md §4.3): three looks (Q-028; mocks: docs/specs/onboarding-preview/ preview.css §2).
-   Fixed to the screen at z 20 (above the HUD and the right panel, under the finder and the toast); tokens only. */
-.a,
-.b,
-.c {
+/* A lesson (D-315, onboarding.md §4.3): the prompt card (D-316; the mock: docs/specs/onboarding-preview/ preview.css
+   §2, look a). Fixed to the screen at z 20 (above the HUD and the right panel, under the finder and the toast); tokens
+   only. */
+.card {
   position: fixed;
   z-index: 20;
   color: var(--fg-dim);
@@ -29,9 +28,7 @@
   letter-spacing: var(--track-label);
 }
 
-.title,
-.titleB,
-.titleC {
+.title {
   margin: 0;
   color: var(--fg-strong);
   font-family: var(--font-display);
@@ -81,8 +78,8 @@
   position: relative;
 }
 
-/* ── a · the prompt card ────────────────────────────────────────── */
-.a {
+/* The prompt card. */
+.card {
   width: 268px;
   border: 1px solid var(--line-hover);
   background: var(--bg);
@@ -90,8 +87,8 @@
 }
 
 /* The right panel's magenta corner marks, on its left. */
-.a::before,
-.a::after {
+.card::before,
+.card::after {
   content: '';
   position: absolute;
   left: -1px;
@@ -101,17 +98,17 @@
   pointer-events: none;
 }
 
-.a::before {
+.card::before {
   top: -1px;
   border-top: 1px solid var(--accent-magenta);
 }
 
-.a::after {
+.card::after {
   bottom: -1px;
   border-bottom: 1px solid var(--accent-magenta);
 }
 
-.a[data-done] {
+.card[data-done] {
   width: auto;
 }
 
@@ -143,7 +140,7 @@
   text-overflow: ellipsis;
 }
 
-.a[data-done] .top {
+.card[data-done] .top {
   padding: 8px 12px;
 }
 
@@ -155,11 +152,11 @@
   margin: 0 10px;
 }
 
-.a .title {
+.card .title {
   margin: 12px 12px 0;
 }
 
-.a .body {
+.card .body {
   margin: 6px 12px 0;
 }
 
@@ -170,178 +167,4 @@
   margin-top: 12px;
   padding: 8px 12px 9px;
   border-top: 1px solid var(--line);
-}
-
-/* ── b · the margin note ────────────────────────────────────────── */
-.b {
-  width: 264px;
-  padding-left: 14px;
-  isolation: isolate;
-  --demo-frame: 1px solid var(--piece-edge);
-}
-
-.b[data-done] {
-  width: auto;
-}
-
-.rail {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--accent-magenta);
-}
-
-/* Each block of ink on its own feathered shade, one layer under all the text (onboarding.md §4's note). */
-.ink {
-  position: relative;
-}
-
-.ink::before,
-.halo::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: var(--ink-shade);
-  box-shadow: 0 0 18px 12px var(--ink-shade);
-  pointer-events: none;
-}
-
-:where(span.ink) {
-  display: inline-block;
-}
-
-.halo {
-  position: relative;
-  margin: 0;
-}
-
-.halo::before {
-  box-shadow: 0 0 22px 14px var(--ink-shade);
-}
-
-.small {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.smallIn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--fg-muted);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.rule {
-  width: 1.8em;
-  height: 1px;
-  background: var(--fg-dim);
-}
-
-.tt {
-  margin-top: 12px;
-}
-
-.titleB {
-  display: inline;
-}
-
-.b .body {
-  margin-top: 8px;
-}
-
-.acts {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  margin-top: 12px;
-}
-
-.chev {
-  color: var(--accent-magenta);
-}
-
-.doneLine {
-  color: var(--fg-strong);
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-}
-
-/* ── c · the drawer ─────────────────────────────────────────────── */
-.c {
-  display: grid;
-  grid-template-columns: 148px 1fr;
-  gap: 12px;
-  width: 440px;
-  padding: 10px 12px 10px 10px;
-  border: 1px solid var(--accent-magenta);
-  background: var(--bg);
-  --demo-frame: 1px solid var(--line);
-}
-
-.c[data-nodemo] {
-  grid-template-columns: 1fr;
-  width: 340px;
-}
-
-/* Joined to its anchor: the edge it hangs from (below) or rises from (above) is open. */
-.c[data-side='below'] {
-  border-top-color: transparent;
-}
-
-.c[data-side='above'] {
-  border-bottom-color: transparent;
-}
-
-.c[data-done] {
-  grid-template-columns: auto;
-  width: auto;
-  padding: 7px 12px;
-  border-color: var(--accent-magenta);
-}
-
-.demoC {
-  align-self: start;
-}
-
-.words {
-  min-width: 0;
-}
-
-.hd {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
-
-.hd button {
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.titleC {
-  margin-top: 6px;
-}
-
-.c .body {
-  margin-top: 4px;
-}
-
-.c .acts {
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.doneC {
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  white-space: nowrap;
 }

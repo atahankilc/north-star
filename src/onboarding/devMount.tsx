@@ -1,6 +1,6 @@
 // Dev only (O5's shots, never imported by the app): renders the coach into the running app, sharing its module stores
-// and its workspace store, and forces any surface in any look. From the page:
-//   const m = await import('/src/onboarding/devMount.tsx'); m.mount(); m.show('lesson', 'focus-plane', 'b')
+// and its workspace store, and forces any surface. From the page:
+//   const m = await import('/src/onboarding/devMount.tsx'); m.mount(); m.show('lesson', 'focus-plane')
 // O6 mounts <Coach /> for real (WorkspaceLayout, the workspaces page).
 import { createRoot, type Root } from 'react-dom/client'
 import { activeStore } from '../state/wsStore'
@@ -9,7 +9,6 @@ import { Coach, coachDev } from './Coach'
 import { lessonById, type Role } from './lessons'
 import { pagesFor, type Shown } from './queue'
 import { SAMPLE_RELEASES } from './releases.sample'
-import type { Look } from './looks'
 import type { Audience } from './seenMerge'
 
 let root: Root | null = null
@@ -38,12 +37,9 @@ export function unmount() {
 type Opts = { via?: 'event' | 'play'; done?: boolean; role?: Role; audience?: Audience; isNew?: boolean; kind?: string }
 type Kind = 'welcome' | 'news' | 'lesson' | 'nudge' | 'empty' | 'guide' | 'kind' | 'clear'
 
-const frameOf = (k: Kind) => (k === 'welcome' || k === 'news' ? 'welcome' : k === 'guide' ? 'guide' : k === 'kind' ? 'kind' : 'lesson')
-
-export function show(kind: Kind, id = '', look: Look = 'a', o: Opts = {}) {
+export function show(kind: Kind, id = '', o: Opts = {}) {
   const dev = coachDev.current
   if (!dev) throw new Error('mount() first')
-  ;(window as unknown as { __onboardingLook: Record<string, Look> }).__onboardingLook = { [frameOf(kind)]: look }
   dev.quiet(true)
   dev.force(null)
   dev.news(null)

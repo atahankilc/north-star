@@ -312,6 +312,8 @@ feature comes back as a piece, and check them with the user then.
   what's new after later releases (at launch everyone, old accounts too, starts new), ≤ 1 nudge a session, `?`
   replays all; seen-state per person in Firestore; demos are the real
   components on made-up data in a sealed iframe (`demo.html`), looping, paused/still under reduced motion.
+- Its look (D-316, Q-028): `a` for every frame: the welcome the wizard window, the lesson the prompt card, the kind
+  guide the glued column, `?` the finder's twin; the other options deleted (onboarding-preview/ keeps them).
 
 ## Settings
 - A modal from the gear or your square: YOU (account, display), WORKSPACE (general: name and "building" description;

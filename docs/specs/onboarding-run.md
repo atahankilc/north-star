@@ -68,7 +68,7 @@ the same time: the two leads share the repo, the emulators and the machine._
 - put the ASCII effect over text, or let a demo frame make any network request to Firebase;
 - change a rule of onboarding.md §3 without logging it under "For the user".
 When unsure: pick the choice that's easiest to undo, write it under "For the user", keep going. The questions in
-onboarding.md §11: Q-025, Q-026, Q-027 answered; Q-028: build every look option (the user's words).
+onboarding.md §11: Q-025, Q-026, Q-027 answered; Q-028 answered (D-316): `a` for every frame, the others deleted.
 
 ### 1.4 After every step
 1. Checks: `npm run build`; `npm run check:lessons` (from O2); `npx vitest run` (once it exists); `npm run test:rules`
@@ -87,7 +87,7 @@ onboarding.md §11: Q-025, Q-026, Q-027 answered; Q-028: build every look option
 | O2 | **Lessons as data + lint**: `lessons.ts` (from onboarding-lessons.md, all of it), `releases.ts` (from state-history.md, D-291 → newest), `scripts/check-lessons.mjs` + the `check:lessons` script | `npm run check:lessons` passes and **fails** on 5 planted mistakes (a missing scene, a 30-word body, a cycle in `after`, a bad role, "kanban" on screen), each reverted |
 | O3 | **Events + queue**: `events.ts` (store subscriptions + URL; `onTracked` if S3 is in), `queue.ts` (busy, one at a time, cooldown, retire on done, tipsOff, nudge budget) | unit tests for the queue rules; a headless run logging the events of: open a workspace, `+` a plane, edit, focus, a card, a link, a deck task drag (each fires once, in order) |
 | O4 | **Design pass**: `docs/specs/onboarding-preview/index.html` (the app's tokens and fonts, no external links, like timeline-preview) with **2–3 options** each for the welcome, the lesson card, the kind guide and the `?` guide, one marked recommended with why. **All options get built in O5** (Q-028: the user said build them all), so they must be really different, not shades of one | the preview opens locally; the reviewer checks the options are really different and on-brand (DESIGN.md, consistency.md, D-222 prompt look, D-219 panel look) |
-| O5 | **The coach surfaces, every look option of O4** (a dev-only switch, onboarding.md §11 Q-028; the recommended one the default), on placeholder demos: `Coach.tsx` (portal, z, `role="dialog"`, pointerdown stopped), `Welcome`/`WhatsNew` (one Pages component), `Lesson` (anchored, lead line, never over its anchor), `KindGuide` (glued to the `+` menu), `Nudge`, `Guide` (`?`), `Demo.tsx` (the iframe host: postMessage, pause, 3 loops, poster, reduced motion) | shots of every surface in every option, dark + light; the switch absent from a production build (`npm run build`, grep `dist/`); keyboard only: open, page, close, focus back; reduced motion: no loop; `?` free while typing (ignored in inputs) |
+| O5 | **The coach surfaces, every look option of O4** (a dev-only switch, onboarding.md §11 Q-028; the recommended one the default; since D-316 only `a` is left and the switch is gone), on placeholder demos: `Coach.tsx` (portal, z, `role="dialog"`, pointerdown stopped), `Welcome`/`WhatsNew` (one Pages component), `Lesson` (anchored, lead line, never over its anchor), `KindGuide` (glued to the `+` menu), `Nudge`, `Guide` (`?`), `Demo.tsx` (the iframe host: postMessage, pause, 3 loops, poster, reduced motion) | shots of every surface in every option, dark + light; the switch absent from a production build (`npm run build`, grep `dist/`); keyboard only: open, page, close, focus back; reduced motion: no loop; `?` free while typing (ignored in inputs) |
 | O6 | **Mount + anchors**: `<Coach />` in WorkspaceLayout and Workspaces (one line each, after asking b2 and the session with uncommitted edits there), `data-learn` anchors in **one** pass, the `plus-open` / `context-menu` / `menu-open` one-line hooks | the app's own behaviour unchanged (smoke of focus, `+`, menus, drags, finder, Esc chains); every anchor named in lessons.ts found by `check:lessons` |
 | O7 | **Director + fixtures + scene tooling**: `director.ts` (steps API, clock, seek, loop with the cell break/rebuild), `fixtures/pazar.ts` (onboarding.md §6.4), the fake cursor and key chips, a headless `scenes check` (loads, 0 requests, poster, loop equality, dark/light) | the scenes check passes on 3 scenes: `canvas-fit` and `sidenav-plus` (the whole screen, a real click opening the real `+` menu, a real fit glide) and `deck-drag`; the reviewer judges their 8-frame strips and live loops against onboarding.md §6.2b and fails anything below it |
 | O8 | **Start**: welcome (4 pages + variants: invited, viewer), empty canvas, workspaces empty state, join pending; their scenes | flow: a fresh emulator user → workspaces empty state → create → welcome → empty-canvas hint gone at the first piece; Bob invited into Alice's filled workspace → the invited variant; Carol viewer → the viewer variant |
@@ -170,7 +170,8 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   (inside the `+` menu's panel, never takes its keys), Guide (`?`: areas folding, keys, tips, plays a lesson), words.ts,
   guideModel.ts, keys.ts, `--ink-shade`; dev helpers devMount.tsx / devGuides.tsx · reviewer: 2 rounds (esc closes a
   lesson first, `?` → Enter reaches it, focus returns, sign-out stops the seen-state, panels never covered, tokens) ·
-  shots: /…/tmp/shots/O5a-*, O5b-* (to move into the gallery) · not mounted yet (O6).
+  shots: /…/tmp/shots/O5a-*, O5b-* (to move into the gallery) · not mounted yet (O6). Note (D-316): the user then
+  picked `a` for every frame; b/c, looks.ts and its switch are deleted, so the switch named here no longer exists.
 - O6 · (this commit) · `<Coach />` mounted in the workspace and (lazily) on the workspaces page; every ANCHORS name as a
   `data-learn` (39) and every view-only event as a one-line `learn()` (pending: 0 anchors, 0 events); the side nav's
   `?` button (GuideButton, its dot); window capture key handlers skip `[aria-modal=true], [data-coach]` (Backspace on
@@ -184,13 +185,12 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
 _(none)_
 
 ### For the user (in the morning)
-- Uncommitted `setFitter`/`fitHere` edits (src/state/canvasView.ts, CanvasView.tsx, WorkspaceLayout.tsx) and a 2-line
-  presence-test move in tests/rules.test.mjs belong to no running session (asked b2, steward-50, steward-05, the audit
-  session: not theirs). The run never commits or reverts them; O6 adds its one-line hooks beside them and commits only
-  its own lines. Commit or drop them yourself.
+- (Done 2026-10-29 ~09:50) the `setFitter`/`fitHere` edits were the user's own; committed as fc76174 at the user's
+  request by the audit session.
 - Deploy the rules once O1 is committed and you've read them: `npm run test:rules`, then
   `npx firebase deploy --only firestore:rules --project north-star-db` (until then, seen-state lives in the browser).
-- **Pick a look** (Q-028): every option is built; compare them in the shots gallery or live with `?look=…` (onboarding.md §11). Say which per frame; the others get deleted.
+- (Done 2026-10-29 ~09:45) **Looks picked** (Q-028): the user chose `a` for all four frames from the preview; b/c being
+  deleted (D-316).
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
@@ -201,7 +201,7 @@ _(the reviewers' and builders' "could be better", not done yet)_
 - O5: the first esc goes to window handlers set up before the lesson (a selected task/card, following), then the
   lesson; `keys: ? → tips off` turns off every tip (give the kind guide its own switch in `?`?); progress.ts imports
   firebase/auth directly: a `watchUser()` in src/data/auth.ts would be cleaner.
-- O5: the coach ships all three looks of each frame (~517 KB JS + 138 KB CSS unminified) until the user picks.
+- (Resolved by D-316) O5 shipped all three looks of each frame until the user picked; only `a` is left.
 - O1: `roleHere`/`canEditHere` in src/onboarding/audience.ts copy `roleOf`/`canEditIn` (src/data/workspaces.ts, which
   loads Firestore): move them into a pure module under src/model once the agent run's model split is committed.
 - O1: the rules bound `seen`/`armed` counts, not their values' sizes (rules can't loop); only your own doc is at stake.

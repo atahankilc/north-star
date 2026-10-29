@@ -1,5 +1,5 @@
 /* The `?` guide (D-315, onboarding.md §4.6): the finder's twin (Finder.module.css), a modal at z 40 over the scrim.
-   Three looks (Q-028): a the list, b the list and a preview, c the map. */
+   A list (D-316). */
 .scrim {
   position: fixed;
   inset: 0;
@@ -22,14 +22,6 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   transform: translate(-50%, -50%);
-}
-
-.guide[data-look='b'] {
-  width: min(752px, calc(100vw - 2 * var(--space-4)));
-}
-
-.guide[data-look='c'] {
-  width: min(1016px, calc(100vw - 2 * var(--space-4)));
 }
 
 /* Magenta marks on the top corners, as the finder's. */
@@ -277,16 +269,12 @@
   color: var(--accent-cyan);
 }
 
-.kbd,
-.k {
+.kbd {
   padding: 0 3px;
   border: 1px solid var(--line-hover);
   color: var(--fg);
   font: 0.9em var(--font-mono);
   white-space: nowrap;
-}
-
-.kbd {
   flex: none;
   min-width: 2ch;
   text-align: center;
@@ -324,259 +312,4 @@
 
 .sp {
   flex: 1;
-}
-
-/* ── b · the preview half ── */
-.preview {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  gap: var(--space-2);
-  width: 330px;
-  padding: var(--space-3);
-  overflow-y: auto;
-  border-left: 1px solid var(--line);
-}
-
-.pg {
-  display: flex;
-  gap: var(--space-2);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-}
-
-.pg [data-on] {
-  color: var(--accent-magenta);
-}
-
-.lab {
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
-
-.noDemo {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 16 / 10;
-  border: 1px dashed var(--line);
-  color: var(--fg-faint);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
-
-.pvTitle {
-  margin: var(--space-1) 0 0;
-  color: var(--fg-strong);
-  font: 500 var(--text-lg) / 1.2 var(--font-display);
-  letter-spacing: var(--track-title);
-}
-
-.pvBody {
-  margin: 0;
-  color: var(--fg-muted);
-  font: var(--text-sm) / 1.5 var(--font-display);
-}
-
-.pvList {
-  margin: 0;
-  padding: 0;
-  color: var(--fg-muted);
-  font-size: var(--text-xs);
-  list-style: none;
-}
-
-.pvList li {
-  padding: 2px 0;
-}
-
-.dim {
-  color: var(--fg-dim);
-}
-
-.bigKey {
-  align-self: flex-start;
-  margin-top: var(--space-2);
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--line-hover);
-  border-bottom-width: 2px;
-  background: var(--bg-raised);
-  color: var(--fg-strong);
-  font: var(--text-lg) var(--font-mono);
-}
-
-.play {
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent-cyan);
-  font: inherit;
-  cursor: pointer;
-}
-
-.play::before {
-  content: '[';
-  color: var(--line-hover);
-}
-
-.play::after {
-  content: ']';
-  color: var(--line-hover);
-}
-
-/* ── c · the map: every area a column of the ledger (`02 CANVAS ──── 6/9`), a bar of cells for what's seen ── */
-.cols {
-  display: grid;
-  flex: 1;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0 18px;
-  min-height: 0;
-  padding: 14px var(--space-4) var(--space-4);
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.col {
-  min-width: 0;
-  margin-bottom: 14px;
-}
-
-.col[data-keys] {
-  grid-column: 1 / -1;
-  margin-bottom: 0;
-}
-
-.ch {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-1);
-  color: var(--fg);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.num {
-  color: var(--accent-magenta);
-}
-
-.rl {
-  flex: 1;
-  height: 1px;
-  background: var(--line-hover);
-}
-
-.c {
-  color: var(--fg-dim);
-}
-
-.bar {
-  display: flex;
-  gap: 1px;
-  margin: 0 0 6px;
-}
-
-.bar i {
-  flex: 1;
-  height: 3px;
-  background: var(--wash-3);
-}
-
-.bar i[data-on] {
-  background: var(--fg-dim);
-}
-
-.bar i[data-new] {
-  background: var(--accent-magenta);
-}
-
-.preview .bar {
-  margin: var(--space-1) 0;
-}
-
-.r {
-  position: relative;
-  display: flex;
-  gap: 6px;
-  padding: 2px 0 2px 2px;
-  color: var(--fg-muted);
-  font-size: var(--text-xs);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.r .st {
-  width: 1em;
-}
-
-.rTitle {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.r:hover {
-  color: var(--fg);
-}
-
-.r[data-picked] {
-  background: var(--wash-2);
-  color: var(--fg-strong);
-}
-
-.r[data-picked]::before {
-  content: '›';
-  position: absolute;
-  left: -10px;
-  color: var(--accent-magenta);
-}
-
-.r[data-dim],
-.r[data-off] {
-  color: var(--fg-dim);
-}
-
-.newText {
-  color: var(--accent-magenta);
-  letter-spacing: var(--track-label);
-}
-
-.keys {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-}
-
-.keyCap {
-  position: relative;
-  color: var(--fg-muted);
-  font-size: var(--text-xs);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.keyCap[data-picked] {
-  background: var(--wash-2);
-  color: var(--fg-strong);
-}
-
-.keyCap[data-picked]::before {
-  content: '›';
-  position: absolute;
-  left: -10px;
-  color: var(--accent-magenta);
-}
-
-.keys .r[data-dim] {
-  display: inline-flex;
-}
-
-/* c: the lesson showing now, above the map (onboarding.md §3.1.9). */
-.nowMap {
-  flex: none;
-  padding-bottom: var(--space-1);
-  border-bottom: 1px solid var(--line);
 }

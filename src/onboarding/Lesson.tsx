@@ -3,19 +3,15 @@
 // no anchor or no room: the bottom-middle card. z 20, announced politely, never taking focus from the canvas. Pages
 // `1 / 3` with `[next ›]` / `[got it]`, `×`, a quiet `don't show tips`; done by doing it: `✓ done` where it was until the
 // queue lets it go (then it breaks cell by cell). Played from `?`: in the middle, a dialog with `[‹ guide]`.
-// Three looks (Q-028), `useLook('lesson')`:
-//   a · the prompt card: `┌ LESSON · FOCUS`, the right panel's magenta corner marks, a straight lead with a square tip.
-//   b · the margin note: ink, no box, a magenta hairline down its left that the lead joins; each block on --ink-shade.
-//   c · the drawer: hangs out of its anchor's edge (rises from the dock's or toast's), joined, the demo beside the words.
+// The prompt card (D-316): `┌ LESSON · FOCUS`, the right panel's magenta corner marks, a straight lead with a square tip.
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Appear } from '../ui/Appear'
 import { DecodeText } from '../ui/DecodeText'
 import { useCanvasView } from '../state/canvasView'
-import { useLook, type Look } from './looks'
 import { Demo } from './Demo'
 import { Btn, keepFocus, stopCanvas, trapTab, useDialogFocus, Words } from './Pages'
-import { place, type Placed, type Rect, type Side } from './place'
+import { place, type Placed, type Rect } from './place'
 import { fill, lessonName, plain, type Fill } from './words'
 import type { CloseHow, Shown } from './queue'
 import styles from './Lesson.module.css'
@@ -89,27 +85,13 @@ function obstacles(anchor: HTMLElement | null) {
   return { soft, hard }
 }
 
-// Where the card goes for this look (c: joined to its anchor's edge).
-function where(look: Look, anchorName: string | undefined, anchor: HTMLElement | null, size: { w: number; h: number }): Placed {
+// Where the card goes.
+function where(anchorName: string | undefined, anchor: HTMLElement | null, size: { w: number; h: number }): Placed {
   const view = { w: innerWidth, h: innerHeight }
   const focus = new URLSearchParams(location.search).has('focus')
   const dockEl = findAnchor('dock')
   const { soft, hard } = obstacles(anchor)
-  const base = { anchor: anchor ? rectOf(anchor) : null, size, view, soft, hard, focus, bottomDock: dockEl ? rectOf(dockEl) : null }
-  if (look === 'c') {
-    const rises = anchorName === 'dock' || anchorName === 'toast'
-    const order: Side[] = rises ? ['above', 'below'] : ['below', 'above']
-    // Inside a piece (a console), it hangs out of the piece's own bottom edge, under the anchor.
-    const piece = anchor?.parentElement?.closest('[data-learn="piece"]')
-    const a = base.anchor
-    if (piece && a && !rises) {
-      const p = rectOf(piece)
-      base.anchor = { ...a, h: Math.max(a.h, p.y + p.h - a.y) }
-      base.hard = base.hard.filter((h) => h.x !== p.x || h.y !== p.y || h.w !== p.w || h.h !== p.h)
-    }
-    return place({ ...base, order, gap: 0 })
-  }
-  return place({ ...base, dock: anchorName === 'dock' })
+  return place({ anchor: anchor ? rectOf(anchor) : null, size, view, soft, hard, focus, bottomDock: dockEl ? rectOf(dockEl) : null, dock: anchorName === 'dock' })
 }
 
 type Props = {
@@ -124,7 +106,6 @@ type Props = {
 }
 
 export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: Props) {
-  const look = useLook('lesson')
   const played = shown.via === 'play'
   const pages = shown.pages
   const [i, setI] = useState(0)
@@ -151,9 +132,9 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
     const anchor = findAnchor(anchorName, target)
     if (anchor) hadAnchor.current = anchor
     const size = { w: card.current.offsetWidth, h: card.current.offsetHeight }
-    const next = where(look, anchorName, anchor, size)
+    const next = where(anchorName, anchor, size)
     setPos((p) => (p && p.x === next.x && p.y === next.y && p.at === next.at && (p.lead?.x2 ?? 0) === (next.lead?.x2 ?? 0) && (p.lead?.y2 ?? 0) === (next.lead?.y2 ?? 0) ? p : next))
-  }, [i, look, sample, played, done, anchorName, target])
+  }, [i, sample, played, done, anchorName, target])
 
   // A pan or zoom ended, the window resized: sample the anchor again. Its anchor gone (its piece deleted): closed.
   useEffect(() => {
@@ -207,17 +188,17 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
     onTipsOff()
     onClose('skipped')
   }
-  const demoW = look === 'a' ? 246 : look === 'b' ? 250 : 148
+  const demoW = 246
   const count = `${i + 1} / ${pages.length}`
-  const common = { look, name, title, body, page, count, last, forward, tipsOff, onClose, onGuide: played ? onGuide : undefined, isNew: shown.isNew, demoW, first }
+  const common = { name, title, body, page, count, last, forward, tipsOff, onClose, onGuide: played ? onGuide : undefined, isNew: shown.isNew, demoW, first }
 
-  const inner = done ? <Done look={look} name={name} title={title} /> : <Card {...common} />
+  const inner = done ? <Done name={name} /> : <Card {...common} />
 
   if (played) {
     return createPortal(
       <div className={styles.shade} data-coach {...stopCanvas} {...keepFocus}>
         <Middle root={root} first={first} onClose={onClose} onGuide={onGuide} forward={forward}>
-          <Appear as="section" className={styles[look]} data-look={look} role="dialog" aria-modal="true" aria-label={`lesson: ${plain(title)}`} data-played>
+          <Appear as="section" className={styles.card} role="dialog" aria-modal="true" aria-label={`lesson: ${plain(title)}`} data-played>
             {inner}
           </Appear>
         </Middle>
@@ -234,8 +215,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
       <Appear
         as="section"
         elRef={card}
-        className={styles[look]}
-        data-look={look}
+        className={styles.card}
         data-coach
         data-side={side}
         data-done={done || undefined}
@@ -298,7 +278,6 @@ function LeadLine({ lead }: { lead: NonNullable<Placed['lead']> }) {
 }
 
 type CardProps = {
-  look: Look
   name: string
   title: string
   body: string
@@ -316,20 +295,14 @@ type CardProps = {
 
 const NewChip = () => <span className={styles.newChip}>NEW</span>
 
-function Card(p: CardProps) {
-  if (p.look === 'b') return <CardB {...p} />
-  if (p.look === 'c') return <CardC {...p} />
-  return <CardA {...p} />
-}
-
 const Title = ({ text, className }: { text: string; className: string }) => (
   <h3 className={className}>
     <DecodeText key={text} text={plain(text)} />
   </h3>
 )
 
-// a · the prompt card.
-function CardA({ name, title, body, page, count, last, forward, tipsOff, onClose, onGuide, isNew, demoW, first }: CardProps) {
+// The prompt card.
+function Card({ name, title, body, page, count, last, forward, tipsOff, onClose, onGuide, isNew, demoW, first }: CardProps) {
   return (
     <>
       <div className={styles.top}>
@@ -368,135 +341,8 @@ function CardA({ name, title, body, page, count, last, forward, tipsOff, onClose
   )
 }
 
-// b · the margin note.
-function CardB({ name, title, body, page, count, last, forward, tipsOff, onClose, onGuide, isNew, demoW, first }: CardProps) {
-  return (
-    <>
-      <span className={styles.rail} aria-hidden />
-      <div className={styles.small}>
-        <span className={`${styles.ink} ${styles.smallIn}`}>
-          <span className={styles.num}>{count.replace(/ /g, '')}</span>
-          <span className={styles.rule} />
-          {name} · lesson
-          {isNew && <NewChip />}
-        </span>
-        <span className={styles.sp} />
-        <span className={styles.ink}>
-          <Btn bare tone="out" onClick={() => onClose('closed')} label="close">
-            ×
-          </Btn>
-        </span>
-      </div>
-      {page.scene && (
-        <div className={`${styles.demo} ${styles.halo}`}>
-          <Demo scene={page.scene} width={demoW} />
-        </div>
-      )}
-      <div className={styles.tt}>
-        <h3 className={styles.titleB}>
-          <span className={styles.ink}>
-            <DecodeText key={title} text={plain(title)} />
-          </span>
-        </h3>
-      </div>
-      <p className={styles.body}>
-        <span className={styles.ink}>
-          <Words text={body} />
-        </span>
-      </p>
-      <div className={styles.acts}>
-        {onGuide && (
-          <span className={styles.ink}>
-            <Btn bare onClick={onGuide} elRef={first}>
-              ‹ guide
-            </Btn>
-          </span>
-        )}
-        <span className={styles.ink}>
-          <Btn bare tone="hot" onClick={forward} elRef={onGuide ? undefined : first}>
-            {last ? 'got it' : 'next'}
-            <span className={styles.chev}> ›</span>
-          </Btn>
-        </span>
-        <span className={styles.sp} />
-        <span className={styles.ink}>
-          <Btn bare tone="out" onClick={tipsOff}>
-            don't show tips
-          </Btn>
-        </span>
-      </div>
-    </>
-  )
-}
-
-// c · the drawer.
-function CardC({ name, title, body, page, count, last, forward, tipsOff, onClose, onGuide, isNew, demoW, first }: CardProps) {
-  return (
-    <>
-      {page.scene && (
-        <div className={styles.demoC}>
-          <Demo scene={page.scene} width={demoW} compact />
-        </div>
-      )}
-      <div className={styles.words}>
-        <div className={styles.hd}>
-          <span className={styles.num}>{count}</span>
-          <span>{name}</span>
-          {isNew && <NewChip />}
-          <span className={styles.sp} />
-          <Btn tone="out" onClick={() => onClose('closed')} label="close">
-            ×
-          </Btn>
-        </div>
-        <Title text={title} className={styles.titleC} />
-        <p className={styles.body}>
-          <Words text={body} />
-        </p>
-        <div className={styles.acts}>
-          {onGuide && (
-            <Btn onClick={onGuide} elRef={first}>
-              ‹ guide
-            </Btn>
-          )}
-          <Btn tone="go" onClick={forward} elRef={onGuide ? undefined : first}>
-            {last ? 'got it' : 'next ›'}
-          </Btn>
-          <span className={styles.sp} />
-          <Btn bare tone="out" onClick={tipsOff}>
-            don't show tips
-          </Btn>
-        </div>
-      </div>
-    </>
-  )
-}
-
 // `✓ done`, where the card was, until the queue lets it go.
-function Done({ look, name, title }: { look: Look; name: string; title: string }) {
-  if (look === 'b')
-    return (
-      <>
-        <span className={styles.rail} aria-hidden />
-        <div className={styles.small}>
-          <span className={`${styles.ink} ${styles.smallIn}`}>
-            <span className={styles.ok}>✓</span>
-            <span className={styles.rule} />
-            {name} · lesson
-          </span>
-        </div>
-        <div className={styles.doneLine}>
-          <span className={styles.ink}>
-            <span className={styles.ok}>done</span> · {plain(title)}
-          </span>
-        </div>
-      </>
-    )
-  if (look === 'c')
-    return (
-      <div className={styles.doneC}>
-        <span className={styles.ok}>✓ done</span> · {name}
-      </div>
-    )
+function Done({ name }: { name: string }) {
   return (
     <div className={styles.top}>
       <span>┌ lesson</span>·<span className={styles.k}>{name}</span>

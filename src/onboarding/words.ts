@@ -29,7 +29,7 @@ export const plain = (s: string) => s.replace(/`/g, '')
 // A lesson's name in its label (`LESSON · FOCUS PLANE`): its id in words.
 export const lessonName = (id: string) => id.replace(/[-_]+/g, ' ')
 
-// One page of the welcome or what's new, as its looks draw it.
+// One page of the welcome or what's new, as the window draws it.
 export type PageModel = {
   // The short name in the tabs / the log (`canvas`, `decks and days`, `+ 2 more`).
   tab: string
