@@ -1,6 +1,6 @@
 // Settings (D-054, D-064, D-097): your square and the gear, bottom left (D-175); either opens a modal with a grouped side
 // menu on the left and the chosen page on the right: you (account, display) and the current workspace (general, people,
-// export, D-246). The assistant's pages (keys, usage) are archived (D-177).
+// export, D-246). The agent's page (your own key, the model, usage: S14, D-312) is under you.
 // A native <dialog>: focus stays inside, Escape and the backdrop close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../data/auth'
@@ -8,6 +8,7 @@ import { usePresence } from '../data/presence'
 import { useDisplay, type BackgroundPref } from '../state/display'
 import { useMotion, type MotionPref } from '../state/motion'
 import { themeAccent, useTheme, type ThemePref } from '../state/theme'
+import { AgentSettings } from '../agent/ui/AgentSettings'
 import { AsciiButton } from './AsciiButton'
 import { Choice } from './Choice'
 import styles from './Settings.module.css'
@@ -18,19 +19,24 @@ const THEME: readonly ThemePref[] = ['dark', 'light', 'system']
 
 // The workspace's own pages; WorkspaceLayout renders each (D-097).
 export type WorkspacePage = 'general' | 'people' | 'export'
-type Page = 'account' | 'display' | WorkspacePage
+type Page = 'account' | 'display' | 'agent' | WorkspacePage
 type Group = 'you' | 'workspace'
 
 // The menu, in groups (D-097): you, this workspace.
 const PAGES: { id: Page; label: string; title: string; about: string; group: Group }[] = [
   { id: 'account', label: 'account', title: 'Account', about: 'Who you are signed in as.', group: 'you' },
   { id: 'display', label: 'display', title: 'Display', about: 'How North Star looks and moves in this browser.', group: 'you' },
+  { id: 'agent', label: 'the agent', title: 'The agent', about: 'Your own OpenAI key and the model the agent uses, in this browser.', group: 'you' },
   { id: 'general', label: 'general', title: 'Workspace', about: 'Its name and what the team is building.', group: 'workspace' },
   { id: 'people', label: 'people', title: 'People', about: 'Who is in this workspace and how others get in.', group: 'workspace' },
   { id: 'export', label: 'export', title: 'Export', about: 'Take the workspace with you as a file.', group: 'workspace' },
 ]
 
 const WORKSPACE_PAGES: readonly Page[] = ['general', 'people', 'export']
+
+// Opens Settings on a page from elsewhere (the agent's `settings → the agent`): heard by the mounted SettingsButton.
+const OPEN_AT = 'north-star:settings-at'
+export const openSettingsAt = (page: 'agent' | 'account' | 'display') => window.dispatchEvent(new CustomEvent(OPEN_AT, { detail: page }))
 
 type Props = {
   // The current workspace's pages, if there is one.
@@ -53,6 +59,22 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
     if (open && !d.open) d.showModal()
     if (!open && d.open) d.close()
   }, [open])
+
+  // Opened (on a page or not): the keyboard on that page's menu item, so only one item reads as current.
+  useEffect(() => {
+    if (!open) return
+    const r = requestAnimationFrame(() => dialog.current?.querySelector<HTMLElement>('[aria-current="page"]')?.focus())
+    return () => cancelAnimationFrame(r)
+  }, [open])
+
+  useEffect(() => {
+    const on = (e: Event) => {
+      setPage((e as CustomEvent<Page>).detail)
+      setOpen(true)
+    }
+    window.addEventListener(OPEN_AT, on)
+    return () => window.removeEventListener(OPEN_AT, on)
+  }, [])
 
   if (!user) return null
   const who = user.name || user.email || 'Account'
@@ -153,6 +175,8 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
                   <BackgroundChoice />
                 </Section>
               )}
+
+              {current.id === 'agent' && <AgentSettings />}
 
               {workspace && WORKSPACE_PAGES.includes(current.id) && workspace(current.id as WorkspacePage)}
             </div>

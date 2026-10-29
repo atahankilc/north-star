@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S14 next (the UI: bottom-right box → column, steps live, stop, [undo], Settings → the agent, empty state, presence; screenshots per 1.6). S1–S13 done.
+S15 next (the preview §4.5: store swap to the changeset's projected ws + diff marks on every kind, change list with ticks, stepper gliding to each, app locked; one shot per kind; applied = previewed). S1–S14 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -205,6 +205,15 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   real apply + history undo + "applied = previewed" · reviewer: 1 fix round (redo lost a doc; `from` as canvas; no
   lock release paths; a stale accept stuck the person; untick follow-up silent) · eval 42/46 + 4 unjudged, `--wrong`
   0/46, same on the emulator.
+- S14 · see `git log --grep "Agent S14"` · `src/agent/ui/` (Agent.tsx: the corner box (⌘J, `/`, Esc) → a resizable
+  right column (`--ai-w`; the card panel sits left of it), numbered turns, live steps, cited links (goTo), tokens,
+  plain errors, stop, scope line, a ledger change list with [apply ↵]/[discard esc], status lines with [undo];
+  AgentGhost (the agent's marks, local only); AgentSettings (Settings → the agent: own key in this browser, masked,
+  check, model, effort, usage, keys); agentStore (the driver: workflow effects, locks released in finally/unmount/
+  workspace change); suggest (first asks)); viewer gets no change tool; screenshots: docs/specs/agent-shots/ (18
+  parts × dark/light, index.html) · reviewer: 1 fix round (marks over names and on wrong targets, undo label,
+  keyboard not handed back, Settings double selection, stub in usage, viewer raw text; design: Geist asks, numbered
+  turns, ledger list, status lines), then pass (design B/B+).
 
 ### Stuck
 _(none)_
@@ -221,6 +230,11 @@ _(questions, choices made on their behalf, anything that needs a key or a design
 - S10 (chosen): no real workspace is exported for fixtures (never touch live data); the three fixtures are generated
   (small, medium, big ≈ 1500 cards). Token counts are an estimate (chars/3.6, no tokenizer dependency); check the
   15k-token map target with a real tokenizer once a key is in.
+- S14, for the user: others can't see the agent yet (only you): showing it needs an `agent: {state, at}` field under
+  your own presence node + a database.rules.json rule + a test. The `?` guide's key list lacks ⌘J and `/`
+  (src/onboarding/keys.ts, the onboarding session's). The canvas re-centres when the column opens instead of keeping
+  its left edge. On Windows/Linux Ctrl+J replaces the browser's Downloads shortcut. The agent's marks can land on the
+  side nav when a plane runs under it.
 - Chosen in S12 (easy to undo): big jobs still plan first and wait for "go" (agent.md §4.10); "big" = several
   pieces, more than ~10 changes, or open-ended; a clearly specified small change runs at once. Evals play a
   scripted "go" turn for those tasks. The OpenAI adapter replays earlier output items under `store: false` (nothing
@@ -304,3 +318,9 @@ _(the reviewers' and builders' "could be better", not done yet)_
   (`history.reset` doesn't clear read-only locks); workflow `fail` from the preview should discard or knowingly keep
   `env.changes` (today it keeps them while the state says nothing is pending); the stale-accept text "there is no card
   something that is gone" → "that card is gone".
+- S14 reviewer ideas (bigger, for the user's design session): hovering a citation lights that card on the canvas
+  before the click; steps as a live trace decoding cell by cell, folding into `▸ 2 steps · 3.6s`; the scope line
+  clickable (`SEES [whole workspace ▾]` → this plane / canvas); the closed box exactly the Finder's `>` prompt (D-222)
+  so ask and find feel like one family, a blinking `>` caret while it works; the column's resize edge usable from the
+  keyboard; wizards (centred on the whole screen) sit partly under an open column; the box doesn't close on a canvas
+  click.

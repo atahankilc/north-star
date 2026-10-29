@@ -529,7 +529,7 @@ export type Accepted =
   | { ok: false; errors: OpError[]; cs: Changeset; said: string; stale?: boolean }
 
 // Ids in a message turned into names (a card's title, a piece's or canvas's name, a text's first words, a task's
-// title); an id the workspace doesn't hold any more: "something that is gone".
+// title); an id the workspace doesn't hold any more: "something that is gone" ("there is no card <id>": "that card is gone").
 export function inNames(text: string, ws: WorkspaceCtx): string {
   const n = namedOf(ws)
   const name = (id: string): string | undefined => {
@@ -545,7 +545,9 @@ export function inNames(text: string, ws: WorkspaceCtx): string {
     if (k) return `canvas ${q(k.name, 40)}`
     return undefined
   }
-  return text.replace(/\b[A-Za-z0-9]{20}\b/g, (id) => name(id) ?? 'something that is gone')
+  // "there is no card <id>" for an id that's gone reads "that card is gone" (S14), not "there is no card something…".
+  const gone = text.replace(/\bthere is no ((?:[a-z]+ or )*[a-z]+) ([A-Za-z0-9]{20})\b/g, (m, what: string, id: string) => (name(id) ? m : `that ${what} is gone`))
+  return gone.replace(/\b[A-Za-z0-9]{20}\b/g, (id) => name(id) ?? 'something that is gone')
 }
 
 // Every remaining plan written as ONE undo step, as the agent (`apply` is the env's: the browser's writes through

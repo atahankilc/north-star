@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The agent: shots (S14)</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<style>
+@font-face { font-family: 'Geist Variable'; src: url(../../../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; }
+@font-face { font-family: 'Geist Mono Variable'; src: url(../../../node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-mono); font-size: var(--text-sm); }
+main { max-width: 1400px; margin: 0 auto; padding: 48px 32px 96px; }
+h1 { font: 500 var(--text-heading)/1.1 var(--font-display); letter-spacing: var(--track-title); color: var(--fg-strong); margin: 0 0 8px; }
+.lead { font-family: var(--font-display); color: var(--fg-muted); max-width: 820px; line-height: 1.55; margin: 0 0 40px; }
+h2 { display: flex; align-items: center; gap: 8px; margin: 56px 0 6px; font: 400 11px/1 var(--font-mono); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg-muted); }
+h2 b { color: var(--accent-magenta); font-weight: 400; }
+h2::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, var(--accent-magenta) 0 12px, var(--line) 12px); }
+.cap { font-family: var(--font-display); color: var(--fg-muted); line-height: 1.55; max-width: 900px; margin: 0 0 14px; }
+.cap em { color: var(--accent-yellow); font-style: normal; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.pair.one { grid-template-columns: 1fr; }
+figure { margin: 0; }
+figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+figcaption { margin-top: 6px; color: var(--fg-muted); font-size: var(--text-xs); }
+code { color: var(--fg-strong); }
+</style>
+</head>
+<body>
+<main>
+<h1>The agent, S14: the corner box, the column, settings</h1>
+<p class="lead">Every new part of step S14 (agent.md §4.6, §6 Phase 6), in dark and light, 1568 × 980 at 2×, on a seeded workspace
+("Pazar", the evals' medium fixture imported through the app). The agent runs on the dev stub (<code>?agentStub=1</code>): scripted
+answers on the real tools, so steps, citations, the change list and the undo are real; the wording of the answers is the stub's,
+not a model's. Open with <code>npx serve docs/specs/agent-shots</code> or the dev server. Not final: the look is for the user to change.</p>
+
+<h2><b>01</b> the corner box</h2>
+<p class="cap">Closed: a framed box in the bottom-right corner, <code>--space-3</code> from the edges like the bottom-left tools, a cyan <code>&gt;</code> and
+<code>ask about Pazar…</code> (the focused plane's name in a focus), <code>⌘J</code> to open (also <code>/</code> when nothing has the keyboard).
+Look at: it never covers the canvas's tools. <em>Not final: the orb could come back here (design session).</em></p>
+<div class="pair"><figure><img src="S14-01-box-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S14-01-box-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>02</b> open: the first asks</h2>
+<p class="cap">Focused, the box grows upward (closed it's a region; open, a dialog the keyboard is in): <code>TRY ──</code> and up to four asks
+chosen from the workspace, in Geist (the person's voice), one short mono line (<code>changes are shown first · one undo step</code>), the prompt.
+Esc gives the keyboard back to what had it. Look at: the asks name real things from this workspace.</p>
+<div class="pair"><figure><img src="S14-02-box-open-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S14-02-box-open-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>03</b> the first message: the column, steps live</h2>
+<p class="cap">The first message grows the box, cell by cell (320 ms; at once with reduced motion), into a full-height column on the right; the app narrows
+beside it (<code>--ai-w</code>), so nothing is under it. Each turn is numbered (<code>01 ──</code>, the number magenta, D-266). Steps are live mono lines (<code>searching "know pricing"… 8ms</code>), a spinner per running step,
+<code>[stop]</code> in the prompt, the scope line at the foot. <em>Not final: the canvas re-centres when it narrows (it doesn't keep its left edge yet).</em></p>
+<div class="pair"><figure><img src="S14-03-steps-dark.png" alt=""><figcaption>dark, mid-turn</figcaption></figure><figure><img src="S14-03-steps-light.png" alt=""><figcaption>light, mid-turn</figcaption></figure></div>
+
+<h2><b>04</b> a cited answer</h2>
+<p class="cap">When the turn ends, its steps fold to <code>▸ 2 steps · 3.5s</code> (click to unfold). The answer is Geist in light Markdown; cited things read
+<code>c15 "title"</code>, the id cyan, the title underlined dashed (only under the text, also when it wraps): a click or Enter goes there (the UI facade's goTo). Tokens per answer under it, no prices
+(<code>56k in · 200 out</code>, cached on hover).</p>
+<div class="pair"><figure><img src="S14-04-answer-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S14-04-answer-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>05</b> an edit: the change list</h2>
+<p class="cap">A change writes nothing: the turn ends with the pending changes in the ledger look, <code>01 CHANGE ──── nothing written yet</code>
+(magenta number and lead), grouped by where (<code>SEGMENTS · PLANE</code>), rows split by dashes, <code>+</code> new, <code>−</code> deletes (magenta, with
+the agent's reason), warnings in yellow, then <code>[apply ↵] [discard esc]</code>. The app is locked while it waits.
+<em>Not final: S15 replaces this list with the real preview (the store swapped, marks on every kind, ticks, the stepper).</em></p>
+<div class="pair"><figure><img src="S14-05-changes-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S14-05-changes-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>06</b> applied, with [undo]</h2>
+<p class="cap">Applied as one undo step (as the agent): the list says <code>applied</code>, then a status line <code>✓ APPLIED · 1 change · Segments [undo]</code>
+(<code>[undo]</code> only while it's still the last step). Undone from the chat: the list says <code>undone</code> (struck), the line <code>↺ UNDONE · 1 change · Segments</code>.</p>
+<div class="pair"><figure><img src="S14-06-applied-dark.png" alt=""><figcaption>dark, applied</figcaption></figure><figure><img src="S14-06-applied-light.png" alt=""><figcaption>light, applied</figcaption></figure></div>
+<div class="pair"><figure><img src="S14-07-undone-dark.png" alt=""><figcaption>dark, after [undo]</figcaption></figure><figure><img src="S14-07-undone-light.png" alt=""><figcaption>light, after [undo]</figcaption></figure></div>
+
+<h2><b>07</b> an error in plain words</h2>
+<p class="cap">A refused key (OpenAI's 401, answered by the test, no real call): <code>! your key was refused — check it in Settings → the agent</code> with
+<code>[open settings]</code>. The header shows the chat's model switch (no stub here).</p>
+<div class="pair"><figure><img src="S14-08-error-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S14-08-error-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>08</b> Settings → the agent</h2>
+<p class="cap">Under YOU: your own OpenAI key (a password field; once saved only <code>sk-…wxyz</code>, <code>[check]</code> asks OpenAI for the models it can use,
+<code>[remove]</code>), the model (works well / not tried yet; the suggested one only pre-selected), reasoning (medium), the keys (⌘J; on Windows and
+Linux Ctrl+J, which takes the place of the browser's Downloads shortcut), this month's usage in tokens (the dev stub's turns aren't counted). The
+note says where the key goes; the dev-stub note shows in dev only. Opened at a page, the keyboard is on that page's menu item.</p>
+<div class="pair"><figure><img src="S14-09-settings-dark.png" alt=""><figcaption>dark, key saved</figcaption></figure><figure><img src="S14-09-settings-light.png" alt=""><figcaption>light, key saved</figcaption></figure></div>
+<div class="pair"><figure><img src="S14-10-settings-nokey-dark.png" alt=""><figcaption>dark, no key yet</figcaption></figure><figure><img src="S14-10-settings-nokey-light.png" alt=""><figcaption>light, no key yet</figcaption></figure></div>
+
+<h2><b>09</b> beside a focused plane, the card panel left of it</h2>
+<p class="cap">In a plane's focus with a card's panel open: the right panel (D-219) sits left of the column, never under it (it reads <code>--ai-w</code>);
+beside (D-211) and the tasks side view (D-300) live inside the app's box, which narrows.</p>
+<div class="pair one"><figure><img src="S14-11-focus-panel-dark.png" alt=""><figcaption>dark</figcaption></figure></div>
+<div class="pair one"><figure><img src="S14-11-focus-panel-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>10</b> ≤ 760 px: the chat covers the screen</h2>
+<p class="cap">On a phone-wide window the box sits in the corner; the column then covers the whole screen (the app keeps its width under it).</p>
+<div class="pair"><figure><img src="S14-12-mobile-box-dark.png" alt=""><figcaption>dark, box</figcaption></figure><figure><img src="S14-13-mobile-column-dark.png" alt=""><figcaption>dark, column</figcaption></figure></div>
+<div class="pair"><figure><img src="S14-12-mobile-box-light.png" alt=""><figcaption>light, box</figcaption></figure><figure><img src="S14-13-mobile-column-light.png" alt=""><figcaption>light, column</figcaption></figure></div>
+
+<h2><b>11</b> a viewer</h2>
+<p class="cap">A viewer opens the same agent: it reads and answers, and says it changes nothing. A viewer's agent has no change tool at all and is told
+up front it only reads, so asked for a change it says an editor can make it (the wording here is the dev stub's).</p>
+<div class="pair"><figure><img src="S14-14-viewer-box-dark.png" alt=""><figcaption>dark, box</figcaption></figure><figure><img src="S14-14-viewer-box-light.png" alt=""><figcaption>light, box</figcaption></figure></div>
+<div class="pair"><figure><img src="S14-15-viewer-column-dark.png" alt=""><figcaption>dark, a refused change</figcaption></figure><figure><img src="S14-15-viewer-column-light.png" alt=""><figcaption>light, a refused change</figcaption></figure></div>
+
+<h2><b>12</b> the agent's marks (local presence)</h2>
+<p class="cap">While a turn runs, what the agent reads gets its marks the way others' selections are drawn (D-272): cyan L's round it and a tag
+<code>agent · reading</code> outside its top edge at the right end (clear of a piece's name), magenta while changing; only on something truly
+visible (the point at its middle must hit it), gliding from thing to thing, gone 2.5 s after the turn. Only you see it for now: showing it to
+others needs a presence rule. <em>Not final: the user may want a cursor too.</em></p>
+<div class="pair"><figure><img src="S14-16-ghost-dark.png" alt=""><figcaption>dark, mid-turn in a focus</figcaption></figure><figure><img src="S14-16-ghost-light.png" alt=""><figcaption>light, mid-turn in a focus</figcaption></figure></div>
+
+<h2><b>13</b> about 1100 px wide: clear of the focus dock</h2>
+<p class="cap">The box narrows with the window (<code>clamp</code> round the bottom's middle), so on a ~1100 px window it stays clear of the focus dock,
+closed and open.</p>
+<div class="pair"><figure><img src="S14-17-narrow-closed-dark.png" alt=""><figcaption>dark, closed</figcaption></figure><figure><img src="S14-17-narrow-closed-light.png" alt=""><figcaption>light, closed</figcaption></figure></div>
+<div class="pair"><figure><img src="S14-18-narrow-open-dark.png" alt=""><figcaption>dark, open</figcaption></figure><figure><img src="S14-18-narrow-open-light.png" alt=""><figcaption>light, open</figcaption></figure></div>
+
+<h2><b>14</b> not shown here</h2>
+<p class="cap">Reduced motion was checked in the browser: the column appears at once (no cell build), spinners hold still as <code>…</code>, the caret
+doesn't blink, the marks don't glide. Keyboard: what had focus before the agent opened gets it back on ⌘J, Esc or <code>[×]</code>; after
+<code>[stop]</code> the keyboard is back in the prompt; <code>/</code> does nothing while a list or menu is open.</p>
+</main>
+</body>
+</html>

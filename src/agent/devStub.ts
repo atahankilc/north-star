@@ -116,9 +116,16 @@ function canvasOfShort(env: Env, piece: string): string | undefined {
 const startupName = (env: Env) => env.getWs().workspace?.name?.trim() || 'your startup'
 
 // The script's next step for this turn.
-export function nextStep(env: Env, ask: string, step: number, results: { name: string; content: string }[], before = ''): Step {
+// `canWrite`: the request lists the change tool (a viewer's agent gets none: it answers in words instead).
+export function nextStep(env: Env, ask: string, step: number, results: { name: string; content: string }[], before = '', canWrite = true): Step {
   const last = results[results.length - 1]?.content ?? ''
   const kind = pickScript(ask, before)
+  const why = (t: string) => t.split('\n')[0].replace(/[.\s]+$/, '')
+  if (!canWrite && (kind === 'edit' || kind === 'plan' || kind === 'go')) {
+    const type = TYPES.find((t) => new RegExp(`\\b${t}`, 'i').test(ask))
+    const title = quoted(ask)
+    return { answer: `You're a viewer in ${startupName(env)}, so I can read and answer but not change anything. An editor can ${type ? `add the ${type}${title ? ` "${title}"` : ''}` : 'make that change'}; I can help you word it or find where it fits first.` }
+  }
   if (kind === 'go') {
     const plane = /Read (p\d+)/.exec(before)?.[1] ?? firstPlane(env)
     const canvas = plane ? canvasOfShort(env, plane) : undefined
@@ -140,7 +147,7 @@ export function nextStep(env: Env, ask: string, step: number, results: { name: s
     }
     const made = [...last.matchAll(/\$\w+ → ([cptx]\d+)/g)].map((m) => m[1])
     if (results[results.length - 1]?.name === 'change' && /^(Proposed|Applied)/.test(last)) return { answer: `Ready, as planned: ${made.length ? made.map((m) => `${m} ${titleOf(env, m)}`).join(', ') : 'the change is ready'}. It's in the preview: apply it as one undo step (⌘Z takes it all back), untick what you don't want, or tell me what to change.` }
-    return { answer: `I tried, but it was refused: ${last.split('\n')[0]}. Nothing changed.` }
+    return { answer: `I tried, but it was refused: ${why(last)}. Nothing changed.` }
   }
   if (kind === 'refuse') {
     if (/\bdelete\b|\bremove\b/i.test(ask))
@@ -174,7 +181,7 @@ export function nextStep(env: Env, ask: string, step: number, results: { name: s
     if (step === 2) return { calls: [{ name: 'change', args: { ops: [{ op: 'create_card', args: { type, plane, title } }], summary: `add ${type} "${title}"` } }], text: `Adding the ${type} to ${plane}.` }
     const made = /\$\w+ → (c\d+)/.exec(last)?.[1]
     if (results[results.length - 1]?.name === 'change' && made) return { answer: `The ${type} ${made} ${titleOf(env, made)} on ${plane} ${titleOf(env, plane)} is in the preview: apply it as one undo step (⌘Z takes it back). I didn't link it to anything yet; tell me what it's for and I'll wire it in.` }
-    return { answer: `I tried to add the ${type}, but it was refused: ${last.split('\n')[0]}. Nothing changed.` }
+    return { answer: `I tried to add the ${type}, but it was refused: ${why(last)}. Nothing changed.` }
   }
   // question
   const words = keywords(ask)
@@ -219,7 +226,7 @@ export function devStubModel(env: Env, o: DevStubOpts = {}): AgentModel & { stre
   async function* stream(req: ModelRequest): AsyncGenerator<ModelEvent> {
     const { ask, step, results, before } = turnOf(req.messages)
     await sleep(thinkMs + (step === 0 ? 250 : 0), req.signal)
-    let s = nextStep(env, ask, step, results, before)
+    let s = nextStep(env, ask, step, results, before, req.tools.some((t) => t.name === 'change'))
     // The loop's last step has the tools off: answer instead of calling.
     if (req.toolChoice === 'none' && 'calls' in s) s = { answer: "I ran out of steps for this turn before finishing. Here's where I got to; ask me to go on." }
     const text = 'answer' in s ? s.answer : (s.text ?? '')

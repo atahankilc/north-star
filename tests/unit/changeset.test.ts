@@ -10,7 +10,7 @@ import { realOf } from '../../evals/tasks/util'
 import { AGENT_TOOLS } from '../../src/agent/tools'
 import { runTurn } from '../../src/agent/loop'
 import { stubModel } from '../../src/agent/stubModel'
-import { canAutoApply, closure, previewDiff, viewOf, emptyChangeset, type Changeset } from '../../src/agent/changeset'
+import { canAutoApply, closure, previewDiff, viewOf, emptyChangeset, inNames, type Changeset } from '../../src/agent/changeset'
 import { parseChange, MAX_OPS } from '../../src/agent/change'
 import { deleteAny } from '../../src/ops/delete'
 import { project } from '../../src/ops/project'
@@ -315,5 +315,15 @@ describe('reviewer fixes', () => {
     const r = await change.run(e, { ops: THREE, dry_run: true })
     expect(r.text).toContain('only examples')
     expect(JSON.stringify(e.ids.toJSON())).toBe(before)
+  })
+})
+
+describe('a stale accept says it in names (S14)', () => {
+  it('"there is no card <gone id>" reads "that card is gone"; a known id reads as its name', () => {
+    const ws = loadFixture('medium') as AgentWs
+    expect(inNames('there is no card abcdefghij0123456789', ws)).toBe('that card is gone')
+    expect(inNames('there is no card or text abcdefghij0123456789', ws)).toBe('that card or text is gone')
+    const card = ws.cards[0]
+    expect(inNames(`there is no card ${card.id}`, ws)).toContain(card.title)
   })
 })

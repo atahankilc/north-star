@@ -122,11 +122,13 @@ export function devStubWanted(): boolean {
 
 // The model a chat talks to. `key`: the person's own key, read by the caller from their browser's storage and passed
 // here; it goes into the adapter's closure and nowhere else. `env`: the dev stub reads the current workspace through it.
-export async function makeModel(o: { model: string; key?: string; env: Pick<AgentEnv, 'getWs' | 'ids'>; stub?: boolean }): Promise<AgentModel> {
+// `effort`: the person's reasoning effort (Settings → the agent), sent only to a model that reasons; left out, effortFor.
+export async function makeModel(o: { model: string; key?: string; env: Pick<AgentEnv, 'getWs' | 'ids'>; stub?: boolean; effort?: Effort }): Promise<AgentModel> {
   if (import.meta.env.DEV && (o.stub ?? devStubWanted())) {
     const { devStubModel } = await import('./devStub')
     return devStubModel(o.env)
   }
   const wid = o.env.getWs().wid
-  return openaiModel({ key: o.key ?? '', model: o.model, reasoning: effortFor(o.model), ...(wid ? { cacheKey: cacheKeyOf(wid) } : {}) })
+  const reasoning = effortFor(o.model) && o.effort ? o.effort : effortFor(o.model)
+  return openaiModel({ key: o.key ?? '', model: o.model, reasoning, ...(wid ? { cacheKey: cacheKeyOf(wid) } : {}) })
 }

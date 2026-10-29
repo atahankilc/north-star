@@ -14,7 +14,7 @@
 //              ──untick──▶ previewing (fewer items; with none left, accept just closes it as discarded)
 //   applied ──undo──▶ applied, undoing ──undo_done ok──▶ undone (the report says so) / not ok──▶ an error, not undone
 //   applied | discarded ──send──▶ running (a new job)
-//   any ──fail──▶ idle with the error, unlocked; any ──reset (chat closed, workspace changed)──▶ idle, pending
+//   any ──fail──▶ idle with the error, unlocked (pending discarded); any ──reset (chat closed, workspace changed)──▶ idle, pending
 //   discarded, unlocked.
 //
 // THE DRIVER must also release the locks itself in a finally around each turn, on unmount and on a workspace change
@@ -148,8 +148,10 @@ export function step(s: WorkflowState, e: WorkflowEvent): { state: WorkflowState
       if (!e.ok) return { state: { ...s, report, error: "couldn't undo it from the chat: other changes came after it" }, effects: [] }
       return { state: { ...s, error: undefined, report: { ...report, undone: true, text: `${report.text} Undone.` } }, effects: [] }
     }
+    // From the preview (or an accept under way) the pending changes are discarded too: the state says nothing is
+    // pending, so the changeset mustn't hold any (S14; a failed accept wrote nothing: apply is one batch).
     case 'fail':
-      return { state: { phase: 'idle', turn: s.turn, pending: 0, error: e.error }, effects: [...(s.phase === 'running' ? [{ type: 'abort' as const }] : []), ...(s.phase === 'previewing' || s.phase === 'applying' ? [{ type: 'close_preview' as const }] : []), { type: 'unlock' }] }
+      return { state: { phase: 'idle', turn: s.turn, pending: 0, error: e.error }, effects: [...(s.phase === 'running' ? [{ type: 'abort' as const }] : []), ...(s.phase === 'previewing' || s.phase === 'applying' ? [{ type: 'discard' as const }, { type: 'close_preview' as const }] : []), { type: 'unlock' }] }
     case 'reset':
       return { state: initialWorkflow(), effects: [...(s.phase === 'running' ? [{ type: 'abort' as const }] : []), ...(s.phase === 'previewing' || s.phase === 'applying' ? [{ type: 'discard' as const }, { type: 'close_preview' as const }] : []), { type: 'unlock' }] }
   }

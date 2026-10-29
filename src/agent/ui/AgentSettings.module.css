@@ -1,0 +1,77 @@
+/* Settings → the agent (S14): the rows' controls, in Settings' look (Settings.module.css). Tokens only. */
+.action {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
+.action:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+.hint {
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: var(--track-label);
+}
+
+.keyForm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  outline: none;
+  caret-color: var(--accent-cyan);
+}
+
+.input::placeholder {
+  color: var(--placeholder);
+}
+
+.input:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.said {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+}
+
+.said[data-tone='error'] {
+  color: var(--accent-yellow);
+}
+
+.select {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.modelRow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.fit {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+.usage {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}

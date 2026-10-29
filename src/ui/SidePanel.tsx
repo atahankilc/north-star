@@ -35,7 +35,8 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
     <Appear
       as="aside"
       className={styles.panel}
-      style={{ right, ...(width ? { width } : {}), ['--tone' as string]: tone ?? 'var(--accent-magenta)' }}
+      // Left of the agent's column when it's open (`--ai-w`, S14).
+      style={{ right: `calc(${right}px + var(--ai-w, 0px))`, ...(width ? { width } : {}), ['--tone' as string]: tone ?? 'var(--accent-magenta)' }}
       // A dialog to the canvas: its wheel scrolls it, a press here doesn't pan, right-click is the browser's.
       role="dialog"
       aria-label={label}

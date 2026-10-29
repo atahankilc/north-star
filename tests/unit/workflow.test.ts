@@ -94,7 +94,7 @@ describe('the workflow', () => {
     expect(run([{ type: 'fail', error: 'the model is gone' }], running)).toMatchObject({ s: { phase: 'idle', error: 'the model is gone' }, kinds: ['abort', 'unlock'] })
     const previewing = run([{ type: 'send', text: 'x' }, end('ok', 2)]).s
     expect(run([{ type: 'reset' }], previewing)).toMatchObject({ s: { phase: 'idle', pending: 0 }, kinds: ['discard', 'close_preview', 'unlock'] })
-    expect(run([{ type: 'fail', error: 'x' }], previewing).kinds).toEqual(['close_preview', 'unlock'])
+    expect(run([{ type: 'fail', error: 'x' }], previewing).kinds).toEqual(['discard', 'close_preview', 'unlock'])
     expect(run([{ type: 'reset' }], initialWorkflow()).kinds).toEqual(['unlock'])
   })
 })

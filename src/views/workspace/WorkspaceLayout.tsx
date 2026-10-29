@@ -44,6 +44,7 @@ import { exportWorkspace } from '../../data/exportWorkspace'
 import { download, fileSlug, zipBundle } from '../../io/bundle'
 import { useEditKeys } from './useEditKeys'
 import { Coach } from '../../onboarding/Coach'
+import { Agent } from '../../agent/ui/Agent'
 import styles from './WorkspaceLayout.module.css'
 
 const VIEWER = "You're a viewer in this workspace: an owner can make you an editor."
@@ -130,6 +131,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
         <Toast />
         <Coach />
       </div>
+      {/* The agent (S14, D-312): beside the app's box, which narrows for its column (--ai-w). */}
+      <Agent />
     </WorkspaceContext.Provider>
   )
 }

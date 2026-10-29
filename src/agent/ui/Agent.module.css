@@ -1,0 +1,923 @@
+/* The agent (S14, D-312; agent.md §4.6): a small framed box in the bottom-right corner, growing into a terminal column on
+   the right (the right panel's look, D-219: a line on its left with magenta marks on its corners, the kind along the
+   top, mono for the system, Geist for what people and the agent say). Tokens only; light under [data-theme='light']. */
+
+/* The column's width, on <html> so the app's box (WorkspaceLayout.module.css `.app`) and the right panel (SidePanel)
+   read it: `--ai-w` is how far the app stops short of the right edge. Never leaves the app less than 360 px. */
+:global(html) {
+  --agent-col-w: min(var(--agent-width, 420px), calc(100vw - 360px));
+}
+
+:global(html[data-agent-open]) {
+  --ai-w: var(--agent-col-w);
+}
+
+:global(html[data-agent-resizing]) {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* ≤ 760 px the chat covers the screen (1.0's D-114): the app keeps its width under it. */
+@media (max-width: 760px) {
+  :global(html[data-agent-open]) {
+    --ai-w: 0px;
+  }
+}
+
+/* ---- The box */
+
+.box {
+  composes: frame from '../../ui/Frame.module.css';
+  position: fixed;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  /* Clear of the focus dock at the bottom's middle on narrower windows (≈ 360 px wide round the middle). */
+  width: clamp(220px, calc(50vw - 200px - var(--space-3)), 340px);
+  border-color: var(--line-hover);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--space-4);
+}
+
+/* A cyan lead on its top edge, like a numbered rule's (it's where you talk to something). */
+.box::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 12px;
+  height: 1px;
+  background: var(--accent-cyan);
+}
+
+.box[data-open] {
+  width: clamp(280px, calc(50vw - 200px - var(--space-3)), 420px);
+  background: var(--bg);
+}
+
+.boxTop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.boxHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.boxModel {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- The column */
+
+.column {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  width: var(--agent-col-w);
+  border-left: 1px solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--space-4);
+  cursor: default;
+}
+
+/* Magenta marks on its left corners, as on the right panel and a plane's console. */
+.column::before,
+.column::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  width: 7px;
+  height: 7px;
+  border-left: 1px solid var(--accent-magenta);
+  pointer-events: none;
+}
+
+.column::before {
+  top: 0;
+  border-top: 1px solid var(--accent-magenta);
+}
+
+.column::after {
+  bottom: 0;
+  border-bottom: 1px solid var(--accent-magenta);
+}
+
+@media (max-width: 760px) {
+  .box,
+  .box[data-open] {
+    width: calc(100vw - 2 * var(--space-3) - 56px);
+  }
+
+  .column {
+    width: 100%;
+    border-left: 0;
+  }
+}
+
+/* Drag the left edge to resize; a cyan line shows where. */
+.edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  z-index: 1;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.edge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 1px;
+  background: var(--accent-cyan);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.edge:hover::after,
+:global(html[data-agent-resizing]) .edge::after {
+  opacity: 1;
+}
+
+:global(html[data-motion='reduced']) .edge::after {
+  transition: none;
+}
+
+.head {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.kind {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--accent-cyan);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.model {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The model switch: plain text like a console's dropdown (`gpt-5.6-terra ▾`). */
+.modelSelect {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+}
+
+.modelSelect:hover,
+.modelSelect:focus-visible {
+  color: var(--fg-strong);
+}
+
+.headTools {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.close {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.headTools .close {
+  margin-left: 0;
+}
+
+.close:hover,
+.close:focus-visible {
+  color: var(--fg-strong);
+}
+
+.br {
+  color: var(--fg-faint);
+}
+
+.action {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
+.action:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+/* In the header, readable at rest (`[new chat]`). */
+.head .action:not(:disabled) {
+  color: var(--fg-muted);
+}
+
+.head .action:not(:disabled):hover,
+.head .action:not(:disabled):focus-visible {
+  color: var(--fg-strong);
+}
+
+/* ---- The log */
+
+.log {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  padding: var(--space-4) 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* The person's message, numbered as a turn: `01 ──` (mono, the number magenta, D-266) and their words in Geist. */
+.you {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.you:first-child {
+  margin-top: 0;
+}
+
+.turn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.turnLine {
+  width: 16px;
+  height: 1px;
+  background: var(--accent-magenta);
+}
+
+.ps {
+  flex: none;
+  min-width: 1ch;
+  color: var(--accent-cyan);
+}
+
+.youText {
+  min-width: 0;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The agent's answer, indented as far as the prompt's text. */
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: 2ch;
+}
+
+.fold {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.fold:hover,
+.fold:focus-visible {
+  color: var(--fg-strong);
+}
+
+.foldMark {
+  color: var(--fg-faint);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 0 0 var(--space-2);
+  border-left: 1px solid var(--line);
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: baseline;
+  gap: 1ch;
+  color: var(--fg-dim);
+}
+
+.stepMark {
+  flex: none;
+  width: 1.5ch;
+  color: var(--accent-cyan);
+}
+
+.step[data-ok='no'] .stepMark {
+  color: var(--accent-yellow);
+}
+
+.stepLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stepMs {
+  flex: none;
+  margin-left: auto;
+  color: var(--fg-faint);
+}
+
+/* What the model said between its steps (`Adding the idea to p3.`). */
+.say {
+  padding: 2px 0 2px 2.5ch;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+}
+
+.thinking {
+  display: flex;
+  gap: 1ch;
+  margin: 0;
+  color: var(--fg-dim);
+}
+
+.answerText {
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.para + .para {
+  margin-top: var(--space-2);
+}
+
+.bullet {
+  display: flex;
+  gap: 1ch;
+}
+
+.dash {
+  flex: none;
+  color: var(--fg-faint);
+}
+
+.num {
+  flex: none;
+  min-width: 1.5ch;
+  color: var(--accent-magenta);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.answerText strong {
+  color: var(--fg-strong);
+  font-weight: 600;
+}
+
+.answerText code {
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* A cited thing: its short id in mono cyan, the title after it, dashed under; a click (or Enter) goes there. */
+.cite {
+  color: var(--fg-strong);
+  text-decoration: underline dashed var(--line-hover);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.cite:hover,
+.cite:focus-visible {
+  text-decoration-color: var(--accent-cyan);
+  outline: none;
+}
+
+.citeId {
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.caret {
+  display: inline-block;
+  width: 7px;
+  height: 13px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: var(--accent-cyan);
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+:global(html[data-motion='reduced']) .caret {
+  animation: none;
+}
+
+.meta {
+  margin: 0;
+  color: var(--fg-dim);
+}
+
+/* Tokens per answer (agent.md §4.8): counts, never prices. */
+.tokens {
+  margin: 0;
+  color: var(--fg-faint);
+}
+
+.note {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.note[data-tone='error'] {
+  color: var(--accent-yellow);
+}
+
+.viewer {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+/* ---- The empty chat */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.emptyLead {
+  margin: 0;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: var(--track-title);
+}
+
+.asks {
+  display: flex;
+  flex-direction: column;
+}
+
+/* `TRY ────` with a cyan lead. */
+.rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  color: var(--fg-dim);
+  font-size: 10px;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.ruleLine {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--accent-cyan) 0 12px, var(--line) 12px);
+}
+
+/* A numbered start: the magenta lead (D-277). */
+.ruleLine[data-tone='magenta'] {
+  background: linear-gradient(to right, var(--accent-magenta) 0 12px, var(--line) 12px);
+}
+
+/* One ask per line, the prompt's row: a `›` where it goes, lit under the pointer. */
+.ask {
+  display: flex;
+  gap: 1ch;
+  padding: 3px var(--space-2);
+  margin: 0 calc(-1 * var(--space-2));
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+}
+
+.askMark {
+  font-family: var(--font-mono);
+  color: var(--fg-faint);
+}
+
+.ask:hover,
+.ask:focus-visible {
+  border-left-color: var(--accent-cyan);
+  background: var(--wash-2);
+  color: var(--fg-strong);
+  outline: none;
+}
+
+.ask:hover .askMark,
+.ask:focus-visible .askMark {
+  color: var(--accent-magenta);
+}
+
+.can {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  color: var(--fg-muted);
+  list-style: none;
+}
+
+.canMark {
+  display: inline-block;
+  width: 2ch;
+  color: var(--accent-cyan);
+}
+
+.canMark[data-tone='no'] {
+  color: var(--accent-magenta);
+}
+
+/* ---- The pending changes (S14's list; S15's preview): the ledger look, `01 CHANGES ──`, rows split by dashes */
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-left: 2ch;
+}
+
+.changes .rule {
+  margin: 0;
+  font-weight: 400;
+}
+
+.n {
+  color: var(--accent-magenta);
+}
+
+.changesState {
+  color: var(--fg-dim);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.whereName {
+  margin-top: var(--space-1);
+  color: var(--fg-dim);
+  font-size: 10px;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  gap: 1ch;
+  padding: var(--space-1) 0;
+}
+
+.item + .item {
+  border-top: 1px dashed var(--line);
+}
+
+.itemMark {
+  flex: none;
+  color: var(--accent-cyan);
+}
+
+.item[data-delete] .itemMark {
+  color: var(--accent-magenta);
+}
+
+.itemLine {
+  min-width: 0;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.changes[data-state='discarded'] .itemLine,
+.changes[data-state='undone'] .itemLine {
+  color: var(--fg-dim);
+  text-decoration: line-through;
+}
+
+.changes[data-state='discarded'] .itemMark,
+.changes[data-state='undone'] .itemMark {
+  color: var(--fg-dim);
+}
+
+.why {
+  color: var(--fg-muted);
+}
+
+.warnings {
+  margin: 0;
+  padding: 0;
+  color: var(--accent-yellow);
+  list-style: none;
+}
+
+.changesFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+}
+
+.changesHint {
+  color: var(--fg-dim);
+}
+
+/* After an accept: a status line, `✓ APPLIED · 1 change · Segments  [undo]`. */
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1ch;
+  margin: 0 0 0 2ch;
+  color: var(--fg);
+}
+
+.statusMark {
+  color: var(--accent-green);
+}
+
+.statusWord {
+  color: var(--accent-green);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.status[data-undone] .statusMark,
+.status[data-undone] .statusWord {
+  color: var(--fg-muted);
+}
+
+.statusText {
+  min-width: 0;
+  color: var(--fg-muted);
+}
+
+.status .action {
+  margin-left: auto;
+}
+
+.reportError {
+  flex-basis: 100%;
+  color: var(--accent-yellow);
+}
+
+/* ---- The foot: the prompt and the scope line */
+
+.foot {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) 20px var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.prompt {
+  display: flex;
+  align-items: flex-start;
+  gap: 1ch;
+  padding: var(--space-2) var(--space-3);
+  cursor: text;
+}
+
+.foot .prompt {
+  padding: var(--space-2) 0;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  max-height: 40vh;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--space-4);
+  resize: none;
+  outline: none;
+  caret-color: var(--accent-cyan);
+}
+
+.input::placeholder {
+  color: var(--fg-dim);
+}
+
+.kbd {
+  flex: none;
+  color: var(--fg-faint);
+  font: inherit;
+}
+
+.scope {
+  margin: 0;
+  overflow: hidden;
+  color: var(--fg-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scopeLabel {
+  margin-right: 1ch;
+  color: var(--fg-faint);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.scopeHere {
+  color: var(--accent-cyan);
+}
+
+/* ---- Small things */
+
+/* The agent's mark: a small cyan square with a dark `>` notch. */
+.mark {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  background: var(--accent-cyan);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 70%, 45% 50%, 0 30%);
+}
+
+.mark[data-running] {
+  animation: pulse 1.2s steps(2) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+:global(html[data-motion='reduced']) .mark[data-running] {
+  animation: none;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1ch;
+  color: var(--accent-cyan);
+}
+
+/* The agent's local presence, drawn like others' selections (D-272): cyan L's round what it looks at, its name on a tag
+   outside the top edge at the right end (a piece's name is cut into the left of its top edge), gliding there. */
+.ghost {
+  position: fixed;
+  z-index: 13;
+  pointer-events: none;
+  transition:
+    left 420ms var(--ease-out),
+    top 420ms var(--ease-out),
+    width 420ms var(--ease-out),
+    height 420ms var(--ease-out);
+  --ghost: var(--accent-cyan);
+}
+
+.ghost[data-kind='change'] {
+  --ghost: var(--accent-magenta);
+}
+
+:global(html[data-motion='reduced']) .ghost {
+  transition: none;
+}
+
+.ghost i {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 0 solid var(--ghost);
+}
+
+.ghost i:nth-child(1) {
+  top: -4px;
+  left: -4px;
+  border-width: 2px 0 0 2px;
+}
+
+.ghost i:nth-child(2) {
+  top: -4px;
+  right: -4px;
+  border-width: 2px 2px 0 0;
+}
+
+.ghost i:nth-child(3) {
+  bottom: -4px;
+  right: -4px;
+  border-width: 0 2px 2px 0;
+}
+
+.ghost i:nth-child(4) {
+  bottom: -4px;
+  left: -4px;
+  border-width: 0 0 2px 2px;
+}
+
+/* The tag: the page's colour with a band in the agent's, so it reads in both themes. */
+.ghostTag {
+  position: absolute;
+  right: -4px;
+  bottom: calc(100% + 8px);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-1) 0 0;
+  border: 1px solid var(--ghost);
+  background: var(--bg);
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 15px;
+  white-space: nowrap;
+}
+
+.ghostTag::before {
+  content: '';
+  align-self: stretch;
+  width: 6px;
+  background: var(--ghost);
+}
