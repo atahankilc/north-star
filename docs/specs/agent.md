@@ -484,6 +484,8 @@ Every bug a person hits becomes a task here before it's fixed.
 
 ## 10. Session kickoff prompt (paste into a fresh session)
 
+For long unattended runs (the user asleep), the protocol and the progress log are [agent-run.md](agent-run.md).
+
 > North Star'a agent'ı geri getiriyoruz. Önce `docs/specs/agent.md`'yi baştan sona oku: 1.0 asistanının neden kötü
 > çalıştığı, araştırma, karşılaştırılan mimariler, verdiğim kararlar (D-312), tasarım, gereken refactor, fazlar,
 > kurallar ve eval seti orada. Phase 1'e (ops katmanı, hiç AI yok) geç; Phase 1'in ilk işi action inventory (kullanıcının yapabildiği her şeyin listesi). Kurallar: bir faz, öncekinin gate'i geçmeden başlamaz; hiçbir yazma
