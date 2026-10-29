@@ -27,8 +27,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   2026-10-29: D-287–D-290. What was done: state-history.md.
 
 ## Next steps (not started; ask the user which first)
-- Plane parity with the old board, left over (D-207's and D-225's *Not yet*): link bend points (D-155), links to a
-  competitor's features and dropping a link on a small card.
+- Plane parity with the old board, left over (D-207's and D-225's *Not yet*): links to a competitor's features and
+  dropping a link on a small card (bend points dropped, D-292).
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
 - The assistant back as a piece (its rules are in decisions-1.0.md; check them with the user first). Then the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,

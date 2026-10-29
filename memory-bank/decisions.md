@@ -158,7 +158,7 @@ feature comes back as a piece, and check them with the user then.
   `≈ theirs`; a part shows its parent.
 - Links (D-207): `edges` drawn when both cards are on the plane; straight, arrowhead, kind colours, a chip (its own
   label in focus), side by side; drawn from a hovered card's `›` with its label ready; a bar: kind, label, reverse,
-  remove. Not yet: bend points, links to competitor features.
+  remove. Always straight (no bend points, D-292). Not yet: links to competitor features.
 - Parts (D-225, D-226): a competitor's features are small cards inside it, shown as it grows on hover (a strip of cells
   closed), open while selected; a folded feature, customer, problem or idea holds its parts as a tree inside it.
 - One card on many planes (D-281; built D-282, D-283, D-284, D-285, D-286, D-290;
@@ -310,6 +310,7 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Accordion-style dropdown look (D-093). An ASCII-glyph scroll bar component (D-105).
 - Reports as a centred column; `show more` paging; a report opening by itself (D-093, D-102, D-106).
 - Links routed by the app as right-angle elbows with lanes: lines shifted as others showed and hid, shape not the user's (D-155).
+- Bend points on links, the user's own (1.0's D-155): not wanted, links stay straight (D-292).
 - Competitor features as squares, spines or a strip beside the card; parts as nested dots, a tree or a frame; a separate competitor page (D-164).
 - A real blur behind the open feature list (drew the board twice a frame and lagged) (D-173).
 - Melting drips (ASCII running down the screen and from under the box) in the delete confirm: too much (D-182).

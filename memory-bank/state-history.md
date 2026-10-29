@@ -832,3 +832,7 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - The cards-to-bring list scrolls (the right-click menu closed on any wheel). `existing card…` is last under a rule.
   Card faces are a dark tone of their type. A paragraph's landing L's are on the grid. A section or open package shrinks
   as one while dragged. Checked headless on the emulators with mid-drag screenshots, dark and light.
+
+## Done (2026-10-29): link bend points dropped (D-292)
+- At the user's word: `bends` gone from the Edge type, reversing, rules and import; docs and the plan say links are
+  straight. Rules tests 427/0. Committed after D-291's memory-bank entry (another session's) so the log has no gap.

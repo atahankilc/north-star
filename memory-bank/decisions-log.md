@@ -5298,3 +5298,13 @@ a paragraph's landing L's on the grid, a section or package dragged shrinks as o
   cards, and an open package with 2 members, shrink together with one set of L's. The bring list scrolled 0 → 517 px and
   stayed open. Faces checked in dark and light. `tsc` clean.
 - *Not yet:* kanban card sheets (cards mode) and table rows keep the plain face. Ask before tinting them too.
+
+### D-292 · 2026-10-29 · Accepted (changes D-207's *Not yet*; 1.0's D-155 dropped. The user: "link bükülme noktalarını tamamen çıkar, istemiyorum onu")
+**Links are always straight: bend points are gone, not "not yet".** 1.0's board let you put bend points on a link
+(D-155); planes never drew them, but links kept any they had and the plan listed them as left to bring back.
+- *Removed:* `bends` from the `Edge` type and from `reverseEdge`; an import leaves bend points in an older file out
+  (`cleanEdge`); `firestore.rules`' `validEdge` no longer checks `bends` (and its three tests went: 427/0); PRODUCT.md,
+  ARCHITECTURE.md, ROADMAP.md, DESIGN.md and the plan say links are straight. Old links in the database that still carry
+  `bends` keep the field, unread.
+- *Not to propose again:* bend points on links (decisions.md, Rejected).
+- *Rules:* changed, not deployed yet.

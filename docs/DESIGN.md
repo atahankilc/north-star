@@ -174,7 +174,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   `--link-*`: violet solves, sky part of, orange competes, raspberry contradicts, gold inspired by, moss depends on, grey
   relates, near-white `for` (near-black in light). Links not touching the hovered or selected card go faint (a
   competitor's include its features', D-115). Several between two cards sit side by side, chips staggered (D-113). No
-  animation. 1.0's board also had bend points (D-155: squares on a selected link, `straighten`); not on planes yet.
+  animation. Always straight: 1.0's bend points (D-155) were dropped (D-292).
 - Floating bars (D-108, D-188): a selected link or text gets a small solid bar under it (2 px top edge in its colour)
   with its tools.
 - Alignment guides (D-117, D-231): while dragging on a plane, a card pulls into line with others' edges and centres
