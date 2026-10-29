@@ -201,3 +201,24 @@ describe('the bottom-middle card and its anchor', () => {
     })
   })
 })
+
+describe('the HUD as hard obstacles', () => {
+  // O9's review: the `unframe` lesson, anchored on a console's `unframe` low on the left, sat over the side nav's `+`,
+  // fit and finder. Lesson.tsx counts the HUD (side nav, breadcrumb, the bottom-left corner) as hard obstacles; here,
+  // with those rects hard, no spot the card takes covers them.
+  it('never covers the HUD given as hard: the side nav, the breadcrumb, the corner', () => {
+    const sidenav = { x: 16, y: 470, w: 48, h: 200 }
+    const crumb = { x: 16, y: 14, w: 320, h: 28 }
+    const corner = { x: 16, y: 830, w: 44, h: 134 }
+    const piece = { x: 330, y: 120, w: 1200, h: 520 }
+    const anchor = { x: 340, y: 610, w: 64, h: 18 }
+    const hud = [sidenav, crumb, corner]
+    const free = place({ anchor, size, view, hard: [piece] })
+    // Without them the left spot lands on the side nav (what the review saw)…
+    expect(hud.some((r) => hits(at(free), r))).toBe(true)
+    // …with them it goes somewhere clear of all three, still in view.
+    const p = place({ anchor, size, view, hard: [piece, ...hud] })
+    for (const r of hud) expect(hits(at(p), r)).toBe(false)
+    expect(inView(at(p), 0)).toBe(true)
+  })
+})

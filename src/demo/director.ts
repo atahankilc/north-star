@@ -137,9 +137,17 @@ for (const proto of [HTMLInputElement.prototype, HTMLTextAreaElement.prototype])
   }
 }
 HTMLElement.prototype.blur = function (this: HTMLElement) {
-  if (wanted === this) {
+  const held = wanted === this
+  if (held) {
     wanted = null
     mark(null)
+  }
+  // In the frame it never had the real focus, so the browser sends no blur: the one the app waits for (a field's
+  // onBlur keeps what was typed: a cell's number, a name) is sent here, as leaving the field would.
+  if (embedded && held) {
+    this.dispatchEvent(new FocusEvent('blur', { relatedTarget: null }))
+    this.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }))
+    return
   }
   realBlur.call(this)
 }
@@ -222,6 +230,8 @@ function pressDown() {
   const field = el.closest<HTMLElement>('input, textarea, [contenteditable="true"]')
   if (field) field.focus({ preventScroll: true })
   else {
+    // The field the keys went to (in the frame, the one only marked focused) is left too: its blur keeps what it holds.
+    if (wanted?.isConnected && wanted !== document.activeElement && !wanted.contains(el)) wanted.blur()
     ;(document.activeElement as HTMLElement | null)?.blur?.()
     wanted = null
     mark(null)
@@ -770,13 +780,17 @@ export async function load(s: Scene, mount: () => Promise<Ctx>) {
   if (last > s.length) console.error(`[demo] ${s.id}: its steps end at ${last} ms, after its length (${s.length})`)
   if (s.length > 8000) console.error(`[demo] ${s.id}: ${s.length} ms is longer than a scene may be (8000)`)
   playing = false
-  await busy
-  scene = s
-  remount = mount
-  phase = 'run'
-  page().style.clipPath = ''
-  busy = reset()
-  await busy
+  // In turn after whatever runs now (a seek, another load): two loads at once would mount two stages, the first one's
+  // promise never settling, and everything after it waiting for good.
+  const run = busy.then(async () => {
+    scene = s
+    remount = mount
+    phase = 'run'
+    page().style.clipPath = ''
+    await reset()
+  })
+  busy = run.catch(() => {})
+  await run
 }
 
 export function play() {
@@ -837,6 +851,8 @@ export type DemoHandle = {
   // The scene's time now (ms), and the scene shown.
   t: number
   scene?: string
+  // The scene's authored size (16:10): its frame should be this size, scaled from outside.
+  size?: [number, number]
   length?: number
   poster?: number
   // Writes the demo refused (each a handler that would have written).

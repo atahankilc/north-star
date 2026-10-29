@@ -1,5 +1,7 @@
 // A live demo in the coach (D-315, docs/specs/onboarding.md §6.2): the demo realm (demo.html, the real components on
-// made-up data) in a sealed frame, 16:10, authored at 960 × 600 and scaled into its slot; under it, never on it, a strip
+// made-up data) in a sealed frame, 16:10, the frame made the scene's own authored size (it says it in `ready`) and the
+// frame scaled into its slot, never the stage inside it (a scaled stage moves every drag too far: the app divides client
+// px by its zoom only); under it, never on it, a strip
 // with what it is (`▸ LIVE DEMO · <scene>`) and its `[❚❚]` / `[▶ play]`. It plays 3 loops, then rests on its poster;
 // reduced motion: the poster, still. The frame is `inert` and hidden from screen readers: the caption is the text.
 // Talking to the frame: postMessage `{ ns, type: play | pause | seek | poster | scene | theme | motion }` there, and
@@ -11,7 +13,7 @@ import { useTheme } from '../state/theme'
 import styles from './Demo.module.css'
 
 export const DEMO_NS = 'north-star-demo'
-// The stage's authored size (onboarding.md §6.2: "960 × 600 CSS px, scaled into the card").
+// The frame's size until the scene says its own (onboarding.md §6.2: "960 × 600 CSS px, scaled into the card").
 export const STAGE = { w: 960, h: 600 }
 const LOOPS = 3
 
@@ -19,6 +21,8 @@ const LOOPS = 3
 // placeholder until its scene is written); the strip still names the scene that was asked for. Kept here, not imported
 // from src/demo/, so the app's bundle never pulls the stage in.
 const BUILT = ['plane-drag', 'canvas-fit', 'sidenav-plus', 'deck-drag', 'pieces-tour', 'plus-adds-plane', 'finder-go', 'peers-comment']
+// O9: the kind guide's rows and the `+` and pieces lessons (onboarding-lessons.md §2).
+BUILT.push('kind-plane', 'kind-matrix', 'kind-table', 'kind-documents', 'kind-deck', 'kind-timeline', 'kind-heading', 'kind-paragraph', 'kind-sticky', 'kind-section', 'kind-title', 'card-customer', 'card-problem', 'card-competitor', 'card-idea', 'card-feature', 'kind-package', 'kind-existing', 'edit-move-resize', 'edit-done', 'console-appear', 'focus-ink', 'plane-inside', 'lens-focus', 'unframe', 'unframed-live', 'stick', 'stick-follow', 'beside', 'beside-pick', 'canvases-share')
 export const playable = (scene: string) => (BUILT.includes(scene) ? scene : 'plane-drag')
 
 type Msg = { ns: typeof DEMO_NS; type: string; [k: string]: unknown }
@@ -31,6 +35,9 @@ export function Demo({ scene, width, label, compact }: { scene: string; width: n
   const [ready, setReady] = useState(false)
   const [playing, setPlaying] = useState(!reduced)
   const loops = useRef(0)
+  // The scene's authored size, from its `ready`: the frame's size (16:10 always, so the slot's height doesn't change).
+  const [size, setSize] = useState(STAGE)
+  const sized = useRef(STAGE)
   // The first scene decides the frame's src; later ones go by message, so the frame is kept.
   const [src] = useState(() => `${import.meta.env.BASE_URL}demo.html#scene=${encodeURIComponent(playable(scene))}`)
 
@@ -43,7 +50,16 @@ export function Demo({ scene, width, label, compact }: { scene: string; width: n
       if (e.source !== frame.current?.contentWindow || e.origin !== location.origin) return
       const m = e.data as Msg
       if (!m || m.ns !== DEMO_NS) return
-      if (m.type === 'ready') setReady(true)
+      if (m.type === 'ready') {
+        // Drawn at another size than its own: the frame takes the scene's size, the scene draws again, then ready.
+        const want = Array.isArray(m.size) && m.size.length === 2 ? { w: Number(m.size[0]), h: Number(m.size[1]) } : STAGE
+        if (want.w !== sized.current.w || want.h !== sized.current.h) {
+          sized.current = want
+          setSize(want)
+          return
+        }
+        setReady(true)
+      }
       if (m.type === 'loop') {
         loops.current += 1
         if (loops.current >= LOOPS) {
@@ -123,11 +139,11 @@ export function Demo({ scene, width, label, compact }: { scene: string; width: n
     }
   }
 
-  const k = width / STAGE.w
+  const k = width / size.w
   const name = label ?? scene
   return (
     <div className={styles.demo} style={{ width }}>
-      <div className={styles.scene} style={{ height: Math.round(STAGE.h * k) }} data-ready={ready || undefined}>
+      <div className={styles.scene} style={{ height: Math.round(size.h * k) }} data-ready={ready || undefined}>
         <iframe
           ref={frame}
           className={styles.frame}
@@ -136,8 +152,8 @@ export function Demo({ scene, width, label, compact }: { scene: string; width: n
           aria-hidden
           tabIndex={-1}
           inert
-          width={STAGE.w}
-          height={STAGE.h}
+          width={size.w}
+          height={size.h}
           style={{ transform: `scale(${k})` }}
         />
       </div>

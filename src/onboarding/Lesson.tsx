@@ -56,11 +56,16 @@ const onScreen = (r: Rect) => r.w > 0 && r.h > 0 && r.x < innerWidth && r.y < in
 // What the card shifts away from (cards, tasks) and what it never covers: every panel and dialog that isn't the
 // coach's own (the right panel, the side view's aside, the threads panel, Settings, a wizard), the pane open beside a
 // focused plane, the piece being taught and what the event was about (`target`), every console and dock on screen, an
-// open menu (the `+` menu, a right-click, a Select), and the coach's other surfaces (a hint, the kind guide). Its lead
-// never crosses a console's or a dock's buttons.
+// open menu (the `+` menu, a right-click, a Select), the HUD (side nav, breadcrumb, the bottom-left corner), and the
+// coach's other surfaces (a hint, the kind guide). Its lead never crosses a console's or a dock's buttons.
 const PANELS = '[role="dialog"], [role="alertdialog"], aside, dialog[open]'
 export const MENUS = '[role="menu"], [role="listbox"], [data-learn="plus-menu"]'
 const CONSOLES = '[data-learn="console"], [data-learn="console-unframe"], [data-learn="dock"], [data-learn="dock-view"]'
+// The HUD (D-027, D-175, D-178): the side nav, the breadcrumb and the bottom-left corner (people here, threads, your square,
+// the gear; the corner is the gear's parent). Never covered, unless it holds the anchor (a lesson about that part sits
+// beside it).
+export const HUD = '[data-learn="sidenav"], header nav[aria-label="Breadcrumb"], [data-learn="people"]'
+const HUD_CORNER = 'header button[aria-haspopup="dialog"][aria-label^="Settings"]'
 function obstacles(anchor: HTMLElement | null, target: string | undefined, own: HTMLElement | null) {
   const soft: Rect[] = []
   for (const el of document.querySelectorAll('[data-card], [data-task]')) {
@@ -98,6 +103,12 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
     if (el === anchor || mine(el) || !isVisible(el)) continue
     hard.push(rectOf(el))
     for (const b of el.querySelectorAll('button')) if (!(anchor && (b === anchor || anchor.contains(b) || b.contains(anchor)))) noLead.push(rectOf(b))
+  }
+  const holdsAnchor = (el: Element) => !!anchor && (el === anchor || el.contains(anchor))
+  for (const el of document.querySelectorAll<HTMLElement>(HUD)) if (!holdsAnchor(el) && isVisible(el)) hard.push(rectOf(el))
+  for (const gear of document.querySelectorAll<HTMLElement>(HUD_CORNER)) {
+    const corner = gear.parentElement
+    if (corner && !holdsAnchor(corner) && isVisible(corner)) hard.push(rectOf(corner))
   }
   // The coach's other surfaces: an empty hint, the kind guide, a nudge.
   for (const el of document.querySelectorAll<HTMLElement>('[data-coach]')) {

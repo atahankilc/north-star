@@ -14,7 +14,8 @@
 // - under reduced motion it shows the poster, still (two shots a second apart, the same);
 // - an 8-frame strip (seeks at 8 even times from 0 to the end of the hold) and a contact sheet of it, for the eye;
 // - played as the coach shows it, inside a parent's `<iframe inert>` with the focus on the parent's button: the parent
-//   keeps its focus, and what a scene types lands in its field, with no shortcut's side effect (side view, snapping).
+//   keeps its focus, what a scene types lands in its field, with no shortcut's side effect (side view, snapping), and
+//   the end it reaches there (live, in the hold) is the same moment seeked on a page of its own (pixels, under 1 %).
 //
 // Needs a dev server or `vite preview` serving demo.html (DEMO_URL, default http://localhost:5185) and puppeteer-core,
 // which is not a dependency of the app: install it anywhere (`npm i puppeteer-core@24` in a scratch folder) and point
@@ -36,6 +37,9 @@ const STRIP = 8
 // Share of pixels that may differ between two pictures that should be the same (text antialiasing, the cursor's
 // sub-pixel place).
 const SAME = 0.004
+// Share of pixels that may differ between the end played live in a frame and the same moment seeked on its own page
+// (the live clock's frames land a little differently: text antialiasing, a cursor's sub-pixel place).
+const FRAME_SAME = 0.01
 
 if (!process.env.PUPPETEER_CORE) {
   console.error('check-scenes: set PUPPETEER_CORE to a puppeteer-core folder (npm i puppeteer-core@24 somewhere else; not in the repo)')
@@ -114,7 +118,30 @@ async function sheet(frames, labels) {
 }
 
 // One scene in one theme and motion: a fresh page, watched for errors and requests, ready.
+// Chrome now and then loses a page's frame as a new page starts (`detached Frame`): the opening is tried again.
 async function open(scene, theme, reduced) {
+  for (let i = 0; ; i++) {
+    try {
+      return await openOnce(scene, theme, reduced)
+    } catch (e) {
+      if (i >= 2 || !/detached|destroyed/i.test(String(e))) throw e
+      console.log(`  (opening ${scene} again: ${String(e).slice(0, 80)})`)
+    }
+  }
+}
+// Each scene's authored size, learned the first time it's opened.
+const SIZES = {}
+// Polled: the page's own frames and timers are the demo's clock.
+async function whenReady(page) {
+  let state = null
+  for (let i = 0; i < 200; i++) {
+    state = await page.evaluate(() => (window.__demo ? { ready: window.__demo.ready, error: window.__demo.error, length: window.__demo.length, poster: window.__demo.poster } : null))
+    if (state?.ready || state?.error) break
+    await wait(150)
+  }
+  return state
+}
+async function openOnce(scene, theme, reduced) {
   const page = await browser.newPage()
   const errors = []
   const requests = []
@@ -129,17 +156,48 @@ async function open(scene, theme, reduced) {
     theme,
     reduced,
   )
+  // At the scene's own size (as the coach's frame is, src/onboarding/Demo.tsx): a stage scaled to a window of another
+  // size moves its drags too far. Set before the page loads (a resize after would draw the scene again under the
+  // checks); the first time a scene is opened its size is learned from it, and the page loaded again at that size.
+  if (SIZES[scene]) await page.setViewport({ width: SIZES[scene][0], height: SIZES[scene][1], deviceScaleFactor: 1 })
   await page.goto(`${BASE}/demo.html#scene=${scene}`)
-  // Polled from here: the page's own frames and timers are the demo's clock.
-  let state = null
-  for (let i = 0; i < 200; i++) {
-    state = await page.evaluate(() => (window.__demo ? { ready: window.__demo.ready, error: window.__demo.error, length: window.__demo.length, poster: window.__demo.poster } : null))
-    if (state?.ready || state?.error) break
-    await wait(150)
+  let state = await whenReady(page)
+  const size = await page.evaluate(() => window.__demo?.size)
+  if (state?.ready && size && !SIZES[scene]) {
+    SIZES[scene] = size
+    if (page.viewport().width !== size[0] || page.viewport().height !== size[1]) {
+      await page.setViewport({ width: size[0], height: size[1], deviceScaleFactor: 1 })
+      await page.reload()
+      state = await whenReady(page)
+    }
   }
   // Played on its own when opened alone: held for the shots.
   await page.evaluate(() => window.__demo?.pause())
   return { page, errors, requests, state }
+}
+// Each pass of a scene under SCENE_TIMEOUT (ms, default 120 000): past it, the scene fails saying so, the pages it opened
+// are closed, the run goes on. The whole run under RUN_TIMEOUT (ms, default 90 min): past it, it stops with what it has.
+const SCENE_MS = Number(process.env.SCENE_TIMEOUT ?? 120000)
+const RUN_MS = Number(process.env.RUN_TIMEOUT ?? 90 * 60000)
+setTimeout(() => {
+  console.log(`\ncheck-scenes: the run timed out after ${RUN_MS / 60000} min\n${failures.map((f) => `- ${f}`).join('\n')}`)
+  process.exit(1)
+}, RUN_MS).unref()
+async function guarded(where, fn) {
+  const before = new Set(await browser.pages())
+  let timer
+  const over = new Promise((r) => (timer = setTimeout(() => r('timeout'), SCENE_MS)))
+  const how = await Promise.race([
+    fn().then(
+      () => 'done',
+      (e) => (fail(where, `threw: ${String(e).slice(0, 200)}`), 'threw'),
+    ),
+    over,
+  ])
+  clearTimeout(timer)
+  if (how !== 'timeout') return
+  fail(where, `timed out after ${SCENE_MS / 1000} s (a page never ready, or a seek that never came back)`)
+  for (const p of await browser.pages()) if (!before.has(p)) await p.close().catch(() => {})
 }
 const seek = async (page, t) => {
   await page.evaluate((t) => window.__demo.seek(t), t)
@@ -151,11 +209,12 @@ for (const scene of scenes) {
   for (const theme of THEMES) {
     const where = `${scene} (${theme})`
     console.log(`${where}`)
+    await guarded(where, async () => {
     const { page, errors, requests, state } = await open(scene, theme, false)
     if (!state?.ready) {
       fail(where, `not ready${state?.error ? `: ${state.error}` : ''}`)
       await page.close()
-      continue
+      return
     }
     ok(`ready (${state.length} ms, poster ${state.poster})`)
     const end = state.length + HOLD
@@ -245,6 +304,7 @@ for (const scene of scenes) {
       if (r.requests.length) fail(where, `reduced motion: requests out: ${r.requests.join(', ')}`)
     }
     await r.page.close()
+    })
   }
 }
 
@@ -256,10 +316,13 @@ const SIDE = '[data-learn="side-view"]'
 for (const scene of scenes) {
   const where = `${scene} (in a frame)`
   console.log(where)
+  await guarded(where, async () => {
   // A browser context of its own: the reduced-motion pass above left `north-star.motion=reduced` in this origin's
   // storage (demo.html copies motion from there), which would hold the scene on its poster. Full motion, dark, here.
   const context = await browser.createBrowserContext()
   const page = await context.newPage()
+  // Room for the frame below the parent's button, so a shot of it is whole.
+  await page.setViewport({ width: 1100, height: 760 })
   const errors = []
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message.slice(0, 300)}`))
   await page.evaluateOnNewDocument(() => {
@@ -273,12 +336,16 @@ for (const scene of scenes) {
   await page.goto(`${BASE}/demo.html#scene=${scene}`)
   const plain = await page.evaluate(() => document.querySelector('link[rel="stylesheet"]')?.href ?? '/package.json')
   await page.goto(new URL(plain, BASE).href)
-  await page.setContent(`<!doctype html><button id="host">next</button><iframe inert tabindex="-1" width="960" height="600" src="${BASE}/demo.html#scene=${scene}"></iframe>
+  await page.setContent(`<!doctype html><button id="host">next</button><iframe inert tabindex="-1" width="960" height="600" style="border: 0; display: block" src="${BASE}/demo.html#scene=${scene}"></iframe>
     <script>
       const f = document.querySelector('iframe')
       document.getElementById('host').focus()
       addEventListener('message', (e) => {
-        if (e.source === f.contentWindow && e.data?.ns === 'north-star-demo' && e.data.type === 'ready') f.contentWindow.postMessage({ ns: 'north-star-demo', type: 'play' }, location.origin)
+        if (e.source !== f.contentWindow || e.data?.ns !== 'north-star-demo' || e.data.type !== 'ready') return
+        // As the coach does: the frame takes the scene's own size (it draws again and says ready), then it plays.
+        const [w, h] = e.data.size ?? [960, 600]
+        if (f.width != w || f.height != h) return void ((f.width = w), (f.height = h))
+        f.contentWindow.postMessage({ ns: 'north-star-demo', type: 'play' }, location.origin)
       })
     </script>`)
   // The typing seen as it happens: a field there and empty first, then growing to what's typed (not a poster's text).
@@ -306,7 +373,8 @@ for (const scene of scenes) {
       seen.snapAfter = now.snap ?? 'unset'
       seen.lostFocus ||= now.host !== 'host'
       seen.length = now.length
-      if (now.loops > 0 || now.t >= now.length) break
+      // On into the hold (everything settled), where the end is compared with the same moment on its own page.
+      if (now.loops > 0 || now.t >= now.length + HOLD * 0.6) break
     }
     await wait(50)
   }
@@ -321,9 +389,31 @@ for (const scene of scenes) {
       seen.side ? fail(where, 'a typed letter opened the tasks side view') : ok('no side view opened by the typing')
       seen.snap === seen.snapAfter ? ok('snapping unchanged') : fail(where, `snapping changed: ${seen.snap} → ${seen.snapAfter}`)
     }
+    // The end as the frame played it, against the same moment seeked on a page of its own: a scene that behaves
+    // differently in a frame (a key lost, a menu that doesn't turn) shows a different end.
+    const t = await page.evaluate(() => {
+      const w = document.querySelector('iframe').contentWindow
+      w.__demo.pause()
+      return w.__demo.t
+    })
+    if (t >= seen.length) {
+      await wait(120)
+      const framed = await (await page.$('iframe')).screenshot({ encoding: 'base64' })
+      const own = await open(scene, 'dark', false)
+      const alone = await seek(own.page, t)
+      await own.page.close()
+      const d = await diff(framed, alone)
+      if (d <= FRAME_SAME) ok(`the end in a frame is the end on its own page (${(d * 100).toFixed(2)} %, t=${Math.round(t)})`)
+      else {
+        fail(where, `the end in a frame differs from the end on its own page: ${(d * 100).toFixed(2)} % (t=${Math.round(t)})`)
+        writeFileSync(join(SHOTS, `${PREFIX}${scene}-end-framed.png`), Buffer.from(framed, 'base64'))
+        writeFileSync(join(SHOTS, `${PREFIX}${scene}-end-alone.png`), Buffer.from(alone, 'base64'))
+      }
+    } else fail(where, `the frame stopped before its end (t=${Math.round(t)} of ${seen.length})`)
     if (errors.length) fail(where, `errors: ${errors.join(' | ')}`)
   }
   await context.close()
+  })
 }
 
 await browser.close()

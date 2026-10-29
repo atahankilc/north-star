@@ -337,7 +337,7 @@ export const LESSONS: readonly Lesson[] = [
     trigger: [{ event: 'stuck' }], anchor: 'bond',
     pages: [
       { title: 'Linked to the plane', body: 'It now follows that plane: rules read its cards, and it moves with it.', scene: 'stick-follow' },
-      { kinds: ['table', 'matrix'], title: 'Open it beside', body: "In the plane's focus, `⇆ {piece}` opens it next to the plane. Pick a row, the plane shows the card.", scene: 'beside' },
+      { kinds: ['table', 'matrix'], title: 'Open it beside', body: "In the plane's focus, `⇆ {piece}` opens it next to the plane. Pick a row, the plane shows the card.", scene: 'beside-pick' },
       { kinds: ['kanban'], title: 'Open it in the side view', body: "In the plane's focus, `⇆ deck` opens it in the side view, with only this plane's tasks.", scene: 'side-view' },
     ],
   },

@@ -106,9 +106,18 @@ function failed(message: string) {
 onError(failed)
 
 let shown: Scene | null = null
+// The window's size the scene was drawn at: the stage scales to it once, as it mounts. The frame made another size (the
+// coach fitting it to the scene) draws the scene again.
+let drawnAt = { w: 0, h: 0 }
+// The latest show(): one started after it (a resize, another scene) makes it stop before saying it's ready.
+let showing = 0
+window.addEventListener('resize', () => {
+  if (shown && (innerWidth !== drawnAt.w || innerHeight !== drawnAt.h)) void show(shown.id)
+})
 async function show(id: string) {
   const s = SCENES[id]
   const demo = window.__demo
+  const mine = ++showing
   demo.ready = false
   if (!s) {
     demo.error = `unknown scene: ${id}`
@@ -117,12 +126,15 @@ async function show(id: string) {
   }
   demo.error = undefined
   shown = s
-  Object.assign(demo, { scene: s.id, length: s.length, poster: s.poster })
+  Object.assign(demo, { scene: s.id, length: s.length, poster: s.poster, size: s.size })
+  drawnAt = { w: innerWidth, h: innerHeight }
   await load(s, mount(s))
-  if (shown !== s) return
+  if (shown !== s || mine !== showing) return
   if (useMotion.getState().reduced) await seek(s.poster)
   demo.ready = true
-  tell('ready')
+  // With its size (16:10, as authored): the coach makes its frame that size and scales the frame, not the stage, so a
+  // drag's client px are the stage's own (the app divides them by its zoom only).
+  tell('ready', { size: s.size })
   // Opened on its own (a check, a look by hand): it plays; in the coach's frame the coach says when.
   if (window.parent === window && !useMotion.getState().reduced) play()
 }

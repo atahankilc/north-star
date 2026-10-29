@@ -151,7 +151,7 @@ when the first drag of a matrix, table, deck or timeline in edit mode ends · do
 when `stuck` (first) · anchor the bond line
 1. **Linked to the plane**: It now follows that plane: rules read its cards, and it moves with it. · `stick-follow`
 2. (a table or matrix) **Open it beside**: In the plane's focus, `⇆ {piece}` opens it next to the plane. Pick a row,
-   the plane shows the card. · `beside`
+   the plane shows the card. · `beside-pick`
    (a deck) **Open it in the side view**: In the plane's focus, `⇆ deck` opens it in the side view, with only this
    plane's tasks. · `side-view`
    (a timeline: no page 2)
@@ -489,7 +489,7 @@ Each 3–8 s (≤ 8000 ms), one action, 1 s hold at the end, poster = the tellin
 | table-rules / table-keys / table-setup | rules picked → rows fill; a head sorts; a scale column added | each end |
 | unframe / unframed-live | a table window turns into a live table on the canvas, a cell typed | live |
 | stick / stick-follow | a table dragged to a plane's edge snaps; the plane moves with it | stuck |
-| beside | in focus `⇆ table` opens it beside; a row picked lights the card | split |
+| beside / beside-pick | in focus `linked` → `⇆ table` opens it beside; beside open, a row picked: the plane glides to its card, lit | split; the card lit |
 | deck-kinds / deck-drag / task-panel / task-learned | a task dragged across; its panel; a finished task's lesson → evidence | each end |
 | card-deck / priorities | a card dropped into `validated`; `order` lists P1–P3 | each end |
 | side-view / side-mine | `t`, plane → deck → days; `MINE` | open |

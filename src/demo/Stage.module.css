@@ -9,6 +9,17 @@
   background: var(--bg);
 }
 
+/* Over everything the page draws, what it puts in the body too (a card's panel, a menu): the hand and the key chip, in
+   the stage's own px (the same size and scale as the stage). Takes no pointer: the page's hit test passes through it. */
+.top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
 /* The person's pointer, drawn by the stage (onboarding.md §6.2): ink with the page round it, so it reads on either
    theme. Its tip is the element's top-left; moved by transform only. */
 .pointer {

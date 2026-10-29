@@ -121,20 +121,11 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 evening: STOPPED on the usage limit. Committed: O0–O8 (last 39f23f3), D-316 looks, guards, 6829f5a.
-**O9 is uncommitted in the tree** (its 31 scenes + beside-pick, fixtures/kit.ts, lines in sceneList.ts / Demo.tsx
-BUILT / lessons-pending.json, lessons.ts `stuck` p2 → beside-pick, onboarding-lessons.md): its builder was mid fix
-round 2 (6 items: kind-existing broken in a frame → click the row + an in-frame end-frame comparison in
-check-scenes.mjs; the unframe lesson over the side nav → sidenav/HUD corners as obstacles in Lesson.tsx; framing of
-edit-move-resize, stick/stick-follow, plane-inside, beside/beside-pick). Some of those edits may be half-done: check
-`git diff` of Lesson.tsx, check-scenes.mjs and those scenes before resuming. **O10 (planes and cards)** had just
-started: any new scene files / fixtures/o10.ts / EmptyHint edits in the tree are its, unreviewed.
-**To resume:** a fresh O9 builder finishes the 6 items (brief: the reviewer's round-2 list above), then the O9
-reviewer's last round (3), commit O9 (only its files), then O10 again (or continue its files). The shared emulators run
-from this session (restart them if gone: `npx firebase emulators:start --only auth,firestore,database --project
-demo-north-star`); watch firebase-debug.log's size.
-Agreed with b2: `onTracked` actor, `agentDriving()`, S13's grown-`before` merges handled; the agent's lessons wait for
-its final UI. Never `git add`/`git mv` from builders (shared index).
+2026-10-29 evening: O0–O9 committed (+ D-316 looks, guards). O10 (planes and cards, 14 scenes) in its fix round
+(three scenes whose Enter never reaches the menu inside the frame → click the row; `brought` only on bringing a
+card; for-links within typing; after O9: link-made's card off the link's two cards, and the console lesson off its
+own edit-mode console). Then O11 onward. Emulators run from this session (restarted three times today, the user's OK);
+watch firebase-debug.log. Never `git add`/`git mv` from builders (shared index).
 
 ### Done
 _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
@@ -207,6 +198,15 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   rounds (typing lost inside the welcome's frame and hitting app shortcuts, the in-frame check inheriting reduced
   motion, placement over consoles and the `+` menu, a setState during render) · flows A/B/C/F/G pass (new, invited
   editor, viewer, join pending, typing in the frame), on a private Firestore emulator when the shared one hung.
+- O9 · (this commit) · the `+` kind guide's 18 scenes (kind-*, card-*) and the piece lessons' 13 (edit-move-resize,
+  edit-done, console-appear, focus-ink, plane-inside, lens-focus, unframe, unframed-live, stick, stick-follow,
+  beside, beside-pick, canvases-share) on fixtures/kit.ts; the demo frame now opens at each scene's own size (it was
+  960×600 CSS-scaled, so drags went 1.5–2× too far), the pointer and key chip in a top layer above portals, scene
+  loads queued (two at once hung a seek), blur/focusout sent by hand in a frame (a typed cell wasn't kept); lessons
+  keep off the HUD (side nav, breadcrumb, people, corner); check-scenes: windows at the scene's size, an in-frame
+  END-FRAME comparison (> 1 % fails), per-scene and run timeouts · reviewer: 3 rounds, judged at the real slot sizes
+  (265 / 246 px): framing, a broken in-frame prompt (kind-existing → clicks), the side nav covered · carried to O10:
+  the console lesson covers its own edit-mode console; stick-follow's last column cut; kind-section's refused writes.
 
 ### Stuck
 _(none)_
@@ -221,6 +221,12 @@ _(none)_
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
+- Director asks (O9/O10 builders): `cursor.press('right')`, double-click and modifier keys (`{ shift, alt }`) for
+  press/drag, recorded for the press check; function targets with a `meant` element (byText/row/inSection presses
+  checked); `frameTo` for a focused piece; `bare: true` on Scene. O10: `brought` triggered by `bringing` anchors to any
+  card: give BringCards' ContextMenu `data-learn="menu"` and anchor that trigger there; onboarding-lessons.md §12's
+  `evidence` row still says `testing +2 −1` (the app shows cells); shared-card's panel lacks `here` (the demo's router
+  has no `location.search`). TextItems' labelRef on press (kind-section's refused writes): lazy like PlaneCards.
 - The agent's lessons (D-315: once its UI is done): b2 says the UI changes again in S15/S16 and the user wants to
   redesign it, so they wait; b2 tells us when it's final.
 - (Done after S9) learn.ts sends nothing while `agentDriving()` (src/agent/driving.ts) is true; agent writes carry
