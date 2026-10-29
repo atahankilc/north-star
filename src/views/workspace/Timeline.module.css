@@ -371,6 +371,23 @@
   color: var(--fg-muted);
 }
 
+/* Late, its name stays beside it (D-314), over its hatch: above it, on the page's colour. */
+.task[data-late='true'] {
+  z-index: 2;
+}
+
+.task[data-late='true'] .label[data-out='true'] {
+  padding: 0 6px 0 4px;
+  background: var(--bg);
+}
+
+/* `+Nd late` after the name when the hatch is too short for it (D-314). */
+.lateBeside {
+  color: var(--accent-magenta);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
 .ok {
   margin-right: 4px;
   color: var(--accent-green);

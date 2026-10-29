@@ -138,13 +138,14 @@ function boxOf(t: Task, s: number, e: number, point: boolean, late: boolean, fin
   const hatchEnd = late ? (now + 1) * ppd + 62 : 0
   if (point) {
     const x = e * ppd + ppd / 2 - 12
-    return { x, w: 24, out: true, x0: x - 30, x1: Math.max(x + 32 + lw, late ? hatchEnd + lw : 0) }
+    // Its name right after it, over the hatch when it's late (D-314); `+Nd late` at the hatch's end.
+    return { x, w: 24, out: true, x0: x - 30, x1: Math.max(x + 32 + lw + (late ? 62 : 0), hatchEnd) }
   }
   const i = inset(ppd)
   const x = s * ppd + i
   const w = Math.max(ppd >= 20 ? 10 : 4, (e - s + 1) * ppd - 2 * i)
   const out = w < lw
-  const x1 = Math.max(x + w, late ? hatchEnd + (out ? lw : 0) : out ? x + w + 8 + lw : 0)
+  const x1 = Math.max(x + w + (out ? 8 + lw + (late ? 62 : 0) : 0), hatchEnd)
   return { x, w, out, x0: x - 4, x1: x1 + 6 }
 }
 
@@ -676,6 +677,8 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     const left = g.x - origin * ppd
     const checks = t.checks?.length ? t.checks.filter((c) => c.done).length / t.checks.length : null
     const hatch = it.late && !lifted ? { x: (e + 1) * ppd - inset(ppd) - origin * ppd, w: (todayAt - e) * ppd + inset(ppd) } : null
+    // A hatch too short to show past the name beside it: `+Nd late` goes after the name instead.
+    const lateBeside = !!hatch && g.out && hatch.w < textW(labelOf(t, it.finished)) + 30
     const style = { left, top: y, width: g.w, ...(tn ? { ['--tone' as string]: tn } : {}), ...(lifted && { left: held!.at[0] - Math.min(held!.grab[0], g.w - 6), top: held!.at[1] - held!.grab[1], scale: '0.8', transformOrigin: `${Math.min(held!.grab[0], g.w - 6)}px ${held!.grab[1]}px` }) } as CSSProperties
     const resizing = drag?.moving && drag.id === t.id && drag.how !== 'move'
     return (
@@ -698,10 +701,11 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
           aria-hidden={lifted || undefined}
         >
           {it.point && <span className={styles.dia} />}
-          <span className={styles.label} data-out={g.out || undefined} {...(!g.out && !it.point && { 'data-sticky': left, 'data-w': g.w })} style={g.out && hatch && hatch.w > 0 ? { left: hatch.x - left + hatch.w + 74 } : undefined}>
+          <span className={styles.label} data-out={g.out || undefined} {...(!g.out && !it.point && { 'data-sticky': left, 'data-w': g.w })}>
             {it.finished && <span className={styles.ok}>✓</span>}
             {t.priority && <span className={styles.p} data-p={t.priority}>{t.priority}</span>}
             {t.title}
+            {lateBeside && <span className={styles.lateBeside}> +{todayAt - e}d late</span>}
           </span>
           {checks !== null && !it.finished && !it.point && (
             <span className={styles.checks}>
@@ -723,7 +727,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         )}
         {hatch && hatch.w > 0 && (
           <span key={`${t.id}-late`} className={styles.hatch} style={{ left: hatch.x, top: y, width: hatch.w }}>
-            <span>+{todayAt - e}d late</span>
+            {!lateBeside && <span>+{todayAt - e}d late</span>}
           </span>
         )}
       </>

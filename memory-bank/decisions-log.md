@@ -5743,5 +5743,8 @@ board; a timeline couldn't make a task for a card.
   "Small shops" for c1 on Roadmap with its days, typing offered `“Buy stamps” A TASK WITH NO CARD`; following Bob saw
   Alice's Sprint 3 then its days (Deck, Days columns) then closed; the canvas kept its middle; no frame without the
   side view going in or out of a focus. `tsc -b` clean.
-- *Not yet:* the ◆ names (a late ◆'s name sits after its hatch, at today; asked, not answered); Beside.tsx still holds
-  its deck/timeline pane code, unused now.
+- *Then (the user: "elmas adlarını da ◆'in yanına al"):* a late task's name stays right beside it (a ◆'s, or one whose
+  bar is too short for it), over its hatch on the page's colour, `+Nd late` at the hatch's end; a hatch too short to
+  show past the name puts `+Nd late` after the name. Its box (lanes) counts both. Checked headless at week and quarter:
+  every name beside its ◆ or bar, `+1d late` after "Bundle price test", `+7d late` at the end of the long hatch.
+- *Not yet:* Beside.tsx still holds its deck/timeline pane code, unused now.
