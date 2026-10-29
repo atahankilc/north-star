@@ -278,14 +278,21 @@ Rejected: (a) the same page with every store made per-instance (a rewrite of hot
   already handles `!firebase`. Auth: a fake user (`demo`, "You"). Presence: `usePeersOn` etc. return the scene's
   scripted peers (a small seam in `src/data/presence.ts`: a demo source). Writes: `setReadOnly('demo')` with the toast
   muted, so any handler that slips through writes nothing.
-- **Stage**: a `WorkspaceContext` store over a fixture (`WorkspaceData` typed, so the compiler checks it), the
-  real `CanvasView` or just one piece's view (a scene picks), the backdrop off, the page black/paper, `pointer-events:
-  none` on everything (the frame is `inert`), a fake cursor (the app's pointer drawn as an SVG) and key chips
-  (`⌘F` shown bottom-left like a keycap) drawn by the stage.
+- **Stage**: a `WorkspaceContext` store over a fixture (`WorkspaceData` typed, so the compiler checks it) and **as
+  much of the real app as the lesson needs, no more** (the user: "the shell is shown when it needs to be shown"): a
+  lesson about one piece shows that piece (or its focus); a lesson about the side nav, fit, the finder, the corner or
+  the breadcrumb shows that part of the HUD (side nav, breadcrumb, bottom-left corner) with the canvas beside it; the
+  welcome's pages show the whole screen. Each scene says which parts it mounts (§6.2b). The backdrop on (dimmed like in a workspace) or off as
+  the scene says; the frame is `inert` to the person (nothing they do reaches it); a fake cursor (the app's pointer
+  drawn as an SVG) and key chips (`⌘F` shown bottom-left like a keycap) drawn by the stage.
 - **Director**: a scene is `{ id, fixture, view, size: [w, h], length ≤ 6000 ms, poster, steps }`; a step is
   `{ at, do }` with a small API: `set(ws => …)` (change the made-up data, e.g. move a task), `cursor.to(selector, ms)`,
   `cursor.press()`, `cursor.drag(selector, to, ms)`, `key('⌘F')`, `ui.focus(id)`, `ui.select(id)`, `ui.edit(id)`,
-  `ui.open('setup')`, `peer(name).to(selector)`, `wait(ms)`. Targets by `data-*` selectors, never coordinates (they
+  `ui.open('setup')`, `peer(name).to(selector)`, `camera.to(selector | 'all', ms)`, `wait(ms)`.
+  **A click is real**: `cursor.press()` on a target sends real pointer/mouse events (and `key()` real key events) to
+  the real element under the fake cursor, so the real `+` menu opens, the real fit glides the camera, the real
+  finder opens, the real focus spreads its ink. Only what would **write** (making a plane, moving a card) is shown with
+  `set()`, timed to the click, because the demo realm writes nothing (until the ops layer's memory backend, §6.3). Targets by `data-*` selectors, never coordinates (they
   survive layout changes). At the end it holds 1 s, then breaks the stage cell by cell and rebuilds the first frame.
 - **Clock**: the director drives `requestAnimationFrame` time; `seek(t)` for headless shots and the poster; the app's
   own `__advance` for the cell reveals; reduced motion → `seek(poster)` and stop.
@@ -294,6 +301,30 @@ Rejected: (a) the same page with every store made per-instance (a rewrite of hot
   is open, preloaded after the workspace is idle.
 - **Size**: scenes are authored at a fixed stage (e.g. 960 × 600 CSS px) and scaled into the card with a CSS
   transform; text stays sharp at device scale.
+
+### 6.2b The quality bar for scenes (the user: "I want really good animation")
+The user's own examples (2026-10-29): *when the side nav is explained, the modal shows the side nav, a dummy mouse
+comes over it and clicks, and the menus open*; *when the fit button is explained, a dummy canvas is shown and a click
+on the button shows what happens*. So every scene:
+1. **Shows the real screen part being talked about, in place, and only what's needed**: a lesson about the side
+   nav shows the side nav at the screen's left edge with the canvas beside it, not a drawing of a button; a lesson
+   about a card's panel shows the plane and the panel, no HUD. The stage frames the part that
+   matters (a gentle camera on the stage itself: the side nav region, a piece's corner) and keeps enough around it
+   to recognise where it is.
+2. **Is cause then effect**: the cursor goes to the thing, presses it (the app's own press feedback, Marks' 70 ms),
+   and the real result plays out (the menu builds cell by cell, the camera glides to fit, the ink spreads). The
+   person sees *what it does*, not only where it is.
+3. **Moves like a person**: the cursor on a curve with ease-in-out (never linear, never teleporting), a short rest
+   before a click, ~60 % of a person's real speed so it can be followed; typing at a readable pace; keys shown as
+   chips when pressed.
+4. **One idea, 3–8 s**, then a 1 s hold on the result, then the cell-by-cell break and rebuild (the app's one
+   motion, D-034). A lesson page that needs two ideas has two pages.
+5. **Made-up data that looks real**: the "Pazar" fixture's names, numbers and text read like a real startup; never
+   lorem ipsum, never "Card 1".
+6. **Same look as the app, right now**: dark and light, the person's current theme; reduced motion → the poster
+   (the result) still.
+7. **Checked by eye**: the reviewer looks at a strip of 8 frames per scene (taken by seek) plus the live loop, and
+   fails a scene that is unclear, too fast, off-centre, or shows something not in the caption.
 
 ### 6.3 Needs from the store swap (for the agent's preview, D-312 §4.5; north-star-b2 builds one seam for both)
 The agent's preview swaps the workspace store to a projected `ws'` while a preview is open. Onboarding's demo realm

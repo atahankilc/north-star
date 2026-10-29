@@ -5786,5 +5786,10 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
   feature, or a real change to one, ships with its lesson in `lessons.ts` and a line in `releases.ts`,
   `check:lessons` passing; until onboarding is built, in onboarding-lessons.md. The agent is left out while it's being
   built ("Agent daha hazır değilken nasıl olcak bu?"): its demos need its finished UI, so its lessons come after.
+- *The demos' bar* (the user: "ciddi iyi bir animasyon istiyorum … side navdan bahsederken model içinde side nav
+  gösterilcek, üstüne dummy bir fare gelip tıklayınca menüler açılcak", then "gösterilmeye gerek varsa gösterilir
+  kabuk"): a scene shows the real part being talked about, in place, and only as much of the app as needed; a fake
+  cursor moving like a person sends real clicks, so the real menu opens and the real fit glides; cause then effect;
+  one idea, 3–8 s; checked by eye from frame strips (onboarding.md §6.2b). A `side-nav` lesson walks its tools.
 - *Open:* Q-028 (the look): every option built, the user picks in the morning.
 - *Not yet:* everything: onboarding-run.md's steps O0–O16.

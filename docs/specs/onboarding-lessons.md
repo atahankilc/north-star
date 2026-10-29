@@ -22,17 +22,31 @@ Inventory rows (file:line, central functions) for each are in [onboarding-invent
 ### `welcome` · welcome · all · D-174
 when `canvas-open` (first canvas, new or invited person) · done — · anchor — (middle)
 1. **This is your canvas**: Everything for your startup lives on this canvas. Drag to move around, scroll to zoom,
-   `0` shows everything. · `canvas-pan-zoom`
+   `0` shows everything. · `canvas-fit` (the cursor drags the canvas, zooms in on a plane, then clicks the side nav's
+   fit button: the camera glides out until everything fits)
    _Invited into a filled workspace:_ **<Name> started this workspace**: Everything for this startup lives on this
-   canvas. Drag to move, scroll to zoom, press `0` to see it all. · `canvas-pan-zoom`
+   canvas. Drag to move, scroll to zoom, press `0` to see it all. · `canvas-fit`
 2. **Pieces hold the work**: Planes hold cards: customers, problems, competitors, ideas, features, linked into one
    chain. Tables, matrices, decks and timelines read them. · `pieces-tour`
 3. (E+) **Add anything with +**: The magenta `+` adds a piece. The first time you meet something, a short note
-   explains it. · `plus-adds-plane`
+   explains it. · `plus-adds-plane` (the cursor goes to the side nav's `+`, clicks: the real menu builds; it moves
+   down the rows, picks plane: a plane appears in the middle in edit mode)
    (V) **Find your way**: `⌘F` finds anything. Double-click a piece to go inside it; `esc` comes back out. · `finder-go`
 4. **Together, live**: Who's here shows bottom left. Right-click anything to comment. Press `?` to see any note
    again. · `peers-comment`
    _(V adds: "As a viewer you can read, comment and keep your own documents.")_
+
+### `side-nav` · lesson · all (`+` page E+) · D-178, D-202, D-196, D-314
+when the pointer first rests on the side nav (≥ 600 ms), after `welcome` · anchor `sidenav`
+Each page's scene is the real side nav at the stage's left edge, the canvas beside it, the cursor clicking one tool.
+1. (E+) **Add**: `+` adds a piece: a plane, a table, a deck… · `sidenav-plus` (click → the menu opens → a row picked
+   → the piece appears)
+2. **Fit**: Shows everything on the canvas at once. Key: `0`. · `sidenav-fit` (the camera zoomed into a corner; click
+   → it glides out to everything)
+3. **Find**: Find any card, heading or task, and go there. Key: `⌘F`. · `sidenav-find` (click → the finder; `riv`
+   typed; Enter → the camera glides there)
+4. **Decks and days**: Opens tasks beside you, from anywhere. Key: `t`. · `sidenav-side` (shown only with a deck;
+   click → the side view opens on the right)
 
 ### `empty-canvas` · empty · E+ · D-176
 when `canvas-open` with no pieces, after `welcome` · done `piece-made` · anchor `plus` (an arrow toward it)
@@ -400,9 +414,10 @@ Each ≤ 6 s, one action, 1 s hold at the end, poster = the telling moment. Fixt
 
 | scene | what happens | poster |
 |---|---|---|
-| canvas-pan-zoom | the cursor drags the canvas, scrolls out, `0` chip, everything fits | fitted |
+| canvas-fit | the whole screen (HUD, side nav, canvas): the cursor drags the canvas, zooms in on a plane, clicks the side nav's fit: the camera glides out to everything | fitted |
+| sidenav-plus / sidenav-fit / sidenav-find / sidenav-side | the side nav at the left edge with the canvas beside it; the cursor clicks one tool and its real result plays (menu → piece; glide to fit; finder → glide; side view opens) | each result |
 | pieces-tour | a plane's cards build in chain order with links; a table beside fills | both built |
-| plus-adds-plane | cursor to `+`, menu opens, `p`, a plane appears in edit mode | the new plane |
+| plus-adds-plane | the whole screen: cursor to the side nav's `+`, clicks, the real menu builds, moves down to plane, clicks; a plane appears in the middle in edit mode | the new plane |
 | edit-move-resize | a piece in edit mode dragged (0.8, landing L's), then its corner pulled | resized |
 | edit-done | `done` pressed, the marks go | after |
 | console-appear | cursor over a piece, the console builds in its corner | console shown |
