@@ -5443,8 +5443,21 @@ cards, as now.
   left of the split and glided the plane to its card; two Escapes closed the panel, then the side view, focus kept;
   a MINE row opened Sprint 3's board with the task picked. 03 A: a deck with 2 tasks switched to cards showed `IT
   HOLDS 2 TASKS … [make a new deck for cards] [move the tasks to ▾] [keep tasks]`. `tsc -b` clean.
-- *Not yet:* the canvas isn't narrowed while it's open (it sits over the canvas's right part); following someone
-  doesn't open it for you; days at the pane's width read small (zoom with the wheel).
+- *Then, its leftovers (the user: "o eksiklikleri hallet"):* the canvas keeps the left part while it's open: opening
+  glides the camera so what was in the screen's middle is in that part's middle (back on closing; behind a focus at
+  once), `0` fits into it, a new piece goes to its middle (`fitCanvas`, `canvasCenter` read `planeArea()`). A follower's
+  opens and closes with the leader's, on their tab and board or days: presence carries `tasks` (`<tab>` or `<deck>
+  days`, ≤ 140, database.rules.json, two rules tests), and the leader's cursor is kept in the middle of the part you
+  see (with beside too, which had the same slip). Days read well since D-304's strip (screen-sized); its dock, longer
+  now, stays inside the side view: the name gives way (`…`), never the actions. Verified in headless Chrome on the
+  emulators, on HEAD plus only these changes (the tree had another session's half-built canvases): the camera
+  -614 → -1014 → -614 opening and closing; fit with it open put the planes in 96–704 of the left 800; the canvas's
+  middle at screen x 400; Bob following Alice: closed, then Sprint 3, then its days, then closed, as she did; the dock
+  inside at 50 % and 30 %. The RTDB rule was tested by hand on the emulator (accepted `deck1 days`, refused 141
+  characters and an unknown field); `test:rules` couldn't run (the emulator ports were another session's).
+- *Not yet:* the RTDB rules aren't deployed (needs `npx firebase deploy --only database --project north-star-db`
+  before this code is pushed, or a follower's leader can't write presence); the canvas isn't shifted again when the
+  line is dragged while it's open.
 
 ### D-301 · 2026-10-29 · Accepted (the user: "biz kanban diyoruz ama buna task planner desek olur mu?", then, offered flow, ledger, stages and deck: "Deck diyelim ozman")
 **The kanban piece is called a deck on screen.** Everything the user reads says deck: the `+` menu's `deck…` (letter

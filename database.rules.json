@@ -17,6 +17,7 @@
           "sel": { ".validate": "newData.isString() && newData.val().length <= 128" },
           "more": { ".validate": "newData.isString() && newData.val().length <= 2048" },
           "drag": { ".validate": "newData.isString() && newData.val().length <= 200" },
+          "tasks": { ".validate": "newData.isString() && newData.val().length <= 140" },
           "since": { ".validate": "newData.isNumber()" },
           "ts": { ".validate": "newData.isNumber() && newData.val() <= now" },
           "$other": { ".validate": false }

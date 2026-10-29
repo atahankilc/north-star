@@ -140,7 +140,7 @@ joinRequests/{wid}_{uid} workspaceId, uid, name, email, code, createdAt   (D-062
 aiSecrets/{wid}         the workspace key, encrypted; no client reads or writes it (D-079)
 
 RTDB: presence/{wid}/{uid}   name, color, photo?, view ('canvas'), plane? (the plane in focus), x?, y? (that space's px),
-                             sel?, more?, drag? (a task held, D-260), since?, ts   (D-065, D-067, D-124, D-191)
+                             sel?, more?, drag? (a task held, D-260), tasks? (the tasks side view's tab, D-300), since?, ts   (D-065, D-067, D-124, D-191)
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: members (`memberIds`) read them; owners and
   editors write them (D-098).

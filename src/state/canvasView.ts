@@ -147,9 +147,10 @@ export function setCam(wid: string, cam: Cam) {
 }
 
 // The canvas point under the middle of the screen. The camera's x/y is that point's offset from the screen's middle.
+// The middle of what's seen of the canvas: the left part's with the tasks side view open (D-300).
 export function canvasCenter(wid: string): [number, number] {
   const { x, y, zoom } = camOf(wid)
-  return [-x / zoom, -y / zoom]
+  return [((planeArea().w - useCanvasView.getState().size.w) / 2 - x) / zoom, -y / zoom]
 }
 
 // A camera move that visibly travels (eased both ends); a newer one stops it. Reduced motion: there at once.
@@ -185,9 +186,11 @@ export function fitCanvas(wid: string, pieces: Bounds[], instant = false) {
     const y0 = Math.min(...pieces.map((p) => p.y))
     const x1 = Math.max(...pieces.map((p) => p.x + p.w))
     const y1 = Math.max(...pieces.map((p) => p.y + p.h))
-    // Room for a plane's name above it and its console under it, and the side nav on the left.
-    const { zoom, cx, cy } = fitInto({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, size.w, size.h, 96)
-    to = { x: -cx * zoom, y: -cy * zoom, zoom }
+    // Room for a plane's name above it and its console under it, and the side nav on the left. With the tasks side
+    // view open (D-300) in the left part, its middle the camera's less half the side view.
+    const area = planeArea()
+    const { zoom, cx, cy } = fitInto({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, area.w, area.h, 96)
+    to = { x: (area.w - size.w) / 2 - cx * zoom, y: -cy * zoom, zoom }
   }
   if (instant) setCam(wid, to)
   else glide(camOf(wid), to, 420, (c) => setCam(wid, c))

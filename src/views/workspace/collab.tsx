@@ -9,12 +9,13 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { cursorAt, dragOf, hasSelected, onCursorMove, selectionOf, setCursor, setPresencePlane, setPresenceSelection, usePresence, type Peer } from '../../data/presence'
 import { selectTask, selectTasks, useKanbanUi } from './Kanban'
-import { camOf, setCam, useCanvasView } from '../../state/canvasView'
+import { camOf, planeArea, setCam, useCanvasView } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { useThemeAccent } from '../../state/theme'
 import { CANVAS } from '../../data/labels'
 import { firebase } from '../../data/firebase'
 import { useWs } from './context'
+import { useTasksSide } from './sideState'
 import styles from './collab.module.css'
 import type { PeerMark } from '../../ui/Marks'
 
@@ -150,6 +151,15 @@ export function Follow({ focusId, focusTo }: FollowProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theirSpace, focusId, leaving])
 
+  // Their tasks side view (D-300): open on their tab (a deck's board or days), or closed, as theirs is.
+  const theirSide = leader ? (leader.tasks ?? '') : null
+  useEffect(() => {
+    if (theirSide === null) return
+    if (!theirSide) return void useTasksSide.setState({ open: false })
+    const [tab, days] = theirSide.split(' ')
+    useTasksSide.setState((s) => ({ open: true, tab, views: days ? { ...s.views, [tab]: 'days' } : s.views[tab] === 'days' ? { ...s.views, [tab]: 'board' } : s.views }))
+  }, [theirSide])
+
   // Their selection becomes yours, several too (D-230).
   const sel = leader?.sel
   const more = leader?.more
@@ -187,13 +197,15 @@ export function Follow({ focusId, focusTo }: FollowProps) {
       const c = cursorAt(uid)
       if (!c) return
       const { size, planeCam } = useCanvasView.getState()
-      // Where their cursor is on screen, from the middle.
+      // Where their cursor is on screen, from the middle of what you see: the left part with something open beside a
+      // plane or the tasks side view (D-211, D-300).
+      const area = planeArea()
       const cam = focusId ? planeCam : camOf(wid)
       if (!cam) return
       const zoom = cam.zoom
-      const sx = focusId && planeCam ? planeCam.ox + c.x * zoom - size.w / 2 : (cam as { x: number }).x + c.x * zoom
+      const sx = focusId && planeCam ? planeCam.ox + c.x * zoom - area.w / 2 : (cam as { x: number }).x + c.x * zoom + (size.w - area.w) / 2
       const sy = focusId && planeCam ? planeCam.oy + c.y * zoom - size.h / 2 : (cam as { y: number }).y + c.y * zoom
-      if (Math.abs(sx) > size.w * MIDDLE || Math.abs(sy) > size.h * MIDDLE) chasing = true
+      if (Math.abs(sx) > area.w * MIDDLE || Math.abs(sy) > size.h * MIDDLE) chasing = true
       if (chasing && Math.hypot(sx, sy) < 2) chasing = false
       if (chasing) {
         // Exponential ease by time: the same feel at any frame rate.

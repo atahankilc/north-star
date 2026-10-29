@@ -30,6 +30,9 @@ export type Presence = {
   more?: string
   // A kanban task they're dragging (D-260): `<task id> <x> <y> <how many>`, x/y its top-left in its kanban's px.
   drag?: string
+  // The tasks side view's tab while it's open (D-300): `mine`, `days` or a deck's id, ` days` after a deck on its days.
+  // A follower's opens on it.
+  tasks?: string
   // When they joined (server time). Earlier joiners keep their colour when someone new arrives.
   since?: number
   ts: number
@@ -189,6 +192,10 @@ export function setPresenceSelection(id: string | null, selection: string[] = []
 // Sent with the cursor (10 a second at most).
 export function setPresenceDrag(d: { id: string; x: number; y: number; n: number } | null) {
   patch({ drag: d ? `${d.id} ${Math.round(d.x)} ${Math.round(d.y)} ${d.n}` : undefined })
+}
+// The tasks side view (D-300): its tab while open, null once closed.
+export function setPresenceTasks(tab: string | null) {
+  patch({ tasks: tab ?? undefined })
 }
 export function dragOf(p: Pick<Presence, 'drag'>): { id: string; x: number; y: number; n: number } | null {
   const [id, x, y, n] = (p.drag ?? '').split(' ')

@@ -664,7 +664,17 @@ export function CanvasView() {
       if (besideRef.current.length) setBesideRef.current([])
       if (useDocUi.getState().readers.length) closeDocs()
     }
+    // The canvas keeps the left part: what was in the screen's middle goes to that part's middle, and back once it
+    // closes (glided on the canvas; behind a focus at once).
+    const { size, split } = useCanvasView.getState()
+    if (sideOpen !== sideWas.current && size.w) {
+      const d = ((size.w - Math.round(size.w * split)) / 2) * (sideOpen ? -1 : 1)
+      const c = camOf(wid)
+      if (focusId) setCam(wid, { ...c, x: c.x + d })
+      else glide(c, { ...c, x: c.x + d }, 320, (v) => setCam(wid, v))
+    }
     sideWas.current = sideOpen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideOpen])
   const besideKey = besideOpen.map((p) => p.id).join(',')
   useEffect(() => {

@@ -176,3 +176,19 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
+
+/* Its dock (FocusDock) kept inside the side view: past its width the name gives way (…), never the actions. */
+.part > [role='toolbar'] {
+  max-width: calc(100% - var(--space-6));
+}
+
+.part > [role='toolbar'] > * {
+  flex-shrink: 0;
+}
+
+.part > [role='toolbar'] > :first-child {
+  flex-shrink: 1;
+  min-width: 4ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

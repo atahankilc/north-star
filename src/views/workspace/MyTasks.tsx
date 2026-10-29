@@ -1,10 +1,11 @@
 // `☐` by your square bottom left (under the rule: yours, not the workspace's): opens and closes the tasks side view (D-300;
-// `t` does the same), on MINE when something new is given to you. Its count is still tasks given to you (D-261): how
+// `t` does the same; where it's open goes out with your presence), on MINE when something new is given to you. Its count is still tasks given to you (D-261): how
 // many are new, magenta, like a thread's `@` (D-166); new = given to you by someone else since you last looked; looking
 // is MINE shown (your read marks, `threadReads/{you}.tasks`). Finished tasks aren't counted. Shown once there's a deck.
 import { useEffect } from 'react'
 import { useAuth } from '../../data/auth'
 import { finished } from '../../data/tasks'
+import { setPresenceTasks } from '../../data/presence'
 import { useReads } from '../../data/threads'
 import { useWs } from './context'
 import { loadTasksSide, toggleTasksSide, useTasksSide } from './sideState'
@@ -18,6 +19,9 @@ export function MyTasks() {
   const lookedAt = reads.data?.tasks ?? 0
   const open = useTasksSide((s) => s.open)
   useEffect(() => loadTasksSide(wid), [wid])
+  // Others see where it's open, so their followers' opens there too (D-300).
+  const shared = useTasksSide((s) => (s.open ? (s.views[s.tab] === 'days' ? `${s.tab} days` : s.tab) : null))
+  useEffect(() => setPresenceTasks(shared), [shared])
 
   const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces) && pieces.some((p) => p.id === t.pieceId))
   // Nothing counts as new until your read marks are in.
