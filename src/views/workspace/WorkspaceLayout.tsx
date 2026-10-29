@@ -9,20 +9,19 @@ import type { WithId } from '../../data/hooks'
 import type { JoinRequest, PieceKind } from '../../data/model'
 import { addPiece, isBare, KIND_NAME, kindOfPiece } from '../../data/pieces'
 import type { MatrixSetup } from '../../data/matrix'
-import { matrixBounds, useMatrixUi } from './Matrix'
+import { useMatrixUi } from './Matrix'
 import { MatrixWizard } from './MatrixWizard'
 import { TableWizard } from './TableWizard'
 import { KanbanWizard } from './KanbanWizard'
 import { useKanbanUi } from './Kanban'
-import { tableBounds, useTableUi } from './Table'
+import { useTableUi } from './Table'
 import { shownPieces } from './shownBox'
 import type { TableSetup } from '../../data/table'
 import { addCard, CARD_TYPES, type CardType } from '../../data/cards'
 import { cardsOn } from '../../data/places'
 import { addLabel, CANVAS, PARA_W, STICKY_H, STICKY_W, TITLE_W } from '../../data/labels'
 import { snap } from '../../data/grid'
-import { labelBox, useAuthor } from './TextItems'
-import { spaceBounds } from './spaceBounds'
+import { useAuthor } from './TextItems'
 import { TYPE_ACCENT } from './PlaneCards'
 import { InboxButton } from './ThreadInbox'
 import { TasksButton } from './MyTasks'
@@ -35,8 +34,6 @@ import { canvasOf, MAIN, setCanvasHere } from '../../data/canvases'
 import { CanvasCrumb } from './CanvasSwitch'
 import { runCells } from '../../ui/Appear'
 import { isReducedMotion } from '../../state/motion'
-import { documentsBounds, documentsOf, listed, pinnedView, readerLeft, useDocUi } from './Documents'
-import { documentHome } from './DocumentPiece'
 import {
   canEditIn,
   describeWorkspace,
@@ -47,7 +44,7 @@ import {
   useJoinRequests,
   useWorkspace,
 } from '../../data/workspaces'
-import { canvasCenter, fitCanvas, fitPlane, setEditing, swapCam, useCanvasView, type PlaneCam } from '../../state/canvasView'
+import { canvasCenter, fitHere, setEditing, swapCam, useCanvasView } from '../../state/canvasView'
 import { useHoldCurtain } from '../../state/curtain'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { AutosaveField } from '../../ui/AutosaveField'
@@ -148,10 +145,10 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           side={
             <>
               {/* A matrix or a table in focus takes its rows and columns from its setup (D-204, D-209), not from `+`. */}
-              <TasksButton />
               {editor && !(focused && isBare(focused)) && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
-              <FitButton wid={wid} plane={focused?.id ?? null} />
+              <FitButton plane={focused?.id ?? null} />
               <FinderButton />
+              <TasksButton />
             </>
           }
         />
@@ -196,35 +193,16 @@ function useShownCanvas(wid: string, canvas: string) {
   return shown
 }
 
-// The side nav's fit (D-186), under the `+`; `0` does the same: everything on the canvas in view, or in focus the plane's
-// contents centred and fitted.
-function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
-  const { pieces, cards, edges, labels, documents, places } = useWs()
-  const { user } = useAuth()
+// The side nav's fit (D-186), under the `+`; the same as `0` (CanvasView's fit): everything on the canvas in view, or in
+// focus the piece's contents centred and fitted, whatever kind it is.
+function FitButton({ plane }: { plane: string | null }) {
   const focused = plane !== null
-  const matrix = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'matrix')
-  const table = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'table')
-  const docs = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'documents')
-  const reader = useDocUi((s) => s.readers.length > 0 && !s.listHidden)
-  const docsBounds = (p: NonNullable<typeof docs>) => documentsBounds(p, listed(documents, documentsOf(p), user?.id).length)
-  const setPlaneCam = (to: PlaneCam) => useCanvasView.setState({ planeCam: to })
-  const one = pieces.find((p) => p.id === plane && kindOfPiece(p) === 'document')
   return (
     <button
       className={styles.fit}
       aria-label={focused ? 'Fit the plane to the screen' : 'Fit everything on the canvas'}
       title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
-      onClick={() =>
-        focused
-          ? docs && reader
-            ? // The list beside its open document: pinned top-left in its part (D-232).
-              setPlaneCam(pinnedView(docsBounds(docs), readerLeft(docsBounds(docs), useCanvasView.getState().size.w, useDocUi.getState().readerAt)))
-            : one
-              ? // A document: at 100 %, its top near the top.
-                setPlaneCam(documentHome(one, useCanvasView.getState().size.w))
-              : fitPlane(matrix ? matrixBounds(matrix, cards) : table ? tableBounds(table, cards) : docs ? docsBounds(docs) : spaceBounds(plane ? cardsOn(cards, places, plane) : [], edges, labels.filter((l) => l.pieceId === plane), [], plane ?? undefined))
-          : fitCanvas(wid, [...shownPieces(pieces, cards), ...labels.filter((l) => l.pieceId === CANVAS).map(labelBox)])
-      }
+      onClick={fitHere}
     >
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
         <path d="M1 6V1h5M12 1h5v5M17 12v5h-5M6 17H1v-5" fill="none" stroke="currentColor" strokeWidth="1.5" />

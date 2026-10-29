@@ -197,6 +197,11 @@ export function fitCanvas(wid: string, pieces: Bounds[], instant = false) {
   else glide(camOf(wid), to, 420, (c) => setCam(wid, c))
 }
 
+// Fit as the canvas does it (D-186): the side nav's button calls what CanvasView set here, the same as `0`.
+let fitter: () => void = () => {}
+export const setFitter = (f: () => void) => void (fitter = f)
+export const fitHere = () => fitter()
+
 // The focused plane's contents in view (D-186): what's in it, centred and fitted to the screen. A plane holds nothing
 // yet, so this takes it back to where it was on the canvas. `instant`: no glide (arriving without the ink, a reload).
 export function fitPlane(content: Bounds | null, instant = false) {

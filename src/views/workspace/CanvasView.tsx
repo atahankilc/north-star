@@ -15,7 +15,7 @@ import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
 import { canEditIn } from '../../data/workspaces'
-import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
+import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, setFitter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs, useWsNow } from './context'
 import { FocusedPlane } from './FocusedPlane'
 import { ViewMenu } from './ViewMenu'
@@ -258,6 +258,10 @@ export function CanvasView() {
     else if (focused) fitPlane(contentOf(focused), instant)
     else fitCanvas(wid, [...shown, ...canvasLabels.map(labelBox)])
   }
+  useEffect(() => {
+    setFitter(() => fitRef.current())
+    return () => setFitter(() => {})
+  }, [])
   // The line between the list and its document dragged: the list fits its new part at once.
   const readerAt = useDocUi((s) => s.readerAt)
   useEffect(() => {
@@ -738,10 +742,6 @@ export function CanvasView() {
     }
     sideWas.current = sideOpen
   }, [sideOpen])
-  const besideKey = besideOpen.map((p) => p.id).join(',')
-  useEffect(() => {
-    if ((besideKey || readerOpen) && useTasksSide.getState().open) closeTasksSide()
-  }, [besideKey, readerOpen])
   // The canvas keeps the left part: what was in the screen's middle goes to that part's middle as the side view opens,
   // closes or widens for a deck's days, and back (glided as it opens or closes on the canvas, else at once).
   const leftShare = sideOpen ? split : 1
@@ -757,6 +757,10 @@ export function CanvasView() {
     else setCam(wid, { ...c, x: c.x + d })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leftShare])
+  const besideKey = besideOpen.map((p) => p.id).join(',')
+  useEffect(() => {
+    if ((besideKey || readerOpen) && useTasksSide.getState().open) closeTasksSide()
+  }, [besideKey, readerOpen])
   useEffect(() => {
     useCanvasView.setState({ beside: besideCount })
     if (focusId && useCanvasView.getState().focusArrived) fitRef.current()
