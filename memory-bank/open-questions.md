@@ -19,5 +19,5 @@ Recommendation: add to CLAUDE.md's hard rules "every new user-facing feature shi
 CLAUDE.md.
 
 ### Q-028 · later · The onboarding's look (D-315)
-The run makes a preview with 2–3 options (`docs/specs/onboarding-preview/`) and builds the recommended one; the user
-picks in the morning.
+The run builds every option (2–3 per frame) behind a dev-only switch, the recommended one the default; the user
+said "build every option if needed, I don't care" and picks in the morning from the real thing.

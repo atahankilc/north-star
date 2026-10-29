@@ -5779,7 +5779,8 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
 - *Q-025 and Q-026, answered the same day:* seen-state per person in Firestore ("evet"); people who used North Star
   before see everything too, since nothing was recorded ("eski kullanıcılar için de tutulan bir kayıt olmadığına göre
   önceden, onlar da görcek"), so what's new is only for releases after onboarding ships. On the look the user asked
-  whether the run builds everything just to show it: only the frames get a preview of options (Q-028), the run builds
-  the recommended one, and the ~60 lessons are data those frames draw, so a different pick changes a few components.
+  whether the run builds everything just to show it: the ~60 lessons are data a few frames draw; then, going to sleep:
+  "gerekirse her opsiyonu her biri için implemente et, umrumda değil", so the run builds every frame option behind a
+  dev-only switch and the user picks in the morning (Q-028).
 - *Open:* Q-027 (a CLAUDE.md rule: every new feature ships its lesson), Q-028 (the look). The run uses the defaults.
 - *Not yet:* everything: onboarding-run.md's steps O0–O16.

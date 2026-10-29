@@ -404,10 +404,13 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
   Star before see the welcome and every lesson too. What's new is only for releases after onboarding ships.
 - **Q-027 · later · a rule for the future**: "every new user-facing feature ships with its lesson and a release
   line". Default: added to CLAUDE.md's hard rules by you (the run doesn't edit CLAUDE.md).
-- **Q-028 · later · the look**: only the **frames** get options (the welcome modal, the lesson card, the kind
-  guide: 2–3 each, a static preview page in `docs/specs/onboarding-preview/`, an hour's work, not built three times).
-  The run builds the recommended one and goes on; every lesson is data drawn by those same few components, so a
-  different pick in the morning is a change to 3 components, not to 60 lessons.
+- **Q-028 · the look: decided by the user in the morning, from the real thing.** The user (2026-10-29, away for the
+  night): "build every option for each if needed, I don't care". So the run **builds all 2–3 options** of each frame
+  (the welcome modal, the lesson card, the kind guide, the `?` guide) as real components, switchable live with a
+  **dev-only** switch (`window.__onboardingLook = { welcome: 'b', lesson: 'a', … }` and `?look=welcome:b,lesson:a` in
+  the URL; never in Settings, never in production builds), the recommended one the default. The shots gallery shows
+  every lesson in the recommended look and each frame in every option, side by side. The lessons are data drawn by
+  those frames, so every option shows every lesson. In the morning the user picks; the others are deleted.
 
 ---
 
