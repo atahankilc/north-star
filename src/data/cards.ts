@@ -6,6 +6,8 @@ import { db } from './firebase'
 import { absent, discardNew, snapshotWith, tracked } from './history'
 import { GRID, snap } from './grid'
 import { edgeRef, edgesOn, type Edge } from './edges'
+import { CANVAS } from './labels'
+import { canvasField } from './canvases'
 
 export const CARD_TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
 export type CardType = (typeof CARD_TYPES)[number]
@@ -240,8 +242,9 @@ export function copyCards(wid: string, pieceId: string, list: Card[], edges: Edg
     const batch = writeBatch(db())
     list.forEach((c) => batch.set(made.get(c.id)!, fieldsOf(c)))
     labels.forEach((l, i) => {
-      const { id: _, ...rest } = l
-      batch.set(texts[i], { ...rest, pieceId, x: l.x + by[0], y: l.y + by[1], createdAt: now })
+      const { id: _, canvasId: __, ...rest } = l
+      // On the canvas: the one shown (D-302).
+      batch.set(texts[i], { ...rest, pieceId, ...(pieceId === CANVAS ? canvasField() : {}), x: l.x + by[0], y: l.y + by[1], createdAt: now })
     })
     inner.forEach((e, i) =>
       batch.set(links[i], { fromId: made.get(e.fromId)!.id, fromType: e.fromType, toId: made.get(e.toId)!.id, toType: e.toType, kind: e.kind, ...(e.label ? { label: e.label } : {}) }),

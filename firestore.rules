@@ -150,6 +150,8 @@ service cloud.firestore {
         && optSize(d, 'w') && optSize(d, 'h')
         && (!('kind' in d) || d.kind != 'section' || ('w' in d && 'h' in d))
         && isText(d.pieceId, 128)
+        // Which canvas (D-302), for text on the canvas only (on a plane it goes with the plane).
+        && (!('canvasId' in d) || (d.pieceId == 'canvas' && isText(d.canvasId, 128)))
         && d.x is number && d.y is number;
     }
 
@@ -184,6 +186,8 @@ service cloud.firestore {
         && (!('stuckTo' in d) || (d.kind in ['matrix', 'table', 'kanban', 'timeline'] && isText(d.stuckTo, 128)))
         // Opened onto the canvas (D-228): a matrix or a table; a documents list or a document (D-234), a kanban (D-251), a timeline (D-289).
         && (!('open' in d) || (d.kind in ['matrix', 'table', 'documents', 'document', 'kanban', 'timeline'] && d.open is bool))
+        // The canvas it's on (D-302); missing: the first.
+        && optText(d, 'canvasId', 128)
         && d.createdAt is number
         && d.updatedAt is number;
     }
@@ -345,6 +349,15 @@ service cloud.firestore {
         && d.createdAt is number;
     }
 
+    // One of the workspace's canvases (D-302, src/data/canvases.ts): a name and its place in the order.
+    function validCanvas(d) {
+      return d.keys().hasOnly(['name', 'order', 'createdAt', 'createdBy'])
+        && isText(d.name, 60) && d.name.size() > 0
+        && d.order is number
+        && d.createdAt is number
+        && optText(d, 'createdBy', 128);
+    }
+
     function valid(wid, collection, id, d) {
       return (collection == 'labels' && validLabel(d))
         || (collection == 'customers' && validCard(d))
@@ -360,7 +373,8 @@ service cloud.firestore {
         || (collection == 'pieces' && validPiece(d))
         || (collection == 'cells' && validCell(id, d))
         || (collection == 'tasks' && validTask(d))
-        || (collection == 'places' && validPlace(id, d));
+        || (collection == 'places' && validPlace(id, d))
+        || (collection == 'canvases' && validCanvas(d));
     }
 
     match /workspaces/{wid} {
@@ -661,7 +675,7 @@ service cloud.firestore {
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells', 'tasks', 'places'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells', 'tasks', 'places', 'canvases'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();

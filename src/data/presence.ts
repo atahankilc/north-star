@@ -18,6 +18,8 @@ export type Presence = {
   view: PresenceView
   // The plane they have in focus (D-191); absent = the canvas.
   plane?: string
+  // The canvas they're on (D-302); absent = the first, `main`.
+  canvas?: string
   // Cursor in that space's px; absent when the pointer is off it. In `usePresence`'s peers
   // only whether it's there is kept up to date: where it is now comes from `cursorAt` (D-169).
   x?: number
@@ -203,7 +205,8 @@ export const hasSelected = (p: Presence, id: string) => p.sel === id || (p.more 
 const round = (v: number) => Math.round(v * 1000) / 1000
 
 // Announce yourself in a workspace while mounted, and listen for everyone else.
-export function usePresenceSession(wid: string, user: AuthUser | null, view: PresenceView) {
+// `canvas`: the one shown (D-302), said only when it isn't the first.
+export function usePresenceSession(wid: string, user: AuthUser | null, view: PresenceView, canvas = 'main') {
   const uid = user?.id
   const name = user?.name || user?.email || 'Someone'
   const photo = user?.photoURL ?? undefined
@@ -292,6 +295,6 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
   }, [wid, uid, name, photo])
 
   useEffect(() => {
-    patch({ view })
-  }, [view, wid, uid])
+    patch({ view, canvas: canvas === 'main' ? undefined : canvas })
+  }, [view, canvas, wid, uid])
 }

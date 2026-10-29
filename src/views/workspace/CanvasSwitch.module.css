@@ -1,0 +1,45 @@
+/* The canvases in the breadcrumb (D-302): a crumb that opens the prompt. */
+.crumb {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  letter-spacing: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.crumb[data-current] {
+  color: var(--fg-strong);
+}
+
+.crumb:hover,
+.crumb[aria-expanded='true'] {
+  color: var(--fg-strong);
+}
+
+.caret {
+  color: var(--fg-faint);
+}
+
+.crumb:hover .caret,
+.crumb[aria-expanded='true'] .caret {
+  color: var(--accent-cyan);
+}
+
+/* Over everything, the size of the screen, so the prompt (ContextMenu, absolute) is placed in it; takes no clicks itself. */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.layer > * {
+  pointer-events: auto;
+}

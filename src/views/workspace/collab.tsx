@@ -73,7 +73,9 @@ export function useCursorReport(root: RefObject<HTMLDivElement | null>, toSpace:
 // Everyone else's cursor in your space: an arrow in their colour and their name, moved every frame while they glide.
 export function PeerCursors({ space, toScreen }: { space: string; toScreen: ToScreen }) {
   const peers = usePresence((s) => s.peers)
-  const here = peers.filter((p) => spaceOf(p) === space && p.x !== undefined && p.y !== undefined)
+  // On the canvas, only those on the same one (D-302); a plane's id is one canvas's already.
+  const { canvas } = useWs()
+  const here = peers.filter((p) => spaceOf(p) === space && (space !== CANVAS || (p.canvas ?? 'main') === canvas) && p.x !== undefined && p.y !== undefined)
   const tone = useThemeAccent()
   const els = useRef(new Map<string, HTMLDivElement>())
   const toScreenRef = useRef(toScreen)

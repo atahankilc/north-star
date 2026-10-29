@@ -5,6 +5,7 @@ import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch,
 import { db } from './firebase'
 import { snap } from './grid'
 import { absent, discardNew, snapshotWith, tracked } from './history'
+import { canvasField } from './canvases'
 
 // The canvas as a space, beside the planes (whose ids are Firestore's 20-character ones).
 export const CANVAS = 'canvas'
@@ -42,6 +43,8 @@ export type Label = {
   // A paragraph's or sticky note's width, the title block's; a section's size.
   w?: number
   h?: number
+  // On the canvas (not a plane): which canvas (D-302); missing: the first, `main`.
+  canvasId?: string
   createdAt: number
 }
 
@@ -76,7 +79,8 @@ type New = Omit<Label, 'id' | 'createdAt'>
 export async function addLabel(wid: string, fields: New) {
   const ref = doc(col(wid))
   const now = Date.now()
-  const data = Object.fromEntries(Object.entries({ ...fields, createdAt: now, updatedAt: now }).filter(([, v]) => v !== undefined))
+  // On the canvas: the one shown (D-302).
+  const data = Object.fromEntries(Object.entries({ ...fields, ...(fields.pieceId === CANVAS ? canvasField() : {}), createdAt: now, updatedAt: now }).filter(([, v]) => v !== undefined))
   await tracked(`add ${NAMES[kindOf(fields)]}`, [ref], () => setDoc(ref, data), { before: absent([ref]), key: `label:text:${ref.id}` })
   return ref.id
 }

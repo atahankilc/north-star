@@ -41,6 +41,8 @@ import { DrawSection } from './DrawSection'
 import { labelBox, TextItems } from './TextItems'
 import { spaceBounds } from './spaceBounds'
 import { CANVAS, deleteLabel, type Label } from '../../data/labels'
+import { canvasOf, canvasTextOn, onCanvas } from '../../data/canvases'
+import { canvasParams } from '../../app/paths'
 import { PlaneCards } from './PlaneCards'
 import { LensCardPanel } from './CardPanel'
 import { DockAction, FocusDock } from './FocusDock'
@@ -87,7 +89,11 @@ const onPixel = (v: number) => {
 }
 
 export function CanvasView() {
-  const { wid, workspace, pieces, cards, labels, threads, cells, edges, documents, tasks, places } = useWs()
+  const { wid, workspace, pieces: everyPiece, cards, labels: everyLabel, threads, cells, edges, documents, tasks, places, canvas } = useWs()
+  // Only what's on the canvas shown (D-302): its pieces, and its own text with the planes' (theirs go with them).
+  // Looked up by id (a thread's plane, a focus asked for), every piece.
+  const pieces = useMemo(() => everyPiece.filter(onCanvas(canvas)), [everyPiece, canvas])
+  const labels = useMemo(() => everyLabel.filter((l) => l.pieceId !== CANVAS || canvasTextOn(canvas)(l)), [everyLabel, canvas])
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)
   // Not the camera itself: a pan or a zoom step moves only the world (World, below), and this draws again when the zoom
@@ -105,7 +111,7 @@ export function CanvasView() {
   // The plane in focus (D-184), in the address so back leaves it and a reload stays in it.
   const [params, setParams] = useSearchParams()
   const focusId = params.get('focus')
-  const focused = focusId ? (pieces.find((p) => p.id === focusId) ?? null) : null
+  const focused = focusId ? (everyPiece.find((p) => p.id === focusId) ?? null) : null
   const focusedBare = Boolean(focused && isBare(focused))
   const focusSpread = useCanvasView((s) => s.focusSpread)
   const focusArrived = useCanvasView((s) => s.focusArrived)
@@ -154,9 +160,8 @@ export function CanvasView() {
   const besideRef = useRef(besideOpen)
   besideRef.current = besideOpen
   const split = useCanvasView((s) => s.split)
-  const setBeside = (ids: string[]) => focusId && setParams(ids.length ? { focus: focusId, beside: ids.join(',') } : { focus: focusId })
-  // Something opened beside closes the tasks side view: the right part is one or the other (D-300).
-  const toggleBeside = (id: string) => (besideIds.includes(id) ? setBeside(besideIds.filter((x) => x !== id)) : (closeTasksSide(), setBeside([...besideIds, id])))
+  const setBeside = (ids: string[]) => focusId && setParams(canvasParams(canvas, ids.length ? { focus: focusId, beside: ids.join(',') } : { focus: focusId }))
+  const toggleBeside = (id: string) => setBeside(besideIds.includes(id) ? besideIds.filter((x) => x !== id) : [...besideIds, id])
   const sideOpen = useTasksSide((s) => s.open)
   const setBesideRef = useRef(setBeside)
   setBesideRef.current = setBeside
@@ -226,6 +231,8 @@ export function CanvasView() {
     if (focused && focusedDocuments && listHidden) return
     if (focused && focusedDocuments && readerOpen) setPlaneView(pinnedView(contentOf(focused)!, readerLeft(contentOf(focused)!, size.w, useDocUi.getState().readerAt)), instant)
     else if (focused && focusedDocument) setPlaneView(documentHome(focused, size.w), instant)
+    // A timeline fills the screen at its own size (D-304): a box as big as the screen less fit's margins.
+    else if (focused && focusedTimeline) fitPlane({ x: 0, y: 0, w: size.w - 192, h: size.h - 192 }, instant)
     else if (focused) fitPlane(contentOf(focused), instant)
     else fitCanvas(wid, [...shown, ...canvasLabels.map(labelBox)])
   }
@@ -344,13 +351,13 @@ export function CanvasView() {
   // Following someone into a plane, or back out (D-191).
   const focusTo = (planeId: string | null) => {
     if (planeId === null) return unfocus()
-    const p = pieces.find((x) => x.id === planeId)
+    const p = everyPiece.find((x) => x.id === planeId)
     if (!p) return
     // From another plane straight to theirs: no ink (it would spread from a plane that isn't on screen).
     if (focusId) {
       useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, labelSelected: null })
       selectTask('', null)
-      setParams({ focus: planeId })
+      setParams(canvasParams(canvasOf(p), { focus: planeId }))
     } else focus(p)
   }
 
@@ -363,13 +370,14 @@ export function CanvasView() {
       return c ? { at: [c.x + CARD.w, c.y + CARD.h], gone: false } : { at: [t.x, t.y], gone: true }
     }
     if (t.on === 'label') {
-      const l = labels.find((x) => x.id === t.targetId)
+      // On another canvas too (D-302): not gone.
+      const l = labels.find((x) => x.id === t.targetId) ?? everyLabel.find((x) => x.id === t.targetId)
       if (!l) return { at: [t.x, t.y], gone: true }
       const b = labelBox(l)
       return { at: [b.x + b.w, b.y + b.h], gone: false }
     }
     if (t.on === 'plane') {
-      const p = shown.find((x) => x.id === t.targetId)
+      const p = shown.find((x) => x.id === t.targetId) ?? everyPiece.find((x) => x.id === t.targetId)
       return p ? { at: [p.x + p.w, p.y + p.h], gone: false } : { at: [t.x, t.y], gone: true }
     }
     // A link (D-207): the middle between its cards' centres.
@@ -400,7 +408,7 @@ export function CanvasView() {
   // A thread inside a plane, for the threads list's `inside "<plane>"` (D-281: a card's, on a card brought there too).
   const insideOf = useCallback((t: WithId<Thread>, plane: string) => threadIn(t, plane, cards), [cards])
   const spaceName = (sp: string) => {
-    const p = pieces.find((x) => x.id === sp)
+    const p = everyPiece.find((x) => x.id === sp)
     return sp === CANVAS ? 'the canvas' : p?.name || `a ${p ? KIND_NAME[kindOfPiece(p)] : 'plane'}`
   }
   const titleOf = (t: Pick<Thread, 'on' | 'targetId'>) => {
@@ -413,7 +421,7 @@ export function CanvasView() {
       return l ? `${l.kind ?? (l.size === 'note' ? 'paragraph' : 'heading')} ${l.text ? `"${l.text.slice(0, 40)}"` : ''}`.trim() : 'deleted text'
     }
     if (t.on === 'plane') {
-      const p = pieces.find((x) => x.id === t.targetId)
+      const p = everyPiece.find((x) => x.id === t.targetId)
       return `${p ? KIND_NAME[kindOfPiece(p)] : 'plane'} ${p?.name ? `"${p.name}"` : ''}`.trim()
     }
     if (t.on === 'task') {
@@ -453,7 +461,7 @@ export function CanvasView() {
     const r = root.current!.getBoundingClientRect()
     // What it's on, for the menu's `>` line (D-222): "do with this customer…".
     const label = on === 'label' ? labels.find((x) => x.id === targetId) : undefined
-    const piece = on === 'plane' ? pieces.find((x) => x.id === targetId) : undefined
+    const piece = on === 'plane' ? everyPiece.find((x) => x.id === targetId) : undefined
     const what =
       on === 'card'
         ? (cards.find((x) => x.id === targetId)?.type ?? 'card')
@@ -602,7 +610,7 @@ export function CanvasView() {
     useTableUi.setState({ setup: null })
     useKanbanUi.setState({ setup: null })
     closeDocs()
-    setParams({ focus: p.id })
+    setParams(canvasParams(canvasOf(p), { focus: p.id }))
   }
   focusRef.current = focus
 
@@ -616,7 +624,7 @@ export function CanvasView() {
     // Documents open beside a list close with its focus (D-232).
     closeDocs()
     useCanvasView.setState({ focusSpread: false, focusArrived: false, focusLeaving: false, cardSelected: null, cardEditing: null, linkSelected: null, linking: null })
-    setParams({}, { replace: true })
+    setParams(canvasParams(canvas), { replace: true })
   }
   // Left by the back button, or a plane deleted (by someone else) while in focus: nothing to animate.
   useEffect(() => {
@@ -627,19 +635,27 @@ export function CanvasView() {
     }
   }, [focusId])
   useEffect(() => {
-    if (focusId && !focused && pieces.length > 0) setParams({}, { replace: true })
-  }, [focusId, focused, pieces.length, setParams])
+    if (focusId && !focused && everyPiece.length > 0) setParams(canvasParams(canvas), { replace: true })
+  }, [focusId, focused, everyPiece.length, setParams, canvas])
 
   // The plane's part of the screen follows what's open beside it (D-211); its contents fit there again.
   // A document open beside its list (D-232) takes the right part the same way.
   // The tasks side view too (D-300), on the canvas as in a focus; opened, what was beside closes.
   const besideCount = sideOpen ? 1 : besideOpen.length + (readerOpen ? 1 : 0)
+  // The right part is the last opened's: the side view opened closes what's beside; something opened beside (a link, the
+  // back button) or a document beside its list closes the side view.
+  const sideWas = useRef(sideOpen)
   useEffect(() => {
-    if (!sideOpen) return
-    if (besideRef.current.length) setBesideRef.current([])
-    if (useDocUi.getState().readers.length) closeDocs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (sideOpen && !sideWas.current) {
+      if (besideRef.current.length) setBesideRef.current([])
+      if (useDocUi.getState().readers.length) closeDocs()
+    }
+    sideWas.current = sideOpen
   }, [sideOpen])
+  const besideKey = besideOpen.map((p) => p.id).join(',')
+  useEffect(() => {
+    if ((besideKey || readerOpen) && useTasksSide.getState().open) closeTasksSide()
+  }, [besideKey, readerOpen])
   useEffect(() => {
     useCanvasView.setState({ beside: besideCount })
     if (focusId && useCanvasView.getState().focusArrived) fitRef.current()
@@ -818,7 +834,7 @@ export function CanvasView() {
     // Nor through what's live on it, opened onto the canvas (D-228): a double-click there types in a cell.
     if (!hit || hit.closest('button, input, textarea, a, [data-live]')) return
     const id = hit.closest<HTMLElement>('[data-target]')?.dataset.target?.match(/^plane:(.+)$/)?.[1]
-    const p = id && pieces.find((x) => x.id === id)
+    const p = id && everyPiece.find((x) => x.id === id)
     if (!p || useCanvasView.getState().editing.includes(p.id)) return
     stopFollowing()
     focus(p)
@@ -1072,7 +1088,7 @@ export function CanvasView() {
           }}
         />
       )}
-      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={whereOf} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${pieces.find((p) => p.id === id)?.name || 'plane'}"`} />
+      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={whereOf} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${everyPiece.find((p) => p.id === id)?.name || 'plane'}"`} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {deletingCards && (
         <HazardConfirm

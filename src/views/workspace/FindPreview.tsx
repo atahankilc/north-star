@@ -117,10 +117,12 @@ const destKey = (d: Dest) => (d.kind === 'place' ? `place:${d.place.space}:${d.p
 type Measure = { lens: React.RefObject<HTMLDivElement | null>; scale: React.RefObject<number>; refocus: React.RefObject<() => void> }
 
 function Shown({ dest, lens, scale, refocus }: { dest: Dest } & Measure) {
-  const { cards, labels, places } = useWs()
+  const { cards, labels, places, canvases } = useWs()
   if (dest.kind === 'place') {
     const { zoom, at, to } = aim(dest.place)
     const view: PlaneCam = { zoom, ox: to[0] - at[0] * zoom, oy: to[1] - at[1] * zoom }
+    // Another canvas isn't on the page to copy (D-302): where it is, until you're there.
+    if (dest.place.space === CANVAS && dest.canvas) return <p className={styles.elsewhere}>{dest.place.label} · on {canvases.find((c) => c.id === dest.canvas)?.name ?? 'another canvas'}</p>
     if (dest.place.space === CANVAS) return <CanvasCopy view={view} />
     // Its `+` marks, as its focus draws them (FocusedPlane): every 25 px of the plane, under its cards.
     const step = 25 * view.zoom

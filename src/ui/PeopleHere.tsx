@@ -17,9 +17,10 @@ export function PeopleHere() {
   const follow = usePresence((s) => s.follow)
   const leader = peers.find((p) => p.uid === following)
   const tone = useThemeAccent()
-  const { pieces } = useWs()
-  // Where someone is: the canvas, or the plane they have in focus.
-  const where = (p: Peer) => (p.plane ? `in ${pieces.find((x) => x.id === p.plane)?.name || 'a plane'}` : 'on the canvas')
+  const { pieces, canvases } = useWs()
+  // Where someone is: the canvas, or the plane they have in focus; with several canvases, which (D-302).
+  const canvasName = (p: Peer) => (canvases.length > 1 ? canvases.find((c) => c.id === (p.canvas ?? 'main'))?.name : undefined)
+  const where = (p: Peer) => (p.plane ? `in ${pieces.find((x) => x.id === p.plane)?.name || 'a plane'}` : `on ${canvasName(p) ?? 'the canvas'}`)
   const toggle = (p: Peer) => {
     setListOpen(false)
     follow(following === p.uid ? null : p.uid)

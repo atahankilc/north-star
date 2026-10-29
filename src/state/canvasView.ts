@@ -125,6 +125,20 @@ export function setEditing(id: string, on: boolean) {
 // A new canvas puts its origin in the middle of the screen, at zoom 1.
 export const camOf = (wid: string): Cam => useCanvasView.getState().cams[wid] ?? { x: 0, y: 0, zoom: 1 }
 
+// Each canvas keeps its own camera (D-302): the one shown is `cams[wid]`, what everything reads; the others wait under
+// `wid canvasId`. Going to another canvas puts the shown one away and brings the other's back, or none (so it's fitted,
+// D-202). What was selected or in edit mode is let go.
+export function swapCam(wid: string, from: string, to: string) {
+  useCanvasView.setState((s) => {
+    const cams = { ...s.cams }
+    if (cams[wid]) cams[`${wid} ${from}`] = cams[wid]
+    const back = cams[`${wid} ${to}`]
+    if (back) cams[wid] = back
+    else delete cams[wid]
+    return { cams, selected: null, editing: [], labelSelected: null, labelEditing: null, cardSelected: null, cardEditing: null, drawing: null }
+  })
+}
+
 export function setCam(wid: string, cam: Cam) {
   useCanvasView.setState((s) => ({ cams: { ...s.cams, [wid]: cam } }))
 }

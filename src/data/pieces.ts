@@ -13,6 +13,7 @@ import { db } from './firebase'
 import { GRID, snap } from './grid'
 import { absent, snapshotWith, tracked } from './history'
 import type { Piece, PieceKind } from './model'
+import { canvasField, canvasHere, onCanvas } from './canvases'
 
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'pieces')
 export const pieceRef = (wid: string, id: string) => doc(col(wid), id)
@@ -69,7 +70,9 @@ const overlaps = (a: Box, b: Box) => a.x < b.x + b.w + GAP && b.x < a.x + a.w + 
 // for (the middle of the screen), or the nearest clear place round it within about its own size, so it's still in
 // view; with none clear there, on top of what's there (it starts in edit mode, to be moved). Steps of the grid, nearest
 // first.
-function nearClear(box: Box, others: Box[]): Pick<Box, 'x' | 'y'> {
+// Only what's on the canvas shown is in the way (D-302).
+function nearClear(box: Box, all: Box[]): Pick<Box, 'x' | 'y'> {
+  const others = (all as (Box & { canvasId?: string })[]).filter(onCanvas(canvasHere()))
   const free = (b: Box) => !others.some((o) => overlaps(b, o))
   if (free(box)) return { x: box.x, y: box.y }
   const step = 4 * GRID
@@ -106,7 +109,7 @@ export async function addPiece(wid: string, kind: PieceKind, at: [number, number
           : kind === 'document' && docId
             ? { docId }
             : {}
-  const data = { kind, ...box, ...extra, createdAt: now, updatedAt: now }
+  const data = { kind, ...box, ...extra, ...canvasField(), createdAt: now, updatedAt: now }
   await tracked(`add a ${KIND_NAME[kind]}`, [ref], () => setDoc(ref, data), { before: absent([ref]) })
   return ref.id
 }
@@ -263,7 +266,7 @@ export async function placeDocument(wid: string, d: Pick<Doc, 'shared' | 'kind' 
   const shared = docRef(wid, d.id)
   await tracked(share ? 'share and place a document' : 'place a document', share ? [ref, shared] : [ref], () => {
     const batch = writeBatch(db())
-    batch.set(ref, { kind: 'document', docId: d.id, ...box, createdAt: now, updatedAt: now })
+    batch.set(ref, { kind: 'document', docId: d.id, ...box, ...canvasField(), createdAt: now, updatedAt: now })
     if (share) batch.update(shared, { shared: true, updatedAt: now })
     return batch.commit()
   })

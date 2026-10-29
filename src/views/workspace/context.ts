@@ -6,6 +6,8 @@ import type { WorkspaceData } from '../../data/workspaceData'
 export type WorkspaceCtx = WorkspaceData & {
   wid: string
   workspace: WithId<Workspace>
+  // The canvas shown (D-302): `main` or a canvas's id.
+  canvas: string
 }
 
 // The workspace's data in a store rather than a context value, so a change draws only what reads the part that

@@ -11,6 +11,7 @@
           "photo": { ".validate": "newData.isString() && newData.val().length <= 2048" },
           "view": { ".validate": "newData.val() === 'canvas'" },
           "plane": { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "canvas": { ".validate": "newData.isString() && newData.val().length <= 128" },
           "x": { ".validate": "newData.isNumber()" },
           "y": { ".validate": "newData.isNumber()" },
           "sel": { ".validate": "newData.isString() && newData.val().length <= 128" },

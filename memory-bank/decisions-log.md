@@ -5461,6 +5461,19 @@ the delete confirm, the setup and wizard (`make the deck`, `a deck holds tasks o
   taken by D-180.
 - *Verified:* `tsc -b` clean; strings checked by grep (no user-facing "kanban" left in src). Not run in the browser.
 
+### D-302 · 2026-10-29 · Accepted (changes D-174's one canvas per workspace; the user: "bir marketin canvası farklı olabilir, bir engineering canvası … default olarak bir section olur ancak başka bir section eklemek isteyen için", then "canvaslar arası dokuman ya da sayfa/pano transferi olmalı … Finder'daki tabı 3'e bölelim … adı canvas olsun, ve ortaklıklar component ve itemlar olarak olabilir")
+**A workspace has one or more canvases** (spec: docs/specs/canvases.md). It starts with one (`main`, implied, named
+by the workspace); more are added from the breadcrumb's prompt (`North Star / Pazarlama ▾`), never as tabs. Items
+(cards, links, packages, tasks, documents) stay the workspace's, so a card can sit on planes on different canvases;
+components (pieces) move between canvases (`move to canvas`, taking what's stuck to them) and can be on several at
+once (`also on canvas`, `pieceSpots/{canvasId}_{pieceId}`, like cards' places, D-281). Pieces and canvas text get
+`canvasId` (missing = `main`); `?canvas=` in the path. The finder's scope is `here | this canvas | everywhere`.
+- *Why:* teams look at the same idea from different sides (marketing, engineering); one canvas gets crowded, and
+  planes and sections don't give "our area". Shared items keep the links between them, the product's point.
+- *Name:* canvas, not section (taken by framed text, D-130).
+- *Not in the first version:* per-canvas roles or visibility; loading only the open canvas.
+- *Not yet:* all of it; four sessions in the spec.
+
 ### D-303 · 2026-10-29 · Accepted (changes D-255's switch; the user: "this plane only buttonu ekleyip basarsan bütün her şeyi gösteriyor nacak ben bunu istemiyorum. Link varsa sadece o plane ile ilgilieri görsün ve bu durum sadece unlink ile kapansın. Yoksa akıl karıştırıcı oluyor")
 **A deck linked to a plane shows only that plane's tasks (or cards), and only unlinking ends it.** D-255's `[this
 plane only]` switch is gone (`setEveryPlane` deleted); `shownTasks` and `heldCards` no longer read `everyPlane`
@@ -5470,3 +5483,33 @@ plane only]` switch is gone (`setEveryPlane` deleted); `shownTasks` and `heldCar
 - *Verified:* `tsc -b`; in headless Chrome the side view's Roadmap dock read `only 01 Pazar's · 1 hidden` (a task for a
   card on another plane left out, its count 3 not 4).
 
+
+### D-305 · 2026-10-29 · Accepted (D-302's session 1; the user: "1. oturuma başla")
+**Canvases themselves, built** (docs/specs/canvases.md, session 1). `canvases/{id}` (`name`, `order`, `createdAt`,
+`createdBy`; src/data/canvases.ts); the first is `main`, implied and named `Main` until its doc is written (with the
+second canvas, or a rename). Pieces and the canvas's own text carry `canvasId` (missing = `main`), set by every writer
+from the canvas shown (`canvasField()`: addPiece, placeDocument, addLabel on the canvas, a paste onto the canvas); text
+on a plane has none. `?canvas=<id>` (`canvasParams`/`canvasPath` in paths.ts); a focused piece's own canvas wins.
+- *Breadcrumb:* one canvas: `Solo ▾` (the workspace's name opens it); more: `Canvas Test / Marketing ▾`. The prompt:
+  `# canvases` (`[1] • Marketing  2 pieces`), a rule, `[n] + new canvas`, `[r] rename "…"`, `move it up/down`,
+  `[x] delete "…"` (editors; delete only with two or more). Typing a name nobody has offers `+ new canvas "…"`;
+  `new canvas` and `rename` turn the prompt into a naming line (`make "…"` / `rename to "…"`).
+- *Switching:* the canvas breaks cell by cell (200 ms), the cameras swap (`swapCam`: each canvas's kept under
+  `wid canvasId`, a new one fitted at once, D-202), CanvasView is made anew (`key`), and builds (320 ms); reduced
+  motion and the first canvas a load finds, at once. Selection and edit mode let go.
+- *Delete:* the hazard confirm (`1 piece on it goes, and the text on it.`; cards on planes elsewhere stay, their home
+  moved as D-282); one undo step brings all of it back; on it, you go to the next canvas first.
+- *Finder:* scopes `here` (a focus only) · `this canvas` · `everywhere` (two canvases or more); one alone, no tabs.
+  Everywhere looks through each canvas, the shown one first, another's groups `Engineering / on the canvas`, its pieces'
+  hint `plane · Engineering`; its preview says where it is (`… · on Engineering`), not a copy. Going there: the canvas
+  first, then on as before (Finder's `waiting`).
+- *Presence:* `canvas` beside `plane` (RTDB rules); cursors on the canvas only from the same canvas; people here say
+  `on Engineering`. New pieces avoid only this canvas's pieces. A thread on a plane or text elsewhere isn't `gone`.
+- *Verified:* rules tests 446/0 (on other ports: another session's emulators held the usual ones); `npm run build`;
+  headless Chrome on the emulators: a two-canvas workspace showed only Marketing's planes and text, the prompt listed
+  both, picking Engineering broke and built and showed `Backend` + `Engineering roadmap` with `?canvas=eng`; the finder
+  in Marketing found nothing in `this canvas`, Tab → `everywhere` found `Engineering / on the canvas`, Enter went there.
+  A one-canvas workspace: `Solo ▾`, typed `Engineering` ↵ made it (and `main`'s doc, `Main`), `+ → plane` wrote
+  `canvasId`; rename to Build; delete through the confirm took its plane and went back to `Solo`; ⌘Z brought both back.
+- *Not yet:* sessions 2–4 (moving and sharing pieces, pickers grouped by canvas, a thread's go-to across canvases,
+  following across canvases, ⌘1–⌘9, export/import of canvases).

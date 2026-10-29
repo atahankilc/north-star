@@ -865,3 +865,9 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - `stuckChain` (CanvasView) for what a plane carries; `goToTask` stays on a timeline's focus that draws the task
   (`showOnTimeline`, the finder closed). Checked in a worktree (other sessions had uncommitted changes in CanvasView);
   committed with only this session's hunks.
+
+## Done (2026-10-29): canvases themselves (D-305, D-302's session 1)
+- `canvases/` + `canvasId` on pieces and canvas text, rules + tests (446/0), `?canvas=`, the breadcrumb's prompt (new,
+  rename, move, delete with the hazard confirm and undo), break and build between canvases with a camera each, the
+  finder's three scopes and going across canvases, presence's `canvas`. Verified in headless Chrome on the emulators
+  (two scripts: switching + finder; new/rename/delete/undo); details in D-305.

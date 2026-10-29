@@ -1,10 +1,13 @@
 // The finder (D-236): ⌘F, or the side nav's compass, anywhere in a workspace. A prompt in the middle of the screen
-// (the menus' look, D-222): `> what's typed`, `[here | everywhere]`, `Aa W .*`. Opened empty it's only that line,
+// (the menus' look, D-222): `> what's typed`, `[here | this canvas | everywhere]` (those there are, D-302), `Aa W .*`. Opened empty it's only that line,
 // in the middle; typed into, it opens out to its matches, grouped by where they are, and the preview of the one picked
 // (what the screen shows once you're there), gliding as it grows so it stays in the middle. ↓ with nothing typed lists
-// the places (go to, D-196). ↑ ↓ pick, Enter goes, Tab is here / everywhere, alt C W X the switches, Escape closes.
+// the places (go to, D-196). ↑ ↓ pick, Enter goes, Tab steps the scopes, alt C W X the switches, Escape closes.
+// Something on another canvas (D-302) goes there first: the canvas builds, then the view goes on as it would.
 import { Fragment, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { canvasPath } from '../../app/paths'
+import { canvasTextOn, onCanvas } from '../../data/canvases'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Doc, DocBody } from '../../data/documents'
@@ -14,8 +17,8 @@ import { useAuth } from '../../data/auth'
 import { KIND_NAME, kindOfPiece } from '../../data/pieces'
 import { useCanvasView } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
-import { useWs } from './context'
-import { closeFinder, findGo, matcherOf, matchesIn, openFinder, setQuery, toggleOpt, toggleScope, useFind, useMatcher, type FindOpts } from './find'
+import { useWs, useWsNow, type WorkspaceCtx } from './context'
+import { closeFinder, findGo, matcherOf, matchesIn, openFinder, setQuery, setScope, toggleOpt, toggleScope, useFind, useMatcher, type FindOpts, type FindScope } from './find'
 import { findGroups, folded, type Dest, type Group, type Row } from './findIndex'
 import { goToTask } from './Kanban'
 import { FindPreview } from './FindPreview'
@@ -40,8 +43,21 @@ const LIST_MAX = 0.3
 const GO_MAX = 0.6
 const EDGE = 16
 
+// A match on another canvas (D-302), waiting for that canvas to be shown.
+let waiting: Row | null = null
+
 export function Finder() {
   const open = useFind((s) => s.open)
+  const { canvas } = useWs()
+  const now = useWsNow()
+  // The canvas asked for is shown (and its pieces drawn): on to the match.
+  useEffect(() => {
+    const row = waiting
+    if (!row || row.dest.canvas !== canvas) return
+    waiting = null
+    const raf = requestAnimationFrame(() => goRow(row, now()))
+    return () => cancelAnimationFrame(raf)
+  }, [canvas, now])
   // ⌘F (ctrl F) anywhere in the workspace is the finder's, never the browser's.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -68,8 +84,14 @@ function Panel() {
   const here = params.get('focus') ?? CANVAS
   const query = useFind((s) => s.query)
   const opts = useFind((s) => s.opts)
-  const scope = useFind((s) => s.scope)
+  const asked = useFind((s) => s.scope)
   const re = useMatcher()
+  const navigate = useNavigate()
+  // The scopes there are (D-302): `here` only in a focus (out of one it's the canvas), `everywhere` only with more
+  // than one canvas; one alone isn't shown.
+  const several = ws.canvases.length > 1
+  const scopes: FindScope[] = [...(here !== CANVAS ? ['here' as const] : []), 'canvas', ...(several ? ['everywhere' as const] : [])]
+  const scope: FindScope = scopes.includes(asked) ? asked : 'canvas'
   const size = useCanvasView((s) => s.size)
   const fieldText = useFieldText()
   // Documents' text comes in one by one: looked through again once they're in, not on each.
@@ -104,7 +126,7 @@ function Panel() {
   const held = useMemo(() => new Map(), [ws.pieces, ws.cards, ws.cells, ws.documents, fieldText, user?.id])
   const groups: Group[] = useMemo(() => {
     if (going) {
-      const places = placesIn(here, shownPieces(ws.pieces, ws.cards), ws.labels, ws.workspace.name)
+      const places = placesIn(here, shownPieces(ws.pieces.filter(onCanvas(ws.canvas)), ws.cards), ws.labels.filter((l) => l.pieceId !== CANVAS || canvasTextOn(ws.canvas)(l)), ws.workspace.name)
       if (!places.length) return []
       const inside = (id: string) => places.filter((p) => p.inside && p.space === id).length
       return [
@@ -130,31 +152,35 @@ function Panel() {
     }
     if (!(found instanceof RegExp)) return []
     const re = found
-    const all = findGroups(
-      { pieces: ws.pieces, cards: ws.cards, places: ws.places, labels: ws.labels, cells: ws.cells, tasks: ws.tasks, documents: ws.documents, bodies, workspace: ws.workspace, me: user?.id, fieldText, room: size, held },
-      re,
-      here,
-    )
-    // Pieces by their names, as places, first.
-    const named = shownPieces(ws.pieces, ws.cards).filter((p) => p.name && matchesIn(p.name, re, 1).length)
-    const places: Group[] = named.length
-      ? [
-          {
-            space: 'places',
-            title: 'places',
-            glyph: '⌖',
-            count: named.length,
-            rows: named.map((p): Row => {
-              const kind = kindOfPiece(p)
-              const name = p.name ?? ''
-              const place = { id: p.id, space: CANVAS, label: name, glyph: '▦', box: p, whole: true }
-              return { id: `piece:${p.id}`, glyph: '⌖', text: name, hint: KIND_NAME[kind], dest: { kind: 'place', place, target: { kind: 'space', space: CANVAS, key: `${kind === 'plane' ? 'plane' : kind}:${p.id}`, k: 0 } } }
-            }),
-          },
-        ]
-      : []
+    // The canvas shown, or every canvas, the one shown first (D-302); another's groups say which it is, and their
+    // matches go there first.
+    const looked = scope === 'everywhere' ? [ws.canvas, ...ws.canvases.map((c) => c.id).filter((c) => c !== ws.canvas)] : [ws.canvas]
+    const all: Group[] = []
+    const named: { row: Row; canvas: string }[] = []
+    for (const c of looked) {
+      const pieces = ws.pieces.filter(onCanvas(c))
+      const labels = ws.labels.filter((l) => l.pieceId !== CANVAS || canvasTextOn(c)(l))
+      const other = c !== ws.canvas
+      const name = ws.canvases.find((x) => x.id === c)?.name ?? ''
+      const tag = (r: Row): Row => (other ? { ...r, id: `${c}:${r.id}`, dest: { ...r.dest, canvas: c } } : r)
+      const groups = findGroups(
+        { pieces, cards: ws.cards, places: ws.places, labels, cells: ws.cells, tasks: ws.tasks, documents: ws.documents, bodies, workspace: ws.workspace, me: user?.id, fieldText, room: size, held },
+        re,
+        here,
+      )
+      for (const g of groups) all.push(other ? { ...g, space: `${c}:${g.space}`, title: `${name} / ${g.title}`, rows: g.rows.map(tag) } : g)
+      // Pieces by their names, as places, first.
+      for (const p of shownPieces(pieces, ws.cards)) {
+        if (!p.name || !matchesIn(p.name, re, 1).length) continue
+        const kind = kindOfPiece(p)
+        const place = { id: p.id, space: CANVAS, label: p.name, glyph: '▦', box: p, whole: true }
+        const row: Row = { id: `piece:${p.id}`, glyph: '⌖', text: p.name, hint: other ? `${KIND_NAME[kind]} · ${name}` : KIND_NAME[kind], dest: { kind: 'place', place, target: { kind: 'space', space: CANVAS, key: `${kind === 'plane' ? 'plane' : kind}:${p.id}`, k: 0 } } }
+        named.push({ row: tag(row), canvas: c })
+      }
+    }
+    const places: Group[] = named.length ? [{ space: 'places', title: 'places', glyph: '⌖', count: named.length, rows: named.map((n) => n.row) }] : []
     return [...places, ...(scope === 'here' ? folded(all, here) : all)]
-  }, [going, unfolded, found, scope, here, ws.pieces, ws.cards, ws.labels, ws.cells, ws.tasks, ws.documents, ws.workspace, bodies, user?.id, fieldText, size, held])
+  }, [going, unfolded, found, scope, here, ws.pieces, ws.cards, ws.labels, ws.cells, ws.tasks, ws.documents, ws.workspace, ws.canvas, ws.canvases, bodies, user?.id, fieldText, size, held])
 
   // Only so many rows are drawn (typing more narrows them); each group still says how many it has.
   const total = groups.reduce((s, g) => s + (g.space === 'places' ? 0 : g.count), 0)
@@ -183,22 +209,13 @@ function Panel() {
 
   const go = (row: Row | null) => {
     if (!row) return
-    const d = row.dest
-    if (d.kind === 'place') return findGo({ ...(d.target ?? { kind: 'space', space: d.place.space, k: 0 }), place: d.place })
-    // A kanban's task (D-261): its kanban's focus, the task picked.
-    if (d.kind === 'lens' && kindOfPiece(d.piece) === 'kanban' && d.target.key?.startsWith('task:')) return goToTask(d.piece, ws.tasks, { id: d.target.key.slice(5) }, ws.pieces)
-    if (d.kind === 'lens') {
-      const page = d.page
-      if (page !== undefined) {
-        const set = { [d.piece.id]: page }
-        if (kindOfPiece(d.piece) === 'documents') useDocUi.setState((s) => ({ pages: { ...s.pages, ...set } }))
-        else useTableUi.setState((s) => ({ pages: { ...s.pages, ...set } }))
-      }
-      return findGo({ ...d.target, focus: d.piece.id })
+    // On another canvas (D-302): that canvas first, then on from there (Finder, above).
+    if (row.dest.canvas && row.dest.canvas !== ws.canvas) {
+      waiting = row
+      closeFinder()
+      return navigate(canvasPath(ws.wid, row.dest.canvas))
     }
-    if (d.kind === 'doc') return findGo({ ...d.target, focus: d.piece.id })
-    useDocUi.setState({ readers: [d.doc.id], listHidden: false })
-    findGo({ ...d.target, focus: d.list.id })
+    goRow(row, ws)
   }
 
   // How big it is, and so where: the list as tall as its rows (to its most), the preview what's left, at the screen's
@@ -253,7 +270,7 @@ function Panel() {
     }
     if (e.key === 'Tab') {
       e.preventDefault()
-      return toggleScope()
+      return scopes.length > 1 && toggleScope(scopes, scope)
     }
     const sw = e.altKey && SWITCHES.find((s) => s.code === e.code)
     if (sw) {
@@ -358,13 +375,15 @@ function Panel() {
             }}
             onKeyDown={keys}
           />
-          <span className={styles.scope} role="group" aria-label="Where">
-            {(['here', 'everywhere'] as const).map((s) => (
-              <button key={s} className={styles.seg} aria-pressed={scope === s} onClick={() => (scope !== s && toggleScope(), field.current?.focus())}>
-                {s}
-              </button>
-            ))}
-          </span>
+          {scopes.length > 1 && (
+            <span className={styles.scope} role="group" aria-label="Where">
+              {scopes.map((s) => (
+                <button key={s} className={styles.seg} aria-pressed={scope === s} onClick={() => (setScope(s), field.current?.focus())}>
+                  {SCOPE_NAME[s]}
+                </button>
+              ))}
+            </span>
+          )}
           <span className={styles.switches}>
             {SWITCHES.map((s) => (
               <button key={s.k} className={styles.tool} aria-pressed={opts[s.k]} title={s.title} onClick={() => (toggleOpt(s.k), field.current?.focus())}>
@@ -401,11 +420,16 @@ function Panel() {
               </>
             ) : (
               <>
-                <b>↑↓</b> or a click: preview · <b>enter</b> or a double-click: go there · <b>⇥</b> here / everywhere · <b>esc</b>
+                <b>↑↓</b> or a click: preview · <b>enter</b> or a double-click: go there · {scopes.length > 1 && (
+                  <>
+                    <b>⇥</b> {scopes.map((s) => SCOPE_NAME[s]).join(' / ')} ·{' '}
+                  </>
+                )}
+                <b>esc</b>
               </>
             )}
           </span>
-          <span>{searching ? 'searching…' : query && found instanceof RegExp ? `${total} ${total === 1 ? 'match' : 'matches'}${more > 0 ? ` (${rows.length} shown: type more)` : ''} · ${scope}` : ''}</span>
+          <span>{searching ? 'searching…' : query && found instanceof RegExp ? `${total} ${total === 1 ? 'match' : 'matches'}${more > 0 ? ` (${rows.length} shown: type more)` : ''} · ${SCOPE_NAME[scope]}` : ''}</span>
         </div>
       </div>
       {looking && <FindBodies />}
@@ -413,21 +437,44 @@ function Panel() {
   )
 }
 
+// Going to a match on the canvas shown.
+function goRow(row: Row, ws: WorkspaceCtx) {
+  const d = row.dest
+  if (d.kind === 'place') return findGo({ ...(d.target ?? { kind: 'space', space: d.place.space, k: 0 }), place: d.place })
+  // A kanban's task (D-261): its kanban's focus, the task picked.
+  if (d.kind === 'lens' && kindOfPiece(d.piece) === 'kanban' && d.target.key?.startsWith('task:')) return goToTask(d.piece, ws.tasks, { id: d.target.key.slice(5) }, ws.pieces)
+  if (d.kind === 'lens') {
+    const page = d.page
+    if (page !== undefined) {
+      const set = { [d.piece.id]: page }
+      if (kindOfPiece(d.piece) === 'documents') useDocUi.setState((s) => ({ pages: { ...s.pages, ...set } }))
+      else useTableUi.setState((s) => ({ pages: { ...s.pages, ...set } }))
+    }
+    return findGo({ ...d.target, focus: d.piece.id })
+  }
+  if (d.kind === 'doc') return findGo({ ...d.target, focus: d.piece.id })
+  useDocUi.setState({ readers: [d.doc.id], listHidden: false })
+  findGo({ ...d.target, focus: d.list.id })
+}
+
 const ZOOM = { min: 1, max: 6, step: 1.5 }
 // How long typing pauses before it's looked for; how long a pick rests before the preview draws it; rows drawn at most.
 const SETTLE_MS = 160
 const PREVIEW_MS = 90
 const ROWS_MAX = 150
-const spaceOf = (d: Dest) => (d.kind === 'place' ? d.place.space : d.target.space)
+const spaceOf = (d: Dest) => `${d.canvas ?? ''}${d.kind === 'place' ? d.place.space : d.target.space}`
+const SCOPE_NAME: Record<FindScope, string> = { here: 'here', canvas: 'this canvas', everywhere: 'everywhere' }
 
 // Over the preview: where it goes, and its zoom (`[−] 100% [+]`; a click on the number puts it back).
 function PreviewHead({ dest, zoom, onZoom, drawing }: { dest: Dest | null; zoom: number; onZoom: (z: number) => void; drawing: boolean }) {
-  const { documents } = useWs()
+  const { documents, canvases } = useWs()
   if (!dest) return <div className={styles.previewHead} />
   const where =
     dest.kind === 'place'
       ? dest.place.space === CANVAS
-        ? 'on the canvas'
+        ? dest.canvas
+          ? `on ${canvases.find((c) => c.id === dest.canvas)?.name ?? 'another canvas'}`
+          : 'on the canvas'
         : 'in its plane'
       : dest.kind === 'reader'
         ? `${dest.doc.title} · beside ${dest.list.name || 'the documents'}`

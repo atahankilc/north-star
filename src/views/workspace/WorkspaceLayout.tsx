@@ -1,8 +1,8 @@
 // /workspaces/:wid: loads one workspace and its canvas (D-036, D-174). There are no pages: the old views are archived
 // (src/archive/, D-177) and come back as pieces on the canvas.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { WORKSPACES, workspacePath } from '../../app/paths'
+import { canvasPath, WORKSPACES } from '../../app/paths'
 import { useAuth } from '../../data/auth'
 import { setReadOnly } from '../../data/history'
 import type { WithId } from '../../data/hooks'
@@ -31,6 +31,10 @@ import { Finder } from './Finder'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { usePresenceSession } from '../../data/presence'
 import { useWorkspaceData } from '../../data/workspaceData'
+import { canvasOf, MAIN, setCanvasHere } from '../../data/canvases'
+import { CanvasCrumb } from './CanvasSwitch'
+import { runCells } from '../../ui/Appear'
+import { isReducedMotion } from '../../state/motion'
 import { documentsBounds, documentsOf, listed, pinnedView, readerLeft, useDocUi } from './Documents'
 import { documentHome } from './DocumentPiece'
 import {
@@ -43,7 +47,7 @@ import {
   useJoinRequests,
   useWorkspace,
 } from '../../data/workspaces'
-import { canvasCenter, fitCanvas, fitPlane, setEditing, useCanvasView, type PlaneCam } from '../../state/canvasView'
+import { canvasCenter, fitCanvas, fitPlane, setEditing, swapCam, useCanvasView, type PlaneCam } from '../../state/canvasView'
 import { useHoldCurtain } from '../../state/curtain'
 import { AsciiButton } from '../../ui/AsciiButton'
 import { AutosaveField } from '../../ui/AutosaveField'
@@ -80,7 +84,15 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   const { user } = useAuth()
   const { data, isLoading } = useWorkspaceData(wid)
   useHoldCurtain('canvas', isLoading)
-  const ctx = useMemo<WorkspaceCtx>(() => ({ ...data, wid, workspace }), [data, wid, workspace])
+  const [params] = useSearchParams()
+  // A plane in focus (D-184) is the view: its name ends the breadcrumb, and the canvas's `+` goes away.
+  const focusId = params.get('focus')
+  const focused = focusId ? data.pieces.find((p) => p.id === focusId) : undefined
+  // The canvas (D-302): the focused piece's, else `?canvas=` when it's one of them, else the first.
+  const asked = params.get('canvas')
+  const canvas = focused ? canvasOf(focused) : asked && (isLoading || data.canvases.some((c) => c.id === asked)) ? asked : MAIN
+  const shown = useShownCanvas(wid, canvas)
+  const ctx = useMemo<WorkspaceCtx>(() => ({ ...data, wid, workspace, canvas: shown }), [data, wid, workspace, shown])
   const store = useWorkspaceStore(ctx)
   const isOwner = isOwnerOf(workspace, user?.id)
   const editor = canEditIn(workspace, user?.id)
@@ -96,12 +108,12 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
     setReadOnly(VIEWER, 'viewer')
     return () => setReadOnly(null, 'viewer')
   }, [editor])
-  // Presence (D-065): who's here. The canvas is the only view (D-174).
-  usePresenceSession(wid, user, 'canvas')
+  // Presence (D-065): who's here. The canvas is the only view (D-174), on one of the canvases (D-302).
+  usePresenceSession(wid, user, 'canvas', shown)
   useEditKeys(wid)
-  // A plane in focus (D-184) is the view: its name ends the breadcrumb, and the canvas's `+` goes away.
-  const focusId = useSearchParams()[0].get('focus')
-  const focused = focusId ? data.pieces.find((p) => p.id === focusId) : undefined
+  // With one canvas the workspace's name opens the canvases (D-302); with more, the canvas's own crumb does.
+  const several = data.canvases.length > 1
+  const canvasName = data.canvases.find((c) => c.id === shown)?.name ?? ''
 
   return (
     <WorkspaceContext.Provider value={store}>
@@ -109,7 +121,12 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
         <Hud
           crumbs={[
             { label: 'workspaces', to: WORKSPACES },
-            focused ? { label: workspace.name, to: workspacePath(wid) } : { label: workspace.name },
+            several
+              ? { label: workspace.name, to: canvasPath(wid, MAIN) }
+              : focused
+                ? { label: workspace.name, to: canvasPath(wid, shown) }
+                : { label: isLoading ? workspace.name : <CanvasCrumb label={workspace.name} current /> },
+            ...(several ? [focused ? { label: canvasName, to: canvasPath(wid, shown) } : { label: <CanvasCrumb label={canvasName} current /> }] : []),
             // A document on its own goes by its document's title (D-232).
             ...(focused ? [{ label: focused.name || data.documents.find((d) => d.id === focused.docId)?.title || KIND_NAME[kindOfPiece(focused)] }] : []),
           ]}
@@ -133,12 +150,44 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             </>
           }
         />
-        {!isLoading && <CanvasView />}
+        {/* One per canvas (D-302): going to another builds it anew, its camera its own. */}
+        {!isLoading && <CanvasView key={shown} />}
         {!isLoading && <Finder />}
         <Toast />
       </div>
     </WorkspaceContext.Provider>
   )
+}
+
+// The canvas shown (D-302) as it follows the one asked for: the old one breaks cell by cell, then the cameras swap (each
+// canvas keeps its own) and the new one builds. The first one, and reduced motion, at once.
+function useShownCanvas(wid: string, canvas: string) {
+  const [shown, setShown] = useState(canvas)
+  // New things go on the canvas shown.
+  setCanvasHere(shown)
+  const built = useRef(false)
+  const swapped = useRef(false)
+  const canvasEl = () => document.querySelector<HTMLElement>('[data-app] [role="application"][aria-label="Canvas"]')
+  useLayoutEffect(() => {
+    if (canvas === shown) return
+    const swap = () => {
+      swapCam(wid, shown, canvas)
+      swapped.current = true
+      setShown(canvas)
+    }
+    const el = canvasEl()
+    if (!built.current || !el || isReducedMotion()) return swap()
+    return runCells(el, 'exit', 0, 200, swap)
+  }, [wid, canvas, shown])
+  // Once the canvas has been on screen: a canvas found only as the workspace loads (a focused plane's) isn't animated.
+  useEffect(() => void (built.current ||= !!canvasEl()))
+  useLayoutEffect(() => {
+    const el = canvasEl()
+    if (!swapped.current || !el) return
+    swapped.current = false
+    return runCells(el, 'enter', 0, 320)
+  }, [shown])
+  return shown
 }
 
 // The side nav's fit (D-186), under the `+`; `0` does the same: everything on the canvas in view, or in focus the plane's

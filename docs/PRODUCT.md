@@ -41,7 +41,8 @@ lens on that same graph.
 
 ## 4. Views
 
-A workspace is one infinite canvas (D-174): the moving backdrop, drag to pan, wheel to zoom. Everything else is a
+A workspace is one infinite canvas (D-174), or several once someone adds more (D-302, not built yet:
+[specs/canvases.md](specs/canvases.md)): the moving backdrop, drag to pan, wheel to zoom. Everything else is a
 **piece** placed on it from the side nav's `+` (D-176), several of each; each piece sits on its own graphite surface
 with a band in its kind's colour (D-274), opens into **focus** (it becomes the view, D-184), and in edit mode is moved,
 resized, renamed or deleted. A matrix, table or documents piece can be **unframed** onto the canvas (D-228, D-234).

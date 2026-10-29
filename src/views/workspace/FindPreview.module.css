@@ -49,3 +49,15 @@
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx) var(--my) / var(--mark) var(--mark);
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx) var(--my) / var(--mark) var(--mark);
 }
+
+/* Something on another canvas (D-302): not on the page to copy; its name and where it is, in the middle. */
+.elsewhere {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+}

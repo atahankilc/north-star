@@ -15,8 +15,12 @@ import { useAuth } from './auth'
 import { useDocuments, type Doc } from './documents'
 import type { Task } from './tasks'
 import type { Place } from './places'
+import { canvasList, type Canvas } from './canvases'
 
 export type WorkspaceData = {
+  // The workspace's canvases in order, `main` first even without its doc (D-302).
+  canvases: Canvas[]
+  // Every piece, on every canvas (`canvasId`, D-302): what's drawn filters them to the one shown.
   pieces: WithId<Piece>[]
   cards: Card[]
   // Text always has a space (`pieceId`); a doc without one isn't the app's and is skipped.
@@ -64,6 +68,8 @@ function planesOn(c: Card, planes: string[]): Card {
 
 export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading: boolean; error: Error | null } {
   const pieces = useWorkspaceCollection<Piece>(wid, 'pieces')
+  const canvasDocs = useWorkspaceCollection<Omit<Canvas, 'id'>>(wid, 'canvases')
+  const canvases = useMemo(() => canvasList(canvasDocs.data), [canvasDocs.data])
   const customers = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.customer)
   const problems = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.problem)
   const competitors = useWorkspaceCollection<CardDoc>(wid, CARD_COLLECTION.competitor)
@@ -114,11 +120,11 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
       })
     }, [cards, places]),
   )
-  const all = [pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs]
+  const all = [canvasDocs, pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs]
   // The same object while nothing in it changed (the workspace's context is built from it).
   const data = useMemo(
-    () => ({ pieces: pieces.data, cards: placed, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places }),
-    [pieces.data, placed, labels, threads, cells.data, evidence.data, competitorFeatures.data, comparisons.data, edges.data, documents.data, tasks.data, places],
+    () => ({ canvases, pieces: pieces.data, cards: placed, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places }),
+    [canvases, pieces.data, placed, labels, threads, cells.data, evidence.data, competitorFeatures.data, comparisons.data, edges.data, documents.data, tasks.data, places],
   )
   return {
     data,

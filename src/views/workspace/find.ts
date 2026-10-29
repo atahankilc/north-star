@@ -13,7 +13,9 @@ import { isReducedMotion } from '../../state/motion'
 import type { Place } from './goTo'
 
 export type FindOpts = { caseSensitive: boolean; words: boolean; regex: boolean }
-export type FindScope = 'here' | 'everywhere'
+// `here`: the space you're in, the rest of its canvas folded; `canvas`: all of the canvas shown; `everywhere`: every
+// canvas (D-302).
+export type FindScope = 'here' | 'canvas' | 'everywhere'
 
 // What's lit after going: `lens`, a match in a table, matrix or list (its element `data-find` = key); `page`, in a
 // document's page (the k-th on it); `space`, in the canvas's or a plane's DOM (the element `data-target` = key).
@@ -46,7 +48,9 @@ export const closeFinder = () => useFind.setState({ open: false })
 export const clearFound = () => useFind.setState({ target: null })
 export const setQuery = (query: string) => useFind.setState({ query })
 export const toggleOpt = (k: keyof FindOpts) => useFind.setState((s) => ({ opts: { ...s.opts, [k]: !s.opts[k] } }))
-export const toggleScope = () => useFind.setState((s) => ({ scope: s.scope === 'here' ? 'everywhere' : 'here' }))
+// The next of the scopes there are (Tab), from the one shown.
+export const toggleScope = (scopes: FindScope[], shown: FindScope) => useFind.setState({ scope: scopes[(scopes.indexOf(shown) + 1) % scopes.length] })
+export const setScope = (scope: FindScope) => useFind.setState({ scope })
 export const findGo = (target: FindTarget) => useFind.setState((s) => ({ open: false, target, asked: s.asked + 1 }))
 
 export const docScope = (id: string) => `doc:${id}`

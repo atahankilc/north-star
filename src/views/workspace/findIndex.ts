@@ -24,11 +24,13 @@ import { cardsOn, type Place as CardPlace } from '../../data/places'
 
 // Where a row goes: a place on the canvas or in a plane (go to's, D-196), lit there; a match in a table, matrix or list
 // (into its focus, landing on `view`); in a document on its own (its focus); in a document open beside a list.
-export type Dest =
+// `canvas`: on another canvas than the one shown (D-302): gone to first.
+export type Dest = (
   | { kind: 'place'; place: Place; target?: FindTarget }
   | { kind: 'lens'; piece: WithId<Piece>; target: FindTarget; page?: number }
   | { kind: 'doc'; piece: WithId<Piece>; target: FindTarget }
   | { kind: 'reader'; list: WithId<Piece>; doc: WithId<Doc>; target: FindTarget }
+) & { canvas?: string }
 
 // `fold`: a plane's own places folded under it in go to (D-200), opened or not; `indent`: one of them.
 export type Row = { id: string; glyph: ReactNode; text: string; hint: string; dest: Dest; tone?: string; inside?: boolean; fold?: { open: boolean; count: number; plane: string }; indent?: boolean }

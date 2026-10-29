@@ -2,7 +2,8 @@
 // features have their own modules in src/data/; the rest is here.
 //
 //   workspaces/{workspaceId}                 Workspace
-//     pieces/{id}                            Piece (D-176): something on the canvas, a plane (D-180), a matrix (D-204)…
+//     canvases/{id}                          Canvas (D-302, src/data/canvases.ts): one of the workspace's canvases
+//     pieces/{id}                            Piece (D-176): something on a canvas, a plane (D-180), a matrix (D-204)…
 //     documents/{id}                         Doc (D-232, src/data/documents.ts): a file the workspace keeps
 //       content/body                         DocBody: a .md's text, a report's sections
 //     cells/{matrixId}_{row}_{col}           Cell (D-204): one of a matrix's or a table's (D-209) cells (src/data/matrix.ts)
@@ -84,6 +85,8 @@ export type Piece = {
   // A matrix or a table opened onto the canvas (D-228): out of its window, at its own size and live there. Its w/h stay
   // the window's, for when it's closed again.
   open?: boolean
+  // The canvas it's on (D-302); missing: the first, `main`.
+  canvasId?: string
   createdAt: number
   updatedAt: number
 }
