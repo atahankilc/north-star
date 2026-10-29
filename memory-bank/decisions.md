@@ -261,7 +261,7 @@ feature comes back as a piece, and check them with the user then.
   the deck); tabs the canvas's decks (cards ones too, board only), `MINE` and `ALL · DAYS` in the corner; a plane's `⇆ deck` opens it there with a
   `LINKED TO` strip; a task's panel inside it (`[full]`, `‹ back`, `[show on board|days]`); never beside a plane.
 - A timeline is always the days of something (D-314): its deck; its plane's deck (stuck to a plane, read, not written);
-  a plane with no deck, every deck's tasks for its cards; nothing, every deck. Drawing days opens the card prompt.
+  a plane with no deck, every deck's tasks for its cards; nothing, every deck on its canvas. Drawing days opens the card prompt.
 - Stuck to a plane (D-255, D-303): only that plane's tasks until unlinked (no switch, no note: the link shows it),
   beside it in its focus.
 - More (D-256, D-258): `[filter]` (GIVEN TO, DUE, FOR, LABEL; only while open, D-308); `#labels`, `P1`–`P3`; column limits (`4/3`

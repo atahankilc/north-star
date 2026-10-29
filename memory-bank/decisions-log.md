@@ -5784,6 +5784,9 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
   stores in the same page (a rewrite of hot files).
 - *Q-025 and Q-026, answered the same day:* seen-state per person in Firestore ("evet"); people who used North Star
   before see everything too, since nothing was recorded ("eski kullanıcılar için de tutulan bir kayıt olmadığına göre
+- *Then (the user: "timeline de sadece kendi canvasını göstersin"):* a timeline piece linked to nothing shows the decks of
+  its own canvas only (`canvasId`, none = `main`), as ALL · DAYS does. Checked headless: one on the main canvas showed
+  Roadmap and Sprint 3, not "Eng board"'s task; one on "Engineering" showed only that deck.
   önceden, onlar da görcek"), so what's new is only for releases after onboarding ships. On the look the user asked
   whether the run builds everything just to show it: the ~60 lessons are data a few frames draw; then, going to sleep:
   "gerekirse her opsiyonu her biri için implemente et, umrumda değil", so the run builds every frame option behind a
