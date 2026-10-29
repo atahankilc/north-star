@@ -729,5 +729,34 @@ service cloud.firestore {
       allow read, delete: if signedIn()
         && (resource.data.uid == request.auth.uid || isOwner(resource.data.workspaceId));
     }
+
+    // What a person has seen of the onboarding (D-315): one doc, theirs alone, nothing else under users/{uid}. Shape
+    // mirrors src/onboarding/seenMerge.ts (SeenState); change both together. These rules bound counts only (seen,
+    // armed) and a few lengths; the length of each key and value in `seen`/`armed` can't be checked here, so the
+    // client cleans them (cleanSeenState: short ids, whole versions).
+    function validOnboarding(d) {
+      return d.keys().hasAll(['v', 'audience', 'startedAt', 'seen', 'armed', 'tipsOff', 'lastRelease', 'updatedAt'])
+        && d.keys().hasOnly(['v', 'audience', 'startedAt', 'seen', 'armed', 'tipsOff', 'lastRelease', 'welcome', 'nudges', 'at', 'updatedAt'])
+        && d.v == 1
+        && d.audience in ['new', 'invited']
+        && d.startedAt is number
+        && d.seen is map && d.seen.size() <= 300
+        && d.armed is list && d.armed.size() <= 200
+        && d.tipsOff is bool
+        && isText(d.lastRelease, 40)
+        && optIn(d, 'welcome', ['done', 'skipped'])
+        && (!('nudges' in d) || (d.nudges is map && d.nudges.keys().hasOnly(['last'])
+          && (!('last' in d.nudges) || d.nudges.last is number)))
+        && (!('at' in d) || (d.at is map && d.at.keys().hasOnly(['tipsOff', 'welcome', 'lastRelease'])
+          && (!('tipsOff' in d.at) || d.at.tipsOff is number)
+          && (!('welcome' in d.at) || d.at.welcome is number)
+          && (!('lastRelease' in d.at) || d.at.lastRelease is number)))
+        && d.updatedAt is number;
+    }
+
+    match /users/{uid}/private/onboarding {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid && validOnboarding(request.resource.data);
+    }
   }
 }

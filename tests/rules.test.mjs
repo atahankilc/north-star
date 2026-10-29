@@ -803,5 +803,49 @@ await allow('owner deletes children, invite code, then workspace', async () => {
   await allow('owner deletes 25 reports six to a batch (workspace delete)', () => inBatches(6, remove))
 }
 
+// ---- The onboarding's seen-state (D-315): users/{uid}/private/onboarding, the person's own only ----
+{
+  const seenDoc = (who, uid = who.uid) => doc(who.fs, 'users', uid, 'private', 'onboarding')
+  const seenState = (extra = {}) => ({
+    v: 1, audience: 'new', startedAt: Date.now(), seen: { focus: 1 }, armed: ['deck@2'], tipsOff: false,
+    lastRelease: 'launch', welcome: 'done', nudges: { last: Date.now() }, at: { tipsOff: 1, lastRelease: 1 },
+    updatedAt: Date.now(), ...extra,
+  })
+  await allow('onboarding: write own seen-state', () => setDoc(seenDoc(dave), seenState()))
+  await allow('onboarding: read own seen-state', () => getDoc(seenDoc(dave)))
+  await allow('onboarding: merge into own seen-state', () =>
+    setDoc(seenDoc(dave), { seen: { plus: 1 }, tipsOff: true, updatedAt: Date.now() }, { merge: true }))
+  await allow('onboarding: the least shape (no welcome, nudges, at)', () =>
+    setDoc(seenDoc(erin), { v: 1, audience: 'invited', startedAt: 1, seen: {}, armed: [], tipsOff: false, lastRelease: '', updatedAt: 1 }))
+  await deny('onboarding: read someone else\'s', () => getDoc(seenDoc(alice, dave.uid)))
+  await deny('onboarding: write someone else\'s', () => setDoc(seenDoc(alice, dave.uid), seenState()))
+  await deny('onboarding: delete someone else\'s', () => deleteDoc(seenDoc(alice, dave.uid)))
+  await deny('onboarding: signed out reads', () => getDoc(seenDoc(anon, dave.uid)))
+  await deny('onboarding: signed out writes', () => setDoc(seenDoc(anon, dave.uid), seenState()))
+  await deny('onboarding: an extra key', () => setDoc(seenDoc(dave), seenState({ secret: 1 })))
+  await deny('onboarding: a missing key', () => {
+    const { armed: _, ...rest } = seenState()
+    return setDoc(seenDoc(dave), rest)
+  })
+  await deny('onboarding: v 2', () => setDoc(seenDoc(dave), seenState({ v: 2 })))
+  await deny('onboarding: an unknown audience', () => setDoc(seenDoc(dave), seenState({ audience: 'old' })))
+  await deny('onboarding: tipsOff not a bool', () => setDoc(seenDoc(dave), seenState({ tipsOff: 'yes' })))
+  await deny('onboarding: seen not a map', () => setDoc(seenDoc(dave), seenState({ seen: ['focus'] })))
+  await deny('onboarding: armed not a list', () => setDoc(seenDoc(dave), seenState({ armed: 'deck' })))
+  await deny('onboarding: too many armed', () =>
+    setDoc(seenDoc(dave), seenState({ armed: Array.from({ length: 201 }, (_, i) => `l${i}@1`) })))
+  await deny('onboarding: too many seen', () =>
+    setDoc(seenDoc(dave), seenState({ seen: Object.fromEntries(Array.from({ length: 301 }, (_, i) => [`l${i}`, 1])) })))
+  await deny('onboarding: too long a lastRelease', () => setDoc(seenDoc(dave), seenState({ lastRelease: 'x'.repeat(41) })))
+  await deny('onboarding: an unknown welcome', () => setDoc(seenDoc(dave), seenState({ welcome: 'later' })))
+  await deny('onboarding: an unknown nudges key', () => setDoc(seenDoc(dave), seenState({ nudges: { count: 3 } })))
+  await deny('onboarding: an unknown stamp', () => setDoc(seenDoc(dave), seenState({ at: { seen: 1 } })))
+  await deny('onboarding: a merge that breaks the shape', () => setDoc(seenDoc(dave), { v: 2 }, { merge: true }))
+  await deny('onboarding: a second doc under users/{uid}/private', () => setDoc(doc(dave.fs, 'users', dave.uid, 'private', 'other'), seenState()))
+  await deny('onboarding: the users/{uid} doc itself', () => setDoc(doc(dave.fs, 'users', dave.uid), { name: 'Dave' }))
+  await deny('onboarding: listing users', () => getDocs(collection(dave.fs, 'users')))
+  await allow('onboarding: delete own seen-state', () => deleteDoc(seenDoc(dave)))
+  await allow('onboarding: delete own (erin)', () => deleteDoc(seenDoc(erin)))
+}
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed ? 1 : 0)
