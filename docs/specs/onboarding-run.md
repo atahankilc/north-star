@@ -121,12 +121,18 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 ~06:00, lead workspace-sections-canvas: O0–O7 committed. O8 (start: welcome scenes and variants, empty states) building; it first fixes O7's two
-carry-overs (focus kept, :hover shown in the demo).
-Agreed with b2: S3's `onTracked` is in (events.ts uses it; ops will fill `meta.kind`/`created` from S4 on).
-The uncommitted 2-line hunk in tests/rules.test.mjs (and CanvasView/WorkspaceLayout/canvasView.ts) is a third
-session's: commit only our own hunks. Emulators already run (someone's): never stop them; rules tests run as a copy of
-the file on a separate project id (`demo-onboarding-*`, rules loaded by REST), not `npm run test:rules`.
+2026-10-29 PAUSED by the user (internet going down). Committed: O0–O7, the look pick (D-316), threads/learn guards.
+**O8 is built but NOT reviewed, NOT committed** (all in the working tree): src/demo/{demoCss.ts (new), director.ts,
+boot.tsx, Stage.module.css, views.tsx}, vite.demo.config.ts, scripts/check-scenes.mjs, src/demo/scenes/{pieces-tour,
+plus-adds-plane,finder-go,peers-comment}.ts (new) + sceneList.ts lines, src/onboarding/{Demo,Coach,Choices (new)}.tsx,
+Coach.module.css, lessons.ts (anchor `workspaces-empty`), scripts/lessons-pending.json, src/views/workspaces/
+Workspaces.tsx + .module.css. Builder's report: carry-overs done (focus kept, :hover shown via a demo-only CSS
+rewrite), welcome variants + empty states + join pending checked in flows; scenes check 8 × dark/light passed; tsc
+fails only in the agent run's src/agent/read/*. **To resume:** start a fresh O8 reviewer (brief: run §1.5 row O8 + the
+list above; the stopped one had no verdict), then commit O8 (only the files above), then O9 again from scratch (the
+stopped O9 builder left nothing in the repo).
+Agreed with b2: `onTracked` actor and `agentDriving()` wired. Emulators are someone else's: never stop them; rules
+tests run as a copy of the file on a separate project id. Never `git add`/`git mv` from builders (shared index).
 
 ### Done
 _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
