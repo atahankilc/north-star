@@ -40,7 +40,9 @@ export type ModelMessage =
   | { role: 'assistant'; content: string; toolCalls?: ToolCall[]; providerItems?: unknown[]; responseId?: string }
   | { role: 'tool'; callId: string; name: string; content: string }
 
-export type ModelRequest = { messages: ModelMessage[]; tools: ToolDef[]; signal?: AbortSignal }
+// `toolChoice: 'none'`: the tools stay listed (the prompt cache's prefix stays the same) but the model must answer in
+// text: the loop's last allowed step (S12, src/agent/loop.ts). Left out: the model may call tools ('auto').
+export type ModelRequest = { messages: ModelMessage[]; tools: ToolDef[]; signal?: AbortSignal; toolChoice?: 'auto' | 'none' }
 
 // Why the model stopped: it wants tools run, it answered, it ran out of room, the provider's filter stopped it, the
 // model refused, or the provider failed.

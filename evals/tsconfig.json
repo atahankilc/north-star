@@ -1,5 +1,5 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": { "types": ["vite/client", "node"], "noEmit": true },
-  "include": [".", "../tests/unit/fixtures", "../tests/unit/evalGraders.test.ts", "../tests/unit/evalRunner.test.ts", "../src/agent/contract.ts", "../src/agent/stubModel.ts"]
+  "include": [".", "../tests/unit/fixtures", "../tests/unit/evalGraders.test.ts", "../tests/unit/evalRunner.test.ts", "../src/agent/contract.ts", "../src/agent/stubModel.ts", "../src/agent/loop.ts", "../src/agent/openai.ts", "../src/agent/models.ts", "../src/agent/tools.ts"]
 }

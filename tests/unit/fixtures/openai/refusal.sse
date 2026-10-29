@@ -1,0 +1,8 @@
+data: {"type":"response.created","response":{"id":"resp_r_1","status":"in_progress"}}
+
+data: {"type":"response.refusal.delta","delta":"I can't help with that."}
+
+data: {"type":"response.output_item.done","output_index":0,"item":{"id":"msg_r","type":"message","role":"assistant","content":[{"type":"refusal","refusal":"I can't help with that."}]}}
+
+data: {"type":"response.completed","response":{"id":"resp_r_1","status":"completed","usage":{"input_tokens":30,"output_tokens":8}}}
+

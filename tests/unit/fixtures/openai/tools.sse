@@ -1,0 +1,35 @@
+: a comment line the parser skips
+
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp_tools_1","status":"in_progress","output":[]}}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","sequence_number":1,"output_index":0,"item":{"id":"rs_1","type":"reasoning","summary":[],"encrypted_content":"gAAAAenc-tools-1"}}
+
+event: response.output_item.added
+data: {"type":"response.output_item.added","sequence_number":2,"output_index":1,"item":{"id":"fc_1","type":"function_call","status":"in_progress","arguments":"","call_id":"call_A","name":"search"}}
+
+event: response.function_call_arguments.delta
+data: {"type":"response.function_call_arguments.delta","sequence_number":3,"item_id":"fc_1","output_index":1,"delta":"{\"query\":"}
+
+event: response.function_call_arguments.delta
+data: {"type":"response.function_call_arguments.delta","sequence_number":4,"item_id":"fc_1","output_index":1,"delta":"\"pricing\"}"}
+
+event: response.function_call_arguments.done
+data: {"type":"response.function_call_arguments.done","sequence_number":5,"item_id":"fc_1","output_index":1,"arguments":"{\"query\":\"pricing\"}"}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","sequence_number":6,"output_index":1,"item":{"id":"fc_1","type":"function_call","status":"completed","arguments":"{\"query\":\"pricing\"}","call_id":"call_A","name":"search"}}
+
+event: response.output_item.added
+data: {"type":"response.output_item.added","sequence_number":7,"output_index":2,"item":{"id":"fc_2","type":"function_call","status":"in_progress","arguments":"","call_id":"call_B","name":"get"}}
+
+event: response.function_call_arguments.delta
+data: {"type":"response.function_call_arguments.delta","sequence_number":8,"item_id":"fc_2","output_index":2,"delta":"{\"ids\":[\"c12\",\"p3\"]}"}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","sequence_number":9,"output_index":2,"item":{"id":"fc_2","type":"function_call","status":"completed","arguments":"{\"ids\":[\"c12\",\"p3\"]}","call_id":"call_B","name":"get"}}
+
+event: response.completed
+data: {"type":"response.completed","sequence_number":10,"response":{"id":"resp_tools_1","status":"completed","usage":{"input_tokens":12000,"input_tokens_details":{"cached_tokens":11264},"output_tokens":95,"output_tokens_details":{"reasoning_tokens":64},"total_tokens":12095}}}
+

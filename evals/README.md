@@ -10,6 +10,7 @@ npm run eval -- --repeat 3        pass^3: every attempt must pass (catches flaky
 npm run eval -- --group build --set capability --task find-01-no-evidence,edit-02-validate-with-interview
 npm run eval -- --wrong           the stub plays each task's plausible wrong script: every task should FAIL
 npm run eval -- --write-fixtures  rewrite evals/fixtures/*.workspace.json (export v2) after the fixtures change
+OPENAI_API_KEY=… npm run eval -- --model openai:gpt-5.6-terra   a real model (S12); the judge uses it too
 ```
 
 `npm run eval` runs `evals/run.ts` in node through Vite's module runner (`evals/cli.mjs`); no extra dependency. The
@@ -27,14 +28,15 @@ grader's verdict and why), `report.json`, and `transcripts/<task>-<attempt>.json
    `validate` + `project`, the same code the browser's apply runs before it writes. **One turn = one undo step**
    (§7.2 point 2): every apply in a turn (the loop calls `env.newTurn`) joins one agent step, whose inverse is each
    touched doc as it was when the turn began. The UI facade records moves and keeps a view in step (`where_am_i`).
-3. **Loop** (`loop.ts`): a minimal stand-in for S12's loop, on the contract's interfaces: the map + where the person is
-   + the ask, then model → tool calls → results until the model answers or 25 steps. Only a stop `end` with no call is
-   `answered`; `length`, a refusal or a content filter end the turn otherwise (and fail the attempt); a call whose
-   arguments didn't parse (`argsError`) goes back to the model; a model that throws fails that attempt, never the run.
-4. **Tools** (`tools.ts`): the read layer's tools as they are, `where_am_i`, a stand-in `change` (ops by name; args
-   checked against the op's JSON Schema in `schema.ts` (types, enums, required, nested, unknown keys) with the errors
-   returned to the model; short ids resolved only under argument names that hold ids (`ID_KEYS`), never inside a
-   title or text), the UI tools. S12/S13 replace them with the real ones; the runner doesn't change.
+3. **Loop**: the agent's real loop since S12 (`src/agent/loop.ts`, see "Model adapter & loop" below). Only a stop
+   `end` with no call is `answered`; `length`, a refusal, a content filter or the step budget end the turn otherwise
+   (and fail the attempt); a call whose arguments didn't parse (`argsError`) goes back to the model; a model that throws
+   fails that attempt, never the run.
+4. **Tools** (`tools.ts`, re-exporting `src/agent/tools.ts` since S12): the read layer's tools as they are,
+   `where_am_i`, a stand-in `change` (ops by name, each op's arguments and summary in its description; args checked
+   against the op's JSON Schema in `src/agent/schema.ts` (types, enums, required, nested, unknown keys) with the errors
+   returned to the model; short ids resolved only under argument names that hold ids (`ID_KEYS`), never inside a title
+   or text), the UI tools. S13 replaces `change` with the real write tool; the runner doesn't change.
 5. **Graders** (`graders.ts`) read the END STATE and the transcript, never what the model says it did.
 6. **Report** (`report.ts`): per attempt a verdict `pass`, `fail` or `unjudged` (no grader failed but an LLM judge was
    skipped: never counted as a pass); pass@1, pass^k, unjudged, failed, steps, tokens in (cached) and out (reasoning),
@@ -43,7 +45,9 @@ grader's verdict and why), `report.json`, and `transcripts/<task>-<attempt>.json
 
 ## Tasks (`tasks/*.ts`)
 
-A task is `{ id, group, set, fixture, ask, view?, role?, graders, reference, wrong? }`.
+A task is `{ id, group, set, fixture, ask, followUps?, view?, role?, graders, reference, wrong? }`. `followUps`: later
+turns of the same chat (`['go']` after a big job's plan, agent.md §4.10); the reference script runs on across the turns;
+graders read the end state after the last turn, and `noWritesInTurn(1)` checks the plan wrote nothing (build-01, build-03).
 
 - `group`: find (10), edit (8), build (8), context (6, one with a table beside), refuse (4), injection (5), as agent.md §8.
 - `set`: `regression` (100 % on every change) or `capability` (measured at phase gates).
@@ -77,7 +81,7 @@ with `setJudge`, S12).
 
 Tests: tests/unit/evalGraders.test.ts (every grader on a right and a wrong end state), tests/unit/evalRunner.test.ts
 (the runner, the stub, the loop's endings, the tools and their schema checks, all references pass (judged ones
-unjudged) and all wrong scripts fail).
+unjudged) and all wrong scripts fail); the loop itself: tests/unit/agentLoop.test.ts.
 
 ## The contract (src/agent/contract.ts, src/agent/stubModel.ts)
 
@@ -87,6 +91,29 @@ unjudged) and all wrong scripts fail).
 `AgentStep`, `AgentTurn` (`end`, `error`), `Transcript` (`system`, `toolsHash`), `AgentEnv` (`getWs`, `apply(plans,
 { actor: 'agent' })`, `actor`, `ids`, `ui`, `now`, `newId`, `newTurn`), `AgentTool`. The stub model plays a script and answers exactly as an adapter would; S12's dev stub
 (`?agentStub=1`) uses it too.
+
+## Model adapter & loop (S12)
+
+- `src/agent/loop.ts` `runTurn(model, env, tools, history, ask, { stepBudget = 25, signal, onEvent, notes, transcript,
+  compact })`: context per agent.md §4.3 (system prompt → map, byte-stable within a turn → agent notes (S16) → the chat
+  so far → where the person is, last → the ask → this turn's steps); all calls of a step run in that step (reads at
+  once, writes and UI moves in order); tool errors, unknown tools and unparsed args go back as results; results cut at
+  ~8k tokens; the last allowed step is asked to answer with the tools listed but off (`toolChoice: 'none'`) and ends
+  `budget`; a stop returns what's done (calls not run say so); old tool results become one-line notes past 6 + 4;
+  compaction past ~60k estimated tokens keeps the last two turns whole (a model-written summary can come through
+  `compact` later); every apply goes as `actor: 'agent'`; events for the UI with step labels (`reading "Pazar"…`).
+- `src/agent/openai.ts`: the Responses API, streamed (SSE), replaying output items with `store: false` and encrypted
+  reasoning (no `previous_response_id`: nothing kept on OpenAI's side, and the loop owns the context); strict only for
+  tools whose schema already fits; `parallel_tool_calls: true`; reasoning effort from `src/agent/models.ts` (medium);
+  401/429/5xx/network/abort handled, one retry for 429 (honouring retry-after, not when out of credit) and 5xx; the key
+  only in a closure and the Authorization header, redacted from every error. Tested on recorded-style SSE fixtures
+  (`tests/unit/fixtures/openai/`); never run against the network yet.
+- `src/agent/prompt.ts`: the system prompt in short sections; `tests/unit/agentPrompt.test.ts` checks §7.3 mechanically.
+- `--model openai:<name>`: the key ONLY from `OPENAI_API_KEY` at run time, never written (the report and transcripts
+  carry the model's name only). `src/agent/models.ts` holds the price table (`prices.ts` re-exports it) and the picker
+  data; every model is `not tried yet` until a run with a key marks it.
+- `src/agent/devStub.ts`: a scripted model for the UI in dev (`?agentStub=1`), on the real tools; not in production.
+- `src/agent/usage.ts`: the browser's usage log, counts and tool names only.
 
 ## Emulator mode (not built)
 

@@ -1,8 +1,9 @@
 // Big builds (agent.md §8, 8 tasks): several ops in one change, graded on the end state: what was made found by its
 // kind (`MADE`, never by the name the reference happened to give it), nothing else changed, no overlaps where things
 // were made or moved, groups and headings laid out as asked, links wired, one undo step; the judge (capability only)
-// for what only a reader can tell. Each has a plausible wrong script.
-import { MADE, count, exists, field, grouped, judge, linked, made, noOverlaps, onPlane, onlyChanged, under, undoRestores } from '../graders'
+// for what only a reader can tell. Each has a plausible wrong script. A big job (a new piece filled with things, agent.md
+// §4.10) is two turns: a plan that writes nothing, then "go" (`followUps`, `noWritesInTurn(1)`).
+import { MADE, count, exists, field, grouped, judge, linked, made, noOverlaps, noWritesInTurn, onPlane, onlyChanged, under, undoRestores } from '../graders'
 import type { Task } from '../types'
 import { answer, call, change, realOf } from './util'
 
@@ -20,7 +21,9 @@ export const BUILD: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: 'Make a competitor matrix for our Roadmap features.',
+    followUps: ['go'],
     graders: [
+      noWritesInTurn(1),
       made('piece', { kind: 'matrix', canvas: 'Build' }),
       field(MATRIX, 'matrix.rows.type', 'feature', ['piece']),
       field(MATRIX, 'matrix.rows.plane', R('p9'), ['piece']),
@@ -30,6 +33,7 @@ export const BUILD: Task[] = [
     ],
     reference: [
       call('view', { piece: 'p9' }),
+      answer('Plan: 1. a matrix on k2 Build with the features on p9 Roadmap as rows and every competitor as columns (compare: none / partial / full / better); 2. it starts empty, and I can fill it from what the cards say after. Say go, or change the plan.'),
       change([['create_piece', { kind: 'matrix', canvas: 'k2', name: 'Roadmap vs competitors', matrix: { template: 'compare', rows: { type: 'feature', plane: 'p9' }, cols: { type: 'competitor' } } }]], 'competitor matrix for Roadmap'),
       answer('Made the matrix "Roadmap vs competitors" on k2 Build: the features on p9 Roadmap as rows, every competitor as columns, cells none / partial / full / better. It is empty; say if you want me to fill it from what we know.'),
     ],
@@ -79,7 +83,9 @@ export const BUILD: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: 'Make a deck of tasks to test our idea "Pre-order bread for pickup".',
+    followUps: ['go'],
     graders: [
+      noWritesInTurn(1),
       made('piece', { kind: 'deck' }),
       count('task', { deck: DECK, card: 'Pre-order bread for pickup' }, { min: 3 }),
       count('task', { deck: DECK }, { min: 3, max: 10 }),
@@ -89,6 +95,7 @@ export const BUILD: Task[] = [
     ],
     reference: [
       call('get', { ids: ['c58'] }),
+      answer('Plan for c58 "Pre-order bread for pickup": 1. a deck "Test: Pre-order bread for pickup" on k1 Discovery; 2. three tasks in todo, each for c58: ask 5 bakers if they would take pre-orders, run a one-week pilot at one stall, count pickups vs no-shows. Say go, or change the plan.'),
       change(
         [
           ['create_piece', { kind: 'deck', canvas: 'main', name: 'Test: Pre-order bread for pickup', handle: '$d' }],

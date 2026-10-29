@@ -1,0 +1,14 @@
+data: {"type":"response.created","response":{"id":"resp_u_1","status":"in_progress"}}
+
+data: {"type":"response.output_item.done","output_index":1,"item":{"id":"fc_u","type":"function_call","status":"completed","arguments":"{\"query\":\"Ayşe’nin fırını €\"}","call_id":"call_u","name":"search"}}
+
+data: {"type":"response.output_text.delta","output_index":0,"delta":"Ayşe’s bakery: "}
+
+data: {"type":"response.output_text.delta","output_index":0,"delta":"ekmek 🍞 €2,50 — çok iyi"}
+
+data: {"type":"response.output_item.done","output_index":0,"item":{"id":"msg_u","type":"message","role":"assistant","content":[{"type":"output_text","text":"Ayşe’s bakery: ekmek 🍞 €2,50 — çok iyi"}]}}
+
+data: {"type":"response.completed","response":{"id":"resp_u_1","status":"completed","usage":{"input_tokens":40,"output_tokens":12}}}
+
+data: {"type":"response.output_text.delta","delta":"never read: after completed"}
+

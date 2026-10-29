@@ -1,0 +1,8 @@
+data: {"type":"response.created","response":{"id":"resp_bad_1","status":"in_progress"}}
+
+data: {"type":"response.output_item.done","output_index":0,"item":{"id":"fc_9","type":"function_call","status":"completed","arguments":"{\"ids\": [\"c12\"","call_id":"call_bad","name":"get"}}
+
+data: {"type":"response.output_item.done","output_index":1,"item":{"id":"fc_10","type":"function_call","status":"completed","arguments":"[1,2]","call_id":"call_arr","name":"view"}}
+
+data: {"type":"response.completed","response":{"id":"resp_bad_1","status":"completed","usage":{"input_tokens":100,"output_tokens":20}}}
+

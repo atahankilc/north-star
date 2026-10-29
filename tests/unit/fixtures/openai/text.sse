@@ -1,0 +1,36 @@
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp_text_1","object":"response","status":"in_progress","model":"gpt-5.6-terra","output":[]}}
+
+event: response.in_progress
+data: {"type":"response.in_progress","sequence_number":1,"response":{"id":"resp_text_1","status":"in_progress"}}
+
+event: response.output_item.added
+data: {"type":"response.output_item.added","sequence_number":2,"output_index":0,"item":{"id":"rs_t1","type":"reasoning","summary":[]}}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","sequence_number":3,"output_index":0,"item":{"id":"rs_t1","type":"reasoning","summary":[],"encrypted_content":"gAAAAenc-text-1"}}
+
+event: response.output_item.added
+data: {"type":"response.output_item.added","sequence_number":4,"output_index":1,"item":{"id":"msg_t1","type":"message","status":"in_progress","role":"assistant","content":[]}}
+
+event: response.content_part.added
+data: {"type":"response.content_part.added","sequence_number":5,"item_id":"msg_t1","output_index":1,"content_index":0,"part":{"type":"output_text","text":"","annotations":[]}}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","sequence_number":6,"item_id":"msg_t1","output_index":1,"content_index":0,"delta":"Three problems "}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","sequence_number":7,"item_id":"msg_t1","output_index":1,"content_index":0,"delta":"have no evidence: "}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","sequence_number":8,"item_id":"msg_t1","output_index":1,"content_index":0,"delta":"c15, c16, c17."}
+
+event: response.output_text.done
+data: {"type":"response.output_text.done","sequence_number":9,"item_id":"msg_t1","output_index":1,"content_index":0,"text":"Three problems have no evidence: c15, c16, c17."}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","sequence_number":10,"output_index":1,"item":{"id":"msg_t1","type":"message","status":"completed","role":"assistant","content":[{"type":"output_text","text":"Three problems have no evidence: c15, c16, c17.","annotations":[]}]}}
+
+event: response.completed
+data: {"type":"response.completed","sequence_number":11,"response":{"id":"resp_text_1","status":"completed","usage":{"input_tokens":5210,"input_tokens_details":{"cached_tokens":4096},"output_tokens":184,"output_tokens_details":{"reasoning_tokens":128},"total_tokens":5394}}}
+

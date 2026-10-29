@@ -1,4 +1,4 @@
-// S11's runner (D-312, evals/run.ts) with the stub model: three tasks' references pass, wrong scripts fail the right
+// S11's runner (D-312, evals/run.ts; on S12's real loop) with the stub model: three tasks' references pass, wrong scripts fail the right
 // graders; the stub answers as a model would; the stand-in change tool applies as the agent (agent-run.md "S12/S13
 // must"); the task set has §8's groups; the export-v2 fixtures round-trip; the report is written.
 import { describe, expect, it } from 'vitest'
@@ -7,11 +7,15 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { stubModel, wrongScript } from '../../src/agent/stubModel'
 import { callsOf } from '../../src/agent/contract'
-import { attempt, parseArgs, referenceModel, runTask, runTasks, selectTasks, wrongModel } from '../../evals/run'
+import { attempt, parseArgs, realModel, referenceModel, runTask, runTasks, selectTasks, wrongModel } from '../../evals/run'
 import { TASKS } from '../../evals/tasks'
 import { makeEnv } from '../../evals/env'
 import { EVAL_TOOLS } from '../../evals/tools'
-import { runTurn } from '../../evals/loop'
+import { runTurn as realTurn } from '../../src/agent/loop'
+import type { AgentEnv, AgentModel, AgentTool } from '../../src/agent/contract'
+
+// The real loop (S12) with the old stand-in's call shape, for these runner tests.
+const runTurn = async (env: AgentEnv, m: AgentModel, tools: AgentTool[], ask: string, o: { budget?: number } = {}) => (await realTurn(m, env, tools, [], ask, { stepBudget: o.budget })).turn
 import { loadFixture, toBundle, fromBundle, FIXTURES } from '../../evals/fixtures'
 import { rates, writeReport } from '../../evals/report'
 import { realOf } from '../../evals/tasks/util'
@@ -122,7 +126,7 @@ describe('the stub model', () => {
   it('a call whose arguments did not parse goes back to the model as an error', async () => {
     const env = makeEnv(loadFixture('medium'))
     const m = { name: 'x', respond: async () => ({ text: '', toolCalls: [{ id: 'a', name: 'get', args: {}, rawArgs: '{ids:', argsError: 'Unexpected token' }], usage: { input: 0, output: 0 }, stop: 'tool_calls' as const }) }
-    const turn = await runTurn(env, m, EVAL_TOOLS, 'x', { budget: 1 })
+    const turn = await runTurn(env, m, EVAL_TOOLS, 'x', { budget: 2 })
     expect(turn.steps[0].results[0]).toMatchObject({ ok: false })
     expect(turn.steps[0].results[0].text).toContain("didn't parse")
   })
@@ -227,6 +231,29 @@ describe('fixtures, options and the report', () => {
     expect(ws.labels.length - base.labels.length).toBe(1)
     expect(ws.threads.length - base.threads.length).toBe(1)
     expect(ws.documents.length - base.documents.length).toBe(1)
+  })
+
+  it('--model openai:<name> takes the key only from OPENAI_API_KEY, and says so clearly without it', () => {
+    expect(() => realModel('openai:gpt-5.6-terra', {})).toThrow(/needs an OpenAI key in the environment variable OPENAI_API_KEY/)
+    expect(() => realModel('anthropic:x', { OPENAI_API_KEY: 'sk-test-abc' })).toThrow(/use stub \(the default\) or openai:<model>/)
+    const r = realModel('openai:gpt-5.6-terra', { OPENAI_API_KEY: 'sk-test-SECRET123456' })
+    const m = r.make()
+    expect([r.name, m.name]).toEqual(['gpt-5.6-terra', 'gpt-5.6-terra'])
+    expect(JSON.stringify({ r, m })).not.toContain('SECRET')
+  })
+
+  it('a plan with no writes gets an automatic "go" (once); a script that plans then acts passes build-04; autoGo: false keeps plans as plans', async () => {
+    const t = byId('build-04-organise-bets')
+    const at = t.reference.findIndex((x) => 'calls' in x && x.calls.some((c) => c.name === 'change'))
+    const planned = [...t.reference.slice(0, at), { answer: 'Plan: 1. cluster the ideas on p3 Bets by status, with a heading over each group. Say go, or change the plan.' }, ...t.reference.slice(at)]
+    const r = await runTask(t, { model: () => stubModel(planned) })
+    expect(r.attempts[0].grades.filter((g) => g.pass === false)).toEqual([])
+    expect(r.attempts[0].transcript.turns.map((x) => x.ask)).toEqual([t.ask, 'go'])
+    // Refuse, injection and viewer tasks never get one.
+    for (const x of TASKS.filter((k) => k.group === 'refuse' || k.group === 'injection' || k.role === 'viewer')) expect(x.autoGo, x.id).toBe(false)
+    const refuse = TASKS.find((k) => k.group === 'refuse')!
+    const kept = await runTask(refuse, { model: () => stubModel([{ answer: 'Plan: 1. delete it all. Say go.' }, { calls: [{ name: 'change', args: {} }] }]) })
+    expect(kept.attempts[0].transcript.turns).toHaveLength(1)
   })
 
   it('selects by set, group and id; parses options', () => {

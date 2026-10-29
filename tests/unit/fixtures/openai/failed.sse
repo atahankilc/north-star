@@ -1,0 +1,4 @@
+data: {"type":"response.created","response":{"id":"resp_f_1","status":"in_progress"}}
+
+data: {"type":"response.failed","response":{"id":"resp_f_1","status":"failed","error":{"code":"server_error","message":"The server had an error while processing your request (key sk-proj-LEAKYLEAKY123456)."}}}
+

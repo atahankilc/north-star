@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S12 next (OpenAI Responses adapter + the loop + a dev stub model `?agentStub=1`; plugs into src/agent/contract.ts and evals' runTurn). S1–S11 done.
+S13 next (the real `change` tool over src/ops with short ids, schema-strict args, actor 'agent', one undo step per turn in the browser; workflows plan → run → preview → ask → report; the eval emulator mode). S1–S12 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -185,6 +185,15 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   op fixes: create_card lands clear of text/sections, create_package pushes members clear, findCol takes "cost (€)" ·
   reviewer: 1 fix round (graders passed plausible-wrong work: 15 loopholes, all closed but one narrow `asked()` case)
   · eval: 37/41 pass + 4 unjudged (no judge model yet), `--wrong` 0/41.
+- S12 · see `git log --grep "Agent S12"` · `src/agent/openai.ts` (Responses API, SSE, output items replayed under
+  store:false, strict only where the schema fits, parallel calls, cached/reasoning usage, retries, abort, key only in
+  a closure and redacted), `loop.ts` (§4.3 context, reads at once/writes in order, errors back to the model, 25-step
+  budget then a forced answer, stop checked between queued writes, history clearing + compaction hook, actor
+  'agent'), `prompt.ts` (~2k tokens, §7.3 checks automated, "big job" plans first), `tools.ts` (typed op signatures,
+  no coordinates), `models.ts`, `devStub.ts` (`?agentStub=1`, dev only), `usage.ts` (no text); evals on the real loop
+  with followUps and an automatic "go" after a plan (off for refuse/injection/viewer) · reviewer: 2 fix rounds (the
+  plan-first rule vs one-turn evals; `change` offered coordinates; a stop didn't stop queued writes; small prompt and
+  adapter items) · eval 37/41 + 4 unjudged, `--wrong` 0/41.
 
 ### Stuck
 _(none)_
@@ -201,6 +210,11 @@ _(questions, choices made on their behalf, anything that needs a key or a design
 - S10 (chosen): no real workspace is exported for fixtures (never touch live data); the three fixtures are generated
   (small, medium, big ≈ 1500 cards). Token counts are an estimate (chars/3.6, no tokenizer dependency); check the
   15k-token map target with a real tokenizer once a key is in.
+- Chosen in S12 (easy to undo): big jobs still plan first and wait for "go" (agent.md §4.10); "big" = several
+  pieces, more than ~10 changes, or open-ended; a clearly specified small change runs at once. Evals play a
+  scripted "go" turn for those tasks. The OpenAI adapter replays earlier output items under `store: false` (nothing
+  kept on OpenAI's side) instead of `previous_response_id`: check with a real key first. Model ids in models.ts
+  (gpt-5.6-terra suggested, pre-selected only) are not verified against a real key.
 - Chosen in S11 (easy to undo): making a package (the UI's `package these` too) now moves its members clear as one
   unit when the new frame would cover a neighbour, instead of overlapping. The eval runner has no Firestore-emulator
   mode yet (the real apply needs the browser app); it runs the same ops in memory. Build it before S13's gate.
@@ -272,3 +286,6 @@ _(the reviewers' and builders' "could be better", not done yet)_
   (moving it changes the old frame): refuse packaging a card already in an unfolded package, or move the old frame
   too. `asked()` should need a question word, not only "?". Decide whether unjudged regression tasks fail the run
   once a judge exists. The eval emulator mode is still to build before S13's gate.
+- S12 reviewer: `reasoning.context` isn't sent (GPT-5.6 defaults to replaying all turns' reasoning: costs tokens);
+  confirm with the docs + a key and send `current_turn` if right. The map and where-am-i are built once per turn: after
+  its own writes the model must call get/view/where_am_i to see them.

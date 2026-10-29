@@ -38,6 +38,13 @@ export type Task = {
   fixture: FixtureName
   // What the person types.
   ask: string
+  // What they type next, each a later turn of the same chat (e.g. ['go'] after the agent's plan for a big job); the
+  // graders read the end state after the last one.
+  followUps?: string[]
+  // The runner answers a plan with "go" by itself (once, after the follow-ups) when a turn ends with a plan and no
+  // writes, so a model that plans a big job first isn't failed for it. false: refuse, ask, injection and viewer tasks,
+  // where a plan must stay a plan.
+  autoGo?: boolean
   // Where they are when they ask (left out: the canvas shown, nothing selected).
   view?: Partial<WhereView>
   // Their role (left out: editor).
