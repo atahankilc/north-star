@@ -5746,4 +5746,13 @@ board; a timeline couldn't make a task for a card.
   bar is too short for it), over its hatch on the page's colour, `+Nd late` at the hatch's end; a hatch too short to
   show past the name puts `+Nd late` after the name. Its box (lanes) counts both. Checked headless at week and quarter:
   every name beside its ◆ or bar, `+1d late` after "Bundle price test", `+7d late` at the end of the long hatch.
-- *Not yet:* Beside.tsx still holds its deck/timeline pane code, unused now.
+- *Then (the user: "e kart tutanları neden göremiyorum?", "timeline … sayfaya dikey olarak ortalasak"):* decks holding
+  cards are tabs too (D-300 had left them out; with decks opening only here a plane's linked card deck fell to MINE):
+  `03 PRIORITIES ⇆ · 2 CARDS`, its card board (a card picked: its panel, the plane glides to it), no `[days ›]`; MINE and
+  timelines leave them out (no tasks, no days). A timeline shorter than what it's given stands in its middle (its
+  board as tall as its rows, the rest above and under), in a focus, a pane or the side view; a focused timeline fits
+  its part of the screen with the side view open, and a focus's dock stays inside its part (scrolling sideways).
+  Checked headless: the card deck's tab, strip and 2 cards; the side days' board 324–756 in 96–1000; a focused
+  timeline 367–633 of 1000 in the left part.
+- *Not yet:* Beside.tsx still holds its deck/timeline pane code, unused now; the canvas isn't shifted again while the
+  side view's line is dragged.

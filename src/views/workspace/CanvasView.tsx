@@ -28,7 +28,7 @@ import { BringCards } from './BringCards'
 import { isNew, useReads } from '../../data/threads'
 import { ThreadInbox } from './ThreadInbox'
 import { CARD } from '../../data/cards'
-import { glide, stopGlide } from '../../state/canvasView'
+import { glide, planeArea, stopGlide } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { isOwnerOf } from '../../data/workspaces'
 import type { Thread } from '../../data/model'
@@ -252,7 +252,8 @@ export function CanvasView() {
     if (focused && focusedDocuments && readerOpen) setPlaneView(pinnedView(contentOf(focused)!, readerLeft(contentOf(focused)!, size.w, useDocUi.getState().readerAt)), instant)
     else if (focused && focusedDocument) setPlaneView(documentHome(focused, size.w), instant)
     // A timeline fills the screen at its own size (D-304): a box as big as the screen less fit's margins.
-    else if (focused && focusedTimeline) fitPlane({ x: 0, y: 0, w: size.w - 192, h: size.h - 192 }, instant)
+    // Its part of the screen with the tasks side view open (D-314).
+    else if (focused && focusedTimeline) fitPlane({ x: 0, y: 0, w: planeArea().w - 192, h: size.h - 192 }, instant)
     else if (focused) fitPlane(contentOf(focused), instant)
     else fitCanvas(wid, [...shown, ...canvasLabels.map(labelBox)])
   }

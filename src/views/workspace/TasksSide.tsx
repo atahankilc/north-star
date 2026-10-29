@@ -3,8 +3,8 @@
 // the right, split from what's left by beside's line (D-211); a deck's `[days ›]` adds its days as a third column (the
 // left part narrowing to its own share), `[‹ close]` takes them away. Below 1300 px there's no room for three: the days
 // slide over the deck, `‹ back to the board`. In a deck's own focus the deck is on the left already: only its days.
-// Tabs on top: each deck on this canvas holding tasks (reading order, its number magenta, `⇆` when linked to a plane,
-// how many unfinished it shows); in the corner, apart, what goes across them: `MINE` (given to you, new ones `●`) and
+// Tabs on top: each deck on this canvas (reading order, its number magenta, `⇆` when linked to a plane, how many
+// unfinished tasks it shows, or how many cards: a deck holding cards is a tab too, its board only, D-314); in the corner, apart, what goes across them: `MINE` (given to you, new ones `●`) and
 // `ALL · DAYS` (every deck's days, as a timeline linked to nothing). Opened from a plane's dock it's that plane's linked
 // deck, a strip under the tabs saying so (`[all decks]` lets go). Days are the deck's linked timeline's when it has one,
 // else rows by who it's given to. A task picked opens its panel inside the side view (TaskPanel), and in a plane's
@@ -14,7 +14,9 @@ import { useAuth } from '../../data/auth'
 import { piecesOn } from '../../data/canvases'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
+import type { Card } from '../../data/cards'
 import { finished, overdue, shownTasks, timelineOf, type Task } from '../../data/tasks'
+import { heldCards } from './kanbanCards'
 import { markTasksSeen, useReads } from '../../data/threads'
 import { setSplit, useCanvasView, type Bounds } from '../../state/canvasView'
 import { useWs, useWsNow } from './context'
@@ -54,16 +56,19 @@ export function TasksSide({ editor, esc, focusedId, plane }: Props) {
   const size = useCanvasView((s) => s.size)
   const split = useCanvasView((s) => s.split)
   const tab = useTasksSide((s) => s.tab)
-  const days = useTasksSide((s) => s.days)
+  const daysOpen = useTasksSide((s) => s.days)
   const linkedTo = useTasksSide((s) => s.linked)
   const inner = useTasksSide((s) => s.inner)
 
-  // Decks holding tasks on this canvas, in reading order.
-  const decks = useMemo(() => piecesOn(canvas, pieces, spots).filter((p) => p.kind === 'kanban' && kanbanOf(p).holds !== 'cards').sort((a, b) => a.y - b.y || a.x - b.x), [pieces, canvas, spots])
+  // The decks on this canvas, in reading order (holding tasks or cards).
+  const decks = useMemo(() => piecesOn(canvas, pieces, spots).filter((p) => p.kind === 'kanban').sort((a, b) => a.y - b.y || a.x - b.x), [pieces, canvas, spots])
   const deck = decks.find((d) => d.id === tab) ?? (focusedId === tab ? pieces.find((p) => p.id === tab && p.kind === 'kanban') : undefined)
   // A deck gone (deleted, elsewhere, holding cards now): MINE.
   const shown = deck ? 'deck' : tab === 'all' ? 'all' : 'mine'
   const deckOnLeft = !!deck && focusedId === deck.id
+  // A deck holding cards has no days.
+  const ofCards = !!deck && kanbanOf(deck).holds === 'cards'
+  const days = daysOpen && !ofCards
   const wide = size.w >= WIDE
   const twoCols = !!deck && days && wide && !deckOnLeft
   const plane2 = linkedTo ? pieces.find((p) => p.id === linkedTo) : undefined
@@ -106,9 +111,10 @@ export function TasksSide({ editor, esc, focusedId, plane }: Props) {
   // The line between the deck and its days.
   const dragInner = (e: ReactPointerEvent<HTMLDivElement>) => follow(e, (x) => useTasksSide.setState({ inner: Math.min(0.7, Math.max(0.3, (x - left) / Math.max(1, width))) }))
 
-  const count = (d: WithId<Piece>) => shownTasks(tasks.filter((t) => t.pieceId === d.id), d, cards).filter((t) => !finished(t, pieces)).length
+  const count = (d: WithId<Piece>) => (kanbanOf(d).holds === 'cards' ? `${heldCards(d, cards).length} cards` : shownTasks(tasks.filter((t) => t.pieceId === d.id), d, cards).filter((t) => !finished(t, pieces)).length)
   const me = user?.id ?? null
-  const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces) && decks.some((d) => d.id === t.pieceId))
+  const taskDecks = decks.filter((d) => kanbanOf(d).holds !== 'cards')
+  const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces) && taskDecks.some((d) => d.id === t.pieceId))
 
   // Escape's `esc`: on the days' `[‹ close]` while they're open beside the deck, else on the side view's `[close]`.
   const escSide = esc === null || (esc !== 'unfocus' && esc.what === 'close' && esc.id === 'tasks')
@@ -117,10 +123,15 @@ export function TasksSide({ editor, esc, focusedId, plane }: Props) {
   const closeDays = (
     <DockAction label={wide ? '‹ close' : '‹ back to the board'} keyHint={escSide && daysClose ? 'esc' : undefined} title="the board without its days" onClick={() => useTasksSide.setState({ days: false })} />
   )
-  const daysToggle = !deckOnLeft && <DockAction label={days ? 'days ‹' : 'days ›'} pressed={days} title={days ? 'close its days' : 'its days beside it'} onClick={() => useTasksSide.setState({ days: !days })} />
+  const daysToggle = !deckOnLeft && !ofCards && <DockAction label={days ? 'days ‹' : 'days ›'} pressed={days} title={days ? 'close its days' : 'its days beside it'} onClick={() => useTasksSide.setState({ days: !days })} />
   const onTask = (t: Task) => {
     const card = plane && t.cardId ? cards.find((c) => c.id === t.cardId) : undefined
     if (card && plane) glidePlaneTo(card, plane.id, cards, now().places, true)
+  }
+  // A card picked on a deck holding cards: its panel, and in a plane's focus the plane glides to it (as beside, D-211).
+  const onCard = (c: Card) => {
+    useCanvasView.setState({ cardSelected: c.id, labelSelected: null })
+    if (plane) glidePlaneTo(c, plane.id, cards, now().places)
   }
 
   if (!size.w) return null
@@ -167,16 +178,16 @@ export function TasksSide({ editor, esc, focusedId, plane }: Props) {
           </div>
         )}
         {shown === 'mine' ? (
-          <Mine decks={decks} top={top}>
+          <Mine decks={taskDecks} top={top}>
             {close}
           </Mine>
         ) : shown === 'all' ? (
           <Days key={`all:${strip?.id ?? ''}`} box={{ x: 0, y: top, w: width, h: colH }} deck={null} plane={strip ?? null} editor={editor} onTask={onTask} dock={close} />
-        ) : deck && (deckOnLeft || (days && !wide)) ? (
+        ) : deck && !ofCards && (deckOnLeft || (days && !wide)) ? (
           <Days key={`days:${deck.id}`} box={{ x: 0, y: top, w: width, h: colH }} deck={deck} plane={null} editor={editor} onTask={onTask} dock={deckOnLeft ? close : <>{closeDays}{close}</>} />
         ) : deck ? (
           <>
-            <Board key={deck.id} box={{ x: 0, y: top, w: deckW, h: colH }} deck={deck} editor={editor} onTask={onTask} esc={esc} dock={<>{daysToggle}</>} close={close} />
+            <Board key={deck.id} box={{ x: 0, y: top, w: deckW, h: colH }} deck={deck} editor={editor} onTask={onTask} onCard={onCard} esc={esc} dock={<>{daysToggle}</>} close={close} />
             {twoCols && (
               <>
                 <div className={`${pane.divider} ${styles.innerLine}`} style={{ left: deckW, top }} onPointerDown={dragInner} role="separator" aria-orientation="vertical" aria-label="The deck and its days" />
@@ -221,13 +232,13 @@ function NewMark() {
 type PartProps = { box: Bounds; editor: boolean; onTask: (t: Task) => void; dock: ReactNode }
 
 // A deck's board in a view of its own (as beside a plane), its dock with what it does.
-function Board({ box, deck, editor, onTask, esc, dock, close }: PartProps & { deck: WithId<Piece>; esc: EscNext | null; close: ReactNode }) {
+function Board({ box, deck, editor, onTask, onCard, esc, dock, close }: PartProps & { deck: WithId<Piece>; onCard: (c: Card) => void; esc: EscNext | null; close: ReactNode }) {
   const { tasks } = useWs()
   const { el, view, pan } = usePaneView(kanbanBounds(deck, tasks), box, true, 0.85)
   const setupOpen = useKanbanUi((s) => s.setup === deck.id)
   return (
     <div ref={el} className={styles.part} style={{ left: box.x, top: box.y, width: box.w, height: box.h }} onPointerDown={pan}>
-      <KanbanView piece={deck} view={view} live editor={editor} onTask={onTask} />
+      <KanbanView piece={deck} view={view} live editor={editor} onTask={onTask} onCard={onCard} />
       {setupOpen && editor && <KanbanSetupPanel piece={deck} />}
       <FocusDock label="Deck" name={<Name deck={deck} />}>
         {dock}

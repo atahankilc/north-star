@@ -274,7 +274,10 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
   const mode = piece.timeline?.rows ?? 'kanban'
   const field = useMemo(() => (mode === 'kanban' ? null : taskRows(mode, cards, { me, names: new Map() })), [mode, cards, me])
   const fullH = TOP + 8 + layout.rowsH + 16 + T.tray
-  const boardH = h ?? fullH
+  // What it's given; shorter than that, the strip stands in its middle (D-314), not at its top.
+  const room = h ?? fullH
+  const boardH = Math.min(room, fullH)
+  const lift = Math.max(0, Math.round((room - boardH) / 2))
   // The rows' height on screen: all of them, or what fits above the tray (then they scroll); the tray right under them.
   const rowsShown = Math.min(layout.rowsH, Math.max(40, boardH - TOP - 8 - 16 - T.tray))
   const maxTop = Math.max(0, layout.rowsH - rowsShown)
@@ -736,7 +739,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
 
   const shown = Math.ceil(visible)
   return (
-    <div ref={board} className={styles.board} style={{ ...vars, width: w, height: boardH }} data-dragging={held || trayHeld ? true : undefined} onPointerDown={pan} onPointerMove={hover} onPointerLeave={() => ghost && setGhost(null)}>
+    <div ref={board} className={styles.board} style={{ ...vars, width: w, height: boardH, ...(lift && { marginTop: lift }) }} data-dragging={held || trayHeld ? true : undefined} onPointerDown={pan} onPointerMove={hover} onPointerLeave={() => ghost && setGhost(null)}>
       {/* The overview: every day's load as a bar glyph, months under it, today a tick, the window you see. */}
       <div className={styles.over} onPointerDown={scrub}>
         <Overview layout={layout} tw={tw} />

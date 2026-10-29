@@ -59,8 +59,9 @@ export type TimelineSetup = { kanbans?: string[]; rows?: TimelineRows }
 // plane, the deck linked to that plane when it has one (the first in reading order; one linked later too: read here,
 // nothing written), else every deck, only the tasks for that plane's cards (each deck given the plane, `cardsOnly`: no
 // task for no card). Linked to nothing, every deck.
-export function timelineKanbans<P extends { id: string; kind: string; stuckTo?: string; x?: number; y?: number }>(t: P, pieces: P[]): P[] {
-  const kanbans = pieces.filter((p) => p.kind === 'kanban')
+export function timelineKanbans<P extends { id: string; kind: string; stuckTo?: string; x?: number; y?: number; kanban?: { holds?: string } }>(t: P, pieces: P[]): P[] {
+  // A deck holding cards has no tasks, so no days (D-314).
+  const kanbans = pieces.filter((p) => p.kind === 'kanban' && p.kanban?.holds !== 'cards')
   const host = pieces.find((p) => p.id === t.stuckTo)
   if (!host) return kanbans
   if (host.kind === 'kanban') return [host]
@@ -70,7 +71,7 @@ export function timelineKanbans<P extends { id: string; kind: string; stuckTo?: 
 }
 
 // A deck's timeline (D-300): the one whose days are this deck's, linked to it or to its plane.
-export function timelineOf<P extends { id: string; kind: string; stuckTo?: string; x?: number; y?: number }>(deck: string, pieces: P[]): P | undefined {
+export function timelineOf<P extends { id: string; kind: string; stuckTo?: string; x?: number; y?: number; kanban?: { holds?: string } }>(deck: string, pieces: P[]): P | undefined {
   const it = pieces.find((p) => p.id === deck)
   // The deck itself back, not every deck given a plane (a plane with no deck's).
   return it && pieces.find((p) => {

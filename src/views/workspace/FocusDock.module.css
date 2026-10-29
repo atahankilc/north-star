@@ -55,6 +55,12 @@
   animation: none;
 }
 
+/* In a part of the screen narrower than it (D-314): it scrolls sideways, no bar. */
+.dock[data-in-part='true'] {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
 .action {
   display: inline-flex;
   align-items: baseline;
