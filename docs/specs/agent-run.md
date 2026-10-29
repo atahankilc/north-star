@@ -100,7 +100,12 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S10 next (read layer: short ids, map, search, query, get, view per kind, neighbours; golden files on 3 fixtures; map ≤ 15k tokens). S1–S9 done.
+PAUSED 2026-10-30 (the user's internet going away). S10 (read layer) is BUILT but NOT reviewed or committed: the
+uncommitted files are src/agent/read/*, tests/unit/fixtures/workspaces.ts, tests/unit/agentRead.test.ts,
+tests/unit/golden/*, and edits to tests/unit/purity.test.ts and docs/specs/agent-actions.md (intro). tsc clean, 339
+tests passed when built. To resume: start a fresh S10 reviewer (the brief: the 20 "where is / what is" questions on the
+medium fixture with the map + ≤ 2 tool calls, output vs fixture data, the workspace_content injection guard, whether
+card docs carry createdAt/updatedAt for whats_new and id order), then fix → commit → S11. S1–S9 committed.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -182,6 +187,9 @@ _(questions, choices made on their behalf, anything that needs a key or a design
   hooks to history.ts, presence.ts, WorkspaceLayout.tsx after ours land (onboarding-run.md §1.2).
 - Op names (agent-actions.md): the model sees `deck`, never `kanban` (D-301); workspace name/description and comments
   are untracked today (no undo), so they can't join a preview's single undo step until they are.
+- S10 (chosen): no real workspace is exported for fixtures (never touch live data); the three fixtures are generated
+  (small, medium, big ≈ 1500 cards). Token counts are an estimate (chars/3.6, no tokenizer dependency); check the
+  15k-token map target with a real tokenizer once a key is in.
 - Chosen in S8 (easy to undo): the agent's `update_deck tasks_to: 'new_deck'` moves the TASKS to a new deck and the
   current one holds cards (the UI's "[make a new deck for cards]" does the reverse via create_piece); a task can be
   given to a member or to anyone a task is already given to.
