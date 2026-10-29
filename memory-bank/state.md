@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-29 (onboarding plan D-315, tasks side view D-300, deck naming D-301, linked decks always filter D-303)_
+_Last updated: 2026-10-29 (audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -35,6 +35,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   pushed; its rule is already deployed. Its preview of four is docs/specs/timeline-preview/ (B, C, D not built).
 - Uncommitted code in the tree from another session (`setFitter` in CanvasView/canvasView.ts, WorkspaceLayout.tsx): not
   part of the above.
+- Audit P1–P3 (docs/audit-2026-10-29.md, D-317–D-323): committed, not pushed. **Deploy before pushing** (asked, D-322):
+  Firestore rules + RTDB (invites, thread preview, presence photo); functions wait for Blaze. P3b, P4–P6 after onboarding.
 
 ## Next steps (not started; ask the user which first)
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks

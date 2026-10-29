@@ -899,3 +899,21 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 ## Done (2026-10-29): a shared piece's delete asks which (D-313)
 - Delete on a piece on several canvases: the hazard confirm with `[only from here]` (focused) and `[delete
   everywhere]`. Verified in headless Chrome (D-313).
+
+## Done (2026-10-29): the audit's P1–P3 (docs/audit-2026-10-29.md; D-317–D-323)
+- Decisions K1–K6 + the invitee read written as D-317–D-323 (27a2881). P1 bugs (2bf01db, f494abe): task marks kept the
+  threads read, a deleted newest message hands the preview back, long threads deleted to the end, the timeline keeps
+  a task's person, one `focusOff()` for a plane's focus, `Choice` `clearable`, small ones. P2 (2bf01db, 7848a70):
+  thread preview bound to its writer, `invites/{wid}_{email}` (the invitee never reads the workspace), members-only
+  presence with Google photos, workspace names checked, viewers never use the workspace key, cleanup takes documents.
+  P3 (0aeb28c, a5797d5, 581b5b9): CI runs test/check:lessons/lint/functions build, ESLint (react-hooks, warnings),
+  fonts and indexes dropped, Functions/Storage lazy, dead exports, stale words, `usePalette()`.
+- Verified: tsc, vitest 413, rules 515/0 on private emulators (copies of firebase.json and the tests on ports +10000,
+  in the session's scratchpad; the new tests fail on the old rules), the committed HEAD in a worktree (tsc, tests,
+  check:lessons, lint, functions build, vite build). Headless Chrome on a dev server at 5181 on those emulators:
+  Settings choices, the timeline drop (old code lost the name), the invite flow with an old invite backfilled, the
+  backdrop in dark, light and light + reduced motion.
+- Not done: `keys().hasOnly` (reading the live fields was refused; without them old docs and undo could be locked),
+  author fields (`givenBy` bound to its writer would refuse undoing someone else's assignment), `kindOfType`
+  (documents.ts open in the onboarding run). Not reproduced headless: the link left selected (only reachable while
+  following plane → plane) and InlineEdit's save after Escape (the old code didn't save in Settings either).
