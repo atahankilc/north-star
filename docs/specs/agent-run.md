@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S4 next (cards, edges, evidence, competitor features, places → ops; builders + registry, see Ideas "S4 shape"). S1–S3 done.
+S5 next (text: labels, sections, stickies, title; packages' remaining ops). S1–S4 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -121,6 +121,14 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   patches on docs with old dangling refs: 27/67 in a seeded workspace; apply's before from the snapshot could make undo
   delete an existing doc), then pass: 0/66 and 0/30 refused, real ⌘Z restores a mixed apply, 31 UI-written docs of
   every kind validate · ideas: "S4 shape", S15 diff mapping.
+- S4 · see `git log --grep "Agent S4"` · op builders + registry (14 ops: create_card rich, update_card, delete,
+  duplicate, create_package, link/unlink/update_link, evidence, competitor features + `ours`, place_on/take_off),
+  `buildBatch` with `$handles`; every write in data/{cards,edges,evidence,competitorFeatures,places} a same-signature
+  wrapper (`applyUi`/`runUi`; keys, merges, labels, toasts kept); `src/model/placement.ts`; a UI-only overlay of
+  recent writes (retired when the live store shows them, cleared on undo/redo, ≤ 3 s) + `freshWs()` for the agent and
+  S15 · reviewer: 2 fix rounds (overlay stale after undo and hiding collaborators' writes; a delete failing whole when
+  one id was gone; test gaps; refused UI writes rejecting into unhandled rejections), then pass with real-UI and
+  collaborator repros · left: `dropCriterionScores` (S7), `planeGoes`/`runOps` (S6).
 
 ### Stuck
 _(none)_
@@ -134,6 +142,8 @@ _(questions, choices made on their behalf, anything that needs a key or a design
   hooks to history.ts, presence.ts, WorkspaceLayout.tsx after ours land (onboarding-run.md §1.2).
 - Op names (agent-actions.md): the model sees `deck`, never `kanban` (D-301); workspace name/description and comments
   are untracked today (no undo), so they can't join a preview's single undo step until they are.
+- Chosen in S4 (easy to undo): deleting a card now also removes its evidence, competitor features and comparisons
+  (today's deleteCard left them as invisible orphans); matrix cells and tasks pointing at it stay (skipped, D-141).
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
@@ -152,7 +162,9 @@ _(the reviewers' and builders' "could be better", not done yet)_
   inside a subscribe callback fired mid-render.
 - `subscribeWs` fires on any change; the agent's read layer may want a selector/diff form (S10).
 - Tests are shallow: S3 should add a shared fixture workspace snapshot used by model, ops and read tests.
-- **S4 shape (S3 reviewer):** ops as pure builders `(ctx: OpCtx, args) => Plan` with `$handles`; one
+- S4 reviewer, later: registry summaries should say what ids look like once S10's short ids exist; `delete` grows to
+  pieces and tasks (S6/S8); `logLearned` → `create_evidence` (S8).
+- **S4 shape (S3 reviewer, done in S4):** ops as pure builders `(ctx: OpCtx, args) => Plan` with `$handles`; one
   `src/ops/registry.ts` (`{ name, args schema, build, kind }`) shared by the agent's tools, validate's op names and
   onboarding; op builders list in `Plan.ids` only ids they really create (else undo deletes it); delete ops cascade exactly like today's data/ functions (card → edges, places, evidence, competitor
   features, comparisons; deck → tasks; matrix → cells), ideally the data/ functions then call the same builders

@@ -16,3 +16,22 @@ export function project(ws: WorkspaceCtx, plans: Plan[]): WorkspaceCtx {
   const workspace = store.get('workspace')!.get(ws.wid) as unknown as WithId<Workspace>
   return { ...ws, ...data, workspace }
 }
+
+// As `project`, but a write that can't apply (a patch on a doc that's gone) is skipped instead of thrown: for writes
+// already sent whose echo the snapshot may or may not show yet (the UI adapter's recent writes, firestore.ts), played
+// again on top. Sets, merges, patches and deletes all land the same when played twice.
+export function projectLoose(ws: WorkspaceCtx, plans: Plan[]): WorkspaceCtx {
+  if (!plans.length) return ws
+  const store = toDocs(ws)
+  for (const p of plans)
+    for (const w of p.writes) {
+      try {
+        writeTo(store, w)
+      } catch {
+        // Gone meanwhile: nothing to replay.
+      }
+    }
+  const data = fromDocs(docsOf(store), ws.documents)
+  const workspace = store.get('workspace')!.get(ws.wid) as unknown as WithId<Workspace>
+  return { ...ws, ...data, workspace }
+}

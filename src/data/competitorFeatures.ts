@@ -1,9 +1,12 @@
 // A competitor's features (D-038, D-164): the basic cards inside a competitor, listed by category in its panel (D-221).
 // Which of ours one matches is the old matrix's comparison doc (`<featureId>_<competitorId>`, its `competitorFeatureId`):
 // one of theirs per feature of ours and competitor. Every write is one undo step; typing in one field merges.
-import { collection, deleteDoc, deleteField, doc, FieldPath, updateDoc, writeBatch, type DocumentReference, type WriteBatch } from 'firebase/firestore'
+import { deleteField, doc, FieldPath, writeBatch, type DocumentReference, type WriteBatch } from 'firebase/firestore'
 import { db } from './firebase'
 import { tracked } from './history'
+import { present, runUi } from '../ops/firestore'
+import { createCompetitorFeature, updateCompetitorFeature as updateFeatureOp } from '../ops/features'
+import { deleteThings } from '../ops/cards'
 
 export { AVAILABILITIES, CRITERION_SCORES } from '../model/shapes'
 export type { Availability, CriterionScore } from '../model/shapes'
@@ -26,58 +29,34 @@ export type CompetitorFeature = {
 // on each of its must-haves (D-133; missing = not assessed).
 export type Comparison = { id: string; featureId: string; competitorId: string; competitorFeatureId?: string; criteria?: Record<string, CriterionScore> }
 
-const col = (wid: string) => collection(db(), 'workspaces', wid, 'competitorFeatures')
 const cmp = (wid: string, featureId: string, competitorId: string) => doc(db(), 'workspaces', wid, 'comparisons', `${featureId}_${competitorId}`)
 
 export type NewCompetitorFeature = Pick<CompetitorFeature, 'name' | 'description' | 'category' | 'availability' | 'url'>
 
+// Every write but dropCriterionScores is an op (S4, D-312: src/ops/features.ts, delete in src/ops/cards.ts) applied as
+// one undo step; resolved once the server has it. The `comparisons` passed are read from the workspace instead and
+// kept for the callers.
+
 // A new one, whole (D-221: the form shows every field), and which of ours it matches, as one undo step.
 export function addCompetitorFeature(wid: string, competitorId: string, fields: NewCompetitorFeature, oursId: string | null = null) {
-  const ref = doc(col(wid))
-  const now = Date.now()
-  const data: Record<string, unknown> = { competitorId, ...fields, createdAt: now, updatedAt: now }
-  for (const k of Object.keys(data)) if (data[k] === undefined || data[k] === '') delete data[k]
-  const match = oursId ? cmp(wid, oursId, competitorId) : null
-  return tracked('add a competitor feature', match ? [ref, match] : [ref], async () => {
-    const batch = writeBatch(db())
-    batch.set(ref, data)
-    if (match) batch.set(match, { featureId: oursId, competitorId, competitorFeatureId: ref.id }, { merge: true })
-    await batch.commit()
-  })
+  return runUi(wid, (ctx) => [createCompetitorFeature(ctx, { ...fields, competitor: competitorId, ours: oursId })], { label: 'add a competitor feature' })
 }
 
 // `undefined` or `''` clears an optional field (never the name).
 export function updateCompetitorFeature(wid: string, id: string, fields: Partial<Omit<CompetitorFeature, 'id' | 'competitorId' | 'createdAt'>>) {
-  const ref = doc(col(wid), id)
-  const data: Record<string, unknown> = { updatedAt: Date.now() }
-  for (const [k, v] of Object.entries(fields)) data[k] = k !== 'name' && (v === undefined || v === '') ? deleteField() : v
   const keys = Object.keys(fields).sort().join(',')
-  return tracked('edit a competitor feature', [ref], () => updateDoc(ref, data), { key: `cfeature:${id}:${keys}` })
+  return runUi(wid, (ctx) => [updateFeatureOp(ctx, { feature: id, fields })], { label: 'edit a competitor feature', key: `cfeature:${id}:${keys}` })
 }
 
 // With the matches that pointed at it.
-export function removeCompetitorFeature(wid: string, f: CompetitorFeature, comparisons: Comparison[]) {
-  const ref = doc(col(wid), f.id)
-  const matched = comparisons.filter((c) => c.competitorFeatureId === f.id).map((c) => cmp(wid, c.featureId, c.competitorId))
-  return tracked('remove a competitor feature', [ref, ...matched], () => {
-    const batch = writeBatch(db())
-    batch.delete(ref)
-    matched.forEach((r) => batch.update(r, { competitorFeatureId: deleteField() }))
-    return batch.commit()
-  })
+export function removeCompetitorFeature(wid: string, f: CompetitorFeature, _comparisons: Comparison[]) {
+  return runUi(wid, (ctx) => [deleteThings(ctx, { ids: present(ctx, [f.id]) })], { label: 'remove a competitor feature' })
 }
 
 // Which of ours their feature matches: `null` clears it. One of theirs per feature of ours and competitor, so matching
 // another feature of theirs to the same one of ours replaces it.
-export function matchOurs(wid: string, f: CompetitorFeature, featureId: string | null, comparisons: Comparison[]) {
-  const was = comparisons.find((c) => c.competitorFeatureId === f.id)
-  const refs = [...(was ? [cmp(wid, was.featureId, was.competitorId)] : []), ...(featureId ? [cmp(wid, featureId, f.competitorId)] : [])]
-  return tracked('match a feature', refs, async () => {
-    const batch = writeBatch(db())
-    if (was && was.featureId !== featureId) batch.update(cmp(wid, was.featureId, was.competitorId), { competitorFeatureId: deleteField() })
-    if (featureId) batch.set(cmp(wid, featureId, f.competitorId), { featureId, competitorId: f.competitorId, competitorFeatureId: f.id }, { merge: true })
-    await batch.commit()
-  })
+export function matchOurs(wid: string, f: CompetitorFeature, featureId: string | null, _comparisons: Comparison[]) {
+  return runUi(wid, (ctx) => [updateFeatureOp(ctx, { feature: f.id, ours: featureId })], { label: 'match a feature' })
 }
 
 // A criterion taken off a feature takes its scores with it, in the same undo step (D-133): its matrix cells (`cells`,
@@ -94,4 +73,4 @@ export function dropCriterionScores(wid: string, featureId: string, criterionId:
   })
 }
 
-export const removeComparison = (wid: string, c: Comparison) => tracked('unmatch', [cmp(wid, c.featureId, c.competitorId)], () => deleteDoc(cmp(wid, c.featureId, c.competitorId)))
+export const removeComparison = (wid: string, c: Comparison) => runUi(wid, (ctx) => [deleteThings(ctx, { ids: present(ctx, [`${c.featureId}_${c.competitorId}`]) })], { label: 'unmatch' })

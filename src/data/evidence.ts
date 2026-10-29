@@ -1,9 +1,9 @@
 // What was learned about a customer, problem or idea (D-137): its own collection, one doc per piece, so people can add
 // and edit pieces at once. Every write is one undo step; typing in one field merges.
-import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc } from 'firebase/firestore'
-import { db } from './firebase'
-import { absent, tracked } from './history'
 import type { Validation } from './cards'
+import { present, runUi } from '../ops/firestore'
+import { createEvidence, updateEvidence as updateEvidenceOp } from '../ops/evidence'
+import { deleteThings } from '../ops/cards'
 
 export { EVIDENCE_KINDS } from '../model/shapes'
 export type { EvidenceKind } from '../model/shapes'
@@ -26,28 +26,20 @@ export type Evidence = {
   createdAt: number
 }
 
-const col = (wid: string) => collection(db(), 'workspaces', wid, 'evidence')
-
+// Every write is an op (S4, D-312: src/ops/evidence.ts) applied as one undo step; resolved once the server has it.
 export function addEvidence(wid: string, fields: Omit<Evidence, 'id' | 'createdAt'>) {
-  const ref = doc(col(wid))
-  const now = Date.now()
-  const data: Record<string, unknown> = { ...fields, createdAt: now, updatedAt: now }
-  for (const k of Object.keys(data)) if (data[k] === undefined || data[k] === '') delete data[k]
-  return tracked('add evidence', [ref], () => setDoc(ref, data), { before: absent([ref]) })
+  const { nodeId, nodeType: _, ...rest } = fields
+  return runUi(wid, (ctx) => [createEvidence(ctx, { ...rest, card: nodeId })], { label: 'add evidence' })
 }
 
 // `undefined` clears an optional field.
 export function updateEvidence(wid: string, id: string, fields: Partial<Omit<Evidence, 'id' | 'nodeId' | 'nodeType' | 'createdAt'>>) {
-  const ref = doc(col(wid), id)
-  const data: Record<string, unknown> = { updatedAt: Date.now() }
-  for (const [k, v] of Object.entries(fields)) data[k] = v === undefined || v === '' ? deleteField() : v
   const keys = Object.keys(fields).sort().join(',')
-  return tracked('edit evidence', [ref], () => updateDoc(ref, data), { key: `evidence:${id}:${keys}` })
+  return runUi(wid, (ctx) => [updateEvidenceOp(ctx, { evidence: id, fields })], { label: 'edit evidence', key: `evidence:${id}:${keys}` })
 }
 
 export function removeEvidence(wid: string, id: string) {
-  const ref = doc(col(wid), id)
-  return tracked('remove evidence', [ref], () => deleteDoc(ref))
+  return runUi(wid, (ctx) => [deleteThings(ctx, { ids: present(ctx, [id]) })], { label: 'remove evidence' })
 }
 
 // For / against, of what a card has.

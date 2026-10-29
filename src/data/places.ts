@@ -2,136 +2,28 @@
 // x/y on the card); every other plane it's on is a `places/{planeId}_{cardId}` doc with its spot there and whether it's
 // folded there. Title, fields, links, tasks and comments stay the card's, one for every plane. The home is never shown:
 // taking a card off it while it's on another plane moves the home there.
-import { deleteField, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
+import { writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
 import { db } from './firebase'
-import { absent, snapshotWith, tracked } from './history'
-import { GRID, snap } from './grid'
-import { CARD, cardRef, placeRef, type AnyType, type Card } from './cards'
-import { edgeRef, edgesOn, type Edge } from './edges'
-import { labelRef } from './labels'
+import { placeRef, type Card } from './cards'
+import type { Edge } from './edges'
+import { elsewhere } from '../model/placement'
+import { applyUi, forFirestore, present, refOf, sayRefused, serverHas, uiCtx } from '../ops/firestore'
+import { placeOnPlan, takeOffPlan } from '../ops/places'
+import { deleteThings, rehome as rehomeOp } from '../ops/cards'
+import type { OpCtx } from '../ops/types'
 
-export type Place = { id: string; planeId: string; cardId: string; type: AnyType; x: number; y: number; folded?: boolean; createdAt: number }
-
-// The cards on a plane, each with its spot there (`on` set for those not at home). A card shown through a place is kept
-// as the same object while neither it nor its place changed, so what's drawn from it stays memoised (D-279).
-const shown = new Map<string, { base: Card; place: Place; card: Card }>()
-function placed(base: Card, p: Place): Card {
-  const was = shown.get(p.id)
-  if (was && was.base === base && was.place.x === p.x && was.place.y === p.y && was.place.folded === p.folded) return was.card
-  const card: Card = { ...base, x: p.x, y: p.y, folded: p.folded, on: p.planeId }
-  shown.set(p.id, { base, place: p, card })
-  return card
-}
-
-export function cardsOn(cards: Card[], places: Place[], plane: string): Card[] {
-  const out = cards.filter((c) => c.pieceId === plane)
-  const here = places.filter((p) => p.planeId === plane)
-  if (!here.length) return out
-  const byId = new Map(cards.map((c) => [c.id, c]))
-  for (const p of here) {
-    const base = byId.get(p.cardId)
-    if (base && base.pieceId !== plane) out.push(placed(base, p))
-  }
-  return out
-}
-
-// Every plane's cards at once, as `cardsOn` gives them, by plane id.
-export function cardsByPlane(cards: Card[], places: Place[]): Map<string, Card[]> {
-  const out = new Map<string, Card[]>()
-  const add = (plane: string, c: Card) => {
-    const at = out.get(plane)
-    if (at) at.push(c)
-    else out.set(plane, [c])
-  }
-  for (const c of cards) add(c.pieceId, c)
-  if (!places.length) return out
-  const byId = new Map(cards.map((c) => [c.id, c]))
-  for (const p of places) {
-    const base = byId.get(p.cardId)
-    if (base && base.pieceId !== p.planeId) add(p.planeId, placed(base, p))
-  }
-  return out
-}
-
-// The plane a card is drawn on: where its place is, else its home.
-export const planeOf = (card: Card) => card.on ?? card.pieceId
-
-// The other planes a card shown on `plane` is on.
-export const elsewhere = (card: Pick<Card, 'id' | 'pieceId'>, places: Place[], plane: string) => planesOf(card, places).filter((p) => p !== plane)
-
-// Every plane a card is on: its home first, then the others in the order it came to them.
-export function planesOf(card: Pick<Card, 'id' | 'pieceId'>, places: Place[]): string[] {
-  return [card.pieceId, ...places.filter((p) => p.cardId === card.id && p.planeId !== card.pieceId).sort((a, b) => a.createdAt - b.createdAt).map((p) => p.planeId)]
-}
-
-export const onPlane = (card: Pick<Card, 'id' | 'pieceId'>, places: Place[], plane: string) =>
-  card.pieceId === plane || places.some((p) => p.cardId === card.id && p.planeId === plane)
-
-// What comes along when cards are brought to a plane (the user, D-281): a card's parts (`part of` to a card of its own
-// type, all the way down, as cardInside's partsOf reads them) and a package's members with theirs.
-export function withParts(picked: Card[], cards: Card[], edges: Edge[]): Card[] {
-  const byId = new Map(cards.map((c) => [c.id, c]))
-  const ids = new Set(picked.map((c) => c.id))
-  for (let grew = true; grew; ) {
-    grew = false
-    for (const e of edges) {
-      if (e.kind !== 'part-of' || !ids.has(e.toId) || ids.has(e.fromId)) continue
-      const [a, b] = [byId.get(e.fromId), byId.get(e.toId)]
-      if (a && b && a.type === b.type) (ids.add(a.id), (grew = true))
-    }
-    for (const id of [...ids]) {
-      for (const m of byId.get(id)?.memberIds ?? []) if (byId.has(m) && !ids.has(m)) (ids.add(m), (grew = true))
-    }
-  }
-  return [...ids].flatMap((id) => byId.get(id) ?? [])
-}
-
-const overlaps = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-  a.x < b.x + CARD.w + GRID && b.x < a.x + CARD.w + GRID && a.y < b.y + CARD.h + GRID && b.y < a.y + CARD.h + GRID
-
-// Where brought cards land on `plane`: laid out as they are on `from` (the first one's home unless said; those not there
-// in a row under them), centred on `at`, on the grid, the whole group moved right past any card it would cover.
-export function landing(list: Card[], cards: Card[], places: Place[], plane: string, at: [number, number], from = list[0]?.pieceId): Map<string, { x: number; y: number; folded?: boolean }> {
-  const there = new Map(cardsOn(cards, places, from).map((c) => [c.id, c]))
-  const spots = new Map<string, { x: number; y: number; folded?: boolean }>()
-  for (const c of list) {
-    const s = there.get(c.id)
-    if (s) spots.set(c.id, { x: s.x, y: s.y, folded: s.folded })
-  }
-  const laid = [...spots.values()]
-  const bottom = laid.length ? Math.max(...laid.map((s) => s.y)) + CARD.h + 2 * GRID : 0
-  let left = laid.length ? Math.min(...laid.map((s) => s.x)) : 0
-  for (const c of list)
-    if (!spots.has(c.id)) {
-      spots.set(c.id, { x: left, y: bottom, folded: c.folded })
-      left += CARD.w + GRID
-    }
-  const all = [...spots.values()]
-  const x0 = Math.min(...all.map((s) => s.x))
-  const y0 = Math.min(...all.map((s) => s.y))
-  const w = Math.max(...all.map((s) => s.x)) + CARD.w - x0
-  const h = Math.max(...all.map((s) => s.y)) + CARD.h - y0
-  let dx = snap(at[0] - w / 2) - x0
-  const dy = snap(at[1] - h / 2) - y0
-  const others = cardsOn(cards, places, plane).filter((c) => !spots.has(c.id))
-  for (let hit = true; hit; ) {
-    hit = false
-    for (const s of all) {
-      const o = others.find((k) => overlaps({ x: s.x + dx, y: s.y + dy }, k))
-      if (o) {
-        dx = o.x + CARD.w + GRID - s.x
-        hit = true
-        break
-      }
-    }
-  }
-  return new Map([...spots].map(([id, s]) => [id, { ...s, x: s.x + dx, y: s.y + dy }]))
-}
+// What a place is and where cards land live in src/model/placement.ts, without Firebase (S4).
+export { cardsOn, cardsByPlane, planeOf, elsewhere, planesOf, onPlane, withParts, landing } from '../model/placement'
+export type { Place } from '../model/placement'
+import type { Place } from '../model/placement'
 
 type Op = { ref: DocumentReference; data: DocumentData | null; set?: boolean }
 
+// Every batch issued at once (they apply to the local cache at once, so tracked()'s "after" sees them all; awaiting
+// each in turn recorded "after" before the later batches of a write of > 450 docs landed).
 function commit(ops: Op[]) {
-  return async () => {
+  return () => {
+    const commits: Promise<void>[] = []
     for (let i = 0; i < ops.length; i += 450) {
       const batch = writeBatch(db())
       for (const o of ops.slice(i, i + 450)) {
@@ -139,81 +31,75 @@ function commit(ops: Op[]) {
         else if (o.set) batch.set(o.ref, o.data)
         else batch.update(o.ref, o.data)
       }
-      await batch.commit()
+      commits.push(batch.commit())
     }
+    return Promise.all(commits)
   }
 }
 
-const plural = (n: number) => (n === 1 ? 'a card' : `${n} cards`)
 
 // Cards (`picked`, with their parts and members) brought to `plane` at `at`, one undo step; `move` takes those at home
 // where the first one is off that plane (their home moves here; others are only brought). Laid out as on `layout` (the
 // plane they were copied on, ⇧⌘V; else the first one's home). Says at once what's coming and the box it lands in (plane
-// px), to select and glide to before the write is confirmed (`written`).
+// px), to select and glide to before the write is confirmed (`written`). An op (S4: src/ops/places.ts' place_on), laid
+// out among the lists passed (a card the caller just let go of is left out of them).
 export function bringIn(wid: string, plane: string, picked: Card[], all: { cards: Card[]; places: Place[]; edges: Edge[] }, at: [number, number], move = false, layout?: string) {
-  const list = withParts(picked, all.cards, all.edges).filter((c) => !onPlane(c, all.places, plane))
-  if (!list.length) return { ids: [] as string[], box: null, written: Promise.resolve() }
-  const spots = landing(list, all.cards, all.places, plane, at, layout ?? list[0].pieceId)
-  const from = list[0].pieceId
-  const now = Date.now()
-  const ops: Op[] = list.map((c) => {
-    const s = spots.get(c.id)!
-    if (move && c.pieceId === from) return { ref: cardRef(wid, c.type, c.id), data: { pieceId: plane, x: s.x, y: s.y, updatedAt: now } }
-    return { ref: placeRef(wid, plane, c.id), set: true, data: { planeId: plane, cardId: c.id, type: c.type, x: s.x, y: s.y, ...(s.folded ? { folded: true } : {}), createdAt: now } }
-  })
-  const written = (async () => {
-    const before = (await Promise.all(ops.map((o) => (o.set ? absent([o.ref]) : snapshotWith(o.ref, {}))))).flat()
-    await tracked(`${move ? 'move' : 'bring'} ${plural(list.length)} here`, ops.map((o) => o.ref), commit(ops), { before })
-  })()
-  const xs = [...spots.values()]
-  const x = Math.min(...xs.map((s) => s.x))
-  const y = Math.min(...xs.map((s) => s.y))
-  const box = { x, y, w: Math.max(...xs.map((s) => s.x)) + CARD.w - x, h: Math.max(...xs.map((s) => s.y)) + CARD.h - y }
-  return { ids: list.map((c) => c.id), box, written }
+  const none = { ids: [] as string[], box: null, written: Promise.resolve() }
+  const ctx = uiCtx(wid)
+  if (!ctx) return none
+  let made
+  try {
+    made = placeOnPlan(ctx, { cards: picked.map((c) => c.id), plane, at, move, layout }, all)
+  } catch (e) {
+    sayRefused(e, `${move ? 'move' : 'bring'} cards here`)
+    return none
+  }
+  if (!made.list.length) return none
+  const written = serverHas(applyUi(wid, ctx, [made.plan]))
+  return { ids: made.list.map((c) => c.id), box: made.box, written }
 }
 
-// Moving a card's home to another plane it's on (the earliest it came to): its spot and fold there become the card's,
-// that place goes. Null when it's on no other plane (`except` left out too).
+// Moving a card's home to another plane it's on (the earliest it came to), as ops' rehome writes it: its spot and fold
+// there become the card's, that place goes. Null when it's on no other plane (`except` left out too).
 function rehome(wid: string, card: Card, places: Place[], except: string): Op[] | null {
-  const p = places.filter((x) => x.cardId === card.id && x.planeId !== card.pieceId && x.planeId !== except).sort((a, b) => a.createdAt - b.createdAt)[0]
-  if (!p) return null
-  return [
-    { ref: cardRef(wid, card.type, card.id), data: { pieceId: p.planeId, x: p.x, y: p.y, folded: p.folded ? true : deleteField(), updatedAt: Date.now() } },
-    { ref: placeRef(wid, p.planeId, card.id), data: null },
-  ]
+  const ctx = { ws: { places }, now: Date.now() } as unknown as OpCtx
+  const writes = rehomeOp(ctx, card, except)
+  return writes && writes.map((w) => ({ ref: refOf(wid, w), data: w.del ? null : forFirestore(w.patch ?? {}) }))
 }
 
 // Cards taken off `plane`, staying on the others they're on, one undo step. A card on no other plane isn't touched
-// (that's a delete). Returns how many came off.
-export async function takeOff(wid: string, plane: string, list: Card[], places: Place[]) {
-  const ops: Op[] = []
-  let n = 0
-  for (const c of list) {
-    const o = c.pieceId === plane ? rehome(wid, c, places, plane) : [{ ref: placeRef(wid, plane, c.id), data: null }]
-    if (o) (ops.push(...o), n++)
+// (that's a delete). Returns how many came off. An op (S4: take_off); the places are read from the workspace.
+export async function takeOff(wid: string, plane: string, list: Card[], _places: Place[]) {
+  const ctx = uiCtx(wid)
+  if (!ctx) return 0
+  let made
+  try {
+    made = takeOffPlan(ctx, { cards: list.map((c) => c.id), plane })
+  } catch (e) {
+    sayRefused(e, 'take cards off this plane')
+    return 0
   }
-  if (!n) return 0
-  await tracked(`take ${plural(n)} off this plane`, ops.map((o) => o.ref), commit(ops))
-  return n
+  if (!made.n) return 0
+  await serverHas(applyUi(wid, ctx, [made.plan]))
+  return made.n
 }
 
 // Delete on a plane (the user, D-281): cards also on another plane come off this one, the others are deleted with their
-// links, text too; one undo step. Returns the cards taken off.
-export async function removeHere(wid: string, plane: string, list: Card[], all: { edges: Edge[]; places: Place[] }, labels: { id: string }[] = []) {
-  const off = list.filter((c) => elsewhere(c, all.places, plane).length)
-  const gone = list.filter((c) => !off.includes(c))
-  const ids = new Set(gone.map((c) => c.id))
-  const ops: Op[] = [
-    ...off.flatMap((c) => (c.pieceId === plane ? (rehome(wid, c, all.places, plane) ?? []) : [{ ref: placeRef(wid, plane, c.id), data: null }])),
-    ...gone.map((c) => ({ ref: cardRef(wid, c.type, c.id), data: null })),
-    ...edgesOn(all.edges, ids).map((e) => ({ ref: edgeRef(wid, e.id), data: null })),
-    ...all.places.filter((p) => ids.has(p.cardId)).map((p) => ({ ref: placeRef(wid, p.planeId, p.cardId), data: null })),
-    ...labels.map((l) => ({ ref: labelRef(wid, l.id), data: null })),
-  ]
-  if (!ops.length) return off
-  const n = list.length + labels.length
-  const what = !gone.length && !labels.length ? `take ${plural(off.length)} off this plane` : off.length ? `remove ${n} things` : `delete ${n > 1 ? `${n} things` : gone.length ? 'a card' : 'text'}`
-  await tracked(what, ops.map((o) => o.ref), commit(ops))
+// links (and what else hangs off them), text too; one undo step. Returns the cards taken off. An op (S4: delete with a
+// plane); what goes with them is read from the workspace.
+export async function removeHere(wid: string, plane: string, list: Card[], _all: { edges: Edge[]; places: Place[] }, labels: { id: string }[] = []) {
+  const ctx = uiCtx(wid)
+  if (!ctx) return []
+  const off = list.filter((c) => elsewhere(c, ctx.ws.places, plane).length)
+  let plan
+  try {
+    plan = deleteThings(ctx, { ids: present(ctx, [...list.map((c) => c.id), ...labels.map((l) => l.id)]), plane })
+  } catch (e) {
+    sayRefused(e, 'delete that')
+    return off
+  }
+  if (!plan.writes.length) return off
+  await serverHas(applyUi(wid, ctx, [plan]))
   return off
 }
 

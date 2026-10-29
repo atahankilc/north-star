@@ -15,6 +15,7 @@ import { TYPE_OF_COLLECTION, WS_COLLECTIONS, type RawDoc } from '../model/fromDo
 import { cleanCard, cleanCell, cleanComparison, cleanCompetitorFeature, cleanEdge, cleanEvidence, cleanLabel, cleanPiece, cleanPlace, cleanTask, type Ids, type Raw } from '../model/clean'
 import type { WorkspaceCtx } from '../state/wsStore'
 import { docAt, toDocs, WriteError, writeTo, type DocStore } from './docs'
+import { a } from './util'
 import { isDelete, type Coll, type OpActor, type OpError, type Plan, type Verdict, type Write } from './types'
 
 const COLLS = new Set<string>([...WS_COLLECTIONS, 'workspace'])
@@ -242,13 +243,13 @@ function checkDoc(coll: Coll, d: RawDoc, store: DocStore, ws: WorkspaceCtx): { p
   const plane = (id: unknown, what: string) => {
     const p = has.piece(id)
     if (!p) ref(`${what} ${String(id)} isn't a piece in the workspace`, 'use the id of an existing plane (or one made earlier in the batch)')
-    else if (p.kind !== 'plane') ref(`${what} ${String(id)} is a ${String(p.kind)}, not a plane`, 'put it on a plane')
+    else if (p.kind !== 'plane') ref(`${what} ${String(id)} is ${a(String(p.kind))}, not a plane`, 'put it on a plane')
   }
   const card = (id: unknown, type: unknown, what: string, only?: AnyType[]) => {
     const t = has.cardType(id)
     if (!t) return ref(`${what} ${String(id)} isn't a card in the workspace`, 'use the id of an existing card (or one made earlier in the batch)')
-    if (type !== undefined && type !== t) ref(`${what} ${String(id)} is a ${t}, not a ${String(type)}`, `say ${t}`)
-    if (only && !only.includes(t)) ref(`${what} ${String(id)} is a ${t}; it must be a ${only.join(' or ')}`, `use a ${only.join(' or ')}`)
+    if (type !== undefined && type !== t) ref(`${what} ${String(id)} is ${a(t)}, not ${a(String(type))}`, `say ${t}`)
+    if (only && !only.includes(t)) ref(`${what} ${String(id)} is ${a(t)}; it must be ${a(only.join(' or '))}`, `use ${a(only.join(' or '))}`)
   }
   if (cardColl) {
     plane(d.pieceId, 'its plane')
@@ -262,7 +263,7 @@ function checkDoc(coll: Coll, d: RawDoc, store: DocStore, ws: WorkspaceCtx): { p
     if (d.stuckTo !== undefined) {
       const host = has.piece(d.stuckTo)
       const hosts = d.kind === 'timeline' ? ['kanban', 'plane'] : ['plane']
-      if (host && !hosts.includes(String(host.kind))) ref(`a ${String(d.kind)} sticks to a ${hosts.join(' or ')}, not a ${String(host.kind)}`, 'stick it to a plane (a timeline to a deck or a plane)')
+      if (host && !hosts.includes(String(host.kind))) ref(`${a(String(d.kind))} sticks to ${a(hosts.join(' or '))}, not ${a(String(host.kind))}`, 'stick it to a plane (a timeline to a deck or a plane)')
       if (d.stuckTo === d.id) ref("a piece can't stick to itself", 'stick it to another piece')
     }
   } else if (coll === 'pieceSpots') {
@@ -290,12 +291,12 @@ function checkDoc(coll: Coll, d: RawDoc, store: DocStore, ws: WorkspaceCtx): { p
   } else if (coll === 'tasks') {
     const p = has.piece(d.pieceId)
     if (!p) ref(`deck ${String(d.pieceId)} isn't in the workspace`, 'use an existing deck id (or one made earlier in the batch)')
-    else if (p.kind !== 'kanban') ref(`${String(d.pieceId)} is a ${String(p.kind)}, not a deck`, 'put the task on a deck')
+    else if (p.kind !== 'kanban') ref(`${String(d.pieceId)} is ${a(String(p.kind))}, not a deck`, 'put the task on a deck')
     if (d.cardId !== undefined) card(d.cardId, d.cardType, 'its card')
   } else if (coll === 'cells') {
     const p = has.piece(d.matrixId)
     if (!p) ref(`matrix ${String(d.matrixId)} isn't in the workspace`, 'use an existing matrix or table id')
-    else if (p.kind !== 'matrix' && p.kind !== 'table') ref(`${String(d.matrixId)} is a ${String(p.kind)}, not a matrix or table`, 'use a matrix or table id')
+    else if (p.kind !== 'matrix' && p.kind !== 'table') ref(`${String(d.matrixId)} is ${a(String(p.kind))}, not a matrix or table`, 'use a matrix or table id')
   }
   return { problems, refs }
 }
