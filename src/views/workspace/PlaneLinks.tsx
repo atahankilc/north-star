@@ -246,6 +246,7 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
         style={{ ['--tone' as string]: linkTone(edge.kind) }}
         role="toolbar"
         aria-label="Link"
+        data-learn="link-bar"
         onPointerDown={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
       >

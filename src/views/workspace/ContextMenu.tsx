@@ -7,15 +7,16 @@ import styles from './ContextMenu.module.css'
 
 // `prompt`, `keys`, `noun`, `empty`: for a list that isn't about what's under the pointer (D-281: the cards to bring).
 // `more`: items made from what's typed (the canvases' `new canvas "…"`, D-302).
-type Props = { at: [number, number]; items: MenuEntry[]; what: string; onClose: () => void; prompt?: string; keys?: string; noun?: string; empty?: string; wide?: boolean; more?: (typed: string) => MenuEntry[] }
+type Props = { at: [number, number]; items: MenuEntry[]; what: string; onClose: () => void; prompt?: string; keys?: string; noun?: string; empty?: string; wide?: boolean; more?: (typed: string) => MenuEntry[]; 'data-learn'?: string }
 
-export function ContextMenu({ at, items, what, onClose, prompt, keys, noun, empty, wide, more }: Props) {
+// `data-learn` names it for the onboarding's lessons (D-315): the right-click menu, the move-to prompt.
+export function ContextMenu({ at, items, what, onClose, prompt, keys, noun, empty, wide, more, 'data-learn': learnAs }: Props) {
   const root = useRef<HTMLElement>(null)
   useEffect(() => {
     const away = (e: Event) => !root.current?.contains(e.target as Node) && onClose()
     // Escape closes only the menu, before the canvas hears it (it would leave focus).
     const key = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
+      if (e.key !== 'Escape' || (e.target as Element | null)?.closest?.('[data-coach]')) return
       e.stopPropagation()
       onClose()
     }
@@ -41,6 +42,7 @@ export function ContextMenu({ at, items, what, onClose, prompt, keys, noun, empt
       elRef={root}
       className={styles.menu}
       data-wide={wide || undefined}
+      data-learn={learnAs}
       style={{ left: at[0], top: at[1] }}
       onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
       onContextMenu={(e: React.MouseEvent) => (e.preventDefault(), e.stopPropagation())}

@@ -14,8 +14,9 @@
 import { canvasOf } from '../model/canvases'
 import type { LessonEvent } from './lessons'
 import type { LearnEvent, Payload } from './queue'
+import { DEDUPE_MS, learn, setLearnClock } from './learn'
 
-export const DEDUPE_MS = 150
+export { DEDUPE_MS }
 // Idle (§4.5): this long in the workspace, this long without input.
 export const IDLE_AFTER_MS = 3 * 60_000
 export const IDLE_QUIET_MS = 10_000
@@ -24,9 +25,8 @@ const CONFIRM_MS = 10_000
 // How often the address, the DOM (Settings, menus) and idle are looked at.
 export const POLL_MS = 250
 
-// The events this file emits today (check:lessons' ratchet reads this list). The rest come from views (O6) or the
-// workspaces page (and `filter-open {kind: 'kanban'}`, EMITS_PARTLY): plus-open, context-menu, crumb-open, sidenav-rest, guide-open, console-shown, axis-unfold,
-// parts-folded, workspaces-open, ws-made, join-requested.
+// The events emitted (check:lessons' ratchet reads this list): by this file's watchers, then (the last lines) by the
+// one-line `learn()` hooks in views (O6), the workspaces page and the coach itself.
 export const EMITS = [
   'canvas-open', 'canvas-switch', 'focus-in', 'focus-out', 'beside-open', 'edit-on', 'edit-off', 'card-selected',
   'cards-multi', 'link-selected', 'linking', 'drawing-section', 'packing', 'bringing', 'to-canvas', 'confirming',
@@ -35,41 +35,19 @@ export const EMITS = [
   'undo', 'deleted', 'task-for-card', 'piece-moved', 'card-moved', 'wizard', 'setup-open', 'finder-open',
   'threads-open', 'thread-open', 'side-view', 'following', 'filter-open', 'filter-set', 'doc-reader', 'settings-open',
   'menu-open', 'task-given', 'peer-joined', 'edit-refused', 'idle',
+  // From views: the `+` menu (WorkspaceLayout), right-click (CanvasView), the crumb (CanvasSwitch), a piece's console
+  // (CanvasView), a feature axis unfolded (Matrix), a folded parts tree (PlaneCards); the workspaces page; the coach.
+  'plus-open', 'context-menu', 'crumb-open', 'console-shown', 'axis-unfold', 'parts-folded',
+  'workspaces-open', 'ws-made', 'join-requested', 'sidenav-rest', 'guide-open',
 ] as const satisfies readonly LessonEvent[]
 
-// Events emitted here for some kinds only: the lessons' other kinds of them come from a view (O6), and check:lessons
-// wants each of those listed in lessons-pending.json as `event:kind`. A deck's filter strip keeps its open state in its
-// view (KanbanFilterDock's own store), so only a plane's `filter-open` is watched here.
-export const EMITS_PARTLY: Record<string, readonly string[]> = { 'filter-open': ['plane'] }
+// Events emitted for some kinds only: check:lessons wants each other kind a lesson listens for listed in
+// lessons-pending.json as `event:kind`. A plane's `filter-open` is watched here; a deck's strip keeps its open state in
+// its view, so KanbanFilterDock says `filter-open {kind: 'kanban'}` itself as it opens.
+export const EMITS_PARTLY: Record<string, readonly string[]> = { 'filter-open': ['plane', 'kanban'] }
 
-// ── The emitter ───────────────────────────────────────────────────────────────────────────────────────────────────────
-
-const listeners = new Set<(e: LearnEvent) => void>()
-const lastSent = new Map<string, number>()
-let clock: () => number = () => Date.now()
-
-export function onLearn(fn: (e: LearnEvent) => void): () => void {
-  listeners.add(fn)
-  return () => void listeners.delete(fn)
-}
-
-// What a view calls (one line, O6). Also what every watcher here sends through.
-export function learn(event: LessonEvent, payload?: Payload): void {
-  const key = `${event} ${payload ? JSON.stringify(payload) : ''}`
-  const now = clock()
-  const was = lastSent.get(key)
-  if (was !== undefined && now - was < DEDUPE_MS) return
-  lastSent.set(key, now)
-  if (lastSent.size > 200) for (const [k, t] of lastSent) if (now - t > DEDUPE_MS) lastSent.delete(k)
-  const e: LearnEvent = payload ? { event, payload } : { event }
-  for (const fn of [...listeners]) {
-    try {
-      fn(e)
-    } catch {
-      // A listener's mistake never breaks the app.
-    }
-  }
-}
+// The emitter is learn.ts (`learn`, `onLearn`), re-exported here.
+export { learn, onLearn } from './learn'
 
 // ── What the watchers read ────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -191,11 +169,11 @@ export type StepCtx = {
 export function stepEvents(base: SnapLike, after: SnapLike, ctx: StepCtx): LearnEvent[] {
   const out: LearnEvent[] = []
   const seen = new Set<string>()
-  const add = (event: LessonEvent, payload?: Payload) => {
+  const add = (event: LessonEvent, payload?: Payload, target?: string) => {
     const key = `${event} ${payload ? JSON.stringify(payload) : ''}`
     if (seen.has(key)) return
     seen.add(key)
-    out.push(payload ? { event, payload } : { event })
+    out.push({ event, ...(payload ? { payload } : {}), ...(target ? { target } : {}) })
   }
   const was = new Map(base.map((b) => [b.ref.path, b.data]))
   const made = new Set(ctx.created ?? [])
@@ -219,29 +197,29 @@ export function stepEvents(base: SnapLike, after: SnapLike, ctx: StepCtx): Learn
     if (col === 'pieces') {
       const kind = String(data.kind)
       if (created) {
-        add('piece-made', { kind, holds: kind === 'kanban' ? ((data.kanban as { holds?: string } | undefined)?.holds ?? 'tasks') : 'none' })
+        add('piece-made', { kind, holds: kind === 'kanban' ? ((data.kanban as { holds?: string } | undefined)?.holds ?? 'tasks') : 'none' }, `plane:${id}`)
         continue
       }
-      if (changed('stuckTo')) add(data.stuckTo ? 'stuck' : 'unstuck', { kind })
-      if (changed('open')) add(data.open ? 'unframed' : 'framed', { kind })
+      if (changed('stuckTo')) add(data.stuckTo ? 'stuck' : 'unstuck', { kind }, `plane:${id}`)
+      if (changed('open')) add(data.open ? 'unframed' : 'framed', { kind }, `plane:${id}`)
       if (changed('canvasId')) add('moved-canvas', { share: false })
-      else if (changed('x') || changed('y')) add('piece-moved', { kind, editing: ctx.editing.includes(id) })
+      else if (changed('x') || changed('y')) add('piece-moved', { kind, editing: ctx.editing.includes(id) }, `plane:${id}`)
     } else if (type) {
-      if (created) add(type === 'package' ? 'package-made' : 'card-made', type === 'package' ? undefined : { kind: type })
+      if (created) add(type === 'package' ? 'package-made' : 'card-made', type === 'package' ? undefined : { kind: type }, `card:${id}`)
       else {
         if (changed('validation') || changed('status')) add('status-set')
         if (changed('x') || changed('y')) add('card-moved', { focus: ctx.focus })
       }
     } else if (col === 'labels') {
-      if (created) add('text-made', { kind: textKind(data) })
+      if (created) add('text-made', { kind: textKind(data) }, `label:${id}`)
     } else if (col === 'edges') {
-      if (created) add('link-made', { kind: String(data.kind) })
+      if (created) add('link-made', { kind: String(data.kind) }, `link:${id}`)
     } else if (col === 'tasks') {
       if (created) add('task-made')
       else if (changed('col')) add('task-moved', { done: !!ctx.doneCol?.(String(data.pieceId), String(data.col)) })
       if (data.cardId && (created || !before?.cardId)) add('task-for-card')
     } else if (col === 'places') {
-      if (created) add('brought')
+      if (created) add('brought', undefined, typeof data.cardId === 'string' ? `card:${data.cardId}` : undefined)
       else if (changed('x') || changed('y')) add('card-moved', { focus: ctx.focus })
     } else if (col === 'pieceSpots') {
       if (created) add('moved-canvas', { share: true })
@@ -296,8 +274,7 @@ export function stopEvents(now = false): void {
 
 // The watchers on these sources; returns the function that takes them all off. Exported for tests.
 export function attach(s: Sources): () => void {
-  clock = () => s.now()
-  lastSent.clear()
+  setLearnClock(() => s.now())
   const offs: Array<() => void> = []
   const ws = () => s.ws.get()
 
@@ -372,7 +349,7 @@ export function attach(s: Sources): () => void {
       // A piece not there yet (still loading): looked at again next time.
       if (next.focus && !inn) return
       if (url.focus) learn('focus-out', { kind: pieceOf(w, url.focus)?.kind ?? 'plane' })
-      if (inn) learn('focus-in', { kind: inn.kind, empty: isEmpty(w, inn, s) })
+      if (inn) learn('focus-in', { kind: inn.kind, empty: isEmpty(w, inn, s) }, `plane:${inn.id}`)
     }
     for (const b of next.beside) if (!url.beside.includes(b)) learn('beside-open', { kind: pieceOf(w, b)?.kind ?? 'table' })
     url = next
@@ -386,7 +363,7 @@ export function attach(s: Sources): () => void {
     s.canvasView.subscribe((n, p) => {
       checkUrl()
       const w = ws()
-      for (const id of n.editing) if (!p.editing.includes(id)) learn('edit-on', { kind: pieceOf(w, id)?.kind ?? 'plane' })
+      for (const id of n.editing) if (!p.editing.includes(id)) learn('edit-on', { kind: pieceOf(w, id)?.kind ?? 'plane' }, `plane:${id}`)
       for (const id of p.editing) if (!n.editing.includes(id)) learn('edit-off', { kind: pieceOf(w, id)?.kind ?? 'plane' })
       if (n.cardSelected && n.cardSelected !== p.cardSelected) {
         const sel = n.cardSelected
@@ -396,7 +373,7 @@ export function attach(s: Sources): () => void {
           learn('cell-picked', { kind, framed: !piece?.open })
         } else {
           const card = w?.cards.find((c) => c.id === sel)
-          if (card) learn('card-selected', { kind: card.type })
+          if (card) learn('card-selected', { kind: card.type }, `card:${card.id}`)
         }
       }
       if (n.cardMulti.length > 1 && p.cardMulti.length < 2) learn('cards-multi', { count: n.cardMulti.length })
@@ -443,7 +420,7 @@ export function attach(s: Sources): () => void {
         hazard: { ids: live ? hazard.ids : [], shared: hazard.shared },
         doneCol: (deck, col) => !!pieceOf(w, deck)?.kanban?.cols?.find((c) => c.id === col)?.done,
       })
-      for (const e of evs) learn(e.event, e.payload)
+      for (const e of evs) learn(e.event, e.payload, e.target)
       if (evs.some((e) => e.event === 'deleted' && e.payload?.confirmed)) hazard = { ids: [], shared: false, until: -Infinity }
     }),
     s.history.subscribe((n, p) => {
@@ -544,6 +521,6 @@ export function attach(s: Sources): () => void {
   checkUrl()
   return () => {
     for (const off of offs) off()
-    clock = () => Date.now()
+    setLearnClock(() => Date.now())
   }
 }

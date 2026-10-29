@@ -13,6 +13,7 @@ export function FocusDock({ children, center, name, label = 'Focus' }: { childre
       className={styles.dock}
       role="toolbar"
       aria-label={label}
+      data-learn="dock"
       data-reduced={isReducedMotion() || undefined}
       // In a part of the screen (`center` its middle), kept inside it: past its width it scrolls sideways (D-314).
       style={center !== undefined ? { left: center, maxWidth: Math.max(160, 2 * center - 16) } : undefined}

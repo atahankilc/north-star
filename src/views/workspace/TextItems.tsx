@@ -66,6 +66,8 @@ const MIN_TEXT_PX = 6
 
 // Something else in the space a section can carry: a plane on the canvas, a card on a plane.
 export type Carried = { id: string; ref: DocumentReference; x: number; y: number; w: number; h: number }
+// Given as they are, or (a plane's cards) built when a section is first dragged.
+type Carry = Carried[] | (() => Carried[])
 
 export const COLOR_VAR: Record<LabelColor, string> = {
   ink: 'var(--fg)',
@@ -96,7 +98,7 @@ const onGrid = (v: number) => Math.ceil(v / GRID - 0.02) * GRID
 const inside = (b: { x: number; y: number; w: number; h: number }, s: { x: number; y: number; w: number; h: number }) =>
   b.x >= s.x && b.y >= s.y && b.x + b.w <= s.x + s.w && b.y + b.h <= s.y + s.h
 
-type Props = { labels: Label[]; layer: 'frames' | 'text'; live: boolean; editor: boolean; zoom: number; carry: Carried[] }
+type Props = { labels: Label[]; layer: 'frames' | 'text'; live: boolean; editor: boolean; zoom: number; carry: Carry }
 
 export function TextItems({ labels, layer, live, editor, zoom, carry }: Props) {
   const shown = labels.filter((l) => (kindOf(l) === 'section') === (layer === 'frames'))
@@ -109,7 +111,7 @@ export function TextItems({ labels, layer, live, editor, zoom, carry }: Props) {
   )
 }
 
-type ItemProps = { l: Label; live: boolean; editor: boolean; zoom: number; labels: Label[]; carry: Carried[] }
+type ItemProps = { l: Label; live: boolean; editor: boolean; zoom: number; labels: Label[]; carry: Carry }
 
 function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const { wid, threads } = useWs()
@@ -168,7 +170,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     const held: { id: string; ref: DocumentReference; x: number; y: number }[] = [{ id: l.id, ref: labelRef(wid, l.id), x: l.x, y: l.y }]
     if (kind === 'section') {
       for (const o of labels) if (o.id !== l.id && inside(labelBox(o), box)) held.push({ id: o.id, ref: labelRef(wid, o.id), x: o.x, y: o.y })
-      for (const c of carry) if (inside(c, box)) held.push({ id: c.id, ref: c.ref, x: c.x, y: c.y })
+      for (const c of typeof carry === 'function' ? carry() : carry) if (inside(c, box)) held.push({ id: c.id, ref: c.ref, x: c.x, y: c.y })
     }
     let d: [number, number] | null = null
     const move = (ev: PointerEvent) => {
@@ -385,6 +387,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     return withLanding(
       <div
         className={styles.sticky}
+        data-learn="sticky"
         data-folded={(l.folded && !typing) || undefined}
         style={{ ...style, width: w ?? STICKY_W.initial, minHeight: STICKY_H, fontSize: STICKY_PX[l.scale ?? 'medium'], ...((l.color ?? 'yellow') === 'yellow' && { ['--paper-tone' as string]: 'var(--sticky-yellow)' }) }}
         {...common}
@@ -415,7 +418,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const px = HEADING_PX[size]
   const kick = kickerParts(l.kicker)
   return withLanding(
-    <div className={styles.heading} data-size={size} style={{ ...style, fontSize: px, letterSpacing: tracking(l, size), ...turnedBox }} {...common} onPointerDown={press} onDoubleClick={edit}>
+    <div className={styles.heading} data-learn="heading" data-size={size} style={{ ...style, fontSize: px, letterSpacing: tracking(l, size), ...turnedBox }} {...common} onPointerDown={press} onDoubleClick={edit}>
       <div ref={body} className={styles.body} data-turn={turn}>
         {typing ? (
           <NamedFields l={l} kick={l.kicker ?? ''} kickSize={kickPx(px)} />
@@ -838,7 +841,7 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
   const named = kind === 'heading' || kind === 'section'
   const sizes = named ? SIZES : kind === 'paragraph' || kind === 'sticky' ? SCALES : []
   return (
-    <div className={styles.bar} data-screen-sized style={{ transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+    <div className={styles.bar} data-learn="text-bar" data-screen-sized style={{ transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
       {sizes.map(([s, name]) => (
         <button
           key={s}

@@ -159,7 +159,7 @@ describe('events', () => {
     f.tick()
     f.tick()
     expect(f.log.slice(1)).toEqual([
-      { event: 'focus-in', payload: { kind: 'plane', empty: true } },
+      { event: 'focus-in', payload: { kind: 'plane', empty: true }, target: 'plane:p1' },
       { event: 'focus-out', payload: { kind: 'plane' } },
     ])
   })
@@ -175,8 +175,8 @@ describe('events', () => {
     f.canvasView.set({ linking: { from: 'c1', to: [1, 2] } })
     f.canvasView.set({ editing: [] })
     expect(f.log).toEqual([
-      { event: 'edit-on', payload: { kind: 'plane' } },
-      { event: 'card-selected', payload: { kind: 'competitor' } },
+      { event: 'edit-on', payload: { kind: 'plane' }, target: 'plane:p1' },
+      { event: 'card-selected', payload: { kind: 'competitor' }, target: 'card:c1' },
       { event: 'linking' },
       { event: 'edit-off', payload: { kind: 'plane' } },
     ])
@@ -191,8 +191,8 @@ describe('events', () => {
     f.write({ label: 'add a deck', before: [snap('workspaces/w1/pieces/k1', null)], after: [snap('workspaces/w1/pieces/k1', { kind: 'kanban', kanban: { holds: 'cards' } })] }, { actor: 'agent' })
     f.write({ label: 'link', before: [snap('workspaces/w1/edges/e1', null)], after: [snap('workspaces/w1/edges/e1', { kind: 'for' })] })
     expect(f.log).toEqual([
-      { event: 'card-made', payload: { kind: 'customer' } },
-      { event: 'link-made', payload: { kind: 'for' } },
+      { event: 'card-made', payload: { kind: 'customer' }, target: 'card:c1' },
+      { event: 'link-made', payload: { kind: 'for' }, target: 'link:e1' },
     ])
   })
 
@@ -235,24 +235,24 @@ describe('events', () => {
 describe('stepEvents', () => {
   const ctx = { editing: [] as string[], focus: true, hazard: { ids: [] as string[], shared: false } }
   it('reads a piece made, stuck, unframed, moved', () => {
-    expect(stepEvents([snap('a/w/pieces/k', null)], [snap('a/w/pieces/k', { kind: 'kanban' })], ctx)).toEqual([{ event: 'piece-made', payload: { kind: 'kanban', holds: 'tasks' } }])
+    expect(stepEvents([snap('a/w/pieces/k', null)], [snap('a/w/pieces/k', { kind: 'kanban' })], ctx)).toEqual([{ event: 'piece-made', payload: { kind: 'kanban', holds: 'tasks' }, target: 'plane:k' }])
     const was = { kind: 'table', x: 0, y: 0 }
     expect(stepEvents([snap('a/w/pieces/t', was)], [snap('a/w/pieces/t', { ...was, stuckTo: 'p', open: true })], ctx)).toEqual([
-      { event: 'stuck', payload: { kind: 'table' } },
-      { event: 'unframed', payload: { kind: 'table' } },
+      { event: 'stuck', payload: { kind: 'table' }, target: 'plane:t' },
+      { event: 'unframed', payload: { kind: 'table' }, target: 'plane:t' },
     ])
-    expect(stepEvents([snap('a/w/pieces/t', was)], [snap('a/w/pieces/t', { ...was, x: 25 })], { ...ctx, editing: ['t'] })).toEqual([{ event: 'piece-moved', payload: { kind: 'table', editing: true } }])
+    expect(stepEvents([snap('a/w/pieces/t', was)], [snap('a/w/pieces/t', { ...was, x: 25 })], { ...ctx, editing: ['t'] })).toEqual([{ event: 'piece-moved', payload: { kind: 'table', editing: true }, target: 'plane:t' }])
   })
   it('reads text kinds, tasks with cards, a confirmed delete', () => {
-    expect(stepEvents([], [snap('a/w/labels/l', { size: 'note' })], ctx)).toEqual([{ event: 'text-made', payload: { kind: 'paragraph' } }])
-    expect(stepEvents([], [snap('a/w/labels/l', { kind: 'sticky' })], ctx)).toEqual([{ event: 'text-made', payload: { kind: 'sticky' } }])
+    expect(stepEvents([], [snap('a/w/labels/l', { size: 'note' })], ctx)).toEqual([{ event: 'text-made', payload: { kind: 'paragraph' }, target: 'label:l' }])
+    expect(stepEvents([], [snap('a/w/labels/l', { kind: 'sticky' })], ctx)).toEqual([{ event: 'text-made', payload: { kind: 'sticky' }, target: 'label:l' }])
     expect(stepEvents([snap('a/w/tasks/t', { title: 'x' })], [snap('a/w/tasks/t', { title: 'x', cardId: 'c' })], ctx)).toEqual([{ event: 'task-for-card' }])
     expect(stepEvents([snap('a/w/pieces/p', { kind: 'plane' })], [snap('a/w/pieces/p', null)], { ...ctx, hazard: { ids: ['p'], shared: false } })).toEqual([{ event: 'deleted', payload: { confirmed: true, shared: false } }])
     expect(stepEvents([snap('a/w/pieces/q', { kind: 'plane' })], [snap('a/w/pieces/q', null)], { ...ctx, hazard: { ids: ['p'], shared: false } })).toEqual([{ event: 'deleted', payload: { confirmed: false, shared: false } }])
   })
   it('one event per kind per step (a paste of five)', () => {
     const after = [1, 2, 3, 4, 5].map((i) => snap(`a/w/ideas/i${i}`, { title: 't' }))
-    expect(stepEvents([], after, ctx)).toEqual([{ event: 'card-made', payload: { kind: 'idea' } }])
+    expect(stepEvents([], after, ctx)).toEqual([{ event: 'card-made', payload: { kind: 'idea' }, target: 'card:i1' }])
   })
   it('reads a task moved, and whether it landed in the finished column', () => {
     const t = { pieceId: 'k', col: 'a', title: 'x' }

@@ -29,7 +29,7 @@ export function PeopleHere() {
   useEffect(() => {
     if (!following) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
+      if (e.key !== 'Escape' || (e.target as Element | null)?.closest?.('[data-coach]')) return
       e.stopPropagation()
       follow(null)
     }
@@ -44,7 +44,7 @@ export function PeopleHere() {
     if (!listOpen) return
     const onDown = (e: PointerEvent) => !root.current?.contains(e.target as Node) && setListOpen(false)
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
+      if (e.key !== 'Escape' || (e.target as Element | null)?.closest?.('[data-coach]')) return
       e.stopPropagation()
       setListOpen(false)
     }
@@ -64,7 +64,7 @@ export function PeopleHere() {
   const shown = peers.length <= MAX ? peers : peers.slice(0, MAX - 1)
   const more = peers.length - shown.length
   return (
-    <div ref={root} className={styles.root}>
+    <div ref={root} className={styles.root} data-learn="people">
       <ul className={`${styles.people} ${styles.stack}`} aria-label={`${peers.length} more ${peers.length === 1 ? 'person' : 'people'} here`}>
         {shown.map((p) => {
           const on = following === p.uid
@@ -113,7 +113,7 @@ export function PeopleHere() {
       )}
       {leader && (
         <div className={styles.following} style={{ ['--peer' as string]: tone(leader.color) }}>
-          <button className={styles.followTag} onClick={() => follow(null)}>
+          <button className={styles.followTag} data-learn="follow-label" onClick={() => follow(null)}>
             following {leader.name} · {where(leader)} <span className={styles.stop}>esc to stop</span>
           </button>
         </div>

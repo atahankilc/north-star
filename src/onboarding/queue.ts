@@ -28,7 +28,9 @@ import { isArmed } from './seenMerge'
 import type { Audience } from './seenMerge'
 
 export type Payload = Record<string, unknown>
-export type LearnEvent = { event: LessonEvent; payload?: Payload }
+// `target`: what it was about, as the app's `data-target` names it (`card:<id>`, `plane:<id>`…): a lesson's anchor is
+// looked for there first.
+export type LearnEvent = { event: LessonEvent; payload?: Payload; target?: string }
 
 // What can hold a lesson back (onboarding.md §5.4); `modal`: the coach's own welcome or what's new.
 export const BUSY_SOURCES = [
@@ -61,6 +63,8 @@ export type Shown = {
   // The pages this person gets (paged lessons; [] for the guide, nudges and empty states).
   pages: Page[]
   payload: Payload
+  // What the event was about (LearnEvent's `target`): its anchor is looked for there first.
+  target?: string
   // Armed by a release: shown with `NEW`.
   isNew: boolean
   // `play`: asked for in `?`; `event`: triggered.
@@ -95,6 +99,7 @@ export type QueueOptions = {
 type Entry = {
   lesson: Lesson
   payload: Payload
+  target?: string
   event: LessonEvent
   automatic: boolean
   // When its own wait started: queued, or released by `after` / the cooldown.
@@ -231,7 +236,7 @@ export function createQueue(o: QueueOptions): Queue {
       if (tipsOff || (known && !due(l, payload)) || isSeen(l)) continue
       if (shown && shown.lesson.id === l.id) continue
       if (l.format === 'nudge' && (nudgedThisLoad || queue.some((q) => q.lesson.format === 'nudge'))) continue
-      const entry: Entry = { lesson: l, payload, event: e.event, automatic: AUTOMATIC.has(e.event), readyAt: null, calmSince: null, pausedSince: null }
+      const entry: Entry = { lesson: l, payload, target: e.target, event: e.event, automatic: AUTOMATIC.has(e.event), readyAt: null, calmSince: null, pausedSince: null }
       const at = queue.findIndex((q) => q.lesson.id === l.id)
       // One per lesson: the newer trigger replaces it, in its place.
       if (at >= 0) queue[at] = entry
@@ -248,6 +253,7 @@ export function createQueue(o: QueueOptions): Queue {
       lesson: e.lesson,
       pages: pagesFor(e.lesson, o.getRole(), audience(), e.payload, pageIf),
       payload: e.payload,
+      ...(e.target ? { target: e.target } : {}),
       isNew: isArmed(o.getProgress(), e.lesson.id),
       via: 'event',
       since: now,

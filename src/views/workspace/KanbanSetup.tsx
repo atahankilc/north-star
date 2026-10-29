@@ -50,7 +50,7 @@ export function KanbanSetupPanel({ piece }: { piece: WithId<Piece> }) {
     boxes: cardsHere && rowFieldOf(setup) ? (setup.names?.length ?? 0) : undefined,
   }
   return (
-    <section className={m.setup} aria-label="Set up the deck" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
+    <section className={m.setup} data-learn="setup" aria-label="Set up the deck" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
       <header className={m.setupHead}>
         <nav className={m.tabs} role="tablist" aria-label="Setup">
           {KANBAN_TABS.map((t) => (

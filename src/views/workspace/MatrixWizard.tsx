@@ -42,6 +42,7 @@ function Wizard() {
   const enter = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if ((e.target as Element | null)?.closest?.('[data-coach]')) return
       if (e.key === 'Enter') return enter.current(e)
       if (e.key !== 'Escape') return
       e.stopPropagation()
@@ -69,7 +70,7 @@ function Wizard() {
 
   return (
     <div className={styles.wizardShade} onPointerDown={(e) => e.target === e.currentTarget && close()}>
-      <section className={styles.wizard} role="dialog" aria-modal="true" aria-label="A new matrix" onKeyDown={(e) => e.stopPropagation()}>
+      <section className={styles.wizard} data-learn="wizard" role="dialog" aria-modal="true" aria-label="A new matrix" onKeyDown={(e) => e.stopPropagation()}>
         <nav className={styles.wizardSteps} role="tablist">
           {STEPS.map((s, i) => (
             <button key={s} role="tab" aria-selected={step === i} className={styles.wizardStep} onClick={() => setStep(i)}>

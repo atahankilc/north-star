@@ -67,6 +67,7 @@ import { clearFound, useFind } from './find'
 import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView, selectTask, useKanbanSizes, useKanbanUi } from './Kanban'
 import { timelineBounds, TimelineDockTools, TimelineView, TimelineWeeks } from './Timeline'
 import { KanbanFilterDock } from './KanbanFilterDock'
+import { learn } from '../../onboarding/learn'
 import { TaskPanel } from './TaskPanel'
 import { timelineKanbans, timelineOf } from '../../data/tasks'
 import { usePlaneFilter } from './planeFilter'
@@ -345,7 +346,8 @@ export function CanvasView() {
   const drawing = useCanvasView((s) => s.drawing)
   // What a canvas section carries besides text: the planes inside it.
   // A section carries the pieces it holds; one here through a spot moves its spot (D-302's session 3).
-  const pieceCarry = useMemo(() => shown.map((p) => ({ id: p.id, ref: p.spot ? spotRef(wid, p.spot, p.id) : pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h })), [shown, wid])
+  // Built only when a section is dragged (a ref per piece), so drawing makes none.
+  const pieceCarry = useCallback(() => shown.map((p) => ({ id: p.id, ref: p.spot ? spotRef(wid, p.spot, p.id) : pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h })), [shown, wid])
   // A point on screen (client px) in a space's px: the canvas's, or the focused plane's own view.
   const canvasToSpace = (cx: number, cy: number): [number, number] => {
     const r = root.current!.getBoundingClientRect()
@@ -458,6 +460,7 @@ export function CanvasView() {
   // Right-click (D-193): a menu on a plane, a card, a piece of text or a link (D-207); only `comment` for now. Elsewhere, nothing.
   const [menu, setMenu] = useState<{ at: [number, number]; what: string; items: MenuEntry[] } | null>(null)
   const closeMenu = useCallback(() => setMenu(null), [])
+  useEffect(() => void (menu && learn('context-menu', { kind: menu.what })), [menu])
   const rightClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('input, textarea, [role=dialog], [aria-label=Threads]')) return
     e.preventDefault()
@@ -1153,7 +1156,7 @@ export function CanvasView() {
       {/* And a task picked on a kanban open on the canvas (D-251), or from a card's panel there (D-254). */}
       {!focused && <TaskPanel editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />
-      {menu && <ContextMenu at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
+      {menu && <ContextMenu data-learn="menu" at={menu.at} what={menu.what} items={menu.items} onClose={closeMenu} />}
       <MoveToCanvas />
       {/* Cards from other planes to bring here (D-281), where the `+` or the right-click menu was. */}
       {focused && !isBare(focused) && <BringCards here={focused.id} origin={root.current?.getBoundingClientRect() ?? { left: 0, top: 0 }} />}
@@ -1394,9 +1397,9 @@ function Bond({ piece, plane: at, zoom, layer }: { piece: WithId<Piece>; plane: 
     const rows = Math.floor(gap.height / BOND_CELL)
     const text = Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => ((r + c) % 2 ? glyph : '·')).join('')).join('\n')
     return layer === 'over' ? (
-      <span className={styles.notch} data-lit={lit || undefined} data-screen-sized style={notch} aria-hidden />
+      <span className={styles.notch} data-learn="bond" data-lit={lit || undefined} data-screen-sized style={notch} aria-hidden />
     ) : (
-      <span className={styles.bondGap} data-lit={lit || undefined} style={gap} aria-hidden>
+      <span className={styles.bondGap} data-learn="bond" data-lit={lit || undefined} style={gap} aria-hidden>
         {text}
       </span>
     )
@@ -1412,7 +1415,7 @@ function Bond({ piece, plane: at, zoom, layer }: { piece: WithId<Piece>; plane: 
   const B = flat ? [dx > 0 ? box.x : box.x + box.w, clamp(A[1], box.y + 20, box.y + box.h - 20)] : [clamp(A[0], box.x + 20, box.x + box.w - 20), dy > 0 ? box.y : box.y + box.h]
   const notch = flat ? { left: A[0] - 1, top: A[1] - 10, width: 2, height: 20 } : { left: A[0] - 10, top: A[1] - 1, width: 20, height: 2 }
   return layer === 'over' ? (
-    <span className={styles.notch} data-lit={lit || undefined} data-screen-sized style={notch} aria-hidden />
+    <span className={styles.notch} data-learn="bond" data-lit={lit || undefined} data-screen-sized style={notch} aria-hidden />
   ) : (
     <svg className={styles.bondLine} data-lit={lit || undefined} data-screen-sized aria-hidden>
       <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} strokeWidth={1 / zoom} />
@@ -1740,6 +1743,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
     <>
     <div
       className={styles.piece}
+      data-learn="piece"
       data-selected={selected || undefined}
       data-editing={editing || undefined}
       data-dragging={held ? true : undefined}
@@ -1990,6 +1994,7 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
+    if (on) learn('console-shown', { kind: el.closest<HTMLElement>('[data-kind]')?.dataset.kind ?? noun }, el.closest<HTMLElement>('[data-target]')?.dataset.target)
     if (first.current) {
       first.current = false
       el.style.clipPath = on ? '' : 'polygon(0 0, 0 0, 0 0)'
@@ -2012,6 +2017,7 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
       className={`${styles.console} ${className ?? ''}`}
       role="toolbar"
       aria-label={noun}
+      {...(on && { 'data-learn': 'console' })}
       data-screen-sized
       data-editing={size ? true : undefined}
       data-shown={on || undefined}
@@ -2026,7 +2032,7 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
             {size.w} × {size.h}
           </span>
           {open && (
-            <button className={styles.tool} title={open.on ? 'back into its window' : 'out of its window onto the canvas, live there'} onClick={open.onToggle}>
+            <button className={styles.tool} data-learn="console-unframe" title={open.on ? 'back into its window' : 'out of its window onto the canvas, live there'} onClick={open.onToggle}>
               {open.on ? 'frame' : 'unframe'}
             </button>
           )}

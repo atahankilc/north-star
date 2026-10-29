@@ -60,6 +60,7 @@ import type { FindItem } from './find'
 import { useStill } from './still'
 import { usePeersOn } from './collab'
 import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
+import { learn } from '../../onboarding/learn'
 import styles from './Matrix.module.css'
 
 // The matrix's parts in its own px: the row heads' column, a cell, the column heads' row, a row, the gap between them,
@@ -275,7 +276,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   // What a card unfolds into that nobody meets, by its key (D-249): across the other axis's cards.
   const openOf = (which: 'rows' | 'cols', key: string) =>
     isOpen(setup, which === 'rows' ? topCols.map((c) => cellView(piece.id, setup, at, { key }, c)) : topRows.map((r) => cellView(piece.id, setup, at, r, { key })))
-  const fold = (which: 'rows' | 'cols', e: Entry, open: boolean) => void setOpen(wid, piece.id, setup, which, [e.key], open)
+  const fold = (which: 'rows' | 'cols', e: Entry, open: boolean) => (open && learn('axis-unfold'), void setOpen(wid, piece.id, setup, which, [e.key], open))
   const renameSub = (e: Entry, text: string) => {
     const card = e.card
     if (!card || !e.sub || !text) return
@@ -604,7 +605,7 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
       {children}
       <Marks tier="s" tone={tone} live={!!onPick} selected={chosen} peers={live ? peers : undefined} />
       {unfold && (
-        <span className={styles.unfold}>
+        <span className={styles.unfold} data-learn="axis">
           {unfold.open > 0 && (
             <span className={styles.openMark} title={`${unfold.open} of what it's judged on nobody meets: white space`}>
               ◇ {unfold.open} open
@@ -1002,7 +1003,7 @@ function CellBar({ setup, cell, row, col, editor, onFold, at, room, write, onTyp
   }, [])
   const left = room && w ? Math.max(8, Math.min(at[0], room - w - 8)) : at[0]
   return (
-    <div ref={bar} className={styles.cellBar} data-screen-sized style={{ left, top: at[1] + 8 }} role="toolbar" aria-label="Cell" onPointerDown={(e) => e.stopPropagation()}>
+    <div ref={bar} className={styles.cellBar} data-learn="cell-bar" data-screen-sized style={{ left, top: at[1] + 8 }} role="toolbar" aria-label="Cell" onPointerDown={(e) => e.stopPropagation()}>
       <div className={styles.where}>
         <span>{row.name || 'untitled'}</span>
         <span className={styles.cross}>×</span>

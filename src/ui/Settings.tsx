@@ -95,7 +95,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
       >
         {open && (
           <div className={styles.inner}>
-            <nav className={styles.nav} aria-label="Settings">
+            <nav className={styles.nav} aria-label="Settings" data-learn="settings-menu">
               {(['you', 'workspace'] as const).map((g) => {
                 const items = pages.filter((p) => p.group === g)
                 if (items.length === 0) return null
@@ -121,7 +121,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
             </nav>
 
             <div className={styles.page} key={current.id}>
-              <header className={styles.head}>
+              <header className={styles.head} {...(current.id === 'people' && { 'data-learn': 'settings-people' })}>
                 <h3 className={styles.title}>{current.title}</h3>
                 <p className={styles.about}>{current.about}</p>
               </header>

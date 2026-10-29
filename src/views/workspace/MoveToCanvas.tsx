@@ -122,6 +122,7 @@ function Prompt({ asked, canvas, canvases, onClose }: { asked: { pieces: string[
   const n = asked.pieces.length + asked.labels.length
   return (
     <ContextMenu
+      data-learn="prompt"
       at={asked.screen}
       what="canvas"
       items={items}

@@ -40,6 +40,8 @@ const KIND_GUIDE = lessonById('kind-guide')!
 // Done → next (onboarding.md §4.3): after a lesson goes, its break (320 ms) and 300 ms of nothing before the next.
 const AFTER_MS = 320 + 300
 const TICK_MS = 150
+// Open menus and lists, over which no empty state draws.
+const MENUS = '[data-learn="plus-menu"], [role="menu"], [role="listbox"]'
 // The pointer resting on the side nav this long is `sidenav-rest`.
 const REST_MS = 600
 
@@ -61,6 +63,10 @@ export type CoachDev = {
   quiet(on: boolean): void
 }
 export const coachDev: { current: CoachDev | null } = { current: null }
+
+// The side nav's `?` (onboarding.md §4.6): opens (or closes) the guide as the key does, through the mounted coach.
+const guideToggle: { current: (() => void) | null } = { current: null }
+export const openGuide = () => guideToggle.current?.()
 
 export function Coach() {
   const store = useContext(WorkspaceContext)
@@ -258,6 +264,9 @@ export function Coach() {
       if (e.key !== '?' || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return
       if (editable(document.activeElement) || editable(e.target as Element)) return
       e.preventDefault()
+      toggle()
+    }
+    const toggle = () => {
       if (guideOpenRef.current) {
         setGuideOpen(false)
         restoreFocus()
@@ -268,6 +277,7 @@ export function Coach() {
       setGuideOpen(true)
       learn('guide-open')
     }
+    guideToggle.current = toggle
     let timer: ReturnType<typeof setTimeout> | undefined
     let on = false
     const onMove = (e: PointerEvent) => {
@@ -283,6 +293,7 @@ export function Coach() {
       removeEventListener('keydown', onKey)
       removeEventListener('pointermove', onMove)
       clearTimeout(timer)
+      if (guideToggle.current === toggle) guideToggle.current = null
     }
   }, [])
 
@@ -456,8 +467,16 @@ export function Coach() {
     }
   }, [])
 
+  // A menu or list open (the `+` with its kind guide, a right-click, a Select): the empty states step aside meanwhile.
+  const anyHint = Object.keys(hints).length > 0
+  const [menuUp, setMenuUp] = useState(false)
+  useEffect(() => {
+    if (!anyHint) return setMenuUp(false)
+    const t = setInterval(() => setMenuUp(!!document.querySelector(MENUS)), 150)
+    return () => clearInterval(t)
+  }, [anyHint])
   const welcomeQueued = cur?.lesson.id === 'welcome' || queue.queued().includes('welcome')
-  const hintIds = Object.keys(hints).filter((id) => !(id === 'empty-canvas' && (welcomeQueued || newsShowing || piecesHere > 0)))
+  const hintIds = menuUp || menu ? [] : Object.keys(hints).filter((id) => !(id === 'empty-canvas' && (welcomeQueued || newsShowing || piecesHere > 0)))
 
   return (
     <>

@@ -1,0 +1,15 @@
+/* The side nav's `?` (D-315): the fit button's look (WorkspaceLayout.module.css .fit), a dot over its top right corner
+   while something new is unseen, magenta as a mention's (D-166). */
+.button {
+  position: relative;
+}
+
+.dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  background: var(--accent-magenta);
+  pointer-events: none;
+}

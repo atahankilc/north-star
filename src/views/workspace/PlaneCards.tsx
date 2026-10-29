@@ -41,6 +41,7 @@ import { useStill } from './still'
 import { factsOf, useTaskTally, type Facts, type Proof } from './cardFacts'
 import { createEdge, defaultKind } from '../../data/edges'
 import { drawLinks, ghostOf, LinkChips, LinkLines } from './PlaneLinks'
+import { learn } from '../../onboarding/learn'
 import styles from './PlaneCards.module.css'
 
 const DRAG_PX = 5
@@ -88,6 +89,9 @@ type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; ed
 
 // A plane's contents: its sections under its cards, its text over them (D-188). Its view moves only the world's
 // transform: what's in it is drawn again when the zoom changes, never as the view pans.
+// A folded parts tree was drawn in focus (the onboarding's `parts-folded`, D-315): said once a page load.
+const partsSaid = { on: false }
+
 export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   const { wid } = useWs()
   // On the canvas the plane's picture is scaled again by the canvas's zoom.
@@ -160,6 +164,7 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
   const cardsLive = useCanvasView((s) => (live ? s.cardsLive : NO_LIVE))
   const shift = useCanvasView((s) => (live ? s.dragShift : null))
   const folds = useMemo(() => foldsOf(cards, edges), [cards, edges])
+  useEffect(() => void (!partsSaid.on && live && cards.some((c) => c.type !== 'package' && folds.rows.has(c.id)) && ((partsSaid.on = true), learn('parts-folded'))), [live, cards, folds])
   const featuresOf = useMemo(() => {
     const m = new Map<string, CompetitorFeature[]>()
     for (const f of competitorFeatures) m.set(f.competitorId, [...(m.get(f.competitorId) ?? []), f])
@@ -249,7 +254,8 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
       if (b.x < f.x + f.w && b.x + b.w > f.x && b.y < f.y + f.h && b.y + b.h > f.y) outsiders.add(c.id)
     }
   }
-  const carry = cards.map((c) => ({ id: c.id, ref: spotRef(wid, c), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
+  // What a section here carries, built only when one is dragged (each card's spot ref).
+  const carry = () => cards.map((c) => ({ id: c.id, ref: spotRef(wid, c), x: c.x, y: c.y, w: CARD.w, h: CARD.h }))
   // The cards there when this opened are just there in focus (the plane's own picture was already showing them); on the
   // canvas they build up with the page. Any card after that builds up as it arrives.
   const [first] = useState(() => new Set(cards.map((c) => c.id)))
@@ -524,6 +530,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
       >
         <div
           className={styles.band}
+          data-learn="package-band"
           onPointerDown={press}
           onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
           onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
@@ -703,6 +710,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
     <>
       <div
         className={styles.box}
+        data-learn="card"
         style={{ left: x, top: y, width: CARD.w, height: h, ['--type' as string]: TYPE_ACCENT[card.type], ...tucked }}
         data-type={card.type}
         data-tucked={tuck ? true : undefined}

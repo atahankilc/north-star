@@ -60,7 +60,7 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
     void removeEntry(wid, piece.id, setup, which, { key: item.cardId ?? item.id, name: item.name ?? '', item, auto: false }, cells)
   const restart: MenuEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setSetup(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
   return (
-    <section className={styles.setup} aria-label="Set up the matrix" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), closeMatrixSetup())}>
+    <section className={styles.setup} data-learn="setup" aria-label="Set up the matrix" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), closeMatrixSetup())}>
       <header className={styles.setupHead}>
         <nav className={styles.tabs} role="tablist" aria-label="Setup">
           {SETUP_TABS.map((t) => (

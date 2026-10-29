@@ -20,13 +20,34 @@ import { fill, lessonName, plain, type Fill } from './words'
 import type { CloseHow, Shown } from './queue'
 import styles from './Lesson.module.css'
 
-// The anchor on screen: the first `[data-learn]` of that name that's drawn.
-export function findAnchor(name: string | undefined): HTMLElement | null {
-  if (!name) return null
-  for (const el of document.querySelectorAll<HTMLElement>(`[data-learn="${name}"]`)) {
-    const r = el.getBoundingClientRect()
-    if (r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth) return el
+// Drawn and visible: on screen, with a size, not hidden by style (visibility, opacity 0, display, a cell-by-cell clip
+// that's shut: a piece's console when not shown), not inside something inert or aria-hidden (the canvas picture's cards
+// under a focus).
+const SHUT = 'polygon(0 0, 0 0, 0 0)'
+export function isVisible(el: HTMLElement): boolean {
+  const r = el.getBoundingClientRect()
+  if (!(r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth)) return false
+  if (el.closest('[inert]') || el.parentElement?.closest('[aria-hidden="true"]')) return false
+  if (getComputedStyle(el).visibility === 'hidden') return false
+  for (let a: HTMLElement | null = el; a && a !== document.body; a = a.parentElement) {
+    if (a.style.clipPath.replace(/px/g, '') === SHUT) return false
+    const cs = getComputedStyle(a)
+    if (cs.display === 'none' || cs.opacity === '0') return false
   }
+  return true
+}
+
+// The anchor on screen: a visible `[data-learn]` of that name, at or inside what the event was about first (`target`,
+// the app's `data-target`: the card selected, the piece just made), else the first one drawn.
+export function findAnchor(name: string | undefined, target?: string): HTMLElement | null {
+  if (!name) return null
+  const sel = `[data-learn="${name}"]`
+  if (target)
+    for (const t of document.querySelectorAll<HTMLElement>(`[data-target="${CSS.escape(target)}"]`)) {
+      const at = [...(t.matches(sel) ? [t] : []), ...t.querySelectorAll<HTMLElement>(sel)].find(isVisible)
+      if (at) return at
+    }
+  for (const el of document.querySelectorAll<HTMLElement>(sel)) if (isVisible(el)) return el
   return null
 }
 
@@ -112,6 +133,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   const done = shown.doneAt !== undefined
   const name = lessonName(shown.lesson.id)
   const anchorName = shown.lesson.anchor
+  const target = shown.target
   const f: Fill = names
 
   const card = useRef<HTMLElement>(null)
@@ -126,12 +148,12 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   // Placed once measured, again on a new page or a pan/zoom's end; kept while `✓ done` shows (its anchor may be gone).
   useLayoutEffect(() => {
     if (played || (done && pos) || !card.current) return
-    const anchor = findAnchor(anchorName)
+    const anchor = findAnchor(anchorName, target)
     if (anchor) hadAnchor.current = anchor
     const size = { w: card.current.offsetWidth, h: card.current.offsetHeight }
     const next = where(look, anchorName, anchor, size)
     setPos((p) => (p && p.x === next.x && p.y === next.y && p.at === next.at && (p.lead?.x2 ?? 0) === (next.lead?.x2 ?? 0) && (p.lead?.y2 ?? 0) === (next.lead?.y2 ?? 0) ? p : next))
-  }, [i, look, sample, played, done, anchorName])
+  }, [i, look, sample, played, done, anchorName, target])
 
   // A pan or zoom ended, the window resized: sample the anchor again. Its anchor gone (its piece deleted): closed.
   useEffect(() => {
@@ -150,6 +172,13 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
     if (card.current) ro.observe(card.current)
     const gone = setInterval(() => {
       if (hadAnchor.current && !hadAnchor.current.isConnected && !document.querySelector(`[data-learn="${anchorName}"]`) && card.current && !card.current.dataset.done) closeRef.current('closed')
+      else if (anchorName) {
+        // Placed again when a better anchor is in sight: none was (still building), the one it went by is hidden now
+        // (a console no longer pointed at), or what the event was about has come into view.
+        const best = findAnchor(anchorName, target)
+        const had = hadAnchor.current
+        if (best && best !== had && (!had || !isVisible(had) || (target && best.closest(`[data-target="${CSS.escape(target)}"]`)))) setSample((n) => n + 1)
+      }
     }, 700)
     return () => {
       off()
@@ -158,7 +187,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
       clearInterval(gone)
       clearTimeout(t)
     }
-  }, [played, anchorName])
+  }, [played, anchorName, target])
 
   const root = useRef<HTMLElement>(null)
   const first = useRef<HTMLButtonElement>(null)

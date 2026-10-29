@@ -33,6 +33,7 @@ export function TasksButton() {
   return (
     <button
       className={`${nav.fit} ${styles.button}`}
+      data-learn="tasks"
       data-on={open || undefined}
       aria-pressed={open}
       aria-label={`Decks and their days${fresh ? `: ${fresh} task${fresh === 1 ? '' : 's'} given to you, new` : ''}`}

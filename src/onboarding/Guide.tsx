@@ -39,6 +39,10 @@ let lastMap: { col: number; i: number } | null = null
 // `whats-new` and `welcome` are what `# start` plays: the coach knows both (welcome is a lesson; what's new its own).
 export const WHATS_NEW = 'whats-new'
 
+// Keys pressed anywhere in the guide stay in it (the canvas's and the app's own never hear them), except `?`, which the
+// coach hears to close it.
+const keepKeys = (e: React.KeyboardEvent) => void (e.key !== '?' && e.stopPropagation())
+
 // The magenta dot on the side nav's `?` (O6): something armed is still unseen.
 export function useGuideDot(): boolean {
   const seen = useProgress((s) => s.seen)
@@ -261,6 +265,7 @@ function ListGuide({ model, look, onClose, onPlay, reach, resume }: { model: Gui
       aria-label="Guide: every note again"
       data-coach
       onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
+      onKeyDown={keepKeys}
     >
       <Line field={field} query={query} setQuery={(q) => (setQuery(q), setSelKey(null))} onKeyDown={onKeyDown} />
       <div className={styles.body}>
@@ -656,7 +661,7 @@ function MapGuide({ model, onClose, onPlay, reach, resume }: { model: GuideModel
   }
 
   return (
-    <Appear className={styles.guide} data-look="c" data-coach role="dialog" aria-modal="true" aria-label="Guide: every note again" onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}>
+    <Appear className={styles.guide} data-look="c" data-coach role="dialog" aria-modal="true" aria-label="Guide: every note again" onPointerDown={(e: React.PointerEvent) => e.stopPropagation()} onKeyDown={keepKeys}>
       <Line field={field} query={query} setQuery={(q) => (setQuery(q), setSel({ col: 0, i: 0 }))} onKeyDown={onKeyDown} />
       {!!reach && !query.trim() && (
         <div className={styles.nowMap} role="listbox" aria-label="Showing now">

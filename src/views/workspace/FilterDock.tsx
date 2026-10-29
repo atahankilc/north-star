@@ -35,7 +35,7 @@ export function PlaneDockExtras({ plane, cards, stuck }: { plane: string; cards:
     if (!filter && !linked) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=menu], [role=listbox]')) return
+      if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=menu], [role=listbox], [aria-modal=true], [data-coach]')) return
       e.stopImmediatePropagation()
       useShelf.setState(filter ? { filter: false } : { linked: false })
     }
@@ -106,7 +106,7 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   ]
   const linksNarrow = f.links.some((g) => !START.links.includes(g))
   return (
-    <Appear className={styles.panel} role="group" aria-label="Filters">
+    <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
       <Menu label="show" up summary={swatches(ALL_TYPES.map((t) => ({ key: t, tone: TYPE_TONE[t], on: !f.hide.includes(t) })))} active={f.hide.length > 0} items={show} ariaLabel="Show card types" noun="types" />
       <Menu label="for" up summary={named(f.for, (id) => customers.find((c) => c.id === id)?.title || '1')} active={f.for.length > 0} items={customers.length ? forItems : []} ariaLabel="Only cards for these customers" empty="No customers on this plane" noun="customers" />
       <Menu label="tag" up summary={named(f.tags, (t) => `#${t}`)} active={f.tags.length > 0} items={tags.length ? tagItems : []} ariaLabel="Only cards with these tags" empty="No tags on this plane" noun="tags" />

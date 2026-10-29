@@ -20,5 +20,5 @@ export function ViewMenu({ editor = true }: { editor?: boolean }) {
     { key: 'show', heading: 'show' },
     { key: 'comments', label: 'comments', checked: comments, hint: 'c', onSelect: toggleThreadPins },
   ]
-  return <Menu label="view" up plain ariaLabel="How this plane is shown" noun="switches" items={items} />
+  return <Menu label="view" up plain data-learn="dock-view" ariaLabel="How this plane is shown" noun="switches" items={items} />
 }

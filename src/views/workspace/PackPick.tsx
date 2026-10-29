@@ -23,7 +23,7 @@ export function PackPick({ cards }: { cards: Card[] }) {
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement | null)?.closest('input, textarea, [contenteditable=true]')) return
+      if ((e.target as HTMLElement | null)?.closest('input, textarea, [contenteditable=true], [data-coach]')) return
       if (e.key !== 'Escape' && e.key !== 'Enter') return
       e.preventDefault()
       e.stopImmediatePropagation()

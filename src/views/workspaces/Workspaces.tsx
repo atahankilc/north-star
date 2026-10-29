@@ -1,7 +1,7 @@
 // /workspaces: your workspaces, plus create, ask to join with a code, import an export (D-080, D-246), and invites waiting
 // for you (D-012, D-062).
 import { AnimatePresence } from 'motion/react'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { workspacePath } from '../../app/paths'
 import type { AuthUser } from '../../data/auth'
@@ -33,7 +33,11 @@ import { AsciiButton } from '../../ui/AsciiButton'
 import { DecodeText } from '../../ui/DecodeText'
 import { Hud } from '../../ui/Hud'
 import { Appear } from '../../ui/Appear'
+import { learn } from '../../onboarding/learn'
 import styles from './Workspaces.module.css'
+
+// The onboarding's coach (D-315), loaded apart from this page (it's shared with the workspace's chunk).
+const Coach = lazy(() => import('../../onboarding/Coach').then((m) => ({ default: m.Coach })))
 
 export function Workspaces({ user }: { user: AuthUser }) {
   const workspaces = useMyWorkspaces(user.id)
@@ -84,8 +88,18 @@ export function Workspaces({ user }: { user: AuthUser }) {
           )}
         </AnimatePresence>
       </section>
+      <Suspense fallback={null}>
+        <Coach />
+        <Listed loading={workspaces.isLoading} empty={workspaces.data.length === 0} />
+      </Suspense>
     </main>
   )
+}
+
+// The list loaded, said to the coach (D-315). Mounted with it (both wait for its chunk), so it's listening by then.
+function Listed({ loading, empty }: { loading: boolean; empty: boolean }) {
+  useEffect(() => void (!loading && learn('workspaces-open', { empty })), [loading]) // eslint-disable-line react-hooks/exhaustive-deps
+  return null
 }
 
 type Mode = 'idle' | 'renaming' | 'confirm' | 'busy'
@@ -239,7 +253,9 @@ function CreateForm({ uid, onCreated }: { uid: string; onCreated: (id: string) =
     setBusy(true)
     setError(null)
     try {
-      onCreated(await createWorkspace(name, uid))
+      const id = await createWorkspace(name, uid)
+      learn('ws-made')
+      onCreated(id)
     } catch (err) {
       setError((err as Error).message)
       setBusy(false)
@@ -284,6 +300,7 @@ function JoinForm({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =
       const result = await requestToJoin(code, user)
       if (result.status === 'member') return onJoined(result.workspaceId)
       setSent(true)
+      learn('join-requested')
       setCode('')
     } catch (err) {
       setError(err instanceof JoinError ? err.message : 'Could not send the request. Check the code and try again.')
@@ -364,7 +381,7 @@ function Pending({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =>
           </li>
         ))}
         {requests.data.map((r: WithId<JoinRequest>) => (
-          <li key={r.id} className={styles.pendingItem}>
+          <li key={r.id} className={styles.pendingItem} data-learn="pending-row">
             <span className={styles.pendingName}>{r.code.slice(0, 4)}-{r.code.slice(4)}</span>
             <span className={styles.pendingMeta}>you asked to join · waiting for the owner</span>
             <span className={styles.pendingActions}>
@@ -396,6 +413,7 @@ function ImportStrip({ user, onCreated }: { user: AuthUser; onCreated: (id: stri
     try {
       const bundle = await readBundle(file)
       const result = await importWorkspace(bundle, user.id, user.name || user.email || 'someone')
+      learn('ws-made')
       if (result.skipped) {
         setDone({ id: result.workspaceId, skipped: result.skipped })
         setBusy(false)

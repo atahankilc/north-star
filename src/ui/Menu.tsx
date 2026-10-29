@@ -72,6 +72,10 @@ type Props = {
   prompt?: string
   // What the foot counts: "8 things", "5 places".
   noun?: string
+  // The onboarding's names (D-315) for the trigger and the open panel, and what hears it open.
+  'data-learn'?: string
+  panelLearn?: { 'data-learn': string }
+  onOpen?: () => void
 }
 
 const text = (n: ReactNode): string => (typeof n === 'string' || typeof n === 'number' ? String(n) : '')
@@ -270,8 +274,11 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
   )
 }
 
-export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, plain, active, ariaLabel, empty, prompt, noun }: Props) {
+export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, plain, active, ariaLabel, empty, prompt, noun, 'data-learn': learnAs, panelLearn, onOpen }: Props) {
   const [open, setOpen] = useState(false)
+  const onOpenRef = useRef(onOpen)
+  onOpenRef.current = onOpen
+  useEffect(() => void (open && onOpenRef.current?.()), [open])
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const id = useId()
@@ -303,6 +310,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
         data-quiet={quiet || undefined}
         aria-controls={open ? id : undefined}
         aria-label={ariaLabel}
+        data-learn={learnAs}
         onClick={() => (open ? close(false) : setOpen(true))}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown' && !open) (e.preventDefault(), setOpen(true))
@@ -318,7 +326,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
       </button>
       <AnimatePresence>
         {open && (
-          <Appear key="menu" className={styles.panel} data-up={up} data-right={right} data-end={alignEnd}>
+          <Appear key="menu" className={styles.panel} data-up={up} data-right={right} data-end={alignEnd} {...panelLearn}>
             <MenuPanel id={id} items={items} ariaLabel={ariaLabel} empty={empty} prompt={prompt} noun={noun} onClose={close} />
           </Appear>
         )}

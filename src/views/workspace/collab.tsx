@@ -51,6 +51,8 @@ export function useCursorReport(root: RefObject<HTMLDivElement | null>, toSpace:
     const el = root.current
     if (!el) return
     const report = () => {
+      // A camera change can land after the canvas unmounted (its root ref cleared before this unsubscribes).
+      if (!el.isConnected || !root.current) return
       const at = last.current && toSpaceRef.current(last.current[0], last.current[1])
       setCursor(at ?? null)
     }

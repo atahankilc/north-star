@@ -104,7 +104,7 @@ export function Beside({ plane, open, editor, esc, matrixSetupPane, onClose }: P
       {open.map((p, i) => (
         <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} esc={esc} matrixSetupHere={p.id === matrixSetupPane} onClose={() => onClose(p.id)} />
       ))}
-      <div className={styles.divider} style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="Plane and what's beside it" />
+      <div className={styles.divider} data-learn="split" style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="Plane and what's beside it" />
       {open.slice(0, -1).map((p, i) => (
         <div key={`row-${p.id}`} className={styles.rowDivider} style={{ left, top: tops[i + 1] }} onPointerDown={dragRow(i)} role="separator" aria-orientation="horizontal" aria-label="Between two panes" />
       ))}

@@ -51,7 +51,7 @@ export function DrawSection({ space, toSpace }: Props) {
   return (
     <div className={styles.draw} onPointerDown={press} aria-label="Draw a section">
       {rect && <div className={styles.rect} style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }} />}
-      {!rect && <span className={styles.hint}>drag to draw a section · esc to stop</span>}
+      {!rect && <span className={styles.hint} data-learn="crosshair">drag to draw a section · esc to stop</span>}
     </div>
   )
 }

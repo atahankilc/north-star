@@ -17,6 +17,7 @@ import { useWs } from './context'
 import { DockAction } from './FocusDock'
 import { NO_FILTER, narrowing, setKanbanFilter, useHoldKanbanFilter, useKanbanFilter, type DueKey, type KanbanFilter } from './kanbanFilter'
 import { TYPE_ACCENT } from './PlaneCards'
+import { learn } from '../../onboarding/learn'
 import styles from './FilterDock.module.css'
 
 // The kanban whose strip is open.
@@ -44,7 +45,7 @@ function TaskFilterDock({ piece, pool }: { piece: WithId<Piece>; pool?: Task[] }
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || (e.target as HTMLElement | null)?.closest('input, textarea, [role=menu], [role=listbox]')) return
+      if (e.key !== 'Escape' || (e.target as HTMLElement | null)?.closest('input, textarea, [role=menu], [role=listbox], [aria-modal=true], [data-coach]')) return
       e.stopImmediatePropagation()
       useOpen.setState({ piece: null })
     }
@@ -54,7 +55,7 @@ function TaskFilterDock({ piece, pool }: { piece: WithId<Piece>; pool?: Task[] }
   useEffect(() => () => useOpen.setState((s) => (s.piece === piece.id ? { piece: null } : s)), [piece.id])
   return (
     <>
-      <DockAction label={n ? `filter · ${n}` : 'filter'} pressed={open || n > 0} title={open ? 'close the filters' : 'which tasks it shows'} onClick={() => useOpen.setState({ piece: open ? null : piece.id })} />
+      <DockAction label={n ? `filter · ${n}` : 'filter'} pressed={open || n > 0} title={open ? 'close the filters' : 'which tasks it shows'} onClick={() => (useOpen.setState({ piece: open ? null : piece.id }), !open && learn('filter-open', { kind: 'kanban' }))} />
       <div className={styles.shelf} style={{ maxWidth: room }}>
         <AnimatePresence>{open && <Strip key="filter" piece={piece} f={f} pool={pool} />}</AnimatePresence>
       </div>
@@ -107,7 +108,7 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
   ]
 
   return (
-    <Appear className={styles.panel} role="group" aria-label="Filters">
+    <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
       <Menu label="given to" up summary={named(f.who, whoName)} active={f.who.length > 0} items={who} ariaLabel="Only tasks given to" noun="people" />
       <Menu label="due" up summary={named(f.due, (d) => DUE.find((x) => x.key === d)!.label)} active={f.due.length > 0} items={due} ariaLabel="Only tasks due" noun="days" />
       <Menu label="for" up summary={named(f.for, forName)} active={f.for.length > 0} items={forItems} ariaLabel="Only tasks for" noun="cards" />

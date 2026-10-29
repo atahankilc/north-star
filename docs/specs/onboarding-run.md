@@ -121,7 +121,8 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 ~06:00, lead workspace-sections-canvas: O0–O5 committed. Next O6 (mount + anchors + view hooks: ask b2 and the third session first), O7 (director + scenes).
+2026-10-29 ~06:00, lead workspace-sections-canvas: O0–O6 committed. O7 (director, Pazar fixture, scenes canvas-fit / sidenav-plus / deck-drag, a scenes check) building;
+then O8 (start: welcome variants, empty states) onward.
 Agreed with b2: S3's `onTracked` is in (events.ts uses it; ops will fill `meta.kind`/`created` from S4 on).
 The uncommitted 2-line hunk in tests/rules.test.mjs (and CanvasView/WorkspaceLayout/canvasView.ts) is a third
 session's: commit only our own hunks. Emulators already run (someone's): never stop them; rules tests run as a copy of
@@ -170,6 +171,14 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   guideModel.ts, keys.ts, `--ink-shade`; dev helpers devMount.tsx / devGuides.tsx · reviewer: 2 rounds (esc closes a
   lesson first, `?` → Enter reaches it, focus returns, sign-out stops the seen-state, panels never covered, tokens) ·
   shots: /…/tmp/shots/O5a-*, O5b-* (to move into the gallery) · not mounted yet (O6).
+- O6 · (this commit) · `<Coach />` mounted in the workspace and (lazily) on the workspaces page; every ANCHORS name as a
+  `data-learn` (39) and every view-only event as a one-line `learn()` (pending: 0 anchors, 0 events); the side nav's
+  `?` button (GuideButton, its dot); window capture key handlers skip `[aria-modal=true], [data-coach]` (Backspace on
+  the welcome deleted a selected task); lessons find the visible instance of their anchor, the event's `target` first;
+  PlaneCards' and CanvasView's carried spotRefs built at drag start, so the demo's network-off Firestore is gone; a
+  guard in collab.tsx's cursor report after a canvas remount · reviewer: 2 rounds (hidden consoles/cards as anchors,
+  the empty hint over the `+` menu) · smoke 21/21 tips off; tips on, the first esc closes a showing lesson (§3.1.5) ·
+  the orphan session's hunks in CanvasView/WorkspaceLayout/canvasView.ts left uncommitted, untouched.
 
 ### Stuck
 _(none)_

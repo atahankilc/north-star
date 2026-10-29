@@ -241,6 +241,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
       className={styles.panel}
       role="dialog"
       aria-label={`Thread on ${title}`}
+      data-learn="thread"
       data-viewer-ok
       onPointerDown={(e) => e.stopPropagation()}
       onWheel={(e) => e.stopPropagation()}

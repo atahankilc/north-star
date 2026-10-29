@@ -11,6 +11,7 @@ import { addCanvas, canvasGoes, CANVAS_NAME_MAX, deleteCanvas, MAIN, moveCanvas,
 import { canEditIn } from '../../data/workspaces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
+import { learn } from '../../onboarding/learn'
 import { ContextMenu } from './ContextMenu'
 import { useWs, useWsNow } from './context'
 import styles from './CanvasSwitch.module.css'
@@ -76,6 +77,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
     <>
       <button
         className={styles.crumb}
+        data-learn="crumb"
         data-current={current || undefined}
         aria-haspopup="menu"
         aria-expanded={!!open}
@@ -85,6 +87,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
           if (open) return close()
           const r = e.currentTarget.getBoundingClientRect()
           setOpen({ at: [r.left - 12, r.bottom + 6], mode: 'list' })
+          learn('crumb-open')
         }}
       >
         {label}

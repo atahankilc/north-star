@@ -726,7 +726,7 @@ function StatusSection({ n, card, editor }: P) {
   const { wid, evidence } = useWs()
   const warn = mismatch(card.validation, evidence.filter((e) => e.nodeId === card.id))
   return (
-    <PanelSection n={n} name="status">
+    <PanelSection n={n} name="status" data-learn="panel-status">
       <Pills values={VALIDATIONS} value={card.validation} editor={editor} label="Status" onPick={(v) => void updateCard(wid, card, { validation: v }, 'status of')} />
       {warn && <p className={styles.warn}>! {warn}</p>}
     </PanelSection>
@@ -862,7 +862,7 @@ export function LinkSection({ n, name, card, cards, editor, links, add, count, e
     if (!add.kind) useCanvasView.setState({ linkSelected: id, linkLabelling: true, cardSelected: null })
   }
   return (
-    <PanelSection n={n} name={name} count={count && links.length ? links.length : undefined} add={editor ? { label: add.label, onClick: () => setPicking(true) } : undefined} empty={!links.length && !picking && !extra}>
+    <PanelSection n={n} name={name} count={count && links.length ? links.length : undefined} add={editor ? { label: add.label, onClick: () => setPicking(true) } : undefined} empty={!links.length && !picking && !extra} {...(add.kind === FOR && add.from === 'me' && { 'data-learn': 'panel-for' })}>
       {links.map((e) => {
         const other = byId.get(e.fromId === card.id ? e.toId : e.fromId)!
         const out = e.fromId === card.id

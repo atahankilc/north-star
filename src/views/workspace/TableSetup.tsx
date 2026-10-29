@@ -59,7 +59,7 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
   const count = { rows: rowsOf(setup.rows, cards, !setup.manual).length, cols: setup.cols.length + 1 }
   const restart: MenuEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setTable(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
   return (
-    <section className={m.setup} aria-label="Set up the table" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
+    <section className={m.setup} data-learn="setup" aria-label="Set up the table" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
       <header className={m.setupHead}>
         <nav className={m.tabs} role="tablist" aria-label="Setup">
           {TABLE_TABS.map((t) => (

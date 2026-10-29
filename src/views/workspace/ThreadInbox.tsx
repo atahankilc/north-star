@@ -209,6 +209,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
       ref={tab}
       className={styles.inbox}
       aria-label="Threads"
+      data-learn="threads"
       data-list={open || undefined}
       data-convo={convo ? true : undefined}
       data-leaving={leaving || undefined}

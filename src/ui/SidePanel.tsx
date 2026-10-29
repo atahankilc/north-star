@@ -39,6 +39,7 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
       // A dialog to the canvas: its wheel scrolls it, a press here doesn't pan, right-click is the browser's.
       role="dialog"
       aria-label={label}
+      data-learn="card-panel"
       onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
       onDoubleClick={(e: React.MouseEvent) => e.stopPropagation()}
     >
@@ -59,11 +60,12 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
 
 // A section under a rule with its number and name (and a count after it); what adds to it sits at the rule's right
 // end (`+ tag`, the user's). With nothing in it, it's just its rule.
-type SectionProps = { n: number; name: ReactNode; count?: ReactNode; add?: { label: string; onClick: () => void }; empty?: boolean; children?: ReactNode }
+// `data-learn`: its name for the onboarding's lessons (D-315).
+type SectionProps = { n: number; name: ReactNode; count?: ReactNode; add?: { label: string; onClick: () => void }; empty?: boolean; children?: ReactNode; 'data-learn'?: string }
 
-export function PanelSection({ n, name, count, add, empty, children }: SectionProps) {
+export function PanelSection({ n, name, count, add, empty, children, 'data-learn': learnAs }: SectionProps) {
   return (
-    <section className={styles.section} data-empty={empty || undefined}>
+    <section className={styles.section} data-empty={empty || undefined} data-learn={learnAs}>
       <h3 className={styles.rule}>
         <span className={styles.n}>{String(n).padStart(2, '0')}</span>
         {name}

@@ -64,6 +64,9 @@ import { PeopleSettings } from './PeopleSettings'
 import { exportWorkspace } from '../../data/exportWorkspace'
 import { download, fileSlug, zipBundle } from '../../io/bundle'
 import { useEditKeys } from './useEditKeys'
+import { Coach } from '../../onboarding/Coach'
+import { learn } from '../../onboarding/learn'
+import { GuideButton } from '../../onboarding/GuideButton'
 import styles from './WorkspaceLayout.module.css'
 
 const VIEWER = "You're a viewer in this workspace: an owner can make you an editor."
@@ -156,6 +159,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
         {!isLoading && <CanvasView key={shown} />}
         {!isLoading && <Finder />}
         <Toast />
+        <Coach />
       </div>
     </WorkspaceContext.Provider>
   )
@@ -231,18 +235,21 @@ function FitButton({ wid, plane }: { wid: string; plane: string | null }) {
 }
 
 // The side nav's compass, under fit: the finder (D-236), which is go to too (D-196): the places with nothing typed (↓),
-// anything in the workspace once something is. ⌘F does the same.
+// anything in the workspace once something is. ⌘F does the same. Under it the guide's `?` (D-315).
 function FinderButton() {
   const open = useFind((s) => s.open)
   return (
-    <button className={styles.fit} data-on={open || undefined} aria-pressed={open} aria-label="Find and go to" title="find, go to (⌘F)" onClick={openFinder}>
-      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
-        {/* A compass, its needle to the north. */}
-        <circle cx="9" cy="9" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M9 3.5 11 9H7z" fill="currentColor" />
-        <path d="M7 9h4l-2 5.5z" fill="none" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
-      </svg>
-    </button>
+    <>
+      <button className={styles.fit} data-on={open || undefined} aria-pressed={open} aria-label="Find and go to" title="find, go to (⌘F)" onClick={openFinder} data-learn="finder">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+          {/* A compass, its needle to the north. */}
+          <circle cx="9" cy="9" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M9 3.5 11 9H7z" fill="currentColor" />
+          <path d="M7 9h4l-2 5.5z" fill="none" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <GuideButton />
+    </>
   )
 }
 
@@ -317,6 +324,9 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
         }
         ariaLabel={plane ? 'Add to the plane' : 'Add to the canvas'}
         prompt="add…"
+        data-learn="plus"
+        panelLearn={{ 'data-learn': 'plus-menu' }}
+        onOpen={() => learn('plus-open', { plane: !!plane })}
         items={
           plane
             ? [

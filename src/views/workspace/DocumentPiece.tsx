@@ -401,7 +401,7 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
     if (!placing || !d || d.shared) return
     go.current?.focus()
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !(e.target as Element | null)?.closest?.('[data-coach]')) {
         e.stopPropagation()
         cancel()
       }
