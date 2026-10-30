@@ -7,8 +7,12 @@ import type { Role } from '../data/model'
 import type { WsCollection } from '../model/fromDocs'
 
 // The workspace's subcollections as Firestore names them, and `workspace`: the workspace doc itself (id = the
-// workspace's id; only `name` and `description` are ever written, history.ts tracks only those).
-export type Coll = WsCollection | 'workspace'
+// workspace's id; only `name` and `description` are ever written, history.ts tracks only those). `documents` and
+// `docBodies` (a document's `content/body`, under the same id) only for the agent notes (S16, src/model/notes.ts):
+// validate refuses any other document.
+export type Coll = WsCollection | 'workspace' | DocColl
+export type DocColl = 'documents' | 'docBodies'
+export const DOC_COLLS: readonly DocColl[] = ['documents', 'docBodies']
 
 // A field taken away in a patch (Firestore's deleteField(), which apply puts in its place). A plain object, so plans
 // stay plain data (a preview, a test, the model can hold them).

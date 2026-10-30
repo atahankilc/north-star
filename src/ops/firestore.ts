@@ -13,7 +13,10 @@ import { isDelete, OpsRefused, type OpActor, type OpCtx, type Plan, type Write }
 const BATCH_LIMIT = 450
 
 export function refOf(wid: string, w: Pick<Write, 'coll' | 'id'>): DocumentReference {
-  return w.coll === 'workspace' ? doc(db(), 'workspaces', wid) : doc(db(), 'workspaces', wid, w.coll, w.id)
+  if (w.coll === 'workspace') return doc(db(), 'workspaces', wid)
+  // A document's body lives under it (documents.ts' bodyRef): only the agent notes are written by ops (S16).
+  if (w.coll === 'docBodies') return doc(db(), 'workspaces', wid, 'documents', w.id, 'content', 'body')
+  return doc(db(), 'workspaces', wid, w.coll, w.id)
 }
 
 // DELETE as Firestore's deleteField(), in a patch's values and a merged set's maps.
@@ -82,7 +85,9 @@ export async function apply(wid: string, plans: Plan[], opts: ApplyOpts = {}): P
   // queued before this one.
   const created = [...new Set(Object.values(ids))]
   const made = new Set(created)
-  const absentRefs = [...refs.values()].filter((r) => made.has(r.id))
+  // A new document's body (`…/documents/<id>/content/body`) is new with it (and can't be read before it: its rule reads
+  // the summary).
+  const absentRefs = [...refs.values()].filter((r) => made.has(r.id) || (r.id === 'body' && !!r.parent.parent && made.has(r.parent.parent.id)))
 
   const key = opts.key ?? `ops:${++count}:${Date.now()}`
   const label = opts.label ?? plans.map((p) => p.label).join(', ')

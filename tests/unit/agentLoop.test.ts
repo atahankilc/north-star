@@ -3,7 +3,7 @@
 // (reads at once, writes in order), old results cleared and compaction, every write as the agent, a model error ending
 // the turn cleanly, the context's order (map byte-stable, where-am-i last), events with step labels, the transcript.
 import { describe, expect, it, vi } from 'vitest'
-import { runTurn, clearOldResults, compactHistory, stepLabel, FINAL_STEP_NOTE, KEEP_RESULTS, STEP_BUDGET, type LoopEvent } from '../../src/agent/loop'
+import { runTurn, notesBlock, clearOldResults, compactHistory, stepLabel, FINAL_STEP_NOTE, KEEP_RESULTS, STEP_BUDGET, type LoopEvent } from '../../src/agent/loop'
 import { stubModel } from '../../src/agent/stubModel'
 import { AGENT_TOOLS } from '../../src/agent/tools'
 import { systemPrompt } from '../../src/agent/prompt'
@@ -281,7 +281,8 @@ describe('the context and what the UI hears', () => {
     expect(a.map((x) => x.role)).toEqual(['system', 'system', 'system', 'user', 'assistant', 'system', 'user'])
     expect(a[0].content).toBe(systemPrompt({ workspaceName: e.getWs().workspace.name }))
     expect(a[1].content.startsWith('# Workspace map')).toBe(true)
-    expect(a[2].content).toBe('## Agent notes\nWe call stalls "booths".')
+    expect(a[2].content).toBe(notesBlock('We call stalls "booths".'))
+    expect(a[2].content).toContain('<workspace_content author="agent notes">\nWe call stalls "booths".\n</workspace_content>')
     expect(a[5].content.startsWith('## Where the person is now')).toBe(true)
     expect(a[5].content).toContain('in focus: p3')
     expect(a[6]).toEqual({ role: 'user', content: 'now' })

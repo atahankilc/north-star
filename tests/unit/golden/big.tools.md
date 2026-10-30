@@ -670,7 +670,7 @@ Lines 13–21 of 41. Next: range "22-41", or a section by its heading.
 [more: Lines 13–21 of 41. Next: range "22-41", or a section by its heading.]
 
 === whats_new(NOW − 2 days)
-whats_new since 2026-11-01 12:00: 107 changes. Who changed a card is not known yet (the change log comes later).
+whats_new since 2026-11-01 12:00: 107 changes. Who changed a card is not known here (no change log loaded).
 <workspace_content author="workspace">
 ## cards · p16 "Channels"
 - changed 2026-11-03 11:00 · c968 · idea · "Export VAT returns from email" · testing

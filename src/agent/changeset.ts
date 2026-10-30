@@ -38,6 +38,7 @@ import { ID_KEYS } from './idKeys'
 import { entriesOf, type MatrixSetup } from '../model/matrix'
 import { colName, type Column, type TableSetup } from '../model/table'
 import { tableRows } from '../model/lens'
+import { lineDiff, notesOf, NOTES_TITLE, type DiffLine } from '../model/notes'
 
 // Handles are read under id keys, and `handle` itself (buildBatch's own default) is never resolved.
 const HANDLE_KEYS: ReadonlySet<string> = ID_KEYS
@@ -75,6 +76,8 @@ export type ChangeItem = {
   // The mark the preview gives it, the same as its things' marks: `+` makes, `−` takes away, `~` changes.
   sign: '+' | '~' | '−'
   why?: string
+  // The agent notes' text before → after, line by line (update_notes only, S16): the preview's diff.
+  diff?: DiffLine[]
 }
 
 export type Changeset = {
@@ -389,6 +392,16 @@ function itemsOf(groups: Group[], built: Built[], live: WorkspaceCtx, ids: Ids |
       const words = parts.flatMap((p) => (p.words && !(placed && p.change === 'changed' && /: planes$/.test(p.words)) ? [p.words] : []))
       const del = DELETE_OPS.has(s.op) || plan.writes.some((w) => w.del && w.coll !== 'places' && w.coll !== 'pieceSpots')
       const was = keep.get(s.item)
+      if (s.op === 'update_notes') {
+        // The notes in words: how many lines come and go; the preview shows the lines themselves (`diff`).
+        const lines = lineDiff(notesOf(before as never).text, notesOf(after as never).text)
+        const plus = lines.filter((l) => l.sign === '+' && l.text.trim()).length
+        const minus = lines.filter((l) => l.sign === '-' && l.text.trim()).length
+        const said = [plus ? `+${plus} line${plus === 1 ? '' : 's'}` : '', minus ? `−${minus} line${minus === 1 ? '' : 's'}` : ''].filter(Boolean).join(' ') || 'the same lines'
+        items.push({ id: s.item, call: g.call, op: s.op, kind: 'notes', label: plan.label, line: `${plan.label}: ${said}`, where: `${NOTES_TITLE} · document`, sign: notesOf(before as never).doc ? '~' : '+', ids: wrote, made, dependsOn, delete: false, diff: lines, ...(s.why ? { why: s.why } : {}) })
+        ws = after
+        return
+      }
       items.push({
         id: s.item,
         call: g.call,

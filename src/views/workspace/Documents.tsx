@@ -79,6 +79,7 @@ export function openDoc(id: string, alongside = useDocUi.getState().sideBySide) 
 export const closeDoc = (id: string) => useDocUi.setState((s) => ({ readers: s.readers.filter((x) => x !== id) }))
 // Sharing or unsharing (its author's). Unsharing one that's on the canvas on its own asks first (its pieces would go).
 export function shareOrAsk(wid: string, d: Pick<Doc, 'shared'> & { id: string }, pieces: Pick<Piece, 'docId'>[]) {
+  if (d.id === 'agent-notes') return // The agent notes stay shared (S16; firestore.rules).
   if (d.shared && pieces.some((p) => p.docId === d.id)) return useDocUi.setState({ unsharing: d.id })
   void shareDocument(wid, d.id, !d.shared)
 }
@@ -342,7 +343,7 @@ function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithI
           ✎
         </button>
       )}
-      {mine && (
+      {mine && d.id !== 'agent-notes' && (
         <button className={styles.act} data-on={d.shared || undefined} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => shareOrAsk(wid, d, pieces))}>
           ◐
         </button>

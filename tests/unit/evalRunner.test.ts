@@ -72,7 +72,7 @@ describe('every task', () => {
 
   it('has §8\'s groups and unique ids', () => {
     const count = (g: string) => TASKS.filter((t) => t.group === g).length
-    expect([count('find'), count('edit'), count('build'), count('context'), count('refuse'), count('injection')]).toEqual([10, 13, 8, 6, 4, 5])
+    expect([count('find'), count('edit'), count('build'), count('context'), count('refuse'), count('injection'), count('memory')]).toEqual([10, 13, 8, 6, 4, 5, 3])
     expect(new Set(TASKS.map((t) => t.id)).size).toBe(TASKS.length)
     expect(TASKS.filter((t) => t.set === 'regression').length).toBeGreaterThan(15)
   })

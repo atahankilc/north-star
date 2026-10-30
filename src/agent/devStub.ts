@@ -16,6 +16,8 @@
 //   edit      add, create, make, new → where_am_i + the planes; view the plane; one `change` (create_card); reports
 //             what the result says (short id, in the preview, one undo step when applied).
 //   question  anything else → search (or a query when there are no words); get the first hits; answers citing them.
+//   remember  "remember …", "keep in mind …", "from now on …" (S16) → one `change` with update_notes adding the fact to
+//             the agent notes, then says it waits in the preview.
 //   demo      "preview demo: <kind>" (S15's screenshots) → one `change` with a batch that touches that kind on the
 //             "Pazar" fixture (cards, links, text, matrix, table, deck, timeline, pieces, canvases, places, or flow:
 //             a bit of everything), then says what's in the preview.
@@ -42,7 +44,7 @@ const TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
 
 const STOP = new Set('a an the and or of to in on for with is are was were be do does did what which who whom how many much our we us my me i you it its this that these those there any all have has had about from by as at show tell list give find please can could would should will'.split(' '))
 
-export type Script = 'refuse' | 'plan' | 'go' | 'edit' | 'question' | 'demo'
+export type Script = 'refuse' | 'plan' | 'go' | 'edit' | 'question' | 'demo' | 'remember'
 
 const PLAN_MARK = 'Say go, or tell me what to change in the plan.'
 
@@ -52,6 +54,7 @@ export function pickScript(ask: string, before = ''): Script {
   if (/^\s*preview demo\b/.test(a)) return 'demo'
   if (before.includes(PLAN_MARK) && /^\s*(go|yes|ok|okay|do it|go ahead|sure)\b/.test(a)) return 'go'
   if (/\b(members?|roles?|owners?|admins?|invites?|invite code|api key|keys?|password)\b/.test(a) || /\bdelete (everything|all|the workspace|this workspace)\b/.test(a) || /\bremove everything\b/.test(a)) return 'refuse'
+  if (/^\s*(please\s+)?(remember|keep in mind|note that|from now on)\b/.test(a)) return 'remember'
   if (/\b(build|organi[sz]e|tidy|matrix|compare|prioriti[sz]e|research|deck of|plan|roadmap)\b/.test(a)) return 'plan'
   if (/\b(add|create|make|new)\b/.test(a)) return 'edit'
   return 'question'
@@ -162,6 +165,14 @@ export function nextStep(env: Env, ask: string, step: number, results: { name: s
     }
     if (results[results.length - 1]?.name === 'change' && /^Proposed/.test(last)) return { answer: `Here's the ${what} batch in the preview: each change is marked where it lands. Step through them, untick what you don't want, then apply it as one undo step.` }
     return { answer: `The ${what} batch was refused: ${why(last)}. Nothing changed.` }
+  }
+  if (kind === 'remember') {
+    // The fact: what follows "remember (that|for later)" and a colon, as one line.
+    const fact = ask.replace(/^\s*(please\s+)?(remember|keep in mind|note that|from now on)\b\s*(that|for later|this)?\s*[:,-]?\s*/i, '').replace(/\s+/g, ' ').trim()
+    const line = fact ? fact[0].toUpperCase() + fact.slice(1) : ''
+    if (step === 0) return line ? { calls: [{ name: 'change', args: { ops: [{ op: 'update_notes', args: { add: [line] } }], summary: 'remember it' } }], text: 'Adding it to the agent notes.' } : { answer: 'What should I remember? Say it in a sentence and I\'ll add it to the agent notes.' }
+    if (results[results.length - 1]?.name === 'change' && /^Proposed/.test(last)) return { answer: `I'll remember it: "${line}" goes into the agent notes, which every chat in ${startupName(env)} reads at its start. It's in the preview: apply it as one undo step, or change the words first.` }
+    return { answer: `I couldn't add it to the agent notes: ${why(last)}. Nothing changed.` }
   }
   if (kind === 'refuse') {
     if (/\bdelete\b|\bremove\b/i.test(ask))

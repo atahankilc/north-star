@@ -35,6 +35,15 @@ pieces/{id}  kind 'document'   docId
   owner's, the shared ones) to `documents/*` with the same id, author, date and sharing, then deletes the old ones.
   One report a batch (a body's rules read its summary). Not an undo step. Safe to run twice.
 
+## The agent notes (S16, D-312)
+One document per workspace is the agent's memory (agent.md §4.7): `documents/agent-notes` + its `content/body`, kind
+`markdown`, `role: 'agent-notes'`. The rules keep that id for it alone (no other document may use the id or the role),
+and it is always shared: every member reads it, owners and editors write it whoever started it (`uid` only says who),
+no one unshares it. Its text is at most 8000 characters (it goes into every chat's prompt, wrapped as workspace
+content). People edit it in the agent's column (`[notes]`); the agent proposes changes through its preview (op
+`update_notes`: add or remove lines, or the whole text), one undo step either way. It shows in a documents list like
+any other, without `share`/`unshare`.
+
 ## The documents list (`+ → documents`)
 
 A window on the canvas like the table (D-208): name in the top edge, console in the corner, no `+` marks. Framed,

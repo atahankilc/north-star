@@ -568,7 +568,7 @@ export function CanvasView() {
         : []),
       ...(editor ? [{ key: 'place', label: 'place on the canvas', glyph: '⇱', letter: 'p', hint: d.shared ? undefined : 'shares it', onSelect: () => useDocUi.setState({ placing: { docId: d.id, near: focusId ?? undefined } }) }] : []),
       ...(mine ? [{ key: 'rename', label: 'rename', glyph: '✎', letter: 'r', onSelect: () => useDocUi.setState({ renaming: d.id }) }] : []),
-      ...(mine ? [{ key: 'share', label: d.shared ? 'unshare' : 'share with everyone', glyph: '◐', letter: 's', onSelect: () => shareOrAsk(wid, d, pieces) }] : []),
+      ...(mine && d.id !== 'agent-notes' ? [{ key: 'share', label: d.shared ? 'unshare' : 'share with everyone', glyph: '◐', letter: 's', onSelect: () => shareOrAsk(wid, d, pieces) }] : []),
       { key: 'download', label: 'download .md', glyph: '↓', letter: 'd', onSelect: () => void downloadDocument(wid, d) },
       ...(mine || (d.shared && isOwnerOf(workspace, user?.id)) ? [{ key: 'delete', label: 'delete', glyph: '×', letter: 'x', danger: true, onSelect: () => useDocUi.setState({ deleting: d.id }) }] : []),
     ]

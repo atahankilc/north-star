@@ -125,6 +125,11 @@ workspaces/{wid}        name, description (≤1000, D-082), ownerId (creator), m
                         done?}] (≤ 50), learned? (evidence id | 'skip', D-254), labels?[] (≤ 20) + priority? (P1–P3, D-256),
                         givenAt? + givenBy? (D-261), uid (who made it) (D-251)
   documents/{id}        kind (markdown|image|pdf|report), title, excerpt, origin, uid, name, shared, size, words?, path?…   (D-232)
+  agentChats/{id}       uid, title, createdAt, updatedAt, shared, model, turns, summary? + content/body {turns, ids}: the
+                        agent's saved chats; its writer reads and writes it, members read it once shared, an owner may
+                        delete a shared one; never a key or a tool's result (S16, D-312)
+  changes/{id}          by, at, kinds[], ids (one comma-joined string), op?, actor: the change log, no free text (rules
+                        check every character); owners and editors add, members read, never changed, owners clear it (S16)
     content/body        a .md's text, or a report's answer, sections, implications, openQuestions, sources (fetched when opened)
   reports/{id}          1.0's reports: only read and deleted, to be moved to documents once (D-090, D-248)
     content/body

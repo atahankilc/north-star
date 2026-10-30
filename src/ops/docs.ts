@@ -19,7 +19,7 @@ import { MAIN } from '../model/canvases'
 import { CARD_COLLECTION, type Card } from '../model/cards'
 import { WS_COLLECTIONS, type Docs, type RawDoc, type WsCollection } from '../model/fromDocs'
 import type { WorkspaceCtx } from '../state/wsStore'
-import { isDelete, type Coll, type Write } from './types'
+import { DOC_COLLS, isDelete, type Coll, type Write } from './types'
 
 export type DocStore = Map<Coll, Map<string, RawDoc>>
 
@@ -46,10 +46,14 @@ function docOfCard(c: Card): RawDoc {
   return d
 }
 
+// Documents' bodies, when the snapshot carries them (the agent's ReadWs).
+export const bodiesOf = (ws: WorkspaceCtx): Record<string, object | undefined> => (ws as { bodies?: Record<string, object | undefined> }).bodies ?? {}
+
 // The workspace's items as the docs they came from, by collection, plus the workspace doc.
 export function toDocs(ws: WorkspaceCtx): DocStore {
   const store: DocStore = new Map()
   for (const c of WS_COLLECTIONS) store.set(c, new Map())
+  for (const c of DOC_COLLS) store.set(c, new Map())
   const put = (coll: Coll, d: RawDoc) => store.get(coll)!.set(d.id, d)
   // The implied first canvas (canvasList adds it, `createdAt` 0) has no doc.
   for (const c of ws.canvases) if (!(c.id === MAIN && !c.createdAt)) put('canvases', c as unknown as RawDoc)
@@ -60,6 +64,10 @@ export function toDocs(ws: WorkspaceCtx): DocStore {
   for (const k of ['cells', 'evidence', 'competitorFeatures', 'comparisons', 'edges', 'threads', 'tasks', 'places'] as const)
     for (const d of ws[k] as unknown as RawDoc[]) put(k, d)
   store.set('workspace', new Map([[ws.wid, ws.workspace as unknown as RawDoc]]))
+  // Documents (the agent notes are the only ones ops write, S16): the summaries the snapshot holds and the bodies it
+  // has loaded (the agent's snapshot carries `bodies`; the store's doesn't).
+  for (const d of ws.documents ?? []) put('documents', d as unknown as RawDoc)
+  for (const [id, b] of Object.entries(bodiesOf(ws))) if (b) put('docBodies', { ...(b as Record<string, unknown>), id })
   return store
 }
 

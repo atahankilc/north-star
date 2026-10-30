@@ -375,7 +375,7 @@ describe('batches and the registry', () => {
       expect(typeof o.build).toBe('function')
     }
     expect([...REGISTRY.keys()].sort()).toEqual(
-      ['arrange', 'create_card', 'create_competitor_feature', 'create_evidence', 'create_package', 'create_text', 'delete', 'duplicate', 'link', 'place_on', 'take_off', 'unlink', 'update_card', 'update_competitor_feature', 'update_evidence', 'update_link', 'update_text', 'create_piece', 'update_piece', 'rename', 'resize', 'create_canvas', 'move_canvas', 'move_to_canvas', 'update_matrix', 'update_table', 'axis_add', 'axis_remove', 'axis_update', 'update_cell', 'create_task', 'update_task', 'move_task', 'update_deck', 'create_deck_column', 'update_deck_column', 'move_deck_column', 'update_timeline'].sort(),
+      ['arrange', 'create_card', 'create_competitor_feature', 'create_evidence', 'create_package', 'create_text', 'delete', 'duplicate', 'link', 'place_on', 'take_off', 'unlink', 'update_card', 'update_competitor_feature', 'update_evidence', 'update_link', 'update_text', 'create_piece', 'update_piece', 'rename', 'resize', 'create_canvas', 'move_canvas', 'move_to_canvas', 'update_matrix', 'update_table', 'axis_add', 'axis_remove', 'axis_update', 'update_cell', 'create_task', 'update_task', 'move_task', 'update_deck', 'create_deck_column', 'update_deck_column', 'move_deck_column', 'update_timeline', 'update_notes'].sort(),
     )
   })
 })

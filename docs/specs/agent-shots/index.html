@@ -181,6 +181,28 @@ doesn't blink, the marks don't glide. Keyboard: what had focus before the agent 
 <p class="cap"><code>[apply ↵]</code>: one undo step as the agent; the marks go, the plane shows exactly what was previewed (now real), the status line has <code>[undo]</code>.</p>
 <div class="pair"><figure><img src="S15-23-flow-applied-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S15-23-flow-applied-light.png" alt=""><figcaption>light</figcaption></figure></div>
 <div class="pair"><figure><img src="S15-23-flow-applied-dark-reduced.png" alt=""><figcaption>dark, reduced motion (no glide, no cell build)</figcaption></figure></div>
+
+<h1>S16 · memory: saved chats, the agent notes, the change log (agent.md §4.7, §4.9 layers 4–6)</h1>
+<p class="cap">Driven by the dev stub on the Pazar fixture (emulators). Chats are saved per person a moment after each turn (<code>agentChats/</code>, private unless shared; never the key, never a tool's raw result). The agent notes are one shared markdown document per workspace, read into every chat's prompt as workspace content; the agent changes them only through the preview. The change log has no screen of its own: it feeds <code>whats_new</code>. Rules for all three are in firestore.rules, <b>not deployed</b>.</p>
+
+<h2><b>29</b> the saved chats</h2>
+<p class="cap"><code>[chats]</code> in the column's head: the prompt list (D-222). <code># this chat</code> with its own actions (<code>[s]</code> share/unshare, <code>[d]</code> delete, pressed twice; typing a name offers <code>rename this chat to "…"</code>), <code># yours</code> newest first (<code>open · now · shared</code>), <code># shared with the workspace</code> with whose it is. Opening someone else's shared chat makes a copy of your own. <em>Not final: the head now says <code>[new]</code> instead of <code>[new chat]</code> to make room.</em></p>
+<div class="pair"><figure><img src="S16-01-chats-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S16-01-chats-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>30</b> a chat reopened</h2>
+<p class="cap">Picked from the list after a page reload: the entries come back from Firestore, the citations still link (the chat's short ids are saved with it), and the model's history is the asks and answers (no tool results were kept). Steps show as labels only.</p>
+<div class="pair"><figure><img src="S16-02-reopened-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S16-02-reopened-light.png" alt=""><figcaption>light</figcaption></figure></div>
+
+<h2><b>31</b> "remember …": the notes change in the preview</h2>
+<p class="cap">The agent proposes <code>update_notes</code> through the same changeset as every change: one row under <code>AGENT NOTES · DOCUMENT</code> with a line diff (<code>+</code> cyan, <code>−</code> magenta and struck, a line of context round it, <code>…</code> for what's left out). Apply = one undo step as the agent.</p>
+<div class="pair"><figure><img src="S16-03-notes-preview-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S16-03-notes-preview-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S16-03b-notes-applied-dark.png" alt=""><figcaption>dark, applied</figcaption></figure><figure><img src="S16-03b-notes-applied-light.png" alt=""><figcaption>light, applied</figcaption></figure></div>
+
+<h2><b>32</b> the agent notes, open</h2>
+<p class="cap"><code>[notes]</code>: the notes as a page (Markdown), words and when they last changed. Owners and editors <code>[edit]</code> them in place (mono, cyan frame, <code>106/8000</code>, <code>⌘↵</code> saves as one undo step through the same op); viewers read only. The last shot is the whole screen, the column beside the canvas.</p>
+<div class="pair"><figure><img src="S16-04-notes-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S16-04-notes-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S16-05-notes-edit-dark.png" alt=""><figcaption>dark, editing</figcaption></figure><figure><img src="S16-05-notes-edit-light.png" alt=""><figcaption>light, editing</figcaption></figure></div>
+<div class="pair"><figure><img src="S16-06-full-dark.png" alt=""><figcaption>dark, whole screen</figcaption></figure><figure><img src="S16-06-full-light.png" alt=""><figcaption>light, whole screen</figcaption></figure></div>
 </main>
 </body>
 </html>

@@ -33,8 +33,11 @@ import { writeReport } from './report'
 import type { FollowUp, Grade, RunResult, Task } from './types'
 import type { Judge } from './graders'
 import type { Writer } from './env'
-import type { AgentWs } from '../src/agent/contract'
+import type { AgentWs, ModelRequest } from '../src/agent/contract'
 import type { Role } from '../src/data/model'
+import { makeIds } from '../src/agent/read'
+import { NOTES_HEAD } from '../src/agent/loop'
+import { chatDocs, turnsOfTranscript } from '../src/agent/chats'
 
 // An attempt's verdict: `pass` (every grader passed), `fail` (one failed, or the attempt itself failed), `unjudged` (none
 // failed but an LLM judge was skipped: never counted as a pass in the rates).
@@ -86,7 +89,7 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
   const defs = EVAL_TOOLS.map((t) => t.def)
   let close = () => {}
   try {
-    const fixture = loadFixture(task.fixture)
+    const fixture = task.setup ? task.setup(loadFixture(task.fixture)) : loadFixture(task.fixture)
     const em = o.backend ? await o.backend(fixture, { role: task.role ?? 'editor', tag: task.id }) : null
     if (em) close = em.close
     const start = em ? em.start : fixture
@@ -99,12 +102,46 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
     const turns: AgentTurn[] = []
     const asks: FollowUp[] = [task.ask, ...(task.followUps ?? [])]
     const nTurns = () => asks.filter((a) => typeof a === 'string').length
+    // S16: what each turn's model was given as the agent notes, and where each chat of the run starts (its turns).
+    const notesSeen: string[] = []
+    let seenThisTurn: string | null = null
+    const watched: AgentModel = {
+      name: model.name,
+      respond: (req: ModelRequest) => {
+        seenThisTurn ??= req.messages.find((m) => m.role === 'system' && m.content.startsWith(NOTES_HEAD))?.content ?? ''
+        return model.respond(req)
+      },
+      ...(model.stream ? { stream: (req: ModelRequest) => ((seenThisTurn ??= req.messages.find((m) => m.role === 'system' && m.content.startsWith(NOTES_HEAD))?.content ?? ''), model.stream!(req)) } : {}),
+    }
+    const who = { uid: env.actor.uid, member: true }
+    const chatIds: string[] = []
+    let chatFrom = 0
+    const saveChat = () => {
+      const part: Transcript = { ...transcript, turns: transcript.turns.slice(chatFrom) }
+      if (!part.turns.length) return
+      const id = `chat${chatIds.length + 1}`
+      const { summary, body } = chatDocs({ uid: who.uid, model: model.name, turns: turnsOfTranscript(part), ids: env.ids.toJSON(), now: env.now() })
+      const r = env.chats.save(who, { id, summary, body })
+      if (r.ok) chatIds.push(id)
+      chatFrom = transcript.turns.length
+    }
     let autoGone = false
     let acceptError: string | undefined
     const untickMissed: string[] = []
     for (let i = 0; i < asks.length; i++) {
       const ask = asks[i]
       // A person's action in the preview (S13): untick an item, found by words in its line.
+      if (typeof ask !== 'string' && 'newChat' in ask) {
+        // The person accepts the preview, the chat is saved, and a new one starts: no history, new short ids.
+        if (env.changes?.items.length) {
+          const a = await env.accept()
+          if (!a.ok) acceptError = a.said
+        }
+        saveChat()
+        history = []
+        env.ids = makeIds()
+        continue
+      }
       if (typeof ask !== 'string') {
         const item = env.changes?.items.find((x) => x.line.toLowerCase().includes(ask.untick.toLowerCase()))
         if (item) env.untick(item.id)
@@ -112,7 +149,9 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
         else untickMissed.push(ask.untick)
         continue
       }
-      const r = await runTurn(model, env, EVAL_TOOLS, history, ask, { transcript, turnId: `${turns.length + 1}` })
+      seenThisTurn = null
+      const r = await runTurn(watched, env, EVAL_TOOLS, history, ask, { transcript, turnId: `${turns.length + 1}` })
+      notesSeen.push(seenThisTurn ?? '')
       history = r.history
       turns.push(r.turn)
       // What the preview showed at this turn's end (agent.md §4.5).
@@ -130,8 +169,9 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
       const a = await env.accept()
       if (!a.ok) acceptError = a.said
     }
+    saveChat()
     const turn = turns[turns.length - 1]
-    const result: RunResult = { start, end: env.getWs(), steps: env.steps, refused: env.refused, moves: env.moves, transcript, answer: answerOf(transcript), ids: env.ids, view: env.ui.currentView(), proposed: env.proposed, ...(em ? { undo: em.undo } : {}) }
+    const result: RunResult = { start, end: env.getWs(), steps: env.steps, refused: env.refused, moves: env.moves, transcript, answer: answerOf(transcript), ids: env.ids, view: env.ui.currentView(), proposed: env.proposed, notesSeen, chats: env.chats, who, chatIds, ...(em ? { undo: em.undo } : {}) }
     const grades = await gradeAll(task.graders, result)
     // A turn that didn't end in an answer fails, whatever the graders say (a refusal or a cut-off is not a reply).
     if (turn.end !== 'answered') grades.push({ name: 'turn answered', pass: false, why: `turn ${turns.length} ended: ${turn.end}${turn.error ? ` (${turn.error})` : ''}` })

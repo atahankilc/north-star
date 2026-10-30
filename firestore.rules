@@ -549,7 +549,10 @@ service cloud.firestore {
         function validDoc(d) {
           return d.keys().hasOnly(['kind', 'title', 'excerpt', 'origin', 'uid', 'name', 'shared', 'contentType', 'size',
               'words', 'pages', 'sections', 'sources', 'width', 'height', 'path', 'thumbPath', 'topic', 'model', 'reportKind',
-              'createdAt', 'updatedAt'])
+              'role', 'createdAt', 'updatedAt'])
+            // The agent notes (S16): one per workspace, under its fixed id (and only it), always a shared markdown document.
+            && ((id == 'agent-notes') == ('role' in d))
+            && (!('role' in d) || (d.role == 'agent-notes' && d.kind == 'markdown' && d.shared == true))
             && d.kind in ['markdown', 'image', 'pdf', 'report']
             && isText(d.title, 300) && d.title.size() > 0
             && optText(d, 'excerpt', 400)
@@ -573,17 +576,30 @@ service cloud.firestore {
         function mayRead(d) {
           return isMember(wid) && (d.shared == true || d.uid == request.auth.uid);
         }
+        // The agent notes (S16, src/model/notes.ts): every member reads them; owners and editors write and delete them
+        // (people in the agent's column, the agent through its preview), whoever started them.
+        function isNotes(d) {
+          return id == 'agent-notes' && d.get('role', null) == 'agent-notes';
+        }
         function mayCreate(d) {
-          return isMember(wid) && validDoc(d) && (d.uid == request.auth.uid || (d.shared == true && isOwner(wid)));
+          return isMember(wid) && validDoc(d)
+            // The notes: any owner or editor (`uid` only says who started them, so an undo restores someone else's).
+            && (isNotes(d) ? canEdit(wid) : (d.uid == request.auth.uid || (d.shared == true && isOwner(wid))));
         }
         function mayDelete(d) {
-          return isMember(wid) && (d.uid == request.auth.uid || (d.shared == true && isOwner(wid)));
+          return isMember(wid) && (isNotes(d) ? canEdit(wid) : (d.uid == request.auth.uid || (d.shared == true && isOwner(wid))));
         }
         // Not there yet reads as missing to any member, as reports do (a listener refused once never comes back).
         allow read: if resource == null ? isMember(wid) : mayRead(resource.data);
         allow create: if mayCreate(request.resource.data);
-        allow update: if isMember(wid) && resource.data.uid == request.auth.uid && validDoc(request.resource.data)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared', 'title', 'updatedAt']);
+        // Its author shares, unshares or renames a document; nothing else in it changes. The notes: an editor changes
+        // their text's counts and title, never who started them, when, or that they're shared.
+        allow update: if isMember(wid) && validDoc(request.resource.data)
+          && (isNotes(resource.data)
+            ? (canEdit(wid) && isNotes(request.resource.data)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'excerpt', 'size', 'words', 'origin', 'updatedAt']))
+            : (resource.data.uid == request.auth.uid && !('role' in request.resource.data)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared', 'title', 'updatedAt'])));
         allow delete: if mayDelete(resource.data);
 
         function summary() {
@@ -605,10 +621,92 @@ service cloud.firestore {
           }
           allow read: if part == 'body' && mayRead(summary());
           allow create: if part == 'body' && validBody(request.resource.data)
-            && isMember(wid) && (summaryAfter().uid == request.auth.uid || (summaryAfter().shared == true && isOwner(wid)));
+            && isMember(wid) && (isNotes(summaryAfter())
+              ? (canEdit(wid) && notesBody(request.resource.data))
+              : (summaryAfter().uid == request.auth.uid || (summaryAfter().shared == true && isOwner(wid))));
+          // Only the agent notes' text changes after it's made (S16).
+          allow update: if part == 'body' && isMember(wid) && canEdit(wid) && isNotes(summaryAfter()) && notesBody(request.resource.data);
           allow delete: if part == 'body'
             && (!exists(/databases/$(database)/documents/workspaces/$(wid)/documents/$(id)) ? isMember(wid) : mayDelete(summary()));
+          function notesBody(b) {
+            return b.keys().hasOnly(['text']) && b.text is string && b.text.size() <= 8000;
+          }
         }
+      }
+
+      // The agent's saved chats (S16, D-312; src/agent/chats.ts, src/data/agentChats.ts): each person's own, private
+      // until they share it; then every member reads it, and still only its writer changes it (an owner may delete a shared
+      // one, as with documents). Any member
+      // keeps their own (viewers too, as they keep their own documents, D-098). The summary is listed; the turns and
+      // the chat's short ids are in content/body, read by whoever reads the summary. Never a key or a tool's raw result:
+      // the shapes leave no room for them (a step is a label and a time).
+      match /agentChats/{cid} {
+        function validChat(d) {
+          return d.keys().hasOnly(['uid', 'title', 'createdAt', 'updatedAt', 'shared', 'model', 'turns', 'summary'])
+            && d.keys().hasAll(['uid', 'title', 'createdAt', 'updatedAt', 'shared', 'model', 'turns'])
+            && isText(d.uid, 128)
+            && isText(d.title, 120) && d.title.size() > 0
+            && d.createdAt is number && d.updatedAt is number
+            && d.shared is bool
+            && isText(d.model, 100)
+            && d.turns is int && d.turns >= 0 && d.turns <= 100000
+            && optText(d, 'summary', 2000);
+        }
+        function mayReadChat(d) {
+          return isMember(wid) && (d.uid == request.auth.uid || d.shared == true);
+        }
+        allow read: if resource == null ? isMember(wid) : mayReadChat(resource.data);
+        allow create: if isMember(wid) && validChat(request.resource.data) && request.resource.data.uid == request.auth.uid;
+        allow update: if isMember(wid) && resource.data.uid == request.auth.uid
+          && validChat(request.resource.data)
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.createdAt == resource.data.createdAt;
+        // Its writer; an owner a shared one (deleting the workspace, D-023), as with documents.
+        allow delete: if isMember(wid) && (resource.data.uid == request.auth.uid || (resource.data.shared == true && isOwner(wid)));
+
+        function chat() {
+          return get(/databases/$(database)/documents/workspaces/$(wid)/agentChats/$(cid)).data;
+        }
+        function chatAfter() {
+          return getAfter(/databases/$(database)/documents/workspaces/$(wid)/agentChats/$(cid)).data;
+        }
+        match /content/{part} {
+          function validChatBody(b) {
+            return b.keys().hasOnly(['turns', 'ids'])
+              && b.turns is list && b.turns.size() <= 200
+              && b.ids is map;
+          }
+          allow read: if part == 'body' && mayReadChat(chat());
+          allow create, update: if part == 'body' && isMember(wid) && validChatBody(request.resource.data)
+            && chatAfter().uid == request.auth.uid;
+          allow delete: if part == 'body' && isMember(wid)
+            && (!exists(/databases/$(database)/documents/workspaces/$(wid)/agentChats/$(cid)) || chat().uid == request.auth.uid
+              || (chat().shared == true && isOwner(wid)));
+        }
+      }
+
+      // The change log (S16, D-312; src/model/changeLog.ts, src/data/changeLog.ts): who changed what, when, with NO
+      // text: collection names from a fixed list, document ids (letters, digits, `_ : . -`) joined by commas, op names.
+      // Written by owners and editors as themselves with each recorded write, never changed; members read it; owners
+      // may clear it.
+      match /changes/{chid} {
+        function validChange(d) {
+          return d.keys().hasOnly(['by', 'at', 'kinds', 'ids', 'op', 'actor'])
+            && d.keys().hasAll(['by', 'at', 'kinds', 'ids', 'actor'])
+            && d.by == request.auth.uid
+            && d.at is int && d.at <= request.time.toMillis() + 60000 && d.at >= request.time.toMillis() - 300000
+            && d.kinds is list && d.kinds.size() > 0 && d.kinds.size() <= 20
+            && d.kinds.hasOnly(['canvases', 'pieceSpots', 'pieces', 'customers', 'problems', 'competitors', 'ideas', 'features',
+              'packages', 'labels', 'cells', 'evidence', 'competitorFeatures', 'comparisons', 'edges', 'tasks', 'places',
+              'documents', 'workspace'])
+            && d.ids is string && d.ids.size() <= 6600
+            && (d.ids == '' || d.ids.matches('[A-Za-z0-9_:.-]{1,64}(,[A-Za-z0-9_:.-]{1,64}){0,99}'))
+            && (!('op' in d) || (d.op is string && d.op.matches('[a-z_,]{0,200}')))
+            && d.actor in ['person', 'agent'];
+        }
+        allow read: if isMember(wid);
+        allow create: if canEdit(wid) && validChange(request.resource.data);
+        allow delete: if isOwner(wid);
       }
 
       // Who is in the workspace, by name (D-098). Each member writes their own entry; owners write one when they let

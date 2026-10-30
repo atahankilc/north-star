@@ -838,8 +838,15 @@ export function whatsNew(ws: ReadWs, ids: Ids, a: WhatsNewArgs): ToolResult {
   for (const c of ws.cells) if ((c.updatedAt ?? 0) > since) cellsBy.set(c.matrixId, (cellsBy.get(c.matrixId) ?? 0) + 1)
   for (const [m, n] of cellsBy) if (d.pieces.has(m)) items.push({ group: 'cells', where: where(m), at: since + 1, line: `${count(n, 'cell')} filled or changed` })
   for (const p of ws.places) if (p.createdAt > since && d.cards.has(p.cardId)) items.push({ group: 'cards brought to planes', where: where(p.planeId), at: p.createdAt, line: `${timeOf(p.createdAt)} · ${ids.short('card', p.cardId)} ${q(d.cards.get(p.cardId)!.title, 50)}` })
+  // The change log (S16), when there is one: who changed what, entry by entry; the items' times only before it starts.
+  const log = (ws.changeLog ?? []).filter((e) => e.at > since)
+  const logStart = ws.changeLog?.length ? Math.min(...ws.changeLog.map((e) => e.at)) : Infinity
+  if (ws.changeLog?.length) {
+    for (let i = items.length - 1; i >= 0; i--) if (items[i].at >= logStart) items.splice(i, 1)
+    for (const e of log) items.push(logItem(ws, ids, d, e, where))
+  }
   items.sort((x, y) => y.at - x.at)
-  const timed = !!ws.times || ws.cards.some((c) => c.createdAt || c.updatedAt)
+  const timed = !!ws.times || ws.cards.some((c) => c.createdAt || c.updatedAt) || !!ws.changeLog?.length
   if (!items.length) return { text: `Nothing new since ${timeOf(since)} in what the snapshot carries.${timed ? '' : ' (Cards don\'t carry their times here; edits to cards show only through their tasks, evidence and comments.)'}` }
   const pg = pageOf(items, a.page, a.limit ?? 60)
   const groups = new Map<string, string[]>()
@@ -849,8 +856,37 @@ export function whatsNew(ws: ReadWs, ids: Ids, a: WhatsNewArgs): ToolResult {
   }
   const body = [...groups].flatMap(([k, l]) => [`## ${k}`, ...l]).join('\n')
   const more = pageLine(items.length, pg, 'Changes', 'Or ask from a later time.')
-  const note = timed ? ' Who changed a card is not known yet (the change log comes later).' : " Cards don't carry their own times here: a card's edits show through its tasks, evidence and comments (the change log comes later)."
+  const note = ws.changeLog?.length
+    ? ` From the change log (who changed what, when)${logStart > since ? `; before ${timeOf(logStart)}, from the items' own times` : ''}.`
+    : timed ? ' Who changed a card is not known here (no change log loaded).' : " Cards don't carry their own times here: a card's edits show through its tasks, evidence and comments (no change log loaded)."
   return finish({ text: [`whats_new since ${timeOf(since)}: ${count(items.length, 'change')}.${note}`, wrap('workspace', body), ...(more ? [more] : [])].join('\n'), more })
+}
+
+// One change-log entry in words: when, who (through the agent or not), what it did (its ops) and what it touched,
+// by short id and name; what's gone since (or not shown to this person) only counted.
+const OP_WORDS: Record<string, string> = { create_card: 'made', update_card: 'changed', delete: 'deleted', link: 'linked', unlink: 'unlinked', arrange: 'moved', create_text: 'wrote', update_text: 'edited', create_task: 'added a task', update_task: 'changed a task', move_task: 'moved a task', update_notes: 'updated the agent notes', update_cell: 'filled cells' }
+function logItem(ws: ReadWs, ids: Ids, d: Derived, e: NonNullable<ReadWs['changeLog']>[number], where: (pieceId: string | undefined) => string): { group: string; where: string; at: number; line: string } {
+  const name = d.names.get(e.by) ?? 'someone'
+  const said: string[] = []
+  let gone = 0
+  let place: string | undefined
+  for (const id of e.ids) {
+    const card = d.cards.get(id)
+    const piece = d.pieces.get(id)
+    const task = d.tasks.get(id)
+    const label = d.labels.get(id)
+    const doc = d.docs.get(id)
+    if (card) (said.push(`${ids.short('card', id)} ${q(card.title, 40)}`), (place ??= card.pieceId))
+    else if (piece) said.push(`${ids.short('piece', id)} ${q(d.nameById(id), 40)}`)
+    else if (task) (said.push(`${ids.short('task', id)} ${q(task.title, 40)}`), (place ??= task.pieceId))
+    else if (label) (said.push(`${ids.short('text', id)} ${q(label.text.split('\n')[0], 40)}`), (place ??= label.pieceId === 'canvas' ? undefined : label.pieceId))
+    else if (doc) said.push(`${ids.short('document', id)} ${q(doc.title, 40)}`)
+    else if (!ws.places.some((p) => p.id === id) && !(ws.cells as unknown as { id: string }[]).some((c) => c.id === id) && !ws.edges.some((x) => x.id === id) && !ws.evidence.some((x) => x.id === id)) gone++
+  }
+  const ops = (e.op ?? '').split(',').filter(Boolean)
+  const verb = [...new Set(ops.map((o) => OP_WORDS[o] ?? o.replace(/_/g, ' ')))].join(', ') || 'changed'
+  const what = said.length ? said.slice(0, 6).join(', ') + (said.length > 6 ? ` and ${said.length - 6} more` : '') : e.kinds.join(', ')
+  return { group: `by ${name}`, where: where(place), at: e.at, line: `${timeOf(e.at)}${e.actor === 'agent' ? ' (through the agent)' : ''} · ${verb}: ${what}${gone ? ` (+${gone} gone since or not shown)` : ''}` }
 }
 
 // ---- where_am_i

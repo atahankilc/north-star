@@ -15,7 +15,8 @@ import { entriesOf, readCell, type MatrixSetup } from '../src/model/matrix'
 import { colName, type TableSetup } from '../src/model/table'
 import { statusOf } from '../src/model/source'
 import type { Box } from '../src/model/layout'
-import { callsOf } from '../src/agent/contract'
+import { callsOf, resultsOf } from '../src/agent/contract'
+import { notesOf } from '../src/model/notes'
 import type { AgentWs } from '../src/agent/contract'
 import type { Grade, Grader, RunResult } from './types'
 
@@ -710,3 +711,71 @@ export async function gradeAll(graders: Grader[], r: RunResult): Promise<(Grade 
   }
   return out
 }
+
+// ---- Memory (S16): the agent notes, the change log, saved chats
+
+// The agent notes at the end say each phrase (whole words, case ignored).
+export const notesSay = (words: string[]): Grader => ({
+  name: `notesSay(${words.join(', ')})`,
+  grade: (r) => {
+    const text = notesOf(r.end).text
+    const miss = words.filter((w) => !wordsRe(w).test(text))
+    return ok(!!text && !miss.length, !text ? 'there are no agent notes' : miss.length ? `the notes don't say ${miss.map((m) => `"${m}"`).join(', ')}` : 'the notes say it')
+  },
+})
+
+// Turn n's model was given the agent notes, saying each phrase (they reached the prompt, not only the store).
+export const notesSeenIn = (turn: number, words: string[]): Grader => ({
+  name: `notesSeenIn(${turn}, ${words.join(', ')})`,
+  grade: (r) => {
+    const seen = r.notesSeen?.[turn - 1] ?? ''
+    const miss = words.filter((w) => !wordsRe(w).test(seen))
+    return ok(!!seen && !miss.length, !seen ? `turn ${turn} had no agent notes in its prompt` : miss.length ? `turn ${turn}'s notes lack ${miss.join(', ')}` : `turn ${turn}'s prompt carried the notes`)
+  },
+})
+
+// A tool's results in the run include each phrase (e.g. whats_new naming who changed what, from the change log).
+export const toolSaid = (tool: string, words: (string | RegExp)[]): Grader => ({
+  name: `toolSaid(${tool}: ${words.map(String).join(', ')})`,
+  grade: (r) => {
+    const text = resultsOf(r.transcript).filter((x) => x.name === tool && x.ok).map((x) => x.text).join('\n')
+    const miss = words.filter((w) => !(typeof w === 'string' ? wordsRe(w).test(text) : w.test(text)))
+    return ok(!!text && !miss.length, !text ? `${tool} gave nothing back` : miss.length ? `${tool} didn't say ${miss.map(String).join(', ')}` : `${tool} said it`)
+  },
+})
+
+// The change log at the end has an entry for the op, by the person, as the agent, with no text in it.
+export const logged = (op: string): Grader => ({
+  name: `logged(${op})`,
+  grade: (r) => {
+    const e = (r.end.changeLog ?? []).find((x) => (x.op ?? '').split(',').includes(op))
+    if (!e) return ok(false, `no change-log entry for ${op}`)
+    const plain = e.ids.every((id) => /^[A-Za-z0-9_:.-]{1,64}$/.test(id)) && !('text' in e) && !('title' in e)
+    return ok(e.actor === 'agent' && e.by === r.who?.uid && plain, `entry by ${e.by} as ${e.actor}${plain ? '' : ', with text in it'}`)
+  },
+})
+
+// The run's chat was saved as its writer's, private (unless `shared`), holding the person's ask and the agent's answer,
+// no tool result and no key; and another member can't read it.
+export const chatSaved = (o: { other?: string } = {}): Grader => ({
+  name: 'chatSaved',
+  grade: (r) => {
+    const store = r.chats
+    const who = r.who
+    const id = r.chatIds?.[r.chatIds.length - 1]
+    if (!store || !who || !id) return ok(false, 'no chat was saved')
+    const c = store.read(who, id)
+    if (!c) return ok(false, `the writer can't read their chat back`)
+    const json = JSON.stringify(c)
+    const bad: string[] = []
+    if (c.summary.uid !== who.uid) bad.push(`saved as ${c.summary.uid}`)
+    if (c.summary.shared) bad.push('shared')
+    if (!c.body.turns.some((t) => t.role === 'user')) bad.push("the person's ask is missing")
+    if (!c.body.turns.some((t) => t.role === 'agent' && t.text)) bad.push("the agent's answer is missing")
+    if (json.includes('<workspace_content')) bad.push('a tool result is in it')
+    if (/sk-[A-Za-z0-9]/.test(json)) bad.push('something like a key is in it')
+    const other = o.other ?? 'someone-else'
+    if (store.read({ uid: other, member: true }, id)) bad.push(`${other} can read it`)
+    return ok(!bad.length, bad.length ? bad.join('; ') : `saved privately as ${who.uid} (${c.body.turns.length} entries), unreadable to others`)
+  },
+})

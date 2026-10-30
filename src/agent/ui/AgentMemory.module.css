@@ -1,0 +1,172 @@
+/* The agent's memory (S16, D-312): the saved chats (the prompt list, D-222, framed in the column's log), the agent notes
+   page, and a notes change as a line diff in the preview. Tokens only; light under [data-theme='light']. */
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+/* `01 ── CHATS` with the magenta lead of something numbered (D-277). */
+.rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--fg-dim);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.n {
+  color: var(--accent-magenta);
+}
+
+.ruleLine {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--accent-magenta) 0 12px, var(--line) 12px);
+}
+
+.aside {
+  color: var(--fg-dim);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.lead {
+  margin: 0;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* The prompt list sits in a hairline frame, as a dropdown's panel does, the full width of the column. */
+.panel {
+  border: 1px solid var(--line-hover);
+  background: var(--bg);
+}
+
+.panel > div {
+  max-height: none;
+}
+
+/* ---- The notes page */
+
+.page {
+  padding: var(--space-3) var(--space-4);
+  border-left: 1px solid var(--line);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.none {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+.edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.area {
+  width: 100%;
+  min-height: 220px;
+  padding: var(--space-3);
+  border: 1px solid var(--accent-cyan);
+  background: var(--bg);
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.area:focus-visible {
+  outline: none;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.action {
+  composes: small from '../../ui/AsciiButton.module.css';
+}
+
+.count {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+.count[data-over] {
+  color: var(--accent-magenta);
+}
+
+.said {
+  color: var(--accent-yellow);
+  font-size: var(--text-xs);
+}
+
+/* ---- The notes diff in the preview: `+` lines cyan, `−` lines magenta and struck, context dim, `…` where lines were
+   left out. Mono, one line each, wrapping inside the column. */
+
+.diff {
+  flex-basis: 100%;
+  margin: var(--space-1) 0 0 4ch;
+  padding: var(--space-2) 0 var(--space-2) var(--space-2);
+  border-left: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dl {
+  display: grid;
+  grid-template-columns: 2ch minmax(0, 1fr);
+}
+
+.ds {
+  user-select: none;
+}
+
+.dl[data-sign='add'] {
+  color: var(--fg-strong);
+}
+
+.dl[data-sign='add'] .ds {
+  color: var(--accent-cyan);
+}
+
+.dl[data-sign='del'] {
+  color: var(--fg-dim);
+  text-decoration: line-through;
+  text-decoration-color: var(--accent-magenta);
+}
+
+.dl[data-sign='del'] .ds {
+  color: var(--accent-magenta);
+  text-decoration: none;
+}
+
+.dl[data-sign='same'] {
+  color: var(--fg-dim);
+}
+
+.dl[data-sign='gap'] {
+  color: var(--fg-faint);
+}

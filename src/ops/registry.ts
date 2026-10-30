@@ -40,13 +40,14 @@ import { columnById, createDeckColumn, DECK_TEMPLATES, LANES, moveDeckColumn, TI
 import { CARD_FIELDS } from '../model/shapes'
 import type { OpCtx, Plan } from './types'
 import { refuse } from './util'
+import { updateNotes } from './notes'
 
 // A JSON-schema-ish description: enough for a tool definition, not a validator (validate is the validator).
 export type ArgSchema = { type?: string | string[]; anyOf?: ArgSchema[]; description?: string; enum?: readonly (string | number)[]; items?: ArgSchema; properties?: Record<string, ArgSchema>; required?: string[] }
 
 export type OpDef = {
   name: string
-  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'piece' | 'canvas' | 'matrix' | 'table' | 'lens' | 'task' | 'deck' | 'timeline' | 'any'
+  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'piece' | 'canvas' | 'matrix' | 'table' | 'lens' | 'task' | 'deck' | 'timeline' | 'notes' | 'any'
   summary: string
   args: ArgSchema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -640,6 +641,14 @@ export const OPS: OpDef[] = [
     summary: "Change a timeline's rows: by deck, by who a task is given to, or by card. (A task's days: update_task start/due.)",
     args: obj({ id: s('the timeline'), rows: { type: 'string', enum: TIMELINE_ROWS_SAID } }, ['id', 'rows']),
     build: updateTimeline,
+  },
+  // S16: the agent notes (one markdown document per workspace, in every prompt): what to remember across chats.
+  {
+    name: 'update_notes',
+    kind: 'notes',
+    summary: "Change the agent notes (the workspace's memory, read at the start of every chat): add lines at the end, remove lines by their words, or replace the whole text. For lasting facts, choices and \"don't do X\" the person asks you to remember; never secrets.",
+    args: obj({ add: { type: 'array', items: s(), description: 'lines to put at the end (one fact each)' }, remove: { type: 'array', items: s(), description: 'lines to take out, as the notes say them' }, text: s('the whole new notes (Markdown), replacing them; alone, without add/remove') }),
+    build: updateNotes,
   },
 ]
 

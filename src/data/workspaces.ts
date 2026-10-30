@@ -310,12 +310,18 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
     // Documents (D-232) the same way: shared and yours; a body before its summary.
     getDocs(query(collection(db(), 'workspaces', wid, 'documents'), where('shared', '==', true))),
     getDocs(query(collection(db(), 'workspaces', wid, 'documents'), where('uid', '==', uid))),
+    // The agent's saved chats (S16) the same way: shared and yours, a body before its summary. Others' private chats
+    // are left for the cleanup, like private documents.
+    getDocs(query(collection(db(), 'workspaces', wid, 'agentChats'), where('shared', '==', true))),
+    getDocs(query(collection(db(), 'workspaces', wid, 'agentChats'), where('uid', '==', uid))),
   ])
   const snaps = await Promise.all([
     ...WORKSPACE_COLLECTIONS.map((c) => getDocs(collection(db(), 'workspaces', wid, c))),
     getDocs(query(collection(db(), 'joinRequests'), where('workspaceId', '==', wid))),
     // Its invites (D-323); their rules read the workspace, so they go before it.
     invitesOf(wid),
+    // The change log (S16): owners may clear it.
+    getDocs(collection(db(), 'workspaces', wid, 'changes')),
     getDocs(collection(db(), 'workspaces', wid, 'members')),
   ])
   // Once each: your own shared reports come back from both report queries. A report's body (D-098) goes before its

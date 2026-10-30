@@ -16,9 +16,29 @@ import { cleanCard, cleanCell, cleanComparison, cleanCompetitorFeature, cleanEdg
 import type { WorkspaceCtx } from '../state/wsStore'
 import { docAt, toDocs, WriteError, writeTo, type DocStore } from './docs'
 import { a } from './util'
-import { isDelete, type Coll, type OpActor, type OpError, type Plan, type Verdict, type Write } from './types'
+import { DOC_COLLS, isDelete, type Coll, type OpActor, type OpError, type Plan, type Verdict, type Write } from './types'
+import { NOTES_ID, NOTES_MAX, NOTES_ROLE } from '../model/notes'
+import { DOC_LIMITS } from '../model/shapes'
 
-const COLLS = new Set<string>([...WS_COLLECTIONS, 'workspace'])
+const COLLS = new Set<string>([...WS_COLLECTIONS, 'workspace', ...DOC_COLLS])
+
+// The agent notes' summary (S16, src/model/notes.ts): the fields and types it may hold; firestore.rules checks the same.
+const NOTES_FIELDS: Record<string, (v: unknown) => boolean> = {
+  kind: (v) => v === 'markdown',
+  role: (v) => v === NOTES_ROLE,
+  title: (v) => typeof v === 'string' && !!v.trim() && v.length <= DOC_LIMITS.title,
+  excerpt: (v) => typeof v === 'string' && v.length <= DOC_LIMITS.excerpt,
+  origin: (v) => v === 'assistant' || v === 'upload',
+  uid: (v) => typeof v === 'string' && !!v && v.length <= 128,
+  name: (v) => typeof v === 'string' && v.length <= 200,
+  shared: (v) => v === true,
+  contentType: (v) => v === 'text/markdown',
+  size: (v) => Number.isInteger(v) && (v as number) >= 0,
+  words: (v) => Number.isInteger(v) && (v as number) >= 0,
+  createdAt: (v) => typeof v === 'number',
+  updatedAt: (v) => typeof v === 'number',
+}
+const NOTES_NEEDED = ['kind', 'role', 'title', 'origin', 'uid', 'name', 'shared', 'size', 'createdAt', 'updatedAt']
 
 // Fields a cleaner leaves to the importer (references, who made it): checked here by type and as references instead.
 const KEPT: Record<string, Record<string, 'string' | 'number' | 'strings'>> = {
@@ -131,6 +151,10 @@ function shapeOfWrite(w: Write, ws: WorkspaceCtx, store: DocStore): Problem | nu
   if (w.merge && !w.set) return { message: `${w.coll}/${w.id}: merge goes with a set`, fix: 'use set with merge, or a patch' }
   if (kinds !== 1) return { message: `${w.coll}/${w.id}: a write is one of set, patch or del`, fix: 'split it into separate writes' }
   if (w.coll === 'threads') return { message: 'comments are not written by ops yet', fix: 'leave comments out of the batch for now' }
+  if (w.coll === 'documents' || w.coll === 'docBodies') {
+    if (w.id !== NOTES_ID) return { message: `documents aren't written by ops, except the agent notes (${NOTES_ID})`, fix: 'leave other documents out of the batch' }
+    if (!w.set || w.merge) return { message: `${w.coll}/${w.id}: the agent notes are written whole (a set)`, fix: 'use update_notes' }
+  }
   if (w.coll === 'workspace') {
     if (w.id !== ws.wid) return { message: `the workspace doc is ${ws.wid}, not ${w.id}`, fix: `use id ${ws.wid}` }
     if (!w.patch) return { message: 'the workspace doc is only ever patched', fix: 'patch its name or description' }
@@ -215,6 +239,19 @@ function checkDoc(coll: Coll, d: RawDoc, store: DocStore, ws: WorkspaceCtx): { p
     if (typeof d.order !== 'number') problems.push({ field: 'order', message: 'a canvas needs an order (a number)', fix: 'put it after the others: the largest order + 1' })
   } else if (coll === 'pieceSpots') {
     for (const k of ['x', 'y'] as const) if (typeof d[k] !== 'number' || !Number.isFinite(d[k])) problems.push({ field: k, message: `${k} must be a number`, fix: 'give the spot x and y in canvas px' })
+  } else if (coll === 'documents') {
+    for (const k of NOTES_NEEDED) if (!(k in d)) problems.push({ field: k, message: `the agent notes need ${k}`, fix: 'use update_notes' })
+    for (const [k, v] of Object.entries(d)) {
+      if (k === 'id') continue
+      const ok = NOTES_FIELDS[k]
+      if (!ok) problems.push({ field: k, message: `${k} isn't a field the agent notes can have`, fix: `leave ${k} out` })
+      else if (!ok(v)) problems.push({ field: k, message: `${k} has a value the agent notes don't allow`, fix: 'use update_notes' })
+    }
+  } else if (coll === 'docBodies') {
+    const extra = Object.keys(d).filter((k) => k !== 'id' && k !== 'text')
+    if (extra.length) problems.push({ field: extra[0], message: `the notes' body holds only its text, not ${extra.join(', ')}`, fix: 'use update_notes' })
+    if (typeof d.text !== 'string' || d.text.length > NOTES_MAX) problems.push({ field: 'text', message: `the agent notes are text of at most ${NOTES_MAX} characters`, fix: 'shorten them: keep what matters for later chats' })
+    if (!docAt(store, 'documents', String(d.id))) ref('the notes have no summary document', 'write the documents/ summary in the same batch (update_notes does)')
   } else if (coll === 'workspace') {
     if (typeof d.name !== 'string' || !d.name.trim() || d.name.length > 200) problems.push({ field: 'name', message: 'the workspace needs a name (1–200 characters)', fix: 'give it a name' })
     if (d.description !== undefined && (typeof d.description !== 'string' || d.description.length > 1000))

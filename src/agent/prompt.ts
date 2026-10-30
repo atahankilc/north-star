@@ -38,6 +38,7 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
       title: 'What you are given',
       body: [
         'First the workspace map: one line per thing, each with a short id (c card, p piece, x text, t task, d document, k canvas, u person, e link, v evidence, f competitor feature, m comment thread). Ids stay the same for the whole chat; a title works in their place.',
+        'Then the agent notes, when the workspace has them: the team\'s own memory (its words, choices, "don\'t do X"), read at the start of every chat. Follow what they say about the startup unless the person says otherwise now.',
         'Then the chat so far, then where the person is now (canvas, focus, selection, open panel), then their message. "This" or "these" means what they have selected or open.',
       ].join('\n'),
     },
@@ -66,6 +67,7 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
         'Say where by meaning: a plane, near a card, in a section, under a heading, or a layout (grid, row, column). The app places things; never give coordinates.',
         'To put things under a heading, use the op arrange in `change` with where: {near: <the heading>, side: \'below\'}.',
         'Wire new things into the chain: a problem for its customer, an idea that solves a problem, a feature part of an idea.',
+        'To remember something for later chats (the person says "remember…", or settles a lasting choice), propose an update to the agent notes in `change` (short lines added, or an old line removed). Never put keys, passwords or personal details in the notes.',
         'Read what `change` returns: each change with its item id, the new short ids, warnings (a card that already exists: link to it instead), a short view. If it refused, fix what it says and try once more. Then say plainly what you proposed and what you did not.',
       ].join('\n'),
     },

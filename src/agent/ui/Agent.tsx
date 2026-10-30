@@ -3,7 +3,8 @@
 // first asks above it. The first message grows it, cell by cell, into a full-height column on the right; the app
 // narrows beside it (`html[data-agent-open]` sets `--ai-w`, which WorkspaceLayout's `[data-app]` box and the right
 // panel read), so the canvas, the card panel, beside and the tasks side view are never under it. ≤ 760 px it covers the
-// screen. `[×] esc` folds it back to the box, the chat kept (for this tab: saving is S16).
+// screen. `[×] esc` folds it back to the box, the chat kept. Chats are saved (S16): `[chats]` lists them (yours and
+// shared ones) to reopen, rename, share or delete; `[notes]` opens the agent notes (AgentMemory.tsx).
 //
 // The column and the box are dialogs to the onboarding (`role="dialog"`, an <aside>): lessons treat them as obstacles.
 // Everything it shows is DOM text, never under the ASCII effect; colours are tokens (light under [data-theme='light']);
@@ -12,7 +13,7 @@ import { AnimatePresence } from 'motion/react'
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
-import { kindOfPiece } from '../../model/pieces'
+import { KIND_NAME, kindOfPiece } from '../../model/pieces'
 import { useMotion } from '../../state/motion'
 import { Appear } from '../../ui/Appear'
 import { useAutoGrow } from '../../ui/autoGrow'
@@ -27,6 +28,7 @@ import { firstAsks } from './suggest'
 import { agentUi } from '../ui'
 import { AgentGhost } from './AgentGhost'
 import { PreviewMarks } from './PreviewMarks'
+import { ChatsView, NotesDiff, NotesView } from './AgentMemory'
 import styles from './Agent.module.css'
 
 const WIDTH_STORE = 'northstar.agent.width'
@@ -118,7 +120,7 @@ function useWhere() {
   const focus = params.get('focus')
   const piece = focus ? ws.pieces.find((p) => p.id === focus) : undefined
   const canvas = ws.canvases.find((c) => c.id === ws.canvas)
-  const name = piece?.name?.trim() || (piece ? kindOfPiece(piece) : '') || ''
+  const name = piece?.name?.trim() || (piece ? KIND_NAME[kindOfPiece(piece)] : '') || ''
   const workspace = ws.workspace.name?.trim() || 'this workspace'
   // `ask about Pazar…` on a canvas, `ask about Segments…` in a plane's focus; the scope line names the canvas too.
   return { focus, here: name || (ws.canvases.length > 1 && canvas?.name ? `${workspace} · ${canvas.name}` : ''), ask: name || workspace, workspace }
@@ -215,6 +217,7 @@ function Box() {
 
 function Column() {
   const chat = useAgent((s) => s.chat)
+  const view = useAgent((s) => s.view)
   const phase = chat.wf.phase
   const running = phase === 'running' || phase === 'applying'
   const { workspace, here, ask, focus } = useWhere()
@@ -238,7 +241,8 @@ function Column() {
       if (e.defaultPrevented) return
       e.preventDefault()
       e.stopPropagation()
-      if (phase === 'previewing') agentActions.discard()
+      if (useAgent.getState().view !== 'chat') agentActions.show('chat')
+      else if (phase === 'previewing') agentActions.discard()
       else closeAgent()
     }
   }
@@ -275,8 +279,14 @@ function Column() {
         </span>
         <ModelSwitch />
         <span className={styles.headTools}>
-          <button className={styles.action} onClick={() => agentActions.newChat()} disabled={running}>
-            new chat
+          <button className={styles.action} data-on={view === 'chats' || undefined} onClick={() => agentActions.show(view === 'chats' ? 'chat' : 'chats')} disabled={running} aria-pressed={view === 'chats'} title="Your saved chats and the shared ones">
+            chats
+          </button>
+          <button className={styles.action} data-on={view === 'notes' || undefined} onClick={() => agentActions.show(view === 'notes' ? 'chat' : 'notes')} aria-pressed={view === 'notes'} title="The agent notes: the workspace's memory">
+            notes
+          </button>
+          <button className={styles.action} onClick={() => agentActions.newChat()} disabled={running} title="A new chat (this one is saved)">
+            new
           </button>
           <button className={styles.close} onClick={() => closeAgent()} title="Fold it back to the box (Esc); the chat stays">
             <span className={styles.br}>[</span>×<span className={styles.br}>]</span> esc
@@ -291,7 +301,7 @@ function Column() {
           stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40
         }}
       >
-        {chat.entries.length === 0 ? <Empty focus={focus} /> : numbered(chat.entries).map(([e, n]) => <EntryView key={e.id} entry={e} n={n} />)}
+        {view === 'chats' ? <ChatsView /> : view === 'notes' ? <NotesView /> : chat.entries.length === 0 ? <Empty focus={focus} /> : numbered(chat.entries).map(([e, n]) => <EntryView key={e.id} entry={e} n={n} />)}
       </div>
       <footer className={styles.foot}>
         {viewer && <p className={styles.viewer}>you're a viewer here: the agent reads and answers, it changes nothing</p>}
@@ -634,7 +644,7 @@ function counted(items: ChangeLine[]): string {
   const n = new Map<string, number>()
   for (const i of items) {
     const noun = i.op === 'axis_add' || i.op === 'axis_remove' ? 'head' : i.op === 'update_cell' ? 'cell' : i.op === 'move_task' ? 'task' : (NOUN[i.kind] ?? 'change')
-    const k = i.op === 'arrange' ? 'move' : i.op === 'delete' ? 'deletion' : i.op === 'resize' ? 'resize' : i.op === 'rename' ? 'rename' : `${verbOf(i)} ${noun}`
+    const k = i.op === 'update_notes' ? 'change to the notes' : i.op === 'arrange' ? 'move' : i.op === 'delete' ? 'deletion' : i.op === 'resize' ? 'resize' : i.op === 'rename' ? 'rename' : `${verbOf(i)} ${noun}`
     n.set(k, (n.get(k) ?? 0) + 1)
   }
   return [...n].map(([k, c]) => (c === 1 ? `1 ${k}` : `${c} ${k.replace(/(?<!s)$/, k.endsWith('evidence') ? '' : 's')}`)).join(', ')
@@ -748,11 +758,12 @@ const STATE_WORDS: Record<Extract<Entry, { kind: 'changes' }>['state'], string> 
   undone: 'undone',
   discarded: 'discarded',
   revising: 'being revised…',
+  unapplied: 'not applied',
 }
 
 function ChangeRow({ i, live, current, onGo }: { i: ChangeLine; live: boolean; current: boolean; onGo: () => void }) {
   return (
-    <li className={styles.item} data-delete={i.delete || undefined} data-off={!i.on || undefined} data-current={current || undefined}>
+    <li className={styles.item} data-diff={i.diff ? '' : undefined} data-delete={i.delete || undefined} data-off={!i.on || undefined} data-current={current || undefined}>
       {live && (
         <button
           className={styles.tick}
@@ -774,6 +785,7 @@ function ChangeRow({ i, live, current, onGo }: { i: ChangeLine; live: boolean; c
         {i.why && <span className={styles.why}> — {i.why}</span>}
         {i.needs && <span className={styles.needs}> · off: it needs {(i.needsWords ?? i.needs).join('; ')}</span>}
       </span>
+      {i.diff && <NotesDiff lines={i.diff} />}
     </li>
   )
 }

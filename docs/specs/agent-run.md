@@ -100,7 +100,7 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S16 next (memory: saved chats `agentChats/`, the agent notes document, a change log; their rules in firestore.rules + rules tests, NOT deployed; screenshots of the new parts). S1–S15 done.
+S17 next (skills: the `/` commands of agent.md §4.10 without the web, each with ≥ 3 eval tasks on the stub; screenshots of each command's result). S1–S16 done.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -227,6 +227,16 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   applied = previewed on every kind (unit test + emulator eval); screenshots S15-01…10 (+09b) per kind and the flow
   20–23, dark/light/reduced. Left: removed items still count in totals/limits while previewing; timeline old-span
   ghost only if the bar was on screen; documents have no preview yet.
+- S16 · see `git log --grep "Agent S16"` · saved chats (`agentChats/{id}` + `content/body`: private unless shared,
+  ≤ 200 turns/~450 KB, labels not raw results, never the key; list/open/rename/share/delete; saved after each turn
+  and on pagehide), the agent notes (`documents/agent-notes`, role 'agent-notes', always shared, editors edit; in the
+  prompt as data; `update_notes` through the preview with a line diff), a change log (`changes/`: by, at, kinds, ids
+  as a checked string, known op names, actor; best-effort outside tracked(); whats_new reads it), UI (chats list,
+  notes page), evals mem-01..03, workspace delete cascades the new data, specs updated (documents.md,
+  ARCHITECTURE.md, agent.md); firestore.rules + ~70 rules tests (586 pass), NOT deployed; loaded into the shared
+  emulator only · reviewer: 1 fix round (any member could squat the notes id; undo of a deleted notes doc refused;
+  notes overwritable before load; last turn lost on close; list paging skipped chats; workspace delete left data;
+  unshare offered on notes; specs), then pass with 37 attack tests · eval 45/49 + 4 unjudged on the emulator too.
 
 ### Stuck
 _(none)_
@@ -248,6 +258,11 @@ _(questions, choices made on their behalf, anything that needs a key or a design
   (src/onboarding/keys.ts, the onboarding session's). The canvas re-centres when the column opens instead of keeping
   its left edge. On Windows/Linux Ctrl+J replaces the browser's Downloads shortcut. The agent's marks can land on the
   side nav when a plane runs under it.
+- S16, for the user: the new rules (agentChats, changes, the agent-notes document) are written and tested but NOT
+  deployed: `npm run deploy:rules` (or the without-Storage command in state.md) when you're happy, together with
+  firestore.indexes.json (two indexes for the chat list). New rule: an owner may delete a SHARED chat (like shared
+  documents; needed for the workspace delete). The change log's `at` must be within −5 min / +1 min of the server's
+  clock, so entries from a badly set clock are dropped silently.
 - Chosen in S12 (easy to undo): big jobs still plan first and wait for "go" (agent.md §4.10); "big" = several
   pieces, more than ~10 changes, or open-ended; a clearly specified small change runs at once. Evals play a
   scripted "go" turn for those tasks. The OpenAI adapter replays earlier output items under `store: false` (nothing
@@ -339,3 +354,5 @@ _(the reviewers' and builders' "could be better", not done yet)_
   click.
 - S15 reviewer: create_piece placed a new table over the next plane (S6 placement: pieces should land clear like
   cards now do); documents have no preview because no op writes documents yet (S16's agent notes will be the first).
+- PlaneCards.tsx/CardPanel.tsx are free again (onboarding's O10 committed): the preview can now light a card's single
+  changed field (status, title, a fact) instead of the whole card, with a one-attribute change per field.

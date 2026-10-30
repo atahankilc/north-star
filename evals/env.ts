@@ -13,6 +13,9 @@ import { makeIds, type Ids } from '../src/agent/read'
 import type { WhereView } from '../src/agent/read/tools'
 import type { AgentEnv, AgentWs, Applied, ApplyAs, UiFacade } from '../src/agent/contract'
 import { accept as acceptChanges, emptyChangeset, untick as untickItem, type Accepted, type AgentSettings, type ChangeItem } from '../src/agent/changeset'
+import { memoryChats, type ChatStore } from '../src/agent/chats'
+import { changeEntry } from '../src/model/changeLog'
+import { REGISTRY } from '../src/ops/registry'
 
 // One undo step (a turn's applies) as the undo stack would hold it: who, the plans, the plan that puts back what they
 // touched, how many applies it joined, and the turn it belongs to.
@@ -36,6 +39,8 @@ export type EvalEnv = AgentEnv & {
   accept: () => Promise<Accepted>
   untick: (item: string) => ChangeItem[]
   discard: () => void
+  // S16: saved chats in memory (the rules' who-may: chats.ts' memoryChats).
+  chats: ChatStore
 }
 
 export const EMPTY_VIEW: WhereView = { canvas: 'main', focus: null, selection: [], piece: null, tasks: [], panel: null, beside: [], side: null }
@@ -112,6 +117,7 @@ export function makeEnv(start: AgentWs, o: EnvOpts = {}): EvalEnv {
     refused: 0,
     newId,
     proposed: [],
+    chats: memoryChats(),
     changes: emptyChangeset(),
     ...(o.settings ? { settings: o.settings } : {}),
     accept: async () => {
@@ -180,7 +186,9 @@ export function makeEnv(start: AgentWs, o: EnvOpts = {}): EvalEnv {
         turnStart = ws
         steps.push({ label, actor: as.actor, ops: plans.map((p) => p.op), plans, inverse: inverseOf(ws, plans), applies: 1, turn, ...(drift ? { drift } : {}), ...(key ? { key } : {}) })
       }
-      ws = next
+      // The change log (S16), as the browser writes it after each recorded write: who, when, what it touched, no text.
+      const entry = changeEntry({ by: uid, at: now, touched: plans.flatMap((p) => p.writes.map((w) => ({ coll: w.coll, id: w.id }))), op: plans.map((p) => p.op).join(','), actor: as.actor, knownOps: new Set(REGISTRY.keys()) })
+      ws = entry ? ({ ...next, changeLog: [...(ws.changeLog ?? []), entry] } as AgentWs) : next
       ids.sync(ws)
       return { ok: true, label, plans, step: { key: key ?? as.key ?? `eval-turn:${turn}`, label } }
     },

@@ -23,6 +23,7 @@ import { fromDocs, WS_COLLECTIONS, type Docs, type RawDoc } from '../src/model/f
 import type { Role } from '../src/data/model'
 import type { AgentWs } from '../src/agent/contract'
 import type { Writer } from './env'
+import { NOTES_ID } from '../src/model/notes'
 
 const PROJECT = 'demo-north-star'
 const FIRESTORE = 'http://127.0.0.1:8080'
@@ -76,8 +77,16 @@ async function readBack(wid: string, base: AgentWs): Promise<AgentWs> {
     await Promise.all(WS_COLLECTIONS.map(async (c) => [c, (await getDocsFromServer(collection(db(), 'workspaces', wid, c))).docs.map((d) => ({ ...d.data(), id: d.id }) as RawDoc)])),
   ) as Docs
   const w = await getDocFromServer(doc(db(), 'workspaces', wid))
-  const data = fromDocs(docs, base.documents)
-  return { ...base, ...data, wid, workspace: { ...(w.data() as AgentWs['workspace']), id: wid } } as AgentWs
+  // The agent notes (S16), the one document ops write: read back with their text, the fixture's others kept.
+  const notes = await getDocFromServer(doc(db(), 'workspaces', wid, 'documents', NOTES_ID))
+  const body = notes.exists() ? await getDocFromServer(doc(db(), 'workspaces', wid, 'documents', NOTES_ID, 'content', 'body')) : null
+  const others = base.documents.filter((d) => d.id !== NOTES_ID)
+  const documents = notes.exists() ? [{ ...(notes.data() as AgentWs['documents'][number]), id: NOTES_ID }, ...others] : others
+  const bodies = { ...(base.bodies ?? {}) }
+  delete bodies[NOTES_ID]
+  if (body?.exists()) bodies[NOTES_ID] = body.data() as { text: string }
+  const data = fromDocs(docs, documents)
+  return { ...base, ...data, documents, bodies, wid, workspace: { ...(w.data() as AgentWs['workspace']), id: wid } } as AgentWs
 }
 
 let n = 0

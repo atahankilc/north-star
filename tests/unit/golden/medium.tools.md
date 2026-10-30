@@ -447,7 +447,7 @@ Lines 16–21 of 35. Next: range "22-35", or a section by its heading.
 [more: Lines 16–21 of 35. Next: range "22-35", or a section by its heading.]
 
 === whats_new(NOW − 2 days)
-whats_new since 2026-11-01 12:00: 7 changes. Who changed a card is not known yet (the change log comes later).
+whats_new since 2026-11-01 12:00: 7 changes. Who changed a card is not known here (no change log loaded).
 <workspace_content author="workspace">
 ## documents · documents
 - changed 2026-11-03 02:00 · d2 markdown "Pricing research"

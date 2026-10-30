@@ -48,6 +48,8 @@ function lists(ws: WorkspaceCtx): [Coll, Item[]][] {
     ['threads', ws.threads],
     ['tasks', ws.tasks],
     ['places', ws.places],
+    // Documents: only the agent notes are ever written by ops (S16); a snapshot without documents lists none.
+    ['documents', (ws.documents ?? []) as unknown as Item[]],
     ['workspace', [{ ...ws.workspace, id: ws.wid }]],
   ]
 }

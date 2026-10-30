@@ -227,6 +227,9 @@ screen). It's there on every canvas and in every focus, so it never has to be fo
 - **Agent notes**: one document per workspace (D-232's documents), read and edited by people and the agent: the
   startup's words, conventions, "don't do X". Changes to it go through the same changeset.
 - Personal preferences (language, tone) in the browser.
+- Built (S16, not deployed): chats in `agentChats/` (src/data/agentChats.ts, src/agent/chats.ts), the notes as
+  `documents/agent-notes` (docs/specs/documents.md, op `update_notes`), the change log in `changes/`
+  (src/model/changeLog.ts); their rules in firestore.rules with tests.
 
 ### 4.9 The knowledge base: as wide as it can be (D-312)
 
@@ -244,6 +247,9 @@ map, each is visible to people too. Built in this order:
 | 7 | Method knowledge | how to do startup work well: customer interviews (Mom Test), jobs to be done, lean canvas, SWOT, positioning, pricing, prioritising (RICE), experiment design | short guides written by us, loaded only when a skill needs them | Phase 9 |
 | 8 | The web | live search when the person turns `[web]` on; deep research writes a cited document, which joins layer 3 | `web_search`, `research` | Phase 9 |
 | 9 | Files: PDFs, images | uploaded reports, screenshots, photos of whiteboards (read by the model's vision) | `read_document` (text pages), image input | after Blaze (Storage) |
+
+Built in S16: layer 4 (the notes, in every prompt), layer 5's saving and reopening (`search_chats` not yet), layer 6
+(the change log, read by `whats_new`).
 
 What it is **not**: the person's other workspaces, never (D-312), and anything outside what they may read (the rules
 decide). Files (layer 9) come last.

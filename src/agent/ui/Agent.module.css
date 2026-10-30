@@ -261,6 +261,11 @@
   color: var(--fg-strong);
 }
 
+/* The view the column shows (`[chats]`, `[notes]`), lit while it's open (S16). */
+.head .action[data-on]:not(:disabled) {
+  color: var(--accent-cyan);
+}
+
 /* ---- The log */
 
 .log {
@@ -648,6 +653,12 @@
   display: flex;
   gap: 1ch;
   padding: var(--space-1) 0;
+}
+
+/* A notes change (S16): its diff on a line of its own under the row, the tick beside the row's words. */
+.item[data-diff] {
+  flex-wrap: wrap;
+  align-items: baseline;
 }
 
 .item + .item {
