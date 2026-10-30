@@ -9,6 +9,7 @@
 // The finder's twin, a list (D-316).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { create } from 'zustand'
 import { Appear } from '../ui/Appear'
 import { guideModel, guideRows, hasNew, keyLesson, parentOf, step, type AreaInfo, type GuideModel, type Note, type Row, type StartRow } from './guideModel'
 import type { KeyRow } from './keys'
@@ -38,11 +39,15 @@ export const WHATS_NEW = 'whats-new'
 // coach hears to close it.
 const keepKeys = (e: React.KeyboardEvent) => void (e.key !== '?' && e.stopPropagation())
 
-// The magenta dot on the side nav's `?` (O6): something armed is still unseen.
+// This person's role in the open workspace, as the coach knows it (null: none known, every note counts).
+export const useGuideRole = create<{ role: Role | null }>(() => ({ role: null }))
+
+// The magenta dot on the side nav's `?` (O6): something armed is still unseen, and `?` lists it here (as `NEW`).
 export function useGuideDot(): boolean {
   const seen = useProgress((s) => s.seen)
   const armed = useProgress((s) => s.armed)
-  return useMemo(() => hasNew({ seen, armed }), [seen, armed])
+  const role = useGuideRole((s) => s.role)
+  return useMemo(() => hasNew({ seen, armed }, undefined, role), [seen, armed, role])
 }
 
 function useModel(role: Role | null): GuideModel {

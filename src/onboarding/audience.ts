@@ -47,3 +47,38 @@ export function releasesSince<R extends ReleaseLike>(lastRelease: string, releas
 }
 
 export const newestRelease = (releases: readonly ReleaseLike[]): string => releases[0]?.id ?? ''
+
+// What a canvas-open does about releases (onboarding.md §4.4, §5.2, §7), decided from the seen-state as it stands:
+// - `begin`: no seen-state anywhere (new or invited, an old account too, Q-026): lastRelease = the newest at once, the
+//   welcome instead of what's new;
+// - `set`: known but no release recorded yet (or releases since with nothing in them): lastRelease = the newest;
+// - `news`: releases since lastRelease with changes in them: their lessons armed (`id@v`, the lesson's version now, so
+//   a release that bumped a lesson's `v` arms it again though an older version was seen; one already seen at that
+//   version stays seen: cleanArmed drops it), and the modal unless tips are off (then only `?`'s dot says so; lastRelease
+//   moves on at once);
+// - `none`: nothing new.
+export type ReleaseWithItems = ReleaseLike & { items: readonly { lessons: readonly string[] }[] }
+export type NewsPlan<R> =
+  | { kind: 'begin'; lastRelease: string }
+  | { kind: 'set'; lastRelease: string }
+  | { kind: 'none' }
+  | { kind: 'news'; releases: R[]; arm: string[]; modal: boolean; lastRelease: string }
+
+export function planNews<R extends ReleaseWithItems>(
+  p: { hasDoc: boolean; lastRelease: string; tipsOff: boolean },
+  releases: readonly R[],
+  versionOf: (lesson: string) => number | undefined,
+): NewsPlan<R> {
+  const top = newestRelease(releases)
+  if (!p.hasDoc) return { kind: 'begin', lastRelease: top }
+  if (!p.lastRelease) return { kind: 'set', lastRelease: top }
+  const since = releasesSince(p.lastRelease, releases)
+  if (!since.length) return { kind: 'none' }
+  if (!since.some((r) => r.items.length)) return { kind: 'set', lastRelease: top }
+  const ids = [...new Set(since.flatMap((r) => r.items.flatMap((i) => i.lessons)))]
+  const arm = ids.flatMap((id) => {
+    const v = versionOf(id)
+    return v ? [`${id}@${v}`] : []
+  })
+  return { kind: 'news', releases: since, arm, modal: !p.tipsOff, lastRelease: top }
+}

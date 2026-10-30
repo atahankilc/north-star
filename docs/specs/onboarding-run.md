@@ -121,7 +121,7 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-30 early morning: O0–O12 committed (+ D-316 looks, guards). Next: O13 (together §8, finding/canvases/settings
+2026-10-30 early morning: O0–O12 and O14 committed (+ D-316 looks, guards). Now: O13 (together §8, finding/canvases/settings
 §9), then O14 what's new, O15 the `?` guide, O16 end to end + gallery + speed. 8 scenes still pending.
 Emulators run from this session (restarted with the user's OK when they hang); watch firebase-debug.log. Never
 `git add`/`git mv` from builders (shared index). Two builders at most at once; stop each when its step is committed.
@@ -233,6 +233,13 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   `deck-add` page, words to the app (side view, doc-beside, task-card, timeline's draw → card prompt) · reviewer: 3
   rounds (words promising what scenes didn't show, a canvas sweep, seek-0 flakes from the dock's centring and from a
   panel left open by the last loop → framing as a step at 0) · flow: 10 lessons one at a time, 0 px over their anchors.
+- O14 · (this commit) · what's new: audience.ts `planNews` (no doc → the welcome, lastRelease = newest; known and behind
+  → what's new, its lessons armed at their current versions; tips off → armed + the dot, no modal); Coach waits for a
+  free moment (no focus, drag, other surface or `?`), lastRelease moves when the modal closes; `[show me]` opens without
+  toggling; the dot counts only lessons `?` lists for this role; releases.ts ships only `launch` with `releases()`/
+  `setReleases()`; the sample release via a dev-only `?release=sample` (absent from production) · reviewer: 1 round,
+  pass (flows: back after a release, an old account with no doc, a new account, tips off, a reload mid-modal, inside a
+  focus, show me on canvases) · follow-ups in Ideas.
 
 ### Stuck
 - O11's `matrix-sure` scene: check-scenes fails about 1 run in 3, dark only, always "1.15 % off" at the end (one element
@@ -250,6 +257,10 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
+- O14 (for O16's polish): what's new's page tabs cut (`DECKS AND DA…`, a space before `…`): shorter tab labels; the
+  modal's top moves between pages (fixed height); `[show me]` on decks and days with no deck on the canvas lands on an
+  empty side view (hide it then); a doc with `welcome` null after a release gets the welcome then what's new; the dot
+  may flash for a viewer before the role is known; no flow shows a nudge working yet.
 - App (not onboarding): `share and place` / `place on the canvas` puts a document where it overlaps the documents list
   and a plane: it doesn't look for the nearest clear spot as `+` does (D-238). O12 review.
 - Demo: document bodies via useDocBody read Firestore only (O12 draws them with docText into the DOM): a fixture body

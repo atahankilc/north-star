@@ -16,23 +16,23 @@ import { useDoc } from '../data/hooks'
 import type { Member } from '../data/model'
 import { WorkspaceContext } from '../views/workspace/context'
 import { useFind } from '../views/workspace/find'
-import { toggleTasksSide } from '../views/workspace/sideState'
+import { toggleTasksSide, useTasksSide } from '../views/workspace/sideState'
 import { useProgress } from './progress'
 import { startEvents, stopEvents, onLearn, learn } from './events'
 import { readBusy, startBusy } from './busy'
 import { createQueue, matches, type LearnEvent, type Shown, type CloseHow } from './queue'
 import { LESSONS, lessonById, type GuideLesson, type Lesson as LessonData, type LineLesson, type PagedLesson } from './lessons'
-import { RELEASES, NEWEST, type Release } from './releases'
-import { fitsRole, releasesSince, roleHere, whoIs } from './audience'
-import { armKey, type Audience } from './seenMerge'
-import { fill, newsLessons, newsPages, plain, welcomePages, type Fill } from './words'
+import { newest, releases, setReleases, type Release } from './releases'
+import { fitsRole, planNews, roleHere, whoIs } from './audience'
+import type { Audience } from './seenMerge'
+import { fill, newsPages, plain, welcomePages, type Fill } from './words'
 import { Pages, type PagesEnd } from './Pages'
 import { Lesson } from './Lesson'
 import { Nudge } from './Nudge'
 import { EmptyHint } from './EmptyHint'
 import { Choices } from './Choices'
 import { KindGuide } from './KindGuide'
-import { Guide } from './Guide'
+import { Guide, useGuideRole } from './Guide'
 
 // Off the queue (see above).
 const OFF_QUEUE = (l: LessonData) => l.format === 'guide' || l.format === 'empty'
@@ -54,6 +54,24 @@ const inFocus = () => new URLSearchParams(location.search).has('focus')
 
 // What a piece kind is called on screen (never "kanban", D-301).
 const KIND_WORDS: Record<string, string> = { kanban: 'deck' }
+
+// Dev only: `?release=sample` (kept for the tab in sessionStorage, as the app drops the query on its way in) puts
+// releases.sample.ts in place of the shipped list, for the what's-new flows and shots; `?release=off` takes it out.
+// Production builds have no branch here: the sample is never in the app's chunks.
+const DEV_RELEASE_KEY = 'north-star:dev-release'
+const devRelease: Promise<void> | null = import.meta.env.DEV ? sampleIfAsked() : null
+function sampleIfAsked(): Promise<void> | null {
+  if (typeof location === 'undefined') return null
+  const q = new URLSearchParams(location.search).get('release')
+  try {
+    if (q === 'sample') sessionStorage.setItem(DEV_RELEASE_KEY, 'sample')
+    else if (q === 'off') sessionStorage.removeItem(DEV_RELEASE_KEY)
+    if (sessionStorage.getItem(DEV_RELEASE_KEY) !== 'sample') return null
+  } catch {
+    if (q !== 'sample') return null
+  }
+  return import('./releases.sample').then((m) => setReleases(m.SAMPLE_RELEASES))
+}
 
 // The dev-only handle devMount.tsx drives (O5's shots; O6 has the real mount).
 export type CoachDev = {
@@ -88,6 +106,8 @@ export function Coach() {
   const role = workspace && uid ? roleHere(workspace, uid) : store ? null : 'owner'
   const roleRef = useRef(role)
   roleRef.current = role
+  // The side nav's `?` dot counts only what `?` lists for this person here.
+  useEffect(() => useGuideRole.setState({ role }), [role])
 
   const [pagesOpen, setPagesOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
@@ -167,32 +187,38 @@ export function Coach() {
 
   // ── What's new, the welcome's start, the empty states ──────────────────────────────────────────────────────────────
   const [news, setNews] = useState<Release[] | null>(null)
+  const newsRef = useRef(news)
+  newsRef.current = news
   const [newsShowing, setNewsShowing] = useState(false)
   const [hints, setHints] = useState<Record<string, true>>({})
   const [kindOpen, setKindOpen] = useState(false)
 
   const decide = () => {
+    // Dev only: the sample release loads first (its import), then this runs.
+    if (devRelease) return void devRelease.then(decideNow)
+    decideNow()
+  }
+  const decideNow = () => {
     const p = useProgress.getState()
     const w = store?.get()
-    if (!uid || !w) return
-    if (!p.hadDoc && !p.state) {
-      // New (or invited): the welcome comes from the queue's own trigger; what's new is all of today for them.
+    if (!uid || !w || newsRef.current) return
+    const plan = planNews({ hasDoc: p.hadDoc || !!p.state, lastRelease: p.lastRelease, tipsOff: p.tipsOff }, releases(), (id) => lessonById(id)?.v)
+    if (plan.kind === 'begin') {
+      // New (or invited, or an old account with no doc): the welcome comes from the queue's own trigger; what's new
+      // is all of today for them.
       const who = whoIs({ uid, hasDoc: false, firstWorkspace: { ownerId: w.workspace.ownerId, pieceCount: piecesNow(store) } })
       audience.current = who === 'invited' ? 'invited' : 'new'
-      p.begin(audience.current, NEWEST)
+      p.begin(audience.current, plan.lastRelease)
       return
     }
     if (p.state?.audience) audience.current = p.state.audience
-    if (!p.lastRelease) {
-      p.setLastRelease(NEWEST)
-      return
-    }
-    const since = releasesSince(p.lastRelease, RELEASES)
-    if (!since.length || !newsPages(since).length) return
-    // Armed now: their lessons show on first use as NEW, whatever happens to the modal.
-    p.arm(newsLessons(since).map((id) => armKey(id, lessonById(id)?.v ?? 1)))
-    // Tips off: no modal (the `?` guide's dot says there's something new).
-    if (!p.tipsOff) setNews(since)
+    if (plan.kind === 'set') return p.setLastRelease(plan.lastRelease)
+    if (plan.kind === 'none') return
+    // Armed now: their lessons show on first use as NEW (and in `?`, its dot on), whatever happens to the modal.
+    if (plan.arm.length) p.arm(plan.arm)
+    // Tips off: no modal; given all the same (the dot says there's something new).
+    if (!plan.modal) return p.setLastRelease(plan.lastRelease)
+    setNews(plan.releases)
   }
 
   useEffect(() => {
@@ -256,7 +282,7 @@ export function Coach() {
     if (!news || newsShowing) return
     const t = setInterval(() => {
       const b = readBusy()
-      if (!cur && !inFocus() && !Object.values(b).some(Boolean)) setNewsShowing(true)
+      if (!cur && !inFocus() && !guideOpenRef.current && !Object.values(b).some(Boolean)) setNewsShowing(true)
     }, 500)
     return () => clearInterval(t)
   }, [news, newsShowing, cur])
@@ -410,8 +436,9 @@ export function Coach() {
   const endNews = ({ go }: PagesEnd) => {
     setNewsShowing(false)
     setNews(null)
-    useProgress.getState().setLastRelease(NEWEST)
-    if (go === 'side-view') toggleTasksSide()
+    useProgress.getState().setLastRelease(newest())
+    // Opened, never closed (the side view may already be open).
+    if (go === 'side-view') void (!useTasksSide.getState().open && toggleTasksSide())
     else if (go === 'finder') useFind.setState({ open: true })
     else if (go === 'guide') setGuideOpen(true)
     else if (go === 'crumb-prompt') document.querySelector<HTMLElement>('[data-learn="crumb"]')?.click()
@@ -421,8 +448,9 @@ export function Coach() {
     setGuideOpen(false)
     if (id === 'whats-new') {
       // Replayed from `?`: the newest release's changes, if it has any.
-      if (newsPages(RELEASES.slice(0, 1)).length) {
-        setNews(RELEASES.slice(0, 1))
+      const latest = releases().slice(0, 1)
+      if (newsPages(latest).length) {
+        setNews(latest)
         setNewsShowing(true)
       }
       return

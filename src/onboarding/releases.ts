@@ -23,3 +23,10 @@ export const RELEASES: readonly Release[] = [
 
 // The newest release's id: what a new person's `lastRelease` starts at.
 export const NEWEST = RELEASES[0].id
+
+// The list the coach reads: RELEASES, except in dev with `?release=sample` (Coach.tsx swaps in releases.sample.ts for
+// the flows and shots; that branch is stripped from production, so the sample never ships).
+let inUse: readonly Release[] = RELEASES
+export const releases = (): readonly Release[] => inUse
+export const newest = (): string => inUse[0]?.id ?? NEWEST
+export const setReleases = (list: readonly Release[] | null) => void (inUse = list ?? RELEASES)

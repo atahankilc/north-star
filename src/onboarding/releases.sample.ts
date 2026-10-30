@@ -1,4 +1,4 @@
-// A sample later release, for tests only (onboarding-lessons.md §11): never imported by the app. It is what a release
+// A sample later release, for tests and the dev-only `?release=sample` switch (onboarding-lessons.md §11): never in a production build. It is what a release
 // after `launch` would look like, written from state-history.md (D-293 → D-314), to build and check what's new.
 import type { Release } from './releases'
 

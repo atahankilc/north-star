@@ -4,7 +4,7 @@
 import { fitsRole } from './audience'
 import { KEYS, type KeyRow } from './keys'
 import { AREAS, LESSONS, type Area, type Lesson, type Role } from './lessons'
-import { RELEASES } from './releases'
+import { releases } from './releases'
 import { isArmed } from './seenMerge'
 
 export const AREA_NAME: Record<Area, string> = {
@@ -82,7 +82,8 @@ export function guideModel(p: ProgressLike, role: Role | null, lessons: readonly
       return { area, name: AREA_NAME[area], notes: mine, seen: mine.filter((n) => n.seen).length, isNew: mine.some((n) => n.isNew) }
     })
     .filter((a) => a.notes.length)
-  const news = RELEASES.flatMap((r) => r.items).length
+  // The latest release's changes (what `what's new` replays).
+  const news = releases()[0]?.items.length ?? 0
   const start: StartRow[] = [
     { id: 'welcome', title: 'welcome', line: 'the pages you saw first', seen: !!p.welcome || (p.seen.welcome ?? 0) >= 1, isNew: false },
     news
@@ -172,7 +173,8 @@ export function step(rows: Row[], i: number, by: 1 | -1): number {
 // A key row's lesson, if it has one this person gets.
 export const keyLesson = (m: GuideModel, k: KeyRow) => (k.lesson && m.areas.some((a) => a.notes.some((n) => n.id === k.lesson)) ? k.lesson : undefined)
 
-// Something armed is still unseen: the magenta dot on the side nav's `?`.
-export function hasNew(p: ProgressLike, lessons: readonly Lesson[] = LESSONS): boolean {
-  return lessons.some((l) => isArmed({ seen: p.seen, armed: p.armed }, l.id))
+// Something armed is still unseen and `?` lists it for this person (so marked `NEW` there): the magenta dot on the side
+// nav's `?`. A lesson armed for another role (a release's editor-only lesson, a viewer here) doesn't light it here.
+export function hasNew(p: ProgressLike, lessons: readonly Lesson[] = LESSONS, role: Role | null = null): boolean {
+  return lessons.some((l) => listed(l, role) && isArmed({ seen: p.seen, armed: p.armed }, l.id))
 }
