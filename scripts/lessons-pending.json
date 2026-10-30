@@ -1,15 +1,6 @@
 {
   "_note": "Built in later onboarding steps (scenes O7+, anchors O6, events O3): check:lessons fails on anything missing that is not here, and on anything here that now exists. Only ever shrink it.",
-  "scenes": [
-    "canvases",
-    "follow",
-    "peers-cursors",
-    "sidenav-find",
-    "sidenav-fit",
-    "sidenav-side",
-    "thread",
-    "threads-panel"
-  ],
+  "scenes": [],
   "anchors": [],
   "events": []
 }

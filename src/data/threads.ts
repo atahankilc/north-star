@@ -5,7 +5,7 @@
 // `threadReads/{your uid}`: each thread's `lastAt` when you last had it open.
 import { arrayUnion, collection, doc, getDocs, increment, limit, orderBy, query, setDoc, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
 import { db, firebase } from './firebase'
-import { useDoc, useQuery } from './hooks'
+import { useDoc, useQuery, type Live, type WithId } from './hooks'
 import { MENTIONS_MAX, MESSAGE_MAX, type Member, type Thread, type ThreadMessage, type ThreadReads, type ThreadTarget } from './model'
 
 const threadsOf = (wid: string) => collection(db(), 'workspaces', wid, 'threads')
@@ -18,12 +18,21 @@ function me() {
   return { uid: user.uid, name: (user.displayName || user.email || 'someone').slice(0, 200) }
 }
 
+// The onboarding's demo realm (D-315: no Firebase at all): a scene's made-up messages, what "you" have read and who
+// "you" are, read instead of Firestore. Never filled while Firebase is there.
+export const demoThreads: { messages: Record<string, WithId<ThreadMessage>[]>; seen: Record<string, number>; me: string } = { messages: {}, seen: {}, me: '' }
+
 // A thread's messages, oldest first, while it's open.
-export const useMessages = (wid: string, tid: string | null) =>
-  useQuery<ThreadMessage>(tid ? query(messagesOf(wid, tid), orderBy('createdAt'), limit(300)) : null, `${wid}/threads/${tid}`)
+export function useMessages(wid: string, tid: string | null): Live<WithId<ThreadMessage>[]> {
+  const live = useQuery<ThreadMessage>(tid && firebase ? query(messagesOf(wid, tid), orderBy('createdAt'), limit(300)) : null, `${wid}/threads/${tid}`)
+  return firebase ? live : { data: (tid && demoThreads.messages[tid]) || [], isLoading: false, error: null }
+}
 
 // What you've read (D-166).
-export const useReads = (wid: string, uid: string | null) => useDoc<ThreadReads>(uid ? `workspaces/${wid}/threadReads/${uid}` : null)
+export function useReads(wid: string, uid: string | null): Live<WithId<ThreadReads> | null> {
+  const live = useDoc<ThreadReads>(uid ? `workspaces/${wid}/threadReads/${uid}` : null)
+  return firebase ? live : { data: { id: uid ?? '', seen: demoThreads.seen } as WithId<ThreadReads>, isLoading: false, error: null }
+}
 
 // Everyone in the workspace, for `@` (D-166): the people list, up to 200.
 export const useMembers = (wid: string, on = true) =>

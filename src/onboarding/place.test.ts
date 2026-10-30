@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hits, leadCrosses, mustReplace, place, RIGHT_FREE, type PlaceInput, type Rect } from './place'
+import { bottomMiddle, hits, leadCrosses, mustReplace, place, RIGHT_FREE, type PlaceInput, type Rect } from './place'
 
 const view = { w: 1568, h: 980 }
 const size = { w: 268, h: 340 }
@@ -145,6 +145,25 @@ describe('the bottom-middle card and its anchor', () => {
     const anchor = { x: 560, y: 600, w: 448, h: 360 }
     const p = place({ anchor, size: { w: 268, h: 340 }, view, hard: [{ x: 0, y: 0, w: 560, h: 600 }, { x: 1008, y: 0, w: 560, h: 980 }] })
     expect(hits({ x: p.x, y: p.y, w: 268, h: 340 }, anchor)).toBe(false)
+  })
+
+  it('goes to the top when a wide anchor fills the bottom (the threads list with a thread beside it)', () => {
+    // The threads panel bottom left with both halves open, ~1070 px wide; the side view on the right.
+    const anchor = { x: 48, y: 400, w: 1070, h: 580 }
+    const side = { x: 1000, y: 0, w: 568, h: 980 }
+    // (No room beside it either, in the app: the card fell back here and sat over the thread half.)
+    const p = bottomMiddle({ anchor, size, view, hard: [side] })
+    expect(hits(at(p), anchor)).toBe(false)
+    expect(hits(at(p), side)).toBe(false)
+    expect(p.y).toBe(16)
+  })
+
+  it('with nothing clear, covers the least, the anchor weighing three times', () => {
+    const anchor = { x: 0, y: 0, w: 1568, h: 600 }
+    const low = { x: 0, y: 600, w: 1568, h: 380 }
+    const p = bottomMiddle({ anchor, size, view, hard: [low] })
+    // The floor covers only `low`; the top would cover the anchor (3×): the floor.
+    expect(p.y).toBe(view.h - 24 - size.h)
   })
 
   it('stays in the middle when the anchor is elsewhere', () => {

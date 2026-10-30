@@ -23,6 +23,7 @@ import {
   useMembers,
   useMessages,
   useReads,
+  demoThreads,
   type NewThread,
 } from '../../data/threads'
 import { useHistory } from '../../data/history'
@@ -56,7 +57,8 @@ export const toggleInbox = (on?: boolean, scope: string | null = null) =>
     return inbox ? { inbox, scope } : { inbox, scope, openId: null, draft: null }
   })
 
-export const myUid = () => firebase?.auth.currentUser?.uid ?? ''
+// Without Firebase (the onboarding's demo realm) the scene's made-up you, else nobody.
+export const myUid = () => (firebase ? (firebase.auth.currentUser?.uid ?? '') : demoThreads.me)
 
 // The comment mark (D-167), on the pins and the threads button: a square speech bubble, its tail at the bottom left,
 // three square dots inside, drawn like the toolbar's other icons (square corners, 1.5 stroke on a 16 grid).

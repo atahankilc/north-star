@@ -29,6 +29,8 @@ BUILT.push('link-draw', 'card-make-name', 'card-panel', 'evidence', 'link-bar', 
 BUILT.push('text-edit', 'sticky', 'section', 'finder-heading', 'matrix-wizard', 'matrix-keys', 'matrix-sure', 'criteria', 'table-rules', 'table-keys', 'table-setup')
 // O12: documents, decks and days (onboarding-lessons.md §6, §7).
 BUILT.push('deck-kinds', 'deck-filter', 'task-panel', 'task-learned', 'card-deck', 'priorities', 'side-view', 'side-mine', 'timeline-scroll', 'timeline-draw', 'doc-beside', 'documents', 'doc-place', 'deck-add')
+// O13: the side nav's pages, together, canvases (onboarding-lessons.md §1, §8, §9).
+BUILT.push('sidenav-fit', 'sidenav-find', 'sidenav-side', 'peers-cursors', 'follow', 'thread', 'threads-panel', 'canvases')
 export const playable = (scene: string) => (BUILT.includes(scene) ? scene : 'plane-drag')
 
 type Msg = { ns: typeof DEMO_NS; type: string; [k: string]: unknown }

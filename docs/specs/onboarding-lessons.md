@@ -387,7 +387,7 @@ when another person first appears in this workspace · anchor `people`
 
 ### `following` · lesson · all · D-067, D-191
 when `following` (first) · anchor the follow frame's label · within following
-1. **Following**: You see what they see, wherever they go. `esc` or a click stops. · `follow`
+1. **Following**: You see what they see, wherever they go. `esc`, a pan of your own, or their square again stops it. · `follow`
 
 ### `comment` · lesson · all · D-192
 when the first thread started or opened · anchor the thread panel · within threads
@@ -405,12 +405,12 @@ when `threads-open` (first) · anchor the panel · within threads
 
 ### `finder` · lesson · all · D-196, D-236
 when `finder-open` (first) · anchor the finder · within finder
-1. **Find anything**: Empty, it lists places. Type to find cards, text, tasks. Tab widens to every canvas. ·
+1. **Find anything**: Empty, it lists places. Type to find cards, text, tasks. Tab widens it: here, this canvas, everywhere. ·
    `finder-go`
 
 ### `canvases` · lesson · all · D-302, D-305
 when the crumb's prompt first opens (`crumb-open`) · anchor `crumb` · within menu
-1. **More than one canvas**: Split big work into canvases. `⌥1`–`⌥9` jump between them. · `canvases`
+1. **More than one canvas**: Big work splits into canvases: this name lists them. `⌥1`–`⌥9` jump between them. · `canvases`
 
 ### `settings` · lesson · all · D-097
 when `settings-open` (first) · anchor the dialog's menu · within settings
@@ -506,7 +506,7 @@ Each 3–8 s (≤ 8000 ms), one action, 1 s hold at the end, poster = the tellin
 | timeline-scroll / timeline-draw | the strip dragged sideways, `[month]`; days drawn in a row, `shelf` typed, the card picked | each end |
 | deck-filter | `[filter]` → GIVEN TO → `me`: `to do` empties | filtered |
 | documents / doc-beside / doc-place | `[upload]`, it lands `◐ only you`, right-click → share; a row clicked, it opens beside; a placed one unframed, read along | each end |
-| peers-cursors / follow / peers-comment / thread / threads-panel | two peers' cursors; following; right-click `comment`, a reply | each end |
+| peers-cursors / follow / peers-comment / thread / threads-panel | two peers arrive (squares, cursors), the hand rests on a square; a square clicked, framed in their colour, into the plane with them; right-click `comment`, a first line; right-click `comment`, `@Jonas …` typed, `↵`: the chip on the card; the threads button: the list, `mentions`, `resolved` (a thread's own half isn't shown: its messages need Firestore) | each end |
 | finder-go | `⌘F`, `riv` typed, Enter glides there | arrived |
-| canvases / canvases-share | the crumb's prompt, `⌥2`; `also on` → `⧉ 2` | each end |
+| canvases / canvases-share | the crumb's prompt (each canvas with its `⌥` key), `Launch week` picked: the canvas breaks and the other builds; `also on` → `⧉ 2` | each end |
 | kind-* / card-* | one per kind-guide row: the thing appearing and doing its one move | the thing |

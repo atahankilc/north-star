@@ -137,14 +137,36 @@ export function bottomMiddle(i: PlaceInput): Placed {
   const floor = i.bottomDock ? i.bottomDock.y - 12 : view.h - 24
   const y = Math.max(m, floor - size.h)
   const mid = (view.w - size.w) / 2
+  const hard = i.hard ?? []
   // Never over its anchor either (an anchor low on the screen, a big one that left no room beside it).
-  const hard = [...(i.hard ?? []), ...(i.anchor ? [i.anchor] : [])]
-  // The middle, else the clear spot nearest it (beside each thing it mustn't cover); none clear: the middle.
-  const xs = [mid, ...hard.flatMap((h) => [h.x - 12 - size.w, h.x + h.w + 12])]
+  const all = [...hard, ...(i.anchor ? [i.anchor] : [])]
+  // The middle, else the clear spot nearest it (beside each thing it mustn't cover), at the floor or else at the top (a
+  // wide anchor along the bottom: the threads list with a thread beside it).
+  const xs = [mid, ...all.flatMap((h) => [h.x - 12 - size.w, h.x + h.w + 12])]
     .map((x) => Math.max(m, Math.min(view.w - m - size.w, x)))
     .sort((p, q) => Math.abs(p - mid) - Math.abs(q - mid))
-  const x = xs.find((x) => !hard.some((h) => hits({ x, y, ...size }, h))) ?? mid
-  return { at: 'bottom', x: Math.round(x), y: Math.round(y), lead: null }
+  const spots = [y, m].flatMap((yy) => xs.map((x) => ({ x, y: yy })))
+  // Nothing clear: the spot hiding least, as the share of each thing it covers (a sliver of a big piece before the side
+  // nav), its anchor counting three times.
+  const share = (r: Rect, h: Rect) => overlap(r, h) / Math.max(1, h.w * h.h)
+  const cost = (p: { x: number; y: number }) => {
+    const r = { x: p.x, y: p.y, ...size }
+    return hard.reduce((n, h) => n + share(r, h), 0) + 3 * (i.anchor ? share(r, i.anchor) : 0)
+  }
+  let best = spots[0]
+  let least = Infinity
+  for (const p of spots) {
+    const c = cost(p)
+    if (c === 0) {
+      best = p
+      break
+    }
+    if (c < least) {
+      least = c
+      best = p
+    }
+  }
+  return { at: 'bottom', x: Math.round(best.x), y: Math.round(best.y), lead: null }
 }
 
 // Whether a card already placed must be placed again: what it must keep clear has moved or grown under it (its anchor:

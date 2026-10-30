@@ -82,6 +82,12 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
   for (const el of document.querySelectorAll(PANELS)) {
     if (el.closest('[data-coach]')) continue
     const r = rectOf(el)
+    // The open modal dialog the anchor is in (Settings): the card goes inside it (the rest of the page is inert), so it's
+    // room to use when it must, beside the anchor with a lead, not a wall.
+    if (anchor && el.matches('dialog[open]') && el.contains(anchor)) {
+      soft.push(r)
+      continue
+    }
     // A screen-filling layer (a shade) would leave no room at all; what's on it is busy anyway.
     if (onScreen(r) && r.w * r.h < screen * 0.9) hard.push(r)
   }
@@ -160,7 +166,11 @@ const CARD_MIN = 160
 
 // Anchors that span the page (a row of the workspaces page's list): below them first, where the page has room, so the
 // card never sits over the forms above.
-const ORDER: Record<string, Side[]> = { 'pending-row': ['below', 'above'] }
+const ORDER: Record<string, Side[]> = {
+  'pending-row': ['below', 'above'],
+  // Settings' menu is the dialog's left column: left of it first (the screen's margin), then over the page beside it.
+  'settings-menu': ['left', 'right', 'above', 'below'],
+}
 
 // Where the card goes.
 function where(anchorName: string | undefined, anchor: HTMLElement | null, size: { w: number; h: number }, target?: string, own: HTMLElement | null = null): Placed {
@@ -196,6 +206,12 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
 
   const card = useRef<HTMLElement>(null)
   const [pos, setPos] = useState<Placed | null>(null)
+  // An anchor inside a modal <dialog> (Settings, D-097): the rest of the page is inert under the browser's top layer, so
+  // the card goes inside that dialog to be seen and pressed (a press outside it would close it). The dialog's frame is a
+  // containing block (its backdrop-filter): screen points are moved by its corner, and it lets the card overflow it.
+  const [host, setHost] = useState<HTMLDialogElement | null>(null)
+  // Where screen points are inside it: its containing block's corner, measured from the card as drawn.
+  const [off, setOff] = useState({ x: 0, y: 0 })
   // The anchor it was placed by: gone from the page (its piece deleted) closes the lesson; hidden for a moment (a
   // console shown only while pointed at) doesn't.
   const hadAnchor = useRef<HTMLElement | null>(null)
@@ -220,10 +236,29 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
     if (played || (done && pos) || !card.current) return
     const anchor = findAnchor(anchorName, target)
     if (anchor) hadAnchor.current = anchor
+    const dlg = anchor?.closest<HTMLDialogElement>('dialog[open]') ?? null
+    setHost((h) => (h === dlg ? h : dlg))
     const size = { w: card.current.offsetWidth, h: card.current.offsetHeight }
     const next = where(anchorName, anchor, size, target, card.current)
     setPos((p) => (p && p.x === next.x && p.y === next.y && p.at === next.at && (p.lead?.x2 ?? 0) === (next.lead?.x2 ?? 0) && (p.lead?.y2 ?? 0) === (next.lead?.y2 ?? 0) ? p : next))
   }, [i, sample, played, done, anchorName, target, squeeze])
+
+  // Inside a dialog: it lets the card hang out of its box while it's there.
+  useEffect(() => {
+    if (!host) return
+    const was = host.style.overflow
+    host.style.overflow = 'visible'
+    return () => void (host.style.overflow = was)
+  }, [host])
+  // In a dialog the card's left/top are from whatever box contains it there (the dialog, or its frame's backdrop-filter):
+  // where it really lands, against where its style put it, is that box's corner.
+  useLayoutEffect(() => {
+    const el = card.current
+    if (!host || !el || !pos) return void setOff((o) => (o.x || o.y ? { x: 0, y: 0 } : o))
+    const r = el.getBoundingClientRect()
+    const at = { x: Math.round(r.left - (parseFloat(el.style.left) || 0)), y: Math.round(r.top - (parseFloat(el.style.top) || 0)) }
+    setOff((o) => (o.x === at.x && o.y === at.y ? o : at))
+  })
 
   // A pan or zoom ended, the window resized: sample the anchor again. Its anchor gone (its piece deleted): closed.
   useEffect(() => {
@@ -326,11 +361,11 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
     )
   }
 
-  const style = pos && !aside ? { left: pos.x, top: pos.y } : pos ? { left: pos.x, top: pos.y, visibility: 'hidden' as const, pointerEvents: 'none' as const } : { left: -9999, top: 0, visibility: 'hidden' as const }
+  const style = pos && !aside ? { left: pos.x - off.x, top: pos.y - off.y } : pos ? { left: pos.x - off.x, top: pos.y - off.y, visibility: 'hidden' as const, pointerEvents: 'none' as const } : { left: -9999, top: 0, visibility: 'hidden' as const }
   const side = pos?.at === 'beside' ? pos.side : 'bottom'
   return createPortal(
     <>
-      {pos?.lead && !done && !aside && <LeadLine lead={pos.lead} over={overWizard} />}
+      {pos?.lead && !done && !aside && <LeadLine lead={{ x1: pos.lead.x1 - off.x, y1: pos.lead.y1 - off.y, x2: pos.lead.x2 - off.x, y2: pos.lead.y2 - off.y }} over={overWizard} />}
       <Appear
         as="section"
         elRef={card}
@@ -360,7 +395,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
         {inner}
       </Appear>
     </>,
-    document.body,
+    host ?? document.body,
   )
 }
 
@@ -379,7 +414,8 @@ function Middle({ root, first, children, onClose, onGuide, forward }: { root: Re
         trapTab(e, box.current)
         if (e.key === 'Escape') onClose('closed')
         else if (e.key === 'ArrowLeft' && onGuide) onGuide()
-        else if ((e.key === 'ArrowRight' || e.key === 'Enter') && !(e.target instanceof HTMLButtonElement)) forward()
+        // → always pages; ↵ too, unless on a button (that one's click is its own).
+        else if (e.key === 'ArrowRight' || (e.key === 'Enter' && !(e.target instanceof HTMLButtonElement))) forward()
       }}
     >
       {children}
@@ -435,7 +471,7 @@ function Card({ name, title, body, page, count, last, forward, tipsOff, onClose,
         {isNew && <NewChip />}
         <span className={styles.sp} />
         {onGuide && (
-          <Btn onClick={onGuide} elRef={first}>
+          <Btn onClick={onGuide}>
             ‹ guide
           </Btn>
         )}
@@ -458,7 +494,8 @@ function Card({ name, title, body, page, count, last, forward, tipsOff, onClose,
           don't show tips
         </Btn>
         <span className={styles.sp} />
-        <Btn tone="go" onClick={forward} elRef={onGuide ? undefined : first}>
+        {/* Focus starts here, played from `?` too: ↵ pages on, ← goes back to the guide. */}
+        <Btn tone="go" onClick={forward} elRef={first}>
           {last ? 'got it' : 'next ›'}
         </Btn>
       </div>

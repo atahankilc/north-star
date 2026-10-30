@@ -421,8 +421,11 @@ export function Coach() {
 
   const close = (how: CloseHow, toGuide = false) => {
     if (!cur) return
-    if (forced) setForced(null)
-    else queue.close(cur.lesson.id, how)
+    if (forced) {
+      setForced(null)
+      // The kind guide played from `?` (its rows as pages, off the queue): seen once closed, like any played note.
+      if (cur.via === 'play' && cur.lesson.id === KIND_GUIDE.id) useProgress.getState().markSeen(KIND_GUIDE.id, KIND_GUIDE.v)
+    } else queue.close(cur.lesson.id, how)
     // A note played from `?` gives focus back to where it was before the guide (unless it goes back to the guide).
     if (cur.via === 'play' && !toGuide) restoreFocus()
   }

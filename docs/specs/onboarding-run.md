@@ -121,10 +121,9 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-30 early morning: O0–O12 and O14 committed (+ D-316 looks, guards). Now: O13 (together §8, finding/canvases/settings
-§9), then O14 what's new, O15 the `?` guide, O16 end to end + gallery + speed. 8 scenes still pending.
-Emulators run from this session (restarted with the user's OK when they hang); watch firebase-debug.log. Never
-`git add`/`git mv` from builders (shared index). Two builders at most at once; stop each when its step is committed.
+2026-10-31 night: O0–O15 committed (+ D-316 looks, guards). Every scene built (pending 0). Next: O16 (end to end for
+each audience, the shots gallery docs/specs/onboarding-shots/, the frame-time check, and the polish items in Ideas).
+Emulators run from this session; watch firebase-debug.log. Never `git add`/`git mv` from builders.
 
 ### Done
 _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
@@ -240,6 +239,18 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   `setReleases()`; the sample release via a dev-only `?release=sample` (absent from production) · reviewer: 1 round,
   pass (flows: back after a release, an old account with no doc, a new account, tips off, a reload mid-modal, inside a
   focus, show me on canvases) · follow-ups in Ideas.
+- O13 · (this commit, with O15) · together, finding, canvases, settings: the last 8 scenes (sidenav-fit, sidenav-find,
+  sidenav-side, peers-cursors, follow, thread, threads-panel, canvases) on fixtures/o13.ts; the demo's whole screen
+  builds the real breadcrumb and follows `?canvas=`; src/data/threads.ts reads `demoThreads` without Firebase (the
+  demo's thread half, new and mentions; the app unchanged with Firebase); a lesson whose anchor is inside an open native
+  dialog (Settings) renders inside it, its offset measured; the bottom-middle card tries the floor, then the top, then
+  the spot covering the least (the anchor weighs 3×); words: following, finder, canvases (neutral for viewers),
+  settings (no "the agent" until its redesign) · reviewer: 2 rounds (Settings' lessons under the dialog, its placement
+  on laptops, a wide anchor covered, threads-panel not showing what its words say) · flow: three browsers.
+- O15 · (this commit, with O13) · the `?` guide: every lesson replays by keys alone (editor 53/53, viewer 27/27): a
+  played lesson starts on next, → and ↵ page, ← back to the guide where it was; the kind guide played from `?` is marked
+  seen (the dot went out); `# keys` checked against every handler (40 → 57 rows) · reviewer: 1 round (two key rows'
+  words, fixed by the lead) · follow-ups in Ideas.
 
 ### Stuck
 - O11's `matrix-sure` scene: check-scenes fails about 1 run in 3, dark only, always "1.15 % off" at the end (one element
@@ -257,6 +268,12 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
+- O13 (for O16): Settings at 1440–1470: the people-settings card covers the menu's YOU group (add
+  `[data-learn="settings-menu"]` as off-limits when it isn't the anchor); Lesson.tsx:255's new useLayoutEffect has no
+  deps (lint warning; `[host, pos, off]`).
+- O15 (for O16): viewers' `# keys` lists editor-only keys (an `editors` flag on KeyRow, filtered in guideModel); in a
+  played lesson ← jumps to the guide even on page 2+ (← could go back a page above page 1); the played lesson has no
+  role="dialog"/aria-modal; onboarding.md §4.6 still says `[▸ 38 keys]` (57 now).
 - O14 (for O16's polish): what's new's page tabs cut (`DECKS AND DA…`, a space before `…`): shorter tab labels; the
   modal's top moves between pages (fixed height); `[show me]` on decks and days with no deck on the canvas lands on an
   empty side view (hide it then); a doc with `welcome` null after a release gets the welcome then what's new; the dot

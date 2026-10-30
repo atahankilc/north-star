@@ -580,7 +580,7 @@ export const LESSONS: readonly Lesson[] = [
   {
     id: 'following', v: 1, format: 'lesson', roles: ALL, area: 'together', since: 'D-067, D-191',
     trigger: [{ event: 'following' }], anchor: 'follow-label', within: 'following',
-    pages: [{ title: 'Following', body: 'You see what they see, wherever they go. `esc` or a click stops.', scene: 'follow' }],
+    pages: [{ title: 'Following', body: 'You see what they see, wherever they go. `esc`, a pan of your own, or their square again stops it.', scene: 'follow' }],
   },
   {
     id: 'comment', v: 1, format: 'lesson', roles: ALL, area: 'together', since: 'D-192',
@@ -597,12 +597,12 @@ export const LESSONS: readonly Lesson[] = [
   {
     id: 'finder', v: 1, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-196, D-236',
     trigger: [{ event: 'finder-open' }], anchor: 'finder', within: 'finder',
-    pages: [{ title: 'Find anything', body: 'Empty, it lists places. Type to find cards, text, tasks. Tab widens to every canvas.', scene: 'finder-go' }],
+    pages: [{ title: 'Find anything', body: 'Empty, it lists places. Type to find cards, text, tasks. Tab widens it: here, this canvas, everywhere.', scene: 'finder-go' }],
   },
   {
     id: 'canvases', v: 1, format: 'lesson', roles: ALL, area: 'canvases', since: 'D-302, D-305',
     trigger: [{ event: 'crumb-open' }], anchor: 'crumb', within: 'menu',
-    pages: [{ title: 'More than one canvas', body: 'Split big work into canvases. `⌥1`–`⌥9` jump between them.', scene: 'canvases' }],
+    pages: [{ title: 'More than one canvas', body: 'Big work splits into canvases: this name lists them. `⌥1`–`⌥9` jump between them.', scene: 'canvases' }],
   },
   {
     id: 'settings', v: 1, format: 'lesson', roles: ALL, area: 'settings', since: 'D-097',

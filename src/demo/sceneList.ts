@@ -82,6 +82,15 @@ import textEdit from './scenes/text-edit'
 import sticky from './scenes/sticky'
 import section from './scenes/section'
 import finderHeading from './scenes/finder-heading'
+// O13's (onboarding-lessons.md §1 side-nav, §8 together, §9 canvases).
+import sidenavFit from './scenes/sidenav-fit'
+import sidenavFind from './scenes/sidenav-find'
+import sidenavSide from './scenes/sidenav-side'
+import peersCursors from './scenes/peers-cursors'
+import follow from './scenes/follow'
+import thread from './scenes/thread'
+import threadsPanel from './scenes/threads-panel'
+import canvases from './scenes/canvases'
 
 export const SCENES: Record<string, Scene> = Object.fromEntries([planeDrag, canvasFit, sidenavPlus, deckDrag, peersComment, piecesTour, plusAddsPlane, finderGo].map((s) => [s.id, s]))
 // O9: the kind guide's rows and the `+` and pieces lessons (onboarding-lessons.md §2).
@@ -92,3 +101,5 @@ for (const s of [linkDraw, cardMakeName, cardPanel, evidence, linkBar, forFilter
 for (const s of [matrixWizard, tableRules, matrixKeys, matrixSure, criteria, tableKeys, tableSetup, textEdit, sticky, section, finderHeading]) SCENES[s.id] = s
 // O12: documents, decks and days (onboarding-lessons.md §6, §7).
 for (const s of [deckKinds, deckFilter, taskPanel, taskLearned, cardDeck, priorities, sideView, sideMine, timelineScroll, timelineDraw, docBeside, documents, docPlace, deckAdd]) SCENES[s.id] = s
+// O13: the side nav's pages, together, canvases (onboarding-lessons.md §1, §8, §9).
+for (const s of [sidenavFit, sidenavFind, sidenavSide, peersCursors, follow, thread, threadsPanel, canvases]) SCENES[s.id] = s
