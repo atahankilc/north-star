@@ -39,6 +39,9 @@ const NOTES_FIELDS: Record<string, (v: unknown) => boolean> = {
   updatedAt: (v) => typeof v === 'number',
 }
 const NOTES_NEEDED = ['kind', 'role', 'title', 'origin', 'uid', 'name', 'shared', 'size', 'createdAt', 'updatedAt']
+// S17: an op's own markdown document (create_document); no role (only the notes have one), shared or not.
+const DOC_OK: Record<string, (v: unknown) => boolean> = { ...Object.fromEntries(Object.entries(NOTES_FIELDS).filter(([k]) => k !== 'role')), shared: (v) => typeof v === 'boolean' }
+const DOC_NEEDED = ['kind', 'title', 'origin', 'uid', 'name', 'shared', 'size', 'createdAt', 'updatedAt']
 
 // Fields a cleaner leaves to the importer (references, who made it): checked here by type and as references instead.
 const KEPT: Record<string, Record<string, 'string' | 'number' | 'strings'>> = {
@@ -108,7 +111,7 @@ export function validate(plans: Plan[], ws: WorkspaceCtx, actor: OpActor): Verdi
   const written = new Map<string, { op: string; coll: Coll; id: string }>()
   for (const p of plans) {
     for (const w of p.writes) {
-      const bad = shapeOfWrite(w, ws, store)
+      const bad = shapeOfWrite(w, ws, store, actor)
       if (bad) {
         say(p.op, bad.message, bad.fix)
         continue
@@ -143,7 +146,7 @@ export function validate(plans: Plan[], ws: WorkspaceCtx, actor: OpActor): Verdi
 // `field`: the field it's about, when it's one field's.
 type Problem = { message: string; fix: string; field?: string }
 
-function shapeOfWrite(w: Write, ws: WorkspaceCtx, store: DocStore): Problem | null {
+function shapeOfWrite(w: Write, ws: WorkspaceCtx, store: DocStore, actor: OpActor): Problem | null {
   if (!COLLS.has(w.coll)) return { message: `there is no collection ${String(w.coll)}`, fix: `use one of: ${[...COLLS].join(', ')}` }
   if (typeof w.id !== 'string' || !w.id || w.id.includes('/') || w.id.length > 1500)
     return { message: `${String(w.id)} isn't an id`, fix: 'use the id the op gave it (ctx.newId()), without "/"' }
@@ -152,8 +155,12 @@ function shapeOfWrite(w: Write, ws: WorkspaceCtx, store: DocStore): Problem | nu
   if (kinds !== 1) return { message: `${w.coll}/${w.id}: a write is one of set, patch or del`, fix: 'split it into separate writes' }
   if (w.coll === 'threads') return { message: 'comments are not written by ops yet', fix: 'leave comments out of the batch for now' }
   if (w.coll === 'documents' || w.coll === 'docBodies') {
-    if (w.id !== NOTES_ID) return { message: `documents aren't written by ops, except the agent notes (${NOTES_ID})`, fix: 'leave other documents out of the batch' }
-    if (!w.set || w.merge) return { message: `${w.coll}/${w.id}: the agent notes are written whole (a set)`, fix: 'use update_notes' }
+    if (w.id !== NOTES_ID) {
+      // S17: a new markdown document of the person's own (create_document), made whole; never someone's existing one.
+      if (!w.set || w.merge) return { message: `${w.coll}/${w.id}: a document is made whole (a set), never changed by an op`, fix: 'use create_document for a new document' }
+      if (docAt(store, w.coll, w.id)) return { message: `${w.coll}/${w.id} is already there: ops only make new documents`, fix: 'use create_document, which makes a new one' }
+      if (w.coll === 'documents' && w.set.uid !== actor.uid) return { message: 'a document an op makes is the person\'s own', fix: 'use create_document (its author is whoever acts)' }
+    } else if (!w.set || w.merge) return { message: `${w.coll}/${w.id}: the agent notes are written whole (a set)`, fix: 'use update_notes' }
   }
   if (w.coll === 'workspace') {
     if (w.id !== ws.wid) return { message: `the workspace doc is ${ws.wid}, not ${w.id}`, fix: `use id ${ws.wid}` }
@@ -239,6 +246,20 @@ function checkDoc(coll: Coll, d: RawDoc, store: DocStore, ws: WorkspaceCtx): { p
     if (typeof d.order !== 'number') problems.push({ field: 'order', message: 'a canvas needs an order (a number)', fix: 'put it after the others: the largest order + 1' })
   } else if (coll === 'pieceSpots') {
     for (const k of ['x', 'y'] as const) if (typeof d[k] !== 'number' || !Number.isFinite(d[k])) problems.push({ field: k, message: `${k} must be a number`, fix: 'give the spot x and y in canvas px' })
+  } else if (coll === 'documents' && d.id !== NOTES_ID) {
+    // S17: a markdown document an op made (create_document): the shape the app writes for an uploaded .md.
+    for (const k of DOC_NEEDED) if (!(k in d)) problems.push({ field: k, message: `a document needs ${k}`, fix: 'use create_document' })
+    for (const [k, v] of Object.entries(d)) {
+      if (k === 'id') continue
+      const ok = DOC_OK[k]
+      if (!ok) problems.push({ field: k, message: `${k} isn't a field an op's document can have`, fix: `leave ${k} out` })
+      else if (!ok(v)) problems.push({ field: k, message: `${k} has a value a document doesn't allow`, fix: 'use create_document' })
+    }
+  } else if (coll === 'docBodies' && d.id !== NOTES_ID) {
+    const extra = Object.keys(d).filter((k) => k !== 'id' && k !== 'text')
+    if (extra.length) problems.push({ field: extra[0], message: `a document's body holds only its text, not ${extra.join(', ')}`, fix: 'use create_document' })
+    if (typeof d.text !== 'string' || d.text.length > DOC_LIMITS.text) problems.push({ field: 'text', message: `a document's text is at most ${DOC_LIMITS.text} characters`, fix: 'make it shorter' })
+    if (!docAt(store, 'documents', String(d.id))) ref('the body has no document', 'write the documents/ summary in the same batch (create_document does)')
   } else if (coll === 'documents') {
     for (const k of NOTES_NEEDED) if (!(k in d)) problems.push({ field: k, message: `the agent notes need ${k}`, fix: 'use update_notes' })
     for (const [k, v] of Object.entries(d)) {

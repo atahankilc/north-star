@@ -77,7 +77,7 @@ vi.mock('firebase/firestore', () => {
   }
 })
 
-import { undo, useHistory } from '../../src/data/history'
+import { onTracked, undo, useHistory } from '../../src/data/history'
 import { WS_COLLECTIONS, type Docs, type RawDoc } from '../../src/model/fromDocs'
 import { makeStore, registerStore } from '../../src/state/wsStore'
 import { addCard, addPackage, deleteCard, deleteCards, discardCard, moveCard, retitleCard, updateCard, copyCards } from '../../src/data/cards'
@@ -303,6 +303,9 @@ describe('data/ functions as ops', () => {
     ['evidence', () => [{ op: 'create_evidence', args: { card: ID.queue, kind: 'data', text: 'Twelve minutes', stance: 'supports' } }, { op: 'update_evidence', args: { evidence: ID.ev1, fields: { stance: 'contradicts', date: null } } }, { op: 'delete', args: { ids: [ID.ev1] } }]],
     ['create_competitor_feature', () => [{ op: 'create_competitor_feature', args: { competitor: ID.orderly, name: 'Stamps', ours: ID.loyalty, handle: '$f' } }, { op: 'update_competitor_feature', args: { feature: ID.cf1, ours: ID.loyalty } }]],
     ['place_on + take_off', () => [{ op: 'place_on', args: { cards: [ID.barista], plane: ID.planeB } }, { op: 'take_off', args: { cards: [ID.anna], plane: ID.planeA } }, { op: 'place_on', args: { cards: [ID.pkg], plane: ID.planeA, move: true } }]],
+    // S17: /dedupe's merge (links, evidence, tasks, places moved; the duplicate deleted) and a document with its body.
+    ['merge_cards', () => [{ op: 'merge_cards', args: { keep: ID.barista, merge: [ID.anna], title: 'Café people' } }]],
+    ['create_document', () => [{ op: 'create_document', args: { title: 'SWOT', text: '# SWOT\n- Anna loses orders' } }]],
   ]
   for (const [name, steps] of batches)
     it(`undo through apply: ${name}`, async () => {
@@ -316,6 +319,17 @@ describe('data/ functions as ops', () => {
       await settle()
       expect(new Map(fake.data)).toEqual(before)
     })
+
+  it("S17: merge_cards and create_document applied as the agent tell onTracked actor 'agent'", async () => {
+    const heard: unknown[] = []
+    const off = onTracked((_l, meta) => heard.push([meta?.op, meta?.actor]))
+    for (const step of [{ op: 'merge_cards', args: { keep: ID.barista, merge: [ID.anna] } }, { op: 'create_document', args: { title: 'One-pager', text: 'Hi' } }]) {
+      const res = await apply(WID, buildBatch({ ws: ws(), actor: { ...ALICE, agent: true }, now: Date.now(), newId: counterIds('a') }, [step]), { ws: ws(), by: ALICE, actor: 'agent' })
+      await res.written
+    }
+    off()
+    expect(heard).toEqual([['merge_cards', 'agent'], ['create_document', 'agent']])
+  })
 
   it('delete wrappers leave out what a collaborator just deleted and delete the rest', async () => {
     const gone = card(ID.barista)

@@ -129,3 +129,51 @@ describe('never in production', () => {
     expect(files.some((f) => /devStub/i.test(f))).toBe(false)
   }, 30_000)
 })
+
+// S17: one script per `/` command, on the medium fixture through the real loop and tools: every turn answers, every
+// change it proposes is accepted (nothing refused), big jobs plan first and run on "go", answers cite real ids.
+describe('the dev stub skills', () => {
+  const ASKS: [string, string[]][] = [
+    ['/ask what solves the bread problems?', []],
+    ['/gaps', []],
+    ['/next', []],
+    ['/next as tasks on Research', []],
+    ['/digest', []],
+    ['/review-deck Sprint', []],
+    ['/test "Pre-order bread for pickup"', ['go']],
+    ['/compare Roadmap', ['go']],
+    ['/prioritize Pricing', ['go']],
+    ['/organize the competitors on Rivals by region', ['go']],
+    ['/sort-stickies Bets', ['go']],
+    ['/learn Talked to Elif, an organic farmer: "I throw away a crate of greens every evening."', []],
+    ['/dedupe customers', ['yes']],
+    ['/import problems for Segments:\n- Ovens break down on Saturdays\n- Flour prices doubled', []],
+    ['/interview "Bakers near the tram"', []],
+    ['/swot', []],
+    ['/one-pager', []],
+    ['/pitch', []],
+    ['/lean-canvas', []],
+  ]
+  for (const [ask, then] of ASKS)
+    it(ask.split('\n')[0], async () => {
+      const env = makeEnv(loadFixture('medium'))
+      const model = devStubModel(env, fast)
+      let history: Awaited<ReturnType<typeof runTurn>>['history'] = []
+      const turns = []
+      for (const a of [ask, ...then]) {
+        const r = await runTurn(model, env, AGENT_TOOLS, history, a)
+        history = r.history
+        turns.push(r.turn)
+        expect(r.turn.end, a).toBe('answered')
+        expect(r.turn.answer.length, a).toBeGreaterThan(20)
+        expect(r.turn.answer, a).not.toMatch(/refused|Nothing changed/)
+        for (const s of r.turn.answer.match(/\b[ctp]\d+\b/g) ?? []) expect(env.ids.real(s), `${a}: ${s}`).toBeTruthy()
+      }
+      if (then.length) expect(turns[0].answer).toMatch(/Say go|Merge them\?/)
+      if (env.changes?.items.length) {
+        const a = await env.accept()
+        expect(a.ok).toBe(true)
+        expect(env.steps.map((s) => s.actor)).toEqual(['agent'])
+      }
+    })
+})

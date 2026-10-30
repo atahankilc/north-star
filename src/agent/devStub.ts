@@ -18,6 +18,8 @@
 //   question  anything else → search (or a query when there are no words); get the first hits; answers citing them.
 //   remember  "remember …", "keep in mind …", "from now on …" (S16) → one `change` with update_notes adding the fact to
 //             the agent notes, then says it waits in the preview.
+//   skill     a `/` command (S17) → that skill's script in devStubSkills.ts (a plan first for big jobs, then its change
+//             on "go"; documents written from the workspace; answers citing real cards).
 //   demo      "preview demo: <kind>" (S15's screenshots) → one `change` with a batch that touches that kind on the
 //             "Pazar" fixture (cards, links, text, matrix, table, deck, timeline, pieces, canvases, places, or flow:
 //             a bit of everything), then says what's in the preview.
@@ -27,6 +29,8 @@ import { clean, derive } from './read/derive'
 import { kindOfPiece } from '../model/pieces'
 import { canvasOf } from '../model/canvases'
 import { viewOf } from './changeset'
+import { parseSkill } from './skills'
+import { skillOfPlan, skillStep } from './devStubSkills'
 
 export const DEV_STUB_MARK = 'north-star:agent-dev-stub'
 
@@ -44,7 +48,7 @@ const TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
 
 const STOP = new Set('a an the and or of to in on for with is are was were be do does did what which who whom how many much our we us my me i you it its this that these those there any all have has had about from by as at show tell list give find please can could would should will'.split(' '))
 
-export type Script = 'refuse' | 'plan' | 'go' | 'edit' | 'question' | 'demo' | 'remember'
+export type Script = 'refuse' | 'plan' | 'go' | 'edit' | 'question' | 'demo' | 'remember' | 'skill'
 
 const PLAN_MARK = 'Say go, or tell me what to change in the plan.'
 
@@ -52,6 +56,10 @@ const PLAN_MARK = 'Say go, or tell me what to change in the plan.'
 export function pickScript(ask: string, before = ''): Script {
   const a = ask.toLowerCase()
   if (/^\s*preview demo\b/.test(a)) return 'demo'
+  // S17: a `/` command, or "go"/"yes" after a skill's plan (devStubSkills.ts).
+  const sk = parseSkill(ask)
+  if (sk && 'skill' in sk) return 'skill'
+  if (skillOfPlan(before) && /^\s*(go|yes|ok|okay|do it|go ahead|sure)\b/.test(a)) return 'skill'
   if (before.includes(PLAN_MARK) && /^\s*(go|yes|ok|okay|do it|go ahead|sure)\b/.test(a)) return 'go'
   if (/\b(members?|roles?|owners?|admins?|invites?|invite code|api key|keys?|password)\b/.test(a) || /\bdelete (everything|all|the workspace|this workspace)\b/.test(a) || /\bremove everything\b/.test(a)) return 'refuse'
   if (/^\s*(please\s+)?(remember|keep in mind|note that|from now on)\b/.test(a)) return 'remember'
@@ -128,6 +136,12 @@ export function nextStep(env: Env, ask: string, step: number, results: { name: s
   const last = results[results.length - 1]?.content ?? ''
   const kind = pickScript(ask, before)
   const why = (t: string) => t.split('\n')[0].replace(/[.\s]+$/, '')
+  if (kind === 'skill') {
+    const p = parseSkill(ask)
+    // /ask is the question script on what follows it.
+    if (p && 'skill' in p && p.skill.name === 'ask') return nextStep(env, p.rest || 'what is here', step, results, before, canWrite)
+    return skillStep(env, ask, step, results, before, canWrite)
+  }
   if (!canWrite && (kind === 'edit' || kind === 'plan' || kind === 'go')) {
     const type = TYPES.find((t) => new RegExp(`\\b${t}`, 'i').test(ask))
     const title = quoted(ask)

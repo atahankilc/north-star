@@ -1,5 +1,5 @@
 // The empty chat's first asks (S14, D-312; agent.md §6 Phase 6 "empty state with good first asks"): a few lines chosen
-// from what the workspace holds, so each one has something to answer. No slash commands yet (S17 may add `/gaps`).
+// from what the workspace holds, so each one has something to answer. The skills (S17) are listed beside them (Agent.tsx FirstSkills).
 import type { WorkspaceCtx } from '../../state/wsStore'
 import { kindOfPiece } from '../../model/pieces'
 

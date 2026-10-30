@@ -41,13 +41,15 @@ import { CARD_FIELDS } from '../model/shapes'
 import type { OpCtx, Plan } from './types'
 import { refuse } from './util'
 import { updateNotes } from './notes'
+import { mergeCards } from './merge'
+import { createDocument } from './document'
 
 // A JSON-schema-ish description: enough for a tool definition, not a validator (validate is the validator).
 export type ArgSchema = { type?: string | string[]; anyOf?: ArgSchema[]; description?: string; enum?: readonly (string | number)[]; items?: ArgSchema; properties?: Record<string, ArgSchema>; required?: string[] }
 
 export type OpDef = {
   name: string
-  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'piece' | 'canvas' | 'matrix' | 'table' | 'lens' | 'task' | 'deck' | 'timeline' | 'notes' | 'any'
+  kind: 'card' | 'link' | 'evidence' | 'feature' | 'place' | 'package' | 'text' | 'piece' | 'canvas' | 'matrix' | 'table' | 'lens' | 'task' | 'deck' | 'timeline' | 'notes' | 'document' | 'any'
   summary: string
   args: ArgSchema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -649,6 +651,21 @@ export const OPS: OpDef[] = [
     summary: "Change the agent notes (the workspace's memory, read at the start of every chat): add lines at the end, remove lines by their words, or replace the whole text. For lasting facts, choices and \"don't do X\" the person asks you to remember; never secrets.",
     args: obj({ add: { type: 'array', items: s(), description: 'lines to put at the end (one fact each)' }, remove: { type: 'array', items: s(), description: 'lines to take out, as the notes say them' }, text: s('the whole new notes (Markdown), replacing them; alone, without add/remove') }),
     build: updateNotes,
+  },
+  // S17: /dedupe's merge and the document skills' markdown documents.
+  {
+    name: 'merge_cards',
+    kind: 'card',
+    summary: 'Merge near-duplicate cards of one type into the one kept: their links, evidence, tasks, planes, packages, matrix/table/deck entries and missing fields move to it, then they are deleted. Needs why and a yes, like a delete.',
+    args: obj({ keep: s('the card that stays'), merge: ids('the cards folded into it, then deleted'), title: s('a new title for the kept card (left out: its own)') }, ['keep', 'merge']),
+    build: mergeCards,
+  },
+  {
+    name: 'create_document',
+    kind: 'document',
+    summary: "Write a new markdown document, the person's own, private unless share is true. Every claim about the workspace names its card (short id and title).",
+    args: obj({ title: s(), text: s('the whole text, Markdown'), share: b('shared with every member (left out: private)'), handle }, ['title', 'text']),
+    build: createDocument,
   },
 ]
 

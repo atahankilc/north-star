@@ -78,6 +78,8 @@ export type ChangeItem = {
   why?: string
   // The agent notes' text before → after, line by line (update_notes only, S16): the preview's diff.
   diff?: DiffLine[]
+  // The words in `line` to strike (S17: a merge strikes only the merged card's name).
+  strike?: string
 }
 
 export type Changeset = {
@@ -105,7 +107,7 @@ export const emptyChangeset = (): Changeset => ({ groups: [], plans: [], items: 
 export const pendingCount = (cs: Changeset | undefined) => cs?.items.length ?? 0
 
 // The ops that take something away: each needs the agent's `why`, and shows struck in the preview.
-export const DELETE_OPS = new Set(['delete', 'unlink', 'axis_remove'])
+export const DELETE_OPS = new Set(['delete', 'unlink', 'axis_remove', 'merge_cards'])
 
 export type BuildCtx = { live: WorkspaceCtx; actor: OpActor; now: number; newId?: () => string }
 
@@ -399,6 +401,33 @@ function itemsOf(groups: Group[], built: Built[], live: WorkspaceCtx, ids: Ids |
         const minus = lines.filter((l) => l.sign === '-' && l.text.trim()).length
         const said = [plus ? `+${plus} line${plus === 1 ? '' : 's'}` : '', minus ? `−${minus} line${minus === 1 ? '' : 's'}` : ''].filter(Boolean).join(' ') || 'the same lines'
         items.push({ id: s.item, call: g.call, op: s.op, kind: 'notes', label: plan.label, line: `${plan.label}: ${said}`, where: `${NOTES_TITLE} · document`, sign: notesOf(before as never).doc ? '~' : '+', ids: wrote, made, dependsOn, delete: false, diff: lines, ...(s.why ? { why: s.why } : {}) })
+        ws = after
+        return
+      }
+      if (s.op === 'merge_cards') {
+        // A merge in words (S17): what moves to the kept card, and the merged card that goes (its name struck, not the line).
+        const keepId = String((built[gi].args[si] as { keep?: unknown }).keep ?? '')
+        const keepCard = before.cards.find((c) => c.id === keepId)
+        const goneIds = new Set(plan.writes.filter((w) => w.del && before.cards.some((c) => c.id === w.id)).map((w) => w.id))
+        const gone = before.cards.filter((c) => goneIds.has(c.id))
+        const sid = (id: string) => (ids ? `${ids.short('card', id)} ` : '')
+        const name = (c: { id: string; title: string }) => `${sid(c.id)}"${c.title.length > 40 ? `${c.title.slice(0, 39)}…` : c.title}"`
+        const moved = (coll: string) => plan.writes.filter((w) => w.coll === coll && w.patch).length
+        const n = (k: number, one: string, many = `${one}s`) => (k ? [`${k} ${k === 1 ? one : many}`] : [])
+        const what = [...n(moved('edges'), 'link'), ...n(moved('evidence'), 'evidence', 'evidence'), ...n(moved('tasks'), 'task'), ...n(moved('competitorFeatures'), 'competitor feature'), ...n(plan.writes.filter((w) => w.coll === 'places' && w.set).length, 'plane')]
+        const goneWords = gone.map(name).join(', ')
+        const line = `merge ${goneWords} into ${keepCard ? name(keepCard) : 'the kept card'}: ${what.length ? `${what.join(', ')} move` : 'nothing else to move'}; ${gone.map((c) => sid(c.id).trim() || `"${c.title}"`).join(', ')} goes`
+        items.push({ id: s.item, call: g.call, op: s.op, kind: 'card', label: plan.label, line, strike: goneWords, where: (parts.find((p) => p.change === 'removed' && p.where) ?? parts.find((p) => p.where))?.where ?? was?.where ?? 'the workspace', sign: '~', ids: wrote, made, dependsOn, delete: false, ...(s.why ? { why: s.why } : {}) })
+        ws = after
+        return
+      }
+      if (s.op === 'create_document') {
+        // A new document (S17): its whole text as added lines, the preview's diff (the notes' look).
+        const text = String(plan.writes.find((w) => w.coll === 'docBodies')?.set?.text ?? '')
+        const sum = plan.writes.find((w) => w.coll === 'documents')?.set ?? {}
+        const lines: DiffLine[] = text.split('\n').map((t) => ({ sign: '+', text: t }))
+        const n = lines.filter((l) => l.text.trim()).length
+        items.push({ id: s.item, call: g.call, op: s.op, kind: 'document', label: plan.label, line: `${plan.label}: ${n} line${n === 1 ? '' : 's'}, ${sum.shared ? 'shared with everyone here' : 'private to you'}`, where: `${String(sum.title ?? 'a document')} · document`, sign: '+', ids: wrote, made, dependsOn, delete: false, diff: lines, ...(s.why ? { why: s.why } : {}) })
         ws = after
         return
       }

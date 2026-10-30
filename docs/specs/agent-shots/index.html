@@ -203,6 +203,74 @@ doesn't blink, the marks don't glide. Keyboard: what had focus before the agent 
 <div class="pair"><figure><img src="S16-04-notes-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S16-04-notes-light.png" alt=""><figcaption>light</figcaption></figure></div>
 <div class="pair"><figure><img src="S16-05-notes-edit-dark.png" alt=""><figcaption>dark, editing</figcaption></figure><figure><img src="S16-05-notes-edit-light.png" alt=""><figcaption>light, editing</figcaption></figure></div>
 <div class="pair"><figure><img src="S16-06-full-dark.png" alt=""><figcaption>dark, whole screen</figcaption></figure><figure><img src="S16-06-full-light.png" alt=""><figcaption>light, whole screen</figcaption></figure></div>
+
+<h1>S17 · skills: the <code>/</code> commands (agent.md §4.10, §4.9 layer 7)</h1>
+<p class="cap">Driven by the dev stub on the Pazar fixture (emulators), one realistic script per command (src/agent/devStubSkills.ts). Each skill is a short guide loaded only for its turn; the system prompt lists names and one-liners. Each shot is the command's result: its answer, or its preview (nothing applied). <code>/research</code> needs the web: not here.</p>
+<h2><b>33</b> the <code>/</code> menu</h2>
+<p class="cap">Typing <code>/</code> at the start of the prompt: the skills in the prompt look (D-222), the prompt itself is the <code>&gt;</code> line. <code># analysis · # building · # documents</code>, rows <code>› /name &lt;what goes after&gt;</code> with the summary under it, a counting foot. ↑↓ move, ↵ or Tab picks (the prompt becomes <code>/name </code>), Esc closes. The second shot: <code>/d</code>, one letter puts the names it starts first (<code>/digest</code>, <code>/dedupe</code>), the rest after (D-222); more letters narrow. In the column the menu takes its room in the foot, so no row lies half under it. <em>Not final: the summaries in Geist under each name; an empty-state list shows above it.</em></p>
+<div class="pair"><figure><img src="S17-01-menu-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-01-menu-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S17-01b-menu-narrowed-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-01b-menu-narrowed-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>34</b> the empty chat lists four skills</h2>
+<p class="cap"><code>SKILLS ──</code> under the first asks: <code>/gaps /next /digest /swot</code> (one click runs them, they need nothing after them) and "type / in the prompt for all 18".</p>
+<div class="pair"><figure><img src="S17-02-empty-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-02-empty-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>35</b> /ask</h2>
+<p class="cap"><code>/ask</code> (the default, explicit): a question answered with its items, short ids as links. The chip <code>/ask</code> sits in the person's message.</p>
+<div class="pair"><figure><img src="S17-03-ask-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-03-ask-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>36</b> /gaps</h2>
+<p class="cap"><code>/gaps</code>: unbacked, untested, unlinked, stale, each with the fix it can propose; nothing changed until the person picks.</p>
+<div class="pair"><figure><img src="S17-04-gaps-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-04-gaps-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>37</b> /next</h2>
+<p class="cap"><code>/next</code>: three things worth doing, each citing what it moves; it offers them as tasks on a deck (the turn ends asking).</p>
+<div class="pair"><figure><img src="S17-05-next-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-05-next-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>38</b> /digest</h2>
+<p class="cap"><code>/digest</code>: <code>whats_new</code> since yesterday, by plane and deck (by person when the change log is loaded).</p>
+<div class="pair"><figure><img src="S17-06-digest-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-06-digest-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>39</b> /review-deck</h2>
+<p class="cap"><code>/review-deck Sprint</code>: a column over its limit, late tasks, late tasks given to no one, and a suggestion; it offers the moves.</p>
+<div class="pair"><figure><img src="S17-07-review-deck-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-07-review-deck-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>40</b> /test</h2>
+<p class="cap"><code>/test "Pre-order bread for pickup"</code> then <code>go</code>: a big job, planned first; the whole-screen shot is stepped to the new deck; the preview holds a new deck with four dated tasks for the idea and the idea set to testing.</p>
+<div class="pair"><figure><img src="S17-08-test-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-08-test-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S17-08-test-dark-full.png" alt=""><figcaption>dark, whole screen</figcaption></figure><figure><img src="S17-08-test-light-full.png" alt=""><figcaption>light, whole screen</figcaption></figure></div>
+<h2><b>41</b> /compare</h2>
+<p class="cap"><code>/compare Roadmap</code> then <code>go</code>: a features × competitors matrix (the whole-screen shot stepped to it); only cells where a competitor feature is matched to ours are filled, the rest stay <code>?</code>.</p>
+<div class="pair"><figure><img src="S17-09-compare-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-09-compare-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S17-09-compare-dark-full.png" alt=""><figcaption>dark, whole screen</figcaption></figure><figure><img src="S17-09-compare-light-full.png" alt=""><figcaption>light, whole screen</figcaption></figure></div>
+<h2><b>42</b> /prioritize</h2>
+<p class="cap"><code>/prioritize Pricing</code> then <code>go</code>: impact/effort filled on the features the priorities deck needs, and the order explained (impact × confidence ÷ effort).</p>
+<div class="pair"><figure><img src="S17-10-prioritize-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-10-prioritize-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>43</b> /organize</h2>
+<p class="cap"><code>/organize the competitors on Rivals by region</code> then <code>go</code>: one <code>arrange</code> (cluster, given groups, headings); the moves drawn as ghosts on the canvas.</p>
+<div class="pair"><figure><img src="S17-11-organize-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-11-organize-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S17-11-organize-dark-full.png" alt=""><figcaption>dark, whole screen</figcaption></figure><figure><img src="S17-11-organize-light-full.png" alt=""><figcaption>light, whole screen</figcaption></figure></div>
+<h2><b>44</b> /sort-stickies</h2>
+<p class="cap"><code>/sort-stickies Bets</code> then <code>go</code>: each note a card in its words, a section round them; the notes stay.</p>
+<div class="pair"><figure><img src="S17-12-sort-stickies-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-12-sort-stickies-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<div class="pair"><figure><img src="S17-12-sort-stickies-dark-full.png" alt=""><figcaption>dark, whole screen</figcaption></figure><figure><img src="S17-12-sort-stickies-light-full.png" alt=""><figcaption>light, whole screen</figcaption></figure></div>
+<h2><b>45</b> /learn</h2>
+<p class="cap"><code>/learn</code> with pasted notes: each fact (the quote, "she only takes cash") becomes evidence on the one card it is about, never on both of a near-duplicate pair; a status change only suggested.</p>
+<div class="pair"><figure><img src="S17-13-learn-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-13-learn-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>46</b> /dedupe</h2>
+<p class="cap"><code>/dedupe customers</code> then <code>yes</code>: pairs listed with which to keep; on yes, <code>merge_cards</code> (links, evidence, tasks, planes, entries moved; the duplicate deleted with a why). The row says what moves (<code>2 links, 1 plane move; c80 goes</code>) and strikes only the merged card's name; the plane's head counts <code>1 merge</code>.</p>
+<div class="pair"><figure><img src="S17-14-dedupe-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-14-dedupe-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>47</b> /import</h2>
+<p class="cap"><code>/import</code> of a pasted list: three problems, each <code>for</code> the customer named; lines already there are skipped.</p>
+<div class="pair"><figure><img src="S17-15-import-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-15-import-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>48</b> /interview</h2>
+<p class="cap"><code>/interview "Bakers near the tram"</code>: a Mom Test script as a new markdown document, private; the preview shows its whole text as added lines.</p>
+<div class="pair"><figure><img src="S17-16-interview-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-16-interview-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>49</b> /swot</h2>
+<p class="cap"><code>/swot</code>: a SWOT document, every point naming its card (short id and title).</p>
+<div class="pair"><figure><img src="S17-17-swot-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-17-swot-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>50</b> /one-pager</h2>
+<p class="cap"><code>/one-pager</code>: a one-page summary document.</p>
+<div class="pair"><figure><img src="S17-18-one-pager-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-18-one-pager-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>51</b> /pitch</h2>
+<p class="cap"><code>/pitch</code>: a pitch outline document, positioning sentence first.</p>
+<div class="pair"><figure><img src="S17-19-pitch-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-19-pitch-light.png" alt=""><figcaption>light</figcaption></figure></div>
+<h2><b>52</b> /lean-canvas</h2>
+<p class="cap"><code>/lean-canvas</code>: the nine boxes, unknowns written as unknown.</p>
+<div class="pair"><figure><img src="S17-20-lean-canvas-dark.png" alt=""><figcaption>dark</figcaption></figure><figure><img src="S17-20-lean-canvas-light.png" alt=""><figcaption>light</figcaption></figure></div>
 </main>
 </body>
 </html>

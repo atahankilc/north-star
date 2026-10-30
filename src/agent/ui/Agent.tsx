@@ -30,6 +30,8 @@ import { AgentGhost } from './AgentGhost'
 import { PreviewMarks } from './PreviewMarks'
 import { ChatsView, NotesDiff, NotesView } from './AgentMemory'
 import styles from './Agent.module.css'
+import { skillChip, useSkillMenu } from './SkillMenu'
+import { SKILLS } from '../skills'
 
 const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
@@ -138,6 +140,7 @@ function Box() {
   const [text, setText] = useState('')
   const input = useRef<HTMLTextAreaElement>(null)
   useAutoGrow(input, text)
+  const skills = useSkillMenu(text, setText)
   const viewer = isViewer(useAgent.getState().wid)
   // Closed, the box's prompt never keeps the keyboard.
   useEffect(() => {
@@ -145,6 +148,7 @@ function Box() {
   }, [open])
 
   const onKey = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    if (skills.onKey(e)) return
     if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
@@ -186,6 +190,7 @@ function Box() {
           {viewer && <p className={styles.viewer}>you're a viewer here: the agent reads and answers, it changes nothing</p>}
         </div>
       )}
+      {open && <div className={styles.skillAnchor}>{skills.menu}</div>}
       <label className={styles.prompt} data-running={running || undefined}>
         <span className={styles.ps} aria-hidden>
           {running ? <Spinner /> : '>'}
@@ -196,7 +201,7 @@ function Box() {
           className={styles.input}
           rows={1}
           value={text}
-          placeholder={running ? 'working…' : pending ? 'changes are waiting: open the chat' : entries ? 'go on with the chat…' : `ask about ${ask}…`}
+          placeholder={running ? 'working…' : pending ? 'changes are waiting: open the chat' : entries ? 'go on with the chat…' : `ask about ${ask}… (/ for skills)`}
           aria-label="Ask the agent"
           onFocus={(e) => {
             remember(e.relatedTarget)
@@ -225,6 +230,7 @@ function Column() {
   const input = useRef<HTMLTextAreaElement>(null)
   const log = useRef<HTMLDivElement>(null)
   useAutoGrow(input, text)
+  const skills = useSkillMenu(text, setText)
   const viewer = isViewer(chat.wid)
 
   // Kept at the bottom while new things come in (unless the person scrolled up to read).
@@ -247,6 +253,7 @@ function Column() {
     }
   }
   const onInputKey = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    if (skills.onKey(e)) return
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       if (!text.trim()) {
@@ -305,6 +312,7 @@ function Column() {
       </div>
       <footer className={styles.foot}>
         {viewer && <p className={styles.viewer}>you're a viewer here: the agent reads and answers, it changes nothing</p>}
+        <div className={styles.skillAnchor}>{skills.menu}</div>
         <label className={styles.prompt} data-running={running || undefined}>
           <span className={styles.ps} aria-hidden>
             {running ? <Spinner /> : '>'}
@@ -315,7 +323,7 @@ function Column() {
             className={styles.input}
             rows={1}
             value={text}
-            placeholder={phase === 'previewing' ? 'change something… (↵ on empty applies)' : phase === 'asking' ? 'answer, or say go…' : `ask about ${ask}…`}
+            placeholder={phase === 'previewing' ? 'change something… (↵ on empty applies)' : phase === 'asking' ? 'answer, or say go…' : `ask about ${ask}… (/ for skills)`}
             aria-label="Ask the agent"
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onInputKey}
@@ -390,6 +398,7 @@ function Empty({ focus }: { focus: string | null }) {
     <div className={styles.empty}>
       <p className={styles.emptyLead}>Ask about your workspace, or ask for a change.</p>
       <FirstAsks focus={focus} onAsk={(t) => agentActions.send(t)} />
+      <FirstSkills />
       <ul className={styles.can}>
         <li>
           <span className={styles.canMark}>+</span>reads every plane, card, deck, matrix and table here
@@ -402,6 +411,43 @@ function Empty({ focus }: { focus: string | null }) {
         </li>
       </ul>
       {!canRun() && <KeyNeeded />}
+    </div>
+  )
+}
+
+// The person's message, a skill named at its start shown as a chip (`/gaps`), the rest in their words.
+function YouText({ text }: { text: string }) {
+  const chip = skillChip(text)
+  if (!chip) return <>{text}</>
+  return (
+    <>
+      <span className={styles.skillChip} data-skill={chip.name}>
+        /{chip.name}
+      </span>
+      {chip.rest ? ` ${chip.rest}` : ''}
+    </>
+  )
+}
+
+// The empty chat's skills: four that need nothing after them (one click runs them), and how to see the rest.
+const FIRST_SKILLS = ['gaps', 'next', 'digest', 'swot']
+function FirstSkills() {
+  const list = FIRST_SKILLS.map((n) => SKILLS.find((s) => s.name === n)!).filter(Boolean)
+  return (
+    <div className={styles.asks}>
+      <div className={styles.rule}>
+        <span>skills</span>
+        <span className={styles.ruleLine} data-tone="magenta" aria-hidden />
+      </div>
+      {list.map((s) => (
+        <button key={s.name} className={styles.ask} data-skill-ask onClick={() => agentActions.send(`/${s.name}`)}>
+          <span className={styles.skillName}>/{s.name}</span>
+          <span className={styles.skillSummary}>{s.summary}</span>
+        </button>
+      ))}
+      <p className={styles.skillMore}>
+        type <kbd className={styles.skillKey}>/</kbd> in the prompt for all {SKILLS.length}
+      </p>
     </div>
   )
 }
@@ -456,7 +502,9 @@ const EntryView = memo(function EntryView({ entry, n }: { entry: Entry; n: numbe
             <span className={styles.n}>{String(n).padStart(2, '0')}</span>
             <span className={styles.turnLine} aria-hidden />
           </span>
-          <span className={styles.youText}>{entry.text}</span>
+          <span className={styles.youText}>
+            <YouText text={entry.text} />
+          </span>
         </div>
       )
     case 'agent':
@@ -644,7 +692,7 @@ function counted(items: ChangeLine[]): string {
   const n = new Map<string, number>()
   for (const i of items) {
     const noun = i.op === 'axis_add' || i.op === 'axis_remove' ? 'head' : i.op === 'update_cell' ? 'cell' : i.op === 'move_task' ? 'task' : (NOUN[i.kind] ?? 'change')
-    const k = i.op === 'update_notes' ? 'change to the notes' : i.op === 'arrange' ? 'move' : i.op === 'delete' ? 'deletion' : i.op === 'resize' ? 'resize' : i.op === 'rename' ? 'rename' : `${verbOf(i)} ${noun}`
+    const k = i.op === 'update_notes' ? 'change to the notes' : i.op === 'merge_cards' ? 'merge' : i.op === 'create_document' ? 'new document' : i.op === 'arrange' ? 'move' : i.op === 'delete' ? 'deletion' : i.op === 'resize' ? 'resize' : i.op === 'rename' ? 'rename' : `${verbOf(i)} ${noun}`
     n.set(k, (n.get(k) ?? 0) + 1)
   }
   return [...n].map(([k, c]) => (c === 1 ? `1 ${k}` : `${c} ${k.replace(/(?<!s)$/, k.endsWith('evidence') ? '' : 's')}`)).join(', ')
@@ -739,7 +787,17 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
 }
 
 // A removed item: only its verb struck (`delete a card`), what it names left readable.
-function ItemText({ line, struck }: { line: string; struck: boolean }) {
+function ItemText({ line, struck, strike }: { line: string; struck: boolean; strike?: string }) {
+  // A merge (S17): only the merged card's name struck.
+  const at0 = strike ? line.indexOf(strike) : -1
+  if (strike && at0 >= 0)
+    return (
+      <span className={styles.itemText}>
+        {line.slice(0, at0)}
+        <span data-struck>{strike}</span>
+        {line.slice(at0 + strike.length)}
+      </span>
+    )
   if (!struck) return <span className={styles.itemText}>{line}</span>
   const at = line.indexOf(': ')
   if (at < 0) return <span className={styles.itemText} data-struck>{line}</span>
@@ -781,7 +839,7 @@ function ChangeRow({ i, live, current, onGo }: { i: ChangeLine; live: boolean; c
         {i.sign}
       </span>
       <span className={styles.itemLine} onClick={live && i.on ? onGo : undefined} data-go={(live && i.on) || undefined}>
-        <ItemText line={i.line} struck={i.delete} />
+        <ItemText line={i.line} struck={i.delete} strike={i.strike} />
         {i.why && <span className={styles.why}> — {i.why}</span>}
         {i.needs && <span className={styles.needs}> · off: it needs {(i.needsWords ?? i.needs).join('; ')}</span>}
       </span>

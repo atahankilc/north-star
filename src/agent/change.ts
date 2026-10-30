@@ -46,7 +46,7 @@ export { ID_KEYS } from './idKeys'
 // What a name under a key may be (left out: anything). Keys whose names the op reads itself (a matrix's row and col, a
 // deck's column, a table's entry) take only short or real ids here; a name passes as written.
 const KINDS: Record<string, IdKind[]> = {
-  card: ['card'], cards: ['card'], competitor: ['card'], ours: ['card'], memberIds: ['card'], open: ['card'], fold: ['card'],
+  card: ['card'], cards: ['card'], keep: ['card'], merge: ['card'], competitor: ['card'], ours: ['card'], memberIds: ['card'], open: ['card'], fold: ['card'],
   from: ['card'], to: ['card'],
   plane: ['piece'], pieces: ['piece'], deck: ['piece'], stuck_to: ['piece'], tasks_to: ['piece'],
   canvas: ['canvas'],

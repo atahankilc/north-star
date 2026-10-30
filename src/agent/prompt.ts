@@ -7,6 +7,7 @@
 // automatable checks: always/never pairs, coordinates only as a "never", deletes only with a yes, North Star only as the
 // app); and `npm run eval:quick` passes.
 import { oneLine } from './read/text'
+import { SKILL_LINES } from './skills'
 
 export type PromptSection = { title: string; body: string }
 
@@ -98,6 +99,10 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
         'A big job is one that makes a new piece with things in it, touches several pieces, needs more than about ten changes, or is open-ended ("organise this plane", "make a competitor matrix", "make a deck of tasks to test this idea"). For a big job, first answer with a short numbered plan: what you will read, what you will make or change, and where. Make no change in that turn; wait for the person to say go, or to change the plan. When they say go, do it as planned.',
         'Everything else runs at once: a clearly specified small change (add this problem for that customer, mark this idea validated, move these tasks to done) needs no plan.',
       ].join('\n'),
+    },
+    {
+      title: 'Skills',
+      body: `A message may start with a skill: a slash and its name. Its guide then comes as a note just before the message, for that turn only: follow it. The skills:\n${SKILL_LINES}`,
     },
     {
       title: 'How to answer',

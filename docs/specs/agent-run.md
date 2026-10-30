@@ -100,7 +100,10 @@ The UI is built tonight; the user will change it later. So every new visible par
 ## Part 2: the log
 
 ### Now
-S17 next (skills: the `/` commands of agent.md §4.10 without the web, each with ≥ 3 eval tasks on the stub; screenshots of each command's result). S1–S16 done.
+ALL 17 STEPS DONE (2026-10-30). The run is finished: S1–S17 committed. What's next is the user's: try it with a
+real key (Settings → the agent), run `npm run eval -- --model openai:<model>` with OPENAI_API_KEY to measure real
+models (and the judges), deploy the S16 rules when happy, and the design session on the UI (shots in
+docs/specs/agent-shots/index.html). Then "Ideas" below, each through the same build → review loop.
 
 ### Done
 _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
@@ -237,6 +240,15 @@ _(one line per step: `S1 · <commit> · reviewer: … · ideas: …`)_
   emulator only · reviewer: 1 fix round (any member could squat the notes id; undo of a deleted notes doc refused;
   notes overwritable before load; last turn lost on close; list paging skipped chats; workspace delete left data;
   unshare offered on notes; specs), then pass with 37 attack tests · eval 45/49 + 4 unjudged on the emulator too.
+- S17 · see `git log --grep "Agent S17"` · skills: `src/agent/skills/` (18 commands = all of §4.10 but /research;
+  each a short guide loaded only for its turn; method guides in our own words: Mom Test, JTBD, experiments, RICE,
+  SWOT, lean canvas, positioning), ops `merge_cards` (moves links/evidence/tasks/features/places/packages/setups/
+  cells; hide lists drop the merged id; its own preview line) and `create_document` (private markdown, previewed as
+  added lines), the `/` menu (D-222), evals/tasks/skills.ts (≥ 3 model-free tasks per skill, ≥ 1 in regression,
+  7 judged twins for document/gaps/next) · reviewer: 2 fix rounds (merge hid the kept card; the merge preview line;
+  /test guide field; evals passing wrong SWOT/priorities/digest/dedupe; judged tasks pulled out of regression) ·
+  eval 99/110 + 11 unjudged (judges need a real model), regression 53/53, `--wrong` 0/110; emulator skills 54/61 +
+  7 unjudged. Screenshots S17-01…20 (+ -full) dark/light.
 
 ### Stuck
 _(none)_
@@ -258,6 +270,13 @@ _(questions, choices made on their behalf, anything that needs a key or a design
   (src/onboarding/keys.ts, the onboarding session's). The canvas re-centres when the column opens instead of keeping
   its left edge. On Windows/Linux Ctrl+J replaces the browser's Downloads shortcut. The agent's marks can land on the
   side nav when a plane runs under it.
+- **Morning summary:** all 17 steps are built, reviewed and committed (see Done). Nothing was pushed or deployed by
+  this run (another session pushed up to 3bc7a9c at the user's request). Nothing was run with a real key: every
+  model-facing part is tested with recorded/stub responses. The gallery: `docs/specs/agent-shots/index.html` (served
+  locally during the night on 127.0.0.1:5190 from the repo root).
+- S17, for the user: documents the agent writes cite cards as `c12 "Title"`: the short ids mean nothing in a later
+  chat (titles keep them readable); stable links would be better. A merge doesn't move comment threads. /research
+  (web) isn't built.
 - S16, for the user: the new rules (agentChats, changes, the agent-notes document) are written and tested but NOT
   deployed: `npm run deploy:rules` (or the without-Storage command in state.md) when you're happy, together with
   firestore.indexes.json (two indexes for the chat list). New rule: an owner may delete a SHARED chat (like shared

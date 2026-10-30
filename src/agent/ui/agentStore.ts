@@ -55,7 +55,7 @@ export type StepLine = { id: string; label: string; running: boolean; ok?: boole
 
 // `on`: ticked; off, either the person unticked it (`off`) or it needs one that is (`needs`: those items).
 // `diff`: an agent-notes change's lines (S16), shown in the preview as + / −.
-export type ChangeLine = { id: string; line: string; where: string; delete: boolean; why?: string; on: boolean; needs?: string[]; needsWords?: string[]; kind: string; op: string; sign: '+' | '~' | '−'; diff?: DiffLine[] }
+export type ChangeLine = { id: string; line: string; strike?: string; where: string; delete: boolean; why?: string; on: boolean; needs?: string[]; needsWords?: string[]; kind: string; op: string; sign: '+' | '~' | '−'; diff?: DiffLine[] }
 
 export type Entry =
   | { id: string; kind: 'user'; text: string }
@@ -350,6 +350,7 @@ const lineOf = (i: ChangeItem, on: boolean, needs?: string[], all?: ChangeItem[]
   line: i.line,
   where: i.where,
   delete: i.delete,
+  ...(i.strike ? { strike: i.strike } : {}),
   kind: i.kind,
   op: i.op,
   sign: i.sign ?? (i.delete ? '−' : '~'),

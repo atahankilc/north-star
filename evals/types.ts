@@ -14,7 +14,7 @@ import type { ChatStore, ChatWho } from '../src/agent/chats'
 // short ids; the agent notes carry what was learned).
 export type FollowUp = string | { untick: string } | { newChat: true }
 
-export type Group = 'find' | 'edit' | 'build' | 'context' | 'refuse' | 'injection' | 'memory'
+export type Group = 'find' | 'edit' | 'build' | 'context' | 'refuse' | 'injection' | 'memory' | 'skills'
 // regression: must pass on every change (100 %); capability: what a phase gate measures.
 export type EvalSet = 'regression' | 'capability'
 

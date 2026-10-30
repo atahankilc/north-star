@@ -295,6 +295,11 @@ Workflows run in the open tab (no server, D-312); closing the tab stops them, an
 | `/review-deck` | late, stuck, unassigned tasks; suggestions to move or split |
 | `/ask` (default) | any question about the workspace, answered with links to the items |
 
+Shipped in S17 (on the stub, no web): every row but `/research`, in `src/agent/skills/` (a guide each, loaded only
+for its turn; method guides in `methods.ts`), the `/` menu in the agent's prompt, two new ops (`merge_cards`,
+`create_document`), three eval tasks per command (`evals/tasks/skills.ts`). Not yet: `/research`, a comment's target
+moved by a merge (threads aren't ops), documents placed on the canvas by the agent.
+
 ### 4.8 Keys, money and Blaze (D-312)
 
 - **Only own keys.** Each person puts their OpenAI key in Settings; it stays in their browser only and calls go

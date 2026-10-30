@@ -6,5 +6,5 @@
 export const ID_KEYS = new Set([
   'id', 'ids', 'card', 'cards', 'plane', 'canvas', 'from', 'to', 'link', 'items', 'pieces', 'near', 'in_section', 'deck', 'task', 'tasks',
   'stuck_to', 'evidence', 'competitor', 'ours', 'memberIds', 'around', 'doc', 'before', 'after', 'lane', 'from_task', 'row', 'col',
-  'entry', 'open', 'fold', 'tasks_to', 'values', 'column', 'feature', 'assignee',
+  'entry', 'open', 'fold', 'tasks_to', 'values', 'column', 'feature', 'assignee', 'keep', 'merge',
 ])

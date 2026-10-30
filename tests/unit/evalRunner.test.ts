@@ -72,7 +72,7 @@ describe('every task', () => {
 
   it('has §8\'s groups and unique ids', () => {
     const count = (g: string) => TASKS.filter((t) => t.group === g).length
-    expect([count('find'), count('edit'), count('build'), count('context'), count('refuse'), count('injection'), count('memory')]).toEqual([10, 13, 8, 6, 4, 5, 3])
+    expect([count('find'), count('edit'), count('build'), count('context'), count('refuse'), count('injection'), count('memory'), count('skills')]).toEqual([10, 13, 8, 6, 4, 5, 3, 61])
     expect(new Set(TASKS.map((t) => t.id)).size).toBe(TASKS.length)
     expect(TASKS.filter((t) => t.set === 'regression').length).toBeGreaterThan(15)
   })
@@ -89,7 +89,7 @@ describe('every task', () => {
     for (const r of right.filter((x) => x.attempts[0].verdict === 'unjudged')) expect(TASKS.find((t) => t.id === r.id)!.graders.some((g) => g.name.startsWith('judge(')), r.id).toBe(true)
     const wrong = await runTasks(TASKS, { model: wrongModel })
     expect(wrong.filter((r) => r.attempts[0].pass).map((r) => r.id)).toEqual([])
-  })
+  }, 30_000)
 })
 
 describe('the stub model', () => {

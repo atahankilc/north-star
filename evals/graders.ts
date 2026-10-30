@@ -779,3 +779,124 @@ export const chatSaved = (o: { other?: string } = {}): Grader => ({
     return ok(!bad.length, bad.length ? bad.join('; ') : `saved privately as ${who.uid} (${c.body.turns.length} entries), unreadable to others`)
   },
 })
+
+// ---- Skills (S17): documents written from the workspace, answers that cite enough real items, fields filled in
+
+// The run wrote one new markdown document (not the agent notes) whose text holds each wanted word, names each wanted
+// card by its short id, and points every card it mentions at a real card: `c12` with that card's title (whole words, on
+// the same line, case ignored). At least `min` distinct cards cited (default 3). `onPlane`: every cited card is on that
+// plane. `shared`: as wanted (default private). `excludes`: phrases it must not hold (e.g. "would you").
+export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; min?: number; onPlane?: string; shared?: boolean; excludes?: (string | RegExp)[] } = {}): Grader => ({
+  name: `docWritten(${[o.words?.length && `${o.words.length} words`, o.cites?.length && `cites ${o.cites.map(showRef).join(', ')}`, `≥ ${o.min ?? 3} cards`, o.onPlane && `on ${o.onPlane}`, o.shared && 'shared'].filter(Boolean).join(', ')})`,
+  grade: (r) => {
+    const made = madeIds(r, 'document').filter((id) => id !== 'agent-notes')
+    if (made.length !== 1) return ok(false, `made ${made.length} documents`)
+    const doc = r.end.documents.find((d) => d.id === made[0])!
+    const text = String((r.end as AgentWs & { bodies?: Record<string, { text?: string } | undefined> }).bodies?.[doc.id]?.text ?? '')
+    const bad: string[] = []
+    if (!text.trim()) bad.push('it has no text')
+    if (doc.kind !== 'markdown') bad.push(`kind ${doc.kind}`)
+    if (!!doc.shared !== !!o.shared) bad.push(doc.shared ? 'it is shared' : 'it is private')
+    for (const w of o.words ?? []) if (!wanted(w).test(text)) bad.push(`no ${String(w)}`)
+    for (const w of o.excludes ?? []) if ((w instanceof RegExp ? w : wordsRe(w)).test(text)) bad.push(`says ${String(w)}`)
+    const cited = new Set<string>()
+    for (const line of text.split('\n'))
+      for (const m of line.matchAll(/\bc(\d+)\b/g)) {
+        const real = r.ids.real(`c${m[1]}`)
+        const card = real?.kind === 'card' ? r.start.cards.find((c) => c.id === real.id) ?? r.end.cards.find((c) => c.id === real.id) : undefined
+        if (!card) bad.push(`c${m[1]} is no card`)
+        else if (!wordsRe(card.title).test(line)) bad.push(`c${m[1]} without its title "${card.title.slice(0, 30)}"`)
+        else {
+          cited.add(card.id)
+          if (o.onPlane && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p))) bad.push(`c${m[1]} isn't on ${o.onPlane}`)
+        }
+      }
+    for (const w of o.cites ?? []) {
+      const id = ref1(r.start, resolveRef(r, w), ['card'])
+      if (!id || !cited.has(id)) bad.push(`doesn't cite ${showRef(w)}`)
+    }
+    if (cited.size < (o.min ?? 3)) bad.push(`cites ${cited.size} cards`)
+    return ok(!bad.length, bad.length ? [...new Set(bad)].slice(0, 6).join('; ') : `"${doc.title}": ${cited.size} cards cited, every one real`)
+  },
+})
+
+// The answer cites at least n distinct real items by short id (cards and tasks), none made up; `onPlane`: every cited
+// card is on that plane; `kind`: only count that kind.
+export const citesSome = (n: number, o: { onPlane?: string; kind?: 'card' | 'task' } = {}): Grader => ({
+  name: `citesSome(${n}${o.kind ? ` ${o.kind}s` : ''}${o.onPlane ? ` on ${o.onPlane}` : ''})`,
+  grade: (r) => {
+    const seen = new Set<string>()
+    const bad: string[] = []
+    for (const m of r.answer.matchAll(SHORT_IN_TEXT)) {
+      const s = m[3] ? `c${m[3]}` : m[0]
+      const real = r.ids.real(s)
+      if (!real || !(exists_(r.end, real.kind, real.id) || exists_(r.start, real.kind, real.id))) {
+        bad.push(`made up ${s}`)
+        continue
+      }
+      if (real.kind !== 'card' && real.kind !== 'task') continue
+      if (o.kind && real.kind !== o.kind) continue
+      if (o.onPlane && real.kind === 'card') {
+        const card = r.start.cards.find((c) => c.id === real.id) ?? r.end.cards.find((c) => c.id === real.id)
+        if (card && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p))) bad.push(`${s} isn't on ${o.onPlane}`)
+      }
+      seen.add(real.id)
+    }
+    return ok(!bad.length && seen.size >= n, bad.length ? [...new Set(bad)].slice(0, 5).join('; ') : `cites ${seen.size}`)
+  },
+})
+
+// Every item of a kind matching `where` (at the end) has each field set.
+export const allSet = (kind: Kind, where: Where, fields: string[]): Grader => ({
+  name: `allSet(${describeWhere(kind, where)}: ${fields.join(', ')})`,
+  grade: (r) => {
+    const items = find(r.end, kind, prep(r, where))
+    const missing = items.filter((x) => fields.some((f) => x[f] === undefined || x[f] === null || x[f] === ''))
+    return ok(items.length > 0 && !missing.length, !items.length ? 'none found' : missing.length ? `${missing.length} of ${items.length} lack one: ${missing.slice(0, 4).map((x) => `"${titleOf(kind, x)}"`).join(', ')}` : `all ${items.length} set`)
+  },
+})
+
+// The answer says who did what on one line: each [who, item] pair shares a line (the item by its short id or title);
+// `not`: pairs that must never share a line (a change put on the wrong person).
+export const sameLine = (want: [string | RegExp, Ref][], not: [string | RegExp, Ref][] = []): Grader => ({
+  name: `sameLine(${want.map(([w, x]) => `${String(w)}~${showRef(x)}`).join(', ')}${not.length ? `; not ${not.map(([w, x]) => `${String(w)}~${showRef(x)}`).join(', ')}` : ''})`,
+  grade: (r) => {
+    const lines = r.answer.split('\n')
+    const has = (line: string, item: Ref) => {
+      const id = ref1(r.start, resolveRef(r, item), [...SHORT_KINDS])
+      const short = id ? SHORT_KINDS.map((k) => r.ids.has(k, id)).find(Boolean) : undefined
+      const t = id ? itemOf(r, id)?.title : undefined
+      return (!!short && new RegExp(`\\b${short}\\b`).test(line)) || (!!t && wordsRe(t).test(line))
+    }
+    const who = (line: string, w: string | RegExp) => (w instanceof RegExp ? w.test(line) : wordsRe(w).test(line))
+    const miss = want.filter(([w, x]) => !lines.some((l) => who(l, w) && has(l, x)))
+    const bad = not.filter(([w, x]) => lines.some((l) => who(l, w) && has(l, x)))
+    return ok(!miss.length && !bad.length, [miss.length && `not on one line: ${miss.map(([w, x]) => `${String(w)} + ${showRef(x)}`).join(', ')}`, bad.length && `wrongly paired: ${bad.map(([w, x]) => `${String(w)} + ${showRef(x)}`).join(', ')}`].filter(Boolean).join('; ') || 'who did what, line by line')
+  },
+})
+
+// In the run's new document, every card cited under a heading matching `section` passes `check` (S17: a SWOT's
+// placement: competitors only outside, our validated work never a threat).
+export const docSectionCards = (section: RegExp, check: (c: Card) => boolean, what: string): Grader => ({
+  name: `docSectionCards(${String(section)}: ${what})`,
+  grade: (r) => {
+    const made = madeIds(r, 'document').filter((id) => id !== 'agent-notes')
+    if (made.length !== 1) return ok(false, `made ${made.length} documents`)
+    const text = String((r.end as AgentWs & { bodies?: Record<string, { text?: string } | undefined> }).bodies?.[made[0]]?.text ?? '')
+    let inside = false
+    const bad: string[] = []
+    for (const line of text.split('\n')) {
+      if (/^\s*#{1,6}\s/.test(line)) {
+        inside = section.test(line)
+        continue
+      }
+      if (!inside) continue
+      for (const m of line.matchAll(/\bc(\d+)\b/g)) {
+        const real = r.ids.real(`c${m[1]}`)
+        const card = real ? r.start.cards.find((c) => c.id === real.id) : undefined
+        if (card && !check(card)) bad.push(`c${m[1]} "${card.title.slice(0, 30)}"`)
+      }
+    }
+    return ok(!bad.length, bad.length ? `under ${String(section)}: ${bad.slice(0, 4).join(', ')}` : what)
+  },
+})

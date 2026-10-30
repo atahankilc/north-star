@@ -13,7 +13,7 @@
 // emulator signs in as the fixture's person (an unsigned custom token, accepted only by the emulator); listeners on every
 // collection (as the app has: history reads the cache); the start read back from Firestore (what graders compare with).
 import { signInWithCustomToken } from 'firebase/auth'
-import { collection, doc, getDocFromServer, getDocsFromServer, onSnapshot, waitForPendingWrites, type Unsubscribe } from 'firebase/firestore'
+import { collection, doc, getDocFromServer, getDocsFromServer, onSnapshot, query, waitForPendingWrites, where, type Unsubscribe } from 'firebase/firestore'
 import { db, firebase, useEmulators } from '../src/data/firebase'
 import { apply } from '../src/ops/firestore'
 import { undo, useHistory } from '../src/data/history'
@@ -80,11 +80,17 @@ async function readBack(wid: string, base: AgentWs): Promise<AgentWs> {
   // The agent notes (S16), the one document ops write: read back with their text, the fixture's others kept.
   const notes = await getDocFromServer(doc(db(), 'workspaces', wid, 'documents', NOTES_ID))
   const body = notes.exists() ? await getDocFromServer(doc(db(), 'workspaces', wid, 'documents', NOTES_ID, 'content', 'body')) : null
-  const others = base.documents.filter((d) => d.id !== NOTES_ID)
+  // S17: the acting person's own documents the run made (create_document), with their text.
+  const uid = firebase!.auth.currentUser?.uid
+  const known = new Set(base.documents.map((d) => d.id))
+  const mine = uid ? (await getDocsFromServer(query(collection(db(), 'workspaces', wid, 'documents'), where('uid', '==', uid)))).docs.filter((d) => d.id !== NOTES_ID && !known.has(d.id)) : []
+  const made = await Promise.all(mine.map(async (d) => ({ doc: { ...(d.data() as AgentWs['documents'][number]), id: d.id }, body: await getDocFromServer(doc(db(), 'workspaces', wid, 'documents', d.id, 'content', 'body')) })))
+  const others = [...made.map((m) => m.doc), ...base.documents.filter((d) => d.id !== NOTES_ID)]
   const documents = notes.exists() ? [{ ...(notes.data() as AgentWs['documents'][number]), id: NOTES_ID }, ...others] : others
   const bodies = { ...(base.bodies ?? {}) }
   delete bodies[NOTES_ID]
   if (body?.exists()) bodies[NOTES_ID] = body.data() as { text: string }
+  for (const m of made) if (m.body.exists()) bodies[m.doc.id] = m.body.data() as { text: string }
   const data = fromDocs(docs, documents)
   return { ...base, ...data, documents, bodies, wid, workspace: { ...(w.data() as AgentWs['workspace']), id: wid } } as AgentWs
 }
