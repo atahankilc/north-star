@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { LESSONS, type Lesson } from './lessons'
-import { CALM_MS, COOLDOWN_MS, GIVE_UP_MS, PAUSE_CAP_MS, createQueue, resetNudgeBudget, type Busy, type ProgressView } from './queue'
+import { CALM_MS, COOLDOWN_MS, GIVE_UP_MS, PAUSE_CAP_MS, countsAsMenu, createQueue, resetNudgeBudget, type Busy, type ProgressView } from './queue'
 import type { Role } from './lessons'
 
 const ALL: Role[] = ['owner', 'editor', 'viewer']
@@ -445,3 +445,158 @@ describe('queue, fix round', () => {
   })
 })
 
+describe('queue, a surface and its own lesson (O11)', () => {
+  it("a lesson showing gives way to the lesson of a surface opened over it, back to the queue, not seen", () => {
+    const s = setup([L('find', { trigger: [{ event: 'finder-open' }] }), L('wiz', { trigger: [{ event: 'wizard' }], within: 'wizard' })])
+    s.q.onEvent({ event: 'finder-open' })
+    s.wait(500)
+    expect(s.shown()).toBe('find')
+    // The wizard opens over it: its own lesson takes the slot after the calm.
+    s.setBusy({ wizard: true })
+    s.q.onEvent({ event: 'wizard' })
+    s.wait(100)
+    expect(s.shown()).toBe(null)
+    expect(s.q.queued()).toEqual(['find', 'wiz'])
+    s.wait(500)
+    expect(s.shown()).toBe('wiz')
+    expect(s.marked).toEqual([])
+    // Closed; the wizard closes too: the one that gave way shows again, its wait started over.
+    s.q.close('wiz', 'closed')
+    s.setBusy({})
+    s.wait(300)
+    expect(s.shown()).toBe(null)
+    s.wait(300)
+    expect(s.shown()).toBe('find')
+    expect(s.marked).toEqual(['wiz'])
+  })
+
+  it("doesn't give way to a surface lesson something else still holds, or to its own surface", () => {
+    const s = setup([L('find', { trigger: [{ event: 'finder-open' }] }), L('wiz', { trigger: [{ event: 'wizard' }], within: 'wizard' })])
+    s.q.onEvent({ event: 'finder-open' })
+    s.wait(500)
+    s.setBusy({ wizard: true, drag: true })
+    s.q.onEvent({ event: 'wizard' })
+    s.wait(1000)
+    expect(s.shown()).toBe('find')
+
+    const t = setup([L('w1', { trigger: [{ event: 'wizard' }], within: 'wizard' }), L('w2', { trigger: [{ event: 'setup-open' }], within: 'wizard' })])
+    t.setBusy({ wizard: true })
+    t.q.onEvent({ event: 'wizard' })
+    t.wait(500)
+    t.q.onEvent({ event: 'setup-open' })
+    t.wait(1000)
+    expect(t.shown()).toBe('w1')
+    expect(t.q.queued()).toEqual(['w2'])
+  })
+
+  it('a surface lesson whose surface closed before it showed is dropped, due at its next trigger', () => {
+    const s = setup([L('busy', { trigger: [{ event: 'linking' }] }), L('wiz', { trigger: [{ event: 'wizard' }], within: 'wizard' })])
+    s.q.onEvent({ event: 'linking' })
+    s.wait(500)
+    expect(s.shown()).toBe('busy')
+    // Waiting behind a drag in the wizard, then the wizard's gone: it never shows outside it.
+    s.setBusy({ wizard: true, drag: true })
+    s.q.onEvent({ event: 'wizard' })
+    s.wait(300)
+    s.setBusy({})
+    s.wait(200)
+    expect(s.q.queued()).toEqual([])
+    expect(s.gaveUp).toEqual(['wiz'])
+    s.q.close('busy', 'closed')
+    s.wait(2000)
+    expect(s.shown()).toBe(null)
+    expect(s.marked).toEqual(['busy'])
+    // The next wizard: it shows there.
+    s.setBusy({ wizard: true })
+    s.q.onEvent({ event: 'wizard' })
+    s.wait(500)
+    expect(s.shown()).toBe('wiz')
+  })
+
+  it('one triggered from outside its surface, which never opened, still shows', () => {
+    const s = setup([L('heads', { trigger: [{ event: 'text-made' }, { event: 'finder-open' }], within: 'finder' })])
+    s.q.onEvent({ event: 'text-made' })
+    s.wait(500)
+    expect(s.shown()).toBe('heads')
+  })
+})
+
+describe('queue, fix round O11', () => {
+  // A stand-in for an element: what `closest` finds above it.
+  const el = (inFinder: boolean) => ({ closest: (sel: string) => (inFinder && sel.includes('aria-label="Find"') ? ({} as Element) : null) })
+
+  it("the finder's own list isn't a menu: the finder's lesson shows while it's open and typed in", () => {
+    expect(countsAsMenu(el(true))).toBe(false)
+    expect(countsAsMenu(el(false))).toBe(true)
+    const s = setup([L('finder', { trigger: [{ event: 'finder-open' }], within: 'finder' })])
+    // busy.ts' `menu` from the lists on screen: only the finder's matches.
+    const lists = [el(true)]
+    s.setBusy({ finder: true, typing: true, menu: lists.some(countsAsMenu) })
+    s.q.onEvent({ event: 'finder-open' })
+    s.wait(500)
+    expect(s.shown()).toBe('finder')
+  })
+
+  it('a menu lesson that gave way to a wizard and whose menu closed meanwhile is dropped, not shown after', () => {
+    const s = setup([L('rc', { trigger: [{ event: 'context-menu' }], within: 'menu' }), L('wiz', { trigger: [{ event: 'wizard' }], within: 'wizard' })])
+    s.setBusy({ menu: true })
+    s.q.onEvent({ event: 'context-menu' })
+    s.wait(500)
+    expect(s.shown()).toBe('rc')
+    // The menu picks the wizard (the menu closes, the wizard opens): `rc` gives way and doesn't come back.
+    s.setBusy({ wizard: true })
+    s.q.onEvent({ event: 'wizard' })
+    s.wait(500)
+    expect(s.shown()).toBe('wiz')
+    expect(s.q.queued()).toEqual([])
+    expect(s.gaveUp).toEqual(['rc'])
+    s.q.close('wiz', 'closed')
+    s.setBusy({})
+    s.wait(3000)
+    expect(s.shown()).toBe(null)
+  })
+
+  it('a nudge that gives way is counted once and ends', () => {
+    const s = setup([L('n', { format: 'nudge', trigger: [{ event: 'idle' }] } as never), L('wiz', { trigger: [{ event: 'wizard' }], within: 'wizard' })])
+    s.q.onEvent({ event: 'idle' })
+    s.wait(500)
+    expect(s.shown()).toBe('n')
+    s.setBusy({ wizard: true })
+    s.q.onEvent({ event: 'wizard' })
+    s.wait(500)
+    expect(s.shown()).toBe('wiz')
+    // The nudge ended for it (never seen, not shown again: the session's one nudge is spent), counted once.
+    s.q.close('wiz', 'closed')
+    s.setBusy({})
+    s.wait(COOLDOWN_MS + 1000)
+    expect(s.shown()).toBe(null)
+    expect(s.marked).toEqual(['wiz'])
+    expect(s.nudges.length).toBe(1)
+  })
+
+  it('a nudge showing never holds the slot: a waiting lesson ends it (not seen) and shows', () => {
+    const s = setup([L('n', { format: 'nudge', trigger: [{ event: 'idle' }] } as never), L('given', { trigger: [{ event: 'task-given' }] })])
+    s.q.onEvent({ event: 'idle' })
+    s.wait(500)
+    expect(s.shown()).toBe('n')
+    s.q.onEvent({ event: 'task-given' })
+    s.wait(100)
+    expect(s.shown()).toBe(null)
+    expect(s.marked).toEqual([])
+    // An automatic one still waits out the cooldown from the last close (none here), then the calm.
+    s.wait(600)
+    expect(s.shown()).toBe('given')
+    expect(s.gaveUp).toEqual([])
+    expect(s.nudges.length).toBe(1)
+  })
+
+  it('a nudge stays while the waiting lesson is still held by something else', () => {
+    const s = setup([L('n', { format: 'nudge', trigger: [{ event: 'idle' }] } as never), L('l', { trigger: [{ event: 'linking' }] })])
+    s.q.onEvent({ event: 'idle' })
+    s.wait(500)
+    s.setBusy({ drag: true })
+    s.q.onEvent({ event: 'linking' })
+    s.wait(1000)
+    expect(s.shown()).toBe('n')
+  })
+})

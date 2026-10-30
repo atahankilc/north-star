@@ -14,7 +14,7 @@ import { Btn, keepFocus, stopCanvas, trapTab, useDialogFocus, Words } from './Pa
 import { mustReplace, place, type Placed, type Rect, type Side } from './place'
 import { getWs } from '../state/wsStore'
 import { fill, lessonName, plain, type Fill } from './words'
-import type { CloseHow, Shown } from './queue'
+import { countsAsMenu, type CloseHow, type Shown } from './queue'
 import styles from './Lesson.module.css'
 
 // Drawn and visible: on screen, with a size, not hidden by style (visibility, opacity 0, display, a cell-by-cell clip
@@ -102,6 +102,9 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
     }
   // A link (`link:<id>`): the two cards it joins are what it means, never covered either.
   hard.push(...linkEnds(target))
+  // A matrix or a table in focus fills the screen, so its piece is no obstacle: what it shows is (its heads, row names
+  // and cells, on screen), one box round them all.
+  hard.push(...lensContent())
   for (const el of document.querySelectorAll<HTMLElement>(`${CONSOLES}, ${MENUS}`)) {
     if (el === anchor || mine(el) || !isVisible(el)) continue
     hard.push(rectOf(el))
@@ -122,6 +125,22 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
   return { soft, hard, noLead }
 }
 
+// A focused matrix's or table's heads, row names and cells on screen, as one box (none when no lens is in focus).
+function lensContent(): Rect[] {
+  const id = new URLSearchParams(location.search).get('focus')
+  const kind = id ? getWs()?.pieces.find((p) => p.id === id)?.kind : undefined
+  if (kind !== 'matrix' && kind !== 'table') return []
+  let box: { x0: number; y0: number; x1: number; y1: number } | null = null
+  for (const el of document.querySelectorAll<HTMLElement>('[data-cell], [data-find-box]')) {
+    const r = rectOf(el)
+    // Not the coach's own, the dots of a matrix too small to read, or an axis's dashed `+ feature` to add to.
+    if (!onScreen(r) || el.closest('[data-coach]') || el.dataset.cell === 'far' || el.closest('button[title^="add a"]')) continue
+    const x0 = Math.max(0, r.x), y0 = Math.max(0, r.y), x1 = Math.min(innerWidth, r.x + r.w), y1 = Math.min(innerHeight, r.y + r.h)
+    box = box ? { x0: Math.min(box.x0, x0), y0: Math.min(box.y0, y0), x1: Math.max(box.x1, x1), y1: Math.max(box.y1, y1) } : { x0, y0, x1, y1 }
+  }
+  return box ? [{ x: box.x0, y: box.y0, w: box.x1 - box.x0, h: box.y1 - box.y0 }] : []
+}
+
 // The two cards a link joins, on screen (the live ones), when the lesson is about a link.
 function linkEnds(target: string | undefined): Rect[] {
   if (!target?.startsWith('link:')) return []
@@ -134,6 +153,10 @@ function linkEnds(target: string | undefined): Rect[] {
   }
   return out
 }
+
+// The card's width (Lesson.module.css), and the narrowest a squeezed one goes.
+const CARD_W = 268
+const CARD_MIN = 160
 
 // Anchors that span the page (a row of the workspaces page's list): below them first, where the page has room, so the
 // card never sits over the forms above.
@@ -179,6 +202,18 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   const [sample, setSample] = useState(0)
   const closeRef = useRef(onClose)
   closeRef.current = onClose
+  // Beside a wizard there may be less room than a card (880 px of wizard on a 1280–1480 px screen): the card then goes
+  // narrower and without its demo, so it still sits beside the wizard, off its controls, rather than in its middle.
+  const [squeeze, setSqueeze] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    if (shown.lesson.within !== 'wizard' || played) return
+    const wiz = document.querySelector<HTMLElement>('[data-learn="wizard"]')
+    if (!wiz) return
+    const r = wiz.getBoundingClientRect()
+    const room = Math.max(r.left, innerWidth - r.right)
+    const next = room >= CARD_W + 30 ? null : Math.max(CARD_MIN, Math.floor(room - 32))
+    setSqueeze((v) => (v === next ? v : next))
+  }, [shown.lesson.within, played, sample])
 
   // Placed once measured, again on a new page or a pan/zoom's end; kept while `✓ done` shows (its anchor may be gone).
   useLayoutEffect(() => {
@@ -188,7 +223,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
     const size = { w: card.current.offsetWidth, h: card.current.offsetHeight }
     const next = where(anchorName, anchor, size, target, card.current)
     setPos((p) => (p && p.x === next.x && p.y === next.y && p.at === next.at && (p.lead?.x2 ?? 0) === (next.lead?.x2 ?? 0) && (p.lead?.y2 ?? 0) === (next.lead?.y2 ?? 0) ? p : next))
-  }, [i, sample, played, done, anchorName, target])
+  }, [i, sample, played, done, anchorName, target, squeeze])
 
   // A pan or zoom ended, the window resized: sample the anchor again. Its anchor gone (its piece deleted): closed.
   useEffect(() => {
@@ -229,20 +264,30 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   // A menu opened while it shows (the `+` menu with its kind guide, a right-click, a Select): a lesson about menus is
   // placed again clear of it; any other steps aside (hidden, taking no clicks) until the menu closes, then comes back.
   const aboutMenus = shown.lesson.within === 'menu'
+  // About a wizard (`within: wizard`): over its dimmed shade (z 40), or the card would sit under it and a press on it
+  // would land on the shade, which closes the wizard.
+  const overWizard = shown.lesson.within === 'wizard'
+  // A wizard opened while another lesson shows steps it aside too: under the wizard's shade it would read dimmed, and a
+  // press on it would land on the shade and close the wizard.
   const [menuUp, setMenuUp] = useState(false)
+  const [wizardUp, setWizardUp] = useState(false)
   useEffect(() => {
     if (played) return
     let was = false
+    let wasWizard = false
     const t = setInterval(() => {
-      const up = [...document.querySelectorAll<HTMLElement>(MENUS)].some((el) => !card.current?.contains(el) && isVisible(el))
-      if (up === was) return
+      const up = [...document.querySelectorAll<HTMLElement>(MENUS)].some((el) => !card.current?.contains(el) && countsAsMenu(el) && isVisible(el))
+      const wiz = [...document.querySelectorAll<HTMLElement>('[data-learn="wizard"]')].some(isVisible)
+      if (up === was && wiz === wasWizard) return
       was = up
+      wasWizard = wiz
       setMenuUp(up)
+      setWizardUp(wiz)
       setSample((n) => n + 1)
     }, 120)
     return () => clearInterval(t)
   }, [played])
-  const aside = menuUp && !aboutMenus
+  const aside = (menuUp && !aboutMenus) || (wizardUp && !overWizard)
 
   const root = useRef<HTMLElement>(null)
   const first = useRef<HTMLButtonElement>(null)
@@ -264,7 +309,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   }
   const demoW = 246
   const count = `${i + 1} / ${pages.length}`
-  const common = { name, title, body, page, count, last, forward, tipsOff, onClose, onGuide: played ? onGuide : undefined, isNew: shown.isNew, demoW, first }
+  const common = { name, title, body, page: squeeze !== null ? { ...page, scene: undefined } : page, count, last, forward, tipsOff, onClose, onGuide: played ? onGuide : undefined, isNew: shown.isNew, demoW, first }
 
   const inner = done ? <Done name={name} /> : <Card {...common} />
 
@@ -285,7 +330,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   const side = pos?.at === 'beside' ? pos.side : 'bottom'
   return createPortal(
     <>
-      {pos?.lead && !done && !aside && <LeadLine lead={pos.lead} />}
+      {pos?.lead && !done && !aside && <LeadLine lead={pos.lead} over={overWizard} />}
       <Appear
         as="section"
         elRef={card}
@@ -295,11 +340,16 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
         data-done={done || undefined}
         data-aside={aside || undefined}
         data-nodemo={!page.scene || undefined}
-        style={style}
+        data-over-wizard={overWizard || undefined}
+        data-squeezed={squeeze !== null || undefined}
+        style={squeeze !== null ? { ...style, width: squeeze } : style}
         role="region"
         aria-live="polite"
         aria-label={`lesson: ${plain(title)}`}
         {...stopCanvas}
+        // A press on it keeps the focus where it was (the finder's field, a name being typed), as the kind guide does: a
+        // lesson closed with its `×` mustn't leave the finder deaf to `esc` (onboarding.md §3.1.9).
+        onMouseDown={(e: React.MouseEvent) => e.preventDefault()}
         onKeyDown={(e: KeyboardEvent) => {
           if (e.key === 'Escape') {
             e.stopPropagation()
@@ -338,7 +388,7 @@ function Middle({ root, first, children, onClose, onGuide, forward }: { root: Re
 }
 
 // The lead: a straight magenta line from the card to its anchor, a square tip on the anchor (D-266's line family).
-function LeadLine({ lead }: { lead: NonNullable<Placed['lead']> }) {
+function LeadLine({ lead, over }: { lead: NonNullable<Placed['lead']>; over?: boolean }) {
   const h = lead.y1 === lead.y2
   const x = Math.min(lead.x1, lead.x2)
   const y = Math.min(lead.y1, lead.y2)
@@ -346,8 +396,8 @@ function LeadLine({ lead }: { lead: NonNullable<Placed['lead']> }) {
   if (len < 1) return null
   return (
     <>
-      <div className={styles.lead} style={h ? { left: x, top: Math.round(y), width: len, height: 1 } : { left: Math.round(x), top: y, width: 1, height: len }} aria-hidden />
-      <div className={styles.tip} style={{ left: Math.round(lead.x2) - 2, top: Math.round(lead.y2) - 2 }} aria-hidden />
+      <div className={styles.lead} data-over-wizard={over || undefined} style={h ? { left: x, top: Math.round(y), width: len, height: 1 } : { left: Math.round(x), top: y, width: 1, height: len }} aria-hidden />
+      <div className={styles.tip} data-over-wizard={over || undefined} style={{ left: Math.round(lead.x2) - 2, top: Math.round(lead.y2) - 2 }} aria-hidden />
     </>
   )
 }

@@ -60,6 +60,13 @@
   height: 5px;
 }
 
+/* A lesson about a wizard: over the wizard's dimmed shade (z 40), never under it. */
+.card[data-over-wizard],
+.lead[data-over-wizard],
+.tip[data-over-wizard] {
+  z-index: 41;
+}
+
 /* Played from `?`: in the middle over the scrim, a dialog. */
 .shade {
   position: fixed;
@@ -167,4 +174,14 @@
   margin-top: 12px;
   padding: 8px 12px 9px;
   border-top: 1px solid var(--line);
+}
+
+/* Squeezed beside a wizard (no demo, narrower): the foot wraps, its count and buttons each kept on one line. */
+.card[data-squeezed] .foot {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.card[data-squeezed] .foot > * {
+  white-space: nowrap;
 }

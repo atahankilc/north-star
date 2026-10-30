@@ -74,6 +74,8 @@ const useStrip = create<Record<string, Strip>>(() => ({}))
 const startFor = (span: number) => dayOf(today()) - Math.round(span / 3)
 const stripOf = (id: string): Strip => useStrip.getState()[id] ?? { from: startFor(20), ppd: STRIP_SCALES[1].ppd, top: 0, span: 20 }
 const setStrip = (id: string, patch: Partial<Strip>) => useStrip.setState((s) => ({ [id]: { ...(s[id] ?? stripOf(id)), ...patch } }))
+// Back to where a timeline starts (today, a week's scale): the onboarding's demo scenes start each loop from there.
+export const resetStrip = (id: string) => (cancelAnimationFrame(motion.get(id) ?? 0), useStrip.setState((s) => ({ ...s, [id]: undefined as unknown as Strip })))
 
 // Its days glided to a first day, or its scale eased to another round a point (a fraction of what's shown); a press
 // stops either.

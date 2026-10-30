@@ -121,9 +121,10 @@ If the night runs out, stop at a clean, committed step with the gallery up to da
 ## Part 2: the log
 
 ### Now
-2026-10-29 late evening: O0–O10 committed (+ D-316 looks, guards). Next: O11 (text §4 + matrix and table §5).
-Emulators run from this session (restarted three times today with the user's OK); watch firebase-debug.log.
-Never `git add`/`git mv` from builders (shared index). Two builders at most at once (usage limits hit twice).
+2026-10-30 early morning: O0–O12 committed (+ D-316 looks, guards). Next: O13 (together §8, finding/canvases/settings
+§9), then O14 what's new, O15 the `?` guide, O16 end to end + gallery + speed. 8 scenes still pending.
+Emulators run from this session (restarted with the user's OK when they hang); watch firebase-debug.log. Never
+`git add`/`git mv` from builders (shared index). Two builders at most at once; stop each when its step is committed.
 
 ### Done
 _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
@@ -215,9 +216,29 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   (menus left open inside the frame → click the row, a lesson pointing at a random card, unreadable `⧉ 2`) · flow:
   13 lessons one at a time, 0 px over their anchors · left: stick-follow's opening frame cuts `EDIT 500`; the
   mustReplace check can re-ask forever when no spot is clear (harmless, guard later).
+- O11 · (this commit, with O12) · text and lenses: 11 scenes (text-edit, sticky, section, finder-heading,
+  matrix-wizard, matrix-keys, matrix-sure, criteria, table-rules, table-keys, table-setup) on fixtures/o11.ts; TextItems'
+  refs lazy; lessons: words to the app (Enter ends a heading, ⌘Enter a paragraph; ▾ folds to the first lines; a table
+  cell types on Enter or a double-click), matrix-keys anchored to the dock; the coach: a `within: wizard` lesson draws
+  over the wizard's shade (z 41) and squeezes beside it on small screens, others step aside while a wizard is open, a
+  focused lens's cells are an obstacle, a press on a lesson keeps the focus where it was; the queue: a surface's own
+  lesson takes the slot (the other goes back unseen), one whose surface closed first stays due, a list inside the finder
+  isn't a menu, a showing nudge ends for a waiting lesson · reviewer: 3 rounds (the finder lesson could never show, a
+  within lesson coming back outside its menu, the wizard covered at 1280/1440, unreadable endings) · stuck:
+  matrix-sure's 1-in-3 dark flake (see Stuck).
+- O12 · (this commit, with O11) · documents and decks: 14 scenes (deck-kinds, deck-filter, task-panel, task-learned,
+  card-deck, priorities, side-view, side-mine, timeline-scroll, timeline-draw, doc-beside, documents, doc-place,
+  deck-add) on fixtures/o12.ts (documents' text drawn with the app's Markdown, tasks moved off SOON); Timeline exports
+  `resetStrip`; events: focus-in and unframed carry `holds` for decks; lessons: deck only for task decks + its
+  `deck-add` page, words to the app (side view, doc-beside, task-card, timeline's draw → card prompt) · reviewer: 3
+  rounds (words promising what scenes didn't show, a canvas sweep, seek-0 flakes from the dock's centring and from a
+  panel left open by the last loop → framing as a step at 0) · flow: 10 lessons one at a time, 0 px over their anchors.
 
 ### Stuck
-_(none)_
+- O11's `matrix-sure` scene: check-scenes fails about 1 run in 3, dark only, always "1.15 % off" at the end (one element
+  toggling between two states, not timing: a longer settle wait didn't change it). Three review rounds used; the step is
+  committed anyway (the coach plays scenes start to end, people never see it). Next: diff the two end frames' bounding
+  box to find the element (likely the cell's note fold or `~` corner at screen size).
 
 ### For the user (in the morning)
 - (Done 2026-10-29 ~09:50) the `setFitter`/`fitHere` edits were the user's own; committed as fc76174 at the user's
@@ -229,6 +250,10 @@ _(none)_
 
 ### Ideas
 _(the reviewers' and builders' "could be better", not done yet)_
+- App (not onboarding): `share and place` / `place on the canvas` puts a document where it overlaps the documents list
+  and a plane: it doesn't look for the nearest clear spot as `+` does (D-238). O12 review.
+- Demo: document bodies via useDocBody read Firestore only (O12 draws them with docText into the DOM): a fixture body
+  seam in src/data would be cleaner; a general reset hook for module stores that outlive a loop (Timeline's resetStrip).
 - Director asks (O9/O10 builders): `cursor.press('right')`, double-click and modifier keys (`{ shift, alt }`) for
   press/drag, recorded for the press check; function targets with a `meant` element (byText/row/inSection presses
   checked); `frameTo` for a focused piece; `bare: true` on Scene. O10: `brought` triggered by `bringing` anchors to any

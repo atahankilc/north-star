@@ -46,7 +46,7 @@ export const PAYLOADS: Record<LessonEvent, readonly string[]> = {
   'workspaces-open': ['empty'],
   'ws-made': [],
   'join-requested': [],
-  'focus-in': ['kind', 'empty'],
+  'focus-in': ['kind', 'empty', 'holds'],
   'focus-out': ['kind'],
   'edit-on': ['kind'],
   'edit-off': ['kind'],
@@ -74,7 +74,7 @@ export const PAYLOADS: Record<LessonEvent, readonly string[]> = {
   'package-made': [],
   stuck: ['kind'],
   unstuck: ['kind'],
-  unframed: ['kind'],
+  unframed: ['kind', 'holds'],
   framed: ['kind'],
   brought: [],
   'canvas-made': [],
@@ -436,12 +436,12 @@ export const LESSONS: readonly Lesson[] = [
   {
     id: 'text-made', v: 1, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-188, D-190',
     trigger: [{ event: 'text-made', when: { kind: ['heading', 'paragraph'] } }], anchor: 'text-bar', within: 'typing',
-    pages: [{ title: 'Writing on the canvas', body: 'Double-click to type, `⌘Enter` to finish. The bar under it changes size, style and colour.', scene: 'text-edit' }],
+    pages: [{ title: 'Writing on the canvas', body: 'Double-click to type; `Enter` ends a heading, `⌘Enter` a paragraph. The bar under it sets size, style and colour.', scene: 'text-edit' }],
   },
   {
     id: 'sticky-made', v: 1, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-257',
     trigger: [{ event: 'text-made', when: { kind: 'sticky' } }], anchor: 'sticky', within: 'typing',
-    pages: [{ title: 'A sticky note', body: 'Paper in a colour, with who wrote it and when. `▾` folds it to one line.', scene: 'sticky' }],
+    pages: [{ title: 'A sticky note', body: 'Paper in a colour, with who wrote it and when. `▾` folds a long one back to its first lines.', scene: 'sticky' }],
   },
   {
     id: 'section-draw', v: 1, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-130',
@@ -451,7 +451,7 @@ export const LESSONS: readonly Lesson[] = [
   {
     id: 'headings-places', v: 1, format: 'lesson', roles: ALL, area: 'text', since: 'D-050, D-196',
     trigger: [{ event: 'text-made', when: { kind: 'heading' } }, { event: 'finder-open', when: { headings: true } }], anchor: 'heading', after: ['text-made', 'finder'], within: 'finder',
-    pages: [{ title: 'Headings are places', body: 'The finder lists them; Enter glides you there.', scene: 'finder-go' }],
+    pages: [{ title: 'Headings are places', body: 'The finder lists them; Enter glides you there.', scene: 'finder-heading' }],
   },
 
   // 5. Matrix and table
@@ -462,7 +462,7 @@ export const LESSONS: readonly Lesson[] = [
   },
   {
     id: 'matrix-keys', v: 1, format: 'lesson', roles: ALL, area: 'lenses', since: 'D-212',
-    trigger: [{ event: 'focus-in', when: { kind: 'matrix' } }, { event: 'cell-picked', when: { kind: 'matrix', framed: false } }], anchor: 'cell-bar', after: ['focus-lens'],
+    trigger: [{ event: 'focus-in', when: { kind: 'matrix' } }, { event: 'cell-picked', when: { kind: 'matrix', framed: false } }], anchor: 'dock', after: ['focus-lens'],
     pages: [
       { roles: EDITORS, title: 'Scoring cells', body: "Click a cell, click again to step it, or type `1`–`9`. Arrows move, `-` means doesn't apply.", scene: 'matrix-keys' },
       { roles: VIEWERS, title: 'Reading the scores', body: 'Each cell scores a row against a column. `~` is inferred, `?` a guess, `—` doesn\'t apply.', scene: 'matrix-keys' },
@@ -483,9 +483,9 @@ export const LESSONS: readonly Lesson[] = [
     id: 'table-keys', v: 1, format: 'lesson', roles: ALL, area: 'lenses', since: 'D-218',
     trigger: [{ event: 'focus-in', when: { kind: 'table' } }], anchor: 'dock', after: ['focus-lens'],
     pages: [
-      { roles: EDITORS, title: 'Working in a table', body: "Click a cell to type, arrows move, a head sorts. Drag a head's edge to widen it.", scene: 'table-keys' },
+      { roles: EDITORS, title: 'Working in a table', body: "Click a cell; `Enter` or a double-click types. Arrows move, a head sorts, a head's edge widens.", scene: 'table-keys' },
       { roles: VIEWERS, title: 'Reading a table', body: "Each row is a card, picked by the table's rules. Drag to look around; `esc` goes back.", scene: 'table-keys' },
-      { roles: EDITORS, title: 'Your own columns', body: '`setup` adds a scale, a number, text or a check.', scene: 'table-setup' },
+      { roles: EDITORS, title: 'Your own columns', body: '`setup` adds columns of its own: a mark, a number, a few words, a check.', scene: 'table-setup' },
     ],
   },
   {
@@ -500,7 +500,7 @@ export const LESSONS: readonly Lesson[] = [
     trigger: [{ event: 'focus-in', when: { kind: 'documents' } }, { event: 'piece-made', when: { kind: 'documents' } }], anchor: 'piece', after: ['focus-lens', 'piece-made'],
     pages: [
       { title: 'Your files', body: "Upload `.md` notes or drop them here. They're private until you share them.", scene: 'documents' },
-      { title: 'Read beside', body: 'In focus, a click opens a document next to the list; open several side by side.', scene: 'doc-beside' },
+      { title: 'Read beside', body: 'In focus, a click opens a document next to the list, to read as a page.', scene: 'doc-beside' },
     ],
   },
   {
@@ -517,9 +517,11 @@ export const LESSONS: readonly Lesson[] = [
   },
   {
     id: 'deck', v: 1, format: 'lesson', roles: ALL, area: 'decks', since: 'D-252',
-    trigger: [{ event: 'focus-in', when: { kind: 'kanban' } }, { event: 'unframed', when: { kind: 'kanban' } }], doneWhen: [{ event: 'task-moved' }], anchor: 'dock', after: ['focus-lens', 'unframed'],
+    // A deck of tasks: a deck holding cards has its own lesson (card-deck).
+    trigger: [{ event: 'focus-in', when: { kind: 'kanban', holds: 'tasks' } }, { event: 'unframed', when: { kind: 'kanban', holds: 'tasks' } }], doneWhen: [{ event: 'task-moved' }], anchor: 'dock', after: ['focus-lens', 'unframed'],
     pages: [
-      { roles: EDITORS, title: 'Moving work along', body: 'Drag tasks between columns. `+ add a task` types one; Enter keeps typing the next.', scene: 'deck-drag' },
+      { roles: EDITORS, title: 'Moving work along', body: 'Drag a task to another column: that is its step now.', scene: 'deck-drag' },
+      { roles: EDITORS, title: 'Adding tasks', body: '`+ add a task` under a column types one; Enter adds it and keeps the field for the next.', scene: 'deck-add' },
       { roles: VIEWERS, title: 'Where the work is', body: "Each column is a step; each task sits in one. Click a task to read who has it, its day and card.", scene: 'deck-drag' },
       { roles: EDITORS, title: "A task's panel", body: 'Click a task: give it to someone, a due day, a card, a checklist.', scene: 'task-panel' },
     ],
@@ -527,7 +529,7 @@ export const LESSONS: readonly Lesson[] = [
   {
     id: 'task-card', v: 1, format: 'lesson', roles: EDITORS, area: 'decks', since: 'D-254',
     trigger: [{ event: 'task-for-card' }], anchor: 'card-panel',
-    pages: [{ title: 'Tasks test cards', body: 'A task for a card shows on it: `☐ 2/5`. Finished, log what it taught as evidence.', scene: 'task-learned' }],
+    pages: [{ title: 'Tasks test cards', body: 'A task for a card is listed on it. Finished, `+ log what it taught` puts what it found on the card, as evidence.', scene: 'task-learned' }],
   },
   {
     id: 'card-deck', v: 1, format: 'lesson', roles: EDITORS, area: 'decks', since: 'D-253, D-271',
@@ -541,7 +543,7 @@ export const LESSONS: readonly Lesson[] = [
     id: 'side-view', v: 1, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314',
     trigger: [{ event: 'side-view' }], anchor: 'side-view',
     pages: [
-      { title: 'Decks and days, beside you', body: '`t` opens this from anywhere: plane, deck, then days, left to right.', scene: 'side-view' },
+      { title: 'Decks and days, beside you', body: '`t` opens your decks beside what you are on, from anywhere; a deck\'s `days ›` adds its days.', scene: 'side-view' },
       { title: 'Yours', body: '`MINE` lists the tasks given to you; `ALL · DAYS` puts every deck on days.', scene: 'side-mine' },
     ],
   },
@@ -550,7 +552,7 @@ export const LESSONS: readonly Lesson[] = [
     trigger: [{ event: 'focus-in', when: { kind: 'timeline' } }, { event: 'piece-made', when: { kind: 'timeline' } }], anchor: 'piece', after: ['focus-lens', 'piece-made'],
     pages: [
       { title: 'Days without end', body: 'Drag sideways through time; pinch or pick day, week, month, quarter.', scene: 'timeline-scroll' },
-      { roles: EDITORS, title: 'Plan by drawing', body: 'Draw on a row to make a task; drag its ends to change its days.', scene: 'timeline-draw' },
+      { roles: EDITORS, title: 'Plan by drawing', body: 'Draw across days on a row, then pick its card: a task. Drag its ends to change its days.', scene: 'timeline-draw' },
     ],
   },
   {

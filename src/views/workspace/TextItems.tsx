@@ -167,10 +167,11 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     const at = heldAt(e, l.x, y, zoom)
     const box = { ...labelBox(l), w: w ?? labelBox(l).w, h: h ?? labelBox(l).h }
     // What a section holds, by where it is now.
-    const held: { id: string; ref: DocumentReference; x: number; y: number }[] = [{ id: l.id, ref: labelRef(wid, l.id), x: l.x, y: l.y }]
+    // Refs made only when the move is written (a getter): the demo, which has no Firestore, drags all the same (D-315).
+    const held: { id: string; ref: DocumentReference; x: number; y: number }[] = [{ id: l.id, get ref() { return labelRef(wid, l.id) }, x: l.x, y: l.y }]
     if (kind === 'section') {
-      for (const o of labels) if (o.id !== l.id && inside(labelBox(o), box)) held.push({ id: o.id, ref: labelRef(wid, o.id), x: o.x, y: o.y })
-      for (const c of typeof carry === 'function' ? carry() : carry) if (inside(c, box)) held.push({ id: c.id, ref: c.ref, x: c.x, y: c.y })
+      for (const o of labels) if (o.id !== l.id && inside(labelBox(o), box)) held.push({ id: o.id, get ref() { return labelRef(wid, o.id) }, x: o.x, y: o.y })
+      for (const c of typeof carry === 'function' ? carry() : carry) if (inside(c, box)) held.push({ id: c.id, get ref() { return c.ref }, x: c.x, y: c.y })
     }
     let d: [number, number] | null = null
     const move = (ev: PointerEvent) => {
@@ -201,7 +202,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
         land(held.map((x) => ({ id: x.id, to: [x.x + dx, x.y + dy] })))
         await moveMany(
           kind === 'section' && held.length > 1 ? 'move a section and what is in it' : `move ${kind === 'title' ? 'the title' : `a ${kind}`}`,
-          held.map((x) => ({ ref: x.ref, from: { x: x.x, y: x.y }, to: { x: x.x + dx, y: x.y + dy } })),
+          held.map((x) => ({ get ref() { return x.ref }, from: { x: x.x, y: x.y }, to: { x: x.x + dx, y: x.y + dy } })),
         ).catch(() => held.forEach((x) => landed(x.id)))
       } else useCanvasView.setState({ dragShift: null })
     }

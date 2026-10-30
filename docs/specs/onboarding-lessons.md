@@ -247,12 +247,13 @@ when `context-menu` (first) · anchor the menu · within menu
 
 ### `text-made` · lesson · E+ · D-188, D-190
 when `text-made {heading|paragraph}` (first) · anchor the text bar · within typing
-1. **Writing on the canvas**: Double-click to type, `⌘Enter` to finish. The bar under it changes size, style and
-   colour. · `text-edit`
+1. **Writing on the canvas**: Double-click to type; `Enter` ends a heading, `⌘Enter` a paragraph. The bar under it
+   sets size, style and colour. · `text-edit`
 
 ### `sticky-made` · lesson · E+ · D-257
 when `text-made {sticky}` (first) · anchor the sticky · within typing
-1. **A sticky note**: Paper in a colour, with who wrote it and when. `▾` folds it to one line. · `sticky`
+1. **A sticky note**: Paper in a colour, with who wrote it and when. `▾` folds a long one back to its first lines. ·
+   `sticky`
 
 ### `section-draw` · lesson · E+ · D-130
 when `drawing-section` (first) · anchor the crosshair hint
@@ -261,7 +262,7 @@ when `drawing-section` (first) · anchor the crosshair hint
 ### `headings-places` · lesson · all · D-050, D-196
 when the first heading made or `finder-open` with headings · anchor the heading · after `text-made`, `finder` ·
 within finder
-1. **Headings are places**: The finder lists them; Enter glides you there. · `finder-go`
+1. **Headings are places**: The finder lists them; Enter glides you there. · `finder-heading`
 
 ---
 
@@ -273,7 +274,8 @@ when `wizard {matrix}` (first) · anchor the wizard's side · within wizard
    · `matrix-wizard`
 
 ### `matrix-keys` · lesson · all · D-212
-when `focus-in {matrix}` or the first cell picked (unframed) · anchor the cell bar · after `focus-lens`
+when `focus-in {matrix}` or the first cell picked (unframed) · anchor `dock` (the cell bar isn't there until a cell is
+picked) · after `focus-lens`
 1. (E+) **Scoring cells**: Click a cell, click again to step it, or type `1`–`9`. Arrows move, `-` means doesn't
    apply. · `matrix-keys`
    (V) **Reading the scores**: Each cell scores a row against a column. `~` is inferred, `?` a guess, `—` doesn't
@@ -291,11 +293,11 @@ when `wizard {table}` (first) · anchor the wizard · within wizard
 
 ### `table-keys` · lesson · all · D-218
 when `focus-in {table}` (first) · anchor `dock` · after `focus-lens`
-1. (E+) **Working in a table**: Click a cell to type, arrows move, a head sorts. Drag a head's edge to widen it. ·
-   `table-keys`
+1. (E+) **Working in a table**: Click a cell; `Enter` or a double-click types. Arrows move, a head sorts, a head's edge
+   widens. · `table-keys`
    (V) **Reading a table**: Each row is a card, picked by the table's rules. Drag to look around; `esc` goes back. ·
    `table-keys`
-2. (E+) **Your own columns**: `setup` adds a scale, a number, text or a check. · `table-setup`
+2. (E+) **Your own columns**: `setup` adds columns of its own: a mark, a number, a few words, a check. · `table-setup`
 
 ### `setup-open` · lesson · E+ · D-217
 when `setup-open` (first, any kind) · anchor the setup panel · within setup
@@ -309,7 +311,7 @@ when `setup-open` (first, any kind) · anchor the setup panel · within setup
 when `focus-in {documents}` or `piece-made {documents}` (first) · anchor the piece · after `focus-lens`,
 `piece-made`
 1. **Your files**: Upload `.md` notes or drop them here. They're private until you share them. · `documents`
-2. **Read beside**: In focus, a click opens a document next to the list; open several side by side. ·
+2. **Read beside**: In focus, a click opens a document next to the list, to read as a page. ·
    `doc-beside`
 
 ### `doc-place` · lesson · E+ · D-234
@@ -327,16 +329,17 @@ when `wizard {kind: kanban}` (first) · anchor the wizard · within wizard
 1. **Tasks or cards**: A deck holds tasks, or your cards sorted by a field: status, impact, effort. · `deck-kinds`
 
 ### `deck` · lesson · all · D-252
-when `focus-in {deck}` (first) or the first deck unframed · done `task-moved` (a task dragged to another column) · anchor `dock` · after `focus-lens`, `unframed`
-1. (E+) **Moving work along**: Drag tasks between columns. `+ add a task` types one; Enter keeps typing the next. ·
-   `deck-drag`
+when `focus-in {deck, holds: tasks}` (first) or the first task deck unframed (a deck of cards has `card-deck`) · done `task-moved` (a task dragged to another column) · anchor `dock` · after `focus-lens`, `unframed`
+1. (E+) **Moving work along**: Drag a task to another column: that is its step now. · `deck-drag`
+   (E+) **Adding tasks**: `+ add a task` under a column types one; Enter adds it and keeps the field for the next. ·
+   `deck-add`
    (V) **Where the work is**: Each column is a step; each task sits in one. Click a task to read who has it, its day
    and card. · `deck-drag`
 2. (E+) **A task's panel**: Click a task: give it to someone, a due day, a card, a checklist. · `task-panel`
 
 ### `task-card` · lesson · E+ · D-254
 when the first task given a card · anchor the task panel
-1. **Tasks test cards**: A task for a card shows on it: `☐ 2/5`. Finished, log what it taught as evidence. ·
+1. **Tasks test cards**: A task for a card is listed on it. Finished, `+ log what it taught` puts what it found on the card, as evidence. ·
    `task-learned`
 
 ### `card-deck` · lesson · E+ · D-253, D-271
@@ -348,19 +351,22 @@ when the first card deck made (`piece-made {kind: kanban, holds: cards}`, `prior
 
 ### `side-view` · lesson · all · D-300, D-314
 when `side-view` (first) · anchor the side view
-1. **Decks and days, beside you**: `t` opens this from anywhere: plane, deck, then days, left to right. · `side-view`
+1. **Decks and days, beside you**: `t` opens your decks beside what you are on, from anywhere; a deck's `days ›` adds
+   its days. · `side-view`
 2. **Yours**: `MINE` lists the tasks given to you; `ALL · DAYS` puts every deck on days. · `side-mine`
 
 ### `timeline` · lesson · all · D-304, D-314
 when `focus-in {timeline}` or `piece-made {timeline}` (first) · anchor the piece · after `focus-lens`, `piece-made`
 1. **Days without end**: Drag sideways through time; pinch or pick day, week, month, quarter. · `timeline-scroll`
-2. (E+) **Plan by drawing**: Draw on a row to make a task; drag its ends to change its days. · `timeline-draw`
+2. (E+) **Plan by drawing**: Draw across days on a row, then pick its card: a task. Drag its ends to change its days. ·
+   `timeline-draw`
 
 ### `empty-timeline` · empty · E+ · D-304
 when `focus-in {kind: timeline, empty}` · done `task-made` · anchor the piece · after `timeline`
 Faint, on the strip: **no tasks yet: draw across days to plan one** · no scene.
 _(An empty deck already says `· nothing yet` in each column with `+ add a task` under it (Kanban.tsx), and an empty
-documents list says "No documents yet. Drop .md files here, or [upload] below." (Documents.tsx): no entry for them.)_
+documents list says "No documents yet. Drop .md files here, or [upload] below. Images and PDFs come with Storage."
+(Documents.tsx): no entry for them.)_
 
 ### `deck-filter` · lesson · all · D-256, D-308
 when `filter-open` on a deck (first) · anchor the strip
@@ -479,23 +485,27 @@ Each 3–8 s (≤ 8000 ms), one action, 1 s hold at the end, poster = the tellin
 | plane-filter | `filter` → SHOW unticks ideas | filtered |
 | guides | a card dragged, magenta guides line it up | guides |
 | prompt-type | a right-click menu, `de` typed, the list narrows | narrowed |
-| text-edit | double-click a heading, type, `⌘Enter`, bar H1 → H2 | edited |
-| sticky | a sticky made, typed, folded | sticky |
-| section | crosshair drag, a section named, moved with its contents | moved |
-| matrix-wizard | the wizard's four steps with the preview | preview |
-| matrix-keys | a cell clicked twice, `3` typed, arrows to the next | scored |
-| matrix-sure | `~` then a note | marked |
-| criteria | an axis unfolds into criteria rows | unfolded |
-| table-rules / table-keys / table-setup | rules picked → rows fill; a head sorts; a scale column added | each end |
+| text-edit | click a heading (its bar), double-click, ` on price` typed, `↵`, the bar's H1 → H2 | H2 |
+| sticky | your long sticky beside Ayla's, its band's `▾` pressed: folded back to its first lines | folded |
+| section | crosshair drag round a heading and two stickies, the section named `This week`, moved with its contents | moved |
+| finder-heading | the canvas with three headings, `⌘F`: the places with the headings among them, `beat` typed, `↵` glides there | arrived |
+| matrix-wizard | the wizard on `start from`: `problems × customers` picked, the preview changes; `columns` → `competitors` | preview |
+| matrix-keys | an empty cell clicked (its bar), again (○ none), `3` typed (● full), `↓` to the next | scored |
+| matrix-sure | a cell's bar: `~ inferred`, then a note typed; its corners say `~` and noted | marked |
+| criteria | a feature's `[+] 2`: its criteria open as rows; one scored `3`; the feature's cell reads from them | unfolded |
+| table-rules / table-keys / table-setup | the wizard's `rows`: `+ type` → `feature`, 33 rows → 8; an empty cost typed `45`, the `cost` head sorts; `setup` → `columns` → `+ a mark`, `done` | each end |
 | unframe / unframed-live | a table window turns into a live table on the canvas, a cell typed | live |
 | stick / stick-follow | a table dragged to a plane's edge snaps; the plane moves with it | stuck |
 | beside / beside-pick | in focus `linked` → `⇆ table` opens it beside; beside open, a row picked: the plane glides to its card, lit | split; the card lit |
-| deck-kinds / deck-drag / task-panel / task-learned | a task dragged across; its panel; a finished task's lesson → evidence | each end |
-| card-deck / priorities | a card dropped into `validated`; `order` lists P1–P3 | each end |
-| side-view / side-mine | `t`, plane → deck → days; `MINE` | open |
-| timeline-scroll / timeline-draw | the strip dragged, scale to week; a task drawn | each end |
-| deck-filter | GIVEN TO one person | filtered |
-| documents / doc-beside / doc-place | list → a click opens one beside; placed on the canvas | each end |
+| deck-kinds | the deck wizard: `features by status` picked, then columns by `impact`; the preview follows | impact columns |
+| deck-drag / deck-add | a task dragged across; `+ add a task`, two typed, Enter after each | each end |
+| task-panel | a task clicked, its panel builds, scrolled to the checklist, the last step ticked | ticked |
+| task-learned | a finished test's `+ log what it taught` pressed, the panel's `learned`, Enter: supports it | logged |
+| card-deck / priorities | a feature dropped from `planned` into `building`; `[order]` pressed, the suggested order beside, `P2 → P1` | each end |
+| side-view / side-mine | `t` beside a plane: the side view with the deck; `MINE` pressed: your tasks | open |
+| timeline-scroll / timeline-draw | the strip dragged sideways, `[month]`; days drawn in a row, `shelf` typed, the card picked | each end |
+| deck-filter | `[filter]` → GIVEN TO → `me`: `to do` empties | filtered |
+| documents / doc-beside / doc-place | `[upload]`, it lands `◐ only you`, right-click → share; a row clicked, it opens beside; a placed one unframed, read along | each end |
 | peers-cursors / follow / peers-comment / thread / threads-panel | two peers' cursors; following; right-click `comment`, a reply | each end |
 | finder-go | `⌘F`, `riv` typed, Enter glides there | arrived |
 | canvases / canvases-share | the crumb's prompt, `⌥2`; `also on` → `⧉ 2` | each end |

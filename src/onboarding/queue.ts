@@ -19,15 +19,28 @@
 // - Cooldown: after one closes, the next automatic one (from `canvas-open`, `idle`, someone else's doing) waits 20 s;
 //   one that answers an action waits only for calm.
 // - tipsOff: nothing shows by itself; `play()` (the `?` guide) still does.
-// - Nudges: at most one a session, only from an `idle` event whose counts match.
+// - Nudges: at most one a session, only from an `idle` event whose counts match; one showing ends (not seen) when a
+//   lesson is waiting that nothing else holds.
 // - Roles: the lesson's roles, then each page's (default the lesson's), audience and kinds; nothing left, nothing shown.
 // - Never twice: seen at its version (or closed this session) never shows by itself; an armed newer version (`NEW`) does.
+// - A surface's own lesson goes first (O11): a lesson `within` a surface (a wizard, a menu, setup, the finder, Settings,
+//   the threads panel, following; not typing, which opens nothing) is due while that surface is open, and another
+//   lesson showing then (it steps aside, Lesson.tsx) doesn't keep the one slot from it: that one goes back to the queue,
+//   its wait started again, not counted as seen.
+// - A surface's own lesson that didn't show while its surface was open (the wizard closed first) is dropped, and stays
+//   due for its next trigger (`onGiveUp`): it never shows outside its surface. One that came from elsewhere (a heading
+//   made, for the finder's `headings-places`) and never saw its surface open is not dropped.
 import { fitsRole } from './audience'
 import { LESSONS, type Lesson, type LessonEvent, type Match, type Page, type Role, type Trigger, type Within } from './lessons'
 import { isArmed } from './seenMerge'
 import type { Audience } from './seenMerge'
 
 export type Payload = Record<string, unknown>
+
+// A surface's own list isn't a menu (O11): the finder's matches are a `listbox`, but the finder is its own busy source,
+// and counting its list as a menu too would hold the finder's lessons for good.
+export const OWN_LISTS = '[role="dialog"][aria-label="Find"]'
+export const countsAsMenu = (el: Pick<Element, 'closest'>) => !el.closest(OWN_LISTS)
 // `target`: what it was about, as the app's `data-target` names it (`card:<id>`, `plane:<id>`…): a lesson's anchor is
 // looked for there first.
 export type LearnEvent = { event: LessonEvent; payload?: Payload; target?: string }
@@ -107,7 +120,15 @@ type Entry = {
   calmSince: number | null
   // Since when a coach surface has been showing over it (PAUSE_CAP_MS).
   pausedSince: number | null
+  // Its `within` surface was seen open while it waited (so its closing drops it).
+  surfaceSeen?: boolean
+  // A nudge already shown once (it gave way and came back): counted once.
+  noted?: boolean
 }
+
+// The `within` sources that are a surface one opens and closes (typing isn't).
+const SURFACES: ReadonlySet<BusySource> = new Set<BusySource>(['wizard', 'menu', 'setup', 'finder', 'settings', 'threads', 'following'])
+const surfaceOf = (l: Lesson): BusySource | null => (l.within && SURFACES.has(l.within as BusySource) ? (l.within as BusySource) : null)
 
 // An event's payload against a trigger's `when`: each key a value, one of a list, or a number at least `min`.
 export function matches(t: Trigger, e: LearnEvent): boolean {
@@ -172,6 +193,8 @@ export function createQueue(o: QueueOptions): Queue {
   const subs = new Set<() => void>()
   let queue: Entry[] = []
   let shown: Shown | null = null
+  // The entry the shown lesson came from (triggered ones): what goes back to the queue when it gives way.
+  let shownEntry: Entry | null = null
   // Closed or retired in this session: never again by itself, even before the progress store has it.
   const doneHere = new Map<string, number>()
   let closedAt = -Infinity
@@ -249,6 +272,7 @@ export function createQueue(o: QueueOptions): Queue {
 
   const show = (e: Entry, now: number) => {
     queue = queue.filter((q) => q !== e)
+    shownEntry = e
     shown = {
       lesson: e.lesson,
       pages: pagesFor(e.lesson, o.getRole(), audience(), e.payload, pageIf),
@@ -258,7 +282,7 @@ export function createQueue(o: QueueOptions): Queue {
       via: 'event',
       since: now,
     }
-    if (e.lesson.format === 'nudge') {
+    if (e.lesson.format === 'nudge' && !e.noted) {
       nudgedThisLoad = true
       o.noteNudge?.(now)
     }
@@ -269,6 +293,7 @@ export function createQueue(o: QueueOptions): Queue {
     let changed = false
     if (shown?.doneAt !== undefined && now - shown.doneAt >= DONE_MS) {
       shown = null
+      shownEntry = null
       closedAt = now
       changed = true
     }
@@ -286,6 +311,49 @@ export function createQueue(o: QueueOptions): Queue {
 
     const busy = o.getBusy()
     const tipsOff = o.getProgress().tipsOff
+    // A surface's own lesson whose surface closed before it showed: dropped, due again at its next trigger.
+    for (const e of [...queue]) {
+      const sf = surfaceOf(e.lesson)
+      if (!sf) continue
+      if (busy[sf]) e.surfaceSeen = true
+      else if (e.surfaceSeen) {
+        queue = queue.filter((q) => q !== e)
+        o.onGiveUp?.(e.lesson.id, e.lesson.v)
+        changed = true
+      }
+    }
+    // A nudge never holds the slot against a lesson (O11): one showing while another waits that nothing else holds ends
+    // (not seen; the session's one nudge stays spent), and that one goes on.
+    if (shown && shown.lesson.format === 'nudge' && shown.via === 'event' && !shown.doneAt) {
+      const waiting = queue.some((e) => e.lesson.format !== 'nudge' && !waitingOnAfter(e) && !holds(busy, e.lesson.within))
+      if (waiting) {
+        shown = null
+        shownEntry = null
+        changed = true
+      }
+    }
+    // A surface opened while another triggered lesson shows, and that surface's own lesson waits for it (nothing else
+    // holding it): the one showing gives way, back to the front of the queue with its wait started again.
+    if (shown && shownEntry && shown.via === 'event' && !shown.doneAt && !tipsOff) {
+      const mine = surfaceOf(shown.lesson)
+      const claims = queue.some((e) => {
+        const sf = surfaceOf(e.lesson)
+        return !!sf && sf !== mine && !!busy[sf] && !waitingOnAfter(e) && !holds(busy, e.lesson.within)
+      })
+      if (claims) {
+        const gave = shownEntry
+        shown = null
+        shownEntry = null
+        // A surface's own lesson whose surface has closed meanwhile is dropped, as one that never showed would be; any
+        // other goes back (a nudge already counted as shown stays counted once).
+        if (mine && !busy[mine]) o.onGiveUp?.(gave.lesson.id, gave.lesson.v)
+        else {
+          const back: Entry = { ...gave, readyAt: null, calmSince: null, pausedSince: null, surfaceSeen: !!mine, noted: gave.lesson.format === 'nudge' || gave.noted }
+          queue = [back, ...queue.filter((q) => q.lesson.id !== back.lesson.id)]
+        }
+        changed = true
+      }
+    }
     for (const e of [...queue]) {
       if (waitingOnAfter(e)) {
         // Waiting on another lesson counts towards nothing: its own wait starts once that one's gone.
@@ -335,6 +403,7 @@ export function createQueue(o: QueueOptions): Queue {
     void how
     markSeen(shown.lesson)
     shown = null
+    shownEntry = null
     closedAt = o.now()
     tell()
   }
@@ -343,6 +412,7 @@ export function createQueue(o: QueueOptions): Queue {
     const l = lessons.find((x) => x.id === id)
     if (!l) return
     if (shown) markSeen(shown.lesson)
+    shownEntry = null
     queue = queue.filter((q) => q.lesson.id !== id)
     const role = o.getRole()
     const pages = l.format === 'welcome' || l.format === 'lesson' ? pagesFor(l, role, audience(), {}, pageIf) : []

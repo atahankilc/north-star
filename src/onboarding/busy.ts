@@ -19,7 +19,7 @@ import { useKanbanUi } from '../views/workspace/Kanban'
 import { useDocUi } from '../views/workspace/Documents'
 import { useProgress } from './progress'
 import type { PieceLike, Sources, StoreLike, WsLike, CanvasViewLike, HistoryLike } from './events'
-import type { Busy } from './queue'
+import { countsAsMenu, type Busy } from './queue'
 
 // A press that moved this far is a drag (a pan, a piece, a card, a task between columns, a box).
 const DRAG_PX = 4
@@ -83,7 +83,8 @@ export const settingsPage = (): string | null => {
   return d.querySelector('[aria-current="page"] span')?.textContent?.trim().toLowerCase() || 'account'
 }
 // A prompt or a Select's list (D-222).
-export const menuOpen = () => !!document.querySelector('[role="menu"], [role="listbox"]')
+// A surface's own list (the finder's matches) isn't one (queue.ts' countsAsMenu).
+export const menuOpen = () => [...document.querySelectorAll('[role="menu"], [role="listbox"]')].some(countsAsMenu)
 
 // Every busy source as it is now (polled by the coach, and on change). `extra`: the coach's own (`modal`).
 export function readBusy(extra: Busy = {}): Busy {

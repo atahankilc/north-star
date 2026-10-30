@@ -209,7 +209,7 @@ export function stepEvents(base: SnapLike, after: SnapLike, ctx: StepCtx): Learn
         continue
       }
       if (changed('stuckTo')) add(data.stuckTo ? 'stuck' : 'unstuck', { kind }, `plane:${id}`)
-      if (changed('open')) add(data.open ? 'unframed' : 'framed', { kind }, `plane:${id}`)
+      if (changed('open')) add(data.open ? 'unframed' : 'framed', { kind, ...(kind === 'kanban' && { holds: (data.kanban as { holds?: string } | undefined)?.holds ?? 'tasks' }) }, `plane:${id}`)
       if (changed('canvasId')) add('moved-canvas', { share: false })
       else if (changed('x') || changed('y')) add('piece-moved', { kind, editing: ctx.editing.includes(id) }, `plane:${id}`)
     } else if (type) {
@@ -360,7 +360,7 @@ export function attach(s: Sources): () => void {
       // A piece not there yet (still loading): looked at again next time.
       if (next.focus && !inn) return
       if (url.focus) learn('focus-out', { kind: pieceOf(w, url.focus)?.kind ?? 'plane' })
-      if (inn) learn('focus-in', { kind: inn.kind, empty: isEmpty(w, inn, s) }, `plane:${inn.id}`)
+      if (inn) learn('focus-in', { kind: inn.kind, empty: isEmpty(w, inn, s), ...(inn.kind === 'kanban' && { holds: inn.kanban?.holds ?? 'tasks' }) }, `plane:${inn.id}`)
     }
     for (const b of next.beside) if (!url.beside.includes(b)) learn('beside-open', { kind: pieceOf(w, b)?.kind ?? 'table' })
     url = next
