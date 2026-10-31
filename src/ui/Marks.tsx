@@ -16,6 +16,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { flushSync } from 'react-dom'
 import { useMotion } from '../state/motion'
 import styles from './Marks.module.css'
+import { DUR } from './motionTokens'
 
 export type Tier = 's' | 'm' | 'l'
 export type Handle = 'n' | 'e' | 's' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
@@ -29,8 +30,9 @@ export function tierFor(tier: Tier, screenPx: number): Tier {
   return tier
 }
 
-// How long a dropped thing takes to grow back into its marks before they spring out.
-const SETTLE_MS = 180
+// How long a dropped thing takes to grow back into its marks before they spring out: the grow-back's own length
+// (PlaneCards', TextItems' `scale var(--dur-quick)`).
+const SETTLE_MS = DUR.quick
 
 // What a space sets for the marks inside it, when they don't each get its zoom.
 export const zsOf = (zoom: number) => ({ '--zs': 1 / zoom }) as CSSProperties
