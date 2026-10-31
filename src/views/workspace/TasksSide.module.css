@@ -1,6 +1,9 @@
 /* The tasks side view (D-300): on the right of the screen, the page's black like what's beside a plane (Beside.module.css
    .pane), split by the same line; its tabs a row of mono caps on top, the deck's number magenta, how many after it. */
 .side {
+  composes: enter from '../../ui/Enter.module.css';
+  --enter-ms: var(--dur-fast);
+  --enter-timing: steps(4);
   --bg-raised: var(--piece-card);
   position: absolute;
   top: 0;
@@ -10,13 +13,6 @@
   overflow: hidden;
   border-left: var(--line-w) solid var(--piece-edge);
   background: var(--bg);
-  animation: side-in var(--dur-fast) steps(4) both;
-}
-
-@keyframes side-in {
-  from {
-    opacity: 0;
-  }
 }
 
 .tabs {

@@ -1,6 +1,8 @@
 /* The focus dock (D-189): a tab on the bottom edge of the screen, in the middle; no bottom border, magenta corner marks
    on its top corners. It rises in a few steps once the plane has arrived. */
 .dock {
+  composes: rise from '../../ui/Enter.module.css';
+  --rise-from: translate(-50%, var(--space-2));
   position: absolute;
   left: 50%;
   bottom: 0;
@@ -20,7 +22,6 @@
   white-space: nowrap;
   transform: translateX(-50%);
   cursor: default;
-  animation: dock-in var(--dur-quick) steps(3) both;
 }
 
 .dock::before,
@@ -42,13 +43,6 @@
 .dock::after {
   right: calc(-1 * var(--line-w));
   border-right: var(--line-w) solid var(--accent-magenta);
-}
-
-@keyframes dock-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, var(--space-2));
-  }
 }
 
 .dock[data-reduced='true'] {

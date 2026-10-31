@@ -213,6 +213,9 @@
 
 /* Yellow, not hazard tape: a heads-up, nothing is lost. */
 .ask {
+  composes: enter from '../../ui/Enter.module.css';
+  --enter-ms: var(--dur-decode);
+  --enter-timing: steps(4);
   position: absolute;
   width: min(var(--size-lg), calc(100vw - var(--space-8)));
   padding: var(--space-6) var(--space-6) var(--space-4);
@@ -220,13 +223,6 @@
   border: var(--line-w) solid var(--accent-yellow);
   background: var(--bg);
   pointer-events: auto;
-  animation: ask-in var(--dur-decode) steps(4) both;
-}
-
-@keyframes ask-in {
-  from {
-    opacity: 0;
-  }
 }
 
 .tape {

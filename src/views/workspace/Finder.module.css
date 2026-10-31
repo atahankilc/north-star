@@ -2,14 +2,15 @@
    set as numbers and glide (eased both ends, so the change is seen), and it's centred by its middle, so growing keeps
    it in the middle. Magenta marks on its top corners, as the dock's. */
 .shade {
+  composes: enter from '../../ui/Enter.module.css';
   position: fixed;
   inset: 0;
   z-index: var(--z-float);
   background: var(--scrim);
-  animation: shade-in var(--dur-quick) steps(3) both;
 }
 
 .finder {
+  composes: enter from '../../ui/Enter.module.css';
   position: fixed;
   top: 50%;
   left: 50%;
@@ -26,7 +27,6 @@
   transition:
     width var(--dur-cells) var(--ease-in-out),
     height var(--dur-cells) var(--ease-in-out);
-  animation: finder-in var(--dur-quick) steps(3) both;
 }
 
 .finder[data-reduced='true'],
@@ -57,17 +57,7 @@
   border-right: var(--line-w) solid var(--accent-magenta);
 }
 
-@keyframes finder-in {
-  from {
-    opacity: 0;
-  }
-}
 
-@keyframes shade-in {
-  from {
-    opacity: 0;
-  }
-}
 
 /* The `>` line. */
 .line {

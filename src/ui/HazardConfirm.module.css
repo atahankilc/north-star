@@ -19,14 +19,12 @@
 }
 
 .veil {
+  composes: enter from './Enter.module.css';
+  --enter-ms: var(--dur-fast);
+  --enter-timing: var(--ease-out);
   position: absolute;
   inset: 0;
   background: color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
-  animation: dim var(--dur-fast) var(--ease-out) both;
-}
-
-@keyframes dim {
-  from { opacity: 0; }
 }
 
 .tape {
@@ -45,6 +43,10 @@
 
 /* The box comes in a few hard steps, not a glide. */
 .box {
+  composes: rise from './Enter.module.css';
+  --enter-ms: var(--dur-decode);
+  --enter-timing: steps(4);
+  --rise-from: translate(-50%, -50%) scale(0.96);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -55,14 +57,6 @@
   background: var(--bg);
   font-family: var(--font-mono);
   transform: translate(-50%, -50%);
-  animation: step-in var(--dur-decode) steps(4) both;
-}
-
-@keyframes step-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.96);
-  }
 }
 
 .dialog[data-reduced='true'] .veil,

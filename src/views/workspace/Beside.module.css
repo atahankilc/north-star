@@ -2,6 +2,9 @@
    black like the focus (D-289), what it holds on the pieces' raised shade (no `+` marks: they're not planes), split
    from the plane by a line that drags. */
 .pane {
+  composes: enter from '../../ui/Enter.module.css';
+  --enter-ms: var(--dur-fast);
+  --enter-timing: steps(4);
   --bg-raised: var(--piece-card);
   position: absolute;
   z-index: var(--z-2);
@@ -9,7 +12,6 @@
   border-left: var(--line-w) solid var(--piece-edge);
   background: var(--bg);
   cursor: grab;
-  animation: pane-in var(--dur-fast) steps(4) both;
 }
 
 
@@ -17,11 +19,6 @@
   cursor: grabbing;
 }
 
-@keyframes pane-in {
-  from {
-    opacity: 0;
-  }
-}
 
 .kind {
   color: var(--fg-dim);

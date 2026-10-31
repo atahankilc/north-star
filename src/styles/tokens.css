@@ -344,6 +344,12 @@
   --menu: rgba(255, 255, 255, 0.96);
 }
 
+/* The small entrances' settings (src/ui/Enter.module.css, D-326), never inherited: a dock inside a pane enters at its
+   own length, not the pane's. The initial length is --dur-quick's. */
+@property --enter-ms { syntax: '<time>'; inherits: false; initial-value: 160ms; }
+@property --enter-timing { syntax: '*'; inherits: false; }
+@property --rise-from { syntax: '*'; inherits: false; }
+
 /* The welcome's night sky in light theme (D-072): while the landing's sky is dark blue its text is light, then eases back.
    Set on <html> by Landing (data-night). Registered so they can ease back to day as fast as the sky breaks up; going into the night they switch at once. */
 @property --bg { syntax: '<color>'; inherits: true; initial-value: #000000; }

@@ -1,0 +1,31 @@
+/* The small entrances (D-326): what isn't built cell by cell (Appear, D-034) but shows in a few hard steps: a scrim,
+   a pane, a dock, a dialog's box. One place for them, composed where they're used:
+     composes: enter from '…/ui/Enter.module.css';
+   `--enter-ms` (default --dur-quick) and `--enter-timing` (default steps(3)) tune it. `rise` also comes from
+   `--rise-from` (a transform: the element's own one, a little lower or smaller) to its own. The three are registered
+   in tokens.css as not inherited, so what a pane sets never reaches a dock inside it. Reduced motion: no entrance. */
+.enter {
+  animation: enter var(--enter-ms, var(--dur-quick)) var(--enter-timing, steps(3)) both;
+}
+
+.rise {
+  animation: rise var(--enter-ms, var(--dur-quick)) var(--enter-timing, steps(3)) both;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: var(--rise-from);
+  }
+}
+
+:global(html[data-motion='reduced']) .enter,
+:global(html[data-motion='reduced']) .rise {
+  animation: none;
+}
