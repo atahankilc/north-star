@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react'
 import { isReducedMotion } from '../../state/motion'
 import styles from './FocusDock.module.css'
+import { Button } from '../../ui/Button'
 
 // `center`: where its middle sits (screen px); its box's middle when unset (the screen's, or a pane's beside a plane:
 // each part has its own dock, D-211). `name`: what it's the dock of, first, set off by `|` (a pane's: `TABLE · costs`).
@@ -46,11 +47,8 @@ export function DockAction({ label, keyHint, title, main, pressed, tone, onClick
   onClick: () => void
 }) {
   return (
-    <span className={styles.action}>
-      <button className={styles.tool} data-main={main || undefined} aria-pressed={pressed} title={title} style={tone ? { color: tone } : undefined} onClick={onClick}>
-        {label}
-      </button>
-      {keyHint && <span className={styles.key}>{keyHint}</span>}
-    </span>
+    <Button tone={main ? 'main' : undefined} pressed={pressed} keyHint={keyHint} title={title} style={tone ? { color: tone } : undefined} onClick={onClick}>
+      {label}
+    </Button>
   )
 }

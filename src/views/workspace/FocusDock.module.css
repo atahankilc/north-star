@@ -55,26 +55,6 @@
   scrollbar-width: none;
 }
 
-.action {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-1);
-}
-
-.tool {
-  composes: small from '../../ui/AsciiButton.module.css';
-  padding: 0 var(--space-half);
-}
-
-.tool[data-main='true'] {
-  color: var(--fg);
-}
-
-.tool[data-main='true']:hover,
-.tool[data-main='true']:focus-visible {
-  color: var(--fg-strong);
-}
-
 /* What it's the dock of (a pane's, D-211): caps, a long name cut with `…`, then `|`. */
 .name {
   max-width: 44ch;
@@ -89,12 +69,3 @@
   color: var(--fg-faint);
 }
 
-/* A switch that's on: what's open beside the plane (D-211). */
-.tool[aria-pressed='true'] {
-  color: var(--accent-cyan);
-}
-
-/* Its key, quieter than the action. */
-.key {
-  color: var(--fg-faint);
-}

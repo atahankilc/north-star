@@ -1,21 +1,13 @@
 import type { ButtonHTMLAttributes } from 'react'
-import styles from './AsciiButton.module.css'
+import { Button, type Accent } from './Button'
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
-  accent?: 'magenta' | 'cyan' | 'yellow' | 'blue' | 'green'
-}
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & { accent?: Accent }
 
-// `[ LABEL ]`-style button (docs/DESIGN.md §6). The accent fills in on hover.
-export function AsciiButton({ accent = 'magenta', className, children, ...rest }: Props) {
+// `[ LABEL ]`-style button (docs/DESIGN.md §6): Button's `md` (D-326). A plain <button>'s type (submit) as before.
+export function AsciiButton({ accent = 'magenta', type = 'submit', children, ...rest }: Props) {
   return (
-    <button
-      {...rest}
-      className={[styles.button, className].filter(Boolean).join(' ')}
-      style={{ ['--accent' as string]: `var(--accent-${accent})` }}
-    >
-      <span aria-hidden className={styles.bracket}>[</span>
-      <span className={styles.label}>{children}</span>
-      <span aria-hidden className={styles.bracket}>]</span>
-    </button>
+    <Button {...rest} size="md" accent={accent} type={type}>
+      {children}
+    </Button>
   )
 }

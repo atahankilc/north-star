@@ -8,6 +8,7 @@ import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Appear } from './Appear'
 import styles from './SidePanel.module.css'
+import { Button } from './Button'
 
 type Props = {
   // What it shows, in words (`problem`), and that kind's colour.
@@ -86,8 +87,8 @@ export function PanelSection({ n, name, count, add, empty, children, 'data-learn
 // A `[verb]` at the panel's foot; `danger` turns magenta on hover.
 export function PanelAction({ label, title, danger, onClick }: { label: string; title?: string; danger?: boolean; onClick: () => void }) {
   return (
-    <button className={styles.action} data-tone={danger ? 'danger' : undefined} title={title} onClick={onClick}>
+    <Button className={styles.action} tone={danger ? 'danger' : undefined} title={title} onClick={onClick}>
       {label}
-    </button>
+    </Button>
   )
 }

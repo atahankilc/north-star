@@ -975,3 +975,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   each served from its own checkout, and old against itself to tell noise: the entrances matched once their settings
   stopped being inherited (the side view's 200 ms reached the dock inside it: found by this comparison); the ink,
   framing, console and canvas scenes match but for noise seen old against old too.
+
+## Done (2026-10-31): the gallery's tree and the kit's Button (D-326)
+- 99d6d50: `[tree]` (src/gallery/uses.ts, UsesTree.tsx), USES / USED IN in the bar. This commit: src/ui/Button.tsx and
+  Button.module.css, AsciiButton / PanelAction / DockAction on it, its gallery example.
+- Verified: tsc, vitest 859, check:tokens 0, check:gallery 75, check:lessons; the tree opened in headless Chrome
+  (Spinner → Agent, Curtain, Loading → People settings → Workspace screen); AsciiButton, SidePanel, Settings,
+  FocusDock, card and task panels shot old and new in dark and light: the first run caught the dock 2 px narrower
+  (`dense` applying a padding that had never applied), fixed by keeping the look; the rest matches but for the
+  real-time canvas's noise, the same old against old.

@@ -5993,7 +5993,15 @@ docs/foundation-audit-2026-10-31.md).
   (their cells' order stays the focus's own, by distance, D-185). Checked frame by frame against the code before.
   Left alone on purpose: the landing's scrim (the intro, not an entrance), the agent's blink and pulse (loops), and
   the SETTLE_MS/CALM_MS pairs elsewhere (different things under one name, not motion).
-- *Not yet:* the kit, patterns, the areas, `check:kit`, folders.
+- *Built:* the gallery's tree (2026-10-31, 99d6d50): `[tree]` lists every component file by level (primitives first),
+  each opening into what uses it; the bar's USES / USED IN; read from the sources (src/gallery/uses.ts). The kit's
+  first piece, Button (src/ui/Button.tsx: `sm` the [verb], `md` the page's, tones primary/danger/main, `pressed`,
+  `keyHint`, `icon`; Button.module.css the one source, AsciiButton.module.css's `small`/`button` compose it);
+  AsciiButton (keeps a plain button's submit), PanelAction and DockAction draw it. The dock's `padding: 0 half` never
+  applied (the stylesheet order let `small`'s win): kept as it looked. Checked in the gallery against the code before,
+  both themes: identical but for the real-time canvas's noise, seen old against old too.
+- *Not yet:* the other primitives (Label, Rule, Field/PromptField, Choice + Checkbox + Tabs, Chip, CountBadge, Empty);
+  moving the ~250 raw buttons and 21 `composes: small` onto Button area by area; patterns; `check:kit`; folders.
 
 ### D-327 · 2026-10-31 · Accepted (agent-bugs 27; the user: "bunlar hardcoded kurallar olmamalı, agent sadece sistemi ve ne yapmaya çalıştığımızı bence daha iyi anlamalı. Bu uygulama insanlar için bir visualization… biz de visualization konusunda iyi olmamız lazım"; then "27 ve 28'i kabul ediyorum")
 **The agent organises by understanding what a structure says to a person, not by rules.** When it organises or

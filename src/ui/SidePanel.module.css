@@ -173,10 +173,6 @@
   border-top: var(--line-w) solid var(--line);
 }
 
-.action {
-  composes: small from './AsciiButton.module.css';
-}
-
 /* Delete (anything that can't be taken lightly) in the far right corner (the user). */
 .action[data-tone='danger'] {
   margin-left: auto;

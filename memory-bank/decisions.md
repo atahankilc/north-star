@@ -44,7 +44,8 @@ feature comes back as a piece, and check them with the user then.
   src/ui, patterns, then features; the gallery's map by what a thing is (`place` category/group, `also`), never by
   folder. Motion's numbers and the tween in src/ui/motionTokens.ts and motion.ts (held to tokens.css by a test), card
   colours in `--type-*` and src/ui/cardTone.ts; one Spinner, the small entrances in src/ui/Enter.module.css, one
-  cell-path builder. Next: the kit, patterns, the areas, `check:kit`, folders.
+  cell-path builder. The kit: Button (src/ui/Button.tsx) the one button. The gallery's `[tree]` shows what each
+  component draws and where it's used. Next: the other primitives, the areas onto them, patterns, `check:kit`, folders.
 - ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
 ## Accounts, sharing, roles
