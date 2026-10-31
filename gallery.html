@@ -58,6 +58,44 @@
         if (local.getItem('north-star.theme') === 'light') document.documentElement.dataset.theme = 'light'
       })()
     </script>
+    <script>
+      // The demo's fixtures read its clock (src/demo/clock.ts: DEMO_DAY). The gallery runs on real time (timers, frames
+      // and performance.now are the browser's), but its dates start on the fixtures' day, Tuesday 20 October 2026, 10:30
+      // in Berlin, and run on from the page's load: a deck's due days and a timeline's today read as the demo's do.
+      ;(function () {
+        var RealDate = window.Date
+        var DAY = RealDate.UTC(2026, 9, 20, 8, 30)
+        var start = performance.now()
+        var now = function () {
+          return DAY + Math.round(performance.now() - start)
+        }
+        function GalleryDate() {
+          if (!new.target) return new RealDate(now()).toString()
+          return arguments.length ? new (Function.prototype.bind.apply(RealDate, [null].concat(Array.prototype.slice.call(arguments))))() : new RealDate(now())
+        }
+        GalleryDate.prototype = RealDate.prototype
+        GalleryDate.now = now
+        GalleryDate.UTC = RealDate.UTC
+        GalleryDate.parse = RealDate.parse
+        window.Date = GalleryDate
+        window.__demoClock = {
+          real: {
+            now: performance.now.bind(performance),
+            raf: window.requestAnimationFrame.bind(window),
+            caf: window.cancelAnimationFrame.bind(window),
+            setTimeout: window.setTimeout.bind(window),
+            Date: RealDate,
+          },
+          day: DAY,
+          // Real time: nothing to step.
+          step: function () {},
+          restart: function () {},
+          sceneTime: function () {
+            return performance.now() - start
+          },
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

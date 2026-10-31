@@ -60,7 +60,7 @@ function Example({ state, onError }: { state: State; onError: (message: string |
   const spec = specOf(state)
   // A new store for each mount (the parent keys Mount by example, state and reset).
   const store = useMemo<Store>(
-    () => makeStore({ ...structuredClone(spec.fixture ?? tiny), wid: WID, workspace, canvas: MAIN }),
+    () => makeStore({ ...structuredClone(spec.fixture ?? { ...tiny, wid: WID, workspace }), canvas: MAIN }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   )
@@ -93,7 +93,7 @@ function Example({ state, onError }: { state: State; onError: (message: string |
   const style = size === 'full' ? { width: '100%', height: '100%' } : size ? { width: size[0], height: size[1] } : undefined
   return (
     <Boundary onError={onError}>
-      <MemoryRouter initialEntries={[spec.route ?? `/workspaces/${WID}`]}>
+      <MemoryRouter initialEntries={[spec.route ?? `/workspaces/${spec.fixture?.wid ?? WID}`]}>
         <WorkspaceContext.Provider value={store}>
           <div ref={box} className={styles.example} data-size={size === 'full' ? 'full' : size ? 'fixed' : 'auto'} style={style}>
             {spec.render()}

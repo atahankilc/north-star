@@ -162,3 +162,66 @@
   color: var(--accent-yellow);
   font-size: var(--text-xs);
 }
+
+/* `[grid]`: every state at once, each the address with `alone` in a frame, a third of its size. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  align-content: start;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  min-height: 0;
+  overflow: auto;
+}
+
+.tile {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tileFrame {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.tile:hover .tileFrame {
+  border-color: var(--accent-cyan);
+}
+
+/* Drawn at 1200 × 750 and scaled to the tile (a third). */
+.tileView {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300%;
+  height: 300%;
+  border: 0;
+  transform: scale(0.3333);
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.tileName,
+.tileNameOn {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+.tileNameOn,
+.tile:hover .tileName {
+  color: var(--fg-strong);
+}
+
+.actionOn {
+  composes: action;
+  color: var(--accent-cyan);
+}

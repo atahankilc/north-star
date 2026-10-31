@@ -21,7 +21,7 @@ useHistory.subscribe((s, prev) => {
   if (s.notice && s.notice !== prev.notice && s.notice.text === READ_ONLY) countRefused()
 })
 
-type Address = { c: string | null; s: string | null; theme: 'dark' | 'light'; motion: 'full' | 'reduced'; on: 'page' | 'piece'; zoom: '1' | '2'; alone: boolean }
+type Address = { c: string | null; s: string | null; theme: 'dark' | 'light'; motion: 'full' | 'reduced'; on: 'page' | 'piece'; zoom: '1' | '2'; alone: boolean; grid: boolean }
 
 const subscribeHash = (on: () => void) => {
   window.addEventListener('hashchange', on)
@@ -39,6 +39,7 @@ function parse(hash: string): Address {
     on: h.get('on') === 'piece' ? 'piece' : 'page',
     zoom: h.get('zoom') === '2' ? '2' : '1',
     alone: h.has('alone'),
+    grid: h.has('grid'),
   }
 }
 
@@ -51,7 +52,7 @@ function hashOf(a: Address): string {
   if (a.on !== 'page') h.set('on', a.on)
   if (a.zoom !== '1') h.set('zoom', a.zoom)
   const s = h.toString()
-  return `#${s}${a.alone ? '&alone' : ''}`
+  return `#${s}${a.alone ? '&alone' : ''}${a.grid && !a.alone ? '&grid' : ''}`
 }
 
 export function Gallery() {
@@ -111,7 +112,20 @@ export function Gallery() {
 
   if (!entry) return <p className={styles.failed}>no example files yet (src/**/X.gallery.tsx)</p>
 
-  const stage = (
+  // Every state at once, each in a frame of its own (the address with `alone`): their stores never meet.
+  const grid = (
+    <div className={styles.grid} data-on={a.on}>
+      {names.map((n) => (
+        <button key={n} className={styles.tile} onClick={() => go({ s: stateSlug(n), grid: false })} title={`open ${n}`}>
+          <span className={styles.tileFrame}>
+            <iframe className={styles.tileView} src={`gallery.html${hashOf({ ...a, c: entry?.id ?? null, s: stateSlug(n), alone: true, grid: false })}`} loading="lazy" tabIndex={-1} title={n} />
+          </span>
+          <span className={stateName === n ? styles.tileNameOn : styles.tileName}>{n}</span>
+        </button>
+      ))}
+    </div>
+  )
+  const stage = a.grid && !a.alone ? grid : (
     <div className={styles.stage} data-on={a.on} data-alone={a.alone || undefined}>
       <div className={styles.zoom} style={a.zoom === '2' ? { transform: 'scale(2)' } : undefined}>
         <Mount key={`${entry.id}/${stateName}/${reset}/${a.theme}/${a.motion}`} state={entry.states[stateName]} onError={setError} />
@@ -137,7 +151,12 @@ export function Gallery() {
             <span className={styles.name}>{entry.name}</span>
             {entry.note && <span className={styles.faint}>{entry.note}</span>}
           </div>
-          <Choice label="state" options={names} value={stateName} onChange={(s) => go({ s: stateSlug(s) })} />
+          <div className={styles.row}>
+            <Choice label="state" options={names} value={a.grid ? undefined : stateName} onChange={(s) => go({ s: stateSlug(s), grid: false })} />
+            <button className={a.grid ? styles.actionOn : styles.action} onClick={() => go({ grid: !a.grid })} title="every state at once">
+              [grid]
+            </button>
+          </div>
           <div className={styles.row}>
             <Choice label="theme" options={['dark', 'light'] as const} value={a.theme} onChange={(theme) => go({ theme })} />
             <Choice label="motion" options={['full', 'reduced'] as const} value={a.motion} onChange={(motion) => go({ motion })} />

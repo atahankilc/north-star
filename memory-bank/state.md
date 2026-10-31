@@ -55,8 +55,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
-- Component gallery (D-324, docs/specs/gallery.md): G1 built and committed 2026-10-31, not pushed (`/gallery.html` on the dev
-  server, every `src/ui` example, `check:gallery` in CI). Next: G2 (pieces) when the user asks.
+- Component gallery (D-324, docs/specs/gallery.md): G1 and G2 (pieces, `[grid]`) built and pushed 2026-10-31
+  (`/gallery.html` on the dev server). Next: G3 (panels, screens: the check's 33 PENDING) when the user asks.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

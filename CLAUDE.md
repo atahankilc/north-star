@@ -52,7 +52,7 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 - Reduced motion and light theme must always work when chosen: every animation reads `useMotion().reduced` /
   `isReducedMotion()`, CSS colours come from tokens (light values under `[data-theme='light']`), WebGL colours from `usePalette()`.
 - Do not start work that depends on a `blocking` open question without asking the user.
-- Gallery (D-324, docs/specs/gallery.md): a new component in a covered folder (now `src/ui`), or a real change to one,
+- Gallery (D-324, docs/specs/gallery.md): a new component in a covered folder (`src/ui`, `src/views/workspace`), or a real change to one,
   ships in the same change with its `X.gallery.tsx` beside it; `npm run check:gallery` must pass.
   The gallery is dev only: never in a build input, never imported by the app.
 - Onboarding (D-315): every new user-facing feature, or a real change to one, ships in the same change with its

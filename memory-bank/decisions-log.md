@@ -5912,7 +5912,9 @@ checks it, that no app file imports the gallery, and that `gallery.html` is in n
   look); Ladle; a hidden route in the deployed app (the user: not on the deployed site).
 - *Built:* G1 (2026-10-31): gallery.html, src/gallery/, src/demo/realm.ts (the store reset shared with the demo),
   19 examples in src/ui (Curtain exempt), `check:gallery` (in CI).
-- *Not yet:* G2 pieces; G3 panels and screens; G4 shots; `[grid]` (every state at once).
+- *Built:* G2 (2026-10-31): the pieces over Pazar (`src/gallery/canvas.tsx`), 11 examples in src/views/workspace,
+  `[grid]` (each state in a frame), the check covering src/views/workspace with a shrinking `PENDING` list.
+- *Not yet:* G3 panels and screens (the 33 `PENDING`); G4 shots.
 
 ### D-325 · 2026-10-31 · Accepted (the user: "we should have a consistency across the app. And 940 raw px seems too inconsistent. Maybe we can try to come up with some rules but for that i want you to consider everything. Type, color, spacing.. doesnt matter"; then "onaylıyorum, başla")
 **Every value in the CSS is a token, from one set of rules: consistency first, so off-scale values snap to the scale**

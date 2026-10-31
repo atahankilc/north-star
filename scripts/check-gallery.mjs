@@ -7,12 +7,50 @@ import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { join, relative, dirname, basename } from 'node:path'
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..')
-// The folders whose components need an example; one joins when its step is built (G2: views/workspace pieces…).
-const COVERED = ['src/ui']
+// The folders whose components need an example (D-324): src/ui since G1, src/views/workspace since G2.
+const COVERED = ['src/ui', 'src/views/workspace']
 // Component files with no example, and why.
 const EXEMPT = {
   'src/ui/Curtain.tsx': 'the page’s own loading curtain (WebGL backdrop); seen on every page load, and it drives the global `revealed` the gallery holds on',
 }
+
+// Components still waiting for their example (G3: panels, docks, wizards, setups, screens): the list only shrinks. One
+// that gets its example must leave the list (the check says so); a new component never joins it.
+const PENDING = [
+  'src/views/workspace/Beside.tsx',
+  'src/views/workspace/BringCards.tsx',
+  'src/views/workspace/CanvasSwitch.tsx',
+  'src/views/workspace/CardPanel.tsx',
+  'src/views/workspace/CardPanelKinds.tsx',
+  'src/views/workspace/CardTasks.tsx',
+  'src/views/workspace/ContextMenu.tsx',
+  'src/views/workspace/DocContent.tsx',
+  'src/views/workspace/DrawSection.tsx',
+  'src/views/workspace/FilterDock.tsx',
+  'src/views/workspace/FindPreview.tsx',
+  'src/views/workspace/Finder.tsx',
+  'src/views/workspace/FocusDock.tsx',
+  'src/views/workspace/FocusedPlane.tsx',
+  'src/views/workspace/KanbanFilterDock.tsx',
+  'src/views/workspace/KanbanSetup.tsx',
+  'src/views/workspace/KanbanWizard.tsx',
+  'src/views/workspace/MatrixSetup.tsx',
+  'src/views/workspace/MatrixWizard.tsx',
+  'src/views/workspace/MoveToCanvas.tsx',
+  'src/views/workspace/MyTasks.tsx',
+  'src/views/workspace/PackPick.tsx',
+  'src/views/workspace/PeopleSettings.tsx',
+  'src/views/workspace/SideNav.tsx',
+  'src/views/workspace/TableSetup.tsx',
+  'src/views/workspace/TableWizard.tsx',
+  'src/views/workspace/TaskPanel.tsx',
+  'src/views/workspace/TasksSide.tsx',
+  'src/views/workspace/ThreadInbox.tsx',
+  'src/views/workspace/Threads.tsx',
+  'src/views/workspace/ViewMenu.tsx',
+  'src/views/workspace/WorkspaceLayout.tsx',
+  'src/views/workspace/collab.tsx',
+]
 
 const problems = []
 const walk = (dir) =>
@@ -39,11 +77,13 @@ for (const folder of COVERED) {
     const ex = p.replace(/\.tsx$/, '.gallery.tsx')
     if (existsSync(ex)) {
       if (EXEMPT[r]) problems.push(`${r}: has an example and is in EXEMPT; drop one`)
+      if (PENDING.includes(r)) problems.push(`${r}: has its example now; take it off PENDING`)
       continue
     }
-    if (!EXEMPT[r]) problems.push(`${r}: a component with no example (add ${basename(ex)} beside it, D-324)`)
+    if (!EXEMPT[r] && !PENDING.includes(r)) problems.push(`${r}: a component with no example (add ${basename(ex)} beside it, D-324)`)
   }
 }
+for (const r of PENDING) if (!existsSync(join(ROOT, r))) problems.push(`PENDING lists ${r}, which is gone`)
 for (const r of Object.keys(EXEMPT)) if (!existsSync(join(ROOT, r))) problems.push(`EXEMPT lists ${r}, which is gone`)
 
 // The app never imports the gallery.
@@ -64,4 +104,4 @@ if (problems.length) {
   process.exit(1)
 }
 const n = COVERED.flatMap((f) => walk(join(ROOT, f))).filter((p) => p.endsWith('.gallery.tsx')).length
-console.log(`gallery ok: ${n} examples in ${COVERED.join(', ')}, ${Object.keys(EXEMPT).length} exempt`)
+console.log(`gallery ok: ${n} examples in ${COVERED.join(', ')}, ${Object.keys(EXEMPT).length} exempt, ${PENDING.length} pending`)

@@ -941,3 +941,11 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc, vitest 832, lint clean on the new files, `npm run build` (no gallery in dist/), the check failing on a
   made-up component without an example and on an app import of the gallery; headless shots of all 74 states × dark/light
   with no errors (a setState-in-render from resetting stores while drawing, fixed); demo.html still ready.
+
+## Done (2026-10-31): the component gallery's G2 (D-324, docs/specs/gallery.md)
+- `src/gallery/canvas.tsx` (`onCanvas`, `docTexts`), 11 examples beside the piece components (canvas, plane, links,
+  text, matrix, table, deck, cards deck, timeline, documents, document), `[grid]` (each state an `&alone` frame),
+  gallery.html's clock for the fixtures (real time from Pazar's day), the check over src/views/workspace (33 PENDING).
+- Verified: tsc, vitest 832, lint clean, both builds (no gallery in dist/), check:gallery; headless shots of every
+  canvas state (49, dark) and some in light, no errors; found and fixed: the fixtures' clock missing (blank page), a
+  timeline alone has no tasks (D-314), so its states carry its deck.

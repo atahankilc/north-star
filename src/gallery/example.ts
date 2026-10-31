@@ -3,7 +3,7 @@
 // (registry.ts) and mounts a state fresh each time it's picked (Mount.tsx).
 import type { ReactNode } from 'react'
 import type { Store } from '../state/wsStore'
-import type { WorkspaceData } from '../data/workspaceData'
+import type { WorkspaceCtx } from '../state/wsStore'
 
 export type Section = 'ui' | 'canvas' | 'panels' | 'screens' | 'onboarding'
 
@@ -29,8 +29,8 @@ export type StateSpec = {
   setup?: (c: GalleryCtx) => void | Promise<void>
   // Held hovered: every element matching it gets `[data-demo-hover]`, which every `:hover` also matches (demoCss.ts).
   hover?: string
-  // The made-up workspace (default: tiny, src/demo/fixtures/tiny.ts).
-  fixture?: WorkspaceData
+  // The made-up workspace with its id and doc (default: tiny, src/demo/fixtures/tiny.ts; Pazar's in canvas.tsx).
+  fixture?: Omit<WorkspaceCtx, 'canvas'>
   // The router's address (`?focus=<id>`), default the made-up workspace's canvas.
   route?: string
   // The example's box: `[w, h]` css px, or `full` (the middle's whole size; for what places itself on the screen: the

@@ -3,8 +3,9 @@
 A page for developers that shows every UI component of the app, each in its states, on made-up data, in dark and
 light, full and reduced motion. Dev only: `gallery.html`, served by the dev server, never built or deployed.
 
-Status: G0 (this spec) and G1 (the page, every `src/ui` example, the check) built 2026-10-31; G2–G4 not started. Scope for now: `src/ui` only (the user, 2026-10-31);
-pieces, panels and screens come after.
+Status: G0 (this spec), G1 (the page, every `src/ui` example, the check) and G2 (the pieces, `[grid]`) built
+2026-10-31; G3–G4 not started. Scope: `src/ui` first (the user, 2026-10-31), then the
+pieces (G2); panels and screens next (G3).
 
 ---
 
@@ -129,9 +130,13 @@ export default example({
 - **G1 — the page and `src/ui`.** `gallery.html`, `src/gallery/` (main, shell, the mount with its boundary, the
   registry, `example()`), `src/demo/realm.ts` (the shared reset), the left column, the bottom bar, the address; an
   example file for every component exported from `src/ui`; `npm run check:gallery` (§7) for `src/ui`.
-- **G2 — the pieces (later).** Plane (canvas, focus, edit mode, selected cards), matrix, table, deck, timeline,
-  documents, document, each framed and unframed; text kinds, sticky, section, project title; links. `[grid]`. The
-  check's folders grow with it.
+- **G2 — the pieces (built).** `src/gallery/canvas.tsx`: `onCanvas({ only, open, focus, edit, selected, card, cards,
+  link, label, change, then })` mounts the real CanvasView over Pazar (no HUD) and leaves the stores as a person's
+  clicks would; `docTexts()` draws a document's text (no Firestore). Examples beside CanvasView, PlaneCards,
+  PlaneLinks, TextItems, Matrix, Table, Kanban, CardKanban, Timeline, Documents, DocumentPiece: on the canvas, in
+  focus, unframed, edit mode, picked. `[grid]`: every state at once, each in a frame of its own (`&alone`), so their
+  stores never meet. gallery.html gives the fixtures' clock (`window.__demoClock`): real time, dates from Pazar's day
+  (20 Oct 2026). The check covers `src/views/workspace` too, with a `PENDING` list (G3's components) that only shrinks.
 - **G3 — panels and screens (later).** Card panel (each type), task panel, the right panels, threads, finder, the
   settings modal, the whole `CanvasScreen`; onboarding's lesson card, kind guide, welcome.
 - **G4 — shots (later).** A script that opens each address `&alone` in dark/light × full/reduced and saves PNGs, with
