@@ -270,10 +270,8 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
 _(none: matrix-sure's flake was fixed in O16a)_
 
 ### For the user (in the morning)
-- **Deploy the onboarding rules** (users/{uid}/private/onboarding, written in O1, tested 485/0 on a separate emulator
-  project): `npm run test:rules`, then `npx firebase deploy --only firestore:rules --project north-star-db`. Until then
-  seen-state lives in the browser only.
-- Push `main` (nothing from this run is pushed).
+- (Done 2026-10-31) the rules deployed by the user (firestore:rules + database, after rules tests 586/0); `main`
+  pushed (a5e7821), Pages deployed.
 - The gallery: serve the repo root and open docs/specs/onboarding-shots/index.html (PNGs regenerate with
   `docs/specs/onboarding-shots/flows/run-all.sh`).
 - (Done 2026-10-29 ~09:50) the `setFitter`/`fitHere` edits were the user's own; committed as fc76174 at the user's
