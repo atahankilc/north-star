@@ -103,7 +103,7 @@ when `piece-made` (first piece of any kind) · done `edit-off` · anchor the new
    accident. · `edit-done`
 
 ### `piece-console` · lesson · all · D-264
-when the first piece's console shows after `piece-made` (or the first console for someone who didn't make one) · done `focus-in` · anchor `console`
+when the first piece's console shows out of edit mode, after `piece-made` (or the first console for someone who didn't make one) · done `focus-in` · anchor `console`
 1. **Every piece has a console**: Point at a piece and its console appears: go inside, edit, link it, see its
    comments. · `console-appear`
 2. **Go inside with focus**: Press `focus` or double-click. Inside, the piece is yours to work in; `esc` comes back.
@@ -237,7 +237,7 @@ when the first card drag in a focus ends · anchor `dock`'s `view`
    freely. · `guides`
 
 ### `right-click` · lesson · all · D-237, D-222
-when `context-menu` (first) · anchor the menu · within menu
+when `context-menu` (first) · anchor the menu · within menu · stays (no lead) after the menu closes, until closed or the next doing ≥ 2.5 s later
 1. **Right-click is a prompt**: Type to narrow it, Enter picks the first, a letter jumps. Every menu works like this.
    · `prompt-type`
 

@@ -48,10 +48,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   bottom-right corner. Overnight run 2026-10-29/30 (docs/specs/agent-run.md, its log is the progress): all 17 steps done
   (ops, read layer, evals, OpenAI loop, change tool, UI, preview, memory, 18 skills); not tried with a real key yet;
   S16's rules NOT deployed. Next: the user's key + `npm run eval -- --model`, rules deploy, a UI design session. 1.0's rules: decisions-1.0.md.
-- Onboarding: plan D-315 (docs/specs/onboarding*.md; onboarding-run.md's log is the progress). O0–O10 committed
-  (demo realm, seen-state + rules **not deployed**, lessons + `check:lessons`, events + queue, the coach mounted, the
-  look `a` everywhere D-316, the scene director, the start, the `+` and pieces, planes and cards: ~60 scenes); O11
-  (text, matrix, table) and O12 (documents, decks) building; O13–O16 left.
+- Onboarding (D-315, D-316): **built** (O0–O16; state-history.md). Not deployed: the onboarding rules
+  (`npm run test:rules`, then deploy firestore:rules). The agent's lessons wait for its redesign.
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).

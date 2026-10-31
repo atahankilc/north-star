@@ -20,7 +20,7 @@ import { toggleTasksSide, useTasksSide } from '../views/workspace/sideState'
 import { useProgress } from './progress'
 import { startEvents, stopEvents, onLearn, learn } from './events'
 import { readBusy, startBusy } from './busy'
-import { createQueue, matches, type LearnEvent, type Shown, type CloseHow } from './queue'
+import { createQueue, hintWaits, matches, type LearnEvent, type Shown, type CloseHow } from './queue'
 import { LESSONS, lessonById, type GuideLesson, type Lesson as LessonData, type LineLesson, type PagedLesson } from './lessons'
 import { newest, releases, setReleases, type Release } from './releases'
 import { fitsRole, planNews, roleHere, whoIs } from './audience'
@@ -28,6 +28,7 @@ import type { Audience } from './seenMerge'
 import { fill, newsPages, plain, welcomePages, type Fill } from './words'
 import { Pages, type PagesEnd } from './Pages'
 import { Lesson } from './Lesson'
+import { disposeDemoPool, preloadDemo } from './Demo'
 import { Nudge } from './Nudge'
 import { EmptyHint } from './EmptyHint'
 import { Choices } from './Choices'
@@ -135,6 +136,19 @@ export function Coach() {
     if (uid) useProgress.getState().startFor(uid)
     else void useProgress.getState().stop()
   }, [uid])
+
+  // The demos' one frame, made once the page is idle, in a workspace with tips on (demoPool.ts).
+  const tipsOff = useProgress((s) => s.tipsOff)
+  const loaded = useProgress((s) => s.loaded)
+  // Tips going off or the coach going: the frame goes too (now, or when the demo holding it gives it back).
+  useEffect(() => {
+    if (!store || !loaded || tipsOff) return
+    const cancel = preloadDemo()
+    return () => {
+      cancel()
+      disposeDemoPool()
+    }
+  }, [store, loaded, tipsOff])
 
   // The events and the busy watch, while mounted (both count their starts).
   useEffect(() => {
@@ -348,6 +362,9 @@ export function Coach() {
       if (useFind.getState().open || document.querySelector('[aria-modal="true"], dialog[open], [role="alertdialog"], [role="menu"], [role="listbox"]')) return
       const c = curRef.current
       if (!c) return
+      // A lesson that lingers after its menu (right-click's, `linger`): an `esc` its menu already took (the menu closes
+      // in its own window handler, which may run first) closes the menu only; the lesson stays a moment after it.
+      if (c.lesson.linger && e.cancelBubble) return
       e.preventDefault()
       e.stopImmediatePropagation()
       closeRef.current('closed')
@@ -515,13 +532,45 @@ export function Coach() {
   // A menu or list open (the `+` with its kind guide, a right-click, a Select): the empty states step aside meanwhile.
   const anyHint = Object.keys(hints).length > 0
   const [menuUp, setMenuUp] = useState(false)
+  // A hint triggered waits before it first shows (hintWaits: its `after` lesson queued or showing, the focus ink
+  // spreading, the curtain down; and the break and gap after a lesson goes); once shown it stays (latched here) until
+  // done. So the empty plane's line comes after `focus-plane`, never beside it or under the ink.
+  const [hintsReady, setHintsReady] = useState<ReadonlySet<string>>(() => new Set())
+  const hintsRef = useRef(hints)
+  hintsRef.current = hints
+  const readyRef = useRef(hintsReady)
+  readyRef.current = hintsReady
   useEffect(() => {
-    if (!anyHint) return setMenuUp(false)
-    const t = setInterval(() => setMenuUp(!!document.querySelector(MENUS)), 150)
+    if (!anyHint) {
+      setMenuUp(false)
+      setHintsReady((r) => (r.size ? new Set() : r))
+      return
+    }
+    const check = () => {
+      setMenuUp(!!document.querySelector(MENUS))
+      const ids = Object.keys(hintsRef.current)
+      const r = readyRef.current
+      const kept = [...r].filter((id) => ids.includes(id))
+      const waiting = ids.filter((id) => !r.has(id))
+      let now: string[] = []
+      if (waiting.length && Date.now() >= holdUntil.current) {
+        const shown = queue.current()?.lesson.id ?? null
+        const queued = queue.queued()
+        const busy = readBusy()
+        now = waiting.filter((id) => {
+          const l = HINTS.find((h) => h.id === id)
+          return !!l && !hintWaits(l, { shown, queued, busy })
+        })
+      }
+      if (now.length || kept.length !== r.size) setHintsReady(new Set([...kept, ...now]))
+    }
+    check()
+    const t = setInterval(check, 150)
     return () => clearInterval(t)
-  }, [anyHint])
+  }, [anyHint, queue])
   const welcomeQueued = cur?.lesson.id === 'welcome' || queue.queued().includes('welcome')
-  const hintIds = menuUp || menu ? [] : Object.keys(hints).filter((id) => !(id === 'empty-canvas' && (welcomeQueued || newsShowing || piecesHere > 0)))
+  const hintIds =
+    menuUp || menu ? [] : Object.keys(hints).filter((id) => hintsReady.has(id) && !(id === 'empty-canvas' && (welcomeQueued || newsShowing || piecesHere > 0)))
 
   return (
     <>

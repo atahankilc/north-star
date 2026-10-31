@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { LESSONS, type Lesson } from './lessons'
-import { CALM_MS, COOLDOWN_MS, GIVE_UP_MS, PAUSE_CAP_MS, countsAsMenu, createQueue, resetNudgeBudget, type Busy, type ProgressView } from './queue'
+import { CALM_MS, COOLDOWN_MS, GIVE_UP_MS, PAUSE_CAP_MS, countsAsMenu, createQueue, hintWaits, matches, resetNudgeBudget, type Busy, type ProgressView } from './queue'
 import type { Role } from './lessons'
 
 const ALL: Role[] = ['owner', 'editor', 'viewer']
@@ -598,5 +598,35 @@ describe('queue, fix round O11', () => {
     s.q.onEvent({ event: 'linking' })
     s.wait(1000)
     expect(s.shown()).toBe('n')
+  })
+})
+
+describe('empty states beside the queue (O16c)', () => {
+  const plane = LESSONS.find((l) => l.id === 'empty-plane')!
+  it('the empty-plane hint waits while focus-plane is queued or showing', () => {
+    expect(plane.after).toContain('focus-plane')
+    expect(hintWaits(plane, { shown: null, queued: ['focus-plane'], busy: {} })).toBe(true)
+    expect(hintWaits(plane, { shown: 'focus-plane', queued: [], busy: {} })).toBe(true)
+    expect(hintWaits(plane, { shown: null, queued: ['card-made'], busy: {} })).toBe(false)
+    expect(hintWaits(plane, { shown: 'piece-made', queued: [], busy: {} })).toBe(false)
+  })
+  it('no hint while the focus ink spreads or the curtain is down', () => {
+    expect(hintWaits(plane, { shown: null, queued: [], busy: { focusMoving: true } })).toBe(true)
+    expect(hintWaits(plane, { shown: null, queued: [], busy: { curtainHidden: true } })).toBe(true)
+    expect(hintWaits({}, { shown: null, queued: [], busy: { typing: true } })).toBe(false)
+  })
+})
+
+describe('piece-console only for the console shown on pointing (O16c)', () => {
+  const l = LESSONS.find((x) => x.id === 'piece-console')!
+  it('not from a piece in edit mode', () => {
+    expect(l.trigger.some((t) => matches(t, { event: 'console-shown', payload: { kind: 'plane', editing: true } }))).toBe(false)
+    expect(l.trigger.some((t) => matches(t, { event: 'console-shown', payload: { kind: 'plane', editing: false } }))).toBe(true)
+  })
+})
+
+describe('only the right-click lesson lingers after its menu (O16c review)', () => {
+  it('linger is set on right-click alone', () => {
+    expect(LESSONS.filter((l) => l.linger).map((l) => l.id)).toEqual(['right-click'])
   })
 })

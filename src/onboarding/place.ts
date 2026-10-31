@@ -23,6 +23,9 @@ export type PlaceInput = {
   soft?: Rect[]
   // What it must never cover (the right panel, the piece being taught, consoles and docks, the coach's hints).
   hard?: Rect[]
+  // What it keeps clear of when it can, but may cover rather than go far from its anchor with no lead (other pieces'
+  // consoles, a focused lens's cells): tried after every clear spot, before the bottom-middle card.
+  firm?: Rect[]
   // What its lead line must never cross (the buttons of a console or a dock): a spot whose lead would is passed over.
   noLead?: Rect[]
   // In a focus: the right strip kept free, left before right.
@@ -43,6 +46,12 @@ export type Placed =
 // The right strip a focus keeps free (a right panel's width, D-219).
 export const RIGHT_FREE = 400
 const STEP = 8
+// Further than this from its anchor (card edge to anchor edge) a spot is far: a near one over another piece's console
+// goes first.
+export const FAR = 120
+
+const gapBetween = (r: Rect, a: Rect) =>
+  Math.hypot(Math.max(a.x - (r.x + r.w), 0, r.x - (a.x + a.w)), Math.max(a.y - (r.y + r.h), 0, r.y - (a.y + a.h)))
 
 export const overlap = (a: Rect, b: Rect) =>
   Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
@@ -81,11 +90,15 @@ function pastHard(side: Side, r: Rect, hard: Rect[], gap: number): Rect {
   return out
 }
 
-function fits(r: Rect, i: PlaceInput, m: number): boolean {
+function fits(r: Rect, i: PlaceInput, m: number, firmToo = true, buttonsToo = true): boolean {
   const { view } = i
   if (r.x < m || r.y < m || r.x + r.w > view.w - m || r.y + r.h > view.h - m) return false
   if (i.anchor && hits(r, i.anchor)) return false
   if ((i.hard ?? []).some((h) => hits(r, h))) return false
+  if (firmToo && (i.firm ?? []).some((h) => hits(r, h))) return false
+  // Never over a console's buttons (`noLead`, the buttons of every console and menu on screen), firm or not; only the
+  // last resort (place()'s `overButtons` pass) may.
+  if (buttonsToo && (i.noLead ?? []).some((h) => hits(r, h))) return false
   if (i.focus && r.x + r.w > view.w - RIGHT_FREE) return false
   return true
 }
@@ -132,6 +145,12 @@ function* shifts(limit: number) {
 }
 
 export function bottomMiddle(i: PlaceInput): Placed {
+  return bottomSpot(i).placed
+}
+
+// The bottom-middle card and whether it had to cover a console's buttons (then a near spot covering the fewest of them,
+// with its lead, is better: place()'s last pass).
+function bottomSpot(i: PlaceInput): { placed: Placed; buttons: boolean } {
   const m = i.margin ?? 16
   const { view, size } = i
   const floor = i.bottomDock ? i.bottomDock.y - 12 : view.h - 24
@@ -139,7 +158,9 @@ export function bottomMiddle(i: PlaceInput): Placed {
   const mid = (view.w - size.w) / 2
   const hard = i.hard ?? []
   // Never over its anchor either (an anchor low on the screen, a big one that left no room beside it).
-  const all = [...hard, ...(i.anchor ? [i.anchor] : [])]
+  const firm = i.firm ?? []
+  const buttons = i.noLead ?? []
+  const all = [...hard, ...firm, ...buttons, ...(i.anchor ? [i.anchor] : [])]
   // The middle, else the clear spot nearest it (beside each thing it mustn't cover), at the floor or else at the top (a
   // wide anchor along the bottom: the threads list with a thread beside it).
   const xs = [mid, ...all.flatMap((h) => [h.x - 12 - size.w, h.x + h.w + 12])]
@@ -147,11 +168,16 @@ export function bottomMiddle(i: PlaceInput): Placed {
     .sort((p, q) => Math.abs(p - mid) - Math.abs(q - mid))
   const spots = [y, m].flatMap((yy) => xs.map((x) => ({ x, y: yy })))
   // Nothing clear: the spot hiding least, as the share of each thing it covers (a sliver of a big piece before the side
-  // nav), its anchor counting three times.
+  // nav), its anchor counting three times, a console's frame once, its buttons ten times.
   const share = (r: Rect, h: Rect) => overlap(r, h) / Math.max(1, h.w * h.h)
   const cost = (p: { x: number; y: number }) => {
     const r = { x: p.x, y: p.y, ...size }
-    return hard.reduce((n, h) => n + share(r, h), 0) + 3 * (i.anchor ? share(r, i.anchor) : 0)
+    return (
+      hard.reduce((n, h) => n + share(r, h), 0) +
+      3 * (i.anchor ? share(r, i.anchor) : 0) +
+      firm.reduce((n, h) => n + share(r, h), 0) +
+      10 * buttons.reduce((n, h) => n + share(r, h), 0)
+    )
   }
   let best = spots[0]
   let least = Infinity
@@ -166,7 +192,8 @@ export function bottomMiddle(i: PlaceInput): Placed {
       best = p
     }
   }
-  return { at: 'bottom', x: Math.round(best.x), y: Math.round(best.y), lead: null }
+  const r = { x: best.x, y: best.y, ...size }
+  return { placed: { at: 'bottom', x: Math.round(best.x), y: Math.round(best.y), lead: null }, buttons: buttons.some((b) => hits(r, b)) }
 }
 
 // Whether a card already placed must be placed again: what it must keep clear has moved or grown under it (its anchor:
@@ -193,13 +220,19 @@ export function place(i: PlaceInput): Placed {
     lead: gap > 0 ? leadFor(side, r, a) : null,
   })
 
-  // 1. A clear spot on a side, shifted along it if its first spot holds cards.
+  const all = [...(i.hard ?? []), ...(i.firm ?? [])]
+  const far = (r: Rect) => gapBetween(r, a) > FAR
+  // 1. A clear spot on a side, shifted along it if its first spot holds cards. One pushed far from its anchor (past
+  // other pieces' consoles) is kept for later: a near spot over those (3) goes first.
+  let farClear: { side: Side; r: Rect } | null = null
   for (const side of sides) {
-    const r0 = pastHard(side, base(side, a, i.size, i.view, gap, m), i.hard ?? [], Math.max(gap, 12))
+    const r0 = base(side, a, i.size, i.view, gap, m)
     const along = side === 'right' || side === 'left'
     const limit = along ? i.view.h : i.view.w
     for (const d of shifts(limit)) {
-      const r = along ? { ...r0, y: r0.y + d } : { ...r0, x: r0.x + d }
+      // Shifted along its side first, then out past what it must not cover there (what's only in the way of the first
+      // spot, like a corner button low on the screen, mustn't push every shifted spot off the screen).
+      const r = pastHard(side, along ? { ...r0, y: r0.y + d } : { ...r0, x: r0.x + d }, all, Math.max(gap, 12))
       if (!fits(r, i, m)) {
         // Off the view this way: further this way won't come back in for the first spot; keep trying the other way.
         continue
@@ -207,18 +240,58 @@ export function place(i: PlaceInput): Placed {
       // A shifted card must still face its anchor (a lead can reach it straight).
       if (along ? r.y > a.y + a.h || r.y + r.h < a.y : r.x > a.x + a.w || r.x + r.w < a.x) continue
       if (leadCrosses(leadFor(side, r, a), i.noLead ?? [])) continue
-      if (covered(r, soft) === 0) return done(side, r)
+      if (covered(r, soft) === 0) {
+        if (!far(r)) return done(side, r)
+        farClear ??= { side, r }
+        break
+      }
     }
   }
   // 2. No clear spot: the side that covers the least, at its first spot.
   let best: { side: Side; r: Rect; n: number } | null = null
-  for (const side of sides) {
-    const r = pastHard(side, base(side, a, i.size, i.view, gap, m), i.hard ?? [], Math.max(gap, 12))
-    if (!fits(r, i, m) || leadCrosses(leadFor(side, r, a), i.noLead ?? [])) continue
-    const n = covered(r, soft)
-    if (!best || n < best.n) best = { side, r, n }
+  if (!farClear)
+    for (const side of sides) {
+      const r = pastHard(side, base(side, a, i.size, i.view, gap, m), all, Math.max(gap, 12))
+      if (!fits(r, i, m) || leadCrosses(leadFor(side, r, a), i.noLead ?? [])) continue
+      const n = covered(r, soft) + (far(r) ? 1e9 : 0)
+      if (!best || n < best.n) best = { side, r, n }
+    }
+  if (best && best.n < 1e9) return done(best.side, best.r)
+  // 3. Nothing clear near it: beside it all the same, with its lead, over the least of what it would rather keep clear
+  // (another piece's console frame, a lens's cells; cards count less; never a console's buttons), before a far spot or
+  // the bottom-middle card.
+  const firm = i.firm ?? []
+  const buttons = i.noLead ?? []
+  // `overButtons`: the last resort, when even the bottom-middle card must cover buttons: the near spot covering the fewest
+  // (the card's and its lead's), with its lead.
+  const nearPass = (overButtons: boolean) => {
+    let near: { side: Side; r: Rect; n: number } | null = null
+    for (const side of sides) {
+      const r0 = base(side, a, i.size, i.view, gap, m)
+      const along = side === 'right' || side === 'left'
+      for (const d of shifts(along ? i.view.h : i.view.w)) {
+        // Out past what it may never cover here: what's hard, and (but in the last resort) every console's buttons.
+        const r = pastHard(side, along ? { ...r0, y: r0.y + d } : { ...r0, x: r0.x + d }, overButtons ? (i.hard ?? []) : [...(i.hard ?? []), ...buttons], Math.max(gap, 12))
+        if (!fits(r, i, m, false, !overButtons)) continue
+        if (along ? r.y > a.y + a.h || r.y + r.h < a.y : r.x > a.x + a.w || r.x + r.w < a.x) continue
+        const crosses = leadCrosses(leadFor(side, r, a), buttons)
+        if (crosses && !overButtons) continue
+        const pressed = overButtons ? buttons.filter((b) => hits(r, b)).length + (crosses ? 1 : 0) : 0
+        const n = 1e6 * pressed + 4 * covered(r, firm) + covered(r, soft) + Math.abs(d) + (far(r) ? 1e9 : 0)
+        if (!near || n < near.n) near = { side, r, n }
+      }
+    }
+    return near
   }
+  const near = nearPass(false)
+  if (near && near.n < 1e9) return done(near.side, near.r)
+  if (farClear) return done(farClear.side, farClear.r)
   if (best) return done(best.side, best.r)
-  // 3. No room beside it: the bottom-middle card.
-  return bottomMiddle(i)
+  if (near) return done(near.side, near.r)
+  // 4. No room beside it: the bottom-middle card, if it finds a spot clear of every console's buttons; else the near
+  // spot covering the fewest buttons, with its lead.
+  const bottom = bottomSpot(i)
+  if (!bottom.buttons) return bottom.placed
+  const last = nearPass(true)
+  return last ? done(last.side, last.r) : bottom.placed
 }

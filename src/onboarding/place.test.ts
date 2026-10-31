@@ -277,3 +277,123 @@ describe('the HUD as hard obstacles', () => {
     expect(movesTo(first, { ...again, x: again.x + 8 })).toBe(true)
   })
 })
+
+describe('place, near with a lead before far without (O16c)', () => {
+  // A table in focus: its cells (firm) fill the middle; the dock at the bottom. Clear room only far to the right.
+  const dock = { x: 655, y: 943, w: 258, h: 37 }
+  const cells = { x: 200, y: 100, w: 1000, h: 830 }
+  it('covers some of what is firm beside the dock, with a lead, rather than the far bottom card', () => {
+    const p = place({ anchor: dock, size, view, firm: [cells], dock: true, focus: true, bottomDock: dock })
+    expect(p.at).toBe('beside')
+    expect(p.lead).not.toBeNull()
+    expect(hits(at(p), dock)).toBe(false)
+  })
+  it('still takes a clear spot when there is one', () => {
+    const small = { x: 600, y: 300, w: 200, h: 200 }
+    const p = place({ anchor: dock, size, view, firm: [small], dock: true, focus: true, bottomDock: dock })
+    expect(p.at).toBe('beside')
+    expect(hits(at(p), small)).toBe(false)
+  })
+  it('never covers what is hard, even so', () => {
+    const wall = { x: 0, y: 0, w: 1568, h: 940 }
+    const p = place({ anchor: dock, size, view, hard: [wall], firm: [cells], dock: true, focus: true, bottomDock: dock })
+    expect(p.at).toBe('bottom')
+  })
+})
+
+describe('place, a far clear spot loses to a near one over a console (O16c)', () => {
+  it('a just-made piece with other pieces\' consoles beside it: near, with a lead', () => {
+    const piece = { x: 970, y: 631, w: 362, h: 152 }
+    // Consoles of other pieces to its left (firm), a wide one under it (its own: hard), the right edge too close.
+    const consoles = [{ x: 600, y: 560, w: 350, h: 40 }, { x: 600, y: 700, w: 350, h: 40 }]
+    const own = { x: 630, y: 790, w: 900, h: 40 }
+    const p = place({ anchor: piece, size, view, firm: consoles, hard: [own] })
+    expect(p.at).toBe('beside')
+    if (p.at !== 'beside') return
+    const r = at(p)
+    const gapX = Math.max(piece.x - (r.x + r.w), 0, r.x - (piece.x + piece.w))
+    const gapY = Math.max(piece.y - (r.y + r.h), 0, r.y - (piece.y + piece.h))
+    expect(Math.hypot(gapX, gapY)).toBeLessThanOrEqual(120)
+    expect(hits(r, own)).toBe(false)
+  })
+})
+
+describe('place, shifted before pushed out (O16c: piece-console)', () => {
+  it('a console at a big piece\'s corner, a button low at the right: right of the piece, facing the console, with a lead', () => {
+    const consoleR = { x: 1120, y: 757, w: 132, h: 32 }
+    const piece = { x: 309, y: 190, w: 960, h: 600 }
+    const corner = { x: 1216, y: 918, w: 340, h: 50 }
+    const p = place({ anchor: consoleR, size: { w: 268, h: 333 }, view, hard: [corner, piece] })
+    expect(p).toMatchObject({ at: 'beside', side: 'right' })
+    expect(p.lead).not.toBeNull()
+    const r = { x: p.x, y: p.y, w: 268, h: 333 }
+    expect(hits(r, piece) || hits(r, corner)).toBe(false)
+  })
+})
+
+describe('place, firm but never over a button (O16c review)', () => {
+  it('covers another console\'s frame, never its buttons', () => {
+    const dock = { x: 655, y: 943, w: 258, h: 37 }
+    const cells = { x: 200, y: 100, w: 1000, h: 830 }
+    // Another piece's console beside the dock, its two buttons inside it.
+    const other = { x: 300, y: 600, w: 700, h: 300 }
+    const buttons = [{ x: 320, y: 860, w: 60, h: 24 }, { x: 640, y: 860, w: 60, h: 24 }]
+    const p = place({ anchor: dock, size, view, firm: [cells, other], noLead: buttons, dock: true, focus: true, bottomDock: dock })
+    expect(p.at).toBe('beside')
+    const r = at(p)
+    for (const b of buttons) expect(hits(r, b)).toBe(false)
+  })
+})
+
+describe('place, buttons everywhere (O16c review 2)', () => {
+  it('pushed out past a console\'s buttons to the nearest spot clear of them, with its lead (the timeline in `more`)', () => {
+    const anchor = { x: 970, y: 631, w: 362, h: 152 }
+    const own = { x: 663, y: 742, w: 646, h: 40 }
+    // Another piece's console left of it, above: its frame firm, its buttons never covered.
+    const frame = { x: 701, y: 545, w: 228, h: 40 }
+    const buttons = [{ x: 716, y: 553, w: 49, h: 22 }, { x: 777, y: 553, w: 68, h: 24 }, { x: 855, y: 553, w: 58, h: 24 }]
+    const p = place({ anchor, size: { w: 268, h: 333 }, view, hard: [own], firm: [frame], noLead: buttons, order: ['left'] })
+    expect(p.at).toBe('beside')
+    expect(p.lead).not.toBeNull()
+    const r = { x: p.x, y: p.y, w: 268, h: 333 }
+    for (const b of buttons) expect(hits(r, b)).toBe(false)
+    expect(hits(r, own)).toBe(false)
+  })
+
+  const grid = (y1: number) => {
+    const out: Rect[] = []
+    for (let x = 0; x < 1568; x += 100) for (let y = 0; y <= y1; y += 100) out.push({ x, y, w: 20, h: 20 })
+    return out
+  }
+  const count = (r: Rect, bs: Rect[]) => bs.filter((b) => hits(r, b)).length
+
+  it('the bottom-middle card keeps off a console frame and its buttons when a spot clear of both exists (the repro)', () => {
+    const firm = [{ x: 600, y: 800, w: 400, h: 40 }]
+    const button = { x: 700, y: 805, w: 60, h: 30 }
+    const p = bottomMiddle({ anchor: null, size: { w: 268, h: 333 }, view, firm, noLead: [button] })
+    const r = { x: p.x, y: p.y, w: 268, h: 333 }
+    expect(hits(r, button)).toBe(false)
+    expect(hits(r, firm[0])).toBe(false)
+  })
+
+  it('no near spot clear of buttons, the bottom is: the bottom-middle card, no lead', () => {
+    const anchor = { x: 700, y: 400, w: 100, h: 40 }
+    const buttons = grid(560)
+    // Right, left and above only (below it, clear of the grid, would be a near spot: the next test's case isn't this).
+    const p = place({ anchor, size, view, noLead: buttons, order: ['right', 'left', 'above'] })
+    expect(p.at).toBe('bottom')
+    expect(count(at(p), buttons)).toBe(0)
+  })
+
+  it('the bottom must cover buttons too: the near spot covering the fewest, with its lead', () => {
+    const anchor = { x: 700, y: 400, w: 100, h: 40 }
+    const buttons = grid(960)
+    const p = place({ anchor, size, view, noLead: buttons, order: ['right', 'left', 'above'] })
+    expect(p.at).toBe('beside')
+    expect(p.lead).not.toBeNull()
+    // The fewest of any spot beside it that faces it: none of those covers fewer.
+    const n = count(at(p), buttons)
+    for (const y of [16, 100, 200, 300, 400]) for (const x of [418, 814]) if (y <= 440 && y + size.h >= 400) expect(n).toBeLessThanOrEqual(count({ x, y, ...size }, buttons))
+    expect(hits(at(p), anchor)).toBe(false)
+  })
+})

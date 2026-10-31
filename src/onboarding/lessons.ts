@@ -60,7 +60,7 @@ export const PAYLOADS: Record<LessonEvent, readonly string[]> = {
   'to-canvas': ['share'],
   confirming: ['kind', 'shared'],
   'beside-open': ['kind'],
-  'console-shown': ['kind'],
+  'console-shown': ['kind', 'editing'],
   'piece-moved': ['kind', 'editing'],
   'card-moved': ['focus'],
   'cell-picked': ['kind', 'framed'],
@@ -191,6 +191,9 @@ type Base = {
   unless?: readonly string[]
   // The busy surface it may show on (it's about it).
   within?: Within
+  // Stays a moment after its anchor goes (its menu closed): no lead, until closed or the person's next doing ≥ 2.5 s
+  // later (Lesson.tsx). Only the right-click's lesson: what it teaches is tried on the menu, which is up for a second.
+  linger?: boolean
 }
 export type PagedLesson = Base & { format: 'welcome' | 'lesson'; pages: readonly Page[] }
 export type GuideLesson = Base & { format: 'guide'; rows: readonly GuideRow[] }
@@ -287,7 +290,8 @@ export const LESSONS: readonly Lesson[] = [
   },
   {
     id: 'piece-console', v: 1, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-264',
-    trigger: [{ event: 'console-shown' }], doneWhen: [{ event: 'focus-in' }], anchor: 'console',
+    // Not the edit-mode console (a piece just made): its words are about the console shown on pointing.
+    trigger: [{ event: 'console-shown', when: { editing: false } }], doneWhen: [{ event: 'focus-in' }], anchor: 'console',
     pages: [
       { title: 'Every piece has a console', body: 'Point at a piece and its console appears: go inside, edit, link it, see its comments.', scene: 'console-appear' },
       { title: 'Go inside with focus', body: 'Press `focus` or double-click. Inside, the piece is yours to work in; `esc` comes back.', scene: 'focus-ink' },
@@ -428,7 +432,7 @@ export const LESSONS: readonly Lesson[] = [
   },
   {
     id: 'right-click', v: 1, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-237, D-222',
-    trigger: [{ event: 'context-menu' }], anchor: 'menu', within: 'menu',
+    trigger: [{ event: 'context-menu' }], anchor: 'menu', within: 'menu', linger: true,
     pages: [{ title: 'Right-click is a prompt', body: 'Type to narrow it, Enter picks the first, a letter jumps. Every menu works like this.', scene: 'prompt-type' }],
   },
 

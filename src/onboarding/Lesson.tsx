@@ -78,6 +78,8 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
   }
   const screen = innerWidth * innerHeight
   const hard: Rect[] = []
+  // Kept clear when there's a clear spot, covered rather than going far with no lead (place.ts' `firm`).
+  const firm: Rect[] = []
   const noLead: Rect[] = []
   const mine = (el: Element) => !!own && (el === own || own.contains(el))
   for (const el of document.querySelectorAll(PANELS)) {
@@ -111,10 +113,16 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
   hard.push(...linkEnds(target))
   // A matrix or a table in focus fills the screen, so its piece is no obstacle: what it shows is (its heads, row names
   // and cells, on screen), one box round them all.
-  hard.push(...lensContent())
+  // Firm, not hard: a lesson about the lens (its keys, by the dock) may cover some of it rather than go far from the dock.
+  firm.push(...lensContent())
+  // Another piece's console is firm (its piece isn't what's taught); the taught piece's own console, a dock and a menu
+  // are never covered.
+  const taught = anchor?.closest('[data-learn="piece"]') ?? null
   for (const el of document.querySelectorAll<HTMLElement>(`${CONSOLES}, ${MENUS}`)) {
     if (el === anchor || mine(el) || !isVisible(el)) continue
-    hard.push(rectOf(el))
+    const its = el.matches('[data-learn="console"], [data-learn="console-unframe"]') ? el.closest('[data-learn="piece"]') : null
+    const other = !!its && its !== taught && !(target && its.closest(`[data-target="${CSS.escape(target)}"]`))
+    ;(other ? firm : hard).push(rectOf(el))
     for (const b of el.querySelectorAll('button')) if (!(anchor && (b === anchor || anchor.contains(b) || b.contains(anchor)))) noLead.push(rectOf(b))
   }
   const holdsAnchor = (el: Element) => !!anchor && (el === anchor || el.contains(anchor))
@@ -132,7 +140,7 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
     const r = rectOf(el)
     if (onScreen(r) && r.w * r.h < screen * 0.5) hard.push(r)
   }
-  return { soft, hard, noLead }
+  return { soft, hard, firm, noLead }
 }
 
 // A focused matrix's or table's heads, row names and cells on screen, as one box (none when no lens is in focus).
@@ -164,6 +172,9 @@ function linkEnds(target: string | undefined): Rect[] {
   return out
 }
 
+// How long a menu's lesson stays, at least, after its menu closed (then the next doing closes it).
+const MENU_STAY_MS = 2500
+
 // The card's width (Lesson.module.css), and the narrowest a squeezed one goes.
 const CARD_W = 268
 const CARD_MIN = 160
@@ -176,13 +187,21 @@ const ORDER: Record<string, Side[]> = {
   'settings-menu': ['left', 'right', 'above', 'below'],
 }
 
-// Where the card goes.
-function where(anchorName: string | undefined, anchor: HTMLElement | null, size: { w: number; h: number }, target?: string, own: HTMLElement | null = null): Placed {
+// Where the card goes. `was`: the anchor's last rect on screen when it isn't drawn now (a toast faded out, a menu
+// closed): the card stays beside where it was rather than falling to the bottom middle (over where it comes back).
+// No anchor drawn yet but one on the page, transparent (a toast fading in): never placed over where it will show.
+function where(anchorName: string | undefined, anchor: HTMLElement | null, size: { w: number; h: number }, target?: string, own: HTMLElement | null = null, was: Rect | null = null): Placed {
   const view = { w: innerWidth, h: innerHeight }
   const focus = new URLSearchParams(location.search).has('focus')
   const dockEl = findAnchor('dock')
-  const { soft, hard, noLead } = obstacles(anchor, target, own)
-  return place({ anchor: anchor ? rectOf(anchor) : null, size, view, soft, hard, noLead, focus, bottomDock: dockEl ? rectOf(dockEl) : null, dock: anchorName === 'dock', order: anchorName ? ORDER[anchorName] : undefined })
+  const { soft, hard, firm, noLead } = obstacles(anchor, target, own)
+  if (!anchor && !was && anchorName)
+    for (const el of document.querySelectorAll<HTMLElement>(`[data-learn="${anchorName}"]`)) {
+      const r = rectOf(el)
+      if (onScreen(r) && !el.closest('[data-coach]')) hard.push(r)
+    }
+  const rect = anchor ? rectOf(anchor) : was
+  return place({ anchor: rect, size, view, soft, hard, firm, noLead, focus, bottomDock: dockEl ? rectOf(dockEl) : null, dock: anchorName === 'dock', order: anchorName ? ORDER[anchorName] : undefined })
 }
 
 type Props = {
@@ -221,6 +240,16 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   // The anchor it was placed by: gone from the page (its piece deleted) closes the lesson; hidden for a moment (a
   // console shown only while pointed at) doesn't.
   const hadAnchor = useRef<HTMLElement | null>(null)
+  // Its anchor's rect when last drawn, and the camera then: while the anchor isn't drawn (a toast faded, a menu closed)
+  // and the camera hasn't moved, the card is placed by that rect (it stays put, never falls over where the anchor was).
+  const lastRect = useRef<{ r: Rect; cam: unknown } | null>(null)
+  const camNow = () => {
+    const c = useCanvasView.getState()
+    return `${JSON.stringify(c.cams)}|${JSON.stringify(c.planeCam)}`
+  }
+  // A lesson about a menu (right-click) whose menu closed: it stays where it was, no lead, until its own buttons or
+  // `esc`, or the person's next doing a moment later (MENU_STAY_MS), so it isn't up for only the menu's second.
+  const [orphan, setOrphan] = useState(false)
   const [sample, setSample] = useState(0)
   const closeRef = useRef(onClose)
   closeRef.current = onClose
@@ -241,11 +270,17 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   useLayoutEffect(() => {
     if (played || (done && posRef.current) || !card.current) return
     const anchor = findAnchor(anchorName, target)
-    if (anchor) hadAnchor.current = anchor
+    if (anchor) {
+      hadAnchor.current = anchor
+      lastRect.current = { r: rectOf(anchor), cam: camNow() }
+      // Its menu back (opened again): pointing at it again.
+      setOrphan(false)
+    }
+    const was = !anchor && lastRect.current && lastRect.current.cam === camNow() ? lastRect.current.r : null
     const dlg = anchor?.closest<HTMLDialogElement>('dialog[open]') ?? null
     setHost((h) => (h === dlg ? h : dlg))
     const size = { w: card.current.offsetWidth, h: card.current.offsetHeight }
-    const next = where(anchorName, anchor, size, target, card.current)
+    const next = where(anchorName, anchor, size, target, card.current, was)
     setPos((p) => (p && p.x === next.x && p.y === next.y && p.at === next.at && (p.lead?.x2 ?? 0) === (next.lead?.x2 ?? 0) && (p.lead?.y2 ?? 0) === (next.lead?.y2 ?? 0) ? p : next))
   }, [i, sample, played, done, anchorName, target, squeeze])
 
@@ -278,11 +313,15 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
       if (n.cams !== p.cams || n.planeCam !== p.planeCam || n.beside !== p.beside) again()
     })
     addEventListener('resize', again)
-    // Its own size settling (type in, a page turned): placed again.
-    const ro = new ResizeObserver(again)
+    // Its own size settling (type in, a page turned): placed again at once (a debounce would draw it a moment where
+    // its old size put it: over a dock).
+    const ro = new ResizeObserver(() => setSample((n) => n + 1))
     if (card.current) ro.observe(card.current)
     const gone = setInterval(() => {
-      if (hadAnchor.current && !hadAnchor.current.isConnected && !document.querySelector(`[data-learn="${anchorName}"]`) && card.current && !card.current.dataset.done) closeRef.current('closed')
+      if (hadAnchor.current && !hadAnchor.current.isConnected && !document.querySelector(`[data-learn="${anchorName}"]`) && card.current && !card.current.dataset.done) {
+        if (shown.lesson.linger) setOrphan(true)
+        else closeRef.current('closed')
+      }
       else if (anchorName) {
         // Placed again when a better anchor is in sight: none was (still building), the one it went by is hidden now
         // (a console no longer pointed at), or what the event was about has come into view.
@@ -305,7 +344,25 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
       clearInterval(gone)
       clearTimeout(t)
     }
-  }, [played, anchorName, target])
+  }, [played, anchorName, target, shown.lesson.linger])
+
+  // Orphaned (its menu closed): the person's next press or key outside it, once MENU_STAY_MS have passed, closes it.
+  useEffect(() => {
+    if (!orphan) return
+    const from = performance.now()
+    const next = (e: Event) => {
+      if (performance.now() - from < MENU_STAY_MS) return
+      if (card.current && e.target instanceof Node && card.current.contains(e.target)) return
+      if (e instanceof KeyboardEvent && ['Shift', 'Meta', 'Alt', 'Control'].includes(e.key)) return
+      closeRef.current('closed')
+    }
+    addEventListener('pointerdown', next, true)
+    addEventListener('keydown', next, true)
+    return () => {
+      removeEventListener('pointerdown', next, true)
+      removeEventListener('keydown', next, true)
+    }
+  }, [orphan])
 
   // A menu opened while it shows (the `+` menu with its kind guide, a right-click, a Select): a lesson about menus is
   // placed again clear of it; any other steps aside (hidden, taking no clicks) until the menu closes, then comes back.
@@ -378,7 +435,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   const side = pos?.at === 'beside' ? pos.side : 'bottom'
   return createPortal(
     <>
-      {pos?.lead && !done && !aside && <LeadLine lead={{ x1: pos.lead.x1 - off.x, y1: pos.lead.y1 - off.y, x2: pos.lead.x2 - off.x, y2: pos.lead.y2 - off.y }} over={overWizard} />}
+      {pos?.lead && !done && !aside && !orphan && <LeadLine lead={{ x1: pos.lead.x1 - off.x, y1: pos.lead.y1 - off.y, x2: pos.lead.x2 - off.x, y2: pos.lead.y2 - off.y }} over={overWizard} />}
       <Appear
         as="section"
         elRef={card}
@@ -470,9 +527,16 @@ type CardProps = {
 
 const NewChip = () => <span className={styles.newChip}>NEW</span>
 
+// The final words, hidden, give the title its size from the first frame (the decode starts as blanks, which collapse:
+// measured then, the card grew a line later and moved, a moment over a dock); the decode draws over them.
 const Title = ({ text, className }: { text: string; className: string }) => (
-  <h3 className={className}>
-    <DecodeText key={text} text={plain(text)} />
+  <h3 className={`${className} ${styles.titleBox}`}>
+    <span className={styles.titleSize} aria-hidden>
+      {plain(text)}
+    </span>
+    <span className={styles.titleDecode}>
+      <DecodeText key={text} text={plain(text)} />
+    </span>
   </h3>
 )
 

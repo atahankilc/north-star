@@ -173,7 +173,7 @@ function DemoSlot({ row, width }: { row: GuideRow | null; width: number }) {
       </div>
     )
   }
-  return <Demo scene={row.scene} width={width} label={row.scene} />
+  return <Demo scene={row.scene} width={width} label={row.scene} own />
 }
 
 // The column: the row's name, its demo, what it is and when to use it.

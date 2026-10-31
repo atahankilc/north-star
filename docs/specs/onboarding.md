@@ -159,7 +159,18 @@ family, D-266). It stays until closed or until the person does what it teaches (
 re-sampled on pan/zoom end.
 - **Placement**, in this order: right of the anchor, left, above; if that space holds cards, shift sideways into a
   clear area before covering any (in a focus: left before right, the right of the screen kept free, D-211; straight
-  above the dock when clear); only then the **bottom-middle card** (no lead). About 340 px tall with a demo.
+  above the dock when clear); with no clear spot, beside it all the same with its lead, over the least of what it would
+  rather keep clear (another piece's console frame, a focused lens's cells; never the anchor, the taught piece, its own
+  console, a dock, a panel, the HUD, or any console's buttons); then the **bottom-middle card** (no lead), placed clear
+  of consoles and their buttons when it can be; if even it must cover buttons, beside the anchor with its lead after
+  all, covering the fewest buttons. About 340 px tall with a demo.
+  Measured at its final size before it's first drawn (the title's words size it while they decode), so it never jumps;
+  an anchor that stops being drawn (a toast fading, a menu closing) keeps the card where it was, and one not drawn yet
+  but on the page is never covered.
+- **The right-click's lesson** (`linger: true` in lessons.ts; only it: other `within: menu` lessons, like the move
+  prompt's, close with their menu): shows on the open menu, where it can be tried; when the menu closes it stays where
+  it was (no lead) until its `×`/`esc`/`[got it]`, or the person's next press or key at least 2.5 s later. Chosen over
+  showing it only after the menu closes: its words are about the menu, which is only there to try while open.
 - **Done → next:** `✓ done` stays 1.2 s where the card was (its anchor may be gone, e.g. the console after a focus),
   breaks cell by cell (320 ms), 300 ms of nothing, then the next lesson builds. The queue waits for that whole ~1.8 s,
   so two never overlap.
@@ -197,6 +208,8 @@ Not modals: the empty states themselves teach, then vanish.
 - **After a join request**: the pending row says "waiting for an owner to let you in" (it may already).
 - **Empty canvas**: §4.1's hint.
 - **An empty plane in focus**: `press + or right-click to add a card` faint in the middle until the first card.
+- Empty states keep `after` like lessons: one waits while a lesson it names is queued or showing (and its break and
+  gap), and while the focus ink spreads or the curtain is down; once shown it stays until done.
 - **A deck without tasks, a documents list without documents, a timeline with nothing**: one line each saying how.
   (Check what exists first; several pieces already have empty lines.)
 
@@ -287,7 +300,7 @@ scripts/check-lessons.mjs    the lint (§8)
 | URL | `canvas-switch` (`?canvas=` changed), `?beside=` (`beside-open`) |
 | One-line hooks (only where no store has it) | `plus-open {plane}` (+ the hovered row for the kind guide), `context-menu {kind}`, `menu-open` (any prompt) |
 | Workspaces page | `workspaces-open {empty}` (the list loaded), `ws-made` (one created or imported), `join-requested` (a code sent) |
-| `useCanvasView` (more) | `console-shown {kind}` (a piece's console first drawn for this person), `piece-moved {kind, editing}` (a piece's drag ended), `card-moved {focus}` (a card's drag ended), `cell-picked {kind, framed}` (a matrix/table cell picked), `axis-unfold` (a feature axis's `unfold`), `parts-folded` (a folded parts tree first drawn) |
+| `useCanvasView` (more) | `console-shown {kind, editing}` (a piece's console drawn; again when its edit mode ends while shown; `piece-console` only for `editing: false`), `piece-moved {kind, editing}` (a piece's drag ended), `card-moved {focus}` (a card's drag ended), `cell-picked {kind, framed}` (a matrix/table cell picked), `axis-unfold` (a feature axis's `unfold`), `parts-folded` (a folded parts tree first drawn) |
 | Writes (more) | `deleted {confirmed, shared}` (the hazard confirm's delete went through), `status-set` (a card's status changed), `task-for-card` (a task given a card), `task-moved {done}` (a task dragged to another column; `done`: into the finished one), `filter-set {kind}` (a filter value picked, e.g. FOR) |
 | Workspace data and presence | `task-given {byOther}` (a task newly given to you, `givenBy` someone else), `peer-joined` (another person first in `presence/{wid}`), `edit-refused` (the viewer's "You're a viewer" toast) |
 | The coach itself | `sidenav-rest` (the pointer rests ≥ 600 ms on the side nav), `guide-open` (`?` opened), `crumb-open` (the breadcrumb's canvas prompt opened), `idle {pieces, cards, seen, decks, peerFor}` (≥ 3 min here and 10 s without input, §4.5; counts for nudges) |
@@ -342,8 +355,10 @@ Rejected: (a) the same page with every store made per-instance (a rewrite of hot
 - **Clock**: the director drives `requestAnimationFrame` time; `seek(t)` for headless shots and the poster; the app's
   own `__advance` for the cell reveals; reduced motion → `seek(poster)` and stop.
 - **Talking to the app**: `postMessage` (`play`, `pause`, `seek`, `scene`, `theme`, `motion`) and back (`ready`,
-  `loop`, `error`). One iframe reused for every demo; created on the first lesson that needs it, kept while the coach
-  is open, preloaded after the workspace is idle.
+  `loop`, `error`). One iframe reused for every demo: made when the workspace is idle (`requestIdleCallback` with no timeout, and only once the camera has been still
+  500 ms; tips on; dropped when tips go off or the coach unmounts), kept
+  hidden, lent to a lesson's slot with `moveBefore` (keeps its document; without it, a frame of its own). A playing demo
+  pauses while the canvas pans, zooms, glides or drags, and goes on 300 ms after.
 - **Size**: scenes are authored at a fixed stage (e.g. 960 × 600 CSS px) and scaled into the card with a CSS
   transform; text stays sharp at device scale.
 

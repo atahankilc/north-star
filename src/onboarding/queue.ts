@@ -172,6 +172,14 @@ export function holds(busy: Busy, within: Within | undefined): boolean {
   return false
 }
 
+// An empty state (drawn by the coach beside the queue, onboarding.md §5.4) waits as a lesson's `after` would: while a
+// lesson it names is queued or showing (`✓ done` too: its break comes first), and while the focus ink spreads or the
+// curtain is down. Once shown it stays (the coach latches it).
+export function hintWaits(l: Pick<Lesson, 'after'>, s: { shown: string | null; queued: readonly string[]; busy: Busy }): boolean {
+  if ((l.after ?? []).some((a) => s.shown === a || s.queued.includes(a))) return true
+  return !!(s.busy.focusMoving || s.busy.curtainHidden)
+}
+
 export type Queue = {
   onEvent(e: LearnEvent): void
   tick(): void

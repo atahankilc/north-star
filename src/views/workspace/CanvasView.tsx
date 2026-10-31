@@ -2006,10 +2006,15 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
   const [keys, setKeys] = useState(false)
   const on = shown || !!size || keys
   const first = useRef(true)
+  // Said again when edit mode ends with it still shown (pointed at): the console lesson is about that one, not edit's.
+  const editing = !!size
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (el && on) learn('console-shown', { kind: el.closest<HTMLElement>('[data-kind]')?.dataset.kind ?? noun, editing }, el.closest<HTMLElement>('[data-target]')?.dataset.target)
+  }, [on, editing, noun])
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
-    if (on) learn('console-shown', { kind: el.closest<HTMLElement>('[data-kind]')?.dataset.kind ?? noun }, el.closest<HTMLElement>('[data-target]')?.dataset.target)
     if (first.current) {
       first.current = false
       el.style.clipPath = on ? '' : 'polygon(0 0, 0 0, 0 0)'

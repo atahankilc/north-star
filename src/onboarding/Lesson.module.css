@@ -185,3 +185,17 @@
 .card[data-squeezed] .foot > * {
   white-space: nowrap;
 }
+
+/* The title's size from its final words (Lesson.tsx Title), the decode drawn over them. */
+.titleBox {
+  position: relative;
+}
+
+.titleSize {
+  visibility: hidden;
+}
+
+.titleDecode {
+  position: absolute;
+  inset: 0;
+}
