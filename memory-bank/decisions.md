@@ -324,6 +324,12 @@ feature comes back as a piece, and check them with the user then.
   the real components, one undo step; in the bottom-right corner growing into a column; knowledge base as wide as it
   can be, never other workspaces, PDFs/images last;
   full workflows with parity to a person plus skills; phases gated by evals built before the UI.
+- Organising (D-327): by understanding what a structure says to a person, never a rule table: the app's purpose and
+  each element's meaning in the prompt, a `look` tool (a picture of the plane and of its own proposal), a `structure`
+  read tool (numbers on the link graph), the user's planes as examples; it may change the structure itself.
+- Big jobs (D-328): a plan kept as state (`plan` tool, a live checklist, saved with the chat), run step by step, each
+  previewed and approved, the next starting by itself; no fixed step count (a person's budget and `[stop]`); a
+  message sent while it runs steers it at the next step; done is checked from the job's state.
 
 ## Onboarding (planned, docs/specs/onboarding.md)
 - Onboarding (D-315, not started): taught at the moment of use, one at a time, short (≤ 4 pages, ≤ 25 words): a

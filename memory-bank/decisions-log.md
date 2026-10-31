@@ -5994,3 +5994,46 @@ docs/foundation-audit-2026-10-31.md).
   Left alone on purpose: the landing's scrim (the intro, not an entrance), the agent's blink and pulse (loops), and
   the SETTLE_MS/CALM_MS pairs elsewhere (different things under one name, not motion).
 - *Not yet:* the kit, patterns, the areas, `check:kit`, folders.
+
+### D-327 · 2026-10-31 · Accepted (agent-bugs 27; the user: "bunlar hardcoded kurallar olmamalı, agent sadece sistemi ve ne yapmaya çalıştığımızı bence daha iyi anlamalı. Bu uygulama insanlar için bir visualization… biz de visualization konusunda iyi olmamız lazım"; then "27 ve 28'i kabul ediyorum")
+**The agent organises by understanding what a structure says to a person, not by rules.** When it organises or
+changes a plane or a canvas it may change the structure (a flow, a plane of its own for a group, a package used on
+several planes, a main plane with detail planes beside it, sections), each only when needed, and decides itself.
+- *What carries it, none of it rules:* (1) the prompt says what North Star is for and what each element means to the
+  eye (a plane one question; nearness belonging; a section or package one unit; a flow an order of reasoning; main and
+  detail planes overview then detail), with visualization principles named (overview first, zoom and filter, details
+  on demand; Gestalt proximity, common region, connectedness; space carries meaning); it says how it reads the plane
+  and what question a person brings before changing it. (2) Eyes: a `look` tool, a schematic picture of a plane or
+  canvas and of the *proposed* state, so it judges its own proposal (as the tldraw agent kit: picture for the rough
+  layout, records for the facts). (3) Taste from examples: planes the user made or liked as reference pictures;
+  evals judged on before/after pictures, not on which move was used.
+- *Perception in code:* a `structure` read tool on the link graph (src/model/graph.ts, to be written): groups, chains
+  in the type order, hubs, links between groups, undrawable links, crowding; numbers, never a verdict. `/organize`
+  is rewritten on it (today "cluster by type", which bug 4 is about), with a `/restructure` skill run as a D-328 job.
+- *Why:* the app is a visualization for people; models already read long text well; rule tables crowd the prompt
+  (agent-bugs "code before prompt") and give the same shape every time. Pictures alone give confident generic
+  critique, so they go with the numbers and `lint`.
+- *Alternatives:* a table of moves with triggers (my first proposal; turned down by the user as hard-coded rules).
+- *Spec:* docs/specs/agent-bugs.md item 27. *Not yet:* all of it; needs 4's `flow`, the link graph, 14, D-328.
+
+### D-328 · 2026-10-31 · Accepted (agent-bugs 28; the user: "bişey istiyorum, bana bitti al diyo… 5-6-10 kere sırada ne varsa onu yap demek zorunda kalıyorum"; "hardcoded bir 25 adımda bitire gerek yok… step by step kullanıcın onayını ala ala ilerleyebilir… agentı çalışırken bölemiyoruz da"; then "27 ve 28'i kabul ediyorum")
+**A big job is a plan kept as state, run step by step with the person's yes, steerable while it runs.**
+- *The job:* a `plan` tool writes the steps (scope, what each makes, how it's checked: skill postconditions, `lint`,
+  coverage map); kept in the chat's runtime and saved with the chat; shown as a live checklist (`3/7 · …`); edited
+  before `go` like a plan today.
+- *Goes on:* workflow.ts gains `applied → running` while steps are left: after an apply the next step starts by
+  itself, told what was applied (bug 5). Every change is still previewed and applied by the person (D-312); at `go`
+  the person picks one preview for all or one per step. A discard or a note sends it back to asking.
+- *No fixed size:* no 25-step job; the agent splits the work itself. `STEP_BUDGET` stays only as a guard against a loop
+  with no progress. Bounded by the person: a token/money budget per job, seen and changed while it runs, `[stop]`.
+- *Steering:* a message sent while it runs is queued and handed to the model at the next step boundary (today
+  workflow.ts drops `send` in `running`); the model adjusts the plan or stops to ask.
+- *Done is checked:* the job ends when every step is done (its checks pass) or skipped with a reason; "is it done?"
+  is answered from the job's state.
+- *Libraries (read 2026-10-31):* OpenAI Agents SDK JS (`needsApproval`, `RunState`), Vercel AI SDK (tool approval,
+  many providers), LangGraph.js (`interrupt()`, server checkpointer). None gives the job layer; all replace loop.ts,
+  which the evals measure. So: keep the loop, copy Claude Code's patterns (todo list, queued messages, approval per
+  step); the AI SDK at most as the provider layer (Q-031).
+- *Evals:* turns from the person until done (target: `go` and one yes per preview); what's left when it says done.
+- *Alternatives:* a bigger fixed step budget (still stops mid-job); auto-apply without previews (against D-312).
+- *Spec:* docs/specs/agent-bugs.md item 28, agent.md §4.10. *Not yet:* all of it; needs bugs 25 and 5 first.

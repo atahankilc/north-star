@@ -274,6 +274,8 @@ an op fails the gate. Not included, ever: members, roles, invites, codes, keys, 
 5. **Report**: what it did, what it didn't, what's next; saved in the chat.
 Workflows run in the open tab (no server, D-312); closing the tab stops them, and what was applied stays.
 
+**How it is built (D-328, 2026-10-31):** the plan is state, not text (a `plan` tool, a live checklist saved with the chat); after each apply the next step starts by itself; one preview for all or one per step, chosen at `go`; no fixed step count (the person's budget and `[stop]` bound it); a message sent while it runs steers it at the next step; the job is done when every step's checks pass or it is skipped with a reason. Organising (D-327) runs as such a job. Detail: docs/specs/agent-bugs.md items 27, 28.
+
 **Extra tools that make it worth using** (each one a skill: a short guide + the tools it needs; each with eval tasks):
 
 | Tool / skill | What it does for the person |
