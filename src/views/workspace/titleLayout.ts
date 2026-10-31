@@ -2,7 +2,8 @@
 // top to bottom: the caption (the north star and PROJECT), the name, the rule (a magenta lead, then a hairline), what
 // it's building. Folded (too far out to read the description): the name alone, as big as fits the unfolded block
 // without breaking a word, the star beside its first line; the block shrinks to it.
-export const T = { pad: 44, caption: 18, name: 92, nameLead: 1, desc: 26, descLead: 1.5, gap: 27, rule: 4, star: 15, arm: 48, stroke: 3 }
+import { TITLE } from '../../model/world'
+export const T = TITLE // its sizes: model/world.ts (D-325)
 export const NAME_TRACK = -0.045
 // What the description says until someone writes it (editors only).
 export const ABOUT_HINT = "What are you building? Double-click to write it."

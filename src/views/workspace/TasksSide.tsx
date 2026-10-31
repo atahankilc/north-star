@@ -138,7 +138,7 @@ export function TasksSide({ editor, esc, focusedId, plane }: Props) {
   const colH = size.h - top
   return (
     <>
-      <div className={pane.divider} style={{ left, zIndex: 6 }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="The side view's width" />
+      <div className={pane.divider} style={{ left, zIndex: 'calc(var(--z-world-ui) + 1)' }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="The side view's width" />
       <aside className={styles.side} data-learn="side-view" style={{ left, width }} aria-label="Decks and days" onPointerDown={(e) => e.stopPropagation()}>
         <div className={styles.tabs}>
           <div className={styles.decks} role="tablist" aria-label="Decks">

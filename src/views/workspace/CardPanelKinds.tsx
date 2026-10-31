@@ -360,7 +360,7 @@ export function Parts({ n, card, cards, editor }: P) {
   return (
     <PanelSection n={n} name="parts" count={rows.length || undefined} add={editor ? { label: 'part', onClick: () => setPicking(true) } : undefined} empty={!rows.length && !picking}>
       {rows.map(({ e, c, depth, last }) => (
-        <div key={e.id} className={styles.part} style={{ paddingLeft: depth * 16 }}>
+        <div key={e.id} className={styles.part} style={{ paddingLeft: `calc(${depth} * var(--space-4))` }}>
           <span className={styles.tree}>{last ? '└' : '├'}</span>
           <button className={styles.to} onClick={() => goToCard(c)}>
             {c.title || PLACEHOLDER[c.type]}

@@ -306,7 +306,7 @@ export function DocFocus({ piece, onUnfocus }: { piece: WithId<Piece>; onUnfocus
   if (!arrived) return null
   if (!d)
     return (
-      <p className={styles.gone} style={{ position: 'absolute', left: 96, top: 96 }}>
+      <p className={styles.gone} style={{ position: 'absolute', left: 'calc(2 * var(--space-12))', top: 'calc(2 * var(--space-12))' }}>
         This document is gone, or only its author sees it now.
       </p>
     )
@@ -353,7 +353,7 @@ function PageOutline({ scroller, at }: { scroller: React.RefObject<HTMLDivElemen
           key={i}
           className={styles.outlineItem}
           data-on={i === now || undefined}
-          style={{ paddingLeft: `${(p.level - top) * 12}px` }}
+          style={{ paddingLeft: `calc(${p.level - top} * var(--space-3))` }}
           onClick={() => p.el.scrollIntoView({ block: 'start', behavior: isReducedMotion() ? 'auto' : 'smooth' })}
           title={p.text}
         >

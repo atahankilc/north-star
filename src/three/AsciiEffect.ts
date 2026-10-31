@@ -133,9 +133,9 @@ function drawAtlas(canvas: HTMLCanvasElement, ramp: string) {
   canvas.width = size * ramp.length
   canvas.height = size
   const ctx = canvas.getContext('2d')!
-  ctx.fillStyle = '#000'
+  ctx.fillStyle = '#000' // tokens-ok: the atlas is a brightness mask, not a colour
   ctx.fillRect(0, 0, canvas.width, canvas.height)
-  ctx.fillStyle = '#fff'
+  ctx.fillStyle = '#fff' // tokens-ok: the atlas is a brightness mask, not a colour
   ctx.font = `500 ${size * 0.8}px "${fonts.mono}", monospace`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
@@ -196,7 +196,7 @@ export class AsciiEffect {
     this.quad = new Scene().add(mesh as Object3D)
 
     // Redraw once Geist Mono has loaded; the first draw may use the fallback font.
-    document.fonts?.load(`48px "${fonts.mono}"`).then(() => {
+    document.fonts?.load(`48px "${fonts.mono}"`).then(() => { // tokens-ok: any size loads the font
       drawAtlas(canvas, ramp)
       atlas.needsUpdate = true
     })

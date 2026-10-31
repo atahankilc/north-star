@@ -21,9 +21,10 @@ import { useOpenSize } from './shownBox'
 import type { FindItem } from './find'
 import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import styles from './Documents.module.css'
+import { DOCS } from '../../model/world'
 
-// Its parts in its own px: the table's head and rows, the shelf's sheets.
-export const D = { head: 40, row: 54, pad: 16, sheet: { w: 140, h: 186, gap: 16, cols: 5 } }
+// Its parts in its own px: model/world.ts (D-325).
+export const D = DOCS
 const COL_W: Record<DocCol | 'grip' | 'actions', number> = { kind: 70, title: 370, by: 130, size: 90, added: 96, grip: 36, actions: 160 }
 const COLS: DocCol[] = ['kind', 'title', 'by', 'size', 'added']
 // The grips' column only where they show (unframed on the canvas, D-234): elsewhere no empty column at its end.

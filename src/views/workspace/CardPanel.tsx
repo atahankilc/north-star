@@ -516,7 +516,7 @@ function Holds({ n, card, cards, editor }: P) {
   return (
     <PanelSection n={n} name="holds" count={tree.length || undefined} add={editor && ids.length < 60 ? { label: 'card', onClick: () => setPicking(true) } : undefined} empty={!tree.length && !picking}>
       {tree.map(({ card: c, depth }) => (
-        <div key={c.id} className={styles.part} style={{ paddingLeft: depth * 16 }}>
+        <div key={c.id} className={styles.part} style={{ paddingLeft: `calc(${depth} * var(--space-4))` }}>
           <span className={styles.tree} style={depth ? undefined : { color: TONE[c.type] }}>
             {depth ? '└' : '▌'}
           </span>

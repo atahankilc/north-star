@@ -1,6 +1,7 @@
 // Every value in the CSS is a token (D-325, docs/specs/tokens.md). Counts the raw values left in each CSS file under src/
-// (tokens.css itself and the dev-only gallery left out) and fails when a file has more than scripts/tokens-baseline.json
-// allows. As files are converted the baseline goes down; at 0 any raw value fails.
+// (tokens.css itself and the dev-only gallery left out), and in TS/TSX the design values written in place (a "13px",
+// a hex colour, `fontSize: 12` in a style), and fails when a file has more than scripts/tokens-baseline.json allows.
+// Where TS has to name a number itself (a font atlas, an off-screen holder), `// tokens-ok: why` on the line says so.
 //   npm run check:tokens            check
 //   npm run check:tokens -- --list  print every raw value, file by file
 //   npm run check:tokens -- --write lower the baseline to today's counts (never raises it)
@@ -9,13 +10,15 @@ import path from 'node:path'
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const baselinePath = path.join(root, 'scripts/tokens-baseline.json')
-const skip = [/^src\/styles\/tokens\.css$/, /^src\/gallery\//]
+const skip = [/^src\/styles\/tokens\.css$/, /^src\/gallery\//, /\.gallery\.tsx$/, /\.test\.tsx?$/]
+// The sources themselves: tokens.ts (WebGL's palette), the card types' colours, motion's TS mirror, the world's geometry.
+const sources = [/^src\/styles\/tokens\.ts$/, /^src\/ui\/cardTone\.ts$/, /^src\/ui\/motionTokens\.ts$/, /^src\/model\/world\.ts$/]
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name)
     if (e.isDirectory()) walk(p, out)
-    else if (e.name.endsWith('.css')) out.push(path.relative(root, p))
+    else if (/\.(css|tsx?)$/.test(e.name)) out.push(path.relative(root, p))
   }
   return out
 }
@@ -36,7 +39,25 @@ const NUMERIC = [
   ['letter-spacing', /^letter-spacing$/, (v) => /^-?\d*\.?\d+em$/.test(v) && !/^-?0(\.0+)?em$/.test(v)],
 ]
 
+// TS/TSX: what a style says in place. A px number not computed (`${x}px` is), a quoted hex colour, a style key given a
+// bare number other than 0.
+const TS_STYLE_KEYS = 'fontSize|fontWeight|padding\\w*|margin\\w*|gap|rowGap|columnGap|zIndex|letterSpacing|lineHeight|borderWidth|borderRadius'
+function scanTs(file) {
+  if (sources.some((r) => r.test(file))) return []
+  const found = []
+  const src = fs.readFileSync(path.join(root, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
+  src.split('\n').forEach((line, i) => {
+    if (/tokens-ok/.test(line)) return
+    const l = line.replace(/(^|\s)\/\/.*$/, '')
+    for (const m of l.matchAll(/(?<![\w.$}-])-?(?!0+(\.0+)?px)\d*\.?\d+px\b/g)) found.push({ line: i + 1, kind: 'px', text: m[0] })
+    for (const m of l.matchAll(/['"`]#[0-9a-fA-F]{3,8}\b/g)) found.push({ line: i + 1, kind: 'hex', text: m[0].slice(1) })
+    for (const m of l.matchAll(new RegExp(`\\b(${TS_STYLE_KEYS})\\s*:\\s*(-?\\d*\\.?\\d+)\\b`, 'g'))) if (Number(m[2]) !== 0) found.push({ line: i + 1, kind: 'style', text: `${m[1]}: ${m[2]}` })
+  })
+  return found
+}
+
 function scan(file) {
+  if (/\.tsx?$/.test(file)) return scanTs(file)
   const src = fs.readFileSync(path.join(root, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
   const found = []
   const lines = src.split('\n')

@@ -36,10 +36,11 @@ import { useOpenSize } from './sizes'
 import { registerStrip } from './stripReveal'
 import styles from './Timeline.module.css'
 import { DUR, lerp, tween } from '../../ui/motion'
+import { STRIP } from '../../model/world'
+import { tokenPx, tokenText } from '../../styles/cssToken'
 
-// Its parts in its own px: the rows' names, the overview, the days' head, a task, the gap between, a row's padding, the
-// tray; how many days a pane beside a deck showed before the strip (kept for the tasks side view's call).
-export const T = { left: 150, over: 34, head: 44, bar: 30, gap: 6, pad: 10, tray: 56, besideDays: 7 }
+// Its parts in its own px: model/world.ts (D-325).
+export const T = STRIP
 const TOP = T.over + 8 + T.head
 
 // Its scales: px a day.
@@ -106,7 +107,7 @@ function textW(s: string) {
   if (known !== undefined) return known
   measure ??= document.createElement('canvas').getContext('2d')
   if (!measure) return s.length * 7
-  measure.font = `13px ${getComputedStyle(document.documentElement).getPropertyValue('--font-display') || 'sans-serif'}`
+  measure.font = `${tokenText('--text-sm')} ${tokenText('--font-display') || 'sans-serif'}`
   const w = measure.measureText(s).width
   widths.set(s, w)
   return w
@@ -858,7 +859,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         </div>
       </div>
       {/* No day yet: a tray under the rows. */}
-      <div className={styles.tray} style={{ top: TOP + 8 + rowsShown + 16 }}>
+      <div className={styles.tray} style={{ top: TOP + tokenPx('--space-2') + rowsShown + tokenPx('--space-4') }}>
         <span className={styles.trayLabel}>no day · {layout.tray.length}</span>
         {layout.tray.map((t) =>
           t.id === trayHeld?.id ? null : (
@@ -875,7 +876,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         (() => {
           const t = layout.tray.find((x) => x.id === trayHeld.id)
           return t ? (
-            <span className={styles.pill} data-lifted style={{ left: trayHeld.at[0] - 10, top: trayHeld.at[1] - 10, ...(tone(t) ? { ['--tone' as string]: tone(t) } : {}) } as CSSProperties}>
+            <span className={styles.pill} data-lifted style={{ left: trayHeld.at[0] - tokenPx('--space-3'), top: trayHeld.at[1] - tokenPx('--space-3'), ...(tone(t) ? { ['--tone' as string]: tone(t) } : {}) } as CSSProperties}>
               <span className={styles.line}>☐ {t.title}</span>
             </span>
           ) : null
@@ -933,7 +934,7 @@ function Edges({ piece, layout, ppd, shown }: { piece: WithId<Piece>; layout: La
               </button>
             )}
             {right.length > 0 && (
-              <button className={styles.edge} style={{ right: 4, top: y }} onPointerDown={go(right.reduce((a, b) => (b.s < a.s ? b : a)))} title="later tasks: glide to the nearest">
+              <button className={styles.edge} style={{ right: 'var(--space-1)', top: y }} onPointerDown={go(right.reduce((a, b) => (b.s < a.s ? b : a)))} title="later tasks: glide to the nearest">
                 {right.length} ›
               </button>
             )}

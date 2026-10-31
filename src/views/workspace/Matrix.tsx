@@ -63,10 +63,12 @@ import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import { learn } from '../../onboarding/learn'
 import styles from './Matrix.module.css'
 import { DUR } from '../../ui/motion'
+import { MATRIX } from '../../model/world'
 
-// The matrix's parts in its own px: the row heads' column, a cell, the column heads' row, a row, the gap between them,
-// the end totals' column and row.
-export const M = { head: 220, cell: 104, top: 72, row: 44, gap: 6, end: 120, endRow: 36 }
+// The matrix's parts in its own px: model/world.ts (D-325).
+export const M = MATRIX
+// A clip-path side that doesn't clip: far past any matrix, not a size.
+const UNCLIPPED = '-10000px' // tokens-ok: means "no edge"
 
 // In focus the heads stick (D-214): panned or zoomed so they'd leave the screen, the column heads stay this far from its
 // top (under the breadcrumb's bar) and the row heads this far from its left (just past the side nav's tools, D-217; the
@@ -440,7 +442,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
           {endsShown}
 
           {/* The row heads, and what closes their column, held in from the left when panned past (D-214). */}
-          <div className={styles.stick} data-stuck={dx > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateX(${dx}px)`, clipPath: `inset(${dy + M.top}px -10000px -10000px -10000px)` }}>
+          <div className={styles.stick} data-stuck={dx > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateX(${dx}px)`, clipPath: `inset(${dy + M.top}px ${UNCLIPPED} ${UNCLIPPED} ${UNCLIPPED})` }}>
             {/* Paper under them out to the screen's edge, so the cells pass under. */}
             {dx > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, stickLeft / view.zoom + M.head + M.gap, L.h + stickTop / view.zoom)} />}
             {rowHeads}
@@ -453,7 +455,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
           </div>
           {/* The column heads, held in from the top. */}
           {/* Each layer cut where the other's heads begin, so neither shows past the corner. */}
-          <div className={styles.stick} data-stuck={dy > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateY(${dy}px)`, clipPath: `inset(-10000px -10000px -10000px ${dx + M.head}px)` }}>
+          <div className={styles.stick} data-stuck={dy > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateY(${dy}px)`, clipPath: `inset(${UNCLIPPED} ${UNCLIPPED} ${UNCLIPPED} ${dx + M.head}px)` }}>
             {dy > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, L.w + stickLeft / view.zoom, stickTop / view.zoom + M.top + M.gap)} />}
             {colHeads}
             {L.ends && (
@@ -796,7 +798,7 @@ function CellDots({ setup, rows, cols, cellAt, L, live, acts }: DotsProps) {
     el.width = Math.ceil(L.w * res)
     el.height = Math.ceil(L.h * res)
     const css = getComputedStyle(el)
-    const color = (v: string) => css.getPropertyValue(v.slice(4, -1)).trim() || '#888'
+    const color = (v: string) => css.getPropertyValue(v.slice(4, -1)).trim() || css.getPropertyValue('--fg-dim').trim()
     const paper = color('var(--wash-2)')
     const mark = color('var(--fg-dim)')
     const tones = new Map(setup.steps.map((st) => [st.id, color(TONE_VAR[st.tone])]))

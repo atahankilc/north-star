@@ -41,11 +41,11 @@ export const NO_DOCK = '& [data-learn="dock"] { visibility: hidden !important; }
 export const wizardCss = `
   & [data-learn="wizard"] { width: 100%; min-height: 100%; height: 100%; border: 0; }
   & body > div:has(> [data-learn="wizard"]) { padding: 0; }
-  & [data-learn="wizard"] > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) 230px; overflow: hidden; }
+  & [data-learn="wizard"] > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) calc(9 * var(--w-grid)); overflow: hidden; }
   & [data-learn="wizard"] [aria-label="Preview"] { padding: var(--space-3); }
   & [data-learn="wizard"] [role="tab"] { padding: var(--space-2) var(--space-3); }
   & [data-learn="wizard"] h3 { margin-bottom: 0; }
-  & [data-learn="wizard"] h3 ~ div > span:first-child { width: 52px; }
+  & [data-learn="wizard"] h3 ~ div > span:first-child { width: calc(2 * var(--w-grid) + var(--space-half)); }
   & [data-learn="wizard"] > div:nth-child(2) > div:first-child { padding: var(--space-3); }
 `
 // Opened (what `+ → matrix…` / `table…` does), and shut again when the stage is made anew (a module store outlives it).

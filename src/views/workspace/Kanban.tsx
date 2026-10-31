@@ -58,10 +58,10 @@ import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
 import { useKanbanSizes } from './sizes'
 import styles from './Kanban.module.css'
+import { DECK } from '../../model/world'
 
-// Its parts in its own px: a column's width and the gap between, its head, the gap under a task, the `+ column` head's
-// width; what an unmeasured task is guessed at (a line of title, its meta line, its padding).
-export const K = { col: 256, gap: 28, head: 32, cardGap: 8, add: 120, line: 18, meta: 26, pad: 22, soon: 40 }
+// Its parts in its own px: model/world.ts (D-325).
+export const K = DECK
 
 // What's due soon on it (D-262): not finished, due by Sunday; past its day first, then by day.
 function weekEnd() {

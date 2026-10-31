@@ -19,7 +19,7 @@ const scene: Scene = {
   length: 6200,
   poster: 6100,
   cursor: onStage(150, 276),
-  setup: [fresh(), pageStyle(ID, `${NO_HUD} ${wizardCss} & [data-learn="wizard"] button[aria-pressed] { min-height: 20px; } & [data-learn="wizard"] > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) 205px; }`), openWizard('table')],
+  setup: [fresh(), pageStyle(ID, `${NO_HUD} ${wizardCss} & [data-learn="wizard"] button[aria-pressed] { min-height: calc(var(--space-4) + var(--space-1)); } & [data-learn="wizard"] > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) calc(8 * var(--w-grid)); }`), openWizard('table')],
   steps: [
     { at: 300, do: cursor.to(ROWS, 800) },
     { do: wait(250) },

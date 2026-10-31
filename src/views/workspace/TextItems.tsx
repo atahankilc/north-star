@@ -274,7 +274,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
         transformOrigin: `${carried.at[0] - l.x}px ${carried.at[1] - y}px`,
       }),
     ['--tone' as string]: color,
-    fontWeight: l.bold ? 700 : undefined,
+    fontWeight: l.bold ? 'var(--weight-bold)' : undefined,
     fontStyle: l.italic ? 'italic' : undefined,
   }
   const common = {
@@ -352,7 +352,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
           <span className={styles.secLine} style={{ flex: `0 0 ${Math.max(0, inset - gap)}px` }} />
           <span
             className={styles.secName}
-            style={{ padding: `0 ${gap}px`, fontSize: px, fontWeight: l.bold ? 700 : undefined, fontStyle: l.italic ? 'italic' : undefined, letterSpacing: tracking(l, size) }}
+            style={{ padding: `0 ${gap}px`, fontSize: px, fontWeight: l.bold ? 'var(--weight-bold)' : undefined, fontStyle: l.italic ? 'italic' : undefined, letterSpacing: tracking(l, size) }}
             onPointerDown={press}
             onDoubleClick={edit}
           >
@@ -721,7 +721,7 @@ function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, ma
       <Star style={{ transform: `translate(${T.pad + cx - r}px, ${T.pad + cy - r}px) scale(${r / T.star})` }} />
       <div className={styles.fold}>
         <div>
-          <span className={styles.titleKick} style={{ fontSize: T.caption, lineHeight: `${T.caption}px`, paddingLeft: T.star * 2 + 13 }}>
+          <span className={styles.titleKick} style={{ fontSize: T.caption, lineHeight: `${T.caption}px`, paddingLeft: T.star * 2 + T.kickGap }}>
             <Ink>PROJECT</Ink>
           </span>
           <i className={styles.spacer} style={{ height: T.gap }} />
@@ -856,7 +856,7 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
       {kind !== 'sticky' && (
         <>
           <span className={styles.rule2} />
-          <button className={styles.tool} aria-pressed={!!l.bold} title="bold" style={{ fontWeight: 700 }} onClick={() => set({ bold: l.bold ? undefined : true })}>
+          <button className={styles.tool} aria-pressed={!!l.bold} title="bold" style={{ fontWeight: 'var(--weight-bold)' }} onClick={() => set({ bold: l.bold ? undefined : true })}>
             B
           </button>
           <button className={styles.tool} aria-pressed={!!l.italic} title="italic" style={{ fontStyle: 'italic' }} onClick={() => set({ italic: l.italic ? undefined : true })}>

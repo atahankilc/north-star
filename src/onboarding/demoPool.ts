@@ -35,7 +35,7 @@ function ensure(): Pool {
   holder = document.createElement('div')
   holder.setAttribute('aria-hidden', 'true')
   holder.inert = true
-  Object.assign(holder.style, { position: 'fixed', left: '-10000px', top: '0', width: '0', height: '0', overflow: 'hidden', visibility: 'hidden', pointerEvents: 'none' })
+  Object.assign(holder.style, { position: 'fixed', left: '-10000px', top: '0', width: '0', height: '0', overflow: 'hidden', visibility: 'hidden', pointerEvents: 'none' }) // tokens-ok: off the screen
   const frame = document.createElement('iframe')
   frame.src = `${srcBase}demo.html#scene=canvas-fit`
   frame.title = 'demo'

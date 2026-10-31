@@ -31,8 +31,8 @@ export const NO_HUD = '& header { display: none !important; }'
 export const wizardCss = `
   & [data-learn="wizard"] { width: 100%; min-height: 100%; height: 100%; border: 0; }
   & body > div:has(> [data-learn="wizard"]) { padding: 0; }
-  & [data-learn="wizard"] > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) 200px; overflow: hidden; }
-  & [data-learn="wizard"] [aria-label="Preview"] { padding: var(--space-3); border-top: 0; border-left: 1px solid var(--line); }
+  & [data-learn="wizard"] > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) calc(8 * var(--w-grid)); overflow: hidden; }
+  & [data-learn="wizard"] [aria-label="Preview"] { padding: var(--space-3); border-top: 0; border-left: var(--line-w) solid var(--line); }
   & [data-learn="wizard"] [role="tab"] { padding: var(--space-2) var(--space-3); }
 `
 

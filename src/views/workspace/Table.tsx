@@ -515,7 +515,7 @@ function WidthGrip({ x, height, zoom, sizing, onMove, onDone, onReset }: GripPro
     <div
       className={styles.grip}
       data-sizing={sizing !== null || undefined}
-      style={{ left: `calc(${x}px - 4.5px / ${z})`, top: 0, width: `calc(9px / ${z})`, height: T.head, ['--rule-h' as string]: `${height}px`, ['--hair' as string]: `calc(1px / ${z})` }}
+      style={{ left: `calc(${x}px - var(--space-2) / 2 / ${z})`, top: 0, width: `calc(var(--space-2) / ${z})`, height: T.head, ['--rule-h' as string]: `${height}px`, ['--hair' as string]: `calc(var(--line-w) / ${z})` }}
       role="separator"
       aria-orientation="vertical"
       aria-label="Column width (drag; double-click for its own)"

@@ -21,7 +21,7 @@ const MARK = () => {
   return { x: r.left + r.width * 0.35, y: r.top + r.height * 0.45 }
 }
 // The setup kept inside the small stage, its tabs in view, its body scrolling (in the app it has the screen's height).
-const fit = `& [data-learn="setup"] { bottom: 52px; max-height: calc(100% - 60px); }
+const fit = `& [data-learn="setup"] { bottom: calc(2 * var(--w-grid) + var(--space-half)); max-height: calc(100% - var(--control-xl) - var(--space-3)); }
   & [data-learn="setup"] [role="tabpanel"] { min-height: 0; overflow: hidden; }`
 const DONE = byText('[data-learn="setup"] button', 'done', 0.5, 0.5)
 const only = (t: TableSetup): TableSetup => ({ ...t, cols: t.cols.filter((c) => c.id !== 'tc-impact' && c.id !== 'tc-effort') })

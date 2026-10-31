@@ -28,6 +28,7 @@ import { isReducedMotion } from '../../state/motion'
 import { runCells } from '../../ui/Appear'
 import { previewState, setBeforeOpen, subscribePreview, type PreviewState, type Target } from '../preview'
 import styles from './PreviewMarks.module.css'
+import { tokenPx } from '../../styles/cssToken'
 
 export function usePreview(): PreviewState | null {
   return useSyncExternalStore(subscribePreview, previewState, () => null)
@@ -432,7 +433,7 @@ export function PreviewMarks() {
         </span>
       ))}
       {hover && (
-        <div className={styles.was} style={{ left: Math.min(hover.x + 14 - app.x, app.w - 300), top: hover.y + 16 - app.y }}>
+        <div className={styles.was} style={{ left: Math.min(hover.x + tokenPx('--space-4') - app.x, app.w - tokenPx('--size-md')), top: hover.y + tokenPx('--space-4') - app.y }}>
           <p className={styles.wasHead}>{hover.d.tag}</p>
           {hover.d.t.why && (
             <p className={styles.why}>
