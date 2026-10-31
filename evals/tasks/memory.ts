@@ -34,8 +34,9 @@ export const MEMORY: Task[] = [
     followUps: [{ newChat: true }, 'Which city should our first pop-up stall be in?'],
     autoGo: false,
     graders: [
-      notesSay(['only sell in Berlin']),
-      notesSeenIn(2, ['only sell in Berlin']),
+      // Any wording of the same fact: "we only sell in Berlin", "Pazar only sells in Berlin".
+      notesSay([/\bonly\s+sells?\s+in\s+Berlin\b/i]),
+      notesSeenIn(2, [/\bonly\s+sells?\s+in\s+Berlin\b/i]),
       answerIncludes(['Berlin']),
       logged('update_notes'),
       onlyChanged({ add: { documents: 1 } }),

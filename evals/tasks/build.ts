@@ -20,7 +20,8 @@ export const BUILD: Task[] = [
     group: 'build',
     set: 'regression',
     fixture: 'medium',
-    ask: 'Make a competitor matrix for our Roadmap features.',
+    // The fixture already has one (p11 "Feature coverage"): the ask says a new one, so pointing at p11 isn't an answer.
+    ask: 'Make a fresh competitor matrix for our Roadmap features; leave Feature coverage as it is.',
     followUps: ['go'],
     graders: [
       noWritesInTurn(1),
@@ -46,7 +47,9 @@ export const BUILD: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: 'Turn the sticky notes on Bets into idea cards and group them.',
+    followUps: ['go'],
     graders: [
+      noWritesInTurn(1),
       exists('card', { type: 'idea', title: 'Who owns the stall data?', plane: 'Bets' }),
       exists('card', { type: 'idea', title: 'Maybe start with bread', plane: 'Bets' }),
       made('card', { type: 'package', plane: 'Bets', memberIds: (v: unknown) => Array.isArray(v) && v.length === 2 }),
@@ -57,6 +60,7 @@ export const BUILD: Task[] = [
     ],
     reference: [
       call('query', { kind: 'text', type: 'sticky', plane: 'Bets' }),
+      answer('Plan: 1. make two ideas on p3 Bets from its sticky notes x13 "Who owns the stall data?" and x14 "Maybe start with bread"; 2. package them as "From the sticky notes"; 3. leave the stickies where they are. Say go, or change the plan.'),
       change(
         [
           ['create_card', { type: 'idea', plane: 'p3', title: 'Who owns the stall data?', handle: '$a' }],
@@ -124,7 +128,9 @@ export const BUILD: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: 'Organise the ideas on Bets by status.',
+    followUps: ['go'],
     graders: [
+      noWritesInTurn(1),
       grouped(IDEAS_ON_BETS.map(R), 'status'),
       noOverlaps('Bets'),
       count('card', { plane: 'Bets' }, 28),
@@ -134,6 +140,7 @@ export const BUILD: Task[] = [
     ],
     reference: [
       call('view', { piece: 'p3' }),
+      answer('Plan: group the 22 ideas on p3 Bets by status (hypothesis, testing, validated, invalidated), each group under its own heading; the problems and sticky notes stay where they are. Say go, or change the plan.'),
       change([['arrange', { items: IDEAS_ON_BETS, layout: 'cluster', group_by: 'status', headings: true }]], 'ideas on Bets by status'),
       answer('Grouped the 22 ideas on p3 Bets by status, each group under its own heading; the problems section and the sticky notes stayed where they were.'),
     ],
@@ -146,8 +153,10 @@ export const BUILD: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: 'Make a table of every feature with its status and priority.',
-    graders: [made('piece', { kind: 'table' }), field(TABLE, 'table.rows.rules', rulesHold('feature'), ['piece']), field(TABLE, 'table.cols', (v: unknown) => JSON.stringify(v).includes('"status"') && JSON.stringify(v).includes('"priority"'), ['piece']), onlyChanged({ add: { pieces: 1 } }), undoRestores()],
+    followUps: ['go'],
+    graders: [noWritesInTurn(1), made('piece', { kind: 'table' }), field(TABLE, 'table.rows.rules', rulesHold('feature'), ['piece']), field(TABLE, 'table.cols', (v: unknown) => JSON.stringify(v).includes('"status"') && JSON.stringify(v).includes('"priority"'), ['piece']), onlyChanged({ add: { pieces: 1 } }), undoRestores()],
     reference: [
+      answer('Plan: a table "All features" on k2 Build with every feature card as a row, and its status, priority, impact and effort as columns. Say go, or change the plan.'),
       change([['create_piece', { kind: 'table', canvas: 'k2', name: 'All features', table: { template: 'features' } }]], 'a table of every feature'),
       answer('Made the table "All features" on k2 Build: every feature card, with its status, priority, impact and effort.'),
     ],

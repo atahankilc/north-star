@@ -206,7 +206,8 @@ export const EDIT: Task[] = [
     autoGo: false,
     fixture: 'medium',
     ask: "Delete the duplicate 'Cash only is a big deal' sticky note on Rivals.",
-    followUps: ['yes'],
+    // Two stickies say it (x8 Ayşe, x9 Jonas): the yes names which, so it answers "shall I delete x9?" and "which one?" alike.
+    followUps: ["yes, delete Jonas's one and keep Ayşe's"],
     graders: [
       noWritesInTurn(1),
       proposedIn(1, { n: 0 }),

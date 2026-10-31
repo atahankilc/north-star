@@ -694,7 +694,16 @@ export const judge = (rubric: string): Grader => ({
   grade: async (r) => {
     if (!judgeFn) return { pass: 'skipped', why: 'no judge model configured' }
     const lines = diffLines(r.start, r.end)
-    const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: r.answer, context: lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.' })
+    // A document the run wrote is shown whole, under the short id the agent knows it by (the diff only has its real id).
+    const bodies = (r.end as AgentWs & { bodies?: Record<string, { text?: string } | undefined> }).bodies ?? {}
+    const docs = madeIds(r, 'document')
+      .filter((id) => id !== 'agent-notes')
+      .map((id) => {
+        const d = r.end.documents.find((x) => x.id === id)
+        return `Document ${r.ids.short('document', id)} (documents/${id}) "${d?.title ?? ''}":\n${String(bodies[id]?.text ?? '').slice(0, 12000) || '(no text)'}`
+      })
+    const context = [lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.', ...docs].join('\n\n')
+    const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: r.answer, context })
     return ok(v.pass, v.why)
   },
 })
@@ -715,22 +724,22 @@ export async function gradeAll(graders: Grader[], r: RunResult): Promise<(Grade 
 // ---- Memory (S16): the agent notes, the change log, saved chats
 
 // The agent notes at the end say each phrase (whole words, case ignored).
-export const notesSay = (words: string[]): Grader => ({
-  name: `notesSay(${words.join(', ')})`,
+export const notesSay = (words: (string | RegExp)[]): Grader => ({
+  name: `notesSay(${words.map(String).join(', ')})`,
   grade: (r) => {
     const text = notesOf(r.end).text
-    const miss = words.filter((w) => !wordsRe(w).test(text))
-    return ok(!!text && !miss.length, !text ? 'there are no agent notes' : miss.length ? `the notes don't say ${miss.map((m) => `"${m}"`).join(', ')}` : 'the notes say it')
+    const miss = words.filter((w) => !(typeof w === 'string' ? wordsRe(w) : w).test(text))
+    return ok(!!text && !miss.length, !text ? 'there are no agent notes' : miss.length ? `the notes don't say ${miss.map((m) => `"${String(m)}"`).join(', ')}` : 'the notes say it')
   },
 })
 
 // Turn n's model was given the agent notes, saying each phrase (they reached the prompt, not only the store).
-export const notesSeenIn = (turn: number, words: string[]): Grader => ({
-  name: `notesSeenIn(${turn}, ${words.join(', ')})`,
+export const notesSeenIn = (turn: number, words: (string | RegExp)[]): Grader => ({
+  name: `notesSeenIn(${turn}, ${words.map(String).join(', ')})`,
   grade: (r) => {
     const seen = r.notesSeen?.[turn - 1] ?? ''
-    const miss = words.filter((w) => !wordsRe(w).test(seen))
-    return ok(!!seen && !miss.length, !seen ? `turn ${turn} had no agent notes in its prompt` : miss.length ? `turn ${turn}'s notes lack ${miss.join(', ')}` : `turn ${turn}'s prompt carried the notes`)
+    const miss = words.filter((w) => !(typeof w === 'string' ? wordsRe(w) : w).test(seen))
+    return ok(!!seen && !miss.length, !seen ? `turn ${turn} had no agent notes in its prompt` : miss.length ? `turn ${turn}'s notes lack ${miss.map(String).join(', ')}` : `turn ${turn}'s prompt carried the notes`)
   },
 })
 
