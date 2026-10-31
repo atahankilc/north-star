@@ -7,6 +7,8 @@
 
 export type ReleaseItem = {
   title: string
+  // Its tab in what's new, when the title is long (`decks`); else the title, cut at a word to fit.
+  tab?: string
   line: string
   // A demo scene (`src/demo/scenes/<scene>.tsx`).
   scene?: string

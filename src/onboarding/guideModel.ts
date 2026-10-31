@@ -74,6 +74,10 @@ function noteOf(l: Lesson, role: Role | null, p: ProgressLike): Note | null {
   return { id: l.id, area: l.area, title: title.charAt(0).toUpperCase() + title.slice(1), body, line: firstLine(body), scene: first.scene, pages: pages.length, seen, isNew }
 }
 
+// The keys this person can use here: a viewer's list leaves out what only changes things (the app is locked for them,
+// D-098); no role known yet lists them all, as the notes do.
+export const keysFor = (role: Role | null, keys: readonly KeyRow[] = KEYS): readonly KeyRow[] => (role === 'viewer' ? keys.filter((k) => !k.editors) : keys)
+
 export function guideModel(p: ProgressLike, role: Role | null, lessons: readonly Lesson[] = LESSONS): GuideModel {
   const notes = lessons.filter((l) => listed(l, role)).map((l) => noteOf(l, role, p)).filter((n): n is Note => !!n)
   const areas = AREAS.filter((a) => a !== 'start')
@@ -90,7 +94,7 @@ export function guideModel(p: ProgressLike, role: Role | null, lessons: readonly
       ? { id: 'whats-new', title: "what's new", line: `${news} ${news === 1 ? 'change' : 'changes'} in the latest release`, seen: true, isNew: false }
       : { id: 'whats-new', title: "what's new", line: 'nothing yet: changes show here after a release', seen: true, isNew: false, off: true },
   ]
-  return { start, areas, keys: KEYS, total: notes.length, seen: notes.filter((n) => n.seen).length }
+  return { start, areas, keys: keysFor(role), total: notes.length, seen: notes.filter((n) => n.seen).length }
 }
 
 // Every word typed is in it.
@@ -178,3 +182,7 @@ export const keyLesson = (m: GuideModel, k: KeyRow) => (k.lesson && m.areas.some
 export function hasNew(p: ProgressLike, lessons: readonly Lesson[] = LESSONS, role: Role | null = null): boolean {
   return lessons.some((l) => listed(l, role) && isArmed({ seen: p.seen, armed: p.armed }, l.id))
 }
+
+// The side nav's `?` dot: only once the role here is known (no role yet → no dot, so a viewer never sees one flash for
+// an editor-only lesson while the workspace loads).
+export const showDot = (p: ProgressLike, role: Role | null, lessons: readonly Lesson[] = LESSONS): boolean => role !== null && hasNew(p, lessons, role)

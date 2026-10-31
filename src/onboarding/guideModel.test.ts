@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { firstLine, guideModel, guideRows, hasNew, keyLesson, parentOf, step, type Row } from './guideModel'
+import { firstLine, guideModel, guideRows, hasNew, keyLesson, keysFor, parentOf, showDot, step, type Row } from './guideModel'
 import { KEYS } from './keys'
 import { LESSONS, lessonById } from './lessons'
 
@@ -107,5 +107,23 @@ describe('the ? guide model', () => {
     expect(m.start.map((s) => s.id)).toEqual(['welcome', 'whats-new'])
     expect(m.start[0].seen).toBe(true)
     expect(kinds(guideRows(m, null, '')).slice(0, 3)).toEqual(['head', 'start', 'start'])
+  })
+
+  it("a viewer's `# keys` leaves out the ones that only change things", () => {
+    const viewer = guideModel(none, 'viewer').keys
+    expect(viewer.length).toBeLessThan(KEYS.length)
+    expect(viewer.some((k) => k.editors)).toBe(false)
+    for (const k of ['+ p ↵', '⌘D', '⇧⌘V', 'g', 'a', '1–9', '⌘Z']) expect(viewer.some((r) => r.keys === k), k).toBe(false)
+    for (const k of ['⌘F', '?', '0', 't', 'esc']) expect(viewer.some((r) => r.keys === k), k).toBe(true)
+    expect(guideModel(none, 'editor').keys).toHaveLength(KEYS.length)
+    expect(keysFor(null)).toHaveLength(KEYS.length)
+    // Typed, a viewer finds none of them either.
+    expect(guideRows(guideModel(none, 'viewer'), null, 'duplicate').some((r) => r.kind === 'key')).toBe(false)
+  })
+
+  it("the `?` dot waits for the role: none before it's known", () => {
+    const p = { seen: {}, armed: ['focus-plane@1'] }
+    expect(showDot(p, null)).toBe(false)
+    expect(showDot(p, 'editor')).toBe(true)
   })
 })

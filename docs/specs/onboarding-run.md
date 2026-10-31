@@ -251,12 +251,15 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   played lesson starts on next, → and ↵ page, ← back to the guide where it was; the kind guide played from `?` is marked
   seen (the dot went out); `# keys` checked against every handler (40 → 57 rows) · reviewer: 1 round (two key rows'
   words, fixed by the lead) · follow-ups in Ideas.
+- O16a · (this commit) · polish: what's new's tabs cut cleanly (`fitTab`, a `tab` per item) and one window height on
+  every page, `[show me]` only where it can go, what's new after the welcome, no `?` dot before the role is known;
+  viewers' `# keys` without the 27 editor-only rows; ← pages back in a played lesson; the settings menu off-limits for
+  other lessons; Lesson effects' deps and a re-place guard; matrix-sure's flake (text on half pixels at zoom 1.25) fixed
+  by ending its glide off the half pixel; CanvasView's carried piece refs lazy (kind-section's refused write) ·
+  reviewer: 1 round, pass.
 
 ### Stuck
-- O11's `matrix-sure` scene: check-scenes fails about 1 run in 3, dark only, always "1.15 % off" at the end (one element
-  toggling between two states, not timing: a longer settle wait didn't change it). Three review rounds used; the step is
-  committed anyway (the coach plays scenes start to end, people never see it). Next: diff the two end frames' bounding
-  box to find the element (likely the cell's note fold or `~` corner at screen size).
+_(none: matrix-sure's flake was fixed in O16a)_
 
 ### For the user (in the morning)
 - (Done 2026-10-29 ~09:50) the `setFitter`/`fitHere` edits were the user's own; committed as fc76174 at the user's

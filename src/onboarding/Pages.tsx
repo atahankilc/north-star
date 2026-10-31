@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom'
 import { Appear } from '../ui/Appear'
 import { DecodeText } from '../ui/DecodeText'
 import { Demo } from './Demo'
-import { bits, plain, two, type PageModel } from './words'
+import { bits, fitTab, plain, two, type PageModel } from './words'
 import type { ReleaseItem } from './releases'
 import styles from './Pages.module.css'
 
@@ -192,15 +192,17 @@ function Stage({ page, scene, width }: { page: PageModel; scene?: string; width:
           <Demo scene={page.scene ?? scene} width={width} />
         </div>
       )}
-      {!page.scene && <NewsList page={page} />}
+      {/* Over the demo's place (kept, hidden), so the window keeps its height on this page too. */}
+      {!page.scene && <NewsList page={page} over={!!scene} />}
     </div>
   )
 }
 
-function NewsList({ page }: { page: PageModel }) {
+function NewsList({ page, over }: { page: PageModel; over: boolean }) {
   if (!page.list) return null
   return (
-    <div className={styles.newsList}>
+    <div className={styles.newsList} data-over={over || undefined}>
+      <div className={styles.nls}>
       {page.list.map((it) => (
         <div key={it.title} className={styles.nl}>
           <span className={styles.num}>›</span>
@@ -212,6 +214,7 @@ function NewsList({ page }: { page: PageModel }) {
           </div>
         </div>
       ))}
+      </div>
       <div className={styles.nf}>
         Their notes show the first time you meet them, marked <span className={styles.newChip}>NEW</span> in <kbd className={styles.kbd}>?</kbd>.
       </div>
@@ -244,25 +247,47 @@ const Keys = () => (
   </span>
 )
 
+// A tab's room in characters: its share of the window, less its padding (14 + 14) and its `01 ` (two digits + 8 px), at
+// about 7.9 px a character (11 px mono, 0.12 em tracking).
+const tabChars = (w: number, n: number) => Math.max(4, Math.floor((w / Math.max(1, n) - 28 - 24) / 7.9))
+
 // The wizard window.
 function Window({ page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW }: WindowProps) {
+  const max = tabChars(demoW + 2, n)
   return (
     <>
       <nav className={styles.steps} aria-label="pages">
-        {pages.map((p, k) => (
-          <button key={k} type="button" tabIndex={-1} className={styles.step} data-on={k === i || undefined} data-done={k < i || undefined} onClick={() => go(k)}>
-            <b>{two(k + 1)}</b>
-            {p.tab}
-          </button>
-        ))}
+        {pages.map((p, k) => {
+          const tab = fitTab(p.tab, max)
+          return (
+            <button key={k} type="button" tabIndex={-1} className={styles.step} data-on={k === i || undefined} data-done={k < i || undefined} onClick={() => go(k)} title={tab === p.tab ? undefined : p.tab}>
+              <b>{two(k + 1)}</b>
+              {tab}
+            </button>
+          )
+        })}
       </nav>
       <Stage page={page} scene={scene} width={demoW} />
       <div className={styles.text}>
         <div className={styles.count}>
           {two(i + 1)} <span>/ {two(n)} · {name}</span>
         </div>
-        <Title text={page.title} id={titleId} className={styles.titleA} />
-        <Body page={page} className={styles.bodyA} />
+        {/* Every page's words in one cell, the others unseen: the window is as tall as its tallest page throughout, so
+            its top never moves as the pages turn. */}
+        <div className={styles.textStack}>
+          {pages.map((p, k) =>
+            k === i ? null : (
+              <div key={k} className={styles.ghost} aria-hidden>
+                <h2 className={styles.titleA}>{plain(p.title)}</h2>
+                <Body page={p} className={styles.bodyA} />
+              </div>
+            ),
+          )}
+          <div>
+            <Title text={page.title} id={titleId} className={styles.titleA} />
+            <Body page={page} className={styles.bodyA} />
+          </div>
+        </div>
       </div>
       <div className={styles.foot}>
         <Btn tone="out" onClick={skip}>

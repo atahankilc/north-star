@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bottomMiddle, hits, leadCrosses, mustReplace, place, RIGHT_FREE, type PlaceInput, type Rect } from './place'
+import { bottomMiddle, hits, leadCrosses, movesTo, mustReplace, place, RIGHT_FREE, type PlaceInput, type Rect } from './place'
 
 const view = { w: 1568, h: 980 }
 const size = { w: 268, h: 340 }
@@ -264,5 +264,16 @@ describe('the HUD as hard obstacles', () => {
     expect(hits(at(p), bar)).toBe(false)
     expect(mustReplace(at(p), bar, [from, to])).toBe(false)
     expect(mustReplace({ ...to, w: 10, h: 10 }, bar, [from, to])).toBe(true)
+  })
+
+  it('a must-replace with no clear spot left stays put (asked once, not every check)', () => {
+    // The anchor fills the screen's width, so every side gives the same bottom-middle spot it already has.
+    const wide = { x: 0, y: 300, w: view.w, h: view.h - 300 }
+    const first = place({ anchor: wide, size, view })
+    expect(mustReplace(at(first), wide)).toBe(true)
+    const again = place({ anchor: wide, size, view })
+    expect(movesTo(first, again)).toBe(false)
+    expect(movesTo(null, again)).toBe(true)
+    expect(movesTo(first, { ...again, x: again.x + 8 })).toBe(true)
   })
 })

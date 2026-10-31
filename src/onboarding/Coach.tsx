@@ -277,15 +277,18 @@ export function Coach() {
       })
   }, [piecesHere, hints])
 
-  // What's new waits for a free moment on the canvas: no focus, nothing busy, nothing else of the coach's.
+  // What's new waits for a free moment on the canvas: no focus, nothing busy, nothing else of the coach's. A welcome
+  // still due (a doc whose `welcome` was never ended, after a release) goes first: queued, it hasn't taken the slot yet
+  // in its calm, so `cur` alone would let what's new in ahead of it; what's new then follows once it's closed.
   useEffect(() => {
     if (!news || newsShowing) return
     const t = setInterval(() => {
       const b = readBusy()
-      if (!cur && !inFocus() && !guideOpenRef.current && !Object.values(b).some(Boolean)) setNewsShowing(true)
+      const welcomeWaits = queue.current()?.lesson.id === 'welcome' || queue.queued().includes('welcome')
+      if (!cur && !welcomeWaits && !inFocus() && !guideOpenRef.current && !Object.values(b).some(Boolean)) setNewsShowing(true)
     }, 500)
     return () => clearInterval(t)
-  }, [news, newsShowing, cur])
+  }, [news, newsShowing, cur, queue])
 
   useEffect(() => setPagesOpen(cur?.lesson.format === 'welcome' || cur?.via === 'play' || newsShowing), [cur, newsShowing])
 
@@ -400,7 +403,6 @@ export function Coach() {
       removeEventListener('pointerover', over)
     }
     // Decided once per opening.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kindOpen])
 
   // The workspace's maker's name, for the invited welcome (`{owner} started this workspace`): from the people list
@@ -541,7 +543,7 @@ export function Coach() {
         {cur?.lesson.format === 'nudge' && cur.doneAt === undefined && (
           <Nudge key={`${cur.lesson.id}-${cur.since}`} line={(cur.lesson as LineLesson).line ?? ''} anchor={cur.lesson.anchor} names={names} onClose={() => close('closed')} />
         )}
-        {news && newsShowing && <Pages key="news" kind="news" pages={newsPages(news)} onEnd={endNews} />}
+        {news && newsShowing && <Pages key="news" kind="news" pages={newsPages(news, (a) => a !== 'side-view' || hasDecks(store))} onEnd={endNews} />}
         {hintIds.map((id) => {
           const l = HINTS.find((h) => h.id === id)
           // Framed choices go into their anchor on the page (the workspaces page's empty box), in place of its line.

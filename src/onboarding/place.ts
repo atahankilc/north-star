@@ -173,6 +173,11 @@ export function bottomMiddle(i: PlaceInput): Placed {
 // a console widening as its piece goes into edit mode; what the lesson is about: a link's two cards).
 export const mustReplace = (card: Rect, anchor: Rect | null, keep: Rect[] = []) => (!!anchor && hits(card, anchor)) || keep.some((k) => hits(card, k))
 
+// Whether placing again would put the card somewhere else (a must-replace with no clear spot left gives the same spot:
+// then it stays, and isn't asked again).
+export const movesTo = (now: Pick<Placed, 'x' | 'y' | 'at'> | null, next: Pick<Placed, 'x' | 'y' | 'at'>) =>
+  !now || now.x !== next.x || now.y !== next.y || now.at !== next.at
+
 export function place(i: PlaceInput): Placed {
   const a = i.anchor
   if (!a) return bottomMiddle(i)

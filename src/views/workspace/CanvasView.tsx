@@ -353,7 +353,8 @@ export function CanvasView() {
   // What a canvas section carries besides text: the planes inside it.
   // A section carries the pieces it holds; one here through a spot moves its spot (D-302's session 3).
   // Built only when a section is dragged (a ref per piece), so drawing makes none.
-  const pieceCarry = useCallback(() => shown.map((p) => ({ id: p.id, ref: p.spot ? spotRef(wid, p.spot, p.id) : pieceRef(wid, p.id), x: p.x, y: p.y, w: p.w, h: p.h })), [shown, wid])
+  // Refs made only when a write takes them (the demo has no Firestore; a section's carry asks for every piece's box).
+  const pieceCarry = useCallback(() => shown.map((p) => ({ id: p.id, get ref() { return p.spot ? spotRef(wid, p.spot, p.id) : pieceRef(wid, p.id) }, x: p.x, y: p.y, w: p.w, h: p.h })), [shown, wid])
   // A point on screen (client px) in a space's px: the canvas's, or the focused plane's own view.
   const canvasToSpace = (cx: number, cy: number): [number, number] => {
     const r = root.current!.getBoundingClientRect()

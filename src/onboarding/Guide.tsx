@@ -11,7 +11,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { create } from 'zustand'
 import { Appear } from '../ui/Appear'
-import { guideModel, guideRows, hasNew, keyLesson, parentOf, step, type AreaInfo, type GuideModel, type Note, type Row, type StartRow } from './guideModel'
+import { guideModel, guideRows, keyLesson, showDot, parentOf, step, type AreaInfo, type GuideModel, type Note, type Row, type StartRow } from './guideModel'
 import type { KeyRow } from './keys'
 import type { Role } from './lessons'
 import { useProgress } from './progress'
@@ -47,7 +47,7 @@ export function useGuideDot(): boolean {
   const seen = useProgress((s) => s.seen)
   const armed = useProgress((s) => s.armed)
   const role = useGuideRole((s) => s.role)
-  return useMemo(() => hasNew({ seen, armed }, undefined, role), [seen, armed, role])
+  return useMemo(() => showDot({ seen, armed }, role), [seen, armed, role])
 }
 
 function useModel(role: Role | null): GuideModel {

@@ -50,7 +50,9 @@ const scene: Scene = {
     // A click on the empty canvas lets the cell go; the view comes closer, so its two corners read: `~` and the note.
     { do: cursor.to(onStage(150, 40), 550) },
     { do: cursor.press() },
-    { do: glideTo(1.25, 58, 64, 550) },
+    // Its end a tenth of a pixel off the grid: at 1.25 a whole plane px lands on a quarter, so some text sat on an exact
+    // half pixel, which Chrome rounded either way from one draw to the next (the end 1.15 % off, 1 run in 3).
+    { do: glideTo(1.25, 58.1, 64.1, 550) },
     // Still long enough for what's drawn at screen size to settle at the new zoom (D-278's 120 ms, and its redraw)
     // before the poster and the end.
     { do: wait(450) },

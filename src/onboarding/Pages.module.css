@@ -115,18 +115,31 @@
 }
 
 .demoKeep[data-away] {
-  position: absolute;
-  inset: 0;
   visibility: hidden;
 }
 
 .newsList {
   display: flex;
   flex-direction: column;
-  gap: 14px;
   aspect-ratio: 16 / 10;
   padding: 22px;
   background: var(--bg);
+}
+
+/* Over the demo's place (kept in the flow, unseen), so the window keeps the demo pages' height. */
+.newsList[data-over] {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+}
+
+/* The rows in the middle of the stage's height, the note at its foot. */
+.nls {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
 }
 
 .nl {
@@ -147,7 +160,6 @@
 }
 
 .nf {
-  margin-top: auto;
   padding-top: 12px;
   border-top: 1px dashed var(--line);
   color: var(--fg-muted);
@@ -244,6 +256,18 @@
 
 .count span {
   color: var(--fg-dim);
+}
+
+.textStack {
+  display: grid;
+}
+
+.textStack > * {
+  grid-area: 1 / 1;
+}
+
+.ghost {
+  visibility: hidden;
 }
 
 .titleA {

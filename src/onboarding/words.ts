@@ -62,15 +62,45 @@ export function welcomePages(pages: readonly Page[], role: string | null, f: Fil
   }))
 }
 
+// A tab's label in `max` characters, cut at a word: the words that fit (a trailing `and`, `as`, `of`… dropped), else the
+// first word cut with `…` straight after it (never `DECKS AND …` or `DECKS AND DA…`).
+const LOOSE = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'in', 'of', 'on', 'or', 'that', 'the', 'to', 'with'])
+export function fitTab(text: string, max: number): string {
+  const t = text.trim().replace(/\s+/g, ' ')
+  if (t.length <= max) return t
+  const words = t.split(' ')
+  const kept: string[] = []
+  for (const w of words) {
+    if ([...kept, w].join(' ').length > max) break
+    kept.push(w)
+  }
+  while (kept.length > 1 && LOOSE.has(kept[kept.length - 1].toLowerCase())) kept.pop()
+  if (kept.length && !(kept.length === 1 && LOOSE.has(kept[0].toLowerCase()))) return kept.join(' ')
+  return words[0].slice(0, Math.max(1, max - 1)) + '…'
+}
+
 // What's new (§4.4): one page per change, the biggest first; past four, three pages and a `+ N more` list page.
-export function newsPages(releases: readonly Release[]): PageModel[] {
+// `can(action)`: whether a `[show me]` has somewhere to go here (the side view with no deck or timeline on the canvas
+// would open empty); an item it can't go to keeps its page, without the button.
+export function newsPages(releases: readonly Release[], can: (action: NonNullable<ReleaseItem['go']>['action']) => boolean = () => true): PageModel[] {
   const items = releases.flatMap((r) => r.items)
-  const page = (it: ReleaseItem): PageModel => ({ tab: it.title.toLowerCase(), title: it.title, body: it.line, scene: it.scene, go: it.go })
+  const page = (it: ReleaseItem): PageModel => ({
+    tab: (it.tab ?? it.title).toLowerCase(),
+    title: it.title,
+    body: it.line,
+    scene: it.scene,
+    go: it.go && can(it.go.action) ? it.go : undefined,
+  })
   if (items.length <= 4) return items.map(page)
   const rest = items.slice(3)
   return [
     ...items.slice(0, 3).map(page),
-    { tab: `+ ${rest.length} more`, title: `And ${rest.length} more`, body: '', list: rest.map((it) => ({ title: it.title, line: it.line })) },
+    {
+      tab: `+ ${rest.length} more`,
+      title: `And ${rest.length} more`,
+      body: rest.length === 1 ? 'A smaller change, in a line.' : 'Smaller changes, a line each.',
+      list: rest.map((it) => ({ title: it.title, line: it.line })),
+    },
   ]
 }
 

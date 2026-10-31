@@ -186,7 +186,7 @@ and cards, links, text, matrix and table, documents, decks and days, together, c
 `6 / 9 seen`, a `NEW` when one of its lessons is armed, and the finder's fold `[▸ 9 inside]`; → or Enter opens it, ←
 folds it, its lessons hanging off a line under it, each a row `› ✓ focus · work inside a piece` (✓ seen, • not yet,
 `NEW` armed). Enter on a lesson plays it in place (as a lesson in the middle). Typing narrows (and opens what
-matches). `# keys` folds the same way (`[▸ 38 keys]`; every shortcut, from the inventory §C); the switch
+matches). `# keys` folds the same way (`[▸ 58 keys]`, a viewer's 31: the ones that only change things left out; every shortcut, from the inventory §C); the switch
 `tips: on | off` sits on the `>` line. Its height is at most the screen minus 48 px top and bottom; the list scrolls
 inside (on a 768 px laptop it does with one area open). A magenta dot on `?` while something new is unseen.
 

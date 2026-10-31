@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LESSONS, type PagedLesson } from './lessons'
 import { SAMPLE_RELEASES } from './releases.sample'
-import { bits, fill, newsLessons, newsPages, tabFor, welcomePages } from './words'
+import { bits, fill, fitTab, newsLessons, newsPages, tabFor, welcomePages } from './words'
 
 describe('words', () => {
   it('fills placeholders, and reads plainly when a name is unknown', () => {
@@ -41,5 +41,28 @@ describe('words', () => {
     expect(pages[3].list).toHaveLength(2)
     expect(newsPages([SAMPLE_RELEASES[1]])).toEqual([])
     expect(newsLessons(SAMPLE_RELEASES)).toContain('side-view')
+  })
+
+  it('cuts a tab at a word, never mid-word or with a space before `…`', () => {
+    expect(fitTab('decks and days', 20)).toBe('decks and days')
+    expect(fitTab('decks and days', 13)).toBe('decks')
+    expect(fitTab('timeline as a strip', 13)).toBe('timeline')
+    expect(fitTab('several canvases', 13)).toBe('several')
+    expect(fitTab('canvases', 5)).toBe('canv…')
+    expect(fitTab('+ 2 more', 13)).toBe('+ 2 more')
+    for (const max of [4, 6, 9, 13]) for (const t of ['decks and days', 'timeline as a strip', 'filters that pass', 'card faces']) {
+      const out = fitTab(t, max)
+      expect(out.length).toBeLessThanOrEqual(max)
+      expect(out).not.toMatch(/\s…|\s$/)
+    }
+  })
+
+  it("what's new: the sample's tabs are its short ones; `[show me]` only where it can go", () => {
+    expect(newsPages(SAMPLE_RELEASES).map((p) => p.tab)).toEqual(['decks', 'timeline', 'canvases', '+ 2 more'])
+    const none = newsPages(SAMPLE_RELEASES, (a) => a !== 'side-view')
+    expect(none[0].go).toBeUndefined()
+    expect(none[2].go?.action).toBe('crumb-prompt')
+    // The list page has a line too (not an empty window under its title).
+    expect(newsPages(SAMPLE_RELEASES)[3].body).not.toBe('')
   })
 })

@@ -11,7 +11,7 @@ import { DecodeText } from '../ui/DecodeText'
 import { useCanvasView } from '../state/canvasView'
 import { Demo } from './Demo'
 import { Btn, keepFocus, stopCanvas, trapTab, useDialogFocus, Words } from './Pages'
-import { mustReplace, place, type Placed, type Rect, type Side } from './place'
+import { movesTo, mustReplace, place, type Placed, type Rect, type Side } from './place'
 import { getWs } from '../state/wsStore'
 import { fill, lessonName, plain, type Fill } from './words'
 import { countsAsMenu, type CloseHow, type Shown } from './queue'
@@ -67,6 +67,7 @@ const CONSOLES = '[data-learn="console"], [data-learn="console-unframe"], [data-
 // beside it).
 export const HUD = '[data-learn="sidenav"], header nav[aria-label="Breadcrumb"], [data-learn="people"]'
 const HUD_CORNER = 'header button[aria-haspopup="dialog"][aria-label^="Settings"]'
+const SETTINGS_MENU = '[data-learn="settings-menu"]'
 function obstacles(anchor: HTMLElement | null, target: string | undefined, own: HTMLElement | null) {
   const soft: Rect[] = []
   for (const el of document.querySelectorAll('[data-card], [data-task]')) {
@@ -118,6 +119,9 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
   }
   const holdsAnchor = (el: Element) => !!anchor && (el === anchor || el.contains(anchor))
   for (const el of document.querySelectorAll<HTMLElement>(HUD)) if (!holdsAnchor(el) && isVisible(el)) hard.push(rectOf(el))
+  // Settings' menu (its YOU and WORKSPACE groups) when the lesson is about something else in Settings (its people): what
+  // takes you there, never covered.
+  for (const el of document.querySelectorAll<HTMLElement>(SETTINGS_MENU)) if (!holdsAnchor(el) && isVisible(el)) hard.push(rectOf(el))
   for (const gear of document.querySelectorAll<HTMLElement>(HUD_CORNER)) {
     const corner = gear.parentElement
     if (corner && !holdsAnchor(corner) && isVisible(corner)) hard.push(rectOf(corner))
@@ -206,6 +210,8 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
 
   const card = useRef<HTMLElement>(null)
   const [pos, setPos] = useState<Placed | null>(null)
+  const posRef = useRef(pos)
+  posRef.current = pos
   // An anchor inside a modal <dialog> (Settings, D-097): the rest of the page is inert under the browser's top layer, so
   // the card goes inside that dialog to be seen and pressed (a press outside it would close it). The dialog's frame is a
   // containing block (its backdrop-filter): screen points are moved by its corner, and it lets the card overflow it.
@@ -233,7 +239,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
 
   // Placed once measured, again on a new page or a pan/zoom's end; kept while `✓ done` shows (its anchor may be gone).
   useLayoutEffect(() => {
-    if (played || (done && pos) || !card.current) return
+    if (played || (done && posRef.current) || !card.current) return
     const anchor = findAnchor(anchorName, target)
     if (anchor) hadAnchor.current = anchor
     const dlg = anchor?.closest<HTMLDialogElement>('dialog[open]') ?? null
@@ -258,7 +264,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
     const r = el.getBoundingClientRect()
     const at = { x: Math.round(r.left - (parseFloat(el.style.left) || 0)), y: Math.round(r.top - (parseFloat(el.style.top) || 0)) }
     setOff((o) => (o.x === at.x && o.y === at.y ? o : at))
-  })
+  }, [host, pos, off])
 
   // A pan or zoom ended, the window resized: sample the anchor again. Its anchor gone (its piece deleted): closed.
   useEffect(() => {
@@ -283,8 +289,13 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
         const best = findAnchor(anchorName, target)
         const had = hadAnchor.current
         if (best && best !== had && (!had || !isVisible(had) || (target && best.closest(`[data-target="${CSS.escape(target)}"]`)))) setSample((n) => n + 1)
-        // What it keeps clear grew or moved under it (a console widening in edit mode, a link's card): placed again.
-        else if (had && isVisible(had) && card.current && !card.current.dataset.done && mustReplace(rectOf(card.current), rectOf(had), linkEnds(target))) setSample((n) => n + 1)
+        // What it keeps clear grew or moved under it (a console widening in edit mode, a link's card): placed again, but
+        // only when placing again would move it (no clear spot left: it stays, rather than asking every 700 ms).
+        else if (had && isVisible(had) && card.current && !card.current.dataset.done && mustReplace(rectOf(card.current), rectOf(had), linkEnds(target))) {
+          const el = card.current
+          const next = where(anchorName, had, { w: el.offsetWidth, h: el.offsetHeight }, target, el)
+          if (movesTo(posRef.current, next)) setSample((n) => n + 1)
+        }
       }
     }, 700)
     return () => {
@@ -338,6 +349,8 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   const title = fill(page.title, f)
   const body = fill(page.body, f)
   const forward = () => (last ? onClose('closed') : setI(i + 1))
+  // ← a page back; on the first page of a note played from `?`, back to the guide.
+  const back = i > 0 ? () => setI(i - 1) : onGuide
   const tipsOff = () => {
     onTipsOff()
     onClose('skipped')
@@ -351,7 +364,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   if (played) {
     return createPortal(
       <div className={styles.shade} data-coach {...stopCanvas} {...keepFocus}>
-        <Middle root={root} first={first} onClose={onClose} onGuide={onGuide} forward={forward}>
+        <Middle root={root} first={first} onClose={onClose} back={back} forward={forward}>
           <Appear as="section" className={styles.card} role="dialog" aria-modal="true" aria-label={`lesson: ${plain(title)}`} data-played>
             {inner}
           </Appear>
@@ -399,8 +412,9 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   )
 }
 
-// Played from `?`: in the middle, a dialog (focus inside, back on close; `esc` closes, `←` back to the guide).
-function Middle({ root, first, children, onClose, onGuide, forward }: { root: React.RefObject<HTMLElement | null>; first: React.RefObject<HTMLButtonElement | null>; children: React.ReactNode; onClose: (how: CloseHow) => void; onGuide?: () => void; forward: () => void }) {
+// Played from `?`: in the middle, a dialog (focus inside, back on close; `esc` closes, `←` a page back, from the first
+// page back to the guide).
+function Middle({ root, first, children, onClose, back, forward }: { root: React.RefObject<HTMLElement | null>; first: React.RefObject<HTMLButtonElement | null>; children: React.ReactNode; onClose: (how: CloseHow) => void; back?: () => void; forward: () => void }) {
   const box = useRef<HTMLDivElement>(null)
   useDialogFocus(box, first)
   void root
@@ -413,7 +427,7 @@ function Middle({ root, first, children, onClose, onGuide, forward }: { root: Re
         e.stopPropagation()
         trapTab(e, box.current)
         if (e.key === 'Escape') onClose('closed')
-        else if (e.key === 'ArrowLeft' && onGuide) onGuide()
+        else if (e.key === 'ArrowLeft' && back) back()
         // → always pages; ↵ too, unless on a button (that one's click is its own).
         else if (e.key === 'ArrowRight' || (e.key === 'Enter' && !(e.target instanceof HTMLButtonElement))) forward()
       }}
@@ -494,7 +508,7 @@ function Card({ name, title, body, page, count, last, forward, tipsOff, onClose,
           don't show tips
         </Btn>
         <span className={styles.sp} />
-        {/* Focus starts here, played from `?` too: ↵ pages on, ← goes back to the guide. */}
+        {/* Focus starts here, played from `?` too: ↵ pages on, ← a page back (from the first, to the guide). */}
         <Btn tone="go" onClick={forward} elRef={first}>
           {last ? 'got it' : 'next ›'}
         </Btn>
