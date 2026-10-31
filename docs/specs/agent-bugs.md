@@ -41,7 +41,7 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
 | 3  | the stepper's item doesn't stand out             | Preview      | mid      | code             | open   |
 | 4  | plane layouts ignore links                       | Layout       | high     | code + prompt    | open   |
 | 10 | can't rearrange a canvas                         | Layout       | mid      | unknown (repro)  | open   |
-| 15 | lists answered from the map                      | Judgment     | mid      | prompt           | open   |
+| 15 | lists answered from the map                      | Judgment     | mid      | code, then prompt| open   |
 | 19 | "would it work" not dry-run                      | Judgment     | low      | prompt           | open   |
 | 20 | vague verb run without asking                    | Judgment     | mid      | prompt           | open   |
 | 21 | skill guides not followed step by step           | Judgment     | mid      | code + methods   | open   |
@@ -53,19 +53,24 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
 
 ## Order
 
-0. **Baseline first**: the eval run as it is, three times on one model (~$13, ~50 min), to know its spread before
-   anything changes; then every step below is measured against it, guards and plumbing too, not only judgment.
-1. **Plumbing** 25, then 1, 5: the evals lie until the store they run on is the app's (bodies there, applies told),
-   so nothing measured before it counts. Then 2, 9: no design needed.
+0. **25 first**: the evals lie until the store they run on is the app's (bodies there, applies told), and fixing it
+   changes the harness, so a baseline taken before it can't be compared with anything after. No baseline before 25.
+1. **Baseline**: the eval run three times on two models (gpt-5.6-terra and a cheaper one; the person picks the
+   model, D-312, so a prompt tuned on one can overfit to it), to know the spread per case, not only the total; every
+   step below is measured against it, guards and plumbing too. Then **plumbing** 1, 5 (failing in the evals first
+   now), then 2, 9: no design needed.
 2. **Guards** 17, 18, 16, 22's rewrite: small.
 3. **`lint`** (6, 11, the checkable half of 12, 21's postconditions): one function, run at the end of every writing
    run. 6 gets its failing eval first.
 4. **Link graph** (`src/model/graph.ts`, one module for 4, 11 and 14): the connected groups of a plane's cards and the
    share of links between them. Then **layout** 4 (the `flow` layout on it), and 10 reproduced in an eval before
    anything is changed.
-5. **Preview** 7, 3: before the agent's UI design session, not in it.
-6. Baseline again, then **judgment** 15, 19, 20, 21's methods, 23, 24, each change measured.
-7. **New parts** 13, 14 (on the link graph), 8.
+5. **Judgment**: 15's map fix (code) first, then baseline again and the prompt and method changes 15, 19, 20, 21's
+   methods, 23, 24, each measured.
+6. **New parts** 13, 14 (on the link graph), 8.
+
+**Preview** 7, 3 run beside all this, from the start: no eval measures them, so they wait on nothing, and 7 is high
+(the person distrusts what they see). Before the agent's UI design session, not in it.
 
 ---
 
@@ -76,9 +81,10 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
     (rule 5). It also renamed the ideas ("Own the stall data" for "Who owns the stall data?").
     Severity mid, not high: every change waits in the preview and an apply is one undo step (D-312), so nothing is lost
     before the person applies. The real risk is a delete missed in the preview.
-    Fix (code, preview): deletes drawn apart in the preview (their own mark and a `N deleted` line), and a delete of
-    something the person's messages never named comes unticked: applying keeps it unless they tick it. Not a check on
-    the last message's words (`go`/`ok`/`yes`): "sounds good" or "tamam, devam" passes any such list.
+    Fix (code, preview): deletes drawn apart in the preview (their own mark and a `N deleted` line) and named on the
+    apply button (`apply · 2 deletes`), always, whatever was said. No reading of the person's words, neither the last
+    message's (`go`/`ok`/`yes`: "sounds good" or "tamam, devam" passes any such list) nor whether a message "named" the
+    thing (does "remove the stickies" name x13?): any such match is a guess, and a guess on deletes is the bug itself.
     Fix (prompt, small): a plan proposes the safe version (keep what's there) and offers a delete as an option; turning
     text into cards keeps its words.
 18. **A viewer's agent still calls `change`.** refuse-03: the tool refused it and the answer was right, but it
@@ -92,12 +98,12 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
     3 asked. Fix (prompt, "Changing things"): do only what was asked; anything more is offered in the answer, not
     proposed.
 6.  **Things it puts on a canvas or plane often land on top of each other, paragraphs most.** Not reproduced yet.
-    Likely causes: `create_text` takes `where: { x, y }` as given with no check against what's there (src/ops/text.ts),
-    though layout.ts says the model never picks coordinates; a paragraph's height is guessed by `labelBox`
+    Not raw coordinates: `change` already refuses x/y from the agent (src/agent/change.ts, NO_COORDS), though
+    `create_text` itself still takes them for the UI. Likely causes: a paragraph's height is guessed by `labelBox`
     (src/model/labelBox.ts) from its text, and long or Markdown text draws taller; text made earlier in the same batch
-    may not count as taken. Fix (code): raw x/y moved to the nearest clear spot; paragraphs measured like `sizes.ts`
-    does; the batch's own items count as taken. Eval first (it fails on any overlap), written before the fix so it
-    shows which of the three causes it is.
+    may not count as taken; `where: { near }` / `{ in_section }` may place without checking what's there. Fix (code):
+    paragraphs measured like `sizes.ts` does; the batch's own items count as taken; `near`/`in_section` land on a
+    clear spot. Eval first (it fails on any overlap), written before the fix so it shows which cause it is.
 11. **Links between cards on different planes are never shown, and it doesn't know.** In its import of the Founder
     Discovery Study (the `north-star` canvas in the user's Granat export), 16 of 48 links join cards on two planes, so
     no plane draws them (D-207). `validate` (src/ops/validate.ts) checks both ends exist, not that they share a plane.
@@ -112,6 +118,9 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
     to the model as warnings: empty key fields, links no plane draws (11), overlaps (6), cardless tasks, table rows that
     match an existing card, items outside or crowding their plane. The model fixes them or lists them in the report.
     (2) Later, if still needed: a model's last look for what code can't judge (21's checklists).
+    Two limits on `lint`: the model gets at most one turn to fix its findings (no loop of fix, lint, fix); and what
+    is left goes into the preview for the person too (`2 links no plane draws`), not only to the model, which can
+    ignore a warning.
 
 ## Plumbing: wiring the app to what was built
 
@@ -183,8 +192,11 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
 15. **It answers lists from the map without querying.** find-02 "competitors in Germany": one step, no tool call, only
     the three cards whose map line says Germany; it missed the nine Europe and global ones that count (D-145). `query`
     does that containment (src/agent/read/tools.ts); the model never asked. find-04 mixed problem and idea counts in a
-    plane summary. Fix: the prompt (src/agent/prompt.ts, "Finding things"): a list, a count or a which/who question is
-    answered from `query`/`view`, never the map alone; the map's region lines say "as typed; query counts the bigger ones".
+    plane summary. Fix (code first): the map stops being the trap: its region lines (src/agent/read/lines.ts) read
+    "as typed", with one note at its head that a place counts inside the bigger ones and `query region` lists them
+    (the note `query` already gives, read/tools.ts). Then, measured, the prompt only if still needed
+    (src/agent/prompt.ts, "Finding things"): a list, a count or a which/who question is answered from `query`/`view`,
+    never the map alone.
 19. **"Check whether this would work" is answered by reading, not a dry run.** edit-12: the count was right (5 tasks),
     but `change` with `dry_run` was never called, so a refusal (a column limit, a locked piece) wouldn't be seen. Fix:
     the prompt names the triggers ("would it work", "check before", "don't change anything yet") → a dry run.
@@ -201,7 +213,9 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     - `/swot` put our own validated cards under threats (swot-01, swot-04);
     - `/sort-stickies` made a problem from a question and skipped a sticky it judged covered by an existing card
       (defensible, but the guide says ideas, sections, the sticky's words).
-    Fix (code first): what's checkable becomes a skill's postconditions, run in `lint` when that skill ran: `/test`'s
+    Fix (code first): what's checkable becomes a skill's postconditions, written in the skill's own definition beside
+    its method (src/agent/skills/), never as special cases inside `lint`; `lint` only runs those of the skills that ran:
+    `/test`'s
     idea is `testing`; `/import`'s named customer has a `for` link on each card; `/prioritize`'s deck has impact and
     effort on its own axes and every feature has both; `/compare`'s `rows.plane`/`cols.items` match what was named.
     Fix (methods, what needs judgment): tighten the vague steps in src/agent/skills/methods.ts ("threats are other
