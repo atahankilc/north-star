@@ -6068,8 +6068,7 @@ several planes, a main plane with detail planes beside it, sections), each only 
 - *Built (2026-11-01): the job saved with the chat.* firestore.rules' chat body takes an optional `job` (closed keys,
   status from a closed set, 2–12 steps bounded like the turns, ints for tokens, budget and settledAt, `paused` ≤ 200,
   `stopAfter` bool); chats.ts' `savedJob` (plain values) and `reopenedJob` (a job under way reopens paused); rules
-  tests 596/0 (10 new). **Not deployed:** deploy the rules before pushing this client, or live saves of a chat with
-  a job are refused.
+  tests 596/0 (10 new). Rules deployed 2026-11-01 (firestore:rules, the user's go), then the client pushed.
 - *Not yet:* one preview for the whole job (only per step now); the evals'
   side of telling the model about an apply (with bug 25); evals for big jobs (turns until done, what's left); a
   steering message is drawn after the answer it interrupted, not where it was sent.
