@@ -30,6 +30,13 @@
 // calls, results and provider items dropped), with a note where a summary will go; a model-written summary can come
 // later through the same hook (opts.compact).
 //
+// APPEND-ONLY (D-329, a model with `appendOnly`: Claude): the history only grows, because Claude binds each thinking
+// block to everything sent before it and refuses an edited history. So: the head is the system prompt alone; the map
+// (when it changed since the last one sent), the notes (likewise), where the person is and a skill's guide are
+// appended AFTER the ask and kept in the history (tagged, `ContextTag`); the last step's note is kept too; old
+// results are never cleared; compaction keeps no turn whole (every turn's ask and answer as text, no calls, results
+// or provider items), so nothing left in the history is bound to what was dropped.
+//
 // WRITES: `change` writes nothing during the turn (S13): it adds to the chat's pending changes (`env.changes`,
 // changeset.ts), which every read of the turn sees (`getWs()` = the workspace with them played on); the workflow
 // (workflow.ts) previews them when the turn ends and accepts them as ONE undo step. Every apply (accept, or auto-apply
@@ -297,6 +304,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
 
   const ws = agentEnv.getWs()
   env.ids.sync(ws)
+  const appendOnly = !!model.appendOnly
   const system = opts.system ?? systemPrompt({ workspaceName: ws.workspace?.name })
   const map = workspaceMap(ws, env.ids)
   const where = whereAmI(ws, env.ids, env.ui.currentView()).text
@@ -304,7 +312,9 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   let past = [...history]
   if (historyTokens(past) > (opts.compactAt ?? COMPACT_TOKENS)) {
     try {
-      past = [...(await (opts.compact ?? ((h) => compactHistory(h, { maxTokens: opts.compactAt })))(past))]
+      // Append-only: no turn kept whole (its thinking would be bound to what the compaction drops).
+      const keepTurns = appendOnly ? 0 : undefined
+      past = [...(await (opts.compact ?? ((h) => compactHistory(h, { maxTokens: opts.compactAt, keepTurns })))(past))]
     } catch {
       // Compaction failing leaves the history as it was.
     }
@@ -312,12 +322,30 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   // The agent notes (S16): the workspace's own (the notes document, src/model/notes.ts) unless the caller gives them;
   // workspace text, so wrapped as data like every other.
   const notes = (opts.notes ?? notesOf(ws).text).trim()
-  const head: ModelMessage[] = [{ role: 'system', content: system }, { role: 'system', content: map }, ...(notes ? [{ role: 'system' as const, content: notesBlock(notes) }] : [])]
   const ask: ModelMessage = { role: 'user', content: userMessage }
   // A skill (S17): `/name …` adds its guide as a developer message right before the ask, for this turn only (not kept
   // in the history). An unknown `/x` goes to the model as an ordinary message, with a one-line note listing the skills.
   const skill = parseSkill(userMessage)
-  const guide: ModelMessage[] = !skill ? [] : 'skill' in skill ? [{ role: 'system', content: skillGuide(skill.skill, skill.rest) }] : [{ role: 'system', content: unknownSkillNote(skill.unknown) }]
+  const guide: ModelMessage[] = !skill ? [] : 'skill' in skill ? [{ role: 'system', tag: 'guide', content: skillGuide(skill.skill, skill.rest) }] : [{ role: 'system', tag: 'guide', content: unknownSkillNote(skill.unknown) }]
+  // Append-only: the context after the ask, kept in the history; the map and the notes only when they changed since
+  // the copy last sent (a compaction drops them, so they come again after one).
+  const lastSent = (tag: 'map' | 'notes') => {
+    for (let i = past.length - 1; i >= 0; i--) {
+      const m = past[i]
+      if (m.role === 'system' && m.tag === tag) return m.content
+    }
+    return undefined
+  }
+  const notesText = notes ? notesBlock(notes) : ''
+  const context: ModelMessage[] = !appendOnly
+    ? []
+    : [
+        ...(lastSent('map') !== map ? [{ role: 'system' as const, tag: 'map' as const, content: map }] : []),
+        ...(notesText && lastSent('notes') !== notesText ? [{ role: 'system' as const, tag: 'notes' as const, content: notesText }] : []),
+        { role: 'system', tag: 'where', content: where },
+        ...guide,
+      ]
+  const head: ModelMessage[] = appendOnly ? [{ role: 'system', content: system }] : [{ role: 'system', content: system }, { role: 'system', content: map }, ...(notes ? [{ role: 'system' as const, content: notesText }] : [])]
   // This turn's messages after the ask (assistant + tool results), and the whole chat as it will be returned.
   const mine: ModelMessage[] = []
   const byName = new Map(tools.map((t) => [t.def.name, t]))
@@ -337,8 +365,9 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     const turn: AgentTurn = { ask: userMessage, steps, answer, end, usage: total, ms: performance.now() - t0, ...(error ? { error } : {}) }
     opts.transcript?.turns.push(turn)
     emit({ type: 'turn_finished', turn })
-    // `past` (cleared in place with this turn's messages) keeps its order: history, the ask, this turn's.
-    return { turn, history: [...past, ask, ...mine] }
+    // `past` (cleared in place with this turn's messages) keeps its order: history, the ask, this turn's (append-only:
+    // the context sent after the ask too).
+    return { turn, history: [...past, ask, ...context, ...mine] }
   }
 
   for (let n = 1; n <= budget; n++) {
@@ -349,13 +378,17 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     const final = n === budget
     emit({ type: 'step_started', n, final })
     const s0 = performance.now()
-    // Old results cleared across the whole chat (history and this turn), in place.
+    // Old results cleared across the whole chat (history and this turn), in place. Never in an append-only history.
     const chat = [...past, ask, ...mine]
-    if (clearOldResults(chat, keep)) {
+    if (!appendOnly && clearOldResults(chat, keep)) {
       past = chat.slice(0, past.length)
       mine.splice(0, mine.length, ...chat.slice(past.length + 1))
     }
-    const messages: ModelMessage[] = [...head, ...past, { role: 'system', content: where }, ...guide, ask, ...mine, ...(final ? [{ role: 'system' as const, content: FINAL_STEP_NOTE }] : [])]
+    // Append-only: the last step's note is kept (the answer after it is bound to it).
+    if (final && appendOnly) mine.push({ role: 'system', tag: 'final', content: FINAL_STEP_NOTE })
+    const messages: ModelMessage[] = appendOnly
+      ? [...head, ...past, ask, ...context, ...mine]
+      : [...head, ...past, { role: 'system', content: where }, ...guide, ask, ...mine, ...(final ? [{ role: 'system' as const, content: FINAL_STEP_NOTE }] : [])]
     let res: ModelResponse
     try {
       res = await callModel(model, { messages, tools: defs, signal, ...(final ? { toolChoice: 'none' as const } : {}) }, (delta) => emit({ type: 'text', n, delta }))
@@ -389,7 +422,8 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
       }
       return { id: c.id, name: c.name, label, args: argsBrief(c.args) }
     })
-    mine.push({ role: 'assistant', content: res.text, ...(calls.length ? { toolCalls: calls } : {}), ...(res.providerItems && (calls.length || !res.toolCalls.length) ? { providerItems: res.providerItems } : {}), ...(res.responseId ? { responseId: res.responseId } : {}) })
+    const items = res.providerItems && (calls.length || !res.toolCalls.length) ? res.providerItems : undefined
+    mine.push({ role: 'assistant', content: res.text, ...(calls.length ? { toolCalls: calls } : {}), ...(items ? { providerItems: items, ...(model.provider ? { provider: model.provider } : {}) } : {}), ...(res.responseId ? { responseId: res.responseId } : {}) })
 
     if (calls.length && signal?.aborted) {
       // Stopped between the model's answer and the tools: nothing runs, each call says so.

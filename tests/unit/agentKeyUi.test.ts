@@ -31,9 +31,11 @@ describe('the key in the agent UI', () => {
   })
 
   it('only settings.ts touches the key\'s storage name; the store reads it through readKey at a turn\'s start', () => {
-    for (const f of files.filter((x) => x !== 'settings.ts')) expect(src(f), f).not.toMatch(/KEY_STORE|northstar\.agent\.openaiKey/)
+    for (const f of files.filter((x) => x !== 'settings.ts')) expect(src(f), f).not.toMatch(/KEY_STORE|northstar\.agent\.(openai|anthropic)Key/)
     const store = src('agentStore.ts')
-    expect(store.match(/readKey\(\)/g)?.length).toBe(1)
+    // One read, of the key for the chat's model's provider (D-329).
+    expect(store.match(/readKey\(/g)?.length).toBe(1)
+    expect(store).toMatch(/readKey\(provider\)/)
     // Never into the zustand state or an entry.
     expect(store).not.toMatch(/setState\(\{[^}]*key/i)
   })
@@ -51,6 +53,37 @@ describe('the key in the agent UI', () => {
     s.removeKey()
     expect(mem.has(KEY_STORE)).toBe(false)
     expect(useAgentSettings.getState().hasKey).toBe(false)
+  })
+
+  it('an Anthropic key (D-329) beside it, the same way: its own name, its own hint, removed alone', async () => {
+    const { useAgentSettings, readKey, KEY_STORE, ANTHROPIC_KEY_STORE } = await import('../../src/agent/ui/settings')
+    const CLAUDE = 'sk-ant-api03-THISISAFAKEKEY0123456789wxyz'
+    useAgentSettings.getState().saveKey(KEY)
+    useAgentSettings.getState().saveKey(` ${CLAUDE} `, 'anthropic')
+    expect(ANTHROPIC_KEY_STORE).toBe('northstar.agent.anthropicKey')
+    expect(mem.get(ANTHROPIC_KEY_STORE)).toBe(CLAUDE)
+    expect(readKey('anthropic')).toBe(CLAUDE)
+    expect(readKey()).toBe(KEY)
+    const s = useAgentSettings.getState()
+    expect([s.hasClaudeKey, s.claudeHint]).toEqual([true, 'sk-…wxyz'])
+    expect(JSON.stringify(s)).not.toContain(CLAUDE)
+    s.removeKey('anthropic')
+    expect(mem.has(ANTHROPIC_KEY_STORE)).toBe(false)
+    expect(mem.get(KEY_STORE)).toBe(KEY)
+    expect(useAgentSettings.getState()).toMatchObject({ hasClaudeKey: false, hasKey: true })
+  })
+
+  it('the picker offers each saved key\'s models and suggests for the keys there', async () => {
+    const { pickable, suggested } = await import('../../src/agent/ui/settings')
+    const none = { hasKey: false, hasClaudeKey: false, models: [], claudeModels: [] }
+    expect(pickable(none)).toEqual(expect.arrayContaining(['gpt-5.6-terra', 'anthropic:claude-opus-5-5']))
+    expect(suggested(none)).toBe('gpt-5.6-terra')
+    const claude = { ...none, hasClaudeKey: true, claudeModels: ['anthropic:claude-sonnet-5-5'] }
+    expect(pickable(claude)).toEqual(['anthropic:claude-sonnet-5-5'])
+    expect(suggested(claude)).toBe('anthropic:claude-opus-5-5')
+    const both = { ...claude, hasKey: true, models: ['gpt-5.6-terra'] }
+    expect(pickable(both)).toEqual(['gpt-5.6-terra', 'anthropic:claude-sonnet-5-5'])
+    expect(suggested(both)).toBe('gpt-5.6-terra')
   })
 
   it('the usage log keeps counts only, even when the ask and the answer contain the key', async () => {

@@ -1,15 +1,15 @@
-// Settings → the agent (S14, D-312; agent.md §4.2, §4.8; CLAUDE.md's hard rule on keys): the person's own OpenAI key
-// (kept only in this browser, never shown again after saving: `sk-…abcd`), `[check]` (the key's model list, which fills
-// the picker), the model (works well / not tried yet; the suggested one only pre-selected), its reasoning effort, and
+// Settings → the agent (S14, D-312, D-329; agent.md §4.2, §4.8; CLAUDE.md's hard rule on keys): the person's own keys,
+// OpenAI's and Anthropic's, either or both (each kept only in this browser, never shown again after saving: `sk-…abcd`),
+// `[check]` (each key's model list, which fills the picker), the model (works well / not tried yet; the suggested one only pre-selected), its reasoning effort, and
 // this month's usage in tokens (counts only, from this browser's usage log).
 import { useState } from 'react'
 import { Choice } from '../../ui/Choice'
 import { Note, Row, Section } from '../../ui/Settings'
 import { Select } from '../../ui/Select'
-import { canChat, devStubWanted, FIT_WORDS, KNOWN_MODELS, pickerRows, reasons, SUGGESTED } from '../models'
+import { canChat, claudeId, devStubWanted, FIT_WORDS, KNOWN_MODELS, pickerRows, reasons, type ProviderId } from '../models'
 import { listModels, type Effort } from '../openai'
 import { clearUsage, readUsage, sumUsage } from '../usage'
-import { EFFORTS, readKey, useAgentSettings } from './settings'
+import { EFFORTS, pickable, readKey, suggested, useAgentSettings } from './settings'
 import { plainError } from './errors'
 import styles from './AgentSettings.module.css'
 
@@ -23,108 +23,163 @@ export function AgentSettings() {
       {import.meta.env.DEV && (
         <Note>
           Dev only: add <code>?agentStub=1</code> to the address (or set <code>northstar.agentStub</code> to 1) to try the agent without a key: scripted
-          answers on the real tools, no OpenAI call.{devStubWanted() ? ' It is on in this tab.' : ''}
+          answers on the real tools, no provider called.{devStubWanted() ? ' It is on in this tab.' : ''}
         </Note>
       )}
     </>
   )
 }
 
-function KeySection() {
+// One provider's key: pasted once, kept in this browser, shown only as `sk-…abcd`; [check] asks that provider which
+// models the key can use (they fill the picker).
+const PROVIDERS = {
+  openai: { label: 'openai key', name: 'OpenAI', where: 'Paste a key from platform.openai.com → API keys.', placeholder: 'sk-…' },
+  anthropic: {
+    label: 'claude key',
+    name: 'Anthropic',
+    where: 'Paste a key from platform.claude.com → API keys.',
+    placeholder: 'sk-ant-…',
+  },
+} as const
+
+// Anthropic's article on the plans' monthly API credits (D-329): linked, so the rules live on their page, not here.
+const CLAUDE_CREDITS = 'https://support.claude.com/en/articles/17154008-monthly-api-credits-for-max-ultra-and-team-plans'
+
+function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text: string; tone?: 'error' } | null) => void }) {
   const s = useAgentSettings()
+  const p = PROVIDERS[provider]
+  const has = provider === 'anthropic' ? s.hasClaudeKey : s.hasKey
+  const hint = provider === 'anthropic' ? s.claudeHint : s.hint
   const [draft, setDraft] = useState('')
-  const [said, setSaid] = useState<{ text: string; tone?: 'error' } | null>(null)
   const [busy, setBusy] = useState(false)
-  const rows = pickerRows(s.models.length ? s.models : KNOWN_MODELS.map((m) => m.id), s.model || undefined)
-  const shown = s.model || SUGGESTED
 
   const save = () => {
     const key = draft.trim()
     if (!key) return
-    s.saveKey(key)
+    s.saveKey(key, provider)
     setDraft('')
-    setSaid({ text: 'Saved in this browser. [check] asks OpenAI which models it can use.' })
+    onSaid({ text: `Saved in this browser. [check] asks ${p.name} which models it can use.` })
   }
 
   const check = async () => {
     setBusy(true)
-    setSaid(null)
+    onSaid(null)
     try {
       if (devStubWanted()) {
-        s.setModels(KNOWN_MODELS.map((m) => m.id))
-        setSaid({ text: 'Dev stub on: models not asked for (the known ones are listed).' })
+        const known = KNOWN_MODELS.filter((m) => m.provider === provider).map((m) => m.id)
+        if (provider === 'anthropic') s.setClaudeModels(known)
+        else s.setModels(known)
+        onSaid({ text: 'Dev stub on: models not asked for (the known ones are listed).' })
         return
       }
-      const ids = (await listModels(readKey())).filter(canChat)
-      s.setModels(ids)
-      setSaid({ text: `Your key works: ${ids.length} model${ids.length === 1 ? '' : 's'} it can use for the agent.` })
+      let ids: string[]
+      if (provider === 'anthropic') {
+        const { listClaudeModels } = await import('../anthropic')
+        ids = (await listClaudeModels(readKey('anthropic'))).map(claudeId).filter(canChat)
+        s.setClaudeModels(ids)
+      } else {
+        ids = (await listModels(readKey())).filter(canChat)
+        s.setModels(ids)
+      }
+      onSaid({ text: `Your ${p.name} key works: ${ids.length} model${ids.length === 1 ? '' : 's'} it can use for the agent.` })
     } catch (e) {
-      setSaid({ text: plainError((e as Error)?.message ?? String(e)).text, tone: 'error' })
+      onSaid({ text: plainError((e as Error)?.message ?? String(e)).text, tone: 'error' })
     } finally {
       setBusy(false)
     }
   }
 
   return (
+    <Row
+      label={p.label}
+      hint={
+        has ? (
+          'Saved in this browser.'
+        ) : provider === 'anthropic' ? (
+          <>
+            {p.where} A Max, Ultra or Team plan&apos;s monthly API credits pay for it when the key comes from the Console organisation linked to
+            the plan (
+            <a href={CLAUDE_CREDITS} target="_blank" rel="noreferrer">
+              how
+            </a>
+            ).
+          </>
+        ) : (
+          p.where
+        )
+      }
+    >
+      {has ? (
+        <>
+          <span className={styles.hint} aria-label={`your ${p.name} key, shortened`}>
+            {hint}
+          </span>
+          <button className={styles.action} data-tone="primary" onClick={() => void check()} disabled={busy}>
+            {busy ? 'checking' : 'check'}
+          </button>
+          <button className={styles.action} data-tone="danger" onClick={() => (s.removeKey(provider), onSaid({ text: 'Removed from this browser.' }))}>
+            remove
+          </button>
+        </>
+      ) : (
+        <form
+          className={styles.keyForm}
+          onSubmit={(e) => {
+            e.preventDefault()
+            save()
+          }}
+        >
+          <input
+            className={styles.input}
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={p.placeholder}
+            aria-label={`your ${p.name} key`}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
+          <button className={styles.action} data-tone="primary" type="submit" disabled={!draft.trim()}>
+            save
+          </button>
+        </form>
+      )}
+    </Row>
+  )
+}
+
+function KeySection() {
+  const s = useAgentSettings()
+  const [said, setSaid] = useState<{ text: string; tone?: 'error' } | null>(null)
+  const suggest = suggested(s)
+  const rows = pickerRows(pickable(s), s.model || undefined, suggest)
+  const shown = s.model || suggest
+
+  return (
     <Section
-      label="your key"
+      label="your keys"
       note={
         <p>
-          Your key is stored only in this browser (its local storage) and goes only to OpenAI, with each request the agent makes. It is never saved
-          in the workspace, never sent to North Star or anyone else, and never shown again here. You pay OpenAI for what you use; the chat shows the
-          tokens of each answer.
+          Your keys are stored only in this browser (its local storage). Each goes only to its own provider (OpenAI or Anthropic), with each request
+          the agent makes on one of its models. They are never saved in the workspace, never sent to North Star or anyone else, and never shown
+          again here. You pay the provider for what you use; the chat shows the tokens of each answer. One key is enough.
         </p>
       }
     >
-      <Row label="openai key" hint={s.hasKey ? 'Saved in this browser.' : 'Paste a key from platform.openai.com → API keys.'}>
-        {s.hasKey ? (
-          <>
-            <span className={styles.hint} aria-label="your key, shortened">
-              {s.hint}
-            </span>
-            <button className={styles.action} data-tone="primary" onClick={() => void check()} disabled={busy}>
-              {busy ? 'checking' : 'check'}
-            </button>
-            <button className={styles.action} data-tone="danger" onClick={() => (s.removeKey(), setSaid({ text: 'Removed from this browser.' }))}>
-              remove
-            </button>
-          </>
-        ) : (
-          <form
-            className={styles.keyForm}
-            onSubmit={(e) => {
-              e.preventDefault()
-              save()
-            }}
-          >
-            <input
-              className={styles.input}
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="sk-…"
-              aria-label="your OpenAI key"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-            />
-            <button className={styles.action} data-tone="primary" type="submit" disabled={!draft.trim()}>
-              save
-            </button>
-          </form>
-        )}
-      </Row>
+      <KeyRow provider="openai" onSaid={setSaid} />
+      <KeyRow provider="anthropic" onSaid={setSaid} />
       {said && (
         <p className={styles.said} data-tone={said.tone}>
           {said.tone === 'error' ? '! ' : ''}
           {said.text}
         </p>
       )}
-      <Row label="model" hint={s.model ? `${FIT_WORDS[rows.find((r) => r.id === s.model)?.fit ?? 'unknown']}. Each chat can switch it in its header.` : `Suggested: ${SUGGESTED}. Pick one to keep it; each chat can switch it.`}>
+      <Row label="model" hint={s.model ? `${FIT_WORDS[rows.find((r) => r.id === s.model)?.fit ?? 'unknown']}. Each chat can switch it in its header.` : `Suggested: ${suggest}. Pick one to keep it; each chat can switch it.`}>
         <Select
           ariaLabel="model"
           className={styles.select}
           value={shown}
-          options={rows.map((r) => ({ value: r.id, label: <ModelRow id={r.id} words={r.fitWords} suggested={!s.model && r.id === SUGGESTED} /> }))}
+          options={rows.map((r) => ({ value: r.id, label: <ModelRow id={r.id} words={r.fitWords} suggested={!s.model && r.id === suggest} /> }))}
           onChange={(v) => s.setModel(v)}
         />
       </Row>

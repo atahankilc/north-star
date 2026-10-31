@@ -70,7 +70,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   15–24 from the first real eval run (gpt-5.6-terra 66/110, 2026-10-31; eval bugs fixed 6c9cc13), 25 eval vs live store:
   docs/specs/agent-bugs.md (26 split from 17; 27 structure-aware organising D-327 and 28 jobs that keep going D-328:
   agreed, not built; second review read against the code). Add new ones there. Claude adapter: D-329
-  (docs/specs/agent-claude.md), agreed, not started. Other providers: Q-031.
+  (docs/specs/agent-claude.md): steps 1–5 built, not tried with a real key; evals after 25. Other providers: Q-031.
 - Emulators only: after a Storage URL fetch, a tab's next Firestore write can queue ~55 s in Chrome (HTTP/1.1 connection limit).
 - Emulators only: the 6th page load in one Chrome tab stalls ~60 s (connections per host); use a new tab per few loads.
 - Emulators only: a Firestore emulator left running for days can stop sending one workspace's live updates; restart it.

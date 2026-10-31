@@ -5,7 +5,11 @@
 // The person picks; nothing here chooses for them. `SUGGESTED` is only the row pre-selected in the picker when they
 // have picked nothing yet, and it is never the cheapest model (1.0 ran the cheapest on low reasoning: §1 cause 1).
 //
-// `makeModel` builds the model the loop talks to: the OpenAI adapter with the person's key, or, in dev with
+// Two providers (D-329): OpenAI's ids bare (`gpt-5.6-terra`, as saved before D-329), Anthropic's with their provider in
+// front (`anthropic:claude-opus-5-5`), so a saved pick, a chat's model and the eval's `--model` say whose key it needs.
+//
+// `makeModel` builds the model the loop talks to: the OpenAI or the Anthropic adapter (lazily, its SDK a chunk of its
+// own) with the person's key for that provider, or, in dev with
 // `?agentStub=1` (or localStorage `northstar.agentStub` = '1'), the dev stub (devStub.ts) that plays scripted answers
 // on the real tools without a key. The stub is behind `import.meta.env.DEV`, so a production build drops it
 // (tests/unit/devStub.test.ts builds this file for production and checks).
@@ -21,7 +25,7 @@ export type Price = { input: number; cachedInput: number; output: number }
 
 export type KnownModel = {
   id: string
-  provider: 'openai'
+  provider: 'openai' | 'anthropic'
   // How it did in the evals (all `unknown` until a run with a key: evals/README.md, `--model openai:<id>`).
   fit: Fit
   // Reasoning effort to send; null: the model doesn't reason (no reasoning block).
@@ -35,17 +39,38 @@ export const KNOWN_MODELS: KnownModel[] = [
   { id: 'gpt-5.6-sol', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 4, cachedInput: 0.4, output: 20 } },
   { id: 'gpt-5.6-terra', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 2, cachedInput: 0.2, output: 12 } },
   { id: 'gpt-5.4-mini', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 0.75, cachedInput: 0.075, output: 4.5 } },
+  // Anthropic's (D-329), prices per million from Anthropic's table as of 2026-10-06 (cache reads as listed; writes,
+  // 1.25 × input, counted as input here). Check the page when a model is added.
+  { id: 'anthropic:claude-opus-5-5', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 4, cachedInput: 0.2, output: 20 } },
+  { id: 'anthropic:claude-sonnet-5-5', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 2, cachedInput: 0.2, output: 10 } },
+  { id: 'anthropic:claude-haiku-5-5', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 0.1, cachedInput: 0.01, output: 0.5 } },
+  { id: 'anthropic:claude-fable-5-1', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 10, cachedInput: 0.25, output: 50 } },
 ]
+
+export type ProviderId = KnownModel['provider']
+export const ANTHROPIC = 'anthropic:'
+// Whose key a model id needs, and the id that provider knows it by.
+export const providerOf = (id: string): ProviderId => (id.startsWith(ANTHROPIC) ? 'anthropic' : 'openai')
+export const bareId = (id: string) => id.replace(/^(anthropic|openai):/, '')
+// Claude's own ids (from its model list) as ours.
+export const claudeId = (id: string) => (id.startsWith(ANTHROPIC) ? id : `${ANTHROPIC}${id}`)
+
 
 // Pre-selected in the picker when the person has chosen nothing (they still choose: nothing runs until they save).
 export const SUGGESTED = 'gpt-5.6-terra'
+// Pre-selected when only an Anthropic key is saved (Anthropic's own default, never its cheapest).
+export const SUGGESTED_CLAUDE = 'anthropic:claude-opus-5-5'
+// The suggestion for the keys saved: OpenAI's when there's an OpenAI key (or none), else Claude's.
+export const suggestedFor = (keys: { openai: boolean; anthropic: boolean }) => (!keys.openai && keys.anthropic ? SUGGESTED_CLAUDE : SUGGESTED)
 export const DEFAULT_EFFORT: Effort = 'medium'
 
 const known = (id: string) => KNOWN_MODELS.find((m) => m.id === id)
 
 // OpenAI's reasoning models: the gpt-5 family and the o-series. Others (gpt-4.1, gpt-4o) get no reasoning block.
 // The `*-chat-latest` models (what ChatGPT runs) take no reasoning block.
-export const reasons = (id: string) => /^(gpt-5|o\d)/.test(id) && !/-chat(-latest)?$/.test(id)
+// Claude's 4.6+ models always think (adaptive; anthropic.ts' `modern`), so they take an effort too.
+export const reasons = (id: string) =>
+  providerOf(id) === 'anthropic' ? /^claude-(opus|sonnet|haiku|fable|mythos)-(4-[6-9]|[5-9])/.test(bareId(id)) : /^(gpt-5|o\d)/.test(id) && !/-chat(-latest)?$/.test(id)
 
 // The effort to send for a model: what we know, else medium for a reasoning model, else none.
 export function effortFor(id: string): Effort | null {
@@ -57,6 +82,8 @@ export function effortFor(id: string): Effort | null {
 // Models from GET /v1/models that can run the agent (chat models that call tools): not embeddings, audio, images,
 // moderation, realtime or search-only models, and not `chatgpt-*-latest` (no tool calls). Codex models call tools: in.
 export function canChat(id: string): boolean {
+  // Claude's: every chat model it lists calls tools.
+  if (id.startsWith(ANTHROPIC)) return /^claude-/.test(bareId(id))
   if (!/^(gpt-|o\d)/.test(id)) return false
   return !/(embedding|tts|whisper|transcribe|audio|realtime|image|dall-e|moderation|search|instruct)/.test(id)
 }
@@ -65,13 +92,13 @@ export type PickerRow = { id: string; fit: Fit; fitWords: string; known: boolean
 
 // The picker's rows from the models a key can use: known ones first (in KNOWN_MODELS' order), then the rest by name.
 // `chosen` (the person's saved pick) is never moved or dropped, even if the key no longer lists it.
-export function pickerRows(available: string[], chosen?: string): PickerRow[] {
+export function pickerRows(available: string[], chosen?: string, suggest = SUGGESTED): PickerRow[] {
   const ids = new Set(available.filter(canChat))
   if (chosen) ids.add(chosen)
   const row = (id: string): PickerRow => {
     const k = known(id)
     const fit = k?.fit ?? 'unknown'
-    return { id, fit, fitWords: FIT_WORDS[fit], known: !!k, suggested: !chosen && id === SUGGESTED, effort: effortFor(id) }
+    return { id, fit, fitWords: FIT_WORDS[fit], known: !!k, suggested: !chosen && id === suggest, effort: effortFor(id) }
   }
   const first = KNOWN_MODELS.filter((m) => ids.has(m.id)).map((m) => row(m.id))
   const rest = [...ids].filter((id) => !known(id)).sort().map(row)
@@ -130,5 +157,9 @@ export async function makeModel(o: { model: string; key?: string; env: Pick<Agen
   }
   const wid = o.env.getWs().wid
   const reasoning = effortFor(o.model) && o.effort ? o.effort : effortFor(o.model)
+  if (providerOf(o.model) === 'anthropic') {
+    const { anthropicModel } = await import('./anthropic')
+    return anthropicModel({ key: o.key ?? '', model: bareId(o.model), effort: reasoning })
+  }
   return openaiModel({ key: o.key ?? '', model: o.model, reasoning, ...(wid ? { cacheKey: cacheKeyOf(wid) } : {}) })
 }

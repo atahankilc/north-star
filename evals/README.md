@@ -11,7 +11,10 @@ npm run eval -- --group build --set capability --task find-01-no-evidence,edit-0
 npm run eval -- --wrong           the stub plays each task's plausible wrong script: every task should FAIL
 npm run eval -- --write-fixtures  rewrite evals/fixtures/*.workspace.json (export v2) after the fixtures change
 npm run eval -- --emulator        accepts through the real apply into the running Firestore emulator (below)
-OPENAI_API_KEY=… npm run eval -- --model openai:gpt-5.6-terra   a real model (S12); the judge uses it too
+OPENAI_API_KEY=… npm run eval -- --model openai:gpt-5.6-terra   a real model (S12)
+ANTHROPIC_API_KEY=… OPENAI_API_KEY=… npm run eval -- --model anthropic:claude-opus-5-5   a Claude model (D-329)
+npm run eval -- … --judge openai:gpt-5.6-terra   the judge: one for every provider (default: that one when
+                                  OPENAI_API_KEY is set, else the model tested; the report names it)
 ```
 
 `npm run eval` runs `evals/run.ts` in node through Vite's module runner (`evals/cli.mjs`); no extra dependency. The
@@ -110,8 +113,10 @@ unjudged) and all wrong scripts fail); the loop itself: tests/unit/agentLoop.tes
   only in a closure and the Authorization header, redacted from every error. Tested on recorded-style SSE fixtures
   (`tests/unit/fixtures/openai/`); never run against the network yet.
 - `src/agent/prompt.ts`: the system prompt in short sections; `tests/unit/agentPrompt.test.ts` checks §7.3 mechanically.
-- `--model openai:<name>`: the key ONLY from `OPENAI_API_KEY` at run time, never written (the report and transcripts
-  carry the model's name only). `src/agent/models.ts` holds the price table (`prices.ts` re-exports it) and the picker
+- `--model openai:<name>` / `anthropic:<name>` (D-329): the key ONLY from `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` at run
+  time, never written (the report and transcripts carry the model's name only). `--judge` fixes the judge, the same for
+  every provider so scores compare. `src/agent/anthropic.ts` is Claude's adapter (the official SDK, append-only
+  history), tested through the real SDK on a fake fetch in `tests/unit/anthropic.test.ts`; never run against the network yet. `src/agent/models.ts` holds the price table (`prices.ts` re-exports it) and the picker
   data; every model is `not tried yet` until a run with a key marks it.
 - `src/agent/devStub.ts`: a scripted model for the UI in dev (`?agentStub=1`), on the real tools; not in production.
 - `src/agent/usage.ts`: the browser's usage log, counts and tool names only.

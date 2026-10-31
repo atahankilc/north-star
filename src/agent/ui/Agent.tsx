@@ -21,8 +21,8 @@ import { openSettingsAt } from '../../ui/Settings'
 import { useWs } from '../../views/workspace/context'
 import { isTyping } from '../../views/workspace/useEditKeys'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, realOf, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
-import { pickerRows, KNOWN_MODELS } from '../models'
-import { useAgentSettings } from './settings'
+import { pickerRows } from '../models'
+import { pickable, suggested, useAgentSettings } from './settings'
 import { firstAsks } from './suggest'
 import { agentUi } from '../ui'
 import { AgentGhost } from './AgentGhost'
@@ -377,7 +377,13 @@ function ModelSwitch() {
   const model = useAgent((s) => s.chat.model)
   const saved = useAgentSettings((s) => s.model)
   const models = useAgentSettings((s) => s.models)
-  const rows = useMemo(() => pickerRows(models.length ? models : KNOWN_MODELS.map((m) => m.id), model || saved || undefined), [models, model, saved])
+  const claudeModels = useAgentSettings((s) => s.claudeModels)
+  const hasKey = useAgentSettings((s) => s.hasKey)
+  const hasClaudeKey = useAgentSettings((s) => s.hasClaudeKey)
+  const rows = useMemo(() => {
+    const keys = { hasKey, hasClaudeKey, models, claudeModels }
+    return pickerRows(pickable(keys), model || saved || undefined, suggested(keys))
+  }, [models, claudeModels, hasKey, hasClaudeKey, model, saved])
   if (stubOn()) return <span className={styles.model} title="Dev only: ?agentStub=1 plays scripted answers on the real tools, no key">dev stub</span>
   const current = chatModel()
   return (
@@ -455,7 +461,7 @@ function FirstSkills() {
 function KeyNeeded() {
   return (
     <p className={styles.note} data-tone="error">
-      add your OpenAI key first: it stays in this browser.{' '}
+      add your key first (OpenAI or Anthropic): it stays in this browser.{' '}
       <button className={styles.action} data-tone="primary" onClick={() => openSettingsAt('agent')}>
         settings → the agent
       </button>

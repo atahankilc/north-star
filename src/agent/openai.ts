@@ -114,7 +114,8 @@ export function toInput(messages: ModelMessage[]): { instructions?: string; inpu
       else input.push({ role: 'developer', content: m.content })
     } else if (m.role === 'user') input.push({ role: 'user', content: m.content })
     else if (m.role === 'assistant') {
-      if (m.providerItems?.length) {
+      // Another provider's items (a chat switched from Claude) never go to OpenAI: its text and calls do (D-329).
+      if (m.providerItems?.length && (m.provider ?? 'openai') === 'openai') {
         // The response's own items, as they came (reasoning items carry their encrypted content).
         for (const it of m.providerItems) input.push(it as Item)
         continue
@@ -411,6 +412,7 @@ export function openaiModel(o: OpenAIOptions): OpenAIModel {
   return {
     name: o.model,
     model: o.model,
+    provider: 'openai',
     stream,
     async respond(req) {
       for await (const ev of stream(req)) if (ev.type === 'done') return ev.response

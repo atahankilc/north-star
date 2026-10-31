@@ -6071,4 +6071,15 @@ several planes, a main plane with detail planes beside it, sections), each only 
   after agent-bugs 25 and the baseline.
 - *Alternatives:* translating messages only (breaks on every new account); the Vercel AI SDK as the provider layer
   (replaces our adapters and their tests; kept as an option, D-328); OAuth with a Claude subscription (forbidden).
-- *Spec:* docs/specs/agent-claude.md. *Not yet:* all of it.
+- *Built (2026-10-31):* steps 1–5: `Provider`/`appendOnly` on `AgentModel`, `providerItems` tagged with their provider
+  (OpenAI drops Claude's and the reverse); loop.ts' append-only mode (head = prompt; map and notes after the ask when
+  changed, where and a guide each turn, the last step's note, all kept; no clearing; compaction keeps no turn whole);
+  src/agent/anthropic.ts on `@anthropic-ai/sdk` 1.3.0 (pinned; its own 347 kB chunk, 77 kB gzipped); models.ts
+  `anthropic:` ids, `providerOf`, `SUGGESTED_CLAUDE` (Opus 5.5) when only a Claude key is saved; settings.ts a key per
+  provider (`northstar.agent.anthropicKey`), `pickable`, `suggested`; Settings → the agent with a row per key (the
+  Claude one linking Anthropic's credits article); evals `--model anthropic:<id>` and `--judge` (default
+  openai:gpt-5.6-terra when its key is there). Checked: 876 unit tests (15 new in tests/unit/anthropic.test.ts through
+  the real SDK on a fake fetch: request shape, the same bytes for the same history, a binding retry, errors), tsc,
+  check:tokens, build. Not run against Anthropic (no key in the session), nor seen in a browser.
+- *Spec:* docs/specs/agent-claude.md. *Not yet:* step 6 (evals, after agent-bugs 25); server-side compaction and
+  context editing; the map as a diff; a look at Settings → the agent in a browser.

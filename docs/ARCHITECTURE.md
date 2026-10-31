@@ -15,7 +15,7 @@ Accepted decisions are listed in [../memory-bank/decisions.md](../memory-bank/de
 - There is **no self-run backend**. Free backend hosts (Render, Railway free tiers, etc.) have cold
   starts or shut down, which is unacceptable.
 - We still need: **auth, database, real-time sync, presence/cursors, file storage**.
-- AI calls use the **user's own OpenAI key**, directly from the browser.
+- AI calls use the **user's own key**, OpenAI's or Anthropic's (D-329), directly from the browser to that provider.
 
 So: one managed **"database-with-batteries"** service that the browser talks to directly, with
 access enforced by that service's permission rules.

@@ -1,6 +1,6 @@
 # The agent on Claude: an Anthropic adapter (plan, not started)
 
-_Written 2026-10-31 for Q-031 (1). Status: **agreed (D-329), not started.** Read with agent.md §4.2 (models and keys), §4.3
+_Written 2026-10-31 for Q-031 (1). Status: **agreed (D-329); steps 1–5 built 2026-10-31, never run against Anthropic yet; step 6 (evals) after agent-bugs 25 and the baseline.** Read with agent.md §4.2 (models and keys), §4.3
 (context), agent-bugs.md (25, the baseline) and D-312 (own keys only, the person picks the model)._
 
 ## Why
@@ -103,6 +103,12 @@ OpenAI keeps today's path: the mode is per provider and the OpenAI evals don't m
 - An eval on a long chat (many turns, compaction) passes only with no binding 400 and no dropped thinking.
 
 ## Steps
+
+_Built (2026-10-31): 1–5 and the eval flags. What differs from the plan below: compaction is the "simple" kind
+(every turn's ask and answer as text, nothing bound to what was dropped), not Anthropic's server-side compaction, and
+old results are not cleared at all (no server-side context editing): both are betas we haven't run with a real key,
+so they wait for step 6. The map is sent whole when it changed, not as a diff (Open, below). SDK 1.x sends the key
+as `Authorization: Bearer` (API version 2026-10-21)._
 
 1. **Contract:** `AgentModel.appendOnly` and `provider`; `providerItems` tagged with their provider (dropped, never
    sent, to another one); the SDK built for the browser (or the fetch fallback decided).

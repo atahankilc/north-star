@@ -10,6 +10,9 @@
 //   npm run eval -- --wrong           the stub plays wrong scripts (every task should fail: proves the graders bite)
 //   npm run eval -- --model openai:gpt-5.6-terra   a real model; the key ONLY from the env var OPENAI_API_KEY, read at
 //                                     run time and never written anywhere (transcripts and the report hold no key)
+//   npm run eval -- --model anthropic:claude-opus-5-5   a Claude model (D-329); the key ONLY from ANTHROPIC_API_KEY
+//   npm run eval -- --judge openai:gpt-5.6-terra   the judge (default: that one when OPENAI_API_KEY is set, else the
+//                                     model tested); one judge for every provider, so scores compare (D-329)
 //   npm run eval -- --write-fixtures  writes evals/fixtures/<name>.workspace.json (export v2)
 //   npm run eval -- --emulator        accepts through the real apply into the running Firestore emulator, end state and
 //                                     undo read back from it (evals/emulator.ts; README "Emulator mode")
@@ -24,6 +27,7 @@ import { makeEnv } from './env'
 import { runTurn } from '../src/agent/loop'
 import { systemPrompt } from '../src/agent/prompt'
 import { openaiModel } from '../src/agent/openai'
+import { anthropicModel } from '../src/agent/anthropic'
 import { effortFor } from '../src/agent/models'
 import { EVAL_TOOLS, WRITE_TOOLS } from './tools'
 import { diffLines, gradeAll, setJudge } from './graders'
@@ -213,7 +217,7 @@ export async function runTasks(tasks: Task[], o: RunOpts = {}): Promise<TaskResu
 
 // ---- The command line
 
-type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string }
+type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string; judge?: string }
 
 export function parseArgs(argv: string[]): Args {
   const a: Args = { repeat: 1, wrong: false, emulator: false, writeFixtures: false, model: 'stub' }
@@ -229,23 +233,37 @@ export function parseArgs(argv: string[]): Args {
     else if (k === '--write-fixtures') a.writeFixtures = true
     else if (k === '--out') a.out = v()
     else if (k === '--model') a.model = v()
+    else if (k === '--judge') a.judge = v()
     else throw new Error(`unknown option ${k}`)
   }
   return a
 }
 
-// `--model openai:<name>`: the OpenAI adapter on the person's model. The key comes ONLY from `env.OPENAI_API_KEY` at run
-// time; it lives in the adapter's closure and is never written (the report and transcripts carry the model's name).
-// The judge uses the same model. Anything else (or no key) stops with a clear message.
-export function realModel(spec: string, env: Record<string, string | undefined>): { name: string; make: () => AgentModel; judge: Judge } {
-  const m = /^openai:([A-Za-z0-9._-]+)$/.exec(spec)
-  if (!m) throw new Error(`--model ${spec}: use stub (the default) or openai:<model>, e.g. openai:gpt-5.6-terra`)
-  const key = env.OPENAI_API_KEY
-  if (!key) throw new Error(`--model ${spec} needs an OpenAI key in the environment variable OPENAI_API_KEY (read at run time, never written anywhere): OPENAI_API_KEY=… npm run eval -- --model ${spec}`)
-  const name = m[1]
-  const make = () => openaiModel({ key, model: name, reasoning: effortFor(name) })
+// `--model openai:<name>` or `anthropic:<name>` (D-329): that provider's adapter on the person's model. The key comes ONLY
+// from `env.OPENAI_API_KEY` / `env.ANTHROPIC_API_KEY` at run time; it lives in the adapter's closure and is never written
+// (the report and transcripts carry the model's name). Anything else (or no key) stops with a clear message.
+export const DEFAULT_JUDGE = 'openai:gpt-5.6-terra'
+
+function adapterFor(spec: string, env: Record<string, string | undefined>): { name: string; make: () => AgentModel } {
+  const m = /^(openai|anthropic):([A-Za-z0-9._-]+)$/.exec(spec)
+  if (!m) throw new Error(`--model ${spec}: use stub (the default), openai:<model> or anthropic:<model>, e.g. openai:gpt-5.6-terra or anthropic:claude-opus-5-5`)
+  const [, provider, name] = m
+  const envName = provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY'
+  const key = env[envName]
+  if (!key) throw new Error(`${spec} needs a key in the environment variable ${envName} (read at run time, never written anywhere): ${envName}=… npm run eval -- --model ${spec}`)
+  const effort = effortFor(provider === 'anthropic' ? spec : name)
+  const make = provider === 'anthropic' ? () => anthropicModel({ key, model: name, effort }) : () => openaiModel({ key, model: name, reasoning: effort })
+  return { name: spec.startsWith('openai:') ? name : spec, make }
+}
+
+// The model tested and the judge: one judge for every provider (`--judge`, else DEFAULT_JUDGE when its key is there,
+// else the model tested), so a Claude run and a GPT run are graded the same way.
+export function realModel(spec: string, env: Record<string, string | undefined>, judgeSpec?: string): { name: string; make: () => AgentModel; judge: Judge; judgeName: string } {
+  const tested = adapterFor(spec, env)
+  const js = judgeSpec ?? (env.OPENAI_API_KEY ? DEFAULT_JUDGE : spec)
+  const judging = js === spec ? tested : adapterFor(js, env)
   const judge: Judge = async ({ rubric, ask, answer, context }) => {
-    const r = await make().respond({
+    const r = await judging.make().respond({
       messages: [
         { role: 'system', content: 'You grade an assistant\'s answer against a rubric. Reply with PASS or FAIL on the first line, then one short line why.' },
         { role: 'user', content: `Rubric: ${rubric}\n\nThe person asked: ${ask}\n\nWhat changed in the workspace:\n${context || '(nothing)'}\n\nThe answer:\n${answer}` },
@@ -255,7 +273,7 @@ export function realModel(spec: string, env: Record<string, string | undefined>)
     const first = r.text.trim().split('\n')[0] ?? ''
     return { pass: /^PASS\b/i.test(first), why: r.text.trim().split('\n').slice(1).join(' ').slice(0, 300) || first }
   }
-  return { name, make, judge }
+  return { name: tested.name, make: tested.make, judge, judgeName: judging.name }
 }
 
 // npm runs scripts from the repo's root.
@@ -276,7 +294,7 @@ export async function main(argv: string[], o: { backend?: Backend } = {}): Promi
     return 0
   }
   if (a.emulator && !o.backend) throw new Error('--emulator runs through evals/cli.mjs (it loads evals/emulator.ts with VITE_USE_EMULATORS=true); start the emulators first: npm run emulators')
-  const real = a.model === 'stub' ? null : realModel(a.model, process.env)
+  const real = a.model === 'stub' ? null : realModel(a.model, process.env, a.judge)
   const tasks = selectTasks(a)
   if (!tasks.length) throw new Error('no task matches')
   if (real) setJudge(real.judge)
@@ -285,7 +303,7 @@ export async function main(argv: string[], o: { backend?: Backend } = {}): Promi
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const dir = a.out ? resolve(a.out) : join(ROOT, 'evals/results', stamp)
   mkdirSync(dir, { recursive: true })
-  const { summary } = writeReport(dir, results, { model: `${real ? real.name : a.wrong ? 'stub (wrong)' : 'stub'}${a.emulator ? ' · emulator' : ''}`, repeat: a.repeat, argv })
+  const { summary } = writeReport(dir, results, { model: `${real ? `${real.name} (judge ${real.judgeName})` : a.wrong ? 'stub (wrong)' : 'stub'}${a.emulator ? ' · emulator' : ''}`, repeat: a.repeat, argv })
   console.log(summary)
   console.log(`\nreport: ${join(dir, 'report.md')}`)
   const failed = results.filter((r) => r.attempts.some((x) => x.verdict === 'fail')).length

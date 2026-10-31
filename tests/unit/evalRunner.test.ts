@@ -244,13 +244,21 @@ describe('fixtures, options and the report', () => {
     expect(ws.documents.length - base.documents.length).toBe(1)
   })
 
-  it('--model openai:<name> takes the key only from OPENAI_API_KEY, and says so clearly without it', () => {
-    expect(() => realModel('openai:gpt-5.6-terra', {})).toThrow(/needs an OpenAI key in the environment variable OPENAI_API_KEY/)
-    expect(() => realModel('anthropic:x', { OPENAI_API_KEY: 'sk-test-abc' })).toThrow(/use stub \(the default\) or openai:<model>/)
+  it('--model openai:<name> / anthropic:<name> take the key only from their env var, and say so clearly without it', () => {
+    expect(() => realModel('openai:gpt-5.6-terra', {})).toThrow(/needs a key in the environment variable OPENAI_API_KEY/)
+    expect(() => realModel('anthropic:claude-opus-5-5', { OPENAI_API_KEY: 'sk-test-abc' })).toThrow(/needs a key in the environment variable ANTHROPIC_API_KEY/)
+    expect(() => realModel('google:x', { OPENAI_API_KEY: 'sk-test-abc' })).toThrow(/use stub \(the default\), openai:<model> or anthropic:<model>/)
     const r = realModel('openai:gpt-5.6-terra', { OPENAI_API_KEY: 'sk-test-SECRET123456' })
     const m = r.make()
-    expect([r.name, m.name]).toEqual(['gpt-5.6-terra', 'gpt-5.6-terra'])
+    expect([r.name, m.name, r.judgeName]).toEqual(['gpt-5.6-terra', 'gpt-5.6-terra', 'gpt-5.6-terra'])
     expect(JSON.stringify({ r, m })).not.toContain('SECRET')
+    // Claude (D-329): its own adapter, and the one judge for every provider when OpenAI's key is there.
+    const c = realModel('anthropic:claude-opus-5-5', { ANTHROPIC_API_KEY: 'sk-ant-test-SECRET123456', OPENAI_API_KEY: 'sk-test-SECRET654321' })
+    const cm = c.make()
+    expect([c.name, cm.name, cm.provider, cm.appendOnly, c.judgeName]).toEqual(['anthropic:claude-opus-5-5', 'claude-opus-5-5', 'anthropic', true, 'gpt-5.6-terra'])
+    expect(JSON.stringify({ c, cm })).not.toContain('SECRET')
+    // No OpenAI key: the model tested judges itself (the report says which judge ran).
+    expect(realModel('anthropic:claude-opus-5-5', { ANTHROPIC_API_KEY: 'sk-ant-test-x' }).judgeName).toBe('anthropic:claude-opus-5-5')
   })
 
   it('a plan with no writes gets an automatic "go" (once); a script that plans then acts passes build-04; autoGo: false keeps plans as plans', async () => {

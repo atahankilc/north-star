@@ -21,7 +21,7 @@
 import { create } from 'zustand'
 import { AGENT_TOOLS } from '../tools'
 import { runTurn, type LoopEvent } from '../loop'
-import { devStubWanted, makeModel, SUGGESTED } from '../models'
+import { devStubWanted, makeModel, providerOf } from '../models'
 import { initialWorkflow, reportOf, step as wfStep, type Effect, type Report, type WorkflowEvent, type WorkflowState } from '../workflow'
 import { browserApply, lockPreview, lockTurn, releaseAgentLocks, undoAgentStep, unlockPreview, unlockTurn } from '../browser'
 import { accept as acceptChanges, discard as discardChanges, emptyChangeset, pendingCount, untick as untickChange, type Changeset, type ChangeItem } from '../changeset'
@@ -34,7 +34,7 @@ import { freshWs } from '../../ops'
 import type { OpActor } from '../../ops'
 import type { AgentEnv, AgentTool, AgentWs, ModelMessage, TurnEnd, Usage } from '../contract'
 import { NO_USAGE } from '../contract'
-import { readKey, useAgentSettings } from './settings'
+import { readKey, suggested, useAgentSettings } from './settings'
 import { plainError, NO_KEY } from './errors'
 import { subscribeWs } from '../../state/wsStore'
 import { NOTES_ID, saveNotes as saveNotesData, watchNotes } from '../../data/agentNotes'
@@ -137,9 +137,10 @@ const push = (e: Entry) => setChat((c) => ({ ...c, entries: [...c.entries, e] })
 // as you focus and unfocus, which drops the parameter). Dev builds only (devStubWanted is false in production).
 let stubAsked = devStubWanted()
 export const stubOn = () => (stubAsked ||= devStubWanted())
-export const chatModel = (c: Chat = get().chat) => (stubOn() ? 'dev stub' : c.model || useAgentSettings.getState().model || SUGGESTED)
+export const chatModel = (c: Chat = get().chat) => (stubOn() ? 'dev stub' : c.model || useAgentSettings.getState().model || suggested(useAgentSettings.getState()))
 // A key is there (or the dev stub stands in for the model).
-export const canRun = () => stubOn() || useAgentSettings.getState().hasKey
+// A key for the chat's model's provider (D-329: OpenAI's or Anthropic's).
+export const canRun = () => stubOn() || (providerOf(chatModel()) === 'anthropic' ? useAgentSettings.getState().hasClaudeKey : useAgentSettings.getState().hasKey)
 
 // ---- The workspace and the person
 
@@ -490,8 +491,9 @@ async function turn(chat: Chat, text: string, n: number) {
   }
   try {
     const stub = stubOn()
-    const key = stub ? '' : readKey()
-    if (!stub && !key) throw new Error('An OpenAI key is needed (Settings → the agent).')
+    const provider = providerOf(model)
+    const key = stub ? '' : readKey(provider)
+    if (!stub && !key) throw new Error(`An ${provider === 'anthropic' ? 'Anthropic' : 'OpenAI'} key is needed (Settings → the agent).`)
     const env = envOf(chat, rt)
     const m = await makeModel({ model, key, env, stub, effort: useAgentSettings.getState().effort })
     // A viewer's agent gets no write tool at all, and is told up front that it reads only (§7.2 point 7).

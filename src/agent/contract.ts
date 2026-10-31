@@ -33,12 +33,20 @@ export type ToolResult = { callId: string; name: string; ok: boolean; text: stri
 export type Usage = { input: number; output: number; cached?: number; reasoning?: number }
 export const NO_USAGE: Usage = Object.freeze({ input: 0, output: 0, cached: 0, reasoning: 0 })
 
+// The providers an adapter can be (D-329): what tags `providerItems`, so one provider never replays another's.
+export type Provider = 'openai' | 'anthropic' | 'stub'
+
+// What a context message is, in an append-only history (D-329, loop.ts): the map, the agent notes, where the person
+// is, a skill's guide, the last step's note, a compaction's note. Adapters send the content and ignore the tag.
+export type ContextTag = 'map' | 'notes' | 'where' | 'guide' | 'final' | 'compact'
+
 export type ModelMessage =
-  | { role: 'system'; content: string }
+  | { role: 'system'; content: string; tag?: ContextTag }
   | { role: 'user'; content: string }
-  // `providerItems`: the provider's own output items (reasoning items, encrypted or not) to send back unchanged on the
-  // next request; `responseId`: the provider's id for the response (OpenAI's previous_response_id).
-  | { role: 'assistant'; content: string; toolCalls?: ToolCall[]; providerItems?: unknown[]; responseId?: string }
+  // `providerItems`: the provider's own output items (reasoning items, encrypted or not; Claude's whole content with
+  // its thinking blocks) to send back unchanged on the next request, only to the same `provider` (left out: OpenAI's,
+  // as saved before D-329); `responseId`: the provider's id for the response (OpenAI's previous_response_id).
+  | { role: 'assistant'; content: string; toolCalls?: ToolCall[]; providerItems?: unknown[]; provider?: Provider; responseId?: string }
   | { role: 'tool'; callId: string; name: string; content: string }
 
 // `toolChoice: 'none'`: the tools stay listed (the prompt cache's prefix stays the same) but the model must answer in
@@ -60,6 +68,12 @@ export type ModelEvent = { type: 'text'; delta: string } | { type: 'tool_call'; 
 export interface AgentModel {
   // Shown in the transcript and the report (`stub`, `gpt-5-mini`…).
   readonly name: string
+  // Whose `providerItems` this model's responses carry (left out: OpenAI's).
+  readonly provider?: Provider
+  // The history must only grow (D-329): Claude binds each thinking block to everything before it, so the loop never
+  // edits a message it has sent. It appends the context each turn (after the ask), never clears old results, and
+  // compacts by replacing the whole history with text alone (loop.ts).
+  readonly appendOnly?: boolean
   respond(req: ModelRequest): Promise<ModelResponse>
   stream?(req: ModelRequest): AsyncIterable<ModelEvent>
 }
