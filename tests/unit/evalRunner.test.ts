@@ -254,10 +254,10 @@ describe('fixtures, options and the report', () => {
   })
 
   it('a plan with no writes gets an automatic "go" (once); a script that plans then acts passes build-04; autoGo: false keeps plans as plans', async () => {
-    const t = byId('build-04-organise-bets')
-    const at = t.reference.findIndex((x) => 'calls' in x && x.calls.some((c) => c.name === 'change'))
-    const planned = [...t.reference.slice(0, at), { answer: 'Plan: 1. cluster the ideas on p3 Bets by status, with a heading over each group. Say go, or change the plan.' }, ...t.reference.slice(at)]
-    const r = await runTask(t, { model: () => stubModel(planned) })
+    // build-04 scripts its own "go" now (ed548a2: big jobs are a plan, then go); without it, the runner's automatic go
+    // is what takes its plan (already in the reference) on to the change.
+    const t = { ...byId('build-04-organise-bets'), followUps: undefined }
+    const r = await runTask(t, { model: () => stubModel(t.reference) })
     expect(r.attempts[0].grades.filter((g) => g.pass === false)).toEqual([])
     expect(r.attempts[0].transcript.turns.map((x) => x.ask)).toEqual([t.ask, 'go'])
     // Refuse, injection and viewer tasks never get one.
