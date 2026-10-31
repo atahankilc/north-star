@@ -1,7 +1,8 @@
 # Agent bugs
 
 What trying the agent (D-312) turned up, 2026-10-31: 1–10 the user in the app, 11–14 its import of the Founder
-Discovery Study set against the hand-made one, 15–24 the first eval run on a real model. None fixed yet. A fixed one
+Discovery Study set against the hand-made one, 15–24 the first eval run on a real model, 25 a review of this list
+(the same day). None fixed yet. A fixed one
 moves to `memory-bank/state-history.md` with how it was checked, and its row here says `fixed`.
 
 Numbers never change (state.md and the log cite them); a new one takes the next number, goes in the group it belongs
@@ -13,6 +14,10 @@ Whatever code can check, code enforces: a refused op, a dropped tool, a rewrite,
 prompt keeps only what needs judgment. Each rule added to the prompt costs attention on every other rule (the skills
 group is 31/61 with the rules already written down), so a prompt fix is the last resort, and it is measured on the evals.
 
+Two corollaries. A rewrite beats a refusal when the intent is clear: a refusal costs the model a turn, a rewrite plus a
+warning doesn't. And a bug not reproduced gets its failing eval before its fix (6, 10), so the eval shows which cause
+it is.
+
 ## Triage
 
 Severity: **high** loses or changes data without a clear yes, or makes the person distrust what they see; **mid** a
@@ -20,12 +25,13 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
 
 | #  | What                                             | Group        | Severity | Layer            | Status |
 |----|--------------------------------------------------|--------------|----------|------------------|--------|
-| 17 | `go` taken as yes to a delete                    | Guards       | high     | code + prompt    | open   |
+| 17 | `go` taken as yes to a delete                    | Guards       | mid      | code (preview)   | open   |
 | 18 | a viewer's agent calls `change`                  | Guards       | low      | code             | open   |
 | 16 | ops nobody asked for                             | Guards       | mid      | code + prompt    | open   |
 | 6  | items land on top of each other                  | Guards       | mid      | code             | open   |
 | 11 | links no plane can draw                          | Guards       | mid      | code (`lint`)    | open   |
 | 12 | no last look before the preview                  | Guards       | mid      | code, then model | open   |
+| 25 | evals build their store apart from the app's     | Plumbing     | high     | code (evals)     | open   |
 | 1  | document text never loaded                       | Plumbing     | high     | code             | open   |
 | 5  | an apply is never told to the model              | Plumbing     | mid      | code             | open   |
 | 2  | bare short ids in the chat                       | Plumbing     | mid      | code             | open   |
@@ -38,8 +44,8 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
 | 15 | lists answered from the map                      | Judgment     | mid      | prompt           | open   |
 | 19 | "would it work" not dry-run                      | Judgment     | low      | prompt           | open   |
 | 20 | vague verb run without asking                    | Judgment     | mid      | prompt           | open   |
-| 21 | skill guides not followed step by step           | Judgment     | mid      | methods          | open   |
-| 23 | "for a plane" leans on other planes              | Judgment     | low      | methods (ask)    | open   |
+| 21 | skill guides not followed step by step           | Judgment     | mid      | code + methods   | open   |
+| 23 | "for a plane" leans on other planes              | Judgment     | low      | methods          | open   |
 | 24 | points at an existing piece instead of making it | Judgment     | low      | prompt           | open   |
 | 13 | no coverage map for a big document               | New parts    | mid      | new              | open   |
 | 14 | one plane or several, never weighed              | New parts    | mid      | code + prompt    | open   |
@@ -47,15 +53,19 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
 
 ## Order
 
-1. **Guards** 17, 18, 16, 22's rewrite: small, and 17 is the only one that loses data.
-2. **Plumbing** 1, 2, 5, 9: no design needed. 1 and 5 also make the evals lie (their store holds bodies; the model
-   never hears of an apply), so they come before any prompt tuning.
-3. **`lint`** (6, 11 and the checkable half of 12): one function, run at the end of every writing run.
-4. **Layout** 4 (the `flow` layout), and 10 reproduced in an eval before anything is changed.
+0. **Baseline first**: the eval run as it is, three times on one model (~$13, ~50 min), to know its spread before
+   anything changes; then every step below is measured against it, guards and plumbing too, not only judgment.
+1. **Plumbing** 25, then 1, 5: the evals lie until the store they run on is the app's (bodies there, applies told),
+   so nothing measured before it counts. Then 2, 9: no design needed.
+2. **Guards** 17, 18, 16, 22's rewrite: small.
+3. **`lint`** (6, 11, the checkable half of 12, 21's postconditions): one function, run at the end of every writing
+   run. 6 gets its failing eval first.
+4. **Link graph** (`src/model/graph.ts`, one module for 4, 11 and 14): the connected groups of a plane's cards and the
+   share of links between them. Then **layout** 4 (the `flow` layout on it), and 10 reproduced in an eval before
+   anything is changed.
 5. **Preview** 7, 3: before the agent's UI design session, not in it.
-6. **Baseline**: the fixed eval run two or three times on one model, to know its spread; only then **judgment** 15,
-   19, 20, 21, 24, each change measured.
-7. **New parts** 13, 14, 8.
+6. Baseline again, then **judgment** 15, 19, 20, 21's methods, 23, 24, each change measured.
+7. **New parts** 13, 14 (on the link graph), 8.
 
 ---
 
@@ -64,29 +74,36 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
 17. **A question in the plan turn, then `go` taken as its yes.** build-02 (second run): instead of a plan it asked
     "shall I remove the stickies?", the person said `go`, and it deleted x13 and x14, a delete with no clear yes
     (rule 5). It also renamed the ideas ("Own the stall data" for "Who owns the stall data?").
-    Fix (code): `change` refuses a delete when the person's last message is only `go`/`ok`/`yes` and no earlier message
-    names what's deleted; the refusal tells the model to ask. Fix (prompt): a plan proposes the safe version (keep what's
-    there) and lists a delete as an option the person must name; turning text into cards keeps its words.
+    Severity mid, not high: every change waits in the preview and an apply is one undo step (D-312), so nothing is lost
+    before the person applies. The real risk is a delete missed in the preview.
+    Fix (code, preview): deletes drawn apart in the preview (their own mark and a `N deleted` line), and a delete of
+    something the person's messages never named comes unticked: applying keeps it unless they tick it. Not a check on
+    the last message's words (`go`/`ok`/`yes`): "sounds good" or "tamam, devam" passes any such list.
+    Fix (prompt, small): a plan proposes the safe version (keep what's there) and offers a delete as an option; turning
+    text into cards keeps its words.
 18. **A viewer's agent still calls `change`.** refuse-03: the tool refused it and the answer was right, but it
     shouldn't try. Fix (code): drop `change` from the tool list for a viewer (src/agent/tools.ts). Nothing in the prompt.
 16. **It adds ops nobody asked for.** edit-09/edit-13 "add three ideas": three `create_card`s plus an `arrange` of them,
     so the preview has 4 items for 3 asked, and unticking one leaves an arrange of the rest. Same family: prioritize-03
     changed 14 features' impact/effort when asked only to fill the deck; learn-03 made a problem and a link from notes
     meant as evidence; dedupe-01 renamed and moved a third card.
-    Fix (code): `change` refuses an `arrange` whose items were all made in the same call (placement goes in the op's
-    own `where`). Fix (prompt, "Changing things"): do only what was asked; anything more is offered in the answer, not
+    Fix (code): `change` folds an `arrange` whose items were all made in the same call into those ops' own `where`
+    (a rewrite, not a refusal, so no turn is lost) and returns a warning saying so; the preview then holds 3 items for
+    3 asked. Fix (prompt, "Changing things"): do only what was asked; anything more is offered in the answer, not
     proposed.
 6.  **Things it puts on a canvas or plane often land on top of each other, paragraphs most.** Not reproduced yet.
     Likely causes: `create_text` takes `where: { x, y }` as given with no check against what's there (src/ops/text.ts),
     though layout.ts says the model never picks coordinates; a paragraph's height is guessed by `labelBox`
     (src/model/labelBox.ts) from its text, and long or Markdown text draws taller; text made earlier in the same batch
     may not count as taken. Fix (code): raw x/y moved to the nearest clear spot; paragraphs measured like `sizes.ts`
-    does; the batch's own items count as taken. Eval: fails on any overlap.
+    does; the batch's own items count as taken. Eval first (it fails on any overlap), written before the fix so it
+    shows which of the three causes it is.
 11. **Links between cards on different planes are never shown, and it doesn't know.** In its import of the Founder
     Discovery Study (the `north-star` canvas in the user's Granat export), 16 of 48 links join cards on two planes, so
     no plane draws them (D-207). `validate` (src/ops/validate.ts) checks both ends exist, not that they share a plane.
     Fix (code, `lint`): a warning the model sees, with the two ways out: place the other card on this plane too
-    (`places`, D-281), or put both on one plane. Eval: fails on any link no plane can draw.
+    (`places`, D-281), or put both on one plane. It reads the link graph (src/model/graph.ts, shared with 4 and 14).
+    Eval: fails on any link no plane can draw.
 12. **It never checks its own work before the preview.** The same import: competitors with only `notes` (no url,
     pricing, audience), evidence without URLs, tasks tied to no card, tables whose rows are typed names repeating cards
     that exist (stale once a card changes), no tags, planes of 960 × 600 holding items out to 1400 × 2475. `/gaps`
@@ -98,6 +115,12 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
 
 ## Plumbing: wiring the app to what was built
 
+25. **The evals and the app build the agent's store in two places, so they drift.** 1 and 5 are two cases: the eval
+    store holds documents' bodies and the live one doesn't; in the evals nothing about an apply reaches the model
+    either way, so a missing line can't fail. Fixing each by hand leaves the next drift to be found in real use.
+    Fix (code): one store builder, the one `liveWs()` uses (src/agent/ui/agentStore.ts), fed by the eval fixture
+    instead of the live workspace, bodies fetched through the same path; apply, discard and undo go through the same
+    history code in both. Comes before 1 and 5, which then fail in the evals first and are fixed against them.
 1.  **It can't read a document's text in the app.** `liveWs()` (src/agent/ui/agentStore.ts) puts only the agent notes
     in `bodies`; documents' `content/body` is never fetched, so `read_document` answers "its text isn't loaded here"
     with the excerpt. The evals pass because their store holds bodies. Fix: fetch a body (through `src/data/`) when
@@ -110,7 +133,10 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
     as the item's name, every letter (k canvas, u person, e link, v, f, m) clickable. No prompt change needed.
 22. **Documents cite ids without the card's title.** pitch-01/02, lean-canvas-01, interview-02, swot-04: good documents,
     but lines like "linked to c32, c29, c25, c33", unreadable outside the agent (2, inside documents). Fix (code):
-    `create_document` rewrites a bare `cN` into `cN "title"` itself.
+    `create_document` rewrites a bare `cN` into `cN "title"` itself. Its limit: the title is frozen at writing, so a
+    renamed card leaves the document on its old name. A reference resolved when the document is drawn would stay
+    current, but documents are exported and read outside the app; that choice is for the documents' writing session
+    (D-232), the rewrite stands until then.
 9.  **The skills list (`/`) doesn't scroll with the arrow keys.** ↑/↓ move the pick (SkillMenu.tsx `setAt`) but the
     picked row goes below the list's edge. Fix: `scrollIntoView({ block: 'nearest' })` on the picked row when `at`
     changes.
@@ -136,7 +162,9 @@ wrong or weak result the person has to fix; **low** an annoyance. Layer: where t
     cluster) never look at links, and `cluster` groups by a field (type, tag…), hence same-type cards together.
     Fix (code): a `flow` layout over the link graph: each connected group its own flow, its columns the chain
     (customer → problem → competitor → idea → feature, D-045), space (or a heading or section) between groups; the
-    model only picks `flow`, never coordinates. Fix (prompt): arranging a plane groups by links and meaning, not type.
+    model only picks `flow`, never coordinates. The groups come from the link graph (src/model/graph.ts), the same
+    module 11's lint and 14's numbers read, so the three never disagree on what's connected. Fix (prompt): arranging a
+    plane groups by links and meaning, not type.
     Eval: linked cards sit near each other.
 10. **It can't rearrange the things on a canvas.** Asked to move or tidy the canvas's items, it doesn't, though
     `arrange` (src/ops/arrange.ts) takes a canvas's pieces and text with every layout. Cause not looked at; to check:
@@ -173,14 +201,17 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     - `/swot` put our own validated cards under threats (swot-01, swot-04);
     - `/sort-stickies` made a problem from a question and skipped a sticky it judged covered by an existing card
       (defensible, but the guide says ideas, sections, the sticky's words).
-    Fix: tighten the vague steps in src/agent/skills/methods.ts (axes with their field names, "threats are other
-    people's things, never ours", "for <customer> means a `for` link on each", "keep the sticky's words"); each guide
-    ends in a checklist the run's last look holds the proposal against (12, step 2).
+    Fix (code first): what's checkable becomes a skill's postconditions, run in `lint` when that skill ran: `/test`'s
+    idea is `testing`; `/import`'s named customer has a `for` link on each card; `/prioritize`'s deck has impact and
+    effort on its own axes and every feature has both; `/compare`'s `rows.plane`/`cols.items` match what was named.
+    Fix (methods, what needs judgment): tighten the vague steps in src/agent/skills/methods.ts ("threats are other
+    people's things, never ours", "keep the sticky's words", full vs partial from the notes); each guide ends in a
+    checklist the run's last look holds the proposal against (12, step 2).
 23. **Documents "for a plane" lean on cards elsewhere.** swot-02 "/swot for Pricing", one-pager-02 "on Roadmap",
     next-03 "/next for Pricing": half the cards cited aren't on that plane (linked competitors, problems elsewhere).
     Sometimes right (a SWOT needs the competitors), but one plane was asked about. Fix: "for <plane>" means that
-    plane's cards first, others only as context, marked "(on Rivals)". **Ask the user:** whether the eval's `onPlane`
-    accepts marked context cards (recommended: yes).
+    plane's cards first, others only as context, marked "(on Rivals)". The eval's `onPlane` accepts marked context
+    cards (the user, 2026-10-31: a SWOT needs the competitors); an unmarked card from elsewhere still fails.
 24. **It points at an existing piece instead of making the one asked for, without saying it could.** build-01 (first
     run): asked for a competitor matrix, it found p11 "Feature coverage" and opened it, without offering a new one.
     Fix: when something like it exists, say so and ask (or offer both); never substitute silently.
@@ -194,8 +225,8 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     saved with the run's report. Eval: on a known document, every section accounted for.
 14. **It can't weigh one plane against several.** Same comparison: it split the study into five topic planes (easy to
     read, but 16 links across planes, 11); the hand import put all 61 cards on one (every link shows, crowded). Both
-    are right sometimes. Fix (code): before placing, compute the topic groups and the share of links between them, and
-    give the model the numbers; few cards or tightly linked groups → one plane with headings or sections per topic,
+    are right sometimes. Fix (code): before placing, compute the topic groups and the share of links between them
+    (the link graph, src/model/graph.ts, shared with 4 and 11), and give the model the numbers; few cards or tightly linked groups → one plane with headings or sections per topic,
     separate topics with few links → a plane each, a card two topics need placed on both (`places`, D-281) instead of
     linked across. The person's words win. Fix (prompt): the choice is one line in the preview and the report ("one
     plane: 40 of 48 links are between topics"). Evals with both kinds of input: each picked when it should be, no link
