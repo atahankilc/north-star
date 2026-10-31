@@ -13,7 +13,7 @@ import {
 } from 'react'
 import { useRevealed } from '../state/curtain'
 import { isReducedMotion } from '../state/motion'
-import { CELL_PX, CELLS_SHUT, cellTime, DURATION_MS, OVERSHOOT } from './cellReveal'
+import { CELL_PX, CELLS_SHUT, cellsPath, cellTime, DURATION_MS, OVERSHOOT } from './cellReveal'
 
 const HIDDEN = CELLS_SHUT
 
@@ -49,29 +49,12 @@ export function runCells(el: HTMLElement, mode: Mode, delay: number, duration: n
       const cols = Math.ceil((w - ox) / CELL_PX)
       const rows = Math.ceil((h - oy) / CELL_PX)
 
-      let path = ''
-      for (let r = 0; r < rows; r++) {
-        const y0 = Math.max(0, oy + r * CELL_PX)
-        const y1 = Math.min(h, oy + (r + 1) * CELL_PX)
-        let runStart = -1
-        // Merge horizontal runs of visible cells into one rectangle each.
-        for (let c = 0; c <= cols; c++) {
-          let visible = false
-          if (c < cols) {
-            const t = cellTime(gx0 + c, gy0 + r)
-            const along = sweep === 'left' ? c / cols : sweep === 'right' ? 1 - c / cols : 0
-            const shown = (sweep ? along * SWEEP + t * (1 - SWEEP) : t) <= p
-            visible = mode === 'enter' ? shown : !shown
-          }
-          if (visible && runStart < 0) runStart = c
-          if (!visible && runStart >= 0) {
-            const x0 = Math.max(0, ox + runStart * CELL_PX)
-            const x1 = Math.min(w, ox + c * CELL_PX)
-            path += `M${x0} ${y0}H${x1}V${y1}H${x0}Z`
-            runStart = -1
-          }
-        }
-      }
+      const path = cellsPath(w, h, ox, oy, cols, rows, (c, r) => {
+        const t = cellTime(gx0 + c, gy0 + r)
+        const along = sweep === 'left' ? c / cols : sweep === 'right' ? 1 - c / cols : 0
+        const shown = (sweep ? along * SWEEP + t * (1 - SWEEP) : t) <= p
+        return mode === 'enter' ? shown : !shown
+      })
       el.style.clipPath = path ? `path('${path}')` : HIDDEN
     }
 

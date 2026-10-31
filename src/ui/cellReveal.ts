@@ -17,6 +17,27 @@ export const DURATION_MS = DUR.cells
 // Every cell shut: what a cell-by-cell entrance hides an element with before its first cell shows.
 export const CELLS_SHUT = 'polygon(0 0, 0 0, 0 0)'
 
+// The path of the cells showing, for a clip-path (D-326: one builder for runCells and the focus's ink). A `cols × rows`
+// grid of CELL_PX cells starting at (ox, oy) in a w × h element (≤ 0: its first cell may start before the edge); `on(c,
+// r)` says whether a cell shows. Each row's run of showing cells is one rectangle. '' when none shows.
+export function cellsPath(w: number, h: number, ox: number, oy: number, cols: number, rows: number, on: (c: number, r: number) => boolean): string {
+  let path = ''
+  for (let r = 0; r < rows; r++) {
+    const y0 = Math.max(0, oy + r * CELL_PX)
+    const y1 = Math.min(h, oy + (r + 1) * CELL_PX)
+    let run = -1
+    for (let c = 0; c <= cols; c++) {
+      const shows = c < cols && on(c, r)
+      if (shows && run < 0) run = c
+      if (!shows && run >= 0) {
+        path += `M${Math.max(0, ox + run * CELL_PX)} ${y0}H${Math.min(w, ox + c * CELL_PX)}V${y1}H${Math.max(0, ox + run * CELL_PX)}Z`
+        run = -1
+      }
+    }
+  }
+  return path
+}
+
 // Deterministic per-cell noise, identical to the GLSL version below.
 export function cellHash(x: number, y: number) {
   const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453

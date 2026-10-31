@@ -5983,5 +5983,12 @@ docs/foundation-audit-2026-10-31.md).
   reduced motion (the light theme's colour shift). One card-type colour map: tokens.css `--type-*`, src/ui/cardTone.ts
   `CARD_TONE` (TYPE_ACCENT, CardPanel's and planeMenu's TONE, FilterDock's TYPE_TONE, KindGuide). Checked: demo scenes
   frame by frame against the code before, identical but for the exits.
-- *Not yet:* `runCells` with an order (FocusedPlane's ink onto it), one Spinner (Loading, Curtain, the agent's), the
-  7 entrance keyframes as one class; then the kit, patterns, the areas, `check:kit`, folders.
+- *Built:* the rest of motion (2026-10-31): one Spinner (src/ui/Spinner.tsx; Loading, Curtain and the agent draw it;
+  the agent's braille one gone); the small entrances in src/ui/Enter.module.css (`enter`, `rise`; their settings
+  registered in tokens.css as not inherited) for the finder, the pane beside, the focus dock, the side view, the
+  document's ask, the hazard confirm; Marks' settle at DUR.quick (the grow-back's length since D-325); one cell-path
+  builder (cellReveal.ts `cellsPath`) for runCells and the focus's ink, the ink and the focus's hold on `tween()`
+  (their cells' order stays the focus's own, by distance, D-185). Checked frame by frame against the code before.
+  Left alone on purpose: the landing's scrim (the intro, not an entrance), the agent's blink and pulse (loops), and
+  the SETTLE_MS/CALM_MS pairs elsewhere (different things under one name, not motion).
+- *Not yet:* the kit, patterns, the areas, `check:kit`, folders.

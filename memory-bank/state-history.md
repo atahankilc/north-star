@@ -967,3 +967,11 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   check:tokens 0, check:lessons; tests/unit/motion.test.ts; six demo scenes sampled (the camera travels through
   in-between values); eight scenes frame by frame against the code before, each served from its own checkout:
   identical (max 9/255 noise) but for the exits now 192 ms; card colours in the gallery, dark and light.
+
+## Done (2026-10-31): the rest of motion (D-326)
+- One Spinner (bb1e105), the small entrances as `enter`/`rise` (980b85c), Marks' settle at DUR.quick (162feeb), one
+  cell-path builder and the focus's ink and hold on tween() (this commit).
+- Verified: tsc, vitest 858, check:tokens 0, check:gallery 74, check:lessons; demo scenes frame by frame, old and new
+  each served from its own checkout, and old against itself to tell noise: the entrances matched once their settings
+  stopped being inherited (the side view's 200 ms reached the dock inside it: found by this comparison); the ink,
+  framing, console and canvas scenes match but for noise seen old against old too.

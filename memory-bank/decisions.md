@@ -43,7 +43,8 @@ feature comes back as a piece, and check them with the user then.
 - Foundation (D-326, docs/foundation-audit-2026-10-31.md): the UI built from the bottom: tokens and motion, the kit in
   src/ui, patterns, then features; the gallery's map by what a thing is (`place` category/group, `also`), never by
   folder. Motion's numbers and the tween in src/ui/motionTokens.ts and motion.ts (held to tokens.css by a test), card
-  colours in `--type-*` and src/ui/cardTone.ts. Next: the rest of motion, the kit, patterns, the areas, `check:kit`, folders.
+  colours in `--type-*` and src/ui/cardTone.ts; one Spinner, the small entrances in src/ui/Enter.module.css, one
+  cell-path builder. Next: the kit, patterns, the areas, `check:kit`, folders.
 - ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
 ## Accounts, sharing, roles

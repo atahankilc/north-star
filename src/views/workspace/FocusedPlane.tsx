@@ -17,9 +17,9 @@ import { glide, stopGlide, useCanvasView, type PlaneCam, type ScreenRect } from 
 import { stopFollowing } from './collab'
 import { isReducedMotion } from '../../state/motion'
 import { isOpen } from './shownBox'
-import { CELL_PX, cellHash } from '../../ui/cellReveal'
+import { CELL_PX, cellHash, cellsPath } from '../../ui/cellReveal'
 import styles from './CanvasView.module.css'
-import { DUR, easeInOut } from '../../ui/motion'
+import { DUR, tween } from '../../ui/motion'
 import { DRAG_PX, wheelStep } from '../../ui/feel'
 
 const IN_MS = DUR.focusIn
@@ -233,18 +233,11 @@ function hold(el: HTMLElement, at: ScreenRect, home: PlaneCam, way: 'in' | 'out'
     const [x1, y1] = [c.ox + (r - home.ox) * z, c.oy + (b - home.oy) * z]
     el.style.clipPath = `inset(${y0 * k}px ${(w - x1) * k}px ${(h - y1) * k}px ${x0 * k}px)`
   }
-  const t0 = performance.now()
-  let raf = 0
-  const frame = (now: number) => {
-    const p = Math.min(1, (now - t0) / ms)
-    cut(easeInOut(way === 'in' ? 1 - p : p))
-    if (p < 1) raf = requestAnimationFrame(frame)
-    else if (way === 'in') el.style.clipPath = ''
-  }
   cut(way === 'in' ? 1 : 0)
-  raf = requestAnimationFrame(frame)
+  // The in-out curve is symmetric, so running it backwards is 1 − k (motion.ts' tween).
+  const stop = tween(ms, (k) => cut(way === 'in' ? 1 - k : k), { onDone: () => void (way === 'in' && (el.style.clipPath = '')) })
   return () => {
-    cancelAnimationFrame(raf)
+    stop()
     el.style.clipPath = ''
   }
 }
@@ -269,33 +262,15 @@ function ink(el: HTMLElement, at: ScreenRect, way: 'in' | 'out', ms: number, rag
       when[y * cols + x] = dx === 0 && dy === 0 ? -1 : (Math.hypot(dx, dy) / far) * (1 - ragged) + cellHash(x, y) * ragged
     }
   const cut = (k: number) => {
-    let path = ''
-    for (let y = 0; y < rows; y++) {
-      let run = -1
-      for (let x = 0; x <= cols; x++) {
-        const on = x < cols && when[y * cols + x] <= k
-        if (on && run < 0) run = x
-        if (!on && run >= 0) {
-          path += `M${run * CELL_PX} ${y * CELL_PX}H${Math.min(w, x * CELL_PX)}V${Math.min(h, (y + 1) * CELL_PX)}H${run * CELL_PX}Z`
-          run = -1
-        }
-      }
-    }
+    const path = cellsPath(w, h, 0, 0, cols, rows, (x, y) => when[y * cols + x] <= k)
     el.style.clipPath = path ? `path('${path}')` : 'inset(50%)'
   }
-  const t0 = performance.now()
-  let raf = 0
-  const frame = (now: number) => {
-    const p = Math.min(1, (now - t0) / ms)
-    cut(easeInOut(way === 'in' ? p : 1 - p))
-    if (p < 1) raf = requestAnimationFrame(frame)
-    else {
+  cut(way === 'in' ? 0 : 1)
+  return tween(ms, (k) => cut(way === 'in' ? k : 1 - k), {
+    onDone: () => {
       // Arrived: the whole screen, held by its CSS from here (resizes and all).
       if (way === 'in') el.style.clipPath = ''
       done()
-    }
-  }
-  cut(way === 'in' ? 0 : 1)
-  raf = requestAnimationFrame(frame)
-  return () => cancelAnimationFrame(raf)
+    },
+  })
 }
