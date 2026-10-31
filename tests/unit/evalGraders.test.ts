@@ -305,7 +305,9 @@ describe('judge', () => {
     G.setJudge(async ({ answer, context }) => ((seen = context), { pass: answer.includes('1 in 8'), why: 'read it' }))
     await expectGrade(g, r, true)
     await expectGrade(g, await run([], { answer: 'Most take cards.' }), false)
-    expect(seen).toBe('The run changed nothing.')
+    // The judge is told how the app works first (71472c8: the agent proposes, the person accepts), then what the run did.
+    expect(seen).toMatch(/^How the app works: the agent never writes directly/)
+    expect(seen.endsWith('\n\nThe run changed nothing.')).toBe(true)
     await g.grade(await run([[NEW_PROBLEM]], { answer: '1 in 8' }))
     expect(seen).toContain('added problems/')
     expect(seen).toContain('Stalls run out of paper bags')
