@@ -5902,3 +5902,20 @@ and tests change together.
 - *Why:* `firestore.rules` let an invitee read the whole workspace doc.
 - *Alternatives:* keep it (an invitee is about to join anyway); split the private fields out of the workspace doc (a
   bigger move).
+
+### D-324 · 2026-10-31 · Accepted (the user: "uygulamadaki bütün ui componentlerin developer sırasında gösterilebileceği bir ui istiyorum"; "kapsam şimdilik src/ui ile başlasın. Kural olsun net, ve sadece dev de görülebilen bir şey olsun")
+**A component gallery for developers: `gallery.html`, dev server only, never built or deployed** (docs/specs/gallery.md).
+Every component in its states on made-up data, dark/light, full/reduced motion, on the page or a piece's surface, one
+address per state (`#c=select&s=open&theme=light`, `&alone` for shots). Built on the demo realm's parts (no Firebase,
+storage in memory, writes refused and counted, `makeStore` + fixtures, the shared store reset, the `:hover` rewrite) but
+on real time, not the director's clock. Each component has an example file beside it (`X.gallery.tsx`), found by
+`import.meta.glob`. Scope now: `src/ui`; pieces, panels and screens later (G2, G3). **The rule:** a new component in a
+covered folder, or a real change to one, ships in the same change with its example file; `npm run check:gallery`
+checks it, that no app file imports the gallery, and that `gallery.html` is in no build input.
+- *Why:* most components are seen only after clicking into the right state in a workspace, and again for light theme and
+  reduced motion; one click per state makes design checks fast and gives shots a fixed address.
+- *Alternatives:* Storybook (needs the same store set-up per story, a build of its own beside Vite/rolldown, its own
+  look); Ladle; a hidden route in the deployed app (the user: not on the deployed site).
+- *Built:* G1 (2026-10-31): gallery.html, src/gallery/, src/demo/realm.ts (the store reset shared with the demo),
+  19 examples in src/ui (Curtain exempt), `check:gallery` (in CI).
+- *Not yet:* G2 pieces; G3 panels and screens; G4 shots; `[grid]` (every state at once).

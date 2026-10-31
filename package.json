@@ -17,6 +17,7 @@
     "deploy:functions": "firebase deploy --only functions --project north-star-db",
     "check:memory": "node scripts/check-memory.mjs",
     "check:lessons": "node scripts/check-lessons.mjs",
+    "check:gallery": "node scripts/check-gallery.mjs",
     "test": "vitest run",
     "eval": "node evals/cli.mjs",
     "eval:quick": "node evals/cli.mjs --set regression",

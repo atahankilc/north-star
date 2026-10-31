@@ -37,6 +37,9 @@ feature comes back as a piece, and check them with the user then.
 - Local dev and tests on emulators: a `demo-` project, test users Alice/Bob/Carol, RTDB on 9010 (D-020).
 - Every deploy (rules, indexes, functions) is asked for first, after `npm run test:rules`; until Blaze the storage-less
   command; an index deploy never deletes Firebase's indexes (D-322).
+- Component gallery (D-324, docs/specs/gallery.md): `gallery.html`, dev only, never built; demo realm parts on real
+  time; one `X.gallery.tsx` beside each component in a covered folder (now `src/ui`), required with a new or changed
+  component, `npm run check:gallery`.
 - ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
 ## Accounts, sharing, roles

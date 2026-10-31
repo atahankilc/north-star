@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="data:," />
+    <title>North Star · gallery</title>
+    <!--
+      The component gallery (D-324, docs/specs/gallery.md): dev only. The dev server serves it at /gallery.html; it is in
+      no build input (vite.config.ts, vite.demo.config.ts), so it is never built or deployed (npm run check:gallery).
+    -->
+    <script>
+      // As the demo realm (demo.html, D-315): set before any module loads, so src/data/firebase.ts never starts Firebase
+      // and src/data/auth.ts gives the made-up person.
+      window.__northStarDemo = true
+      // localStorage and sessionStorage in memory, seeded with the app's theme and motion: nothing an example keeps
+      // reaches the app's storage on this origin, and the gallery's theme and motion switches never change the app's.
+      ;(function () {
+        function Memory() {
+          this._m = new Map()
+        }
+        Memory.prototype = {
+          get length() {
+            return this._m.size
+          },
+          clear: function () {
+            this._m.clear()
+          },
+          getItem: function (k) {
+            k = String(k)
+            return this._m.has(k) ? this._m.get(k) : null
+          },
+          key: function (i) {
+            return Array.from(this._m.keys())[i] ?? null
+          },
+          removeItem: function (k) {
+            this._m.delete(String(k))
+          },
+          setItem: function (k, v) {
+            this._m.set(String(k), String(v))
+          },
+        }
+        var local = new Memory()
+        ;['north-star.theme', 'north-star.motion'].forEach(function (k) {
+          try {
+            var v = window.localStorage.getItem(k)
+            if (v !== null) local.setItem(k, v)
+          } catch (e) {}
+        })
+        // The address can ask for a theme or motion (`#…&theme=light&motion=reduced`): in before the first paint.
+        var h = new URLSearchParams(location.hash.slice(1))
+        if (h.get('theme') === 'light' || h.get('theme') === 'dark') local.setItem('north-star.theme', h.get('theme'))
+        if (h.get('motion') === 'reduced' || h.get('motion') === 'full') local.setItem('north-star.motion', h.get('motion'))
+        Object.defineProperty(window, 'localStorage', { value: local, configurable: true })
+        Object.defineProperty(window, 'sessionStorage', { value: new Memory(), configurable: true })
+        if (local.getItem('north-star.theme') === 'light') document.documentElement.dataset.theme = 'light'
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/gallery/main.tsx"></script>
+  </body>
+</html>

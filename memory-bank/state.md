@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-10-29 (audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-10-31 (gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -53,6 +53,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
+- Component gallery (D-324, docs/specs/gallery.md): G1 built and committed 2026-10-31, not pushed (`/gallery.html` on the dev
+  server, every `src/ui` example, `check:gallery` in CI). Next: G2 (pieces) when the user asks.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

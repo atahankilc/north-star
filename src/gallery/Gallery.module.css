@@ -1,0 +1,164 @@
+/* The component gallery (D-324, docs/specs/gallery.md §3): dev only, but the app's language, tokens only. */
+.page {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: 100%;
+}
+
+/* Above whatever an example puts in the body (a confirm's portal), so the gallery stays usable. */
+.side {
+  position: relative;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.side > :last-child {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+}
+
+.title {
+  padding: var(--space-4) var(--space-3) var(--space-2);
+  color: var(--fg-strong);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+}
+
+.faint {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.main {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The example's room: a transform, so what it draws `position: fixed` (the HUD, a side panel, the toast) is placed in
+   this box, not on the whole page; what it puts in the body (a portal) is the page's still. */
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+  transform: translateZ(0);
+  background: var(--bg);
+}
+
+.stage[data-alone] {
+  height: 100%;
+}
+
+/* On a framed piece's surface (D-263): the page's tokens take the surface's, as inside `.piece`. */
+.stage[data-on='piece'] {
+  --bg: var(--piece);
+  --bg-raised: var(--piece-card);
+  --grid-mark: var(--piece-mark);
+  background: var(--piece);
+}
+
+.zoom {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  transform-origin: center;
+}
+
+.example {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.example[data-size='auto'] {
+  padding: var(--space-8);
+}
+
+.example[data-size='full'] {
+  max-width: none;
+  max-height: none;
+}
+
+.bar {
+  position: relative;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  --label-w: 64px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.name {
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  letter-spacing: var(--track-title);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-8);
+}
+
+.note {
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+}
+
+.error,
+.failed {
+  color: var(--accent-magenta);
+  font-size: var(--text-xs);
+}
+
+.failed {
+  padding: var(--space-6);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.file,
+.action {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.file:hover,
+.action:hover {
+  color: var(--accent-cyan);
+}
+
+.refused {
+  color: var(--accent-yellow);
+  font-size: var(--text-xs);
+}
