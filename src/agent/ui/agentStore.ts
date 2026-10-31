@@ -41,7 +41,7 @@ import { subscribeWs } from '../../state/wsStore'
 import { NOTES_ID, saveNotes as saveNotesData, watchNotes } from '../../data/agentNotes'
 import { startChangeLog, watchChanges, watchMembers, type ChangeEntry } from '../../data/changeLog'
 import { chatsAvailable, deleteChat, listChats, newChatId, openChat as openChatData, renameChat as renameChatData, saveChat, shareChat as shareChatData, type ChatListItem } from '../../data/agentChats'
-import { chatDocs, historyOf, type ChatCursor, type ChatSummary } from '../chats'
+import { chatDocs, historyOf, reopenedJob, type ChatCursor, type ChatSummary } from '../chats'
 import { entriesOf, turnsOf } from './chatEntries'
 
 export { entriesOf, turnsOf } from './chatEntries'
@@ -355,7 +355,7 @@ export function saveNow(): Promise<void> {
   if (!me?.uid || !chat.wid || !chatsAvailable() || !chat.entries.some((e) => e.kind === 'user')) return saving
   if (chat.saved && chat.saved.uid !== me.uid) return saving
   const rt = rtOf(chat)
-  const { summary, body } = chatDocs({ uid: me.uid, model: chatModel(chat), turns: turnsOf(chat.entries), ids: rt.ids.toJSON(), was: chat.saved ?? null, now: Date.now() })
+  const { summary, body } = chatDocs({ uid: me.uid, model: chatModel(chat), turns: turnsOf(chat.entries), ids: rt.ids.toJSON(), was: chat.saved ?? null, now: Date.now(), job: rt.job })
   saving = saving
     .then(() => saveChat(chat.wid, chat.id, summary, body))
     .then(() => {
@@ -789,8 +789,10 @@ export const agentActions = {
     await saveNow()
     leave()
     const mine = got.summary.uid === me?.uid
-    const chat: Chat = { id: mine ? id : newChatId(s.wid), wid: s.wid, model: got.summary.model, entries: entriesOf(got.body.turns), wf: initialWorkflow(), saved: mine ? got.summary : null, ...(mine ? {} : { from: got.summary.uid }) }
-    runtimes.set(chat.id, runtime({ history: historyOf(got.body.turns), ids: makeIds(got.body.ids) }))
+    // The job comes back with the chat (D-328); one that was under way waits for the person.
+    const job = reopenedJob(got.body.job)
+    const chat: Chat = { id: mine ? id : newChatId(s.wid), wid: s.wid, model: got.summary.model, entries: entriesOf(got.body.turns), wf: initialWorkflow(), saved: mine ? got.summary : null, ...(mine ? {} : { from: got.summary.uid }), job }
+    runtimes.set(chat.id, runtime({ history: historyOf(got.body.turns), ids: makeIds(got.body.ids), job }))
     chats.set(chat.wid, chat)
     useAgent.setState({ chat, view: 'chat', mode: 'column', touch: null })
   },

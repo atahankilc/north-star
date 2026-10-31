@@ -671,10 +671,26 @@ service cloud.firestore {
           return getAfter(/databases/$(database)/documents/workspaces/$(wid)/agentChats/$(cid)).data;
         }
         match /content/{part} {
+          // The chat's big job (D-328, src/agent/job.ts), optional: its plan's steps (at most 12, bounded like the
+          // turns), their state as a closed set, what it used. No room for anything else.
+          function validJob(j) {
+            return j is map
+              && j.keys().hasOnly(['title', 'steps', 'status', 'paused', 'tokens', 'budget', 'settledAt', 'stopAfter'])
+              && j.keys().hasAll(['title', 'steps', 'status', 'tokens', 'budget', 'settledAt'])
+              && isText(j.title, 120) && j.title.size() > 0
+              && j.steps is list && j.steps.size() >= 2 && j.steps.size() <= 12
+              && j.status in ['planned', 'running', 'paused', 'done']
+              && optText(j, 'paused', 200)
+              && j.tokens is int && j.tokens >= 0
+              && j.budget is int && j.budget > 0
+              && j.settledAt is int && j.settledAt >= -1 && j.settledAt <= 12
+              && (!('stopAfter' in j) || j.stopAfter is bool);
+          }
           function validChatBody(b) {
-            return b.keys().hasOnly(['turns', 'ids'])
+            return b.keys().hasOnly(['turns', 'ids', 'job'])
               && b.turns is list && b.turns.size() <= 200
-              && b.ids is map;
+              && b.ids is map
+              && (!('job' in b) || validJob(b.job));
           }
           allow read: if part == 'body' && mayReadChat(chat());
           allow create, update: if part == 'body' && isMember(wid) && validChatBody(request.resource.data)

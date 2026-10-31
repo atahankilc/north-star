@@ -126,3 +126,22 @@ describe('the loop: steering between steps, the job in the context', () => {
     expect(where.content).toMatch(/## The job: Organise Pazar \(planned; 0\/3 settled\)/)
   })
 })
+
+describe('the job saved with the chat (firestore.rules: body.job)', () => {
+  it('saved as plain values the rule takes; a running one reopens paused; the body check knows the field', async () => {
+    const { chatDocs, chatProblems, reopenedJob, savedJob } = await import('../../src/agent/chats')
+    const j: Job = { ...(progressJob(plan(), { step: 1, state: 'doing' }) as Job), paused: undefined, stopAfter: undefined, tokens: 1234.6 }
+    const saved = savedJob(j)!
+    expect(Object.values(saved).includes(undefined)).toBe(false)
+    expect('paused' in saved || 'stopAfter' in saved).toBe(false)
+    expect(saved.tokens).toBe(1235)
+    expect(savedJob(null)).toBeUndefined()
+    const { summary, body } = chatDocs({ uid: 'u', model: 'm', turns: [], ids: { v: 1, next: {}, ids: {} }, now: 1, job: j })
+    expect(body.job?.status).toBe('running')
+    expect(chatProblems(summary as never, body as never)).toEqual([])
+    expect(chatProblems(summary as never, { ...body, job: { ...saved, status: 'hacked' } } as never)).toEqual(['body: job'])
+    expect(reopenedJob(saved)).toMatchObject({ status: 'paused', paused: 'the chat was reopened' })
+    expect(reopenedJob({ ...saved, status: 'done' })?.status).toBe('done')
+    expect(reopenedJob(undefined)).toBeNull()
+  })
+})

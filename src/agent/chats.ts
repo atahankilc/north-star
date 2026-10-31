@@ -6,6 +6,7 @@
 // reads: uid, title, times, shared, model, turns, summary?) and `…/{id}/content/body` (the turns and the chat's short
 // ids, read when it's opened). Never the key; never a tool's raw result (a step keeps only its label and time); the
 // usage log stays counts only (usage.ts).
+import type { Job } from './job'
 import type { IdsState } from './read/ids'
 import type { AgentTurn, ModelMessage, Transcript } from './contract'
 
@@ -44,7 +45,20 @@ export type ChatSummary = {
   // A short summary for search_chats (written by the agent at a chat's end, later).
   summary?: string
 }
-export type ChatBody = { turns: SavedTurn[]; ids: IdsState }
+// `job`: the chat's big job (D-328), when it has one; saved as plain values (no `undefined`, which Firestore refuses).
+export type ChatBody = { turns: SavedTurn[]; ids: IdsState; job?: Job }
+
+// A job as it is saved: plain values only, the step count and texts as firestore.rules allows them.
+export function savedJob(j: Job | null | undefined): Job | undefined {
+  if (!j || j.steps.length < 2) return undefined
+  return JSON.parse(JSON.stringify({ ...j, title: j.title.slice(0, 120), steps: j.steps.slice(0, 12), ...(j.paused ? { paused: j.paused.slice(0, 200) } : {}), tokens: Math.max(0, Math.round(j.tokens)), budget: Math.max(1, Math.round(j.budget)), settledAt: Math.max(-1, Math.min(12, j.settledAt)) })) as Job
+}
+
+// A job as a reopened chat holds it: one that was under way waits for the person (nothing runs by itself on opening).
+export function reopenedJob(j: Job | undefined): Job | null {
+  if (!j) return null
+  return j.status === 'running' ? { ...j, status: 'paused', paused: 'the chat was reopened' } : j
+}
 export type SavedChat = { id: string; summary: ChatSummary; body: ChatBody }
 
 const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s)
@@ -83,7 +97,7 @@ export function capTurns(turns: SavedTurn[], ids: IdsState): SavedTurn[] {
 }
 
 // The summary and body to save (the first ask as the title unless it was renamed).
-export function chatDocs(o: { uid: string; model: string; turns: SavedTurn[]; ids: IdsState; was?: ChatSummary | null; now: number }): { summary: ChatSummary; body: ChatBody } {
+export function chatDocs(o: { uid: string; model: string; turns: SavedTurn[]; ids: IdsState; was?: ChatSummary | null; now: number; job?: Job | null }): { summary: ChatSummary; body: ChatBody } {
   const turns = capTurns(o.turns, o.ids)
   const first = o.turns.find((t) => t.role === 'user')
   const summary: ChatSummary = {
@@ -96,7 +110,8 @@ export function chatDocs(o: { uid: string; model: string; turns: SavedTurn[]; id
     turns: o.turns.filter((t) => t.role === 'user').length,
     ...(o.was?.summary ? { summary: o.was.summary } : {}),
   }
-  return { summary, body: { turns, ids: o.ids } }
+  const job = savedJob(o.job)
+  return { summary, body: { turns, ids: o.ids, ...(job ? { job } : {}) } }
 }
 
 // What's wrong with a chat's docs as firestore.rules sees them (keys, types, sizes); empty = fine.
@@ -112,7 +127,9 @@ export function chatProblems(summary: Record<string, unknown>, body?: Record<str
   if (!Number.isInteger(summary.turns) || (summary.turns as number) < 0) out.push('summary: turns')
   if (summary.summary !== undefined && (typeof summary.summary !== 'string' || summary.summary.length > CHAT_SUMMARY_MAX)) out.push('summary: summary')
   if (body) {
-    for (const k of Object.keys(body)) if (k !== 'turns' && k !== 'ids') out.push(`body: ${k} isn't a field a chat's body has`)
+    for (const k of Object.keys(body)) if (k !== 'turns' && k !== 'ids' && k !== 'job') out.push(`body: ${k} isn't a field a chat's body has`)
+    const j = body.job as Job | undefined
+    if (j !== undefined && (!j || typeof j.title !== 'string' || !Array.isArray(j.steps) || j.steps.length < 2 || j.steps.length > 12 || !['planned', 'running', 'paused', 'done'].includes(j.status))) out.push('body: job')
     if (!Array.isArray(body.turns) || body.turns.length > CHAT_TURNS_MAX) out.push(`body: turns (a list of at most ${CHAT_TURNS_MAX})`)
     if (!body.ids || typeof body.ids !== 'object' || Array.isArray(body.ids)) out.push('body: ids')
     if (bytes(body) > CHAT_BYTES_MAX + 50_000) out.push('body: too big')
