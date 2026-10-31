@@ -9,7 +9,7 @@ function Pick({ clearable, start }: { clearable?: boolean; start?: 'P1' | 'P2' |
 
 export default example({
   name: 'Choice',
-  section: 'ui',
+  place: 'forms/pickers',
   file: 'src/ui/Choice.tsx',
   states: {
     picked: () => <Pick start="P2" />,

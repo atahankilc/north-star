@@ -5,7 +5,8 @@ import { Note, Row, Section, SettingsButton } from './Settings'
 
 export default example({
   name: 'Settings',
-  section: 'ui',
+  place: 'overlays/settings',
+  also: ['forms/layout'],
   file: 'src/ui/Settings.tsx',
   note: 'the modal from the gear or your square (D-097); its parts: Section, Row, Note',
   states: {

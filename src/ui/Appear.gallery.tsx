@@ -5,7 +5,7 @@ const box = { width: 320, padding: 'var(--space-6)', border: '1px solid var(--li
 
 export default example({
   name: 'Appear',
-  section: 'ui',
+  place: 'motion/entrance',
   file: 'src/ui/Appear.tsx',
   note: 'the one entrance: cell by cell in random order (D-034); \\ plays it again; reduced motion: there at once',
   states: {

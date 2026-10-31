@@ -3,7 +3,7 @@ import { onCanvas, P } from '../../gallery/canvas'
 
 export default example({
   name: 'Links',
-  section: 'canvas',
+  place: 'canvas/cards',
   file: 'src/views/workspace/PlaneLinks.tsx',
   note: 'links between cards: straight, kind colours, a chip (D-207); `for` and `relates` shown for the picked card',
   states: {

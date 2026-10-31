@@ -3,7 +3,7 @@ import { onCanvas, P } from '../../gallery/canvas'
 
 export default example({
   name: 'Table',
-  section: 'canvas',
+  place: 'canvas/pieces',
   file: 'src/views/workspace/Table.tsx',
   note: 'features with their fields and a number column (D-209)',
   states: {

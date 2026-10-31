@@ -3,7 +3,8 @@ import { onCanvas, P } from '../../gallery/canvas'
 
 export default example({
   name: 'Plane',
-  section: 'canvas',
+  place: 'canvas/pieces',
+  also: ['canvas/cards'],
   file: 'src/views/workspace/PlaneCards.tsx',
   note: 'a plane and its cards: a fitted picture on the canvas, live in focus (D-180, D-187)',
   states: {

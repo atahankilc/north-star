@@ -14,7 +14,7 @@ function Field(p: Omit<Parameters<typeof AutosaveField>[0], 'value' | 'onSave'> 
 
 export default example({
   name: 'AutosaveField',
-  section: 'ui',
+  place: 'forms/fields',
   file: 'src/ui/AutosaveField.tsx',
   note: 'saves as you type and on blur; the gallery keeps the value in the example only',
   states: {

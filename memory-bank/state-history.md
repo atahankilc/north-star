@@ -949,3 +949,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc, vitest 832, lint clean, both builds (no gallery in dist/), check:gallery; headless shots of every
   canvas state (49, dark) and some in light, no errors; found and fixed: the fixtures' clock missing (blank page), a
   timeline alone has no tasks (D-314), so its states carry its deck.
+
+## Done (2026-10-31): the gallery's G3 and its map (D-324, D-326)
+- G3: every component in src/views/workspace and src/onboarding has an example (four parallel forks: panels, docks and
+  wizards, screens, onboarding), helpers panels.tsx, docks.tsx, screens.tsx, onboarding.tsx; PENDING emptied,
+  src/onboarding covered; the shell without z-index (portals read whole), its list `role="list"` (lessons no longer
+  hide behind it). The map (D-326): `place`/`also`, MAP, the Tokens page; Coach under screens.
+- Verified: tsc, vitest 832, lint, both builds, check:gallery (73 examples), check:lessons; all 299 states shot with a
+  fresh load each, no errors; the wizard and lesson fixes and the map looked at.
+- The foundation audit (docs/foundation-audit-2026-10-31.md) found the duplication D-326 plans to remove.

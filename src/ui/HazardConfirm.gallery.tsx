@@ -22,7 +22,8 @@ function Confirm(p: Omit<ComponentProps<typeof HazardConfirm>, 'onConfirm' | 'on
 
 export default example({
   name: 'HazardConfirm',
-  section: 'ui',
+  place: 'feedback/confirm',
+  also: ['overlays/dialogs'],
   file: 'src/ui/HazardConfirm.tsx',
   note: 'a modal over the whole page; answer or Escape to get the gallery back',
   states: {

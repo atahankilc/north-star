@@ -3,7 +3,7 @@ import { onCanvas, P } from '../../gallery/canvas'
 
 export default example({
   name: 'Canvas',
-  section: 'canvas',
+  place: 'canvas/the canvas',
   file: 'src/views/workspace/CanvasView.tsx',
   note: 'the real canvas over Pazar (src/demo/fixtures/pazar.ts), no HUD; drag pans, the wheel zooms',
   states: {

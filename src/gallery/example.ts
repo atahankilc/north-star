@@ -5,7 +5,26 @@ import type { ReactNode } from 'react'
 import type { Store } from '../state/wsStore'
 import type { WorkspaceCtx } from '../state/wsStore'
 
-export type Section = 'ui' | 'canvas' | 'panels' | 'screens' | 'onboarding'
+// The gallery's map (D-326, docs/foundation-audit-2026-10-31.md): what a component is, never where its file lives. A
+// category, in the building's order (foundations at the bottom, whole screens at the top), and a group inside it.
+export const CATEGORIES = ['foundations', 'motion', 'actions', 'forms', 'text', 'feedback', 'overlays', 'hud', 'panels', 'canvas', 'screens', 'onboarding'] as const
+export type Category = (typeof CATEGORIES)[number]
+export const CATEGORY_NAME: Record<Category, string> = {
+  foundations: 'foundations',
+  motion: 'motion',
+  actions: 'actions',
+  forms: 'forms',
+  text: 'text and labels',
+  feedback: 'feedback',
+  overlays: 'overlays',
+  hud: 'hud and navigation',
+  panels: 'panels',
+  canvas: 'canvas pieces',
+  screens: 'screens',
+  onboarding: 'onboarding',
+}
+// `motion/text`: a category and a group in it.
+export type Place = `${Category}/${string}`
 
 // What a state's `setup` gets, once the state is drawn.
 export type GalleryCtx = {
@@ -43,7 +62,9 @@ export type State = (() => ReactNode) | StateSpec
 
 export type Example = {
   name: string
-  section: Section
+  // Where it lives on the map, then anywhere else it belongs (DecodeText: `motion/text`, also `text/animated`).
+  place: Place
+  also?: Place[]
   // The component's file, from the repo's root.
   file: string
   // A line about the component.

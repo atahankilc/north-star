@@ -9,7 +9,7 @@ function Edit({ editing, value = 'Pazar' }: { editing?: boolean; value?: string 
 
 export default example({
   name: 'InlineEdit',
-  section: 'ui',
+  place: 'forms/fields',
   file: 'src/ui/InlineEdit.tsx',
   note: 'double-click (or the caller) to edit; Enter keeps, Escape drops',
   states: {

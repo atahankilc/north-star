@@ -6,7 +6,7 @@ const say = (text: string, action?: string) => (_c: GalleryCtx) => useHistory.ge
 
 export default example({
   name: 'Toast',
-  section: 'ui',
+  place: 'feedback/notices',
   file: 'src/ui/Toast.tsx',
   note: 'bottom centre, 2.6 s (6 s with an action); \\ shows it again',
   states: {

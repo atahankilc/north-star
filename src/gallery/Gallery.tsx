@@ -2,14 +2,15 @@
 // MenuPanel, D-222), the example in the middle, the bar under it (state, theme, motion, what it stands on, zoom), the
 // address saying all of it (`#c=select&s=open&theme=light&motion=reduced&on=piece&zoom=2`, `&alone` for the example by
 // itself). Built from the app's own components and tokens.
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { create } from 'zustand'
 import { MenuPanel, type MenuEntry } from '../ui/Menu'
 import { Choice } from '../ui/Choice'
 import { useHistory } from '../data/history'
 import { useTheme } from '../state/theme'
 import { useMotion } from '../state/motion'
-import { ENTRIES, SECTIONS, entryById, stateSlug } from './registry'
+import { ENTRIES, MAP, entryById, stateSlug } from './registry'
+import { CATEGORY_NAME } from './example'
 import { Mount } from './Mount'
 import styles from './Gallery.module.css'
 
@@ -64,6 +65,12 @@ export function Gallery() {
   const names = useMemo(() => (entry ? Object.keys(entry.states) : []), [entry])
   const stateName = names.find((n) => stateSlug(n) === a.s) ?? names[0]
   const [reset, setReset] = useState(0)
+  // The list is the app's MenuPanel, whose `role="menu"` an onboarding lesson reads as an open menu and hides under
+  // (Lesson.tsx MENUS): here it's the page's own navigation, always open, so it says it's a list.
+  const side = useRef<HTMLElement>(null)
+  useLayoutEffect(() => {
+    side.current?.querySelector('[role="menu"]')?.setAttribute('role', 'list')
+  })
   const [error, setError] = useState<string | null>(null)
   const refused = useRefused((s) => s.n)
 
@@ -90,17 +97,20 @@ export function Gallery() {
     return () => window.removeEventListener('keydown', on)
   }, [names, stateName, go])
 
+  // The map (D-326): `# category` lines, a group's name over what's in it; a component in several places is listed in
+  // each. Typing finds by name, file or place.
   const items = useMemo<MenuEntry[]>(
     () =>
-      SECTIONS.flatMap((sec) => {
-        const here = ENTRIES.filter((e) => e.section === sec)
-        if (!here.length) return []
+      MAP.flatMap((spot, i) => {
+        const first = i === 0 || MAP[i - 1].category !== spot.category
         return [
-          { key: `# ${sec}`, heading: `${sec} · ${here.length}` },
-          ...here.map((e) => ({
-            key: e.id,
+          ...(first ? [{ key: `# ${spot.category}`, heading: CATEGORY_NAME[spot.category].toUpperCase() }] : []),
+          { key: `## ${spot.category}/${spot.group}`, heading: `› ${spot.group}` },
+          ...spot.entries.map((e) => ({
+            key: `${spot.category}/${spot.group}/${e.id}`,
             label: e.name,
-            words: e.file,
+            words: `${e.file} ${spot.category} ${spot.group}`,
+            indent: true,
             glyph: e.id === entry?.id ? '•' : undefined,
             hint: String(Object.keys(e.states).length),
             onSelect: () => go({ c: e.id, s: null }),
@@ -138,17 +148,18 @@ export function Gallery() {
   const note = typeof spec === 'function' ? undefined : spec.note
   return (
     <div className={styles.page}>
-      <aside className={styles.side} aria-label="Components">
+      <aside ref={side} className={styles.side} aria-label="Components">
         <div className={styles.title}>
           NORTH STAR <span className={styles.faint}>· GALLERY</span>
         </div>
-        <MenuPanel items={items} ariaLabel="Components" prompt="find a component…" noun="components" onClose={() => {}} />
+        <MenuPanel items={items} ariaLabel="Components" prompt="find a component…" noun="entries" onClose={() => {}} />
       </aside>
       <main className={styles.main}>
         {stage}
         <div className={styles.bar}>
           <div className={styles.head}>
             <span className={styles.name}>{entry.name}</span>
+            <span className={styles.faint}>{[entry.place, ...(entry.also ?? [])].map((p) => p.replace('/', ' › ')).join(' · ')}</span>
             {entry.note && <span className={styles.faint}>{entry.note}</span>}
           </div>
           <div className={styles.row}>

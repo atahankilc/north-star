@@ -9,7 +9,7 @@ const withPeers = (n: number, follow?: string) => (_c: GalleryCtx) => usePresenc
 
 export default example({
   name: 'PeopleHere',
-  section: 'ui',
+  place: 'hud/presence',
   file: 'src/ui/PeopleHere.tsx',
   note: 'squares, never names (D-169); hover shows who and where',
   states: {

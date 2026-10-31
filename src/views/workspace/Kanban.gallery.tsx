@@ -3,7 +3,7 @@ import { onCanvas, P } from '../../gallery/canvas'
 
 export default example({
   name: 'Deck',
-  section: 'canvas',
+  place: 'canvas/pieces',
   file: 'src/views/workspace/Kanban.tsx',
   note: 'a deck of tasks (kanban in code, D-301): columns, a limit, overdue in magenta',
   states: {

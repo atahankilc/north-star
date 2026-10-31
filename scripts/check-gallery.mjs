@@ -7,50 +7,17 @@ import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { join, relative, dirname, basename } from 'node:path'
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..')
-// The folders whose components need an example (D-324): src/ui since G1, src/views/workspace since G2.
-const COVERED = ['src/ui', 'src/views/workspace']
+// The folders whose components need an example (D-324): src/ui since G1, src/views/workspace since G2, src/onboarding
+// since G3.
+const COVERED = ['src/ui', 'src/views/workspace', 'src/onboarding']
 // Component files with no example, and why.
 const EXEMPT = {
   'src/ui/Curtain.tsx': 'the page’s own loading curtain (WebGL backdrop); seen on every page load, and it drives the global `revealed` the gallery holds on',
 }
 
-// Components still waiting for their example (G3: panels, docks, wizards, setups, screens): the list only shrinks. One
-// that gets its example must leave the list (the check says so); a new component never joins it.
-const PENDING = [
-  'src/views/workspace/Beside.tsx',
-  'src/views/workspace/BringCards.tsx',
-  'src/views/workspace/CanvasSwitch.tsx',
-  'src/views/workspace/CardPanel.tsx',
-  'src/views/workspace/CardPanelKinds.tsx',
-  'src/views/workspace/CardTasks.tsx',
-  'src/views/workspace/ContextMenu.tsx',
-  'src/views/workspace/DocContent.tsx',
-  'src/views/workspace/DrawSection.tsx',
-  'src/views/workspace/FilterDock.tsx',
-  'src/views/workspace/FindPreview.tsx',
-  'src/views/workspace/Finder.tsx',
-  'src/views/workspace/FocusDock.tsx',
-  'src/views/workspace/FocusedPlane.tsx',
-  'src/views/workspace/KanbanFilterDock.tsx',
-  'src/views/workspace/KanbanSetup.tsx',
-  'src/views/workspace/KanbanWizard.tsx',
-  'src/views/workspace/MatrixSetup.tsx',
-  'src/views/workspace/MatrixWizard.tsx',
-  'src/views/workspace/MoveToCanvas.tsx',
-  'src/views/workspace/MyTasks.tsx',
-  'src/views/workspace/PackPick.tsx',
-  'src/views/workspace/PeopleSettings.tsx',
-  'src/views/workspace/SideNav.tsx',
-  'src/views/workspace/TableSetup.tsx',
-  'src/views/workspace/TableWizard.tsx',
-  'src/views/workspace/TaskPanel.tsx',
-  'src/views/workspace/TasksSide.tsx',
-  'src/views/workspace/ThreadInbox.tsx',
-  'src/views/workspace/Threads.tsx',
-  'src/views/workspace/ViewMenu.tsx',
-  'src/views/workspace/WorkspaceLayout.tsx',
-  'src/views/workspace/collab.tsx',
-]
+// Components still waiting for their example: none since G3. Kept so a folder joining later can list its own while
+// they're written; the list only shrinks, and a new component never joins it.
+const PENDING = []
 
 const problems = []
 const walk = (dir) =>

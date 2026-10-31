@@ -3,7 +3,7 @@ import { onCanvas, P } from '../../gallery/canvas'
 
 export default example({
   name: 'Timeline',
-  section: 'canvas',
+  place: 'canvas/pieces',
   file: 'src/views/workspace/Timeline.tsx',
   note: 'the days of a deck: start to due, a ◆ for a due day alone, late hatched to today (D-304); today is 20 Oct 2026 here',
   states: {

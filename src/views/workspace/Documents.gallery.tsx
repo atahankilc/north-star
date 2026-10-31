@@ -5,7 +5,7 @@ const shelf = (ws: typeof PAZAR) => ({ ...ws, pieces: ws.pieces.map((p) => (p.id
 
 export default example({
   name: 'Documents',
-  section: 'canvas',
+  place: 'canvas/pieces',
   file: 'src/views/workspace/Documents.tsx',
   note: 'the documents you can see, as a table or a shelf (D-232)',
   states: {

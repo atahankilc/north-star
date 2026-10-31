@@ -3,7 +3,7 @@ import { Ink } from './Ink'
 
 export default example({
   name: 'Ink',
-  section: 'ui',
+  place: 'text/ink',
   file: 'src/ui/Ink.tsx',
   note: 'the shade text sits on, line by line; switch ON to piece to see it take the surface',
   states: {

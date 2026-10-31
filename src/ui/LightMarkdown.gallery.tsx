@@ -12,7 +12,7 @@ const TEXT = `Talked to **six cooks** this week.
 
 export default example({
   name: 'LightMarkdown',
-  section: 'ui',
+  place: 'text/markdown',
   file: 'src/ui/LightMarkdown.tsx',
   note: 'paragraphs and sticky notes: bold, italic, code, links, bullets, numbers',
   states: {

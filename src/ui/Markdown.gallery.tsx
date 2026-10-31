@@ -29,7 +29,7 @@ orders close 21:00 the day before
 
 export default example({
   name: 'Markdown',
-  section: 'ui',
+  place: 'text/markdown',
   file: 'src/ui/Markdown.tsx',
   note: 'documents: headings, lists, tables, quotes, code',
   states: {

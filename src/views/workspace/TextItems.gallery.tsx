@@ -34,7 +34,8 @@ const only = (labels: Label[]) => onCanvas({ only: [], change: (ws) => ({ ...ws,
 
 export default example({
   name: 'Text',
-  section: 'canvas',
+  place: 'canvas/text',
+  also: ['text/on the canvas'],
   file: 'src/views/workspace/TextItems.tsx',
   note: 'text on the canvas: headings, paragraphs, sticky notes, sections, the project title (D-188, D-194)',
   states: {

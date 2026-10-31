@@ -3,9 +3,9 @@
 A page for developers that shows every UI component of the app, each in its states, on made-up data, in dark and
 light, full and reduced motion. Dev only: `gallery.html`, served by the dev server, never built or deployed.
 
-Status: G0 (this spec), G1 (the page, every `src/ui` example, the check) and G2 (the pieces, `[grid]`) built
-2026-10-31; G3–G4 not started. Scope: `src/ui` first (the user, 2026-10-31), then the
-pieces (G2); panels and screens next (G3).
+Status: G0 (this spec), G1 (the page, every `src/ui` example, the check) G2 (the pieces, `[grid]`) and G3 (panels,
+docks, wizards, screens, onboarding) built 2026-10-31; G4 not started. Scope: `src/ui` first (the user, 2026-10-31), then the
+pieces (G2), then panels, screens and onboarding (G3).
 
 ---
 
@@ -57,7 +57,9 @@ it brings its own look).
 └───────────────────────┴────────────────────────────────────────────────┘
 ```
 
-- **Left column**: the prompt look (D-222): a `>` line narrowing the list (Enter opens the first), `# section` lines
+- **Left column**: the map (D-326): categories in the building's order (FOUNDATIONS, MOTION, ACTIONS, FORMS, TEXT AND
+  LABELS, FEEDBACK, OVERLAYS, HUD AND NAVIGATION, PANELS, CANVAS PIECES, SCREENS, ONBOARDING), each with its groups
+  (`› text`), a component listed under its `place` and every `also`. In the prompt look (D-222): a `>` line narrowing the list (Enter opens the first), `# section` lines
   with a count, rows `› name`, a counting foot. ↑/↓ move, Enter opens. Keys `[` / `]` step through the states, `\` mounts again. `window.__gallery` lists every example and its
   states, for scripts.
 - **Middle**: the example, mounted fresh each time it's picked (new store, every outside-React store reset). An error
@@ -91,7 +93,7 @@ import { Select } from './Select'
 
 export default example({
   name: 'Select',
-  section: 'ui',               // ui | canvas | panels | screens | onboarding
+  place: 'forms/pickers',      // category/group on the map (D-326); `also: ['…']` lists it elsewhere too
   file: 'src/ui/Select.tsx',
   states: {
     default: () => <Select value="b" options={OPTS} onChange={() => {}} ariaLabel="pick" />,
@@ -137,8 +139,17 @@ export default example({
   focus, unframed, edit mode, picked. `[grid]`: every state at once, each in a frame of its own (`&alone`), so their
   stores never meet. gallery.html gives the fixtures' clock (`window.__demoClock`): real time, dates from Pazar's day
   (20 Oct 2026). The check covers `src/views/workspace` too, with a `PENDING` list (G3's components) that only shrinks.
-- **G3 — panels and screens (later).** Card panel (each type), task panel, the right panels, threads, finder, the
-  settings modal, the whole `CanvasScreen`; onboarding's lesson card, kind guide, welcome.
+- **G3 — panels, screens, onboarding (built).** Every component in `src/views/workspace` and `src/onboarding` has
+  its example (the check's `PENDING` is empty; `src/onboarding` covered). Helpers beside canvas.tsx: `panels.tsx`
+  (Pazar's threads with messages, a package, a match, parts), `docks.tsx` (find, right-click, press, drag with
+  pointer capture made harmless), `screens.tsx` (`screen()`: the whole screen as the demo's CanvasScreen, HUD and
+  all; several canvases; a peer's cursor placed), `onboarding.tsx` (`Fresh` resets the coach's progress and guide
+  role, lessons built as devMount does, a lesson drawn once its anchor is there). The shell has no z-index, so a
+  portal centred on the window (a wizard, a list) reads whole; the list says `role="list"`, so a lesson doesn't
+  take it for an open menu. Not shown fully: people's names (Firestore paging), peers' cursors after a pan (their
+  tracks are presence.ts's own).
+- **The map (D-326, built).** `place` and `also` replace `section`; `MAP` in registry.ts; a Tokens page under
+  foundations (src/gallery/Tokens.gallery.tsx, every token read from the page's style sheets).
 - **G4 — shots (later).** A script that opens each address `&alone` in dark/light × full/reduced and saves PNGs, with
   puppeteer-core from a scratchpad (never a dependency of the repo, as state.md's notes say); a side-by-side page for
   comparing two runs. Decided when G3 is done.

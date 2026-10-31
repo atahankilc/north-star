@@ -9,7 +9,7 @@ const add = (ws: typeof PAZAR) => ({ ...ws, pieces: [...ws.pieces, DOC] })
 
 export default example({
   name: 'Document',
-  section: 'canvas',
+  place: 'canvas/pieces',
   file: 'src/views/workspace/DocumentPiece.tsx',
   note: 'one document in a window; its text drawn by the gallery (no Firestore to load it from)',
   states: {

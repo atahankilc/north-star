@@ -3,7 +3,7 @@ import { onCanvas, P } from '../../gallery/canvas'
 
 export default example({
   name: 'Matrix',
-  section: 'canvas',
+  place: 'canvas/pieces',
   file: 'src/views/workspace/Matrix.tsx',
   note: 'features × competitors on a scale, `—` and `~ ?` (D-204, D-136)',
   states: {

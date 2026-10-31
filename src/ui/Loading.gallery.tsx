@@ -3,7 +3,8 @@ import { Loading } from './Loading'
 
 export default example({
   name: 'Loading',
-  section: 'ui',
+  place: 'feedback/loading',
+  also: ['motion/loops'],
   file: 'src/ui/Loading.tsx',
   note: 'turning while full motion, still while reduced',
   states: {

@@ -5,7 +5,7 @@ const ACCENTS = ['magenta', 'cyan', 'yellow', 'blue', 'green'] as const
 
 export default example({
   name: 'AsciiButton',
-  section: 'ui',
+  place: 'actions/buttons',
   file: 'src/ui/AsciiButton.tsx',
   states: {
     default: () => <AsciiButton>create workspace</AsciiButton>,

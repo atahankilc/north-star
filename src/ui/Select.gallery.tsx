@@ -17,7 +17,7 @@ function Pick({ options = KINDS, start = 'solves', disabled }: { options?: Selec
 
 export default example({
   name: 'Select',
-  section: 'ui',
+  place: 'forms/pickers',
   file: 'src/ui/Select.tsx',
   note: 'never a native <select> (D-093); the `>` line past 7 options',
   states: {

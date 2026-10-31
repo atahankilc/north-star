@@ -26,7 +26,8 @@ const panel = { width: 320, border: '1px solid var(--line-hover)', background: '
 
 export default example({
   name: 'Menu',
-  section: 'ui',
+  place: 'overlays/menus',
+  also: ['forms/pickers'],
   file: 'src/ui/Menu.tsx',
   note: 'the prompt (D-222): `>` narrows, Enter picks the first, a letter goes first',
   states: {

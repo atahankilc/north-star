@@ -5914,7 +5914,9 @@ checks it, that no app file imports the gallery, and that `gallery.html` is in n
   19 examples in src/ui (Curtain exempt), `check:gallery` (in CI).
 - *Built:* G2 (2026-10-31): the pieces over Pazar (`src/gallery/canvas.tsx`), 11 examples in src/views/workspace,
   `[grid]` (each state in a frame), the check covering src/views/workspace with a shrinking `PENDING` list.
-- *Not yet:* G3 panels and screens (the 33 `PENDING`); G4 shots.
+- *Built:* G3 (2026-10-31): every component in src/views/workspace and src/onboarding (73 examples in all),
+  `PENDING` empty, src/onboarding covered.
+- *Not yet:* G4 shots.
 
 ### D-325 · 2026-10-31 · Accepted (the user: "we should have a consistency across the app. And 940 raw px seems too inconsistent. Maybe we can try to come up with some rules but for that i want you to consider everything. Type, color, spacing.. doesnt matter"; then "onaylıyorum, başla")
 **Every value in the CSS is a token, from one set of rules: consistency first, so off-scale values snap to the scale**
@@ -5935,3 +5937,24 @@ gallery/headless shots in dark and light: changes listed in the spec are expecte
   the sticky's glue band 5.2 → 7 px; a card's compact title 24 → 22.
 - *Not yet:* the files (baseline 1,760 on 2026-10-31); world geometry and TS durations into `tokens.ts`; DESIGN.md's
   sections written from the spec as each family lands.
+
+### D-326 · 2026-10-31 · Accepted (the user: "farklı componentler farklı kategoriler altında olmalı… bir çok şey individual componentlerden oluşturulmak yerine yeniden kodlanıyorsa… bu gallery'nin bir anlamı yok… bir bina gibi foundation'ımızın iyi olması lazım"; then "evet, haritayla başla, G3'ü birlikte commit et")
+**The UI is built like a building, from the bottom: foundations (tokens, motion), the kit (primitives), patterns, then the
+rooms (features); the gallery's map shows those floors, by what a thing is, never by its folder** (the audit:
+docs/foundation-audit-2026-10-31.md).
+- *The map (built):* every example has a `place` (`category/group`) and may be `also` elsewhere (DecodeText: `motion/text`
+  and `text/animated`). Categories in order: foundations, motion, actions, forms, text and labels, feedback, overlays,
+  hud and navigation, panels, canvas pieces, screens, onboarding. A Tokens page (foundations) reads every token from
+  tokens.css as it is now. Coach (draws the other onboarding surfaces, no look of its own) sits under screens.
+- *The plan (next, in order):* motion foundations (`DUR`, easings, one `tween()`, `runCells` with an order, one card-type
+  colour map); the kit (Button, Label, Rule, Field/PromptField, Choice + Checkbox + Tabs, Chip, CountBadge, Spinner,
+  Empty); patterns (Dialog/Window with one close, WizardShell, SetupPanel, Dock); each area moved onto them with
+  before/after gallery shots; `check:kit` (raw buttons, inputs, dialogs, portals, bracket and caps-label CSS outside
+  src/ui counted against a shrinking baseline); folders last, in one commit.
+- *Why:* the audit: 281 raw buttons outside src/ui against 19 shared; caps labels re-declared 63× under ~55 names; the
+  `01 NAME ──` rule and the `>` prompt each rebuilt 8×; Choice used once against 22 local clones; 10+ own dialogs, 4
+  close buttons; the card-type colour map 4×; easing 4×, the tween loop 8×, 3 spinners. src/ui is an eighth of the UI
+  code; blocks born in features (DockAction, Pills, Choices, Toggle) never moved down.
+- *Alternatives:* restructure folders first (churn for every session, fixes no duplication); keep grouping by folder.
+- *Coordination:* D-325 (tokens) works on the same CSS; kit work never on the same files at the same time.
+- *Not yet:* everything after the map.

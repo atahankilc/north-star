@@ -3,7 +3,8 @@ import { DecodeText } from './DecodeText'
 
 export default example({
   name: 'DecodeText',
-  section: 'ui',
+  place: 'motion/text',
+  also: ['text/animated'],
   file: 'src/ui/DecodeText.tsx',
   note: 'text decoding in (260 ms); press \\ to play it again',
   states: {

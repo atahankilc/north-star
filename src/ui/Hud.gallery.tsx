@@ -3,7 +3,7 @@ import { Hud } from './Hud'
 
 export default example({
   name: 'Hud',
-  section: 'ui',
+  place: 'hud/layout',
   file: 'src/ui/Hud.tsx',
   note: 'the breadcrumb top left, you and the gear bottom left; placed on the screen, so shown in the whole middle',
   states: {

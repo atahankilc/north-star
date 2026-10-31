@@ -38,8 +38,11 @@ feature comes back as a piece, and check them with the user then.
 - Every deploy (rules, indexes, functions) is asked for first, after `npm run test:rules`; until Blaze the storage-less
   command; an index deploy never deletes Firebase's indexes (D-322).
 - Component gallery (D-324, docs/specs/gallery.md): `gallery.html`, dev only, never built; demo realm parts on real
-  time; one `X.gallery.tsx` beside each component in a covered folder (`src/ui`, `src/views/workspace` but its `PENDING`), required with a new or changed
+  time; one `X.gallery.tsx` beside each component in a covered folder (`src/ui`, `src/views/workspace`, `src/onboarding`), required with a new or changed
   component, `npm run check:gallery`.
+- Foundation (D-326, docs/foundation-audit-2026-10-31.md): the UI built from the bottom: tokens and motion, the kit in
+  src/ui, patterns, then features; the gallery's map by what a thing is (`place` category/group, `also`), never by
+  folder. Next: motion foundations, the kit, patterns, moving areas onto them, `check:kit`, folders last.
 - ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
 ## Accounts, sharing, roles

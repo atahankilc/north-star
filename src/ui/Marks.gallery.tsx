@@ -25,7 +25,8 @@ const row = (items: [string, ReactNode][]) => (
 
 export default example({
   name: 'Marks',
-  section: 'ui',
+  place: 'motion/feedback',
+  also: ['canvas/selection'],
   file: 'src/ui/Marks.tsx',
   note: 'the L’s of anything selectable (D-265): distance = state, tone = what it is; point at the first to see hover live',
   states: {

@@ -35,7 +35,7 @@ function Problem({ empty }: { empty?: boolean }) {
 
 export default example({
   name: 'SidePanel',
-  section: 'ui',
+  place: 'panels/frame',
   file: 'src/ui/SidePanel.tsx',
   note: 'every right panel (D-219): 400 px, flush right, full height; with PanelSection and PanelAction',
   states: {

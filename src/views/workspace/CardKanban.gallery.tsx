@@ -12,7 +12,7 @@ const with_ = (p: WithId<Piece>) => (ws: typeof PAZAR) => ({ ...ws, pieces: [...
 
 export default example({
   name: 'Cards deck',
-  section: 'canvas',
+  place: 'canvas/pieces',
   file: 'src/views/workspace/CardKanban.tsx',
   note: 'a deck holding cards: columns and rows are fields, a drop sets them (D-253, D-268)',
   states: {
