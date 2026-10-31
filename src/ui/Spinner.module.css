@@ -1,0 +1,7 @@
+/* The one spinner (D-326): a glyph's cell wide, so the text after it never shifts as it turns. */
+.spinner {
+  display: inline-block;
+  width: 1ch;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+}

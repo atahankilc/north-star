@@ -7,7 +7,3 @@
   font-family: var(--font-mono);
   font-size: var(--text-sm);
 }
-
-.glyph {
-  color: var(--accent-cyan);
-}

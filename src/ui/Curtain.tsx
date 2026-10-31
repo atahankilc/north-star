@@ -11,6 +11,7 @@ import { BACKDROP_CAMERA, BackdropScene } from '../three/Backdrop'
 import { isReducedMotion } from '../state/motion'
 import { backdropDim } from '../three/sceneClock'
 import styles from './Curtain.module.css'
+import { Spinner } from './Spinner'
 
 const SHOW_AFTER_MS = 250 // after the first load, ignore loads shorter than this
 const SETTLE_MS = 150 // stay up until nothing has held the curtain for this long
@@ -115,7 +116,7 @@ export function Curtain({ field = true }: { field?: boolean }) {
             animate={{ opacity: 1, y: 0, transition: { delay: booting.current ? 0.3 : 0.1 } }}
             exit={{ opacity: 0, transition: { duration: 0.2 } }}
           >
-            <Spinner />
+            <Spinner className={styles.spinner} />
             <span>{status ?? 'ready'}</span>
           </motion.div>
         )}
@@ -124,19 +125,3 @@ export function Curtain({ field = true }: { field?: boolean }) {
   )
 }
 
-// Quarter-block glyph spinning in place: ▖ ▘ ▝ ▗
-const FRAMES = '▖▘▝▗'
-
-function Spinner() {
-  const [i, setI] = useState(0)
-  useEffect(() => {
-    if (isReducedMotion()) return
-    const id = window.setInterval(() => setI((n) => (n + 1) % FRAMES.length), 120)
-    return () => window.clearInterval(id)
-  }, [])
-  return (
-    <span className={styles.spinner} aria-hidden>
-      {FRAMES[i]}
-    </span>
-  )
-}

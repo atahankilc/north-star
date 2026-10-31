@@ -14,7 +14,6 @@ import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, 
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import { KIND_NAME, kindOfPiece } from '../../model/pieces'
-import { useMotion } from '../../state/motion'
 import { Appear } from '../../ui/Appear'
 import { useAutoGrow } from '../../ui/autoGrow'
 import { Select } from '../../ui/Select'
@@ -32,6 +31,7 @@ import { ChatsView, NotesDiff, NotesView } from './AgentMemory'
 import styles from './Agent.module.css'
 import { skillChip, useSkillMenu } from './SkillMenu'
 import { SKILLS } from '../skills'
+import { Spinner } from '../../ui/Spinner'
 
 const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
@@ -193,7 +193,7 @@ function Box() {
       {open && <div className={styles.skillAnchor}>{skills.menu}</div>}
       <label className={styles.prompt} data-running={running || undefined}>
         <span className={styles.ps} aria-hidden>
-          {running ? <Spinner /> : '>'}
+          {running ? <Spinner className={styles.spinner} /> : '>'}
         </span>
         <textarea
           ref={input}
@@ -315,7 +315,7 @@ function Column() {
         <div className={styles.skillAnchor}>{skills.menu}</div>
         <label className={styles.prompt} data-running={running || undefined}>
           <span className={styles.ps} aria-hidden>
-            {running ? <Spinner /> : '>'}
+            {running ? <Spinner className={styles.spinner} /> : '>'}
           </span>
           <textarea
             ref={input}
@@ -554,7 +554,7 @@ function AgentAnswer({ entry }: { entry: Extract<Entry, { kind: 'agent' }> }) {
       )}
       {entry.running && !entry.live && !entry.steps.some((s) => s.running) && (
         <p className={styles.thinking}>
-          <Spinner /> thinking…
+          <Spinner className={styles.spinner} /> thinking…
         </p>
       )}
       {(entry.text || entry.live) && (
@@ -592,7 +592,7 @@ function Step({ s }: { s: StepLine }) {
   return (
     <li className={styles.step} data-ok={s.ok === false ? 'no' : undefined}>
       <span className={styles.stepMark} aria-hidden>
-        {s.running ? <Spinner /> : s.ok === false ? '!' : '·'}
+        {s.running ? <Spinner className={styles.spinner} /> : s.ok === false ? '!' : '·'}
       </span>
       <span className={styles.stepLabel}>{s.label || '…'}</span>
       {!s.running && s.ms !== undefined && <span className={styles.stepMs}>{secs(s.ms)}</span>}
@@ -888,19 +888,3 @@ function AgentMark({ running }: { running?: boolean }) {
   return <span className={styles.mark} data-running={running || undefined} aria-hidden />
 }
 
-const FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-
-export function Spinner() {
-  const reduced = useMotion((s) => s.reduced)
-  const [i, setI] = useState(0)
-  useEffect(() => {
-    if (reduced) return
-    const t = setInterval(() => setI((x) => (x + 1) % FRAMES.length), 90)
-    return () => clearInterval(t)
-  }, [reduced])
-  return (
-    <span className={styles.spinner} aria-hidden>
-      {reduced ? '…' : FRAMES[i]}
-    </span>
-  )
-}
