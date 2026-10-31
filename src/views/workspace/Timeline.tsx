@@ -36,11 +36,11 @@ import { useOpenSize } from './sizes'
 import { registerStrip } from './stripReveal'
 import styles from './Timeline.module.css'
 import { DUR, lerp, tween } from '../../ui/motion'
-import { STRIP } from '../../model/world'
+import { STRIP_PX } from '../../model/world'
 import { tokenPx, tokenText } from '../../styles/cssToken'
 
 // Its parts in its own px: model/world.ts (D-325).
-export const T = STRIP
+export const T = STRIP_PX
 const TOP = T.over + 8 + T.head
 
 // Its scales: px a day.

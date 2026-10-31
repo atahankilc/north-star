@@ -36,15 +36,15 @@ if (typeof document !== 'undefined') writeWorldCss(document.documentElement)
 
 // A deck (Kanban.tsx `K`): a column's width and the gap between, its head, the gap under a task, the `+ column` head's
 // width; what an unmeasured task is guessed at (a line of title, its meta line, its padding), the SOON band.
-export const DECK = { col: 256, gap: 28, head: 32, cardGap: 8, add: 120, line: 18, meta: 26, pad: 22, soon: 40 }
+export const DECK_PX = { col: 256, gap: 28, head: 32, cardGap: 8, add: 120, line: 18, meta: 26, pad: 22, soon: 40 }
 // A matrix (Matrix.tsx `M`): the row heads' column, a cell, the column heads' row, a row, the gap between them, the end
 // totals' column and row.
-export const MATRIX = { head: 220, cell: 104, top: 72, row: 44, gap: 6, end: 120, endRow: 36 }
+export const MATRIX_PX = { head: 220, cell: 104, top: 72, row: 44, gap: 6, end: 120, endRow: 36 }
 // A timeline (Timeline.tsx `T`): the rows' names, the overview, the days' head, a task, the gap between, a row's padding,
 // the tray; how many days a pane beside a deck showed before the strip (kept for the tasks side view's call).
-export const STRIP = { left: 150, over: 34, head: 44, bar: 30, gap: 6, pad: 10, tray: 56, besideDays: 7 }
+export const STRIP_PX = { left: 150, over: 34, head: 44, bar: 30, gap: 6, pad: 10, tray: 56, besideDays: 7 }
 // A documents list (Documents.tsx `D`): the table's head and rows, the shelf's sheets.
-export const DOCS = { head: 40, row: 54, pad: 16, sheet: { w: 140, h: 186, gap: 16, cols: 5 } }
+export const DOCS_PX = { head: 40, row: 54, pad: 16, sheet: { w: 140, h: 186, gap: 16, cols: 5 } }
 // The project title (titleLayout.ts `T`), top to bottom: the caption (the north star and PROJECT), the name, the rule,
 // what it's building; the caption's text starts two stars and kickGap in.
-export const TITLE = { pad: 44, caption: 18, name: 92, nameLead: 1, desc: 26, descLead: 1.5, gap: 27, rule: 4, star: 15, arm: 48, stroke: 3, kickGap: 13 }
+export const TITLE_PX = { pad: 44, caption: 18, name: 92, nameLead: 1, desc: 26, descLead: 1.5, gap: 27, rule: 4, star: 15, arm: 48, stroke: 3, kickGap: 13 }

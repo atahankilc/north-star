@@ -4,6 +4,7 @@
 import { K } from '../../views/workspace/Kanban'
 import { aim, camera, cursor, find, set, wait, type Scene, type Ctx } from '../director'
 import { pazar, workspace, WID, P } from '../fixtures/pazar'
+import { DAY } from '../time'
 
 const TASK = 'tk-cutoff'
 const task = `[data-task="${TASK}"]`
@@ -19,7 +20,6 @@ const dropAt = () => {
 
 // The deck's tasks a week later than Pazar's: nothing due this week, so no SOON band over the columns (it isn't what this
 // scene is about).
-const DAY = 24 * 3600 * 1000
 const later = (d?: string) => (d ? new Date(Date.parse(d) + 7 * DAY).toISOString().slice(0, 10) : d)
 const tasks = pazar.tasks.map((t) => (t.col === 'done' ? t : { ...t, due: later(t.due), start: later(t.start) }))
 

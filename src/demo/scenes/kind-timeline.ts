@@ -4,12 +4,12 @@
 import { aim, camera, cursor, find, onStage, set, wait, type Ctx, type Scene } from '../director'
 import { CLEAR, appear, bare, base, pazarPiece } from '../fixtures/kit'
 import { P } from '../fixtures/pazar'
+import { DAY } from '../time'
 
 const days = { ...pazarPiece(P.days), x: CLEAR.x, y: CLEAR.y, open: true }
 const ID = 'tk-shelf'
 const BAR = `[data-bar][data-task="${ID}"]`
 const t0 = base.tasks.find((t) => t.id === ID)!
-const DAY = 24 * 3600 * 1000
 const shift = (d: string | undefined, n: number) => (d ? new Date(Date.parse(d) + n * DAY).toISOString().slice(0, 10) : d)
 const span = Math.round((Date.parse(t0.due!) - Date.parse(t0.start!)) / DAY) + 1
 let from = { x: 0, y: 0 }

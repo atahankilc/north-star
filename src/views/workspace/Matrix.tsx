@@ -63,10 +63,10 @@ import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import { learn } from '../../onboarding/learn'
 import styles from './Matrix.module.css'
 import { DUR } from '../../ui/motion'
-import { MATRIX } from '../../model/world'
+import { MATRIX_PX } from '../../model/world'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
-export const M = MATRIX
+export const M = MATRIX_PX
 // A clip-path side that doesn't clip: far past any matrix, not a size.
 const UNCLIPPED = '-10000px' // tokens-ok: means "no edge"
 

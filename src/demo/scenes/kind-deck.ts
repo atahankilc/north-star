@@ -4,8 +4,8 @@
 import { aim, camera, cursor, find, onStage, set, wait, type Scene } from '../director'
 import { CLEAR, appear, bare, base, pazarPiece } from '../fixtures/kit'
 import { P } from '../fixtures/pazar'
+import { DAY } from '../time'
 
-const DAY = 24 * 3600 * 1000
 // A week later than Pazar's, so no SOON band over the columns (not what this one is about).
 const later = (d?: string) => (d ? new Date(Date.parse(d) + 7 * DAY).toISOString().slice(0, 10) : d)
 // Two of its columns, `doing` and `review`, so the whole deck (its name too) reads in the slot.

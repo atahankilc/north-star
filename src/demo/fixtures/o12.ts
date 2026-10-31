@@ -11,6 +11,7 @@ import { camOf, setCam } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import type { Task } from '../../data/tasks'
 import { run, type Action } from '../director'
+import { DAY } from '../time'
 
 // ——— the stage ———
 // CSS for this scene only, over the whole page (its portals too: a wizard, a panel), put in once.
@@ -71,7 +72,6 @@ export const firstText = (selector: string, words: string, ax = 0.5, ay = 0.5) =
 
 // Pazar's unfinished tasks a week later: nothing due this week, so no SOON band over a deck's columns (it isn't what
 // these scenes are about).
-const DAY = 24 * 3600 * 1000
 const later = (d?: string) => (d ? new Date(Date.parse(d) + 7 * DAY).toISOString().slice(0, 10) : d)
 export const calmTasks = (tasks: Task[]) => tasks.map((t) => (t.col === 'done' ? t : { ...t, due: later(t.due), start: later(t.start) }))
 

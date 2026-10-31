@@ -5952,7 +5952,9 @@ gallery/headless shots in dark and light: changes listed in the spec are expecte
   firestore.rules), `src/ui/feel.ts` (one DRAG_PX = 5, was 4 in the onboarding; ZOOM_MIN/MAX; wheelStep()), durations in
   motionTokens.ts (D-326). A constant used in two places or that is a design/feel choice goes to its module; an
   algorithm's own detail stays where it is. `check:tokens` scans TS/TSX too (uncomputed px, quoted hex, bare style
-  numbers); a technical exception says why with `// tokens-ok`.
+  numbers); a technical exception says why with `// tokens-ok`. Kept that way (the user: "bundan sonra agentlar …
+  değerlendircek mi"): a hard rule in CLAUDE.md; check:tokens also fails on a home's name redefined elsewhere and on the
+  same name + number in two files; the limits test fails on a limit neither checked nor explained.
 - *Not yet:* TS durations read from one source (D-326 took it).
 
 ### D-326 · 2026-10-31 · Accepted (the user: "farklı componentler farklı kategoriler altında olmalı… bir çok şey individual componentlerden oluşturulmak yerine yeniden kodlanıyorsa… bu gallery'nin bir anlamı yok… bir bina gibi foundation'ımızın iyi olması lazım"; then "evet, haritayla başla, G3'ü birlikte commit et")

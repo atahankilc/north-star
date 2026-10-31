@@ -51,6 +51,13 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   in Settings → display; the choice is saved in that browser.
 - Reduced motion and light theme must always work when chosen: every animation reads `useMotion().reduced` /
   `isReducedMotion()`, CSS colours come from tokens (light values under `[data-theme='light']`), WebGL colours from `usePalette()`.
+- Tokens (D-325, docs/specs/tokens.md): no raw value in CSS or TS. Sizes, colours, type, spacing, layers and durations
+  are tokens (`src/styles/tokens.css`; in TS the token itself, or `tokenPx()` for pixel math). A constant that isn't a
+  token has one home by kind: `src/model/world.ts` (canvas and pieces' geometry), `src/model/limits.ts` (text lengths and
+  list sizes, kept equal to firestore.rules by tests/unit/limits.test.ts), `src/ui/feel.ts` (drag threshold, zoom),
+  `src/ui/motionTokens.ts` (durations, D-326). Import it; never redefine it. A new constant used in two places, or one
+  that is a design or feel choice, goes to its home. `npm run check:tokens` must pass; a line that truly must name a
+  number says why with `// tokens-ok: …`.
 - Do not start work that depends on a `blocking` open question without asking the user.
 - Gallery (D-324, docs/specs/gallery.md): a new component in a covered folder (`src/ui`, `src/views/workspace`, `src/onboarding`), or a real change to one,
   ships in the same change with its `X.gallery.tsx` beside it; `npm run check:gallery` must pass.

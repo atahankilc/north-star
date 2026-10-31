@@ -246,6 +246,10 @@ Durations written in TS (cellReveal, the focus ink, the curtain) are not CSS: th
   (a day in ms, a cap on drawn dots) stays where it's used.
 - **`check:tokens` reads TS/TSX too:** an uncomputed `"…px"`, a quoted hex colour, a style key given a bare number. The
   sources are exempt; a line that must name a number (an off-screen holder, a font atlas) says why with `// tokens-ok`.
+  It also fails when a name a home exports (`DRAG_PX`, `GRID`, a `*_MAX`…) is defined in another file, and when the same
+  UPPER_CASE name with the same number is defined in two files (same name, different value is allowed: it means
+  something else). tests/unit/limits.test.ts fails when a limit is neither checked against its rule nor listed with why
+  the rules can't hold it. The rule is in CLAUDE.md's hard rules, so every session reads it.
 
 ## Progress
 - 2026-10-31: tokens in tokens.css, `check:tokens` in CI (baseline 1,760), **src/ui done** (0 left; 148 gallery shots

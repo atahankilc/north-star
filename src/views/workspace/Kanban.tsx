@@ -58,10 +58,10 @@ import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
 import { useKanbanSizes } from './sizes'
 import styles from './Kanban.module.css'
-import { DECK } from '../../model/world'
+import { DECK_PX } from '../../model/world'
 
 // Its parts in its own px: model/world.ts (D-325).
-export const K = DECK
+export const K = DECK_PX
 
 // What's due soon on it (D-262): not finished, due by Sunday; past its day first, then by day.
 function weekEnd() {

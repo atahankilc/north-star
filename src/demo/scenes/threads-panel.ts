@@ -13,8 +13,8 @@ import { base, byText } from '../fixtures/kit'
 import { calm, cornerOnly, thread } from '../fixtures/o13'
 import { DEMO_USER, P, PEOPLE } from '../fixtures/pazar'
 import { DEMO_DAY } from '../clock'
+import { MIN } from '../time'
 
-const MIN = 60 * 1000
 const THREADS = [
   thread('t-pickup', {
     on: 'card', targetId: 'f-pickup', planeId: P.product, count: 4, lastAt: DEMO_DAY - 12 * MIN,

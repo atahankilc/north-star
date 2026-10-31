@@ -81,10 +81,36 @@ function scan(file) {
 }
 
 const files = walk(path.join(root, 'src')).filter((f) => !skip.some((r) => r.test(f))).sort()
+
+// Constants that aren't tokens have one home each (docs/specs/tokens.md §8). A name a home exports is defined nowhere
+// else (import it), and the same UPPER_CASE name with the same number is not written in two files (move it home).
+const HOMES = ['src/ui/feel.ts', 'src/model/limits.ts', 'src/model/world.ts', 'src/ui/motionTokens.ts', 'src/model/grid.ts']
+const owned = new Map()
+for (const h of HOMES) {
+  if (!fs.existsSync(path.join(root, h))) continue
+  for (const m of fs.readFileSync(path.join(root, h), 'utf8').matchAll(/^export const ([A-Z][A-Z0-9_]*)\b/gm)) owned.set(m[1], h)
+}
+const DEF = /^\s*(?:export\s+)?(?:const|let)\s+([A-Z][A-Z0-9_]*)\s*=\s*([^\n]*)$/gm
+const numbers = new Map() // `NAME=value` → files
+const homeless = {}
+for (const f of files.filter((f) => /\.tsx?$/.test(f) && !HOMES.includes(f))) {
+  const src = fs.readFileSync(path.join(root, f), 'utf8')
+  for (const m of src.matchAll(DEF)) {
+    const line = src.slice(0, m.index).split('\n').length
+    if (owned.has(m[1])) (homeless[f] ??= []).push({ line, kind: 'owned', text: `${m[1]} is ${owned.get(m[1])}'s` })
+    const v = m[2].replace(/\s*\/\/.*$/, '').trim()
+    if (/^[\d_.\s*+\-/()]+$/.test(v) && /\d/.test(v)) {
+      const k = `${m[1]}=${v.replace(/\s+/g, '')}`
+      if (!numbers.has(k)) numbers.set(k, [])
+      numbers.get(k).push({ f, line })
+    }
+  }
+}
+for (const [k, at] of numbers) if (new Set(at.map((a) => a.f)).size > 1) for (const a of at) (homeless[a.f] ??= []).push({ line: a.line, kind: 'twice', text: `${k} also in ${at.filter((b) => b.f !== a.f).map((b) => b.f).join(', ')}` })
 const counts = {}
 const all = {}
 for (const f of files) {
-  const found = scan(f)
+  const found = [...scan(f), ...(homeless[f] ?? [])]
   all[f] = found
   if (found.length) counts[f] = found.length
 }

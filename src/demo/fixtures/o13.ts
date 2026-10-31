@@ -19,6 +19,7 @@ import hudStyles from '../../ui/Hud.module.css'
 import { inFocus, onCanvas, run, type Action, type Ctx } from '../director'
 import { PEOPLE } from './pazar'
 import { DEMO_DAY } from '../clock'
+import { MIN } from '../time'
 
 // ——— the stage ———
 // Only the HUD's part the lesson is about (onboarding.md §6.2b.1): on a 16:10 stage small enough to read in the lesson's
@@ -178,7 +179,6 @@ export const drift = (uid: string, to: { x: number; y: number }, ms: number): Ac
 
 // ——— threads ———
 
-const MIN = 60 * 1000
 export const thread = (id: string, t: Partial<Thread> & Pick<Thread, 'on' | 'targetId' | 'planeId'>): WithId<Thread> => ({
   id,
   x: 0,

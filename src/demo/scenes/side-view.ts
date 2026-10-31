@@ -9,10 +9,10 @@ import { base, byText } from '../fixtures/kit'
 import { calmTasks } from '../fixtures/o12'
 import { P, WID } from '../fixtures/pazar'
 import { DEMO_DAY } from '../clock'
+import { DAY } from '../time'
 
 // Pazar's tasks a week later (no SOON band over the board), and yours spanning today into next week (not due this week,
 // so not in SOON either), so the days show your row with its bar titled.
-const DAY = 24 * 3600 * 1000
 const day = (n: number) => new Date(DEMO_DAY + n * DAY).toISOString().slice(0, 10)
 const tasks = calmTasks(base.tasks).map((t) =>
   t.id === 'tk-cutoff' ? { ...t, title: 'Order cut-off at 9 pm', start: day(-2), due: day(8) } : t.id === 'tk-counter' ? { ...t, title: 'Portion counter at 9 pm', start: day(-1), due: day(9) } : t,

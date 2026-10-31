@@ -46,6 +46,27 @@ const CASES: [keyof typeof L, () => number][] = [
   ['CHANGE_KINDS_MAX', () => num(rules.slice(rules.indexOf('match /changes/')), list('d.kinds'))],
 ]
 
+// Limits the rules can't hold, each with why: they bound an item inside a list or map (Firestore rules can't loop over
+// one), or Firestore itself. The client and the ops enforce them.
+const CLIENT_ONLY: Partial<Record<keyof typeof L, string>> = {
+  COL_NAME_MAX: "a deck column's name, inside the kanban's cols list",
+  LIMIT_MAX: "a deck column's limit, inside the cols list",
+  BOX_NAME_MAX: "a box's name, inside the kanban's names list",
+  CHECK_MAX: 'a checklist item, inside the checks list',
+  LABEL_MAX: 'a #label, inside the labels list',
+  MATRIX_NAME_MAX: "a typed head's name, inside an axis's items",
+  GLYPH_MAX: "a scale step's glyph, inside the steps list",
+  STEP_LABEL_MAX: "a scale step's label, inside the steps list",
+  TABLE_COL_NAME_MAX: "a table column's name, inside the cols list",
+  CHANGE_IDS_MAX: 'ids in one change entry: the rules cap the joined string (6600), not the count',
+  WRITE_BATCH_MAX: "Firestore's own batch cap (500), not a rule",
+}
+
 describe('limits match firestore.rules', () => {
   for (const [name, read] of CASES) it(name, () => expect(L[name]).toBe(read()))
+  // A new limit is either checked against its rule above or says here why the rules can't hold it.
+  it('every limit is checked or says why not', () => {
+    const covered = new Set<string>([...CASES.map(([n]) => n), ...Object.keys(CLIENT_ONLY)])
+    expect(Object.keys(L).filter((n) => !covered.has(n))).toEqual([])
+  })
 })
