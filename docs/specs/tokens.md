@@ -151,10 +151,10 @@ up" may need to give way to "round down" in dense lists (kanban sheets, the tabl
 - **Marks on edges:** `--corner-mark` 7 (the magenta L's on panel, console and dock corners), `--lead` 12 (a numbered
   rule's magenta lead), `--underline-offset` 3 (2–4).
 - **Breakpoints** can't be variables: `@media` lines are left to themselves, and they are 760 and 640 px only.
-- **World geometry** (`--w-*`, equal to TS constants): `--w-grid` 25 (GRID), `--w-card-pad` 7, `--w-card-edge` 4,
+- **World geometry** (`--w-*`, one source: `src/model/world.ts`, which TS reads and which writes these CSS vars at load): `--w-grid` 25 (GRID), `--w-card-pad` 7, `--w-card-edge` 4,
   `--w-chip-gap` 5, `--w-row-part` 15 / `--w-row-feature` 21 / `--w-row-category` 13 (cardInside.ts), `--w-sticky-h` 125
   (STICKY_H), `--w-doc-pad` 36 (DocumentPiece PAD). Deck (`K`) and timeline (`T`) sizes are written exact in tokens.
-  *Planned, not done:* a card's 200 × 100 and its parts, kanban sheet and column widths, timeline row height,
+  *Was planned:* a card's 200 × 100 and its parts, kanban sheet and column widths, timeline row height,
   documents' sheet (140 × 186). These are read by TS for layout too, so they live in `tokens.ts` (`world`) and are
   written into CSS from there once, at load (one place, read by both).
 
@@ -242,8 +242,9 @@ Durations written in TS (cellReveal, the focus ink, the curtain) are not CSS: th
 - 2026-10-31: **the world done** (PlaneCards, TextItems, Kanban, Timeline, Matrix, Table, Documents, DocumentPiece,
   DocContent, CanvasView, PlaneLinks, collab, DrawSection, demo Stage): **0 raw values left anywhere.** Codemod in an
   exact mode for the world (spacing only where a token is equal), TS-coupled sizes kept exact, the rest snapped. Gallery
-  G2 pieces and every demo scene shot before/after. `check:tokens` now fails on any raw value. Not yet: world geometry
-  read from `tokens.ts` (one source) and TS durations into `tokens.ts`.
+  G2 pieces and every demo scene shot before/after. `check:tokens` now fails on any raw value.
+- 2026-10-31: **the world's geometry from one source**, `src/model/world.ts` (TS reads it, it writes the `--w-*` vars):
+  42 demo-scene frames identical before/after. TS durations: D-326.
 
 ## How it gets done
 1. tokens.css and tokens.ts: every token above, DESIGN.md §3, 4, 6, 7 rewritten from this file.

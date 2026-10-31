@@ -3,15 +3,16 @@
 // links and corner marks, and where a folded part's card tucks into its row.
 import { CARD, type Card } from './cards'
 import { GRID } from './grid'
+import { WORLD } from './world'
 import type { CompetitorFeature } from '../data/competitorFeatures'
 import type { Edge } from './edges'
 
 // Where the list inside a card starts: under its type line and a title kept to two lines.
 export const INNER_TOP = 56
 // A part's row in a folded feature; a competitor feature's small card (18 + 3 apart) and a category's name over its.
-export const PART_ROW = 15
-export const FEATURE_ROW = 21
-export const CATEGORY_ROW = 13
+export const PART_ROW = WORLD.rowPart
+export const FEATURE_ROW = WORLD.rowFeature
+export const CATEGORY_ROW = WORLD.rowCategory
 // Under the list: a gap, the facts line, the card's padding.
 const FOOT = 4 + 8 + 7 + 6
 

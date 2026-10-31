@@ -75,9 +75,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
   world (D-325). Lowercase actions are untracked.
 - *Inside the zoomed world (D-325):* the screen's `--text-xs`…`--text-lg` hold in canvas px too; `--w-text-*` adds only
   what the screen lacks: `-3xs` 7, `-2xs` 8, `-xs` 9, `-sm` 10 (read when zoomed in), `-lg` 14 (card titles), `-xl` 22,
-  `-2xl` 26 (don't shrink on phones). Screen UI never uses `--w-*`. Sizes TS also measures are `--w-*` tokens equal to
-  their constants (`--w-grid`, `--w-card-*`, `--w-row-*`, `--w-sticky-h`, `--w-doc-pad`) or exact in tokens; they never
-  snap alone. `--text-title` 22 is the right panel's title, `--text-code` 0.88em code inside Markdown.
+  `-2xl` 26 (don't shrink on phones). Screen UI never uses `--w-*`. Sizes TS also measures come from one source,
+  `src/model/world.ts`, which writes them as `--w-grid`, `--w-card-*`, `--w-row-*`, `--w-sticky-h`, `--w-doc-pad`; the
+  deck's and timeline's rows are exact in tokens. They never snap alone. `--text-title` 22 is the right panel's title, `--text-code` 0.88em code inside Markdown.
 - *Line height and weight (D-325):* ratios only: `--lh-none` 1, `--lh-tight` 1.15, `--lh-snug` 1.3, `--lh-body` 1.5 (a
   fixed row height is a size token); `--weight-regular` 400, `--weight-medium` 500, `--weight-bold` 600.
 - *Every value a token (D-325, docs/specs/tokens.md):* no number with a unit in a module CSS file (`0`, `%`, `ch`,

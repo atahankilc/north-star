@@ -14,6 +14,7 @@ import { placeDocument, pieceRef } from '../../data/pieces'
 import { useAuth } from '../../data/auth'
 import { canvasCenter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
+import { WORLD } from '../../model/world'
 import { useWs } from './context'
 import { DocContent } from './DocContent'
 import { closeDoc, documentsBounds, shareOrAsk, documentsOf, listed, readerLeft, useDocUi } from './Documents'
@@ -24,7 +25,7 @@ import styles from './DocumentPiece.module.css'
 import beside from './Beside.module.css'
 
 // The margin round its text, in its px.
-const PAD = 36
+const PAD = WORLD.docPad
 // Its text's width in a window of width `w`: the window's, less the margins.
 export const docWidth = (w: number) => Math.max(240, w - 2 - 2 * PAD)
 // How tall each document piece's text came out, measured as it's drawn: what fit frames (its first screen).

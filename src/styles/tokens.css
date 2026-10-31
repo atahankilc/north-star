@@ -97,16 +97,8 @@
   --w-text-xl: 22px; /* a card's compact title and handle */
   --w-text-2xl: 26px; /* the project title's description */
 
-  /* The world's geometry (D-325), in canvas px. TS measures with the same numbers: keep each equal to its constant. */
-  --w-grid: 25px; /* GRID, model/grid.ts */
-  --w-card-pad: 7px; /* a card's padding (CHIP_ROOM, PlaneCards.tsx) */
-  --w-card-edge: 4px; /* a card's type edge on its left */
-  --w-chip-gap: 5px; /* CHIP_GAP, PlaneCards.tsx */
-  --w-row-part: 15px; /* PART_ROW, model/cardInside.ts */
-  --w-row-feature: 21px; /* FEATURE_ROW */
-  --w-row-category: 13px; /* CATEGORY_ROW */
-  --w-sticky-h: 125px; /* STICKY_H, model/labels.ts */
-  --w-doc-pad: 36px; /* PAD, DocumentPiece.tsx */
+  /* The world's geometry (--w-grid, --w-card-pad, --w-card-edge, --w-chip-gap, --w-row-*, --w-sticky-h, --w-doc-pad) is
+     written from src/model/world.ts, its one source (D-325): TS measures with the same numbers. */
 
   /* Tracking (D-093, D-325): every uppercase label, sans titles, the display headline; glyph cells that must touch.
      Actions are lowercase, untracked. The same three on screen and in the world. */

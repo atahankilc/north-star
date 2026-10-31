@@ -5941,8 +5941,10 @@ gallery/headless shots in dark and light: changes listed in the spec are expecte
   boxes snap to one ladder `--size-xs`…`--size-xl`.
 - *Built (2026-10-31):* every CSS file, 1,760 → 0 raw values (src/ui 4845207, panels de5a1ae, the world after);
   `check:tokens` in CI now fails on any raw value. Verified with gallery and demo-scene shots before/after, dark and light.
-- *Not yet:* world geometry and TS durations read from `tokens.ts` (one source; now the CSS tokens carry comments naming
-  each TS constant).
+- *One source for the world's geometry (2026-10-31, the user: "birleştirebiliyosak neden birleştirmiyoruz?"):*
+  `src/model/world.ts` holds the numbers; GRID, the card rows, STICKY_H, the chip gap and the document's PAD read them, and
+  it writes the `--w-grid`/`--w-card-*`/`--w-row-*`/`--w-sticky-h`/`--w-doc-pad` CSS vars on <html> when it loads.
+- *Not yet:* TS durations read from one source (D-326 took it).
 
 ### D-326 · 2026-10-31 · Accepted (the user: "farklı componentler farklı kategoriler altında olmalı… bir çok şey individual componentlerden oluşturulmak yerine yeniden kodlanıyorsa… bu gallery'nin bir anlamı yok… bir bina gibi foundation'ımızın iyi olması lazım"; then "evet, haritayla başla, G3'ü birlikte commit et")
 **The UI is built like a building, from the bottom: foundations (tokens, motion), the kit (primitives), patterns, then the

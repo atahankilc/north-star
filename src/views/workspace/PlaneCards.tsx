@@ -13,6 +13,7 @@
 // (`[−] 3 parts`), their cards shrinking into its rows, and grows back out on `[+]`.
 // The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { WORLD } from '../../model/world'
 import { CARD, copyCards, foldCard, foldPackage, moveCard, moveCards, spotRef, type AnyType, type Card } from '../../data/cards'
 import { planeOf } from '../../data/places'
 import { clipboard, deleteHere, heldAt, landed, onPlane, othersThan, pasteSame, selectedIds, setSelection, startGroupDrag, toggleSelected } from './selection'
@@ -886,11 +887,11 @@ function ProofCells({ proof }: { proof: Proof }) {
 }
 
 // Tags as framed chips in a row; what doesn't fit becomes `+N`. Mono is 0.6 em a character. The same sizes as the CSS
-// (D-325): --w-text-3xs, --space-1, --w-chip-gap; the room is the card less --w-card-pad twice and --w-card-edge.
+// (D-325): --w-text-3xs, --space-1, and the world's chip gap and card padding (model/world.ts).
 const CHIP_TEXT = 7
 const CHIP_PAD = 4
-const CHIP_GAP = 5
-const CHIP_ROOM = CARD.w - 2 * 7 - 4
+const CHIP_GAP = WORLD.chipGap
+const CHIP_ROOM = CARD.w - 2 * WORLD.cardPad - WORLD.cardEdge
 const chipWidth = (text: string) => text.length * CHIP_TEXT * 0.6 + CHIP_PAD * 2
 function TagChips({ tags }: { tags: string[] }) {
   const shown: string[] = []

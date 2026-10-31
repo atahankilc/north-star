@@ -1,5 +1,6 @@
 // What text on the canvas or a plane is, without Firebase (S3, D-312); data/labels.ts re-exports it and keeps the
 // writes.
+import { WORLD } from './world'
 
 // The canvas as a space, beside the planes (whose ids are Firestore's 20-character ones).
 export const CANVAS = 'canvas'
@@ -54,7 +55,7 @@ export const STICKY_PX: Record<TextScale, number> = { small: 6.8, medium: 8.4, l
 export const PARA_W = { initial: 500, min: 120, max: 3200 }
 // A sticky note starts 6 grid steps wide and 5 tall (D-259); it grows down with its text, folded back to the 5.
 export const STICKY_W = { initial: 150, min: 100, max: 800 }
-export const STICKY_H = 125
+export const STICKY_H = WORLD.stickyH
 export const TITLE_W = { initial: 800, min: 500, max: 2400 }
 export const SECTION_MIN = { w: 100, h: 75 }
 export const KICKER_MAX = 60
