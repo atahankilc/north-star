@@ -11,22 +11,22 @@
 /* One person: initial, name and email, their role and what an owner can do. */
 .member {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: var(--control) minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) 0;
 }
 
 .member + .member {
-  border-top: 1px solid var(--line);
+  border-top: var(--line-w) solid var(--line);
 }
 
 .avatar {
   display: inline-grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--line-hover);
+  width: var(--control);
+  height: var(--control);
+  border: var(--line-w) solid var(--line-hover);
   color: var(--fg);
   font-size: var(--text-xs);
 }
@@ -60,9 +60,9 @@
 }
 
 .role {
-  min-width: 84px;
+  min-width: 13ch;
   padding: var(--space-1) 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
   color: var(--fg-strong);
   font-size: var(--text-sm);
 }
@@ -116,7 +116,7 @@
   min-width: 0;
   padding: var(--space-1) 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
   background: none;
   color: var(--fg-strong);
   font: inherit;
@@ -135,7 +135,7 @@
 
 @media (max-width: 640px) {
   .member {
-    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-columns: var(--control) minmax(0, 1fr);
   }
 
   .controls {

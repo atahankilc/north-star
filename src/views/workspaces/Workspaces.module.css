@@ -1,13 +1,13 @@
 .page {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-1);
   height: 100%;
   overflow-y: auto;
   padding: var(--hud-h) var(--hud-x) 0;
 }
 
 .content {
-  max-width: 1100px;
+  max-width: var(--page-w);
   margin: 0 auto;
   padding: var(--space-12) 0;
 }
@@ -16,8 +16,8 @@
   margin: 0 0 var(--space-8);
   font-family: var(--font-display);
   font-size: var(--text-hero);
-  font-weight: 400;
-  line-height: 0.9;
+  font-weight: var(--weight-regular);
+  line-height: var(--lh-none);
   letter-spacing: var(--track-display);
   color: var(--fg-strong);
 }
@@ -48,7 +48,7 @@
 
 .importText {
   flex: 1;
-  min-width: 240px;
+  min-width: var(--size-sm);
   margin: 0;
   color: var(--fg-dim);
   font-size: var(--text-sm);
@@ -77,7 +77,7 @@
   min-width: 0;
   padding: var(--space-2) 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
   background: none;
   color: var(--fg-strong);
   font: inherit;
@@ -147,7 +147,7 @@
 
 .pendingMeta {
   flex: 1;
-  min-width: 160px;
+  min-width: var(--size-xs);
   color: var(--fg-dim);
   font-size: var(--text-xs);
 }
@@ -165,7 +165,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--size-sm), 1fr));
   gap: var(--space-4);
   margin: 0;
   padding: 0;
@@ -178,12 +178,12 @@
   flex-direction: column;
   justify-content: space-between;
   gap: var(--space-8);
-  min-height: 160px;
+  min-height: var(--size-xs);
   padding: var(--space-4) var(--space-4) var(--space-3);
 }
 
 .card:hover {
-  transform: translateY(-3px);
+  transform: translateY(calc(-1 * var(--space-1)));
 }
 
 .card[data-mode='renaming'] {
@@ -197,7 +197,7 @@
 .card[data-mode='confirm'],
 .card[data-mode='busy'] {
   --accent: var(--accent-magenta);
-  border-color: color-mix(in srgb, var(--accent-magenta) 45%, var(--line));
+  border-color: color-mix(in srgb, var(--accent-magenta) var(--mix-soft), var(--line));
 }
 
 .card[data-mode='confirm']::before,
@@ -221,7 +221,7 @@
 
 .cardName {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-1);
   align-self: flex-start;
   font-family: var(--font-display);
   font-size: var(--text-lg);
@@ -237,7 +237,7 @@
 
 .cardDate {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-1);
   color: var(--fg-muted);
   font-size: var(--text-xs);
   pointer-events: none;
@@ -249,12 +249,12 @@ span.cardName {
 
 .cardFoot {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-1);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-3);
-  min-height: 24px;
+  min-height: var(--control-sm);
   /* Clicks between the foot's items still open the card. */
   pointer-events: none;
 }
@@ -275,7 +275,7 @@ span.cardName {
   display: flex;
   flex-shrink: 0;
   gap: var(--space-1);
-  opacity: 0.45;
+  opacity: var(--o-faint);
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 
@@ -291,9 +291,9 @@ span.cardName {
 
 .nameInput {
   width: 100%;
-  padding: 0 0 2px;
+  padding: 0 0 var(--space-half);
   border: 0;
-  border-bottom: 1px solid var(--accent-magenta);
+  border-bottom: var(--line-w) solid var(--accent-magenta);
   background: none;
   outline: none;
   caret-color: var(--accent-magenta);

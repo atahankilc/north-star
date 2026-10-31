@@ -1,15 +1,15 @@
 /* The right-click menu (D-193): at the pointer, the dropdowns' prompt (D-222, Menu.module.css .prompt). */
 .menu {
   position: absolute;
-  z-index: 10;
-  min-width: 240px;
-  max-width: 340px;
-  border: 1px solid var(--line-hover);
+  z-index: var(--z-hud);
+  min-width: var(--menu-w);
+  max-width: var(--menu-max-w);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
 }
 
 /* A list of things to pick from (D-281: cards from other planes), with their planes on the right: room for both. */
 .menu[data-wide] {
-  width: 400px;
-  max-width: calc(100vw - 16px);
+  width: var(--size-lg);
+  max-width: calc(100vw - var(--space-4));
 }

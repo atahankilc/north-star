@@ -6,10 +6,10 @@
 
 .dot {
   position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 6px;
-  height: 6px;
+  top: var(--space-1);
+  right: var(--space-1);
+  width: var(--dot);
+  height: var(--dot);
   background: var(--accent-magenta);
   pointer-events: none;
 }

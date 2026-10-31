@@ -27,7 +27,7 @@
   min-width: 0;
   padding: var(--space-1) 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
   background: none;
   color: var(--fg-strong);
   font: inherit;

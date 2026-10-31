@@ -4,7 +4,7 @@
 /* No panel found: a box at the menu's place over the page, so the same `left: 100%` holds. */
 .over {
   position: fixed;
-  z-index: 40;
+  z-index: var(--z-menu);
   pointer-events: none;
 }
 
@@ -15,11 +15,11 @@
 /* ── Glued to the menu's right edge, one panel split by a hairline ── */
 .glued {
   position: absolute;
-  top: -1px;
+  top: calc(-1 * var(--line-w));
   left: 100%;
   display: flex;
-  min-height: calc(100% + 2px);
-  border: 1px solid var(--line-hover);
+  min-height: calc(100% + 2 * var(--line-w));
+  border: var(--line-w) solid var(--line-hover);
   border-left-color: var(--line);
   background: var(--bg);
   color: var(--fg-dim);
@@ -39,8 +39,8 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
-  padding: 10px var(--space-3);
-  border-bottom: 1px solid var(--line);
+  padding: var(--space-3) var(--space-3);
+  border-bottom: var(--line-w) solid var(--line);
   font-size: var(--text-sm);
 }
 
@@ -62,13 +62,13 @@
 }
 
 .demoWrap {
-  padding: 10px var(--space-3) 0;
+  padding: var(--space-3) var(--space-3) 0;
 }
 
 .noDemo {
   display: grid;
   place-items: center;
-  border: 1px dashed var(--line);
+  border: var(--line-w) dashed var(--line);
   color: var(--fg-faint);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
@@ -82,17 +82,17 @@
 }
 
 .what {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   color: var(--fg-strong);
-  font: 500 var(--text-lg) / 1.3 var(--font-display);
+  font: var(--weight-medium) var(--text-lg) / var(--lh-snug) var(--font-display);
   letter-spacing: var(--track-title);
 }
 
 .when {
   min-height: calc(3 * 1.45em);
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--fg-muted);
-  font: var(--text-sm) / 1.45 var(--font-display);
+  font: var(--text-sm) / var(--lh-body) var(--font-display);
 }
 
 .spacer {
@@ -105,10 +105,10 @@
   flex: none;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 2px 10px;
-  min-height: 29px;
-  padding: 7px var(--space-3);
-  border-top: 1px solid var(--line);
+  gap: var(--space-half) var(--space-3);
+  min-height: var(--control);
+  padding: var(--space-2) var(--space-3);
+  border-top: var(--line-w) solid var(--line);
   color: var(--fg-muted);
   font-size: var(--text-xs);
   white-space: nowrap;
@@ -143,7 +143,7 @@
 .hiddenNote {
   position: absolute;
   top: calc(100% + var(--space-2));
-  left: -1px;
+  left: calc(-1 * var(--line-w));
   isolation: isolate;
   color: var(--fg-muted);
   font-family: var(--font-mono);
@@ -155,14 +155,14 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: var(--z-under);
   background: var(--ink-shade);
-  box-shadow: 0 0 18px 12px var(--ink-shade);
+  box-shadow: var(--ink-feather) var(--ink-shade);
 }
 
 .k {
-  padding: 0 3px;
-  border: 1px solid var(--line-hover);
+  padding: 0 var(--space-1);
+  border: var(--line-w) solid var(--line-hover);
   color: var(--fg);
   font: 0.9em var(--font-mono);
 }

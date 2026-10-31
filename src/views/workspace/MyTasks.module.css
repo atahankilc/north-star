@@ -7,15 +7,15 @@
 /* New since you last looked: magenta, as a mention's (D-166). */
 .badge {
   position: absolute;
-  top: -6px;
-  right: -8px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
+  top: calc(-1 * var(--space-2));
+  right: calc(-1 * var(--space-2));
+  min-width: var(--control-xs);
+  height: var(--control-xs);
+  padding: 0 var(--space-1);
   background: var(--accent-magenta);
   color: var(--bg);
   font-size: var(--text-xs);
-  font-weight: 600;
-  line-height: 16px;
+  font-weight: var(--weight-bold);
+  line-height: var(--control-xs);
   text-align: center;
 }

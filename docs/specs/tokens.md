@@ -137,10 +137,11 @@ up" may need to give way to "round down" in dense lists (kanban sheets, the tabl
 - **Controls** (screen), one ladder of squares and rows: `--control-xs` 16 (badges), `--control-sm` 24 (avatars,
   small buttons, chips; 22–26), `--control` 30 (buttons, triggers, rows; 28–30), `--control-lg` 36 (the side nav's
   tools, the create button), `--control-xl` 48 (the big avatar). `--head-h` 40 and `--hud-h` 56 as today.
-- **Panels and columns** (screen), named once each: `--panel-w` 400 (the right panel, D-219), `--menu-w` 260 (menus,
-  popovers, a settings label), `--menu-max-w` 360, `--menu-h` 460 (the prompt), `--list-h` 320 (Select, people),
-  `--confirm-w` 420, `--modal-w` 960 / `--modal-h` 720 / `--modal-nav-w` 216 (settings), `--name-max-w` 160,
-  `--hud-shade-w` 120, `--measure` 760. Small labels' widths are in `ch` (10ch, 12ch).
+- **Boxes on screen: one ladder** `--size-xs` 160, `--size-sm` 260, `--size-md` 340, `--size-lg` 420, `--size-xl` 560
+  (off-ladder widths snap: 220–300 → sm, 300–360 → md, 400–440 → lg, 500–620 → xl). Named aliases read from it:
+  `--menu-w` (sm), `--menu-max-w` (md), `--confirm-w` (lg), `--name-max-w` (xs). Kept as their own: `--panel-w` 400
+  (D-219), `--menu-h` 460, `--list-h` 320, `--modal-w` 960 / `--modal-h` 720 / `--modal-nav-w` 216, `--hud-shade-w`
+  120, `--page-w` 1100, `--measure` 760. Small labels' and columns' widths are in `ch` (10ch–13ch).
 - **Marks on edges:** `--corner-mark` 7 (the magenta L's on panel, console and dock corners), `--lead` 12 (a numbered
   rule's magenta lead), `--underline-offset` 3 (2–4).
 - **Breakpoints** can't be variables: `@media` lines are left to themselves, and they are 760 and 640 px only.
@@ -210,6 +211,8 @@ Durations today: 40, 70, 80, 120, 140, 160, 180, 200, 260, 280, 320, 400, 420, 6
 | `--dur-cells` | 320 | a component's cell-by-cell build-up (D-035) | 280, 320 |
 | `--dur-med` | 400 | headline, page, large moves | 400, 420 |
 | `--dur-slow` | 600 | | 600 |
+| `--dur-blink` | 1 s | a caret's or a pulse's beat | 1 s, 1.2 s |
+| `--dur-intro` | 10 s | the welcome (D-072) | 10 s |
 | `--dur-spring` | 300 | Marks' spring | 300 |
 
 Eases: `--ease-out` (as today), `--ease-in-out` `cubic-bezier(0.65, 0, 0.35, 1)` (fold and resize; today raw twice),
@@ -222,8 +225,12 @@ Durations written in TS (cellReveal, the focus ink, the curtain) are not CSS: th
 ## Progress
 - 2026-10-31: tokens in tokens.css, `check:tokens` in CI (baseline 1,760), **src/ui done** (0 left; 148 gallery shots
   before/after, dark and light: 55 changed as listed above, mostly 10 → 11 px labels, menu/settings rows a step taller,
-  Markdown's line height 1.65 → 1.5). 1,475 left in 44 files. Next: panels (CardPanel, Agent, onboarding), then the
-  world.
+  Markdown's line height 1.65 → 1.5). Pushed (4845207).
+- 2026-10-31: **panels done** (CardPanel, Threads, Finder, the task panel, docks, side view, context menu, the agent's
+  UI, onboarding, workspaces, landing, global.css; 0 left): demo scenes (every scene at its poster and two moments,
+  dark and light) and the `?` guide shot before/after. `check:tokens` also counts weights and line heights inside
+  `font:`. Next: the world (PlaneCards, TextItems, Kanban, Timeline, Matrix, Table, Documents, CanvasView…), with the
+  gallery's G2 pieces and the demo scenes.
 
 ## How it gets done
 1. tokens.css and tokens.ts: every token above, DESIGN.md §3, 4, 6, 7 rewritten from this file.

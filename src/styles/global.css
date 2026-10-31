@@ -34,8 +34,8 @@ a {
 }
 
 :focus-visible {
-  outline: 1px solid var(--accent-cyan);
-  outline-offset: 3px;
+  outline: var(--line-w) solid var(--accent-cyan);
+  outline-offset: var(--space-1);
 }
 
 /* Set from the in-app motion setting (src/state/motion.ts): full by default, whatever the OS says (D-063). */
@@ -49,8 +49,8 @@ html[data-motion='reduced'] *::after {
 /* Scroll bars: thin square bars in line colours, brighter on hover, cyan while held. Chrome and Safari take the
    ::-webkit-scrollbar rules (setting scrollbar-color would make Chrome ignore them); Firefox only knows the standard pair. */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: var(--space-2);
+  height: var(--space-2);
 }
 
 ::-webkit-scrollbar-track,
@@ -61,17 +61,17 @@ html[data-motion='reduced'] *::after {
 ::-webkit-scrollbar-thumb {
   background-color: var(--line-hover);
   background-clip: padding-box;
-  border: 2px solid transparent;
+  border: var(--line-w-bold) solid transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--fg-faint);
-  border-width: 1px;
+  border-width: var(--line-w);
 }
 
 ::-webkit-scrollbar-thumb:active {
   background-color: var(--accent-cyan);
-  border-width: 1px;
+  border-width: var(--line-w);
 }
 
 @supports (-moz-appearance: none) {
@@ -88,7 +88,7 @@ html[data-motion='reduced'] *::after {
 /* Find (D-236): every match lit yellow, the current one solid; a match that isn't text on the page (a scale's step, a
    note) lights the box it's in. */
 ::highlight(find) {
-  background-color: color-mix(in srgb, var(--accent-yellow) 32%, transparent);
+  background-color: color-mix(in srgb, var(--accent-yellow) var(--mix-soft), transparent);
   color: var(--fg-strong);
 }
 
@@ -98,13 +98,13 @@ html[data-motion='reduced'] *::after {
 }
 
 [data-found] {
-  outline: 1px dashed color-mix(in srgb, var(--accent-yellow) 70%, transparent);
-  outline-offset: -3px;
+  outline: var(--line-w) dashed color-mix(in srgb, var(--accent-yellow) var(--mix-strong), transparent);
+  outline-offset: calc(-1 * var(--space-1));
 }
 
 [data-found='at'] {
-  outline: 2px solid var(--accent-yellow);
-  outline-offset: -2px;
+  outline: var(--line-w-bold) solid var(--accent-yellow);
+  outline-offset: calc(-1 * var(--space-half));
 }
 
 /* While a space zooms, what's held at screen size in it (chips, marks, consoles, bars, guides) is hidden until the zoom

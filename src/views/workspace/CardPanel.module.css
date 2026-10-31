@@ -23,15 +23,15 @@
 
 /* Its quick facts, under the title. */
 .under {
-  padding: 10px 20px 2px;
+  padding: var(--space-3) var(--space-6) var(--space-half);
   color: var(--fg-dim);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 10px;
+  gap: var(--space-half) var(--space-3);
 }
 
 .pill {
@@ -66,25 +66,25 @@
 }
 
 .warn {
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--accent-magenta);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 /* Evidence: cell, text, `×`; where it came from under it. */
 .ev {
   display: grid;
-  grid-template-columns: 10px 1fr auto;
-  gap: 1px 8px;
-  margin-bottom: 8px;
+  grid-template-columns: var(--dot-lg) 1fr auto;
+  gap: var(--space-half) var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .cell {
-  width: 7px;
-  height: 7px;
-  margin-top: 5px;
+  width: var(--dot);
+  height: var(--dot);
+  margin-top: var(--space-1);
   padding: 0;
-  border: 1px solid var(--fg);
+  border: var(--line-w) solid var(--fg);
   background: none;
   cursor: pointer;
 }
@@ -104,7 +104,7 @@
 .src {
   grid-column: 2;
   color: var(--fg-dim);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .src a {
@@ -115,7 +115,7 @@
 /* A row's `×`: only while the row is hovered. */
 .x {
   align-self: start;
-  padding: 0 2px;
+  padding: 0 var(--space-half);
   border: 0;
   background: none;
   color: var(--fg-faint);
@@ -136,21 +136,21 @@
 .link {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 1px 0;
+  gap: var(--space-2);
+  padding: var(--space-half) 0;
 }
 
 .swatch {
   flex: none;
   align-self: center;
-  width: 10px;
-  height: 3px;
+  width: var(--dot-lg);
+  height: var(--line-w-bold);
   background: var(--tone);
 }
 
 .kind {
   flex: none;
-  width: 86px;
+  width: 13ch;
   color: var(--tone);
 }
 
@@ -170,31 +170,31 @@
   color: var(--fg-strong);
   text-decoration: underline;
   text-decoration-color: var(--fg-faint);
-  text-underline-offset: 3px;
+  text-underline-offset: var(--underline-offset);
 }
 
 .type {
   flex: none;
   color: var(--fg-faint);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .tags {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 0 5px;
-  border: 1px solid var(--line);
+  gap: var(--space-half);
+  padding: 0 var(--space-1);
+  border: var(--line-w) solid var(--line);
   background: var(--chip);
-  font-size: 10px;
-  line-height: 16px;
+  font-size: var(--text-xs);
+  line-height: var(--space-4);
 }
 
 .chipX {
@@ -222,8 +222,8 @@
   background: none;
   color: var(--fg);
   font-family: var(--font-display);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
   outline: none;
   resize: none;
 }
@@ -243,24 +243,24 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 4px 0 10px;
-  padding: 10px 10px 8px;
-  border-left: 2px solid var(--line-hover);
+  gap: var(--space-2);
+  margin: var(--space-1) 0 var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  border-left: var(--line-w-bold) solid var(--line-hover);
   background: var(--bg-raised);
 }
 
 .formRow {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .input {
   width: 100%;
   min-width: 0;
-  padding: 2px 0;
+  padding: var(--space-half) 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
   background: none;
   color: var(--fg-strong);
   font: inherit;
@@ -276,7 +276,7 @@
 .formActions {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .small {
@@ -286,7 +286,7 @@
 .hint {
   margin-left: auto;
   color: var(--fg-faint);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .tagInput {
@@ -294,28 +294,28 @@
 }
 
 .picker {
-  margin: 2px 0 8px;
-  border: 1px solid var(--line-hover);
+  margin: var(--space-half) 0 var(--space-2);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
 }
 
 /* The prompt (Menu.module.css .prompt) in a panel: shorter, the rest scrolls. */
 .picker > * {
-  max-height: min(50vh, 360px);
+  max-height: min(50vh, var(--list-h));
 }
 
 /* Label | value rows: a feature's plan, a competitor's profile, a competitor feature's details. */
 .plan {
   display: grid;
-  grid-template-columns: 70px 1fr;
-  gap: 6px 12px;
+  grid-template-columns: 11ch 1fr;
+  gap: var(--space-2) var(--space-3);
   align-items: baseline;
 }
 
 .k {
   color: var(--fg-dim);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
@@ -357,9 +357,9 @@
 
 /* A competitor's features: a category in grey caps over its rows; a match has a cyan bar and `≈ our …`. */
 .cat {
-  margin: 10px 0 4px;
+  margin: var(--space-3) 0 var(--space-1);
   color: var(--fg-dim);
-  font-size: 10px;
+  font-size: var(--text-xs);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
@@ -367,11 +367,11 @@
 .cf {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 0 10px;
+  gap: 0 var(--space-3);
   width: 100%;
-  padding: 3px 0 3px 8px;
+  padding: var(--space-1) 0 var(--space-1) var(--space-2);
   border: 0;
-  border-left: 2px solid transparent;
+  border-left: var(--line-w-bold) solid transparent;
   background: none;
   color: var(--fg);
   font: inherit;
@@ -389,29 +389,29 @@
 
 .cfAv {
   color: var(--fg-dim);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .cfMatch {
   grid-column: 1 / -1;
   color: var(--accent-cyan);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .cfOpen {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 2px 0 6px;
-  padding: 8px 8px 8px 10px;
-  border-left: 2px solid var(--fg-dim);
+  gap: var(--space-2);
+  margin: var(--space-half) 0 var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border-left: var(--line-w-bold) solid var(--fg-dim);
   background: var(--bg-raised);
 }
 
 .cfHead {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .select {
@@ -422,11 +422,11 @@
 .parent {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 8px 20px;
-  border-bottom: 1px solid var(--line);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-6);
+  border-bottom: var(--line-w) solid var(--line);
   color: var(--fg-dim);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .parentTo {
@@ -449,8 +449,8 @@
 .part {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 2px 0;
+  gap: var(--space-2);
+  padding: var(--space-half) 0;
 }
 
 .tree {
@@ -464,8 +464,8 @@
 
 .crit {
   display: grid;
-  grid-template-columns: 14px 1fr auto;
-  gap: 0 8px;
+  grid-template-columns: var(--space-4) 1fr auto;
+  gap: 0 var(--space-2);
   align-items: baseline;
 }
 
@@ -484,14 +484,14 @@
 
 .conf {
   display: flex;
-  gap: 8px;
-  margin: 6px 0 0;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
   color: var(--fg-dim);
 }
 
 .conf b {
   color: var(--fg-strong);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 .conf b[data-level='none'] {
@@ -499,13 +499,13 @@
 }
 
 .swatch[data-faint] {
-  opacity: 0.5;
+  opacity: var(--o-dim);
 }
 
 .cats {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .parent[data-none] {
@@ -517,13 +517,13 @@
 }
 
 .crit {
-  grid-template-columns: 14px 1fr auto auto;
+  grid-template-columns: var(--space-4) 1fr auto auto;
 }
 
 /* `met by 2` / `◇ open`, read from the matrices that score it (D-249). */
 .critRead {
   color: var(--fg-faint);
-  font-size: 10px;
+  font-size: var(--text-xs);
   white-space: nowrap;
 }
 
@@ -538,17 +538,17 @@
 .scores {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  margin: 4px 0 8px 22px;
-  padding: 6px 8px;
-  border-left: 2px solid var(--line-hover);
+  gap: var(--space-1);
+  margin: var(--space-1) 0 var(--space-2) var(--space-6);
+  padding: var(--space-2) var(--space-2);
+  border-left: var(--line-w-bold) solid var(--line-hover);
   background: var(--bg-raised);
 }
 
 .score {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .scoreWho {
@@ -570,7 +570,7 @@
 .same {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-half);
   margin-top: var(--space-2);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -579,7 +579,7 @@
 .sameRow {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 

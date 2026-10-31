@@ -71,7 +71,7 @@
 .checks {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-half);
   margin: 0 0 var(--space-1);
   padding: 0;
   list-style: none;
@@ -143,9 +143,9 @@
 /* The evidence's cell: filled = supports, outlined = against (the card panel's). */
 .cell {
   flex: none;
-  width: 7px;
-  height: 7px;
-  border: 1px solid var(--fg);
+  width: var(--dot);
+  height: var(--dot);
+  border: var(--line-w) solid var(--fg);
 }
 
 .cell[data-filled='true'] {

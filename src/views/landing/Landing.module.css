@@ -1,6 +1,6 @@
 .page {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-1);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -31,9 +31,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: var(--z-under);
   background: linear-gradient(to bottom, transparent, var(--bg) 35%);
-  animation: scrim 10s linear var(--intro-at, -10s) both;
+  animation: scrim var(--dur-intro) linear var(--intro-at, calc(-1 * var(--dur-intro))) both;
 }
 
 @keyframes scrim {
@@ -46,8 +46,8 @@
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--text-display);
-  font-weight: 400;
-  line-height: 0.82;
+  font-weight: var(--weight-regular);
+  line-height: var(--lh-none);
   letter-spacing: var(--track-display);
   color: var(--fg-strong);
 }

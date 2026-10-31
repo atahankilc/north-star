@@ -4,12 +4,12 @@
 .pane {
   --bg-raised: var(--piece-card);
   position: absolute;
-  z-index: 2;
+  z-index: var(--z-2);
   overflow: hidden;
-  border-left: 1px solid var(--piece-edge);
+  border-left: var(--line-w) solid var(--piece-edge);
   background: var(--bg);
   cursor: grab;
-  animation: pane-in 200ms steps(4) both;
+  animation: pane-in var(--dur-fast) steps(4) both;
 }
 
 
@@ -32,9 +32,9 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  z-index: 3;
-  width: 9px;
-  margin-left: -4px;
+  z-index: var(--z-3);
+  width: var(--space-2);
+  margin-left: calc(-1 * var(--space-1));
   cursor: col-resize;
   touch-action: none;
 }
@@ -44,8 +44,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 4px;
-  width: 1px;
+  left: var(--space-1);
+  width: var(--line-w);
   background: var(--line-hover);
   transition: background var(--dur-fast) var(--ease-out);
 }
@@ -59,9 +59,9 @@
 .rowDivider {
   position: absolute;
   right: 0;
-  z-index: 3;
-  height: 9px;
-  margin-top: -4px;
+  z-index: var(--z-3);
+  height: var(--space-2);
+  margin-top: calc(-1 * var(--space-1));
   cursor: row-resize;
   touch-action: none;
 }
@@ -71,8 +71,8 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: 4px;
-  height: 1px;
+  top: var(--space-1);
+  height: var(--line-w);
   background: var(--line-hover);
   transition: background var(--dur-fast) var(--ease-out);
 }

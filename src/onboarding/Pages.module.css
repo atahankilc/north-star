@@ -5,11 +5,11 @@
 .shade {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: var(--z-menu);
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  background: color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
   font-family: var(--font-mono);
 }
 
@@ -23,8 +23,8 @@
 
 /* ── Shared ─────────────────────────────────────────────────────── */
 .kbd {
-  padding: 0 3px;
-  border: 1px solid var(--line-hover);
+  padding: 0 var(--space-1);
+  border: var(--line-w) solid var(--line-hover);
   color: var(--fg);
   font: 0.9em var(--font-mono);
 }
@@ -42,7 +42,7 @@
 }
 
 .newChip {
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   background: var(--accent-magenta);
   color: var(--on-accent);
   font: var(--text-xs) var(--font-mono);
@@ -105,8 +105,8 @@
 .btn:focus-visible,
 .bare:focus-visible,
 .step:focus-visible {
-  outline: 1px solid var(--accent-cyan);
-  outline-offset: 2px;
+  outline: var(--line-w) solid var(--accent-cyan);
+  outline-offset: var(--space-half);
 }
 
 /* The demo kept across pages; on a page without one (the `+ N more` list) it's out of sight, its rows in its place. */
@@ -122,7 +122,7 @@
   display: flex;
   flex-direction: column;
   aspect-ratio: 16 / 10;
-  padding: 22px;
+  padding: var(--space-6);
   background: var(--bg);
 }
 
@@ -139,41 +139,41 @@
   flex: 1;
   flex-direction: column;
   justify-content: center;
-  gap: 18px;
+  gap: var(--space-4);
 }
 
 .nl {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: baseline;
 }
 
 .nt {
   color: var(--fg-strong);
-  font: 500 var(--text-lg) / 1.3 var(--font-display);
+  font: var(--weight-medium) var(--text-lg) / var(--lh-snug) var(--font-display);
 }
 
 .nb {
-  margin-top: 2px;
+  margin-top: var(--space-half);
   color: var(--fg-muted);
-  font: var(--text-sm) / 1.5 var(--font-display);
+  font: var(--text-sm) / var(--lh-body) var(--font-display);
 }
 
 .nf {
-  padding-top: 12px;
-  border-top: 1px dashed var(--line);
+  padding-top: var(--space-3);
+  border-top: var(--line-w) dashed var(--line);
   color: var(--fg-muted);
-  font: var(--text-sm) / 1.5 var(--font-display);
+  font: var(--text-sm) / var(--lh-body) var(--font-display);
 }
 
 /* ── The wizard window ──────────────────────────────────────────── */
 .wa {
-  width: var(--w, 620px);
-  border: 1px solid var(--line-hover);
+  width: var(--w, var(--size-xl));
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
-  --demo-strip-x: 20px;
-  --demo-strip-line: 1px solid var(--line);
-  --demo-strip-line-b: 1px solid var(--line);
+  --demo-strip-x: var(--space-6);
+  --demo-strip-line: var(--line-w) solid var(--line);
+  --demo-strip-line-b: var(--line-w) solid var(--line);
 }
 
 /* The finder's corner marks, top left and right. */
@@ -181,33 +181,33 @@
 .wa::after {
   content: '';
   position: absolute;
-  top: -1px;
-  z-index: 2;
-  width: 8px;
-  height: 8px;
-  border-top: 1px solid var(--accent-magenta);
+  top: calc(-1 * var(--line-w));
+  z-index: var(--z-2);
+  width: var(--corner-mark);
+  height: var(--corner-mark);
+  border-top: var(--line-w) solid var(--accent-magenta);
   pointer-events: none;
 }
 
 .wa::before {
-  left: -1px;
-  border-left: 1px solid var(--accent-magenta);
+  left: calc(-1 * var(--line-w));
+  border-left: var(--line-w) solid var(--accent-magenta);
 }
 
 .wa::after {
-  right: -1px;
-  border-right: 1px solid var(--accent-magenta);
+  right: calc(-1 * var(--line-w));
+  border-right: var(--line-w) solid var(--accent-magenta);
 }
 
 .steps {
   display: flex;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
 }
 
 .step {
   flex: 1;
   min-width: 0;
-  padding: 11px 14px;
+  padding: var(--space-3) var(--space-4);
   overflow: hidden;
   border: 0;
   background: none;
@@ -222,8 +222,8 @@
 }
 
 .step b {
-  margin-right: 8px;
-  font-weight: 400;
+  margin-right: var(--space-2);
+  font-weight: var(--weight-regular);
 }
 
 .step[data-done] {
@@ -231,7 +231,7 @@
 }
 
 .step[data-on] {
-  box-shadow: inset 0 -2px 0 var(--accent-magenta);
+  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 var(--accent-magenta);
   color: var(--fg-strong);
 }
 
@@ -240,15 +240,15 @@
 }
 
 .wa .newsList {
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
 }
 
 .text {
-  padding: 18px 20px 6px;
+  padding: var(--space-4) var(--space-6) var(--space-2);
 }
 
 .count {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   color: var(--accent-magenta);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
@@ -275,22 +275,22 @@
   color: var(--fg-strong);
   font-family: var(--font-display);
   font-size: var(--text-heading);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   letter-spacing: var(--track-title);
-  line-height: 1.15;
+  line-height: var(--lh-tight);
 }
 
 .bodyA {
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--fg-muted);
   font-family: var(--font-display);
   font-size: var(--text-md);
-  line-height: 1.5;
+  line-height: var(--lh-body);
 }
 
 .foot {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 20px 14px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6) var(--space-4);
 }

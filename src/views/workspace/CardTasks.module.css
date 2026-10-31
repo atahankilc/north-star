@@ -4,7 +4,7 @@
   align-items: baseline;
   gap: var(--space-2);
   width: 100%;
-  padding: 2px 0;
+  padding: var(--space-half) 0;
   border: 0;
   background: none;
   color: var(--fg);
@@ -44,7 +44,7 @@
 .due {
   flex: none;
   color: var(--fg-dim);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .due[data-late='true'] {
@@ -56,7 +56,7 @@
   max-width: 14ch;
   overflow: hidden;
   color: var(--fg-faint);
-  font-size: 10px;
+  font-size: var(--text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

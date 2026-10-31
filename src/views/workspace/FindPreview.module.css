@@ -8,7 +8,7 @@
 .frame {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--line-hover);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
 }
 

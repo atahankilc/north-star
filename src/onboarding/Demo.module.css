@@ -33,7 +33,7 @@
   justify-content: space-between;
   align-items: baseline;
   gap: var(--space-2);
-  padding: 5px var(--demo-strip-x, 0) 6px;
+  padding: var(--space-1) var(--demo-strip-x, 0) var(--space-2);
   /* A look draws lines round the strip (the window's) or none (a card's); set by what holds the demo. */
   border-top: var(--demo-strip-line, 0);
   border-bottom: var(--demo-strip-line-b, 0);
@@ -52,7 +52,7 @@
 
 .what b {
   color: var(--accent-magenta);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 .toggle {

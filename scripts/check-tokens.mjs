@@ -1,4 +1,4 @@
-// Every value in the CSS is a token (D-319, docs/specs/tokens.md). Counts the raw values left in each CSS file under src/
+// Every value in the CSS is a token (D-325, docs/specs/tokens.md). Counts the raw values left in each CSS file under src/
 // (tokens.css itself and the dev-only gallery left out) and fails when a file has more than scripts/tokens-baseline.json
 // allows. As files are converted the baseline goes down; at 0 any raw value fails.
 //   npm run check:tokens            check
@@ -41,12 +41,18 @@ function scan(file) {
   const found = []
   const lines = src.split('\n')
   lines.forEach((line, i) => {
-    // The reduced-motion switch (0.01ms !important) isn't a duration.
-    // Breakpoints can't be variables (D-325: 760 and 640 only).
-    if (/^\s*@media/.test(line)) return
-    const l = line.replace(/0\.01ms\s*!important/g, '')
+    // Breakpoints and container queries can't be variables (D-325: 760 and 640 only).
+    if (/^\s*@(media|container)/.test(line)) return
+    // The reduced-motion switch (0.01ms !important) isn't a duration; an inline SVG (url(...)) can't read variables.
+    const l = line.replace(/0\.01ms\s*!important/g, '').replace(/url\((["']).*?\1\)/g, 'url()')
     for (const [kind, re] of RULES) for (const m of l.matchAll(re)) found.push({ line: i + 1, kind, text: m[0] })
     for (const m of l.matchAll(/color-mix\((?:[^()]|\([^()]*\))*?(\d+(\.\d+)?%)/g)) found.push({ line: i + 1, kind: 'mix', text: m[1] })
+    // The font shorthand: a weight or a line height written in it (`font: 500 var(--text-lg) / 1.3 …`).
+    const f = l.match(/^\s*font\s*:\s*([^;]+);/)
+    if (f) {
+      for (const m of f[1].matchAll(/(?:^|\s)([1-9]00)(?=\s)/g)) found.push({ line: i + 1, kind: 'font-weight', text: m[1] })
+      for (const m of f[1].matchAll(/\/\s*(\d*\.?\d+)(?=\s)/g)) found.push({ line: i + 1, kind: 'line-height', text: m[1] })
+    }
     const d = l.match(/^\s*([a-z-]+)\s*:\s*([^;]+);/)
     if (d) for (const [kind, prop, raw] of NUMERIC) if (prop.test(d[1]) && raw(d[2].replace(/\s*!important/, '').trim())) found.push({ line: i + 1, kind, text: d[2].trim() })
   })
@@ -90,7 +96,7 @@ for (const [f, n] of Object.entries(counts)) {
 }
 const lower = baseline ? Object.entries(baseline).filter(([f, n]) => (counts[f] ?? 0) < n) : []
 if (over.length) {
-  console.error('check:tokens: raw values added (D-319, docs/specs/tokens.md). Use a token; `--list <file>` shows them.')
+  console.error('check:tokens: raw values added (D-325, docs/specs/tokens.md). Use a token; `--list <file>` shows them.')
   for (const o of over) console.error('  ' + o)
   process.exit(1)
 }
