@@ -74,8 +74,10 @@ feature comes back as a piece, and check them with the user then.
   rest, self-hosted (D-013, D-093). WebGL only behind; readable or editable text is DOM, never under the ASCII effect
   (D-009, D-019).
 - Tokens only, no raw colours, sizes or tracking (D-069, D-093, D-097); every CSS value a token from one set of short
-  scales, consistency first (off-scale snaps), screen `--text-*` vs the world's `--w-*`, `npm run check:tokens` against a
-  baseline that only goes down (D-325, docs/specs/tokens.md; files being converted); `Frame.module.css` is the one framed
+  scales, consistency first (off-scale snaps), screen `--text-*` vs the world's `--w-*`, `npm run check:tokens` (CSS and
+  TS/TSX) at 0 in CI (D-325, docs/specs/tokens.md); constants that aren't tokens by kind in one module each:
+  model/world.ts (geometry), model/limits.ts (data limits, tested against firestore.rules), ui/feel.ts (DRAG_PX 5,
+  zoom), motionTokens.ts (D-326); `Frame.module.css` is the one framed
   surface (D-024); shared `Page.module.css`, `fieldLabel`, `small` buttons (D-093). Actions lowercase, labels uppercase; no
   native `<select>` (`src/ui/Select.tsx`) (D-093). `▸`/`▾` only open or fold something, never lead a row of actions (D-189).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,

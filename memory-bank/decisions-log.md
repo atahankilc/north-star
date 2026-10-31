@@ -5944,6 +5944,15 @@ gallery/headless shots in dark and light: changes listed in the spec are expecte
 - *One source for the world's geometry (2026-10-31, the user: "birleştirebiliyosak neden birleştirmiyoruz?"):*
   `src/model/world.ts` holds the numbers; GRID, the card rows, STICKY_H, the chip gap and the document's PAD read them, and
   it writes the `--w-grid`/`--w-card-*`/`--w-row-*`/`--w-sticky-h`/`--w-doc-pad` CSS vars on <html> when it loads.
+- *Extended to TS (2026-10-31, the user: "TS tarafını da token'a bağla"; "tokene koyamadığımız şeyleri de ortak şekilde
+  kullanılcak formata getiremez miyiz?"; "5 olsun"):* design numbers in TS read tokens (`tokenPx()` in
+  src/styles/cssToken.ts for pixel math, the token itself in styles); constants that aren't tokens live in one module by
+  kind: `src/model/world.ts` (canvas and pieces' geometry: grid, card rows, K/M/T/D, the title), `src/model/limits.ts`
+  (text lengths and list sizes for data/, ops/ and the model; tests/unit/limits.test.ts checks them against
+  firestore.rules), `src/ui/feel.ts` (one DRAG_PX = 5, was 4 in the onboarding; ZOOM_MIN/MAX; wheelStep()), durations in
+  motionTokens.ts (D-326). A constant used in two places or that is a design/feel choice goes to its module; an
+  algorithm's own detail stays where it is. `check:tokens` scans TS/TSX too (uncomputed px, quoted hex, bare style
+  numbers); a technical exception says why with `// tokens-ok`.
 - *Not yet:* TS durations read from one source (D-326 took it).
 
 ### D-326 · 2026-10-31 · Accepted (the user: "farklı componentler farklı kategoriler altında olmalı… bir çok şey individual componentlerden oluşturulmak yerine yeniden kodlanıyorsa… bu gallery'nin bir anlamı yok… bir bina gibi foundation'ımızın iyi olması lazım"; then "evet, haritayla başla, G3'ü birlikte commit et")

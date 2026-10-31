@@ -231,6 +231,22 @@ not a duration).
 Durations written in TS (cellReveal, the focus ink, the curtain) are not CSS: they move into `tokens.ts` under
 `motion` in the same pass, so a duration exists once.
 
+## 8. TS and constants that aren't tokens
+- **In TS, a design number reads its token.** A style writes the token (`'var(--space-2)'`, `calc(${n} * var(--space-3))`);
+  pixel math that needs the number calls `tokenPx('--space-4')` (src/styles/cssToken.ts reads it from <html> once).
+- **Constants that aren't tokens live in one module by kind**, not inside components:
+  - `src/model/world.ts`: the canvas's and pieces' geometry (grid, card rows, a deck's `K`, a matrix's `M`, a timeline's
+    `T`, documents' `D`, the project title), which also writes the CSS's `--w-*` vars.
+  - `src/model/limits.ts`: text lengths and list sizes, for data/, ops/ (the agent) and the model; firestore.rules holds
+    the same numbers and tests/unit/limits.test.ts fails when they part.
+  - `src/ui/feel.ts`: how handling feels: one `DRAG_PX` (5), the zoom's range and `wheelStep()`. Sticking's reach is
+    `STICK_REACH` in model/pieceMoves.ts (the agent's ops read it).
+  - `src/ui/motionTokens.ts`: durations and easings (D-326).
+  A constant used in two places, or one that is a design or feel choice, goes to its module; an algorithm's own detail
+  (a day in ms, a cap on drawn dots) stays where it's used.
+- **`check:tokens` reads TS/TSX too:** an uncomputed `"…px"`, a quoted hex colour, a style key given a bare number. The
+  sources are exempt; a line that must name a number (an off-screen holder, a font atlas) says why with `// tokens-ok`.
+
 ## Progress
 - 2026-10-31: tokens in tokens.css, `check:tokens` in CI (baseline 1,760), **src/ui done** (0 left; 148 gallery shots
   before/after, dark and light: 55 changed as listed above, mostly 10 → 11 px labels, menu/settings rows a step taller,
@@ -245,6 +261,8 @@ Durations written in TS (cellReveal, the focus ink, the curtain) are not CSS: th
   G2 pieces and every demo scene shot before/after. `check:tokens` now fails on any raw value.
 - 2026-10-31: **the world's geometry from one source**, `src/model/world.ts` (TS reads it, it writes the `--w-*` vars):
   42 demo-scene frames identical before/after. TS durations: D-326.
+- 2026-10-31: **TS too**: feel.ts (DRAG_PX 5 everywhere, was 4 in the onboarding), limits.ts (+ the rules test), pieces'
+  geometry into world.ts, tokenPx(), the inline numbers and demo wizards' fits; check:tokens scans TS/TSX, 0 left.
 
 ## How it gets done
 1. tokens.css and tokens.ts: every token above, DESIGN.md §3, 4, 6, 7 rewritten from this file.
