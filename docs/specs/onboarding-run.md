@@ -282,53 +282,21 @@ _(none: matrix-sure's flake was fixed in O16a)_
   deleted (D-316).
 
 ### Ideas
-_(the reviewers' and builders' "could be better", not done yet)_
-- O13 (for O16): Settings at 1440–1470: the people-settings card covers the menu's YOU group (add
-  `[data-learn="settings-menu"]` as off-limits when it isn't the anchor); Lesson.tsx:255's new useLayoutEffect has no
-  deps (lint warning; `[host, pos, off]`).
-- O15 (for O16): viewers' `# keys` lists editor-only keys (an `editors` flag on KeyRow, filtered in guideModel); in a
-  played lesson ← jumps to the guide even on page 2+ (← could go back a page above page 1); the played lesson has no
-  role="dialog"/aria-modal; onboarding.md §4.6 still says `[▸ 38 keys]` (57 now).
-- O14 (for O16's polish): what's new's page tabs cut (`DECKS AND DA…`, a space before `…`): shorter tab labels; the
-  modal's top moves between pages (fixed height); `[show me]` on decks and days with no deck on the canvas lands on an
-  empty side view (hide it then); a doc with `welcome` null after a release gets the welcome then what's new; the dot
-  may flash for a viewer before the role is known; no flow shows a nudge working yet.
-- App (not onboarding): `share and place` / `place on the canvas` puts a document where it overlaps the documents list
-  and a plane: it doesn't look for the nearest clear spot as `+` does (D-238). O12 review.
-- Demo: document bodies via useDocBody read Firestore only (O12 draws them with docText into the DOM): a fixture body
-  seam in src/data would be cleaner; a general reset hook for module stores that outlive a loop (Timeline's resetStrip).
-- Director asks (O9/O10 builders): `cursor.press('right')`, double-click and modifier keys (`{ shift, alt }`) for
-  press/drag, recorded for the press check; function targets with a `meant` element (byText/row/inSection presses
-  checked); `frameTo` for a focused piece; `bare: true` on Scene. O10: `brought` triggered by `bringing` anchors to any
-  card: give BringCards' ContextMenu `data-learn="menu"` and anchor that trigger there; onboarding-lessons.md §12's
-  `evidence` row still says `testing +2 −1` (the app shows cells); shared-card's panel lacks `here` (the demo's router
-  has no `location.search`). TextItems' labelRef on press (kind-section's refused writes): lazy like PlaneCards.
-- The agent's lessons (D-315: once its UI is done): b2 says the UI changes again in S15/S16 and the user wants to
-  redesign it, so they wait; b2 tells us when it's final.
-- (Done after S9) learn.ts sends nothing while `agentDriving()` (src/agent/driving.ts) is true; agent writes carry
-  `actor: 'agent'` (b2: a must in agent-run.md, with a test).
-- O12: the `deck` lesson's page 1 (E+) says "`+ add a task` types one; Enter keeps typing the next" but deck-drag shows
-  only the drag: give it its own page + scene (`deck-add`) or cut the sentence.
-- **O6 must (done in O6):** Kanban.tsx:339, FilterDock.tsx:38, KanbanFilterDock.tsx:47 (window capture handlers) skip events from
-  inside `[role=dialog]`: Backspace on the coach's welcome deleted a selected task (O5 review). Before mounting Coach.
-- O7: one demo frame reused, scenes swapped in place (today a new scene reloads demo.html); preload on idle; measure in
-  O16 what opening `+` costs with the kind guide's frame.
-- O5: the first esc goes to window handlers set up before the lesson (a selected task/card, following), then the
-  lesson; `keys: ? → tips off` turns off every tip (give the kind guide its own switch in `?`?); progress.ts imports
-  firebase/auth directly: a `watchUser()` in src/data/auth.ts would be cleaner.
-- (Resolved by D-316) O5 shipped all three looks of each frame until the user picked; only `a` is left.
-- O1: `roleHere`/`canEditHere` in src/onboarding/audience.ts copy `roleOf`/`canEditIn` (src/data/workspaces.ts, which
-  loads Firestore): move them into a pure module under src/model once the agent run's model split is committed.
-- O1: the rules bound `seen`/`armed` counts, not their values' sizes (rules can't loop); only your own doc is at stake.
-- O2: features with no lesson yet: deck lanes, column limits and labels (D-256), tags and the TAG filter (D-056),
+_(what's still open after the run, 2026-10-31; everything else from the reviewers' lists was done in O1–O16)_
+- **The agent's lessons** (D-315: once its UI is done): wait for the user's design session on the agent.
+- **Features with no lesson yet**: deck lanes, column limits and labels (D-256); tags and the TAG filter (D-056);
   `linked · N` (D-235).
-- O0: PlaneCards builds every card's spotRef while drawing (`carry`): make it lazy at drag start (O6's pass), then
-  drop the demo-only Firestore in db().
-- O0/O7: scenes should drive real pointer events on `data-target="card:<id>"` so the press marks, 0.8 lift and landing
-  L's play; the drop's refused write needs the ops layer's memory backend or a stage hook that `set()`s on drop.
-- O0: the demo page preloads the three and firebase chunks (shared helpers); fine while same-origin cached.
-- O0 (app, not onboarding): a competitor card says "2 features" twice (the closed strip and the meta line).
-- O4 (spec): scenes are 16:10 but the lesson card and kind guide asked for 4:3; the glued kind guide needs a min height
-  (~330 px) when typing narrows the menu; the `+` menu (~450 px) runs off a 768 px screen; lesson placement tries
-  right, left, above, then the middle-bottom card; `# keys` folds; "✓ done" holds ~1.2 s and the next lesson waits.
-- O2: after the run, a `check:lessons --final` that fails while scripts/lessons-pending.json isn't empty.
+- **Esc order**: the first esc goes to window handlers set up before the lesson (a selected task or card, following),
+  the second closes the lesson.
+- **Tips off is all-or-nothing**: `? → tips off` turns off every tip; the kind guide could get its own switch in `?`.
+- **Director helpers** (scene tooling only): `cursor.press('right')`, double-click and held modifier keys
+  (`{ shift, alt }`) recorded for the press check; function targets with a `meant` element so byText/row presses are
+  checked; `frameTo` for a focused piece; `bare: true` on Scene; a general reset hook for module stores that outlive a
+  loop (Timeline's `resetStrip`); a fixture body seam for documents (useDocBody reads Firestore only).
+- **Tidying**: progress.ts imports firebase/auth directly (a `watchUser()` in src/data/auth.ts); audience.ts copies
+  `roleOf`/`canEditIn` from src/data/workspaces.ts (move both into a pure module under src/model).
+- **`check:lessons --final`**: fails while scripts/lessons-pending.json isn't empty (nothing is pending today).
+- **App bugs seen during the run (not onboarding)**: `share and place` / `place on the canvas` puts a document over
+  other pieces (no nearest clear spot as `+` does, D-238); a competitor card says "2 features" twice; in edit mode
+  consoles grow very large when zoomed far out; the agent's ask box overlaps the task panel's foot.
+- O1 (accepted): the rules bound `seen`/`armed` counts, not their values' sizes; only the person's own doc is at stake.
