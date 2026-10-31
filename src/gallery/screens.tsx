@@ -9,7 +9,7 @@ import { camOf, useCanvasView } from '../state/canvasView'
 import { onCanvas, P, PAZAR, type OnCanvas } from './canvas'
 import type { StateSpec } from './example'
 
-function Screen() {
+export function Screen() {
   setCanvasHere(MAIN)
   return <CanvasScreen />
 }

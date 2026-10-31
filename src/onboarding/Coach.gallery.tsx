@@ -1,6 +1,7 @@
 import { example, type GalleryCtx } from '../gallery/example'
 import { Fresh, shown } from '../gallery/onboarding'
 import { Canvas, onCanvas, P } from '../gallery/canvas'
+import { Screen } from '../gallery/screens'
 import { SAMPLE_RELEASES } from './releases.sample'
 import { Coach, coachDev } from './Coach'
 
@@ -19,14 +20,14 @@ const force = (what: (d: NonNullable<typeof coachDev.current>) => void) => async
   what(d)
 }
 
-const withCoach = (o: NonNullable<Parameters<typeof onCanvas>[0]>, what: Parameters<typeof force>[0]) => {
+const withCoach = (o: NonNullable<Parameters<typeof onCanvas>[0]>, what: Parameters<typeof force>[0], progress?: Parameters<typeof Fresh>[0]['progress'], hud = false) => {
   const s = onCanvas({ ...o, then: force(what) })
   return {
     ...s,
     render: () => (
       <>
-        <Canvas />
-        <Fresh>
+        {hud ? <Screen /> : <Canvas />}
+        <Fresh progress={progress}>
           <Coach />
         </Fresh>
       </>
@@ -43,7 +44,9 @@ export default example({
     welcome: withCoach({ only: [P.lunch] }, (d) => d.force(shown('welcome'))),
     'lesson in focus': withCoach({ only: [P.lunch], focus: P.lunch }, (d) => d.force(shown('focus-plane'))),
     'what’s new': withCoach({ only: [P.lunch] }, (d) => d.news(SAMPLE_RELEASES as never)),
-    'empty canvas': withCoach({ only: [] }, (d) => d.hint('empty-canvas')),
+    // The welcome seen (while it's still to come the coach keeps this hint back, Coach.tsx `welcomeQueued`), and the whole
+    // screen: the hint sits beside the side nav's `+`.
+    'empty canvas': withCoach({ only: [] }, (d) => d.hint('empty-canvas'), { seen: { welcome: 1 } }, true),
     guide: withCoach({ only: [P.lunch] }, (d) => d.guide(true)),
   },
 })

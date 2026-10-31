@@ -63,6 +63,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Blaze: the user's payments profile was refused once (OR_BAOOC_15, likely profile country vs German card); retrying.
 
 ## Known issues
+- Gallery: Coach › empty canvas draws nothing, even with the welcome seen, the whole screen (side nav's `+`) and no menu
+  open; next to look at: Coach.tsx's `hintWaits`/`readBusy` for that hint. EmptyHint › empty canvas shows it alone.
 - Agent: ten bugs and gaps found trying it in the app (documents unread, bare ids, preview stepping, plane layout, apply not
   heard, overlaps, previews outside their piece, no web, skills list scroll, canvas arrange), then 11–14 from an import
   and 15–24 from the first real eval run (gpt-5.6-terra 66/110, 2026-10-31; eval bugs fixed 6c9cc13):
