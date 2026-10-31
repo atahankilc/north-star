@@ -5864,15 +5864,9 @@ is `everyone`, as D-098 says (viewers: own-key calls only).
 - *Alternatives:* let `everyone` mean viewers too (and change D-098). Not urgent: the key waits for Blaze and the agent
   uses own keys (D-312), but the code should agree with the rule.
 
-### D-319 · 2026-10-29 · Accepted (audit K3; the user: "Hepsi token")
-**Every raw px, letter-spacing and hex in the CSS becomes a token, inside the zoomed world too.** Sizes inside the world
-(card faces, plane px, kanban sheets…) get their own tokens in `src/styles/` (written in DESIGN.md), Hud's night
-colours become `--night-*`. Done file by file with before/after headless shots in dark and light; nothing may look
-different.
-- *Why:* the audit counted ~53 raw `font-size`, ~21 raw `letter-spacing` and 8 hex colours against D-069/D-093/D-097.
-- *Alternatives:* a written exception for the zoomed world, tokens only for screen-sized UI (the audit's
-  recommendation); the user wanted all of it.
-- *Not yet:* all of it (the audit's P3b; it touches every view's CSS, so it waits for the onboarding run).
+### D-319 · 2026-10-29 · Superseded by D-325
+Was: every raw px, letter-spacing and hex becomes a token, inside the world too, and nothing may look different (audit
+K3, the user: "Hepsi token"). D-325 keeps "all of it" but puts consistency first: off-scale values snap to the scale.
 
 ### D-320 · 2026-10-29 · Accepted (audit K4; the user: "Sadece eslint-plugin-react-hooks, uyarı olarak")
 **ESLint with only `eslint-plugin-react-hooks`, as warnings.** `npm run lint` counts them; CI runs it but never fails
@@ -5919,3 +5913,23 @@ checks it, that no app file imports the gallery, and that `gallery.html` is in n
 - *Built:* G1 (2026-10-31): gallery.html, src/gallery/, src/demo/realm.ts (the store reset shared with the demo),
   19 examples in src/ui (Curtain exempt), `check:gallery` (in CI).
 - *Not yet:* G2 pieces; G3 panels and screens; G4 shots; `[grid]` (every state at once).
+
+### D-325 · 2026-10-31 · Accepted (the user: "we should have a consistency across the app. And 940 raw px seems too inconsistent. Maybe we can try to come up with some rules but for that i want you to consider everything. Type, color, spacing.. doesnt matter"; then "onaylıyorum, başla")
+**Every value in the CSS is a token, from one set of rules: consistency first, so off-scale values snap to the scale**
+(docs/specs/tokens.md, DESIGN.md §3, 4, 6, 7). No number with a unit in a module CSS file (`0`, `%`, `ch`, `em`,
+`vw`/`vh` and calc() multipliers aside): px, ms, hex, z-index, opacity, line-height, weight, tracking and color-mix
+amounts are tokens. Two families: screen (`--text-*`, panels, menus) and the world's `--w-*` (canvas px, scaled with
+the zoom); spacing is shared, with `--space-half` 2 px added. Short scales: screen type xs–heading plus `--text-title`
+22; world type 7 steps (7–26); tracking label / title / display / cells; line height four ratios; three opacities; four
+mix amounts; two feathers; named app layers (`--z-hud` … `--z-curtain`); every duration named (`--dur-press` …
+`--dur-slow`), `--ease-in-out`. A new step only when many uses share one purpose. `npm run check:tokens` counts what's
+raw per file against `scripts/tokens-baseline.json`, in CI; the baseline only goes down. Converted file by file with
+gallery/headless shots in dark and light: changes listed in the spec are expected, anything else is a mistake.
+- *Why:* the count found ~1,760 raw values (1,330 px, 26 z-indexes, 31 line heights, 14 world type sizes) with no
+  system; colour and spacing were already mostly tokens.
+- *Alternatives:* D-319 as written (nothing may look different: hundreds of one-use tokens); only type and colour (the
+  audit's count); literally every px its own token. The user wanted rules over everything.
+- *Visible, agreed:* screen labels 10 → 11 px; uppercase tracking 0.04–0.14 → 0.12em; spacing 6 → 8, 10 → 12, 14 → 16;
+  the sticky's glue band 5.2 → 7 px; a card's compact title 24 → 22.
+- *Not yet:* the files (baseline 1,760 on 2026-10-31); world geometry and TS durations into `tokens.ts`; DESIGN.md's
+  sections written from the spec as each family lands.

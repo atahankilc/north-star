@@ -6,8 +6,8 @@
   align-items: center;
   gap: var(--space-2);
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: var(--control);
+  height: var(--control);
   /* Bottom left (D-175): only your square; the name shows on hover. */
   padding: 0;
   border: 0;
@@ -28,8 +28,8 @@
   display: inline-grid;
   flex-shrink: 0;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: var(--control-sm);
+  height: var(--control-sm);
   background: var(--accent-cyan);
   color: var(--on-accent);
   font-size: var(--text-xs);
@@ -40,8 +40,8 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: var(--control);
+  height: var(--control);
   padding: 0;
   border: 0;
   background: none;
@@ -54,10 +54,10 @@
 .trigger::after {
   content: '';
   position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: -3px;
-  height: 2px;
+  left: var(--space-2);
+  right: var(--space-2);
+  bottom: calc(-1 * var(--space-1));
+  height: var(--line-w-bold);
   background: var(--accent-magenta);
   transform: scaleX(0);
   transition: transform var(--dur-med) var(--ease-out);
@@ -75,7 +75,7 @@
 
 .gear {
   font-size: var(--text-lg);
-  line-height: 1;
+  line-height: var(--lh-none);
   transition: transform var(--dur-med) var(--ease-out);
 }
 
@@ -88,17 +88,17 @@
 /* People waiting to join: a count pinned to the corner. */
 .badge {
   position: absolute;
-  top: -4px;
-  right: -6px;
+  top: calc(-1 * var(--space-1));
+  right: calc(-1 * var(--space-2));
   display: inline-grid;
   place-items: center;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
+  min-width: var(--control-xs);
+  height: var(--control-xs);
+  padding: 0 var(--space-1);
   background: var(--accent-cyan);
   color: var(--on-accent);
   font-size: var(--text-xs);
-  line-height: 1;
+  line-height: var(--lh-none);
 }
 
 @media (max-width: 760px) {
@@ -109,8 +109,8 @@
 
 .dialog {
   composes: frame from './Frame.module.css';
-  width: min(960px, calc(100vw - 2 * var(--space-4)));
-  height: min(720px, calc(100vh - 2 * var(--space-8)));
+  width: min(var(--modal-w), calc(100vw - 2 * var(--space-4)));
+  height: min(var(--modal-h), calc(100vh - 2 * var(--space-8)));
   padding: 0;
   color: var(--fg);
   background: var(--bg-raised);
@@ -124,7 +124,7 @@
 .inner {
   position: relative;
   display: grid;
-  grid-template-columns: 216px minmax(0, 1fr);
+  grid-template-columns: var(--modal-nav-w) minmax(0, 1fr);
   height: 100%;
 }
 
@@ -135,7 +135,7 @@
   min-height: 0;
   overflow-y: auto;
   padding: var(--space-6) var(--space-3) var(--space-6) var(--space-4);
-  border-right: 1px solid var(--line);
+  border-right: var(--line-w) solid var(--line);
   background: var(--wash-1);
 }
 
@@ -150,7 +150,7 @@
   composes: fieldLabel from './Frame.module.css';
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-half);
   padding: 0 var(--space-3) var(--space-1);
 }
 
@@ -167,7 +167,7 @@
 .navList {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--line-w);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -179,9 +179,9 @@
   align-items: center;
   gap: var(--space-2);
   width: 100%;
-  padding: 6px var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border: 0;
-  border-left: 2px solid transparent;
+  border-left: var(--line-w-bold) solid transparent;
   background: none;
   color: var(--fg-muted);
   font: inherit;
@@ -214,8 +214,8 @@
 }
 
 .navBadge {
-  min-width: 16px;
-  padding: 0 4px;
+  min-width: var(--control-xs);
+  padding: 0 var(--space-1);
   background: var(--accent-cyan);
   color: var(--on-accent);
   font-size: var(--text-xs);
@@ -225,7 +225,7 @@
 
 .page {
   /* The text column of every row (name + what it does); Choice outside a Row reads it too (D-093). */
-  --label-w: 260px;
+  --label-w: var(--menu-w);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -257,8 +257,8 @@
   position: absolute;
   top: var(--space-6);
   right: var(--space-6);
-  z-index: 2;
-  padding: 2px;
+  z-index: var(--z-2);
+  padding: var(--space-half);
   /* Scrolled rows pass under it. */
   background: var(--bg-raised);
   border: 0;
@@ -284,8 +284,8 @@
   display: inline-grid;
   flex-shrink: 0;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: var(--control-xl);
+  height: var(--control-xl);
   background: var(--accent-cyan);
   color: var(--on-accent);
   font-size: var(--text-lg);
@@ -294,7 +294,7 @@
 .profileText {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-half);
   min-width: 0;
 }
 
@@ -314,7 +314,7 @@
 .section {
   position: relative;
   flex-shrink: 0;
-  border: 1px solid var(--line);
+  border: var(--line-w) solid var(--line);
 }
 
 /* The box draws its own corner, so this is the plain field label, set into the top edge. */
@@ -327,8 +327,8 @@
   padding: 0 var(--space-2);
   background: var(--bg-raised);
   color: var(--fg-muted);
-  font-weight: 400;
-  line-height: 1;
+  font-weight: var(--weight-regular);
+  line-height: var(--lh-none);
   transform: translateY(-50%);
 }
 
@@ -343,17 +343,17 @@
 }
 
 .body > * + * {
-  border-top: 1px solid var(--line);
+  border-top: var(--line-w) solid var(--line);
 }
 
 .foot {
   padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--line);
+  border-top: var(--line-w) solid var(--line);
   background: var(--wash-1);
   color: var(--fg-muted);
   font-family: var(--font-display);
   font-size: var(--text-sm);
-  line-height: 1.55;
+  line-height: var(--lh-body);
 }
 
 .foot a,
@@ -394,7 +394,7 @@
 .rowLabel {
   color: var(--fg-strong);
   font-size: var(--text-sm);
-  line-height: 30px;
+  line-height: var(--control);
 }
 
 /* What a setting does, in readable text beside it. */
@@ -402,7 +402,7 @@
   color: var(--fg-muted);
   font-family: var(--font-display);
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--lh-body);
 }
 
 .rowValue {
@@ -411,7 +411,7 @@
   align-items: center;
   gap: var(--space-2) var(--space-3);
   min-width: 0;
-  min-height: 30px;
+  min-height: var(--control);
   color: var(--fg);
   overflow-wrap: anywhere;
 }
@@ -421,7 +421,7 @@
   color: var(--fg-muted);
   font-family: var(--font-display);
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--lh-body);
 }
 
 .note[data-tone='error'] {
@@ -445,7 +445,7 @@
     overflow-x: auto;
     padding: var(--space-3) var(--space-4) 0;
     border-right: 0;
-    border-bottom: 1px solid var(--line);
+    border-bottom: var(--line-w) solid var(--line);
   }
 
   /* Tabs have no room for the group names. */
@@ -461,7 +461,7 @@
     width: auto;
     white-space: nowrap;
     border-left: 0;
-    border-bottom: 2px solid transparent;
+    border-bottom: var(--line-w-bold) solid transparent;
   }
 
   .navItem[aria-current='page'] {
@@ -473,7 +473,7 @@
   }
 
   .page {
-    --label-w: 96px;
+    --label-w: 12ch;
     padding: var(--space-4) var(--space-4) var(--space-6);
   }
 

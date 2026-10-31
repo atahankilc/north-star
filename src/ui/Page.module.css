@@ -2,12 +2,12 @@
    view's own toolbar, so switching views never moves the content. Compose: `composes: page from '../../ui/Page.module.css'`. */
 .page {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-1);
   display: flex;
   flex-direction: column;
   height: 100%;
   /* Room for the filter row (Bars.module.css) or the toolbar above. */
-  padding: calc(var(--hud-h) + 48px) var(--hud-x) calc(var(--hud-y) + var(--corner-h));
+  padding: calc(var(--hud-h) + var(--space-12)) var(--hud-x) calc(var(--hud-y) + var(--corner-h));
 }
 
 /* A view without filters puts its own controls where the filter row sits, at the same height. */
@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  height: 30px;
+  height: var(--control);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
@@ -30,7 +30,7 @@
   color: var(--fg-strong);
   font-family: var(--font-display);
   font-size: var(--text-heading);
-  font-weight: 400;
-  line-height: 1.25;
+  font-weight: var(--weight-regular);
+  line-height: var(--lh-snug);
   letter-spacing: var(--track-title);
 }

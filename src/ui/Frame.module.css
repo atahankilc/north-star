@@ -1,6 +1,6 @@
 /* The one framed surface (docs/DESIGN.md §6). Compose it: `composes: frame from '../../ui/Frame.module.css'`. */
 .frame {
-  border: 1px solid var(--line);
+  border: var(--line-w) solid var(--line);
   background: var(--surface);
   backdrop-filter: var(--surface-blur);
   -webkit-backdrop-filter: var(--surface-blur);
@@ -24,10 +24,10 @@
 .interactive::before {
   content: '';
   position: absolute;
-  top: -1px;
-  left: -1px;
-  right: -1px;
-  height: 2px;
+  top: calc(-1 * var(--line-w));
+  left: calc(-1 * var(--line-w));
+  right: calc(-1 * var(--line-w));
+  height: var(--line-w-bold);
   background: var(--accent, var(--accent-magenta));
   transform: scaleX(0);
   transform-origin: left;

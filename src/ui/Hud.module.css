@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 10;
+  z-index: var(--z-hud);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -22,19 +22,19 @@
    the bar diagonally, so any one colour there would be wrong somewhere. */
 :global(:root[data-theme='light'][data-night-top]) .hud {
   --bg: transparent;
-  --fg: #e8ecf5;
-  --fg-strong: #ffffff;
-  --fg-dim: #8f9bb8;
-  --fg-faint: #5d6a8a;
+  --fg: var(--night-fg);
+  --fg-strong: var(--night-fg-strong);
+  --fg-dim: var(--night-fg-dim);
+  --fg-faint: var(--night-fg-faint);
 }
 
 /* While night covers the headline (data-night, tokens.css) but hasn't reached the bar yet, the bar keeps the paper's colours. */
 :global(:root[data-theme='light'][data-night]:not([data-night-top])) .hud {
   --bg: transparent;
-  --fg: #161616;
-  --fg-strong: #000000;
-  --fg-dim: #6b6b6b;
-  --fg-faint: #8c8c8c;
+  --fg: var(--paper-fg);
+  --fg-strong: var(--paper-fg-strong);
+  --fg-dim: var(--paper-fg-dim);
+  --fg-faint: var(--paper-fg-faint);
 }
 
 .hud > * {
@@ -83,13 +83,13 @@ a.link:hover {
   bottom: 0;
   left: 0;
   /* Under everything else in the bar, the breadcrumb too (the bar is its own layer, so this stays over the canvas). */
-  z-index: -1;
-  width: 120px;
+  z-index: var(--z-under);
+  width: var(--hud-shade-w);
   background: linear-gradient(
     to right,
-    color-mix(in srgb, var(--bg) 96%, transparent) 0,
-    color-mix(in srgb, var(--bg) 90%, transparent) 50px,
-    color-mix(in srgb, var(--bg) 45%, transparent) 82px,
+    color-mix(in srgb, var(--bg) var(--mix-near), transparent) 0,
+    color-mix(in srgb, var(--bg) var(--mix-near), transparent) 42%,
+    color-mix(in srgb, var(--bg) var(--mix-soft), transparent) 68%,
     transparent
   );
   pointer-events: none;
@@ -107,7 +107,7 @@ a.link:hover {
   left: var(--space-3);
   top: 50%;
   transform: translateY(-50%);
-  width: 36px;
+  width: var(--control-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -120,7 +120,7 @@ a.link:hover {
   position: fixed;
   left: var(--space-3);
   bottom: var(--space-3);
-  width: 36px;
+  width: var(--control-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -129,8 +129,8 @@ a.link:hover {
 }
 
 .rule {
-  width: 20px;
-  height: 1px;
+  width: var(--control-sm);
+  height: var(--line-w);
   background: var(--line);
 }
 

@@ -28,6 +28,7 @@ jobs:
       - run: npm test
       - run: npm run check:lessons
       - run: npm run check:gallery
+      - run: npm run check:tokens
       - run: npm run lint
       - run: npm ci --prefix functions
       - run: npm run build:functions

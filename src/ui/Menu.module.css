@@ -10,7 +10,7 @@
   display: inline-flex;
   align-items: center;
   /* Fixed height: a trigger without a summary ("go to") is as tall as the others. */
-  height: 30px;
+  height: var(--control);
   padding: 0 var(--space-2) 0 var(--space-3);
   color: var(--fg);
   font: inherit;
@@ -26,7 +26,7 @@
 
 /* Narrowing the board: the accent bar stays, the edge and value take the accent. */
 .trigger[data-active='true'] {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-color: color-mix(in srgb, var(--accent) var(--mix-soft), var(--line));
 }
 
 .trigger[data-active='true']::before {
@@ -44,11 +44,11 @@
 .summary {
   display: inline-block;
   max-width: 20ch;
-  line-height: 14px;
+  line-height: var(--lh-tight);
   margin-left: var(--space-2);
   padding-left: var(--space-2);
   overflow: hidden;
-  border-left: 1px solid var(--line);
+  border-left: var(--line-w) solid var(--line);
   color: var(--fg);
   text-overflow: ellipsis;
 }
@@ -82,7 +82,7 @@
   display: inline-flex;
   align-items: baseline;
   gap: 0.6em;
-  padding: 0 2px;
+  padding: 0 var(--space-half);
   border: 0;
   background: none;
   color: var(--fg-muted);
@@ -98,8 +98,8 @@
 }
 
 .plain:focus-visible {
-  outline: 1px solid var(--fg-dim);
-  outline-offset: 2px;
+  outline: var(--line-w) solid var(--fg-dim);
+  outline-offset: var(--space-half);
 }
 
 .plain .label {
@@ -138,10 +138,10 @@
 /* SHOW's summary: one square per type, in its colour; hidden types go dark. */
 .swatch {
   display: inline-block;
-  margin-right: 3px;
-  vertical-align: 1px;
-  width: 7px;
-  height: 7px;
+  margin-right: var(--space-1);
+  vertical-align: var(--line-w);
+  width: var(--dot);
+  height: var(--dot);
   background: var(--tone);
 }
 
@@ -151,7 +151,7 @@
 
 .swatch[data-on='false'] {
   background: none;
-  box-shadow: inset 0 0 0 1px var(--fg-faint);
+  box-shadow: inset 0 0 0 var(--line-w) var(--fg-faint);
 }
 
 /* The create button: a solid square `+`. */
@@ -160,10 +160,10 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  height: 36px;
-  min-width: 36px;
+  height: var(--control-lg);
+  min-width: var(--control-lg);
   padding: 0 var(--space-3);
-  border: 1px solid var(--accent-magenta);
+  border: var(--line-w) solid var(--accent-magenta);
   background: var(--accent-magenta);
   color: var(--on-accent);
   font: inherit;
@@ -192,8 +192,8 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: var(--control);
+  height: var(--control);
   padding: 0;
   border: 0;
   background: none;
@@ -216,10 +216,10 @@
 .icon::after {
   content: '';
   position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: -3px;
-  height: 2px;
+  left: var(--space-2);
+  right: var(--space-2);
+  bottom: calc(-1 * var(--space-1));
+  height: var(--line-w-bold);
   background: var(--accent-magenta);
   transform: scaleX(0);
   transition: transform var(--dur-med) var(--ease-out);
@@ -246,10 +246,10 @@
   position: absolute;
   top: calc(100% + var(--space-1));
   left: 0;
-  z-index: 40;
-  min-width: 260px;
-  max-width: 360px;
-  border: 1px solid var(--line-hover);
+  z-index: var(--z-menu);
+  min-width: var(--menu-w);
+  max-width: var(--menu-max-w);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
 }
 
@@ -272,7 +272,7 @@
 .prompt {
   display: flex;
   flex-direction: column;
-  max-height: min(60vh, 460px);
+  max-height: min(60vh, var(--menu-h));
   font-family: var(--font-mono);
   font-size: var(--text-sm);
 }
@@ -282,8 +282,8 @@
   flex: none;
   align-items: center;
   gap: var(--space-2);
-  padding: 10px var(--space-3);
-  border-bottom: 1px solid var(--line);
+  padding: var(--space-3) var(--space-3);
+  border-bottom: var(--line-w) solid var(--line);
   cursor: text;
 }
 
@@ -319,9 +319,9 @@
 
 /* `# text`: a section of the list, a comment line. */
 .heading {
-  padding: var(--space-2) var(--space-3) 2px;
+  padding: var(--space-2) var(--space-3) var(--space-half);
   color: var(--fg-faint);
-  font-size: 10px;
+  font-size: var(--text-xs);
 }
 
 .heading::before {
@@ -331,7 +331,7 @@
 /* A rule: what's under it is apart from the rest (the `+`'s `existing card…`). */
 .rule {
   margin: var(--space-1) var(--space-3);
-  border-top: 1px solid var(--line);
+  border-top: var(--line-w) solid var(--line);
 }
 
 .item {
@@ -339,7 +339,7 @@
   align-items: baseline;
   gap: var(--space-2);
   width: 100%;
-  padding: 5px var(--space-3);
+  padding: var(--space-1) var(--space-3);
   border: 0;
   background: none;
   color: var(--fg);
@@ -388,7 +388,7 @@
   left: calc(var(--space-3) + 1ch + var(--space-2) + 0.6em);
   top: 0;
   bottom: 0;
-  width: 1px;
+  width: var(--line-w);
   background: var(--edge);
 }
 
@@ -452,8 +452,8 @@
   align-items: baseline;
   gap: 0.4ch;
   margin-left: var(--space-2);
-  padding: 1px var(--space-2);
-  border: 1px solid var(--edge);
+  padding: var(--space-half) var(--space-2);
+  border: var(--line-w) solid var(--edge);
   color: var(--fg-dim);
   font-size: var(--text-xs);
   cursor: pointer;
@@ -479,10 +479,10 @@
 
 .foot {
   flex: none;
-  min-height: 29px;
-  padding: 7px var(--space-3);
-  border-top: 1px solid var(--line);
+  min-height: var(--control);
+  padding: var(--space-2) var(--space-3);
+  border-top: var(--line-w) solid var(--line);
   color: var(--fg-faint);
-  font-size: 10px;
+  font-size: var(--text-xs);
   white-space: nowrap;
 }

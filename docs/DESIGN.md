@@ -71,11 +71,17 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - *Case:* uppercase means a label (`NOTES`, `┌ DISPLAY`, column heads, type names); everything you click is lowercase
   (buttons, the Settings menu, choices).
 - *Tracking:* `--track-label` 0.12em on every small uppercase label, `--track-title` -0.02em on Geist titles,
-  `--track-display` -0.045em on the display headline. Lowercase actions are untracked.
-- *Inside the zoomed world too (D-319):* sizes in canvas px (card faces, plane and kanban text, matrix heads) and
-  their tracking get their own tokens in `src/styles/` (a `--world-*` family), and Hud's night colours become `--night-*`;
-  no raw px, letter-spacing or hex stays in any CSS file. Not done yet: converted file by file, each with before/after
-  shots in dark and light, nothing may look different.
+  `--track-display` -0.045em on the display headline, `--track-cells` -1px where glyph cells must touch. The same in the
+  world (D-325). Lowercase actions are untracked.
+- *Inside the zoomed world (D-325):* type in canvas px has its own scale `--w-text-3xs` 7, `-2xs` 8, `-xs` 9, `-sm` 10,
+  `-md` 13, `-lg` 14, `-xl` 22, `-2xl` 26; a world element never uses `--text-*`, and screen UI never `--w-*`.
+  `--text-title` 22 is the right panel's title, `--text-code` 0.88em code inside Markdown.
+- *Line height and weight (D-325):* ratios only: `--lh-none` 1, `--lh-tight` 1.15, `--lh-snug` 1.3, `--lh-body` 1.5 (a
+  fixed row height is a size token); `--weight-regular` 400, `--weight-medium` 500, `--weight-bold` 600.
+- *Every value a token (D-325, docs/specs/tokens.md):* no number with a unit in a module CSS file (`0`, `%`, `ch`,
+  `em`, `vw`/`vh` and calc() multipliers aside); spacing `--space-half` 2 to `--space-12` 48, lines `--line-w` 1 /
+  `--line-w-bold` 2, `--dot`, `--arrow`, `--control*`, `--row-h`, shadows `--feather`, mixes `--mix-*`, opacity
+  `--o-*`, layers `--z-*`, durations `--dur-*`. Off-scale values snap. `npm run check:tokens` keeps count.
 - *Reading width:* `--measure` (760 px) for long text (a document open in its reader).
 - *1.0 (D-096, D-101, D-102, D-106):* the reports tab read on solid `--bg` with an "on this page" outline (documents keep
   that); the assistant's stage was one cyan box (`StageBox`) with a `‹ n/N ›` stepper.
@@ -282,6 +288,9 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
 - **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour
   (`<Appear>`, `src/ui/cellReveal.ts`), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
 - Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.
+- *Durations and eases are tokens (D-325):* `--dur-press` 70, `--dur-snap` 120, `--dur-quick` 160, `--dur-fast` 200,
+  `--dur-decode` 260, `--dur-spring` 300, `--dur-cells` 320, `--dur-med` 400, `--dur-slow` 600 ms; `--ease-out`,
+  `--ease-in-out` (folding, resizing), `--mark-spring`. Nothing else in CSS.
 - **1.0's assistant** (D-094, D-095, D-114, D-121): the chat a small box sliding up with the orb perched on it (pushed off
   by a wide panel: it falls, bounces, peeks, hops back); the first message grows it into a column (650 ms); a preview or
   report glides it left (700 ms) while the stage builds in its wake; steps a live log folding into `▸ N steps · 4.7s`.

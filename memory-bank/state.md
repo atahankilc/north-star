@@ -23,6 +23,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
+- D-325 tokens (docs/specs/tokens.md): every CSS value a token, off-scale snaps; `check:tokens` in CI. src/ui done
+  2026-10-31 (gallery shots before/after); 1,475 raw values left in 44 files: panels next, then the world.
 - D-310 (pieces drawn oldest first, the newest on top): committed, not pushed.
 - D-308 (filters only while their view is open; what's added after shows): committed, not pushed.
 - Committed, **not pushed** (2026-10-29): D-293 hidden while zooming and D-297 focus in/out together (efd34b4), D-294

@@ -2,15 +2,15 @@
   composes: frame from './Frame.module.css';
   position: fixed;
   left: 50%;
-  bottom: calc(var(--hud-y) + 40px);
-  z-index: 30;
+  bottom: calc(var(--hud-y) + var(--space-12));
+  z-index: var(--z-float);
   padding: var(--space-2) var(--space-4);
   color: var(--fg);
   font-size: var(--text-sm);
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transform: translate(-50%, 6px);
+  transform: translate(-50%, var(--space-2));
   transition:
     opacity var(--dur-fast) var(--ease-out),
     transform var(--dur-fast) var(--ease-out);

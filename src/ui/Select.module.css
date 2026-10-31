@@ -21,7 +21,7 @@
 
 .trigger:disabled {
   cursor: default;
-  opacity: 0.6;
+  opacity: var(--o-dim);
 }
 
 .value {
@@ -40,11 +40,11 @@
 /* The list in the menus' prompt look (D-222, Menu.module.css), fixed where Select placed it. */
 .list {
   position: fixed;
-  z-index: 60;
-  max-height: min(50vh, 320px);
+  z-index: var(--z-popover);
+  max-height: min(50vh, var(--list-h));
   overflow-y: auto;
   padding: 0 0 var(--space-1);
-  border: 1px solid var(--line-hover);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   font-family: var(--font-mono);
 }
@@ -56,8 +56,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 9px var(--space-3);
-  border-bottom: 1px solid var(--line);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--line-w) solid var(--line);
   background: var(--bg);
   cursor: text;
 }

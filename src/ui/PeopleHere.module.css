@@ -18,10 +18,10 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  max-width: 160px;
-  height: 26px;
+  max-width: var(--name-max-w);
+  height: var(--control-sm);
   padding: 0 var(--space-2) 0 0;
-  border: 1px solid transparent;
+  border: var(--line-w) solid transparent;
   background: none;
   color: var(--peer);
   font: inherit;
@@ -41,15 +41,15 @@
 /* Following them: the chip fills in. */
 .person[aria-pressed='true'] {
   border-color: var(--peer);
-  background: color-mix(in srgb, var(--peer) 18%, transparent);
+  background: color-mix(in srgb, var(--peer) var(--card-tint), transparent);
 }
 
 .swatch {
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: var(--control-sm);
+  height: var(--control-sm);
   overflow: hidden;
   background: var(--peer);
   color: var(--on-accent);
@@ -60,7 +60,7 @@
 .swatch img {
   width: 100%;
   height: 100%;
-  border-bottom: 3px solid var(--peer);
+  border-bottom: var(--line-w-bold) solid var(--peer);
   object-fit: cover;
 }
 
@@ -70,7 +70,7 @@
 }
 
 .stack li + li {
-  margin-top: -4px;
+  margin-top: calc(-1 * var(--space-1));
 }
 
 .stack .person {
@@ -81,12 +81,12 @@
 }
 
 .stack .swatch {
-  outline: 2px solid var(--bg);
+  outline: var(--line-w-bold) solid var(--bg);
 }
 
 .stack .person:hover,
 .stack .person:focus-visible {
-  z-index: 1;
+  z-index: var(--z-1);
 }
 
 .stack .person:hover .swatch,
@@ -96,7 +96,7 @@
 }
 
 .stack .person[aria-pressed='true'] {
-  z-index: 1;
+  z-index: var(--z-1);
   background: none;
 }
 
@@ -104,9 +104,9 @@
 .tip {
   position: absolute;
   top: 50%;
-  left: calc(100% + 8px);
+  left: calc(100% + var(--space-2));
   transform: translateY(-50%);
-  padding: 2px var(--space-2);
+  padding: var(--space-half) var(--space-2);
   background: var(--peer);
   color: var(--on-accent);
   font-family: var(--font-mono);
@@ -123,17 +123,17 @@
 }
 
 .where {
-  opacity: 0.7;
+  opacity: var(--o-soft);
 }
 
 .more {
   display: grid;
   place-items: center;
-  min-width: 24px;
-  height: 24px;
+  min-width: var(--control-sm);
+  height: var(--control-sm);
   margin-top: var(--space-1);
   padding: 0 var(--space-1);
-  border: 1px solid var(--fg-faint);
+  border: var(--line-w) solid var(--fg-faint);
   background: var(--bg);
   color: var(--fg-dim);
   font: inherit;
@@ -157,10 +157,10 @@
   composes: frame from './Frame.module.css';
   position: absolute;
   bottom: 0;
-  left: calc(100% + 8px);
-  z-index: 60;
-  width: 260px;
-  max-height: min(50vh, 320px);
+  left: calc(100% + var(--space-2));
+  z-index: var(--z-popover);
+  width: var(--menu-w);
+  max-height: min(50vh, var(--list-h));
   margin: 0;
   padding: var(--space-1) 0;
   overflow-y: auto;
@@ -207,8 +207,8 @@
 .following {
   position: fixed;
   inset: 0;
-  z-index: -1;
-  border: 2px solid var(--peer);
+  z-index: var(--z-under);
+  border: var(--line-w-bold) solid var(--peer);
   pointer-events: none;
 }
 
@@ -216,7 +216,7 @@
   position: absolute;
   top: 0;
   left: 50%;
-  padding: 2px var(--space-2);
+  padding: var(--space-half) var(--space-2);
   border: 0;
   background: var(--peer);
   color: var(--on-accent);
@@ -228,5 +228,5 @@
 }
 
 .stop {
-  opacity: 0.6;
+  opacity: var(--o-dim);
 }

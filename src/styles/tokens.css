@@ -78,19 +78,47 @@
   --text-sm: 13px;
   --text-md: 15px;
   --text-lg: 18px; /* card and list titles */
-  --text-heading: 26px; /* page, panel and report titles; 20px on phones */
+  --text-title: 22px; /* the right panel's title (D-219) */
+  --text-heading: 26px; /* page and report titles; 20px on phones */
   --text-xl: clamp(28px, 4vw, 44px);
   --text-hero: clamp(48px, 8vw, 112px); /* the workspaces page title */
   --text-display: clamp(72px, 14vw, 220px);
+  /* Code and list markers inside Markdown: relative to the text around them. */
+  --text-code: 0.88em;
 
-  /* Tracking (D-093): small uppercase labels, sans titles, the display headline. Actions are lowercase, untracked. */
+  /* Type inside the zoomed world (D-319, docs/specs/tokens.md): canvas px, scaled with the zoom. Never on screen-sized UI,
+     and the screen's --text-* never inside the world. */
+  --w-text-3xs: 7px; /* the tiniest caps: a card's chip and inner category, mini avatars, a sticky's glue band */
+  --w-text-2xs: 8px; /* a link's chip, a package band's caps */
+  --w-text-xs: 9px; /* who, meta rows, members, month names */
+  --w-text-sm: 10px; /* hints in cells, sheet text, readouts */
+  --w-text-md: 13px; /* pills, row labels, order titles */
+  --w-text-lg: 14px; /* card, task and package titles */
+  --w-text-xl: 22px; /* a card's compact title and handle */
+  --w-text-2xl: 26px; /* the project title's description */
+
+  /* Tracking (D-093, D-319): every uppercase label, sans titles, the display headline; glyph cells that must touch.
+     Actions are lowercase, untracked. The same three on screen and in the world. */
   --track-label: 0.12em;
   --track-title: -0.02em;
   --track-display: -0.045em;
+  --track-cells: -1px;
+
+  /* Line height: ratios only (D-319). A fixed row height is a size token, not a line height. */
+  --lh-none: 1;
+  --lh-tight: 1.15;
+  --lh-snug: 1.3;
+  --lh-body: 1.5;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-bold: 600;
 
   /* Reading width: the report screen and the reports list. */
   --measure: 760px;
 
+  /* Spacing (D-319): one scale on screen and in the world (a 4 px rhythm in canvas px there). Off-scale values snap to it. */
+  --space-half: 2px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -108,8 +136,76 @@
   /* Column headers of the table-like views (TableHead.module.css). */
   --head-h: 40px;
 
+  /* Lines and small shapes (D-319). A 1 px border is --line-w; a band, drop line or inset bar --line-w-bold. */
+  --line-w: 1px;
+  --line-w-bold: 2px;
+  --dot: 6px; /* status dots, small handles */
+  --dot-lg: 10px; /* scale squares, bigger handles */
+  --arrow: 7px; /* every CSS-triangle arrowhead */
+  --corner-mark: 7px; /* the magenta L's on a panel's, console's or dock's corners */
+  --lead: 12px; /* a numbered rule's magenta lead (D-277) */
+  --underline-offset: 3px;
+
+  /* Screen sizes (D-325). Squares and rows: a badge, an avatar or small button, a button or row, the side nav's tools,
+     a big avatar. Breakpoints can't be variables: they are 760 and 640 px only. */
+  --control-xs: 16px;
+  --control-sm: 24px;
+  --control: 30px;
+  --control-lg: 36px;
+  --control-xl: 48px;
+  --panel-w: 400px; /* the right panel (D-219) */
+  --menu-w: 260px; /* a menu's, a popover's and a settings label's width */
+  --menu-max-w: 360px;
+  --menu-h: 460px; /* the prompt's tallest */
+  --list-h: 320px; /* a Select's or people list's tallest */
+  --confirm-w: 420px; /* the hazard confirm */
+  --modal-w: 960px; /* settings */
+  --modal-h: 720px;
+  --modal-nav-w: 216px;
+  --name-max-w: 160px; /* a person's chip */
+  --hud-shade-w: 120px; /* the HUD's fade at the left edge */
+
+  /* Shadows (D-319): what a shadow is, the colour given where it's used, so it follows a piece's own --bg:
+     box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent). */
+  --feather: 0 0 16px 10px; /* the hugging shade behind ink on the page (D-277) */
+  --ink-feather: 0 0 18px 12px; /* the same, round the onboarding's ink (--ink-shade) */
+
+  /* How much of a colour goes into a color-mix (D-319). --card-tint (below) is the card face's. */
+  --mix-wash: 8%;
+  --mix-soft: 40%;
+  --mix-strong: 72%;
+  --mix-near: 86%;
+  /* Opacity: faint (others while one is lit, ghosts), dim, soft. 0 and 1 stay as numbers. */
+  --o-faint: 0.35;
+  --o-dim: 0.6;
+  --o-soft: 0.85;
+
+  /* Layers (D-319). Inside a component: --z-under, --z-1…3 order its own parts. The app's layers, lowest first; a
+     neighbour above one is calc(var(--z-menu) + 1). */
+  --z-under: -1;
+  --z-1: 1;
+  --z-2: 2;
+  --z-3: 3;
+  --z-world-ui: 5; /* marks, drop lines and tags over the world's pieces */
+  --z-hud: 10; /* HUD, the context menu, piece consoles */
+  --z-panel: 12; /* the right panel, threads, the agent */
+  --z-coach: 20; /* onboarding's lessons and coach, a title being typed */
+  --z-float: 30; /* finder, toasts, others' name tags */
+  --z-menu: 40; /* prompts and menus, the guide, the kind guide */
+  --z-popover: 60; /* Select's list, people here, the canvas switch */
+  --z-curtain: 100; /* the loading curtain */
+  --z-demo: 2147483647; /* the demo stage only */
+
+  /* Motion (D-034, D-035, D-319): every duration has a name. Mirror TS durations in tokens.ts `motion`. */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --dur-fast: 200ms;
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* folding and resizing */
+  --dur-press: 70ms; /* a press */
+  --dur-snap: 120ms; /* resize, landing, the console leaving */
+  --dur-quick: 160ms; /* small things in and out, steps(3) entrances */
+  --dur-fast: 200ms; /* hovers, colour changes */
+  --dur-decode: 260ms; /* text decode */
+  --dur-spring: 300ms; /* the Marks' spring */
+  --dur-cells: 320ms; /* a component's cell-by-cell build-up */
   --dur-med: 400ms;
   --dur-slow: 600ms;
 
@@ -238,12 +334,24 @@
   transition: --bg 0.25s ease, --fg 0.25s ease, --fg-strong 0.25s ease, --fg-dim 0.25s ease, --fg-faint 0.25s ease;
 }
 
+/* The night's ink and the paper's, named so the HUD can hold either while the night crosses it (Hud.module.css). */
+:root {
+  --night-fg: #e8ecf5;
+  --night-fg-strong: #ffffff;
+  --night-fg-dim: #8f9bb8;
+  --night-fg-faint: #5d6a8a;
+  --paper-fg: #161616;
+  --paper-fg-strong: #000000;
+  --paper-fg-dim: #6b6b6b;
+  --paper-fg-faint: #8c8c8c;
+}
+
 :root[data-theme='light'][data-night] {
   --bg: #0c1736; /* palettes.light.night: the HUD's fade strip and the page behind the canvas */
-  --fg: #e8ecf5;
-  --fg-strong: #ffffff;
-  --fg-dim: #8f9bb8;
-  --fg-faint: #5d6a8a;
+  --fg: var(--night-fg);
+  --fg-strong: var(--night-fg-strong);
+  --fg-dim: var(--night-fg-dim);
+  --fg-faint: var(--night-fg-faint);
 }
 
 @media (max-width: 760px) {

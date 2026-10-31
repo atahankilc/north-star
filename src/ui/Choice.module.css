@@ -9,7 +9,7 @@
   composes: fieldLabel from './Frame.module.css';
   flex-shrink: 0;
   /* Settings sets one column for all its rows (D-093). */
-  width: var(--label-w, 76px);
+  width: var(--label-w, 10ch);
 }
 
 .options {

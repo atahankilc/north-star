@@ -21,7 +21,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: var(--z-under);
   background: var(--accent);
   transform: scaleX(0);
   transform-origin: left;
@@ -49,7 +49,7 @@
 }
 
 .button:disabled {
-  opacity: 0.4;
+  opacity: var(--o-faint);
   cursor: not-allowed;
 }
 
@@ -64,7 +64,7 @@
 /* The small `[verb]` button for row and inline actions (D-093): lowercase, dim, faint brackets. Compose it:
    `composes: small from '../../ui/AsciiButton.module.css'`. `data-tone="primary"` is cyan, `"danger"` turns magenta on hover. */
 .small {
-  padding: 2px var(--space-1);
+  padding: var(--space-half) var(--space-1);
   border: 0;
   background: none;
   color: var(--fg-dim);
@@ -102,6 +102,6 @@
 }
 
 .small:disabled {
-  opacity: 0.4;
+  opacity: var(--o-faint);
   cursor: not-allowed;
 }

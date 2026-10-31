@@ -59,7 +59,7 @@
   border: 0 solid var(--fg-dim);
   opacity: 0;
   transition-property: --mo, --ml, border-color, opacity;
-  transition-duration: 140ms;
+  transition-duration: var(--dur-quick);
   transition-timing-function: var(--ease-out);
 }
 
@@ -73,7 +73,7 @@
 .marks[data-state='hover'] i {
   --mo: var(--hov0);
   opacity: 1;
-  transition-duration: 160ms;
+  transition-duration: var(--dur-quick);
 }
 
 /* Selected: just outside, in its tone, sprung out to the ring. */
@@ -82,10 +82,10 @@
   border-color: var(--tone, var(--accent-cyan));
   opacity: 1;
   transition:
-    --mo 300ms var(--mark-spring),
-    --ml 300ms var(--mark-spring),
-    border-color 120ms,
-    opacity 80ms;
+    --mo var(--dur-spring) var(--mark-spring),
+    --ml var(--dur-spring) var(--mark-spring),
+    border-color var(--dur-snap),
+    opacity var(--dur-press);
 }
 
 /* Pressed (and where it lands while dragged): on its corners, longer, in its tone, snapped there. */
@@ -95,10 +95,10 @@
   border-color: var(--tone, var(--accent-cyan));
   opacity: 1;
   transition:
-    --mo 70ms var(--ease-out),
-    --ml 70ms var(--ease-out),
-    border-color 40ms,
-    opacity 40ms;
+    --mo var(--dur-press) var(--ease-out),
+    --ml var(--dur-press) var(--ease-out),
+    border-color var(--dur-press),
+    opacity var(--dur-press);
 }
 
 /* Selected without a press: drawn on the corners for a frame, then the spring. */
@@ -114,7 +114,7 @@
   --mo: var(--hov0);
   border-color: var(--accent-cyan);
   opacity: 1;
-  transition-duration: 160ms;
+  transition-duration: var(--dur-quick);
 }
 
 /* Dragged: they're on its landing. */
@@ -128,21 +128,21 @@
   --mo: calc(var(--sel0) + var(--i) * 2 * var(--th0));
   border-color: var(--peer);
   opacity: 1;
-  transition-duration: 200ms;
+  transition-duration: var(--dur-fast);
 }
 
 .tag {
   position: absolute;
-  bottom: calc(100% + var(--sel) + var(--th) + 3px * var(--zs, 1) + var(--i) * 15px * var(--zs, 1));
+  bottom: calc(100% + var(--sel) + var(--th) + var(--space-1) * var(--zs, 1) + var(--i) * var(--text-xs) * var(--lh-body) * var(--zs, 1));
   left: calc(-1 * (var(--sel) + var(--th)));
-  padding: 0 calc(5px * var(--zs, 1));
+  padding: 0 calc(var(--space-1) * var(--zs, 1));
   background: var(--peer);
   color: var(--on-accent);
   font-family: var(--font-mono);
-  font-size: calc(10px * var(--zs, 1));
+  font-size: calc(var(--text-xs) * var(--zs, 1));
   font-style: normal;
-  font-weight: 400;
-  line-height: 1.4;
+  font-weight: var(--weight-regular);
+  line-height: var(--lh-body);
   letter-spacing: normal;
   text-transform: none;
   white-space: nowrap;
@@ -151,25 +151,25 @@
 /* Where a dragged thing lands: its box, the L's stepping grid to grid. */
 .landing {
   position: absolute;
-  z-index: 9;
+  z-index: calc(var(--z-hud) - 1);
   pointer-events: none;
   transition:
-    left 80ms var(--ease-out),
-    top 80ms var(--ease-out);
+    left var(--dur-press) var(--ease-out),
+    top var(--dur-press) var(--ease-out);
 }
 
 /* Alt+drag's box: a cyan wash, cyan L's on its corners. */
 .box {
   position: absolute;
-  z-index: 30;
-  background: color-mix(in srgb, var(--accent-cyan) 8%, transparent);
+  z-index: var(--z-float);
+  background: color-mix(in srgb, var(--accent-cyan) var(--mix-wash), transparent);
   pointer-events: none;
 }
 
 .marks[data-state='box'] {
-  --len0: 12px;
-  --th0: 1.5px;
-  --th: calc(1.5px * var(--zs, 1));
+  --len0: var(--mark-m-len);
+  --th0: var(--mark-s-th);
+  --th: calc(var(--mark-s-th) * var(--zs, 1));
 }
 
 .marks[data-state='box'] i {
@@ -188,10 +188,10 @@
    edge's a bar at its middle the L's stroke wide and 1.2 L long; hovered or held, they grow like a pressed L. */
 .handles {
   --r: calc(var(--sel) + var(--th));
-  --hit: calc(5px * var(--zs, 1));
+  --hit: calc(var(--space-1) * var(--zs, 1));
   position: absolute;
   inset: calc(-1 * var(--pad, 0px));
-  z-index: 3;
+  z-index: var(--z-3);
   pointer-events: none;
 }
 
@@ -212,8 +212,8 @@
   height: var(--len);
   border: 0 solid var(--accent-cyan);
   transition:
-    width 120ms var(--ease-out),
-    height 120ms var(--ease-out);
+    width var(--dur-snap) var(--ease-out),
+    height var(--dur-snap) var(--ease-out);
 }
 
 .handle[data-k='c']:is(:hover, [data-on])::after {
@@ -235,9 +235,9 @@
   background: var(--accent-cyan);
   background-clip: content-box;
   transition:
-    width 120ms var(--ease-out),
-    height 120ms var(--ease-out),
-    margin 120ms var(--ease-out);
+    width var(--dur-snap) var(--ease-out),
+    height var(--dur-snap) var(--ease-out),
+    margin var(--dur-snap) var(--ease-out);
 }
 
 .handle[data-k='b']:is([data-h='e'], [data-h='w']) {
@@ -279,21 +279,21 @@
   background: var(--accent-cyan);
 }
 
-.edge[data-e='e'] { top: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); right: calc(-1 * var(--r)); width: calc(1px * var(--zs, 1)); }
-.edge[data-e='w'] { top: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); left: calc(-1 * var(--r)); width: calc(1px * var(--zs, 1)); }
-.edge[data-e='s'] { left: calc(-1 * var(--r)); right: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); height: calc(1px * var(--zs, 1)); }
-.edge[data-e='n'] { left: calc(-1 * var(--r)); right: calc(-1 * var(--r)); top: calc(-1 * var(--r)); height: calc(1px * var(--zs, 1)); }
+.edge[data-e='e'] { top: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); right: calc(-1 * var(--r)); width: calc(var(--line-w) * var(--zs, 1)); }
+.edge[data-e='w'] { top: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); left: calc(-1 * var(--r)); width: calc(var(--line-w) * var(--zs, 1)); }
+.edge[data-e='s'] { left: calc(-1 * var(--r)); right: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); height: calc(var(--line-w) * var(--zs, 1)); }
+.edge[data-e='n'] { left: calc(-1 * var(--r)); right: calc(-1 * var(--r)); top: calc(-1 * var(--r)); height: calc(var(--line-w) * var(--zs, 1)); }
 
 .readout {
   position: absolute;
-  padding: 0 calc(5px * var(--zs, 1));
+  padding: 0 calc(var(--space-1) * var(--zs, 1));
   background: var(--accent-cyan);
   color: var(--on-accent);
   font-family: var(--font-mono);
-  font-size: calc(11px * var(--zs, 1));
+  font-size: calc(var(--text-xs) * var(--zs, 1));
   font-style: normal;
-  font-weight: 400;
-  line-height: 1.5;
+  font-weight: var(--weight-regular);
+  line-height: var(--lh-body);
   letter-spacing: normal;
   text-transform: none;
   white-space: nowrap;
@@ -301,14 +301,14 @@
 
 .readout[data-at='right'] {
   top: 50%;
-  left: calc(100% + var(--r) + 8px * var(--zs, 1));
+  left: calc(100% + var(--r) + var(--space-2) * var(--zs, 1));
   transform: translateY(-50%);
 }
 
 /* Height too: beside the bottom-right corner, clear of what hangs under the thing (a text's bar, a console). */
 .readout[data-at='below'] {
   bottom: calc(-1 * var(--r));
-  left: calc(100% + var(--r) + 8px * var(--zs, 1));
+  left: calc(100% + var(--r) + var(--space-2) * var(--zs, 1));
 }
 
 .handles[data-reduced='true'] .handle,

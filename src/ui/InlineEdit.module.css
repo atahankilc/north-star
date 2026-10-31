@@ -13,7 +13,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   text-decoration: underline dashed transparent;
-  text-underline-offset: 4px;
+  text-underline-offset: var(--underline-offset);
   cursor: text;
   transition: text-decoration-color var(--dur-fast) var(--ease-out);
 }
@@ -28,7 +28,7 @@
   padding: 0;
   border: 0;
   background: none;
-  box-shadow: inset 0 -1px 0 var(--accent-magenta);
+  box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--accent-magenta);
   color: inherit;
   font: inherit;
   letter-spacing: inherit;
