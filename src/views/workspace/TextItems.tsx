@@ -58,9 +58,9 @@ import { Landing, Marks, type Handle } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../model/labelBox'
+import { DRAG_PX } from '../../ui/feel'
 export { labelBox } from '../../model/labelBox'
 
-const DRAG_PX = 5
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
 const MIN_TEXT_PX = 6
 

@@ -13,6 +13,7 @@ import { useTheme } from '../state/theme'
 import { useCanvasView } from '../state/canvasView'
 import styles from './Demo.module.css'
 import { DEMO_NS, STAGE, canMove, giveBack, lend, setFrameClass, setSrcBase, type Pool } from './demoPool'
+import { DRAG_PX } from '../ui/feel'
 
 export { DEMO_NS, STAGE, preloadDemo, disposeDemoPool } from './demoPool'
 const LOOPS = 3
@@ -42,7 +43,6 @@ setSrcBase(import.meta.env.BASE_URL)
 // The canvas moving (a pan, a zoom, a glide, a drag): a playing demo holds still meanwhile and goes on this long after,
 // so its frames (a loop's seam and rebuild) never land in the middle of the canvas's.
 const RESUME_MS = 300
-const DRAG_PX = 4
 // A drag whose end never came (the pointer let go outside the window, a lost capture): the demo goes on after this.
 const HOLD_CAP_MS = 5000
 

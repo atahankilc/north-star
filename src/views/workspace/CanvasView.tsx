@@ -11,7 +11,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
-import { canOpen, deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, isHost, hostKinds, kindOfPiece, sticks, placeLens, STICK_GAP, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
+import { canOpen, deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, isHost, hostKinds, kindOfPiece, sticks, placeLens, STICK_GAP, STICK_REACH, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../data/pieces'
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
@@ -76,13 +76,11 @@ import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
 import { DUR, easeInOut, lerp } from '../../ui/motion'
 import { CELLS_SHUT } from '../../ui/cellReveal'
+import { DRAG_PX, wheelStep } from '../../ui/feel'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
 export const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu], [data-scrolls]'
 
-const ZOOM_MIN = 0.1
-const ZOOM_MAX = 4
-const DRAG_PX = 5
 // The catch round 100%: a wheel zoom within 3% of it stays at exactly 1, where the canvas is drawn at its own pixels.
 const ZOOM_CATCH = 0.03
 // The wheel's own zoom per workspace, which the catch holds the camera at 1 against.
@@ -837,7 +835,7 @@ export function CanvasView() {
       // camera's zoom starts the wheel from there.
       const prev = wheelZoom.get(wid)
       const from = prev !== undefined && (c.zoom === 1 ? Math.abs(prev - 1) < ZOOM_CATCH : prev === c.zoom) ? prev : c.zoom
-      const raw = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, from * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))))
+      const raw = wheelStep(from, e)
       wheelZoom.set(wid, raw)
       const zoom = Math.abs(raw - 1) < ZOOM_CATCH ? 1 : raw
       if (zoom === c.zoom) return
@@ -1657,7 +1655,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       else setSizing(handle)
       if (lens) {
         // Within 48 screen px of an edge; alt held: free, no sticking.
-        const t = ev.altKey ? null : stickTarget(to, planes, 48 / zoom)
+        const t = ev.altKey ? null : stickTarget(to, planes, STICK_REACH / zoom)
         stick = t?.plane ?? linked
         if (t) to = t.box
         useCanvasView.setState({ stickHint: t ? { plane: t.plane, box: t.box } : null })

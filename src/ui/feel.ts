@@ -1,0 +1,18 @@
+// How the app feels to handle (D-325): the numbers behind a press, a drag, a wheel zoom and a stick, in one place so every
+// view and the onboarding read the same ones. Durations and easings are in motionTokens.ts (D-326); sizes in tokens.css
+// and model/world.ts.
+
+// A press that moved this far (screen px) is a drag: a pan, a piece, a card, a cell, a task, a box (D-150, D-217).
+export const DRAG_PX = 5
+
+// The zoom's range, on the canvas, in a focus and beside it (D-186).
+export const ZOOM_MIN = 0.1
+export const ZOOM_MAX = 4
+
+// One wheel step's zoom: a pinch (ctrl, a trackpad) moves faster than a mouse wheel.
+const WHEEL = 0.0015
+const PINCH = 0.01
+export const wheelStep = (zoom: number, e: { deltaY: number; ctrlKey: boolean }) =>
+  Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * Math.exp(-e.deltaY * (e.ctrlKey ? PINCH : WHEEL))))
+
+// Sticking's reach (48 screen px, D-210) is STICK_REACH in model/pieceMoves.ts: the agent's ops read it too.

@@ -20,9 +20,8 @@ import { useDocUi } from '../views/workspace/Documents'
 import { useProgress } from './progress'
 import type { PieceLike, Sources, StoreLike, WsLike, CanvasViewLike, HistoryLike } from './events'
 import { countsAsMenu, type Busy } from './queue'
+import { DRAG_PX } from '../ui/feel'
 
-// A press that moved this far is a drag (a pan, a piece, a card, a task between columns, a box).
-const DRAG_PX = 4
 // The camera moved this recently: it's gliding (a fit, the finder going somewhere, a wheel).
 const GLIDE_MS = 200
 

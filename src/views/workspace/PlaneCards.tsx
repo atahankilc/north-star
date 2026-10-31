@@ -46,8 +46,8 @@ import { learn } from '../../onboarding/learn'
 import styles from './PlaneCards.module.css'
 import { CELLS_SHUT } from '../../ui/cellReveal'
 import { CARD_TONE } from '../../ui/cardTone'
+import { DRAG_PX } from '../../ui/feel'
 
-const DRAG_PX = 5
 // How a card is drawn by how big it is on screen (D-111, D-153): everything while its small text (8 px) is 4 px or more;
 // the title alone (24 px) while that's 5 px or more; then bars. Going back up takes 10 % more, so a view resting on a
 // line doesn't flip them.

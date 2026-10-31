@@ -20,6 +20,7 @@ import { isOpen } from './shownBox'
 import { CELL_PX, cellHash } from '../../ui/cellReveal'
 import styles from './CanvasView.module.css'
 import { DUR, easeInOut } from '../../ui/motion'
+import { DRAG_PX, wheelStep } from '../../ui/feel'
 
 const IN_MS = DUR.focusIn
 const OUT_MS = DUR.focusOut
@@ -28,11 +29,7 @@ const BARE_MS = DUR.glide
 // How much the cells' order is left to chance: the rest is their distance from the plane.
 const RAGGED = 0.18
 
-// How far a press on a matrix's cell moves before it pans instead (D-217), as a card's drag (D-150).
-const CELL_DRAG_PX = 5
 
-const ZOOM_MIN = 0.1
-const ZOOM_MAX = 4
 
 
 type Props = {
@@ -100,7 +97,7 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
       const r = el.getBoundingClientRect()
       const px = e.clientX - r.left
       const py = e.clientY - r.top
-      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, c.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))))
+      const zoom = wheelStep(c.zoom, e)
       const k = zoom / c.zoom
       useCanvasView.setState({ planeCam: { zoom, ox: px - (px - c.ox) * k, oy: py - (py - c.oy) * k } })
     }
@@ -129,7 +126,7 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     }
     if (!onCell) begin()
     const move = (ev: PointerEvent) => {
-      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) >= CELL_DRAG_PX) moved = true
+      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) >= DRAG_PX) moved = true
       if (!panning) {
         if (!moved) return
         begin()

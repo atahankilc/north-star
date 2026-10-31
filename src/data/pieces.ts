@@ -96,7 +96,7 @@ export async function placePiece(wid: string, id: string, from: Box, to: Box, ki
 // ---- Sticking (D-210): a matrix or a table dropped near a plane's edge sits one grid step out from it and is bound to
 // it: it moves with the plane, and what it shows is that plane's cards (a rule set by itself, `auto`, still changeable).
 // Pulled away, it lets go and its own rule goes. The geometry is src/model/pieceMoves.ts'.
-export { STICK_GAP, stickTarget, touchSide, sideOf, followTo, type Side } from '../model/pieceMoves'
+export { STICK_GAP, STICK_REACH, stickTarget, touchSide, sideOf, followTo, type Side } from '../model/pieceMoves'
 
 // Linked to a plane, or let go, from its console's dropdown (D-215), where it is: one undo step (S6: update_piece).
 export const linkLens = (wid: string, piece: Piece & { id: string }, plane: string | null) => {

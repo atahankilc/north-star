@@ -23,12 +23,9 @@ import { DockAction, FocusDock } from './FocusDock'
 import { TableSetupPanel } from './TableSetup'
 import styles from './Beside.module.css'
 import { DUR } from '../../ui/motion'
+import { DRAG_PX, wheelStep } from '../../ui/feel'
 
-const ZOOM_MIN = 0.1
-const ZOOM_MAX = 4
 const PAD = 48
-// How far a press on a cell moves before it pans instead (D-217).
-const CELL_DRAG_PX = 5
 
 // What Escape closes next (after a selection): a setup, then what's beside (the last opened), then focus. The dock
 // whose action that is shows `esc` on it.
@@ -149,7 +146,7 @@ export function usePaneView(content: Bounds, box: Bounds, top = false, floor = 0
       const c = viewRef.current
       const r = node.getBoundingClientRect()
       const [px, py] = [e.clientX - r.left, e.clientY - r.top]
-      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, c.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))))
+      const zoom = wheelStep(c.zoom, e)
       const k = zoom / c.zoom
       setView({ zoom, ox: px - (px - c.ox) * k, oy: py - (py - c.oy) * k })
     }
@@ -177,7 +174,7 @@ export function usePaneView(content: Bounds, box: Bounds, top = false, floor = 0
     if (!onCell) begin()
     const move = (ev: PointerEvent) => {
       if (!panning) {
-        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < CELL_DRAG_PX) return
+        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < DRAG_PX) return
         begin()
       }
       setView({ ...start, ox: start.ox + ev.clientX - sx, oy: start.oy + ev.clientY - sy })
