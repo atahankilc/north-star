@@ -11,6 +11,8 @@ import { useTheme } from '../state/theme'
 import { useMotion } from '../state/motion'
 import { ENTRIES, MAP, entryById, stateSlug } from './registry'
 import { CATEGORY_NAME } from './example'
+import { UsesTree } from './UsesTree'
+import { NODES, nodeOf } from './uses'
 import { Mount } from './Mount'
 import styles from './Gallery.module.css'
 
@@ -22,7 +24,7 @@ useHistory.subscribe((s, prev) => {
   if (s.notice && s.notice !== prev.notice && s.notice.text === READ_ONLY) countRefused()
 })
 
-type Address = { c: string | null; s: string | null; theme: 'dark' | 'light'; motion: 'full' | 'reduced'; on: 'page' | 'piece'; zoom: '1' | '2'; alone: boolean; grid: boolean }
+type Address = { c: string | null; s: string | null; theme: 'dark' | 'light'; motion: 'full' | 'reduced'; on: 'page' | 'piece'; zoom: '1' | '2'; alone: boolean; grid: boolean; side: 'map' | 'tree' }
 
 const subscribeHash = (on: () => void) => {
   window.addEventListener('hashchange', on)
@@ -41,6 +43,7 @@ function parse(hash: string): Address {
     zoom: h.get('zoom') === '2' ? '2' : '1',
     alone: h.has('alone'),
     grid: h.has('grid'),
+    side: h.get('side') === 'tree' ? 'tree' : 'map',
   }
 }
 
@@ -52,6 +55,7 @@ function hashOf(a: Address): string {
   h.set('motion', a.motion)
   if (a.on !== 'page') h.set('on', a.on)
   if (a.zoom !== '1') h.set('zoom', a.zoom)
+  if (a.side !== 'map') h.set('side', a.side)
   const s = h.toString()
   return `#${s}${a.alone ? '&alone' : ''}${a.grid && !a.alone ? '&grid' : ''}`
 }
@@ -121,6 +125,7 @@ export function Gallery() {
   )
 
   if (!entry) return <p className={styles.failed}>no example files yet (src/**/X.gallery.tsx)</p>
+  const node = nodeOf(entry.file)
 
   // Every state at once, each in a frame of its own (the address with `alone`): their stores never meet.
   const grid = (
@@ -152,7 +157,15 @@ export function Gallery() {
         <div className={styles.title}>
           NORTH STAR <span className={styles.faint}>· GALLERY</span>
         </div>
-        <MenuPanel items={items} ariaLabel="Components" prompt="find a component…" noun="entries" onClose={() => {}} />
+        <div className={styles.sideTabs}>
+          <Choice label="list" bare options={['map', 'tree'] as const} value={a.side} onChange={(side) => go({ side })} />
+          <span className={styles.faint}>{a.side === 'map' ? 'by what it is' : 'by what it’s made of'}</span>
+        </div>
+        {a.side === 'map' ? (
+          <MenuPanel items={items} ariaLabel="Components" prompt="find a component…" noun="entries" onClose={() => {}} />
+        ) : (
+          <UsesTree entryOf={entryOfFile} current={entry.id} onPick={(e) => go({ c: e.id, s: null })} />
+        )}
       </aside>
       <main className={styles.main}>
         {stage}
@@ -174,6 +187,12 @@ export function Gallery() {
             <Choice label="on" options={['page', 'piece'] as const} value={a.on} onChange={(on) => go({ on })} />
             <Choice label="zoom" options={['1', '2'] as const} value={a.zoom} onChange={(zoom) => go({ zoom })} />
           </div>
+          {node && (
+            <div className={styles.uses}>
+              <Uses label="uses" files={node.uses} empty="nothing else: a primitive" go={go} />
+              <Uses label="used in" files={node.usedBy} empty="nowhere yet" go={go} />
+            </div>
+          )}
           {(note || error) && <div className={error ? styles.error : styles.note}>{error ?? note}</div>}
           <div className={styles.foot}>
             <button className={styles.file} title="copy the path" onClick={() => void navigator.clipboard?.writeText(entry.file)}>
@@ -190,6 +209,32 @@ export function Gallery() {
           </div>
         </div>
       </main>
+    </div>
+  )
+}
+
+const ENTRY_BY_FILE = new Map(ENTRIES.map((e) => [e.file, e]))
+const entryOfFile = (file: string) => ENTRY_BY_FILE.get(file)
+
+// A row of the bar: the files a component draws, or that draw it, each opening its example (faint without one).
+function Uses({ label, files, empty, go }: { label: string; files: string[]; empty: string; go: (next: { c: string; s: null }) => void }) {
+  return (
+    <div className={styles.usesRow}>
+      <span className={styles.usesLabel}>{label}</span>
+      {files.length === 0 && <span className={styles.faint}>{empty}</span>}
+      {files.map((f) => {
+        const e = entryOfFile(f.slice(1))
+        const n = NODES.get(f)
+        return e ? (
+          <button key={f} className={styles.usesItem} title={f.slice(1)} onClick={() => go({ c: e.id, s: null })}>
+            {e.name}
+          </button>
+        ) : (
+          <span key={f} className={styles.usesNone} title={`${f.slice(1)}: no example`}>
+            {n?.name ?? f}
+          </span>
+        )
+      })}
     </div>
   )
 }

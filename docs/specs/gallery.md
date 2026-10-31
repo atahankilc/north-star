@@ -148,6 +148,11 @@ export default example({
   portal centred on the window (a wizard, a list) reads whole; the list says `role="list"`, so a lesson doesn't
   take it for an open menu. Not shown fully: people's names (Firestore paging), peers' cursors after a pan (their
   tracks are presence.ts's own).
+- **The tree (D-326, built).** The list's other half, `[tree]` (`&side=tree`): every component file by level, level 0
+  the primitives (they draw no other component file), each opening (`▸ N`) into what uses it, and on up to the
+  screens; files with no example (the agent, the landing, three.js) listed faint. The bar's `USES` and `USED IN` rows
+  for the component shown. Read from the sources (src/gallery/uses.ts: a file uses another when it imports a
+  capitalised name from it and draws `<Name`), never kept by hand.
 - **The map (D-326, built).** `place` and `also` replace `section`; `MAP` in registry.ts; a Tokens page under
   foundations (src/gallery/Tokens.gallery.tsx, every token read from the page's style sheets).
 - **G4 — shots (later).** A script that opens each address `&alone` in dark/light × full/reduced and saves PNGs, with

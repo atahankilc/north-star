@@ -224,3 +224,115 @@
   composes: action;
   color: var(--accent-cyan);
 }
+
+/* The list's switch: the map (what a thing is) or the tree (what it's made of, D-326). */
+.sideTabs {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 0 var(--space-3) var(--space-2);
+}
+
+/* The tree: a row's lines, its name, its level when nested, `▸ N` what uses it. */
+.treeRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto 3.5em;
+  align-items: baseline;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.treeRow:hover {
+  background: var(--wash-2);
+}
+
+.treePrefix {
+  color: var(--fg-faint);
+  white-space: pre;
+}
+
+.treeName {
+  overflow: hidden;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.treeName[data-here] {
+  color: var(--accent-cyan);
+}
+
+.treeRow[data-depth='0'] .treeName {
+  color: var(--fg-strong);
+}
+
+/* No example: listed so the tree says where things end up, faint and not openable. */
+.treeRow[data-none] .treeName {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+.treeLevel {
+  padding: 0 var(--space-2);
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+}
+
+.treeFold {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  text-align: right;
+  cursor: pointer;
+}
+
+.treeFold:hover {
+  color: var(--accent-cyan);
+}
+
+/* The bar's uses / used in. */
+.uses {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.usesRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.usesLabel {
+  width: var(--label-w);
+  color: var(--fg-faint);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.usesItem {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.usesItem:hover {
+  color: var(--accent-cyan);
+}
+
+.usesNone {
+  color: var(--fg-faint);
+}
