@@ -12,6 +12,7 @@ import type { WorkspaceCtx } from '../state/wsStore'
 import type { Ids, ReadWs } from './read'
 import type { WhereView } from './read/tools'
 import type { AgentSettings, Changeset } from './changeset'
+import type { JobHost } from './job'
 
 // ---- What the model sees and says
 
@@ -37,8 +38,9 @@ export const NO_USAGE: Usage = Object.freeze({ input: 0, output: 0, cached: 0, r
 export type Provider = 'openai' | 'anthropic' | 'stub'
 
 // What a context message is, in an append-only history (D-329, loop.ts): the map, the agent notes, where the person
-// is, a skill's guide, the last step's note, a compaction's note. Adapters send the content and ignore the tag.
-export type ContextTag = 'map' | 'notes' | 'where' | 'guide' | 'final' | 'compact'
+// is, a skill's guide, the last step's note, a compaction's note, what the person did with a preview (D-328, bug 5).
+// Adapters send the content and ignore the tag.
+export type ContextTag = 'map' | 'notes' | 'where' | 'guide' | 'final' | 'compact' | 'outcome'
 
 export type ModelMessage =
   | { role: 'system'; content: string; tag?: ContextTag }
@@ -129,6 +131,8 @@ export type AgentEnv = {
   liveWs?: () => AgentWs
   // The chat's id (auto-apply's undo key `agent-turn:<chatId>:<turnId>`, so two chats' turns never share a step).
   chatId?: string
+  // The chat's big job (D-328, job.ts): what `plan` and `progress` write. Left out, those tools say there is none.
+  job?: JobHost
 }
 
 // A tool the loop can run: its definition for the model and how it runs. Read tools never write; write tools go

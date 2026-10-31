@@ -22,6 +22,7 @@ import { useWs } from '../../views/workspace/context'
 import { isTyping } from '../../views/workspace/useEditKeys'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, realOf, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
+import type { Job, JobStep } from '../job'
 import { pickable, suggested, useAgentSettings } from './settings'
 import { firstAsks } from './suggest'
 import { agentUi } from '../ui'
@@ -260,7 +261,7 @@ function Column() {
         if (phase === 'previewing') agentActions.accept()
         return
       }
-      if (running) return
+      // While it works the words steer it: they reach the model at its next step (D-328).
       agentActions.send(text)
       setText('')
       stick.current = true
@@ -312,6 +313,7 @@ function Column() {
       </div>
       <footer className={styles.foot}>
         {viewer && <p className={styles.viewer}>you're a viewer here: the agent reads and answers, it changes nothing</p>}
+        {chat.job && view === 'chat' && <JobPanel job={chat.job} phase={phase} />}
         <div className={styles.skillAnchor}>{skills.menu}</div>
         <label className={styles.prompt} data-running={running || undefined}>
           <span className={styles.ps} aria-hidden>
@@ -323,7 +325,7 @@ function Column() {
             className={styles.input}
             rows={1}
             value={text}
-            placeholder={phase === 'previewing' ? 'change something… (↵ on empty applies)' : phase === 'asking' ? 'answer, or say go…' : `ask about ${ask}… (/ for skills)`}
+            placeholder={running ? 'tell it something while it works… (it reads it at its next step)' : phase === 'previewing' ? 'change something… (↵ on empty applies)' : phase === 'asking' ? 'answer, or say go…' : `ask about ${ask}… (/ for skills)`}
             aria-label="Ask the agent"
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onInputKey}
@@ -496,12 +498,93 @@ function FirstAsks({ focus, onAsk, compact }: { focus: string | null; onAsk: (t:
 // Each turn numbered by the person's messages (`01 ── which problems…`, D-266: numbers magenta, before the name).
 function numbered(entries: Entry[]): [Entry, number][] {
   let n = 0
-  return entries.map((e) => [e, e.kind === 'user' ? ++n : n])
+  return entries.map((e) => [e, e.kind === 'user' && !e.steer && !e.auto ? ++n : n])
+}
+
+// The job's checklist (D-328): the plan as state, live; what it has used against its budget; the person's controls.
+const MARKS: Record<JobStep['state'], string> = { todo: ' ', doing: '>', done: '×', skipped: '−' }
+const kTok = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : `${Math.round(n / 1000)}k`)
+
+function JobPanel({ job, phase }: { job: Job; phase: string }) {
+  const running = phase === 'running' || phase === 'applying'
+  const done = job.steps.filter((x) => x.state === 'done' || x.state === 'skipped').length
+  const over = job.tokens >= job.budget
+  return (
+    <section className={styles.job} aria-label="The job" data-status={job.status}>
+      <header className={styles.jobHead}>
+        <span className={styles.jobKind}>job</span>
+        <span className={styles.jobTitle}>{job.title}</span>
+        <span className={styles.jobRule} aria-hidden />
+        <span className={styles.jobCount}>
+          {done}/{job.steps.length}
+        </span>
+      </header>
+      <ol className={styles.jobSteps}>
+        {job.steps.map((x) => (
+          <li key={x.n} className={styles.jobStep} data-state={x.state}>
+            <span className={styles.jobMark} aria-label={x.state}>
+              [{MARKS[x.state]}]
+            </span>
+            <span className={styles.jobN}>{String(x.n).padStart(2, '0')}</span>
+            <span className={styles.jobText}>
+              {x.title}
+              {x.why && <span className={styles.jobWhy}> · {x.why}</span>}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <footer className={styles.jobFoot}>
+        <span className={styles.jobUsed} data-over={over || undefined}>
+          {job.status === 'paused' && job.paused ? `paused: ${job.paused} · ` : job.status === 'planned' ? 'waiting for go · ' : job.status === 'done' ? 'done · ' : job.stopAfter ? 'stops after this step · ' : ''}
+          {kTok(job.tokens)} / {kTok(job.budget)} tokens
+        </span>
+        <span className={styles.jobTools}>
+          {job.status === 'running' && !job.stopAfter && (
+            <button className={styles.action} onClick={() => agentActions.jobStopAfter()}>
+              stop after this step
+            </button>
+          )}
+          {job.status === 'running' && job.stopAfter && (
+            <button className={styles.action} onClick={() => agentActions.jobStopAfter(false)}>
+              keep going
+            </button>
+          )}
+          {(job.status === 'paused' || job.status === 'planned') && !running && phase !== 'previewing' && (
+            <button className={styles.action} data-tone="primary" onClick={() => agentActions.jobGoOn(over)}>
+              {over ? 'raise budget and go on' : 'go on'}
+            </button>
+          )}
+          {!running && (
+            <button className={styles.action} onClick={() => agentActions.jobDrop()}>
+              drop
+            </button>
+          )}
+        </span>
+      </footer>
+    </section>
+  )
 }
 
 const EntryView = memo(function EntryView({ entry, n }: { entry: Entry; n: number }) {
   switch (entry.kind) {
     case 'user':
+      // The app's own go-on to a job's next step: a quiet line, not the person's words.
+      if (entry.auto)
+        return (
+          <p className={styles.goOn}>
+            <span aria-hidden>→ </span>
+            {entry.text}
+          </p>
+        )
+      if (entry.steer)
+        return (
+          <div className={styles.you} data-steer>
+            <span className={styles.steerTag}>while it worked</span>
+            <span className={styles.youText}>
+              <YouText text={entry.text} />
+            </span>
+          </div>
+        )
       return (
         <div className={styles.you}>
           <span className={styles.turn} aria-label={`turn ${n}`}>

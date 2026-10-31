@@ -5,8 +5,9 @@
 // the dev stub (devStub.ts) take this one list, and the prompt's test checks every tool it names is here.
 import { READ_TOOLS, whereAmI, type Ids } from './read'
 import { REGISTRY, type ArgSchema } from '../ops/registry'
-import { toolDef, type AgentTool } from './contract'
+import { toolDef, type AgentEnv, type AgentTool } from './contract'
 import { agentArgs, ID_KEYS, runChange } from './change'
+import { jobText, planJob, progressJob } from './job'
 
 export { NO_COORDS, COORDS_FIX, agentArgs, ID_KEYS } from './change'
 
@@ -137,6 +138,47 @@ const ui: AgentTool[] = [
   { def: toolDef('show_beside', 'Open a piece stuck to a plane beside it (a deck or timeline: the tasks side view).', { properties: { piece: id('a piece') }, required: ['piece'] }), kind: 'ui', run: async (env, a) => (await env.ui.showBeside(String(realIds(env.ids, a.piece, true))), { ok: true, text: 'beside' }) },
 ]
 
-export const AGENT_TOOLS: AgentTool[] = [...read, whereTool, changeTool, ...ui]
+// ---- The job (D-328, job.ts): a big job's plan as state, shown to the person as a checklist
+
+const jobOf = (env: AgentEnv) => env.job
+const planTool: AgentTool = {
+  def: toolDef(
+    'plan',
+    "Write a big job's plan as steps the person sees as a checklist: each step a part you propose in one go, in an order where each builds on the last (2–12 steps). Calling it again changes the plan; a step already done keeps its state when its title stays. Changes nothing in the workspace.",
+    {
+      properties: {
+        title: { type: 'string', description: 'the job in a few words' },
+        steps: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, scope: { type: 'string', description: 'what it covers, e.g. "the 14 competitors on Rivals"' }, check: { type: 'string', description: 'how you will know it is right' } }, required: ['title'] } },
+      },
+      required: ['title', 'steps'],
+    },
+  ),
+  kind: 'ui',
+  run: async (env, a) => {
+    const host = jobOf(env)
+    if (!host) return { ok: false, text: 'no job can be kept here: answer with the plan as text instead' }
+    const j = planJob(a, host.get())
+    if ('error' in j) return { ok: false, text: j.error }
+    host.set(j)
+    return { ok: true, text: jobText(j) }
+  },
+}
+const progressTool: AgentTool = {
+  def: toolDef('progress', "Move a step of the plan: doing when you start it, done when its changes are proposed and checked, skipped with why. Changes nothing in the workspace.", {
+    properties: { step: { type: 'integer' }, state: { type: 'string', enum: ['doing', 'done', 'skipped'] }, why: { type: 'string', description: 'needed for skipped' } },
+    required: ['step', 'state'],
+  }),
+  kind: 'ui',
+  run: async (env, a) => {
+    const host = jobOf(env)
+    if (!host) return { ok: false, text: 'there is no plan in this chat' }
+    const j = progressJob(host.get(), a)
+    if ('error' in j) return { ok: false, text: j.error }
+    host.set(j)
+    return { ok: true, text: jobText(j) }
+  },
+}
+
+export const AGENT_TOOLS: AgentTool[] = [...read, whereTool, changeTool, ...ui, planTool, progressTool]
 export const WRITE_TOOLS = new Set(AGENT_TOOLS.filter((t) => t.kind === 'write').map((t) => t.def.name))
 export const TOOL_NAMES = AGENT_TOOLS.map((t) => t.def.name)

@@ -75,8 +75,11 @@ describe('the workflow', () => {
     expect([p.s.phase, p.s.error]).toEqual(['previewing', 'refused'])
     const bad = step(initialWorkflow(), { type: 'accept' })
     expect([bad.state.phase, bad.effects, bad.state.error]).toEqual(['idle', [], "can't accept while idle"])
+    // A second message while it runs steers it (D-328): queued for the model's next step, no new turn, no error.
     const busy = run([{ type: 'send', text: 'a' }, { type: 'send', text: 'b' }])
-    expect(busy.kinds).toEqual(['lock', 'run'])
+    expect(busy.kinds).toEqual(['lock', 'run', 'steer'])
+    expect(busy.s).toMatchObject({ phase: 'running', turn: 1 })
+    expect(busy.s.error).toBeUndefined()
   })
 
   it('a question waits; a plain answer goes idle', () => {

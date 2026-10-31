@@ -11,6 +11,7 @@ import type { OpActor, OpError, Plan, Write } from '../src/ops/types'
 import type { Role } from '../src/data/model'
 import { makeIds, type Ids } from '../src/agent/read'
 import type { WhereView } from '../src/agent/read/tools'
+import type { Job } from '../src/agent/job'
 import type { AgentEnv, AgentWs, Applied, ApplyAs, UiFacade } from '../src/agent/contract'
 import { accept as acceptChanges, emptyChangeset, untick as untickItem, type Accepted, type AgentSettings, type ChangeItem } from '../src/agent/changeset'
 import { memoryChats, type ChatStore } from '../src/agent/chats'
@@ -109,10 +110,13 @@ export function makeEnv(start: AgentWs, o: EnvOpts = {}): EvalEnv {
     },
     currentView: () => ({ ...view }),
   }
+  // The chat's big job (D-328): kept here as the app keeps it in the chat's runtime.
+  let job: Job | null = null
   const env: EvalEnv = {
     start,
     steps,
     moves,
+    job: { get: () => job, set: (j) => void (job = j) },
     view,
     refused: 0,
     newId,

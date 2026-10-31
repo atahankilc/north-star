@@ -35,6 +35,7 @@ import type { OpActor } from '../../ops'
 import type { AgentEnv, AgentTool, AgentWs, ModelMessage, TurnEnd, Usage } from '../contract'
 import { NO_USAGE } from '../contract'
 import { readKey, suggested, useAgentSettings } from './settings'
+import { JOB_BUDGET, nextMove, nextStep, settled, type Job, type JobHost, type Move } from '../job'
 import { plainError, NO_KEY } from './errors'
 import { subscribeWs } from '../../state/wsStore'
 import { NOTES_ID, saveNotes as saveNotesData, watchNotes } from '../../data/agentNotes'
@@ -58,7 +59,9 @@ export type StepLine = { id: string; label: string; running: boolean; ok?: boole
 export type ChangeLine = { id: string; line: string; strike?: string; where: string; delete: boolean; why?: string; on: boolean; needs?: string[]; needsWords?: string[]; kind: string; op: string; sign: '+' | '~' | '−'; diff?: DiffLine[] }
 
 export type Entry =
-  | { id: string; kind: 'user'; text: string }
+  // `steer`: sent while the agent worked (D-328), handed to it between its steps; `auto`: the app's own go-on to the
+  // next step of a job, not the person's words.
+  | { id: string; kind: 'user'; text: string; steer?: boolean; auto?: boolean }
   | { id: string; kind: 'agent'; text: string; live: string; steps: StepLine[]; usage: Usage; running: boolean; ms?: number; end?: TurnEnd; error?: string; errorSettings?: boolean; model: string }
   // The pending changes (S14's simple list; S15's preview replaces it): `pending` until applied or discarded.
   // The preview (S15): every item proposed, ticked or not, until applied or discarded.
@@ -69,7 +72,8 @@ export type Entry =
 
 // `saved`: the summary as last saved (its id is the chat's), or null until the first save; `from`: the person whose
 // shared chat this one was copied from (opening someone else's shared chat makes a copy of your own).
-export type Chat = { id: string; wid: string; model: string; entries: Entry[]; wf: WorkflowState; saved?: ChatSummary | null; from?: string }
+// `job`: the chat's big job (D-328, job.ts) as the checklist shows it; the runtime holds the same.
+export type Chat = { id: string; wid: string; model: string; entries: Entry[]; wf: WorkflowState; saved?: ChatSummary | null; from?: string; job?: Job | null }
 
 export type Mode = 'closed' | 'box' | 'column'
 
@@ -100,7 +104,11 @@ export const READ_ONLY = "## You only read here\nThe person is a viewer in this 
 
 // `base`: the changes as the preview opened (unticking works from it, so a tick put back brings its item back); `off`:
 // the items the person unticked.
-type Runtime = { history: ModelMessage[]; ids: Ids; changes: Changeset; abort: AbortController | null; last: AgentWs | null; base: Changeset | null; off: Set<string> }
+// `steer`: messages sent while a turn runs, waiting for its next step (D-328); `job`: the chat's big job (job.ts),
+// kept for this tab only (the saved chat's body holds turns and ids: saving a job needs a rules change first).
+type Runtime = { history: ModelMessage[]; ids: Ids; changes: Changeset; abort: AbortController | null; last: AgentWs | null; base: Changeset | null; off: Set<string>; steer: string[]; job: Job | null }
+
+const runtime = (o: Partial<Runtime> = {}): Runtime => ({ history: [], ids: makeIds(), changes: emptyChangeset(), abort: null, last: null, base: null, off: new Set(), steer: [], job: null, ...o })
 
 const runtimes = new Map<string, Runtime>()
 const chats = new Map<string, Chat>()
@@ -110,13 +118,13 @@ const uid = (p: string) => `${p}${Date.now().toString(36)}${(++n).toString(36)}`
 
 const newChat = (wid: string): Chat => {
   const c: Chat = { id: wid && chatsAvailable() ? newChatId(wid) : uid('chat'), wid, model: '', entries: [], wf: initialWorkflow(), saved: null }
-  runtimes.set(c.id, { history: [], ids: makeIds(), changes: emptyChangeset(), abort: null, last: null, base: null, off: new Set() })
+  runtimes.set(c.id, runtime())
   return c
 }
 
 const rtOf = (c: Chat): Runtime => {
   let r = runtimes.get(c.id)
-  if (!r) runtimes.set(c.id, (r = { history: [], ids: makeIds(), changes: emptyChangeset(), abort: null, last: null, base: null, off: new Set() }))
+  if (!r) runtimes.set(c.id, (r = runtime()))
   return r
 }
 
@@ -184,6 +192,41 @@ const TOOLS: AgentTool[] = AGENT_TOOLS.map((t) => ({
   },
 }))
 
+// The job's host for the tools: the runtime holds it, the chat shows it (only while that chat is the one open).
+const jobHost = (chatId: string, rt: Runtime): JobHost => ({
+  get: () => rt.job,
+  set: (job) => {
+    rt.job = job
+    if (get().chat.id === chatId) setChat((c) => ({ ...c, job }))
+  },
+})
+
+// What the person did with a preview, told to the model (bug 5, D-328): a line kept in its history, read with its
+// next turn, so "what's next" never answers as if the changes still waited.
+const tellModel = (rt: Runtime, text: string) => {
+  rt.history = [...rt.history, { role: 'system', tag: 'outcome', content: text }]
+}
+
+// The app goes on with the job by itself, or pauses it with why (D-328, job.ts' nextMove). Run after the effects of
+// the event that led here, never inside them.
+function moveJob(chat: Chat, move: Move) {
+  if (!move) return
+  const rt = rtOf(chat)
+  if (!rt.job) return
+  if ('pause' in move) {
+    jobHost(chat.id, rt).set({ ...rt.job, status: 'paused', paused: move.pause })
+    if (get().chat.id === chat.id) push({ id: uid('note'), kind: 'note', text: `The job paused: ${move.pause}. Say go on (or press [go on]) to carry on.` })
+    return
+  }
+  jobHost(chat.id, rt).set({ ...rt.job, settledAt: settled(rt.job) })
+  setTimeout(() => {
+    const c = get().chat
+    if (c.id !== chat.id || (c.wf.phase !== 'idle' && c.wf.phase !== 'applied' && c.wf.phase !== 'asking')) return
+    push({ id: uid('you'), kind: 'user', text: move.go, auto: true })
+    if (canRun()) dispatch({ type: 'send', text: move.go })
+  }, 0)
+}
+
 function envOf(chat: Chat, rt: Runtime): AgentEnv {
   const wid = chat.wid
   const live = (): AgentWs => {
@@ -206,6 +249,7 @@ function envOf(chat: Chat, rt: Runtime): AgentEnv {
     },
     now: () => Date.now(),
     chatId: chat.id,
+    job: jobHost(chat.id, rt),
     get changes() {
       return rt.changes
     },
@@ -405,6 +449,9 @@ function run(chatId: string, e: Effect) {
       return
     case 'run':
       return void turn(chat, e.text, e.turn)
+    case 'steer':
+      rt.steer.push(e.text)
+      return
     case 'abort':
       return rt.abort?.abort()
     case 'preview': {
@@ -445,13 +492,20 @@ function run(chatId: string, e: Effect) {
       const list = [...get().chat.entries].reverse().find((x): x is Extract<Entry, { kind: 'changes' }> => x.kind === 'changes')
       const items = list?.state === 'applied' ? list.items.filter((i) => i.on) : []
       const wheres = [...new Set(items.map((i) => i.where.replace(/ · [a-z ]+$/, '')))]
-      return push({ id: uid('rep'), kind: 'report', report: e.report, wheres, count: e.report.done.length })
+      push({ id: uid('rep'), kind: 'report', report: e.report, wheres, count: e.report.done.length })
+      // The model hears what happened (bug 5); a job goes on after an apply, pauses after a discard.
+      const applied = get().chat.wf.phase === 'applied'
+      tellModel(rt, applied ? `The person applied your proposed changes. ${e.report.text}` : `The person discarded your proposed changes: nothing was written. ${e.report.text}`)
+      const move = nextMove(rt.job, applied ? { applied: e.report.done.length } : { discarded: true })
+      setTimeout(() => moveJob(chat, move), 0)
+      return
     }
     case 'undo':
       return void undoAgentStep(e.step.key).then((ok) => {
         if (get().chat.id !== chatId) return
         dispatch({ type: 'undo_done', ok })
         if (!ok) return
+        tellModel(rt, 'The person undid the changes they had applied: the workspace is back as it was before them.')
         const list = [...get().chat.entries].reverse().find((x) => x.kind === 'changes' && x.state === 'applied')
         if (list) patchEntry(list.id, (x) => ({ ...x, state: 'undone' }) as Entry)
       })
@@ -500,16 +554,23 @@ async function turn(chat: Chat, text: string, n: number) {
     const viewer = env.actor.role === 'viewer'
     const tools = viewer ? TOOLS.filter((t) => t.kind !== 'write') : TOOLS
     const system = viewer ? `${systemPrompt({ workspaceName: env.getWs().workspace?.name })}\n\n${READ_ONLY}` : undefined
-    const r = await runTurn(m, env, tools, rt.history, text, { signal: controller.signal, onEvent: on, turnId: `${chat.id}:${n}`, ...(system ? { system } : {}) })
+    const r = await runTurn(m, env, tools, rt.history, text, { signal: controller.signal, onEvent: on, turnId: `${chat.id}:${n}`, steer: () => rt.steer.splice(0), ...(system ? { system } : {}) })
     rt.history = r.history
+    // What the job used (D-328): its budget counts every token of its turns, in and out.
+    if (rt.job && rt.job.status !== 'done') jobHost(chat.id, rt).set({ ...rt.job, tokens: rt.job.tokens + r.turn.usage.input + r.turn.usage.output })
     // The usage log counts the person's own model calls; the dev stub's scripted turns aren't any.
     // A call that failed before any token was counted isn't an answer either.
     const counted = r.turn.usage.input > 0 || r.turn.usage.output > 0 || r.turn.end !== 'error'
     if (!stub && counted) recordTurn(r.turn, m.name)
     const err = r.turn.error ? plainError(r.turn.error) : null
     patchEntry(id, (x) => (x.kind === 'agent' ? { ...x, text: r.turn.answer || (r.turn.end === 'stopped' ? '' : x.live), live: '', running: false, ms: r.turn.ms, end: r.turn.end, usage: r.turn.usage, ...(err ? { error: err.text, ...(err.settings ? { errorSettings: true } : {}) } : {}) } : x))
-    if (mine()) dispatch({ type: 'turn_end', answer: r.turn.answer, pending: pendingCount(rt.changes), end: r.turn.end })
+    if (mine()) {
+      dispatch({ type: 'turn_end', answer: r.turn.answer, pending: pendingCount(rt.changes), end: r.turn.end })
+      afterTurn(chat, r.turn.end)
+    }
   } catch (e) {
+    // Words queued for a turn that failed stay in the chat as sent; they don't leak into the next turn.
+    rt.steer.splice(0)
     const err = plainError((e as Error)?.message ?? String(e))
     patchEntry(id, (x) => (x.kind === 'agent' ? { ...x, running: false, live: '', error: err.text, ...(err.settings ? { errorSettings: true } : {}), end: 'error' } : x))
     if (mine()) dispatch({ type: 'fail', error: err.text })
@@ -519,6 +580,21 @@ async function turn(chat: Chat, text: string, n: number) {
     const phase = get().chat.wf.phase
     if (!mine() || (phase !== 'previewing' && phase !== 'applying')) releaseAgentLocks()
   }
+}
+
+// After a turn (D-328): words the person sent too late for its last step start the next turn; else, with no preview
+// open, a job goes on with its next step or pauses (a preview's job move comes after its apply).
+function afterTurn(chat: Chat, end: TurnEnd) {
+  const rt = rtOf(chat)
+  const left = rt.steer.splice(0).filter((x) => x.trim())
+  const phase = get().chat.wf.phase
+  if (left.length) {
+    setTimeout(() => get().chat.id === chat.id && dispatch({ type: 'send', text: left.join('\n\n') }), 0)
+    return
+  }
+  if (phase === 'previewing') return
+  const move = nextMove(rt.job, { asked: phase === 'asking', stopped: end === 'stopped' })
+  setTimeout(() => moveJob(chat, move), 0)
 }
 
 async function accept(chat: Chat) {
@@ -590,8 +666,17 @@ export const agentActions = {
     if (!t) return
     const s = get()
     const phase = s.chat.wf.phase
-    if (phase === 'running' || phase === 'applying') return
+    if (phase === 'applying') return
     useAgent.setState({ mode: 'column' })
+    // While it works: steering, handed to the model at its next step (D-328).
+    if (phase === 'running') {
+      push({ id: uid('you'), kind: 'user', text: t, steer: true })
+      dispatch({ type: 'send', text: t })
+      return
+    }
+    // A person's word goes on with a paused job too (the model reads the job and decides).
+    const rt = rtOf(s.chat)
+    if (rt.job?.status === 'paused') jobHost(s.chat.id, rt).set({ ...rt.job, status: 'running', paused: undefined, settledAt: -1 })
     push({ id: uid('you'), kind: 'user', text: t })
     if (!canRun()) {
       push({ id: uid('note'), kind: 'note', text: NO_KEY, tone: 'error', settings: true })
@@ -600,6 +685,31 @@ export const agentActions = {
     dispatch({ type: 'send', text: t })
   },
   stop: () => dispatch({ type: 'stop' }),
+  // The job's checklist (D-328): finish the step under way and stop; go on (a paused job, from its next step); raise
+  // the budget and go on; drop the job (the chat stays).
+  jobStopAfter(on = true) {
+    const c = get().chat
+    const rt = rtOf(c)
+    if (rt.job) jobHost(c.id, rt).set({ ...rt.job, stopAfter: on || undefined })
+  },
+  jobGoOn(raise = false) {
+    const c = get().chat
+    const rt = rtOf(c)
+    const j = rt.job
+    if (!j || j.status === 'done' || c.wf.phase === 'running' || c.wf.phase === 'applying' || c.wf.phase === 'previewing') return
+    const nx = nextStep(j)
+    if (!nx) return
+    jobHost(c.id, rt).set({ ...j, status: 'running', paused: undefined, stopAfter: undefined, settledAt: -1, ...(raise ? { budget: j.budget + JOB_BUDGET } : {}) })
+    const text = `Go on with step ${nx.n} of ${j.steps.length}: ${nx.title}.`
+    push({ id: uid('you'), kind: 'user', text, auto: true })
+    if (canRun()) dispatch({ type: 'send', text })
+  },
+  jobDrop() {
+    const c = get().chat
+    const rt = rtOf(c)
+    if (c.wf.phase === 'running') return
+    jobHost(c.id, rt).set(null)
+  },
   // A tick in the preview: off takes the item and what needs it off, on brings it back (and what came off only with
   // it); the preview is worked out again from its base on the workspace as it is now.
   tick(item: string, on: boolean) {
@@ -680,7 +790,7 @@ export const agentActions = {
     leave()
     const mine = got.summary.uid === me?.uid
     const chat: Chat = { id: mine ? id : newChatId(s.wid), wid: s.wid, model: got.summary.model, entries: entriesOf(got.body.turns), wf: initialWorkflow(), saved: mine ? got.summary : null, ...(mine ? {} : { from: got.summary.uid }) }
-    runtimes.set(chat.id, { history: historyOf(got.body.turns), ids: makeIds(got.body.ids), changes: emptyChangeset(), abort: null, last: null, base: null, off: new Set() })
+    runtimes.set(chat.id, runtime({ history: historyOf(got.body.turns), ids: makeIds(got.body.ids) }))
     chats.set(chat.wid, chat)
     useAgent.setState({ chat, view: 'chat', mode: 'column', touch: null })
   },

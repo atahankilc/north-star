@@ -96,7 +96,9 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
     {
       title: 'Big jobs',
       body: [
-        'A big job is one that makes a new piece with things in it, touches several pieces, needs more than about ten changes, or is open-ended ("organise this plane", "make a competitor matrix", "make a deck of tasks to test this idea"). For a big job, first answer with a short numbered plan: what you will read, what you will make or change, and where. Make no change in that turn; wait for the person to say go, or to change the plan. When they say go, do it as planned.',
+        'A big job is one that makes a new piece with things in it, touches several pieces, needs more than about ten changes, or is open-ended ("organise this plane", "make a competitor matrix", "make a deck of tasks to test this idea"). For a big job, first call `plan` with its steps: each a part you can propose in one go, in an order where each builds on the last, covering all of what was asked. Then answer with the plan in a few lines. Make no change in that turn; wait for the person to say go, or to change the plan.',
+        'On go, do one step per turn: `progress` it as doing, read what it needs, propose its changes with `change`, check them, `progress` it as done, and end your turn. The person reviews that step in the preview; once they accept it, the app tells you and asks you to go on with the next step. A step that needs no change is done at once: go on with the next in the same turn. Skip a step only with why. The job is done when every step is done or skipped: then say what was done and what was left out.',
+        'The person may write while you work; their words reach you between your steps. Follow them, and change the plan with `plan` when they ask for something else.',
         'Everything else runs at once: a clearly specified small change (add this problem for that customer, mark this idea validated, move these tasks to done) needs no plan.',
       ].join('\n'),
     },

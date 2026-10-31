@@ -2,6 +2,7 @@
 // drive. Pure: a state, an event, the next state and the effects the driver carries out. No React, no Firebase.
 //
 //   idle ──send──▶ running ──turn ends──▶ asking      (no change pending; the agent asked or showed a plan: waiting)
+//                    │ ◀──send (steering, D-328)── the message is queued for the model's next step, the turn goes on
 //                    │                    previewing  (changes pending: the preview opens by itself)
 //                    │                    idle        (it answered; nothing pending)
 //                    └──stop──▶ previewing if anything is pending, else idle (what was applied stays)
@@ -64,6 +65,8 @@ export type Effect =
   | { type: 'lock' }
   | { type: 'unlock' }
   | { type: 'run'; text: string; turn: number; revising: boolean }
+  // A message sent while a turn runs (D-328): handed to the model between its steps.
+  | { type: 'steer'; text: string }
   | { type: 'abort' }
   | { type: 'preview' }
   | { type: 'close_preview' }
@@ -93,7 +96,8 @@ const same = (s: WorkflowState, e: WorkflowEvent): { state: WorkflowState; effec
 export function step(s: WorkflowState, e: WorkflowEvent): { state: WorkflowState; effects: Effect[] } {
   switch (e.type) {
     case 'send': {
-      if (s.phase === 'running' || s.phase === 'applying') return same(s, e)
+      if (s.phase === 'running') return { state: s, effects: [{ type: 'steer', text: e.text }] }
+      if (s.phase === 'applying') return same(s, e)
       const revising = s.phase === 'previewing' && s.pending > 0
       const turn = s.turn + 1
       return {

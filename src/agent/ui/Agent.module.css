@@ -1191,3 +1191,145 @@
   color: var(--accent-cyan);
   font: inherit;
 }
+
+/* ---- The job (D-328): a big job's plan as a live checklist above the prompt */
+
+.job {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: var(--menu-h);
+  padding-bottom: var(--space-2);
+  overflow-y: auto;
+  border-bottom: var(--line-w) dashed var(--line);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.jobHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.jobKind {
+  flex: none;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+}
+
+.jobTitle {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.jobRule {
+  flex: 1;
+  min-width: var(--space-4);
+  border-top: var(--line-w) solid var(--line);
+}
+
+.jobCount {
+  flex: none;
+  color: var(--accent-magenta);
+}
+
+.jobSteps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jobStep {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-2);
+  color: var(--fg-muted);
+  line-height: var(--lh-snug);
+}
+
+.jobStep[data-state='doing'] {
+  color: var(--fg-strong);
+}
+
+.jobStep[data-state='doing'] .jobMark {
+  color: var(--accent-cyan);
+}
+
+.jobStep[data-state='done'],
+.jobStep[data-state='skipped'] {
+  color: var(--fg-faint);
+}
+
+.jobMark {
+  color: var(--fg-dim);
+  white-space: pre;
+}
+
+.jobN {
+  color: var(--accent-magenta);
+}
+
+.jobText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.jobWhy {
+  color: var(--fg-faint);
+}
+
+.jobFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.jobUsed {
+  color: var(--fg-dim);
+}
+
+.jobUsed[data-over] {
+  color: var(--accent-yellow);
+}
+
+.jobTools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The app's own go-on to a job's next step, and words sent while it worked */
+
+.goOn {
+  margin: var(--space-2) 0 0;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.you[data-steer] {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-half);
+}
+
+.steerTag {
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+}

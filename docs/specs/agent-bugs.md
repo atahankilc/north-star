@@ -41,7 +41,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 12 | no last look before the preview                  | Guards       | mid      | code, then model | open   |
 | 25 | evals build their store apart from the app's     | Plumbing     | blocker  | code (evals)     | open   |
 | 1  | document text never loaded                       | Plumbing     | high     | code             | open   |
-| 5  | an apply is never told to the model              | Plumbing     | mid      | code             | open   |
+| 5  | an apply is never told to the model              | Plumbing     | mid      | code             | app fixed; evals with 25 |
 | 2  | bare short ids in the chat                       | Plumbing     | mid      | code             | open   |
 | 22 | bare ids in documents                            | Plumbing     | mid      | code             | open   |
 | 9  | skills list doesn't scroll                       | Plumbing     | low      | code             | open   |
@@ -57,7 +57,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 24 | points at an existing piece instead of making it | Judgment     | low      | prompt           | open   |
 | 13 | no coverage map for a big document               | New parts    | mid      | new              | open   |
 | 14 | one plane or several, never weighed              | New parts    | mid      | code + prompt    | open   |
-| 28 | a big job stops after one preview                | New parts    | high     | new (workflow)   | agreed D-328 |
+| 28 | a big job stops after one preview                | New parts    | high     | new (workflow)   | built (job, steering; not saved) |
 | 27 | organising never changes the structure           | New parts    | high     | new (read + skill)| agreed D-327 |
 | 8  | no web access                                    | New parts    | mid      | new (Phase 9)    | open   |
 
@@ -289,7 +289,8 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
 28. **A big job stops after one preview, so "is it done?" turns up much more.** The user, 2026-10-31: asked
     for something, it says done, the person applies, asks "is it finished?", and it lists a lot still to do. Then
     "do what's next" five to ten times over. It feels like a chat box, not an agent that's part of the app.
-    Agreed (D-328), not built. The cause is in the design, not the model: a turn ends in one preview (workflow.ts:
+    Agreed (D-328); the job and steering built 2026-11-01 (decisions-log D-328 *Built*: what, how checked, not yet).
+    The cause is in the design, not the model: a turn ends in one preview (workflow.ts:
     running → previewing → applied → idle), and nothing carries the job past it. The plan of a big job is only text
     in an answer (prompt.ts, "A big job…"); no state holds its steps, so after an apply nothing knows what's left; the
     model isn't told the apply happened (5); 25 steps a turn (loop.ts `STEP_BUDGET`) push it to a small proposal

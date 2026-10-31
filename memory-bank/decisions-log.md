@@ -6053,7 +6053,23 @@ several planes, a main plane with detail planes beside it, sections), each only 
   step); the AI SDK at most as the provider layer (Q-031).
 - *Evals:* turns from the person until done (target: `go` and one yes per preview); what's left when it says done.
 - *Alternatives:* a bigger fixed step budget (still stops mid-job); auto-apply without previews (against D-312).
-- *Spec:* docs/specs/agent-bugs.md item 28, agent.md §4.10. *Not yet:* all of it; needs bugs 25 and 5 first.
+- *Built (2026-11-01): the job and steering.* src/agent/job.ts (plan, progress, `nextMove`: go on after an apply or a
+  settled step; pause with why on no progress since the last go-on, the budget (2M tokens, raised from the checklist),
+  stop-after, a question, a stop, a discard); `plan` and `progress` tools (tools.ts); the job read with where the person
+  is each turn (loop.ts); a message sent while a turn runs is a `steer` effect (workflow.ts), queued and handed to the
+  model at its next step as the person's words (loop.ts' STEER), kept in the history, or the next turn if it came too
+  late; agentStore.ts holds the job per chat (`jobHost`), tells the model what was applied, discarded or undone
+  (bug 5, the app's side), goes on by itself (`moveJob`), and Agent.tsx draws the checklist above the prompt
+  (`[stop after this step]`, `[go on]`, `[raise budget and go on]`, `[drop]`), the go-on lines and `while it worked`.
+  The prompt's "Big jobs": `plan`, one step per turn, `progress`, the app goes on after the apply. Checked: 888 unit
+  tests (12 new in tests/unit/agentJob.test.ts); the whole flow in headless Chrome on the emulators with the dev
+  stub's new `job demo` script: plan, go, steering mid-turn, three applies each followed by the app's own go-on, the
+  job done, no console errors.
+- *Not yet:* the job saved with the chat (the body's rule allows only turns and ids: a rules change, then deploy,
+  asked first; until then a reopened chat has no job); one preview for the whole job (only per step now); the evals'
+  side of telling the model about an apply (with bug 25); evals for big jobs (turns until done, what's left); a
+  steering message is drawn after the answer it interrupted, not where it was sent.
+- *Spec:* docs/specs/agent-bugs.md item 28, agent.md §4.10.
 
 ### D-329 · 2026-10-31 · Accepted (Q-031 (1); the user: "evet, claude adapter'ını planla"; then "planı onaylıyorum, D-numarası ver ve commit et")
 **The agent runs on Claude too: an Anthropic adapter with the person's own key, on a loop that only appends.**

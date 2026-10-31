@@ -20,6 +20,9 @@
 //             the agent notes, then says it waits in the preview.
 //   skill     a `/` command (S17) → that skill's script in devStubSkills.ts (a plan first for big jobs, then its change
 //             on "go"; documents written from the workspace; answers citing real cards).
+//   job       "job demo" (D-328) → `plan` with three steps, answers the plan; on "go" (or the app's "Go on with step N")
+//             → `progress` doing, one `change` (an idea on the first plane), `progress` done, says it's in the preview;
+//             after the apply the app goes on with the next step by itself.
 //   demo      "preview demo: <kind>" (S15's screenshots) → one `change` with a batch that touches that kind on the
 //             "Pazar" fixture (cards, links, text, matrix, table, deck, timeline, pieces, canvases, places, or flow:
 //             a bit of everything), then says what's in the preview.
@@ -31,6 +34,7 @@ import { canvasOf } from '../model/canvases'
 import { viewOf } from './changeset'
 import { parseSkill } from './skills'
 import { skillOfPlan, skillStep } from './devStubSkills'
+import { STEER_HEAD } from './loop'
 
 export const DEV_STUB_MARK = 'north-star:agent-dev-stub'
 
@@ -48,14 +52,18 @@ const TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
 
 const STOP = new Set('a an the and or of to in on for with is are was were be do does did what which who whom how many much our we us my me i you it its this that these those there any all have has had about from by as at show tell list give find please can could would should will'.split(' '))
 
-export type Script = 'refuse' | 'plan' | 'go' | 'edit' | 'question' | 'demo' | 'remember' | 'skill'
+export type Script = 'refuse' | 'plan' | 'go' | 'edit' | 'question' | 'demo' | 'remember' | 'skill' | 'job'
 
 const PLAN_MARK = 'Say go, or tell me what to change in the plan.'
+const JOB_MARK = 'Say go and I will do it step by step: each step waits in the preview for you.'
+const JOB_STEPS = ['Add the first idea', 'Add the second idea', 'Add the third idea']
 
 // `before`: the agent's last answer before this message (a plan waiting for go makes "go" carry it out).
 export function pickScript(ask: string, before = ''): Script {
   const a = ask.toLowerCase()
   if (/^\s*preview demo\b/.test(a)) return 'demo'
+  if (/^\s*job demo\b/.test(a) || /^(the changes were applied \(\d+\)\. )?go on with step \d+/.test(a)) return 'job'
+  if (before.includes(JOB_MARK) && /^\s*(go|yes|ok|okay|do it|go ahead|sure)\b/.test(a)) return 'job'
   // S17: a `/` command, or "go"/"yes" after a skill's plan (devStubSkills.ts).
   const sk = parseSkill(ask)
   if (sk && 'skill' in sk) return 'skill'
@@ -82,10 +90,13 @@ const quoted = (ask: string) => /["“]([^"”]{2,80})["”]/.exec(ask)?.[1]?.tr
 const idsIn = (text: string, kinds = 'ctpxd') => [...new Set(text.match(new RegExp(`\\b[${kinds}]\\d+\\b`, 'g')) ?? [])]
 
 // The turn so far as the stub reads it: the ask, how many steps it has answered, the tool results it got.
+// A message the person sent while it worked (D-328, loop.ts' STEER) is part of the turn, not a new ask.
+const steering = (m: ModelMessage) => m.role === 'user' && m.content.startsWith(STEER_HEAD)
+
 function turnOf(messages: ModelMessage[]) {
   let at = -1
   for (let i = messages.length - 1; i >= 0; i--)
-    if (messages[i].role === 'user') {
+    if (messages[i].role === 'user' && !steering(messages[i])) {
       at = i
       break
     }
@@ -136,6 +147,20 @@ export function nextStep(env: Env, ask: string, step: number, results: { name: s
   const last = results[results.length - 1]?.content ?? ''
   const kind = pickScript(ask, before)
   const why = (t: string) => t.split('\n')[0].replace(/[.\s]+$/, '')
+  if (kind === 'job') {
+    if (/^\s*job demo\b/i.test(ask)) {
+      if (step === 0) return { calls: [{ name: 'plan', args: { title: 'Three ideas, one per step', steps: JOB_STEPS.map((title, i) => ({ title, check: `idea ${i + 1} on the first plane` })) } }] }
+      return { answer: ['The plan, as a checklist below:', ...JOB_STEPS.map((t, i) => `${i + 1}. ${t}`), JOB_MARK].join('\n') }
+    }
+    const n = Number(/step (\d+)/i.exec(ask)?.[1] ?? 1)
+    const plane = firstPlane(env)
+    if (!plane) return { answer: `There's no plane in ${startupName(env)} to put the ideas on yet.` }
+    if (step === 0) return { calls: [{ name: 'progress', args: { step: n, state: 'doing' } }], text: `Step ${n}: ${JOB_STEPS[n - 1] ?? 'the next one'}.` }
+    if (step === 1) return { calls: [{ name: 'change', args: { ops: [{ op: 'create_card', args: { type: 'idea', plane, title: `Idea ${n} from the job` } }], summary: `job step ${n}` } }] }
+    if (step === 2) return { calls: [{ name: 'progress', args: { step: n, state: 'done' } }] }
+    const made = /\$\w+ → (c\d+)/.exec(results.map((r) => r.content).join('\n'))?.[1]
+    return { answer: `Step ${n} of ${JOB_STEPS.length} is in the preview${made ? `: ${made} ${titleOf(env, made)}` : ''}. Apply it and I go on with the next step.` }
+  }
   if (kind === 'skill') {
     const p = parseSkill(ask)
     // /ask is the question script on what follows it.
