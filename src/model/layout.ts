@@ -15,7 +15,7 @@ export type Box = { x: number; y: number; w: number; h: number }
 export type Boxed = Box & { id: string }
 
 // Beside a thing is a `where` (`{ near }`), not a layout: any block goes there.
-export const BLOCK_LAYOUTS = ['grid', 'row', 'column', 'cluster'] as const
+export const BLOCK_LAYOUTS = ['grid', 'row', 'column', 'cluster', 'flow'] as const
 export const ALIGNS = ['align-left', 'align-centre', 'align-right', 'align-top', 'align-middle', 'align-bottom'] as const
 export const SPREADS = ['spread-x', 'spread-y'] as const
 export const LAYOUTS = [...BLOCK_LAYOUTS, ...ALIGNS, ...SPREADS] as const
@@ -126,6 +126,96 @@ export function clusterSpots(sizes: { w: number; h: number }[], groups: Group[],
     x += gw + GROUP_GAP
   }
   return { spots, groups: boxes, w, h: y + bandH }
+}
+
+// Flows (D-327, bug 4): each band one connected part of the link graph (graph.ts: a group, or a topic of a big one),
+// laid along the chain left to right, a column per card type it has (`rank`: graph.ts' chainRank); in each column a
+// card goes level with the cards it links to in the columns before (their mean row; one pass, so lines cross little),
+// cards with no link there last. `loose` (no link) make a grid of their own. The bands and that grid are blocks, each
+// set where it sits highest within `maxW` (a skyline), GROUP_GAP apart, so a flow uses the plane's width before its
+// height.
+export const FLOW_COL_GAP = 4 * GRID
+
+// `maxH`: a band taller than this (a long column) is cut into strips that sit side by side like bands.
+export function flowSpots(sizes: { w: number; h: number }[], bands: number[][], loose: number[], rank: (i: number) => number, links: [number, number][], maxW?: number, maxH?: number) {
+  const spots: { x: number; y: number }[] = sizes.map(() => ({ x: 0, y: 0 }))
+  const near = new Map<number, number[]>()
+  for (const [a, b] of links) (near.set(a, [...(near.get(a) ?? []), b]), near.set(b, [...(near.get(b) ?? []), a]))
+  // Each block's spots relative to its own top-left, and its size.
+  type Block = { members: number[]; rel: { x: number; y: number }[]; w: number; h: number }
+  const blocks: Block[] = []
+  for (const band of bands) {
+    const ranks = [...new Set(band.map(rank))].sort((p, q) => p - q)
+    const cols = ranks.map((r) => band.filter((i) => rank(i) === r))
+    const row = new Map<number, number>()
+    cols.forEach((col, c) => {
+      if (c > 0) {
+        const mean = (i: number) => {
+          const ps = (near.get(i) ?? []).filter((j) => row.has(j)).map((j) => row.get(j)!)
+          return ps.length ? ps.reduce((p, q) => p + q, 0) / ps.length : Infinity
+        }
+        col.sort((p, q) => mean(p) - mean(q) || p - q)
+      }
+      col.forEach((i, k) => row.set(i, k))
+    })
+    const members: number[] = []
+    const rel: { x: number; y: number }[] = []
+    let [x, h] = [0, 0]
+    for (const col of cols) {
+      const colW = Math.max(...col.map((i) => up(sizes[i].w)))
+      let cy = 0
+      for (const i of col) {
+        members.push(i)
+        rel.push({ x, y: cy })
+        cy += up(sizes[i].h) + GAP
+      }
+      h = Math.max(h, cy - GAP)
+      x += colW + FLOW_COL_GAP
+    }
+    if (maxH === undefined || h <= maxH) blocks.push({ members, rel, w: x - FLOW_COL_GAP, h })
+    else {
+      // Too tall: strips of maxH, each card in the strip its top falls in, each strip a block of its own.
+      const strips = new Map<number, number[]>()
+      members.forEach((_, k) => strips.set(Math.floor(rel[k].y / maxH), [...(strips.get(Math.floor(rel[k].y / maxH)) ?? []), k]))
+      for (const ks of [...strips.keys()].sort((p, q) => p - q).map((s) => strips.get(s)!)) {
+        const top = Math.min(...ks.map((k) => rel[k].y))
+        const left = Math.min(...ks.map((k) => rel[k].x))
+        blocks.push({
+          members: ks.map((k) => members[k]),
+          rel: ks.map((k) => ({ x: rel[k].x - left, y: rel[k].y - top })),
+          w: Math.max(...ks.map((k) => rel[k].x - left + up(sizes[members[k]].w))),
+          h: Math.max(...ks.map((k) => rel[k].y - top + up(sizes[members[k]].h))),
+        })
+      }
+    }
+  }
+  if (loose.length) {
+    const own = loose.map((i) => sizes[i])
+    const widest = Math.max(0, ...blocks.map((b) => b.w))
+    const g = gridSpots(own, gridCols(own, maxW !== undefined ? Math.max(maxW - widest - GROUP_GAP, Math.max(...own.map((o) => up(o.w)))) : undefined))
+    blocks.push({ members: loose, rel: g.spots, w: g.w, h: g.h })
+  }
+  // Each block, in order, where it sits highest within the width (a skyline: the lowest free height across its span,
+  // the leftmost of the ties), GROUP_GAP from the others. Without a width, one row.
+  const boxes: Box[] = []
+  const placed: Box[] = []
+  const limit = maxW ?? Infinity
+  let [w, h] = [0, 0]
+  for (const b of blocks) {
+    const xs = [0, ...placed.map((p) => p.x + p.w + GROUP_GAP)].filter((x) => x === 0 || x + b.w <= limit).sort((p, q) => p - q)
+    let best = { x: 0, y: Infinity }
+    for (const x of xs) {
+      const y = Math.max(0, ...placed.filter((p) => p.x < x + b.w + GROUP_GAP && x < p.x + p.w + GROUP_GAP).map((p) => p.y + p.h + GROUP_GAP))
+      if (y < best.y) best = { x, y }
+    }
+    b.members.forEach((i, k) => (spots[i] = { x: best.x + b.rel[k].x, y: best.y + b.rel[k].y }))
+    const box = { x: best.x, y: best.y, w: b.w, h: b.h }
+    placed.push(box)
+    boxes.push(box)
+    w = Math.max(w, box.x + box.w)
+    h = Math.max(h, box.y + box.h)
+  }
+  return { spots, bands: boxes, w, h }
 }
 
 // ---- Staying clear

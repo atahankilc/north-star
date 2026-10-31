@@ -47,7 +47,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 9  | skills list doesn't scroll                       | Plumbing     | low      | code             | open   |
 | 7  | preview inside a piece spills onto the canvas    | Preview      | high     | code             | open   |
 | 3  | the stepper's item doesn't stand out             | Preview      | mid      | code             | open   |
-| 4  | plane layouts ignore links                       | Layout       | high     | code + prompt    | open   |
+| 4  | plane layouts ignore links                       | Layout       | high     | code + prompt    | built (flow, D-327); no real-model eval yet |
 | 10 | can't rearrange a canvas                         | Layout       | mid      | unknown (repro)  | open   |
 | 15 | lists answered from the map                      | Judgment     | mid      | code, then prompt| open   |
 | 19 | "would it work" not dry-run                      | Judgment     | low      | prompt           | open   |
@@ -56,9 +56,9 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 23 | "for a plane" leans on other planes              | Judgment     | low      | methods          | open   |
 | 24 | points at an existing piece instead of making it | Judgment     | low      | prompt           | open   |
 | 13 | no coverage map for a big document               | New parts    | mid      | new              | open   |
-| 14 | one plane or several, never weighed              | New parts    | mid      | code + prompt    | open   |
+| 14 | one plane or several, never weighed              | New parts    | mid      | code + prompt    | numbers built (`structure`, D-327) |
 | 28 | a big job stops after one preview                | New parts    | high     | new (workflow)   | built (job, steering; not saved) |
-| 27 | organising never changes the structure           | New parts    | high     | new (read + skill)| agreed D-327 |
+| 27 | organising never changes the structure           | New parts    | high     | new (read + skill)| phase 1 built; `look` next |
 | 8  | no web access                                    | New parts    | mid      | new (Phase 9)    | open   |
 
 ## Order
@@ -210,7 +210,8 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     Fix (code): a `flow` layout over the link graph: each connected group its own flow, its columns the chain
     (customer → problem → competitor → idea → feature, D-045), space (or a heading or section) between groups; the
     model only picks `flow`, never coordinates. The groups come from the link graph (src/model/graph.ts, not written
-    yet), the same module 11's lint, 14's numbers and 27's analysis read, so they never disagree on what's connected.
+    yet), the same module 11's lint, 14's numbers and 27's analysis read, so they never disagree on what's connected. (Built with
+    D-327: graph.ts and the `flow` layout.)
     The `/organize` skill is a cause too (src/agent/skills/index.ts): its method says "by type, then by customer or
     theme" and "one arrange with layout cluster", so it asks for exactly what this bug complains of. It is rewritten
     with 27. Fix (prompt): arranging a
@@ -290,6 +291,9 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     for something, it says done, the person applies, asks "is it finished?", and it lists a lot still to do. Then
     "do what's next" five to ten times over. It feels like a chat box, not an agent that's part of the app.
     Agreed (D-328); the job and steering built 2026-11-01 (decisions-log D-328 *Built*: what, how checked, not yet).
+    Found while building 27's evals: a step can be marked done after its `change` was refused (the stub did; a real
+    model may too). "Done is checked" isn't enforced yet: `progress` done should be refused, or warned, when the
+    turn's last `change` for it failed.
     The cause is in the design, not the model: a turn ends in one preview (workflow.ts:
     running → previewing → applied → idle), and nothing carries the job past it. The plan of a big job is only text
     in an answer (prompt.ts, "A big job…"); no state holds its steps, so after an apply nothing knows what's left; the
@@ -336,7 +340,8 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     there"; "I've built the main plane, now I'll split it into parts that are easier to follow"; "these cards make a
     package on a sub-plane, and I'll use it on another plane later, because at a wider view it links to other
     things; at the end I put it on the main plane", each only when it's needed.
-    Agreed (D-327), not built. Today it can only move things: `/organize` is "cluster by type, one arrange" (4). The ops for
+    Agreed (D-327); phase 1 built 2026-11-01 (decisions-log D-327 *Built*); phase 2 (`look`, pictures) next.
+    Before it: it could only move things: `/organize` is "cluster by type, one arrange" (4). The ops for
     structure exist (`create_piece` plane, `place_on`/`take_off`, `create_package`, sections, headings, `stuck_to`), but
     the agent sees nothing that would tell it when to use them, and no skill uses them together.
     **The user's direction (2026-10-31): no hard-coded rules.** The agent should understand the system and what we are

@@ -2,6 +2,7 @@
 // context's last part. Each is `(ws, ids, args) → { text, more? }`, pure over the snapshot; text stays under ~8k tokens
 // (§7.2 point 4), paged, saying how to narrow. Workspace text is inside <workspace_content> wrappers.
 import { FOR } from '../../model/edges'
+import { linkGraph } from '../../model/graph'
 import { isOnPlane, type Card } from '../../model/cards'
 import { kindOf } from '../../model/labels'
 import { kindOfPiece, KIND_NAME } from '../../model/pieces'
@@ -947,6 +948,81 @@ const day = (description: string) => ({ type: 'string', pattern: '^\\d{4}-\\d{2}
 const obj = (properties: Record<string, unknown>, required: string[] = []): JsonSchema => ({ type: 'object', properties, ...(required.length ? { required } : {}), additionalProperties: false })
 const paging = { page: int('which page, from 1'), limit: int('how many a page', 1, 500) }
 
+// ---- structure (D-327): a plane's or a canvas's shape as numbers from the link graph (src/model/graph.ts), never a
+// verdict: what is connected, what runs the chain, what could stand apart, what links leave the plane. The model
+// decides what the shape should be; this only says what it is.
+
+type StructureArgs = { space: string }
+
+export function structure(ws: ReadWs, ids: Ids, a: StructureArgs): ToolResult {
+  ws = clean(ws)
+  ids.sync(ws)
+  const d = derive(ws)
+  const r = resolve(ws, ids, a.space, ['piece', 'canvas'], undefined, 'plane or canvas')
+  if (!('id' in r)) return { text: unclear(a.space, r) }
+  const cite = (id: string) => `${ids.short('card', id)} ${q(d.cards.get(id)?.title, 40)}`
+  const few = (cs: string[], n = 6) => `${cs.slice(0, n).map(cite).join(', ')}${cs.length > n ? `, and ${cs.length - n} more` : ''}`
+  if (r.kind === 'canvas') {
+    const planes = d.pieceOrder.filter((p) => kindOfPiece(p) === 'plane' && canvasOf(p) === r.id)
+    const home = new Map<string, string[]>()
+    for (const p of planes) for (const c of d.onPlane.get(p.id) ?? []) home.set(c.id, [...(home.get(c.id) ?? []), p.id])
+    const pair = new Map<string, number>()
+    for (const e of d.edges.values()) {
+      const pa = home.get(e.fromId) ?? []
+      const pb = home.get(e.toId) ?? []
+      if (!pa.length || !pb.length || pa.some((x) => pb.includes(x))) continue
+      const key = [pa[0], pb[0]].sort().join('|')
+      pair.set(key, (pair.get(key) ?? 0) + 1)
+    }
+    const shared = [...home].filter(([, ps]) => ps.length > 1)
+    const pn = (id: string) => `${ids.short('piece', id)} ${q(d.nameById(id), 40)}`
+    return {
+      text: [
+        `## Structure of ${ids.short('canvas', r.id)} (canvas): ${planes.length} plane${planes.length === 1 ? '' : 's'}`,
+        ...planes.map((p) => {
+          const g = linkGraph((d.onPlane.get(p.id) ?? []).map((c) => ({ id: c.id, type: c.type })), [...d.edges.values()])
+          return `- ${pn(p.id)}: ${count(g.cards, 'card')}, ${count(g.links, 'link')}, ${count(g.groups.length, 'linked group')}, ${g.loose.length} loose; ${count(g.outside.length, 'link')} to cards on no shared plane`
+        }),
+        pair.size ? `Links between planes (each drawn on neither): ${[...pair].sort((x, y) => y[1] - x[1]).map(([k, n]) => `${k.split('|').map(pn).join(' – ')}: ${n}`).join('; ')}` : 'No links between planes.',
+        shared.length ? `Cards on more than one plane: ${shared.length} (${few(shared.map(([c]) => c))})` : 'No card is on more than one plane.',
+        'Look into a plane with structure on it.',
+      ].join('\n'),
+    }
+  }
+  const plane = d.pieces.get(r.id)
+  if (!plane || kindOfPiece(plane) !== 'plane') return { text: `${a.space} is a ${plane ? kindOfPiece(plane) : 'thing'}, not a plane or a canvas: structure reads a plane's cards or a canvas's planes.` }
+  const on = d.onPlane.get(plane.id) ?? []
+  const g = linkGraph(on.map((c) => ({ id: c.id, type: c.type })), [...d.edges.values()])
+  const typeLine = (types: [string, number][]) => types.map(([t, n]) => `${t} ${n}`).join(' → ')
+  const lines = [
+    `## Structure of ${ids.short('piece', plane.id)} ${q(d.nameById(plane.id), 40)} (plane): ${count(g.cards, 'card')}, ${count(g.links, 'link')} between them`,
+  ]
+  if (!g.cards) return { text: `${lines[0]}\nNo cards on it.` }
+  lines.push(`Linked groups: ${g.groups.length}; loose cards (no link here): ${g.loose.length}.`)
+  g.groups.forEach((gr, i) => {
+    lines.push(`- group ${i + 1}: ${count(gr.cards.length, 'card')}, ${count(gr.links, 'link')}; runs ${typeLine(gr.types)}; ${gr.chainLinks} of ${count(gr.links, 'link')} step along the chain${gr.flow ? ' (it reads as a flow)' : ''}`)
+    if (gr.topics.length > 1) {
+      lines.push(`  ${gr.topics.length} topics inside it, ${gr.crossing} link${gr.crossing === 1 ? '' : 's'} crossing between them:`)
+      gr.topics.forEach((t, k) => lines.push(`  - topic ${i + 1}.${k + 1}: ${count(t.cards.length, 'card')}, ${count(t.links, 'link')}: ${few(t.cards, 4)}`))
+    } else lines.push(`  ${few(gr.cards)}`)
+  })
+  if (g.loose.length) lines.push(`Loose: ${few(g.loose, 8)}`)
+  if (g.hubs.length) lines.push(`Hubs (many links, or links into several topics): ${g.hubs.slice(0, 5).map((h) => `${cite(h.id)} (${h.degree} links${h.topics > 1 ? `, ${h.topics} topics` : ''})`).join('; ')}`)
+  if (g.outside.length) {
+    const where = (id: string) => (d.planesOf.get(id) ?? []).map((p) => ids.short('piece', p)).join('/') || 'no plane'
+    lines.push(`Links to cards not on this plane (drawn on no plane, D-207): ${g.outside.length}: ${g.outside.slice(0, 6).map((o) => `${cite(o.id)} – ${cite(o.to)} (on ${where(o.to)})`).join('; ')}${g.outside.length > 6 ? '; …' : ''}`)
+  }
+  const elsewhere = on.filter((c) => (d.planesOf.get(c.id) ?? []).length > 1)
+  if (elsewhere.length) lines.push(`Also on other planes: ${few(elsewhere.map((c) => c.id), 6)}`)
+  const pkgs = on.filter((c) => c.type === 'package')
+  if (pkgs.length) lines.push(`Packages: ${pkgs.map((p) => `${cite(p.id)} (${(p.memberIds ?? []).length} inside)`).join('; ')}`)
+  const texts = [...d.labels.values()].filter((l) => l.pieceId === plane.id)
+  const sections = texts.filter((l) => kindOf(l) === 'section').length
+  const heads = texts.filter((l) => kindOf(l) === 'heading').length
+  lines.push(`Text on it: ${sections} section${sections === 1 ? '' : 's'}, ${heads} heading${heads === 1 ? '' : 's'}, ${texts.length - sections - heads} other.`)
+  return { text: lines.join('\n') }
+}
+
 export const READ_TOOLS: ReadTool[] = [
   {
     name: 'search',
@@ -1014,6 +1090,12 @@ export const READ_TOOLS: ReadTool[] = [
     summary: 'What was made or changed since a time, grouped by kind and where, by whom when known.',
     args: obj({ since: { anyOf: [{ type: 'string', description: 'a day (2026-10-28) or an ISO time' }, { type: 'number', description: 'ms since 1970' }] }, ...paging }, ['since']),
     run: whatsNew as ReadTool['run'],
+  },
+  {
+    name: 'structure',
+    summary: "A plane's or a canvas's shape as numbers: on a plane, its linked groups (and the topics inside a big one, with the links crossing between them), how each runs the chain customer → problem → competitor → idea → feature, loose cards, hubs, links to cards on other planes, packages, sections; on a canvas, its planes and the links between them. Facts to decide a layout or a structure on, never a verdict.",
+    args: obj({ space: str('a plane or a canvas (id or name)') }, ['space']),
+    run: structure as ReadTool['run'],
   },
 ]
 

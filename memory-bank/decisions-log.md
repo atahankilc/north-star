@@ -6031,7 +6031,23 @@ several planes, a main plane with detail planes beside it, sections), each only 
   (agent-bugs "code before prompt") and give the same shape every time. Pictures alone give confident generic
   critique, so they go with the numbers and `lint`.
 - *Alternatives:* a table of moves with triggers (my first proposal; turned down by the user as hard-coded rules).
-- *Spec:* docs/specs/agent-bugs.md item 27. *Not yet:* all of it; needs 4's `flow`, the link graph, 14, D-328.
+- *Built (2026-11-01), phase 1:* src/model/graph.ts (the link graph: linked groups, loose cards, the chain a group
+  runs and whether it reads as a flow, topics where a single link alone holds a part of a big group to the rest (a
+  bridge with three cards and a quarter of the group on each side), hubs, links leaving the set); the `flow` layout
+  (layout.ts' flowSpots, arrange's `layout: 'flow'`: a band per topic along the chain, a card level with what it
+  links to, loose cards in a grid, a band taller than the plane cut into strips, the blocks packed on a skyline
+  within the plane's width); the `structure` read tool (a plane's groups, topics, chain, hubs, links to other planes,
+  packages, text; a canvas's planes and the links between them); the prompt's "Making it readable" (what each element
+  says to the eye, principles named, `structure` first, examples not a checklist); `/organize` rewritten on it (the
+  person's grouping wins) and `/restructure` (a job: structure, plan, a step a turn); the eval runner's `{ goOn: true }`
+  (apply, tell the model, go on as the app does) and graders `noNewLinksAcrossPlanes`, `linksShownOn`; three
+  `/restructure` tasks. Checked: 896 unit tests (agentStructure.test.ts new), stub evals 113 tasks 0 failed, every
+  wrong script failing. Two things found on the way: label propagation leaked a topic across one bridge (replaced by
+  bridges), and the first flow ran off the bottom of a plane (strips, then the skyline).
+- *Not yet, phase 2:* the `look` tool (a picture of a plane and of the proposed state: images in tool results for
+  both providers, rendered in the browser and in node for the evals); the user's planes as reference pictures; evals
+  judged on before/after pictures; runs with a real model.
+- *Spec:* docs/specs/agent-bugs.md item 27.
 
 ### D-328 · 2026-10-31 · Accepted (agent-bugs 28; the user: "bişey istiyorum, bana bitti al diyo… 5-6-10 kere sırada ne varsa onu yap demek zorunda kalıyorum"; "hardcoded bir 25 adımda bitire gerek yok… step by step kullanıcın onayını ala ala ilerleyebilir… agentı çalışırken bölemiyoruz da"; then "27 ve 28'i kabul ediyorum")
 **A big job is a plan kept as state, run step by step with the person's yes, steerable while it runs.**

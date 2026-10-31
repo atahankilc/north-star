@@ -12,7 +12,9 @@ import type { ChatStore, ChatWho } from '../src/agent/chats'
 
 // `{ newChat }` (S16): the person accepts what's pending, then starts a new chat in the same workspace (no history, new
 // short ids; the agent notes carry what was learned).
-export type FollowUp = string | { untick: string } | { newChat: true }
+// `{ goOn: true }` (D-328): the person applies the preview, the model is told, and a job under way goes on with its
+// next step's message, as the app does (agentStore.ts' moveJob); a job that stops goes no further.
+export type FollowUp = string | { untick: string } | { newChat: true } | { goOn: true }
 
 export type Group = 'find' | 'edit' | 'build' | 'context' | 'refuse' | 'injection' | 'memory' | 'skills'
 // regression: must pass on every change (100 %); capability: what a phase gate measures.

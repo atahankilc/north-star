@@ -3,7 +3,7 @@
 // what was made or changed, the cards an answer cites (real ones, the right ones), and for the document skills the
 // document's text: every card it mentions is real and named with its own title (docWritten). Big jobs (agent.md §4.10)
 // plan first and change nothing until "go" (`followUps`, `noWritesInTurn(1)`). Each has a plausible wrong script. The judge rides on a twin of the first task for /gaps, /next and the five document skills (`-04-judged`, capability, JUDGED below), so the stub's pass counts stay model-free.
-import { MADE, allSet, docSectionCards, judge, sameLine, answerExcludes, answerIncludes, absent, cell, cites, citesSome, count, docWritten, exists, field, grouped, linked, made, noDeletes, noOverlaps, noWriteAttempts, noWritesInTurn, onPlane, onlyChanged, task, toolCalled, undoRestores, type ChangeTest } from '../graders'
+import { MADE, allSet, docSectionCards, judge, sameLine, answerExcludes, answerIncludes, absent, cell, cites, citesSome, count, docWritten, exists, field, grouped, linked, made, noDeletes, noOverlaps, noWriteAttempts, noWritesInTurn, onPlane, onlyChanged, task, toolCalled, undoRestores, noNewLinksAcrossPlanes, linksShownOn, noWrites, type ChangeTest } from '../graders'
 import { NOW } from '../fixtures'
 import type { Grader, Task } from '../types'
 import type { AgentWs } from '../../src/agent/contract'
@@ -76,6 +76,10 @@ const JUDGE_NEXT = judge('Three concrete, well-chosen actions tied to cited card
 const RIVALS = { TR: ['c37', 'c38', 'c48'], DE: ['c36', 'c41', 'c42', 'c45', 'c47'], EU: ['c35', 'c39', 'c40', 'c43', 'c44', 'c46'] }
 const regionOf = (c: Card) => (['Turkey'].includes(c.regions?.[0] ?? '') ? 'TR' : ['Germany', 'DACH'].includes(c.regions?.[0] ?? '') ? 'DE' : 'EU')
 const IDEAS_ON_BETS = Array.from({ length: 22 }, (_, i) => `c${55 + i}`)
+// D-327: Segments' one large linked group (the restaurant buyers and their problems), and the Segments problems Bets'
+// ideas link to (src/model/graph.ts on the medium fixture).
+const SEG_GROUP = ['c4', 'c15', 'c18', 'c19', 'c20', 'c24', 'c26', 'c28']
+const SEG_PROBLEMS_FOR_BETS = ['c16', 'c19', 'c20', 'c21', 'c22', 'c24', 'c25', 'c26', 'c27', 'c30']
 const IDEAS_ON_PRICING = ['c133', 'c134', 'c135', 'c136', 'c137', 'c138', 'c139', 'c140']
 const ROADMAP_GAPS = ['c97', 'c98', 'c99', 'c101', 'c103', 'c104', 'c107', 'c108', 'c111', 'c115', 'c117', 'c119', 'c120', 'c122']
 
@@ -719,6 +723,96 @@ export const SKILL_TASKS: Task[] = [
       change([['create_piece', { kind: 'deck', canvas: 'k2', name: 'Priorities' }]]),
       answer('Made it.'),
     ],
+  },
+
+  // ---- /restructure (D-327): a plane's parts moved onto planes of their own or brought together, as a job (D-328):
+  // structure first, a plan, then a step a turn, each applied before the next (`{ goOn: true }`).
+  {
+    id: 'skill-restructure-01',
+    group: 'skills',
+    set: 'regression',
+    fixture: 'medium',
+    ask: '/restructure Segments',
+    followUps: ['go', { goOn: true }],
+    graders: [
+      toolCalled('structure'),
+      toolCalled('plan'),
+      noWritesInTurn(1),
+      made('piece', { kind: 'plane' }),
+      ...SEG_GROUP.map((c) => onPlane(R(c), MADE('piece', { kind: 'plane' }))),
+      noOverlaps(MADE('piece', { kind: 'plane' })),
+      noNewLinksAcrossPlanes(),
+      noDeletes(),
+    ],
+    reference: [
+      call('structure', { space: 'p1' }),
+      call('plan', { title: 'Restaurant buyers on a plane of their own', steps: [{ title: 'Move the restaurant buyers and their problems to a plane of their own', scope: 'group 1 of Segments: c4 and its 7 problems' }, { title: 'Lay it out as a flow', check: 'customer left, problems right, linked cards level' }] }),
+      answer('Segments mixes many groups; group 1 (c4 "Restaurant buyers new to the city" and 7 problems, linked to nothing else on it) reads as its own question.\nPlan:\n1. Move it to a plane of its own, "Restaurant buyers".\n2. Lay it out as a flow.\nSay go and I will do it step by step: each step waits in the preview for you.'),
+      call('progress', { step: 1, state: 'doing' }),
+      change(
+        [
+          ['create_piece', { kind: 'plane', name: 'Restaurant buyers', canvas: 'k1', where: { near: 'p1' }, handle: '$p' }],
+          ['place_on', { cards: SEG_GROUP, plane: '$p', move: true }],
+        ],
+        'restaurant buyers onto their own plane',
+      ),
+      call('progress', { step: 1, state: 'done' }),
+      answer('Step 1 of 2 is in the preview: a plane "Restaurant buyers" beside p1 with c4 and its 7 problems moved there.'),
+      call('progress', { step: 2, state: 'doing' }),
+      change([['arrange', { items: SEG_GROUP, plane: 'Restaurant buyers', layout: 'flow' }]], 'restaurant buyers as a flow'),
+      call('progress', { step: 2, state: 'done' }),
+      answer('Step 2 of 2 is in the preview: the restaurant buyers laid out as a flow, the customer on the left and its problems beside it. Every step is settled.'),
+    ],
+  },
+  {
+    id: 'skill-restructure-02',
+    group: 'skills',
+    set: 'capability',
+    fixture: 'medium',
+    ask: "/restructure Bets: its ideas link to problems on Segments, but no plane shows those links",
+    followUps: ['go', { goOn: true }],
+    graders: [
+      toolCalled('structure'),
+      toolCalled('plan'),
+      noWritesInTurn(1),
+      ...SEG_PROBLEMS_FOR_BETS.map((c) => onPlane(R(c), R('p3'))),
+      ...SEG_PROBLEMS_FOR_BETS.map((c) => onPlane(R(c), R('p1'))),
+      linksShownOn(R('p3'), 10),
+      noNewLinksAcrossPlanes(),
+      noOverlaps('Bets'),
+      noDeletes(),
+    ],
+    reference: [
+      call('structure', { space: 'p3' }),
+      call('plan', { title: 'Bets with the problems its ideas solve', steps: [{ title: 'Place the Segments problems its ideas link to on Bets too', scope: '10 problems; they stay on Segments' }, { title: 'Lay Bets out as a flow', check: 'each idea level with its problem' }] }),
+      answer('102 of Bets\' links go to cards on other planes, so no plane draws them; 10 problems on Segments carry many of them.\nPlan:\n1. Place those 10 problems on Bets too (they stay on Segments).\n2. Lay Bets out as a flow, each idea beside its problem.\nSay go and I will do it step by step: each step waits in the preview for you.'),
+      call('progress', { step: 1, state: 'doing' }),
+      change([['place_on', { cards: SEG_PROBLEMS_FOR_BETS, plane: 'p3' }]], 'Segments problems on Bets too'),
+      call('progress', { step: 1, state: 'done' }),
+      answer('Step 1 of 2 is in the preview: the 10 problems placed on p3 Bets, still on p1 Segments.'),
+      call('progress', { step: 2, state: 'doing' }),
+      change([['arrange', { items: [...SEG_PROBLEMS_FOR_BETS, ...IDEAS_ON_BETS], plane: 'p3', layout: 'flow' }]], 'Bets as a flow'),
+      call('progress', { step: 2, state: 'done' }),
+      answer('Step 2 of 2 is in the preview: Bets laid out as a flow, problems on the left and the ideas that solve them beside them.'),
+    ],
+  },
+  {
+    id: 'skill-restructure-03',
+    group: 'skills',
+    set: 'capability',
+    fixture: 'medium',
+    ask: '/restructure this canvas, but only tell me the plan for now',
+    autoGo: false,
+    // Model-free: the plan comes from the canvas's numbers (it names the planes the links run between), kept as a job,
+    // and nothing is written.
+    graders: [toolCalled('structure'), toolCalled('plan'), noWrites(), answerIncludes(['Segments', 'Bets'])],
+    reference: [
+      call('structure', { space: 'k1' }),
+      call('plan', { title: 'A canvas whose links show', steps: [{ title: 'Place the Segments problems Bets links to on Bets' }, { title: 'Put the restaurant buyers on a plane of their own' }, { title: 'Lay each plane out as a flow' }] }),
+      answer('Of k1\'s links, most join cards on two planes, so no plane draws them (Segments – Bets 33, the most). Plan:\n1. Place the Segments problems Bets links to on Bets too, so those links show.\n2. Put the restaurant buyers (c4 and 7 problems) on a plane of their own: linked to nothing else on Segments.\n3. Lay each plane out as a flow.\nNothing changed yet: say go when you want it.'),
+    ],
+    // Guessed without reading the structure, and no plan kept as a job.
+    wrong: [answer('Plan: 1. Tidy each plane by type. 2. Add headings. Say go.')],
   },
 
   // ---- /organize

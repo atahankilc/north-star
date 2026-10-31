@@ -390,6 +390,40 @@ export const onPlane = (card: Ref, plane: Ref): Grader => ({
   },
 })
 
+// Links whose cards share no plane: drawn on no plane (D-207). D-327: a restructure never adds one.
+function linksAcross(ws: AgentWs): number {
+  const planes = ws.pieces.filter((p) => kindOfPiece(p) === 'plane').map((p) => p.id)
+  const on = new Map(ws.cards.map((c) => [c.id, new Set(planes.filter((p) => isOnPlane(c, p)))]))
+  return ws.edges.filter((e) => {
+    const a = on.get(e.fromId)
+    const b = on.get(e.toId)
+    return !!a && !!b && ![...b].some((p) => a.has(p))
+  }).length
+}
+
+export const noNewLinksAcrossPlanes = (): Grader => ({
+  name: 'noNewLinksAcrossPlanes()',
+  grade: (r) => {
+    const [before, after] = [linksAcross(r.start), linksAcross(r.end)]
+    return ok(after <= before, `links drawn on no plane: ${before} → ${after}`)
+  },
+})
+
+// Links drawn on a plane (both cards on it): at least `min` more than at the start.
+export const linksShownOn = (plane: Ref, min: number): Grader => ({
+  name: `linksShownOn(${showRef(plane)}) +${min}`,
+  grade: (r) => {
+    const count = (ws: AgentWs) => {
+      const p = ref1(ws, resolveRef(r, plane), ['piece'])
+      if (!p) return 0
+      const here = new Set(ws.cards.filter((c) => isOnPlane(c, p)).map((c) => c.id))
+      return ws.edges.filter((e) => here.has(e.fromId) && here.has(e.toId)).length
+    }
+    const [before, after] = [count(r.start), count(r.end)]
+    return ok(after - before >= min, `links shown: ${before} → ${after}`)
+  },
+})
+
 // A matrix's cell, rows and columns by name: a step's label, a number or a text (null: empty).
 export const cell = (matrix: Ref, row: string, col: string, want: Match): Grader => ({
   name: `cell(${showRef(matrix)}: ${row} × ${col} = ${show(want)})`,

@@ -29,6 +29,7 @@ import { systemPrompt } from '../src/agent/prompt'
 import { openaiModel } from '../src/agent/openai'
 import { anthropicModel } from '../src/agent/anthropic'
 import { effortFor } from '../src/agent/models'
+import { nextMove, settled } from '../src/agent/job'
 import { EVAL_TOOLS, WRITE_TOOLS } from './tools'
 import { diffLines, gradeAll, setJudge } from './graders'
 import { costOf } from './prices'
@@ -144,6 +145,25 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
         saveChat()
         history = []
         env.ids = makeIds()
+        continue
+      }
+      if (typeof ask !== 'string' && 'goOn' in ask) {
+        // The person applies the step (D-328): the model hears it, and a job under way goes on by itself.
+        let applied: number | undefined
+        if (env.changes?.items.length) {
+          const a = await env.accept()
+          if (!a.ok) acceptError = a.said
+          else {
+            applied = a.applied.length
+            history = [...history, { role: 'system', tag: 'outcome', content: `The person applied your proposed changes (${applied}).` }]
+          }
+        }
+        const job = env.job?.get() ?? null
+        const move = nextMove(job, applied !== undefined ? { applied } : {})
+        if (move && 'go' in move && job) {
+          env.job!.set({ ...job, settledAt: settled(job) })
+          asks.splice(i + 1, 0, move.go)
+        }
         continue
       }
       if (typeof ask !== 'string') {

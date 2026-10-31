@@ -243,7 +243,7 @@ describe('the read layer: what the tools say', () => {
     expect(query(ws, ids, { kind: 'task', overdue: true }, ).text).not.toContain('Interview')
   })
   it('every read tool is listed for the model, its args a JSON schema', () => {
-    expect(READ_TOOLS.map((t) => t.name)).toEqual(['search', 'query', 'get', 'view', 'neighbours', 'read_document', 'whats_new'])
+    expect(READ_TOOLS.map((t) => t.name)).toEqual(['search', 'query', 'get', 'view', 'neighbours', 'read_document', 'whats_new', 'structure'])
     for (const t of READ_TOOLS) expect(t.args).toMatchObject({ type: 'object', additionalProperties: false })
     const q = READ_TOOLS.find((t) => t.name === 'query')!.args.properties
     for (const k of ['kind', 'type', 'status', 'tag', 'region', 'plane', 'deck', 'column', 'priority', 'assignee', 'has_evidence', 'no_evidence', 'contradicting', 'linked_to', 'for', 'due_before', 'due_after', 'overdue', 'on_canvas', 'title', 'resolved', 'on', 'by'])

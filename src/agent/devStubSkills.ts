@@ -214,6 +214,14 @@ export function skillStep(env: Env, ask: string, step: number, results: Result[]
       const n = env.changes?.items.filter((i) => i.op === 'update_card').length ?? 0
       return done(`In the preview: impact or effort on ${plural(n, 'feature')}.\nOrder (impact × confidence ÷ effort): first ${ranked.slice(0, 2).map(k.cite).join(' and ')}; last ${ranked.slice(-1).map(k.cite).join('')}.`)
     }
+    case 'restructure': {
+      // D-327: it reads the shape first and says how it reads it (the real model then plans the moves as a job).
+      const plane = (rest && k.named(rest)) || k.planes[0]
+      if (!plane) return { answer: 'There is no plane to look at.' }
+      if (step === 0) return { calls: [{ name: 'structure', args: { space: k.P(plane) } }] }
+      const said = results[results.length - 1]?.content.split('\n').slice(0, 3).join('\n') ?? ''
+      return { answer: `How I read ${k.P(plane)} ${q(plane.name)}:\n${said}\nTell me which part should stand on its own, or say "job demo" to see a job run step by step.` }
+    }
     case 'organize': {
       const plane = (rest && k.named(rest)) || k.planes[0]
       if (!plane) return { answer: 'There is no plane to organise.' }

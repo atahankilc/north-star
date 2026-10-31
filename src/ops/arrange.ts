@@ -14,6 +14,7 @@
 // add its own with create_text `where: { near }`. A section named by `where: { in_section }` grows to hold the block (its
 // w/h in the same plan), and refuses when growing would cover something outside it. Every other section is solid: a
 // block never lands in one or on its name. A member of an unfolded package isn't moved without its package.
+import { chainRank, linkGraph } from '../model/graph'
 import { cardsOn } from '../model/placement'
 import { CARD, type Card } from '../model/cards'
 import { carriedWith, foldedHeight, foldsOf, packageBox, type Folds } from '../model/cardInside'
@@ -34,6 +35,7 @@ import {
   clearOffset,
   clusterSpots,
   firstClear,
+  flowSpots,
   GAP,
   gridCols,
   gridSpots,
@@ -182,6 +184,19 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
       const groups = groupsOf(units, args.group_by ?? 'type', !!args.headings)
       const c = clusterSpots(sizes, groups, maxW)
       ;[rel, size, groupBoxes] = [c.spots, c, c.groups]
+    } else if (layout === 'flow') {
+      // By the links among them (graph.ts): each topic of each connected group a band along the chain; the rest below.
+      const at = new Map(units.map((u, i) => [u.id, i]))
+      const cards = units.flatMap((u) => (u.card ? [{ id: u.id, type: u.card.type }] : []))
+      const edges = ctx.ws.edges.filter((e) => at.has(e.fromId) && at.has(e.toId))
+      const g = linkGraph(cards, edges)
+      const bands = g.groups.flatMap((gr) => gr.topics.map((t) => t.cards.map((id) => at.get(id)!).sort((p, q) => p - q)))
+      const inBand = new Set(bands.flat())
+      const loose = units.map((_, i) => i).filter((i) => !inBand.has(i))
+      const rank = (i: number) => chainRank(units[i].card?.type ?? '')
+      const maxH = bounds ? bounds.h - 4 * GRID : undefined
+      const f = flowSpots(sizes, bands, loose, rank, edges.map((e) => [at.get(e.fromId)!, at.get(e.toId)!] as [number, number]), maxW, maxH)
+      ;[rel, size] = [f.spots, f]
     } else {
       let g: { spots: { x: number; y: number }[]; w: number; h: number }
       if (layout === 'column') {
