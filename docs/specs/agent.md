@@ -4,7 +4,7 @@ _Written 2026-10-29. Status: **plan accepted (D-312), not started.** The user an
 whole file before any agent work._
 
 **What the user decided (D-312), short:**
-- **OpenAI first**, other providers later behind the same adapter. **The user picks the model.** We provide nothing:
+- **OpenAI first**, other providers later behind the same adapter (Claude next: D-329, docs/specs/agent-claude.md). **The user picks the model.** We provide nothing:
   everyone uses **their own key**; no workspace key for the agent (D-079's function stays parked).
 - **Changes are shown as a preview first**, and the preview must be good on **every** component kind (§4.5).
 - **It lives in the bottom-right corner**, as 1.0's did: a small box there, growing into a column on the right (§4.6).

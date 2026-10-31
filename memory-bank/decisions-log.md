@@ -6037,3 +6037,30 @@ several planes, a main plane with detail planes beside it, sections), each only 
 - *Evals:* turns from the person until done (target: `go` and one yes per preview); what's left when it says done.
 - *Alternatives:* a bigger fixed step budget (still stops mid-job); auto-apply without previews (against D-312).
 - *Spec:* docs/specs/agent-bugs.md item 28, agent.md §4.10. *Not yet:* all of it; needs bugs 25 and 5 first.
+
+### D-329 · 2026-10-31 · Accepted (Q-031 (1); the user: "evet, claude adapter'ını planla"; then "planı onaylıyorum, D-numarası ver ve commit et")
+**The agent runs on Claude too: an Anthropic adapter with the person's own key, on a loop that only appends.**
+- *Keys and pay:* a key per provider in the browser (`northstar.agent.anthropicKey` beside OpenAI's), never logged or
+  stored elsewhere (CLAUDE.md). No sign-in with Claude (Anthropic's terms forbid it in third-party apps). Max, Ultra
+  and Team plans pay through their monthly API credits when the key comes from the Console organisation linked to
+  the plan (support.claude.com 17154008: Max $100, Ultra $200 a month, expiring each cycle, requests stopping when
+  used up, never charged to the plan); the key row says so and links Anthropic's article.
+- *The hard part:* Claude's current models bind each thinking block to everything before it, and new accounts (from
+  2026-08-31) get a 400 on an edited history. The loop gets an append-only mode per provider: the map, notes and
+  where-the-person-is appended each turn as a system message (the map as what changed), old results cleared and long
+  chats compacted by Anthropic's server-side context editing and compaction; thinking blocks sent back verbatim, one
+  `drop_block` retry on a binding 400. OpenAI keeps today's path.
+- *The adapter:* src/agent/anthropic.ts, the official `@anthropic-ai/sdk` in the browser (`dangerouslyAllowBrowser`),
+  lazy-loaded, the client only in the adapter's closure, errors redacted; `fetch` with the direct-browser header if
+  the SDK doesn't build for the browser. Adaptive thinking, the person's effort always sent, automatic caching,
+  `tool_choice: none` for the last step, server-side `fallbacks: "default"` on refusals, `pause_turn` continued, a
+  plain line when credits run out. Models from `/v1/models`; KNOWN_MODELS rows `anthropic:` with `fit: 'unknown'`.
+  The model id carries its provider; a chat stays on its provider.
+- *Smart and informed:* the same eval suite, three runs per model, one fixed judge for every provider, `fit` written
+  only from those runs; per-provider prompt changes only where the evals show a gap; a long-chat eval with no binding
+  400.
+- *Order:* steps 1–5 (contract, append-only loop, adapter, models and settings, settings UI) now; step 6 (evals)
+  after agent-bugs 25 and the baseline.
+- *Alternatives:* translating messages only (breaks on every new account); the Vercel AI SDK as the provider layer
+  (replaces our adapters and their tests; kept as an option, D-328); OAuth with a Claude subscription (forbidden).
+- *Spec:* docs/specs/agent-claude.md. *Not yet:* all of it.

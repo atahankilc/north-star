@@ -327,6 +327,10 @@ feature comes back as a piece, and check them with the user then.
 - Organising (D-327): by understanding what a structure says to a person, never a rule table: the app's purpose and
   each element's meaning in the prompt, a `look` tool (a picture of the plane and of its own proposal), a `structure`
   read tool (numbers on the link graph), the user's planes as examples; it may change the structure itself.
+- Claude (D-329, docs/specs/agent-claude.md): an Anthropic adapter on the person's own key (a Max/Ultra/Team plan's
+  monthly API credits pay when the key is from its linked Console organisation; never a Claude sign-in), on a loop
+  that only appends for that provider (context appended per turn, clearing and compaction server-side); the same
+  evals and one judge for every provider.
 - Big jobs (D-328): a plan kept as state (`plan` tool, a live checklist, saved with the chat), run step by step, each
   previewed and approved, the next starting by itself; no fixed step count (a person's budget and `[stop]`); a
   message sent while it runs steers it at the next step; done is checked from the job's state.
