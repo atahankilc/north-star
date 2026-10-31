@@ -105,52 +105,10 @@
   padding: var(--space-4) var(--space-6) var(--space-2);
 }
 
-/* `01 STATUS ────`: the number magenta (D-266), the name a label, the rule to the edge from a magenta lead (D-277). */
-.rule {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+/* `01 STATUS ────`: the kit's Rule (D-266, D-277); its place in the section is the panel's (two classes, so it wins over
+   the Rule's own margin whatever order the stylesheets load in). */
+.section .rule {
   margin: 0 0 var(--space-3);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-regular);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
-
-.line {
-  flex: 1;
-  height: var(--line-w);
-  /* A numbered start: a short magenta lead (D-277's family of lines). */
-  background: linear-gradient(to right, var(--accent-magenta) 0 var(--lead), var(--line) var(--lead));
-}
-
-.count {
-  color: var(--fg-faint);
-  letter-spacing: normal;
-  text-transform: none;
-}
-
-/* `+ tag` at the rule's right end. */
-.add {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  font-size: var(--text-xs);
-  letter-spacing: normal;
-  text-transform: none;
-  cursor: pointer;
-}
-
-.add::before {
-  content: '+ ';
-  color: var(--accent-magenta);
-}
-
-.add:hover {
-  color: var(--fg-strong);
 }
 
 .section[data-empty='true'] {
@@ -159,11 +117,6 @@
 
 .section[data-empty='true'] .rule {
   margin-bottom: var(--space-1);
-}
-
-/* A number, wherever there is one, is magenta (D-266). */
-.n {
-  color: var(--accent-magenta);
 }
 
 .foot {

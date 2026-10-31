@@ -1,0 +1,30 @@
+/* The `>` line (src/ui/PromptField.tsx, D-326; Menu.module.css's `.line` is the same look). */
+.prompt {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  cursor: text;
+}
+
+.prompt[data-framed] {
+  padding: var(--space-3);
+  border-bottom: var(--line-w) solid var(--line);
+}
+
+.sign {
+  flex: none;
+  color: var(--accent-magenta);
+  font-family: var(--font-mono);
+}
+
+/* The field inside has no line of its own: the prompt's row is the line. */
+.input,
+.input:hover,
+.input:focus {
+  padding: 0;
+  border-bottom-color: transparent;
+}
+
+.prompt[data-running] .input {
+  color: var(--fg-dim);
+}

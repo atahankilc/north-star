@@ -1,0 +1,48 @@
+/* The rule (D-266, D-277; D-326's kit): `01 NAME ──── count  + add`. The number magenta, the name a label, the line to
+   the edge from a magenta lead when numbered; a count after the name or at the end; an aside after the line; `+ add`
+   at the right end. Margins are the caller's (a panel section's, a deck column's). */
+.rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+/* A number, wherever there is one, is magenta (D-266). */
+.n {
+  color: var(--accent-magenta);
+}
+
+.line {
+  flex: 1;
+  height: var(--line-w);
+  background: var(--line);
+}
+
+/* A numbered start: a short magenta lead (D-277's family of lines). */
+.line[data-lead] {
+  background: linear-gradient(to right, var(--accent-magenta) 0 var(--lead), var(--line) var(--lead));
+}
+
+.count,
+.aside {
+  color: var(--fg-faint);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* `+ tag` at the right end: a Button with no brackets, its `+` magenta. Two classes, so it wins over Button's own. */
+.rule .add {
+  padding: 0;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.plus {
+  color: var(--accent-magenta);
+}

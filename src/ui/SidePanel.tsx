@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom'
 import { Appear } from './Appear'
 import styles from './SidePanel.module.css'
 import { Button } from './Button'
+import { Rule } from './Rule'
 
 type Props = {
   // What it shows, in words (`problem`), and that kind's colour.
@@ -68,17 +69,7 @@ type SectionProps = { n: number; name: ReactNode; count?: ReactNode; add?: { lab
 export function PanelSection({ n, name, count, add, empty, children, 'data-learn': learnAs }: SectionProps) {
   return (
     <section className={styles.section} data-empty={empty || undefined} data-learn={learnAs}>
-      <h3 className={styles.rule}>
-        <span className={styles.n}>{String(n).padStart(2, '0')}</span>
-        {name}
-        {count !== undefined && <span className={styles.count}>{count}</span>}
-        <span className={styles.line} aria-hidden />
-        {add && (
-          <button className={styles.add} onClick={add.onClick}>
-            {add.label}
-          </button>
-        )}
-      </h3>
+      <Rule className={styles.rule} n={n} name={name} count={count} add={add} />
       {!empty && children}
     </section>
   )

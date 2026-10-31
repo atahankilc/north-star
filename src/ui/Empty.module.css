@@ -1,0 +1,10 @@
+/* Nothing here yet (D-326's kit): one faint line, in the words of what it's about. Spacing is the caller's. */
+.empty {
+  margin: 0;
+  color: var(--fg-faint);
+  white-space: normal;
+}
+
+.empty[data-tone='dim'] {
+  color: var(--fg-dim);
+}

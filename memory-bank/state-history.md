@@ -984,3 +984,10 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   FocusDock, card and task panels shot old and new in dark and light: the first run caught the dock 2 px narrower
   (`dense` applying a padding that had never applied), fixed by keeping the look; the rest matches but for the
   real-time canvas's noise, the same old against old.
+
+## Done (2026-11-01): the kit's primitives (D-326)
+- src/ui: Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge with their examples; Frame's
+  `fieldLabel` composes Label, PanelSection draws Rule.
+- Verified: tsc, vitest 876, check:tokens 0, check:gallery 84, check:lessons, lint (no errors); each fork shot its
+  states in dark and light; SidePanel, Settings and the card panels old against new (worktrees): identical once the
+  rules' margin was put back, the rest of the differences the real-time canvas's noise seen old against old.

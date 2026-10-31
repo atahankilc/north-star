@@ -46,10 +46,7 @@
 
 /* The two labels (D-093). A field label names one field or list: "NOTES". */
 .fieldLabel {
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  composes: label from './Label.module.css';
 }
 
 /* A section label starts a group, with a box-corner glyph: "┌ NEW WORKSPACE". */

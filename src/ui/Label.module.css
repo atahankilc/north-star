@@ -1,0 +1,18 @@
+/* The label (D-093: labels uppercase, actions lowercase; D-326's kit): small mono caps, tracked. One source for what the
+   views re-declared under many names (.head, .kind, .k, .eyebrow…); CSS composes it:
+     composes: label from '…/ui/Label.module.css';
+   Frame.module.css's `fieldLabel` does. */
+.label {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.label[data-tone='faint'] {
+  color: var(--fg-faint);
+}
+
+.label[data-tone='default'] {
+  color: var(--fg);
+}

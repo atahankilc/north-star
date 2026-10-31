@@ -6000,8 +6000,17 @@ docs/foundation-audit-2026-10-31.md).
   AsciiButton (keeps a plain button's submit), PanelAction and DockAction draw it. The dock's `padding: 0 half` never
   applied (the stylesheet order let `small`'s win): kept as it looked. Checked in the gallery against the code before,
   both themes: identical but for the real-time canvas's noise, seen old against old too.
-- *Not yet:* the other primitives (Label, Rule, Field/PromptField, Choice + Checkbox + Tabs, Chip, CountBadge, Empty);
-  moving the ~250 raw buttons and 21 `composes: small` onto Button area by area; patterns; `check:kit`; folders.
+- *Built:* the other primitives (2026-11-01, three parallel forks, each piece's look taken from its commonest copy so
+  moving onto it changes nothing): Label (Frame's `fieldLabel` composes it), Rule (`01 NAME ── count [+ add]`, `Num`;
+  PanelSection draws it), Empty, Field (underline, `quiet`, `multiline` growing, Enter/Escape, keys kept in), PromptField
+  (the `>` line, the Spinner while `running`), Checkbox (`[x]`, `hint`, `strike`), Tabs (`tabs` | `segments`, arrow
+  keys), Chip (`tag` | `pill` | `kind`, `onRemove`), CountBadge (`9+`, corner | inline). Each with its example.
+  SidePanel and Settings identical old and new in both themes; the comparison caught the card panel's rules losing
+  their margin to the stylesheet order (fixed: `.section .rule`).
+- *Not yet:* moving the areas onto the kit (what each copy still needs is in those forks' notes: a world size for
+  Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
+  MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,
+  Dock); `check:kit`; folders.
 
 ### D-327 · 2026-10-31 · Accepted (agent-bugs 27; the user: "bunlar hardcoded kurallar olmamalı, agent sadece sistemi ve ne yapmaya çalıştığımızı bence daha iyi anlamalı. Bu uygulama insanlar için bir visualization… biz de visualization konusunda iyi olmamız lazım"; then "27 ve 28'i kabul ediyorum")
 **The agent organises by understanding what a structure says to a person, not by rules.** When it organises or
