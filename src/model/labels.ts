@@ -1,6 +1,8 @@
 // What text on the canvas or a plane is, without Firebase (S3, D-312); data/labels.ts re-exports it and keeps the
 // writes.
 import { WORLD } from './world'
+import { KICKER_MAX } from './limits'
+export { KICKER_MAX }
 
 // The canvas as a space, beside the planes (whose ids are Firestore's 20-character ones).
 export const CANVAS = 'canvas'
@@ -58,7 +60,6 @@ export const STICKY_W = { initial: 150, min: 100, max: 800 }
 export const STICKY_H = WORLD.stickyH
 export const TITLE_W = { initial: 800, min: 500, max: 2400 }
 export const SECTION_MIN = { w: 100, h: 75 }
-export const KICKER_MAX = 60
 
 // firestore.rules' validLabel: 4000 for a paragraph or a sticky note, 200 for the rest.
 export const textMax = (l: Pick<Label, 'kind' | 'size'>) => (l.size === 'note' || l.kind === 'sticky' ? 4000 : 200)

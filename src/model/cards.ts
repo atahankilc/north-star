@@ -1,6 +1,8 @@
 // What a card is, without Firebase (S3, D-312): its types, fields and the doc → card conversion. data/cards.ts re-exports
 // all of it under the same names and keeps the writes.
 import { GRID } from './grid'
+import { TITLE_MAX } from './limits'
+export { TITLE_MAX }
 
 export const CARD_TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
 export type CardType = (typeof CARD_TYPES)[number]
@@ -20,9 +22,6 @@ export const CARD_COLLECTION: Record<AnyType, string> = {
 
 // Every card is the same rectangle (D-055): 8 × 4 grid steps, so a snapped card has a mark on each corner.
 export const CARD = { w: 8 * GRID, h: 4 * GRID }
-
-// firestore.rules' validCard and validCompetitor allow 200.
-export const TITLE_MAX = 200
 
 // What the card shows besides its title (D-152, D-205): set from the side panel, which isn't back yet, so for now only
 // read. A customer, problem or idea has a status (D-137); a competitor its regions (D-145); a feature its priority,

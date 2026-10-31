@@ -18,6 +18,8 @@ import { useDoc, usePaged, useQuery, type WithId } from './hooks'
 import type { AuthUser } from './auth'
 import { deleteThread } from './threads'
 import type { Invite, InviteCode, JoinRequest, Member, Role, Workspace } from './model'
+import { DESCRIPTION_MAX, WRITE_BATCH_MAX as BATCH_LIMIT } from '../model/limits'
+export { DESCRIPTION_MAX }
 
 // No 0/O/1/I/L: codes get read aloud and typed by hand.
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -287,15 +289,12 @@ export async function renameWorkspace(wid: string, name: string) {
 
 // What the team is building, in a sentence or two (D-082). The assistant reads it first, so it knows the startup
 // apart from the app.
-export const DESCRIPTION_MAX = 1000
-
 export function describeWorkspace(wid: string, description: string) {
   return updateDoc(doc(db(), 'workspaces', wid), { description: description.trim().slice(0, DESCRIPTION_MAX) })
 }
 
 // Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
 const WORKSPACE_COLLECTIONS = ['pieces', 'labels', 'customers', 'problems', 'competitors', 'ideas', 'features', 'packages', 'edges', 'competitorFeatures', 'comparisons', 'evidence', 'cells', 'tasks', 'places', 'canvases', 'pieceSpots']
-const BATCH_LIMIT = 450
 // A report body's delete rule reads its summary (twice), and a batch's rules may read at most 20 documents, more and the
 // whole batch is refused: so reports go a few to a batch.
 const REPORTS_PER_BATCH = 6

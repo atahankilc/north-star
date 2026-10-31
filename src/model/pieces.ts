@@ -1,5 +1,7 @@
 // What a piece is, without Firebase (S3, D-312); data/pieces.ts re-exports it and keeps the writes.
 import type { Piece, PieceKind } from '../data/model'
+import { PIECE_NAME_MAX } from './limits'
+export { PIECE_NAME_MAX }
 
 // A new piece's size in canvas pixels at zoom 1.
 export const PIECE_SIZE: Record<PieceKind, { w: number; h: number }> = {
@@ -38,6 +40,3 @@ export const isHost = (p: Pick<Piece, 'kind'>) => kindOfPiece(p) === 'plane' || 
 // What can be taken out of its window onto the canvas (D-228): a lens, the documents list, a document (D-234), a kanban
 // (D-251), a timeline (D-289).
 export const canOpen = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'documents' || p.kind === 'document' || p.kind === 'kanban' || p.kind === 'timeline'
-
-// firestore.rules' validPiece allows 80.
-export const PIECE_NAME_MAX = 80

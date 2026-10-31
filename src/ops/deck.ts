@@ -22,14 +22,11 @@ import { cardIn, find, handleOf, refuse } from './util'
 import { rulesFrom, type RuleSpec } from './table'
 import { shortId } from './matrix'
 import { colsOf, columnIn, deckIn, tasksOf } from './tasks'
+import { KANBAN_COLS_MAX, COL_NAME_MAX, LIMIT_MAX, BOX_NAMES_MAX, BOX_NAME_MAX } from '../model/limits'
+export { KANBAN_COLS_MAX, COL_NAME_MAX, LIMIT_MAX, BOX_NAMES_MAX, BOX_NAME_MAX }
 
 type P = Piece & { id: string }
 
-export const KANBAN_COLS_MAX = 12
-export const COL_NAME_MAX = 40
-export const LIMIT_MAX = 99
-export const BOX_NAMES_MAX = 40
-export const BOX_NAME_MAX = 40
 export const DECK_TEMPLATES = KANBAN_TEMPLATES.map((t) => t.key)
 export const LANES = ['assignee', 'card'] as const
 // A timeline's rows as the model says them: by deck (stored as none), by who, by card.

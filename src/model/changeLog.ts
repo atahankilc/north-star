@@ -6,6 +6,8 @@
 // names (`create_card,link`), only the ops registry's (the writer passes them). firestore.rules refuses anything else.
 // (A determined writer could still spell words in an id or an op-shaped string; the rules keep it to that.) The read layer's `whats_new` reads it (by name
 // through the members list) and falls back to the items' own times where there is no log.
+import { CHANGE_IDS_MAX, CHANGE_KINDS_MAX } from './limits'
+export { CHANGE_IDS_MAX, CHANGE_KINDS_MAX }
 
 // What a change touched may be any of these (firestore.rules lists the same).
 export const CHANGE_KINDS = [
@@ -14,8 +16,6 @@ export const CHANGE_KINDS = [
 ] as const
 export type ChangeKind = (typeof CHANGE_KINDS)[number]
 
-export const CHANGE_IDS_MAX = 100
-export const CHANGE_KINDS_MAX = 20
 const ID = /^[A-Za-z0-9_:.-]{1,64}$/
 const OP = /^[a-z_,]{0,200}$/
 

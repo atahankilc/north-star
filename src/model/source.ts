@@ -3,6 +3,8 @@
 // field, `is` or `is not`, and the values it takes (any of them): a plane, a card type, a status, a tag; or a few words
 // the title holds. Generic on purpose, so a table (and later a matrix's axes) can show any slice of the workspace.
 import { isOnPlane, type Card } from './cards'
+import { VALUE_MAX } from './limits'
+export { VALUE_MAX }
 
 export const RULE_FIELDS = ['plane', 'type', 'status', 'tag', 'title'] as const
 export type RuleField = (typeof RULE_FIELDS)[number]
@@ -31,7 +33,6 @@ export type Source = {
 export const MAX_RULES = 12
 export const MAX_VALUES = 50
 export const MAX_ITEMS = 200
-export const VALUE_MAX = 200
 
 // A card's status: a customer's, problem's or idea's validation (D-137), a feature's own (D-138).
 export const statusOf = (c: Card) => c.validation ?? c.status

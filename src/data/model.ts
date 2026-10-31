@@ -22,6 +22,8 @@ import type { DocumentsSetup } from './documents'
 import type { KanbanSetup, TimelineSetup } from './tasks'
 import type { MatrixSetup } from './matrix'
 import type { TableSetup } from './table'
+import { MESSAGE_MAX, MENTIONS_MAX } from '../model/limits'
+export { MESSAGE_MAX, MENTIONS_MAX }
 
 // D-098: any number of owners (never none), editors, and viewers who read but don't change the workspace.
 export type Role = 'owner' | 'editor' | 'viewer'
@@ -131,7 +133,6 @@ export type Presence = {
 // 'task' (D-260): a kanban's task; its thread's `planeId` is the kanban.
 export const THREAD_TARGETS = ['card', 'label', 'link', 'plane', 'task'] as const
 export type ThreadTarget = (typeof THREAD_TARGETS)[number]
-export const MESSAGE_MAX = 2000
 
 export type Thread = {
   on: ThreadTarget
@@ -169,7 +170,6 @@ export type ThreadMessage = {
   createdAt: number
   editedAt?: number
 }
-export const MENTIONS_MAX = 20
 
 // What you've read of the workspace's threads (D-166), yours only: each thread's `lastAt` when you last saw it.
 // `tasks` (D-261): when you last looked at the tasks given to you.

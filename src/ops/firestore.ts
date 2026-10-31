@@ -9,8 +9,8 @@ import { projectLoose } from './project'
 import { docAt, toDocs, type DocStore } from './docs'
 import { autoId } from './newId'
 import { isDelete, OpsRefused, type OpActor, type OpCtx, type Plan, type Write } from './types'
+import { WRITE_BATCH_MAX as BATCH_LIMIT } from '../model/limits'
 
-const BATCH_LIMIT = 450
 
 export function refOf(wid: string, w: Pick<Write, 'coll' | 'id'>): DocumentReference {
   if (w.coll === 'workspace') return doc(db(), 'workspaces', wid)

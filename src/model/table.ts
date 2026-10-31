@@ -14,6 +14,8 @@ import type { Rule, Source } from './source'
 export { FIELDS, OWN_KINDS, COL_W } from './shapes'
 export type { Field, OwnKind } from './shapes'
 import type { Field, OwnKind } from './shapes'
+import { TABLE_COL_NAME_MAX as COL_NAME_MAX } from './limits'
+export { COL_NAME_MAX }
 
 export type Column = {
   id: string
@@ -43,7 +45,6 @@ export type TableSetup = {
 
 // firestore.rules' validTable allows these.
 export const MAX_COLS = 30
-export const COL_NAME_MAX = 40
 export const CHECKED = 'yes'
 export const NAME_COL = 'name'
 

@@ -3,6 +3,7 @@
 import { deleteDoc, getDoc, getDocFromCache, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
 import { create } from 'zustand'
 import { db } from './firebase'
+import { WRITE_BATCH_MAX as BATCH_LIMIT } from '../model/limits'
 
 type Snapshot = { ref: DocumentReference; data: DocumentData | null }[]
 
@@ -17,7 +18,6 @@ type Step = {
 
 const MERGE_WITHIN_MS = 2000
 const MAX_STEPS = 100
-const BATCH_LIMIT = 450
 
 type History = {
   wid: string | null

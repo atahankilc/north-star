@@ -6,12 +6,12 @@
 // 'agent-notes'`, always shared, always `kind: 'markdown'`. firestore.rules lets every member read it and owners and
 // editors write it (any other document stays its author's). Its text is capped (it goes into every prompt).
 import { DOC_LIMITS } from './shapes'
+import { AGENT_NOTES_MAX as NOTES_MAX } from './limits'
+export { NOTES_MAX }
 
 export const NOTES_ID = 'agent-notes'
 export const NOTES_ROLE = 'agent-notes'
 export const NOTES_TITLE = 'Agent notes'
-// Characters of text (about 2.7k tokens at the read layer's estimate); firestore.rules holds the body to this too.
-export const NOTES_MAX = 8000
 
 // The summary fields the notes doc may hold (a subset of a document's, plus the marker).
 export type NotesDoc = {

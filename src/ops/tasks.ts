@@ -10,16 +10,11 @@ import type { Piece } from '../data/model'
 import type { Check, KanbanCol, KanbanSetup, Task, TaskPriority } from '../data/tasks'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { cardIn, find, handleOf, refuse } from './util'
+import { TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, TASK_NOTES_MAX as NOTES_MAX } from '../model/limits'
+export { TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, NOTES_MAX }
 
 type P = Piece & { id: string }
 
-// firestore.rules allows these (data/tasks.ts' limits; kept here so the ops stay pure).
-export const TASK_TITLE_MAX = 200
-export const CHECKS_MAX = 50
-export const CHECK_MAX = 200
-export const LABELS_MAX = 20
-export const LABEL_MAX = 40
-export const NOTES_MAX = 20000
 export const PRIORITIES = ['P1', 'P2', 'P3'] as const
 
 // ---- Finding decks, columns and tasks (refusing with the candidates)

@@ -8,9 +8,10 @@ import type { Piece } from '../data/model'
 import type { Cell } from './matrix'
 import type { Edge } from './edges'
 import type { Task } from '../data/tasks'
+import { CANVAS_NAME_MAX } from './limits'
+export { CANVAS_NAME_MAX }
 
 export const MAIN = 'main'
-export const CANVAS_NAME_MAX = 60
 // The first canvas's name until someone gives it one.
 export const MAIN_NAME = 'Main'
 

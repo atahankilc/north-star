@@ -37,6 +37,8 @@ export type Axis = {
 export { UNFOLDS, TONES, CELL_KINDS, TOTALS_AT, TOTALS_AS, CONFIDENCES } from './shapes'
 export type { Unfold, Tone, CellKind, TotalsAt, TotalsAs, Confidence } from './shapes'
 import type { CellKind, Confidence, Tone, TotalsAs, TotalsAt, Unfold } from './shapes'
+import { MATRIX_NAME_MAX as NAME_MAX, CELL_TEXT_MAX as TEXT_MAX, CELL_NOTES_MAX as NOTES_MAX, GLYPH_MAX, STEP_LABEL_MAX as LABEL_MAX } from './limits'
+export { NAME_MAX, TEXT_MAX, NOTES_MAX, GLYPH_MAX, LABEL_MAX }
 
 // Low to high: the order keys 1–9 pick them in and the readings stack them in.
 export type Step = { id: string; glyph: string; label: string; tone: Tone }
@@ -79,11 +81,6 @@ export type Cell = {
 // firestore.rules' validMatrix and validCell allow these.
 export const MAX_ENTRIES = 200
 export const MAX_STEPS = 9
-export const NAME_MAX = 200
-export const TEXT_MAX = 200
-export const NOTES_MAX = 20000
-export const GLYPH_MAX = 4
-export const LABEL_MAX = 40
 
 // In scales.ts, which imports nothing at run time: pieces.ts, table.ts and this one import each other, and a table's
 // default steps are read as table.ts loads, whichever of them the app loads first.

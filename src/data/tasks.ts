@@ -50,12 +50,12 @@ export type KanbanSetup = {
 }
 // A box's name (D-269): small in its corner; `good` washes the box green, `bad` sets its name in magenta.
 export type BoxName = { col: string; row: string; name: string; tone?: 'good' | 'bad' }
-export const BOX_NAMES_MAX = 40
-export const BOX_NAME_MAX = 40
 // The cards' fields a kanban's columns can come from (D-268): src/model/shapes.ts (S3).
 export { CARD_FIELDS } from '../model/shapes'
 export type { CardField } from '../model/shapes'
 import type { CardField } from '../model/shapes'
+import { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX } from '../model/limits'
+export { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX }
 // A timeline (D-262): its rows. The kanbans it shows are the one it's linked to, else every kanban (D-289); `kanbans`, a
 // list once picked by hand (its `shows ▾`, gone), is still read from old data and exports but never used.
 export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
@@ -130,16 +130,6 @@ export type Task = {
 export type TaskFields = Partial<Pick<Task, 'title' | 'notes' | 'assignee' | 'assigneeName' | 'start' | 'due' | 'cardId' | 'cardType' | 'checks' | 'learned' | 'labels' | 'priority'>>
 export const TASK_PRIORITIES = ['P1', 'P2', 'P3'] as const
 export type TaskPriority = (typeof TASK_PRIORITIES)[number]
-
-// firestore.rules allows these.
-export const KANBAN_COLS_MAX = 12
-export const COL_NAME_MAX = 40
-export const TASK_TITLE_MAX = 200
-export const CHECKS_MAX = 50
-export const CHECK_MAX = 200
-export const LABELS_MAX = 20
-export const LABEL_MAX = 40
-export const LIMIT_MAX = 99
 
 export const emptyKanban = (): KanbanSetup => ({
   cols: [
