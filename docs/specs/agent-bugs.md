@@ -78,3 +78,64 @@ Found by the user trying the agent (D-312) in the app, 2026-10-31. Not fixed yet
     topics need is placed on both (`places`, D-281) instead of linked across; the person's words win when they say
     which. The choice is one line in the preview and the report ("one plane: 40 of 48 links are between topics"). Evals
     with both kinds of input check it picks each when it should, and that no link is lost either way.
+
+## From the first eval run on a real model (gpt-5.6-terra, 2026-10-31)
+
+`npm run eval -- --model openai:gpt-5.6-terra`: 66/110 (60 %), $4.20, 16 min (report
+`evals/results/2026-10-31T20-08-07-655Z/report.md`, gitignored). About a dozen failures were the eval's own bugs, fixed
+in 6c9cc13 (big jobs without their `go` turn, a fixture that already held the matrix, a judge that couldn't see the
+document, exact-word note checks, an ambiguous yes); the judge's app context after it is uncommitted. What's left is
+the agent. Strongest groups: context 6/6, injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes).
+
+15. **It answers lists from the map without querying.** find-02 "competitors in Germany": one step, no tool call, only
+    the three cards whose map line says Germany; it missed the nine Europe and global ones that count for Germany
+    (D-145). `query` already does that containment (src/agent/read/tools.ts), the model never asked. find-04 also
+    mixed problem and idea counts in a plane summary. Fix: the prompt (src/agent/prompt.ts, "Finding things") says a
+    list, a count or a "which/who" question is answered from `query`/`view`, never from the map alone (the map is an
+    index, not the answer); the map's region lines could say "regions as typed; query counts the bigger ones".
+16. **It adds ops nobody asked for.** edit-09/edit-13 "add three ideas": three `create_card`s plus an `arrange` of them,
+    so the preview has 4 items for 3 asked, and unticking one leaves an arrange of the rest. Same family: prioritize-03
+    changed 14 features' impact/effort when asked only to fill the deck; learn-03 made a problem and a link from notes
+    meant as evidence; dedupe-01 renamed and moved a third card. Fix: the prompt's "Changing things": do only what was
+    asked; placement goes in the op's own `where`, not a separate `arrange`; anything more is offered in the answer, not
+    proposed. Maybe `change` warns when an `arrange` only moves things the same call just made.
+17. **A question in the plan turn, then `go` taken as its yes.** build-02 (second run): instead of a plan it asked
+    "shall I remove the stickies?", the person said `go`, and it deleted x13 and x14, a delete with no clear yes (rule 5).
+    It also renamed the ideas ("Own the stall data" for "Who owns the stall data?"). Fix: the prompt says a plan proposes
+    the safe version (keep what's there) and lists a delete as an option the person must name; `go` approves the plan,
+    never a delete; when turning text into cards, keep its words. Maybe `change` refuses a delete when the last person
+    message is only `go`/`ok`.
+18. **A viewer's agent still calls `change`.** refuse-03: the tool refused it and the answer was right, but the prompt
+    says no `change` call as a viewer. Fix: tell the model the person's role in the "where you are" block every turn
+    (not only in the system prompt), or drop `change` from the tool list for a viewer (src/agent/tools.ts), so it can't.
+19. **"Check whether this would work" is answered by reading, not a dry run.** edit-12: the count was right (5 tasks),
+    but `change` with `dry_run` was never called, so a refusal (a column limit, a locked piece) wouldn't have been
+    seen. Fix: the prompt names the trigger: "would it work", "check before", "don't change anything yet" → a dry run.
+20. **"Clean up the duplicates" ran without asking which.** refuse-02: one step, no question. Rule 7 says ask when a
+    guess would change data. Fix: name the vague verbs in the prompt (clean up, tidy, fix, sort out) with no target as
+    "ask which first"; or the `/dedupe` method's first step lists the pairs and waits.
+21. **Skill guides not followed step by step.** Each a small, checkable miss:
+    - `/test` didn't set the idea to `testing` (test-01);
+    - `/compare` left `rows.plane` empty for "our Roadmap features", left `cols.items` empty when given two competitors,
+      made 11 cells for 7 known facts, and scored `partial` where the feature's notes say full (compare-01/02/03);
+    - `/prioritize` swapped the deck's axes (impact as columns) and left a feature without impact (prioritize-01/03);
+    - `/organize` made 5 headings for 3 regions and put cards in the wrong group (organize-01);
+    - `/import` skipped the `for` link to the customer named in the ask (import-01);
+    - `/swot` put our own validated cards under threats (swot-01, swot-04);
+    - `/sort-stickies` made a problem from a question and skipped a sticky it judged covered by an existing card
+      (defensible, but the guide says ideas, sections, the sticky's words).
+    Fix: tighten the methods in src/agent/skills/methods.ts where they're vague (axes spelled out with the field names,
+    "threats are other people's things, never ours", "for <customer> means a `for` link on each", "keep the sticky's
+    words"); a skill's last step re-reads its guide's checklist against what it proposed (ties in with 12).
+22. **Documents cite ids without the card's title on the line.** pitch-01/02, lean-canvas-01, interview-02, swot-04:
+    good documents, but lines like "linked to c32, c29, c25, c33" name cards by bare id, unreadable once the document
+    is read outside the agent (same as 2, inside documents). Fix: the document skills' guides say every card is
+    `c12 "title"`, never a bare id; or `create_document` rewrites a bare `cN` into `cN "title"` itself.
+23. **Documents "for a plane" lean on cards elsewhere.** swot-02 "/swot for Pricing", one-pager-02 "on Roadmap",
+    next-03 "/next for Pricing": half the cards cited aren't on that plane (linked competitors, problems on other
+    planes). Sometimes right (a SWOT needs the competitors), but the person asked about one plane. Fix: the guide says
+    "for <plane>" means that plane's cards first; others only as context, marked "(on Rivals)". Open: whether the
+    eval's `onPlane` should allow linked cards; decide with the user.
+24. **It points at an existing piece instead of making the one asked for, without saying it could.** build-01 (first
+    run): asked for a competitor matrix, it found p11 "Feature coverage" and opened it. Reasonable, but it didn't offer
+    to make a new one. Fix: when something like it exists, say so and ask (or offer both), don't silently substitute.

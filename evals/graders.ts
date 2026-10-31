@@ -702,7 +702,10 @@ export const judge = (rubric: string): Grader => ({
         const d = r.end.documents.find((x) => x.id === id)
         return `Document ${r.ids.short('document', id)} (documents/${id}) "${d?.title ?? ''}":\n${String(bodies[id]?.text ?? '').slice(0, 12000) || '(no text)'}`
       })
-    const context = [lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.', ...docs].join('\n\n')
+    // How the app works, so true statements about it aren't read as made up: the agent only proposes, the person accepts.
+    const app =
+      'How the app works: the agent never writes directly; it proposes changes that open as a preview the person accepts (here accepted, so they are listed below), so "waiting in the preview" is true. A new document is private until shared. Short ids (c12 a card, d5 a document, x3 a text, t4 a task) are how the agent names things; an answer may point to the document it wrote by its id, and the document\'s own text (below) is where its claims and card citations are.'
+    const context = [app, lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.', ...docs].join('\n\n')
     const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: r.answer, context })
     return ok(v.pass, v.why)
   },
