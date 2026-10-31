@@ -31,7 +31,7 @@
 }
 
 .box[data-dragging='true'] {
-  z-index: 10;
+  z-index: var(--z-hud);
   cursor: grabbing;
 }
 
@@ -39,51 +39,51 @@
    Its face a dark tone of that edge (a pale one in light), so the type reads from the whole card (D-291).
    Dragged, it goes small under the pointer (`scale`, `translate` set inline); let go, it grows into its marks. */
 .card {
-  --small: 8px;
+  --small: var(--w-text-2xs);
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  padding: 7px 7px 7px 11px;
+  padding: var(--w-card-pad) var(--w-card-pad) var(--w-card-pad) calc(var(--w-card-pad) + var(--w-card-edge));
   overflow: hidden;
   background: color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised));
-  box-shadow: inset 4px 0 0 var(--type), 0 0 0 1px var(--piece-card-edge);
+  box-shadow: inset var(--w-card-edge) 0 0 var(--type), 0 0 0 var(--line-w) var(--piece-card-edge);
   transition:
-    scale 180ms var(--ease-out),
-    translate 180ms var(--ease-out);
+    scale var(--dur-quick) var(--ease-out),
+    translate var(--dur-quick) var(--ease-out);
 }
 
 /* On a face tinted by its type the page's greys sink into it: inside, they lean to the ink (in both themes), and the
    type's own colour leans a quarter to it, so every line reads, small ones too (D-295). */
 .card,
 .band {
-  --fg-dim: color-mix(in srgb, var(--fg) 70%, transparent);
-  --fg-faint: color-mix(in srgb, var(--fg) 62%, transparent);
-  --placeholder: color-mix(in srgb, var(--fg) 52%, transparent);
-  --type-ink: color-mix(in srgb, var(--type) 75%, var(--fg));
-  --clash-ink: color-mix(in srgb, var(--accent-magenta) 60%, var(--fg));
+  --fg-dim: color-mix(in srgb, var(--fg) var(--mix-strong), transparent);
+  --fg-faint: color-mix(in srgb, var(--fg) var(--mix-strong), transparent);
+  --placeholder: color-mix(in srgb, var(--fg) var(--mix-soft), transparent);
+  --type-ink: color-mix(in srgb, var(--type) var(--mix-strong), var(--fg));
+  --clash-ink: color-mix(in srgb, var(--accent-magenta) var(--mix-strong), var(--fg));
 }
 
 /* Carried, it follows the pointer at once; let go, it grows back into its marks (D-265). */
 .box[data-dragging='true'] .card {
-  transition: scale 160ms var(--ease-out);
+  transition: scale var(--dur-quick) var(--ease-out);
 }
 
 /* The header: the type left; right, a status (or regions, priority), then the evidence as cells. */
 .head {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   min-height: var(--small);
   font-family: var(--font-mono);
   font-size: var(--small);
-  line-height: 1;
+  line-height: var(--lh-none);
 }
 
 .kind {
   flex: none;
   color: var(--type-ink);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
@@ -102,12 +102,12 @@
 .proof {
   display: flex;
   flex: none;
-  gap: 3px;
+  gap: var(--space-1);
   color: var(--fg);
 }
 
 .status + .proof {
-  margin-left: 2px;
+  margin-left: var(--space-half);
 }
 
 .kind + .proof {
@@ -115,9 +115,9 @@
 }
 
 .proof > i {
-  width: 6px;
-  height: 6px;
-  border: 1px solid currentColor;
+  width: var(--dot);
+  height: var(--dot);
+  border: var(--line-w) solid currentColor;
 }
 
 .proof > i[data-filled='true'] {
@@ -127,13 +127,13 @@
 /* The title: Geist, up to three lines (two above tags). */
 .title {
   display: -webkit-box;
-  margin: 5px 0 0;
+  margin: calc(var(--space-1) + var(--line-w)) 0 0;
   overflow: hidden;
   color: var(--fg);
   font-family: var(--font-display);
-  font-size: 14px;
-  line-height: 1.12;
-  letter-spacing: -0.01em;
+  font-size: var(--w-text-lg);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--track-title);
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow-wrap: anywhere;
@@ -152,19 +152,19 @@
 .facts {
   overflow: hidden;
   margin-top: auto;
-  padding-top: 4px;
+  padding-top: var(--space-1);
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--small);
-  line-height: 1;
+  line-height: var(--lh-none);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .tags {
   display: flex;
-  gap: 5px;
-  margin-top: 4px;
+  gap: var(--w-chip-gap);
+  margin-top: var(--space-1);
   white-space: nowrap;
 }
 
@@ -173,25 +173,25 @@
 }
 
 .chip {
-  padding: 0 4px;
-  border: 1px solid var(--line);
+  padding: 0 var(--space-1);
+  border: var(--line-w) solid var(--line);
   background: var(--chip);
   color: var(--fg);
   font-family: var(--font-mono);
-  font-size: 7.5px;
-  line-height: 11px;
+  font-size: var(--w-text-3xs);
+  line-height: var(--lh-body);
 }
 
 /* Zoomed out (D-153): the title alone, 24 px, top-aligned where the header starts, three lines at most. */
 .compact {
-  max-height: calc(3 * 1.12 * 24px);
+  max-height: calc(3 * var(--lh-tight) * var(--w-text-xl));
   margin: 0;
   overflow: hidden;
   color: var(--fg);
   font-family: var(--font-display);
-  font-size: 24px;
-  line-height: 1.12;
-  letter-spacing: -0.01em;
+  font-size: var(--w-text-xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--track-title);
   overflow-wrap: anywhere;
 }
 
@@ -208,17 +208,17 @@
 .handle {
   position: absolute;
   top: 50%;
-  left: calc(100% - 10px);
-  z-index: 6;
+  left: calc(100% - var(--dot-lg));
+  z-index: calc(var(--z-world-ui) + 1);
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  width: 32px;
-  height: 40px;
+  width: var(--space-8);
+  height: var(--head-h);
   color: var(--fg-dim);
   font-family: var(--font-mono);
-  font-size: 22px;
-  line-height: 1;
+  font-size: var(--w-text-xl);
+  line-height: var(--lh-none);
   transform: translateY(-50%);
   cursor: crosshair;
 }
@@ -236,9 +236,9 @@
 .box {
   transform-origin: 0 0;
   transition:
-    height 280ms cubic-bezier(0.65, 0, 0.35, 1),
-    transform 280ms cubic-bezier(0.65, 0, 0.35, 1),
-    opacity 280ms cubic-bezier(0.65, 0, 0.35, 1);
+    height var(--dur-cells) var(--ease-in-out),
+    transform var(--dur-cells) var(--ease-in-out),
+    opacity var(--dur-cells) var(--ease-in-out);
 }
 
 .box[data-tucked='true'] {
@@ -248,30 +248,30 @@
 
 /* Open, over every other card and its list. */
 .box[data-open='true'] {
-  z-index: 12;
+  z-index: var(--z-panel);
 }
 
 /* Holding something, the title keeps two lines' room so the list always starts at the same place (cardInside.ts). */
 .title[data-inside='true'] {
   flex: none;
-  height: calc(2 * 1.12 * 14px);
+  height: calc(2 * var(--lh-tight) * var(--w-text-lg));
 }
 
 .inner {
   display: flex;
   flex-direction: column;
-  margin-top: 5px;
+  margin-top: calc(var(--space-1) + var(--line-w));
 }
 
 .innerCat {
-  height: 13px;
+  height: var(--w-row-category);
   margin: 0;
-  padding-top: 3px;
+  padding-top: calc(var(--space-1) - var(--line-w));
   color: var(--fg-dim);
   font-family: var(--font-mono);
-  font-size: 7px;
-  line-height: 10px;
-  letter-spacing: 0.14em;
+  font-size: var(--w-text-3xs);
+  line-height: calc(var(--w-row-category) - calc(var(--space-1) - var(--line-w)));
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
@@ -284,26 +284,26 @@
   display: flex;
   width: 100%;
   align-items: center;
-  gap: 6px;
-  height: 18px;
-  margin-bottom: 3px;
-  padding: 0 6px 0 8px;
+  gap: var(--space-2);
+  height: calc(var(--w-row-feature) - calc(var(--space-1) - var(--line-w)));
+  margin-bottom: calc(var(--space-1) - var(--line-w));
+  padding: 0 var(--space-2);
   border: 0;
-  background: color-mix(in srgb, var(--fg) 7%, transparent);
-  box-shadow: inset 2px 0 0 var(--type);
+  background: color-mix(in srgb, var(--fg) var(--mix-wash), transparent);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--type);
   color: var(--fg);
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: var(--w-text-xs);
   text-align: left;
   cursor: pointer;
 }
 
 .mini[data-match='true'] {
-  box-shadow: inset 2px 0 0 var(--accent-cyan);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--accent-cyan);
 }
 
 .mini:hover {
-  background: color-mix(in srgb, var(--fg) 12%, transparent);
+  background: color-mix(in srgb, var(--fg) var(--mix-wash), transparent);
 }
 
 .miniName {
@@ -318,29 +318,29 @@
   flex: none;
   color: var(--fg-dim);
   font-family: var(--font-mono);
-  font-size: 7px;
+  font-size: var(--w-text-3xs);
 }
 
 /* A closed competitor: a cell per feature (cyan when it matches ours) and how many. */
 .strip {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: auto;
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--small);
-  line-height: 1;
+  line-height: var(--lh-none);
 }
 
 .cells {
   display: inline-flex;
-  gap: 2px;
+  gap: var(--space-half);
 }
 
 .cells i {
-  width: 8px;
-  height: 4px;
+  width: var(--space-2);
+  height: var(--space-1);
   background: var(--line-hover);
 }
 
@@ -352,13 +352,13 @@
 .foot {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
   margin-top: auto;
 }
 
 .strip + .foot {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .foot .facts {
@@ -373,7 +373,7 @@
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--small);
-  line-height: 1;
+  line-height: var(--lh-none);
   white-space: nowrap;
 }
 
@@ -383,7 +383,7 @@
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--small);
-  line-height: 1;
+  line-height: var(--lh-none);
   white-space: nowrap;
 }
 
@@ -405,7 +405,7 @@
   color: var(--link-part);
   font-family: var(--font-mono);
   font-size: var(--small);
-  line-height: 1;
+  line-height: var(--lh-none);
   cursor: pointer;
 }
 
@@ -420,7 +420,7 @@
 /* An alignment guide (D-231). */
 .guide {
   position: absolute;
-  z-index: 40;
+  z-index: var(--z-menu);
   background: var(--accent-magenta);
   pointer-events: none;
 }
@@ -429,22 +429,22 @@
    the band that is the package (its name, rating, a cell per member, `[−]`), which takes the pointer like a card. */
 .pkg {
   position: absolute;
-  z-index: -1;
+  z-index: var(--z-under);
   pointer-events: none;
   transition:
-    scale 180ms var(--ease-out),
-    translate 180ms var(--ease-out);
+    scale var(--dur-quick) var(--ease-out),
+    translate var(--dur-quick) var(--ease-out);
 }
 
 /* Dragged by its band, it goes small with its members as cards do (D-291). */
 .pkg[data-dragging='true'] {
-  transition: scale 160ms var(--ease-out);
+  transition: scale var(--dur-quick) var(--ease-out);
 }
 
 .frame {
   position: absolute;
-  inset: 25px 0 0;
-  border: 1px solid color-mix(in srgb, var(--type) 55%, transparent);
+  inset: var(--w-grid) 0 0;
+  border: var(--line-w) solid color-mix(in srgb, var(--type) var(--mix-soft), transparent);
   border-top: 0;
 }
 
@@ -455,15 +455,15 @@
   left: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 25px;
-  padding: 0 8px 0 13px;
+  gap: var(--space-2);
+  height: var(--w-grid);
+  padding: 0 var(--space-2) 0 var(--space-3);
   background: color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised));
-  box-shadow: inset 4px 0 0 var(--type), 0 0 0 1px var(--piece-card-edge);
+  box-shadow: inset var(--w-card-edge) 0 0 var(--type), 0 0 0 var(--line-w) var(--piece-card-edge);
   color: var(--fg-dim);
   font-family: var(--font-mono);
-  font-size: 8px;
-  line-height: 1;
+  font-size: var(--w-text-2xs);
+  line-height: var(--lh-none);
   pointer-events: auto;
   cursor: default;
 }
@@ -477,8 +477,8 @@
   overflow: hidden;
   color: var(--fg-strong);
   font-family: var(--font-display);
-  font-size: 14px;
-  letter-spacing: -0.01em;
+  font-size: var(--w-text-lg);
+  letter-spacing: var(--track-title);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -514,29 +514,29 @@
   display: flex;
   width: 100%;
   align-items: center;
-  gap: 6px;
-  height: 15px;
+  gap: var(--space-2);
+  height: var(--w-row-part);
   padding: 0;
   border: 0;
   background: none;
   color: var(--fg);
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: var(--w-text-xs);
   text-align: left;
   cursor: pointer;
 }
 
 .memberRow > i {
   flex: none;
-  width: 2px;
-  height: 11px;
+  width: var(--line-w-bold);
+  height: calc(var(--w-row-part) - var(--space-1));
   background: var(--tone);
 }
 
 .memberRow:hover .miniName {
   text-decoration: underline;
   text-decoration-color: var(--fg-faint);
-  text-underline-offset: 2px;
+  text-underline-offset: var(--underline-offset);
 }
 
 /* Picking a package's cards (D-240): clicks pick, a drag boxes them in. */
@@ -548,13 +548,13 @@
 /* In an unfolded package's frame but not one of its cards (D-242): faint, a dashed edge a little out; back while
    hovered, selected or dragged. */
 .box[data-dim='true'] > .card {
-  opacity: 0.32;
-  outline: 1px dashed var(--line-hover);
-  outline-offset: 3px;
+  opacity: var(--o-faint);
+  outline: var(--line-w) dashed var(--line-hover);
+  outline-offset: var(--space-1);
   transition:
-    opacity 160ms var(--ease-out),
-    scale 160ms var(--ease-out),
-    translate 160ms var(--ease-out);
+    opacity var(--dur-quick) var(--ease-out),
+    scale var(--dur-quick) var(--ease-out),
+    translate var(--dur-quick) var(--ease-out);
 }
 
 .box[data-dim='true']:hover > .card,

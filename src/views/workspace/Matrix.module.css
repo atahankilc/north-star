@@ -21,9 +21,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  box-shadow: 0 0 16px 10px color-mix(in srgb, var(--bg) 72%, transparent);
+  z-index: var(--z-under);
+  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
+  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
   pointer-events: none;
 }
 
@@ -70,7 +70,7 @@
   display: flex;
   align-items: flex-end;
   gap: var(--space-1);
-  padding: 0 var(--space-2) var(--space-2) 2px;
+  padding: 0 var(--space-2) var(--space-2) var(--space-half);
   color: var(--fg-dim);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
@@ -101,7 +101,7 @@
 .rowHead[data-card='true'],
 .colHead[data-card='true'] {
   background: color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised));
-  box-shadow: inset 3px 0 0 var(--type), 0 0 0 1px var(--piece-card-edge);
+  box-shadow: inset var(--w-card-edge) 0 0 var(--type), 0 0 0 var(--line-w) var(--piece-card-edge);
 }
 
 .rowHead[data-pick='true'],
@@ -117,13 +117,13 @@
 .colHead {
   flex-direction: column;
   justify-content: space-between;
-  gap: 6px;
-  padding: 6px var(--space-2) 6px var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
 }
 
 .rowHead:not([data-card]),
 .colHead:not([data-card]) {
-  border-bottom: 1px dashed var(--line-hover);
+  border-bottom: var(--line-w) dashed var(--line-hover);
   color: var(--fg-muted);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -138,7 +138,7 @@
   display: -webkit-box;
   min-width: 0;
   overflow: hidden;
-  line-height: 1.2;
+  line-height: var(--lh-snug);
   /* As many lines as the head holds (D-216): a column's three, four for a typed name or a long one set smaller; a
      row's two, three when long. */
   -webkit-line-clamp: 3;
@@ -187,13 +187,13 @@
 /* `×` to take a head out: in its top-right corner, shown while hovered. */
 .remove {
   flex-shrink: 0;
-  padding: 0 2px;
+  padding: 0 var(--space-half);
   border: 0;
   background: none;
   color: var(--fg-dim);
   font: inherit;
   font-size: var(--text-xs);
-  line-height: 1;
+  line-height: var(--lh-none);
   cursor: pointer;
   opacity: 0;
   transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
@@ -202,8 +202,8 @@
 .rowHead .remove,
 .colHead .remove {
   position: absolute;
-  top: 3px;
-  right: 3px;
+  top: var(--space-1);
+  right: var(--space-1);
 }
 
 .rowHead:hover .remove,
@@ -226,7 +226,7 @@
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  line-height: 1;
+  line-height: var(--lh-none);
 }
 
 .colHead .totals {
@@ -236,33 +236,33 @@
 .squares {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: var(--space-half);
 }
 
 .squares > i,
 .sampleSquares > i {
   display: block;
-  width: 6px;
-  height: 6px;
+  width: var(--dot);
+  height: var(--dot);
 }
 
 .squares > i[data-empty],
 .sampleSquares > i[data-empty] {
-  box-shadow: inset 0 0 0 1px var(--line-hover);
+  box-shadow: inset 0 0 0 var(--line-w) var(--line-hover);
 }
 
 .track {
   display: flex;
   flex: 1;
-  gap: 1px;
-  min-width: 36px;
-  height: 3px;
+  gap: var(--line-w);
+  min-width: var(--control-lg);
+  height: var(--line-w-bold);
   background: var(--wash-3);
 }
 
 .rowHead .track {
   flex: none;
-  width: 48px;
+  width: var(--control-xl);
 }
 
 .tally {
@@ -290,12 +290,12 @@
   display: flex;
   align-items: center;
   padding: 0 var(--space-2);
-  border-left: 1px solid var(--line);
+  border-left: var(--line-w) solid var(--line);
 }
 
 .endCell[data-row] {
   justify-content: center;
-  border-top: 1px solid var(--line);
+  border-top: var(--line-w) solid var(--line);
   border-left: 0;
 }
 
@@ -330,21 +330,21 @@
 /* A scale's step: a square filled to it from the left, in its colour (D-212); empty, a faint outline. */
 .square {
   display: block;
-  width: 14px;
-  height: 14px;
-  box-shadow: inset 0 0 0 1px var(--tone);
+  width: var(--control-xs);
+  height: var(--control-xs);
+  box-shadow: inset 0 0 0 var(--line-w) var(--tone);
   background: linear-gradient(90deg, var(--tone) var(--fill), transparent var(--fill));
 }
 
 .unset {
   display: block;
-  width: 14px;
-  height: 14px;
-  box-shadow: inset 0 0 0 1px var(--line);
+  width: var(--control-xs);
+  height: var(--control-xs);
+  box-shadow: inset 0 0 0 var(--line-w) var(--line);
 }
 
 .cell:hover .unset {
-  box-shadow: inset 0 0 0 1px var(--line-hover);
+  box-shadow: inset 0 0 0 var(--line-w) var(--line-hover);
 }
 
 .unsetDot {
@@ -352,14 +352,14 @@
 }
 
 .glyph {
-  line-height: 1;
+  line-height: var(--lh-none);
 }
 
 /* Doesn't apply: a short rule where the value would be. */
 .out {
   display: block;
-  width: 14px;
-  height: 1px;
+  width: var(--control-xs);
+  height: var(--line-w);
   background: var(--fg-faint);
 }
 
@@ -369,7 +369,7 @@
 }
 
 .unit {
-  margin-left: 2px;
+  margin-left: var(--space-half);
   color: var(--fg-dim);
   font-size: var(--text-xs);
 }
@@ -387,7 +387,7 @@
   width: calc(100% - 2 * var(--space-3));
   padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--accent-cyan);
+  border-bottom: var(--line-w) solid var(--accent-cyan);
   outline: none;
   background: none;
   color: var(--fg-strong);
@@ -403,17 +403,17 @@
   right: 0;
   width: 0;
   height: 0;
-  border-top: 7px solid var(--fg-dim);
-  border-left: 7px solid transparent;
+  border-top: var(--arrow) solid var(--fg-dim);
+  border-left: var(--arrow) solid transparent;
 }
 
 .sure {
   position: absolute;
-  top: 3px;
-  left: 5px;
+  top: var(--space-1);
+  left: var(--space-1);
   color: var(--fg-dim);
   font-size: var(--text-xs);
-  line-height: 1;
+  line-height: var(--lh-none);
 }
 
 /* The dashed card closing an axis (D-212): `+ feature`; open, a field to type a name in, cards that match under it. */
@@ -422,7 +422,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 var(--space-3);
-  border: 1px dashed var(--line-hover);
+  border: var(--line-w) dashed var(--line-hover);
   background: none;
   color: var(--fg-faint);
   font: inherit;
@@ -442,7 +442,7 @@
 }
 
 .add[data-open] {
-  z-index: 2;
+  z-index: var(--z-2);
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
@@ -455,7 +455,7 @@
 /* A column's is wider than its card while typing, so a name fits. */
 .add[data-open][data-which='cols'] {
   width: auto !important;
-  min-width: 220px;
+  min-width: var(--size-sm);
 }
 
 /* Typed as it will read: a typed name's mono, no frame; a caret, and the line the name will stand on. */
@@ -464,7 +464,7 @@
   min-width: 0;
   padding: 0 0 var(--space-1);
   border: 0;
-  border-bottom: 1px dashed var(--line-hover);
+  border-bottom: var(--line-w) dashed var(--line-hover);
   outline: none;
   background: none;
   color: var(--fg-strong);
@@ -483,19 +483,19 @@
 
 .addHint {
   color: var(--fg-faint);
-  font-size: 10px;
+  font-size: var(--w-text-sm);
   white-space: nowrap;
 }
 
 .picks {
   position: absolute;
-  top: calc(100% + 4px);
-  left: -1px;
+  top: calc(100% + var(--space-1));
+  left: calc(-1 * var(--line-w));
   display: flex;
   flex-direction: column;
-  min-width: 220px;
+  min-width: var(--size-sm);
   padding: var(--space-1) 0;
-  border: 1px solid var(--line-hover);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
 }
 
@@ -506,7 +506,7 @@
   padding: var(--space-1) var(--space-3);
   border: 0;
   background: none;
-  box-shadow: inset 2px 0 0 var(--type);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--type);
   color: var(--fg);
   font: inherit;
   font-size: var(--text-xs);
@@ -544,14 +544,14 @@
 /* The selected cell's bar, at screen size under it, kept on the screen (like text's bar, D-188). */
 .cellBar {
   position: absolute;
-  z-index: 3;
+  z-index: var(--z-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   width: max-content;
-  max-width: 440px;
+  max-width: var(--size-lg);
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--line-hover);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   color: var(--fg-dim);
   font-family: var(--font-mono);
@@ -579,7 +579,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 0 2px;
+  padding: 0 var(--space-half);
 }
 
 .tool[aria-pressed='true'] {
@@ -595,8 +595,8 @@
 }
 
 .tool .square {
-  width: 10px;
-  height: 10px;
+  width: var(--dot-lg);
+  height: var(--dot-lg);
 }
 
 .stepGlyph {
@@ -605,10 +605,10 @@
 
 .note {
   width: 100%;
-  min-width: 260px;
+  min-width: var(--size-sm);
   padding: var(--space-1) 0;
   border: 0;
-  border-top: 1px dashed var(--line);
+  border-top: var(--line-w) dashed var(--line);
   outline: none;
   background: none;
   color: var(--fg);
@@ -623,7 +623,7 @@
 .noteText {
   margin: 0;
   padding-top: var(--space-1);
-  border-top: 1px dashed var(--line);
+  border-top: var(--line-w) dashed var(--line);
   color: var(--fg);
   white-space: pre-wrap;
 }
@@ -634,11 +634,11 @@
   position: absolute;
   left: 50%;
   bottom: calc(var(--space-8) + var(--space-2));
-  z-index: 3;
+  z-index: var(--z-3);
   display: flex;
   flex-direction: column;
-  width: min(720px, calc(100% - 2 * var(--space-4)));
-  border: 1px solid var(--line-hover);
+  width: min(calc(var(--size-xl) + var(--size-xs)), calc(100% - 2 * var(--space-4)));
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   color: var(--fg-dim);
   font-family: var(--font-mono);
@@ -653,7 +653,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding: 0 var(--space-4);
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
 }
 
 .tabs {
@@ -665,7 +665,7 @@
   padding: var(--space-2) 0;
   border: 0;
   background: none;
-  box-shadow: inset 0 -2px 0 transparent;
+  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 transparent;
   color: var(--fg-dim);
   font: inherit;
   letter-spacing: var(--track-label);
@@ -679,7 +679,7 @@
 }
 
 .tab[aria-selected='true'] {
-  box-shadow: inset 0 -2px 0 var(--accent-magenta);
+  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 var(--accent-magenta);
   color: var(--fg-strong);
 }
 
@@ -710,7 +710,7 @@
 
 .setupLabel {
   flex-shrink: 0;
-  width: 100px;
+  width: calc(4 * var(--w-grid));
   color: var(--fg-dim);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
@@ -756,9 +756,9 @@
 
 .checkHint {
   display: block;
-  margin: 2px 0 0;
+  margin: var(--space-half) 0 0;
   color: var(--fg-faint);
-  font-size: 10px;
+  font-size: var(--w-text-sm);
 }
 
 /* One of a few, framed; the picked one cyan. */
@@ -772,9 +772,9 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 24px;
+  min-height: var(--control-sm);
   padding: 0 var(--space-2);
-  border: 1px solid var(--line);
+  border: var(--line-w) solid var(--line);
   background: none;
   color: var(--fg-dim);
   font: inherit;
@@ -795,8 +795,8 @@
 
 .typeTick {
   display: block;
-  width: 6px;
-  height: 6px;
+  width: var(--dot);
+  height: var(--dot);
   background: var(--type);
 }
 
@@ -815,18 +815,18 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 24px;
+  min-height: var(--control-sm);
   padding: 0 var(--space-1) 0 var(--space-2);
-  border: 1px solid var(--line);
+  border: var(--line-w) solid var(--line);
   color: var(--fg);
 }
 
 .pillMark {
   display: block;
   flex-shrink: 0;
-  width: 6px;
-  height: 6px;
-  box-shadow: inset 0 0 0 1px var(--fg-dim);
+  width: var(--dot);
+  height: var(--dot);
+  box-shadow: inset 0 0 0 var(--line-w) var(--fg-dim);
 }
 
 [data-card] > .pillMark {
@@ -835,7 +835,7 @@
 }
 
 .pillX {
-  padding: 0 2px;
+  padding: 0 var(--space-half);
   border: 0;
   background: none;
   color: var(--fg-faint);
@@ -883,14 +883,14 @@
 
 .addList {
   position: absolute;
-  bottom: calc(100% + 4px);
-  left: -1px;
-  z-index: 4;
+  bottom: calc(100% + var(--space-1));
+  left: calc(-1 * var(--line-w));
+  z-index: calc(var(--z-3) + 1);
   display: flex;
   flex-direction: column;
-  min-width: 280px;
+  min-width: var(--size-sm);
   padding: var(--space-1) 0;
-  border: 1px solid var(--line-hover);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
 }
 
@@ -925,10 +925,10 @@
 
 /* A text field shaped like a pill. */
 .pillField {
-  min-height: 24px;
+  min-height: var(--control-sm);
   width: 22ch;
   padding: 0 var(--space-2);
-  border: 1px solid var(--line);
+  border: var(--line-w) solid var(--line);
   outline: none;
   background: none;
   color: var(--fg);
@@ -948,7 +948,7 @@
   min-width: 0;
   padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
   outline: none;
   background: none;
   color: var(--fg);
@@ -984,9 +984,9 @@
 .kind {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-half);
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--line);
+  border: var(--line-w) solid var(--line);
   background: none;
   color: var(--fg);
   font: inherit;
@@ -1005,15 +1005,15 @@
 
 .kind small {
   color: var(--fg-dim);
-  font-size: 10px;
-  line-height: 1.4;
+  font-size: var(--w-text-sm);
+  line-height: var(--lh-body);
 }
 
 .kindSample {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  height: 20px;
+  height: var(--control-sm);
   color: var(--fg-strong);
   font-size: var(--text-sm);
 }
@@ -1023,7 +1023,7 @@
   flex-direction: column;
   gap: var(--space-1);
   margin: 0;
-  padding: 0 0 0 calc(100px + var(--space-3));
+  padding: 0 0 0 calc(calc(4 * var(--w-grid)) + var(--space-3));
   list-style: none;
 }
 
@@ -1041,12 +1041,12 @@
 .stepLook {
   display: grid;
   place-items: center;
-  width: 16px;
+  width: var(--control-xs);
   color: var(--tone);
 }
 
 .tone {
-  padding: 0 2px;
+  padding: 0 var(--space-half);
   border: 0;
   background: none;
   color: var(--tone);
@@ -1061,14 +1061,14 @@
 
 .sampleSquares {
   display: inline-flex;
-  gap: 2px;
+  gap: var(--space-half);
 }
 
 .sampleBar {
   display: inline-flex;
-  gap: 1px;
-  width: 36px;
-  height: 3px;
+  gap: var(--line-w);
+  width: var(--control-lg);
+  height: var(--line-w-bold);
   background: var(--wash-3);
 }
 
@@ -1077,20 +1077,20 @@
 .wizardShade {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: var(--z-menu);
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  background: color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
 }
 
 .wizard {
   display: flex;
   flex-direction: column;
-  width: min(880px, 100%);
-  min-height: min(500px, 100%);
+  width: min(var(--modal-w), 100%);
+  min-height: min(var(--size-xl), 100%);
   max-height: 100%;
-  border: 1px solid var(--line-hover);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   color: var(--fg-dim);
   font-family: var(--font-mono);
@@ -1099,7 +1099,7 @@
 
 .wizardSteps {
   display: flex;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
 }
 
 .wizardStep {
@@ -1107,7 +1107,7 @@
   padding: var(--space-3) var(--space-4);
   border: 0;
   background: none;
-  box-shadow: inset 0 -2px 0 transparent;
+  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 transparent;
   color: var(--fg-dim);
   font: inherit;
   letter-spacing: var(--track-label);
@@ -1121,7 +1121,7 @@
 }
 
 .wizardStep[aria-selected='true'] {
-  box-shadow: inset 0 -2px 0 var(--accent-magenta);
+  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 var(--accent-magenta);
   color: var(--fg-strong);
 }
 
@@ -1133,7 +1133,7 @@
 .wizardMain {
   display: grid;
   flex: 1;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) var(--size-sm);
   min-height: 0;
 }
 
@@ -1150,7 +1150,7 @@
   color: var(--fg-strong);
   font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 
 .templates {
@@ -1162,9 +1162,9 @@
 .template {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-half);
   padding: var(--space-3);
-  border: 1px solid var(--line);
+  border: var(--line-w) solid var(--line);
   background: none;
   color: var(--fg);
   font: inherit;
@@ -1194,7 +1194,7 @@
   gap: var(--space-2);
   min-width: 0;
   padding: var(--space-4);
-  border-left: 1px solid var(--line);
+  border-left: var(--line-w) solid var(--line);
   background: var(--bg-raised);
 }
 
@@ -1202,16 +1202,16 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 10px;
+  font-size: var(--w-text-sm);
 }
 
 .mini th,
 .mini td {
   overflow: hidden;
   padding: var(--space-1);
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--line-w) solid var(--line);
   color: var(--fg-muted);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   text-align: center;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1225,8 +1225,8 @@
 }
 
 .mini td .square {
-  width: 10px;
-  height: 10px;
+  width: var(--dot-lg);
+  height: var(--dot-lg);
   margin: 0 auto;
 }
 
@@ -1234,7 +1234,7 @@
   display: flex;
   justify-content: space-between;
   padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--line);
+  border-top: var(--line-w) solid var(--line);
 }
 
 @media (max-width: 760px) {
@@ -1243,7 +1243,7 @@
   }
 
   .wizardPreview {
-    border-top: 1px solid var(--line);
+    border-top: var(--line-w) solid var(--line);
     border-left: 0;
   }
 
@@ -1294,21 +1294,21 @@
   content: '';
   position: absolute;
   background: var(--type);
-  opacity: 0.45;
+  opacity: var(--o-faint);
 }
 
 .rowHead[data-sub]::before {
   top: 0;
   bottom: 0;
   left: var(--space-3);
-  width: 1px;
+  width: var(--line-w);
 }
 
 .colHead[data-sub]::before {
   top: var(--space-2);
   left: 0;
   right: 0;
-  height: 1px;
+  height: var(--line-w);
 }
 
 .subN {
@@ -1353,7 +1353,7 @@
 }
 
 .endCell[data-sub] {
-  opacity: 0.7;
+  opacity: var(--o-soft);
 }
 
 /* A card's cell read from its parts: a small square each, filled to its step in its colour (D-133's blocks). */
@@ -1361,25 +1361,25 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 3px;
-  max-width: calc(100% - 16px);
+  gap: var(--space-1);
+  max-width: calc(100% - var(--space-4));
 }
 
 .parts > i {
   display: block;
-  width: 8px;
-  height: 8px;
-  box-shadow: inset 0 0 0 1px var(--tone);
+  width: var(--space-2);
+  height: var(--space-2);
+  box-shadow: inset 0 0 0 var(--line-w) var(--tone);
   background: linear-gradient(90deg, var(--tone) var(--fill), transparent var(--fill));
 }
 
 .parts > i[data-empty] {
-  box-shadow: inset 0 0 0 1px var(--line-hover);
+  box-shadow: inset 0 0 0 var(--line-w) var(--line-hover);
   background: none;
 }
 
 .parts > i[data-out] {
-  height: 1px;
+  height: var(--line-w);
   margin-block: auto;
   box-shadow: none;
   background: var(--fg-faint);

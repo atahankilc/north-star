@@ -29,9 +29,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  box-shadow: 0 0 16px 10px color-mix(in srgb, var(--bg) 72%, transparent);
+  z-index: var(--z-under);
+  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
+  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
   pointer-events: none;
 }
 
@@ -67,7 +67,7 @@
 .headRow {
   display: flex;
   align-items: flex-end;
-  border-bottom: 1px solid var(--line-hover);
+  border-bottom: var(--line-w) solid var(--line-hover);
 }
 
 .head {
@@ -97,7 +97,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  border-bottom: 1px dashed var(--line);
+  border-bottom: var(--line-w) dashed var(--line);
 }
 
 .layer[data-live='true'] .row {
@@ -138,7 +138,7 @@
 
 .excerpt {
   overflow: hidden;
-  margin-top: 2px;
+  margin-top: var(--space-half);
   color: var(--fg-dim);
   font-size: var(--text-xs);
   text-overflow: ellipsis;
@@ -158,8 +158,8 @@
 .grip {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: var(--control-sm);
+  height: var(--control-sm);
   color: var(--fg-faint);
   pointer-events: auto;
   cursor: grab;
@@ -187,7 +187,7 @@
   gap: var(--space-2);
   overflow: hidden;
   padding: var(--space-3);
-  border: 1px solid var(--line);
+  border: var(--line-w) solid var(--line);
   background: var(--card-behind);
   font-family: var(--font-mono);
 }
@@ -198,10 +198,10 @@
 
 .fold {
   position: absolute;
-  top: -1px;
-  right: -1px;
-  width: 14px;
-  height: 14px;
+  top: calc(-1 * var(--line-w));
+  right: calc(-1 * var(--line-w));
+  width: var(--control-xs);
+  height: var(--control-xs);
   background: linear-gradient(225deg, var(--bg) 50%, var(--line-hover) 50%);
 }
 
@@ -218,7 +218,7 @@
   color: var(--fg);
   font-family: var(--font-display);
   font-size: var(--text-sm);
-  line-height: 1.3;
+  line-height: var(--lh-snug);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
@@ -228,14 +228,14 @@
   min-height: 0;
   overflow: hidden;
   color: var(--fg-dim);
-  font-size: 10px;
-  line-height: 1.5;
+  font-size: var(--w-text-sm);
+  line-height: var(--lh-body);
 }
 
 .bars i {
   display: block;
-  height: 3px;
-  margin: 5px 0;
+  height: var(--line-w-bold);
+  margin: var(--space-1) 0;
   background: var(--line);
 }
 
@@ -245,14 +245,14 @@
   gap: var(--space-2);
   margin-top: auto;
   color: var(--fg-dim);
-  font-size: 10px;
+  font-size: var(--w-text-sm);
   white-space: nowrap;
 }
 
 .sheet .grip {
   position: absolute;
-  right: 4px;
-  bottom: 22px;
+  right: var(--space-1);
+  bottom: var(--space-6);
 }
 
 /* Its tools in a console or dock. */
@@ -264,7 +264,7 @@
 
 .tool {
   composes: small from '../../ui/AsciiButton.module.css';
-  padding: 0 2px;
+  padding: 0 var(--space-half);
 }
 
 .tool:disabled {
@@ -306,22 +306,22 @@
 /* A document's actions as marks (D-232): faint, lit on hover; never open the document. */
 .actions {
   display: inline-flex;
-  gap: 2px;
+  gap: var(--space-half);
   justify-content: flex-end;
 }
 
 .act {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: var(--control);
+  height: var(--control);
   padding: 0;
   border: 0;
   background: none;
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-lg);
-  line-height: 1;
+  line-height: var(--lh-none);
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
@@ -349,8 +349,8 @@
 .rename {
   width: 100%;
   min-width: 0;
-  padding: 1px var(--space-1);
-  border: 1px solid var(--accent-cyan);
+  padding: var(--space-half) var(--space-1);
+  border: var(--line-w) solid var(--accent-cyan);
   background: var(--bg);
   color: var(--fg-strong);
   font-family: var(--font-display);

@@ -25,9 +25,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  box-shadow: 0 0 16px 10px color-mix(in srgb, var(--bg) 72%, transparent);
+  z-index: var(--z-under);
+  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
+  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
   pointer-events: none;
 }
 
@@ -52,7 +52,7 @@
 
 /* A dashed rule under each row; the selected cell's row washed. */
 .band {
-  border-bottom: 1px dashed var(--line);
+  border-bottom: var(--line-w) dashed var(--line);
   pointer-events: none;
 }
 
@@ -115,7 +115,7 @@
    middle, 2 screen px wide and 1.2 × 12 long (a pressed L's while dragged); dragged, a cyan line down the whole table
    and the width beside it. Drawn at screen size (`--hair` and `--z` from Table.tsx). */
 .grip {
-  z-index: 2;
+  z-index: var(--z-2);
   cursor: col-resize;
   touch-action: none;
 }
@@ -136,7 +136,7 @@
   height: calc(14.4 * var(--hair));
   background: var(--accent-cyan);
   transform: translate(-50%, -50%);
-  transition: height 120ms var(--ease-out);
+  transition: height var(--dur-snap) var(--ease-out);
 }
 
 .grip::after {
@@ -168,7 +168,7 @@
   color: var(--on-accent);
   font-family: var(--font-mono);
   font-size: calc(11 * var(--hair));
-  line-height: 1.5;
+  line-height: var(--lh-body);
   white-space: nowrap;
   transform: translateY(-50%);
   pointer-events: none;
@@ -186,7 +186,7 @@
 /* Its face a dark tone of its type, as a card's on a plane (D-294). */
 .name[data-card='true'] {
   background: color-mix(in srgb, var(--type) var(--card-tint), transparent);
-  box-shadow: inset 2px 0 0 var(--type);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--type);
 }
 
 .nameText {
@@ -207,7 +207,7 @@
   min-width: 0;
   padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--accent-cyan);
+  border-bottom: var(--line-w) solid var(--accent-cyan);
   outline: none;
   background: none;
   color: var(--fg-strong);
@@ -218,7 +218,7 @@
 /* `×` to take a row out: shown while hovered. */
 .remove {
   flex-shrink: 0;
-  padding: 0 2px;
+  padding: 0 var(--space-half);
   border: 0;
   background: none;
   color: var(--fg-dim);
@@ -278,7 +278,7 @@
 }
 
 .glyph {
-  line-height: 1;
+  line-height: var(--lh-none);
 }
 
 .unset {
@@ -291,7 +291,7 @@
 }
 
 .unit {
-  margin-left: 2px;
+  margin-left: var(--space-half);
   color: var(--fg-dim);
   font-size: var(--text-xs);
   letter-spacing: 0;
@@ -314,7 +314,7 @@
   width: 100%;
   padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--accent-cyan);
+  border-bottom: var(--line-w) solid var(--accent-cyan);
   outline: none;
   background: none;
   color: var(--fg-strong);
@@ -352,7 +352,7 @@
 
 .tool {
   composes: small from '../../ui/AsciiButton.module.css';
-  padding: 0 2px;
+  padding: 0 var(--space-half);
 }
 
 /* The setup's columns in order (D-218): one line each, the name fixed first. */
@@ -370,7 +370,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1) var(--space-2);
-  min-height: 24px;
+  min-height: var(--control-sm);
 }
 
 .colFixed {

@@ -43,17 +43,17 @@
   position: absolute;
   display: grid;
   place-items: center;
-  border: 1px solid var(--piece-edge);
+  border: var(--line-w) solid var(--piece-edge);
   background: var(--piece);
   box-shadow:
     var(--piece-shadow),
-    inset 0 1px 0 var(--piece-hi);
+    inset 0 var(--line-w) 0 var(--piece-hi);
   /* Out of edit mode it pans the canvas like empty space (D-186). */
   cursor: inherit;
   transition:
     border-color var(--dur-fast) var(--ease-out),
-    scale 180ms var(--ease-out),
-    translate 180ms var(--ease-out);
+    scale var(--dur-quick) var(--ease-out),
+    translate var(--dur-quick) var(--ease-out);
 }
 
 /* The marks: a thin `+` (3 px arms, 1 px stroke) every 25 plane px, on its cards' grid as it shows them (D-187). */
@@ -62,8 +62,8 @@
   position: absolute;
   inset: 0;
   background: var(--grid-mark);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx, -12.5px) var(--my, -12.5px) / var(--mark, 25px) var(--mark, 25px);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx, -12.5px) var(--my, -12.5px) / var(--mark, 25px) var(--mark, 25px);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx, calc(var(--w-grid) / -2)) var(--my, calc(var(--w-grid) / -2)) / var(--mark, var(--w-grid)) var(--mark, var(--w-grid));
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx, calc(var(--w-grid) / -2)) var(--my, calc(var(--w-grid) / -2)) / var(--mark, var(--w-grid)) var(--mark, var(--w-grid));
   pointer-events: none;
 }
 
@@ -81,7 +81,7 @@
    edge (Marks' handles). Moved, it goes 0.8 round the point held under the pointer, its L's where it lands; let go,
    it grows back into them. */
 .piece[data-carried='true'] {
-  z-index: 5;
+  z-index: var(--z-world-ui);
   transition: none;
 }
 
@@ -101,9 +101,9 @@
 .piece::after {
   content: '';
   position: absolute;
-  top: -1px;
-  right: -1px;
-  left: -1px;
+  top: calc(-1 * var(--line-w));
+  right: calc(-1 * var(--line-w));
+  left: calc(-1 * var(--line-w));
   height: var(--piece-band);
   background: var(--kind);
   pointer-events: none;
@@ -125,7 +125,7 @@
    The notch on the plane's edge where it's linked. */
 .notch {
   position: absolute;
-  z-index: 2;
+  z-index: var(--z-2);
   background: var(--edge);
   pointer-events: none;
 }
@@ -136,8 +136,8 @@
   overflow: hidden;
   color: var(--fg-faint);
   font-family: var(--font-mono);
-  font-size: 9px;
-  line-height: 9px;
+  font-size: var(--w-text-xs);
+  line-height: var(--lh-none);
   letter-spacing: 0;
   text-align: center;
   white-space: pre;
@@ -150,8 +150,8 @@
   top: 0;
   left: 0;
   overflow: visible;
-  width: 1px;
-  height: 1px;
+  width: var(--line-w);
+  height: var(--line-w);
   pointer-events: none;
 }
 
@@ -203,21 +203,21 @@
 
   position: absolute;
   /* Over the plane's cards (D-187). */
-  z-index: 1;
+  z-index: var(--z-1);
   top: 0;
   /* Cut into the edge as a section's name is (D-266): a 16 px lead of edge, then 8 px clear each side of it. */
-  left: calc(16px / var(--z, 1));
+  left: calc(var(--space-4) / var(--z, 1));
   display: flex;
   gap: 0.6em;
-  max-width: calc(100% - 32px / var(--z, 1));
-  padding: 0 calc(8px / var(--z, 1));
+  max-width: calc(100% - 2 * var(--space-4) / var(--z, 1));
+  padding: 0 calc(var(--space-2) / var(--z, 1));
   transform: translateY(-50%);
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
   font-size: calc(var(--name-size) / var(--z, 1));
-  font-weight: 500;
-  line-height: 1.5;
+  font-weight: var(--weight-medium);
+  line-height: var(--lh-body);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   white-space: nowrap;
@@ -237,30 +237,30 @@
 .nameNum {
   flex: none;
   color: var(--accent-magenta);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 /* Unframed (D-267): no edge to be cut into; the name is a heading's small line 8 px over its contents, on the canvas:
    mono 11 px on the screen, caps, tracked, `04 ── RIVALS · TABLE`, on a shade that hugs it. */
 .piece[data-open='true'] .name {
-  --name-size: 11px;
-  top: calc(25px - 8px / var(--z, 1));
-  left: 25px;
+  --name-size: var(--text-xs);
+  top: calc(var(--w-grid) - var(--space-2) / var(--z, 1));
+  left: var(--w-grid);
   align-items: center;
-  max-width: calc(100% - 50px);
+  max-width: calc(100% - 2 * var(--w-grid));
   padding: 0;
   transform: translateY(-100%);
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  box-shadow: 0 0 calc(16px / var(--z, 1)) calc(10px / var(--z, 1)) color-mix(in srgb, var(--bg) 72%, transparent);
-  font-weight: 400;
-  line-height: 1.2;
-  letter-spacing: 0.14em;
+  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
+  box-shadow: 0 0 calc(var(--space-4) / var(--z, 1)) calc(var(--space-3) / var(--z, 1)) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
+  font-weight: var(--weight-regular);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--track-label);
 }
 
 .nameRule {
   flex: none;
   width: 1.8em;
-  height: calc(1px / var(--z, 1));
+  height: calc(var(--line-w) / var(--z, 1));
   background: var(--fg-dim);
 }
 
@@ -271,12 +271,12 @@
   flex-shrink: 100;
   min-width: 0;
   color: var(--fg-faint);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 .name[data-unnamed='true'] {
   color: var(--fg-faint);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 /* The name in edit mode (D-179, D-180, D-223): a field on the edge framed in cyan, a cyan `>` before what's typed and
@@ -285,7 +285,7 @@
   gap: 0.5em;
   max-width: none;
   padding: 0.15em 0.6em;
-  border: 1px solid var(--accent-cyan);
+  border: var(--line-w) solid var(--accent-cyan);
   color: var(--fg-strong);
   letter-spacing: normal;
   text-transform: none;
@@ -321,7 +321,7 @@
   align-self: center;
   color: var(--fg-faint);
   font-size: 0.8em;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 /* A piece's console (D-179, D-181, D-189, D-264): a tab inside its bottom-right corner, standing on its bottom edge (no
@@ -332,20 +332,20 @@
    them. In edit mode a status line in cyan. */
 .console {
   position: absolute;
-  z-index: 2;
-  right: calc(16px * var(--cs, 1));
+  z-index: var(--z-2);
+  right: calc(var(--space-4) * var(--cs, 1));
   bottom: 0;
   display: flex;
   align-items: baseline;
-  gap: calc(8px * var(--cs, 1));
-  padding: calc(5px * var(--cs, 1)) calc(10px * var(--cs, 1)) calc(6px * var(--cs, 1));
-  border: calc(1px * var(--cs, 1)) solid var(--piece-edge);
+  gap: calc(var(--space-2) * var(--cs, 1));
+  padding: calc(var(--space-1) * var(--cs, 1)) calc(var(--space-3) * var(--cs, 1)) calc(var(--space-2) * var(--cs, 1));
+  border: calc(var(--line-w) * var(--cs, 1)) solid var(--piece-edge);
   border-bottom: 0;
   background: var(--bg);
   color: var(--fg-dim);
   font-family: var(--font-mono);
-  font-size: calc(11px * var(--cs, 1));
-  line-height: calc(16px * var(--cs, 1));
+  font-size: calc(var(--text-xs) * var(--cs, 1));
+  line-height: calc(var(--space-4) * var(--cs, 1));
   white-space: nowrap;
   cursor: default;
 }
@@ -359,21 +359,21 @@
 .console::after {
   content: '';
   position: absolute;
-  top: calc(-1px * var(--cs, 1));
-  width: calc(6px * var(--cs, 1));
-  height: calc(6px * var(--cs, 1));
-  border-top: calc(1px * var(--cs, 1)) solid var(--accent-magenta);
+  top: calc(-1 * var(--line-w) * var(--cs, 1));
+  width: calc(var(--corner-mark) * var(--cs, 1));
+  height: calc(var(--corner-mark) * var(--cs, 1));
+  border-top: calc(var(--line-w) * var(--cs, 1)) solid var(--accent-magenta);
   pointer-events: none;
 }
 
 .console::before {
-  left: calc(-1px * var(--cs, 1));
-  border-left: calc(1px * var(--cs, 1)) solid var(--accent-magenta);
+  left: calc(-1 * var(--line-w) * var(--cs, 1));
+  border-left: calc(var(--line-w) * var(--cs, 1)) solid var(--accent-magenta);
 }
 
 .console::after {
-  right: calc(-1px * var(--cs, 1));
-  border-right: calc(1px * var(--cs, 1)) solid var(--accent-magenta);
+  right: calc(-1 * var(--line-w) * var(--cs, 1));
+  border-right: calc(var(--line-w) * var(--cs, 1)) solid var(--accent-magenta);
 }
 
 .console[data-editing='true'],
@@ -384,7 +384,7 @@
 
 /* Something new inside while the console's hidden: a small tab of its own, magenta (D-264). */
 .console[data-fresh] {
-  padding-inline: calc(6px * var(--cs, 1));
+  padding-inline: calc(var(--space-2) * var(--cs, 1));
   border-color: var(--accent-magenta);
 }
 
@@ -399,7 +399,7 @@
 
 .tool {
   composes: small from '../../ui/AsciiButton.module.css';
-  padding: 0 calc(2px * var(--cs, 1));
+  padding: 0 calc(var(--space-half) * var(--cs, 1));
 }
 
 .console .tool {
@@ -423,7 +423,7 @@
   --grid-mark: var(--piece-mark);
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: calc(var(--z-3) + 1);
   background: var(--bg);
   /* Its own view pans (D-186). */
   cursor: grab;
@@ -480,7 +480,7 @@
 .tool[aria-label^='Comments inside'] {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   white-space: nowrap;
 }
 
@@ -497,7 +497,7 @@
   --grid-mark: var(--piece-mark);
   border-color: transparent;
   background: var(--bg);
-  box-shadow: 0 0 14px 8px var(--bg);
+  box-shadow: var(--feather) var(--bg);
 }
 
 .piece[data-open='true']::after {
@@ -507,32 +507,32 @@
 /* Unframed (D-267): the same console on the same hover rule, hanging 10 px under its contents' right end, its own edge
    all round (nothing to stand on). */
 .piece[data-open='true'] > .console {
-  top: calc(100% - 50px + 10px * var(--cs, 1));
-  right: 25px;
+  top: calc(100% - 2 * var(--w-grid) + var(--space-3) * var(--cs, 1));
+  right: var(--w-grid);
   bottom: auto;
-  border-bottom: calc(1px * var(--cs, 1)) solid var(--piece-edge);
+  border-bottom: calc(var(--line-w) * var(--cs, 1)) solid var(--piece-edge);
 }
 
 /* Going between (D-267): the window it leaves or goes into, the piece's own look, breaking or building cell by cell
    under what's in it; meanwhile the piece itself shows none of it (framing: it's the copy that builds). */
 .ghostWindow {
   position: absolute;
-  top: -1px;
-  left: -1px;
-  border: 1px solid var(--piece-edge);
+  top: calc(-1 * var(--line-w));
+  left: calc(-1 * var(--line-w));
+  border: var(--line-w) solid var(--piece-edge);
   background: var(--piece);
   box-shadow:
     var(--piece-shadow),
-    inset 0 1px 0 var(--piece-hi);
+    inset 0 var(--line-w) 0 var(--piece-hi);
   pointer-events: none;
 }
 
 .ghostWindow::after {
   content: '';
   position: absolute;
-  top: -1px;
-  right: -1px;
-  left: -1px;
+  top: calc(-1 * var(--line-w));
+  right: calc(-1 * var(--line-w));
+  left: calc(-1 * var(--line-w));
   height: var(--piece-band);
   background: var(--kind);
 }
@@ -559,8 +559,8 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 7;
-  border: 1px solid var(--accent-cyan);
+  z-index: calc(var(--z-world-ui) + 2);
+  border: var(--line-w) solid var(--accent-cyan);
   background: var(--wash-cyan);
   pointer-events: none;
 }
@@ -568,11 +568,11 @@
 /* A document dragged out of its list (D-232): a small window under the pointer, its name in the edge. */
 .dragGhost {
   position: absolute;
-  z-index: 6;
-  width: 160px;
-  height: 110px;
-  margin: -12px 0 0 -12px;
-  border: 1px solid var(--accent-cyan);
+  z-index: calc(var(--z-world-ui) + 1);
+  width: var(--size-xs);
+  height: calc(4 * var(--w-grid));
+  margin: calc(-1 * var(--space-3)) 0 0 calc(-1 * var(--space-3));
+  border: var(--line-w) solid var(--accent-cyan);
   background: var(--wash-cyan);
   pointer-events: none;
 }
@@ -580,10 +580,10 @@
 .dragGhostName {
   position: absolute;
   top: 0;
-  left: 10px;
-  max-width: calc(100% - 20px);
+  left: var(--space-3);
+  max-width: calc(100% - 2 * var(--space-3));
   overflow: hidden;
-  padding: 0 6px;
+  padding: 0 var(--space-2);
   transform: translateY(-50%);
   background: var(--bg);
   color: var(--fg);
@@ -600,5 +600,5 @@
   flex: none;
   margin-left: 0.6em;
   color: var(--accent-magenta);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }

@@ -1,16 +1,1 @@
-{
-  "src/demo/Stage.module.css": 9,
-  "src/views/workspace/CanvasView.module.css": 92,
-  "src/views/workspace/DocContent.module.css": 19,
-  "src/views/workspace/DocumentPiece.module.css": 25,
-  "src/views/workspace/Documents.module.css": 30,
-  "src/views/workspace/DrawSection.module.css": 4,
-  "src/views/workspace/Kanban.module.css": 99,
-  "src/views/workspace/Matrix.module.css": 134,
-  "src/views/workspace/PlaneCards.module.css": 111,
-  "src/views/workspace/PlaneLinks.module.css": 18,
-  "src/views/workspace/Table.module.css": 17,
-  "src/views/workspace/TextItems.module.css": 115,
-  "src/views/workspace/Timeline.module.css": 119,
-  "src/views/workspace/collab.module.css": 17
-}
+{}

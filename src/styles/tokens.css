@@ -86,18 +86,29 @@
   /* Code and list markers inside Markdown: relative to the text around them. */
   --text-code: 0.88em;
 
-  /* Type inside the zoomed world (D-319, docs/specs/tokens.md): canvas px, scaled with the zoom. Never on screen-sized UI,
-     and the screen's --text-* never inside the world. */
+  /* Type inside the zoomed world (D-325, docs/specs/tokens.md): canvas px, scaled with the zoom. The screen's --text-xs…lg
+     hold in the world too; these add only what the screen doesn't have (below 11 px, read when zoomed in; a card's
+     title; titles that don't shrink on phones). Never on screen-sized UI. */
   --w-text-3xs: 7px; /* the tiniest caps: a card's chip and inner category, mini avatars, a sticky's glue band */
   --w-text-2xs: 8px; /* a link's chip, a package band's caps */
   --w-text-xs: 9px; /* who, meta rows, members, month names */
   --w-text-sm: 10px; /* hints in cells, sheet text, readouts */
-  --w-text-md: 13px; /* pills, row labels, order titles */
   --w-text-lg: 14px; /* card, task and package titles */
   --w-text-xl: 22px; /* a card's compact title and handle */
   --w-text-2xl: 26px; /* the project title's description */
 
-  /* Tracking (D-093, D-319): every uppercase label, sans titles, the display headline; glyph cells that must touch.
+  /* The world's geometry (D-325), in canvas px. TS measures with the same numbers: keep each equal to its constant. */
+  --w-grid: 25px; /* GRID, model/grid.ts */
+  --w-card-pad: 7px; /* a card's padding (CHIP_ROOM, PlaneCards.tsx) */
+  --w-card-edge: 4px; /* a card's type edge on its left */
+  --w-chip-gap: 5px; /* CHIP_GAP, PlaneCards.tsx */
+  --w-row-part: 15px; /* PART_ROW, model/cardInside.ts */
+  --w-row-feature: 21px; /* FEATURE_ROW */
+  --w-row-category: 13px; /* CATEGORY_ROW */
+  --w-sticky-h: 125px; /* STICKY_H, model/labels.ts */
+  --w-doc-pad: 36px; /* PAD, DocumentPiece.tsx */
+
+  /* Tracking (D-093, D-325): every uppercase label, sans titles, the display headline; glyph cells that must touch.
      Actions are lowercase, untracked. The same three on screen and in the world. */
   --track-label: 0.12em;
   --track-title: -0.02em;

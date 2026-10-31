@@ -15,7 +15,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 2147483647;
+  z-index: var(--z-demo);
   transform-origin: 0 0;
   pointer-events: none;
 }
@@ -26,7 +26,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 10;
+  z-index: var(--z-hud);
   pointer-events: none;
   will-change: transform;
 }
@@ -37,8 +37,8 @@
   stroke: var(--bg);
   stroke-width: 1.2;
   stroke-linejoin: round;
-  transform-origin: 1px 1px;
-  transition: transform 70ms ease-out;
+  transform-origin: var(--line-w) var(--line-w);
+  transition: transform var(--dur-press) ease-out;
 }
 
 /* Pressed: a little smaller, the press the Marks answer with (D-265's 70 ms). */
@@ -56,11 +56,11 @@
   position: absolute;
   left: calc(var(--space-4) * 4);
   bottom: var(--space-4);
-  z-index: 10;
-  min-width: 28px;
+  z-index: var(--z-hud);
+  min-width: var(--control);
   padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--fg-dim);
-  border-bottom-width: 3px;
+  border: var(--line-w) solid var(--fg-dim);
+  border-bottom-width: var(--line-w-bold);
   background: var(--bg-raised);
   color: var(--fg-strong);
   font-family: var(--font-mono);

@@ -23,7 +23,7 @@ function walk(dir, out = []) {
 // What counts as raw. `0`, %, ch, em, vw/vh and unitless calc() multipliers are fine.
 const RULES = [
   ['px', /(?<![\w.-])-?(?!0+(\.0+)?px)\d*\.?\d+px\b/g],
-  ['time', /(?<![\w.-])\d*\.?\d+m?s\b/g],
+  ['time', /(?<![\w.-])(?!0+(\.0+)?m?s\b)\d*\.?\d+m?s\b/g],
   ['hex', /#[0-9a-fA-F]{3,8}\b/g],
   ['ease', /cubic-bezier\(/g],
 ]

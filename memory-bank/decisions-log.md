@@ -5935,8 +5935,14 @@ gallery/headless shots in dark and light: changes listed in the spec are expecte
   audit's count); literally every px its own token. The user wanted rules over everything.
 - *Visible, agreed:* screen labels 10 → 11 px; uppercase tracking 0.04–0.14 → 0.12em; spacing 6 → 8, 10 → 12, 14 → 16;
   the sticky's glue band 5.2 → 7 px; a card's compact title 24 → 22.
-- *Not yet:* the files (baseline 1,760 on 2026-10-31); world geometry and TS durations into `tokens.ts`; DESIGN.md's
-  sections written from the spec as each family lands.
+- *Refined while building (2026-10-31):* the screen's `--text-xs`…`--text-lg` hold in the world too (windows on the
+  canvas already read that way); `--w-*` adds only what the screen lacks, and sizes TS also measures (card rows, chips,
+  the grid, deck and timeline rows) stay exact as `--w-*` tokens equal to their constants or exact in tokens; screen
+  boxes snap to one ladder `--size-xs`…`--size-xl`.
+- *Built (2026-10-31):* every CSS file, 1,760 → 0 raw values (src/ui 4845207, panels de5a1ae, the world after);
+  `check:tokens` in CI now fails on any raw value. Verified with gallery and demo-scene shots before/after, dark and light.
+- *Not yet:* world geometry and TS durations read from `tokens.ts` (one source; now the CSS tokens carry comments naming
+  each TS constant).
 
 ### D-326 · 2026-10-31 · Accepted (the user: "farklı componentler farklı kategoriler altında olmalı… bir çok şey individual componentlerden oluşturulmak yerine yeniden kodlanıyorsa… bu gallery'nin bir anlamı yok… bir bina gibi foundation'ımızın iyi olması lazım"; then "evet, haritayla başla, G3'ü birlikte commit et")
 **The UI is built like a building, from the bottom: foundations (tokens, motion), the kit (primitives), patterns, then the

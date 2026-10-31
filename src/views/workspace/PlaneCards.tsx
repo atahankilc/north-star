@@ -885,8 +885,9 @@ function ProofCells({ proof }: { proof: Proof }) {
   )
 }
 
-// Tags as framed chips in a row; what doesn't fit becomes `+N`. Mono is 0.6 em a character.
-const CHIP_TEXT = 7.5
+// Tags as framed chips in a row; what doesn't fit becomes `+N`. Mono is 0.6 em a character. The same sizes as the CSS
+// (D-325): --w-text-3xs, --space-1, --w-chip-gap; the room is the card less --w-card-pad twice and --w-card-edge.
+const CHIP_TEXT = 7
 const CHIP_PAD = 4
 const CHIP_GAP = 5
 const CHIP_ROOM = CARD.w - 2 * 7 - 4

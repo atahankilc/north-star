@@ -22,7 +22,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 72px;
+  height: calc(1.5 * var(--space-12));
   background: linear-gradient(transparent, var(--bg));
   pointer-events: none;
 }
@@ -60,7 +60,7 @@
 
 .outlineItem {
   overflow: hidden;
-  padding: 3px 0;
+  padding: var(--space-1) 0;
   border: 0;
   background: none;
   color: var(--fg-dim);
@@ -92,7 +92,7 @@
   position: absolute;
   inset: 0;
   overflow-y: auto;
-  padding: var(--space-12) var(--space-8) 120px;
+  padding: var(--space-12) var(--space-8) calc(2.5 * var(--space-12));
 }
 
 /* The page and, on its right, what's on it. */
@@ -116,7 +116,7 @@
   display: flex;
   flex: none;
   flex-direction: column;
-  width: 180px;
+  width: var(--size-xs);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
@@ -139,7 +139,7 @@
     gap: var(--space-1) var(--space-4);
     width: auto;
     padding-bottom: var(--space-3);
-    border-bottom: 1px solid var(--line);
+    border-bottom: var(--line-w) solid var(--line);
   }
 
   .pageOutline .outlineHead {
@@ -164,12 +164,12 @@
 .zoom {
   display: inline-flex;
   align-items: baseline;
-  gap: 2px;
+  gap: var(--space-half);
 }
 
 .zoomAt {
   min-width: 4ch;
-  padding: 0 2px;
+  padding: 0 var(--space-half);
   border: 0;
   background: none;
   color: var(--fg);
@@ -186,21 +186,21 @@
 .placeLayer {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  z-index: calc(var(--z-world-ui) + 1);
   pointer-events: none;
 }
 
 .ghost {
   position: absolute;
-  border: 1px dashed var(--fg-dim);
+  border: var(--line-w) dashed var(--fg-dim);
   background: var(--wash-1);
 }
 
 .ghostName {
   position: absolute;
   top: 0;
-  left: 14px;
-  padding: 0 8px;
+  left: var(--space-4);
+  padding: 0 var(--space-2);
   transform: translateY(-50%);
   background: var(--bg);
   color: var(--fg-dim);
@@ -214,13 +214,13 @@
 /* Yellow, not hazard tape: a heads-up, nothing is lost. */
 .ask {
   position: absolute;
-  width: min(440px, calc(100vw - 32px));
+  width: min(var(--size-lg), calc(100vw - var(--space-8)));
   padding: var(--space-6) var(--space-6) var(--space-4);
   transform: translate(-50%, -50%);
-  border: 1px solid var(--accent-yellow);
+  border: var(--line-w) solid var(--accent-yellow);
   background: var(--bg);
   pointer-events: auto;
-  animation: ask-in 240ms steps(4) both;
+  animation: ask-in var(--dur-decode) steps(4) both;
 }
 
 @keyframes ask-in {
@@ -234,8 +234,8 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: repeating-linear-gradient(90deg, var(--accent-yellow) 0 6px, transparent 6px 12px);
+  height: var(--line-w-bold);
+  background: repeating-linear-gradient(90deg, var(--accent-yellow) 0 var(--dot), transparent var(--dot) calc(2 * var(--dot)));
 }
 
 .askKicker {
@@ -260,7 +260,7 @@
   color: var(--fg-muted);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  line-height: 1.6;
+  line-height: var(--lh-body);
 }
 
 .askActions {
@@ -297,14 +297,14 @@
 }
 
 .openClip[data-cut] {
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 160px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 160px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - var(--size-xs)), transparent);
+  mask-image: linear-gradient(to bottom, black calc(100% - var(--size-xs)), transparent);
 }
 
 .openMore {
   display: flex;
   align-items: center;
-  padding: 0 36px;
+  padding: 0 var(--w-doc-pad);
   box-sizing: border-box;
 }
 

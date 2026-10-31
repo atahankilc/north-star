@@ -31,9 +31,13 @@ the 940 raw px and the inconsistency really are.
 1. **No number with a unit in a module CSS file**, except: `0`, `%`, `ch`, `em` (sizes relative to the text), `vw`/`vh`,
    and the multipliers in a `calc()` (`calc(2 * var(--space-3))`). Every px, ms, hex, z-index and opacity is a token.
 2. **Two families.** Screen tokens (`--text-*`, `--space-*`, …) for what is drawn at screen size: HUD, panels, menus,
-   prompts, the agent, settings, onboarding. **World tokens (`--w-*`)** for what lives inside the zoomed world in canvas
-   px: card faces, plane text, kanban sheets, the timeline, matrix and table cells, documents' sheets, stickies. A world
-   element never uses a screen type token, and the other way round (spacing is shared, see below).
+   prompts, the agent, settings, onboarding. Inside the zoomed world (canvas px) the screen's `--text-xs`…`--text-lg`
+   hold too (matrix, table, deck and documents already read that way); **world tokens (`--w-*`)** add only what the
+   screen doesn't have: type below 11 px (read when zoomed in), a card's 14 px title, titles that don't shrink on
+   phones, and the world's geometry that TS measures with the same numbers. Screen UI never uses `--w-*`.
+   **TS-coupled sizes stay exact:** where a size is also a constant in TS (a card's rows, a deck's guess, the
+   timeline's rows, the grid), it is a `--w-*` token equal to the constant, or the same number written in tokens
+   (`calc(var(--space-2) + var(--space-half))` for 10); it doesn't snap unless the constant changes with it.
 3. **A component's own geometry is a named token too** (a panel's width, a row's height): `--panel-w`, `--row-h`. If it
    is used by one component only it is still declared in tokens.css under that component's heading, so every size the
    app has is in one file.
@@ -62,18 +66,20 @@ SidePanel and Agent rules, CardTasks' due and where, PreviewMarks' badge). Matri
 see below.
 
 ### World (canvas px, scaled with the zoom)
-Today 14 sizes: 5.2, 7, 7.5, 8, 9, 9.5, 10, 10.5, 12.5, 13, 14, 22, 24, 26. Proposed 7 steps:
+Today 14 sizes: 5.2, 7, 7.5, 8, 9, 9.5, 10, 10.5, 12.5, 13, 14, 22, 24, 26. The screen steps hold (11, 13, 15, 18);
+the world adds:
 
 | Token | px | Was | For |
 |---|---|---|---|
 | `--w-text-3xs` | 7 | 5.2, 7, 7.5 | the tiniest caps: a card's chip and inner category, mini avatars, the sticky's glue band and fold |
-| `--w-text-2xs` | 8 | 8 | a link's chip, a package band's caps |
+| `--w-text-2xs` | 8 | 8 | a link's chip, a package band's caps, a card's small text |
 | `--w-text-xs` | 9 | 9, 9.5 | who, meta rows, members, month names |
 | `--w-text-sm` | 10 | 10, 10.5 | hints in cells, sheet text, readouts |
-| `--w-text-md` | 13 | 12.5, 13 | pills, row labels, order titles |
 | `--w-text-lg` | 14 | 14 | card, task and package titles |
 | `--w-text-xl` | 22 | 22, 24 | a card's compact title and handle |
-| `--w-text-2xl` | 26 | 26 | the project title's description |
+| `--w-text-2xl` | 26 | 26 | the project title's description (`--text-heading` shrinks on phones) |
+
+12.5 and 13 are `--text-sm`. The chip's 7.5 → 7 changed `CHIP_TEXT` in PlaneCards.tsx with it.
 
 Headings, paragraphs and stickies keep their sizes in TS (`PARA_PX`, `STICKY_PX`, H1–H3 48/29/22), since the layout
 measures with them; they move to `tokens.ts` under `world`, so TS and CSS read one list.
@@ -145,7 +151,10 @@ up" may need to give way to "round down" in dense lists (kanban sheets, the tabl
 - **Marks on edges:** `--corner-mark` 7 (the magenta L's on panel, console and dock corners), `--lead` 12 (a numbered
   rule's magenta lead), `--underline-offset` 3 (2–4).
 - **Breakpoints** can't be variables: `@media` lines are left to themselves, and they are 760 and 640 px only.
-- **World geometry** (`--w-*`): a card's 200 × 100 and its parts, kanban sheet and column widths, timeline row height,
+- **World geometry** (`--w-*`, equal to TS constants): `--w-grid` 25 (GRID), `--w-card-pad` 7, `--w-card-edge` 4,
+  `--w-chip-gap` 5, `--w-row-part` 15 / `--w-row-feature` 21 / `--w-row-category` 13 (cardInside.ts), `--w-sticky-h` 125
+  (STICKY_H), `--w-doc-pad` 36 (DocumentPiece PAD). Deck (`K`) and timeline (`T`) sizes are written exact in tokens.
+  *Planned, not done:* a card's 200 × 100 and its parts, kanban sheet and column widths, timeline row height,
   documents' sheet (140 × 186). These are read by TS for layout too, so they live in `tokens.ts` (`world`) and are
   written into CSS from there once, at load (one place, read by both).
 
@@ -229,8 +238,12 @@ Durations written in TS (cellReveal, the focus ink, the curtain) are not CSS: th
 - 2026-10-31: **panels done** (CardPanel, Threads, Finder, the task panel, docks, side view, context menu, the agent's
   UI, onboarding, workspaces, landing, global.css; 0 left): demo scenes (every scene at its poster and two moments,
   dark and light) and the `?` guide shot before/after. `check:tokens` also counts weights and line heights inside
-  `font:`. Next: the world (PlaneCards, TextItems, Kanban, Timeline, Matrix, Table, Documents, CanvasView…), with the
-  gallery's G2 pieces and the demo scenes.
+  `font:` (de5a1ae).
+- 2026-10-31: **the world done** (PlaneCards, TextItems, Kanban, Timeline, Matrix, Table, Documents, DocumentPiece,
+  DocContent, CanvasView, PlaneLinks, collab, DrawSection, demo Stage): **0 raw values left anywhere.** Codemod in an
+  exact mode for the world (spacing only where a token is equal), TS-coupled sizes kept exact, the rest snapped. Gallery
+  G2 pieces and every demo scene shot before/after. `check:tokens` now fails on any raw value. Not yet: world geometry
+  read from `tokens.ts` (one source) and TS durations into `tokens.ts`.
 
 ## How it gets done
 1. tokens.css and tokens.ts: every token above, DESIGN.md §3, 4, 6, 7 rewritten from this file.

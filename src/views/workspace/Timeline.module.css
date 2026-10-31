@@ -53,13 +53,13 @@
 
 .overName {
   position: absolute;
-  top: 2px;
+  top: var(--space-half);
   left: 0;
-  width: calc(var(--left) - 16px);
+  width: calc(var(--left) - var(--space-4));
   color: var(--fg-faint);
-  font-size: 10px;
+  font-size: var(--w-text-sm);
   letter-spacing: var(--track-label);
-  line-height: 14px;
+  line-height: calc(var(--space-3) + var(--space-half));
   text-transform: uppercase;
   pointer-events: none;
 }
@@ -73,39 +73,39 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 18px;
+  height: calc(var(--space-4) + var(--space-half));
   overflow: hidden;
   color: var(--fg-faint);
   font-size: var(--text-xs);
-  line-height: 18px;
+  line-height: calc(var(--space-4) + var(--space-half));
   white-space: pre;
 }
 
 .overMonth {
   position: absolute;
-  top: 20px;
-  padding-left: 3px;
-  border-left: 1px solid var(--line);
+  top: calc(var(--space-4) + var(--space-1));
+  padding-left: var(--space-1);
+  border-left: var(--line-w) solid var(--line);
   color: var(--fg-faint);
-  font-size: 9.5px;
+  font-size: var(--w-text-xs);
   letter-spacing: var(--track-label);
-  line-height: 12px;
+  line-height: var(--space-3);
   text-transform: uppercase;
 }
 
 .overToday {
   position: absolute;
   top: 0;
-  width: 1px;
-  height: 18px;
+  width: var(--line-w);
+  height: calc(var(--space-4) + var(--space-half));
   background: var(--accent-cyan);
 }
 
 .window {
   position: absolute;
-  top: -2px;
-  height: 22px;
-  border: 1px solid var(--accent-cyan);
+  top: calc(-1 * var(--space-half));
+  height: calc(var(--space-6) - var(--space-half));
+  border: var(--line-w) solid var(--accent-cyan);
   background: var(--wash-cyan);
   cursor: grab;
 }
@@ -118,12 +118,12 @@
 /* The days' head: months (their number magenta) over the days, as the scale allows. */
 .headClip {
   position: absolute;
-  top: calc(var(--over) + 8px);
+  top: calc(var(--over) + var(--space-2));
   left: var(--left);
   right: 0;
   height: var(--head);
   overflow: hidden;
-  border-bottom: 1px solid var(--line-hover);
+  border-bottom: var(--line-w) solid var(--line-hover);
 }
 
 .timeLayer {
@@ -135,32 +135,32 @@
 
 .month {
   position: absolute;
-  top: 2px;
-  height: 42px;
-  padding-left: 6px;
-  border-left: 1px solid var(--line-hover);
+  top: var(--space-half);
+  height: calc(var(--head) - var(--space-half));
+  padding-left: var(--space-2);
+  border-left: var(--line-w) solid var(--line-hover);
   color: var(--fg);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
-  line-height: 14px;
+  line-height: calc(var(--space-3) + var(--space-half));
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .month b {
-  margin-right: 4px;
+  margin-right: var(--space-1);
   color: var(--accent-magenta);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 
 .dayHead {
   position: absolute;
-  top: 24px;
-  padding-left: 5px;
+  top: var(--space-6);
+  padding-left: var(--space-1);
   color: var(--fg-dim);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
-  line-height: 14px;
+  line-height: calc(var(--space-3) + var(--space-half));
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -175,16 +175,16 @@
 
 .headToday {
   position: absolute;
-  top: 20px;
-  width: 1px;
-  height: 24px;
+  top: calc(var(--space-4) + var(--space-1));
+  width: var(--line-w);
+  height: var(--space-6);
   background: var(--accent-cyan);
 }
 
 /* The rows, cut to its height and scrolled inside it. */
 .rowsClip {
   position: absolute;
-  top: calc(var(--over) + 8px + var(--head) + 8px);
+  top: calc(var(--over) + var(--space-2) + var(--head) + var(--space-2));
   left: 0;
   right: 0;
   overflow: hidden;
@@ -221,14 +221,14 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  border-left: 1px dashed var(--line);
+  border-left: var(--line-w) dashed var(--line);
 }
 
 .monthLine {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 1px;
+  width: var(--line-w);
   background: var(--line-hover);
 }
 
@@ -236,8 +236,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  z-index: 2;
-  width: 1px;
+  z-index: var(--z-2);
+  width: var(--line-w);
   background: var(--accent-cyan);
   pointer-events: none;
 }
@@ -246,7 +246,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 1px;
+  height: var(--line-w);
   background: var(--line);
 }
 
@@ -255,8 +255,8 @@
   left: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
-  width: calc(var(--left) - 14px);
+  gap: var(--space-2);
+  width: calc(var(--left) - var(--space-4));
   height: var(--bar);
   color: var(--fg);
   font-size: var(--text-xs);
@@ -281,10 +281,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: var(--control-xs);
+  height: var(--control-xs);
   background: var(--wash-3);
-  font-size: 9px;
+  font-size: var(--w-text-xs);
   letter-spacing: 0;
 }
 
@@ -295,10 +295,10 @@
 /* A task: a sheet from its first day to its due day, its face its card's colour (D-291), its left edge that colour. */
 .task {
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-1);
   height: var(--bar);
   background: color-mix(in srgb, var(--tone, var(--fg-dim)) var(--card-tint), var(--bg-raised));
-  box-shadow: inset 2px 0 0 var(--tone, var(--line-hover)), 0 0 0 1px var(--piece-card-edge);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--tone, var(--line-hover)), 0 0 0 var(--line-w) var(--piece-card-edge);
   color: var(--fg);
 }
 
@@ -307,22 +307,22 @@
 }
 
 .task:focus-visible {
-  outline: 1px solid var(--fg-dim);
-  outline-offset: -1px;
+  outline: var(--line-w) solid var(--fg-dim);
+  outline-offset: calc(-1 * var(--line-w));
 }
 
 /* Past its due day, not finished: a magenta edge, hatched on to today. */
 .task[data-late='true'] {
-  outline: 1px solid var(--accent-magenta);
-  outline-offset: -1px;
+  outline: var(--line-w) solid var(--accent-magenta);
+  outline-offset: calc(-1 * var(--line-w));
 }
 
 .task[data-finished='true'] {
-  opacity: 0.5;
+  opacity: var(--o-dim);
 }
 
 .task[data-lifted] {
-  z-index: 4;
+  z-index: calc(var(--z-3) + 1);
   pointer-events: none;
 }
 
@@ -335,29 +335,29 @@
 
 .dia {
   position: absolute;
-  top: 8px;
-  left: 5px;
-  width: 14px;
-  height: 14px;
+  top: var(--space-2);
+  left: calc(var(--space-1) + var(--line-w));
+  width: calc(var(--space-3) + var(--space-half));
+  height: calc(var(--space-3) + var(--space-half));
   background: var(--tone, var(--fg-dim));
-  box-shadow: 0 0 0 2px var(--bg);
+  box-shadow: 0 0 0 var(--line-w-bold) var(--bg);
   transform: rotate(45deg) scale(0.82);
 }
 
 .task[data-point='true'][data-late='true'] .dia {
-  outline: 1px solid var(--accent-magenta);
-  outline-offset: 2px;
+  outline: var(--line-w) solid var(--accent-magenta);
+  outline-offset: var(--space-half);
 }
 
 /* Its name, cut with `…` inside a sheet; beside it when the sheet is too short. */
 .label {
   position: absolute;
   top: 0;
-  left: 10px;
-  right: 8px;
+  left: var(--space-3);
+  right: var(--space-2);
   overflow: hidden;
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: var(--bar);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -365,7 +365,7 @@
 }
 
 .label[data-out='true'] {
-  left: calc(100% + 8px);
+  left: calc(100% + var(--space-2));
   right: auto;
   overflow: visible;
   color: var(--fg-muted);
@@ -373,11 +373,11 @@
 
 /* Late, its name stays beside it (D-314), over its hatch: above it, on the page's colour. */
 .task[data-late='true'] {
-  z-index: 2;
+  z-index: var(--z-2);
 }
 
 .task[data-late='true'] .label[data-out='true'] {
-  padding: 0 6px 0 4px;
+  padding: 0 var(--space-2) 0 var(--space-1);
   background: var(--bg);
 }
 
@@ -389,13 +389,13 @@
 }
 
 .ok {
-  margin-right: 4px;
+  margin-right: var(--space-1);
   color: var(--accent-green);
   font-family: var(--font-mono);
 }
 
 .p {
-  margin-right: 5px;
+  margin-right: var(--space-1);
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -408,10 +408,10 @@
 /* Its checklist: a line along its foot, filled as far as it's done. */
 .checks {
   position: absolute;
-  left: 2px;
+  left: var(--space-half);
   right: 0;
   bottom: 0;
-  height: 2px;
+  height: var(--line-w-bold);
   background: color-mix(in srgb, var(--tone, var(--fg-dim)) 22%, transparent);
   pointer-events: none;
 }
@@ -427,76 +427,76 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  z-index: 2;
-  width: 10px;
+  z-index: var(--z-2);
+  width: var(--dot-lg);
   cursor: ew-resize;
 }
 
 .grip::after {
   content: '';
   position: absolute;
-  top: 5px;
-  bottom: 5px;
-  left: 4px;
-  width: 2px;
+  top: calc(var(--space-1) + var(--line-w));
+  bottom: calc(var(--space-1) + var(--line-w));
+  left: var(--space-1);
+  width: var(--line-w-bold);
   background: var(--accent-cyan);
 }
 
 .grip[data-side='start'] {
-  left: -5px;
+  left: calc(-1 * var(--dot-lg) / 2);
 }
 
 .grip[data-side='due'] {
-  right: -5px;
+  right: calc(-1 * var(--dot-lg) / 2);
 }
 
 .grip[data-side='give'] {
-  left: -26px;
-  width: 22px;
+  left: calc(-1 * (var(--space-6) + var(--space-half)));
+  width: calc(var(--space-6) - var(--space-half));
 }
 
 .grip[data-side='give']::after {
   content: '⟵';
-  top: 7px;
+  top: calc(var(--space-2) - var(--line-w));
   bottom: auto;
-  left: 2px;
+  left: var(--space-half);
   width: auto;
   background: none;
   color: var(--accent-cyan);
   font-size: var(--text-sm);
-  line-height: 14px;
+  line-height: calc(var(--space-3) + var(--space-half));
 }
 
 .hatch {
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-1);
   height: var(--bar);
-  border-top: 1px solid color-mix(in srgb, var(--accent-magenta) 40%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--accent-magenta) 40%, transparent);
-  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--accent-magenta) 75%, transparent) 0 1px, transparent 1px 6px);
+  border-top: var(--line-w) solid color-mix(in srgb, var(--accent-magenta) var(--mix-soft), transparent);
+  border-bottom: var(--line-w) solid color-mix(in srgb, var(--accent-magenta) var(--mix-soft), transparent);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--accent-magenta) var(--mix-strong), transparent) 0 var(--line-w), transparent var(--line-w) calc(var(--space-1) + var(--space-half)));
   pointer-events: none;
 }
 
 .hatch span {
   position: absolute;
   top: 0;
-  left: calc(100% + 6px);
+  left: calc(100% + var(--space-2));
   color: var(--accent-magenta);
   font-size: var(--text-xs);
-  line-height: calc(var(--bar) - 2px);
+  line-height: calc(var(--bar) - var(--space-half));
   white-space: nowrap;
 }
 
 /* The days a held or drawn task would get. */
 .readout {
   position: absolute;
-  z-index: 5;
-  margin-top: -8px;
-  padding: 2px 6px;
-  border: 1px solid var(--accent-cyan);
+  z-index: var(--z-world-ui);
+  margin-top: calc(-1 * var(--space-2));
+  padding: var(--space-half) var(--space-2);
+  border: var(--line-w) solid var(--accent-cyan);
   background: var(--bg);
   color: var(--accent-cyan);
-  font-size: 10.5px;
+  font-size: var(--w-text-sm);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   white-space: nowrap;
@@ -507,12 +507,12 @@
 /* An empty day's `+`: pressed and drawn across days, a new task. */
 .ghost {
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-1);
   display: flex;
   align-items: center;
   justify-content: center;
   height: var(--bar);
-  border: 1px dashed var(--line-hover);
+  border: var(--line-w) dashed var(--line-hover);
   color: var(--accent-cyan);
   font-size: var(--text-sm);
   cursor: crosshair;
@@ -525,17 +525,17 @@
 
 .draft {
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-1);
   height: var(--bar);
-  outline: 1px dashed var(--accent-cyan);
-  outline-offset: -1px;
+  outline: var(--line-w) dashed var(--accent-cyan);
+  outline-offset: calc(-1 * var(--line-w));
   background: var(--wash-cyan);
 }
 
 /* A new task's card prompt (D-300): on the screen under the days drawn (`pickAt` marks where), over every panel. */
 .pick {
   position: fixed;
-  z-index: 12;
+  z-index: var(--z-panel);
 }
 
 .pickAt {
@@ -547,9 +547,9 @@
 /* Tasks past the screen's edges, per row. */
 .edge {
   position: absolute;
-  z-index: 3;
-  padding: 1px 6px;
-  border: 1px solid var(--line-hover);
+  z-index: var(--z-3);
+  padding: var(--space-half) var(--space-2);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   color: var(--fg-muted);
   font: inherit;
@@ -574,33 +574,33 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--fg-dim);
   font-size: var(--text-xs);
 }
 
 .trayLabel {
-  width: calc(var(--left) - 16px);
+  width: calc(var(--left) - var(--space-4));
   letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
 .pill {
   position: relative;
-  max-width: 260px;
-  padding: 4px 9px;
-  border: 1px solid var(--line-hover);
+  max-width: var(--size-sm);
+  padding: var(--space-1) var(--space-2);
+  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
-  box-shadow: inset 2px 0 0 var(--tone, transparent);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--tone, transparent);
   color: var(--fg);
   font-family: var(--font-display);
-  font-size: 12.5px;
+  font-size: var(--text-sm);
   cursor: grab;
 }
 
 .pill[data-lifted] {
   position: absolute;
-  z-index: 6;
+  z-index: calc(var(--z-world-ui) + 1);
   scale: 0.8;
   transform-origin: 0 0;
   pointer-events: none;
