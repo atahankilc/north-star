@@ -23,10 +23,11 @@ import { useWs, useWsNow, type WorkspaceCtx } from './context'
 import { shownPieces } from './shownBox'
 import { labelBox } from './TextItems'
 import styles from './CanvasSwitch.module.css'
+import { DUR } from '../../ui/motion'
 
 type Box = { x: number; y: number; w: number; h: number }
 
-const LEAVE_MS = 200
+const LEAVE_MS = DUR.exit
 // Returns them, to show again if the move is refused.
 function leave(targets: string[]): Promise<HTMLElement[]> {
   const els = targets.flatMap((t) => [...document.querySelectorAll<HTMLElement>(`[aria-label="Canvas"] [data-target="${t}"]`)])

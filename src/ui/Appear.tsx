@@ -13,9 +13,9 @@ import {
 } from 'react'
 import { useRevealed } from '../state/curtain'
 import { isReducedMotion } from '../state/motion'
-import { CELL_PX, cellTime, DURATION_MS, OVERSHOOT } from './cellReveal'
+import { CELL_PX, CELLS_SHUT, cellTime, DURATION_MS, OVERSHOOT } from './cellReveal'
 
-const HIDDEN = 'polygon(0 0, 0 0, 0 0)'
+const HIDDEN = CELLS_SHUT
 
 export type Mode = 'enter' | 'exit'
 

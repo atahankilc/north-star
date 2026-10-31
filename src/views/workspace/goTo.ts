@@ -14,6 +14,7 @@ import { create } from 'zustand'
 import type { ReactNode } from 'react'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { placesIn as placesAt, type PlaceMark } from '../../model/goTo'
+import { DUR } from '../../ui/motion'
 
 export { shownPlaces, type PlaceAt, type PlaceMark } from '../../model/goTo'
 
@@ -52,10 +53,10 @@ export function goToPlace(wid: string, place: Place, inPlane: boolean) {
     const c = useCanvasView.getState().planeCam
     if (!c) return
     const { zoom, at, to } = aim(place)
-    return glide(c, { zoom, ox: to[0] - at[0] * zoom, oy: to[1] - at[1] * zoom }, 420, (v) => useCanvasView.setState({ planeCam: v }))
+    return glide(c, { zoom, ox: to[0] - at[0] * zoom, oy: to[1] - at[1] * zoom }, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
   }
   const c = camOf(wid)
   const { size } = useCanvasView.getState()
   const { zoom, at, to } = aim(place)
-  glide(c, { zoom, x: to[0] - size.w / 2 - at[0] * zoom, y: to[1] - size.h / 2 - at[1] * zoom }, 420, (v) => setCam(wid, v))
+  glide(c, { zoom, x: to[0] - size.w / 2 - at[0] * zoom, y: to[1] - size.h / 2 - at[1] * zoom }, DUR.glide, (v) => setCam(wid, v))
 }

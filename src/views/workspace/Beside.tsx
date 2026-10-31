@@ -22,6 +22,7 @@ import { tableBounds, TablePager, TableView, useTableUi } from './Table'
 import { DockAction, FocusDock } from './FocusDock'
 import { TableSetupPanel } from './TableSetup'
 import styles from './Beside.module.css'
+import { DUR } from '../../ui/motion'
 
 const ZOOM_MIN = 0.1
 const ZOOM_MAX = 4
@@ -207,7 +208,7 @@ export function glidePlaneTo(picked: Pick<Card, 'id'>, plane: string, cards: Car
   const to = { ...c, ox: w / 2 - (card.x + CARD.w / 2) * c.zoom, oy: size.h / 2 - (card.y + CARD.h / 2) * c.zoom }
   stopGlide()
   if (isReducedMotion()) useCanvasView.setState({ planeCam: to })
-  else glide(c, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
+  else glide(c, to, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
 }
 
 function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose }: PaneProps) {

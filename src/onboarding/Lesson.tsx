@@ -16,11 +16,12 @@ import { getWs } from '../state/wsStore'
 import { fill, lessonName, plain, type Fill } from './words'
 import { countsAsMenu, type CloseHow, type Shown } from './queue'
 import styles from './Lesson.module.css'
+import { CELLS_SHUT } from '../ui/cellReveal'
 
 // Drawn and visible: on screen, with a size, not hidden by style (visibility, opacity 0, display, a cell-by-cell clip
 // that's shut: a piece's console when not shown), not inside something inert or aria-hidden (the canvas picture's cards
 // under a focus).
-const SHUT = 'polygon(0 0, 0 0, 0 0)'
+const SHUT = CELLS_SHUT
 export function isVisible(el: HTMLElement): boolean {
   const r = el.getBoundingClientRect()
   if (!(r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth)) return false

@@ -31,6 +31,7 @@ import { CARD, isOnPlane } from '../model/cards'
 import { kindOfPiece, sticks } from '../model/pieces'
 import type { WorkspaceCtx } from '../state/wsStore'
 import { agentDriving, queued } from './driving'
+import { DUR } from '../ui/motionTokens'
 
 export { agentDriving }
 
@@ -302,7 +303,7 @@ async function showNow(id: string, o: { plane?: string; canvas?: string; focus?:
     const b = { x: shown.x, y: shown.y, w: CARD.w, h: CARD.h }
     const [sx0, sy0] = [v.ox + b.x * v.zoom, v.oy + b.y * v.zoom]
     if (sx0 >= 48 && sx0 + b.w * v.zoom <= area - 48 && sy0 >= 56 && sy0 + b.h * v.zoom <= size.h - 56) return
-    glide(v, { ...v, ox: area / 2 - (b.x + b.w / 2) * v.zoom, oy: size.h / 2 - (b.y + b.h / 2) * v.zoom }, 420, (to) => useCanvasView.setState({ planeCam: to }))
+    glide(v, { ...v, ox: area / 2 - (b.x + b.w / 2) * v.zoom, oy: size.h / 2 - (b.y + b.h / 2) * v.zoom }, DUR.glide, (to) => useCanvasView.setState({ planeCam: to }))
     return
   }
   const piece = pieceOf(id)

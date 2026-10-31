@@ -5965,4 +5965,14 @@ docs/foundation-audit-2026-10-31.md).
   code; blocks born in features (DockAction, Pills, Choices, Toggle) never moved down.
 - *Alternatives:* restructure folders first (churn for every session, fixes no duplication); keep grouping by folder.
 - *Coordination:* D-325 (tokens) works on the same CSS; kit work never on the same files at the same time.
-- *Not yet:* everything after the map.
+- *Built:* motion foundations (2026-10-31): src/ui/motionTokens.ts (DUR with `glide` 420, `exit` 192, `consoleIn/Out`,
+  `focusIn/Out`; EASE_POINTS; `cubicBezier`, `easeOut`, `easeInOut`, `lerp`; pure, so node code reads it) and
+  src/ui/motion.ts (`tween()`, `glideValues()`, reduced motion inside); tests/unit/motion.test.ts holds DUR and the
+  easings to tokens.css; tokens.css `--dur-glide`, `--dur-exit`. Moved onto it: canvasView's `glide`, the 13 typed
+  420s, Timeline's strip glide and scale, CanvasView's morph, FocusedPlane's easing and timings, DecodeText, the
+  exits (200 → 192), the console's cells; `CELLS_SHUT` (cellReveal.ts) for the 5 shut polygons; the root covered by
+  reduced motion (the light theme's colour shift). One card-type colour map: tokens.css `--type-*`, src/ui/cardTone.ts
+  `CARD_TONE` (TYPE_ACCENT, CardPanel's and planeMenu's TONE, FilterDock's TYPE_TONE, KindGuide). Checked: demo scenes
+  frame by frame against the code before, identical but for the exits.
+- *Not yet:* `runCells` with an order (FocusedPlane's ink onto it), one Spinner (Loading, Curtain, the agent's), the
+  7 entrance keyframes as one class; then the kit, patterns, the areas, `check:kit`, folders.

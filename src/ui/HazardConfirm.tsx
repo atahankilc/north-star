@@ -9,6 +9,7 @@ import { runCells } from './Appear'
 import { CELL_PX } from './cellReveal'
 import { DecodeText } from './DecodeText'
 import styles from './HazardConfirm.module.css'
+import { DUR } from './motion'
 
 type Props = {
   title: string
@@ -117,7 +118,7 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
     const el = box.current
     if (!el || reduced) return then()
     dialog.current?.setAttribute('data-leaving', 'true')
-    runCells(el, 'exit', 0, 200, then)
+    runCells(el, 'exit', 0, DUR.exit, then)
   }
 
   return createPortal(

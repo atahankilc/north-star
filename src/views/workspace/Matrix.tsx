@@ -62,6 +62,7 @@ import { usePeersOn } from './collab'
 import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import { learn } from '../../onboarding/learn'
 import styles from './Matrix.module.css'
+import { DUR } from '../../ui/motion'
 
 // The matrix's parts in its own px: the row heads' column, a cell, the column heads' row, a row, the gap between them,
 // the end totals' column and row.
@@ -217,7 +218,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
       which === 'rows'
         ? { ...view, oy: el.clientHeight / 2 - (L.rowY(rows.length - 1) + M.row / 2) * view.zoom }
         : { ...view, ox: el.clientWidth / 2 - (L.colX(cols.length - 1) + M.cell / 2) * view.zoom }
-    glide(view, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
+    glide(view, to, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
     // When one comes in.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows.length, cols.length])

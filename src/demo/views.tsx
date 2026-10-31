@@ -21,6 +21,7 @@ import { SideNav } from '../views/workspace/SideNav'
 import { useWs, WorkspaceContext } from '../views/workspace/context'
 import { KIND_NAME, kindOfPiece } from '../data/pieces'
 import layout from '../views/workspace/WorkspaceLayout.module.css'
+import { DUR } from '../ui/motion'
 
 // The router's navigate, for the director's `ui.focus`.
 export function Navigator({ onNavigate }: { onNavigate: (go: (to: string) => void) => void }) {
@@ -50,7 +51,7 @@ function useShownCanvas(wid: string) {
     }
     const el = canvasEl()
     if (!el || isReducedMotion()) return swap()
-    return runCells(el, 'exit', 0, 200, swap)
+    return runCells(el, 'exit', 0, DUR.exit, swap)
   }, [wid, asked, shown, store])
   useLayoutEffect(() => {
     const el = canvasEl()

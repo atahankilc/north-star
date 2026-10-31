@@ -14,6 +14,7 @@ import { camOf, planeArea, setCam, useCanvasView, type Bounds } from '../state/c
 import { isReducedMotion } from '../state/motion'
 import { runCells } from '../ui/Appear'
 import { finishAnimations, releaseAnimations, restart, step as stepClock, stepAnimations, yieldTask, realClock } from './clock'
+import { CELLS_SHUT } from '../ui/cellReveal'
 
 export type Pt = { x: number; y: number }
 // Where the cursor goes: a CSS selector (the element's middle, or `aim()`'s point in it), a stage point, or a function
@@ -667,7 +668,7 @@ export function attach(p: { pointer: HTMLElement | null; chip: HTMLElement | nul
 // Where the break and the rebuild run: the whole page (the stage and what it puts in portals, a card's panel), kept
 // hidden from the end of the break until the rebuild's cells start.
 const page = () => document.body
-const HIDDEN = 'polygon(0 0, 0 0, 0 0)'
+const HIDDEN = CELLS_SHUT
 // Frames shown while the stage was being made again (a half-settled frame at the loop's seam): should stay 0.
 let leaks = 0
 // Frames where, with the pointer last, something other than a field showed a focus ring (what a real click never

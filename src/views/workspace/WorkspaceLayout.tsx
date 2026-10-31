@@ -47,6 +47,7 @@ import { useEditKeys } from './useEditKeys'
 import { Coach } from '../../onboarding/Coach'
 import { Agent } from '../../agent/ui/Agent'
 import styles from './WorkspaceLayout.module.css'
+import { DUR } from '../../ui/motion'
 
 const VIEWER = "You're a viewer in this workspace: an owner can make you an editor."
 
@@ -158,7 +159,7 @@ function useShownCanvas(wid: string, canvas: string) {
     }
     const el = canvasEl()
     if (!built.current || !el || isReducedMotion()) return swap()
-    return runCells(el, 'exit', 0, 200, swap)
+    return runCells(el, 'exit', 0, DUR.exit, swap)
   }, [wid, canvas, shown])
   // Once the canvas has been on screen: a canvas found only as the workspace loads (a focused plane's) isn't animated.
   useEffect(() => void (built.current ||= !!canvasEl()))

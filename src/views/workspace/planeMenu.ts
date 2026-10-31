@@ -15,15 +15,10 @@ import { linkTone } from './PlaneLinks'
 import { LINK_GROUPS } from './planeFilter'
 import { clipboard, deleteHere, onPlane, packageThese, pasteSame, selectedIds, setSelection } from './selection'
 import { foldsOf } from './cardInside'
+import { CARD_TONE } from '../../ui/cardTone'
 
 const CARD_LETTER: Record<CardType, string> = { customer: 'c', problem: 'r', competitor: 'o', idea: 'i', feature: 'f' }
-const TONE: Record<CardType, string> = {
-  customer: 'var(--accent-green)',
-  problem: 'var(--accent-magenta)',
-  competitor: 'var(--accent-yellow)',
-  idea: 'var(--fg)',
-  feature: 'var(--accent-cyan)',
-}
+const TONE: Record<CardType, string> = CARD_TONE
 
 type Ctx = {
   wid: string

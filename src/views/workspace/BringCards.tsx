@@ -13,6 +13,7 @@ import { ContextMenu } from './ContextMenu'
 import { useWs } from './context'
 import { planeTitle } from '../../data/canvases'
 import { TYPE_ACCENT } from './PlaneCards'
+import { DUR } from '../../ui/motion'
 
 const ORDER: AnyType[] = [...CARD_TYPES, 'package']
 const MANY: Record<AnyType, string> = { customer: 'customers', problem: 'problems', competitor: 'competitors', idea: 'ideas', feature: 'features', package: 'packages' }
@@ -28,7 +29,7 @@ function show(box: { x: number; y: number; w: number; h: number }) {
   if (l >= 0 && t >= 0 && r <= size.w && b <= size.h) return
   const to = { ...c, ox: size.w / 2 - (box.x + box.w / 2) * c.zoom, oy: size.h / 2 - (box.y + box.h / 2) * c.zoom }
   if (isReducedMotion()) useCanvasView.setState({ planeCam: to })
-  else glide(c, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
+  else glide(c, to, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
 }
 
 // `here`: the plane in focus; the list closes when that changes.

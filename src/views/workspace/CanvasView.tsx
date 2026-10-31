@@ -74,6 +74,8 @@ import { TaskPanel } from './TaskPanel'
 import { timelineKanbans, timelineOf } from '../../data/tasks'
 import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
+import { DUR, easeInOut, lerp } from '../../ui/motion'
+import { CELLS_SHUT } from '../../ui/cellReveal'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
 export const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu], [data-scrolls]'
@@ -651,10 +653,10 @@ export function CanvasView() {
     if (sp !== space) return focusTo(sp === CANVAS ? null : sp)
     const [x, y] = pinOf(t).at
     const { size, planeCam } = useCanvasView.getState()
-    if (focusId && planeCam) glide(planeCam, { ...planeCam, ox: size.w / 2 - x * planeCam.zoom, oy: size.h / 2 - y * planeCam.zoom }, 420, (c) => useCanvasView.setState({ planeCam: c }))
+    if (focusId && planeCam) glide(planeCam, { ...planeCam, ox: size.w / 2 - x * planeCam.zoom, oy: size.h / 2 - y * planeCam.zoom }, DUR.glide, (c) => useCanvasView.setState({ planeCam: c }))
     else if (!focusId) {
       const c = camOf(wid)
-      glide(c, { ...c, x: -x * c.zoom, y: -y * c.zoom }, 420, (v) => setCam(wid, v))
+      glide(c, { ...c, x: -x * c.zoom, y: -y * c.zoom }, DUR.glide, (v) => setCam(wid, v))
     }
   }
   // The canvas a thread is on (D-302's session 4): its space's, or for the canvas's own the text's or the plane's.
@@ -1291,7 +1293,7 @@ function setPlaneView(to: PlaneCam, instant: boolean) {
   const c = useCanvasView.getState().planeCam
   stopGlide()
   if (instant || !c || isReducedMotion()) useCanvasView.setState({ planeCam: to })
-  else glide(c, to, 420, (v) => useCanvasView.setState({ planeCam: v }))
+  else glide(c, to, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
 }
 
 // The zoom what's held at screen size on the canvas is drawn for (piece names, consoles, marks, text's bars): the
@@ -1740,7 +1742,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
     // Once a turn: on its start.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [morph?.to])
-  const eased = morph ? easeBoth(morph.t) : 1
+  const eased = morph ? easeInOut(morph.t) : 1
   const openView = morph?.to === 'open' ? between(fitted, OPEN_VIEW, eased) : OPEN_VIEW
   const framedView = morph?.to === 'framed' ? between(OPEN_VIEW, inner, eased) : inner
   const step = GRID * inner.zoom
@@ -2017,10 +2019,10 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
     if (!el) return
     if (first.current) {
       first.current = false
-      el.style.clipPath = on ? '' : 'polygon(0 0, 0 0, 0 0)'
+      el.style.clipPath = on ? '' : CELLS_SHUT
       return
     }
-    return runCells(el, on ? 'enter' : 'exit', 0, on ? 170 : 90)
+    return runCells(el, on ? 'enter' : 'exit', 0, on ? DUR.consoleIn : DUR.consoleOut)
   }, [on])
   const fresh = !on && !!comments?.fresh && comments.count > 0
   return (
@@ -2183,9 +2185,8 @@ const NONE: never[] = []
 const OPEN_VIEW: PlaneCam = { ox: OPEN_PAD, oy: OPEN_PAD, zoom: 1 }
 
 // Framing and unframing (D-267): as long as the cells' build-up (D-034's components'), eased both ends.
-const MORPH_MS = 320
-const easeBoth = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
-const between = (a: PlaneCam, b: PlaneCam, t: number): PlaneCam => ({ ox: a.ox + (b.ox - a.ox) * t, oy: a.oy + (b.oy - a.oy) * t, zoom: a.zoom + (b.zoom - a.zoom) * t })
+const MORPH_MS = DUR.cells
+const between = (a: PlaneCam, b: PlaneCam, t: number): PlaneCam => ({ ox: lerp(a.ox, b.ox, t), oy: lerp(a.oy, b.oy, t), zoom: lerp(a.zoom, b.zoom, t) })
 
 // What's stuck to a piece, and what's stuck to those, all the way down (D-298), each after the one it's stuck to.
 function stuckChain(shown: WithId<Piece>[], id: string): WithId<Piece>[] {

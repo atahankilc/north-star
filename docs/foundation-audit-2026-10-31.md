@@ -64,7 +64,10 @@ Entrances mostly use the shared pieces (`<Appear>` 25 uses, `runCells` 9, `Decod
   Curtain's opacity fade (MotionConfig turns off transforms only); 7 entrance `@keyframes` rely only on the global
   0.01 ms rule.
 
-## 4. Proposal (to decide with the user)
+## 4. Proposal (accepted as D-326)
+
+Progress: the map (2026-10-31); motion foundations, step 2 below, mostly (2026-10-31; what's left in D-326's
+*Not yet*).
 
 A building: foundations, then the kit, then patterns, then the rooms. The gallery shows each floor and is the safety net
 for every move (before/after shots per state, as D-325 does).

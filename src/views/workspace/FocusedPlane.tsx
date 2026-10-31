@@ -19,11 +19,12 @@ import { isReducedMotion } from '../../state/motion'
 import { isOpen } from './shownBox'
 import { CELL_PX, cellHash } from '../../ui/cellReveal'
 import styles from './CanvasView.module.css'
+import { DUR, easeInOut } from '../../ui/motion'
 
-const IN_MS = 820
-const OUT_MS = 700
+const IN_MS = DUR.focusIn
+const OUT_MS = DUR.focusOut
 // A matrix's way in and out: the table's glide (fitPlane's) and its page's cells together.
-const BARE_MS = 420
+const BARE_MS = DUR.glide
 // How much the cells' order is left to chance: the rest is their distance from the plane.
 const RAGGED = 0.18
 
@@ -33,7 +34,6 @@ const CELL_DRAG_PX = 5
 const ZOOM_MIN = 0.1
 const ZOOM_MAX = 4
 
-const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 
 type Props = {
   piece: WithId<Piece>
@@ -240,7 +240,7 @@ function hold(el: HTMLElement, at: ScreenRect, home: PlaneCam, way: 'in' | 'out'
   let raf = 0
   const frame = (now: number) => {
     const p = Math.min(1, (now - t0) / ms)
-    cut(inOut(way === 'in' ? 1 - p : p))
+    cut(easeInOut(way === 'in' ? 1 - p : p))
     if (p < 1) raf = requestAnimationFrame(frame)
     else if (way === 'in') el.style.clipPath = ''
   }
@@ -290,7 +290,7 @@ function ink(el: HTMLElement, at: ScreenRect, way: 'in' | 'out', ms: number, rag
   let raf = 0
   const frame = (now: number) => {
     const p = Math.min(1, (now - t0) / ms)
-    cut(inOut(way === 'in' ? p : 1 - p))
+    cut(easeInOut(way === 'in' ? p : 1 - p))
     if (p < 1) raf = requestAnimationFrame(frame)
     else {
       // Arrived: the whole screen, held by its CSS from here (resizes and all).

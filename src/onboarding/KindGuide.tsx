@@ -18,6 +18,7 @@ import { Demo } from './Demo'
 import { lessonById, type GuideLesson, type GuideRow } from './lessons'
 import { useProgress } from './progress'
 import styles from './KindGuide.module.css'
+import { CARD_TONE } from '../ui/cardTone'
 
 type Props = { menu: DOMRect; row: string | null; where: 'canvas' | 'plane'; onHide: () => void }
 
@@ -41,12 +42,12 @@ const LOOK: Record<string, { glyph: string; tone?: string }> = {
   sticky: { glyph: '▤', tone: 'var(--accent-yellow)' },
   section: { glyph: '⬚' },
   title: { glyph: '✦' },
-  customer: { glyph: '▌', tone: 'var(--accent-green)' },
-  problem: { glyph: '▌', tone: 'var(--accent-magenta)' },
-  competitor: { glyph: '▌', tone: 'var(--accent-yellow)' },
-  idea: { glyph: '▌', tone: 'var(--fg)' },
-  feature: { glyph: '▌', tone: 'var(--accent-cyan)' },
-  package: { glyph: '▣', tone: 'var(--accent-blue)' },
+  customer: { glyph: '▌', tone: CARD_TONE.customer },
+  problem: { glyph: '▌', tone: CARD_TONE.problem },
+  competitor: { glyph: '▌', tone: CARD_TONE.competitor },
+  idea: { glyph: '▌', tone: CARD_TONE.idea },
+  feature: { glyph: '▌', tone: CARD_TONE.feature },
+  package: { glyph: '▣', tone: CARD_TONE.package },
   existing: { glyph: '⧉' },
 }
 

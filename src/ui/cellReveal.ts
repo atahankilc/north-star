@@ -3,6 +3,8 @@
 // moment. The same math runs in CSS (Appear) and in GLSL (3D cards), and both use the backdrop's
 // screen grid, so pieces line up with the ASCII field behind them.
 
+import { DUR } from './motionTokens'
+
 // Grid cell in CSS px. The backdrop's cell is 9 device px (cellSize()), so this is one of its cells on a 1x screen and
 // 2 × 2 of them on a 2x one: the lines still fall on the backdrop's grid.
 export const CELL_PX = 9
@@ -10,7 +12,10 @@ export const CELL_PX = 9
 // Progress runs a little past 1 so the last cells are surely in.
 export const OVERSHOOT = 1.02
 
-export const DURATION_MS = 320
+export const DURATION_MS = DUR.cells
+
+// Every cell shut: what a cell-by-cell entrance hides an element with before its first cell shows.
+export const CELLS_SHUT = 'polygon(0 0, 0 0, 0 0)'
 
 // Deterministic per-cell noise, identical to the GLSL version below.
 export function cellHash(x: number, y: number) {

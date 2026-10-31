@@ -2,10 +2,11 @@
 import { useEffect, useState } from 'react'
 import { useRevealed } from '../state/curtain'
 import { isReducedMotion } from '../state/motion'
+import { DUR } from './motionTokens'
 
 const GLYPHS = '#%@*+=-:.·/\\|<>[]{}'
 
-export function DecodeText({ text, duration = 260, delay = 0 }: { text: string; duration?: number; delay?: number }) {
+export function DecodeText({ text, duration = DUR.decode, delay = 0 }: { text: string; duration?: number; delay?: number }) {
   const [out, setOut] = useState(() => text.replace(/\S/g, ' '))
   // Start once the loading curtain has opened, so the effect is actually seen.
   const revealed = useRevealed()

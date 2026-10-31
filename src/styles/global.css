@@ -38,7 +38,9 @@ a {
   outline-offset: var(--space-1);
 }
 
-/* Set from the in-app motion setting (src/state/motion.ts): full by default, whatever the OS says (D-063). */
+/* Set from the in-app motion setting (src/state/motion.ts): full by default, whatever the OS says (D-063). The root
+   too: the light theme's colour shift is a transition on :root (tokens.css). */
+html[data-motion='reduced'],
 html[data-motion='reduced'] *,
 html[data-motion='reduced'] *::before,
 html[data-motion='reduced'] *::after {

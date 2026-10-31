@@ -44,6 +44,8 @@ import { createEdge, defaultKind } from '../../data/edges'
 import { drawLinks, ghostOf, LinkChips, LinkLines } from './PlaneLinks'
 import { learn } from '../../onboarding/learn'
 import styles from './PlaneCards.module.css'
+import { CELLS_SHUT } from '../../ui/cellReveal'
+import { CARD_TONE } from '../../ui/cardTone'
 
 const DRAG_PX = 5
 // How a card is drawn by how big it is on screen (D-111, D-153): everything while its small text (8 px) is 4 px or more;
@@ -68,14 +70,8 @@ const TITLE_SHOWN = 80
 const CARRIED = 0.8
 
 // Type = the left edge and the label in its colour (D-055, D-057).
-export const TYPE_ACCENT: Record<AnyType, string> = {
-  package: 'var(--accent-blue)',
-  customer: 'var(--accent-green)',
-  problem: 'var(--accent-magenta)',
-  competitor: 'var(--accent-yellow)',
-  idea: 'var(--fg)',
-  feature: 'var(--accent-cyan)',
-}
+// The card types' colours (src/ui/cardTone.ts, D-326), under the name the views have used.
+export const TYPE_ACCENT = CARD_TONE
 
 const PLACEHOLDER: Record<AnyType, string> = {
   package: 'What does this piece deliver?',
@@ -569,7 +565,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
   const face = useRef<HTMLDivElement>(null)
   const revealed = useRevealed()
   useLayoutEffect(() => {
-    if (arrive && face.current && !isReducedMotion()) face.current.style.clipPath = 'polygon(0 0, 0 0, 0 0)'
+    if (arrive && face.current && !isReducedMotion()) face.current.style.clipPath = CELLS_SHUT
     // On mount only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

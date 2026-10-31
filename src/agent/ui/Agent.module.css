@@ -962,10 +962,10 @@
   z-index: calc(var(--z-panel) + 1);
   pointer-events: none;
   transition:
-    left var(--dur-med) var(--ease-out),
-    top var(--dur-med) var(--ease-out),
-    width var(--dur-med) var(--ease-out),
-    height var(--dur-med) var(--ease-out);
+    left var(--dur-glide) var(--ease-out),
+    top var(--dur-glide) var(--ease-out),
+    width var(--dur-glide) var(--ease-out),
+    height var(--dur-glide) var(--ease-out);
   --ghost: var(--accent-cyan);
 }
 

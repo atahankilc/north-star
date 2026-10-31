@@ -958,3 +958,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc, vitest 832, lint, both builds, check:gallery (73 examples), check:lessons; all 299 states shot with a
   fresh load each, no errors; the wizard and lesson fixes and the map looked at.
 - The foundation audit (docs/foundation-audit-2026-10-31.md) found the duplication D-326 plans to remove.
+
+## Done (2026-10-31): motion foundations (D-326)
+- src/ui/motionTokens.ts and motion.ts, cardTone.ts, `--dur-glide`/`--dur-exit`/`--type-*`; glide, the 420s, Timeline's
+  tweens, the morph, FocusedPlane, DecodeText, exits, console cells, CELLS_SHUT, the root in reduced motion, the
+  card colour maps moved onto them (decisions-log D-326 *Built*).
+- Verified: tsc, vitest (837; the one failure is evalGraders › judge, from 71472c8, not this), check:gallery,
+  check:tokens 0, check:lessons; tests/unit/motion.test.ts; six demo scenes sampled (the camera travels through
+  in-between values); eight scenes frame by frame against the code before, each served from its own checkout:
+  identical (max 9/255 noise) but for the exits now 192 ms; card colours in the gallery, dark and light.

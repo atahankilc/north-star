@@ -23,6 +23,7 @@ import type { FindItem } from './find'
 import { usePeersOn } from './collab'
 import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import styles from './Table.module.css'
+import { DUR } from '../../ui/motion'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
 export const T = { head: 40, row: 32, name: 260, add: 40 }
@@ -271,7 +272,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
     }
     // A column across to the middle, its head brought down into sight if it's above (the setup sits over the middle).
     if (ci >= 0) to = { ...to, ox: el.clientWidth / 2 - (xs[ci] + ws[ci] / 2) * view.zoom, oy: Math.max(to.oy, HEAD_IN) }
-    glide(view, to, 420, move)
+    glide(view, to, DUR.glide, move)
     // When one comes in.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowKeys, colIds])

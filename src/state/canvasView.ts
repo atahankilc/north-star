@@ -2,7 +2,7 @@
 // for the tab's life, so leaving the workspace and coming back finds the canvas where it was. `center` is the canvas point in the middle of the screen,
 // where the side nav's `+` puts new things.
 import { create } from 'zustand'
-import { isReducedMotion } from './motion'
+import { DUR, glideValues } from '../ui/motion'
 
 export type Cam = { x: number; y: number; zoom: number }
 
@@ -154,21 +154,14 @@ export function canvasCenter(wid: string): [number, number] {
   return [((planeArea().w - useCanvasView.getState().size.w) / 2 - x) / zoom, -y / zoom]
 }
 
-// A camera move that visibly travels (eased both ends); a newer one stops it. Reduced motion: there at once.
-let moving = 0
+// A camera move that visibly travels (eased both ends, motion.ts' tween); a newer one stops it. Reduced motion: there
+// at once. `ms` is DUR.glide unless the caller has a reason.
+let moving = () => {}
 export function glide<T extends Record<string, number>>(from: T, to: T, ms: number, apply: (v: T) => void) {
-  cancelAnimationFrame(moving)
-  if (isReducedMotion()) return apply(to)
-  const t0 = performance.now()
-  const frame = (now: number) => {
-    const p = Math.min(1, (now - t0) / ms)
-    const k = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
-    apply(Object.fromEntries(Object.keys(to).map((key) => [key, from[key] + (to[key] - from[key]) * k])) as T)
-    if (p < 1) moving = requestAnimationFrame(frame)
-  }
-  moving = requestAnimationFrame(frame)
+  moving()
+  moving = glideValues(from, to, ms, apply)
 }
-export const stopGlide = () => cancelAnimationFrame(moving)
+export const stopGlide = () => moving()
 
 export type Bounds = { x: number; y: number; w: number; h: number }
 
@@ -194,7 +187,7 @@ export function fitCanvas(wid: string, pieces: Bounds[], instant = false) {
     to = { x: (area.w - size.w) / 2 - cx * zoom, y: -cy * zoom, zoom }
   }
   if (instant) setCam(wid, to)
-  else glide(camOf(wid), to, 420, (c) => setCam(wid, c))
+  else glide(camOf(wid), to, DUR.glide, (c) => setCam(wid, c))
 }
 
 // Fit as the canvas does it (D-186): the side nav's button calls what CanvasView set here, the same as `0`.
@@ -217,5 +210,5 @@ export function fitPlane(content: Bounds | null, instant = false) {
   if (instant) {
     stopGlide()
     useCanvasView.setState({ planeCam: to })
-  } else glide(planeCam, to, 420, (c) => useCanvasView.setState({ planeCam: c }))
+  } else glide(planeCam, to, DUR.glide, (c) => useCanvasView.setState({ planeCam: c }))
 }

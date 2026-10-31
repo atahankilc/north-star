@@ -16,6 +16,7 @@ import { DockAction } from './FocusDock'
 import { linkTone } from './PlaneLinks'
 import { LINK_GROUPS, narrowing, setFilter, START, useFilter, useHoldFilter, type Filter } from './planeFilter'
 import styles from './FilterDock.module.css'
+import { CARD_TONE } from '../../ui/cardTone'
 
 // What opens over the focus dock (D-233, D-235): each its own strip in the console's look, stacked with a gap; Escape
 // closes the top one (once no menu in it is open).
@@ -90,7 +91,7 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   const show: MenuEntry[] = ALL_TYPES.map((t) => ({ key: t, label: `${t}s`, checked: !f.hide.includes(t), tone: TYPE_TONE[t], onSelect: () => set({ hide: flip(f.hide, t) }) }))
   const forItems: MenuEntry[] = [
     { key: 'any', label: 'any customer', checked: f.for.length === 0, onSelect: () => set({ for: [] }) },
-    ...customers.map((c) => ({ key: c.id, label: c.title || 'untitled', checked: f.for.includes(c.id), tone: 'var(--accent-green)', onSelect: () => set({ for: flip(f.for, c.id) }) })),
+    ...customers.map((c) => ({ key: c.id, label: c.title || 'untitled', checked: f.for.includes(c.id), tone: CARD_TONE.customer, onSelect: () => set({ for: flip(f.for, c.id) }) })),
   ]
   const tagItems: MenuEntry[] = [
     { key: 'any', label: 'any tag', checked: f.tags.length === 0, onSelect: () => set({ tags: [] }) },
@@ -129,11 +130,4 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
 }
 
 // Each card type's colour (its edge), as the old SHOW's swatches.
-const TYPE_TONE: Record<string, string> = {
-  customer: 'var(--accent-green)',
-  problem: 'var(--accent-magenta)',
-  competitor: 'var(--accent-yellow)',
-  idea: 'var(--fg)',
-  feature: 'var(--accent-cyan)',
-  package: 'var(--accent-blue)',
-}
+const TYPE_TONE: Record<string, string> = CARD_TONE

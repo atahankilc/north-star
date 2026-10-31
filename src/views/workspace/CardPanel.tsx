@@ -49,16 +49,11 @@ import { linkTone } from './PlaneLinks'
 import { TasksSection } from './CardTasks'
 import { openThread, startComment, threadOn } from './Threads'
 import styles from './CardPanel.module.css'
+import { DUR } from '../../ui/motion'
+import { CARD_TONE } from '../../ui/cardTone'
 
 // Type = the panel's colour, as the card's edge (D-055).
-const TONE: Record<AnyType, string> = {
-  package: 'var(--accent-blue)',
-  customer: 'var(--accent-green)',
-  problem: 'var(--accent-magenta)',
-  competitor: 'var(--accent-yellow)',
-  idea: 'var(--fg)',
-  feature: 'var(--accent-cyan)',
-}
+const TONE: Record<AnyType, string> = CARD_TONE
 
 export const PLACEHOLDER: Record<AnyType, string> = {
   package: 'What does this piece deliver?',
@@ -1020,7 +1015,7 @@ export function goToCard(c: Card) {
   const [sx1, sy1] = [sx0 + b.w * v.zoom, sy0 + b.h * v.zoom]
   if (sx0 >= 48 && sx1 <= room - 48 && sy0 >= 56 && sy1 <= size.h - 56) return
   const cx = room / 2
-  glide(v, { ...v, ox: cx - (b.x + b.w / 2) * v.zoom, oy: size.h / 2 - (b.y + b.h / 2) * v.zoom }, 420, (to) => useCanvasView.setState({ planeCam: to }))
+  glide(v, { ...v, ox: cx - (b.x + b.w / 2) * v.zoom, oy: size.h / 2 - (b.y + b.h / 2) * v.zoom }, DUR.glide, (to) => useCanvasView.setState({ planeCam: to }))
 }
 
 // A piece's name with its leading number apart, magenta (D-266, D-276): `01 Pazar`.

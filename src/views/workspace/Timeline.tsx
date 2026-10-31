@@ -35,6 +35,7 @@ import { OPEN_PAD } from './shownBox'
 import { useOpenSize } from './sizes'
 import { registerStrip } from './stripReveal'
 import styles from './Timeline.module.css'
+import { DUR, lerp, tween } from '../../ui/motion'
 
 // Its parts in its own px: the rows' names, the overview, the days' head, a task, the gap between, a row's padding, the
 // tray; how many days a pane beside a deck showed before the strip (kept for the tasks side view's call).
@@ -75,40 +76,25 @@ const startFor = (span: number) => dayOf(today()) - Math.round(span / 3)
 const stripOf = (id: string): Strip => useStrip.getState()[id] ?? { from: startFor(20), ppd: STRIP_SCALES[1].ppd, top: 0, span: 20 }
 const setStrip = (id: string, patch: Partial<Strip>) => useStrip.setState((s) => ({ [id]: { ...(s[id] ?? stripOf(id)), ...patch } }))
 // Back to where a timeline starts (today, a week's scale): the onboarding's demo scenes start each loop from there.
-export const resetStrip = (id: string) => (cancelAnimationFrame(motion.get(id) ?? 0), useStrip.setState((s) => ({ ...s, [id]: undefined as unknown as Strip })))
+export const resetStrip = (id: string) => (stopStrip(id), useStrip.setState((s) => ({ ...s, [id]: undefined as unknown as Strip })))
 
 // Its days glided to a first day, or its scale eased to another round a point (a fraction of what's shown); a press
-// stops either.
-const motion = new Map<string, number>()
-const stopStrip = (id: string) => cancelAnimationFrame(motion.get(id) ?? 0)
-const ease = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2)
-function glideStrip(id: string, to: Partial<Pick<Strip, 'from' | 'top'>>, ms = 420) {
+// stops either (motion.ts' tween: reduced motion lands at once).
+const motion = new Map<string, () => void>()
+const stopStrip = (id: string) => motion.get(id)?.()
+function glideStrip(id: string, to: Partial<Pick<Strip, 'from' | 'top'>>, ms: number = DUR.glide) {
   stopStrip(id)
   const a = stripOf(id)
-  if (isReducedMotion()) return setStrip(id, to)
-  const t0 = performance.now()
-  const step = (now: number) => {
-    const k = ease(Math.min(1, (now - t0) / ms))
-    setStrip(id, { ...(to.from !== undefined && { from: a.from + (to.from - a.from) * k }), ...(to.top !== undefined && { top: a.top + (to.top - a.top) * k }) })
-    if (k < 1) motion.set(id, requestAnimationFrame(step))
-  }
-  motion.set(id, requestAnimationFrame(step))
+  motion.set(id, tween(ms, (k) => setStrip(id, { ...(to.from !== undefined && { from: lerp(a.from, to.from, k) }), ...(to.top !== undefined && { top: lerp(a.top, to.top, k) }) })))
 }
-function scaleStrip(id: string, ppd: number, at = 0.5, ms = 320) {
+function scaleStrip(id: string, ppd: number, at = 0.5, ms: number = DUR.cells) {
   stopStrip(id)
   const a = stripOf(id)
   const to = Math.max(PPD_MIN, Math.min(PPD_MAX, ppd))
   // The day under the point stays put.
   const day = a.from + a.span * at
   const set = (p: number) => setStrip(id, { ppd: p, from: day - ((a.span * a.ppd) / p) * at })
-  if (isReducedMotion()) return set(to)
-  const t0 = performance.now()
-  const step = (now: number) => {
-    const k = ease(Math.min(1, (now - t0) / ms))
-    set(a.ppd * Math.pow(to / a.ppd, k))
-    if (k < 1) motion.set(id, requestAnimationFrame(step))
-  }
-  motion.set(id, requestAnimationFrame(step))
+  motion.set(id, tween(ms, (k) => set(a.ppd * Math.pow(to / a.ppd, k))))
 }
 const toToday = (id: string) => glideStrip(id, { from: startFor(stripOf(id).span) })
 
@@ -488,13 +474,16 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
       if (!moved) return void useKanbanUi.setState({ selected: null, many: null })
       if (isReducedMotion() || performance.now() - lt > 60) return
       let vel = (v * 16) / s / ppd
+      // A coast, not a tween: it slows by itself and ends when it's still.
+      let raf = 0
       const decay = () => {
         if (Math.abs(vel) < 0.01) return
         setStrip(piece.id, { from: stripOf(piece.id).from - vel })
         vel *= 0.92
-        motion.set(piece.id, requestAnimationFrame(decay))
+        raf = requestAnimationFrame(decay)
       }
-      motion.set(piece.id, requestAnimationFrame(decay))
+      raf = requestAnimationFrame(decay)
+      motion.set(piece.id, () => cancelAnimationFrame(raf))
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)

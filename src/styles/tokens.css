@@ -36,6 +36,14 @@
   --accent-blue: #3d7bff;
   --accent-green: #3dff8a;
 
+  /* Each card type's colour (D-045, D-326): src/ui/cardTone.ts reads these; the light theme's accents follow. */
+  --type-customer: var(--accent-green);
+  --type-problem: var(--accent-magenta);
+  --type-competitor: var(--accent-yellow);
+  --type-idea: var(--fg);
+  --type-feature: var(--accent-cyan);
+  --type-package: var(--accent-blue);
+
   /* What an assistant proposal does to an item in its preview (D-096): diff colours, kept apart from the type colours. */
   --diff-new: #a6ff3d;
   --diff-edited: #ff9f1c;
@@ -206,7 +214,7 @@
   --z-curtain: 100; /* the loading curtain */
   --z-demo: 2147483647; /* the demo stage only */
 
-  /* Motion (D-034, D-035, D-319): every duration has a name. Mirror TS durations in tokens.ts `motion`. */
+  /* Motion (D-034, D-035, D-319): every duration has a name. Script reads them from src/ui/motion.ts (DUR, EASE_POINTS, D-326), held to these by tests/unit/motion.test.ts. */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* folding and resizing */
   --dur-press: 70ms; /* a press */
@@ -217,6 +225,8 @@
   --dur-spring: 300ms; /* the Marks' spring */
   --dur-cells: 320ms; /* a component's cell-by-cell build-up */
   --dur-med: 400ms;
+  --dur-glide: 420ms; /* a camera or a view travelling (fit, go to); motion.ts DUR.glide */
+  --dur-exit: 192ms; /* a component breaking cell by cell on its way out */
   --dur-slow: 600ms;
   --dur-blink: 1s; /* a caret's or a pulse's beat */
   --dur-intro: 10s; /* the welcome (D-072) */

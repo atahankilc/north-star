@@ -13,7 +13,7 @@ import { isNew, markSeen, useReads, type NewThread } from '../../data/threads'
 import { isReducedMotion } from '../../state/motion'
 import { ago } from '../../ui/ago'
 import { runCells } from '../../ui/Appear'
-import { DURATION_MS } from '../../ui/cellReveal'
+import { DURATION_MS, CELLS_SHUT } from '../../ui/cellReveal'
 import { CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './Threads'
 import styles from './Threads.module.css'
 
@@ -27,7 +27,7 @@ const HEAD_ROOM = 64
 // Breaking apart takes 0.6 of the build-up, as `Appear`'s exit; what's leaving is kept a little past it.
 const OUT_MS = Math.round(DURATION_MS * 0.6)
 const KEEP_MS = OUT_MS + 40
-const HIDDEN = 'polygon(0 0, 0 0, 0 0)'
+const HIDDEN = CELLS_SHUT
 
 // A value kept for `ms` after it goes, so what's leaving is still drawn while it animates out.
 function useLinger<T>(value: T | null, ms: number): [T | null, boolean] {
