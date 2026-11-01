@@ -63,8 +63,6 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Blaze: the user's payments profile was refused once (OR_BAOOC_15, likely profile country vs German card); retrying.
 
 ## Known issues
-- Gallery: Coach › empty canvas draws nothing, even with the welcome seen, the whole screen (side nav's `+`) and no menu
-  open; next to look at: Coach.tsx's `hintWaits`/`readBusy` for that hint. EmptyHint › empty canvas shows it alone.
 - Agent: bugs 1–28 with their order and status in docs/specs/agent-bugs.md (add new ones there); the first real eval
   run (gpt-5.6-terra 66/110, 2026-10-31) is not a baseline. Other providers: Q-031.
 - Emulators only: after a Storage URL fetch, a tab's next Firestore write can queue ~55 s in Chrome (HTTP/1.1 connection limit).

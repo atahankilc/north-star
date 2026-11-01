@@ -540,6 +540,9 @@ export function Coach() {
   hintsRef.current = hints
   const readyRef = useRef(hintsReady)
   readyRef.current = hintsReady
+  // Quiet (dev only: the gallery forces one surface), the real queue's lessons aren't drawn, so they hold no hint back.
+  const quietRef = useRef(quiet)
+  quietRef.current = quiet
   useEffect(() => {
     if (!anyHint) {
       setMenuUp(false)
@@ -554,8 +557,8 @@ export function Coach() {
       const waiting = ids.filter((id) => !r.has(id))
       let now: string[] = []
       if (waiting.length && Date.now() >= holdUntil.current) {
-        const shown = queue.current()?.lesson.id ?? null
-        const queued = queue.queued()
+        const shown = quietRef.current ? null : (queue.current()?.lesson.id ?? null)
+        const queued = quietRef.current ? [] : queue.queued()
         const busy = readBusy()
         now = waiting.filter((id) => {
           const l = HINTS.find((h) => h.id === id)
@@ -568,7 +571,7 @@ export function Coach() {
     const t = setInterval(check, 150)
     return () => clearInterval(t)
   }, [anyHint, queue])
-  const welcomeQueued = cur?.lesson.id === 'welcome' || queue.queued().includes('welcome')
+  const welcomeQueued = cur?.lesson.id === 'welcome' || (!quiet && queue.queued().includes('welcome'))
   const hintIds =
     menuUp || menu ? [] : Object.keys(hints).filter((id) => hintsReady.has(id) && !(id === 'empty-canvas' && (welcomeQueued || newsShowing || piecesHere > 0)))
 

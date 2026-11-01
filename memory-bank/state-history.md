@@ -1197,3 +1197,9 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   aligned with D-333, CITE says how to mark context (23); `npm run eval -- --replay <run>` (scriptOf, divergence,
   replay.md). Verified: tsc, vitest 965, stub evals 116 tasks 0 failed, `--wrong` 116 failed, replay of the third
   run 249 → 293 of 348.
+
+## Done (2026-11-01): the gallery's Coach › empty canvas draws its hint
+- The cause: the gallery keeps the coach quiet (its real queue not drawn), but the queue's own welcome still counted as
+  showing, so the empty canvas's hint (after: welcome) waited behind an unseen lesson. While quiet (dev only), the real
+  queue holds no hint back. Verified in headless Chrome: the hint beside the `+`; onboarding tests, check:lessons.
+
