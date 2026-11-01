@@ -3,26 +3,23 @@
 // which cards), its columns (a field's values, for cards) and rows (another field, D-269). A small preview beside it shows the columns as they'll come and
 // how many cards each gets. `make the kanban` puts it at the middle of the canvas, in edit mode. Escape or a click outside
 // leaves it; Enter goes to the next step, ⌘Enter makes it (D-250). Nothing is written until it's made.
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useState } from 'react'
 import { addPiece } from '../../data/pieces'
 import { emptyKanban, type KanbanSetup } from '../../data/tasks'
 import { canvasCenter, setEditing } from '../../state/canvasView'
 import { useWs } from './context'
-import { wizardEnter } from './wizardKeys'
+import { WizardShell } from '../../ui/WizardShell'
 import { useKanbanUi, type KanbanTab } from './Kanban'
 import { KanbanEditor, type SetKanban } from './KanbanSetup'
 import { boxKey, byBox, byColumn, columnsOf, heldCards, KANBAN_TEMPLATES, NO_VALUE, rowFieldOf, rowsOfField, type CardCol } from './kanbanCards'
 import m from './Matrix.module.css'
-import { Button } from '../../ui/Button'
-import { Label } from '../../ui/Label'
 
 const STEPS = ['start from', 'holds', 'columns · rows'] as const
 const QUESTION = ['Start from', 'What does it hold?', 'Its columns and rows']
 
 export function KanbanWizard() {
   const open = useKanbanUi((s) => s.wizard)
-  return open ? createPortal(<Wizard />, document.body) : null
+  return open ? <Wizard /> : null
 }
 
 const close = () => useKanbanUi.setState({ wizard: false })
@@ -50,20 +47,6 @@ function Wizard() {
   const rows = rowField ? rowsOfField(rowField, held) : []
   const boxes = rowField ? byBox(field, cols as CardCol[], rowField, rows, held) : null
 
-  // Heard first, wherever the focus is: Escape leaves, Enter steps on (D-250).
-  const enter = useRef<(e: KeyboardEvent) => void>(() => {})
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.target as Element | null)?.closest?.('[data-coach]')) return
-      if (e.key === 'Enter') return enter.current(e)
-      if (e.key !== 'Escape') return
-      e.stopPropagation()
-      close()
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [])
-
   const make = async () => {
     close()
     const t = KANBAN_TEMPLATES.find((x) => x.key === template)
@@ -72,109 +55,87 @@ function Wizard() {
     // Where you're looking, in edit mode, to be moved where you want it.
     setEditing(id, true)
   }
-  enter.current = (e) => wizardEnter(e, step, STEPS.length, setStep, () => void make())
   const tab: KanbanTab = step === 1 ? 'holds' : 'cols'
 
   return (
-    <div className={m.wizardShade} onPointerDown={(e) => e.target === e.currentTarget && close()}>
-      <section className={m.wizard} data-learn="wizard" role="dialog" aria-modal="true" aria-label="A new deck" onKeyDown={(e) => e.stopPropagation()}>
-        <nav className={m.wizardSteps} role="tablist">
-          {STEPS.map((s, i) => (
-            <button key={s} role="tab" aria-selected={step === i} className={m.wizardStep} onClick={() => setStep(i)}>
-              <span className={m.wizardNum}>{i + 1}</span>
-              {s}
-            </button>
-          ))}
-        </nav>
-        <div className={m.wizardMain}>
-          <div className={m.wizardQ}>
-            <h3 className={m.wizardTitle}>{QUESTION[step]}</h3>
-            {step === 0 && (
-              <div className={m.templates}>
-                {KANBAN_TEMPLATES.map((t) => (
-                  <button
-                    key={t.key}
-                    className={m.template}
-                    aria-pressed={template === t.key}
-                    onClick={() => {
-                      setDraft({ ...emptyKanban(), ...t.setup() })
-                      setTemplate(t.key)
-                    }}
-                  >
-                    {t.name}
-                    <small>{t.hint}</small>
-                  </button>
+    <WizardShell
+      label="A new deck"
+      steps={STEPS}
+      step={step}
+      onStep={setStep}
+      title={QUESTION[step]}
+      make="make the deck"
+      onMake={() => void make()}
+      onClose={close}
+      preview={
+        <>
+          <table className={m.mini}>
+            <thead>
+              <tr>
+                {cols.slice(0, 5).map((c) => (
+                  <th key={c.id} title={c.name}>
+                    {c.name}
+                  </th>
                 ))}
-                <button className={m.template} aria-pressed={template === null} onClick={() => setStep(1)}>
-                  my own
-                  <small>answer the next two</small>
-                </button>
-              </div>
-            )}
-            {step === 1 && (
-              <>
-                <KanbanEditor tab="holds" setup={draft} onChange={change} />
-                {cardsHere && <KanbanEditor tab="cards" setup={draft} onChange={change} />}
-              </>
-            )}
-            {step === 2 && <KanbanEditor tab={tab} setup={draft} onChange={change} />}
-          </div>
-          <aside className={m.wizardPreview} aria-label="Preview">
-            <Label>preview</Label>
-            <table className={m.mini}>
-              <thead>
+              </tr>
+            </thead>
+            <tbody>
+              {boxes ? (
+                rows.slice(0, 5).map((r) => (
+                  <tr key={r.id}>
+                    {cols.slice(0, 5).map((c) => (
+                      <td key={c.id} title={`${c.name} × ${r.name}`}>
+                        {boxes.get(boxKey(c.id, r.id))?.length ?? 0}
+                      </td>
+                    ))}
+                    <th title={r.name}>{r.id === NO_VALUE ? '–' : r.name}</th>
+                  </tr>
+                ))
+              ) : (
                 <tr>
                   {cols.slice(0, 5).map((c) => (
-                    <th key={c.id} title={c.name}>
-                      {c.name}
-                    </th>
+                    <td key={c.id}>{counts ? (counts.get(c.id)?.length ?? 0) : '·'}</td>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {boxes ? (
-                  rows.slice(0, 5).map((r) => (
-                    <tr key={r.id}>
-                      {cols.slice(0, 5).map((c) => (
-                        <td key={c.id} title={`${c.name} × ${r.name}`}>
-                          {boxes.get(boxKey(c.id, r.id))?.length ?? 0}
-                        </td>
-                      ))}
-                      <th title={r.name}>{r.id === NO_VALUE ? '–' : r.name}</th>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    {cols.slice(0, 5).map((c) => (
-                      <td key={c.id}>{counts ? (counts.get(c.id)?.length ?? 0) : '·'}</td>
-                    ))}
-                  </tr>
-                )}
-              </tbody>
-            </table>
-            <p className={m.checkHint}>
-              {cardsHere ? `${held.length} cards in ${cols.length} columns${rowField ? ` × ${rows.length} rows` : ''}` : `tasks in ${cols.length} columns`}
-              {cols.length > 5 || rows.length > 5 ? ' · the first few shown' : ''}
-            </p>
-          </aside>
+              )}
+            </tbody>
+          </table>
+          <p className={m.checkHint}>
+            {cardsHere ? `${held.length} cards in ${cols.length} columns${rowField ? ` × ${rows.length} rows` : ''}` : `tasks in ${cols.length} columns`}
+            {cols.length > 5 || rows.length > 5 ? ' · the first few shown' : ''}
+          </p>
+        </>
+      }
+    >
+      {step === 0 && (
+        <div className={m.templates}>
+          {KANBAN_TEMPLATES.map((t) => (
+            <button
+              key={t.key}
+              className={m.template}
+              aria-pressed={template === t.key}
+              onClick={() => {
+                setDraft({ ...emptyKanban(), ...t.setup() })
+                setTemplate(t.key)
+              }}
+            >
+              {t.name}
+              <small>{t.hint}</small>
+            </button>
+          ))}
+          <button className={m.template} aria-pressed={template === null} onClick={() => setStep(1)}>
+            my own
+            <small>answer the next two</small>
+          </button>
         </div>
-        <footer className={m.wizardFoot}>
-          <span>{step > 0 && <Button onClick={() => setStep(step - 1)}>back</Button>}</span>
-          <span className={m.setupEnd}>
-            <Button onClick={close}>
-              cancel
-            </Button>
-            {step < STEPS.length - 1 && (
-              <Button onClick={() => setStep(step + 1)}>
-                next
-              </Button>
-            )}
-            <Button tone="main" onClick={() => void make()}>
-              make the deck
-            </Button>
-          </span>
-        </footer>
-      </section>
-    </div>
+      )}
+      {step === 1 && (
+        <>
+          <KanbanEditor tab="holds" setup={draft} onChange={change} />
+          {cardsHere && <KanbanEditor tab="cards" setup={draft} onChange={change} />}
+        </>
+      )}
+      {step === 2 && <KanbanEditor tab={tab} setup={draft} onChange={change} />}
+    </WizardShell>
   )
 }

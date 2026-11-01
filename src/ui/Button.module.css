@@ -76,6 +76,8 @@
   font-size: var(--text-xs);
   letter-spacing: normal;
   text-transform: none;
+  /* One verb, one line: a narrow row never breaks a `[verb]` in two (a lesson's foot did). */
+  white-space: nowrap;
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-out);
 }

@@ -3,14 +3,12 @@
    it in the middle. Magenta marks on its top corners, as the dock's. */
 .shade {
   composes: enter from '../../ui/Enter.module.css';
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-float);
-  background: var(--scrim);
+  /* The Window's scrim (D-326) at the finder's layer and in the page's scrim. */
+  --window-z: var(--z-float);
+  --window-scrim: var(--scrim);
 }
 
 .finder {
-  composes: enter from '../../ui/Enter.module.css';
   position: fixed;
   top: 50%;
   left: 50%;
@@ -29,8 +27,7 @@
     height var(--dur-cells) var(--ease-in-out);
 }
 
-.finder[data-reduced='true'],
-.finder[data-reduced='true'] ~ .shade {
+.finder[data-reduced='true'] {
   transition: none;
   animation: none;
 }

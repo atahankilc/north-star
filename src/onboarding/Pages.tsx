@@ -3,9 +3,8 @@
 // (D-316): the matrix/table/deck wizards' frame, the pages as tabs, the demo on top, words on black.
 // What's new is the same frame: the pages are the changes, `[show me]` where an item has somewhere to go, the last
 // page `+ N more` as a list.
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
-import { Appear } from '../ui/Appear'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { stopCanvas, Window } from '../ui/Window'
 import { DecodeText } from '../ui/DecodeText'
 import { Demo } from './Demo'
 import { bits, fitTab, plain, two, type PageModel } from './words'
@@ -55,49 +54,9 @@ function setRef<T>(ref: React.Ref<T>, v: T | null) {
   else if (ref) (ref as React.MutableRefObject<T | null>).current = v
 }
 
-// Focus inside while open (Tab wraps), and back where it was on close.
-export function useDialogFocus(root: React.RefObject<HTMLElement | null>, first: React.RefObject<HTMLElement | null>) {
-  useLayoutEffect(() => {
-    const was = document.activeElement as HTMLElement | null
-    ;(first.current ?? root.current)?.focus({ preventScroll: true })
-    return () => {
-      if (was && document.contains(was)) was.focus({ preventScroll: true })
-    }
-    // Once, on open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-}
-export function trapTab(e: KeyboardEvent, root: HTMLElement | null) {
-  if (e.key !== 'Tab' || !root) return
-  const all = [...root.querySelectorAll<HTMLElement>('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')]
-  if (!all.length) return
-  const i = all.indexOf(document.activeElement as HTMLElement)
-  if (e.shiftKey && i <= 0) {
-    e.preventDefault()
-    all[all.length - 1].focus()
-  } else if (!e.shiftKey && i === all.length - 1) {
-    e.preventDefault()
-    all[0].focus()
-  }
-}
-
-// A press on a shade (not on what's on it) keeps focus where it is, in the dialog (it never drops to <body>).
-export const keepFocus = {
-  onPointerDownCapture: (e: React.PointerEvent) => {
-    if (e.target === e.currentTarget) e.preventDefault()
-  },
-  onMouseDown: (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) e.preventDefault()
-  },
-}
-
-// Stops what the canvas would do with a press, a wheel or a double-click here (as SidePanel does).
-export const stopCanvas = {
-  onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
-  onDoubleClick: (e: React.MouseEvent) => e.stopPropagation(),
-  onWheel: (e: React.WheelEvent) => e.stopPropagation(),
-  onContextMenu: (e: React.MouseEvent) => e.stopPropagation(),
-}
+// Focus kept inside and given back, Tab going round, a press on the scrim keeping the focus, the canvas never hearing a
+// press: the Window's (src/ui/Window.tsx, D-326), here for the lessons and nudges that import them from this file.
+export { keepFocus, stopCanvas, trapTab, useDialogFocus } from '../ui/Window'
 
 type Props = {
   kind: 'welcome' | 'news'
@@ -109,7 +68,6 @@ export function Pages({ kind, pages, onEnd }: Props) {
   const [i, setI] = useState(0)
   const root = useRef<HTMLElement>(null)
   const next = useRef<HTMLButtonElement>(null)
-  useDialogFocus(root, next)
   const n = pages.length
   const page = pages[Math.min(i, n - 1)]
   const last = i >= n - 1
@@ -121,7 +79,6 @@ export function Pages({ kind, pages, onEnd }: Props) {
   const onKey = (e: KeyboardEvent) => {
     // The canvas and the app's own keys never hear what's pressed in here.
     e.stopPropagation()
-    trapTab(e, root.current)
     if (e.key === 'Escape') {
       e.preventDefault()
       skip()
@@ -145,27 +102,30 @@ export function Pages({ kind, pages, onEnd }: Props) {
   const fitW = useFitWidth()
   const common = { page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW: fitW - 2 }
 
-  return createPortal(
-    <div className={styles.shade} data-coach {...stopCanvas} {...keepFocus}>
-      <Appear
-        as="section"
-        elRef={root}
-        className={styles.wa}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        onKeyDown={onKey}
-        style={{ '--w': `${fitW}px` } as React.CSSProperties}
-      >
-        <Window {...common} />
-      </Appear>
-    </div>,
-    document.body,
+  // The Window (D-326): the scrim (`data-coach`: the canvas and the app's keys never hear what's pressed here), focus on
+  // `[next ›]` and back where it was, Tab round inside, the cell-by-cell build; its frame is the welcome's own (`.wa`)
+  // and Escape is `skip`, heard by `onKey` (the Window's own Escape steps aside for the coach).
+  return (
+    <Window
+      labelledBy={titleId}
+      onClose={skip}
+      escape={false}
+      scrimPress="keep"
+      scrimProps={{ 'data-coach': true, ...stopCanvas }}
+      look="bare"
+      entrance="cells"
+      focus={next}
+      elRef={root}
+      className={styles.wa}
+      onKeyDown={onKey}
+      style={{ '--w': `${fitW}px` } as React.CSSProperties}
+    >
+      <PageWindow {...common} />
+    </Window>
   )
 }
 
-type WindowProps = {
+type PageWindowProps = {
   page: PageModel
   pages: PageModel[]
   i: number
@@ -267,7 +227,7 @@ const Keys = () => (
 const tabChars = (w: number, n: number) => Math.max(4, Math.floor((w / Math.max(1, n) - 28 - 24) / 7.9))
 
 // The wizard window.
-function Window({ page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW }: WindowProps) {
+function PageWindow({ page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW }: PageWindowProps) {
   const max = tabChars(demoW + 2, n)
   return (
     <>

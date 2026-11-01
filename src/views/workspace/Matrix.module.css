@@ -640,12 +640,6 @@
   border-bottom: var(--line-w) solid var(--line);
 }
 
-.tabCount {
-  margin-left: var(--space-1);
-  color: var(--fg-faint);
-  letter-spacing: 0;
-}
-
 .setupEnd {
   display: flex;
   align-items: center;
@@ -690,43 +684,11 @@
   font-size: var(--w-text-sm);
 }
 
-/* One of a few, framed; the picked one cyan. */
+/* A rule's line: what it looks at, is / is not, its values (src/ui/Options.tsx), side by side. */
 .choices {
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--space-1);
-}
-
-.choice {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--control-sm);
-  padding: 0 var(--space-2);
-  border: var(--line-w) solid var(--line);
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
-}
-
-.choice:hover {
-  border-color: var(--line-hover);
-  color: var(--fg);
-}
-
-.choice[aria-pressed='true'] {
-  border-color: var(--accent-cyan);
-  background: var(--wash-cyan);
-  color: var(--fg-strong);
-}
-
-.typeTick {
-  display: block;
-  width: var(--dot);
-  height: var(--dot);
-  background: var(--type);
 }
 
 /* What's added by hand: a card with its type's colour down the left, a name in mono. */
@@ -902,51 +864,6 @@
   text-align: center;
 }
 
-/* What a cell holds: three framed choices, each with a sample and a line. */
-.kinds {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
-  width: 100%;
-}
-
-.kind {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-half);
-  padding: var(--space-2) var(--space-3);
-  border: var(--line-w) solid var(--line);
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.kind:hover {
-  border-color: var(--line-hover);
-}
-
-.kind[aria-pressed='true'] {
-  border-color: var(--accent-cyan);
-  background: var(--wash-cyan);
-}
-
-.kind small {
-  color: var(--fg-dim);
-  font-size: var(--w-text-sm);
-  line-height: var(--lh-body);
-}
-
-.kindSample {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  height: var(--control-sm);
-  color: var(--fg-strong);
-  font-size: var(--text-sm);
-}
-
 .steps {
   display: flex;
   flex-direction: column;
@@ -1001,87 +918,7 @@
   background: var(--wash-3);
 }
 
-/* The wizard (D-212): over the whole screen, the page dimmed behind it; four steps as tabs, the question left, a
-   preview right, the way out and `make the matrix` at the foot. Its height holds still between steps. */
-.wizardShade {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-menu);
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
-  background: color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
-}
-
-.wizard {
-  display: flex;
-  flex-direction: column;
-  width: min(var(--modal-w), 100%);
-  min-height: min(var(--size-xl), 100%);
-  max-height: 100%;
-  border: var(--line-w) solid var(--line-hover);
-  background: var(--bg);
-  color: var(--fg-dim);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-}
-
-.wizardSteps {
-  display: flex;
-  border-bottom: var(--line-w) solid var(--line);
-}
-
-.wizardStep {
-  flex: 1;
-  padding: var(--space-3) var(--space-4);
-  border: 0;
-  background: none;
-  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 transparent;
-  color: var(--fg-dim);
-  font: inherit;
-  letter-spacing: var(--track-label);
-  text-align: left;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.wizardStep:hover {
-  color: var(--fg);
-}
-
-.wizardStep[aria-selected='true'] {
-  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 var(--accent-magenta);
-  color: var(--fg-strong);
-}
-
-.wizardNum {
-  margin-right: var(--space-2);
-  color: var(--accent-magenta);
-}
-
-.wizardMain {
-  display: grid;
-  flex: 1;
-  grid-template-columns: minmax(0, 1fr) var(--size-sm);
-  min-height: 0;
-}
-
-.wizardQ {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
-  padding: var(--space-4);
-}
-
-.wizardTitle {
-  margin: 0 0 var(--space-2);
-  color: var(--fg-strong);
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-medium);
-}
-
+/* A wizard's step content (the shell is src/ui/WizardShell.tsx, D-326): templates to start from, the preview's table. */
 .templates {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1117,16 +954,6 @@
   font-size: var(--text-xs);
 }
 
-.wizardPreview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
-  padding: var(--space-4);
-  border-left: var(--line-w) solid var(--line);
-  background: var(--bg-raised);
-}
-
 .mini {
   width: 100%;
   border-collapse: collapse;
@@ -1159,23 +986,7 @@
   margin: 0 auto;
 }
 
-.wizardFoot {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  border-top: var(--line-w) solid var(--line);
-}
-
 @media (max-width: 760px) {
-  .wizardMain {
-    grid-template-columns: 1fr;
-  }
-
-  .wizardPreview {
-    border-top: var(--line-w) solid var(--line);
-    border-left: 0;
-  }
-
   .templates,
   .kinds {
     grid-template-columns: 1fr;

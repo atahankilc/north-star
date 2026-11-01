@@ -4,7 +4,7 @@
 // (what the screen shows once you're there), gliding as it grows so it stays in the middle. ↓ with nothing typed lists
 // the places (go to, D-196). ↑ ↓ pick, Enter goes, Tab steps the scopes, alt C W X the switches, Escape closes.
 // Something on another canvas (D-302) goes there first: the canvas builds, then the view goes on as it would.
-import { Fragment, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { canvasPath } from '../../app/paths'
 import { canvasTextOn, piecesOn } from '../../data/canvases'
@@ -32,6 +32,7 @@ import { Button } from '../../ui/Button'
 import { Empty } from '../../ui/Empty'
 import { PromptField } from '../../ui/PromptField'
 import { Tabs } from '../../ui/Tabs'
+import { Window } from '../../ui/Window'
 
 const SWITCHES: { k: keyof FindOpts; label: string; title: string; code: string }[] = [
   { k: 'caseSensitive', label: 'Aa', title: 'match case (alt C)', code: 'KeyC' },
@@ -352,11 +353,19 @@ function Panel() {
 
   return (
     <>
-      <div className={styles.shade} onPointerDown={closeFinder} aria-hidden />
-      <div
+      {/* The Window (D-326): its scrim closes it, focus on the field and back on close; the frame, the keys (Escape,
+          Tab steps the scopes) and the fade (the scrim's) are the finder's own. */}
+      <Window
+        label="Find"
+        onClose={closeFinder}
+        escape={false}
+        trap={false}
+        look="bare"
+        entrance="none"
+        portal={false}
+        focus={field as RefObject<HTMLElement | null>}
+        scrimProps={{ className: styles.shade }}
         className={styles.finder}
-        role="dialog"
-        aria-label="Find"
         data-full={full || undefined}
         data-reduced={isReducedMotion() || undefined}
         style={{ width, height }}
@@ -429,7 +438,7 @@ function Panel() {
           </span>
           <span>{searching ? 'searching…' : query && found instanceof RegExp ? `${total} ${total === 1 ? 'match' : 'matches'}${more > 0 ? ` (${rows.length} shown: type more)` : ''} · ${SCOPE_NAME[scope]}` : ''}</span>
         </div>
-      </div>
+      </Window>
       {looking && <FindBodies />}
     </>
   )

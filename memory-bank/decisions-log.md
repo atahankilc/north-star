@@ -6047,7 +6047,17 @@ docs/foundation-audit-2026-10-31.md).
   the welcome's and a lesson's feet. Kept: a piece's name field (D-223's cyan frame, zoom-sized, `17/80`), the change
   ticks (Checkbox has no hidden-label mode), the wizard window's steps (patterns). Found: Button `sm` wraps in a
   narrow row (a lesson's foot broke; kept on one line there): a kit `nowrap` is next.
-- *Not yet:* moving the other areas onto the kit (what each copy still needs is in those forks' notes: a world size for
+- *Built:* the patterns and the rule (2026-11-01): Button `sm` never wraps (`nowrap`; a card panel's `+ idea that solves
+  it` no longer breaks); Options, the framed option (one / many / act, swatch, count, cards; the setups' type picker,
+  cell kinds, rule values, fields: the wizards draw them through the same editors); Window (role=dialog, focus in and
+  back, Tab kept inside when modal, Escape, scrim, `[×] esc`, `frame`/`bare`; Pages' focus helpers moved into it) and
+  WizardShell on it (steps, body, preview, foot, Enter next / ⌘Enter make; wizardKeys.ts gone): the three wizards,
+  onboarding's welcome window, the finder and a document's ask on them. Kept: HazardConfirm (a native <dialog>),
+  CanvasSwitch and MoveToCanvas (menus), Threads (a docked panel), the agent's column (left alone while the user tries
+  a big job on this tree). `npm run check:kit` in CI (scripts/check-kit.mjs, baseline 238 in 64 files, only shrinks),
+  the rule in CLAUDE.md.
+- *Not yet:* the agent's column on Window; the landing and workspaces pages; lowering check:kit's baseline area by
+  area (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
   MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,
   Dock); `check:kit`; folders.

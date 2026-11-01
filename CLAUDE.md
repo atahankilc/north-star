@@ -35,6 +35,7 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   `npm run deploy:rules` (D-322; storage-less until Blaze, `deploy:storage` apart)
 - `npm run check:gallery`: every component in a covered folder has its `X.gallery.tsx`, and the gallery stays out of
   the app and every build (D-324); the gallery itself: `/gallery.html` on the dev server
+- `npm run check:kit`: hand-made UI outside src/ui no more than scripts/kit-baseline.json (D-326)
 - `npm run check:memory`: the memory bank agrees with itself (log numbering, every standing decision has a line in
   decisions.md or decisions-1.0.md, nothing superseded cited as a rule, state.md ≤ 120 lines); run after editing memory-bank/
 - `npm run build`: typecheck + production build; `npm run build:functions`, `npm run deploy:functions` (needs the Blaze plan)
@@ -59,6 +60,11 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   that is a design or feel choice, goes to its home. `npm run check:tokens` must pass; a line that truly must name a
   number says why with `// tokens-ok: …`.
 - Do not start work that depends on a `blocking` open question without asking the user.
+- Kit (D-326, docs/foundation-audit-2026-10-31.md): UI is built from the kit in `src/ui` (Button, Label, Rule, Field,
+  PromptField, Checkbox, Tabs, Options, Chip, CountBadge, Empty, Spinner, Window, WizardShell…); a need it doesn't meet
+  grows the kit first. Outside `src/ui`, a raw `<button>`/`<input>`/`<textarea>`, an own `role="dialog"` or portal, a
+  hand-drawn bracket or caps label in CSS fails `npm run check:kit` past its baseline (scripts/kit-baseline.json, only
+  shrinks: `-- --write` after moving an area); one that truly must stay says why with `// kit-ok: …`.
 - Gallery (D-324, docs/specs/gallery.md): a new component in a covered folder (`src/ui`, `src/views/workspace`, `src/onboarding`), or a real change to one,
   ships in the same change with its `X.gallery.tsx` beside it; `npm run check:gallery` must pass.
   The gallery is dev only: never in a build input, never imported by the app.

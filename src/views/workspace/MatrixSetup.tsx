@@ -45,6 +45,7 @@ import styles from './Matrix.module.css'
 import { Tabs } from '../../ui/Tabs'
 import { Checkbox } from '../../ui/Checkbox'
 import { Button } from '../../ui/Button'
+import { Options } from '../../ui/Options'
 
 const ANY = 'any'
 const TAB_NAME: Record<SetupTab, string> = { rows: 'rows', cols: 'columns', cells: 'cells', options: 'options' }
@@ -100,17 +101,9 @@ export function Toggle({ on, label, hint, onChange }: { on: boolean; label: stri
   return <Checkbox size="xs" checked={on} label={label} hint={hint} onChange={onChange} />
 }
 
-// Pick one of a few: framed choices, the picked one cyan.
-export function Choices<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: ReactNode; hint?: string }[]; onChange: (v: T) => void }) {
-  return (
-    <span className={styles.choices}>
-      {options.map((o) => (
-        <button key={o.value} className={styles.choice} aria-pressed={o.value === value} title={o.hint} onClick={() => onChange(o.value)}>
-          {o.label}
-        </button>
-      ))}
-    </span>
-  )
+// Pick one of a few: the kit's framed options (src/ui/Options.tsx), the picked one cyan.
+export function Choices<T extends string>({ value, options, onChange, label = 'Pick one' }: { value: T; options: { value: T; label: ReactNode; hint?: string }[]; onChange: (v: T) => void; label?: string }) {
+  return <Options pick="one" label={label} value={value} options={options.map((o) => ({ value: o.value, label: o.label, title: o.hint }))} onChange={(v) => v !== undefined && onChange(v)} />
 }
 
 type AxisProps = {
@@ -134,21 +127,14 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
   return (
     <>
       <Row label="all cards of" hint="they join and leave by themselves as cards are made or deleted">
-        <span className={styles.choices}>
-          {CARD_TYPES.map((t) => (
-            <button
-              key={t}
-              className={styles.choice}
-              aria-pressed={axis.type === t}
-              style={{ ['--type' as string]: TYPE_ACCENT[t] }}
-              title={axis.type === t ? 'click again for none' : `every ${t}`}
-              onClick={() => onChange({ ...axis, type: axis.type === t ? undefined : t, hide: undefined })}
-            >
-              <span className={styles.typeTick} aria-hidden />
-              {t}s <span className={styles.tabCount}>{ofType(t)}</span>
-            </button>
-          ))}
-        </span>
+        <Options
+          pick="one"
+          clearable
+          label={`${which}: every card of a type`}
+          value={axis.type}
+          options={CARD_TYPES.map((t) => ({ value: t, label: `${t}s`, swatch: TYPE_ACCENT[t], count: ofType(t), title: axis.type === t ? 'click again for none' : `every ${t}` }))}
+          onChange={(t) => onChange({ ...axis, type: t, hide: undefined })}
+        />
       </Row>
       {axis.type && (
         <Row label="on">
@@ -325,17 +311,19 @@ export function CellsEditor({ setup, onChange }: { setup: MatrixSetup; onChange:
   return (
     <>
       <Row label="a cell holds">
-        <span className={styles.kinds}>
-          {CELL_KINDS.map((k) => (
-            <button key={k} className={styles.kind} aria-pressed={setup.cell === k} onClick={() => onChange('cell', k)}>
-              <span className={styles.kindSample} aria-hidden>
-                {k === 'scale' ? setup.steps.slice(-3).map((s) => <StepSquare key={s.id} steps={setup.steps} step={s} />) : k === 'number' ? `42${setup.unit ?? ''}` : 'beta only'}
-              </span>
-              {KIND[k].label}
-              <small>{KIND[k].hint}</small>
-            </button>
-          ))}
-        </span>
+        <Options
+          pick="one"
+          cards
+          label="What a cell holds"
+          value={setup.cell}
+          options={CELL_KINDS.map((k) => ({
+            value: k,
+            label: KIND[k].label,
+            line: KIND[k].hint,
+            sample: k === 'scale' ? setup.steps.slice(-3).map((s) => <StepSquare key={s.id} steps={setup.steps} step={s} />) : k === 'number' ? `42${setup.unit ?? ''}` : 'beta only',
+          }))}
+          onChange={(k) => k && onChange('cell', k)}
+        />
       </Row>
       {setup.cell === 'scale' && (
         <>
@@ -349,6 +337,7 @@ export function CellsEditor({ setup, onChange }: { setup: MatrixSetup; onChange:
           <StepsEditor steps={setup.steps} marks={!!setup.marks} onChange={(steps, key) => onChange('steps', steps, key)} />
           <Row label="show as" hint="squares filled to the step, or the steps' own glyphs">
             <Choices
+              label="Show as"
               value={setup.marks ? 'marks' : 'squares'}
               options={[
                 { value: 'squares', label: 'squares' },
@@ -427,11 +416,12 @@ export function OptionsEditor({ setup, onChange }: { setup: MatrixSetup; onChang
       {setup.reading && (
         <>
           <Row label="where">
-            <Choices value={setup.totalsAt ?? 'head'} options={TOTALS_AT.map((v) => ({ value: v, label: AT_NAME[v] }))} onChange={(v) => onChange('totalsAt', v === 'head' ? undefined : v)} />
+            <Choices label="Totals where" value={setup.totalsAt ?? 'head'} options={TOTALS_AT.map((v) => ({ value: v, label: AT_NAME[v] }))} onChange={(v) => onChange('totalsAt', v === 'head' ? undefined : v)} />
           </Row>
           <Row label="as" hint={setup.cell === 'scale' ? undefined : 'numbers show their average, words how many are written'}>
             {setup.cell === 'scale' ? (
               <Choices
+                label="Totals as"
                 value={setup.totalsAs ?? 'squares'}
                 options={TOTALS_AS.map((v) => ({
                   value: v,

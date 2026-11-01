@@ -25,6 +25,7 @@ import styles from './DocumentPiece.module.css'
 import beside from './Beside.module.css'
 import { Button } from '../../ui/Button'
 import { Label } from '../../ui/Label'
+import { Window } from '../../ui/Window'
 
 // The margin round its text, in its px.
 const PAD = WORLD.docPad
@@ -401,17 +402,6 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
   useEffect(() => {
     if (d?.shared) placeRef.current()
   }, [d?.shared, placing])
-  useEffect(() => {
-    if (!placing || !d || d.shared) return
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !(e.target as Element | null)?.closest?.('[data-coach]')) {
-        e.stopPropagation()
-        cancel()
-      }
-    }
-    window.addEventListener('keydown', key, true)
-    return () => window.removeEventListener('keydown', key, true)
-  }, [placing, d])
   if (!placing || !d || d.shared) return null
   const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, Math.max(lo, hi)))
   const w = 650 * zoom
@@ -426,10 +416,17 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
           <span className={styles.ghostName}>◐ {d.title}</span>
         </div>
       )}
-      <div
+      {/* The Window (D-326), not modal, in place: Escape cancels, the focus back where it was after; its frame and
+          entrance are the ask's own, its first focus the `share and place` (autoFocus). */}
+      <Window
+        label="Share it with everyone?"
+        onClose={cancel}
+        modal={false}
+        portal={false}
+        look="bare"
+        entrance="none"
+        focus={false}
         className={styles.ask}
-        role="dialog"
-        aria-label="Share it with everyone?"
         // Inside the ghost, kept on the screen.
         style={rect ? { left: clamp(rect.x + rect.w / 2, 240, size.w - 240), top: clamp(rect.y + rect.h / 2, 160, size.h - 160) } : { left: '50%', top: '50%' }}
       >
@@ -446,7 +443,7 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
             share and place
           </Button>
         </p>
-      </div>
+      </Window>
     </div>
   )
 }

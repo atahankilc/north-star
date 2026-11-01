@@ -76,6 +76,7 @@ export function KanbanEditor({ tab, setup, onChange, onHoldCards }: { tab: Kanba
     return (
       <Row label="it holds" hint="a deck holds tasks or cards, never both">
         <Choices<'tasks' | 'cards'>
+          label="It holds"
           value={cardsHere ? 'cards' : 'tasks'}
           options={[
             { value: 'tasks', label: 'tasks', hint: 'the team’s work, in its own columns; given to, due, a checklist' },
@@ -112,6 +113,7 @@ export function KanbanEditor({ tab, setup, onChange, onHoldCards }: { tab: Kanba
     <>
       <Row label="columns from" hint="no value comes first: its cards haven't got one yet; drag them out to set it">
         <Choices<CardField>
+          label="Columns from"
           value={field}
           options={CARD_FIELDS.map((f) => ({ value: f, label: FIELD_NAME[f], hint: HINT[f] }))}
           // The rows' field can't be the columns' too: it goes.
@@ -120,6 +122,7 @@ export function KanbanEditor({ tab, setup, onChange, onHoldCards }: { tab: Kanba
       </Row>
       <Row label="rows from" hint="none, or another field: then each box is a column × a row, and dropping a card in one sets both">
         <Choices<CardField | 'none'>
+          label="Rows from"
           value={row ?? 'none'}
           options={[{ value: 'none' as const, label: 'none', hint: 'one row' }, ...CARD_FIELDS.filter((f) => f !== field).map((f) => ({ value: f, label: FIELD_NAME[f], hint: HINT[f] }))]}
           onChange={(f) => onChange({ rowField: f === 'none' ? undefined : f }, f === 'none' ? 'no rows on a deck' : `a deck’s rows by ${FIELD_NAME[f]}`)}

@@ -41,6 +41,7 @@ import styles from './Table.module.css'
 import { Tabs } from '../../ui/Tabs'
 import { Button } from '../../ui/Button'
 import { Empty } from '../../ui/Empty'
+import { Options } from '../../ui/Options'
 
 const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view: 'view' }
 
@@ -119,13 +120,12 @@ export function RowsEditor({ setup, onChange, onRemoveItem, cardsOnly }: EditorP
         rows.rules.map((r, i) => <RuleLine key={i} rule={r} first={i === 0} onChange={(next, key) => setRule(i, next, key ? `rule:${i}:${key}` : undefined)} onRemove={() => setRule(i, null)} />)}
       {!setup.manual && rows.rules.length < MAX_RULES && (
         <Row label={rows.rules.length ? 'and' : 'where'}>
-          <span className={m.choices}>
-            {RULE_FIELDS.filter((f) => !rows.rules.some((r) => r.field === f)).map((f) => (
-              <button key={f} className={m.choice} onClick={() => set({ ...rows, rules: [...rows.rules, { field: f, values: [] }] })}>
-                + {f}
-              </button>
-            ))}
-          </span>
+          <Options
+            pick="act"
+            label="Add a rule on"
+            options={RULE_FIELDS.filter((f) => !rows.rules.some((r) => r.field === f)).map((f) => ({ value: f, label: `+ ${f}` }))}
+            onPick={(f) => set({ ...rows, rules: [...rows.rules, { field: f, values: [] }] })}
+          />
         </Row>
       )}
       <Row label="added by hand" hint={cardsOnly ? 'single cards of any type' : "single cards of any type, or names that aren't cards"}>
@@ -160,7 +160,6 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
   const { cards, pieces } = useWs()
   const planes = pieces.filter((p) => kindOfPiece(p) === 'plane')
   const choices = choicesOf(rule.field, cards, planes)
-  const toggle = (v: string) => onChange({ ...rule, values: rule.values.includes(v) ? rule.values.filter((x) => x !== v) : [...rule.values, v] })
   return (
     <Row label={first ? 'where' : 'and'}>
       <span className={m.choices}>
@@ -171,24 +170,22 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
           options={RULE_FIELDS.map((f) => ({ value: f, label: f }))}
           onChange={(f) => onChange({ field: f as RuleField, values: [], ...(rule.not ? { not: true } : {}) })}
         />
-        <button className={m.choice} title="is, or is not" onClick={() => onChange({ ...rule, not: rule.not ? undefined : true })}>
-          {rule.field === 'title' ? (rule.not ? 'lacks' : 'has') : rule.not ? 'is not' : 'is'}
-        </button>
+        <Options
+          pick="act"
+          label="is, or is not"
+          options={[{ value: 'not', label: rule.field === 'title' ? (rule.not ? 'lacks' : 'has') : rule.not ? 'is not' : 'is', title: 'is, or is not' }]}
+          onPick={() => onChange({ ...rule, not: rule.not ? undefined : true })}
+        />
         {rule.field === 'title' ? (
           <AutosaveField className={m.pillField} label="the words" placeholder="words in the title" maxLength={200} value={rule.values[0] ?? ''} onSave={(w) => onChange({ ...rule, values: w.trim() ? [w] : [] }, 'words')} />
         ) : choices.length ? (
-          choices.map((c) => (
-            <button
-              key={c.value}
-              className={m.choice}
-              aria-pressed={rule.values.includes(c.value)}
-              style={rule.field === 'type' ? { ['--type' as string]: TYPE_ACCENT[c.value as keyof typeof TYPE_ACCENT] } : undefined}
-              onClick={() => toggle(c.value)}
-            >
-              {rule.field === 'type' && <span className={m.typeTick} aria-hidden />}
-              {c.label}
-            </button>
-          ))
+          <Options
+            pick="many"
+            label={`${rule.field} values`}
+            values={rule.values}
+            options={choices.map((c) => ({ value: c.value, label: c.label, swatch: rule.field === 'type' ? TYPE_ACCENT[c.value as keyof typeof TYPE_ACCENT] : undefined }))}
+            onChange={(values) => onChange({ ...rule, values })}
+          />
         ) : (
           <Empty as="span">{rule.field === 'tag' ? 'no tags yet' : 'nothing to pick yet'}</Empty>
         )}
@@ -229,34 +226,27 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
   return (
     <>
       <Row label="the card's" hint="shown as they are on the card; switch one on to add it, off to take it out">
-        <span className={m.choices}>
-          {FIELDS.map((f) => {
-            const c = cols.find((x) => x.field === f)
-            return (
-              <button key={f} className={m.choice} aria-pressed={!!c} disabled={!c && full} onClick={() => (c ? drop(c) : set([...cols, { id: newId(), field: f as Field }]))}>
-                {f}
-              </button>
-            )
-          })}
-        </span>
+        <Options
+          pick="many"
+          label="The card's fields as columns"
+          values={FIELDS.filter((f) => cols.some((x) => x.field === f))}
+          options={FIELDS.map((f) => ({ value: f, label: f, disabled: full && !cols.some((x) => x.field === f) }))}
+          onChange={(next) => {
+            const off = cols.find((x) => x.field && !next.includes(x.field))
+            const on = next.find((f) => !cols.some((x) => x.field === f))
+            if (off) drop(off)
+            else if (on) set([...cols, { id: newId(), field: on as Field }])
+          }}
+        />
       </Row>
       <Row label="its own" hint="values only this table holds">
-        <span className={m.kinds}>
-          {OWN_KINDS.map((k) => (
-            <button
-              key={k}
-              className={m.kind}
-              disabled={full}
-              onClick={() => set([...cols, { id: newId(), name: OWN_NAME[k].name, kind: k, ...(k === 'scale' ? { steps: DEFAULT_STEPS } : {}) }])}
-            >
-              <span className={m.kindSample} aria-hidden>
-                {OWN_NAME[k].sample}
-              </span>
-              + {OWN_NAME[k].label}
-              <small>{OWN_NAME[k].hint}</small>
-            </button>
-          ))}
-        </span>
+        <Options
+          pick="act"
+          cards
+          label="A column of its own"
+          options={OWN_KINDS.map((k) => ({ value: k, label: `+ ${OWN_NAME[k].label}`, sample: OWN_NAME[k].sample, line: OWN_NAME[k].hint, disabled: full }))}
+          onPick={(k) => set([...cols, { id: newId(), name: OWN_NAME[k].name, kind: k, ...(k === 'scale' ? { steps: DEFAULT_STEPS } : {}) }])}
+        />
       </Row>
       <Row label="in order" hint="the name always comes first">
         <ol className={styles.colList}>
@@ -323,6 +313,7 @@ export function ViewEditor({ setup, onChange }: EditorProps) {
     <>
       <Row label="rows a page" hint="the dock pages through them">
         <Choices<string>
+          label="Rows a page"
           value={setup.pageSize ? String(setup.pageSize) : ALL}
           options={[{ value: ALL, label: 'all' }, ...PAGE_SIZES.map((n) => ({ value: String(n), label: String(n) }))]}
           onChange={(v) => onChange('pageSize', v === ALL ? undefined : Number(v))}
@@ -339,6 +330,7 @@ export function ViewEditor({ setup, onChange }: EditorProps) {
           />
           {setup.sort && (
             <Choices<string>
+              label="Order"
               value={setup.sort.desc ? 'down' : 'up'}
               options={[
                 { value: 'up', label: '↑ a → z' },

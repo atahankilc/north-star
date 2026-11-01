@@ -19,6 +19,7 @@
     "check:lessons": "node scripts/check-lessons.mjs",
     "check:gallery": "node scripts/check-gallery.mjs",
     "check:tokens": "node scripts/check-tokens.mjs",
+    "check:kit": "node scripts/check-kit.mjs",
     "test": "vitest run",
     "eval": "node evals/cli.mjs",
     "eval:quick": "node evals/cli.mjs --set regression",

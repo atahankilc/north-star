@@ -1,18 +1,7 @@
 /* The welcome and what's new (D-315, onboarding.md §4.1, §4.4): one paged modal, the wizard window (D-316). Tokens
    only; the mock is docs/specs/onboarding-preview/ (preview.css §1, look a). */
 
-/* The wizards' shade (Matrix.module.css .wizardShade): z 40, the page at 72 % over everything. */
-.shade {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-menu);
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
-  background: color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
-  font-family: var(--font-mono);
-}
-
+/* The window's own frame; its scrim (z 40, the page at 72 % over everything) is the Window's (src/ui/Window.tsx). */
 .wa {
   position: relative;
   max-width: 100%;

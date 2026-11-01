@@ -66,8 +66,8 @@ Entrances mostly use the shared pieces (`<Appear>` 25 uses, `runCells` 9, `Decod
 
 ## 4. Proposal (accepted as D-326)
 
-Progress: the map (2026-10-31); motion foundations, step 2 below, mostly (2026-10-31; what's left in D-326's
-*Not yet*).
+Progress (D-326's log has each step): the map, motion, the kit, every area moved onto it, the patterns and
+`check:kit` (2026-10-31 → 11-01). Left: folders, and the few areas noted in D-326's *Not yet*.
 
 A building: foundations, then the kit, then patterns, then the rooms. The gallery shows each floor and is the safety net
 for every move (before/after shots per state, as D-325 does).

@@ -1117,3 +1117,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   check:gallery 84, check:lessons, lint; gallery states old against new (each from its own checkout, a second old for
   noise), the agent's UI through a throwaway example in the comparison checkouts only: the changes are the snaps in
   D-326's log. One fork deleted the shared scratch `out` folder mid-run (screenshots only; nothing else lost).
+
+## Done (2026-11-01): the kit's patterns and check:kit (D-326)
+- Button `sm` nowrap; Options (setups); Window + WizardShell (three wizards, onboarding's welcome, finder, a
+  document's ask); scripts/check-kit.mjs + kit-baseline.json (238 in 64 files), `check:kit` in deploy.yml, CLAUDE.md's
+  Kit rule. Asked the other sessions first; the agent's column left out while the user tries a big job.
+- Verified: tsc, vitest 954, check:tokens 0, check:gallery 87, check:lessons, check:kit (catches a new raw button,
+  honours kit-ok), lint; gallery states old against new for nowrap (112: one real change, the panel's button no
+  longer broken), Options (setups) and Window/WizardShell (76 + 30 reruns, keys in headless Chrome); the window's own
+  focus ring caught and removed. No visible change otherwise but the small snaps in D-326's log.
