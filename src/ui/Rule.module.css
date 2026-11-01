@@ -18,15 +18,16 @@
   color: var(--accent-magenta);
 }
 
+/* `--rule-line` on the rule (or above it) colours the line: a deck column lights it cyan while a task is held over it. */
 .line {
   flex: 1;
   height: var(--line-w);
-  background: var(--line);
+  background: var(--rule-line, var(--line));
 }
 
 /* A numbered start: a short magenta lead (D-277's family of lines). */
 .line[data-lead] {
-  background: linear-gradient(to right, var(--accent-magenta) 0 var(--lead), var(--line) var(--lead));
+  background: linear-gradient(to right, var(--accent-magenta) 0 var(--lead), var(--rule-line, var(--line)) var(--lead));
 }
 
 .count,

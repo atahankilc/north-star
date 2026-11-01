@@ -29,6 +29,10 @@ import { DockAction, FocusDock } from './FocusDock'
 import { closeTasksSide, useTasksSide } from './sideState'
 import pane from './Beside.module.css'
 import styles from './TasksSide.module.css'
+import { Tabs } from '../../ui/Tabs'
+import { Empty } from '../../ui/Empty'
+import { Button } from '../../ui/Button'
+import { Num, Rule } from '../../ui/Rule'
 
 // The tabs' row, under the breadcrumb's bar (`--hud-h`, 56) whose shade would cover it; the linked strip under it.
 const TABS_H = 56 + 40
@@ -141,40 +145,53 @@ export function TasksSide({ editor, esc, focusedId, plane }: Props) {
       <div className={pane.divider} style={{ left, zIndex: 'calc(var(--z-world-ui) + 1)' }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="The side view's width" />
       <aside className={styles.side} data-learn="side-view" style={{ left, width }} aria-label="Decks and days" onPointerDown={(e) => e.stopPropagation()}>
         <div className={styles.tabs}>
-          <div className={styles.decks} role="tablist" aria-label="Decks">
-            {decks.map((d, i) => (
-              <button key={d.id} role="tab" aria-selected={tab === d.id} className={styles.tab} onClick={() => useTasksSide.setState({ tab: d.id, linked: null })} title={d.name || 'deck'}>
-                <b>{String(i + 1).padStart(2, '0')}</b>
-                <span className={styles.tabName}>{d.name || 'deck'}</span>
-                {d.stuckTo && (
-                  <span className={styles.link} title="linked to a plane: only its cards' tasks">
-                    ⇆
-                  </span>
-                )}
-                <em>· {count(d)}</em>
-              </button>
-            ))}
-            {!decks.length && <span className={styles.dim}>no deck on this canvas yet</span>}
-          </div>
-          {/* Across every deck, apart from them (D-300). */}
-          <div className={styles.corner} role="tablist" aria-label="Across decks">
-            <button role="tab" aria-selected={shown === 'mine'} className={styles.chip} onClick={() => useTasksSide.setState({ tab: 'mine', linked: null })} title="given to you, across decks">
-              mine <em>· {mine.length}</em>
-              <NewMark />
-            </button>
-            <button role="tab" aria-selected={shown === 'all'} className={styles.chip} onClick={() => useTasksSide.setState({ tab: 'all', linked: null })} title="every deck's tasks on days">
-              all · days
-            </button>
-          </div>
+          {/* The decks and, in the corner, across them (D-300): two rows of tabs sharing one choice (Tabs, D-326). */}
+          {decks.length ? (
+            <Tabs
+              className={styles.decks}
+              label="Decks"
+              value={tab ?? ''}
+              onChange={(id) => useTasksSide.setState({ tab: id, linked: null })}
+              options={decks.map((d, i) => ({
+                value: d.id,
+                title: d.name || 'deck',
+                count: `· ${count(d)}`,
+                label: (
+                  <>
+                    <Num n={i + 1} /> <span className={styles.tabName}>{d.name || 'deck'}</span>
+                    {d.stuckTo && (
+                      <span className={styles.link} title="linked to a plane: only its cards' tasks">
+                        {' '}⇆
+                      </span>
+                    )}
+                  </>
+                ),
+              }))}
+            />
+          ) : (
+            <Empty as="span" tone="dim">
+              no deck on this canvas yet
+            </Empty>
+          )}
+          <Tabs
+            className={styles.corner}
+            label="Across decks"
+            value={shown === 'mine' || shown === 'all' ? shown : ''}
+            onChange={(t) => useTasksSide.setState({ tab: t, linked: null })}
+            options={[
+              { value: 'mine', title: 'given to you, across decks', count: `· ${mine.length}`, label: <>mine<NewMark /></> },
+              { value: 'all', title: "every deck's tasks on days", label: 'all · days' },
+            ]}
+          />
         </div>
         {strip && (
           <div className={styles.strip} style={{ top: TABS_H, height: STRIP_H }}>
             <span>
               ⇆ linked to <b>{strip.name || 'a plane'}</b> <span className={styles.dim}>· its cards only</span>
             </span>
-            <button className={styles.stripAll} onClick={() => useTasksSide.setState({ linked: null })} title="the side view's tabs as from the side nav">
-              [all decks]
-            </button>
+            <Button tone="primary" onClick={() => useTasksSide.setState({ linked: null })} title="the side view's tabs as from the side nav">
+              all decks
+            </Button>
           </div>
         )}
         {shown === 'mine' ? (
@@ -332,15 +349,14 @@ function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: number; c
   return (
     <div className={styles.part} style={{ left: 0, right: 0, top, bottom: 0 }}>
       <div className={styles.mine} data-scrolls>
-        {!groups.length && <p className={styles.none}>nothing given to you{decks.length ? '' : ': no deck on this canvas yet, put one on it from its +'}</p>}
+        {!groups.length && (
+          <Empty className={styles.none} tone="dim">
+            nothing given to you{decks.length ? '' : ': no deck on this canvas yet, put one on it from its +'}
+          </Empty>
+        )}
         {groups.map(({ d, list }) => (
           <section key={d.id} className={styles.group} aria-label={d.name || 'deck'}>
-            <h3 className={styles.groupHead}>
-              <b>{String(decks.indexOf(d) + 1).padStart(2, '0')}</b>
-              {d.name || 'deck'}
-              <span className={styles.rule} aria-hidden />
-              <span className={styles.dim}>{list.length}</span>
-            </h3>
+            <Rule className={styles.groupHead} n={decks.indexOf(d) + 1} name={d.name || 'deck'} count={list.length} countAt="end" />
             {list.map((t) => {
               const late = overdue(t, false)
               return (

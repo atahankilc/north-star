@@ -51,16 +51,13 @@
   cursor: pointer;
 }
 
+/* `OVERVIEW` and its span of days: a Label (faint), placed here. */
 .overName {
   position: absolute;
   top: var(--space-half);
   left: 0;
   width: calc(var(--left) - var(--space-4));
-  color: var(--fg-faint);
-  font-size: var(--w-text-sm);
-  letter-spacing: var(--track-label);
   line-height: calc(var(--space-3) + var(--space-half));
-  text-transform: uppercase;
   pointer-events: none;
 }
 
@@ -258,10 +255,6 @@
   gap: var(--space-2);
   width: calc(var(--left) - var(--space-4));
   height: var(--bar);
-  color: var(--fg);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -581,8 +574,6 @@
 
 .trayLabel {
   width: calc(var(--left) - var(--space-4));
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .pill {
@@ -614,7 +605,6 @@
   text-overflow: ellipsis;
 }
 
-.trayNone,
 .trayHint {
   color: var(--fg-faint);
 }

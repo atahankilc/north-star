@@ -66,7 +66,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
 - Component gallery (D-324, docs/specs/gallery.md): G1–G3 and the map (D-326) pushed 2026-10-31. Foundation (D-326):
-  motion, the tree and Button pushed; the kit's primitives built 2026-11-01; panels, docks and setups moved onto them 2026-11-01; next: decks and the timeline.
+  motion, the tree and Button pushed; the kit's primitives built 2026-11-01; panels, docks, setups, decks and the timeline moved onto them 2026-11-01; next: the canvas pieces.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

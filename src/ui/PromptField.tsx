@@ -24,13 +24,15 @@ type Props = {
   disabled?: boolean
   maxLength?: number
   className?: string
+  // Leaving it (a deck's add-task keeps what was typed, then closes).
+  onBlur?: () => void
 }
 
 export const PromptField = forwardRef<HTMLInputElement | HTMLTextAreaElement | null, Props>(function PromptField(
-  { value, onChange, onSubmit, onEscape, label, placeholder, sign = '>', running, multiline, framed, autoFocus, disabled, maxLength, className },
+  { value, onChange, onSubmit, onEscape, label, placeholder, sign = '>', running, multiline, framed, autoFocus, disabled, maxLength, className, onBlur },
   ref,
 ) {
-  const shared = { value, onChange, label, placeholder, onEscape, autoFocus, disabled, maxLength, className: styles.input }
+  const shared = { value, onChange, label, placeholder, onEscape, autoFocus, disabled, maxLength, onBlur, className: styles.input }
   return (
     <label className={[styles.prompt, className].filter(Boolean).join(' ')} data-framed={framed || undefined} data-running={running || undefined}>
       <span className={styles.sign} aria-hidden>

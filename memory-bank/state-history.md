@@ -1070,3 +1070,10 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   its name, linked where there's a place; create_document writes `c12 "title"` for a bare `c12`.
 - Verified: an answer of bare ids of eight letters in headless Chrome (dev hook `__agent`), tsc, vitest 925
   (agentNames.test.ts), check:tokens 0, stub evals 0 failed, `--wrong` 114 failed.
+
+## Done (2026-11-01): decks, the timeline and the side view on the kit (D-326)
+- Kanban, CardKanban, KanbanSetup, Timeline, TasksSide onto Rule, Field, PromptField, Chip, Button, Tabs, Num, Label,
+  Empty (two forks; reports in /private/tmp/claude-501/ns-kit-deck and ns-kit-timeline, not kept).
+- Verified: tsc, vitest 925, check:tokens 0, check:gallery 84, lint; ~100 gallery states old against new (each from
+  its own checkout, a second old for noise), both themes: the changes are the snaps in D-326's log, looked at in their
+  crops; the rest the real-time canvas behind.

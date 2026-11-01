@@ -38,6 +38,9 @@ import styles from './Timeline.module.css'
 import { DUR, lerp, tween } from '../../ui/motion'
 import { STRIP_PX } from '../../model/world'
 import { tokenPx, tokenText } from '../../styles/cssToken'
+import { Label } from '../../ui/Label'
+import { Empty } from '../../ui/Empty'
+import { Button } from '../../ui/Button'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const T = STRIP_PX
@@ -740,12 +743,12 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         <span className={styles.overToday} style={{ left: ((todayAt - layout.lo) / (layout.hi - layout.lo)) * tw }} />
         <div ref={win} className={styles.window} data-window />
       </div>
-      <span className={styles.overName}>
+      <Label tone="faint" className={styles.overName}>
         overview
         <span>
           {short(layout.lo)} – {short(layout.hi)}
         </span>
-      </span>
+      </Label>
       {/* The days' head: months (their number magenta) and days, by scale; today cyan. */}
       <div className={styles.headClip}>
         <div ref={headLayer} className={styles.timeLayer}>
@@ -845,12 +848,12 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
             </div>
           </div>
           {layout.rows.map((r) => (
-            <span key={r.key} className={styles.rowName} data-none={!r.drop || undefined} style={{ top: r.top + T.pad, ...(r.tone ? ({ ['--tone' as string]: r.tone } as CSSProperties) : {}) }}>
+            <Label key={r.key} tone="default" className={styles.rowName} data-none={!r.drop || undefined} style={{ top: r.top + T.pad, ...(r.tone ? ({ ['--tone' as string]: r.tone } as CSSProperties) : {}) }}>
               {r.initials && <span className={styles.who}>{r.initials}</span>}
               {r.kind && <span className={styles.kind}>▌</span>}
               <span className={styles.rowLabel}>{r.label}</span>
               <span className={styles.rowCount}>{r.items.length || ''}</span>
-            </span>
+            </Label>
           ))}
           {layout.rows.map((r) => (
             <span key={`rule-${r.key}`} className={styles.rule} style={{ top: r.top + r.h - 1 }} />
@@ -860,7 +863,9 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
       </div>
       {/* No day yet: a tray under the rows. */}
       <div className={styles.tray} style={{ top: TOP + tokenPx('--space-2') + rowsShown + tokenPx('--space-4') }}>
-        <span className={styles.trayLabel}>no day · {layout.tray.length}</span>
+        <Label tone="dim" className={styles.trayLabel}>
+          no day · {layout.tray.length}
+        </Label>
         {layout.tray.map((t) =>
           t.id === trayHeld?.id ? null : (
             <button key={t.id} className={styles.pill} data-task={t.id} data-selected={selected === t.id || undefined} style={tone(t) ? ({ ['--tone' as string]: tone(t) } as CSSProperties) : undefined} tabIndex={live ? 0 : -1} onPointerDown={pressTray(t)}>
@@ -869,7 +874,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
             </button>
           ),
         )}
-        {!layout.tray.length && <span className={styles.trayNone}>every task has a day</span>}
+        {!layout.tray.length && <Empty as="span">every task has a day</Empty>}
         {live && editor && layout.tray.length > 0 && <span className={styles.trayHint}>drag onto a day to give it one</span>}
       </div>
       {trayHeld &&
@@ -1039,15 +1044,15 @@ export function TimelineWeeks({ piece, toolClass }: { piece: WithId<Piece>; tool
   const step = (by: number) => glideStrip(piece.id, { from: stripOf(piece.id).from + by * 7 })
   return (
     <>
-      <button className={toolClass} title="a week back" aria-label="A week back" onClick={() => step(-1)}>
+      <Button className={toolClass} title="a week back" aria-label="A week back" onClick={() => step(-1)}>
         ‹
-      </button>
-      <button className={toolClass} aria-pressed={onToday} title="back to today" onClick={() => toToday(piece.id)}>
+      </Button>
+      <Button className={toolClass} pressed={onToday} title="back to today" onClick={() => toToday(piece.id)}>
         today
-      </button>
-      <button className={toolClass} title="a week on" aria-label="A week on" onClick={() => step(1)}>
+      </Button>
+      <Button className={toolClass} title="a week on" aria-label="A week on" onClick={() => step(1)}>
         ›
-      </button>
+      </Button>
     </>
   )
 }

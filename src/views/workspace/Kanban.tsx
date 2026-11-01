@@ -57,6 +57,12 @@ import { learnable } from './TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
 import { useKanbanSizes } from './sizes'
+import { Button } from '../../ui/Button'
+import { Chip } from '../../ui/Chip'
+import { Empty } from '../../ui/Empty'
+import { Field } from '../../ui/Field'
+import { PromptField } from '../../ui/PromptField'
+import { Rule } from '../../ui/Rule'
 import styles from './Kanban.module.css'
 import { DECK_PX } from '../../model/world'
 
@@ -605,7 +611,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
                           </Slotted>
                         ))}
                         {slot >= 0 && slot >= list.length && <Gap h={drag!.size[1]} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined} />}
-                        {!list.length && slot < 0 && adding !== cell && !field && <span className={styles.empty}>· nothing yet</span>}
+                        {!list.length && slot < 0 && adding !== cell && !field && <Empty as="span" className={styles.empty}>· nothing yet</Empty>}
                         {live && editor && lane.drop && (
                           <AddTask open={adding === cell} quiet={!!field} onPress={own} onOpen={() => useKanbanUi.setState({ adding: cell })} onClose={() => useKanbanUi.setState({ adding: null })} onAdd={(title) => add(c.id, lane.key, title)} />
                         )}
@@ -770,6 +776,9 @@ type HeadProps = {
   onLimit: (limit: number | undefined) => void
 }
 
+// How urgent (D-256), as the kit's pill (D-326): P1 magenta, P2 as the text, P3 faint (no tone).
+export const PRIORITY_TONE: Record<string, string | undefined> = { P1: 'var(--accent-magenta)', P2: 'var(--fg)' }
+
 // A column's head, as the right panel's sections: its number faint, its name in caps, a rule, its count; the finished
 // one's name green. Live, a double-click renames it, and on hover its tools come in after the count. With a limit
 // (D-256), the count reads `4/3` (every task in it, shown or not, over the limit), the head magenta once over; `≤` types
@@ -786,83 +795,81 @@ function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, a
     const next = v.trim() && k >= 1 ? Math.min(LIMIT_MAX, k) : undefined
     if (next !== col.limit) onLimit(next)
   }
+  const name = naming ? (
+    <Field
+      className={styles.headField}
+      value={draft}
+      autoFocus
+      maxLength={COL_NAME_MAX}
+      label="Column name"
+      size="sm"
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={setDraft}
+      onBlur={() => onRename(draft)}
+      onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
+      onEscape={() => (setDraft(col.name), requestAnimationFrame(() => onRename(col.name)))}
+    />
+  ) : (
+    <span className={styles.name} onDoubleClick={tools ? onName : undefined} title={tools ? 'double-click to rename' : undefined}>
+      {col.name}
+    </span>
+  )
+  const countEl =
+    limiting !== null ? (
+      <span className={styles.count}>
+        {holds}/
+        <Field
+          className={styles.limitField}
+          value={limiting}
+          autoFocus
+          inputMode="numeric"
+          label="Limit"
+          placeholder="–"
+          size="sm"
+          onFocus={(e) => e.currentTarget.select()}
+          onChange={(v) => setLimiting(v.replace(/\D/g, '').slice(0, 2))}
+          onBlur={() => keepLimit(limiting)}
+          onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
+          onEscape={() => setLimiting(null)}
+        />
+      </span>
+    ) : (
+      <span className={styles.count} title={col.limit ? `${holds} of at most ${col.limit}${over ? ': over its limit' : ''}` : undefined}>
+        {col.limit ? `${holds}/${col.limit}` : count}
+      </span>
+    )
+  // Its tools, after the count while it's hovered (D-252): `≤` the limit, `‹ ›` move it, `✓` the finished one, `×`.
+  const toolRow = tools && (
+    <span className={styles.tools}>
+      <Button icon className={styles.tool} data-limit pressed={!!col.limit} title={col.limit ? `at most ${col.limit}: change or take away` : 'how many it should hold at most'} aria-label="Column limit" onClick={() => setLimiting(col.limit ? String(col.limit) : '')}>
+        ≤
+      </Button>
+      {!first && (
+        <Button icon className={styles.tool} title="move it left" aria-label="Move the column left" onClick={() => onMove(-1)}>
+          ‹
+        </Button>
+      )}
+      {!last && (
+        <Button icon className={styles.tool} title="move it right" aria-label="Move the column right" onClick={() => onMove(1)}>
+          ›
+        </Button>
+      )}
+      <Button icon className={styles.tool} data-done pressed={!!col.done} title={col.done ? 'not the finished column' : 'its tasks are finished: their due days stop warning'} aria-label="Finished column" onClick={onDone}>
+        ✓
+      </Button>
+      {!alone && (
+        <Button icon tone="danger" className={styles.tool} title={count ? `take it away: its ${count} task${count > 1 ? 's go' : ' goes'} to the column ${first ? 'after' : 'before'} it` : 'take it away'} aria-label="Delete the column" onClick={onDelete}>
+          ×
+        </Button>
+      )}
+    </span>
+  )
+  // The kit's rule (D-326): `01 TODO ──── 5`, the tools after it (beside the rule, so hidden they take no room); the head
+  // keeps its own presses and its over state.
   return (
     <div className={styles.head} data-over={over || undefined} onPointerDown={naming || tools || limiting !== null ? onPress : undefined}>
-      <span className={styles.n}>{String(n).padStart(2, '0')}</span>
-      {naming ? (
-        <input
-          className={styles.headField}
-          value={draft}
-          autoFocus
-          maxLength={COL_NAME_MAX}
-          aria-label="Column name"
-          size={Math.max(draft.length, 4)}
-          onFocus={(e) => e.currentTarget.select()}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => onRename(draft)}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Enter') e.currentTarget.blur()
-            if (e.key === 'Escape') (setDraft(col.name), requestAnimationFrame(() => onRename(col.name)))
-          }}
-        />
-      ) : (
-        <span className={styles.name} onDoubleClick={tools ? onName : undefined} title={tools ? 'double-click to rename' : undefined}>
-          {col.name}
-        </span>
-      )}
-      <span className={styles.rule} aria-hidden />
-      {limiting !== null ? (
-        <span className={styles.count}>
-          {holds}/
-          <input
-            className={styles.limitField}
-            value={limiting}
-            autoFocus
-            inputMode="numeric"
-            aria-label="Limit"
-            placeholder="–"
-            size={2}
-            onFocus={(e) => e.currentTarget.select()}
-            onChange={(e) => setLimiting(e.target.value.replace(/\D/g, '').slice(0, 2))}
-            onBlur={() => keepLimit(limiting)}
-            onKeyDown={(e) => {
-              e.stopPropagation()
-              if (e.key === 'Enter') e.currentTarget.blur()
-              if (e.key === 'Escape') setLimiting(null)
-            }}
-          />
-        </span>
-      ) : (
-        <span className={styles.count} title={col.limit ? `${holds} of at most ${col.limit}${over ? ': over its limit' : ''}` : undefined}>
-          {col.limit ? `${holds}/${col.limit}` : count}
-        </span>
-      )}
-      {tools && (
-        <span className={styles.tools}>
-          <button className={styles.tool} data-limit aria-pressed={!!col.limit} title={col.limit ? `at most ${col.limit}: change or take away` : 'how many it should hold at most'} aria-label="Column limit" onClick={() => setLimiting(col.limit ? String(col.limit) : '')}>
-            ≤
-          </button>
-          {!first && (
-            <button className={styles.tool} title="move it left" aria-label="Move the column left" onClick={() => onMove(-1)}>
-              ‹
-            </button>
-          )}
-          {!last && (
-            <button className={styles.tool} title="move it right" aria-label="Move the column right" onClick={() => onMove(1)}>
-              ›
-            </button>
-          )}
-          <button className={styles.tool} aria-pressed={!!col.done} title={col.done ? 'not the finished column' : 'its tasks are finished: their due days stop warning'} aria-label="Finished column" onClick={onDone}>
-            ✓
-          </button>
-          {!alone && (
-            <button className={styles.tool} data-danger title={count ? `take it away: its ${count} task${count > 1 ? 's go' : ' goes'} to the column ${first ? 'after' : 'before'} it` : 'take it away'} aria-label="Delete the column" onClick={onDelete}>
-              ×
-            </button>
-          )}
-        </span>
-      )}
+      <Rule as="div" className={styles.headRule} n={n} name={name} count={countEl} countAt="end" />
+      {toolRow}
     </div>
   )
 }
@@ -915,9 +922,11 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, 
       <span className={styles.title}>
         {finished && <span className={styles.tick}>✓ </span>}
         {task.priority && (
-          <span className={styles.priority} data-p={task.priority}>
-            {task.priority}{' '}
-          </span>
+          <>
+            <Chip variant="pill" tone={PRIORITY_TONE[task.priority]}>
+              {task.priority}
+            </Chip>{' '}
+          </>
         )}
         {task.title}
       </span>
@@ -948,14 +957,16 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, 
         </span>
       )}
       {learn && (
-        <button
+        <Button
+          icon
+          tone="primary"
           className={styles.learn}
           title="log what it taught on its card, as evidence"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => (e.stopPropagation(), learn())}
         >
           + log what it taught
-        </button>
+        </Button>
       )}
       {live && !lifted && <Marks tone={tone} selected={selected} peers={peers} />}
       {extra}
@@ -976,37 +987,33 @@ function AddTask({ open, quiet, onPress, onOpen, onClose, onAdd }: AddProps) {
         + add a task
       </button>
     )
+  // The kit's prompt (D-326), a `>` and a field as tall as its text, on a sheet in the task's place: Enter makes it and
+  // keeps the field for the next, Escape or leaving it empty stops; leaving it with words keeps them as a task.
+  const done = () => {
+    if (draft.trim()) onAdd(draft)
+    setDraft('')
+    onClose()
+  }
   return (
-    <label className={styles.adding} onPointerDown={onPress}>
-      <span className={styles.prompt} aria-hidden>
-        &gt;
-      </span>
-      <textarea
-        className={styles.addField}
+    <div className={styles.adding} onPointerDown={onPress}>
+      <PromptField
+        className={styles.addPrompt}
         value={draft}
         autoFocus
-        rows={2}
+        multiline
         maxLength={TASK_TITLE_MAX}
         placeholder="what needs doing?"
-        aria-label="New task"
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          if (draft.trim()) onAdd(draft)
+        label="New task"
+        onChange={setDraft}
+        onBlur={done}
+        onSubmit={(v) => {
+          if (!v.trim()) return onClose()
+          onAdd(v)
           setDraft('')
-          onClose()
         }}
-        onKeyDown={(e) => {
-          e.stopPropagation()
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault()
-            if (!draft.trim()) return onClose()
-            onAdd(draft)
-            setDraft('')
-          }
-          if (e.key === 'Escape') (setDraft(''), onClose())
-        }}
+        onEscape={() => (setDraft(''), onClose())}
       />
-    </label>
+    </div>
   )
 }
 

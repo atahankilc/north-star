@@ -19,8 +19,11 @@ type Props<T extends string> = {
 export function Tabs<T extends string>({ options, value, onChange, label, look = 'tabs', className }: Props<T>) {
   const row = useRef<HTMLDivElement>(null)
   const tabs = look === 'tabs'
+  // None current (a group beside another sharing one choice: a deck's tabs while MINE is open): the first is the one
+  // the keyboard reaches, and the arrows start from it.
+  const current = options.findIndex((o) => o.value === value)
   const move = (e: KeyboardEvent) => {
-    const at = options.findIndex((o) => o.value === value)
+    const at = current < 0 ? (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? 0 : -1) : current
     const to = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? at + 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? at - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : null
     if (to === null) return
     e.preventDefault()
@@ -30,7 +33,7 @@ export function Tabs<T extends string>({ options, value, onChange, label, look =
   }
   return (
     <div ref={row} className={[styles.row, className].filter(Boolean).join(' ')} data-look={look} role={tabs ? 'tablist' : 'radiogroup'} aria-label={label} onKeyDown={move}>
-      {options.map((o) => {
+      {options.map((o, i) => {
         const on = o.value === value
         return (
           <button
@@ -40,7 +43,7 @@ export function Tabs<T extends string>({ options, value, onChange, label, look =
             role={tabs ? 'tab' : 'radio'}
             aria-selected={tabs ? on : undefined}
             aria-checked={tabs ? undefined : on}
-            tabIndex={on ? 0 : -1}
+            tabIndex={on || (current < 0 && i === 0) ? 0 : -1}
             data-value={o.value}
             title={o.title}
             onClick={() => onChange(o.value)}

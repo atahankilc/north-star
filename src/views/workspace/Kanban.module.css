@@ -153,8 +153,10 @@
   pointer-events: none;
 }
 
-/* A column's head, the right panel's section rule (D-219): `01 TODO ──── 5`. */
+/* A column's head, the right panel's section rule (D-219): `01 TODO ──── 5`. Its line a step brighter than a panel's
+   (`--rule-line`): on the page's black it's what parts the columns. */
 .head {
+  --rule-line: var(--line-hover);
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -169,6 +171,12 @@
 /* A number, wherever there is one, is magenta (D-266). */
 .n {
   color: var(--accent-magenta);
+}
+
+/* The kit's rule inside it (D-326): the number, the name, the line, the count, then the tools. */
+.headRule {
+  flex: 1;
+  min-width: 0;
 }
 
 .name {
@@ -190,9 +198,9 @@
   transition: background-color var(--dur-quick) var(--ease-out);
 }
 
-/* A task held over it: its rule lights. */
-.colHead[data-over='true'] .rule {
-  background: var(--accent-cyan);
+/* A task held over it: its rule lights (the kit's rule reads `--rule-line`). */
+.colHead[data-over='true'] .head {
+  --rule-line: var(--accent-cyan);
 }
 
 .count {
@@ -200,16 +208,14 @@
   letter-spacing: 0;
 }
 
-.headField {
+/* Renaming: the kit's field (D-326) as wide as the name, in the head's caps. Two classes, over the field's own. */
+.head .headField {
+  display: inline-block;
+  width: auto;
   min-width: 4ch;
-  padding: var(--space-half) var(--space-1);
-  border: var(--line-w) solid var(--accent-cyan);
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
+  field-sizing: content;
   letter-spacing: inherit;
   text-transform: uppercase;
-  outline: none;
 }
 
 /* Its tools, after the count, while it's hovered: they take no room until then. */
@@ -223,35 +229,25 @@
   display: flex;
 }
 
-.tool {
+/* Each a kit Button `icon` (D-326) in a cell of its own; the finished one green while on, the limit as the text. */
+.tools .tool {
   min-width: var(--control-xs);
   height: var(--control-xs);
   padding: 0 var(--space-1);
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  letter-spacing: 0;
-  cursor: pointer;
 }
 
-.tool:hover,
-.tool:focus-visible {
-  color: var(--fg);
+.tools .tool:hover,
+.tools .tool:focus-visible {
   background: var(--wash-2);
   outline: none;
 }
 
-.tool[aria-pressed='true'] {
+.tools .tool[data-done][aria-pressed='true'] {
   color: var(--accent-green);
 }
 
-.tool[data-limit][aria-pressed='true'] {
+.tools .tool[data-limit][aria-pressed='true'] {
   color: var(--fg);
-}
-
-.tool[data-danger]:hover {
-  color: var(--accent-magenta);
 }
 
 /* Over its limit (D-256): its name and count magenta. */
@@ -260,19 +256,11 @@
   color: var(--accent-magenta);
 }
 
-.limitField {
+.head .limitField {
+  display: inline-block;
   width: 3ch;
-  padding: 0 var(--space-half);
-  border: var(--line-w) solid var(--accent-cyan);
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
+  padding: 0;
   text-align: center;
-  outline: none;
-}
-
-.limitField::placeholder {
-  color: var(--placeholder);
 }
 
 /* Its tasks, hung under the rule. */
@@ -315,10 +303,6 @@
   color: color-mix(in srgb, var(--tone) var(--mix-strong), var(--fg));
 }
 
-.task[data-ccard] .priority[data-p='P1'] {
-  color: color-mix(in srgb, var(--accent-magenta) var(--mix-strong), var(--fg));
-}
-
 .layer[data-live='true'] .task {
   cursor: grab;
 }
@@ -358,22 +342,6 @@
   white-space: nowrap;
 }
 
-/* How urgent (D-256), before the title: P1 magenta, P2 as the text, P3 faint. */
-.priority {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0;
-  color: var(--fg-dim);
-}
-
-.priority[data-p='P1'] {
-  color: var(--accent-magenta);
-}
-
-.priority[data-p='P2'] {
-  color: var(--fg);
-}
-
 /* Its #labels, a line under the title. */
 .labels {
   overflow: hidden;
@@ -384,21 +352,10 @@
   white-space: nowrap;
 }
 
-/* Finished, for a card still being tested (D-254): a cyan line asking what it taught. */
-.learn {
+/* Finished, for a card still being tested (D-254): a cyan line asking what it taught (the kit's Button, primary). */
+.task .learn {
   align-self: flex-start;
   padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent-cyan);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  cursor: pointer;
-}
-
-.learn:hover,
-.learn:focus-visible {
-  color: var(--fg-strong);
 }
 
 .for {
@@ -506,42 +463,25 @@
   outline: none;
 }
 
-/* Typing a new task: a sheet in its place, the menus' cyan `>` (D-222), a cyan edge. */
+/* Typing a new task: a sheet in its place with the kit's prompt (D-326), a cyan edge. */
 .adding {
   display: flex;
-  gap: var(--space-2);
   padding: calc(var(--space-2) + var(--space-half)) var(--space-3) calc(var(--space-2) + var(--space-half)) var(--space-4);
   background: var(--bg-raised);
   box-shadow: inset var(--line-w-bold) 0 0 var(--accent-cyan);
 }
 
-.prompt {
-  color: var(--accent-cyan);
-  line-height: var(--lh-snug);
-}
-
-.addField {
+.addPrompt {
   flex: 1;
   min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
+}
+
+/* What's typed reads as the task will: Geist at a task title's size, in the world. */
+.addPrompt textarea {
   color: var(--fg);
   font-family: var(--font-display);
   font-size: var(--w-text-lg);
   line-height: var(--lh-snug);
-  resize: none;
-  outline: none;
-}
-
-/* The sheet's cyan edge already says it's being typed in. */
-.addField:focus-visible,
-.headField:focus-visible {
-  outline: none;
-}
-
-.addField::placeholder {
-  color: var(--placeholder);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -713,7 +653,7 @@
 }
 
 /* Nothing in it at all: a line under the heads. */
-.empty[data-wide] {
+.emptyWide {
   display: block;
   margin-top: var(--space-3);
   padding-left: 0;
@@ -897,11 +837,6 @@
   color: var(--accent-magenta);
 }
 
-/* Where the card's own priority differs: `P2 → P1` in yellow. */
-.priority[data-differs='true'] {
-  color: var(--accent-yellow);
-}
-
 /* Its tasks when it's switching to cards, or held cards before (D-300): what's on it, why, and where they can go. */
 .held {
   display: flex;
@@ -931,8 +866,9 @@
   gap: var(--space-2);
 }
 
-.heldActs > button {
-  color: var(--accent-cyan);
+.heldAct {
+  display: inline-flex;
+  align-items: baseline;
 }
 
 .heldHint {

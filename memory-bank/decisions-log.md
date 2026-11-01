@@ -6020,6 +6020,14 @@ docs/foundation-audit-2026-10-31.md).
   `main` ink, PackPick's `[package N]` blue as its CSS always meant (the stylesheet order had kept it grey), a
   checkbox's hint 10 → 11 px (`--text-xs`). Left for later: the framed option boxes (card type, cell kind, rule
   values: the kit has no framed option yet), AddPill, the wizards' steps and templates (the wizard shell, patterns).
+- *Built:* decks, the timeline and the side view on the kit (2026-11-01): column heads and the suggested order's
+  head → Rule (Rule got `--rule-line`), the column rename and limit → Field, the add-task sheet → PromptField (got
+  `onBlur`), P1–P3 → Chip `pill` (its height now the line's), tool and held-task buttons → Button (KanbanSetup's held
+  tasks had doubled brackets), the side view's deck tabs and MINE / ALL · DAYS → Tabs (Tabs: the first takes the
+  keyboard when none is current), MINE's heads → Rule, the timeline's labels → Label (it passes attributes through),
+  empty lines → Empty. Looks snapped to the kit: the column heads' magenta lead, the add-task sheet's magenta `>` and
+  height, the side view's tabs underlined instead of framed, OVERVIEW 10 → 11 px. Kept: the scale buttons (a pinch
+  rests between scales), LaneHead, the SOON band, `+ add a task` / `+ column` (quiet rows, not verbs).
 - *Not yet:* moving the other areas onto the kit (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
   MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,

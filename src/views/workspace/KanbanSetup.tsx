@@ -176,14 +176,20 @@ function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]
       </p>
       <span className={styles.heldActs}>
         {!cardsHere && (
-          <button className={m.tool} data-main autoFocus onClick={() => void makeNew()} title="a new deck next to this one holds the cards; the tasks stay here">
-            [make a new deck for cards]<span className={styles.heldHint}>next to this one; the tasks stay</span>
-          </button>
+          <span className={styles.heldAct}>
+            <Button tone="main" autoFocus onClick={() => void makeNew()} title="a new deck next to this one holds the cards; the tasks stay here">
+              make a new deck for cards
+            </Button>
+            <span className={styles.heldHint}>next to this one; the tasks stay</span>
+          </span>
         )}
         {others.length > 0 && (
-          <button className={m.tool} aria-expanded={picking} onClick={() => setPicking(!picking)}>
-            [move the tasks to {picking ? '▴' : '▾'}]<span className={styles.heldHint}>{cardsHere ? 'into the column of the same name' : 'then this one holds cards'}</span>
-          </button>
+          <span className={styles.heldAct}>
+            <Button tone="primary" aria-expanded={picking} onClick={() => setPicking(!picking)}>
+              move the tasks to {picking ? '▴' : '▾'}
+            </Button>
+            <span className={styles.heldHint}>{cardsHere ? 'into the column of the same name' : 'then this one holds cards'}</span>
+          </span>
         )}
         {picking && (
           <span className={styles.heldList} role="list">
@@ -203,13 +209,13 @@ function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]
           </span>
         )}
         {cardsHere ? (
-          <button className={m.tool} onClick={() => void setKanbanSetup(wid, piece.id, { holds: undefined }, 'hold tasks on a deck')}>
-            [hold tasks again]
-          </button>
+          <Button tone="primary" onClick={() => void setKanbanSetup(wid, piece.id, { holds: undefined }, 'hold tasks on a deck')}>
+            hold tasks again
+          </Button>
         ) : (
-          <button className={m.tool} onClick={onDone}>
-            [keep tasks]
-          </button>
+          <Button tone="primary" onClick={onDone}>
+            keep tasks
+          </Button>
         )}
       </span>
     </div>

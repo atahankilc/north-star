@@ -23,11 +23,17 @@ import { TYPE_ACCENT } from './PlaneCards'
 import { boxKey, boxPatch, byBox, byColumn, columnsOf, FIELD_NAME, heldCards, isPriorities, NO_VALUE, placeOf, rowFieldOf, rowsOfField, scorer, sureOf, takes, type CardCol } from './kanbanCards'
 import { suggestedOrder, type Ranked } from './cardFacts'
 import { create } from 'zustand'
-import { Gap, kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
+import { Gap, kanbanOf, K, LaneHead, PRIORITY_TONE, useKanbanSizes } from './Kanban'
+import { Chip } from '../../ui/Chip'
+import { Empty } from '../../ui/Empty'
+import { Rule } from '../../ui/Rule'
 import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import { usePeersOn } from './collab'
 import { loadFolds, saveFolds } from './rows'
 import styles from './Kanban.module.css'
+
+// P1 on a card's tinted face: its magenta leaning to the ink, so it reads there (D-295).
+const P1_ON_TINT = 'color-mix(in srgb, var(--accent-magenta) var(--mix-strong), var(--fg))'
 
 type Over = { col: string; row: string }
 type Drag = { id: string; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: Over | null }
@@ -179,10 +185,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
           return (
             <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-out={c.out || undefined} data-none={c.id === NO_VALUE || undefined} data-over={(lifted && drag?.over?.col === c.id) || undefined} data-off={off || undefined}>
               <div className={styles.head}>
-                <span className={styles.n}>{String(i).padStart(2, '0')}</span>
-                <span className={styles.name}>{c.name}</span>
-                <span className={styles.rule} aria-hidden />
-                <span className={styles.count}>{byCol.get(c.id)?.length ?? 0}</span>
+                <Rule as="div" className={styles.headRule} n={i} name={<span className={styles.name}>{c.name}</span>} count={<span className={styles.count}>{byCol.get(c.id)?.length ?? 0}</span>} countAt="end" />
               </div>
             </div>
           )
@@ -239,7 +242,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
                           </div>
                         ))}
                         {over && !here && <Gap h={drag!.size[1]} tone={TYPE_ACCENT[lifted!.type]} />}
-                        {!list.length && !over && !rowField && <span className={styles.empty}>· none</span>}
+                        {!list.length && !over && !rowField && <Empty as="span" className={styles.empty}>· none</Empty>}
                       </div>
                     </div>
                   )
@@ -250,9 +253,9 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
         )
       })}
       {!held.length && (
-        <p className={styles.empty} data-wide>
+        <Empty className={`${styles.empty} ${styles.emptyWide}`}>
           no cards here yet: its setup picks which ({FIELD_NAME[field]} applies to {field === 'status' ? 'customers, problems, ideas and features' : field === 'priority' ? 'features' : 'features and packages'})
-        </p>
+        </Empty>
       )}
       </div>
       {orderOn && <OrderList order={order} unrated={held.length - order.length} live={live} selected={selected} onPick={(c) => live && pick(c)} onPress={own} />}
@@ -312,9 +315,9 @@ function CardSheet({ card, field, rowField, sure, finished, selected, live, lift
         <span className={styles.sheetType}>{card.type}</span>
         <span className={styles.push} />
         {shown('priority') && card.priority && (
-          <span className={styles.priority} data-p={card.priority}>
+          <Chip variant="pill" tone={card.priority === 'P1' ? P1_ON_TINT : PRIORITY_TONE[card.priority]}>
             {card.priority}
-          </span>
+          </Chip>
         )}
       </span>
       <span className={styles.title}>{card.title || `untitled ${card.type}`}</span>
@@ -368,9 +371,7 @@ function OrderList({ order, unrated, live, selected, onPick, onPress }: OrderPro
   return (
     <aside className={styles.order} aria-label="Suggested order" onPointerDown={live ? onPress : undefined}>
       <div className={styles.head}>
-        <span className={styles.name}>suggested order</span>
-        <span className={styles.rule} aria-hidden />
-        <span className={styles.count}>{order.length}</span>
+        <Rule as="div" className={styles.headRule} name={<span className={styles.name}>suggested order</span>} count={<span className={styles.count}>{order.length}</span>} countAt="end" />
       </div>
       <p className={styles.orderHow}>impact × confidence ÷ effort</p>
       {order.map((r, i) => {
@@ -393,13 +394,13 @@ function OrderList({ order, unrated, live, selected, onPick, onPress }: OrderPro
               {r.sure.level === 'broken' ? '! ' : ''}
               {r.score.toFixed(1)}
             </span>
-            <span className={styles.priority} data-p={r.suggested} data-differs={differs || undefined}>
+            <Chip variant="pill" tone={differs ? 'var(--accent-yellow)' : PRIORITY_TONE[r.suggested]}>
               {differs ? `${own} → ${r.suggested}` : r.suggested}
-            </span>
+            </Chip>
           </button>
         )
       })}
-      {!order.length && <p className={styles.empty}>· nothing rated yet</p>}
+      {!order.length && <Empty className={styles.empty}>· nothing rated yet</Empty>}
       {unrated > 0 && <p className={styles.orderHow}>{unrated} not rated yet: give them an impact and an effort</p>}
     </aside>
   )

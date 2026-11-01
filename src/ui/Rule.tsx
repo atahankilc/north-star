@@ -1,7 +1,7 @@
 // The rule (D-266, D-277; D-326's kit): `01 NAME ──── count  + add`, as a panel's sections, a deck's columns and the
 // agent's views start. `n` a number (two digits, magenta) or a string as it is; `count` after the name, or at the end
 // (`countAt="end"`, a deck column's `──── 5`); `aside` after the line (faint words); `add` a `+ label` Button at the
-// right end; `line={false}` for a numbered label with no line. `Num` is the magenta number alone (a tab, a choice).
+// right end; `line={false}` for a numbered label with no line. `--rule-line` set on it (or above) colours the line. `Num` is the magenta number alone (a tab, a choice).
 import type { ReactNode } from 'react'
 import { Button } from './Button'
 import styles from './Rule.module.css'

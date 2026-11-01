@@ -41,10 +41,12 @@
   border-color: var(--line-hover);
 }
 
-/* pill: the value in its colour, no frame (P1, a status). */
+/* pill: the value in its colour, no frame (P1, a status). It sits in a line of text, so it takes that line's height
+   rather than making the line taller. */
 .chip[data-variant='pill'] {
   color: var(--fg-dim);
   letter-spacing: normal;
+  line-height: inherit;
 }
 
 .chip[data-variant='pill'][data-toned] {
