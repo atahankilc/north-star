@@ -56,7 +56,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   (4a07c52). Landing + workspaces on the kit: pushed 2026-11-01 (f15f8d7). The whole UI but the agent on the kit:
   check:kit 238 → 13 (only src/agent/ui left); D-334 (:where); folders by layer/area (2026-11-01, not pushed). Next, agreed with the user: the agent's column on Window (only when
   the user says), check:kit lower area by area, folders last; the plan is D-326's *Not yet*.
-- D-335 (Q-029 + old-data code deleted): committed, not pushed; its rules not deployed yet (ask first).
+- D-335 (Q-029 + old-data code deleted): pushed; firestore:rules deployed 2026-11-01 (rules tests 616/0).
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers
