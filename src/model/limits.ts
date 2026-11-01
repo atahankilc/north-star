@@ -6,6 +6,9 @@
 export const TITLE_MAX = 200
 export const LONG_TEXT_MAX = 20000
 
+// A workspace's name as typed on the workspaces page and in settings (D-338).
+export const WORKSPACE_NAME_MAX = 80
+
 // Pieces, canvases and text (D-176, D-302, D-194).
 export const PIECE_NAME_MAX = 80
 export const CANVAS_NAME_MAX = 60

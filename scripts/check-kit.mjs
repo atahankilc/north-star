@@ -2,7 +2,8 @@
 // is (a raw <button>, <input>, <textarea>, an own role="dialog" or portal; in CSS a bracket drawn by hand, a caps label
 // declared by hand, the old `small`/`button` composes) and fails when a file has more than scripts/kit-baseline.json
 // allows. The baseline only shrinks: moving an area onto the kit lowers it (`--write`). A line that truly needs its own
-// says why with `// kit-ok: why` (TSX) or `/* kit-ok: why */` (CSS).
+// says why with `// kit-ok: why` (TSX) or `/* kit-ok: why */` (CSS). `--admit <rule>` takes today's hits of a rule that's
+// new into the baseline once (the rule then only stops new ones).
 //   npm run check:kit            check
 //   npm run check:kit -- --list  print every hit, file by file
 //   npm run check:kit -- --write lower the baseline to today's counts (never raises it)
@@ -21,11 +22,19 @@ const RULES = {
     ['textarea', /<textarea\b/g],
     ['dialog', /role="dialog"/g],
     ['portal', /createPortal\(/g],
+    // D-338's round: a menu hosted by hand (the kit's ContextMenu or Menu hosts MenuPanel), a `[verb]`'s brackets drawn
+    // in spans (Button, or Button `look` inside a target), a text cap typed as a number (model/limits.ts).
+    ['menuHost', /<MenuPanel\b/g],
+    ['bracketSpan', /<span[^>]*>\s*[[\]]\s*<\/span>/g],
+    ['rawLimit', /maxLength=\{\d+\}/g],
   ],
   css: [
     ['bracket', /content:\s*['"][[\]]['"]/g],
     ['caps', /text-transform:\s*uppercase/g],
     ['small', /composes:\s*(small|button)\s+from\s+['"][^'"]*AsciiButton\.module\.css['"]/g],
+    // D-338's round: numbers made by a CSS counter (the kit's Num), a piece's graphite drawn by hand (PieceCard).
+    ['counter', /counter-increment\s*:/g],
+    ['pieceSurface', /background:\s*var\(--piece\)\s*;/g],
   ],
 }
 
@@ -67,6 +76,17 @@ if (args.includes('--list')) {
     console.log(f)
     for (const h of hits) console.log(`  ${h.line} ${h.name}: ${h.text.slice(0, 110)}`)
   }
+}
+
+// A rule just added: today's hits of it go into the baseline, once, so it stops only new ones (`--admit menuHost`).
+const admit = args.flatMap((a, i) => (a === '--admit' ? [args[i + 1]] : []))
+if (admit.length && baseline) {
+  for (const [f, c] of Object.entries(now))
+    for (const k of admit) if (c[k] && !baseline[f]?.[k]) (baseline[f] ??= {})[k] = c[k]
+  const sorted = Object.fromEntries(Object.keys(baseline).sort().map((k) => [k, baseline[k]]))
+  fs.writeFileSync(baselinePath, JSON.stringify(sorted, null, 2) + '\n')
+  console.log(`check:kit: admitted today's ${admit.join(', ')} into the baseline`)
+  process.exit(0)
 }
 
 if (args.includes('--write')) {

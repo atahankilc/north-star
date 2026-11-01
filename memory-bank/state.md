@@ -64,6 +64,11 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Workspaces page (D-338, docs/specs/workspaces-page.md): built and pushed 2026-11-01, firestore:rules deployed (summary +
   visited); the user's pick E from docs/specs/workspaces-preview/. Left: whether to add a release entry (the first what's
   new), a look at it in light theme. Verified: state-history D-338.
+- D-339 (2026-11-01, pushed): rules enforced by hooks; git hooks on (core.hooksPath set by the user). Claude Code
+  loads `.claude/settings.json` after `/hooks` or a new session.
+- Key hints out of the app (the user, 2026-11-01: "App genelinde böyle her yerde tuş takımını belirtiyoruz ama
+  kaldırılmasını istiyorum… onboardingde olması yeterli"): `↑↓ pick · ↵ open · esc` lines and `kbd` hints everywhere
+  go, the keys taught by onboarding instead; not started (the workspaces page's already gone, D-338).
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

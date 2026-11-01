@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "dev": "vite",
     "build": "tsc --noEmit && vite build && vite build -c vite.demo.config.ts && cp dist/index.html dist/404.html",
     "preview": "vite preview",

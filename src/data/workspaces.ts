@@ -22,7 +22,10 @@ import { DESCRIPTION_MAX, WRITE_BATCH_MAX as BATCH_LIMIT } from '../model/limits
 export { DESCRIPTION_MAX }
 
 // No 0/O/1/I/L: codes get read aloud and typed by hand.
-const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+export const INVITE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+const ALPHABET = INVITE_ALPHABET
+// What could be a code as typed: four and four of its letters, the dash optional (normalizeInviteCode drops it).
+export const INVITE_CODE_TYPED = new RegExp(`^[${INVITE_ALPHABET}]{4}-?[${INVITE_ALPHABET}]{4}$`, 'i')
 
 export function newInviteCode(length = 8): string {
   const bytes = crypto.getRandomValues(new Uint8Array(length))

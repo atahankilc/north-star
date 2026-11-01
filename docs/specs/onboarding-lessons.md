@@ -59,9 +59,9 @@ Faint, centred: **press + to add your first piece** · no scene.
 
 ### `workspaces-empty` · empty · all · D-062, D-338 · v2
 when the workspaces page with no workspaces · done `ws-made` or `join-requested`
-The page's three ways in, drawn as its pieces (`new`, `join`, `import` cut in): `Start one` (type its name in the line
-above and press ↵) · `Join a teammate's` (paste the code they gave you above) · `Bring one in` (a .zip someone
-exported: pick the file).
+The page's three ways in, drawn as its info cards (`new`, `join`, `import` cut in), the page's own words: `Start one`
+(Type its name in the line above and press ↵.) · `Join a teammate's` (Paste the code they gave you above. An owner lets
+you in.) · `Bring one in` (A .zip exported from North Star: drop it anywhere on this page.), `[choose file]` in its corner.
 
 ### `join-pending` · lesson · all · D-062
 when `join-requested` · anchor the pending row

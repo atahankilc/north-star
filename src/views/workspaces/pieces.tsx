@@ -1,11 +1,11 @@
 // The workspaces page's pieces (D-338, docs/specs/workspaces-page.md §1–2): drawn as the canvas draws its pieces
 // (graphite, a band in its colour on top, its name cut into the edge, Marks on hover and on the keyboard's pick).
 // Clicking one goes into the workspace; its actions are in its menu (`⋯`, right-click), never on its face.
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect } from 'react'
 import { ago } from '../../ui/foundation/ago'
 import { Button } from '../../ui/primitives/Button'
 import { Label } from '../../ui/primitives/Label'
-import { Marks } from '../../ui/primitives/Marks'
+import { PieceCard } from '../../ui/patterns/PieceCard'
 import { Num } from '../../ui/primitives/Rule'
 import type { WithId } from '../../data/hooks'
 import type { Workspace } from '../../data/model'
@@ -15,33 +15,12 @@ import type { ChangeKind } from '../../model/changeLog'
 import { WorkspacePicture } from './WorkspacePicture'
 import styles from './Workspaces.module.css'
 
-// A piece: its band's colour, its name cut into the top edge, Marks. `onOpen` makes the whole of it a target.
-export function Piece({ band, cut, tier = 'm', picked, onOpen, onMenu, className, children }: {
-  band: string
-  cut: ReactNode
-  tier?: 's' | 'm' | 'l'
-  picked?: boolean
-  onOpen?: () => void
-  onMenu?: (at: [number, number]) => void
-  className?: string
-  children: ReactNode
-}) {
-  const [hover, setHover] = useState(false)
+// The workspace's menu (open, rename, invite code, leave, delete), under its `⋯`: right-click opens the same.
+export function More({ name, onMenu }: { name: string; onMenu: (at: [number, number]) => void }) {
   return (
-    <article
-      className={[styles.piece, className].filter(Boolean).join(' ')}
-      style={{ '--band': band } as React.CSSProperties}
-      data-open={onOpen ? true : undefined}
-      onPointerEnter={() => setHover(true)}
-      onPointerLeave={() => setHover(false)}
-      onContextMenu={onMenu ? (e) => (e.preventDefault(), onMenu([e.clientX, e.clientY])) : undefined}
-    >
-      {cut !== null && <Label className={styles.cut}>{cut}</Label>}
-      {/* An invisible layer over the whole piece: it opens the workspace. */}
-      {onOpen && <button /* kit-ok: a layer over the whole piece, not a [verb] */ type="button" className={styles.open} onClick={onOpen} aria-label="open" tabIndex={-1} />}
-      {children}
-      {onOpen && <Marks tier={tier} hover={hover} selected={picked} />}
-    </article>
+    <Button icon className={styles.more} aria-label={`more for ${name}`} title="more: rename, invite code, leave, delete" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); onMenu([r.left, r.bottom]) }}>
+      ⋯
+    </Button>
   )
 }
 
@@ -103,37 +82,33 @@ export function ContinuePiece({ w, uid, visit, picked, onOpen, onMenu }: {
   const here = useHereNow(w.id, w.memberIds, uid)
   const role = roleOf(w, uid) ?? 'editor'
   return (
-    <Piece band="var(--accent-cyan)" tier="l" picked={picked} onOpen={onOpen} onMenu={onMenu} className={styles.hero} cut={<><Num n={1} /> continue <span className={styles.kind}>· {role}</span></>}>
+    <PieceCard band="var(--accent-cyan)" tier="l" picked={picked} onOpen={onOpen} onMenu={onMenu} className={styles.hero} name={<><Num n={1} /> continue <span className={styles.kind}>· {role}</span></>}>
       <div className={styles.heroPic}>
         <WorkspacePicture summary={summary} />
       </div>
       <div className={styles.heroSide}>
         <h2 className={styles.heroName}>{w.name}</h2>
         {w.description && <p className={styles.about}>{w.description}</p>}
-        <Label className={styles.caps}>since you left{visit?.visited ? ` · ${agoText(visit.visited)}` : ''}</Label>
-        <ul className={styles.since}>
-          {lines.length ? (
-            lines.slice(0, 4).map((l) => (
-              <li key={l.by}>
-                <span className={styles.who}>{names[l.by] ?? 'someone'}</span> {kindsText(l.kinds)} <span className={styles.t}>{ago(l.at)}</span>
-              </li>
-            ))
-          ) : (
-            <li className={styles.faint}>nothing new since you left</li>
-          )}
-        </ul>
+        {lines.length > 0 && (
+          <>
+            <Label className={styles.caps}>since you left{visit?.visited ? ` · ${agoText(visit.visited)}` : ''}</Label>
+            <ul className={styles.since}>
+              {lines.slice(0, 4).map((l) => (
+                <li key={l.by}>
+                  <span className={styles.who}>{names[l.by] ?? 'someone'}</span> {kindsText(l.kinds)} <span className={styles.t}>{ago(l.at)}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
         <div className={styles.go}>
-          <Button size="md" accent="cyan" tone="main" onClick={onOpen}>
-            continue ↵
-          </Button>
+          <People w={w} />
           <HereNow names={here} />
           <span className={styles.grow} />
-          <Button icon aria-label={`more for ${w.name}`} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); onMenu([r.left, r.bottom]) }}>
-            ⋯
-          </Button>
+          <More name={w.name} onMenu={onMenu} />
         </div>
       </div>
-    </Piece>
+    </PieceCard>
   )
 }
 
@@ -153,7 +128,7 @@ export function OtherPiece({ w, n, uid, visit, newTasks, picked, onOpen, onMenu 
   const here = useHereNow(w.id, w.memberIds, uid)
   const role = roleOf(w, uid) ?? 'editor'
   return (
-    <Piece band="var(--piece-edge)" picked={picked} onOpen={onOpen} onMenu={onMenu} className={styles.mini} cut={<><Num n={n} /> <span className={styles.kind}>{role}</span></>}>
+    <PieceCard band="var(--piece-edge)" picked={picked} onOpen={onOpen} onMenu={onMenu} className={styles.mini} name={<><Num n={n} /> <span className={styles.kind}>{role}</span></>}>
       <div className={styles.miniPic}>
         <WorkspacePicture summary={summary} />
       </div>
@@ -166,9 +141,10 @@ export function OtherPiece({ w, n, uid, visit, newTasks, picked, onOpen, onMenu 
           {newTasks > 0 && <span className={styles.mine}>☐ {newTasks}</span>}
           <span className={styles.grow} />
           {visit?.visited ? ago(visit.visited) : ''}
+          <More name={w.name} onMenu={onMenu} />
         </span>
       </div>
-    </Piece>
+    </PieceCard>
   )
 }
 

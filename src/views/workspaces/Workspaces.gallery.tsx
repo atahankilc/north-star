@@ -99,7 +99,9 @@ export default example({
     one: { ...page({ workspaces: [FEW[2]] }), note: 'the three ways in stay while you have two or fewer' },
     many: page({ workspaces: MANY }),
     'typed a name': page({ workspaces: FEW }, { setup: typed('pa') }),
+    'typed a name you have': { ...page({ workspaces: FEW }, { setup: typed('Pazar') }), note: 'the match first (↵ opens it); `+ new` can still make a second one by that name' },
     'typed a code': page({ workspaces: FEW }, { setup: typed('ABCD-EFGH') }),
+    'typed an 8-letter name': { ...page({ workspaces: FEW }, { setup: typed('Pazarlar') }), note: 'a name first; a code only offered beside it (no dash, so it reads as a name)' },
     'a menu': page({ workspaces: FEW }, { setup: (c) => c.click('[aria-label^="more for"]') }),
   },
 })

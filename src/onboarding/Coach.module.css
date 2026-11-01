@@ -98,43 +98,12 @@
 }
 
 .choice {
-  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-4);
-  border: var(--line-w) solid var(--piece-edge);
-  background: var(--piece);
-  box-shadow: var(--piece-shadow);
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
   cursor: pointer;
-}
-
-.choice::before {
-  content: '';
-  position: absolute;
-  top: calc(-1 * var(--line-w));
-  left: calc(-1 * var(--line-w));
-  right: calc(-1 * var(--line-w));
-  height: var(--piece-band);
-  background: var(--band);
-}
-
-.choice:hover,
-.choice:focus-visible {
-  border-color: var(--line-hover);
-}
-
-.choiceNo {
-  position: absolute;
-  top: calc(-1 * var(--space-2));
-  left: var(--space-4);
-  padding: 0 var(--space-2);
-  background: var(--bg);
-  color: var(--fg);
 }
 
 .choiceLabel {
@@ -145,4 +114,14 @@
 .choiceLine {
   color: var(--fg-dim);
   font-size: var(--text-sm);
+}
+
+/* The import choice's `[choose file]`, in the bottom-right corner as on the page's card. */
+.choiceAct {
+  align-self: flex-end;
+  margin-top: auto;
+}
+
+.choice:hover .choiceAct {
+  color: var(--fg-strong);
 }

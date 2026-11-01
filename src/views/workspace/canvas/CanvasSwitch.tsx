@@ -12,7 +12,7 @@ import { canEditIn } from '../../../data/workspaces'
 import { HazardConfirm } from '../../../ui/patterns/HazardConfirm'
 import type { MenuEntry } from '../../../ui/patterns/Menu'
 import { learn } from '../../../onboarding/learn'
-import { ContextMenu } from './ContextMenu'
+import { ContextMenu } from '../../../ui/patterns/ContextMenu'
 import { useWs, useWsNow } from './context'
 import styles from './CanvasSwitch.module.css'
 

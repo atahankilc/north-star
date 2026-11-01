@@ -1,0 +1,3 @@
+#!/bin/sh
+# The repo's rules before a commit (D-339): tokens, kit, gallery, lessons, memory bank. scripts/commit-rules.mjs.
+exec node scripts/commit-rules.mjs pre

@@ -7,7 +7,8 @@ import { createPortal } from 'react-dom'
 import { Appear } from '../ui/primitives/Appear'
 import type { Choice } from './lessons'
 import styles from './Coach.module.css'
-import { Label } from '../ui/primitives/Label'
+import { Button } from '../ui/primitives/Button'
+import { PieceCard } from '../ui/patterns/PieceCard'
 
 // What each choice goes to on the page (D-338: Workspaces.tsx), by its place in the list: the prompt takes a name or a
 // code, the third opens the file picker.
@@ -25,11 +26,16 @@ export function Choices({ into, choices }: { into: Element; choices: readonly Ch
     <ul className={styles.choices} data-coach aria-label="ways to start">
       {choices.map((c, i) => (
         <Appear as="li" key={c.label} className={styles.choiceItem}>
-          <button /* kit-ok: a choice drawn as a piece (its name cut in, a line), the whole of it the target */ type="button" className={styles.choice} style={{ '--band': BAND[i] } as React.CSSProperties} onClick={() => GO[i]?.()}>
-            <Label className={styles.choiceNo}>{CUT[i] ?? ''}</Label>
+          <PieceCard as="button" band={BAND[i]} name={CUT[i] ?? ''} onOpen={() => GO[i]?.()} className={styles.choice}>
             <span className={styles.choiceLabel}>{c.label}</span>
             <span className={styles.choiceLine}>{c.line}</span>
-          </button>
+            {/* The import's verb, as the page's own card has it. */}
+            {i === 2 && (
+              <Button look className={styles.choiceAct}>
+                choose file
+              </Button>
+            )}
+          </PieceCard>
         </Appear>
       ))}
     </ul>,

@@ -244,9 +244,9 @@ export const LESSONS: readonly Lesson[] = [
     id: 'workspaces-empty', v: 2, format: 'empty', roles: ALL, area: 'start', since: 'D-062, D-338',
     trigger: [{ event: 'workspaces-open', when: { empty: true } }], doneWhen: [{ event: 'ws-made' }, { event: 'join-requested' }], anchor: 'workspaces-empty',
     choices: [
-      { label: 'Start one', line: 'type its name in the line above and press ↵' },
-      { label: "Join a teammate's", line: 'paste the code they gave you above' },
-      { label: 'Bring one in', line: 'a .zip someone exported: pick the file' },
+      { label: 'Start one', line: 'Type its name in the line above and press ↵.' },
+      { label: "Join a teammate's", line: 'Paste the code they gave you above. An owner lets you in.' },
+      { label: 'Bring one in', line: 'A .zip exported from North Star: drop it anywhere on this page.' },
     ],
   },
   {

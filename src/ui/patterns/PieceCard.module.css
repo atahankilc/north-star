@@ -1,0 +1,64 @@
+/* A piece as a card (D-263, D-266): the canvas's graphite, its band on top, its name cut into the edge. */
+.piece {
+  position: relative;
+  border: var(--line-w) solid var(--piece-edge);
+  background: var(--piece);
+  box-shadow:
+    var(--piece-shadow),
+    inset 0 var(--line-w) 0 var(--piece-hi);
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+}
+
+.piece::before {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--line-w));
+  left: calc(-1 * var(--line-w));
+  right: calc(-1 * var(--line-w));
+  height: var(--piece-band);
+  background: var(--band);
+  pointer-events: none;
+}
+
+.piece[data-open] {
+  cursor: pointer;
+}
+
+button.piece:hover,
+button.piece:focus-visible {
+  border-color: var(--line-hover);
+}
+
+/* Its name cut into the top edge: the page's ground behind it, over the band. */
+.name {
+  position: absolute;
+  z-index: var(--z-1);
+  top: calc(-1 * var(--space-2));
+  left: var(--space-4);
+  max-width: calc(100% - var(--space-8));
+  overflow: hidden;
+  padding: 0 var(--space-2);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: var(--lh-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.open {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* What can be pressed on the piece sits over its target layer (its words fall through to it). */
+.piece :is(button:not(.open), a, input, textarea) {
+  position: relative;
+  z-index: var(--z-1);
+}

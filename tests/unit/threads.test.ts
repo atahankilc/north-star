@@ -54,6 +54,8 @@ vi.mock('firebase/firestore', () => {
     orderBy: (_f: string, order: 'asc' | 'desc' = 'asc') => ({ order }),
     limit: (max: number) => ({ max }),
     getDocs: async (q: Q) => children(q),
+    // markTasksSeen looks whether the read marks are there before making them (the rules refuse an update with no `seen`).
+    getDoc: async (r: { path: string }) => ({ exists: () => fake.data.has(r.path), data: () => structuredClone(fake.data.get(r.path)) }),
     deleteField: () => fake.DEL,
     increment: (n: number) => fake.INC(n),
     arrayUnion: (...v: unknown[]) => v,

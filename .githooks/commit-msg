@@ -1,0 +1,3 @@
+#!/bin/sh
+# A changed component ships with its gallery example and its lesson, or the message says why not (D-339).
+exec node scripts/commit-rules.mjs msg "$1"

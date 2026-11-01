@@ -6430,3 +6430,32 @@ right-click → `d` ↵ → the hazard confirm → deleted (`02` → `01`). The 
 Not yet: no release entry (the first `what's new` opens for everyone: the user's
 call, as D-330); the light theme and reduced motion not shot; a `.zip` dropped not tried in a browser; names in
 since-you-left only from the people list (≤ 10 a query).
+After the first look (the user, 2026-11-01: "specific olarak bir continue buttonu koymak çok işlevsiz"; "actionları
+sağ click arkasında saklı"; "aynı workspace isminde iki yer açamıyorum… mantıklı mı?"): no continue button, `⋯` on every
+piece, the import piece last in the others, since-you-left only when something changed, no key hints on the page (the user: onboarding
+teaches keys), `+ new` offered for a name you have too, the backdrop shaded under words only (docs/specs/workspaces-page.md §6).
+
+### D-339 · 2026-11-01 · Accepted (the user: "bu token ve kit kuralını deterministik yapmamız lazım. ben her agenta bunu sormak istemiyorum"; "yada onboardinge ekleme yada gallerye ekleme de buna dahil")
+**The repo's UI rules are enforced by machines, as each file is written and at each commit.**
+- **While writing:** `.claude/settings.json` (project, committed) has a PostToolUse hook on Write/Edit/MultiEdit running
+  `scripts/ui-rules-hook.mjs`: for a file under `src/` it runs check:tokens, check:kit, check:gallery, check:lessons
+  (memory-bank files: check:memory), each well under a second; a refusal goes back to the agent (exit 2) with what to fix.
+- **At commit:** `.githooks/pre-commit` and `commit-msg` (git's `core.hooksPath`, set by `npm install`'s `prepare`) run
+  `scripts/commit-rules.mjs`: the same checks; and a staged component in a covered folder without its staged
+  `X.gallery.tsx` needs a `Gallery: <why>` line, UI staged without `src/onboarding/lessons.ts` or
+  `docs/specs/onboarding-lessons.md` a `Lessons: <why>` line. A "real change" can't be told by a script, so the commit
+  has to say; forgetting can't pass.
+- **New kit rules** (check:kit, from this session's misses; today's hits admitted once with `--admit`, the baseline only
+  shrinks): `menuHost` (`<MenuPanel` hosted outside the kit: use ContextMenu or Menu), `bracketSpan` (a `[verb]`'s
+  brackets in spans: Button, or Button `look`), `rawLimit` (`maxLength={80}`: model/limits.ts), CSS `counter` (Num), CSS
+  `pieceSurface` (`background: var(--piece)`: PieceCard).
+- **Kit grown with it:** `PieceCard` (src/ui/patterns: a piece off the canvas, the workspaces page's and the onboarding
+  choices' cards), `ContextMenu` moved from the canvas into src/ui/patterns (the page's own copy deleted), Button `look`
+  (a verb's look inside a target). Gallery covers `src/views/workspaces` too. `WORKSPACE_NAME_MAX` and
+  `INVITE_ALPHABET`/`INVITE_CODE_TYPED` in their homes.
+Why: the user had to ask each agent whether tokens, the kit, the gallery and onboarding were kept; one round (D-338) had
+three hand-made copies of a piece, a second right-click menu, a CSS counter for numbers and a limit typed as a number,
+none caught by the checks that existed.
+Done by the user the same day: `git config core.hooksPath .githooks` (the agent's run of it was refused as persistence);
+the Claude Code hook takes effect once Claude Code reloads its settings (`/hooks` or a new session). TS constants that
+duplicate another module's (a regex of an alphabet) are still a reviewer's catch.

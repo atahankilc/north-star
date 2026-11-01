@@ -1,8 +1,8 @@
-import { example } from '../../../gallery/example'
-import { onCanvas, P, PAZAR } from '../../../gallery/canvas'
-import { rightClick } from '../../../gallery/docks'
-import { CANVAS } from '../../../model/labels'
-import { MAIN } from '../../../data/canvases'
+import { example } from '../../gallery/example'
+import { onCanvas, P, PAZAR } from '../../gallery/canvas'
+import { rightClick } from '../../gallery/docks'
+import { CANVAS } from '../../model/labels'
+import { MAIN } from '../../data/canvases'
 
 const AT = Date.UTC(2026, 9, 19, 9, 0)
 const withText = (ws: typeof PAZAR) => ({
@@ -16,7 +16,7 @@ const withText = (ws: typeof PAZAR) => ({
 export default example({
   name: 'Right-click menu',
   place: 'overlays/menus',
-  file: 'src/views/workspace/canvas/ContextMenu.tsx',
+  file: 'src/ui/patterns/ContextMenu.tsx',
   note: 'right-click is the prompt (D-222, D-237): what can be done with what’s under the pointer',
   states: {
     card: onCanvas({ only: [P.lunch], focus: P.lunch, then: () => rightClick('[data-target="card:i-preorder"]') }),

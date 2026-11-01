@@ -2,7 +2,7 @@
 // prompt (it finds, starts, joins; a .zip dropped anywhere imports), and under it, with nothing typed: the workspace you
 // left (its picture, since you left, who's here), what needs you, the others; the three ways in while you have few.
 // A first visit is the same page with a START piece where the continue piece goes. Typed: ledger rows.
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { workspacePath } from '../../app/paths'
 import type { AuthUser } from '../../data/auth'
@@ -27,6 +27,7 @@ import {
   isOwnerOf,
   ownerCount,
   withdrawJoinRequest,
+  INVITE_CODE_TYPED,
 } from '../../data/workspaces'
 import { useVisits, type Visit } from '../../data/glance'
 import { useHoldCurtain } from '../../state/curtain'
@@ -40,25 +41,26 @@ import { PromptField } from '../../ui/primitives/PromptField'
 import { Num, numText, Rule } from '../../ui/primitives/Rule'
 import { Hud } from '../../ui/patterns/Hud'
 import { HazardConfirm } from '../../ui/patterns/HazardConfirm'
-import { MenuPanel, type MenuEntry } from '../../ui/patterns/Menu'
+import { type MenuEntry } from '../../ui/patterns/Menu'
+import { ContextMenu } from '../../ui/patterns/ContextMenu'
 import { Window } from '../../ui/patterns/Window'
 import { learn } from '../../onboarding/learn'
-import { tokenPx } from '../../styles/cssToken'
-import { DESCRIPTION_MAX } from '../../model/limits'
-import { ContinuePiece, NewTasksOf, OtherPiece, People, Piece } from './pieces'
+import { DESCRIPTION_MAX, WORKSPACE_NAME_MAX } from '../../model/limits'
+import { ContinuePiece, NewTasksOf, OtherPiece, People } from './pieces'
+import { PieceCard } from '../../ui/patterns/PieceCard'
 import { WorkspacePicture } from './WorkspacePicture'
 import styles from './Workspaces.module.css'
 
 // The onboarding's coach (D-315), loaded apart from this page (it's shared with the workspace's chunk).
 const Coach = lazy(() => import('../../onboarding/Coach').then((m) => ({ default: m.Coach })))
 
-// An invite code as typed: four and four, the dash optional (normalizeInviteCode drops it).
-const CODE = /^[A-Z0-9]{4}-?[A-Z0-9]{4}$/i
+// An invite code as typed (workspaces.ts): with the dash it reads as a code first; without, a name first (`Pazarlar`).
+const CODE = INVITE_CODE_TYPED
 // While you have this many or fewer, the three ways in stay under your workspaces.
 const START_ROW_UNTIL = 2
-const NAME_MAX = 80
+const NAME_MAX = WORKSPACE_NAME_MAX
 
-type Row = { kind: 'ws'; w: WithId<Workspace> } | { kind: 'new'; name: string } | { kind: 'code'; code: string }
+type Row = { kind: 'ws'; w: WithId<Workspace> } | { kind: 'new'; name: string; again: boolean } | { kind: 'code'; code: string }
 type Ask = { kind: 'new'; name: string } | { kind: 'rename'; w: WithId<Workspace> } | { kind: 'delete' | 'leave'; w: WithId<Workspace> }
 
 export function Workspaces({ user }: { user: AuthUser }) {
@@ -98,8 +100,12 @@ export function Workspaces({ user }: { user: AuthUser }) {
     const isCode = CODE.test(q)
     const low = q.toLowerCase()
     const found: Row[] = sorted.filter((w) => w.name.toLowerCase().includes(low)).map((w) => ({ kind: 'ws', w }))
-    if (isCode) found.push({ kind: 'code', code: q.toUpperCase() })
-    else if (!sorted.some((w) => w.name.toLowerCase() === low)) found.push({ kind: 'new', name: q.slice(0, NAME_MAX) })
+    // A name you already have can be made again (two ideas may share one): the match stays first, so ↵ opens it.
+    const make: Row = { kind: 'new', name: q.slice(0, NAME_MAX), again: sorted.some((w) => w.name.toLowerCase() === low) }
+    const code: Row = { kind: 'code', code: q.toUpperCase() }
+    // `+ new` is always there; a code is offered beside it, first only when typed with its dash.
+    if (isCode) found.push(...(q.includes('-') ? [code, make] : [make, code]))
+    else found.push(make)
     return found
   }, [q, sorted])
   useEffect(() => setPick(0), [q])
@@ -209,14 +215,6 @@ export function Workspaces({ user }: { user: AuthUser }) {
   const openMenu = (w: WithId<Workspace>) => (at: [number, number]) => setMenu({ at, w })
 
   const placeholder = none ? 'name your first workspace, or paste an invite code…' : 'find, start a new one, or paste an invite code…'
-  const hint = q
-    ? CODE.test(q)
-      ? 'looks like an invite code · ↵ asks to join'
-      : `↑↓ pick · ↵ open · ⌘↵ new tab${rows.some((r) => r.kind === 'new') ? ` · ↵ on the last row makes “${q}”` : ''} · esc clears`
-    : none
-      ? 'type a name and ↵ to start · paste an invite code to join · drop a .zip anywhere to import'
-      : `↵ continue ${sorted[0]?.name ?? ''} · type to find or start one · paste a code to join · drop a .zip to import`
-
   return (
     <main className={styles.page} onDragOver={onDragOver} onDragLeave={(e) => !e.relatedTarget && setDragging(false)} onDrop={onDrop}>
       <Hud crumbs={[{ label: 'workspaces' }]} />
@@ -250,7 +248,6 @@ export function Workspaces({ user }: { user: AuthUser }) {
               if (e.key === 'Tab' && !e.shiftKey && r?.kind === 'new') (e.preventDefault(), setAsk({ kind: 'new', name: r.name }))
             }}
           />
-          <p className={styles.hint}>{hint}</p>
           {note && (
             <p className={styles.note} data-tone={note.tone}>
               {note.text}
@@ -286,6 +283,11 @@ export function Workspaces({ user }: { user: AuthUser }) {
                       <OtherPiece w={w} n={i + 2} uid={user.id} visit={visits.data[w.id]} newTasks={tasks[w.id] ?? 0} onOpen={() => go(w.id)} onMenu={openMenu(w)} />
                     </Appear>
                   ))}
+                  {sorted.length > START_ROW_UNTIL && (
+                    <Appear>
+                      <ImportPiece onFile={() => file.current?.click()} />
+                    </Appear>
+                  )}
                 </div>
               </>
             )}
@@ -310,8 +312,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
 
       {menu && (
         <div className={styles.layer}>
-          <WorkspaceMenu at={menu.at} items={menuItems(menu.w)} name={menu.w.name} onClose={() => setMenu(null)} />
-          <MenuAway onClose={() => setMenu(null)} />
+          <ContextMenu at={menu.at} items={menuItems(menu.w)} what="workspace" prompt={menu.w.name} onClose={() => setMenu(null)} />
         </div>
       )}
 
@@ -356,37 +357,6 @@ function Listed({ loading, empty }: { loading: boolean; empty: boolean }) {
   return null
 }
 
-// A workspace's menu at the pointer (or under its `⋯`), kept on the screen.
-function WorkspaceMenu({ at, items, name, onClose }: { at: [number, number]; items: MenuEntry[]; name: string; onClose: () => void }) {
-  const box = useRef<HTMLElement>(null)
-  useLayoutEffect(() => {
-    const el = box.current
-    if (!el) return
-    const gap = tokenPx('--space-2')
-    el.style.left = `${Math.max(gap, Math.min(at[0], window.innerWidth - el.offsetWidth - gap))}px`
-    el.style.top = `${Math.max(gap, Math.min(at[1], window.innerHeight - el.offsetHeight - gap))}px`
-  }, [at])
-  return (
-    <Appear elRef={box} className={styles.menu} data-ws-menu style={{ left: at[0], top: at[1] }} onContextMenu={(e: React.MouseEvent) => e.preventDefault()}>
-      <MenuPanel items={items} ariaLabel={name} prompt={name} onClose={onClose} />
-    </Appear>
-  )
-}
-
-// A press anywhere else, or the wheel, closes the menu.
-function MenuAway({ onClose }: { onClose: () => void }) {
-  useEffect(() => {
-    const away = (e: Event) => !(e.target as Element | null)?.closest?.('[data-ws-menu]') && onClose()
-    window.addEventListener('pointerdown', away, true)
-    window.addEventListener('wheel', away, true)
-    return () => {
-      window.removeEventListener('pointerdown', away, true)
-      window.removeEventListener('wheel', away, true)
-    }
-  }, [onClose])
-  return null
-}
-
 // ── Typed: ledger rows ───────────────────────────────────────────────────────────────────────────────────────────
 function Found({ rows, pick, q, visits, tasks, onPick, onRun, onMenu }: {
   rows: Row[]
@@ -416,7 +386,7 @@ function Found({ rows, pick, q, visits, tasks, onPick, onRun, onMenu }: {
       <ul className={styles.rows}>
         {rows.map((r, i) => (
           <li key={r.kind === 'ws' ? r.w.id : r.kind} onPointerEnter={() => onPick(i)} onContextMenu={r.kind === 'ws' ? (e) => (e.preventDefault(), onMenu(r.w)([e.clientX, e.clientY])) : undefined}>
-            <Piece band="transparent" cut={null} tier="s" picked={i === pick} onOpen={() => onRun(r)} className={styles.rowPiece}>
+            <PieceCard band="transparent" name={null} tier="s" picked={i === pick} onOpen={() => onRun(r)} className={styles.rowPiece}>
               {r.kind === 'ws' ? (
                 <>
                   <Num n={i + 1} className={styles.rowN} />
@@ -432,7 +402,9 @@ function Found({ rows, pick, q, visits, tasks, onPick, onRun, onMenu }: {
                 <>
                   <span className={styles.rowN} data-make>+</span>
                   <span className={styles.rowName} data-make>new workspace “{r.name}”</span>
-                  <span className={styles.rowSub}>↵ makes it and opens its canvas · ⇥ say what you're building first</span>
+                  <span className={styles.rowSub}>
+                    {r.again ? 'you have one by this name already; this makes another' : 'it opens on an empty canvas'}
+                  </span>
                 </>
               ) : (
                 <>
@@ -441,7 +413,7 @@ function Found({ rows, pick, q, visits, tasks, onPick, onRun, onMenu }: {
                   <span className={styles.rowSub}>an owner lets you in; it waits on this page until then</span>
                 </>
               )}
-            </Piece>
+            </PieceCard>
           </li>
         ))}
       </ul>
@@ -480,25 +452,25 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
         <div className={styles.needs}>
           {total > 0 && (
             <Appear>
-              <Piece band="var(--accent-yellow)" cut="for you" onOpen={() => onOpen(withTasks[0].id)}>
+              <PieceCard band="var(--accent-yellow)" name="for you" className={styles.info} onOpen={() => onOpen(withTasks[0].id)}>
                 <span className={styles.needT}>☐ {total} new {total === 1 ? 'task' : 'tasks'} for you</span>
                 <span className={styles.needS}>{withTasks.map((w) => `${tasks[w.id]} in ${w.name}`).join(' · ')}</span>
-              </Piece>
+              </PieceCard>
             </Appear>
           )}
           {askingIn.map((w) => (
             <Appear key={w.id}>
-              <Piece band="var(--accent-magenta)" cut="asking" onOpen={() => onOpen(w.id)}>
+              <PieceCard band="var(--accent-magenta)" name="asking" className={styles.info} onOpen={() => onOpen(w.id)}>
                 <span className={styles.needT}>
                   {asking[w.id]} {asking[w.id] === 1 ? 'person asks' : 'people ask'} to join {w.name}
                 </span>
                 <span className={styles.needS}>let them in from its settings → people</span>
-              </Piece>
+              </PieceCard>
             </Appear>
           ))}
           {invites.map((i) => (
             <Appear key={i.id}>
-              <Piece band="var(--accent-cyan)" cut="invited">
+              <PieceCard band="var(--accent-cyan)" name="invited" className={styles.info}>
                 <span className={styles.needT}>{i.name}</span>
                 <span className={styles.needS}>
                   invited you · {i.memberCount} {i.memberCount === 1 ? 'person' : 'people'}
@@ -511,12 +483,12 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
                     decline
                   </Button>
                 </span>
-              </Piece>
+              </PieceCard>
             </Appear>
           ))}
           {requests.map((r) => (
             <Appear key={r.id} data-learn="pending-row">
-              <Piece band="var(--line-hover)" cut="waiting">
+              <PieceCard band="var(--line-hover)" name="waiting" className={styles.info}>
                 <span className={styles.needT}>
                   {r.code.slice(0, 4)}-{r.code.slice(4)}
                 </span>
@@ -526,7 +498,7 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
                     withdraw
                   </Button>
                 </span>
-              </Piece>
+              </PieceCard>
             </Appear>
           ))}
         </div>
@@ -541,30 +513,53 @@ function AskingOf({ wid, onCount }: { wid: string; onCount: (wid: string, n: num
   return null
 }
 
+// The import card's words, the same wherever it is.
+const IMPORT_TITLE = 'Bring one in'
+const IMPORT_LINE = 'A .zip exported from North Star: drop it anywhere on this page.'
+
+// A .zip at the end of the others, as a workspace card: its picture a drop target, its strip the words and the button.
+function ImportPiece({ onFile }: { onFile: () => void }) {
+  return (
+    <PieceCard band="var(--accent-blue)" name="import" onOpen={onFile} className={styles.mini}>
+      <div className={styles.miniPic} data-drop>
+        <Label>drop a .zip</Label>
+      </div>
+      <div className={styles.miniInfo}>
+        <span className={styles.miniName}>{IMPORT_TITLE}</span>
+        <span className={styles.row}>
+          <span className={styles.people}>from North Star</span>
+          <span className={styles.grow} />
+          <Button onClick={onFile}>choose file</Button>
+        </span>
+      </div>
+    </PieceCard>
+  )
+}
+
 // ── The three ways in (the onboarding's `workspaces-empty` choices draw over them, D-315) ────────────────────────────
 function StartRow({ small, onFile }: { small?: boolean; onFile: () => void }) {
   return (
     <div className={styles.starts} data-small={small || undefined} data-learn="workspaces-empty">
       <Appear>
-        <Piece band="var(--accent-magenta)" cut="new">
+        <PieceCard band="var(--accent-magenta)" name="new" className={styles.info}>
           <span className={styles.needT}>{small ? 'Another idea' : 'Start one'}</span>
           <span className={styles.needS}>Type its name in the line above and press ↵.</span>
-        </Piece>
+        </PieceCard>
       </Appear>
       <Appear>
-        <Piece band="var(--accent-cyan)" cut="join">
+        <PieceCard band="var(--accent-cyan)" name="join" className={styles.info}>
           <span className={styles.needT}>Join a teammate's</span>
           <span className={styles.needS}>Paste the code they gave you above. An owner lets you in.</span>
-        </Piece>
+        </PieceCard>
       </Appear>
       <Appear>
-        <Piece band="var(--accent-blue)" cut="import">
-          <span className={styles.needT}>Bring one in</span>
-          <span className={styles.needS}>Drop a .zip exported from North Star anywhere on this page.</span>
+        <PieceCard band="var(--accent-blue)" name="import" className={styles.info}>
+          <span className={styles.needT}>{IMPORT_TITLE}</span>
+          <span className={styles.needS}>{IMPORT_LINE}</span>
           <span className={styles.acts}>
             <Button onClick={onFile}>choose file</Button>
           </span>
-        </Piece>
+        </PieceCard>
       </Appear>
     </div>
   )
@@ -581,7 +576,7 @@ function FirstVisit({ onFile, invites, requests, user, onJoined }: {
   return (
     <>
       <Appear>
-        <Piece band="var(--accent-magenta)" tier="l" className={styles.hero} cut={<><Num n={1} /> start</>}>
+        <PieceCard band="var(--accent-magenta)" tier="l" className={styles.hero} name={<><Num n={1} /> start</>}>
           <div className={styles.heroPic}>
             <WorkspacePicture summary={null} sample />
           </div>
@@ -590,12 +585,14 @@ function FirstVisit({ onFile, invites, requests, user, onJoined }: {
             <p className={styles.about}>A workspace is one startup idea: its customers, problems, rivals and plan, on a canvas you share.</p>
             <Label className={styles.caps}>how it starts</Label>
             <ol className={styles.steps}>
-              <li>name it in the line above</li>
-              <li>it opens on its own canvas</li>
-              <li>the welcome shows you around, about a minute</li>
+              {['name it in the line above', 'it opens on its own canvas', 'the welcome shows you around, about a minute'].map((t, i) => (
+                <li key={t}>
+                  <Num n={String(i + 1)} className={styles.stepN} /> {t}
+                </li>
+              ))}
             </ol>
           </div>
-        </Piece>
+        </PieceCard>
       </Appear>
       <NeedsYou user={user} workspaces={[]} tasks={{}} invites={invites} requests={requests} onOpen={onJoined} />
       <StartRow onFile={onFile} />

@@ -41,6 +41,11 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 - `npm run build`: typecheck + production build; `npm run build:functions`, `npm run deploy:functions` (needs the Blaze plan)
 
 ## Hard rules
+- The rules below are enforced, not asked for (D-339): after every Write/Edit under `src/`, `.claude/settings.json` runs
+  `scripts/ui-rules-hook.mjs` (tokens, kit, gallery, lessons, memory bank) and a refusal comes back as the tool's
+  feedback: fix it before going on, never work round it. Commits run `scripts/commit-rules.mjs` (`.githooks/`, set by
+  `npm install`): the same checks, and a staged component without its `X.gallery.tsx` or without a lesson change needs a
+  `Gallery: …` / `Lessons: …` line in the message saying why. A rule the checks can't see yet: add it to the check.
 - OpenAI keys: a person's own key lives only in their own browser storage. A workspace key (D-079) is sent once to the
   `setWorkspaceKey` function and kept only encrypted in `aiSecrets/`, which no client can read; it is never returned to
   any browser. Never log or store either key anywhere else, and never put message text in the usage log.
@@ -65,7 +70,7 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   grows the kit first. Outside `src/ui`, a raw `<button>`/`<input>`/`<textarea>`, an own `role="dialog"` or portal, a
   hand-drawn bracket or caps label in CSS fails `npm run check:kit` past its baseline (scripts/kit-baseline.json, only
   shrinks: `-- --write` after moving an area); one that truly must stay says why with `// kit-ok: …`.
-- Gallery (D-324, docs/specs/gallery.md): a new component in a covered folder (`src/ui`, `src/views/workspace`, `src/onboarding`), or a real change to one,
+- Gallery (D-324, docs/specs/gallery.md): a new component in a covered folder (`src/ui`, `src/views/workspace`, `src/views/workspaces`, `src/onboarding`), or a real change to one,
   ships in the same change with its `X.gallery.tsx` beside it; `npm run check:gallery` must pass.
   The gallery is dev only: never in a build input, never imported by the app.
 - Onboarding (D-315): every new user-facing feature, or a real change to one, ships in the same change with its

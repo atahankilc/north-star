@@ -1,8 +1,8 @@
 // The right-click menu (D-193): on a plane, a card or a piece of text, where the pointer is; the dropdowns' prompt look
 // (D-222), its `>` line saying what it's on. Only `comment` for now. A click outside, Escape, or the wheel outside it closes it.
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import { Appear } from '../../../ui/primitives/Appear'
-import { MenuPanel, type MenuEntry } from '../../../ui/patterns/Menu'
+import { Appear } from '../primitives/Appear'
+import { MenuPanel, type MenuEntry } from './Menu'
 import styles from './ContextMenu.module.css'
 
 // `prompt`, `keys`, `noun`, `empty`: for a list that isn't about what's under the pointer (D-281: the cards to bring).

@@ -9,7 +9,7 @@ import { join, relative, dirname, basename } from 'node:path'
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..')
 // The folders whose components need an example (D-324): src/ui since G1, src/views/workspace since G2, src/onboarding
 // since G3.
-const COVERED = ['src/ui', 'src/views/workspace', 'src/onboarding']
+const COVERED = ['src/ui', 'src/views/workspace', 'src/views/workspaces', 'src/onboarding']
 // Component files with no example, and why.
 const EXEMPT = {
   'src/ui/patterns/Curtain.tsx': 'the page’s own loading curtain (WebGL backdrop); seen on every page load, and it drives the global `revealed` the gallery holds on',

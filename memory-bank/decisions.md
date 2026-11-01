@@ -47,6 +47,9 @@ feature comes back as a piece, and check them with the user then.
   cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
   component draws and where it's used. Patterns: Options, Window, WizardShell. Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
   from coming back. Everything but the agent's column is on it (13 left, all src/agent/ui); next: the agent's column, Q-032, folders.
+- The UI rules are enforced, not asked for (D-339): a Claude Code hook on every write (`scripts/ui-rules-hook.mjs`) and git
+  hooks on commit (`scripts/commit-rules.mjs`; a component without its gallery or lesson needs `Gallery:`/`Lessons:` in the
+  message); check:kit also refuses `menuHost`, `bracketSpan`, `rawLimit`, CSS `counter`, `pieceSurface`.
 - ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
 ## Accounts, sharing, roles

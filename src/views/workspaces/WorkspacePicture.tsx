@@ -6,7 +6,7 @@
 import { useEffect, useRef } from 'react'
 import type { PieceKind } from '../../data/model'
 import { CARD_UNITS, type Summary } from '../../model/summary'
-import { tokenText } from '../../styles/cssToken'
+import { tokenPx, tokenText } from '../../styles/cssToken'
 import { useTheme } from '../../state/theme'
 import { CARD_TONE } from '../../ui/foundation/cardTone'
 import { DUR } from '../../ui/foundation/motionTokens'
@@ -22,6 +22,8 @@ const BAND: Record<PieceKind, `--${string}`> = {
   documents: '--link-depends',
   document: '--link-depends',
 }
+// How faint an empty workspace's made-up canvas is.
+const GHOST = 0.4
 const varName = (v: string) => v.slice(4, -1) as `--${string}` // 'var(--x)' → '--x'
 
 // The made-up canvas for `sample`: a heading, a plane with cards, a deck, a table (0–1000; cards 0–100).
@@ -44,7 +46,8 @@ const SAMPLE: Summary = {
   ],
 }
 
-// `sample`: with no summary, the made-up canvas (a first visit); else a plain piece's ground.
+// No summary (a first visit, an empty or not yet pictured workspace): the made-up canvas, shapes only; `sample` draws
+// it at full strength (the first visit's START), else faint, so an empty workspace's card looks like the others.
 type Props = { summary: Summary | null; sample?: boolean; className?: string }
 
 export function WorkspacePicture({ summary, sample = false, className }: Props) {
@@ -80,17 +83,21 @@ function paint(cv: HTMLCanvasElement, summary: Summary | null, wantSample: boole
   g.fillStyle = tokenText('--bg')
   g.fillRect(0, 0, W, H)
   const sample = !summary || !summary.pieces.length
-  if (sample && !wantSample) return
   const s = sample ? SAMPLE : summary
+  // An empty one's ghost: the same drawing, faint.
+  const base = sample && !wantSample ? GHOST : 1
+  g.globalAlpha = base
   const shapesOnly = sample
 
   // The pieces' box (0–1000 on its longer side) fitted into the picture with a margin, centred.
-  const pad = Math.min(W, H) * 0.06
+  // A margin all round, more on top: the piece's name is cut into its top edge, over the picture.
+  const pad = Math.max(tokenPx('--space-2'), Math.min(W, H) * 0.06)
+  const top = pad + tokenPx('--space-3')
   const bw = Math.max(...s.pieces.map((p) => p.x + p.w), 1)
   const bh = Math.max(...s.pieces.map((p) => p.y + p.h), 1)
-  const k = Math.min((W - 2 * pad) / bw, (H - 2 * pad) / bh)
+  const k = Math.min((W - 2 * pad) / bw, (H - top - pad) / bh)
   const ox = (W - bw * k) / 2
-  const oy = (H - bh * k) / 2
+  const oy = top + (H - top - pad - bh * k) / 2
 
   const piece = tokenText('--piece')
   const edge = tokenText('--piece-edge')
@@ -106,17 +113,22 @@ function paint(cv: HTMLCanvasElement, summary: Summary | null, wantSample: boole
     g.strokeStyle = edge
     g.lineWidth = 1
     g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1)
+    // What's drawn inside a piece stays inside it, however small the picture.
+    g.save()
+    g.beginPath()
+    g.rect(x, y, w, h)
+    g.clip()
     g.fillStyle = tokenText(BAND[p.kind])
-    g.globalAlpha = shapesOnly ? 0.7 : 1
+    g.globalAlpha = base * (shapesOnly ? 0.7 : 1)
     g.fillRect(x, y, w, 2)
-    g.globalAlpha = 1
+    g.globalAlpha = base
     if (p.kind === 'plane') {
       // Its grid, then its cards fitted inside it.
       const step = Math.max(4, Math.min(w, h) / 24)
       g.fillStyle = grid
-      g.globalAlpha = 0.7
+      g.globalAlpha = base * 0.7
       for (let gx = x + step; gx < x + w - 1; gx += step) for (let gy = y + step; gy < y + h - 1; gy += step) g.fillRect(gx, gy, 1, 1)
-      g.globalAlpha = 1
+      g.globalAlpha = base
       // Its cards by their own box (a card is CARD_UNITS), fitted inside with a margin, keeping their spacing.
       const mine = s.cards.filter((c) => c.piece === i)
       if (mine.length) {
@@ -137,9 +149,9 @@ function paint(cv: HTMLCanvasElement, summary: Summary | null, wantSample: boole
             continue
           }
           g.fillStyle = tokenText(varName(CARD_TONE[c.type]))
-          g.globalAlpha = 0.28
+          g.globalAlpha = base * 0.28
           g.fillRect(cx, cy, cw, ch)
-          g.globalAlpha = 1
+          g.globalAlpha = base
           g.fillRect(cx, cy, Math.max(1, cw * 0.06), ch)
         }
       }
@@ -161,6 +173,7 @@ function paint(cv: HTMLCanvasElement, summary: Summary | null, wantSample: boole
         g.fillRect(x + 12 + w * 0.22, ry, w * 0.6, 2)
       }
     }
+    g.restore()
   })
   if (shapesOnly) {
     // The sample's heading and its rule fading right, over the plane.

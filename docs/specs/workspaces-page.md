@@ -9,25 +9,27 @@ there, what needs you. Making, joining and importing are rarer and live in the s
 ```
 Workspaces 05                                        ← hero title, count magenta mono
 > find, start a new one, or paste an invite code…    ← PromptField, the page's first line
-  ↵ continue Pazar · type to find · a new name ↵ starts one · an invite code ↵ asks to join · drop a .zip anywhere
 ┌ 01 CONTINUE · OWNER ─────────────────────────────┐
 │ [picture of its first canvas] │ Pazar             │
 │                               │ its description   │
-│                               │ SINCE YOU LEFT·2H │
+│                               │ SINCE YOU LEFT·2H │  ← only when something changed
 │                               │ Ayşe · 4 cards…   │
-│                               │ [continue ↵] ■■ 1 here now   ⋯ │
+│                               │ 3 people · 1 here now     ⋯ │  ← the piece itself opens it
 └──────────────────────────────────────────────────┘
 ┌ FOR YOU ──┐ ┌ ASKING ───┐ ┌ INVITED ──┐ ┌ WAITING ─┐   ← only the ones that apply
 OTHERS ─────────────────────────────────── 04
-┌02 EDITOR┐ ┌03 OWNER┐ …                                  ← picture, name, people, here, new, last visit
+┌02 EDITOR┐ ┌03 OWNER┐ … ┌IMPORT┐                         ← picture, name, people, here, new, last visit, ⋯;
+                                                             the import piece last once the start row is gone
 START ANOTHER ───────                                      ← only while you have ≤ 2
 ┌ NEW ┐ ┌ JOIN ┐ ┌ IMPORT [choose file] ┐
 ```
 
 - **Typed**: the body gives way (cell by cell) to ledger rows: `01 Name` (the match lit cyan), new-for-you, people,
-  role, last visit, under it the since-you-left line; then `+ new workspace "…"` when no name matches exactly, or
-  `ask to join ABCD-EFGH` when it reads as a code (`[A-Z0-9]{4}-?[A-Z0-9]{4}`). ↑↓ pick, ↵ goes, ⌘↵ opens in a new tab,
-  Escape empties it. Cleared, the body comes back.
+  role, last visit, under it the since-you-left line; then always `+ new workspace "…"` (also when you have one by that
+  name: two ideas may share a name; the match stays first, so ↵ opens it), and `ask to join ABCD-EFGH` beside it when
+  it could be a code (four and four of the codes' letters, no 0 O 1 I L): first when typed with its dash, else after
+  `+ new` (an 8-letter name stays a name). ↑↓ pick, ↵ goes, ⌘↵ opens in a new tab,
+  Tab on `+ new` asks what you're building first, Escape empties it; none of it written on the page. Cleared, the body comes back.
 - **Typing anywhere** on the page (not in a field, no window open) types into the prompt.
 - **A `.zip` dropped anywhere** imports it (a cyan dashed frame says so while dragging).
 - **First visit** (no workspaces): `Workspaces 00`, the placeholder `name your first workspace, or paste an invite
@@ -91,3 +93,13 @@ as for D-330).
 
 - The summary of a canvas other than the first; a picture made of a big canvas's text.
 - Since-you-left lines that name what changed (the log has no text, D-312).
+
+## 6. After the first look (the user, 2026-11-01)
+- No `continue` button: the piece opens it. Since-you-left only when something changed. No key hints on the page at
+  all (the placeholder says what the prompt does; keys are onboarding's to teach). Every piece has its `⋯` (right-click is not known to everyone), no frame
+  round it. The import piece ends the others. The backdrop shaded only under what's read (title, prompt, rules), not
+  under the whole column. A picture's drawing clipped to each piece, its margin clear of the cut-in name.
+- Two kinds of card, one system: a **workspace card** (a picture over a strip: name, facts, `⋯`; the import card at the
+  end of the others is one too, its picture `DROP A .ZIP`, its strip `choose file`), and an **info card** (name cut in,
+  a title, one line, its actions in the bottom-right corner: needs-you, the three ways in). An empty or not yet
+  pictured workspace's picture is the made-up canvas, faint. The import card's words the same everywhere.

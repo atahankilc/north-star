@@ -7,9 +7,32 @@
     "button": 6
   },
   "src/agent/ui/AgentMemory.tsx": {
-    "textarea": 1
+    "textarea": 1,
+    "menuHost": 1
   },
   "src/agent/ui/SkillMenu.tsx": {
     "button": 1
+  },
+  "src/views/workspace/canvas/CanvasView.module.css": {
+    "pieceSurface": 2
+  },
+  "src/views/workspace/matrix/MatrixSetup.tsx": {
+    "rawLimit": 2
+  },
+  "src/views/workspace/panels/CardPanel.tsx": {
+    "menuHost": 1,
+    "rawLimit": 6
+  },
+  "src/views/workspace/panels/CardPanelKinds.tsx": {
+    "rawLimit": 7
+  },
+  "src/views/workspace/panels/TaskPanel.tsx": {
+    "rawLimit": 1
+  },
+  "src/views/workspace/plane/PlaneLinks.tsx": {
+    "rawLimit": 1
+  },
+  "src/views/workspace/table/TableSetup.tsx": {
+    "rawLimit": 2
   }
 }
