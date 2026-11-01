@@ -1,7 +1,7 @@
 import { example } from '../../../gallery/example'
 import { PAZAR } from '../../../gallery/canvas'
 import { DEMO_DAY } from '../../../demo/clock'
-import { TasksButton } from './MyTasks'
+import { TasksTool } from './TasksTool'
 
 type Ws = typeof PAZAR
 // Two of the deck's tasks given to you a moment ago by Ayla: the `☐ 2` by your square (D-261).
@@ -11,13 +11,13 @@ const given = (ws: Ws): Ws => ({
 })
 
 export default example({
-  name: 'Tasks button',
+  name: 'TasksTool',
   place: 'hud/corner',
-  file: 'src/views/workspace/deck/MyTasks.tsx',
+  file: 'src/views/workspace/deck/TasksTool.tsx',
   note: 'the side nav’s tasks button: shown with a deck or timeline on the canvas; it counts tasks given to you since you last looked',
   states: {
-    'given to you': { fixture: given(PAZAR), render: () => <TasksButton /> },
-    'nothing new': { fixture: PAZAR, render: () => <TasksButton /> },
-    'no deck': { fixture: { ...PAZAR, pieces: PAZAR.pieces.filter((p) => p.kind !== 'kanban' && p.kind !== 'timeline') }, render: () => <TasksButton />, note: 'hidden: no deck or timeline on the canvas' },
+    'given to you': { fixture: given(PAZAR), render: () => <TasksTool /> },
+    'nothing new': { fixture: PAZAR, render: () => <TasksTool /> },
+    'no deck': { fixture: { ...PAZAR, pieces: PAZAR.pieces.filter((p) => p.kind !== 'kanban' && p.kind !== 'timeline') }, render: () => <TasksTool />, note: 'hidden: no deck or timeline on the canvas' },
   },
 })

@@ -133,7 +133,7 @@ export const FORMATS = ['welcome', 'guide', 'lesson', 'nudge', 'empty'] as const
 export type Format = (typeof FORMATS)[number]
 // The names a lesson's words may fill in.
 export const PLACEHOLDERS = ['owner', 'peer', 'piece'] as const
-// What a page may wait for: the side nav's tasks button (shown while the canvas has a deck or a timeline, MyTasks.tsx).
+// What a page may wait for: the side nav's tasks button (shown while the canvas has a deck or a timeline, TasksTool.tsx).
 export const PAGE_IFS = ['has-tasks-button'] as const
 
 // An event's payload must match: a value, one of a list, or at least a number (counts the queue gives `idle`).

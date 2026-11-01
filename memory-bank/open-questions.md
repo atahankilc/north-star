@@ -47,3 +47,10 @@ external) and which one looked faint. **Recommendation:** (a) draw the atlas at 
 pixels (look unchanged); (b) a floor lifting the faintest glyphs; (c) only if needed, a minimum cell size in CSS px
 (changes D-172's fine look, ask first).
 
+
+### Q-034 · soon · Where the HUD's tools sit (the decks tool vs threads)
+The user, 2026-11-01: "thread panel için ayrı bir button yokken neden deck için var". Both have one: threads in the
+bottom-left corner above your square (D-193), the decks-and-days side view in the side nav (D-300), shown only with a
+deck or timeline on the canvas. The split today: side nav = the canvas's tools (`+`, fit, find, `?`, decks); corner =
+people (here now, threads, you, settings). **Recommendation:** keep the split, but say it in the guide; or, if the
+decks tool is felt as "yours" (its count is tasks given to you), move it to the corner beside threads. Ask the user.

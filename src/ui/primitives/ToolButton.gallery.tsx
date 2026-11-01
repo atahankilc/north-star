@@ -1,20 +1,16 @@
 import { example } from '../../gallery/example'
 import { ToolButton } from './ToolButton'
+import { CompassIcon } from './hudIcons'
 
 const none = () => {}
-const icon = (
-  <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
-    <circle cx="9" cy="9" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M9 3.5 11 9H7z" fill="currentColor" />
-  </svg>
-)
+const icon = <CompassIcon />
 
 export default example({
   name: 'ToolButton',
   place: 'actions/buttons',
   also: ['hud/side-nav'],
   file: 'src/ui/primitives/ToolButton.tsx',
-  note: 'the HUD’s icon tool (D-326): the side nav’s fit, compass and ?, the decks-and-days and threads buttons',
+  note: 'the HUD’s icon tool (D-326): the side nav’s fit, compass and ?, the decks-and-days and threads buttons, the settings gear; every icon from hudIcons.tsx, one size (D-343)',
   states: {
     states: () => (
       <div style={{ display: 'flex', gap: 'var(--space-8)', alignItems: 'center' }}>

@@ -9,7 +9,7 @@
 //   somewhere (a card's links, parts and planes in its panel).
 // - `look`: the same `[verb]` drawn as a span, for inside something that is itself the button (a card that's one target).
 // PanelAction and DockAction draw this; so should every new button (check:kit, D-326).
-import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
+import type { ButtonHTMLAttributes, CSSProperties, ReactNode, Ref } from 'react'
 import styles from './Button.module.css'
 
 export type ButtonTone = 'primary' | 'danger' | 'main'
@@ -17,6 +17,8 @@ export type Accent = 'magenta' | 'cyan' | 'yellow' | 'blue' | 'green'
 
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
   children: ReactNode
+  // React 19: a ref is a prop, passed on to the <button> (the hazard confirm focuses its cancel).
+  ref?: Ref<HTMLButtonElement>
   size?: 'sm' | 'md'
   tone?: ButtonTone
   accent?: Accent

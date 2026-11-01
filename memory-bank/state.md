@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-01 (light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-01 (two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -67,7 +67,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   kaldırılmasını istiyorum… onboardingde olması yeterli"): `↑↓ pick · ↵ open · esc` lines and `kbd` hints everywhere
   go, the keys taught by onboarding instead; not started (the workspaces page's already gone, D-338).
 - Landing (D-340, 2026-11-01, committed): full-screen backdrop, mono name, no HUD, Button; the user is working
-  through more landing changes. AsciiButton deleted (its callers on `Button size="md"`).
+  through more landing changes. AsciiButton deleted (e1b86de).
+- D-343 (2026-11-01, committed): two buttons, HUD tools `*Tool`, one icon set; next Q-034 (tools' places).
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Next: Q-033 (dark
   backdrop faint on some screens; ask the user which screens, then (a) + (b)).
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).

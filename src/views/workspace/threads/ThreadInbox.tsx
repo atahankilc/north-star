@@ -17,6 +17,7 @@ import { DURATION_MS, CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './Threads'
 import { Button } from '../../../ui/primitives/Button'
 import { ToolButton } from '../../../ui/primitives/ToolButton'
+import { ThreadsIcon } from '../../../ui/primitives/hudIcons'
 import styles from './Threads.module.css'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
@@ -75,7 +76,7 @@ type Props = {
 
 // The button in the bottom-left corner, just above your square (D-193): the comment mark; a magenta count of new
 // mentions in its corner, or a magenta dot while anything else is new.
-export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
+export function ThreadsTool({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
   const open = useThreadView((s) => s.inbox)
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
@@ -91,7 +92,7 @@ export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
       data-viewer-ok
       onClick={() => toggleInbox()}
     >
-      <CommentIcon />
+      <ThreadsIcon />
     </ToolButton>
   )
 }

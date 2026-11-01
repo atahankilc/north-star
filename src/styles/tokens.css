@@ -169,6 +169,7 @@
   --control: 30px;
   --control-lg: 36px;
   --control-xl: 48px;
+  --tool-icon: 18px; /* a HUD tool's icon (src/ui/primitives/hudIcons.tsx, D-343) */
   /* One ladder for screen boxes' widths (and a few heights): off-ladder sizes snap to it. */
   --size-xs: 160px;
   --size-sm: 260px;

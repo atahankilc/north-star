@@ -1,6 +1,7 @@
 // The HUD's tool (D-326, the kit): an icon alone, a control square, dim, strong on hover, cyan while what it opens is
 // open (`pressed`). The side nav's fit, compass and `?`, the decks-and-days button and the threads button drew it five
-// times by hand. `dot` is a magenta mark on its corner (something new, unread); `badge` a count there (CountBadge).
+// times by hand, the settings gear a sixth. `dot` is a magenta mark on its corner (something new, unread); `badge` a count
+// there (CountBadge), magenta for what's new, `badgeTone` cyan for people waiting (the gear).
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { CountBadge } from './CountBadge'
 import styles from './ToolButton.module.css'
@@ -11,12 +12,13 @@ type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-la
   pressed?: boolean
   dot?: boolean
   badge?: number
+  badgeTone?: 'magenta' | 'cyan'
   children: ReactNode
   'data-learn'?: string
   'data-viewer-ok'?: boolean
 }
 
-export function ToolButton({ label, pressed, dot, badge, children, className, type = 'button', ...rest }: Props) {
+export function ToolButton({ label, pressed, dot, badge, badgeTone, children, className, type = 'button', ...rest }: Props) {
   return (
     <button
       {...rest}
@@ -27,7 +29,7 @@ export function ToolButton({ label, pressed, dot, badge, children, className, ty
       data-on={pressed || undefined}
     >
       {children}
-      {badge ? <CountBadge count={badge} /> : dot && <span className={styles.dot} aria-hidden />}
+      {badge ? <CountBadge count={badge} tone={badgeTone} /> : dot && <span className={styles.dot} aria-hidden />}
     </button>
   )
 }

@@ -1,5 +1,5 @@
 /* The one button (src/ui/primitives/Button.tsx, D-326): `md` the page's `[ LABEL ]` (docs/DESIGN.md §6), its accent wiping in on
-   hover; `sm` the small `[verb]` (HazardConfirm.module.css composes it). Every rule is in `:where()` (D-334): it weighs nothing, so a caller's class (a padding, a colour) always
+   hover; `sm` the small `[verb]`. Every rule is in `:where()` (D-334): it weighs nothing, so a caller's class (a padding, a colour) always
    wins, even though files composing this one bring these rules again after the caller's CSS. */
 :where(.md) {
   position: relative;

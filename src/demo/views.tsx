@@ -16,7 +16,7 @@ import { Hud } from '../ui/patterns/Hud'
 import { PeopleHere } from '../ui/patterns/PeopleHere'
 import { CanvasView } from '../views/workspace/canvas/CanvasView'
 import { Finder } from '../views/workspace/find/Finder'
-import { InboxButton } from '../views/workspace/threads/ThreadInbox'
+import { ThreadsTool } from '../views/workspace/threads/ThreadInbox'
 import { SideNav } from '../views/workspace/canvas/SideNav'
 import { useWs, WorkspaceContext } from '../views/workspace/canvas/context'
 import { KIND_NAME, kindOfPiece } from '../data/pieces'
@@ -84,7 +84,7 @@ export function CanvasScreen() {
         corner={
           <>
             <PeopleHere />
-            <InboxButton wid={wid} threads={threads} />
+            <ThreadsTool wid={wid} threads={threads} />
           </>
         }
         side={<SideNav wid={wid} focused={focused} editor />}

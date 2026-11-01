@@ -169,7 +169,7 @@ _(one line per step: `O0 · <commit> · reviewer: … · ideas: …`)_
   picked `a` for every frame; b/c, looks.ts and its switch are deleted, so the switch named here no longer exists.
 - O6 · (this commit) · `<Coach />` mounted in the workspace and (lazily) on the workspaces page; every ANCHORS name as a
   `data-learn` (39) and every view-only event as a one-line `learn()` (pending: 0 anchors, 0 events); the side nav's
-  `?` button (GuideButton, its dot); window capture key handlers skip `[aria-modal=true], [data-coach]` (Backspace on
+  `?` button (GuideTool, its dot); window capture key handlers skip `[aria-modal=true], [data-coach]` (Backspace on
   the welcome deleted a selected task); lessons find the visible instance of their anchor, the event's `target` first;
   PlaneCards' and CanvasView's carried spotRefs built at drag start, so the demo's network-off Firestore is gone; a
   guard in collab.tsx's cursor report after a canvas remount · reviewer: 2 rounds (hidden consoles/cards as anchors,

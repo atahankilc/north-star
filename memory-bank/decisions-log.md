@@ -6506,3 +6506,22 @@ and better by measurement and later run on a server with a backoffice.** Spec: d
 Verified: headless Chrome, light, dpr 1 and 2, before/after crops; typecheck, check:tokens 0, unit tests 753/0.
 Not yet: dark theme faint on some screens (Q-033).
 
+
+### D-343 · 2026-11-01 · Accepted (the user: "şu an 5 farklı buttonumuz var: AsciiButton, Button, ToolButton, TasksButton ve GuideButton… bunların bu kadar farklı olmasının nedenini anlamadım"; "hudda toplam 7 icon var… settings iconu neden diğerlerinden daha küçük. Herekiyosa hud button diye bişi yapalım ama hepsi consisten olsun")
+Two buttons only: `Button` (a `[verb]`, sm/md/icon/link) and `ToolButton` (the HUD's icon square). Everything else
+that read like a button kind was a feature wrapping one of them, and is now named so:
+- AsciiButton deleted (it was `Button size="md"`; commit e1b86de).
+- The HUD's features that wrap ToolButton are `*Tool`: `FitTool`, `FinderTool` (SideNav.tsx), `TasksTool`
+  (deck/TasksTool.tsx, was MyTasks.tsx's TasksButton), `GuideTool` (onboarding/GuideTool.tsx), `ThreadsTool`
+  (ThreadInbox.tsx, was InboxButton). `SettingsButton` keeps its name: it is the gear, your square and the modal.
+- One icon set: every HUD tool's icon is in `src/ui/primitives/hudIcons.tsx`, one 18-unit grid, 1.5 strokes, square
+  ends; ToolButton sizes them (`--tool-icon` 18 px), no icon sets its own size. Before: 18, 20 and 16 units, strokes
+  1.2–1.6, the gear a text glyph `⚙` (smaller).
+- The gear is a ToolButton: cyan while settings are open, like the threads button (was its own copy of ToolButton's
+  CSS with a magenta bar under it when open), its count via `badgeTone="cyan"`; it still turns 45° on hover.
+- HazardConfirm's actions are `Button` (were raw `<button>`s composing AsciiButton's CSS); Button takes a `ref`.
+- check:kit's `small` counts composing Button.module.css outside src/ui.
+Alternatives: a new `HudButton`: not needed, ToolButton is it; what was missing was one icon size and set.
+Verified: headless Chrome on demo.html (deck-drag), every HUD icon 18 px; typecheck, check:kit/gallery/tokens/lessons,
+unit tests 983/0, build.
+Not yet: where each tool sits (the decks-and-days tool in the side nav, threads in the corner) is unchanged; Q-034.

@@ -250,7 +250,7 @@ export function Coach() {
       // The empty states: shown by their trigger (for this person, unseen, tips on), gone (and seen) when done.
       const p = useProgress.getState()
       // Marked seen here, not in the state's updater: React runs updaters while rendering, and a store write there
-      // redraws other components mid-render (GuideButton's dot).
+      // redraws other components mid-render (GuideTool's dot).
       for (const l of HINTS) if (l.doneWhen?.some((t) => matches(t, e)) && (p.seen[l.id] ?? 0) < l.v) p.markSeen(l.id, l.v)
       setHints((h) => {
         let next = h

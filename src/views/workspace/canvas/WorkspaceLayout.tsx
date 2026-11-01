@@ -8,7 +8,7 @@ import { setReadOnly } from '../../../data/history'
 import type { WithId } from '../../../data/hooks'
 import type { JoinRequest } from '../../../data/model'
 import { KIND_NAME, kindOfPiece } from '../../../data/pieces'
-import { InboxButton } from '../threads/ThreadInbox'
+import { ThreadsTool } from '../threads/ThreadInbox'
 import { Finder } from '../find/Finder'
 import { usePresenceSession } from '../../../data/presence'
 import { useWorkspaceData } from '../../../data/workspaceData'
@@ -128,7 +128,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
             <>
               {/* Who's here, then the threads, just above your square (D-193). */}
               <PeopleHere />
-              <InboxButton wid={wid} threads={data.threads} />
+              <ThreadsTool wid={wid} threads={data.threads} />
             </>
           }
           side={<SideNav wid={wid} focused={focused} editor={editor} />}

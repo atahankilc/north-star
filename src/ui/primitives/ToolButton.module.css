@@ -13,6 +13,12 @@
   transition: color var(--dur-fast) var(--ease-out);
 }
 
+.tool > svg {
+  /* Every HUD icon one size (D-343): the icon never sets its own. */
+  width: var(--tool-icon);
+  height: var(--tool-icon);
+}
+
 .tool:hover,
 .tool:focus-visible {
   color: var(--fg-strong);

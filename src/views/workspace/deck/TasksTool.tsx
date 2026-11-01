@@ -13,8 +13,9 @@ import { useReads } from '../../../data/threads'
 import { useWs } from '../canvas/context'
 import { loadTasksSide, sideShared, toggleTasksSide, useTasksSide } from './sideState'
 import { ToolButton } from '../../../ui/primitives/ToolButton'
+import { DeckIcon } from '../../../ui/primitives/hudIcons'
 
-export function TasksButton() {
+export function TasksTool() {
   const { wid, tasks, pieces, canvas, spots } = useWs()
   const { user } = useAuth()
   const me = user?.id ?? null
@@ -39,12 +40,7 @@ export function TasksButton() {
       data-viewer-ok
       onClick={() => toggleTasksSide(fresh && !open ? 'mine' : undefined)}
     >
-      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
-        {/* A deck's columns over a bar of days. */}
-        <path d="M2 2h4v10H2zM8 2h4v7H8zM14 2h4v12h-4z" fill="none" stroke="currentColor" strokeWidth="1.4" />
-        <path d="M2 17.5h16" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M6 15.5v4M14 15.5v4" stroke="currentColor" strokeWidth="1.2" />
-      </svg>
+      <DeckIcon />
     </ToolButton>
   )
 }

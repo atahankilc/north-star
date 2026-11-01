@@ -351,7 +351,7 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 | Make + name helpers | `history.ts:discardNew`, `cards.ts:discardCard`, `labels.ts:discardLabel` | Internal to create + name; ops create whole things. |
 | Presence session (WorkspaceLayout.tsx:111) | `presence.ts:usePresenceSession` | Writes your presence node and its onDisconnect; live state, not content. |
 | Batch helper | `places.ts:runOps` (`export const runOps = commit`, places.ts:234) | Internal, **no UI caller** (used by `deletePiece`): the R2 plan + apply pattern to grow from. |
-| Presence | `presence.ts:setCursor`, `setPresencePlane`, `setPresenceSelection`, `setPresenceDrag`, `setPresenceTasks` | Live state in RTDB (collab.tsx, MyTasks.tsx). |
+| Presence | `presence.ts:setCursor`, `setPresencePlane`, `setPresenceSelection`, `setPresenceDrag`, `setPresenceTasks` | Live state in RTDB (collab.tsx, TasksTool.tsx). |
 | Read markers | `threads.ts:markSeen`, `markTasksSeen` | Yours. |
 | Canvas on screen | `canvases.ts:setCanvasHere`, `setShownHere` | R1 module state; removed by R1. |
 | Display (theme, motion, background) | localStorage, `src/ui/patterns/Settings.tsx` | Yours, per browser. |

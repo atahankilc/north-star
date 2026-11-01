@@ -8,6 +8,7 @@ import { isReducedMotion } from '../../state/motion'
 import { runCells } from '../primitives/Appear'
 import { CELL_PX } from '../foundation/cellReveal'
 import { DecodeText } from '../primitives/DecodeText'
+import { Button } from '../primitives/Button'
 import styles from './HazardConfirm.module.css'
 import { DUR } from '../foundation/motion'
 
@@ -146,17 +147,17 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
           </p>
         ))}
         <div className={styles.actions}>
-          <button ref={cancelBtn} className={styles.action} onClick={() => leave(onCancel)}>
+          <Button ref={cancelBtn} className={styles.action} onClick={() => leave(onCancel)}>
             cancel
-          </button>
+          </Button>
           {also && (
-            <button ref={alsoBtn} className={styles.action} onClick={() => leave(also.onSelect)}>
+            <Button ref={alsoBtn} className={styles.action} onClick={() => leave(also.onSelect)}>
               {also.label}
-            </button>
+            </Button>
           )}
-          <button className={`${styles.action} ${styles.danger}`} onClick={() => leave(onConfirm)}>
+          <Button className={`${styles.action} ${styles.danger}`} onClick={() => leave(onConfirm)}>
             {confirm}
-          </button>
+          </Button>
         </div>
       </div>
     </dialog>,

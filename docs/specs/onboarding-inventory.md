@@ -43,12 +43,12 @@ are dead leftovers from 1.0.)
 | canvas-crumb | The workspace/canvas name `▾`: canvases prompt (go, new, rename, move, delete). | `CanvasCrumb` CanvasSwitch.tsx:23 | all go; E+ manage | breadcrumb |
 | side-nav | Left middle: `+`, fit, compass, decks-and-days icon. | Hud.tsx:75; WorkspaceLayout.tsx:142-150 | all (`+` E+) | — |
 | plus-menu | Magenta `+` → prompt `add…` (canvas letters p m t d k l h a n s i; in a plane c r o i f k h a n s e). | `AddToCanvas` WorkspaceLayout.tsx:234; `<Menu>` :287; items :298-326. Not for viewers (:145); hidden in a bare focus | E+ | canvas |
-| fit | Fit icon or `0`. | `FitButton` WorkspaceLayout.tsx:194; key CanvasView.tsx:852; `fitHere` canvasView.ts:203 | all | canvas |
-| finder | Compass or ⌘F: places when empty, matches when typed; Tab scope; ⌥C/⌥W/⌥X; → ← fold; Enter goes. | `FinderButton` WorkspaceLayout.tsx:213; ⌘F Finder.tsx:66-76; `openFinder` find.ts:46 (`useFind.open`); `findGo` find.ts:54 | all | canvas, focus |
+| fit | Fit icon or `0`. | `FitTool` WorkspaceLayout.tsx:194; key CanvasView.tsx:852; `fitHere` canvasView.ts:203 | all | canvas |
+| finder | Compass or ⌘F: places when empty, matches when typed; Tab scope; ⌥C/⌥W/⌥X; → ← fold; Enter goes. | `FinderTool` WorkspaceLayout.tsx:213; ⌘F Finder.tsx:66-76; `openFinder` find.ts:46 (`useFind.open`); `findGo` find.ts:54 | all | canvas, focus |
 | finder-preview | Live preview of where you'll land. | FindPreview.tsx | all | finder |
-| tasks-side-btn | Columns-over-a-bar icon (only with a deck/timeline); magenta count of tasks given to you. | `TasksButton` MyTasks.tsx:18 | all | deck |
+| tasks-side-btn | Columns-over-a-bar icon (only with a deck/timeline); magenta count of tasks given to you. | `TasksTool` TasksTool.tsx:18 | all | deck |
 | corner-people | Squares of who's here, `+N`. | `PeopleHere` src/ui/patterns/PeopleHere.tsx; WorkspaceLayout.tsx:138 | all | — |
-| corner-threads | Threads button, magenta dot / `@` count. | `InboxButton` ThreadInbox.tsx:76 → `toggleInbox` Threads.tsx:53 | all | — |
+| corner-threads | Threads button, magenta dot / `@` count. | `ThreadsTool` ThreadInbox.tsx:76 → `toggleInbox` Threads.tsx:53 | all | — |
 | corner-square | Your initial → Settings (account). | `SettingsButton` src/ui/patterns/Settings.tsx:72 | all | — |
 | corner-gear | ⚙ → Settings (people page when people wait; cyan badge). | Settings.tsx:78; `useJoinRequests` WorkspaceLayout.tsx:99 | all (badge O) | — |
 | toast | One line bottom centre (undo/redo/what was done, `[go there]`). | `Toast` src/ui/patterns/Toast.tsx:10 (WorkspaceLayout.tsx:155); `useHistory.say` history.ts:43 | all | — |
@@ -192,7 +192,7 @@ are dead leftovers from 1.0.)
 | thread-panel | `>` prompt, Enter sends, `@` people, resolve, `[on the canvas ↗]`. | `ThreadPanel` Threads.tsx:132 | all | thread-chip |
 | threads-panel | Bottom tab: list + thread halves. | `toggleInbox` Threads.tsx:53 → ThreadInbox.tsx:97 | all | corner-threads |
 | thread-pins | `c` hides/shows chips. | CanvasView.tsx:848 | all | thread-chip |
-| tasks-given-badge | Count of tasks given to you since you looked. | MyTasks.tsx:29-31 | all | deck-side-view |
+| tasks-given-badge | Count of tasks given to you since you looked. | TasksTool.tsx:29-31 | all | deck-side-view |
 
 ## 10. Canvases
 

@@ -4,7 +4,7 @@
 //   lesson — a lesson showing with its demo playing (side-nav: 4 pages, its scene looping in the frame);
 //   none   — the baseline: the coach not mounted. Without editing the app: the dev server's `/src/onboarding/Coach.tsx`
 //            is answered with a stub (`Coach = () => null`), so nothing of the coach runs (no queue, events, busy
-//            polling, seen-state, demo frame). The `?` button (GuideButton) still mounts; it does nothing on its own.
+//            polling, seen-state, demo frame). The `?` button (GuideTool) still mounts; it does nothing on its own.
 // Frames: requestAnimationFrame intervals while the pan (a drag, 3 × 60 steps) or the zoom (60 wheel steps, in then
 // out) runs, and 10 s with no input (`idle`: what the coach costs on its own); long tasks from a PerformanceObserver. Reported per condition: median and p95 frame ms, frames over
 // 20 ms, long tasks (count, total ms). ROUNDS rounds, the conditions in a rotating order (default 3).

@@ -13,7 +13,7 @@ import { snap } from '../../../data/grid'
 import { canvasCenter, fitHere, setEditing, useCanvasView } from '../../../state/canvasView'
 import { Menu } from '../../../ui/patterns/Menu'
 import { learn } from '../../../onboarding/learn'
-import { GuideButton } from '../../../onboarding/GuideButton'
+import { GuideTool } from '../../../onboarding/GuideTool'
 import { useMatrixUi } from '../matrix/Matrix'
 import { MatrixWizard } from '../matrix/MatrixWizard'
 import { TableWizard } from '../table/TableWizard'
@@ -23,11 +23,12 @@ import { useTableUi } from '../table/Table'
 import { shownPieces } from './shownBox'
 import { useAuthor } from '../text/TextItems'
 import { TYPE_ACCENT } from '../plane/PlaneCards'
-import { TasksButton } from '../deck/MyTasks'
+import { TasksTool } from '../deck/TasksTool'
 import { openFinder, useFind } from '../find/find'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { useWs } from './context'
 import { ToolButton } from '../../../ui/primitives/ToolButton'
+import { CompassIcon, FitIcon } from '../../../ui/primitives/hudIcons'
 
 // `focused`: the piece in focus, if any; `editor`: whether you may make things (viewers make nothing, D-098).
 export function SideNav({ wid, focused, editor }: { wid: string; focused?: WithId<Piece>; editor: boolean }) {
@@ -35,16 +36,16 @@ export function SideNav({ wid, focused, editor }: { wid: string; focused?: WithI
     <>
       {/* A matrix or a table in focus takes its rows and columns from its setup (D-204, D-209), not from `+`. */}
       {editor && !(focused && isBare(focused)) && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
-      <FitButton plane={focused?.id ?? null} />
-      <FinderButton />
-      <TasksButton />
+      <FitTool plane={focused?.id ?? null} />
+      <FinderTool />
+      <TasksTool />
     </>
   )
 }
 
 // The side nav's fit (D-186), under the `+`; the same as `0` (CanvasView's fit): everything on the canvas in view, or in
 // focus the piece's contents centred and fitted, whatever kind it is.
-function FitButton({ plane }: { plane: string | null }) {
+function FitTool({ plane }: { plane: string | null }) {
   const focused = plane !== null
   return (
     <ToolButton
@@ -52,29 +53,21 @@ function FitButton({ plane }: { plane: string | null }) {
       title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
       onClick={fitHere}
     >
-      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
-        <path d="M1 6V1h5M12 1h5v5M17 12v5h-5M6 17H1v-5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="6" y="6" width="6" height="6" fill="none" stroke="currentColor" strokeWidth="1" />
-      </svg>
+      <FitIcon />
     </ToolButton>
   )
 }
 
 // The side nav's compass, under fit: the finder (D-236), which is go to too (D-196): the places with nothing typed (↓),
 // anything in the workspace once something is. ⌘F does the same. Under it the guide's `?` (D-315).
-function FinderButton() {
+function FinderTool() {
   const open = useFind((s) => s.open)
   return (
     <>
       <ToolButton pressed={open} label="Find and go to" title="find, go to (⌘F)" onClick={openFinder} data-learn="finder">
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
-          {/* A compass, its needle to the north. */}
-          <circle cx="9" cy="9" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M9 3.5 11 9H7z" fill="currentColor" />
-          <path d="M7 9h4l-2 5.5z" fill="none" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
-        </svg>
+        <CompassIcon />
       </ToolButton>
-      <GuideButton />
+      <GuideTool />
     </>
   )
 }

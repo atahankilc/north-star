@@ -92,7 +92,6 @@
 }
 
 .action {
-  composes: sm from '../primitives/Button.module.css';
   font-size: var(--text-sm);
 }
 

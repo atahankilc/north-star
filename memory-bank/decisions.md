@@ -45,7 +45,7 @@ feature comes back as a piece, and check them with the user then.
   state side by side, what it's built from and where it's used by area (D-336). Motion's numbers and the tween in src/ui/foundation/motionTokens.ts and motion.ts (held to tokens.css by a test), card
   colours in `--type-*` and src/ui/foundation/cardTone.ts; one Spinner, the small entrances in src/ui/foundation/Enter.module.css, one
   cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
-  component draws and where it's used. Patterns: Options, Window, WizardShell. Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
+  component draws and where it's used. Two buttons only (D-343): Button and ToolButton; a feature wrapping ToolButton is a `*Tool`, its icon from `src/ui/primitives/hudIcons.tsx` (one 18 px set), the gear too. Patterns: Options, Window, WizardShell. Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
   from coming back. Everything but the agent's column is on it (13 left, all src/agent/ui); next: the agent's column, Q-032, folders.
 - The UI rules are enforced, not asked for (D-339): a Claude Code hook on every write (`scripts/ui-rules-hook.mjs`) and git
   hooks on commit (`scripts/commit-rules.mjs`; a component without its gallery or lesson needs `Gallery:`/`Lessons:` in the
