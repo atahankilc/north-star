@@ -37,14 +37,6 @@ baseline.
 
 _Q-032 (the kit's rules repeated in the live CSS) was answered by D-334._
 
-### Q-033 · soon · The backdrop faint on some screens (dark theme)
-The user, 2026-11-01: on their screen the dark ASCII backdrop is clear, on some others barely visible. Measured
-(headless, dpr 1/1.25/1.5/2): the ink is the same at every dpr; what changes is glyph size (a cell is 9 device px,
-D-172, so on a 2x screen glyphs are physically half size, strokes ~1 device px) and the glyph atlas being sampled
-from 64 px down to 9 with no mipmaps (thin strokes drop out). About a third of lit pixels are mid-dark grey, which
-poor panels, low brightness or a bright room crush to black. Waiting on: which screen is the user's (MacBook or
-external) and which one looked faint. **Recommendation:** (a) draw the atlas at the real cell size so strokes sit on
-pixels (look unchanged); (b) a floor lifting the faintest glyphs; (c) only if needed, a minimum cell size in CSS px
-(changes D-172's fine look, ask first).
+_Q-033 (the backdrop faint on some screens) was closed by D-348: background strength in Settings → display._
 
 _Q-034 (where the HUD's tools sit) was answered by D-343: the decks tool stays in the side nav._

@@ -13,7 +13,7 @@ const STRENGTH_KEY = 'north-star.backdrop-strength'
 const HUD_KEY = 'north-star.hud-size'
 
 // How bright the field is drawn for each step, times the page's own dim (D-346). Strong lifts the faint glyphs that
-// some screens crush to black (Q-033).
+// some screens crush to black (Q-033, closed by this setting).
 export const STRENGTH_FACTOR: Record<StrengthPref, number> = { soft: 0.7, normal: 1, strong: 1.35 } // tokens-ok: brightness factors, not sizes or colours
 
 function read<T extends string>(key: string, allowed: readonly T[], fallback: T): T {

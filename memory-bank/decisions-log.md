@@ -6506,7 +6506,7 @@ and better by measurement and later run on a server with a backoffice.** Spec: d
   changes), and ink coverage is `pow(…, 0.6)` (was 0.75). Dark strokes on bright paper read thinner than lit strokes on
   black; before, the printed backdrop was barely visible.
 Verified: headless Chrome, light, dpr 1 and 2, before/after crops; typecheck, check:tokens 0, unit tests 753/0.
-Not yet: dark theme faint on some screens (Q-033).
+Not yet: dark theme faint on some screens (Q-033, closed by D-348's background strength).
 
 
 ### D-343 · 2026-11-01 · Accepted (the user: "şu an 5 farklı buttonumuz var: AsciiButton, Button, ToolButton, TasksButton ve GuideButton… bunların bu kadar farklı olmasının nedenini anlamadım"; "hudda toplam 7 icon var… settings iconu neden diğerlerinden daha küçük. Herekiyosa hud button diye bişi yapalım ama hepsi consisten olsun")
@@ -6669,4 +6669,5 @@ The settings lesson bumped to v2. No release entry: the first "what's new" is st
 Alternatives offered: two steps (normal / large), four (up to 48 px); also an interface text size, hiding others'
 cursors, grid dots on/off (not picked).
 Looked at in the app by the user after the deploy (2026-11-01): "baktım iyi".
-*Not yet:* Q-033's own fixes (a), (b) still open.
+Closes Q-033 (the user: "kapa o open questionı"): the strength setting is the answer; Q-033's other ideas (the
+glyph atlas drawn at the real cell size, a floor under the faintest glyphs, a minimum cell size) are not planned.
