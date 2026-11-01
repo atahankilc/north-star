@@ -38,9 +38,9 @@ export const NO_USAGE: Usage = Object.freeze({ input: 0, output: 0, cached: 0, r
 export type Provider = 'openai' | 'anthropic' | 'stub'
 
 // What a context message is, in an append-only history (D-329, loop.ts): the map, the agent notes, where the person
-// is, a skill's guide, the last step's note, a compaction's note, what the person did with a preview (D-328, bug 5).
-// Adapters send the content and ignore the tag.
-export type ContextTag = 'map' | 'notes' | 'where' | 'guide' | 'final' | 'compact' | 'outcome'
+// is, a skill's guide, the last step's note, a compaction's note, what the person did with a preview (D-328, bug 5),
+// what a skill's checks found (agent-bugs 21). Adapters send the content and ignore the tag.
+export type ContextTag = 'map' | 'notes' | 'where' | 'guide' | 'final' | 'compact' | 'outcome' | 'checks'
 
 // A picture for the model (D-327 phase 2): a PNG, base64, sent with a tool's result (`look`) or a message (a judge's
 // before and after). Never saved with a chat, never in a transcript or the usage log.

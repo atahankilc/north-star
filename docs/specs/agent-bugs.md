@@ -49,10 +49,10 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 3  | the stepper's item doesn't stand out             | Preview      | mid      | code             | fixed  |
 | 4  | plane layouts ignore links                       | Layout       | high     | code + prompt    | built (flow, D-327); no real-model eval yet |
 | 10 | can't rearrange a canvas                         | Layout       | mid      | code             | fixed  |
-| 15 | lists answered from the map                      | Judgment     | mid      | code, then prompt| open   |
+| 15 | lists answered from the map                      | Judgment     | mid      | code, then prompt| code part fixed |
 | 19 | "would it work" not dry-run                      | Judgment     | low      | prompt           | open   |
 | 20 | vague verb run without asking                    | Judgment     | mid      | prompt           | open   |
-| 21 | skill guides not followed step by step           | Judgment     | mid      | code + methods   | open   |
+| 21 | skill guides not followed step by step           | Judgment     | mid      | code + methods   | code part fixed |
 | 23 | "for a plane" leans on other planes              | Judgment     | low      | methods          | open   |
 | 24 | points at an existing piece instead of making it | Judgment     | low      | prompt           | open   |
 | 13 | no coverage map for a big document               | New parts    | mid      | new              | open   |
@@ -196,8 +196,10 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     agent notes' text); `read_document` answers `needs` when a text isn't there, the tool wrapper calls
     `AgentEnv.loadBody` and reads again (the loop hands it on); the app and the emulator mode load through
     `readDocBody` (src/data/documents.ts) under the rules, the in-memory evals from the fixture. The outcome line is
-    workflow.ts' `withOutcome`, the same words in agentStore.ts and evals/run.ts. Left: a reopened saved chat still gets
-    chats.ts' shorter `[the proposed changes were applied (N)]` (only a count is saved).
+    workflow.ts' `withOutcome`, the same words in agentStore.ts and evals/run.ts. *Leftover fixed 2026-11-01:* a reopened
+    saved chat tells it with the same `withOutcome` line, from the saved status line's report (what was applied where,
+    what wasn't, then an undo); a discard's status line had been saved as `applied` and now says discarded (an older
+    one is read from the change list before it); a change list with no status line after it keeps the short line.
 1.  **It can't read a document's text in the app.** `liveWs()` (src/agent/ui/agentStore.ts) puts only the agent notes
     in `bodies`; documents' `content/body` is never fetched, so `read_document` answers "its text isn't loaded here"
     with the excerpt. The evals pass because their store holds bodies. Fix: fetch a body (through `src/data/`) when
@@ -307,6 +309,9 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     (the note `query` already gives, read/tools.ts). Then, measured, the prompt only if still needed
     (src/agent/prompt.ts, "Finding things"): a list, a count or a which/who question is answered from `query`/`view`,
     never the map alone.
+    *Code part fixed 2026-11-01:* the map, when a competitor has regions, says at its head that they are as typed, that
+    a place counts inside the bigger ones, and that a list or count by region comes from `query({region})` (read/map.ts).
+    The prompt part waits for the baseline.
 19. **"Check whether this would work" is answered by reading, not a dry run.** edit-12: the count was right (5 tasks),
     but `change` with `dry_run` was never called, so a refusal (a column limit, a locked piece) wouldn't be seen. Fix:
     the prompt names the triggers ("would it work", "check before", "don't change anything yet") → a dry run.
@@ -331,6 +336,17 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     Fix (methods, what needs judgment): tighten the vague steps in src/agent/skills/methods.ts ("threats are other
     people's things, never ours", "keep the sticky's words", full vs partial from the notes); each guide ends in a
     checklist the run's last look holds the proposal against (12, step 2).
+    *Code part fixed 2026-11-01:* src/agent/skills/checks.ts, one check per skill, run by the loop once when a skill's
+    turn ends with changes waiting: what they find goes back to the model as a `checks` message for one more step (fix
+    it or say why), and what is still there after it goes into the preview's warnings (`/test: …`). `/test`: an idea
+    given test tasks still a hypothesis; `/import`: new cards with no `for` link to the customer the ask names (by short
+    id or title); `/prioritize`: a deck it makes or changes without effort across and impact down, features on the
+    planes the ask names (else the priorities deck's) without impact or effort; `/compare`: a new matrix over every
+    feature when the ask names a plane, or over every competitor when it names some. Found on the way, likely a cause
+    of test-01: a plan skill's guide was sent only on its plan turn, so the `go` turn that runs its "on go" steps never
+    saw them (except Claude's append-only history); the loop now sends it again on the turn after a plan skill.
+    skill-prioritize-03's reference got its reply to the check (its deck holds features with no effort). Left: the
+    methods' wording (judgment), measured on the baseline.
 23. **Documents "for a plane" lean on cards elsewhere.** swot-02 "/swot for Pricing", one-pager-02 "on Roadmap",
     next-03 "/next for Pricing": half the cards cited aren't on that plane (linked competitors, problems elsewhere).
     Sometimes right (a SWOT needs the competitors), but one plane was asked about. Fix: "for <plane>" means that

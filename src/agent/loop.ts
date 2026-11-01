@@ -52,7 +52,8 @@ import { systemPrompt } from './prompt'
 import { viewOf } from './changeset'
 import { notesOf } from '../model/notes'
 import { wrap } from './read/text'
-import { parseSkill, skillGuide, unknownSkillNote } from './skills'
+import { parseSkill, skillGuide, unknownSkillNote, type Skill } from './skills'
+import { skillChecks } from './skills/checks'
 import { jobText } from './job'
 
 // The notes as the model gets them: a heading, then the text as workspace content (data, never instructions).
@@ -347,8 +348,14 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   const ask: ModelMessage = { role: 'user', content: userMessage }
   // A skill (S17): `/name …` adds its guide as a developer message right before the ask, for this turn only (not kept
   // in the history). An unknown `/x` goes to the model as an ordinary message, with a one-line note listing the skills.
+  // A plan skill's guide comes again on the turn after its plan (agent-bugs 21: its "on go" steps are for that turn),
+  // unless an append-only history still holds it.
   const skill = parseSkill(userMessage)
-  const guide: ModelMessage[] = !skill ? [] : 'skill' in skill ? [{ role: 'system', tag: 'guide', content: skillGuide(skill.skill, skill.rest) }] : [{ role: 'system', tag: 'guide', content: unknownSkillNote(skill.unknown) }]
+  const active = skill && 'skill' in skill ? skill : !skill ? planSkillBefore(past) : null
+  const guideText = active ? skillGuide(active.skill, active.rest) : skill && 'unknown' in skill ? unknownSkillNote(skill.unknown) : ''
+  const guideKept = appendOnly && past.some((m) => m.role === 'system' && m.tag === 'guide' && m.content === guideText)
+  const guide: ModelMessage[] = guideText && !guideKept ? [{ role: 'system', tag: 'guide', content: guideText }] : []
+  let checked = false
   // Append-only: the context after the ask, kept in the history; the map and the notes only when they changed since
   // the copy last sent (a compaction drops them, so they come again after one).
   const lastSent = (tag: 'map' | 'notes') => {
@@ -528,10 +535,35 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     }
     else if (res.stop === 'content_filter' || res.stop === 'refusal') end = 'refused'
     else {
+      // A skill's checks (agent-bugs 21), once: what they find goes back for one more step; what's left after it
+      // goes into the preview's warnings.
+      const found = active && env.changes ? skillChecks(active.skill.name, { before: env.getWs(), after: agentEnv.getWs(), cs: env.changes, ids: env.ids, rest: active.rest }) : []
+      if (found.length && !checked && n < budget) {
+        checked = true
+        mine.push({ role: 'system', tag: 'checks', content: CHECKS_NOTE(active!.skill.name, found) })
+        continue
+      }
+      if (found.length && env.changes) env.changes = { ...env.changes, warnings: [...env.changes.warnings, ...found.map((f) => `/${active!.skill.name}: ${f}`)] }
       answer = res.text
       end = 'answered'
     }
     break
   }
   return finish()
+}
+
+// What a skill's checks found, told to the model before the preview (agent-bugs 21).
+export const CHECKS_NOTE = (name: string, found: string[]) =>
+  `Before the person sees the preview, the /${name} guide's checks found:\n${found.map((f) => `- ${f}`).join('\n')}\nFix them with change now, or, if one is right as it is, say why in your answer. Then answer again.`
+
+// The plan skill the person's last message started, when this message isn't a skill of its own: its `go` (or a note
+// on its plan) is the turn its "on go" steps are for.
+function planSkillBefore(past: ModelMessage[]): { skill: Skill; rest: string } | null {
+  for (let i = past.length - 1; i >= 0; i--) {
+    const m = past[i]
+    if (m.role !== 'user' || m.content.startsWith(STEER_HEAD)) continue
+    const s = parseSkill(m.content)
+    return s && 'skill' in s && s.skill.plan ? s : null
+  }
+  return null
 }

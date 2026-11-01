@@ -718,6 +718,8 @@ export const SKILL_TASKS: Task[] = [
       answer('Plan: there is no priorities deck yet.\n1. Make one on k2 Build (template priorities: features and packages, effort × impact, corners named).\n2. Then explain the order from what is filled in.\nSay go, or tell me what to change in the plan.'),
       change([['create_piece', { kind: 'deck', canvas: 'k2', name: 'Priorities', deck: { template: 'priorities' } }]], 'a priorities deck'),
       answer('In the preview: the deck "Priorities" on k2 Build, features and packages by effort × impact. Quick wins first: c113 "Stall opening hours pickup slots" and c100 "Stall opening hours price list".'),
+      // The guide's checks (agent-bugs 21) say some features it holds lack impact or effort: kept as they are, with why.
+      answer('In the preview: the deck "Priorities" on k2 Build, features and packages by effort × impact. Quick wins first: c113 "Stall opening hours pickup slots" and c100 "Stall opening hours price list". Some features have no impact or effort yet; they sit in the deck\'s "no value" row until you estimate them, or ask me to.'),
     ],
     wrong: [
       call('query', { kind: 'piece', type: 'deck' }),
