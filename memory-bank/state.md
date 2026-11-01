@@ -23,26 +23,13 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
-- D-332 plane grid as dots (2026-11-01): committed, not pushed.
-- D-331 away in presence (2026-11-01): RTDB rules deployed, pushed and live.
-- D-330 text saves as it's typed, Escape keeps it (2026-11-01): pushed and live.
-- D-325 tokens (docs/specs/tokens.md): CSS and TS at 0 raw values, `check:tokens` in CI; constants by kind in world.ts,
-  limits.ts (+ rules test), feel.ts (2026-10-31; the TS part committed, not pushed). TS durations: D-326.
-- D-310 (pieces drawn oldest first, the newest on top): committed, not pushed.
-- D-308 (filters only while their view is open; what's added after shows): committed, not pushed.
-- Committed, **not pushed** (2026-10-29): D-293 hidden while zooming and D-297 focus in/out together (efd34b4), D-294
-  card faces on kanbans and tables (0c9178f), D-295 readable text on tinted cards (1c78097), D-296 dropped plans
-  (memory only), D-298 timeline leftovers (06e11c7), D-299 card pickers as the prompt (80441e7), a framed table's focus
-  kept inside its window (f14b321). D-291/D-292 and before: pushed and live. What was done: state-history.md.
-- D-300/D-301/D-303/D-314 (decks and days in one side view, plane → deck → days; timelines always of something):
-  committed, not pushed.
-- D-304, the timeline as a strip (tasks' `start`, sideways without end, scales, overview): committed (414e24b), not
-  pushed; its rule is already deployed. Its preview of four is docs/specs/timeline-preview/ (B, C, D not built).
-- Uncommitted code in the tree from another session (`setFitter` in CanvasView/canvasView.ts, WorkspaceLayout.tsx): not
-  part of the above.
-- Audit P1–P3 (docs/audit-2026-10-29.md, D-317–D-323): committed, not pushed. Firestore rules + RTDB deployed
-  2026-10-29 (the user's go, D-322; indexes not deployed, Firebase's kept); functions wait for Blaze. P3b, P4–P6 after onboarding.
-  Left: Q-029, Q-030; `kindOfType` once documents.ts is committed; until the push, invites don't work live (old client).
+- Pushed and live (checked against origin/main 2026-11-01): D-332 grid dots, D-331 away (RTDB rules deployed), D-330
+  text saved as typed, D-325 tokens (CSS and TS, `check:tokens` in CI), D-310, D-308, D-293–D-299 and the framed
+  table's focus, D-300/D-301/D-303/D-314 decks and days, D-304 the timeline strip (its preview of four:
+  docs/specs/timeline-preview/, B, C, D not built), the `setFitter` code, audit P1–P3 (D-317–D-323). What was done:
+  state-history.md.
+- Audit leftovers: Firestore rules + RTDB deployed 2026-10-29 (indexes not, Firebase's kept); functions wait for
+  Blaze. P3b, P4–P6 after onboarding; Q-029, Q-030.
 
 ## Next steps (not started; ask the user which first)
 - **The agent, where it stands (2026-11-01; D-327, D-328, D-329 built and pushed, none tried with a real model):**
@@ -57,7 +44,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   5. The local harness stays an idea (Q-031).
   Order and status of every agent bug: docs/specs/agent-bugs.md (its table).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
-  which (D-313); committed, not pushed;
+  which (D-313); pushed;
   rules deployed.
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
 - The agent (D-312, docs/specs/agent.md; the overnight build: docs/specs/agent-run.md): see the first item above.
