@@ -307,6 +307,9 @@ feature comes back as a piece, and check them with the user then.
 - Real-time collaboration with presence and live cursors (D-005); presence in RTDB `presence/{wid}/{uid}`, readable by
   any signed-in user, own node whole-node writes (D-016, D-065); the client shows only members' presence and a
   `photo` only from googleusercontent.com, the rule checks the photo too; with Blaze the read is bound to membership (D-317).
+- Away (D-331): a hidden tab or 5 minutes untouched is `away`: the square faint, grey and last, `away` on hover, not
+  followable (a follow already going goes on); no cursor or drag, the selection kept but not shown; hidden after 180 s
+  silent (60 s for those here).
 - Cursors (D-065, D-169, D-191): in your space's px (`plane` = the plane in focus); sent 10× a second, drawn 200 ms
   behind on a curve (D-193). Following (D-067, D-170, D-191) is total: into the plane they focus and out, their cursor
   kept in your middle (gliding only past ±22 %), their selection and panel yours until you click; a frame in their

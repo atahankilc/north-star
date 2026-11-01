@@ -577,9 +577,9 @@ export const LESSONS: readonly Lesson[] = [
 
   // 8. Together
   {
-    id: 'people-here', v: 1, format: 'lesson', roles: ALL, area: 'together', since: 'D-169',
+    id: 'people-here', v: 2, format: 'lesson', roles: ALL, area: 'together', since: 'D-169, D-331',
     trigger: [{ event: 'peer-joined' }], anchor: 'people',
-    pages: [{ title: '{peer} is here', body: 'Their square is bottom left, their cursor on the canvas. Click the square to follow them.', scene: 'peers-cursors' }],
+    pages: [{ title: '{peer} is here', body: 'Their square is bottom left, their cursor on the canvas. Click the square to follow them. A faint square is away.', scene: 'peers-cursors' }],
   },
   {
     id: 'following', v: 1, format: 'lesson', roles: ALL, area: 'together', since: 'D-067, D-191',

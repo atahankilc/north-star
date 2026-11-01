@@ -6177,3 +6177,27 @@ several planes, a main plane with detail planes beside it, sections), each only 
   v1. No release entry: the first `what's new` would open for everyone, too much for a fix (the user's call).
 - *Not yet:* a card's title and the panels' notes were not checked for the same (they're edited in the panel).
 
+### D-331 · 2026-11-01 · Accepted (the user: "inactive userlar yada ekranı focusta olmayanları şuan gösteriyor muyuz uygulamada?"; then, after the cost: "evet, uzakta durumunu ekle"; "evet, başla")
+**Someone whose tab is hidden or who hasn't touched it for 5 minutes is shown as away.**
+- *What:* presence gets `away: true` (absent = here). The writer sets it when the tab is hidden (at once) or nothing
+  was touched (pointer, keys, wheel, touch) for `AWAY_AFTER_MS` (5 min, src/ui/feel.ts; checked with the 20 s
+  heartbeat); any touch or the tab shown again clears it at once. Going away drops the cursor and a drag in hand; the
+  selection stays, so it's back on return.
+- *Seen by others:* the square faint (`--o-dim`) and grey, sorted after those here, `away · on the canvas` on hover and in
+  the list; a click on it starts no following (one already going goes on; their view doesn't move anyway). Their
+  selection's L's and a drag ghost aren't drawn; no cursor whatever the last write said.
+- *Stale:* someone silent past 60 s is still hidden, but past 180 s when away (`AWAY_STALE_MS`): Chrome may run a
+  hidden tab's timers once a minute, so its heartbeat came late and the square blinked out and back.
+- *Rules:* `away` must be `true` (database.rules.json); rules tests 599/0 on private emulators. **Deploy the RTDB rules
+  before the client goes live:** the old rules refuse the whole presence write once `away` is in it. Deployed
+  2026-11-01 (`--only database`, the user's go).
+- *Why:* showing someone who isn't looking as here misleads (waiting on them, following a still screen, assuming they
+  saw). Cost was not the reason: presence costs next to nothing; an open tab still holds an RTDB connection (Spark: 100
+  at once), which away doesn't change. *Not yet:* closing a tab's connections after a long time away, if the
+  connection limit or Firestore reads start to matter (Blaze or more people).
+- *Verified (2026-11-01):* headless Chrome, Alice and Bob on the emulators: Bob hidden → Alice sees him away (data-away,
+  `Bob, away · on the canvas`), his cursor gone, his selection kept; Alice's click doesn't follow; Bob shown again or
+  moving → here; Bob's clock 6 min ahead → away at the next heartbeat. Screenshot: the square grey and faint. tsc,
+  vitest 917, build, check:tokens, check:gallery (PeopleHere: one away, away in the list, all away), check:lessons.
+- *Lessons:* `people-here` v2 ("A faint square is away."); no release entry, as D-330.
+

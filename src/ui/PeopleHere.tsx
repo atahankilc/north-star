@@ -2,6 +2,8 @@
 // and tags use, no names; the squares overlap, the name and where they are show on hover, and past MAX a `+N` opens the
 // list of everyone. A click follows them, totally (D-191, collab.tsx): their space, their cursor, their selection; a
 // second click, Escape, or a pan or zoom of your own stops it. While following, the page is framed in their colour.
+// Someone away (D-331: their tab hidden, or untouched for a while) is drawn faint, last, `away` on hover; a click on them
+// starts no following (one already going goes on).
 import { useEffect, useRef, useState } from 'react'
 import { usePresence, type Peer } from '../data/presence'
 import { useThemeAccent } from '../state/theme'
@@ -20,10 +22,12 @@ export function PeopleHere() {
   const { pieces, canvases } = useWs()
   // Where someone is: the canvas, or the plane they have in focus; with several canvases, which (D-302).
   const canvasName = (p: Peer) => (canvases.length > 1 ? canvases.find((c) => c.id === (p.canvas ?? 'main'))?.name : undefined)
-  const where = (p: Peer) => (p.plane ? `in ${pieces.find((x) => x.id === p.plane)?.name || 'a plane'}` : `on ${canvasName(p) ?? 'the canvas'}`)
+  const place = (p: Peer) => (p.plane ? `in ${pieces.find((x) => x.id === p.plane)?.name || 'a plane'}` : `on ${canvasName(p) ?? 'the canvas'}`)
+  const where = (p: Peer) => (p.away ? `away · ${place(p)}` : place(p))
   const toggle = (p: Peer) => {
     setListOpen(false)
-    follow(following === p.uid ? null : p.uid)
+    if (following === p.uid) follow(null)
+    else if (!p.away) follow(p.uid)
   }
   // Escape stops following, before anything else hears it.
   useEffect(() => {
@@ -74,6 +78,7 @@ export function PeopleHere() {
               <button
                 className={styles.person}
                 style={{ ['--peer' as string]: tone(p.color) }}
+                data-away={p.away || undefined}
                 aria-label={`${p.name}, ${where(p)}${on ? ', following' : ''}`}
                 aria-pressed={on}
                 onClick={() => toggle(p)}
@@ -103,7 +108,7 @@ export function PeopleHere() {
         <ul className={styles.list} aria-label="Everyone here">
           {peers.map((p) => (
             <li key={p.uid}>
-              <button className={styles.row} style={{ ['--peer' as string]: tone(p.color) }} aria-pressed={following === p.uid} onClick={() => toggle(p)}>
+              <button className={styles.row} style={{ ['--peer' as string]: tone(p.color) }} data-away={p.away || undefined} aria-pressed={following === p.uid} onClick={() => toggle(p)}>
                 <Swatch p={p} />
                 <span className={styles.rowName}>{p.name}</span>
                 <span className={styles.where}>{following === p.uid ? 'following' : where(p)}</span>

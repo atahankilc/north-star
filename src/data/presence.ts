@@ -7,6 +7,7 @@ import { create } from 'zustand'
 import { accents } from '../styles/tokens'
 import type { AuthUser } from './auth'
 import { firebase } from './firebase'
+import { AWAY_AFTER_MS } from '../ui/feel'
 
 // The canvas is the only view (D-174).
 export type PresenceView = 'canvas'
@@ -33,6 +34,9 @@ export type Presence = {
   // The tasks side view's tab while it's open (D-300): `mine`, `days` or a deck's id, ` days` after a deck on its days.
   // A follower's opens on it.
   tasks?: string
+  // Away (D-331): their tab is hidden or they haven't touched it for AWAY_AFTER_MS. Still here, drawn faint; no cursor,
+  // their selection and drag not shown, not to be followed. Absent = here.
+  away?: true
   // When they joined (server time). Earlier joiners keep their colour when someone new arrives.
   since?: number
   ts: number
@@ -47,6 +51,9 @@ const WRITE_EVERY_MS = 100
 // onDisconnect hasn't fired yet).
 const HEARTBEAT_MS = 20_000
 const STALE_MS = 60_000
+// A hidden tab's timers may run only once a minute (Chrome's throttling), so its heartbeat comes late: someone away is
+// given longer before being hidden, or they'd blink out and back (D-331).
+const AWAY_STALE_MS = 180_000
 
 // Each person's preferred colour: a hash of their uid over the accent palette (DESIGN.md §3).
 export function presenceColor(uid: string): string {
@@ -186,9 +193,15 @@ function patch(p: Partial<Omit<Presence, 'ts' | 'since'>>) {
   schedule()
 }
 
-// Board pointer in world units, or null when it leaves the board.
+// Board pointer in world units, or null when it leaves the board. None while away (D-331).
 export function setCursor(at: [number, number] | null) {
-  patch(at ? { x: round(at[0]), y: round(at[1]) } : { x: undefined, y: undefined })
+  patch(at && !mine?.data.away ? { x: round(at[0]), y: round(at[1]) } : { x: undefined, y: undefined })
+}
+
+// Going away drops the cursor and a drag in hand; the selection stays (it's shown again on coming back, D-331).
+function setAway(away: boolean) {
+  if (!mine || !!mine.data.away === away) return
+  patch(away ? { away: true, x: undefined, y: undefined, drag: undefined } : { away: undefined })
 }
 
 // The plane the board shows (D-139): cursors are only drawn for people on the same one.
@@ -259,8 +272,9 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
     const publish = () => {
       const now = Date.now() + offset
       const here = Object.entries(all)
-        .filter(([id, p]) => id !== uid && !!members?.has(id) && now - (p.ts ?? 0) < STALE_MS)
-        .map(([id, p]) => ({ ...p, photo: safePhoto(p.photo), uid: id }))
+        .filter(([id, p]) => id !== uid && !!members?.has(id) && now - (p.ts ?? 0) < (p.away ? AWAY_STALE_MS : STALE_MS))
+        // Someone away has no cursor here, whatever their last write said.
+        .map(([id, p]) => ({ ...p, ...(p.away ? { x: undefined, y: undefined } : {}), photo: safePhoto(p.photo), uid: id }))
       let moved = false
       for (const p of here) {
         if (p.x === undefined || p.y === undefined) tracks.delete(p.uid)
@@ -277,7 +291,8 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
       const colors = assignColors([...here, { uid, since: mine?.since ?? undefined }])
       const { following } = usePresence.getState()
       usePresence.setState({
-        peers: here.map((p) => ({ ...p, color: colors.get(p.uid)! })).sort((a, b) => a.name.localeCompare(b.name)),
+        // Those here first, then those away (D-331), each by name.
+        peers: here.map((p) => ({ ...p, color: colors.get(p.uid)! })).sort((a, b) => Number(!!a.away) - Number(!!b.away) || a.name.localeCompare(b.name)),
         myColor: colors.get(uid)!,
         // They left: stop following.
         following: following && here.some((p) => p.uid === following) ? following : null,
@@ -296,13 +311,27 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
     )
 
     republish = publish
+    // Away (D-331): the tab hidden, or nothing touched for AWAY_AFTER_MS (checked with the heartbeat). Any touch, or
+    // the tab shown again, is back at once.
+    let active = performance.now()
+    const check = () => setAway(document.hidden || performance.now() - active >= AWAY_AFTER_MS)
+    const onActive = () => {
+      active = performance.now()
+      if (mine?.data.away) check()
+    }
+    const ACTIVE = ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart'] as const
+    for (const t of ACTIVE) window.addEventListener(t, onActive, { capture: true, passive: true })
     const beat = window.setInterval(() => {
+      check()
       flush()
       publish()
     }, HEARTBEAT_MS)
-    // A hidden tab has no pointer on the board.
-    const onVisibility = () => document.hidden && setCursor(null)
+    const onVisibility = () => {
+      if (!document.hidden) active = performance.now()
+      check()
+    }
     document.addEventListener('visibilitychange', onVisibility)
+    check()
 
     return () => {
       offConnected()
@@ -310,6 +339,7 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
       offPeers()
       window.clearInterval(beat)
       document.removeEventListener('visibilitychange', onVisibility)
+      for (const t of ACTIVE) window.removeEventListener(t, onActive, { capture: true })
       if (pending !== null) window.clearTimeout(pending)
       pending = null
       mine = null

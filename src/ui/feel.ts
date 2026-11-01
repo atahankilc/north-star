@@ -20,3 +20,6 @@ export const wheelStep = (zoom: number, e: { deltaY: number; ctrlKey: boolean })
 // Typing on the canvas is kept as it's typed: a pause this long (ms) writes what's there (the user lost ten minutes of
 // writing to an Escape, 2026-11-01).
 export const AUTOSAVE_MS = 500
+
+// Untouched this long (ms), someone is shown as away to the others (D-331); a hidden tab is away at once.
+export const AWAY_AFTER_MS = 5 * 60_000

@@ -382,8 +382,8 @@ when the first task given to this person by someone else · anchor `tasks` (side
 
 ### `people-here` · lesson · all · D-169
 when another person first appears in this workspace · anchor `people`
-1. **{peer} is here**: Their square is bottom left, their cursor on the canvas. Click the square to follow them. ·
-   `peers-cursors`
+1. **{peer} is here**: Their square is bottom left, their cursor on the canvas. Click the square to follow them. A
+   faint square is away. · `peers-cursors` (v2, D-331)
 
 ### `following` · lesson · all · D-067, D-191
 when `following` (first) · anchor the follow frame's label · within following

@@ -146,7 +146,7 @@ invites/{wid}_{email}   workspaceId, email, name, memberCount, invitedBy, at: wh
 aiSecrets/{wid}         the workspace key, encrypted; no client reads or writes it (D-079)
 
 RTDB: presence/{wid}/{uid}   name, color, photo? (googleusercontent.com only, D-317), view ('canvas'), plane? (the plane in focus), x?, y? (that space's px),
-                             sel?, more?, drag? (a task held, D-260), tasks? (the tasks side view's tab, D-300), since?, ts   (D-065, D-067, D-124, D-191)
+                             sel?, more?, drag? (a task held, D-260), tasks? (the tasks side view's tab, D-300), away? (true, D-331), since?, ts   (D-065, D-067, D-124, D-191)
 ```
 - Entities are **subcollections of their workspace**, so one rule covers them: members (`memberIds`) read them; owners and
   editors write them (D-098).
@@ -189,7 +189,9 @@ RTDB: presence/{wid}/{uid}   name, color, photo? (googleusercontent.com only, D-
   smoothed only on the receiving side (D-169, D-193): each position is kept with the time it arrived, and the cursor is drawn
   200 ms in the past on a curve (Catmull-Rom) through them, bunched arrivals spread out again; cursor positions stay out of
   React state, so a moving pointer re-renders nothing but the canvas. Each tab writes its whole node, so a second tab survives
-  the first one's disconnect (D-065). A cursor is in its space's px: the canvas's, or the focused plane's (`plane`, D-191); you see the cursors of people in
+  the first one's disconnect (D-065). `away` (D-331): the tab hidden or untouched for 5 minutes; the cursor and a drag
+  are dropped, the selection kept but not shown, the square faint and not followable; a heartbeat every 20 s keeps `ts`
+  fresh, someone silent past 60 s is hidden, past 180 s when away (a hidden tab's timers are throttled). A cursor is in its space's px: the canvas's, or the focused plane's (`plane`, D-191); you see the cursors of people in
   your space. `sel` is the selected item (a card, text, piece, cell or task), shown wherever it is drawn (D-068, D-272), and
   taken as your own while you follow them (D-170); `more` is the rest of a selection of several, ids joined by spaces, ≤2048 characters (D-124). RTDB writes are free (billed by bandwidth),
   and Spark allows 100 simultaneous connections.

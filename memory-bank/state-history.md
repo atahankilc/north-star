@@ -1044,3 +1044,8 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   wash); in focus every mark as before (shot after stepping into Segments).
 - Verified: tsc, vitest 917 (previewFold.test.ts, happy-dom), check:tokens 0, stub evals 0 failed; before and after
   screenshots looked at.
+
+## Done (2026-11-01): away in presence (D-331)
+- A hidden tab or 5 minutes untouched is `away`: faint grey square, last, not followable, no cursor, selection hidden;
+  away people get 180 s before being hidden. Rule `away == true`; rules 599/0 (private emulators).
+- Verified with Alice and Bob in headless Chrome (decisions-log D-331); vitest 917, build, gallery, lessons.

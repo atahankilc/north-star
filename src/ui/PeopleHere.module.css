@@ -126,6 +126,21 @@
   opacity: var(--o-soft);
 }
 
+/* Away (D-331): the square faint and grey, the name still in their colour on hover; nothing to follow. */
+[data-away] .swatch {
+  opacity: var(--o-dim);
+  filter: grayscale(1);
+}
+
+.person[data-away],
+.row[data-away] {
+  cursor: default;
+}
+
+.row[data-away] .rowName {
+  opacity: var(--o-soft);
+}
+
 .more {
   display: grid;
   place-items: center;

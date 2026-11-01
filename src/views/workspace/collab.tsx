@@ -264,7 +264,8 @@ export function usePeersOn(id: string, space?: string): PeerMark[] {
   const tone = useThemeAccent()
   const me = firebase?.auth.currentUser?.uid
   return peers
-    .filter((p) => p.uid !== me && (space === undefined || spaceOf(p) === space) && hasSelected(p, id))
+    // Someone away (D-331) keeps their selection, but it isn't shown till they're back.
+    .filter((p) => p.uid !== me && !p.away && (space === undefined || spaceOf(p) === space) && hasSelected(p, id))
     .map((p) => ({ uid: p.uid, name: p.name, color: tone(p.color) }))
 }
 
@@ -275,7 +276,7 @@ export function PeerTaskDrags({ taskIds, render }: { taskIds: Set<string>; rende
   const tone = useThemeAccent()
   const me = firebase?.auth.currentUser?.uid
   const held = peers.flatMap((p) => {
-    const d = p.uid !== me ? dragOf(p) : null
+    const d = p.uid !== me && !p.away ? dragOf(p) : null
     return d && taskIds.has(d.id) ? [{ p, d }] : []
   })
   return (

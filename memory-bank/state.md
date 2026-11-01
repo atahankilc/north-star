@@ -23,6 +23,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
 
 ## In progress
+- D-331 away in presence (2026-11-01): RTDB rules deployed 2026-11-01; committed, not pushed.
 - D-330 text saves as it's typed, Escape keeps it (2026-11-01): committed, not pushed.
 - D-325 tokens (docs/specs/tokens.md): CSS and TS at 0 raw values, `check:tokens` in CI; constants by kind in world.ts,
   limits.ts (+ rules test), feel.ts (2026-10-31; the TS part committed, not pushed). TS durations: D-326.
