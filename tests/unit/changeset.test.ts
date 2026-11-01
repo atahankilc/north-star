@@ -327,3 +327,59 @@ describe('a stale accept says it in names (S14)', () => {
     expect(inNames(`there is no card ${card.id}`, ws)).toContain(card.title)
   })
 })
+
+// agent-bugs 31: an arrange of cards made in the same call rides with them: no item of its own; unticking a card leaves
+// the arrange laying out the rest (edit-09, edit-13: "add three ideas" came with a fourth item).
+describe('an arrange of the cards just made rides with them', () => {
+  const CLUBS = [
+    ...['Bread club', 'Cheese club', 'Olive club'].map((title, i) => ({ op: 'create_card', args: { type: 'idea', plane: 'p3', title, handle: `$c${i}` } })),
+    { op: 'arrange', args: { items: ['$c0', '$c1', '$c2'], layout: 'row', where: { near: 'x12', side: 'below' }, plane: 'p3' } },
+  ]
+  it('three cards and their row: three items; the row is still written', async () => {
+    const e = env()
+    const r = await change.run(e, { ops: CLUBS })
+    expect(r.ok).toBe(true)
+    expect(e.changes!.items.map((i) => i.op)).toEqual(['create_card', 'create_card', 'create_card'])
+    const ws = viewOf(e.changes, e.getWs())
+    const made = e.changes!.items.flatMap((i) => i.made).filter((id) => ws.cards.some((c) => c.id === id))
+    const ys = new Set(made.map((id) => ws.cards.find((c) => c.id === id)!.y))
+    expect(ys.size).toBe(1)
+  })
+  it('one unticked: the other two stay, still in a row, and nothing comes off with a warning', async () => {
+    const e = env()
+    await change.run(e, { ops: CLUBS })
+    const olive = e.changes!.items.find((i) => i.line.includes('Olive club'))!
+    e.untick(olive.id)
+    expect(e.changes!.items.map((i) => i.line.match(/"(\w+ club)"/)?.[1])).toEqual(['Bread club', 'Cheese club'])
+    expect(e.changes!.warnings.filter((w) => /came off/.test(w))).toEqual([])
+    const ws = viewOf(e.changes, e.getWs())
+    expect(ws.cards.some((c) => c.title === 'Olive club')).toBe(false)
+    const two = ws.cards.filter((c) => c.title === 'Bread club' || c.title === 'Cheese club')
+    expect(new Set(two.map((c) => c.y)).size).toBe(1)
+  })
+})
+
+// agent-bugs 32: a section drawn round new cards lands clear of what's beside it, moving them along; arranging into it
+// then works (sort-stickies-03: two cards a step apart, a section each, cut each other and the arrange was refused).
+describe('a section round things lands clear', () => {
+  const OPS = [
+    { op: 'create_card', args: { type: 'idea', plane: 'p1', from_text: 'x4', handle: '$bread' } },
+    { op: 'create_card', args: { type: 'problem', plane: 'p1', from_text: 'x5', handle: '$cash' } },
+    { op: 'create_text', args: { kind: 'section', plane: 'p1', text: 'Ideas', around: ['$bread'], handle: '$ideasSection' } },
+    { op: 'create_text', args: { kind: 'section', plane: 'p1', text: 'Problems', around: ['$cash'], handle: '$problemsSection' } },
+    { op: 'arrange', args: { items: ['$bread'], layout: 'column', where: { in_section: '$ideasSection' }, plane: 'p1' } },
+    { op: 'arrange', args: { items: ['$cash'], layout: 'column', where: { in_section: '$problemsSection' }, plane: 'p1' } },
+  ]
+  it('the model\'s own ops from that run: proposed, nothing landing on anything, each card inside its section', async () => {
+    const e = env()
+    const r = await change.run(e, { ops: OPS })
+    expect(r.ok, r.text).toBe(true)
+    expect(e.changes!.warnings.filter((w) => /land on each other/.test(w))).toEqual([])
+    const ws = viewOf(e.changes, e.getWs())
+    for (const [title, sec] of [['Maybe start with bread', 'Ideas'], ['Cash only is a big deal', 'Problems']]) {
+      const c = ws.cards.find((x) => x.title === title)!
+      const s = ws.labels.find((l) => l.text === sec && l.pieceId === R('p1'))!
+      expect(c.x >= s.x && c.y >= s.y && c.x + 200 <= s.x + (s.w ?? 0) && c.y + 100 <= s.y + (s.h ?? 0), `${title} in ${sec}`).toBe(true)
+    }
+  })
+})

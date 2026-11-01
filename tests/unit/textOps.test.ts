@@ -244,8 +244,14 @@ describe('registry and batches', () => {
       { op: 'arrange', args: { items: ['$s'], by: [0, 200] } },
     ])
     const ws = run(ctx, plans)
-    expect(ws.cards.find((c) => c.id === ID.queue)).toMatchObject({ y: 425 })
-    expect(ws.cards.find((c) => c.id === ID.menu)).toMatchObject({ y: 425 })
+    // Drawn round them it would cut the Ideas section beside it, so it and they moved clear first (agent-bugs 32);
+    // then all moved down 200 together: the cards keep their place in it, and it cuts nothing.
+    const sec = ws.labels.find((l) => l.text === 'Problems' && l.pieceId === ID.planeA)!
+    for (const id of [ID.queue, ID.menu]) expect(ws.cards.find((c) => c.id === id)!.y - sec.y).toBe(75)
+    expect(sec.y).toBeGreaterThanOrEqual(350)
+    const ideas = labelBox(ws.labels.find((l) => l.id === SEC.plane)!)
+    const box = labelBox(sec)
+    expect(box.x + box.w <= ideas.x || ideas.x + ideas.w <= box.x || box.y + box.h <= ideas.y || ideas.y + ideas.h <= box.y).toBe(true)
     for (const name of ['create_text', 'update_text', 'arrange']) expect(REGISTRY.get(name)?.args.type).toBe('object')
     expect(REGISTRY.get('create_text')!.args.properties!.kind.enum).toEqual(['heading', 'paragraph', 'sticky', 'section', 'title'])
     expect(REGISTRY.get('update_text')!.args.properties!.kicker.type).toEqual(['string', 'null'])

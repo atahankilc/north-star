@@ -39,8 +39,7 @@ something is finished, add its entry to state-history.md and leave at most one l
      cheap shakedown (claude-haiku-5-5 ×1, ~$1), its failures read; then terra, gpt-5.4-mini, claude-sonnet-5-5 ×1
      (judge terra); ×3 only for a model to mark `works well`; then the prompt bugs one by one (19, 20, 23, 24).
   2. In the app: a big job (`/restructure Segments`), and the two go buttons (not looked at in a browser yet).
-  3. Code left: bugs 31 (an arrange of new cards is its own preview item), 32 (a section round new cards cuts what's
-     beside it); the preview pick saved with the chat (rules).
+  3. Bugs 31, 32 fixed 2026-11-01 (committed, not pushed); left: the preview pick saved with the chat (rules).
   4. The local harness stays an idea (Q-031).
   Order and status of every agent bug: docs/specs/agent-bugs.md (its table).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks

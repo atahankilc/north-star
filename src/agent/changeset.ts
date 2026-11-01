@@ -48,8 +48,10 @@ const HANDLE_KEYS: ReadonlySet<string> = ID_KEYS
 // reason (required for deletes).
 export type ChangeOp = { op: string; args: Record<string, unknown>; why?: string }
 
-// A step as kept: the op, its item, the new ids its builder took (given back on every rebuild).
-type Step = ChangeOp & { item: string; newIds: string[] }
+// A step as kept: the op, its item, the new ids its builder took (given back on every rebuild). `rides`: an arrange of
+// cards made in the same call (agent-bugs 31): no preview item of its own, it goes with those cards; a card unticked
+// or dropped leaves the arrange without it (with none left, the arrange goes too).
+type Step = ChangeOp & { item: string; newIds: string[]; rides?: boolean }
 type Group = { call: number; summary?: string; steps: Step[] }
 
 // What the preview lists, one per op (agent.md §4.5's change list).
@@ -379,6 +381,10 @@ function itemsOf(groups: Group[], built: Built[], live: WorkspaceCtx, ids: Ids |
       const named = strings(built[gi].args[si])
       const dependsOn = [...new Set([...named, ...wrote.filter((x) => !made.includes(x))].flatMap((x) => (madeBy.has(x) ? [madeBy.get(x)!] : [])))]
       for (const m of made) madeBy.set(m, s.item)
+      if (s.rides) {
+        ws = after
+        return
+      }
       const d = diff(before, after)
       const nb = namedOf(before)
       const na = namedOf(after)
@@ -551,9 +557,9 @@ export function addCall(cs: Changeset, ops: ChangeOp[], c: BuildCtx & { ids?: Id
   }
   let next = cs.nextItem
   const call = cs.nextCall
-  const steps: Step[] = ops.map((o, i) => ({ op: o.op, args: { ...o.args, ...('handle' in o.args ? {} : { handle: `$${i + 1}` }) }, ...(o.why ? { why: o.why } : {}), item: `i${next++}`, newIds: [] }))
+  const steps: Step[] = markRiders(ops.map((o, i) => ({ op: o.op, args: { ...o.args, ...('handle' in o.args ? {} : { handle: `$${i + 1}` }) }, ...(o.why ? { why: o.why } : {}), item: `i${next++}`, newIds: [] })))
   const removed = new Set(c.drop?.length ? closure(cs.items, c.drop) : [])
-  const groups = [...cs.groups.map((g) => ({ ...g, steps: g.steps.filter((s) => !removed.has(s.item)) })).filter((g) => g.steps.length), ...(steps.length ? [{ call, ...(c.summary ? { summary: c.summary } : {}), steps }] : [])]
+  const groups = [...without(cs.groups, removed), ...(steps.length ? [{ call, ...(c.summary ? { summary: c.summary } : {}), steps }] : [])]
   let r: Rebuilt
   try {
     r = rebuild(groups, c, steps.length > 0)
@@ -584,6 +590,31 @@ export function closure(items: ChangeItem[], ids: string[]): string[] {
   return [...out]
 }
 
+// Steps marked `rides` (agent-bugs 31): an arrange whose items are all cards made by create_card in the same call.
+function markRiders(steps: Step[]): Step[] {
+  const cards = new Set(steps.filter((x) => x.op === 'create_card').map((x) => String(x.args.handle)))
+  return steps.map((x) => {
+    const items = x.args.items
+    return x.op === 'arrange' && Array.isArray(items) && items.length > 0 && items.every((h) => cards.has(String(h))) ? { ...x, rides: true } : x
+  })
+}
+
+// The steps left once `removed` items come off: a riding arrange loses the cards that went, and goes when none is left.
+function without(groups: Group[], removed: Set<string>): Group[] {
+  return groups
+    .map((g) => {
+      const gone = new Set(g.steps.filter((x) => removed.has(x.item)).map((x) => String(x.args.handle)))
+      const steps = g.steps.flatMap((x): Step[] => {
+        if (removed.has(x.item)) return []
+        if (!x.rides || !gone.size) return [x]
+        const items = (x.args.items as unknown[]).filter((h) => !gone.has(String(h)))
+        return items.length ? [{ ...x, args: { ...x.args, items } }] : []
+      })
+      return { ...g, steps }
+    })
+    .filter((g) => g.steps.length)
+}
+
 // A rebuild turned into the changeset it gives: plans, items (in order), warnings, what came off.
 function settle(cs: Changeset, r: Rebuilt, c: BuildCtx & { ids?: Ids }, removed: Set<string>): Changeset {
   const plans = r.built.flatMap((b) => b.plans)
@@ -600,7 +631,7 @@ function settle(cs: Changeset, r: Rebuilt, c: BuildCtx & { ids?: Ids }, removed:
 export function untick(cs: Changeset, item: string, c: BuildCtx & { ids?: Ids }): { cs: Changeset; off: ChangeItem[] } {
   if (!cs.items.some((i) => i.id === item)) return { cs, off: [] }
   const removed = new Set(closure(cs.items, [item]))
-  const groups = cs.groups.map((g) => ({ ...g, steps: g.steps.filter((s) => !removed.has(s.item)) })).filter((g) => g.steps.length)
+  const groups = without(cs.groups, removed)
   const r = rebuild(groups, c, false)
   const next = settle(cs, r, c, removed)
   return { cs: next, off: next.off.slice(cs.off.length) }

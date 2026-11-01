@@ -7,6 +7,7 @@ import { cardsOn } from '../model/placement'
 import { carriedWith, foldsOf } from '../model/cardInside'
 import { CANVAS, kindOf, LABEL_COLORS, PARA_W, STICKY_W, TITLE_W, textMax, type Label, type LabelColor, type TextKind, type TextScale } from '../model/labels'
 import { labelBox } from '../model/labelBox'
+import { clashes, clearOffset, within, type Obstacle } from '../model/layout'
 import { canvasOf, MAIN } from '../model/canvases'
 import { around, cardBoxes, clearSpotFor, downPast, inSection, piecesShown, rightOf, sectionHolds, type Box, type Boxed } from '../model/textPlace'
 import { followerMoves, STICK_REACH, stickTarget, stuckChain } from '../model/pieceMoves'
@@ -183,9 +184,37 @@ export function createText(ctx: OpCtx, args: CreateTextArgs): Plan {
   // Where.
   let spot: { x: number; y: number }
   const w = args.where
+  const carried: Write[] = []
   if (kind === 'section' && args.around) {
     if (!args.around.length) refuse(op, 'a section round nothing', 'name the things it goes round, or give where with w and h')
-    const box = around(args.around.map((id) => boxIn(ctx, op, s, id)))
+    const held = args.around.map((id) => boxIn(ctx, op, s, id))
+    let box = around(held)
+    // Drawn round what it holds, it must not cut what's beside it (agent-bugs 32: two new cards a step apart, each
+    // given a section, cut each other's): then it and what it holds move together to the nearest clear spot. A
+    // section wholly round it is fine.
+    const heldIds = new Set(held.map((h) => h.id))
+    const { labels, others } = boxesIn(ctx, s)
+    const outside: Obstacle[] = [
+      ...labels.flatMap((l): Obstacle[] => {
+        if (heldIds.has(l.id)) return []
+        const b = labelBox(l)
+        if (kindOf(l) !== 'section') return [b]
+        return within(box, b) ? [] : [{ ...b, frame: true }]
+      }),
+      ...others.filter((o) => !heldIds.has(o.id)),
+    ]
+    // Only a real cut moves it (touching or near is fine); where it goes keeps the usual room.
+    if (clashes([box], outside.map((o) => ({ ...o, frame: true })))) {
+      const d = clearOffset([box], outside)
+      if (d.dx || d.dy) {
+        box = { ...box, x: box.x + d.dx, y: box.y + d.dy }
+        for (const h of held) {
+          const l = labels.find((x) => x.id === h.id)
+          const at = l ? { x: l.x, y: l.y } : { x: h.x, y: h.y }
+          carried.push(moveWrite(ctx, op, { id: h.id, x: at.x + d.dx, y: at.y + d.dy, ...(s.plane ? { plane: s.plane } : { canvas: s.canvas }) }).write)
+        }
+      }
+    }
     spot = { x: box.x, y: box.y }
     fields.w = box.w
     fields.h = box.h
@@ -216,7 +245,7 @@ export function createText(ctx: OpCtx, args: CreateTextArgs): Plan {
     createdAt: now,
     updatedAt: now,
   }
-  return { op, label: `add ${TEXT_NAMES[kind]}`, writes: [{ coll: 'labels', id, set: data }], ids: { [handleOf(args)]: id }, meta: { kind } }
+  return { op, label: `add ${TEXT_NAMES[kind]}`, writes: [{ coll: 'labels', id, set: data }, ...carried], ids: { [handleOf(args)]: id }, meta: { kind } }
 }
 
 // ---- update_text

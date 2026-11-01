@@ -62,8 +62,8 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 8  | no web access                                    | New parts    | mid      | new (Phase 9)    | open   |
 | 29 | small jobs split into steps the evals never ran  | Plumbing     | blocker  | code (job, evals)| fixed  |
 | 30 | ids written as Markdown links                    | Plumbing     | mid      | code             | fixed  |
-| 31 | an arrange of new cards is its own preview item  | Guards       | low      | code (changeset) | open   |
-| 32 | a section round new cards cuts what's beside it  | Layout       | mid      | code (ops)       | open   |
+| 31 | an arrange of new cards is its own preview item  | Guards       | low      | code (changeset) | fixed  |
+| 32 | a section round new cards cuts what's beside it  | Layout       | mid      | code (ops)       | fixed  |
 | 33 | the evals' own errors, found by reading every failure | Plumbing | blocker  | evals            | fixed  |
 
 ## Order
@@ -190,6 +190,9 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     with it (its handle is gone). Bug 16's fold only takes an arrange with nothing but `where: { near }`. Fix (code,
     changeset): an arrange of cards made in the same call rides with them (no item of its own), and an unticked card
     leaves the arrange without it instead of taking it off.
+    *Fixed 2026-11-01:* changeset.ts marks such an arrange `rides` (all its items create_card handles of its call): no
+    preview item, and an untick or a drop takes the gone cards out of its items (none left, it goes). Tests:
+    changeset.test.ts ("three cards and their row: three items"; one unticked, the other two still in a row).
 
 ## Plumbing: wiring the app to what was built
 
@@ -363,6 +366,11 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     outside (sort-stickies-03: the model then proposed nothing). Fix (code, ops): a section round things lands clear
     (it and what it holds moved together to the nearest clear spot, a rewrite, not a refusal), and an arrange of what
     a section already holds lays it out inside it without growing past its neighbours.
+    *Fixed 2026-11-01 (the first half, which the second followed from):* create_text `around` checks the box against
+    what's outside it; on a real cut (touching is fine) it and what it holds move together to the nearest clear spot
+    (src/ops/text.ts; only the agent draws sections round things). With the sections clear, the arrange in_section
+    from sort-stickies-03's own ops goes through: changeset.test.ts replays them. A card under a sticky stays refused
+    (a section round it would be moved away from the sticky anyway).
 
 ## Judgment: prompt and skill methods, measured on the evals
 

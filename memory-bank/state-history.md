@@ -1203,3 +1203,7 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   showing, so the empty canvas's hint (after: welcome) waited behind an unseen lesson. While quiet (dev only), the real
   queue holds no hint back. Verified in headless Chrome: the hint beside the `+`; onboarding tests, check:lessons.
 
+- agent-bugs 31: an arrange of cards made in the same call `rides` with them (changeset.ts: no item of its own; an
+  untick leaves it laying out the rest). 32: a section drawn `around` things that would cut what's beside it moves
+  with them to the nearest clear spot (src/ops/text.ts). Verified: tsc, vitest 968 (changeset and textOps tests
+  replay the runs' own ops), stub evals 116 tasks 0 failed, `--wrong` 116 failed.
