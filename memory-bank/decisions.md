@@ -92,7 +92,7 @@ feature comes back as a piece, and check them with the user then.
   native `<select>` (`src/ui/primitives/Select.tsx`) (D-093). `▸`/`▾` only open or fold something, never lead a row of actions (D-189).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,
   D-069). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
-  `Palette` only what WebGL reads, D-321), bg `#f5f5f5`, no-flash script (D-069).
+  `Palette` only what WebGL reads, D-321), bg `#f3f3f3` (D-342), no-flash script (D-069); the backdrop prints bolder, darker glyphs in light (D-342).
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
   people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge; its `+` an unframed drawn
@@ -129,6 +129,7 @@ feature comes back as a piece, and check them with the user then.
 - Backdrop: flows by itself (no pointer) in generations every ~9 s (D-026, D-028); 30 fps on demand, one texel per cell
   (D-063); a cell is 9 device px, stars by a sine-free hash, light ink near-black (D-172); dimmed to 8 % in workspaces
   (D-110). Welcome intro: stars, sunrise, the north star, 10 s; the light landing gets a night sky with tone sweeps (D-072).
+- Landing (D-340): the backdrop on the whole screen (no scrim), the name in JetBrains Mono, no HUD, sign-in a `Button` `md`.
 - Motion `full | reduced | system` (default full), read through `useMotion().reduced`; background on/off (D-030, D-063).
 
 ## Canvas and pieces
@@ -348,6 +349,10 @@ feature comes back as a piece, and check them with the user then.
   monthly API credits pay when the key is from its linked Console organisation; never a Claude sign-in), on a loop
   that only appends for that provider (context appended per turn, clearing and compaction server-side); the same
   evals and one judge for every provider.
+- Pipeline (D-341, docs/specs/agent-pipeline.md): a turn's role (chat, planner, executor; reviewer later) read from
+  facts, a model per role, one provider per pipeline; the harness carries the intelligence, code judges first; every
+  eval run recorded (manifest + summary, evals/results/index.jsonl), compared (`--compare`), replayed (`--replay`);
+  the same records later from production jobs and a backoffice that reads them.
 - Big jobs (D-328): a plan kept as state (`plan` tool, a live checklist, saved with the chat), run step by step; at go
   the person picks one preview at the end or one per step (the agent suggests, a message takes the suggestion), the
   next step starting by itself; no fixed step count (a person's budget and `[stop]`); a message sent while it runs

@@ -78,7 +78,7 @@ void main() {
     // Blended in display (sRGB) space: in linear light 30% ink over paper reads only ~15% darker on screen, so the
     // printed backdrop came out far paler than the dark one. This way ink darkness on screen matches glyph brightness in dark.
     // Thin glyph edges count for more than in dark: a small glyph is mostly antialiased edge.
-    float cover = pow(clamp(l * uGain, 0.0, 1.0) * glyph, 0.75) * uDim;
+    float cover = pow(clamp(l * uGain, 0.0, 1.0) * glyph, 0.6) * uDim;
     vec3 printed = mix(toSrgb(uPaper), toSrgb(ink), toSrgb(vec3(cover)).r);
     col = pow(printed, vec3(2.2));
     // The welcome's night: glyphs glow on a dark-blue sky the way they do on black. It sweeps in diagonally from the bottom
@@ -128,7 +128,11 @@ export type AsciiOptions = {
 export type MaskMode = 'off' | 'covering' | 'revealing' | 'covered'
 const MASK_MODES: Record<MaskMode, number> = { off: 0, covering: 1, revealing: 2, covered: 3 }
 
-function drawAtlas(canvas: HTMLCanvasElement, ramp: string) {
+// Light theme draws the glyphs bolder (D-342): dark strokes on bright paper read thinner than the same strokes lit on
+// black, so the printed backdrop came out faint.
+const WEIGHT = { dark: 500, light: 700 }
+
+function drawAtlas(canvas: HTMLCanvasElement, ramp: string, weight: number = WEIGHT.dark) {
   const size = 64
   canvas.width = size * ramp.length
   canvas.height = size
@@ -136,7 +140,7 @@ function drawAtlas(canvas: HTMLCanvasElement, ramp: string) {
   ctx.fillStyle = '#000' // tokens-ok: the atlas is a brightness mask, not a colour
   ctx.fillRect(0, 0, canvas.width, canvas.height)
   ctx.fillStyle = '#fff' // tokens-ok: the atlas is a brightness mask, not a colour
-  ctx.font = `500 ${size * 0.8}px "${fonts.mono}", monospace`
+  ctx.font = `${weight} ${size * 0.8}px "${fonts.mono}", monospace`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   for (let i = 0; i < ramp.length; i++) {
@@ -155,9 +159,14 @@ export class AsciiEffect {
   private geometry = new PlaneGeometry(2, 2)
   private camera = new OrthographicCamera()
   private buffer = new Vector2()
+  private canvas: HTMLCanvasElement
+  private ramp: string
+  private weight = WEIGHT.dark
 
   constructor({ cellSize = 9, saturation = 1, gain = 1.4, ramp = GLYPH_RAMP }: AsciiOptions = {}) {
     const canvas = document.createElement('canvas')
+    this.canvas = canvas
+    this.ramp = ramp
     drawAtlas(canvas, ramp)
     const atlas = new CanvasTexture(canvas)
     atlas.minFilter = LinearFilter
@@ -196,8 +205,8 @@ export class AsciiEffect {
     this.quad = new Scene().add(mesh as Object3D)
 
     // Redraw once the mono font (JetBrains Mono) has loaded; the first draw may use the fallback font.
-    document.fonts?.load(`48px "${fonts.mono}"`).then(() => { // tokens-ok: any size loads the font
-      drawAtlas(canvas, ramp)
+    document.fonts?.load(`700 48px "${fonts.mono}"`).then(() => { // tokens-ok: any size loads the font
+      drawAtlas(canvas, ramp, this.weight)
       atlas.needsUpdate = true
     })
   }
@@ -209,6 +218,12 @@ export class AsciiEffect {
   // Light theme: glyphs print dark on `paper` instead of glowing on black.
   setTheme(light: boolean, paper: string, sky: string, dusk: string) {
     this.material.uniforms.uLight.value = light ? 1 : 0
+    const weight = light ? WEIGHT.light : WEIGHT.dark
+    if (weight !== this.weight) {
+      this.weight = weight
+      drawAtlas(this.canvas, this.ramp, weight)
+      this.atlas.needsUpdate = true
+    }
     ;(this.material.uniforms.uPaper.value as Color).set(paper)
     ;(this.material.uniforms.uSky.value as Color).set(sky)
     ;(this.material.uniforms.uDusk.value as Color).set(dusk)

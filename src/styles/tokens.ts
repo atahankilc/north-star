@@ -46,7 +46,7 @@ export const palettes: Record<Theme, Palette> = {
     dusk: '#000000',
   },
   light: {
-    bg: '#f5f5f5',
+    bg: '#f3f3f3',
     magenta: '#db1a7a',
     cyan: '#0a979c',
     yellow: '#a87d00',

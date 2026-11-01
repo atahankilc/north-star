@@ -58,7 +58,7 @@ The scale stays, with one step added for panel titles:
 | `--text-lg` | 18 | card and list titles |
 | `--text-title` *(new)* | 22 | right panel titles (SidePanel; 22 today, DESIGN.md said 26) |
 | `--text-heading` | 26 / 20 on phones | page and report titles |
-| `--text-xl`, `--text-hero`, `--text-display` | clamp | as today |
+| `--text-xl`, `--text-hero`, `--text-display` | clamp | as today; `--text-display` 48–168 px, 10vw (D-340: the mono name fits one line on a phone) |
 | `--text-code` *(new)* | 0.88em | code and markers inside Markdown (0.86em ×3, 0.92em ×1) |
 
 **Changes you will see:** the 31 labels at **10 px become 11 px** (CardPanel's small labels, Menu headings and foot,

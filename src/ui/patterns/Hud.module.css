@@ -17,26 +17,6 @@
   pointer-events: none;
 }
 
-/* The welcome's night in light theme (D-072): it reaches the top first and leaves it last, so the bar keeps night colours
-   for as long as Landing holds data-night-top (tokens.css has the page's). Its fade strip stays clear meanwhile: the tones cross
-   the bar diagonally, so any one colour there would be wrong somewhere. */
-:global(:root[data-theme='light'][data-night-top]) .hud {
-  --bg: transparent;
-  --fg: var(--night-fg);
-  --fg-strong: var(--night-fg-strong);
-  --fg-dim: var(--night-fg-dim);
-  --fg-faint: var(--night-fg-faint);
-}
-
-/* While night covers the headline (data-night, tokens.css) but hasn't reached the bar yet, the bar keeps the paper's colours. */
-:global(:root[data-theme='light'][data-night]:not([data-night-top])) .hud {
-  --bg: transparent;
-  --fg: var(--paper-fg);
-  --fg-strong: var(--paper-fg-strong);
-  --fg-dim: var(--paper-fg-dim);
-  --fg-faint: var(--paper-fg-faint);
-}
-
 .hud > * {
   pointer-events: auto;
 }

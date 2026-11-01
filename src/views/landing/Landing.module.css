@@ -19,41 +19,20 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-8);
-  /* Solid band under the type, like the Enosta reference. */
   margin: 0 calc(var(--hud-x) * -1) calc(var(--hud-y) * -1);
   padding: var(--space-6) var(--hud-x) var(--space-8);
   position: relative;
 }
 
-/* The solid band, kept out while the welcome's dawn glows at the bottom edge and faded in as it melts into the flow
-   (D-072). `--intro-at` (minus the seconds into the intro) lines the 10 s animation up with the intro clock; after the intro it's done. */
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: var(--z-under);
-  background: linear-gradient(to bottom, transparent, var(--bg) 35%);
-  animation: scrim var(--dur-intro) linear var(--intro-at, calc(-1 * var(--dur-intro))) both;
-}
-
-@keyframes scrim {
-  /* After the light theme's night has left (9.4 s, sceneClock.ts), so it never lays a flat band over its tones. */
-  0%, 94% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
 .title {
   margin: 0;
-  font-family: var(--font-display);
+  /* Mono (D-340): the name drawn like the rest of the system's marks, over the field it came from. */
+  font-family: var(--font-mono);
   font-size: var(--text-display);
   font-weight: var(--weight-regular);
   line-height: var(--lh-none);
   letter-spacing: var(--track-display);
   color: var(--fg-strong);
-}
-
-.kernRt {
-  letter-spacing: var(--track-title);
 }
 
 .aside {

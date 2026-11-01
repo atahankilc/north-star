@@ -46,7 +46,7 @@ References in [design/references/](design/references/):
 | `--accent-green` | `#3dff8a` | success / "we're better" |
 
 **Light theme (D-069):** dark is the default; Settings → display → theme switches to light (or `system`). Light swaps the
-tokens above for neutral light grey (`--bg #f5f5f5`), white surfaces, near-black text (`--fg #111`, `--fg-muted #444`,
+tokens above for neutral light grey (`--bg #f3f3f3`, D-342), white surfaces, near-black text (`--fg #111`, `--fg-muted #444`,
 `--fg-dim #595959`, `--fg-faint #767676`, D-337) and darker accents (magenta `#db1a7a`, cyan `#0a979c`,
 yellow `#a87d00`, blue `#2a5fe0`, green `#0f9a4b`); the ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
 (`[data-theme='light']`); what WebGL draws (bg, accents, the night sky) also in `palettes.light` in `tokens.ts`, read through
@@ -69,11 +69,11 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - *Which face (D-337, replacing D-093's split):* Inter is the page's default: titles, reading text, rows, hints, meta
   lines, fields, settings, menus' items, tasks, table cells. JetBrains Mono only where the system speaks: caps labels
   (Label, Rule, kinds, piece names, column heads), numbers and counts, `[verb]` buttons, keys (`[p]`, `⌘F`), the
-  prompt's `>` and `›`, glyphs, cells, consoles and docks, readouts, tags, sticky notes. A rule that sets mono on a
+  prompt's `>` and `›`, glyphs, cells, consoles and docks, readouts, tags, sticky notes, and the landing's name (D-340). A rule that sets mono on a
   whole container is wrong now: set it on the bit.
 - *Scale (tokens.css; no raw px sizes):* `--text-xs` 12 (labels, meta, small buttons; nothing smaller), `--text-sm` 14 (body
   and controls), `--text-md` 15 (report body), `--text-lg` 18 (card and list titles), `--text-heading` 26, 20 on phones (page,
-  panel and report titles), `--text-xl`, `--text-hero` (the workspaces page title), `--text-display` (landing headline).
+  panel and report titles), `--text-xl`, `--text-hero` (the workspaces page title), `--text-display` (the landing's name, in JetBrains Mono, D-340).
 - *Case:* uppercase means a label (`NOTES`, `┌ DISPLAY`, column heads, type names); everything you click is lowercase
   (buttons, the Settings menu, choices).
 - *Tracking:* `--track-label` 0.05em on every small uppercase label (D-337; 0.12em pulled small caps apart), `--track-title` -0.02em on sans titles,
@@ -223,7 +223,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   except what's beside the plane (D-211) and the right panel (D-219).
 
 ### HUD (D-027, D-175)
-- Top left on every page: the breadcrumb (`# north-star / workspaces / <name>`, then the focused plane's name, D-189).
+- Top left on every page but the landing (which has none, D-340): the breadcrumb (`# north-star / workspaces / <name>`, then the focused plane's name, D-189).
   Everything else moves to a left side nav piece by piece. Screen-edge margins come only from `--hud-x` / `--hud-y`.
 - The side nav's tools at the middle of the left edge (D-178): unframed icon buttons like the gear; the `+` a drawn 20 px
   magenta `+`, its menu opening right.
@@ -286,8 +286,8 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
 - **Welcome** (D-072): the first 10 s after the app starts, before the flow: the sky slowly fills with stars (few, then
   faster) while a sunrise glow spreads low along the bottom edge from the lower left (pale gold at the edge, then orange, then red;
   it never climbs far), and last one star blazes far brighter than the rest (cross and diagonal rays, upper right). Then the stars
-  go out one by one and the sky melts slowly into the flow, which has been running underneath. The landing's headline scrim stays
-  out during the intro so the glow can reach the bottom edge, and fades in as the flow takes over. No galaxy, nebula, Milky Way,
+  go out one by one and the sky melts slowly into the flow, which has been running underneath. The landing has no scrim:
+  the glow and then the flow reach every edge, behind the title too (D-340). No galaxy, nebula, Milky Way,
   shooting stars, constellation lines or aurora (all tried and rejected). Skipped when the app starts under reduced motion.
   In the light theme, signed out only, the landing's sky turns dark blue for the intro (white stars, a brighter sunrise, light text):
   it sweeps in with the page's other entrances as eight tones (paper → light blue → night) crossing diagonally from the bottom left

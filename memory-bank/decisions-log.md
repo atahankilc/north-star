@@ -375,7 +375,7 @@ Rules: `edit`, `field`, `since` validated; 118 rule tests pass.
 **Light theme, dark by default.** Settings → display → `theme: dark | light | system` (`src/state/theme.ts`, localStorage
 `north-star.theme`, default `dark`; `system` follows `prefers-color-scheme`). An inline script in `index.html` applies a stored light
 theme before the first paint, so dark never flashes first.
-- *CSS:* `html[data-theme='light']` overrides the tokens in `tokens.css`: neutral light grey `--bg #f5f5f5`, white surfaces, near-black text,
+- *CSS:* `html[data-theme='light']` overrides the tokens in `tokens.css`: neutral light grey `--bg` (`#f3f3f3` since D-342), white surfaces, near-black text,
   and darker accents so they stay readable on paper. New tokens in both themes: `--on-accent` (text on an accent fill, always black),
   `--wash-1/2/3` and `--wash-cyan` (hover and stripe tints, replacing `rgba(255,255,255,…)`), `--scrim` (modal backdrop), `--menu`.
   Never hard-code a colour in CSS; use a token.
@@ -390,7 +390,7 @@ theme before the first paint, so dark never flashes first.
 - *Landing:* no controls in the HUD any more (the user's call): the motion switch is gone, and motion and theme are in Settings once signed in.
   A signed-out visitor gets the stored preference, or else the defaults.
 - *Defaults, always (user's rule, in CLAUDE.md):* dark theme, full motion, background on, regardless of the OS. Changing them is a
-  signed-in Settings thing only. The light background is a neutral grey (`#f5f5f5`); a warm off-white was tried and rejected.
+  signed-in Settings thing only. The light background is a neutral grey (`#f3f3f3` since D-342); a warm off-white was tried and rejected.
 
 ### D-070 · 2026-10-17 · Accepted (changes D-001's routing)
 *D-248:* old `#/` links are no longer upgraded, and old view paths no longer open the canvas.
@@ -418,7 +418,7 @@ the usual flow. (The first pass had a "space photo" look: nebula clouds, a galax
   from the bottom edge, centred left of middle and squashed so it spreads sideways and stays low (palette `ember` → `dawn` → a pale gold
   from the yellow accent at the edge; the ASCII target is 8-bit, so pure red alone only reaches faint glyphs), the bright star blooms
   4.2–5 s in the upper right, stars go out 5.4–8.5 s, slow crossfade into the flow 6.2–9.8 s. The glow skips the bottom calm band.
-  The landing hero's scrim is a `::before` whose 10 s fade-in is lined up with the intro clock (`--intro-at`), so it's out while the glow shows.
+  The landing has no scrim under its headline since D-340: the glow and the flow reach every edge.
 - *Light theme (user's idea): a dark-blue night sky, landing only.* While signed out, the light theme's ASCII pass draws the intro on
   `palettes.light.night` (#0c1736) the way dark draws on black: white stars, a brighter sunrise (glow 2.2× in light, `uLight`), light text.
   Signed-in pages never get it (they see the intro faded on paper). Landing calls `startNight()` when the page is revealed, so the sky
@@ -426,9 +426,8 @@ the usual flow. (The first pass had a "space photo" look: nebula clouds, a galax
   It moves as *tone sweeps* (user's design): eight tones from paper through light blue (`palettes.light.dusk`) to night, crossing the
   screen diagonally from the bottom left to the top right with room between them, in squares a third of a cell wide with a ragged
   edge; leaving, the tones go out the same direction, so day comes back from the bottom left. The text follows: `data-night`
-  (headline, `--bg`) and `data-night-top` (HUD, Hud.module.css; its fade strip is clear meanwhile) switch when their spot is half
-  way through the tones (`nightHalfway`). The headline's scrim fades in only after
-  the night has left (9.4 s). Rejected on the way: a 1.2 s fade that slid down from the top as a grey gradient, the night waiting for
+  (headline, `--bg`) switches when its spot is half way through the tones (`nightHalfway`); the landing has no HUD since
+  D-340, so `data-night-top` went with it. Rejected on the way: a 1.2 s fade that slid down from the top as a grey gradient, the night waiting for
   its own fill before the page appeared, a slow morning rising from the bottom, plain random squares, glyph-ramp ink in random
   order, a fast top-down front whose tones followed each other too closely, and four tones rising straight up from the bottom. Dark theme is untouched.
 - *Second pass (user):* the galaxy, nebula clouds, Milky Way band and shooting stars didn't look good and are gone; the sunrise replaces them.
@@ -5231,7 +5230,7 @@ want ... there is also an individual link button"); the dropdown with a search i
 ("It should look like how link dropdown is looking"); the timeline has no unframed look ("lets add it like the others");
 unframed, pieces take more room than they need ("check kanban ... actually all of them"); framed pieces are lighter
 (graphite) on the canvas, but "their bg should switch to black when they are focused".
-- *Unframed on black:* `.piece[data-open]` fills with the page's `--bg` (black; `#f5f5f5` in light), its edge feathered
+- *Unframed on black:* `.piece[data-open]` fills with the page's `--bg` (black; `--bg` in light), its edge feathered
   (`0 0 14px 8px`, never a box); what it holds takes `--bg-raised: --piece-card` and `--grid-mark: --piece-mark`
   (cards and tasks on #0b0b0b vanished on black). The document's own feathered paper (`openPaper`) went: the piece is
   the paper now. The rows' hugging shades stay.
@@ -6459,3 +6458,51 @@ none caught by the checks that existed.
 Done by the user the same day: `git config core.hooksPath .githooks` (the agent's run of it was refused as persistence);
 the Claude Code hook takes effect once Claude Code reloads its settings (`/hooks` or a new session). TS constants that
 duplicate another module's (a regex of an alphabet) are still a reviewer's catch.
+
+### D-340 · 2026-11-01 · Accepted (the user: "the background ascii character animation is cut off closed to bottom edge… I want the animation to be on full face"; "the North Star text do not look that good, maybe we can use the mono font here"; "we dont need #north-star at top left in this page"; "use [Button] instead of ascii button… deletion is another task for future")
+**The landing: the backdrop on the whole screen, the name in mono, no breadcrumb, the kit's Button.**
+- **No scrim:** the hero's `::before` (a band fading to `--bg`, faded in at 9.4 s of the intro) is gone; the welcome and the
+  flow reach every edge, behind the title and the sign-in too. The text is DOM over the backdrop, never under the effect.
+- **The name in JetBrains Mono** (`--font-mono`, regular, `--track-display`): an exception to D-337's "mono only on system
+  bits", asked by the user. `--text-display` (used only here) is `clamp(48px, 10vw, 168px)` so the wider mono name holds
+  one line on a phone and leaves room for the sign-in on a laptop. Inter's `r`–`t` kerning span went with Inter.
+- **No HUD on the landing:** no `# north-star` top left (signed out there was nothing else in it). The light night's
+  `data-night-top` timers and Hud.module.css's two night rules went with it.
+- **Sign-in on `Button` `md`** (the same look; AsciiButton already drew it). AsciiButton stays for Settings and People
+  until they move; deleting it is a later task.
+Verified: headless Chrome 1440×900 at 4 s and 12 s, 1920×1080, 390×844, light theme at 3 s and 12 s; typecheck,
+check:tokens 0, check:kit, check:gallery.
+Not yet: AsciiButton's last callers (Settings.tsx, PeopleSettings.tsx) onto Button, then delete it.
+
+
+### D-341 · 2026-11-01 · Accepted (the user: "Gerçekten çalışan bir pipeline gibi düşün… kendime bir backoffice kurmam lazım, çoğu agentın nasıl çalıştığının ölçümlerini görebildiğim, değişiklikler sonucunda tekrar runlar yapabildiğim… şimdi değil… ancak temelleri sağlam atalım"; on cost: "her iş için aynı agentı runlıyoruz ama bu çok maliyetli olabiliyor")
+**The agent's work is split by role across models, and every run is recorded the same way, so it can be made cheaper
+and better by measurement and later run on a server with a backoffice.** Spec: docs/specs/agent-pipeline.md.
+- *Roles:* a turn's role is read before it runs, from facts (a plan skill → `planner`; a job planned, running or
+  paused → `executor`; else `chat`; `reviewer` named for later), never from the person's words (D-333) or an extra
+  model call. A *pipeline* names a model per role (`chat` required, the rest fall back to it); one provider per
+  pipeline; a model's own items (reasoning, thinking) go back only to that model (loop.ts), its text and calls stay.
+- *Principles:* the harness carries the intelligence (tools, code checks, guides; the target is the cheap model as good
+  as the strong one but on the hardest jobs); code is the first judge; one record shape for eval runs, replays and,
+  later, production jobs; measure before and after.
+- *Built (2026-11-01, P0):* src/agent/pipeline.ts (`roleOf`, `modelFor`, `single`, `routed`, `plan-strong`,
+  `pipelineProblems`); the evals' `--pipeline`/`--strong` (a model per turn, each turn recording its model and role,
+  cost per turn's model); evals/records.ts (report.json's `manifest`: git sha and dirty, command, pipeline, model,
+  judge, prompt and tools hashes; `summary`: pass, cost, tokens overall, by group, model and role; a line per run in
+  evals/results/index.jsonl); evals/compare.ts (`--compare A B`, old zero-cost Claude attempts priced again from their
+  tokens). Checked: tsc, vitest (agentPipeline.test.ts new), stub evals 0 failed, a run recorded and two compared.
+- *Not yet:* P1 the cheap baseline (mini ×3) and Claude's cache at 85 %+; P2 `routed` and `plan-strong` measured on both
+  providers; P3 routing in the app (a cheap and a strong model in Settings, a job's cost shown, a budget per chat), the
+  reviewer if it pays; P4 jobs on the server (Blaze, D-079) writing the same records; P5 the backoffice reading them.
+
+### D-342 · 2026-11-01 · Accepted (the user: "Light modda hem ascii karakter animasyonları zar zor gözüküyor hem de arka plan beyazı çoooook beyaz, belki… azcık alt bir ton"; "bu arka plan beyazı bütün uygulama bazında geçerli"; after #ebebeb: "şuan uyguladığınla beyaz arasında bişi olsa"; after #f0f0f0: "bir adım daha aç"; "tamam bu iyi")
+**Light theme: the page a step down from white, and the backdrop printed bolder.**
+- **`--bg` `#f3f3f3`** (was `#f5f5f5`), app-wide; `palettes.light.bg` in tokens.ts the same (WebGL's paper). Neutral grey,
+  never warm (D-069). Pieces and surfaces stay white, so they stand off the page. `#ebebeb` was tried first: too big a gap
+  to the white pieces; `#f0f0f0` next: still a little dark. With it `--ink-shade` rgba(243,243,243,.92), `--card-behind` `#e6e6e6`.
+- **Glyphs in light** (AsciiEffect.ts): the atlas is drawn at weight 700 (dark keeps 500; redrawn when the theme
+  changes), and ink coverage is `pow(…, 0.6)` (was 0.75). Dark strokes on bright paper read thinner than lit strokes on
+  black; before, the printed backdrop was barely visible.
+Verified: headless Chrome, light, dpr 1 and 2, before/after crops; typecheck, check:tokens 0, unit tests 753/0.
+Not yet: dark theme faint on some screens (Q-033).
+
