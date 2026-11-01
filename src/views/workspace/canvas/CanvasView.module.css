@@ -309,6 +309,12 @@
    what's the canvas's: shown only while the piece is pointed at (built cell by cell, CanvasView's PlaneConsole), in edit
    mode, with its setup open or the keyboard in it; something new inside a small magenta tab meanwhile. Its size follows
    `--cs`, set on the piece. */
+/* Level with the piece's resize handles (`--z-3`) and after them, so over them: in edit mode the bottom edge's handles
+   never sit on its tools; still under a plane in focus (`--z-3` + 1). */
+.console {
+  z-index: var(--z-3);
+}
+
 .console:not([data-shown]):not([data-fresh]) {
   pointer-events: none;
 }
